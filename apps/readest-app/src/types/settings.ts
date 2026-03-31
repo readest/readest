@@ -6,6 +6,7 @@ import { OPDSCatalog } from './opds';
 import { RSSCatalog, ArticleManagementSettings } from './rss';
 import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
+import type { ShadowLibrarySettings } from './shadow-library';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -104,6 +105,8 @@ export interface SystemSettings {
   customTextures: CustomTexture[];
   opdsCatalogs: OPDSCatalog[];
   rssFeeds: RSSCatalog[];
+  rssFolders: string[]; // List of folder paths (e.g., "Science", "Science/Biology")
+  rssFolderColors?: Record<string, string>; // Map of folder path to color
   articleManagement: ArticleManagementSettings;
   metadataSeriesCollapsed: boolean;
   metadataOthersCollapsed: boolean;
@@ -121,4 +124,7 @@ export interface SystemSettings {
   aiSettings: AISettings;
   globalReadSettings: ReadSettings;
   globalViewSettings: ViewSettings;
+  
+  // Shadow library configuration
+  shadowLibrary?: ShadowLibrarySettings;
 }

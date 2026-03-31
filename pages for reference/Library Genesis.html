@@ -1,0 +1,1084 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<META HTTP-EQUIV="CACHE-CONTROL" CONTENT="max-age=604800, must-revalidate">
+	<meta name="rating" content="general">
+	<!--<link href="/rss/index.php" rel="alternate" type="application/rss+xml" title="News" />-->
+	<link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+	<title>Library Genesis</title>
+		
+	<!--[if IE 6]>
+	<style>
+		body {behavior: url("/csshover3.htc");}
+		#menu li .drop {background:url("img/drop.gif") no-repeat right 8px; 
+	</style>
+	<![endif]-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">	
+	
+<link href="/css/font.min.css" rel="stylesheet">	
+<style>
+nav.navbar .dropdown:hover > .dropdown-menu {
+ display: block; 
+}
+.bd-placeholder-img {
+	font-size: 1.125rem;
+	text-anchor: middle;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+@media (min-width: 768px) {
+			.bd-placeholder-img-lg {
+			font-size: 3.5rem;
+		}
+	}
+
+.panel-heading .accordion-toggle:after {
+    font-family: "Glyphicons Halflings";  
+    content: "\e114";    
+    float: right;       
+    color: grey;         
+}
+.panel-heading .accordion-toggle.collapsed:after {
+    content: "\e080";   
+}
+.tooltip-inner {
+    max-width: 350px;
+    width: 350px; 
+}
+h1 {
+	display: block; 
+	font-size: 1.8rem; 
+	font-weight: bold; 
+	font-family: Georgia, "Times New Roman", Times, serif;  color: #A00000; 
+}
+#tablelibgen td { 
+	font-family: "Pt Sans", Tahoma, Helvetica, sans-serif; 
+	margin: 0; 
+	padding: 0em 3px; 
+	font-size: 1rem;
+}
+
+#tablelibgen1 td { 
+	font-family: "Pt Sans", Tahoma, Helvetica, sans-serif; 
+	margin: 0; 
+	padding: 0em 3px; 
+	font-size: 1rem;
+}
+
+.taghide {
+    display: none; 
+}
+.taghide + label ~ div {
+    display: none;
+}
+/* оформляем текст label */
+.taghide + label {
+    display: inline-block; 
+}
+/* вид текста label при активном переключателе */
+
+/* когда чекбокс активен показываем блоки с содержанием  */
+.taghide:checked + label + div {
+    display: block; 
+}
+
+
+
+/*.navbar {
+	background-color: #BBBBBB;
+}*/
+	</style>
+
+	<link rel="stylesheet" href="/css/dark-mode.css">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<link rel="stylesheet" type="text/css" href="../css/paginator3000.css" />
+<script type="text/javascript" src="../js/paginator3000.js"></script><script type='text/javascript' src='//inopportunefable.com/28/4b/51/284b513767b1a27086dec8171527696f.js'></script>
+
+
+
+
+</head>
+<body>    
+<nav class="navbar navbar-expand-md navbar-dark bg-secondary  mb-1">
+  
+   <a class="navbar-brand" href="/index.php">
+    <img src="/img/logo.png"  height="30" alt="">
+  </a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarCollapse">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="/community/app.php/article/news">NEWS <span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="/community/">FORUM <span class="sr-only">(current)</span></a>
+      </li>
+	
+      <li class="nav-item dropdown">
+<a class="btn btn-secondary dropdown-toggle" href="/community/ucp.php?mode=login" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          LOGIN
+        </a>
+        <div class="dropdown-menu" aria-labelledby="dropdown01">    
+          <a class="dropdown-item" href="/community/ucp.php?mode=register">Register</a>
+        </div>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          DOWNLOAD
+        </a>
+        <div class="dropdown-menu" aria-labelledby="dropdown01">      
+
+          <a class="dropdown-item" href="/mirrors.php">Mirrors</a>
+          <a class="dropdown-item" href="http://libgenfrialc7tguyjywa36vtrdcplwpxaw43h6o63dmmwhvavo5rqqd.onion/">TOR</a>
+
+	<div class="dropdown-divider"></div>
+         <h6 class="dropdown-header">P2P</h6>
+          <a class="dropdown-item" href="/torrents/">Torrents</a>
+          <a class="dropdown-item" href="https://ipdl.cat/data/torrents.html">Torrents status</a>
+          <a class="dropdown-item" href="/nzb/">Usenet (*.nzb)</a>
+          <a class="dropdown-item" href="/soft/">Soft</a>
+	<!--https://phillm.net/libgen-stats-table.php-->
+
+
+
+
+	<div class="dropdown-divider"></div>
+         <h6 class="dropdown-header">DB Dumps</h6>
+          <a class="dropdown-item" href="/dirlist.php?dir=dbdumps">Libgen</a>
+          <a class="dropdown-item" href="http://libgen.rs/dbdumps/">libgen.rs (gen.lib.rus.ec)</a>
+
+	<!--<div class="dropdown-divider"></div>
+ 	 <a class="dropdown-item" href="/magz0/">Unsorted magz</a>
+ 	 <a class="dropdown-item" href="/fict0/">Unsorted fiction</a>
+
+	 <a class="dropdown-item" href="/comics4/">Unsorted comics</a>
+        </div>-->
+
+      </li>
+
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="librarian.php" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          UPLOAD
+        </a>
+        <div class="dropdown-menu" aria-labelledby="dropdown01">  
+          <a class="dropdown-item" href="ftp://ftp.libgen.bz/upload/">FTP</a> 
+        </div>
+      </li>
+
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="/index.php?req=fmode:last&topics1=all" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          LAST
+        </a>
+
+        <div class="dropdown-menu" aria-labelledby="dropdown01">
+	<a class="dropdown-item" href="/index.php?req=fmode:last&topics1=all"><b>Files</b></a>
+
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=l">Libgen</a>
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=a">Scientific Articles</a> 
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=f">Fiction</a> 
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=c">Comics</a> 
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=m">Magazines</a> 
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=s">Standards</a> 
+          <a class="dropdown-item" href="/index.php?req=fmode:last&topics%5B%5D=r">Fiction RUS</a>
+	<div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="/index.php?req=mode:last&curtab=e">Editions</a> 
+          <a class="dropdown-item" href="/index.php?req=mode:last&curtab=s">Series</a>
+          <a class="dropdown-item" href="/index.php?req=mode:last&curtab=p">Publishers</a> 
+        <!--  <a class="dropdown-item" href="/index.php?req=mode:last&curtab=f">Files</a> -->
+          <a class="dropdown-item" href="/index.php?req=mode:last&curtab=a">Authors</a> 
+          <a class="dropdown-item" href="/index.php?req=mode:last&curtab=w">Works</a>
+
+
+  
+        </div>
+
+
+      </li>
+
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          OTHERS
+        </a>
+
+        <div class="dropdown-menu" aria-labelledby="dropdown01">  
+          <a class="dropdown-item" href="json.php">API</a> 
+          <a class="dropdown-item" href="rss.php">RSS</a> 
+          <a class="dropdown-item" href="top.php">Top 100 users</a> 
+          <a class="dropdown-item" href="stat.php">Stats</a>
+
+	<a class="dropdown-item" href="topics.php">Topics</a>
+
+          <a class="dropdown-item" href="batchsearchindex.php">Batch search</a>  
+          <a class="dropdown-item" href="biblioservice.php">Bibliographic services</a>
+          <a class="dropdown-item" href="https://wiki.mhut.org/software:libgen_desktop">Libgen librarian for desktop</a>
+
+
+          <a class="dropdown-item" href="/code/">Source (PHP)</a>
+          <a class="dropdown-item" href="/soft/">LG soft</a>
+          <!--<a class="dropdown-item" href="/import/">Import local files in LG format</a>-->
+          <a class="dropdown-item" href="https://z-library.se/fulltext/">Full text search</a>
+
+
+
+        </div>
+      </li>
+
+
+
+     <!-- <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="topics.php" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          Topics
+        </a>
+      </li>
+-->
+
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          LINKS
+        </a>
+
+        <div class="dropdown-menu" aria-labelledby="dropdown01">  
+
+
+          
+          <a class="dropdown-item" href="http://sci-hub.ru">Sci-hub</a> 
+          <a class="dropdown-item" href="http://magzdb.org">Magzdb.org</a>
+
+          <a class="dropdown-item" href="http://nlr.ru/rlin/Periodika_rus.php">РНБ</a>
+          <a class="dropdown-item" href="http://rsl.ru/">РГБ</a>
+          <a class="dropdown-item" href="http://loc.gov/">LOC</a>
+          <a class="dropdown-item" href="https://comicvine.gamespot.com/">ComicVine</a>
+          <a class="dropdown-item" href="http://cyberleninka.ru/">Cyberleninka</a>
+          <a class="dropdown-item" href="http://lib.rus.ec/">Lib.rus.ec</a>
+          <a class="dropdown-item" href="http://flibusta.net/">Flibusta.net</a>
+          <a class="dropdown-item" href="http://goodreads.com/">Goodreads.com</a>
+          <a class="dropdown-item" href="http://worldcat.org/">Worldcat.org</a>
+          <a class="dropdown-item" href="https://wiki.archiveteam.org/">Archive team</a>
+          <a class="dropdown-item" href="https://www.reddit.com/r/libgen/">Reddit</a>
+          <a class="dropdown-item" href="http://annas-archive.org/">Anna's Archive</a>
+          <a class="dropdown-item" href="https://welib.org/">Welib</a>
+          <a class="dropdown-item" href="https://open-slum.org/">The Shadow Library Uptime Monitor</a>
+
+        </div>
+
+      </li>
+
+
+      <li class="nav-item dropdown">
+        <a class="btn btn-secondary" href="index.php?req=mode:req&curtab=e" role="button" id="dropdownMenuLink"  aria-haspopup="true" aria-expanded="false">
+          WANTED
+        </a>
+      </li>
+
+    </ul>
+  </div>
+
+  <div class="nav-link">
+
+    <div class="custom-control custom-switch">
+      <input type="checkbox" class="custom-control-input" id="darkSwitch">
+      <label class="custom-control-label" for="darkSwitch">🌓</label>
+    </div>
+    <script src="/js/dark-mode-switch.js"></script>
+  </div>
+   <a class="navbar-brand" href="setlang.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&lang=ru">RU</a>
+</nav>
+<form class="card p-2 needs-validation" novalidate id="formlibgen" action="index.php" enctype="multipart/form-data" METHOD="GET">
+<div class="input-group mb-3" >
+	<input autofocus type="text" class="form-control" placeholder="Input value" name="req" aria-label="input text" aria-describedby="button-addon2" value="frankenstein" required>
+	<div class="input-group-append">
+	<button class="btn btn-outline-secondary"  id="button-addon2" type="submit">&nbsp;&nbsp;&nbsp;&nbsp;&#128269;&nbsp;&nbsp;&nbsp;&nbsp;</button>
+	</div>
+
+	<div class="invalid-feedback">Input value</div>
+</div>
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-8">	
+			<div class="d-block" id="topic">
+				<strong>Search in fields:</strong>
+				<input type="checkbox" checked class="column-input" id="colt" name="columns[]" value="t">
+				<label class="column-label" for="coltitle">Title</label>
+				<input type="checkbox" checked class="column-input" id="cola" name="columns[]" value="a">
+				<label class="column-label" for="colauthor">Author(s)</label>
+				<input type="checkbox" checked class="column-input" id="cols" name="columns[]" value="s">
+				<label class="column-label" for="colseries">Series</label>
+				<input type="checkbox" checked class="column-input" id="coly" name="columns[]" value="y">
+				<label class="column-label" for="colyear">Year</label>
+				<input type="checkbox" checked class="column-input" id="colp" name="columns[]" value="p">
+				<label class="column-label" for="colpublisher">Publisher</label>
+				<input type="checkbox" checked class="column-input" id="coli" name="columns[]" value="i">
+				<label class="column-label" for="colisbn">ISBN</label>
+	  		</div>
+	
+	  		<div class="d-block" id="object">
+				<strong>Search in objects:</strong>
+				<input type="checkbox" checked class="column-input" id="objf" name="objects[]" value="f">
+				<label class="column-label" for="objf">Files</label>
+				<input type="checkbox" checked class="column-input" id="obje" name="objects[]" value="e">
+				<label class="column-label" for="obje">Editions</label>
+				<input type="checkbox" checked class="column-input" id="objs" name="objects[]" value="s">
+				<label class="column-label" for="objs">Series</label>
+				<input type="checkbox" checked class="column-input" id="obja" name="objects[]" value="a">
+				<label class="column-label" for="obja">Authors</label>
+				<input type="checkbox" checked class="column-input" id="objp" name="objects[]" value="p">
+				<label class="column-label" for="objp">Publishers</label>
+				<input type="checkbox" checked class="column-input" id="objw" name="objects[]" value="w">
+				<label class="column-label" for="objw">Works</label>
+			</div>
+			<div class="d-block" id="column">
+				<strong>Search in topics :</strong>
+				<input type="checkbox" checked class="column-input" id="topl" name="topics[]" value="l" >
+				<label class="column-label" for="topl">Libgen</label>
+				<input type="checkbox"  class="column-input" id="topc" name="topics[]" value="c" >
+				<label class="column-label" for="topc">Comics</label>
+				<input type="checkbox"  class="column-input" id="topf" name="topics[]" value="f" >
+				<label class="column-label" for="topf">Fiction</label>
+				<input type="checkbox"  class="column-input" id="topa" name="topics[]" value="a" >
+				<label class="column-label" for="topa">Scientific Articles</label>
+				<input type="checkbox"  class="column-input" id="topm" name="topics[]" value="m" >
+				<label class="column-label" for="topm">Magazines</label>
+				<input type="checkbox"  class="column-input" id="topr" name="topics[]" value="r" >
+				<label class="column-label" for="topr">Fiction RUS</label>
+				<input type="checkbox" checked class="column-input" id="tops" name="topics[]" value="s" >
+				<label class="column-label" for="tops">Standards</label>
+			</div>
+ 		</div>
+		<div class="col-4">
+
+			<div >
+				<strong>Results per page:</strong>
+
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="res25" name="res" class="custom-control-input" value="25" checked>
+				<label class="custom-control-label" for="res25">25</label>
+				</div>
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="res50" name="res" class="custom-control-input" value="50" >
+				<label class="custom-control-label" for="res50">50</label>
+				</div>
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="res100" name="res" class="custom-control-input" value="100" >
+				<label class="custom-control-label" for="res100">100</label>
+
+				</div>
+ 			</div>
+			<div class="d-block">
+				<table><tr><td>
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" id="covers" name="covers" >
+						<label class="custom-control-label" for="covers"><strong>Show Covers</strong></label>
+						<script type="text/javascript">
+						$("input[id=covers]").change(function(){
+							if($(this).is(":checked")==false)
+							{
+								document.cookie = "covers=; expires=Thu 01-Jan-70 00:00:01 GMT;";
+							}
+						});				
+						</script>
+					</div>
+					</td><td> 
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" id="showch" name="showch" >
+						<label class="custom-control-label" for="showch"><strong>Show chapters</strong></label>
+						<script type="text/javascript">
+						$("input[id=showch]").change(function(){
+							if($(this).is(":checked")==false)
+							{
+								document.cookie = "showch=; expires=Thu 01-Jan-70 00:00:01 GMT;";
+							}
+						});				
+						</script>
+					</div>
+				</td></tr></table>
+
+ 			</div>
+
+			<div class="d-block">
+
+				<div class="custom-control custom-switch">
+					<input type="checkbox" class="custom-control-input" id="gmode" name="gmode" >
+					<label class="custom-control-label" for="gmode" ><strong>Google mode <a href="#" data-toggle="modal" data-target="#googlemodemodal">?</a></strong></label>
+					<script type="text/javascript">
+					$("input[id=gmode]").change(function(){
+						if($(this).is(":checked")==false)
+						{
+							document.cookie = "gmode=; expires=Thu 01-Jan-70 00:00:01 GMT;";
+						}
+					});
+					</script>
+					
+				</div>
+ 			</div>
+
+			<div >
+
+
+				<strong>Seach in files:</strong>
+
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="all" name="filesuns" class="custom-control-input" value="all" checked>
+				<label class="custom-control-label" for="all">All</label>
+				</div>
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="sort" name="filesuns" class="custom-control-input" value="sort" >
+				<label class="custom-control-label" for="sort">Only sorted</label>
+				</div>
+				<div class="custom-control custom-radio custom-control-inline">
+				<input type="radio" id="unsort" name="filesuns" class="custom-control-input" value="unsort" >
+				<label class="custom-control-label" for="unsort">Only uns.</label>
+				</div>
+
+
+
+ 			</div>
+
+ 		</div>
+	</div>
+</div>
+</form><ul class="nav nav-tabs "><li class="nav-item">
+ <a class="nav-link active " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f">Files <span class="badge badge-primary">486</span></a>
+</li><li class="nav-item">
+ <a class="nav-link  " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=e">Editions <span class="badge badge-primary">559</span></a>
+</li><li class="nav-item">
+ <a class="nav-link  " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=s">Series <span class="badge badge-primary">0</span></a>
+</li><li class="nav-item">
+ <a class="nav-link  " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=a">Authors <span class="badge badge-primary">0</span></a>
+</li><li class="nav-item">
+ <a class="nav-link  " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=p">Publishers <span class="badge badge-primary">1</span></a>
+</li><li class="nav-item">
+ <a class="nav-link  " href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=w">Works <span class="badge badge-primary">1718</span></a>
+</li><li class="navbar-right" style="float: right !important;"><a class="nav-link" href="/json.php?object=f&ids=93554259,93603169,93554122,93603168,91773627,100333599,100418189,100419881,113815631,93554123,93554124,93392040,93763973,98501666,98501668,98501669,70516762,70595192,73662477,93573483,93614129,93670076,93670077,110843386,110851641,110862882,70595191,70595193,73662475,74090378,74090379,74090380,74090381,74090384,93505882,97481901,101209718,103686955,110833635,110843467,110845909,110856447,110859393,110865876,110866334,110867197,151145,72317982,78270711,82562156,91319649,91482415,91482416,91486788,91506456,91521404,91521453,91553779,91564453,91567353,91571238,91574099,91578421,91580147,91587819,91588242,91619726,91643908,91646014,91648115,91650156,91662260,91679476,91694436,91694437,91698178,91709450,91731104,91738624,91741658,91760156,91830857,91846812,91849847,91870074,91886353,91910847,91912275,91989008,92260564,92261019,92386355,92427393,92446014,92504824,92532381,92693845,92696285,92696358,92712646,92872883,92905257,93047320,93098631,93154830,93163378,93255312,93255822,93258538,93326281,93327645,93330000,93334604,93387014,93389264,93405901,93415189,93435339,93448669,93465022,93544867,93553471,93562215,93571955,93603167,93630494,93650404,93650405,93655252,93661967,93666196,93667577,93671203,93679560,93691232,93692657,93704041,93711869,93717909,93731044,93743367,93765244,93783507,93793492,93794577,93825725,93838244,93873717,93886701,93929369,93929370,93959718,93973693,93980309,93980722,93981851,93994028,94002588,94034279,96474065,96474342,96721929,97498966,97554908,97785720,97862672,97863018,97940612,97980862,97986029,98017687,98042484,98052703,98068553,98227627,98314152,98328338,98328550,98385267,98385295,98391588,98392477,98402072,98413526,98500259,98532955,98558053,98982933,99002254,99023805,99369819,99380849,99381210,99383870,99701747,99733671,99870813,99870814,99870815,99870816,99870817,99937395,100118492,100246956,100307206,100385021,100407583,100407584,100407700,100689870,100710432,100741073,100790960,100857512,100990516,101032628,101140743,101193323,101215506,101242564,101299201,101299202,101299203,101497911,101879951,101944258,101944567,102008900,102009026,102024977,102037450,102039945,102040349,102060379,102060420,102063661,102064449,102070209,102086096,102195319,102213088,102224777,102421123,102421337,102429957,102437624,102452207,102457202,102458405,102464348,102503771,102710685,102738759,102769899,102861193,102862152,102862280,102864186,103605806,103666570,103670962,103739301,103744835,103745424,103754678,103758443,103759043,103776552,103779440,103782859,103791491,103792019,103801372,103811350,103811827,103814976,103815851,103906656,103999550,104023126,104026780,104040962,104040970,104061865,104439288,104439297,104516691,104534001,104534004,104823703,104823704,104836939,104896278,105000601,105000715,105009780,105068948,105070599,105070726,105117966,105128696,105364091,106167900,106204678,106204679,106273945,106303537,106432142,106559884,106596124,106686276,106843364,106843365,106843367,106861193,106894170,106904158,106975909,107116772,107908303,107908305,107908308,107964636,107966887,107968946,108120294,108123948,108165239,108168487,108191039,108597559,108598513,108647706,108779486,108790147,108805795,108830166,108838565,108838577,108858023,108905918,109044238,109053294,109091037,109094629,109117458,109219172,109285445,109290532,109322773,109329917,109330282,109330303,109401416,109415391,109465764,109613908,109717339,109757769,109771421,109774605,109775256,109787928,109805289,109809370,109809387,109845022,109857238,109863125,109867441,109869407,109882831,109899943,109904236,109906507,109914134,109962956,109984584,110044682,110139861,110201930,110215983,110225587,110384511,110396534,110448431,110448436,110448439,110448443,110448446,110448450,110448454,110448457,110448459,110448462,110448466,110448471,110448474,110448478,110448482,110448486,110448490,110448494,110448498,110448500,110448504,110448507,110448513,110448517,110602426,110813652,110817965,110818020,110818554,110824422,110827333,110827491,110828749,110830826,110833676,110861538,110931117,110996350,110998717,111147924,111188824,111189651,111194987,111197944,111200687,111211721,112040255,112041479,112044361,112044362,112228547,112228650,112231281,112233454,112234443,112235627,112272378,112392416,112649159,112682168,112927480,112927568,112953933,112962509,112974191,112974195,113002884,113262124,113302469,113397497,113411653,113457378,113605047,113605048,113605054,113605055,113605056,113660867,113660868,113660882,113660883,113981208,114380838,114556549,114699018,114710776,114733778,114777878,114789485,114803772,114956115,114966783,115011856,115309835,115559335,115676316,115697787,115714968,115715575,115734757,115749369"><font color="black">JSON</font></a></li> </ul><div style="text-align: center;" class="paginator" id="paginator_example_top"></div><script type="text/javascript">paginator_example_top = new Paginator("paginator_example_top", 20, 25, 1, "/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=&ordermode=desc&filesuns=all&page=" );</script><table class="table  table-striped" id="tablelibgen"><thead><tr>
+
+<th scope="col" class="first_col"><nobr>
+ID <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=f_id&ordermode=asc">&#8597</a> 
+Time add. <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=time_added&ordermode=asc">&#8597</a> 
+Title <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=title&ordermode=asc">&#8597</a> 
+Series <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=series&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col"><nobr>Author(s) <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=author&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col"><nobr>Publisher <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=publisher&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col"><nobr>Year <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=year&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col">Language</th>
+<th scope="col">Pages</th>
+<th scope="col"><nobr>Size  <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=filesize&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col"><nobr>Ext. <a href="/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=extension&ordermode=asc">&#8597</a></nobr></th>
+<th scope="col">Mirrors</th>
+</tr></thead><tbody><tr>
+
+<td><b>Devil's advocates<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554259<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138351233"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554259<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138351233">The curse of Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554259<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138351233"><i><font color="green"> 9781906733858; 1906733856</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2573933</span></nobr>
+
+</td>
+<td>Frankenstein, Victor;Harmes, Marcus K</td>
+<td>Auteur</td>
+<td><nobr>2015</nobr></td>
+<td>English</td>
+<td>103 / 1 vol. (100 p.) : illustrations, couv. ill. en coul. ; 19 cm</td>
+<td><nobr><a href="/file.php?id=93554259">1 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=3828567b338310ddd564be1a0f320008"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/3828567b338310ddd564be1a0f320008"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/3828567b338310ddd564be1a0f320008?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/3828567b338310ddd564be1a0f320008"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93603169<br>Making the Monster - Kathryn Harkup" href="edition.php?id=138400317">MAKING THE MONSTER: the science behind mary shelley's frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93603169<br>Making the Monster - Kathryn Harkup" href="edition.php?id=138400317"><i><font color="green"> 9781472933768; 1472933761</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2623017</span></nobr>
+
+</td>
+<td>Frankenstein, Victor;HARKUP, KATHRYN</td>
+<td>Bloomsbury Publishing Plc;Bloomsbury Sigma</td>
+<td><nobr>2019</nobr></td>
+<td>English</td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=93603169">2 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=03b04d8c845ea71c71cd30c7ee6346db"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/03b04d8c845ea71c71cd30c7ee6346db"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/03b04d8c845ea71c71cd30c7ee6346db?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/03b04d8c845ea71c71cd30c7ee6346db"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554122<br>Monstrous Progeny 2016 - Friedman, Lester D._253B Kavey, Allison B._253B" href="edition.php?id=138351092">Monstrous progeny: a history of the Frankenstein narratives <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554122<br>Monstrous Progeny 2016 - Friedman, Lester D._253B Kavey, Allison B._253B" href="edition.php?id=138351092"><i><font color="green"> 9780813564241; 0813564247; 9780813564234; 0813564239; 9780813564258; 0813564255</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2573792</span></nobr>
+
+</td>
+<td>Frankenstein, Victor;Friedman, Lester D.;Kavey, Allison;Shelley, Mary Wollstonecraft</td>
+<td>Rutgers University Press</td>
+<td><nobr>2016</nobr></td>
+<td>English</td>
+<td>252 / xi, 236 pages : illustrations ; 24 cm</td>
+<td><nobr><a href="/file.php?id=93554122">4 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=7eddbc386bd12c54a285cf8410838b9c"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/7eddbc386bd12c54a285cf8410838b9c"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/7eddbc386bd12c54a285cf8410838b9c?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/7eddbc386bd12c54a285cf8410838b9c"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93603168<br>The Casebook of Victor Franken - Peter Ackroyd_3344" href="edition.php?id=138400316">The Casebook of Victor Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93603168<br>The Casebook of Victor Franken - Peter Ackroyd_3344" href="edition.php?id=138400316"><i><font color="green"> 9780385531498; 0385531494; 9780099524137; 0099524139</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2623016</span></nobr>
+
+</td>
+<td>Frankenstein, Victor;Ackroyd, Peter</td>
+<td>Knopf Doubleday Publishing Group;[distributor] TBS The Book Service Ltd, Vintage</td>
+<td><nobr>2008;2009</nobr></td>
+<td>English</td>
+<td>0 / 416 pages ; 20 x 13 x 3 cm</td>
+<td><nobr><a href="/file.php?id=93603168">2 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=f0f382167ed76be92188c6dcec4b4d88"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/f0f382167ed76be92188c6dcec4b4d88"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/f0f382167ed76be92188c6dcec4b4d88?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/f0f382167ed76be92188c6dcec4b4d88"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Frankenstein 5<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2011-08-31/2019-12-21; ID: 91773627<br>_426497.6e9ab735ba5f0ef5c60dd3faf0b64c39" href="edition.php?id=136470496"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2011-08-31/2019-12-21; ID: 91773627<br>_426497.6e9ab735ba5f0ef5c60dd3faf0b64c39" href="edition.php?id=136470496">Frankenstein: the Dead Town <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2011-08-31/2019-12-21; ID: 91773627<br>_426497.6e9ab735ba5f0ef5c60dd3faf0b64c39" href="edition.php?id=136470496"><i><font color="green"> 9780440423300; 0440423309</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 693229</span></nobr>
+
+</td>
+<td>Dean Koontz</td>
+<td>Random House Publishing Group</td>
+<td><nobr>2011</nobr></td>
+<td>English</td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=91773627">3 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=6e9ab735ba5f0ef5c60dd3faf0b64c39"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/6e9ab735ba5f0ef5c60dd3faf0b64c39"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/6e9ab735ba5f0ef5c60dd3faf0b64c39?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/6e9ab735ba5f0ef5c60dd3faf0b64c39"><span class="badge badge-primary">4</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="bookfi.net" href="http://bookfi.net/md5/6e9ab735ba5f0ef5c60dd3faf0b64c39"><span class="badge badge-primary">5</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Les Frankenstein #5<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-11/2023-07-15; ID: 100333599<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - Frankenstein rôde (2014, Éd. Fleuve noir)" href="edition.php?id=144083693"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-11/2023-07-15; ID: 100333599<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - Frankenstein rôde (2014, Éd. Fleuve noir)" href="edition.php?id=144083693">Frankenstein rôde <i></i></a> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 4360173</span></nobr>
+
+</td>
+<td>Jean-Claude Carrière (Benoît Becker)</td>
+<td>Éd. Fleuve noir</td>
+<td><nobr>2014</nobr></td>
+<td>French</td>
+<td>26</td>
+<td><nobr><a href="/file.php?id=100333599">163 kB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=4786d8785834e1b8b84be71cd3b279d7"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/4786d8785834e1b8b84be71cd3b279d7"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/4786d8785834e1b8b84be71cd3b279d7?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/4786d8785834e1b8b84be71cd3b279d7"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Les Frankenstein #6<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-12/2023-07-15; ID: 100418189<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - La cave de Frankenstein (2014, Éd. Fleuve noir)" href="edition.php?id=144168493"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-12/2023-07-15; ID: 100418189<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - La cave de Frankenstein (2014, Éd. Fleuve noir)" href="edition.php?id=144168493">La cave de Frankenstein <i></i></a> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 4373308</span></nobr>
+
+</td>
+<td>Jean-Claude Carrière (Benoît Becker)</td>
+<td>Éd. Fleuve noir</td>
+<td><nobr>2014</nobr></td>
+<td>French</td>
+<td>25</td>
+<td><nobr><a href="/file.php?id=100418189">199 kB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=95969a5b1d8dd317a2ecc09daa949bbd"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/95969a5b1d8dd317a2ecc09daa949bbd"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/95969a5b1d8dd317a2ecc09daa949bbd?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/95969a5b1d8dd317a2ecc09daa949bbd"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Les Frankenstein #4<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-12/2023-07-15; ID: 100419881<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - Le sceau de Frankenstein (2014, Éd. Fleuve noir)" href="edition.php?id=144170191"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-07-12/2023-07-15; ID: 100419881<br>Jean-Claude Carrière (Benoît Becker) [Carrière, Jean-Claude] - Le sceau de Frankenstein (2014, Éd. Fleuve noir)" href="edition.php?id=144170191">Le sceau de Frankenstein <i></i></a> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 4373539</span></nobr>
+
+</td>
+<td>Jean-Claude Carrière (Benoît Becker)</td>
+<td>Éd. Fleuve noir</td>
+<td><nobr>2014</nobr></td>
+<td>French</td>
+<td>27</td>
+<td><nobr><a href="/file.php?id=100419881">176 kB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=57546798392cedc1c982c416cfe0081f"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/57546798392cedc1c982c416cfe0081f"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/57546798392cedc1c982c416cfe0081f?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/57546798392cedc1c982c416cfe0081f"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Dean Koontz's Frankenstein 4<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2026-01-15/2026-01-15; ID: 113815631<br>Dean Koontz - Frankenstein: Lost Souls (2010, Bantam)" href="edition.php?id=206464224"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2026-01-15/2026-01-15; ID: 113815631<br>Dean Koontz - Frankenstein: Lost Souls (2010, Bantam)" href="edition.php?id=206464224">Frankenstein: Lost Souls <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2026-01-15/2026-01-15; ID: 113815631<br>Dean Koontz - Frankenstein: Lost Souls (2010, Bantam)" href="edition.php?id=206464224"><i><font color="green"> 9780553808018; 055380801X; 9780553907674; 0553907670</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 7325062</span></nobr>
+
+</td>
+<td>Dean Koontz</td>
+<td>Bantam</td>
+<td><nobr>2010</nobr></td>
+<td>English</td>
+<td>0 / 368</td>
+<td><nobr><a href="/file.php?id=113815631">603 kB</a></nobr></td>
+<td>mobi</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=cb56a5caa66365b0be0f01620cddfa46"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/cb56a5caa66365b0be0f01620cddfa46"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/cb56a5caa66365b0be0f01620cddfa46?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/cb56a5caa66365b0be0f01620cddfa46"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Cultographies<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554123<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351093"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554123<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351093">Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554123<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351093"><i><font color="green"> 9780231850568; 0231850565; 9780231167437; 0231167431</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2573793</span></nobr>
+
+</td>
+<td>Horton, Robert</td>
+<td>Columbia University Press;Wallflower Press</td>
+<td><nobr>2014</nobr></td>
+<td>English</td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=93554123">2 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=65d9eab06cdc52a1282fcc29c1ec691d"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/65d9eab06cdc52a1282fcc29c1ec691d"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/65d9eab06cdc52a1282fcc29c1ec691d?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/65d9eab06cdc52a1282fcc29c1ec691d"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Cultographies<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554124<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351094"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554124<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351094">Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93554124<br>Cultographies Frankenstein - Robert Horton" href="edition.php?id=138351094"><i><font color="green"> 9780231167437; 0231167431; 9780231850568; 0231850565</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2573794</span></nobr>
+
+</td>
+<td>Horton, Robert</td>
+<td>Wallflower Press</td>
+<td><nobr>2014</nobr></td>
+<td>English</td>
+<td>129</td>
+<td><nobr><a href="/file.php?id=93554124">2 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=d271c541e867bb9e29156ee6ba3652a3"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/d271c541e867bb9e29156ee6ba3652a3"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/d271c541e867bb9e29156ee6ba3652a3?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/d271c541e867bb9e29156ee6ba3652a3"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Studies in Classical Reception<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2019-08-28/2022-03-25; ID: 93392040<br>1350054917_9781350054912_FrankensteinAndItsClassicsTheModernPrometheusFromAntiquityToScienceFiction" href="edition.php?id=138178130"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2019-08-28/2022-03-25; ID: 93392040<br>1350054917_9781350054912_FrankensteinAndItsClassicsTheModernPrometheusFromAntiquityToScienceFiction" href="edition.php?id=138178130">Frankenstein and its Classics: The Modern Prometheus from Antiquity to Science Fiction <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2019-08-28/2022-03-25; ID: 93392040<br>1350054917_9781350054912_FrankensteinAndItsClassicsTheModernPrometheusFromAntiquityToScienceFiction" href="edition.php?id=138178130"><i><font color="green"> 1350054917; 9781350054912</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2400863</span></nobr>
+
+</td>
+<td>Benjamin Eldon Stevens; Jesse Weiner; Brett M. Rogers</td>
+<td>Bloomsbury Academic</td>
+<td><nobr>2018</nobr></td>
+<td>English</td>
+<td>289 / 289</td>
+<td><nobr><a href="/file.php?id=93392040">4 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=1665d2e1afadf8f84bcc6fbe5db7fab4"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/1665d2e1afadf8f84bcc6fbe5db7fab4"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/1665d2e1afadf8f84bcc6fbe5db7fab4?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/1665d2e1afadf8f84bcc6fbe5db7fab4"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-09-27/2020-09-27; ID: 93763973<br>0262533286_9780262533287_FrankensteinAnnotatedForScientistsEngineersAndCreatorsOfAllKinds" href="edition.php?id=138566679">Frankenstein: Annotated for Scientists, Engineers, And Creators Of All Kinds | Mary Shelley <i>1st Edition</i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-09-27/2020-09-27; ID: 93763973<br>0262533286_9780262533287_FrankensteinAnnotatedForScientistsEngineersAndCreatorsOfAllKinds" href="edition.php?id=138566679"><i><font color="green"> 0262533286; 9780262533287; 0262340259; 9780262340250</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2789410</span></nobr>
+
+</td>
+<td>David H. Guston, Ed Finn, Jason Scott Robert</td>
+<td>The MIT Press</td>
+<td><nobr>2017</nobr></td>
+<td>English</td>
+<td>321 / 321</td>
+<td><nobr><a href="/file.php?id=93763973">5 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=deb4530055d904a9412a7327290798d1"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/deb4530055d904a9412a7327290798d1"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/deb4530055d904a9412a7327290798d1?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/deb4530055d904a9412a7327290798d1"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501666<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679">Frankenstein: Annotated for Scientists, Engineers, And Creators Of All Kinds | Mary Shelley <i>1st Edition</i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501666<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679"><i><font color="green"> 0262533286; 9780262533287; 0262340259; 9780262340250</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 3839487</span></nobr>
+
+</td>
+<td>David H. Guston, Ed Finn, Jason Scott Robert</td>
+<td>The MIT Press</td>
+<td><nobr>2017</nobr></td>
+<td>English</td>
+<td>0 / 321</td>
+<td><nobr><a href="/file.php?id=98501666">2 MB</a></nobr></td>
+<td>pdf</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=b7e267e7d7fff674854a18d96dc899ae"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/b7e267e7d7fff674854a18d96dc899ae"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/b7e267e7d7fff674854a18d96dc899ae?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/b7e267e7d7fff674854a18d96dc899ae"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501668<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679">Frankenstein: Annotated for Scientists, Engineers, And Creators Of All Kinds | Mary Shelley <i>1st Edition</i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501668<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679"><i><font color="green"> 0262533286; 9780262533287; 0262340259; 9780262340250</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 3839489</span></nobr>
+
+</td>
+<td>David H. Guston, Ed Finn, Jason Scott Robert</td>
+<td>The MIT Press</td>
+<td><nobr>2017</nobr></td>
+<td>English</td>
+<td>0 / 321</td>
+<td><nobr><a href="/file.php?id=98501668">2 MB</a></nobr></td>
+<td>mobi</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=2467c7895f00670b7f9d6c7678971414"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/2467c7895f00670b7f9d6c7678971414"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/2467c7895f00670b7f9d6c7678971414?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/2467c7895f00670b7f9d6c7678971414"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501669<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679">Frankenstein: Annotated for Scientists, Engineers, And Creators Of All Kinds | Mary Shelley <i>1st Edition</i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2023-02-05/2023-03-06; ID: 98501669<br>Mary Shelley - Frankenstein: Annotated for Scientists, Engineers, and Creators of All Kinds (2017, The MIT Press)" href="edition.php?id=138566679"><i><font color="green"> 0262533286; 9780262533287; 0262340259; 9780262340250</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 3839490</span></nobr>
+
+</td>
+<td>David H. Guston, Ed Finn, Jason Scott Robert</td>
+<td>The MIT Press</td>
+<td><nobr>2017</nobr></td>
+<td>English</td>
+<td>43 / 321</td>
+<td><nobr><a href="/file.php?id=98501669">1 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=cb2dc26332dec9e511fcd4aa03913b00"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/cb2dc26332dec9e511fcd4aa03913b00"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/cb2dc26332dec9e511fcd4aa03913b00?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/cb2dc26332dec9e511fcd4aa03913b00"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>The Cambridge Companion to Frankenstein</b><p><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-02/2021-07-21; ID: 70516762<br>" href="edition.php?id=70831059">The Cambridge Companion to Frankenstein || Frankenstein's Politics <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-02/2021-07-21; ID: 70516762<br>" href="edition.php?id=70831059"><i><font color="green"> 9781316091203; 1316091201</font></a></i><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-02/2021-07-21; ID: 70516762<br>" href="edition.php?id=70831059"><i><font color="green">DOI: 10.1017/CBO9781316091203.008</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book section">bsect</a></span> 
+<span class="badge badge-secondary"">a 64573526</span></nobr>
+
+</td>
+<td>Craciun, Adriana (author)</td>
+<td>Cambridge University Press</td>
+<td><nobr>2016 August 5</nobr></td>
+<td></td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=70516762">114 kB</a></nobr></td>
+<td>pdf</td>
+<td><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=8a70865587be573178169c746f2feb20&downloadname=10.1017/CBO9781316091203.008"><span class="badge badge-primary">Libgen</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="sci-hub" href="http://sci-hub.ru/10.1017/CBO9781316091203.008"><span class="badge badge-primary">Sci-Hub</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/8a70865587be573178169c746f2feb20"><span class="badge badge-primary">Randombook</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/8a70865587be573178169c746f2feb20"><span class="badge badge-primary">libgen.pw</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/8a70865587be573178169c746f2feb20?r=Ax2w6jC"><span class="badge badge-primary">Anna's arch</span></a> </td>
+</tr><tr>
+
+<td><b>The Cambridge Companion to Frankenstein</b><p><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-11/2021-07-21; ID: 70595192<br>" href="edition.php?id=70910198">The Cambridge Companion to Frankenstein || Frankenstein: Its Composition and Publication <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-11/2021-07-21; ID: 70595192<br>" href="edition.php?id=70910198"><i><font color="green"> 9781316091203; 1316091201</font></a></i><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2017-05-11/2021-07-21; ID: 70595192<br>" href="edition.php?id=70910198"><i><font color="green">DOI: 10.1017/CBO9781316091203.003</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book section">bsect</a></span> 
+<span class="badge badge-secondary"">a 64652666</span></nobr>
+
+</td>
+<td>Robinson, Charles E. (author)</td>
+<td>Cambridge University Press</td>
+<td><nobr>2016 August 25</nobr></td>
+<td></td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=70595192">119 kB</a></nobr></td>
+<td>pdf</td>
+<td><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=30146a4a1f3afd87e38c6f027e3c87d1&downloadname=10.1017/CBO9781316091203.003"><span class="badge badge-primary">Libgen</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="sci-hub" href="http://sci-hub.ru/10.1017/CBO9781316091203.003"><span class="badge badge-primary">Sci-Hub</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/30146a4a1f3afd87e38c6f027e3c87d1"><span class="badge badge-primary">Randombook</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/30146a4a1f3afd87e38c6f027e3c87d1"><span class="badge badge-primary">libgen.pw</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/30146a4a1f3afd87e38c6f027e3c87d1?r=Ax2w6jC"><span class="badge badge-primary">Anna's arch</span></a> </td>
+</tr><tr>
+
+<td><b>The Cambridge Companion to Frankenstein</b><p><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2018-02-13/2021-07-21; ID: 73662477<br>" href="edition.php?id=74005893">The Cambridge Companion to Frankenstein || Growing up Frankenstein: Adaptations for Young Readers <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2018-02-13/2021-07-21; ID: 73662477<br>" href="edition.php?id=74005893"><i><font color="green"> 9781316091203; 1316091201</font></a></i><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2018-02-13/2021-07-21; ID: 73662477<br>" href="edition.php?id=74005893"><i><font color="green">DOI: 10.1017/CBO9781316091203.018</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book section">bsect</a></span> 
+<span class="badge badge-secondary"">a 67748365</span></nobr>
+
+</td>
+<td>Coats, Karen (author);Sands, Farran Norris (author)</td>
+<td>Cambridge University Press</td>
+<td><nobr>2016 August 5</nobr></td>
+<td></td>
+<td>0</td>
+<td><nobr><a href="/file.php?id=73662477">113 kB</a></nobr></td>
+<td>pdf</td>
+<td><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=c8bc01977301dab346451dae58602af9&downloadname=10.1017/CBO9781316091203.018"><span class="badge badge-primary">Libgen</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="sci-hub" href="http://sci-hub.ru/10.1017/CBO9781316091203.018"><span class="badge badge-primary">Sci-Hub</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/c8bc01977301dab346451dae58602af9"><span class="badge badge-primary">Randombook</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/c8bc01977301dab346451dae58602af9"><span class="badge badge-primary">libgen.pw</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/c8bc01977301dab346451dae58602af9?r=Ax2w6jC"><span class="badge badge-primary">Anna's arch</span></a> </td>
+</tr><tr>
+
+<td><b>Haney Foundation series<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93573483<br>Mary Shelley and the Rights of - Botting, Eileen Hunt_253B" href="edition.php?id=138370536"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93573483<br>Mary Shelley and the Rights of - Botting, Eileen Hunt_253B" href="edition.php?id=138370536">Mary Shelley and the rights of the child political philosophy in Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93573483<br>Mary Shelley and the Rights of - Botting, Eileen Hunt_253B" href="edition.php?id=138370536"><i><font color="green"> 9780812249620; 0812249623</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2593236</span></nobr>
+
+</td>
+<td>Botting, Eileen Hunt;Shelley, Mary Wollstonecraft</td>
+<td>University of Pennsylvania Press</td>
+<td><nobr>2018;2017</nobr></td>
+<td>English</td>
+<td>0 / xi, 220 Seiten</td>
+<td><nobr><a href="/file.php?id=93573483">1 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=5affff872cbe56c5f5ed4c5055d439d6"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/5affff872cbe56c5f5ed4c5055d439d6"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/5affff872cbe56c5f5ed4c5055d439d6?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/5affff872cbe56c5f5ed4c5055d439d6"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>Devil's advocates<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93614129<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138411304"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93614129<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138411304">The Curse of Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93614129<br>The Curse of Frankenstein - Marcus K. Harmes" href="edition.php?id=138411304"><i><font color="green"> 9780993071706; 0993071708</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2634004</span></nobr>
+
+</td>
+<td>Harmes, Marcus K</td>
+<td>Columbia University Press;Auteur</td>
+<td><nobr>2015</nobr></td>
+<td>English</td>
+<td>0 / (103 pages) : illustrations</td>
+<td><nobr><a href="/file.php?id=93614129">2 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=f959e5dffdf11069a9e7a575f8f81ffc"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/f959e5dffdf11069a9e7a575f8f81ffc"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/f959e5dffdf11069a9e7a575f8f81ffc?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/f959e5dffdf11069a9e7a575f8f81ffc"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>CliffsNotes<a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93670076<br>CliffsNotes on Shelley_2527s Frankenstein - Jeff Coghill (retail)" href="edition.php?id=138467366"><i></i></a></b><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93670076<br>CliffsNotes on Shelley_2527s Frankenstein - Jeff Coghill (retail)" href="edition.php?id=138467366">CliffsNotes on Shelley's Frankenstein <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93670076<br>CliffsNotes on Shelley_2527s Frankenstein - Jeff Coghill (retail)" href="edition.php?id=138467366"><i><font color="green"> 9780764585937; 0764585932</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2690066</span></nobr>
+
+</td>
+<td>Shelley, Mary Wollstonecraft;Jeff Coghill</td>
+<td>Houghton Mifflin Harcourt;IDG, Transworld</td>
+<td><nobr>2000;2011</nobr></td>
+<td>English</td>
+<td>0 / 96 pages : illustrations ; 21 cm</td>
+<td><nobr><a href="/file.php?id=93670076">795 kB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=17819aca6d42ab7de462f3096cae6d29"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/17819aca6d42ab7de462f3096cae6d29"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/17819aca6d42ab7de462f3096cae6d29?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/17819aca6d42ab7de462f3096cae6d29"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93670077<br>Shelley Unbound - Scott D. de Hart" href="edition.php?id=138467367">Shelley unbound: discovering Frankenstein's true creator <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2020-07-26/2020-07-27; ID: 93670077<br>Shelley Unbound - Scott D. de Hart" href="edition.php?id=138467367"><i><font color="green"> 9781936239641; 1936239647</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book">b</a></span> 
+<span class="badge badge-secondary"">l 2690067</span></nobr>
+
+</td>
+<td>Shelley, Mary Wollstonecraft;Shelley, Percy Bysshe;De Hart, Scott D</td>
+<td>Feral House</td>
+<td><nobr>2013</nobr></td>
+<td>English</td>
+<td>0 / 185 pages</td>
+<td><nobr><a href="/file.php?id=93670077">1 MB</a></nobr></td>
+<td>epub</td>
+<td><nobr><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=e6b3a5cec4361dd9f6bfd7a3719f67c1"><span class="badge badge-primary">1</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/e6b3a5cec4361dd9f6bfd7a3719f67c1"><span class="badge badge-primary">2</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/e6b3a5cec4361dd9f6bfd7a3719f67c1?r=Ax2w6jC"><span class="badge badge-primary">3</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/e6b3a5cec4361dd9f6bfd7a3719f67c1"><span class="badge badge-primary">4</span></a> </nobr></td>
+</tr><tr>
+
+<td><b>The Cambridge Companion to Frankenstein</b><p><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110843386<br>10.0000%2Fwww.cambridge.org%2Fgeneric-511426D0125D" href="edition.php?id=70910198">The Cambridge Companion to Frankenstein || Frankenstein: Its Composition and Publication <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110843386<br>10.0000%2Fwww.cambridge.org%2Fgeneric-511426D0125D" href="edition.php?id=70910198"><i><font color="green"> 9781316091203; 1316091201</font></a></i><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110843386<br>10.0000%2Fwww.cambridge.org%2Fgeneric-511426D0125D" href="edition.php?id=70910198"><i><font color="green">DOI: 10.1017/CBO9781316091203.003</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book section">bsect</a></span> 
+<span class="badge badge-secondary"">a 90113672</span></nobr>
+
+</td>
+<td>Robinson, Charles E. (author)</td>
+<td>Cambridge University Press</td>
+<td><nobr>2016 August 25</nobr></td>
+<td></td>
+<td>13</td>
+<td><nobr><a href="/file.php?id=110843386">119 kB</a></nobr></td>
+<td>pdf</td>
+<td><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=53342b405d5f610711ee7cec6c86c243&downloadname=10.1017/CBO9781316091203.003"><span class="badge badge-primary">Libgen</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="sci-hub" href="http://sci-hub.ru/10.1017/CBO9781316091203.003"><span class="badge badge-primary">Sci-Hub</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/53342b405d5f610711ee7cec6c86c243"><span class="badge badge-primary">Randombook</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/53342b405d5f610711ee7cec6c86c243"><span class="badge badge-primary">libgen.pw</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/53342b405d5f610711ee7cec6c86c243?r=Ax2w6jC"><span class="badge badge-primary">Anna's arch</span></a> </td>
+</tr><tr>
+
+<td><b>The Cambridge Companion to Frankenstein</b><p><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110851641<br>10.0000%2Fwww.cambridge.org%2Fgeneric-8A614919009D" href="edition.php?id=70831059">The Cambridge Companion to Frankenstein || Frankenstein's Politics <i></i></a><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110851641<br>10.0000%2Fwww.cambridge.org%2Fgeneric-8A614919009D" href="edition.php?id=70831059"><i><font color="green"> 9781316091203; 1316091201</font></a></i><br><a data-toggle="tooltip" data-placement="right" data-html="true" title="Add/Edit : 2025-08-05/2025-08-05; ID: 110851641<br>10.0000%2Fwww.cambridge.org%2Fgeneric-8A614919009D" href="edition.php?id=70831059"><i><font color="green">DOI: 10.1017/CBO9781316091203.008</font></a></i> 
+<nobr><span class="badge badge-primary"><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Book section">bsect</a></span> 
+<span class="badge badge-secondary"">a 90121878</span></nobr>
+
+</td>
+<td>Craciun, Adriana (author)</td>
+<td>Cambridge University Press</td>
+<td><nobr>2016 August 5</nobr></td>
+<td></td>
+<td>15</td>
+<td><nobr><a href="/file.php?id=110851641">114 kB</a></nobr></td>
+<td>pdf</td>
+<td><a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen" href="/ads.php?md5=fcfaed452fd076374547aaf83b344df2&downloadname=10.1017/CBO9781316091203.008"><span class="badge badge-primary">Libgen</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="sci-hub" href="http://sci-hub.ru/10.1017/CBO9781316091203.008"><span class="badge badge-primary">Sci-Hub</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="Randombook" href="https://randombook.org/book/fcfaed452fd076374547aaf83b344df2"><span class="badge badge-primary">Randombook</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="libgen.pw" href="https://libgen.pw/book/fcfaed452fd076374547aaf83b344df2"><span class="badge badge-primary">libgen.pw</span></a> <a data-toggle="tooltip" data-placement="bottom" data-html="true" title="anna's archive" href="https://en.annas-archive.gl/md5/fcfaed452fd076374547aaf83b344df2?r=Ax2w6jC"><span class="badge badge-primary">Anna's arch</span></a> </td>
+</tr></tbody></table><table>
+  <tr>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+  </tr> 
+  <tr>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+  </tr> 
+  <tr>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+    <td><script type="text/javascript">
+	atOptions = {
+		'key' : '80ff16b446cdd16fda9f69edcec465d4',
+		'format' : 'iframe',
+		'height' : 60,
+		'width' : 468,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://inopportunefable.com/80ff16b446cdd16fda9f69edcec465d4/invoke.js"></scr' + 'ipt>');
+</script></td>
+  </tr> 
+</table><div style="text-align: center;" class="paginator" id="paginator_example_bottom"></div><script type="text/javascript">paginator_example_bottom = new Paginator("paginator_example_bottom", 20, 25, 1, "/index.php?req=frankenstein&columns%5B%5D=t&columns%5B%5D=a&columns%5B%5D=s&columns%5B%5D=y&columns%5B%5D=p&columns%5B%5D=i&objects%5B%5D=f&objects%5B%5D=e&objects%5B%5D=s&objects%5B%5D=a&objects%5B%5D=p&objects%5B%5D=w&topics%5B%5D=l&topics%5B%5D=s&res=25&filesuns=all&curtab=f&order=&ordermode=desc&filesuns=all&page=" );</script><div class="modal fade text-dark" id="googlemodemodal" tabindex="-1" aria-labelledby="googlemodemodalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="googlemodemodalLabel">Google mode</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        
+By default, the search searches for a set of marked fields containing all the words specified in the query in no particular order<br>
+Advanced search mode (Google mode), allows you to set more precise search terms:<br>
+- Quotes: "" - search exactly for the phrase as it is written in the database<br>
+- Mask: * (min 3 chars)- search by part of a word<br>
+- Excluding words: - (minus) - does not display records containing this word, also, these conditions can be combined.<br>
+Example:<br>
+"Physics and Chemistry" Basi * -technology<br>
+means the title of the book contains the exact phrase "Physics and Chemistry", contains the word starting with Basi and does not contain the word technology.<br>
+You can also search for a specific field or view mode that is not displayed for selection in the interface, syntax: field_name:value<br>
+List of add. fields:<br>
+For the Files tab:<br>
+<i>md5</i><br>
+<i>tth</i><br>
+<i>sha1</i><br>
+<i>sha256</i><br>
+<i>crc32</i><br>
+<i>edonkey</i><br>
+<i>doi</i><br>
+
+View modes:<br>
+<i>mode:last</i> - last added entries (for a given object - series, authors, editions, etc.)<br>
+<br>
+<i>fmode:last</i> - last added files (for the given repository)<br>
+<br>
+Add. fields for object "editions" and "files":<br>
+<i>issuevolume</i> - periodical volume<br>
+<i>issuesid</i> - serial ID of the periodical<br>
+<i>issuenumber</i> - the number (within the volume) of the periodical<br>
+<i>issuetnumber</i> is the gross number of the periodical<br>
+<i>issueynumber</i> - intra-annual issue of the periodical<br>
+<i>year</i> - year<br>
+<i>publisherid</i> - Publisher ID<br>
+<i>authorid</i> - Author's ID<br>
+<i>lang</i> - three-letter language code (ISO 639)<br>
+<i>fsize</i> - filesize (MBytes), for example: fsize&gt;10, fsize&lt;20, fsize=15<br>
+<i>ext</i> - File extenstion <br>
+<i>booktopicid</i> - ID of the classifier for books<br>
+<i>tags</i> - Теги (издание, работы, серия)<br>
+<br>
+Add. fields for object "series"<br>
+<i>comtopicid</i> - ID of the classifier for comics<br>
+<i>smtopicid</i> - ID of the classifier for scientific journals<br>
+<i>magtopicid</i> - ID of the classifier for magazines<br>
+<i>issn</i> - ISSN
+
+      </div>
+    </div>
+  </div>
+</div><nav class="navbar sticky-bottom navbar-expand-sm navbar-dark bg-secondary">
+  <div class="collapse navbar-collapse" id="navbarCollapse">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+	    <a class="nav-link" href="#" data-toggle="modal" data-target="#dmcamodal">DMCA</a>
+      </li>
+      <li class="nav-item">
+	    <a class="nav-link" href="#" data-toggle="modal" data-target="#aboutmodal">ABOUT</a>
+      </li>
+      <li class="nav-item">
+	    <a class="nav-link" href="#" data-toggle="modal" data-target="#donatemodal" >DONATE</a>
+      </li>
+	
+    </ul>
+	<span class="navbar-text">Users online 9244</span>
+  </div>
+</nav>
+
+<!-- Modal Donate -->
+<div class="modal fade text-dark" id="donatemodal" tabindex="-1" aria-labelledby="donatemodalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="donatemodalLabel">Donate</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <a href="bitcoin://bc1qlv9lwa5vncm2jjrxyhddfcvu0z3u5vn0s9672r">Bitcoin</a>
+	<br>
+        <a href="monero:48WhyKv4D9x53SyDFNYuMsHsDzuHXEcht4mWoFtXtE3k4KZ3A7goi3CQWBQQZ3A8PSK7CpwnAFKLnfGiZTAbEpcaCQCghvN">Monero</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal About -->
+<div class="modal fade text-dark" id="aboutmodal" tabindex="-1" aria-labelledby="aboutmodalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="aboutmodalLabel">About</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+
+<div id="about">
+The Library Genesis aggregator is a community aiming at collecting and cataloging items descriptions for the most part of scientific, 
+scientific and technical directions, as well as file metadata. In addition to the descriptions, 
+the aggregator contains only links to third-party resources hosted by users. 
+All information posted on the website is collected from publicly available public Internet resources and is intended solely for informational purposes.  
+</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal DMCA -->
+<div class="modal fade text-dark" id="dmcamodal" tabindex="-1" aria-labelledby="dmcamodalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="dmcamodalLabel">About</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+<div id="dmca">
+Library Genesis - aggregator items is a website that collects and organizes online items from users. 
+Item aggregation is done for fact-finding purposes, and website Library Genesis respects the rights of copyright holders and respect dcma.
+
+     Removing Content From Library Genesis / DMCA Policy
+     Library Genesis respects the intellectual property of others.
+</div>
+
+    <div class="dmca">
+     If you believe that your copyrighted work has been copied in a way that constitutes copyright infringement and is accessible on this site, you may notify our copyright agent, as set forth in the Digital Millennium Copyright Act of 1998 (DMCA). For your complaint to be valid under the DMCA, you must provide the following information when providing notice of the claimed copyright infringement:
+</div>
+    <div class="dmca">
+     * A physical or electronic signature of a person authorized to act on behalf of the copyright owner Identification of the copyrighted work claimed to have been infringed <br />
+     * Identification of the material that is claimed to be infringing or to be the subject of the infringing activity and that is to be removed <br />
+     * Information reasonably sufficient to permit the service provider to contact the complaining party, such as an address, telephone number, and, if available, an electronic mail address <br />
+     * A statement that the complaining party "in good faith believes that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or law" <br />
+     * A statement that the "information in the notification is accurate", and "under penalty of perjury, the complaining party is authorized to act on behalf of the owner of an exclusive right that is allegedly infringed" <br />
+     The above information must be submitted as a written, faxed or emailed notification to the following Designated Agent: ianzlib@protonmail.com. Appeals will be reviewed within 72 hours.</div>
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.5/dist/popper.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+	<script src="/js/form-validation.js"></script>
+	<script>
+$('[data-toggle="tooltip"]').tooltip();
+$('.btn-tooltip-bottom').tooltip({
+    placement: 'bottom'
+});
+</script>
+
+</body>
+</html>

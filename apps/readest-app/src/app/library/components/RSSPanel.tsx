@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RSSCatalog, RSSFeed, RSSItem } from '@/types/rss';
 import { fetchRSSFeed } from '@/services/rss/rssFetcher';
@@ -25,35 +25,23 @@ export function RSSPanel({ isOpen, onClose }: RSSPanelProps) {
   const [selectedFeed, setSelectedFeed] = useState<RSSCatalog | null>(null);
   const [selectedItem, setSelectedItem] = useState<RSSItem | null>(null);
   const [feed, setFeed] = useState<RSSFeed | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [folderFilter, setFolderFilter] = useState<string | null>(null);
 
   const loadFeed = async (catalog: RSSCatalog) => {
-    setLoading(true);
     try {
       const fetchedFeed = await fetchRSSFeed(catalog.url, catalog.fileContent);
-      // Apply saved article states to the fetched items
       applyArticleStates(fetchedFeed.items, catalog.id);
       setFeed(fetchedFeed);
       setSelectedFeed(catalog);
       setViewMode('feeds');
     } catch (e) {
       console.error('Failed to load RSS feed:', e);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleItemSelect = (item: RSSItem) => {
     setSelectedItem(item);
     setViewMode('article');
-  };
-
-  const handleBackToFeeds = () => {
-    setSelectedItem(null);
-    setFeed(null);
-    setViewMode('manager');
   };
 
   const handleBackToManager = () => {
@@ -69,8 +57,7 @@ export function RSSPanel({ isOpen, onClose }: RSSPanelProps) {
     }
   };
 
-  // Filter feeds by folder and search
-  const filteredFeeds = selectedFeed?.feed?.items.filter(item => {
+  const filteredFeeds = feed?.items.filter(item => {
     if (searchQuery && !item.metadata.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
@@ -135,16 +122,7 @@ export function RSSPanel({ isOpen, onClose }: RSSPanelProps) {
       {/* Content */}
       <div className='flex-1 overflow-auto'>
         {viewMode === 'manager' && (
-          <RSSManager onFeedSelect={loadFeed} onClose={onClose} />
-        )}
-
-        {viewMode === 'loading' && (
-          <div className='flex h-full items-center justify-center'>
-            <div className='text-center'>
-              <div className='loading loading-spinner loading-lg mb-4'></div>
-              <h1 className='text-base font-semibold'>{_('Loading...')}</h1>
-            </div>
-          </div>
+          <RSSManager onFeedSelect={loadFeed} onClose={() => {}} />
         )}
 
         {viewMode === 'feeds' && feed && selectedFeed && (

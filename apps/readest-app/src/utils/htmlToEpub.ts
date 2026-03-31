@@ -177,7 +177,7 @@ export class HtmlToEpubConverter {
   /**
    * Create a minimal ZIP file for EPUB using JSZip
    */
-  private async createMinimalEpubZip(files: Record<string, string>): Promise<Uint8Array> {
+  private async createMinimalEpubZip(files: Record<string, string>): Promise<Blob> {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     
@@ -187,13 +187,13 @@ export class HtmlToEpubConverter {
     }
     
     // Generate ZIP - mimetype must be stored uncompressed
-    const blob = await zip.generateAsync({ 
+    const blob = await zip.generateAsync({
       type: 'blob',
       compression: 'DEFLATE',
       compressionOptions: { level: 9 },
     });
-    
-    return new Uint8Array(await blob.arrayBuffer());
+
+    return blob;
   }
 
   private generateUUID(): string {

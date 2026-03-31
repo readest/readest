@@ -215,11 +215,10 @@ export const saveArticleToLibrary = async (
     });
     
     // Load existing library books first
-    const { loadLibraryBooks } = await import('@/services/libraryService');
-    const books = await loadLibraryBooks(appService.fs, appService.generateCoverImageUrl.bind(appService));
-    
+    const books = await appService.loadLibraryBooks();
+
     console.log('[ArticleManager] Importing article as book:', title, '- Existing books in library:', books.length);
-    
+
     try {
       const importedBook = await appService.importBook(
         epubFile,
@@ -229,19 +228,17 @@ export const saveArticleToLibrary = async (
         false, // overwrite
         false  // transient
       );
-      
+
       if (importedBook) {
         console.log('[ArticleManager] Book imported successfully:', importedBook);
-        
+
         // Save the library books to library.json
-        const { saveLibraryBooks } = await import('@/services/libraryService');
-        await saveLibraryBooks(appService.fs, books);
+        await appService.saveLibraryBooks(books);
         console.log('[ArticleManager] Library saved to disk');
-        
+
         // Set article books to use scrolled mode by default
-        const { saveBookConfig } = await import('@/services/bookService');
         const { DEFAULT_BOOK_SEARCH_CONFIG } = await import('@/services/constants');
-        
+
         const articleConfig = {
           updatedAt: Date.now(),
           bookHash: importedBook.hash,
@@ -251,8 +248,8 @@ export const saveArticleToLibrary = async (
           },
           searchConfig: DEFAULT_BOOK_SEARCH_CONFIG,
         };
-        
-        await saveBookConfig(appService.fs, importedBook, articleConfig, settings);
+
+        await appService.saveBookConfig(importedBook, articleConfig, settings);
         console.log('[ArticleManager] Article configured for scrolled reading');
         
         // Update article state with book hash
@@ -352,7 +349,7 @@ export const isSaved = (item: RSSItem): boolean => {
 /**
  * Check if article is marked for deletion (deprecated - always returns false)
  */
-export const isDeleted = (item: RSSItem): boolean => {
+export const isDeleted = (_item: RSSItem): boolean => {
   // Deletion is now immediate, so this always returns false
   return false;
 };

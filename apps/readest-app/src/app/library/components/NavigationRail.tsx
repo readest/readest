@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { FiHome, FiBook, FiRss } from 'react-icons/fi';
+import { FiHome, FiBook, FiRss, FiGlobe } from 'react-icons/fi';
 
-export type NavigationView = 'dashboard' | 'library' | 'feeds';
+export type NavigationView = 'dashboard' | 'library' | 'feeds' | 'sources';
 
 interface NavigationRailProps {
   activeView: NavigationView;
@@ -51,6 +51,12 @@ export function NavigationRail({ activeView, onChangeView }: NavigationRailProps
           label={_('Library')}
           active={activeView === 'library'}
           onClick={() => onChangeView('library')}
+        />
+        <NavItem
+          icon={<FiGlobe />}
+          label={_('Sources')}
+          active={activeView === 'sources'}
+          onClick={() => onChangeView('sources')}
         />
         <NavItem
           icon={<FiRss />}

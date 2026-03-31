@@ -96,6 +96,8 @@ export interface RSSCatalog {
   fileContent?: string; // For local RSS files
   folder?: string; // For organizing feeds into folders
   tags?: string[]; // For tagging feeds
+  priority?: boolean; // Mark as favorite/priority feed
+  color?: string; // Custom color for feed icon
 }
 
 // Pre-configured academic RSS/Atom feeds

@@ -94,8 +94,13 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     ...settings.aiSettings,
   };
 
-  // Preserve rssFeeds during migrations (critical user data)
+  // Preserve rssFeeds, rssFolders, and rssFolderColors during migrations (critical user data)
   const preservedRssFeeds = settings.rssFeeds || [];
+  const preservedRssFolders = settings.rssFolders || [];
+  const preservedRssFolderColors = settings.rssFolderColors || {};
+  
+  // Preserve shadowLibrary settings during migrations
+  const preservedShadowLibrary = settings.shadowLibrary;
 
   settings.localBooksDir = await ctx.fs.getPrefix('Books');
 
@@ -104,9 +109,20 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
-  // Restore rssFeeds after all migrations (ensure they're never lost)
+  // Restore rssFeeds, rssFolders, and rssFolderColors after all migrations (ensure they're never lost)
   if (preservedRssFeeds.length > 0) {
     settings.rssFeeds = preservedRssFeeds;
+  }
+  if (preservedRssFolders.length > 0) {
+    settings.rssFolders = preservedRssFolders;
+  }
+  if (Object.keys(preservedRssFolderColors).length > 0) {
+    settings.rssFolderColors = preservedRssFolderColors;
+  }
+  
+  // Restore shadowLibrary settings
+  if (preservedShadowLibrary) {
+    settings.shadowLibrary = preservedShadowLibrary;
   }
 
   return settings;

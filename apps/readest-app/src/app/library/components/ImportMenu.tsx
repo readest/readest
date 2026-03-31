@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { MdRssFeed } from 'react-icons/md';
-import { IoFileTray } from 'react-icons/io5';
+import { IoFileTray, IoGlobe } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import MenuItem from '@/components/MenuItem';
@@ -12,6 +12,7 @@ interface ImportMenuProps {
   onImportBooksFromDirectory?: () => void;
   onOpenCatalogManager: () => void;
   onOpenRSSManager?: () => void;
+  onOpenShadowLibrary?: () => void;
 }
 
 const ImportMenu: React.FC<ImportMenuProps> = ({
@@ -20,6 +21,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   onImportBooksFromDirectory,
   onOpenCatalogManager,
   onOpenRSSManager,
+  onOpenShadowLibrary,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -41,6 +43,11 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
 
   const handleOpenRSSManager = () => {
     onOpenRSSManager?.();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleOpenShadowLibrary = () => {
+    onOpenShadowLibrary?.();
     setIsDropdownOpen?.(false);
   };
 
@@ -66,6 +73,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         Icon={<MdRssFeed className='h-5 w-5' />}
         onClick={handleOpenCatalogManager}
       />
+      {onOpenShadowLibrary && (
+        <MenuItem
+          label={_('Shadow Libraries')}
+          Icon={<IoGlobe className='h-5 w-5' />}
+          onClick={handleOpenShadowLibrary}
+        />
+      )}
       {onOpenRSSManager && (
         <MenuItem
           label={_('RSS Feeds')}

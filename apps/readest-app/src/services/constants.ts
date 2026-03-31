@@ -27,6 +27,7 @@ import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import { DEFAULT_SHADOW_LIBRARY_SETTINGS } from '@/types/shadow-library';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -98,6 +99,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryColumns: 6,
   opdsCatalogs: [],
   rssFeeds: [],
+  rssFolders: [],
+  rssFolderColors: {},
   articleManagement: {
     autoCleanupEnabled: true,
     cleanupAfterDays: 7,
@@ -114,6 +117,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   kosync: DEFAULT_KOSYNC_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
+  shadowLibrary: DEFAULT_SHADOW_LIBRARY_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,

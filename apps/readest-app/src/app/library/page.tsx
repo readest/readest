@@ -58,10 +58,11 @@ import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
-import { RSSManagerDialog } from './components/RSSManagerDialog';
+import { ShadowLibraryDialog } from './components/ShadowLibraryDialog';
 import { RSSPanel } from './components/RSSPanel';
 import { NavigationRail, NavigationView } from './components/NavigationRail';
 import { FeedsView } from './components/FeedsView';
+import SourcesPage from '@/app/sources/page';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
@@ -118,6 +119,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
+  const [showShadowLibrary, setShowShadowLibrary] = useState(false);
   const [currentView, setCurrentView] = useState<NavigationView>('library');
   const [showRSSPanel, setShowRSSPanel] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -404,6 +406,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setShowRSSPanel(false);
   };
 
+  const handleShowShadowLibrary = () => {
+    setShowShadowLibrary(true);
+  };
+
+  const handleDismissShadowLibrary = () => {
+    setShowShadowLibrary(false);
+  };
+
   useEffect(() => {
     if (pendingNavigationBookIds) {
       const bookIds = pendingNavigationBookIds;
@@ -419,13 +429,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     isInitiating.current = true;
 
     const initLogin = async () => {
-      const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
+      // Use settings from Zustand store instead of loading from disk
+      // to avoid overwriting recent changes (like priority toggles)
       if (token && user) {
         if (!settings.keepLogin) {
-          settings.keepLogin = true;
-          setSettings(settings);
-          saveSettings(envConfig, settings);
+          const updatedSettings = { ...settings, keepLogin: true };
+          setSettings(updatedSettings);
+          saveSettings(envConfig, updatedSettings);
         }
       } else if (settings.keepLogin) {
         router.push('/auth');
@@ -435,8 +445,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
     const initLibrary = async () => {
       const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
-      setSettings(settings);
+      const diskSettings = await appService.loadSettings();
+      console.log('[initLibrary] Settings loaded from disk, rssFeeds:', diskSettings.rssFeeds?.map(f => ({ id: f.id, name: f.name, priority: f.priority })));
+      
+      // Use settings from disk (they should be the latest saved state)
+      setSettings(diskSettings);
 
       // Reuse the library from the store when we return from the reader
       const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
@@ -877,6 +890,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                   }
                   onOpenCatalogManager={handleShowOPDSDialog}
                   onOpenRSSManager={handleShowRSSManager}
+                  onOpenShadowLibrary={handleShowShadowLibrary}
                   onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
                   onSelectAll={handleSelectAll}
                   onDeselectAll={handleDeselectAll}
@@ -1007,7 +1021,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               <FeedsView />
             </div>
           )}
-          
+
+          {currentView === 'sources' && (
+            <div className="flex-1 overflow-hidden">
+              <SourcesPage />
+            </div>
+          )}
+
           {currentView === 'dashboard' && (
             <div className="flex-1 overflow-hidden p-8">
               <div className="flex h-full items-center justify-center">
@@ -1046,6 +1066,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {showShadowLibrary && <ShadowLibraryDialog onClose={handleDismissShadowLibrary} />}
       {showRSSPanel && (
         <div className='fixed right-0 top-0 z-40 h-full w-96 shadow-xl'>
           <RSSPanel isOpen={showRSSPanel} onClose={handleDismissRSSManager} />

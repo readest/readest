@@ -8,16 +8,14 @@ import { FiBookmark, FiSave } from 'react-icons/fi';
 interface FeedViewProps {
   feed: RSSFeed;
   onItemSelect: (item: RSSItem) => void;
-  onGenerateCachedImageUrl?: (url: string) => Promise<string>;
   onSelectMode?: boolean;
   selectedItems?: Set<string>;
   onToggleSelect?: (guid: string) => void;
 }
 
-export function FeedView({ 
-  feed, 
-  onItemSelect, 
-  onGenerateCachedImageUrl,
+export function FeedView({
+  feed,
+  onItemSelect,
   onSelectMode = false,
   selectedItems = new Set(),
   onToggleSelect,

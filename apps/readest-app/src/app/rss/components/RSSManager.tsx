@@ -18,7 +18,7 @@ interface RSSManagerProps {
   onClose: () => void;
 }
 
-export function RSSManager({ onFeedSelect, onClose }: RSSManagerProps) {
+export function RSSManager({ onFeedSelect }: RSSManagerProps) {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
   const { settings, setSettings } = useSettingsStore();
