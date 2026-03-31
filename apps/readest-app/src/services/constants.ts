@@ -823,6 +823,7 @@ export const TRANSLATED_LANGS = {
   si: 'සිංහල',
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
+  ro: 'Română',
 };
 
 export const TRANSLATOR_LANGS: Record<string, string> = {
