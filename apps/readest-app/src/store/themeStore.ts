@@ -169,6 +169,9 @@ export const initSystemThemeListener = (appService: AppService) => {
     } else {
       systemIsDarkMode = mediaQuery.matches;
     }
+    if (typeof window !== 'undefined' && localStorage) {
+      localStorage.setItem('systemIsDarkMode', systemIsDarkMode ? 'true' : 'false');
+    }
     useThemeStore.getState().handleSystemThemeChange(systemIsDarkMode);
   };
 

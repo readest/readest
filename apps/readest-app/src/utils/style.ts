@@ -553,8 +553,8 @@ export const getThemeCode = () => {
   if (typeof window !== 'undefined') {
     themeColor = localStorage.getItem('themeColor') || 'default';
     themeMode = localStorage.getItem('themeMode') || 'auto';
+    systemIsDarkMode = localStorage.getItem('systemIsDarkMode') === 'true';
     customThemes = JSON.parse(localStorage.getItem('customThemes') || '[]');
-    systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
   const isDarkMode = themeMode === 'dark' || (themeMode === 'auto' && systemIsDarkMode);
   let currentTheme = themes.find((theme) => theme.name === themeColor);
