@@ -127,9 +127,10 @@ export class LibGenProvider extends ShadowLibraryProviderBase {
             return allResults;
           }
 
-          // Stop if page appears to be truly empty
-          if (results.length === 0 && html.length < 50000) {
-            console.log(`[LibGen] Page ${page} appears empty (HTML: ${html.length}), stopping`);
+          // Stop if page returned no results (only trust this after the first page,
+          // since page 1 returning empty means the query itself has no hits)
+          if (results.length === 0) {
+            console.log(`[LibGen] Page ${page} returned no results, stopping pagination`);
             return allResults;
           }
 
@@ -609,9 +610,6 @@ export class LibGenProvider extends ShadowLibraryProviderBase {
   private bookToSearchResult(book: LibGenBook): ShadowLibrarySearchResult {
     return {
       id: book.md5,
-      sourceId: this.provider.id,
-      sourceName: this.provider.name,
-      sourceType: this.provider.type as any,
       title: book.title,
       authors: book.authors,
       publisher: book.publisher,
@@ -621,13 +619,11 @@ export class LibGenProvider extends ShadowLibraryProviderBase {
       size: book.size,
       coverUrl: book.coverUrl,
       downloadUrl: book.mirrors[0],
-      mirrorIndex: this.provider.activeMirrorIndex,
       extensionData: {
         md5: book.md5,
-        mirrors: book.mirrors,
         extension: book.extension,
-        series: book.series,
-        isbn: book.isbn,
+        ...(book.series && { series: book.series }),
+        ...(book.isbn && { isbn: book.isbn }),
       },
     };
   }

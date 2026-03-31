@@ -41,8 +41,9 @@ export class SciHubProvider extends ShadowLibraryProviderBase {
 
   /**
    * Resolve DOI to PDF
+   * @param retryDepth - Internal counter to bound mirror-switch retries.
    */
-  async resolveDOI(doi: string): Promise<DOIResolutionResult> {
+  async resolveDOI(doi: string, retryDepth = 0): Promise<DOIResolutionResult> {
     const baseUrl = this.getActiveMirrorUrl();
     if (!baseUrl) {
       return {
@@ -108,11 +109,10 @@ export class SciHubProvider extends ShadowLibraryProviderBase {
     } catch (error) {
       console.error('[SciHub] DOI resolution failed:', error);
       
-      // Try next mirror
+      // Try next mirror, capped at mirror count to prevent infinite recursion
       const hasMoreMirrors = await this.switchMirror();
-      if (hasMoreMirrors) {
-        // Retry with new mirror
-        return this.resolveDOI(doi);
+      if (hasMoreMirrors && retryDepth < this.provider.mirrors.length) {
+        return this.resolveDOI(doi, retryDepth + 1);
       }
 
       return {

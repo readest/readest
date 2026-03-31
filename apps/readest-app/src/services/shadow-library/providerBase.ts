@@ -116,11 +116,13 @@ export abstract class ShadowLibraryProviderBase implements IShadowLibraryProvide
   }
 
   /**
-   * Make authenticated request
+   * Make authenticated request.
+   * @param retryDepth - Internal counter to bound mirror-switch retries (max = mirror count).
    */
   protected async makeRequest(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryDepth = 0,
   ): Promise<Response> {
     const baseUrl = this.getActiveMirrorUrl();
     if (!baseUrl) {
@@ -186,12 +188,12 @@ export abstract class ShadowLibraryProviderBase implements IShadowLibraryProvide
       if (!response.ok && (response.status === 403 || response.status === 503)) {
         mirrorManager.markMirrorFailed(this.provider, baseUrl, `HTTP ${response.status}`);
 
-        // Auto-switch mirror if enabled
+        // Auto-switch mirror if enabled; cap retries at number of mirrors to prevent infinite recursion
         const settings = mirrorManager.getSettings();
-        if (settings.autoSwitchMirror) {
+        const maxRetries = this.provider.mirrors.length;
+        if (settings.autoSwitchMirror && retryDepth < maxRetries) {
           await this.switchMirror();
-          // Retry with new mirror
-          return this.makeRequest(endpoint, options);
+          return this.makeRequest(endpoint, options, retryDepth + 1);
         }
       }
 

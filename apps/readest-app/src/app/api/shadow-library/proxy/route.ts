@@ -9,6 +9,32 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const READEST_SHADOW_LIBRARY_USER_AGENT = 'Readest/1.0 (Shadow Library Client)';
 
+/**
+ * Allowed hostnames for the proxy. Only shadow library domains are permitted
+ * to prevent this endpoint from being used as an open SSRF proxy.
+ */
+const ALLOWED_HOSTS = new Set([
+  // Library Genesis mirrors
+  'libgen.li',
+  'libgen.is',
+  'libgen.rs',
+  'libgen.st',
+  'libgen.pw',
+  'libgen.fun',
+  // Library Genesis CDN / download mirrors
+  'download.library.lol',
+  'library.lol',
+  // Anna's Archive
+  'annas-archive.org',
+  'annas-archive.se',
+  // Sci-Hub mirrors
+  'sci-hub.se',
+  'sci-hub.st',
+  'sci-hub.ru',
+  // Unpaywall (open access, legitimate)
+  'api.unpaywall.org',
+]);
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const targetUrl = searchParams.get('url');
@@ -20,11 +46,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Validate URL
+  // Validate URL format
   if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
     return NextResponse.json(
       { error: 'Invalid URL. Must start with http:// or https://' },
       { status: 400 }
+    );
+  }
+
+  // Allowlist check — prevents this endpoint from acting as an open SSRF proxy
+  let targetHostname: string;
+  try {
+    targetHostname = new URL(targetUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return NextResponse.json({ error: 'Malformed URL' }, { status: 400 });
+  }
+  if (!ALLOWED_HOSTS.has(targetHostname)) {
+    return NextResponse.json(
+      { error: `Domain not permitted: ${targetHostname}` },
+      { status: 403 },
     );
   }
 
@@ -160,6 +200,15 @@ export async function HEAD(request: NextRequest) {
 
   if (!targetUrl) {
     return NextResponse.json({ error: 'Missing URL parameter' }, { status: 400 });
+  }
+
+  try {
+    const hostname = new URL(targetUrl).hostname.replace(/^www\./, '');
+    if (!ALLOWED_HOSTS.has(hostname)) {
+      return NextResponse.json({ error: `Domain not permitted: ${hostname}` }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Malformed URL' }, { status: 400 });
   }
 
   try {

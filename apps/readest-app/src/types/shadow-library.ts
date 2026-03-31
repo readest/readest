@@ -117,7 +117,7 @@ export interface ShadowLibrarySearchResult {
   subjects?: string[];
   
   // Provider-specific extension data
-  extensionData?: Record<string, string | number | boolean>;
+  extensionData?: Record<string, string | number | boolean | string[]>;
 }
 
 /**

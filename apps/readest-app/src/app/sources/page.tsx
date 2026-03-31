@@ -208,9 +208,8 @@ export default function SourcesPage() {
           try {
             const imported = await appService.importBook(file, libraryBooks);
             if (imported) {
-              // Refresh library list in store
-              const newLibrary = await appService.loadLibraryBooks();
-              setLibrary(newLibrary);
+              // Incrementally update the store — avoids a full disk read
+              setLibrary([imported, ...libraryBooks.filter((b) => b.hash !== imported.hash)]);
               eventDispatcher.dispatch('toast', {
                 message: _('{{title}} added to library', { title: imported.title }),
                 timeout: 3000,
