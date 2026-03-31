@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLibraryStore } from '@/store/libraryStore';
+import { eventDispatcher } from '@/utils/event';
 import {
   IoSearch,
   IoClose,
@@ -50,7 +52,8 @@ export default function SourcesPage() {
   const _ = useTranslation();
   const router = useRouter();
   const { appService } = useEnv();
-  
+  const { library: libraryBooks, setLibrary } = useLibraryStore();
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [doiQuery, setDoiQuery] = useState('');
@@ -199,11 +202,35 @@ export default function SourcesPage() {
   // Handle download result
   const handleDownload = useCallback(async (result: SourceSearchResult) => {
     try {
-      await downloadQueue.addDownload(result);
+      await downloadQueue.addDownload(result, {
+        onComplete: async (file: File) => {
+          if (!appService) return;
+          try {
+            const imported = await appService.importBook(file, libraryBooks);
+            if (imported) {
+              // Refresh library list in store
+              const newLibrary = await appService.loadLibraryBooks();
+              setLibrary(newLibrary);
+              eventDispatcher.dispatch('toast', {
+                message: _('{{title}} added to library', { title: imported.title }),
+                timeout: 3000,
+                type: 'success',
+              });
+            }
+          } catch (err) {
+            console.error('[Sources] Import failed:', err);
+            eventDispatcher.dispatch('toast', {
+              message: _('Failed to import book'),
+              timeout: 3000,
+              type: 'error',
+            });
+          }
+        },
+      });
     } catch (error) {
       console.error('Download failed:', error);
     }
-  }, []);
+  }, [appService, libraryBooks, setLibrary, _]);
 
   // Handle open streaming
   const handleStream = useCallback(async (result: SourceSearchResult) => {

@@ -38,6 +38,10 @@ export interface DownloadItem {
   startedAt?: number;
   completedAt?: number;
   destination?: string;
+  /** Called with the downloaded File after a successful download */
+  onComplete?: (file: File) => Promise<void>;
+  /** The downloaded file, available after status === 'completed' */
+  fileResult?: File;
 }
 
 /**
@@ -75,13 +79,15 @@ export class DownloadQueue {
   /**
    * Add download to queue
    */
-  async addDownload(result: SourceSearchResult): Promise<string> {
+  async addDownload(
+    result: SourceSearchResult,
+    options?: { onComplete?: (file: File) => Promise<void> },
+  ): Promise<string> {
     const downloadId = `download-${result.sourceId}-${result.id}-${Date.now()}`;
-    
+
     // Get download URL
     let downloadUrl = result.downloadUrl;
     if (!downloadUrl) {
-      // TODO: Import getDownloadUrl when circular dependency is resolved
       console.warn('Download URL not available');
       downloadUrl = '#';
     }
@@ -97,6 +103,7 @@ export class DownloadQueue {
       speed: 0,
       eta: 0,
       createdAt: Date.now(),
+      onComplete: options?.onComplete,
     };
 
     this.state.downloads.set(downloadId, download);
@@ -140,66 +147,153 @@ export class DownloadQueue {
    */
   private async executeDownload(download: DownloadItem): Promise<void> {
     try {
-      // Determine source type for rate limiting
       const sourceType: SourceProviderType = download.result.sourceType;
 
-      // Create download executor with rate limiting
       await rateLimiter.queueRequest(
         download.id,
         async () => {
-          // Simulated download (replace with actual implementation)
-          await this.simulateDownload(download);
+          await this.realDownload(download);
         },
-        sourceType
+        sourceType,
       );
 
       download.status = 'completed';
       download.progress = 100;
       download.completedAt = Date.now();
+      this.notifyListeners();
+
+      // Fire completion callback after status is updated
+      if (download.onComplete && download.fileResult) {
+        await download.onComplete(download.fileResult);
+      }
     } catch (error) {
       download.status = 'error';
       download.error = error instanceof Error ? error.message : 'Download failed';
+      this.notifyListeners();
     }
-
-    this.notifyListeners();
   }
 
   /**
-   * Simulate download progress (replace with actual implementation)
+   * Extract a direct file URL from an HTML interstitial page
+   * (e.g. libgen.li/ads.php returns an HTML page with a download link)
    */
-  private async simulateDownload(download: DownloadItem): Promise<void> {
-    const totalSize = 1024 * 1024 * 5; // 5MB simulated
-    const chunkSize = 1024 * 100; // 100KB chunks
-    download.totalBytes = totalSize;
+  private extractFileUrlFromHtml(html: string, pageUrl: string): string | null {
+    const base = new URL(pageUrl);
 
+    // Pattern 1: get.php?md5=...&key=... (libgen.li ads page)
+    const getPhpMatch = html.match(/href=["']([^"']*get\.php\?[^"']*)["']/i);
+    if (getPhpMatch) {
+      const href = getPhpMatch[1];
+      if (href.startsWith('http')) return href;
+      return `${base.origin}${href.startsWith('/') ? '' : '/'}${href}`;
+    }
+
+    // Pattern 2: direct link ending with a known ebook extension
+    const directMatch = html.match(
+      /href=["']([^"']+\.(?:epub|pdf|djvu|mobi|fb2|azw3|cbz|cbr|doc|docx|txt|rtf))["']/i,
+    );
+    if (directMatch) {
+      const href = directMatch[1];
+      if (href.startsWith('http')) return href;
+      return `${base.origin}${href.startsWith('/') ? '' : '/'}${href}`;
+    }
+
+    return null;
+  }
+
+  /**
+   * Download a file for real, streaming bytes with progress tracking.
+   * Handles HTML interstitial pages (e.g. libgen ads pages) automatically.
+   */
+  private async realDownload(download: DownloadItem): Promise<void> {
+    // Step 1: fetch the download URL through the proxy
+    let fetchUrl = download.url;
+    let proxyUrl = `/api/shadow-library/proxy?url=${encodeURIComponent(fetchUrl)}`;
+    let response = await fetch(proxyUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Step 2: if we got an HTML page, extract the real file URL and re-fetch
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.startsWith('text/html')) {
+      const html = await response.text();
+      const resolved = this.extractFileUrlFromHtml(html, fetchUrl);
+      if (resolved) {
+        fetchUrl = resolved;
+        proxyUrl = `/api/shadow-library/proxy?url=${encodeURIComponent(fetchUrl)}`;
+        response = await fetch(proxyUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } else {
+        throw new Error('Could not find a download link on the page');
+      }
+    }
+
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    download.totalBytes = contentLength;
+
+    // Step 3: stream bytes with progress updates
+    const reader = response.body?.getReader();
+    const chunks: Uint8Array[] = [];
     let downloaded = 0;
     const startTime = Date.now();
 
-    while (downloaded < totalSize) {
-      if (download.status === 'cancelled') {
-        throw new Error('Download cancelled');
+    if (reader) {
+      while (true) {
+        if (download.status === 'cancelled') {
+          reader.cancel();
+          throw new Error('Download cancelled');
+        }
+        while (download.status === 'paused') {
+          await new Promise<void>((resolve) => setTimeout(resolve, 500));
+        }
+
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        chunks.push(value);
+        downloaded += value.length;
+        download.downloadedBytes = downloaded;
+        if (contentLength > 0) {
+          download.progress = (downloaded / contentLength) * 100;
+        }
+
+        const elapsed = (Date.now() - startTime) / 1000;
+        download.speed = elapsed > 0 ? downloaded / elapsed : 0;
+        download.eta =
+          download.speed > 0 && contentLength > 0
+            ? (contentLength - downloaded) / download.speed
+            : 0;
+
+        this.notifyListeners();
       }
-
-      if (download.status === 'paused') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        continue;
-      }
-
-      // Simulate chunk download
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      downloaded = Math.min(downloaded + chunkSize, totalSize);
-      download.downloadedBytes = downloaded;
-      download.progress = (downloaded / totalSize) * 100;
-
-      // Calculate speed and ETA
-      const elapsed = (Date.now() - startTime) / 1000;
-      download.speed = downloaded / elapsed;
-      const remaining = totalSize - downloaded;
-      download.eta = remaining / download.speed;
-
-      this.notifyListeners();
+    } else {
+      // Fallback: read entire body at once (no streaming progress)
+      const buffer = await response.arrayBuffer();
+      chunks.push(new Uint8Array(buffer));
+      downloaded = buffer.byteLength;
     }
+
+    // Step 4: build a File object with the correct name and MIME type
+    const ext = (download.result.format ?? 'epub').toLowerCase();
+    const safeName = (download.result.title ?? 'download').replace(/[/\\:*?"<>|]/g, '_');
+    const filename = `${safeName}.${ext}`;
+    const mimeTypes: Record<string, string> = {
+      epub: 'application/epub+zip',
+      pdf: 'application/pdf',
+      mobi: 'application/x-mobipocket-ebook',
+      djvu: 'image/vnd.djvu',
+      fb2: 'application/x-fictionbook+xml',
+      azw3: 'application/vnd.amazon.ebook',
+    };
+    const mimeType = mimeTypes[ext] ?? 'application/octet-stream';
+    const file = new File(chunks, filename, { type: mimeType });
+
+    download.fileResult = file;
+    download.downloadedBytes = downloaded;
+    download.totalBytes = downloaded;
   }
 
   /**

@@ -86,10 +86,10 @@ const LibGenResultRow: React.FC<{
   const { extensionData } = result;
   const md5 = extensionData?.md5 || '';
   
-  // Construct cover URL from MD5 - use https to avoid mixed content issues
-  const coverUrl = result.coverUrl || (md5 && md5.length >= 2 
-    ? `https://libgen.li/covers/${md5.substring(0, 2)}/${md5}.1.jpg`
-    : null);
+  // Route cover images through the proxy to bypass CORS restrictions on libgen.li
+  const coverUrl = md5 && md5.length >= 2
+    ? `/api/shadow-library/proxy?url=${encodeURIComponent(`https://libgen.li/covers/${md5.substring(0, 2)}/${md5}.1.jpg`)}`
+    : result.coverUrl || null;
 
   return (
     <tr className="hover:bg-base-200">
