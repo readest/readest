@@ -246,6 +246,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY,
       );
+      hideZoomLabelAfterDelay();
     }
   };
 
@@ -302,6 +303,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         setZoomSpeed(newZoom);
 
         lastTouchDistance.current = currentDistance;
+        hideZoomLabelAfterDelay();
       });
     }
   };
