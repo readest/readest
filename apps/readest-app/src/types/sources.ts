@@ -65,8 +65,10 @@ export interface SourceSearchResult {
   description?: string;
   subjects?: string[];
   
-  // Source-specific data
-  sourceData?: any;
+  // Source-specific data (generic catch-all)
+  sourceData?: Record<string, unknown>;
+  // Provider extension data (e.g. md5, mirrors, isbn for LibGen)
+  extensionData?: Record<string, string | number | boolean | string[]>;
 }
 
 /**

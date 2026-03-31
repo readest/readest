@@ -93,6 +93,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data);
     }
 
+    // Handle binary content: images and ebook formats
+    // Must come before the text fallback to avoid corrupting binary data
+    const isBinary =
+      contentType.startsWith('image/') ||
+      contentType.includes('application/epub+zip') ||
+      contentType.includes('application/x-mobipocket') ||
+      contentType.includes('application/x-fictionbook') ||
+      contentType.includes('application/vnd.amazon.ebook') ||
+      contentType.includes('application/octet-stream') ||
+      contentType.includes('application/zip');
+
+    if (isBinary) {
+      const arrayBuffer = await response.arrayBuffer();
+      return new NextResponse(arrayBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': contentType.startsWith('image/') ? 'public, max-age=86400' : 'no-store',
+        },
+      });
+    }
+
     // Handle HTML/text
     const text = await response.text();
     return new NextResponse(text, {

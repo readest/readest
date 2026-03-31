@@ -183,17 +183,15 @@ const LibGenResultRow: React.FC<{
         </span>
       </td>
 
-      {/* Download button - opens LibGen download page */}
+      {/* Download button - downloads directly to library */}
       <td className="px-2 py-2">
-        <a
-          href={result.downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => onDownload(result)}
           className="btn btn-xs btn-primary gap-1 h-6 min-h-6 px-2"
-          title="Download from LibGen"
+          title="Download and add to library"
         >
           ⬇ Download
-        </a>
+        </button>
       </td>
     </tr>
   );
