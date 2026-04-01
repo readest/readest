@@ -103,12 +103,7 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
 
 const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
-  const {
-    getView,
-    getProgress,
-    getViewSettings: _getViewSettings,
-    setProgress: _setProgress,
-  } = useReaderStore();
+  const { getView, getProgress } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const { themeCode } = useThemeStore();
 

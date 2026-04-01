@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
-import { RsvpState, RsvpWord, RSVPController } from '@/services/rsvp';
+import { RsvpState, RSVPController } from '@/services/rsvp';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
 import {
@@ -56,7 +56,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
-  const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
+  const currentWord = state.words[state.currentIndex] ?? null;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
@@ -130,7 +130,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     const handleStateChange = (e: Event) => {
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
-      setCurrentWord(controller.currentWord);
 
       // Update context window only when current word falls outside or nears edge
       const idx = newState.currentIndex;

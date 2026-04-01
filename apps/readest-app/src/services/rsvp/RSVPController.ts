@@ -28,7 +28,6 @@ export class RSVPController extends EventTarget {
     wpm: DEFAULT_WPM,
     punctuationPauseMs: DEFAULT_PUNCTUATION_PAUSE_MS,
     progress: 0,
-    resumedFromIndex: null,
   };
 
   private playbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -58,7 +57,11 @@ export class RSVPController extends EventTarget {
   }
 
   get currentState(): RsvpState {
-    return { ...this.state };
+    return {
+      ...this.state,
+      progress:
+        this.state.words.length > 0 ? (this.state.currentIndex / this.state.words.length) * 100 : 0,
+    };
   }
 
   get currentWord(): RsvpWord | null {
@@ -211,7 +214,6 @@ export class RSVPController extends EventTarget {
     }
 
     let startIndex = 0;
-    let resumedFromIndex: number | null = null;
 
     if (this.pendingStartWordIndex !== null && this.pendingStartWordIndex < words.length) {
       startIndex = this.pendingStartWordIndex;
@@ -222,12 +224,10 @@ export class RSVPController extends EventTarget {
         const cfiIndex = this.findWordIndexByCfi(words, savedPosition.cfi);
         if (cfiIndex >= 0) {
           startIndex = cfiIndex;
-          resumedFromIndex = cfiIndex;
         } else {
           const textIndex = words.findIndex((w) => w.text === savedPosition.wordText);
           if (textIndex >= 0) {
             startIndex = textIndex;
-            resumedFromIndex = textIndex;
           }
         }
       }
@@ -240,8 +240,6 @@ export class RSVPController extends EventTarget {
       playing: false,
       words,
       currentIndex: clampedStart,
-      progress: words.length > 0 ? (clampedStart / words.length) * 100 : 0,
-      resumedFromIndex,
     };
     this.emitStateChange();
 
@@ -329,8 +327,6 @@ export class RSVPController extends EventTarget {
       playing: false,
       words: [],
       currentIndex: 0,
-      progress: 0,
-      resumedFromIndex: null,
     };
     this.emitStateChange();
   }
@@ -479,37 +475,33 @@ export class RSVPController extends EventTarget {
   }
 
   skipForward(count: number = 10): void {
-    const newIndex = Math.min(this.state.words.length - 1, this.state.currentIndex + count);
-    this.state.currentIndex = newIndex;
-    this.state.progress = (newIndex / this.state.words.length) * 100;
+    this.state.currentIndex = Math.min(
+      this.state.words.length - 1,
+      this.state.currentIndex + count,
+    );
     this.emitStateChange();
   }
 
   skipBackward(count: number = 10): void {
-    const newIndex = Math.max(0, this.state.currentIndex - count);
-    this.state.currentIndex = newIndex;
-    this.state.progress = (newIndex / this.state.words.length) * 100;
+    this.state.currentIndex = Math.max(0, this.state.currentIndex - count);
     this.emitStateChange();
   }
 
   seekToPosition(percentage: number): void {
     if (this.state.words.length === 0) return;
     const newIndex = Math.floor((percentage / 100) * this.state.words.length);
-    const clampedIndex = Math.max(0, Math.min(this.state.words.length - 1, newIndex));
-    this.state.currentIndex = clampedIndex;
-    this.state.progress = (clampedIndex / this.state.words.length) * 100;
+    this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, newIndex));
     this.emitStateChange();
   }
 
   seekToIndex(index: number): void {
     if (this.state.words.length === 0) return;
-    const clampedIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
-    this.state.currentIndex = clampedIndex;
-    this.state.progress = (clampedIndex / this.state.words.length) * 100;
+    this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
     this.emitStateChange();
   }
 
   loadNextPageContent(retryCount = 0): void {
+    this.clearTimer();
     const words = this.extractWordsWithRanges();
     if (words.length === 0) {
       if (retryCount < 3) {
@@ -526,8 +518,6 @@ export class RSVPController extends EventTarget {
       playing: false,
       words,
       currentIndex: 0,
-      progress: 0,
-      resumedFromIndex: null,
     };
     this.emitStateChange();
 
@@ -567,7 +557,6 @@ export class RSVPController extends EventTarget {
     }
 
     this.state.currentIndex = newIndex;
-    this.state.progress = (newIndex / this.state.words.length) * 100;
     this.emitStateChange();
 
     this.scheduleNextWord();
