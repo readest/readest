@@ -27,8 +27,5 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "prettier.requireConfig": true,
-  "prettier.documentSelectors": [
-    "**/*.{js,jsx,ts,tsx,css,json,md,html,yml}"
-  ],
-  "cmake.sourceDirectory": "/home/lex/Documents/Github/readest/packages/simplecc-wasm/OpenCC"
+  "prettier.documentSelectors": ["**/*.{js,jsx,ts,tsx,css,json,md,html,yml}"]
 }
