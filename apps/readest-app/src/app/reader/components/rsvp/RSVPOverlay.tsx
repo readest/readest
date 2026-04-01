@@ -59,6 +59,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
+  const chapterDropdownRef = useRef<HTMLDivElement>(null);
   const [showWpmDropdown, setShowWpmDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(() => {
@@ -277,6 +278,19 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state.currentIndex, contextCollapsed]);
 
+  useEffect(() => {
+    if (!showChapterDropdown) return;
+    const raf = requestAnimationFrame(() => {
+      const container = chapterDropdownRef.current;
+      if (!container) return;
+      const activeItem = container.querySelector<HTMLElement>('[data-active="true"]');
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'center' });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showChapterDropdown]);
+
   const toggleContext = useCallback(() => {
     setContextCollapsed((prev) => {
       const next = !prev;
@@ -377,6 +391,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   };
 
+  const handleWordClick = (wordIndex: number) => {
+    const wasPlaying = state.playing;
+    if (wasPlaying) controller.pause();
+    controller.seekToIndex(wordIndex);
+    if (wasPlaying) setTimeout(() => controller.resume(), 50);
+  };
+
   // Progress bar click handler
   const handleProgressBarClick = (event: React.MouseEvent) => {
     const target = event.currentTarget as HTMLElement;
@@ -465,12 +486,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <>
               <Overlay onDismiss={() => setShowChapterDropdown(false)} />
               <div
+                ref={chapterDropdownRef}
                 className='absolute left-0 right-0 top-full z-[100] mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-gray-500/20 px-2 shadow-2xl'
                 style={{ backgroundColor: bgColor }}
               >
                 {flatChapters.map((chapter, idx) => (
                   <button
                     key={`${chapter.href}-${idx}`}
+                    data-active={isChapterActive(chapter.href) ? 'true' : undefined}
                     className={clsx(
                       'block w-full rounded-md border-none bg-transparent px-4 py-2.5 text-left text-sm transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
                       isChapterActive(chapter.href) &&
@@ -568,6 +591,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div
             ref={contextPanelRef}
             className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             <div className='text-left text-base leading-relaxed md:text-lg'>
               {contextWords.map((w, i) => {
@@ -577,8 +602,20 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                   <span
                     key={wordIndex}
                     ref={isCurrent ? contextWordRef : undefined}
-                    className={isCurrent ? undefined : 'opacity-70'}
+                    role={isCurrent ? undefined : 'button'}
+                    tabIndex={isCurrent ? undefined : 0}
+                    className={
+                      isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'
+                    }
                     style={isCurrent ? { color: effectiveOrpColor } : undefined}
+                    onClick={isCurrent ? undefined : () => handleWordClick(wordIndex)}
+                    onKeyDown={
+                      isCurrent
+                        ? undefined
+                        : (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') handleWordClick(wordIndex);
+                          }
+                    }
                   >
                     {w.text}{' '}
                   </span>

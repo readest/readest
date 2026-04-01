@@ -33,6 +33,9 @@ export class RSVPController extends EventTarget {
 
   private anchorToHref: Map<string, string> = new Map();
   private _chapterMarkers: Array<{ index: number; href: string }> = [];
+  private _allWords: RsvpWord[] = [];
+  private _allMarkers: Array<{ index: number; href: string }> = [];
+  private _chapterIndex: number = 0;
 
   private playbackTimer: ReturnType<typeof setTimeout> | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
@@ -101,6 +104,69 @@ export class RSVPController extends EventTarget {
     for (const href of hrefs) {
       const fragment = href.split('#')[1];
       if (fragment) this.anchorToHref.set(fragment, href);
+    }
+  }
+
+  private getChapterBoundaries(): Array<{ start: number; end: number; href: string }> {
+    const total = this._allWords.length;
+    const markers = this._allMarkers;
+    if (markers.length === 0) return [{ start: 0, end: total, href: '' }];
+
+    const boundaries: Array<{ start: number; end: number; href: string }> = [];
+    // Prepend any words before the first chapter marker
+    if (markers[0]!.index > 0) {
+      boundaries.push({ start: 0, end: markers[0]!.index, href: '' });
+    }
+    for (let i = 0; i < markers.length; i++) {
+      boundaries.push({
+        start: markers[i]!.index,
+        end: markers[i + 1]?.index ?? total,
+        href: markers[i]!.href,
+      });
+    }
+    return boundaries;
+  }
+
+  private applyChapter(
+    chapterIdx: number,
+    startIndexInChapter: number,
+    resumedFromIndex: number | null,
+  ): void {
+    const boundaries = this.getChapterBoundaries();
+    const boundary = boundaries[chapterIdx]!;
+    const chapterWords = this._allWords.slice(boundary.start, boundary.end);
+    this._chapterIndex = chapterIdx;
+    // Expose a single marker at index 0 so getChapterHrefAtIndex still works
+    this._chapterMarkers = boundary.href ? [{ index: 0, href: boundary.href }] : [];
+    const clampedStart =
+      chapterWords.length > 0 ? Math.min(chapterWords.length - 1, startIndexInChapter) : 0;
+    this.state = {
+      ...this.state,
+      words: chapterWords,
+      currentIndex: clampedStart,
+      progress: chapterWords.length > 0 ? (clampedStart / chapterWords.length) * 100 : 0,
+      resumedFromIndex,
+    };
+  }
+
+  private advanceToNextChapter(): void {
+    const boundaries = this.getChapterBoundaries();
+    if (this._chapterIndex + 1 >= boundaries.length) {
+      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
+      return;
+    }
+
+    const wasPlaying = this.state.playing;
+    this.state.playing = false;
+    this.applyChapter(this._chapterIndex + 1, 0, null);
+    this.emitStateChange();
+
+    if (wasPlaying) {
+      this.startCountdown(() => {
+        this.state.playing = true;
+        this.emitStateChange();
+        this.scheduleNextWord();
+      });
     }
   }
 
@@ -247,8 +313,8 @@ export class RSVPController extends EventTarget {
   }
 
   start(retryCount = 0): void {
-    const words = this.extractWordsWithRanges();
-    if (words.length === 0) {
+    const allWords = this.extractWordsWithRanges();
+    if (allWords.length === 0) {
       if (retryCount < 3) {
         setTimeout(() => this.start(retryCount + 1), 150 * (retryCount + 1));
         return;
@@ -256,49 +322,59 @@ export class RSVPController extends EventTarget {
       return;
     }
 
-    let startIndex = 0;
+    this._allWords = allWords;
+    this._allMarkers = [...this._chapterMarkers];
+
+    let absoluteStartIndex = 0;
     let resumedFromIndex: number | null = null;
 
-    if (this.pendingStartWordIndex !== null && this.pendingStartWordIndex < words.length) {
-      startIndex = this.pendingStartWordIndex;
+    if (this.pendingStartWordIndex !== null && this.pendingStartWordIndex < allWords.length) {
+      absoluteStartIndex = this.pendingStartWordIndex;
       this.pendingStartWordIndex = null;
     } else {
       const savedPosition = this.loadPositionFromStorage();
       if (savedPosition) {
         // Try CFI-based position recovery first
         if (savedPosition.cfi) {
-          const cfiIndex = this.findWordIndexByCfi(words, savedPosition.cfi);
+          const cfiIndex = this.findWordIndexByCfi(allWords, savedPosition.cfi);
           if (cfiIndex >= 0) {
-            startIndex = cfiIndex;
+            absoluteStartIndex = cfiIndex;
             resumedFromIndex = cfiIndex;
           } else {
             // CFI not found, try text match as fallback
-            const textMatchIndex = words.findIndex((w) => w.text === savedPosition.wordText);
+            const textMatchIndex = allWords.findIndex((w) => w.text === savedPosition.wordText);
             if (textMatchIndex >= 0) {
-              startIndex = textMatchIndex;
+              absoluteStartIndex = textMatchIndex;
               resumedFromIndex = textMatchIndex;
             }
           }
         } else {
           // Legacy position without CFI - try text match
-          const textMatchIndex = words.findIndex((w) => w.text === savedPosition.wordText);
+          const textMatchIndex = allWords.findIndex((w) => w.text === savedPosition.wordText);
           if (textMatchIndex >= 0) {
-            startIndex = textMatchIndex;
+            absoluteStartIndex = textMatchIndex;
             resumedFromIndex = textMatchIndex;
           }
         }
       }
     }
 
-    this.state = {
-      ...this.state,
-      active: true,
-      playing: false,
-      words,
-      currentIndex: startIndex,
-      progress: (startIndex / words.length) * 100,
-      resumedFromIndex,
-    };
+    // Find which chapter the start position falls in
+    const boundaries = this.getChapterBoundaries();
+    let startChapterIndex = 0;
+    let startIndexInChapter = absoluteStartIndex;
+    for (let i = 0; i < boundaries.length; i++) {
+      const b = boundaries[i]!;
+      if (absoluteStartIndex >= b.start && absoluteStartIndex < b.end) {
+        startChapterIndex = i;
+        startIndexInChapter = absoluteStartIndex - b.start;
+        break;
+      }
+    }
+    if (resumedFromIndex !== null) resumedFromIndex = startIndexInChapter;
+
+    this.state = { ...this.state, active: true, playing: false, resumedFromIndex: null };
+    this.applyChapter(startChapterIndex, startIndexInChapter, resumedFromIndex);
     this.emitStateChange();
 
     this.startCountdown(() => {
@@ -574,11 +650,19 @@ export class RSVPController extends EventTarget {
     this.emitStateChange();
   }
 
+  seekToIndex(index: number): void {
+    if (this.state.words.length === 0) return;
+    const clampedIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
+    this.state.currentIndex = clampedIndex;
+    this.state.progress = (clampedIndex / this.state.words.length) * 100;
+    this.emitStateChange();
+  }
+
   loadNextPageContent(retryCount = 0): void {
     this.clearPositionFromStorage();
 
-    const words = this.extractWordsWithRanges();
-    if (words.length === 0) {
+    const allWords = this.extractWordsWithRanges();
+    if (allWords.length === 0) {
       if (retryCount < 3) {
         setTimeout(() => this.loadNextPageContent(retryCount + 1), 200 * (retryCount + 1));
         return;
@@ -587,16 +671,12 @@ export class RSVPController extends EventTarget {
       return;
     }
 
-    const wasPlaying = this.state.playing;
+    this._allWords = allWords;
+    this._allMarkers = [...this._chapterMarkers];
 
-    this.state = {
-      ...this.state,
-      words,
-      currentIndex: 0,
-      progress: 0,
-      resumedFromIndex: null,
-      playing: false,
-    };
+    const wasPlaying = this.state.playing;
+    this.state.playing = false;
+    this.applyChapter(0, 0, null);
     this.emitStateChange();
 
     if (wasPlaying) {
@@ -614,7 +694,7 @@ export class RSVPController extends EventTarget {
     if (!this.state.playing || !this.state.active) return;
 
     if (this.state.currentIndex >= this.state.words.length) {
-      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
+      this.advanceToNextChapter();
       return;
     }
 
@@ -630,7 +710,7 @@ export class RSVPController extends EventTarget {
     const newIndex = this.state.currentIndex + 1;
 
     if (newIndex >= this.state.words.length) {
-      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
+      this.advanceToNextChapter();
       return;
     }
 
@@ -663,7 +743,10 @@ export class RSVPController extends EventTarget {
       const { doc, index: docIndex } = content as { doc: Document; index: number };
       if (!doc?.body) continue;
 
-      const words = this.extractWordsFromElement(doc.body, doc, docIndex, runningIndex);
+      // Each spine document is a chapter boundary
+      this._chapterMarkers.push({ index: runningIndex, href: String(docIndex) });
+
+      const words = this.extractWordsFromElement(doc.body, doc, docIndex);
       allWords.push(...words);
       runningIndex += words.length;
     }
@@ -675,7 +758,6 @@ export class RSVPController extends EventTarget {
     element: HTMLElement,
     doc: Document,
     docIndex: number,
-    baseIndex: number = 0,
   ): RsvpWord[] {
     const excludeTags = new Set(['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'ASIDE']);
     const words: RsvpWord[] = [];
@@ -739,14 +821,6 @@ export class RSVPController extends EventTarget {
       const style = el.ownerDocument.defaultView?.getComputedStyle(el);
       if (style?.display === 'none' || style?.visibility === 'hidden') {
         return;
-      }
-
-      const id = el.getAttribute('id');
-      if (id && this.anchorToHref.has(id)) {
-        this._chapterMarkers.push({
-          index: baseIndex + words.length,
-          href: this.anchorToHref.get(id)!,
-        });
       }
 
       for (const child of Array.from(el.childNodes)) {
