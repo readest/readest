@@ -198,6 +198,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const bookSorter = createBookSorter(sortBy, uiLanguage);
     if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
       ungroupedBooks.sort(withinGroupSorter);
+      // When inside a group, books are already sorted correctly — return directly
+      // to avoid the merge sort below overriding the within-group sort order
+      return ungroupedBooks;
     } else {
       ungroupedBooks.sort((a, b) => bookSorter(a, b) * sortOrderMultiplier);
     }
