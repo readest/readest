@@ -50,3 +50,17 @@ export const stepReadingRulerPosition = (
     rulerSize,
   );
 };
+
+export const getReadingRulerMoveDirection = (
+  side: 'left' | 'right' | 'up' | 'down',
+  bookDir?: string,
+): 'backward' | 'forward' => {
+  const normalizedSide =
+    bookDir === 'rtl' && (side === 'left' || side === 'right')
+      ? side === 'left'
+        ? 'right'
+        : 'left'
+      : side;
+
+  return normalizedSide === 'left' || normalizedSide === 'up' ? 'backward' : 'forward';
+};

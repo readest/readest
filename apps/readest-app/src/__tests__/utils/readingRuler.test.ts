@@ -3,6 +3,7 @@ import {
   calculateReadingRulerSize,
   clampReadingRulerPosition,
   FIXED_LAYOUT_READING_RULER_LINE_HEIGHT,
+  getReadingRulerMoveDirection,
   stepReadingRulerPosition,
 } from '@/app/reader/utils/readingRuler';
 
@@ -52,5 +53,14 @@ describe('readingRuler utils', () => {
   it('clamps stepped movement at the edges', () => {
     expect(stepReadingRulerPosition(85, 1000, 200, 'forward')).toBe(90);
     expect(stepReadingRulerPosition(15, 1000, 200, 'backward')).toBe(10);
+  });
+
+  it('maps tap and key sides to logical ruler movement direction', () => {
+    expect(getReadingRulerMoveDirection('right', 'ltr')).toBe('forward');
+    expect(getReadingRulerMoveDirection('left', 'ltr')).toBe('backward');
+    expect(getReadingRulerMoveDirection('right', 'rtl')).toBe('backward');
+    expect(getReadingRulerMoveDirection('left', 'rtl')).toBe('forward');
+    expect(getReadingRulerMoveDirection('down', 'rtl')).toBe('forward');
+    expect(getReadingRulerMoveDirection('up', 'ltr')).toBe('backward');
   });
 });
