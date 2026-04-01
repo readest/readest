@@ -40,7 +40,6 @@ export const useParallelViewStore = create<ParallelViewState>((set, get) => ({
         uniqueKeys.forEach((key) => targetGroup.add(key));
       }
 
-      console.log('Set parallel groups:', newGroups);
       return { parallelViews: newGroups };
     });
   },
@@ -63,7 +62,6 @@ export const useParallelViewStore = create<ParallelViewState>((set, get) => ({
         }
       });
 
-      console.log('Unset parallel groups:', newGroups);
       return { parallelViews: newGroups };
     });
   },

@@ -3,7 +3,8 @@
   "private": true,
   "repository": "readest/readest",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm --filter @readest/readest-app test",
+    "lint": "pnpm --filter @readest/readest-app lint",
     "tauri": "pnpm --filter @readest/readest-app tauri",
     "dev-web": "pnpm --filter @readest/readest-app dev-web",
     "prepare": "husky",
