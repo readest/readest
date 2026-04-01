@@ -1157,5 +1157,12 @@
   "Sunset": "Apus",
   "Reveal in Finder": "Afișează în Finder",
   "Reveal in File Explorer": "Afișează în File Explorer",
-  "Reveal in Folder": "Afișează în dosar"
+  "Reveal in Folder": "Afișează în dosar",
+  "TTS": "TTS",
+  "Media Info": "Informații media",
+  "Update Frequency": "Frecvența actualizării",
+  "Every Sentence": "La fiecare propoziție",
+  "Every Paragraph": "La fiecare paragraf",
+  "Every Chapter": "La fiecare capitol",
+  "TTS Media Info Update Frequency": "Frecvența actualizării informațiilor media TTS"
 }
