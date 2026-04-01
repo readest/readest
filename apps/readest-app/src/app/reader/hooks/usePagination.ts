@@ -118,7 +118,7 @@ export const usePagination = (
     if (!viewState?.inited || !bookData) return;
 
     const dispatchReadingRulerMove = (side: PaginationSide) => {
-      eventDispatcher.dispatch('reading-ruler-move', {
+      return eventDispatcher.dispatchSync('reading-ruler-move', {
         bookKey,
         direction: getReadingRulerMoveDirection(side, viewRef.current?.book.dir),
       });
@@ -180,8 +180,7 @@ export const usePagination = (
                       ? 'right'
                       : 'left';
 
-              if (viewSettings.readingRulerEnabled) {
-                dispatchReadingRulerMove(side);
+              if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove(side)) {
                 return;
               }
 
@@ -218,14 +217,12 @@ export const usePagination = (
         const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
-          if (viewSettings.readingRulerEnabled) {
-            dispatchReadingRulerMove('up');
+          if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
             return;
           }
           viewPagination(viewRef.current, viewSettings, 'up');
         } else if (keyName === 'VolumeDown') {
-          if (viewSettings.readingRulerEnabled) {
-            dispatchReadingRulerMove('down');
+          if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('down')) {
             return;
           }
           viewPagination(viewRef.current, viewSettings, 'down');

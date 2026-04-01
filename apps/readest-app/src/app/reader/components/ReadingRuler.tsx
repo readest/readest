@@ -312,13 +312,13 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         direction?: 'backward' | 'forward';
       };
 
-      if (detail.bookKey !== bookKey || !detail.direction || isDragging.current) return;
+      if (detail.bookKey !== bookKey || !detail.direction || isDragging.current) return false;
 
       const dimension = isVertical
         ? (containerRef.current?.clientWidth ?? containerSize.width)
         : (containerRef.current?.clientHeight ?? containerSize.height);
 
-      if (!dimension) return;
+      if (!dimension) return false;
 
       const nextPosition = stepReadingRulerPosition(
         currentPositionRef.current,
@@ -327,12 +327,17 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         detail.direction,
       );
 
+      if (Math.abs(nextPosition - currentPositionRef.current) < 0.001) {
+        return false;
+      }
+
       setRulerPosition(nextPosition, true);
+      return true;
     };
 
-    eventDispatcher.on('reading-ruler-move', handleMove);
+    eventDispatcher.onSync('reading-ruler-move', handleMove);
     return () => {
-      eventDispatcher.off('reading-ruler-move', handleMove);
+      eventDispatcher.offSync('reading-ruler-move', handleMove);
     };
   }, [bookKey, containerSize.height, containerSize.width, isVertical, rulerSize, setRulerPosition]);
 

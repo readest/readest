@@ -107,7 +107,7 @@ describe('ReadingRuler', () => {
       />,
     );
 
-    await eventDispatcher.dispatch('reading-ruler-move', {
+    eventDispatcher.dispatchSync('reading-ruler-move', {
       bookKey: 'book-1',
       direction: 'forward',
     });
@@ -156,5 +156,30 @@ describe('ReadingRuler', () => {
     fireEvent.pointerMove(topHandle, { pointerId: 1, clientY: 316 });
 
     expect(ruler.style.top).toBe('34%');
+  });
+
+  it('does not consume ruler movement when already at the boundary', () => {
+    render(
+      <ReadingRuler
+        bookKey='book-1'
+        isVertical={false}
+        rtl={false}
+        lines={2}
+        position={97.6}
+        opacity={0.5}
+        color='transparent'
+        bookFormat='EPUB'
+        viewSettings={viewSettings}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+
+    const consumed = eventDispatcher.dispatchSync('reading-ruler-move', {
+      bookKey: 'book-1',
+      direction: 'forward',
+    });
+
+    expect(consumed).toBe(false);
+    expect(saveViewSettings).not.toHaveBeenCalled();
   });
 });

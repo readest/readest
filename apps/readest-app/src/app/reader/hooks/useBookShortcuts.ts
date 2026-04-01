@@ -41,11 +41,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const viewSettings = getViewSettings(sideBarBookKey);
     if (!viewSettings?.readingRulerEnabled) return false;
 
-    eventDispatcher.dispatch('reading-ruler-move', {
+    return eventDispatcher.dispatchSync('reading-ruler-move', {
       bookKey: sideBarBookKey,
       direction: getReadingRulerMoveDirection(side, getView(sideBarBookKey)?.book.dir),
     });
-    return true;
   };
 
   const toggleScrollMode = () => {

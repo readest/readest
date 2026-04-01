@@ -128,7 +128,7 @@ describe('useBookShortcuts', () => {
   });
 
   it('routes page-turn shortcuts to reading ruler movement when enabled', () => {
-    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(true);
 
     render(<Harness />);
     shortcutState.actions?.['onGoNext']?.();
@@ -141,7 +141,7 @@ describe('useBookShortcuts', () => {
   });
 
   it('uses reading order when directional shortcuts are handled in rtl books', () => {
-    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(true);
     mockView.book.dir = 'rtl';
 
     render(<Harness />);
@@ -155,6 +155,15 @@ describe('useBookShortcuts', () => {
 
   it('falls back to normal page navigation when the ruler is disabled', () => {
     currentViewSettings.readingRulerEnabled = false;
+
+    render(<Harness />);
+    shortcutState.actions?.['onGoNext']?.();
+
+    expect(mockView.next).toHaveBeenCalledWith(72);
+  });
+
+  it('falls back to normal page navigation when the ruler cannot move further', () => {
+    vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(false);
 
     render(<Harness />);
     shortcutState.actions?.['onGoNext']?.();
