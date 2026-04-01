@@ -1,12 +1,18 @@
 import clsx from 'clsx';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Insets } from '@/types/misc';
-import { BookFormat, FIXED_LAYOUT_FORMATS, ViewSettings } from '@/types/book';
+import { BookFormat, ViewSettings } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { READING_RULER_COLORS } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
+import { eventDispatcher } from '@/utils/event';
+import {
+  calculateReadingRulerSize,
+  clampReadingRulerPosition,
+  stepReadingRulerPosition,
+} from '../utils/readingRuler';
 
 interface ReadingRulerProps {
   bookKey: string;
@@ -20,21 +26,6 @@ interface ReadingRulerProps {
   viewSettings: ViewSettings;
   gridInsets: Insets;
 }
-
-const FIXED_LAYOUT_LINE_HEIGHT = 28;
-
-const calculateRulerSize = (
-  lines: number,
-  viewSettings: ViewSettings,
-  bookFormat: BookFormat,
-): number => {
-  if (FIXED_LAYOUT_FORMATS.has(bookFormat)) {
-    return lines * FIXED_LAYOUT_LINE_HEIGHT;
-  }
-  const fontSize = viewSettings.defaultFontSize || 16;
-  const lineHeight = viewSettings.lineHeight || 1.5;
-  return Math.round(lines * fontSize * lineHeight);
-};
 
 const ReadingRuler: React.FC<ReadingRulerProps> = ({
   bookKey,
@@ -65,18 +56,11 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPositionRef = useRef(position);
 
-  const rulerSize = calculateRulerSize(lines, viewSettings, bookFormat);
+  const rulerSize = calculateReadingRulerSize(lines, viewSettings, bookFormat);
   const baseColor = READING_RULER_COLORS[color] || READING_RULER_COLORS['yellow'];
 
   const clampPosition = useCallback(
-    (pos: number, dimension: number) => {
-      if (dimension <= 0) return Math.max(0, Math.min(100, pos));
-      const halfPct = (rulerSize / 2 / dimension) * 100;
-      if (halfPct >= 50) return 50;
-      const min = halfPct;
-      const max = 100 - halfPct;
-      return Math.max(min, Math.min(max, pos));
-    },
+    (pos: number, dimension: number) => clampReadingRulerPosition(pos, dimension, rulerSize),
     [rulerSize],
   );
 
@@ -86,6 +70,28 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       saveViewSettings(envConfig, bookKey, 'readingRulerPosition', pos, false, false);
     }, 10000),
     [envConfig, bookKey],
+  );
+
+  const setRulerPosition = useCallback(
+    (nextPosition: number, animate = false) => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+        animationTimeoutRef.current = null;
+      }
+
+      setShouldAnimate(animate);
+      setCurrentPosition(nextPosition);
+      currentPositionRef.current = nextPosition;
+      throttledSave(nextPosition);
+
+      if (animate) {
+        animationTimeoutRef.current = setTimeout(() => {
+          setShouldAnimate(false);
+          animationTimeoutRef.current = null;
+        }, 650);
+      }
+    },
+    [throttledSave],
   );
 
   // Track container size for overlay calculations
@@ -203,17 +209,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         containerDimension,
       );
 
-      // Clear any existing animation timeout
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-
-      // Enable animation, update position, then disable animation after transition
-      setShouldAnimate(true);
-      setCurrentPosition(targetPosition);
-      currentPositionRef.current = targetPosition;
-      throttledSave(targetPosition);
-      animationTimeoutRef.current = setTimeout(() => setShouldAnimate(false), 650);
+      setRulerPosition(targetPosition, true);
     };
 
     const currentPage = progress.pageinfo.current;
@@ -240,7 +236,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     viewSettings.marginLeftPx,
     viewSettings.marginRightPx,
     rulerSize,
-    throttledSave,
+    setRulerPosition,
   ]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -279,9 +275,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       if (!isDragging.current) return;
       isDragging.current = false;
       e.currentTarget.releasePointerCapture(e.pointerId);
-      throttledSave(currentPosition);
+      throttledSave(currentPositionRef.current);
     },
-    [currentPosition, throttledSave],
+    [throttledSave],
   );
 
   useEffect(() => {
@@ -289,11 +285,40 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     if (!dimension || isDragging.current) return;
     const clamped = clampPosition(currentPositionRef.current, dimension);
     if (clamped !== currentPositionRef.current) {
-      setCurrentPosition(clamped);
-      currentPositionRef.current = clamped;
-      throttledSave(clamped);
+      setRulerPosition(clamped);
     }
-  }, [containerSize.width, containerSize.height, isVertical, clampPosition, throttledSave]);
+  }, [containerSize.width, containerSize.height, isVertical, clampPosition, setRulerPosition]);
+
+  useEffect(() => {
+    const handleMove = (event: CustomEvent) => {
+      const detail = (event.detail ?? {}) as {
+        bookKey?: string;
+        direction?: 'backward' | 'forward';
+      };
+
+      if (detail.bookKey !== bookKey || !detail.direction || isDragging.current) return;
+
+      const dimension = isVertical
+        ? (containerRef.current?.clientWidth ?? containerSize.width)
+        : (containerRef.current?.clientHeight ?? containerSize.height);
+
+      if (!dimension) return;
+
+      const nextPosition = stepReadingRulerPosition(
+        currentPositionRef.current,
+        dimension,
+        rulerSize,
+        detail.direction,
+      );
+
+      setRulerPosition(nextPosition, true);
+    };
+
+    eventDispatcher.on('reading-ruler-move', handleMove);
+    return () => {
+      eventDispatcher.off('reading-ruler-move', handleMove);
+    };
+  }, [bookKey, containerSize.height, containerSize.width, isVertical, rulerSize, setRulerPosition]);
 
   const fadeOpacity = Math.min(0.9, opacity);
 
@@ -322,6 +347,13 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   // Animation transition for smooth auto-positioning
   const getTransitionStyle = (property: 'left' | 'top') =>
     shouldAnimate ? `${property} 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none';
+
+  const dragHandleProps = {
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerCancel: handlePointerUp,
+  };
 
   if (isVertical) {
     // Vertical ruler (for vertical writing mode - moves left/right)
@@ -354,7 +386,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         {/* Vertical ruler */}
         <div
           className={clsx(
-            'ruler pointer-events-auto absolute bottom-0 top-0 my-2 cursor-col-resize touch-none rounded-2xl',
+            'ruler pointer-events-none absolute bottom-0 top-0 my-2 rounded-2xl',
             color === 'transparent' ? 'border-base-content/55 border' : '',
           )}
           style={{
@@ -368,13 +400,16 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
                 }
               : backdropFilterStyle),
           }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
         >
-          {/* extended touch area */}
-          <div className='absolute inset-y-0 -left-2 -right-2 touch-none' />
+          {/* Keep the ruler body pass-through so text inside stays selectable. */}
+          <div
+            className='pointer-events-auto absolute inset-y-0 -left-2 w-4 cursor-col-resize touch-none'
+            {...dragHandleProps}
+          />
+          <div
+            className='pointer-events-auto absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none'
+            {...dragHandleProps}
+          />
         </div>
       </div>
     );
@@ -410,7 +445,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       {/* Horizontal ruler */}
       <div
         className={clsx(
-          'ruler pointer-events-auto absolute left-0 right-0 mx-2 cursor-row-resize touch-none rounded-2xl',
+          'ruler pointer-events-none absolute left-0 right-0 mx-2 rounded-2xl',
           color === 'transparent' ? 'border-base-content/55 border' : '',
         )}
         style={{
@@ -424,13 +459,15 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
               }
             : backdropFilterStyle),
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
       >
-        {/* Extended touch area */}
-        <div className='absolute inset-x-0 -bottom-2 -top-2 touch-none' />
+        <div
+          className='pointer-events-auto absolute inset-x-0 -top-2 h-4 cursor-row-resize touch-none'
+          {...dragHandleProps}
+        />
+        <div
+          className='pointer-events-auto absolute inset-x-0 -bottom-2 h-4 cursor-row-resize touch-none'
+          {...dragHandleProps}
+        />
       </div>
     </div>
   );
