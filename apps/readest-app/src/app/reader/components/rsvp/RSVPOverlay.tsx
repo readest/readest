@@ -457,7 +457,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         <button
           aria-label={_('Close Speed Reading')}
           title={_('Close')}
-          className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-gray-500/20 active:scale-95'
+          className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-gray-500/20'
           onClick={onClose}
         >
           <IoClose className='h-5 w-5' />
@@ -466,7 +466,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         {/* Chapter selector */}
         <div className='relative min-w-0 flex-1'>
           <button
-            className='flex w-full items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20 active:scale-[0.98]'
+            className='flex w-full items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20'
             onClick={() => setShowChapterDropdown(!showChapterDropdown)}
           >
             <span className='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left'>
@@ -513,7 +513,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         {/* WPM selector */}
         <div className='relative shrink-0'>
           <button
-            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20 active:scale-[0.98]'
+            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20'
             onClick={() => setShowWpmDropdown(!showWpmDropdown)}
             aria-label={_('Select reading speed')}
             title={_('Select reading speed')}
