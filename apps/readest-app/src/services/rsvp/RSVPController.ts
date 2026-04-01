@@ -32,6 +32,7 @@ export class RSVPController extends EventTarget {
   };
 
   private anchorToHref: Map<string, string> = new Map();
+  private basePathToHref: Map<string, string> = new Map();
   private _chapterMarkers: Array<{ index: number; href: string }> = [];
   private _allWords: RsvpWord[] = [];
   private _allMarkers: Array<{ index: number; href: string }> = [];
@@ -101,9 +102,14 @@ export class RSVPController extends EventTarget {
 
   setChapters(hrefs: string[]): void {
     this.anchorToHref.clear();
+    this.basePathToHref.clear();
     for (const href of hrefs) {
       const fragment = href.split('#')[1];
       if (fragment) this.anchorToHref.set(fragment, href);
+      const basePath = href.split('#')[0];
+      if (basePath && !this.basePathToHref.has(basePath)) {
+        this.basePathToHref.set(basePath, href);
+      }
     }
   }
 
@@ -743,8 +749,13 @@ export class RSVPController extends EventTarget {
       const { doc, index: docIndex } = content as { doc: Document; index: number };
       if (!doc?.body) continue;
 
-      // Each spine document is a chapter boundary
-      this._chapterMarkers.push({ index: runningIndex, href: String(docIndex) });
+      // Each spine document is a chapter boundary; map spine index to TOC href when available
+      // section.id holds the spine item's file path (e.g. 'OPS/chapter01.xhtml')
+      const sectionId = this.view.book?.sections?.[docIndex]?.id;
+      const tocHref = sectionId
+        ? (this.basePathToHref.get(sectionId) ?? String(docIndex))
+        : String(docIndex);
+      this._chapterMarkers.push({ index: runningIndex, href: tocHref });
 
       const words = this.extractWordsFromElement(doc.body, doc, docIndex);
       allWords.push(...words);
