@@ -117,16 +117,16 @@ export const usePagination = (
     const bookData = getBookData(bookKey);
     if (!viewState?.inited || !bookData) return;
 
+    const dispatchReadingRulerMove = (side: PaginationSide) => {
+      eventDispatcher.dispatch('reading-ruler-move', {
+        bookKey,
+        direction: getReadingRulerMoveDirection(side, viewRef.current?.book.dir),
+      });
+    };
+
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
-        const dispatchReadingRulerMove = (side: PaginationSide) => {
-          eventDispatcher.dispatch('reading-ruler-move', {
-            bookKey,
-            direction: getReadingRulerMoveDirection(side, viewRef.current?.book.dir),
-          });
-        };
-
         if (msg.data.type === 'iframe-single-click') {
           const viewElement = containerRef.current;
           if (viewElement) {
@@ -218,8 +218,16 @@ export const usePagination = (
         const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
+          if (viewSettings.readingRulerEnabled) {
+            dispatchReadingRulerMove('up');
+            return;
+          }
           viewPagination(viewRef.current, viewSettings, 'up');
         } else if (keyName === 'VolumeDown') {
+          if (viewSettings.readingRulerEnabled) {
+            dispatchReadingRulerMove('down');
+            return;
+          }
           viewPagination(viewRef.current, viewSettings, 'down');
         }
       } else if (
