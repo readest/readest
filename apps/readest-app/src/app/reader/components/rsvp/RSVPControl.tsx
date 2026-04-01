@@ -383,11 +383,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const view = getView(bookKey);
       if (!view) return;
 
-      // Navigate to chapter
-      view.goTo(href);
-
-      // Wait for navigation, then reload RSVP content starting at the selected chapter
-      setTimeout(() => {
+      const onRelocate = () => {
+        view.removeEventListener('relocate', onRelocate);
         const controller = controllerRef.current;
         if (controller) {
           const progress = getProgress(bookKey);
@@ -396,7 +393,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
           }
           controller.loadNextPageContent();
         }
-      }, 500);
+      };
+      view.addEventListener('relocate', onRelocate);
+      view.goTo(href);
     },
     [bookKey, getProgress, getView],
   );
@@ -405,21 +404,16 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     const view = getView(bookKey);
     if (!view) return;
 
-    // Remove RSVP highlight when moving to next page
     removeRsvpHighlight();
 
-    // RSVP extracts ALL words from the current section via renderer.getContents().
-    // When RSVP runs out of words and calls this function, it means the entire
-    // chapter/section has been read, so we need to go to the next section.
     const indexBefore = view.renderer.primaryIndex;
-    await view.renderer.nextSection?.();
 
-    // Wait for section change, then load new content
-    setTimeout(() => {
+    const onRelocate = () => {
+      view.removeEventListener('relocate', onRelocate);
       const controller = controllerRef.current;
       if (!controller) return;
 
-      // Pause at the end of the book instead of restarting
+      // Pause at the end of the book instead of advancing
       if (view.renderer.primaryIndex === indexBefore) {
         controller.pause();
         return;
@@ -430,7 +424,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
         controller.setCurrentCfi(progress.location);
       }
       controller.loadNextPageContent();
-    }, 500);
+    };
+    view.addEventListener('relocate', onRelocate);
+    await view.renderer.nextSection?.();
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
   // Get current chapter info
