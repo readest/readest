@@ -237,15 +237,13 @@ export class RSVPController extends EventTarget {
     this.state = {
       ...this.state,
       active: true,
-      playing: false,
+      playing: true,
       words,
       currentIndex: clampedStart,
     };
     this.emitStateChange();
 
     this.startCountdown(() => {
-      this.state.playing = true;
-      this.emitStateChange();
       this.scheduleNextWord();
     });
   }
@@ -259,9 +257,9 @@ export class RSVPController extends EventTarget {
 
   resume(): void {
     if (!this.state.active) return;
+    this.state.playing = true;
+    this.emitStateChange();
     this.startCountdown(() => {
-      this.state.playing = true;
-      this.emitStateChange();
       this.scheduleNextWord();
     });
   }
@@ -522,9 +520,9 @@ export class RSVPController extends EventTarget {
     this.emitStateChange();
 
     if (wasPlaying) {
+      this.state.playing = true;
+      this.emitStateChange();
       this.startCountdown(() => {
-        this.state.playing = true;
-        this.emitStateChange();
         this.scheduleNextWord();
       });
     }
