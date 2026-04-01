@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { RSVPController } from '@/services/rsvp/RSVPController';
 import { FoliateView } from '@/types/view';
 
@@ -26,22 +26,18 @@ function makeDoc(text: string): Document {
     },
   } as unknown as Document;
 
-  // Make ownerDocument point back to doc
   (body as unknown as { ownerDocument: Document }).ownerDocument = doc;
   (textNode as unknown as { ownerDocument: Document }).ownerDocument = doc;
   return doc;
 }
 
-function createMockView(sections: Array<{ id: string }>, docs: Document[]): FoliateView {
+function createMockView(primaryIndex: number, docs: Document[]): FoliateView {
   return {
     renderer: {
-      primaryIndex: 0,
+      primaryIndex,
       getContents: vi.fn().mockReturnValue(docs.map((doc, i) => ({ doc, index: i }))),
     },
-    book: {
-      sections,
-      toc: [],
-    },
+    book: { toc: [] },
     language: { isCJK: false },
     tts: null,
     getCFI: vi.fn().mockReturnValue('epubcfi(/6/4!/4/2/1:0)'),
@@ -50,70 +46,42 @@ function createMockView(sections: Array<{ id: string }>, docs: Document[]): Foli
 }
 
 describe('RSVPController', () => {
-  describe('setChapters + extractWordsWithRanges', () => {
-    test('getChapterHrefAtIndex returns real TOC href after chapter advance', () => {
+  describe('start()', () => {
+    test('extracts words from primary spine document only', () => {
+      const ch1Doc = makeDoc('Hello world');
+      const ch2Doc = makeDoc('Foo bar baz');
+      const view = createMockView(0, [ch1Doc, ch2Doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      controller.start();
+
+      // Should only have words from doc at primaryIndex 0
+      expect(controller.currentState.words.length).toBe(2);
+      expect(controller.currentState.words[0]!.text).toBe('Hello');
+      expect(controller.currentState.words[1]!.text).toBe('world');
+    });
+
+    test('sets active state after start', () => {
+      const doc = makeDoc('one two three');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      controller.start();
+
+      expect(controller.currentState.active).toBe(true);
+      expect(controller.currentState.currentIndex).toBe(0);
+    });
+
+    test('uses secondary doc when primaryIndex is 1', () => {
       const ch1Doc = makeDoc('Hello world');
       const ch2Doc = makeDoc('Foo bar');
-
-      const view = createMockView(
-        [{ id: 'OEBPS/chapter01.html' }, { id: 'OEBPS/chapter02.html' }],
-        [ch1Doc, ch2Doc],
-      );
-
+      const view = createMockView(1, [ch1Doc, ch2Doc]);
       const controller = new RSVPController(view, 'test-book-abc123');
-      controller.setChapters(['OEBPS/chapter01.html', 'OEBPS/chapter02.html']);
-
-      // start() calls extractWordsWithRanges() internally, which should now map
-      // spine docIndex 0 → 'OEBPS/chapter01.html' and docIndex 1 → 'OEBPS/chapter02.html'
-      controller.start();
-
-      // After start, chapter 0 is active; the marker at index 0 should have a real TOC href
-      const hrefCh1 = controller.getChapterHrefAtIndex(0);
-      expect(hrefCh1).toBe('OEBPS/chapter01.html');
-    });
-
-    test('getChapterHrefAtIndex returns correct TOC href when first TOC item has a fragment', () => {
-      const ch1Doc = makeDoc('Intro text');
-      const ch2Doc = makeDoc('Chapter two text');
-
-      const view = createMockView(
-        [{ id: 'OEBPS/chapter01.html' }, { id: 'OEBPS/chapter02.html' }],
-        [ch1Doc, ch2Doc],
-      );
-
-      const controller = new RSVPController(view, 'test-book-abc123');
-      // TOC has chapter02 with a fragment — basePathToHref should map 'OEBPS/chapter02.html' → 'OEBPS/chapter02.html#start'
-      controller.setChapters(['OEBPS/chapter01.html', 'OEBPS/chapter02.html#start']);
 
       controller.start();
 
-      const hrefCh1 = controller.getChapterHrefAtIndex(0);
-      expect(hrefCh1).toBe('OEBPS/chapter01.html');
-    });
-  });
-
-  describe('setChapters', () => {
-    let controller: RSVPController;
-
-    beforeEach(() => {
-      const doc = makeDoc('word');
-      const view = createMockView([{ id: 'ch1.html' }], [doc]);
-      controller = new RSVPController(view, 'test-book-abc123');
-    });
-
-    test('basePathToHref maps base path to first TOC href (no fragment)', () => {
-      controller.setChapters(['ch1.html', 'ch2.html']);
-      // Internal: we verify behavior via getChapterHrefAtIndex after start()
-      // (direct field access not possible; behavior tested through observable output)
-      expect(() => controller.setChapters(['ch1.html'])).not.toThrow();
-    });
-
-    test('does not overwrite first TOC href for a base path when called with multiple hrefs for same base', () => {
-      // Two TOC items pointing to same file but different anchors
-      controller.setChapters(['ch1.html#intro', 'ch1.html#section2']);
-      // Should store ch1.html → 'ch1.html#intro' (first one wins)
-      // Verifiable indirectly via start() behavior
-      expect(() => controller.setChapters(['ch1.html#intro', 'ch1.html#section2'])).not.toThrow();
+      expect(controller.currentState.words.length).toBe(2);
+      expect(controller.currentState.words[0]!.text).toBe('Foo');
     });
   });
 });

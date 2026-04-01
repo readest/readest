@@ -225,9 +225,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
   }, [state.active, controller, onClose]);
 
-  // Derive the current chapter from markers as playback advances through TOC sections
-  const effectiveChapterHref =
-    controller.getChapterHrefAtIndex(state.currentIndex) || currentChapterHref;
+  const effectiveChapterHref = currentChapterHref;
 
   // Word display helpers
   const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
