@@ -47,16 +47,28 @@ function SyncAnnotations:parseDatetimeToMs(dt)
     return os.time() * 1000
 end
 
+function SyncAnnotations:parseISODatetime(dt)
+    if not dt then return os.time() end
+    local y, m, d, h, min, s = dt:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+    if y then
+        return os.time({
+            year = tonumber(y), month = tonumber(m), day = tonumber(d),
+            hour = tonumber(h), min = tonumber(min), sec = tonumber(s),
+        })
+    end
+    return os.time()
+end
+
 function SyncAnnotations:generateNoteId(book_hash, note_type, pos0, pos1)
     local raw = "ko:" .. book_hash .. ":" .. note_type .. ":" .. (pos0 or "") .. ":" .. (pos1 or "")
     return sha2.md5(raw):sub(1, 7)
 end
 
-function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
+function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full_sync)
     local annotations = ui.annotation and ui.annotation.annotations
     if not annotations then return {} end
 
-    local last_sync = settings.last_notes_sync_at or 0
+    local last_sync = full_sync and 0 or (settings.last_notes_sync_at or 0)
 
     local notes = {}
     for _, item in ipairs(annotations) do
@@ -79,7 +91,7 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
                 style = "squiggly"
             end
 
-            local id = self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
+            local id = item.id or self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
             table.insert(notes, {
                 bookHash = book_hash,
                 metaHash = meta_hash,
@@ -98,7 +110,7 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
         elseif not item.drawer and type(item.page) == "string" then
             -- Bookmark: no drawer, position in page field (xpointer string)
             local page_xp = item.page
-            local id = self:generateNoteId(book_hash, "bookmark", page_xp)
+            local id = item.id or self:generateNoteId(book_hash, "bookmark", page_xp)
             table.insert(notes, {
                 bookHash = book_hash,
                 metaHash = meta_hash,
@@ -117,13 +129,13 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash)
     return notes
 end
 
-function SyncAnnotations:push(ui, settings, client, interactive)
+function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
     local book_hash = ui.doc_settings:readSetting("partial_md5_checksum")
     local meta_hash = ui.doc_settings:readSetting("readest_sync") or {}
     meta_hash = meta_hash.meta_hash_v1
     if not book_hash or not meta_hash then return end
 
-    local annotations = self:getAnnotations(ui, settings, book_hash, meta_hash)
+    local annotations = self:getAnnotations(ui, settings, book_hash, meta_hash, full_sync)
     if #annotations == 0 then
         if interactive then
             UIManager:show(InfoMessage:new{
@@ -172,7 +184,7 @@ function SyncAnnotations:push(ui, settings, client, interactive)
     )
 end
 
-function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog, interactive)
+function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog, interactive, full_sync)
     if ui.document.info.has_pages then
         if interactive then
             UIManager:show(InfoMessage:new{
@@ -185,14 +197,14 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
 
     if interactive then
         UIManager:show(InfoMessage:new{
-            text = _("Pulling annotations..."),
+            text = full_sync and _("Full sync: pulling all annotations...") or _("Pulling annotations..."),
             timeout = 1,
         })
     end
 
     client:pullChanges(
         {
-            since = settings.last_notes_sync_at or 0,
+            since = full_sync and 0 or (settings.last_notes_sync_at or 0),
             type = "notes",
             book = book_hash,
             meta_hash = meta_hash,
@@ -219,19 +231,37 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 return
             end
 
-            logger.dbg("ReadestSync: Pulled annotations from sync:", data)
+            logger.dbg("ReadestSync: Pulled annotations from sync:", #data)
             local annotation_mgr = ui.annotation
             if not annotation_mgr then return end
 
-            -- Build dedup sets: annotations by pos0|pos1, bookmarks by page xpointer
+            -- Build dedup sets: by ID, by pos0|pos1 for annotations, by page xpointer for bookmarks
+            local existing_ids = {}
             local existing_annotations = {}
             local existing_bookmarks = {}
             for _, item in ipairs(annotation_mgr.annotations) do
+                -- Use stored id if available
+                if item.id then
+                    existing_ids[item.id] = true
+                end
                 if item.drawer then
-                    local key = tostring(item.pos0) .. "|" .. tostring(item.pos1 or "")
+                    local pos0 = item.pos0
+                    local pos1 = item.pos1
+                    if type(pos0) == "table" then pos0 = nil end
+                    if type(pos1) == "table" then pos1 = nil end
+                    local key = tostring(pos0) .. "|" .. tostring(pos1 or "")
                     existing_annotations[key] = true
+                    -- Also generate ID for annotations without id
+                    if not item.id and pos0 then
+                        local id = self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
+                        existing_ids[id] = true
+                    end
                 elseif type(item.page) == "string" then
                     existing_bookmarks[item.page] = true
+                    if not item.id then
+                        local id = self:generateNoteId(book_hash, "bookmark", item.page)
+                        existing_ids[id] = true
+                    end
                 end
             end
 
@@ -244,18 +274,31 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 local xp0 = note.xpointer0
                 if not xp0 then goto continue end
 
+                -- Deduplicate by server-provided ID
+                if note.id and existing_ids[note.id] then goto continue end
+
                 local note_type = note.type
                 local item
+
+                local created = self:parseISODatetime(note.created_at)
+                local updated = self:parseISODatetime(note.updated_at) or created
+                local datetime_str = os.date("%Y-%m-%d %H:%M:%S", created)
+                local datetime_updated_str = os.date("%Y-%m-%d %H:%M:%S", updated)
+
+                -- Resolve KOReader page number from xpointer
+                local pageno = ui.document:getPageFromXPointer(xp0) or note.page
 
                 if note_type == "bookmark" then
                     if existing_bookmarks[xp0] then goto continue end
 
                     item = {
+                        id = note.id,
                         page = xp0,
                         text = note.text or "",
                         note = note.note or "",
-                        pageno = note.page,
-                        datetime = os.date("%Y-%m-%d %H:%M:%S"),
+                        pageno = pageno,
+                        datetime = datetime_str,
+                        datetime_updated = datetime_updated_str,
                     }
                     existing_bookmarks[xp0] = true
                 else
@@ -271,6 +314,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                     end
 
                     item = {
+                        id = note.id,
                         pos0 = xp0,
                         pos1 = xp1 or xp0,
                         page = xp0,
@@ -278,8 +322,9 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                         note = note.note or "",
                         drawer = drawer,
                         color = READEST_TO_KO_COLOR[note.color] or "yellow",
-                        pageno = note.page,
-                        datetime = os.date("%Y-%m-%d %H:%M:%S"),
+                        pageno = pageno,
+                        datetime = datetime_str,
+                        datetime_updated = datetime_updated_str,
                     }
                     existing_annotations[key] = true
                 end

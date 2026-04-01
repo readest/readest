@@ -137,6 +137,15 @@ function ReadestSync:addToMainMenu(menu_items)
                 callback = function()
                     self:pullBookNotes(true)
                 end,
+            },
+            {
+                text = _("Full sync all annotations"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
+                end,
+                callback = function()
+                    self:fullSyncBookNotes()
+                end,
                 separator = true,
             },
             {
@@ -227,22 +236,22 @@ end
 
 -- ── Annotation sync ────────────────────────────────────────────────
 
-function ReadestSync:pushBookNotes(interactive)
-    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookNotes(interactive) end) then
+function ReadestSync:pushBookNotes(interactive, full_sync)
+    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookNotes(interactive, full_sync) end) then
         return
     end
 
     local client = self:ensureClient(interactive)
     if not client then return end
 
-    SyncAnnotations:push(self.ui, self.settings, client, interactive)
+    SyncAnnotations:push(self.ui, self.settings, client, interactive, full_sync)
 end
 
-function ReadestSync:pullBookNotes(interactive)
+function ReadestSync:pullBookNotes(interactive, full_sync)
     local book_hash, meta_hash = self:getBookIdentifiers()
     if not book_hash or not meta_hash then return end
 
-    if NetworkMgr:willRerunWhenOnline(function() self:pullBookNotes(interactive) end) then
+    if NetworkMgr:willRerunWhenOnline(function() self:pullBookNotes(interactive, full_sync) end) then
         return
     end
 
@@ -250,8 +259,14 @@ function ReadestSync:pullBookNotes(interactive)
     if not client then return end
 
     SyncAnnotations:pull(
-        self.ui, self.settings, client, book_hash, meta_hash, self.dialog, interactive
+        self.ui, self.settings, client, book_hash, meta_hash, self.dialog, interactive, full_sync
     )
+end
+
+function ReadestSync:fullSyncBookNotes()
+    -- Push all annotations first, then pull all
+    self:pushBookNotes(true, true)
+    self:pullBookNotes(true, true)
 end
 
 -- ── Event handlers ─────────────────────────────────────────────────
