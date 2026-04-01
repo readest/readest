@@ -16,7 +16,7 @@ const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 
 export class RSVPController extends EventTarget {
   private view: FoliateView;
-  private _bookKey: string;
+  private bookKey: string;
   private bookId: string; // Book hash without session suffix, for persistent storage
   private currentCfi: string | null = null;
 
@@ -38,7 +38,7 @@ export class RSVPController extends EventTarget {
   constructor(view: FoliateView, bookKey: string) {
     super();
     this.view = view;
-    this._bookKey = bookKey;
+    this.bookKey = bookKey;
     // Extract book ID (hash) from bookKey format: "{hash}-{sessionId}"
     // Use only the hash for persistent position storage across sessions
     this.bookId = bookKey.split('-')[0] || bookKey;
