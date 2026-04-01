@@ -107,6 +107,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
+  const isDraggingProgressBar = useRef(false);
+  const wasPlayingBeforeDrag = useRef(false);
+  const [isProgressBarDragging, setIsProgressBarDragging] = useState(false);
   const SWIPE_THRESHOLD = 50;
   const TAP_THRESHOLD = 10;
 
@@ -395,23 +398,32 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     if (wasPlaying) setTimeout(() => controller.resume(), 50);
   };
 
-  // Progress bar click handler
-  const handleProgressBarClick = (event: React.MouseEvent) => {
-    const target = event.currentTarget as HTMLElement;
+  const getProgressBarPercentage = (clientX: number, target: HTMLElement): number => {
     const rect = target.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const percentage = (clickX / rect.width) * 100;
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    return (x / rect.width) * 100;
+  };
 
-    const wasPlaying = state.playing;
-    if (wasPlaying) {
-      controller.pause();
-    }
+  const handleProgressBarPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDraggingProgressBar.current = true;
+    setIsProgressBarDragging(true);
+    wasPlayingBeforeDrag.current = state.playing;
+    if (state.playing) controller.pause();
+    controller.seekToPosition(getProgressBarPercentage(event.clientX, event.currentTarget));
+  };
 
-    controller.seekToPosition(percentage);
+  const handleProgressBarPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingProgressBar.current) return;
+    controller.seekToPosition(getProgressBarPercentage(event.clientX, event.currentTarget));
+  };
 
-    if (wasPlaying) {
-      setTimeout(() => controller.resume(), 50);
-    }
+  const handleProgressBarPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingProgressBar.current) return;
+    isDraggingProgressBar.current = false;
+    setIsProgressBarDragging(false);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (wasPlayingBeforeDrag.current) setTimeout(() => controller.resume(), 50);
   };
 
   const handleChapterSelect = (href: string) => {
@@ -703,21 +715,24 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             aria-valuemin={0}
             aria-valuemax={100}
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
-            onClick={handleProgressBarClick}
+            onPointerDown={handleProgressBarPointerDown}
+            onPointerMove={handleProgressBarPointerMove}
+            onPointerUp={handleProgressBarPointerUp}
+            onPointerCancel={handleProgressBarPointerUp}
             onKeyDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.key === 'ArrowLeft') controller.skipBackward();
               else if (e.key === 'ArrowRight') controller.skipForward();
             }}
-            title={_('Click to seek')}
+            title={_('Drag to seek')}
           >
             <div
-              className='absolute left-0 top-0 h-full rounded transition-[width] duration-100'
+              className={`absolute left-0 top-0 h-full rounded ${isProgressBarDragging ? '' : 'transition-[width] duration-100'}`}
               style={{ width: `${state.progress}%`, backgroundColor: accentColor }}
             />
             <div
-              className='absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow transition-[left] duration-100'
+              className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow ${isProgressBarDragging ? '' : 'transition-[left] duration-100'}`}
               style={{ left: `${state.progress}%`, backgroundColor: accentColor }}
             />
           </div>
