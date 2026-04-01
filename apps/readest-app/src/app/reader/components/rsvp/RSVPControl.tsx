@@ -262,18 +262,16 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
           // Navigate to the saved position's section
           view.goTo(cfi);
 
-          // Wait for navigation, then reload and start RSVP
+          // Wait for navigation, then start RSVP — start() handles word extraction
+          // and position recovery from storage directly, so loadNextPageContent()
+          // must not be called here (it would clear the saved position first)
           setTimeout(() => {
             const progress = getProgress(bookKey);
             if (progress?.location) {
               controller.setCurrentCfi(progress.location);
             }
-            controller.loadNextPageContent();
-            // Small delay to ensure content is loaded
-            setTimeout(() => {
-              controller.start();
-              setIsActive(true);
-            }, 100);
+            controller.start();
+            setIsActive(true);
           }, 500);
         }
       };
