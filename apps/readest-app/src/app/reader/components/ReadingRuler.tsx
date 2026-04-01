@@ -52,6 +52,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const isDragging = useRef(false);
+  const dragPointerOffsetRef = useRef(0);
   const lastPageRef = useRef<number | null>(null);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPositionRef = useRef(position);
@@ -239,14 +240,28 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     setRulerPosition,
   ]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    isDragging.current = true;
-    // Disable animation during manual drag for immediate feedback
-    setShouldAnimate(false);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }, []);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging.current = true;
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const dimension = isVertical ? rect.width : rect.height;
+        const pointerPosition = isVertical ? e.clientX - rect.left : e.clientY - rect.top;
+        const rulerCenter = (currentPositionRef.current / 100) * dimension;
+        dragPointerOffsetRef.current = pointerPosition - rulerCenter;
+      } else {
+        dragPointerOffsetRef.current = 0;
+      }
+
+      // Disable animation during manual drag for immediate feedback
+      setShouldAnimate(false);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [isVertical],
+  );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
@@ -258,10 +273,10 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       let newPosition: number;
 
       if (isVertical) {
-        const relativeX = e.clientX - rect.left;
+        const relativeX = e.clientX - rect.left - dragPointerOffsetRef.current;
         newPosition = clampPosition((relativeX / rect.width) * 100, rect.width);
       } else {
-        const relativeY = e.clientY - rect.top;
+        const relativeY = e.clientY - rect.top - dragPointerOffsetRef.current;
         newPosition = clampPosition((relativeY / rect.height) * 100, rect.height);
       }
       setCurrentPosition(newPosition);
@@ -274,6 +289,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     (e: React.PointerEvent) => {
       if (!isDragging.current) return;
       isDragging.current = false;
+      dragPointerOffsetRef.current = 0;
       e.currentTarget.releasePointerCapture(e.pointerId);
       throttledSave(currentPositionRef.current);
     },

@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ReadingRuler from '@/app/reader/components/ReadingRuler';
 import { ViewSettings } from '@/types/book';
@@ -26,6 +26,9 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 };
 
+HTMLElement.prototype.setPointerCapture = vi.fn();
+HTMLElement.prototype.releasePointerCapture = vi.fn();
+
 describe('ReadingRuler', () => {
   const viewSettings = {
     defaultFontSize: 16,
@@ -44,6 +47,18 @@ describe('ReadingRuler', () => {
       configurable: true,
       get: () => 800,
     });
+
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 800,
+      bottom: 1000,
+      width: 800,
+      height: 1000,
+      toJSON: () => ({}),
+    }));
   });
 
   afterEach(() => {
@@ -114,5 +129,32 @@ describe('ReadingRuler', () => {
         false,
       );
     });
+  });
+
+  it('keeps the drag handle anchored instead of snapping the ruler center to the pointer', () => {
+    const { container } = render(
+      <ReadingRuler
+        bookKey='book-1'
+        isVertical={false}
+        rtl={false}
+        lines={2}
+        position={33}
+        opacity={0.5}
+        color='transparent'
+        bookFormat='EPUB'
+        viewSettings={viewSettings}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+
+    const ruler = container.querySelector('.ruler') as HTMLDivElement;
+    const topHandle = container.querySelector('.cursor-row-resize') as HTMLDivElement;
+
+    expect(ruler.style.top).toBe('33%');
+
+    fireEvent.pointerDown(topHandle, { pointerId: 1, clientY: 306 });
+    fireEvent.pointerMove(topHandle, { pointerId: 1, clientY: 316 });
+
+    expect(ruler.style.top).toBe('34%');
   });
 });
