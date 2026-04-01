@@ -345,7 +345,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   };
 
   // Animation transition for smooth auto-positioning
-  const getTransitionStyle = (property: 'left' | 'top') =>
+  const getTransitionStyle = (property: 'left' | 'top' | 'width' | 'height') =>
     shouldAnimate ? `${property} 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none';
 
   const dragHandleProps = {
@@ -371,6 +371,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           style={{
             width: `${rulerStartPx}px`,
             opacity: fadeOpacity,
+            transition: getTransitionStyle('width'),
           }}
         />
 
@@ -380,6 +381,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
           style={{
             width: `${containerSize.width - rulerEndPx}px`,
             opacity: fadeOpacity,
+            transition: getTransitionStyle('width'),
           }}
         />
 
@@ -430,6 +432,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         style={{
           height: `${rulerStartPx}px`,
           opacity: fadeOpacity,
+          transition: getTransitionStyle('height'),
         }}
       />
 
@@ -439,6 +442,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         style={{
           height: `${containerSize.height - rulerEndPx}px`,
           opacity: fadeOpacity,
+          transition: getTransitionStyle('height'),
         }}
       />
 

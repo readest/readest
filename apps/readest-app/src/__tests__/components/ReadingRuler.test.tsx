@@ -99,7 +99,12 @@ describe('ReadingRuler', () => {
 
     await waitFor(() => {
       const ruler = container.querySelector('.ruler') as HTMLDivElement;
+      const overlays = container.querySelectorAll('.bg-base-100');
+
       expect(ruler.style.top).toBe('37.8%');
+      expect(ruler.style.transition).toContain('top 0.6s');
+      expect(overlays[0]?.getAttribute('style')).toContain('transition: height 0.6s');
+      expect(overlays[1]?.getAttribute('style')).toContain('transition: height 0.6s');
       expect(saveViewSettings).toHaveBeenCalledWith(
         {},
         'book-1',
