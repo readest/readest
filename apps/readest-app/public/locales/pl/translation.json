@@ -1170,5 +1170,12 @@
   "Text to Speech": "Tekst na mowę",
   "Zoom": "Powiększenie",
   "Window": "Okno",
-  "Your Bookshelf": "Twoja półka z książkami"
+  "Your Bookshelf": "Twoja półka z książkami",
+  "TTS": "Czytanie na głos",
+  "Media Info": "Informacje o mediach",
+  "Update Frequency": "Częstotliwość aktualizacji",
+  "Every Sentence": "Co zdanie",
+  "Every Paragraph": "Co akapit",
+  "Every Chapter": "Co rozdział",
+  "TTS Media Info Update Frequency": "Częstotliwość aktualizacji informacji o mediach TTS"
 }

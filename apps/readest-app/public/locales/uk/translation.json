@@ -1170,5 +1170,12 @@
   "Text to Speech": "Озвучення",
   "Zoom": "Масштаб",
   "Window": "Вікно",
-  "Your Bookshelf": "Ваша книжкова полиця"
+  "Your Bookshelf": "Ваша книжкова полиця",
+  "TTS": "Озвучування",
+  "Media Info": "Медіа-інформація",
+  "Update Frequency": "Частота оновлення",
+  "Every Sentence": "Кожне речення",
+  "Every Paragraph": "Кожен абзац",
+  "Every Chapter": "Кожен розділ",
+  "TTS Media Info Update Frequency": "Частота оновлення медіа-інформації TTS"
 }

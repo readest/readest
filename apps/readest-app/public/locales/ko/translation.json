@@ -1131,5 +1131,12 @@
   "Text to Speech": "텍스트 음성 변환",
   "Zoom": "확대/축소",
   "Window": "창",
-  "Your Bookshelf": "내 책장"
+  "Your Bookshelf": "내 책장",
+  "TTS": "음성 읽기",
+  "Media Info": "미디어 정보",
+  "Update Frequency": "업데이트 빈도",
+  "Every Sentence": "문장마다",
+  "Every Paragraph": "단락마다",
+  "Every Chapter": "챕터마다",
+  "TTS Media Info Update Frequency": "TTS 미디어 정보 업데이트 빈도"
 }

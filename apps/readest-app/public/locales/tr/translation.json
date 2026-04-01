@@ -1144,5 +1144,12 @@
   "Text to Speech": "Metinden konuşmaya",
   "Zoom": "Yakınlaştırma",
   "Window": "Pencere",
-  "Your Bookshelf": "Kitaplığınız"
+  "Your Bookshelf": "Kitaplığınız",
+  "TTS": "Sesli Okuma",
+  "Media Info": "Medya Bilgisi",
+  "Update Frequency": "Güncelleme Sıklığı",
+  "Every Sentence": "Her Cümle",
+  "Every Paragraph": "Her Paragraf",
+  "Every Chapter": "Her Bölüm",
+  "TTS Media Info Update Frequency": "TTS Medya Bilgisi Güncelleme Sıklığı"
 }

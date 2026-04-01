@@ -1170,5 +1170,12 @@
   "Text to Speech": "Besedilo v govor",
   "Zoom": "Povečava",
   "Window": "Okno",
-  "Your Bookshelf": "Vaša knjižna polica"
+  "Your Bookshelf": "Vaša knjižna polica",
+  "TTS": "Branje na glas",
+  "Media Info": "Podatki o medijih",
+  "Update Frequency": "Pogostost posodabljanja",
+  "Every Sentence": "Vsak stavek",
+  "Every Paragraph": "Vsak odstavek",
+  "Every Chapter": "Vsako poglavje",
+  "TTS Media Info Update Frequency": "Pogostost posodabljanja podatkov o medijih TTS"
 }

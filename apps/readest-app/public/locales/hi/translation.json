@@ -1144,5 +1144,12 @@
   "Text to Speech": "पाठ से वाक्",
   "Zoom": "ज़ूम",
   "Window": "विंडो",
-  "Your Bookshelf": "आपकी किताबों की अलमारी"
+  "Your Bookshelf": "आपकी किताबों की अलमारी",
+  "TTS": "पाठ से वाक्",
+  "Media Info": "मीडिया जानकारी",
+  "Update Frequency": "अपडेट आवृत्ति",
+  "Every Sentence": "हर वाक्य",
+  "Every Paragraph": "हर पैराग्राफ",
+  "Every Chapter": "हर अध्याय",
+  "TTS Media Info Update Frequency": "TTS मीडिया जानकारी अपडेट आवृत्ति"
 }

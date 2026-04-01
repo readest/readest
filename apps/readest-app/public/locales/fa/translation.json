@@ -1144,5 +1144,12 @@
   "Text to Speech": "تبدیل متن به گفتار",
   "Zoom": "بزرگ‌نمایی",
   "Window": "پنجره",
-  "Your Bookshelf": "قفسه کتاب شما"
+  "Your Bookshelf": "قفسه کتاب شما",
+  "TTS": "تبدیل متن به گفتار",
+  "Media Info": "اطلاعات رسانه",
+  "Update Frequency": "تناوب به‌روزرسانی",
+  "Every Sentence": "هر جمله",
+  "Every Paragraph": "هر پاراگراف",
+  "Every Chapter": "هر فصل",
+  "TTS Media Info Update Frequency": "تناوب به‌روزرسانی اطلاعات رسانه TTS"
 }

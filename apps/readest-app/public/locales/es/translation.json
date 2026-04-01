@@ -1157,5 +1157,12 @@
   "Text to Speech": "Texto a voz",
   "Zoom": "Zoom",
   "Window": "Ventana",
-  "Your Bookshelf": "Tu estantería"
+  "Your Bookshelf": "Tu estantería",
+  "TTS": "Lectura en voz alta",
+  "Media Info": "Info multimedia",
+  "Update Frequency": "Frecuencia de actualización",
+  "Every Sentence": "Cada oración",
+  "Every Paragraph": "Cada párrafo",
+  "Every Chapter": "Cada capítulo",
+  "TTS Media Info Update Frequency": "Frecuencia de actualización de info multimedia TTS"
 }

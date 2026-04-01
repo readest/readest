@@ -1144,5 +1144,12 @@
   "Text to Speech": "Κείμενο σε ομιλία",
   "Zoom": "Ζουμ",
   "Window": "Παράθυρο",
-  "Your Bookshelf": "Η βιβλιοθήκη σου"
+  "Your Bookshelf": "Η βιβλιοθήκη σου",
+  "TTS": "Εκφώνηση",
+  "Media Info": "Πληροφορίες μέσων",
+  "Update Frequency": "Συχνότητα ενημέρωσης",
+  "Every Sentence": "Κάθε πρόταση",
+  "Every Paragraph": "Κάθε παράγραφο",
+  "Every Chapter": "Κάθε κεφάλαιο",
+  "TTS Media Info Update Frequency": "Συχνότητα ενημέρωσης πληροφοριών μέσων TTS"
 }

@@ -1131,5 +1131,12 @@
   "Text to Speech": "テキスト読み上げ",
   "Zoom": "ズーム",
   "Window": "ウィンドウ",
-  "Your Bookshelf": "あなたの本棚"
+  "Your Bookshelf": "あなたの本棚",
+  "TTS": "読み上げ",
+  "Media Info": "メディア情報",
+  "Update Frequency": "更新頻度",
+  "Every Sentence": "文ごと",
+  "Every Paragraph": "段落ごと",
+  "Every Chapter": "章ごと",
+  "TTS Media Info Update Frequency": "TTSメディア情報の更新頻度"
 }

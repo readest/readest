@@ -1131,5 +1131,12 @@
   "Text to Speech": "Chuyển văn bản thành giọng nói",
   "Zoom": "Thu phóng",
   "Window": "Cửa sổ",
-  "Your Bookshelf": "Tủ sách của bạn"
+  "Your Bookshelf": "Tủ sách của bạn",
+  "TTS": "Đọc văn bản",
+  "Media Info": "Thông tin phương tiện",
+  "Update Frequency": "Tần suất cập nhật",
+  "Every Sentence": "Mỗi câu",
+  "Every Paragraph": "Mỗi đoạn văn",
+  "Every Chapter": "Mỗi chương",
+  "TTS Media Info Update Frequency": "Tần suất cập nhật thông tin phương tiện TTS"
 }

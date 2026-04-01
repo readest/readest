@@ -1131,5 +1131,12 @@
   "Text to Speech": "文字转语音",
   "Zoom": "缩放",
   "Window": "窗口",
-  "Your Bookshelf": "你的书架"
+  "Your Bookshelf": "你的书架",
+  "TTS": "语音朗读",
+  "Media Info": "媒体信息",
+  "Update Frequency": "更新频率",
+  "Every Sentence": "每句",
+  "Every Paragraph": "每段",
+  "Every Chapter": "每章",
+  "TTS Media Info Update Frequency": "TTS 媒体信息更新频率"
 }

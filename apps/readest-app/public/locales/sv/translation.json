@@ -1144,5 +1144,12 @@
   "Text to Speech": "Text till tal",
   "Zoom": "Zoom",
   "Window": "Fönster",
-  "Your Bookshelf": "Din bokhylla"
+  "Your Bookshelf": "Din bokhylla",
+  "TTS": "Uppläsning",
+  "Media Info": "Medieinformation",
+  "Update Frequency": "Uppdateringsfrekvens",
+  "Every Sentence": "Varje mening",
+  "Every Paragraph": "Varje stycke",
+  "Every Chapter": "Varje kapitel",
+  "TTS Media Info Update Frequency": "Uppdateringsfrekvens för TTS-medieinformation"
 }

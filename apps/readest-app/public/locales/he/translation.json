@@ -1157,5 +1157,12 @@
   "Text to Speech": "טקסט לדיבור",
   "Zoom": "זום",
   "Window": "חלון",
-  "Your Bookshelf": "מדף הספרים שלך"
+  "Your Bookshelf": "מדף הספרים שלך",
+  "TTS": "הקראה",
+  "Media Info": "פרטי מדיה",
+  "Update Frequency": "תדירות עדכון",
+  "Every Sentence": "כל משפט",
+  "Every Paragraph": "כל פסקה",
+  "Every Chapter": "כל פרק",
+  "TTS Media Info Update Frequency": "תדירות עדכון פרטי מדיה TTS"
 }

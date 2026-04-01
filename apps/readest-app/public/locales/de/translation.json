@@ -1144,5 +1144,12 @@
   "Text to Speech": "Sprachausgabe",
   "Zoom": "Zoom",
   "Window": "Fenster",
-  "Your Bookshelf": "Dein Bücherregal"
+  "Your Bookshelf": "Dein Bücherregal",
+  "TTS": "Sprachausgabe",
+  "Media Info": "Medieninfo",
+  "Update Frequency": "Aktualisierungshäufigkeit",
+  "Every Sentence": "Jeden Satz",
+  "Every Paragraph": "Jeden Absatz",
+  "Every Chapter": "Jedes Kapitel",
+  "TTS Media Info Update Frequency": "TTS-Medieninfo-Aktualisierungshäufigkeit"
 }

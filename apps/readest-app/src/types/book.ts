@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { TTSMediaMetadataMode } from '@/services/tts/types';
 import { AnnotationToolType } from './annotator';
 
 export type BookFormat =
@@ -154,6 +155,7 @@ export interface BookStyle {
   backgroundTextureId: string;
   backgroundOpacity: number;
   backgroundSize: string;
+  highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
   userStylesheet: string;
@@ -234,6 +236,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsMediaMetadata: TTSMediaMetadataMode;
 }
 
 export interface TranslatorConfig {

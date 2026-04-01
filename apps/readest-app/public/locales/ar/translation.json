@@ -1196,5 +1196,12 @@
   "Text to Speech": "تحويل النص إلى كلام",
   "Zoom": "تكبير",
   "Window": "نافذة",
-  "Your Bookshelf": "رف الكتب الخاص بك"
+  "Your Bookshelf": "رف الكتب الخاص بك",
+  "TTS": "تحويل النص إلى كلام",
+  "Media Info": "معلومات الوسائط",
+  "Update Frequency": "تردد التحديث",
+  "Every Sentence": "كل جملة",
+  "Every Paragraph": "كل فقرة",
+  "Every Chapter": "كل فصل",
+  "TTS Media Info Update Frequency": "تردد تحديث معلومات وسائط TTS"
 }

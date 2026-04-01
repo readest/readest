@@ -1144,5 +1144,12 @@
   "Text to Speech": "உரையிலிருந்து பேச்சு",
   "Zoom": "பெரிதாக்கு",
   "Window": "சாளரம்",
-  "Your Bookshelf": "உங்கள் புத்தக அலமாரி"
+  "Your Bookshelf": "உங்கள் புத்தக அலமாரி",
+  "TTS": "உரை வாசிப்பு",
+  "Media Info": "ஊடக தகவல்",
+  "Update Frequency": "புதுப்பிப்பு அதிர்வெண்",
+  "Every Sentence": "ஒவ்வொரு வாக்கியமும்",
+  "Every Paragraph": "ஒவ்வொரு பத்தியும்",
+  "Every Chapter": "ஒவ்வொரு அத்தியாயமும்",
+  "TTS Media Info Update Frequency": "TTS ஊடக தகவல் புதுப்பிப்பு அதிர்வெண்"
 }

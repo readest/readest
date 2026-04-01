@@ -1144,5 +1144,12 @@
   "Text to Speech": "পাঠ থেকে বাক্য",
   "Zoom": "জুম",
   "Window": "উইন্ডো",
-  "Your Bookshelf": "আপনার বইয়ের তাক"
+  "Your Bookshelf": "আপনার বইয়ের তাক",
+  "TTS": "টেক্সট টু স্পিচ",
+  "Media Info": "মিডিয়া তথ্য",
+  "Update Frequency": "আপডেটের ফ্রিকোয়েন্সি",
+  "Every Sentence": "প্রতিটি বাক্য",
+  "Every Paragraph": "প্রতিটি অনুচ্ছেদ",
+  "Every Chapter": "প্রতিটি অধ্যায়",
+  "TTS Media Info Update Frequency": "TTS মিডিয়া তথ্য আপডেট ফ্রিকোয়েন্সি"
 }

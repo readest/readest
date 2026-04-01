@@ -1131,5 +1131,12 @@
   "Text to Speech": "อ่านออกเสียง",
   "Zoom": "ซูม",
   "Window": "หน้าต่าง",
-  "Your Bookshelf": "ชั้นหนังสือของคุณ"
+  "Your Bookshelf": "ชั้นหนังสือของคุณ",
+  "TTS": "อ่านออกเสียง",
+  "Media Info": "ข้อมูลสื่อ",
+  "Update Frequency": "ความถี่ในการอัปเดต",
+  "Every Sentence": "ทุกประโยค",
+  "Every Paragraph": "ทุกย่อหน้า",
+  "Every Chapter": "ทุกบท",
+  "TTS Media Info Update Frequency": "ความถี่ในการอัปเดตข้อมูลสื่อ TTS"
 }

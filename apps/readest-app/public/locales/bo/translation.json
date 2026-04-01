@@ -1131,5 +1131,12 @@
   "Text to Speech": "ཡི་གེ་ནས་སྒྲ།",
   "Zoom": "ཆེ་རུ་གཏོང་།",
   "Window": "སྒེའུ་ཁུང་།",
-  "Your Bookshelf": "ཁྱོད་ཀྱི་དཔེ་མཛོད།"
+  "Your Bookshelf": "ཁྱོད་ཀྱི་དཔེ་མཛོད།",
+  "TTS": "ཡི་གེ་ནས་སྒྲ",
+  "Media Info": "སྨྱན་བྱད་ཆ་འཕྲིན",
+  "Update Frequency": "གསར་སྒྱུར་ཐེངས་གྲངས",
+  "Every Sentence": "ཚིག་གྲུབ་རེ་རེ",
+  "Every Paragraph": "དུམ་མཚམས་རེ་རེ",
+  "Every Chapter": "ལེའུ་རེ་རེ",
+  "TTS Media Info Update Frequency": "TTS སྨྱན་བྱད་ཆ་འཕྲིན་གསར་སྒྱུར་ཐེངས་གྲངས"
 }

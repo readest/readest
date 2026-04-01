@@ -1144,5 +1144,12 @@
   "Text to Speech": "පෙළ කථනය",
   "Zoom": "විශාලනය",
   "Window": "කවුළුව",
-  "Your Bookshelf": "ඔබේ පොත් රාක්කය"
+  "Your Bookshelf": "ඔබේ පොත් රාක්කය",
+  "TTS": "කියවීම",
+  "Media Info": "මාධ්‍ය තොරතුරු",
+  "Update Frequency": "යාවත්කාලීන සංඛ්‍යාතය",
+  "Every Sentence": "සෑම වාක්‍යයක්ම",
+  "Every Paragraph": "සෑම ඡේදයක්ම",
+  "Every Chapter": "සෑම පරිච්ඡේදයක්ම",
+  "TTS Media Info Update Frequency": "TTS මාධ්‍ය තොරතුරු යාවත්කාලීන සංඛ්‍යාතය"
 }

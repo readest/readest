@@ -1144,5 +1144,12 @@
   "Text to Speech": "Tekst naar spraak",
   "Zoom": "Zoom",
   "Window": "Venster",
-  "Your Bookshelf": "Jouw boekenkast"
+  "Your Bookshelf": "Jouw boekenkast",
+  "TTS": "Spraak",
+  "Media Info": "Media-info",
+  "Update Frequency": "Updatefrequentie",
+  "Every Sentence": "Elke zin",
+  "Every Paragraph": "Elke alinea",
+  "Every Chapter": "Elk hoofdstuk",
+  "TTS Media Info Update Frequency": "TTS media-info updatefrequentie"
 }

@@ -1157,5 +1157,12 @@
   "Text to Speech": "Synthèse vocale",
   "Zoom": "Zoom",
   "Window": "Fenêtre",
-  "Your Bookshelf": "Votre bibliothèque"
+  "Your Bookshelf": "Votre bibliothèque",
+  "TTS": "Synthèse vocale",
+  "Media Info": "Infos média",
+  "Update Frequency": "Fréquence de mise à jour",
+  "Every Sentence": "Chaque phrase",
+  "Every Paragraph": "Chaque paragraphe",
+  "Every Chapter": "Chaque chapitre",
+  "TTS Media Info Update Frequency": "Fréquence de mise à jour des infos média TTS"
 }

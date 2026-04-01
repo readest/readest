@@ -15,6 +15,7 @@ import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
+import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { useTTSMediaSession } from './useTTSMediaSession';
@@ -47,6 +48,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const followingTTSLocationRef = useRef(true);
   const sectionChangingTimestampRef = useRef(0);
+  const previousSectionLabelRef = useRef<string | undefined>(undefined);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
@@ -134,23 +136,39 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
     const handleSpeakMark = (e: Event) => {
       const progress = getProgress(bookKey);
+      const viewSettings = getViewSettings(bookKey);
       const { sectionLabel } = progress || {};
       const mark = (e as CustomEvent<TTSMark>).detail;
+      const ttsMediaMetadata = viewSettings?.ttsMediaMetadata ?? 'sentence';
 
-      if (mediaSessionRef.current) {
+      const metadata = buildTTSMediaMetadata({
+        markText: mark?.text || '',
+        markName: mark?.name || '',
+        sectionLabel: sectionLabel || '',
+        title,
+        author,
+        ttsMediaMetadata,
+        previousSectionLabel: previousSectionLabelRef.current,
+      });
+
+      if (ttsMediaMetadata === 'chapter') {
+        previousSectionLabelRef.current = sectionLabel;
+      }
+
+      if (metadata.shouldUpdate && mediaSessionRef.current) {
         const mediaSession = mediaSessionRef.current;
         if (mediaSession instanceof TauriMediaSession) {
           mediaSession.updateMetadata({
-            title: mark?.text || '',
-            artist: sectionLabel || title,
-            album: author,
+            title: metadata.title,
+            artist: metadata.artist,
+            album: metadata.album,
             artwork: '',
           });
         } else {
           mediaSession.metadata = new MediaMetadata({
-            title: mark?.text || '',
-            artist: sectionLabel || title,
-            album: author,
+            title: metadata.title,
+            artist: metadata.artist,
+            album: metadata.album,
             artwork: [{ src: coverImageUrl || '/icon.png', sizes: '512x512', type: 'image/png' }],
           });
         }
@@ -386,6 +404,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         setShowIndicator(false);
         setShowBackToCurrentTTSLocation(false);
       }
+      previousSectionLabelRef.current = undefined;
       if (appService?.isIOSApp) {
         await invokeUseBackgroundAudio({ enabled: false });
       }
