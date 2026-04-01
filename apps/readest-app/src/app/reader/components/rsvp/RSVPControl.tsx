@@ -405,7 +405,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       // Navigate to chapter
       view.goTo(href);
 
-      // Wait for navigation, then reload RSVP content
+      // Wait for navigation, then reload RSVP content starting at the selected chapter
       setTimeout(() => {
         const controller = controllerRef.current;
         if (controller) {
@@ -413,7 +413,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
           if (progress?.location) {
             controller.setCurrentCfi(progress.location);
           }
-          controller.loadNextPageContent();
+          controller.loadNextPageContent(0, href);
         }
       }, 500);
     },

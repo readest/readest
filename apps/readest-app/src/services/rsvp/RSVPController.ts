@@ -664,13 +664,16 @@ export class RSVPController extends EventTarget {
     this.emitStateChange();
   }
 
-  loadNextPageContent(retryCount = 0): void {
+  loadNextPageContent(retryCount = 0, startHref?: string): void {
     this.clearPositionFromStorage();
 
     const allWords = this.extractWordsWithRanges();
     if (allWords.length === 0) {
       if (retryCount < 3) {
-        setTimeout(() => this.loadNextPageContent(retryCount + 1), 200 * (retryCount + 1));
+        setTimeout(
+          () => this.loadNextPageContent(retryCount + 1, startHref),
+          200 * (retryCount + 1),
+        );
         return;
       }
       this.pause();
@@ -680,9 +683,20 @@ export class RSVPController extends EventTarget {
     this._allWords = allWords;
     this._allMarkers = [...this._chapterMarkers];
 
+    // When a specific href is requested, find the matching chapter boundary
+    let startChapterIndex = 0;
+    if (startHref) {
+      const boundaries = this.getChapterBoundaries();
+      const baseHref = startHref.split('#')[0]!;
+      const idx = boundaries.findIndex(
+        (b) => b.href === startHref || b.href.split('#')[0] === baseHref,
+      );
+      if (idx >= 0) startChapterIndex = idx;
+    }
+
     const wasPlaying = this.state.playing;
     this.state.playing = false;
-    this.applyChapter(0, 0, null);
+    this.applyChapter(startChapterIndex, 0, null);
     this.emitStateChange();
 
     if (wasPlaying) {
