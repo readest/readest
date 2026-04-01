@@ -96,7 +96,7 @@ export class RSVPController extends EventTarget {
   }
 
   private loadPunctuationPauseFromStorage(): number | null {
-    const stored = localStorage.getItem(`${PUNCTUATION_PAUSE_KEY_PREFIX}${this.bookKey}`);
+    const stored = localStorage.getItem(`${PUNCTUATION_PAUSE_KEY_PREFIX}${this.bookId}`);
     if (stored) {
       const parsed = parseInt(stored, 10);
       if (!isNaN(parsed) && PUNCTUATION_PAUSE_OPTIONS.includes(parsed)) {
@@ -107,7 +107,7 @@ export class RSVPController extends EventTarget {
   }
 
   private savePunctuationPauseToStorage(pauseMs: number): void {
-    localStorage.setItem(`${PUNCTUATION_PAUSE_KEY_PREFIX}${this.bookKey}`, pauseMs.toString());
+    localStorage.setItem(`${PUNCTUATION_PAUSE_KEY_PREFIX}${this.bookId}`, pauseMs.toString());
   }
 
   setWpm(wpm: number): void {
@@ -118,7 +118,7 @@ export class RSVPController extends EventTarget {
   }
 
   private loadWpmFromStorage(): number | null {
-    const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${this.bookKey}`);
+    const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${this.bookId}`);
     if (stored) {
       const parsed = parseInt(stored, 10);
       if (!isNaN(parsed) && parsed >= MIN_WPM && parsed <= MAX_WPM) {
@@ -129,7 +129,7 @@ export class RSVPController extends EventTarget {
   }
 
   private saveWpmToStorage(wpm: number): void {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${this.bookKey}`, wpm.toString());
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${this.bookId}`, wpm.toString());
   }
 
   setCurrentCfi(cfi: string | null): void {
