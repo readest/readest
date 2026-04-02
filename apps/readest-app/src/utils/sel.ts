@@ -25,6 +25,7 @@ export interface Position {
 export interface TextSelection {
   key: string;
   text: string;
+  page: number;
   range: Range;
   index: number;
   cfi?: string;

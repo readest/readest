@@ -7,7 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { BookNote, BooknoteGroup, NoteExportConfig } from '@/types/book';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
-import { renderNoteTemplate } from '@/utils/note';
+import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
 import Dialog from '@/components/Dialog';
 
 interface ExportMarkdownDialogProps {
@@ -64,7 +64,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 {% if annotation.note %}
 **${_('Note:')}** {{ annotation.note }}
 {% endif %}
-*${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
+*${_('Page:')} {{ annotation.page }} · ${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
 {% endfor %}
 
 ---
@@ -122,10 +122,12 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         chapters: sortedGroups.map((group) => ({
           title: group.label || _('Untitled'),
           annotations: group.booknotes.map((note) => ({
+            ...note,
             text: note.text || '',
             note: note.note || '',
             style: note.style,
             color: note.color,
+            page: note.page,
             timestamp: note.updatedAt,
           })),
         })),
@@ -173,7 +175,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         for (const note of group.booknotes) {
           // Add quote
           if (exportConfig.includeQuotes && note.text) {
-            lines.push(`> ${note.text}`);
+            lines.push(formatBlockQuote(note.text));
           }
 
           // Add note
@@ -182,11 +184,19 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             lines.push(`**${_('Note')}**: ${note.note}`);
           }
 
-          // Add timestamp
+          let pageStr = '';
+          if (exportConfig.includePageNumber && note.page) {
+            pageStr = `${_('Page: {{number}}', { number: note.page })}`;
+          }
+          let timestampStr = '';
           if (exportConfig.includeTimestamp && note.updatedAt) {
             const timestamp = new Date(note.updatedAt).toLocaleString();
+            timestampStr = `${_('Time:')} ${timestamp}`;
+          }
+          if (pageStr || timestampStr) {
             lines.push('');
-            lines.push(`*${_('Time:')} ${timestamp}*`);
+            const infoStr = pageStr ? `${pageStr} · ${timestampStr}`.trim() : timestampStr;
+            lines.push(`*${infoStr}*`);
           }
 
           lines.push(exportConfig.noteSeparator);
@@ -320,6 +330,17 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                 disabled={exportConfig.useCustomTemplate}
               />
               <span className='text-sm'>{_('Notes')}</span>
+            </label>
+
+            <label className='flex cursor-pointer items-center gap-2'>
+              <input
+                type='checkbox'
+                checked={exportConfig.includePageNumber}
+                onChange={() => handleToggle('includePageNumber')}
+                className='checkbox checkbox-sm'
+                disabled={exportConfig.useCustomTemplate}
+              />
+              <span className='text-sm'>{_('Page Number')}</span>
             </label>
 
             <label className='flex cursor-pointer items-center gap-2'>
@@ -462,8 +483,66 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                           {_('Annotation color')}: yellow | red | green | blue | violet
                         </li>
                         <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.page</code> -{' '}
+                          {_('Annotation page number')}
+                        </li>
+                        <li className='ml-8'>
                           <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
                           {_('Annotation time')}
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className='mb-2 font-bold'>{_('Available Formatters:')}</p>
+                      <ul className='space-y-1 font-mono'>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>date</code> /{' '}
+                          <code className='bg-base-300 rounded px-1'>{"date('%Y-%m-%d')"}</code> -{' '}
+                          {_('Format date')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>blockquote</code> -{' '}
+                          {_('Markdown block quote (> per line)')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>nl2br</code> -{' '}
+                          {_('Newlines to <br>')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>upper</code> /{' '}
+                          <code className='bg-base-300 rounded px-1'>lower</code> /{' '}
+                          <code className='bg-base-300 rounded px-1'>capitalize</code> /{' '}
+                          <code className='bg-base-300 rounded px-1'>title</code> -{' '}
+                          {_('Change case')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>trim</code> -{' '}
+                          {_('Trim whitespace')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>truncate(n)</code> -{' '}
+                          {_('Truncate to n characters')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>{"replace('a', 'b')"}</code> -{' '}
+                          {_('Replace text')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>default(val)</code> -{' '}
+                          {_('Fallback value')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>length</code> -{' '}
+                          {_('Get length')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>first</code> /{' '}
+                          <code className='bg-base-300 rounded px-1'>last</code> -{' '}
+                          {_('First/last element')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>{"join(', ')"}</code> -{' '}
+                          {_('Join array')}
                         </li>
                       </ul>
                     </div>

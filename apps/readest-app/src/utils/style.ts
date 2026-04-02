@@ -148,6 +148,9 @@ const getColorStyles = (
       background-color: var(--theme-bg-color, transparent);
       background: var(--background-set, none);
     }
+    body {
+      ${isEink ? `background-color: ${bg} !important;` : ''}
+    }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
@@ -167,6 +170,9 @@ const getColorStyles = (
     img {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
       ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
+    }
+    svg, img {
+      ${overrideColor ? `background-color: transparent !important;` : ''};
     }
     /* horizontal rule #1649 */
     *:has(> hr.background-img):not(body) {
@@ -221,6 +227,10 @@ const getColorStyles = (
       border-color: unset;
       background-color: ${bg} !important;
     }
+    .calibre {
+      color: unset;
+      background-color: unset;
+    }
   `;
   return colorStyles;
 };
@@ -272,9 +282,8 @@ const getLayoutStyles = (
   body {
     overflow: unset;
     zoom: ${zoomLevel};
-  }
-  svg, img {
-    background-color: transparent !important;
+    padding: unset;
+    margin: unset;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
@@ -306,6 +315,11 @@ const getLayoutStyles = (
     -webkit-hyphenate-limit-lines: 2;
     hanging-punctuation: allow-end last;
     widows: 2;
+  }
+  li {
+    line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
+    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
+    hyphens: ${hyphenate ? 'auto' : 'manual'};
   }
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
@@ -387,10 +401,6 @@ const getLayoutStyles = (
     display: none;
   }
 
-  .calibre {
-    color: unset;
-  }
-
   div:has(> img, > svg) {
     max-width: 100% !important;
   }
@@ -468,11 +478,10 @@ export const getFootnoteStyles = () => `
 
   body {
     padding: 1em !important;
+    overflow-wrap: break-word;
   }
 
   a:any-link {
-    cursor: default;
-    pointer-events: none;
     text-decoration: none;
     padding: unset;
     margin: unset;
@@ -740,13 +749,13 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
   // unset font-family for body when set to serif or sans-serif
   css = css.replace(ruleRegex, (_, selector, block) => {
     if (/\bbody\b/i.test(selector)) {
-      const hasSerifFont = /font-family\s*:\s*serif\s*[;$]/.test(block);
-      const hasSansSerifFont = /font-family\s*:\s*sans-serif\s*[;$]/.test(block);
+      const hasSerifFont = /font-family\s*:\s*serif\s*(?:;|\}|$)/.test(block);
+      const hasSansSerifFont = /font-family\s*:\s*sans-serif\s*(?:;|\}|$)/.test(block);
       if (hasSerifFont) {
-        block = block.replace(/font-family\s*:\s*serif\s*([;$])/gi, 'font-family: unset$1');
+        block = block.replace(/font-family\s*:\s*serif\s*(;|\}|$)/gi, 'font-family: unset$1');
       }
       if (hasSansSerifFont) {
-        block = block.replace(/font-family\s*:\s*sans-serif\s*([;$])/gi, 'font-family: unset$1');
+        block = block.replace(/font-family\s*:\s*sans-serif\s*(;|\}|$)/gi, 'font-family: unset$1');
       }
     }
     return selector + block;
@@ -782,7 +791,10 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
     .replace(/([\s;])-o-user-select\s*:\s*none/gi, '$1-o-user-select: unset')
     .replace(/([\s;])user-select\s*:\s*none/gi, '$1user-select: unset')
-    .replace(/([\s;])font-family\s*:\s*monospace/gi, '$1font-family: var(--monospace)')
+    .replace(/(font-family\s*:[^;]*?)\bsans-serif\b/gi, '$1READEST_SS_PLACEHOLDER')
+    .replace(/(font-family\s*:[^;]*?)\bserif\b(?!-)/gi, '$1var(--serif)')
+    .replace(/READEST_SS_PLACEHOLDER/g, 'var(--sans-serif)')
+    .replace(/(font-family\s*:[^;]*?)\bmonospace\b/gi, '$1var(--monospace)')
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
@@ -799,6 +811,27 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+/**
+  @param document should be the global `document`
+*/
+export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) => {
+  const styleId = 'scrollbar-hide-style';
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+  if (hideScrollbar) {
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: none; }';
+  } else {
+    if (styleEl) {
+      styleEl.textContent = 'foliate-view::part(container) { scrollbar-width: thin; }';
+    }
+  }
 };
 
 export const applyImageStyle = (document: Document) => {

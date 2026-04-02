@@ -24,9 +24,16 @@
       "@/*": ["./src/*"],
       "@/components/ui/*": ["./src/components/primitives/*"],
       "@pdfjs/*": ["./public/vendor/pdfjs/*"],
-      "@simplecc/*": ["./public/vendor/simplecc/*"]
+      "@simplecc/*": ["./public/vendor/simplecc/*"],
+      "tauri-plugin-turso": ["./src-tauri/plugins/tauri-plugin-turso/guest-js"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "raw-loader.d.ts", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "raw-loader.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "out"]
 }

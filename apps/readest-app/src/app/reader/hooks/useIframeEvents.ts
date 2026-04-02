@@ -4,6 +4,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
 import { ScrollSource } from './usePagination';
 import { eventDispatcher } from '@/utils/event';
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from '@/services/constants';
 
 export const useMouseEvent = (
   bookKey: string,
@@ -97,23 +98,61 @@ export const useTouchEvent = (
   handleContinuousScroll: (source: ScrollSource, delta: number, threshold: number) => void,
 ) => {
   const { getBookData } = useBookDataStore();
-  const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, getViewSettings, getView } = useReaderStore();
 
   const touchStartRef = useRef<IframeTouch | null>(null);
   const touchEndRef = useRef<IframeTouch | null>(null);
   const touchStartTimeRef = useRef<number | null>(null);
   const touchEndTimeRef = useRef<number | null>(null);
+  const isPinchingRef = useRef(false);
+  const initialPinchDistRef = useRef(0);
+  const initialZoomRef = useRef(100);
+  const lastPinchRatioRef = useRef(1);
+
+  const getTouchDistance = (t0: IframeTouch, t1: IframeTouch) => {
+    // Use screenX/screenY instead of clientX/clientY because pinchZoom
+    // applies a CSS transform to the iframe's parent, which changes the
+    // iframe's coordinate space and causes clientX/clientY to oscillate
+    const dx = t1.screenX - t0.screenX;
+    const dy = t1.screenY - t0.screenY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
   const onTouchStart = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.targetTouches[0];
-    if (!touch) return;
-    touchStartRef.current = touch;
+    const t0 = e.targetTouches[0] as IframeTouch | undefined;
+    const t1 = e.targetTouches[1] as IframeTouch | undefined;
+    if (t0 && t1) {
+      const bookData = getBookData(bookKey);
+      if (bookData?.isFixedLayout) {
+        isPinchingRef.current = true;
+        initialPinchDistRef.current = getTouchDistance(t0, t1);
+        initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
+        lastPinchRatioRef.current = 1;
+        touchStartRef.current = null;
+        touchEndRef.current = null;
+        return;
+      }
+    }
+    if (!t0) return;
+    touchStartRef.current = t0;
     touchStartTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
   };
 
   const onTouchMove = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
+    const t0 = e.targetTouches[0] as IframeTouch | undefined;
+    const t1 = e.targetTouches[1] as IframeTouch | undefined;
+    if (isPinchingRef.current && t0 && t1) {
+      const currentDist = getTouchDistance(t0, t1);
+      if (initialPinchDistRef.current > 0) {
+        const ratio = currentDist / initialPinchDistRef.current;
+        lastPinchRatioRef.current = ratio;
+        const renderer = getView(bookKey)?.renderer;
+        renderer?.pinchZoom?.(ratio);
+      }
+      return;
+    }
     if (!touchStartRef.current) return;
-    const touch = e.targetTouches[0];
+    const touch = t0;
     if (touch) {
       touchEndRef.current = touch;
       touchEndTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
@@ -135,6 +174,22 @@ export const useTouchEvent = (
   };
 
   const onTouchEnd = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
+    if (isPinchingRef.current) {
+      const t0 = e.targetTouches[0] as IframeTouch | undefined;
+      const t1 = e.targetTouches[1] as IframeTouch | undefined;
+      if (t0 && t1) return; // still pinching with 2+ fingers
+      isPinchingRef.current = false;
+      const renderer = getView(bookKey)?.renderer;
+      if (renderer && initialPinchDistRef.current > 0) {
+        renderer.pinchEnd?.();
+        const newZoom = Math.round(initialZoomRef.current * lastPinchRatioRef.current);
+        const clampedZoom = Math.max(MIN_ZOOM_LEVEL, Math.min(MAX_ZOOM_LEVEL, newZoom));
+        eventDispatcher.dispatch('pinch-zoom', { zoomLevel: clampedZoom });
+      }
+      touchStartRef.current = null;
+      touchEndRef.current = null;
+      return;
+    }
     if (!touchStartRef.current) return;
 
     const touch = e.targetTouches[0];

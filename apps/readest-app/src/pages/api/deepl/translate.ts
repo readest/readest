@@ -83,7 +83,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const env = (getCloudflareContext().env || {}) as CloudflareEnv;
+  let env: Partial<CloudflareEnv> = {};
+  try {
+    env = (getCloudflareContext().env || {}) as CloudflareEnv;
+  } catch {
+    console.warn('Cloudflare context is not available. Skipping KV cache.');
+  }
   const hasKVCache = !!env['TRANSLATIONS_KV'];
 
   const { user, token } = await validateUserAndToken(req.headers['authorization']);
@@ -183,11 +188,20 @@ async function callDeepLAPI(
   // TODO: this should be processed in the client, but for now, we need to do it here
   // please remove this when most clients are updated
   const input = text.replaceAll('\n', '').trim();
-  const requestBody = {
+
+  const requestBody: {
+    text: string | string[];
+    target_lang: string;
+    source_lang?: string;
+  } = {
     text: isV2Api ? [input] : input,
     source_lang: isV2Api ? sourceLang : (LANG_V2_V1_MAP[sourceLang] ?? sourceLang),
     target_lang: isV2Api ? targetLang : (LANG_V2_V1_MAP[targetLang] ?? targetLang),
   };
+
+  if (isV2Api && requestBody.source_lang?.toUpperCase() === 'AUTO') {
+    delete requestBody.source_lang;
+  }
 
   const response = await fetch(apiUrl, {
     method: 'POST',

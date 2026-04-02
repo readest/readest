@@ -18,7 +18,7 @@ import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
 import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
-import { useBookDataStore } from './bookDataStore';
+import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 import { uniqueId } from '@/utils/misc';
 
@@ -51,6 +51,7 @@ interface ReaderStore {
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
+  setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
     key: string,
@@ -181,24 +182,27 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       book.primaryLanguage = book.primaryLanguage ?? primaryLanguage;
       book.metadata = book.metadata ?? bookDoc.metadata;
 
-      // Update series info from metadata
+      // Update series info from metadata if available and not already set on the book
       if (bookDoc.metadata.belongsTo?.series) {
         const belongsTo = bookDoc.metadata.belongsTo.series;
         const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
         if (series) {
-          book.metadata.series = formatTitle(series.name);
-          book.metadata.seriesIndex = parseFloat(series.position || '0');
+          book.metadata.series = book.metadata.series ?? formatTitle(series.name);
+          book.metadata.seriesIndex =
+            book.metadata.seriesIndex ?? parseFloat(series.position || '0');
         }
       }
       // TODO: uncomment this when we can ensure metaHash is correctly generated for all books
       // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
       book.metaHash = getMetadataHash(bookDoc.metadata);
 
-      const isFixedLayout = FIXED_LAYOUT_FORMATS.has(book.format);
+      const isFixedLayout =
+        bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(book.format);
+      const newBookData: BookData = { id, book, file, config, bookDoc, isFixedLayout };
       useBookDataStore.setState((state) => ({
         booksData: {
           ...state.booksData,
-          [id]: { id, book, file, config, bookDoc, isFixedLayout },
+          [id]: newBookData,
         },
       }));
       const configViewSettings = config.viewSettings!;
@@ -298,8 +302,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const viewState = state.viewStates[key];
       if (!viewState || !bookData) return state;
 
-      const pagePressInfo = bookData.isFixedLayout ? section : pageinfo;
-      const progress: [number, number] = [pagePressInfo.current + 1, pagePressInfo.total];
+      const pageInfo = bookData.isFixedLayout ? section : pageinfo;
+      const progress: [number, number] = [pageInfo.current + 1, pageInfo.total];
 
       // calculate progress percentage
       const progressPercentage = Math.round((progress[0] / progress[1]) * 100);
@@ -360,12 +364,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               location,
               sectionHref: tocItem?.href,
               sectionLabel: tocItem?.label,
-              sectionId: tocItem?.id,
               section,
               pageinfo,
               timeinfo,
+              index: section.current,
               range,
-            },
+              page: pageInfo.current + 1, // 1-based page number
+            } as BookProgress,
           },
         },
       };
@@ -388,6 +393,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setIsLoading: (key: string, loading: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          loading,
         },
       },
     })),

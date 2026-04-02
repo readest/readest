@@ -35,15 +35,15 @@ const MAX_NOTEBOOK_WIDTH = 0.45;
 
 const Notebook: React.FC = ({}) => {
   const _ = useTranslation();
-  const { updateAppTheme, safeAreaInsets } = useThemeStore();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
+  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight } = useThemeStore();
   const { sideBarBookKey } = useSidebarStore();
   const { notebookWidth, isNotebookVisible, isNotebookPinned, notebookActiveTab } =
     useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
   const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
   const { setNotebookNewAnnotation, setNotebookEditAnnotation, setNotebookActiveTab } =
@@ -94,6 +94,14 @@ const Notebook: React.FC = ({}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!isNotebookVisible || notebookNewAnnotation || notebookEditAnnotation) {
+      setIsSearchBarVisible(false);
+      setSearchResults(null);
+      setSearchTerm('');
+    }
+  }, [isNotebookVisible, notebookNewAnnotation, notebookEditAnnotation]);
+
   const handleNotebookResize = (newWidth: string) => {
     setNotebookWidth(newWidth);
     settings.globalReadSettings.notebookWidth = newWidth;
@@ -133,6 +141,7 @@ const Notebook: React.FC = ({}) => {
       type: 'annotation',
       cfi,
       note,
+      page: selection.page,
       text: selection.text,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -150,6 +159,7 @@ const Notebook: React.FC = ({}) => {
     if (!sideBarBookKey) return;
     const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
+    const progress = getProgress(sideBarBookKey)!;
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((item) => item.id === note.id);
     if (existingIndex === -1) return;
@@ -158,6 +168,7 @@ const Notebook: React.FC = ({}) => {
     } else {
       note.updatedAt = Date.now();
     }
+    note.page = progress.page;
     annotations[existingIndex] = note;
     view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
@@ -232,6 +243,7 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const isMobile = window.innerWidth < 640;
 
   return isNotebookVisible ? (
     <>
@@ -254,20 +266,14 @@ const Notebook: React.FC = ({}) => {
         aria-label={_('Notebook')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
         style={{
-          width: `${notebookWidth}`,
-          maxWidth: `${MAX_NOTEBOOK_WIDTH * 100}%`,
-          position: isNotebookPinned ? 'relative' : 'absolute',
-          paddingTop: `${safeAreaInsets?.top || 0}px`,
+          width: isMobile ? '100%' : `${notebookWidth}`,
+          maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
+          position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
+          paddingTop: systemUIVisible
+            ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
+            : `${safeAreaInsets?.top || 0}px`,
         }}
       >
-        <style jsx>{`
-          @media (max-width: 640px) {
-            .notebook-container {
-              width: 100%;
-              min-width: 100%;
-            }
-          }
-        `}</style>
         <div
           className={clsx(
             'drag-bar pointer-events-auto absolute -left-2 top-0 z-30 h-full w-0.5 cursor-col-resize bg-transparent p-2',

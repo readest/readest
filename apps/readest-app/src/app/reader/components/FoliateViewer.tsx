@@ -1,6 +1,7 @@
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
-import { BookConfig } from '@/types/book';
+import { BookConfig, PageInfo } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -25,6 +26,7 @@ import { useKOSync } from '../hooks/useKOSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyScrollbarStyle,
   applyScrollModeClass,
   applyTableStyle,
   applyThemeModeClass,
@@ -62,6 +64,7 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { isFontType } from '@/utils/font';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
@@ -85,9 +88,9 @@ const FoliateViewer: React.FC<{
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
-  const { loadCustomFonts, getLoadedFonts } = useCustomFontStore();
+  const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
-  const { getViewState, getViewSettings, setViewSettings } = useReaderStore();
+  const { getViewState, getProgress, getViewSettings, setViewSettings } = useReaderStore();
   const { getParallels } = useParallelViewStore();
   const { getBookData } = useBookDataStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -102,6 +105,7 @@ const FoliateViewer: React.FC<{
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
@@ -128,12 +132,16 @@ const FoliateViewer: React.FC<{
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
+    const atEnd = viewRef.current?.renderer.atEnd || false;
+    const { current, next, total } = detail.location as PageInfo;
+    const currentPage = atEnd && total > 0 ? total - 1 : current;
+    const pageInfo = { current: currentPage, next, total };
     setProgress(
       bookKey,
       detail.cfi,
       detail.tocItem,
       detail.section,
-      detail.location,
+      pageInfo,
       detail.time,
       detail.range,
     );
@@ -155,6 +163,7 @@ const FoliateViewer: React.FC<{
               viewSettings,
               width,
               height,
+              isFixedLayout: bookData.isFixedLayout,
               primaryLanguage: bookData.book?.primaryLanguage,
               userLocale: getLocale(),
               content: data,
@@ -180,6 +189,14 @@ const FoliateViewer: React.FC<{
         });
     };
   };
+
+  const skipToReadingPosition = useCallback(() => {
+    const view = getView(bookKey);
+    const progress = getProgress(bookKey);
+    if (view && progress) {
+      view.renderer.scrollToAnchor?.(progress.range);
+    }
+  }, [getView, getProgress, bookKey]);
 
   const docLoadHandler = (event: Event) => {
     setLoading(false);
@@ -220,8 +237,12 @@ const FoliateViewer: React.FC<{
       applyTableStyle(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
+      applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      handleA11yNavigation(viewRef.current, detail.doc, detail.index);
+      handleA11yNavigation(viewRef.current, detail.doc, detail.index, {
+        skipToLastPosCallback: skipToReadingPosition,
+        skipToLastPosLabel: _('Skip to last reading position'),
+      });
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
@@ -308,13 +329,29 @@ const FoliateViewer: React.FC<{
       const allImages: { src: string; cfi: string | null }[] = [];
 
       docs?.forEach(({ doc, index }) => {
-        const images = doc.querySelectorAll('img');
-        images.forEach((img) => {
-          if (img.src && index !== undefined && img.parentNode) {
-            const range = doc.createRange();
-            range.selectNodeContents(img);
-            const cfi = viewRef.current?.getCFI(index, range) || null;
-            allImages.push({ src: img.src, cfi });
+        const elements = doc.querySelectorAll('img, svg');
+        elements.forEach((el) => {
+          if (index === undefined) return;
+          if (el.localName === 'img') {
+            const img = el as HTMLImageElement;
+            if (img.src && img.parentNode) {
+              const range = doc.createRange();
+              range.selectNodeContents(img);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: img.src, cfi });
+            }
+          } else if (el.localName === 'svg') {
+            const svg = el as unknown as SVGSVGElement;
+            const svgImage = svg.querySelector('image');
+            const href =
+              svgImage?.getAttribute('href') ||
+              svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+            if (href) {
+              const range = doc.createRange();
+              range.selectNodeContents(svg);
+              const cfi = viewRef.current?.getCFI(index, range) || null;
+              allImages.push({ src: href, cfi });
+            }
           }
         });
       });
@@ -422,10 +459,31 @@ const FoliateViewer: React.FC<{
 
       const { book } = view;
 
-      book.transformTarget?.addEventListener('load', (event: Event) => {
-        const { detail } = event as CustomEvent;
+      book.transformTarget?.addEventListener('load', async (event: Event) => {
+        const { detail } = event as CustomEvent<{
+          isScript: boolean;
+          type: string;
+          href: string;
+          url?: string;
+          allow?: boolean;
+        }>;
         if (detail.isScript) {
           detail.allow = viewSettings.allowScript ?? false;
+        }
+        if (isFontType(detail.type) && detail.href?.startsWith('fonts/')) {
+          const fontFileName = detail.href.split('/').pop()?.toLowerCase();
+          getAvailableFonts().forEach(async (font) => {
+            const customFontFileName = font.path.split('/').pop()?.toLowerCase();
+            if (fontFileName && fontFileName === customFontFileName) {
+              if (!font.loaded) {
+                const loadedFont = await loadFont(envConfig, font.id);
+                font.blobUrl = loadedFont?.blobUrl;
+              }
+              if (font.blobUrl) {
+                detail.url = font.blobUrl;
+              }
+            }
+          });
         }
       });
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
@@ -496,7 +554,7 @@ const FoliateViewer: React.FC<{
     const ttsBarHeight =
       viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(ttsBarHeight, 44) - insets.bottom)
+      ? Math.max(0, Math.max(ttsBarHeight, 52) - insets.bottom)
       : Math.max(0, ttsBarHeight);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
@@ -510,6 +568,18 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
+    if (viewMargins) {
+      const showBarsOnScroll = viewSettings.showBarsOnScroll;
+      const headerVisible = showTopHeader && showBarsOnScroll;
+      const footerVisible = showBottomFooter && showBarsOnScroll;
+      const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+      const footerBarHeight = 52 + safeBottomPadding;
+      const scrollTop = headerVisible ? gridInsets.top + 44 : 0;
+      const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
+      setScrollMargins({ top: scrollTop, bottom: scrollBottom });
+    } else {
+      setScrollMargins({ top: 0, bottom: 0 });
+    }
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
@@ -527,6 +597,7 @@ const FoliateViewer: React.FC<{
         }
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
+        applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -536,6 +607,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,
+    viewSettings?.hideScrollbar,
   ]);
 
   useEffect(() => {
@@ -584,15 +656,17 @@ const FoliateViewer: React.FC<{
     viewSettings?.showHeader,
     viewSettings?.showFooter,
     viewSettings?.showTTSBar,
+    viewSettings?.showBarsOnScroll,
+    viewSettings?.showMarginsOnScroll,
+    viewSettings?.scrolled,
     viewState?.ttsEnabled,
   ]);
-
-  const showViewMargins = viewSettings?.showMarginsOnScroll && viewSettings?.scrolled;
 
   return (
     <>
       {selectedImage && (
         <ImageViewer
+          gridInsets={gridInsets}
           src={selectedImage}
           onClose={handleCloseImage}
           onPrevious={currentImageIndex > 0 ? handlePreviousImage : undefined}
@@ -601,6 +675,7 @@ const FoliateViewer: React.FC<{
       )}
       {selectedTableHtml && (
         <TableViewer
+          gridInsets={gridInsets}
           html={selectedTableHtml}
           isDarkMode={isDarkMode}
           onClose={() => setSelectedTableHtml(null)}
@@ -608,19 +683,25 @@ const FoliateViewer: React.FC<{
       )}
       <div
         ref={containerRef}
-        tabIndex={-1}
-        role='document'
+        role='main'
         aria-label={_('Book Content')}
-        className='foliate-viewer h-[100%] w-[100%] focus:outline-none'
+        className={clsx(
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',
+          viewState?.loading && 'bg-base-100',
+        )}
         style={{
-          paddingTop: showViewMargins ? insets.top : 0,
-          paddingBottom: showViewMargins ? insets.bottom : 0,
+          paddingTop: scrollMargins.top,
+          paddingBottom: scrollMargins.bottom,
         }}
         {...mouseHandlers}
         {...touchHandlers}
       />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
-      {!docLoaded.current && loading && <Spinner loading={true} />}
+      {((!docLoaded.current && loading) || viewState?.loading) && (
+        <div className='bg-base-100/85 absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
+          <Spinner loading={true} />
+        </div>
+      )}
       {syncState === 'conflict' && conflictDetails && (
         <KOSyncConflictResolver
           details={conflictDetails}

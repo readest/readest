@@ -4,8 +4,10 @@ import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { CustomTextureInfo } from '@/styles/textures';
+import { DatabaseOpts, DatabaseService } from './database';
+import { SchemaType } from '@/services/database/migrate';
 
-export type AppPlatform = 'web' | 'tauri';
+export type AppPlatform = 'web' | 'tauri' | 'node';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 // prettier-ignore
 export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Log' | 'Cache' | 'Temp' | 'None';
@@ -158,4 +160,10 @@ export interface AppService {
   generateCoverImageUrl(book: Book): Promise<string>;
   updateCoverImage(book: Book, imageUrl?: string, imageFile?: string): Promise<void>;
   ask(message: string): Promise<boolean>;
+  openDatabase(
+    schema: SchemaType,
+    path: string,
+    base: BaseDir,
+    opts?: DatabaseOpts,
+  ): Promise<DatabaseService>;
 }

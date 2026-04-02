@@ -16,6 +16,8 @@ const createExpanderIcon = (isExpanded: boolean) => {
       )}
       style={{ transformOrigin: 'center' }}
       fill='currentColor'
+      aria-hidden='true'
+      focusable='false'
     >
       <polygon points='0 0, 8 5, 0 10' />
     </svg>
@@ -38,6 +40,17 @@ const TOCItemView = React.memo<{
   onItemClick: (item: TOCItem) => void;
 }>(({ flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
   const { item, depth } = flatItem;
+
+  const pageNumber = item.location
+    ? item.location.current + 1
+    : item.index !== undefined
+      ? item.index + 1
+      : null;
+  const ariaLabel = item.label
+    ? pageNumber !== null
+      ? `${item.label}, ${pageNumber}`
+      : item.label
+    : undefined;
 
   const handleToggleExpand = useCallback(
     (event: React.MouseEvent) => {
@@ -62,7 +75,9 @@ const TOCItemView = React.memo<{
       role='treeitem'
       onClick={item.href ? handleClickItem : undefined}
       onKeyDown={item.href ? (e) => e.key === 'Enter' && handleClickItem(e) : undefined}
-      aria-expanded={flatItem.isExpanded ? 'true' : 'false'}
+      aria-label={ariaLabel}
+      aria-current={isActive ? 'page' : undefined}
+      aria-expanded={item.subitems ? (flatItem.isExpanded ? 'true' : 'false') : undefined}
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
       className={clsx(
@@ -82,6 +97,7 @@ const TOCItemView = React.memo<{
           onKeyDown={(e) => {
             e.stopPropagation();
           }}
+          aria-label={flatItem.isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
           className='inline-block cursor-pointer'
           style={{
             padding: '12px',
@@ -102,7 +118,7 @@ const TOCItemView = React.memo<{
         {item.label}
       </div>
       {(item.location || item.index !== undefined) && (
-        <div className='text-base-content/50 ms-auto ps-1 text-xs sm:pe-1'>
+        <div aria-hidden='true' className='text-base-content/50 ms-auto ps-1 text-xs sm:pe-1'>
           {item.location ? item.location.current + 1 : item.index + 1}
         </div>
       )}

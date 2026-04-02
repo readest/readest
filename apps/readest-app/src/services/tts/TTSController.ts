@@ -9,6 +9,7 @@ import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
+import { isValidLang } from '@/utils/lang';
 
 type TTSState =
   | 'stopped'
@@ -112,7 +113,9 @@ export class TTSController extends EventTarget {
         const { style, color } = this.options;
         overlayer?.remove(HIGHLIGHT_KEY);
         overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
-      } catch {}
+      } catch (e) {
+        console.error('Failed to highlight range', e);
+      }
     };
   }
 
@@ -121,14 +124,15 @@ export class TTSController extends EventTarget {
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 
-  async initViewTTS(options?: TTSHighlightOptions) {
-    if (options) {
-      this.options.style = options.style;
-      this.options.color = options.color;
-    }
-    const currentSectionIndex = this.view.renderer.getContents()[0]?.index ?? 0;
+  updateHighlightOptions(options: TTSHighlightOptions) {
+    this.options.style = options.style;
+    this.options.color = options.color;
+  }
+
+  async initViewTTS(index?: number) {
     if (this.#ttsSectionIndex === -1) {
-      await this.#initTTSForSection(currentSectionIndex);
+      const fromSectionIndex = (index || this.view.renderer.getContents()[0]?.index) ?? 0;
+      await this.#initTTSForSection(fromSectionIndex);
     }
   }
 
@@ -155,6 +159,12 @@ export class TTSController extends EventTarget {
       doc = currentSection.doc;
     } else {
       doc = await section.createDocument();
+      const html = doc.querySelector('html');
+      const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
+      if (html && !isValidLang(lang) && this.ttsLang) {
+        html.setAttribute('lang', this.ttsLang);
+        html.setAttribute('xml:lang', this.ttsLang);
+      }
     }
 
     if (this.view.tts && this.view.tts.doc === doc) {
@@ -206,7 +216,16 @@ export class TTSController extends EventTarget {
   }
 
   async #handleNavigationWithSSML(ssml: string | undefined, isPlaying: boolean) {
-    if (isPlaying) this.#speak(ssml);
+    if (isPlaying) {
+      this.#speak(ssml);
+    } else {
+      if (ssml) {
+        const { marks } = parseSSMLMarks(ssml);
+        if (marks.length > 0) {
+          this.dispatchSpeakMark(marks[0]);
+        }
+      }
+    }
   }
 
   async #handleNavigationWithoutSSML(initSection: () => Promise<boolean>, isPlaying: boolean) {
@@ -524,6 +543,7 @@ export class TTSController extends EventTarget {
     await this.stop();
     this.#clearHighlighter();
     this.#ttsSectionIndex = -1;
+    this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }

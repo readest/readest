@@ -47,7 +47,7 @@
 
 | **Feature**                             | **Description**                                                                                                        | **Status** |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF (experimental)                                                      | ✅         |
+| **Multi-Format Support**                | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF                                                                     | ✅         |
 | **Scroll/Page View Modes**              | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
 | **Full-Text Search**                    | Search across the entire book to find relevant sections.                                                               | ✅         |
 | **Annotations and Highlighting**        | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |
@@ -122,8 +122,8 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 For the best experience to build Readest for yourself, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
 
 ```bash
-nvm install v22
-nvm use v22
+nvm install v24
+nvm use v24
 npm install -g pnpm
 rustup update
 ```

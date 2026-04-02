@@ -195,7 +195,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           )}
           style={{
             bottom: appService?.hasSafeAreaInset
-              ? `${(safeAreaInsets?.bottom || 0) * 0.33 + (hoveredBookKey ? 70 : 52)}px`
+              ? `calc(env(safe-area-inset-bottom, 0px) * ${appService?.isIOSApp ? 0.33 : 1} + ${hoveredBookKey ? 70 : 52}px)`
               : undefined,
           }}
         >

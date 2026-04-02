@@ -1,0 +1,69 @@
+## Project Overview
+
+Readest is a cross-platform ebook reader built as a **Next.js 16 + Tauri v2** hybrid app. It's part of a pnpm monorepo at `/apps/readest-app/`. The app runs on web (CloudFlare Workers), desktop (macOS/Windows/Linux via Tauri), and mobile (iOS/Android via Tauri).
+
+## Common Commands
+
+```bash
+# Development
+pnpm dev-web               # Web-only dev server (no Rust compilation needed)
+pnpm tauri dev             # Desktop dev with Tauri (compiles Rust backend)
+
+# Building
+pnpm build                 # Build Next.js for Tauri
+pnpm build-web             # Build Next.js for web deployment
+
+# Testing (see [docs/testing.md](docs/testing.md) for full details)
+pnpm test                  # Unit tests (vitest + jsdom)
+pnpm test -- src/__tests__/utils/misc.test.ts  # Run a single test file
+pnpm test -- --watch       # Watch mode
+pnpm test:browser          # Browser tests (Chromium via Playwright)
+pnpm tauri:dev:test        # Start Tauri app with webdriver
+pnpm test:tauri            # Run Tauri integration tests
+
+# Linting & Formatting
+pnpm lint                  # ESLint
+pnpm format                # Prettier (runs from monorepo root)
+pnpm format:check          # Check formatting without writing
+
+# Rust
+pnpm fmt:check             # Check formatting Rust code (src-tauri)
+pnpm clippy:check          # Lint Rust code (src-tauri)
+```
+
+### Source Layout
+
+| Directory         | Purpose                                                       |
+| ----------------- | ------------------------------------------------------------- |
+| `src/app/`        | Next.js App Router pages and API routes                       |
+| `src/components/` | React components (reader, settings, library, assistant, etc.) |
+| `src/services/`   | Business logic: TTS, translators, OPDS, sync, AI, metadata    |
+| `src/store/`      | Zustand state stores                                          |
+| `src/hooks/`      | Custom React hooks                                            |
+| `src/libs/`       | Document loaders, payment, storage, sync                      |
+| `src/utils/`      | Pure utility functions                                        |
+| `src/types/`      | TypeScript type definitions                                   |
+| `src/context/`    | React Context providers (Auth, Env, Sync, etc.)               |
+| `src/workers/`    | Web Workers for background tasks                              |
+| `src-tauri/`      | Rust backend: Tauri plugins, platform-specific code           |
+
+### Path Aliases (tsconfig)
+
+- `@/*` → `./src/*`
+- `@/components/ui/*` → `./src/components/primitives/*`
+
+### Rust Backend (`src-tauri/`)
+
+Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Custom Tauri plugins are in `src-tauri/plugins/`.
+
+## Project Rules
+
+Rules are in `.claude/rules/`: test-first, typescript, build-constraints, verification.
+
+### i18n
+
+See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `stubTranslation` usage in non-React modules, and extraction workflow.
+
+### Safe Area Insets
+
+See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.

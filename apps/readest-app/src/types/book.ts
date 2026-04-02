@@ -85,6 +85,7 @@ export interface BookNote {
   id: string;
   type: BookNoteType;
   cfi: string;
+  page?: number;
   text?: string;
   style?: HighlightStyle;
   color?: HighlightColor;
@@ -131,6 +132,7 @@ export interface BookLayout {
   rtl: boolean;
   scrollingOverlap: number;
   allowScript: boolean;
+  hideScrollbar: boolean;
 }
 
 export interface BookStyle {
@@ -188,6 +190,7 @@ export interface BookLanguage {
   convertChineseVariant: ConvertChineseVariant;
 }
 
+export type ProgressBarMode = 'remaining' | 'progress' | 'battery' | 'time' | 'all' | 'none';
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -201,12 +204,16 @@ export interface ViewConfig {
   showRemainingTime: boolean;
   showRemainingPages: boolean;
   showProgressInfo: boolean;
+  showCurrentTime: boolean;
+  use24HourClock: boolean;
+  showCurrentBatteryStatus: boolean;
+  showBatteryPercentage: boolean;
   tapToToggleFooter: boolean;
   showBarsOnScroll: boolean;
   showMarginsOnScroll: boolean;
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
-  progressInfoMode: 'remaining' | 'progress' | 'all' | 'none';
+  progressInfoMode: ProgressBarMode;
 
   animated: boolean;
   isEink: boolean;
@@ -242,6 +249,7 @@ export interface NoteExportConfig {
   includeChapterTitles: boolean;
   includeQuotes: boolean;
   includeNotes: boolean;
+  includePageNumber: boolean;
   includeTimestamp: boolean;
   includeChapterSeparator: boolean;
   noteSeparator: string;
@@ -299,13 +307,14 @@ export interface ViewSettings
 
 export interface BookProgress {
   location: string;
-  sectionId: number;
   sectionHref: string;
   sectionLabel: string;
   section: PageInfo;
   pageinfo: PageInfo;
   timeinfo: TimeInfo;
+  index: number;
   range: Range;
+  page: number;
 }
 
 export interface BookSearchConfig {

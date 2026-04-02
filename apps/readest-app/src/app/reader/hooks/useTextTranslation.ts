@@ -3,6 +3,8 @@ import { FoliateView } from '@/types/view';
 import { UseTranslatorOptions } from '@/services/translators';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslator } from '@/hooks/useTranslator';
+import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { walkTextNodes } from '@/utils/walk';
 import { debounce } from '@/utils/debounce';
 import { getLocale } from '@/utils/misc';
@@ -13,7 +15,8 @@ export function useTextTranslation(
   widthLineBreak = false,
   targetBlockClassName = 'translation-target-block',
 ) {
-  const { getViewSettings, getProgress } = useReaderStore();
+  const _ = useTranslation();
+  const { getViewSettings, getProgress, setIsLoading } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
   const progress = getProgress(bookKey);
 
@@ -31,6 +34,12 @@ export function useTextTranslation(
   const observerRef = useRef<IntersectionObserver | null>(null);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
+  const translationQueue = useRef<HTMLElement[]>([]);
+  const activeTranslations = useRef(0);
+  const MAX_CONCURRENT_TRANSLATIONS = 5;
+  const pendingDOMUpdates = useRef<Array<() => void>>([]);
+  const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toggleTranslationVisibility = (visible: boolean) => {
     translatedElements.current.forEach((element) => {
@@ -49,8 +58,21 @@ export function useTextTranslation(
     translateRef.current = translate;
   }, [translate]);
 
+  const hintInitialTranslating = () => {
+    setIsLoading(bookKey, true);
+    eventDispatcher.dispatch('hint', {
+      bookKey,
+      message: _('Translating...'),
+    });
+    hintTimerRef.current = setTimeout(() => {
+      hintTimerRef.current = null;
+      setIsLoading(bookKey, false);
+    }, 2000);
+  };
+
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
+
     const observer = createTranslationObserver();
     observerRef.current = observer;
     const nodes = walkTextNodes(view, ['pre', 'code', 'math']);
@@ -64,6 +86,13 @@ export function useTextTranslation(
   };
 
   const updateTranslation = () => {
+    translationQueue.current = [];
+    activeTranslations.current = 0;
+    if (batchTimerRef.current) {
+      clearTimeout(batchTimerRef.current);
+      batchTimerRef.current = null;
+    }
+    pendingDOMUpdates.current = [];
     translatedElements.current.forEach((element) => {
       const translationTargets = element.querySelectorAll('.translation-target');
       translationTargets.forEach((target) => target.remove());
@@ -76,48 +105,86 @@ export function useTextTranslation(
   };
 
   const createTranslationObserver = () => {
+    const visibleElements = new Set<HTMLElement>();
     return new IntersectionObserver(
       (entries) => {
-        let beforeIntersectedElement: HTMLElement | null = null;
-        let lastIntersectedElement: HTMLElement | null = null;
         for (const entry of entries) {
-          if (!entry.isIntersecting) {
-            if (!lastIntersectedElement) {
-              beforeIntersectedElement = entry.target as HTMLElement;
-            }
-            continue;
+          if (entry.isIntersecting) {
+            visibleElements.add(entry.target as HTMLElement);
+          } else {
+            visibleElements.delete(entry.target as HTMLElement);
           }
-          const currentElement = entry.target as HTMLElement;
-          translateElement(currentElement);
-          lastIntersectedElement = currentElement;
         }
-        if (beforeIntersectedElement) {
-          translateElement(beforeIntersectedElement);
+
+        if (visibleElements.size === 0) return;
+
+        const nodes = allTextNodes.current;
+        if (nodes.length === 0) return;
+
+        let firstIdx = nodes.length;
+        let lastIdx = -1;
+        for (const el of visibleElements) {
+          const idx = nodes.indexOf(el);
+          if (idx !== -1) {
+            if (idx < firstIdx) firstIdx = idx;
+            if (idx > lastIdx) lastIdx = idx;
+          }
         }
-        if (lastIntersectedElement) {
-          preTranslateNextElements(lastIntersectedElement, 2);
+
+        if (lastIdx === -1) return;
+
+        const startIdx = Math.max(0, firstIdx - 1);
+        const endIdx = Math.min(nodes.length - 1, lastIdx + 2);
+
+        for (let i = startIdx; i <= endIdx; i++) {
+          const node = nodes[i];
+          if (node) {
+            scheduleTranslation(node);
+          }
         }
       },
-      {
-        rootMargin: '1280px',
-        threshold: 0,
-      },
+      { threshold: 0 },
     );
   };
 
-  const preTranslateNextElements = (currentElement: HTMLElement, count: number) => {
-    if (!allTextNodes.current || count <= 0) return;
-    const currentIndex = allTextNodes.current.indexOf(currentElement);
-    if (currentIndex === -1) {
-      return;
-    }
+  const scheduleTranslation = (el: HTMLElement) => {
+    if (!enabled.current) return;
+    if (el.classList.contains('translation-target')) return;
+    if (el.querySelector('.translation-target')) return;
+    if (translationQueue.current.indexOf(el) !== -1) return;
+    translationQueue.current.push(el);
+    drainTranslationQueue();
+  };
 
-    const nextElements = allTextNodes.current.slice(currentIndex + 1, currentIndex + 1 + count);
-    nextElements.forEach((element, index) => {
+  const drainTranslationQueue = () => {
+    while (
+      activeTranslations.current < MAX_CONCURRENT_TRANSLATIONS &&
+      translationQueue.current.length > 0
+    ) {
+      const el = translationQueue.current.shift()!;
+      if (el.querySelector('.translation-target') || !enabled.current) continue;
+      activeTranslations.current++;
+      translateElement(el).finally(() => {
+        activeTranslations.current--;
+        drainTranslationQueue();
+      });
+    }
+    if (translationQueue.current.length === 0 && activeTranslations.current === 0) {
       setTimeout(() => {
-        translateElement(element);
-      }, index * 500);
-    });
+        setIsLoading(bookKey, false);
+      }, 500);
+    }
+  };
+
+  const batchDOMUpdate = (update: () => void) => {
+    pendingDOMUpdates.current.push(update);
+    if (!batchTimerRef.current) {
+      batchTimerRef.current = setTimeout(() => {
+        batchTimerRef.current = null;
+        const updates = pendingDOMUpdates.current.splice(0);
+        updates.forEach((fn) => fn());
+      }, 50);
+    }
   };
 
   const recreateTranslationObserver = () => {
@@ -183,8 +250,6 @@ export function useTextTranslation(
       }
     };
 
-    updateSourceNodes(el);
-
     try {
       const translated = await translateRef.current([text]);
       const translatedText = translated[0];
@@ -211,8 +276,12 @@ export function useTextTranslation(
       if (el.querySelector('.translation-target')) {
         return;
       }
-      el.appendChild(wrapper);
-      translatedElements.current.push(el);
+      batchDOMUpdate(() => {
+        if (!enabled.current || el.querySelector('.translation-target')) return;
+        updateSourceNodes(el);
+        el.appendChild(wrapper);
+        translatedElements.current.push(el);
+      });
     } catch (err) {
       console.warn('Translation failed:', err);
     }
@@ -260,11 +329,11 @@ export function useTextTranslation(
       for (let i = beforeStart; i <= afterEnd; i++) {
         const node = nodes[i];
         if (node) {
-          translateElement(node);
+          scheduleTranslation(node);
         }
       }
     }, 500),
-    [translateElement],
+    [scheduleTranslation],
   );
 
   useEffect(() => {
@@ -316,15 +385,29 @@ export function useTextTranslation(
 
     if ('renderer' in view) {
       view.addEventListener('load', observeTextNodes);
+      view.addEventListener('load', hintInitialTranslating);
     } else {
       observeTextNodes();
     }
     return () => {
       if ('renderer' in view) {
         view.removeEventListener('load', observeTextNodes);
+        view.removeEventListener('load', hintInitialTranslating);
       }
       observerRef.current?.disconnect();
       translatedElements.current = [];
+      translationQueue.current = [];
+      activeTranslations.current = 0;
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+      }
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = null;
+      }
+      pendingDOMUpdates.current = [];
+      setIsLoading(bookKey, false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);

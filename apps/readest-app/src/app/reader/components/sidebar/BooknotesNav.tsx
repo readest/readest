@@ -3,6 +3,7 @@ import React from 'react';
 import { Insets } from '@/types/misc';
 import { TOCItem } from '@/libs/document';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReaderStore } from '@/store/readerStore';
 import { useBooknotesNav } from '../../hooks/useBooknotesNav';
 import ContentNavBar from './ContentNavBar';
 
@@ -25,8 +26,9 @@ const BooknotesNav: React.FC<BooknotesNavProps> = ({ bookKey, gridInsets, toc })
     handleNext,
   } = useBooknotesNav(bookKey, toc);
   const _ = useTranslation();
+  const { hoveredBookKey } = useReaderStore();
 
-  if (!showBooknotesNav) {
+  if (!showBooknotesNav || hoveredBookKey === bookKey) {
     return null;
   }
 

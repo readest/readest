@@ -235,7 +235,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
       {/* Main footer container */}
       <div
-        role='group'
+        role='contentinfo'
         aria-label={_('Footer Bar')}
         className={containerClasses}
         dir={viewSettings?.rtl ? 'rtl' : 'ltr'}

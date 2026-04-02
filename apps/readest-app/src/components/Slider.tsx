@@ -28,7 +28,7 @@ const Slider: React.FC<SliderProps> = ({
   max = 100,
   step = 1,
   initialValue = 50,
-  heightPx = 40,
+  heightPx = 44,
   minLabel = '',
   maxLabel = '',
   minIcon,
@@ -134,7 +134,7 @@ const Slider: React.FC<SliderProps> = ({
           max={100}
           step={step}
           value={percentage}
-          className='absolute inset-0 h-full w-full cursor-pointer opacity-0'
+          className='slider-input absolute inset-0 h-full min-h-12 w-full cursor-pointer opacity-0'
           onChange={handleChange}
           aria-label={label}
           aria-valuemin={min}

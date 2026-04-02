@@ -17,7 +17,7 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getView, getViewsById, getViewSettings } = useReaderStore();
+  const { getView, getViewsById, getViewSettings, getProgress } = useReaderStore();
 
   const startPointRef = useRef<Point | null>(null);
   const startDocRef = useRef<Document | null>(null);
@@ -261,6 +261,7 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
       views.forEach((v) => v?.addAnnotation(annotation));
 
       const config = getConfig(bookKey)!;
+      const progress = getProgress(bookKey)!;
       const { booknotes: annotations = [] } = config;
       const existingIndex = annotations.findIndex(
         (a) => a.cfi === cfi && a.type === 'annotation' && a.style && !a.deletedAt,
@@ -270,10 +271,11 @@ export const useInstantAnnotation = ({ bookKey, getAnnotationText }: UseInstantA
         annotations[existingIndex] = {
           ...annotations[existingIndex]!,
           ...annotation,
+          page: progress.page,
           id: annotations[existingIndex]!.id,
         };
       } else {
-        annotations.push(annotation);
+        annotations.push({ ...annotation, page: progress.page });
       }
 
       const updatedConfig = updateBooknotes(bookKey, annotations);

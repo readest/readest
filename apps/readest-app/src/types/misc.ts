@@ -5,7 +5,7 @@ export type Insets = {
   right: number;
 };
 
-export interface LocaleWithTextInfo extends Intl.Locale {
+export type LocaleWithTextInfo = Intl.Locale & {
   getTextInfo?: () => { direction: string };
   textInfo?: { direction: string };
-}
+};

@@ -79,7 +79,14 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
   );
 
   return (
-    <div className={classes} style={{ bottom: bottomOffset }}>
+    <div
+      className={classes}
+      style={{
+        bottom: appService?.isAndroidApp
+          ? `calc(env(safe-area-inset-bottom) + 64px)`
+          : bottomOffset,
+      }}
+    >
       {appService?.hasScreenBrightness && (
         <Slider
           label={_('Screen Brightness')}

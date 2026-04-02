@@ -2,9 +2,8 @@ import { getAPIBaseUrl } from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
 import { ErrorCodes, TranslationProvider } from '../types';
 import { UserPlan } from '@/types/quota';
-import { getSubscriptionPlan } from '@/utils/access';
+import { getSubscriptionPlan, getTranslationQuota } from '@/utils/access';
 import { normalizeToShortLang } from '@/utils/lang';
-import { DEFAULT_DAILY_TRANSLATION_QUOTA } from '@/services/constants';
 import { saveDailyUsage } from '../utils';
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
@@ -37,14 +36,15 @@ export const deeplProvider: TranslationProvider = {
       throw new Error('Authentication token is required for DeepL translation');
     }
 
+    const normalizedSourceLang = normalizeToShortLang(sourceLang).toUpperCase();
     const body = JSON.stringify({
       text: text,
-      source_lang: normalizeToShortLang(sourceLang).toUpperCase(),
+      ...(normalizedSourceLang !== 'AUTO' ? { source_lang: normalizedSourceLang } : {}),
       target_lang: normalizeToShortLang(targetLang).toUpperCase(),
       use_cache: useCache,
     });
 
-    const quota = DEFAULT_DAILY_TRANSLATION_QUOTA[userPlan];
+    const quota = getTranslationQuota(userPlan);
     try {
       const response = await fetch(DEEPL_API_ENDPOINT, { method: 'POST', headers, body });
 

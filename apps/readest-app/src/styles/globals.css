@@ -476,6 +476,11 @@ foliate-fxl {
   inset: -8px;
 }
 
+input[type='range'].slider-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 @keyframes spin-counterclockwise {
   from {
     transform: rotate(0deg);
@@ -484,6 +489,10 @@ foliate-fxl {
   to {
     transform: rotate(-360deg);
   }
+}
+
+.btn-ghost.btn-active {
+  background-color: theme('colors.base-300');
 }
 
 .animate-reverse-spin {

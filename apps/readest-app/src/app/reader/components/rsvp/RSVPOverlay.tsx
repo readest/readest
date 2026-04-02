@@ -14,6 +14,8 @@ import {
   IoPlaySkipForward,
   IoRemove,
   IoAdd,
+  IoChevronDown,
+  IoSettingsSharp,
 } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Overlay } from '@/components/Overlay';
@@ -23,6 +25,14 @@ interface FlatChapter {
   href: string;
   level: number;
 }
+
+// Display settings
+const FONT_SIZE_OPTIONS = [1.25, 1.5, 1.875, 2.25, 3, 3.75, 4.25, 5, 6, 8];
+const DEFAULT_FONT_SIZE_INDEX = 4;
+const ORP_COLOR_OPTIONS = ['', '#EF4444', '#3B82F6', '#22C55E', '#F97316', '#A855F7'];
+const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
+const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
+const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
 
 interface RSVPOverlayProps {
   gridInsets: Insets;
@@ -49,6 +59,49 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [contextCollapsed, setContextCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_CONTEXT) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [fontSizeIndex, setFontSizeIndex] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FONT_SIZE);
+      if (saved !== null) {
+        const idx = parseInt(saved, 10);
+        if (idx >= 0 && idx < FONT_SIZE_OPTIONS.length) return idx;
+      }
+    } catch {
+      /* ignore */
+    }
+    return DEFAULT_FONT_SIZE_INDEX;
+  });
+  const [orpColorIndex, setOrpColorIndex] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_ORP_COLOR);
+      if (saved !== null) {
+        const idx = parseInt(saved, 10);
+        if (idx >= 0 && idx < ORP_COLOR_OPTIONS.length) return idx;
+      }
+    } catch {
+      /* ignore */
+    }
+    return 0;
+  });
+  // Context window: only rebuild the rendered word list when the current word
+  // falls outside the window or nears its edge, keeping the DOM stable.
+  const [contextWindow, setContextWindow] = useState(() => {
+    if (!state || state.words.length === 0) return { start: 0, end: 0 };
+    return {
+      start: Math.max(0, state.currentIndex - 50),
+      end: Math.min(state.words.length, state.currentIndex + 151),
+    };
+  });
+  const contextWordRef = useRef<HTMLSpanElement>(null);
+  const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -76,6 +129,27 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
       setCurrentWord(controller.currentWord);
+
+      // Update context window only when current word falls outside or nears edge
+      const idx = newState.currentIndex;
+      const total = newState.words.length;
+      setContextWindow((prev) => {
+        if (total === 0) return { start: 0, end: 0 };
+        // Outside window — reset
+        if (idx < prev.start || idx >= prev.end) {
+          return {
+            start: Math.max(0, idx - 50),
+            end: Math.min(total, idx + 151),
+          };
+        }
+        // Near end of window — extend forward
+        const windowSize = prev.end - prev.start;
+        if (idx - prev.start > windowSize * 0.8) {
+          return { start: prev.start, end: Math.min(total, prev.end + 100) };
+        }
+        // No change — return same reference to avoid re-render
+        return prev;
+      });
     };
 
     const handleCountdownChange = (e: Event) => {
@@ -174,24 +248,60 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Context text helpers - show 100 words before and after
-  const getContextBefore = useCallback((): string => {
-    if (!state || state.words.length === 0) return '';
-    const startIndex = Math.max(0, state.currentIndex - 100);
-    return state.words
-      .slice(startIndex, state.currentIndex)
-      .map((w) => w.text)
-      .join(' ');
-  }, [state]);
+  // Stable word list that only changes when contextWindow changes
+  const contextWords = useMemo(
+    () => state.words.slice(contextWindow.start, contextWindow.end),
+    [state.words, contextWindow],
+  );
 
-  const getContextAfter = useCallback((): string => {
-    if (!state || state.words.length === 0) return '';
-    const endIndex = Math.min(state.words.length, state.currentIndex + 101);
-    return state.words
-      .slice(state.currentIndex + 1, endIndex)
-      .map((w) => w.text)
-      .join(' ');
-  }, [state]);
+  // Auto-scroll: keep highlighted word away from top/bottom edges
+  useEffect(() => {
+    const panel = contextPanelRef.current;
+    const word = contextWordRef.current;
+    if (contextCollapsed || !panel || !word) return;
+
+    const panelRect = panel.getBoundingClientRect();
+    const wordRect = word.getBoundingClientRect();
+    const margin = panelRect.height * 0.15;
+    const topLine = panelRect.top + margin;
+
+    if (wordRect.top < topLine) {
+      panel.scrollTop -= topLine - wordRect.top;
+    } else if (wordRect.bottom > panelRect.bottom - margin) {
+      panel.scrollTop += wordRect.top - topLine;
+    }
+  }, [state.currentIndex, contextCollapsed]);
+
+  const toggleContext = useCallback(() => {
+    setContextCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(STORAGE_KEY_CONTEXT, next ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
+  const updateFontSize = useCallback((idx: number) => {
+    const clamped = Math.max(0, Math.min(FONT_SIZE_OPTIONS.length - 1, idx));
+    setFontSizeIndex(clamped);
+    try {
+      localStorage.setItem(STORAGE_KEY_FONT_SIZE, String(clamped));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const updateOrpColor = useCallback((idx: number) => {
+    setOrpColorIndex(idx);
+    try {
+      localStorage.setItem(STORAGE_KEY_ORP_COLOR, String(idx));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
@@ -290,6 +400,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const bgColor = themeCode.bg;
   const fgColor = themeCode.fg;
   const accentColor = themeCode.primary;
+  const effectiveOrpColor = ORP_COLOR_OPTIONS[orpColorIndex] || accentColor;
+  const currentFontSize =
+    FONT_SIZE_OPTIONS[fontSizeIndex] ?? FONT_SIZE_OPTIONS[DEFAULT_FONT_SIZE_INDEX]!;
 
   return (
     <div
@@ -373,35 +486,60 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         </div>
       </div>
 
-      {/* Context panel (shown when paused) */}
-      {!state.playing && countdown === null && (
-        <div className='mx-3 max-h-[25vh] overflow-y-auto rounded-lg border border-gray-500/20 bg-gray-500/10 p-3 md:mx-4 md:max-h-[30vh] md:rounded-xl md:p-4'>
-          <div className='mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide opacity-60 md:mb-3'>
-            <svg
-              width='14'
-              height='14'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-              className='md:h-4 md:w-4'
-            >
-              <path d='M4 6h16M4 12h16M4 18h10' />
-            </svg>
-            <span>{_('Context')}</span>
+      {/* Context panel (always visible, collapsible) */}
+      <div className='mx-3 overflow-hidden rounded-lg border border-gray-500/20 bg-gray-500/10 md:mx-4 md:rounded-xl'>
+        <button
+          className='flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide opacity-60 transition-opacity hover:opacity-80 md:px-4 md:py-3'
+          onClick={toggleContext}
+          aria-expanded={!contextCollapsed}
+          aria-label={contextCollapsed ? _('Show context') : _('Hide context')}
+        >
+          <svg
+            width='14'
+            height='14'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            className='md:h-4 md:w-4'
+          >
+            <path d='M4 6h16M4 12h16M4 18h10' />
+          </svg>
+          <span className='flex-1 text-left'>{_('Context')}</span>
+          <IoChevronDown
+            className={clsx(
+              'h-3.5 w-3.5 transition-transform duration-200',
+              !contextCollapsed && 'rotate-180',
+            )}
+          />
+        </button>
+        {!contextCollapsed && (
+          <div
+            ref={contextPanelRef}
+            className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
+          >
+            <div className='text-left text-base leading-relaxed md:text-lg'>
+              {contextWords.map((w, i) => {
+                const wordIndex = contextWindow.start + i;
+                const isCurrent = wordIndex === state.currentIndex;
+                return (
+                  <span
+                    key={wordIndex}
+                    ref={isCurrent ? contextWordRef : undefined}
+                    className={isCurrent ? undefined : 'opacity-70'}
+                    style={isCurrent ? { color: effectiveOrpColor } : undefined}
+                  >
+                    {w.text}{' '}
+                  </span>
+                );
+              })}
+            </div>
           </div>
-          <div className='text-left text-base leading-relaxed md:text-lg'>
-            <span className='opacity-70'>{getContextBefore()} </span>
-            <span className='font-semibold' style={{ color: accentColor }}>
-              {currentWord?.text || ''}
-            </span>
-            <span className='opacity-70'> {getContextAfter()}</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Main content area */}
-      <div className='flex flex-1 flex-col items-center justify-center p-4 md:p-8'>
+      <div className='flex flex-1 flex-col items-center justify-center p-4 md:p-6'>
         <div className='flex h-full w-full flex-col items-center justify-center'>
           <div className='flex h-full w-full flex-col items-center'>
             {/* Top guide line */}
@@ -422,16 +560,22 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               )}
 
               {/* Word display */}
-              <div className='relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-4 font-mono text-2xl font-medium tracking-wide sm:min-h-20 sm:px-4 sm:py-6 sm:text-3xl md:text-4xl lg:text-5xl'>
+              <div
+                className='rsvp-word relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-2 font-mono font-medium leading-none tracking-wide sm:min-h-20 sm:px-4 sm:py-4'
+                style={{ fontSize: `${currentFontSize}rem` }}
+              >
                 {currentWord ? (
                   <>
-                    <span className='absolute right-[calc(50%+0.3em)] text-right opacity-60'>
+                    <span className='rsvp-word-before absolute right-[calc(50%+0.3em)] text-right opacity-60'>
                       {wordBefore}
                     </span>
-                    <span className='relative z-10 font-bold' style={{ color: accentColor }}>
+                    <span
+                      className='rsvp-word-orp relative z-10 font-bold'
+                      style={{ color: effectiveOrpColor }}
+                    >
                       {orpChar}
                     </span>
-                    <span className='absolute left-[calc(50%+0.3em)] text-left opacity-60'>
+                    <span className='rsvp-word-after absolute left-[calc(50%+0.3em)] text-left opacity-60'>
                       {wordAfter}
                     </span>
                   </>
@@ -494,96 +638,140 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </div>
         </div>
 
-        {/* Controls */}
-        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4'>
-          {/* Playback controls - centered on mobile, middle on desktop */}
-          <div className='flex items-center justify-center gap-2 md:order-2 md:gap-4'>
-            <button
-              aria-label={_('Skip back 15 words')}
-              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-3 md:py-2'
-              onClick={() => controller.skipBackward(15)}
-              title={_('Back 15 words (Shift+Left)')}
-            >
-              <span className='text-xs font-semibold opacity-80'>15</span>
-              <IoPlaySkipBack className='h-5 w-5 md:h-6 md:w-6' />
-            </button>
+        {/* Playback controls */}
+        <div className='relative flex items-center justify-center gap-1 md:gap-2'>
+          <button
+            aria-label={_('Skip back 15 words')}
+            className='flex cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.skipBackward(15)}
+            title={_('Back 15 words (Shift+Left)')}
+          >
+            <span className='text-xs font-semibold opacity-80'>15</span>
+            <IoPlaySkipBack className='h-5 w-5 md:h-6 md:w-6' />
+          </button>
 
-            <button
-              aria-label={state.playing ? _('Pause') : _('Play')}
-              className={clsx(
-                'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
-                state.playing ? '' : 'ps-1',
-              )}
-              onClick={() => controller.togglePlayPause()}
-              title={state.playing ? _('Pause (Space)') : _('Play (Space)')}
-            >
-              {state.playing ? (
-                <IoPause className='h-7 w-7 md:h-8 md:w-8' />
-              ) : (
-                <IoPlay className='h-7 w-7 md:h-8 md:w-8' />
-              )}
-            </button>
+          <button
+            aria-label={_('Decrease speed')}
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.decreaseSpeed()}
+            title={_('Slower (Left/Down)')}
+          >
+            <IoRemove className='h-4 w-4 md:h-5 md:w-5' />
+          </button>
 
-            <button
-              aria-label={_('Skip forward 15 words')}
-              className='flex cursor-pointer items-center gap-1 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-3 md:py-2'
-              onClick={() => controller.skipForward(15)}
-              title={_('Forward 15 words (Shift+Right)')}
-            >
-              <IoPlaySkipForward className='h-5 w-5 md:h-6 md:w-6' />
-              <span className='text-xs font-semibold opacity-80'>15</span>
-            </button>
-          </div>
+          <button
+            aria-label={state.playing ? _('Pause') : _('Play')}
+            className={clsx(
+              'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
+              state.playing ? '' : 'ps-1',
+            )}
+            onClick={() => controller.togglePlayPause()}
+            title={state.playing ? _('Pause (Space)') : _('Play (Space)')}
+          >
+            {state.playing ? (
+              <IoPause className='h-7 w-7 md:h-8 md:w-8' />
+            ) : (
+              <IoPlay className='h-7 w-7 md:h-8 md:w-8' />
+            )}
+          </button>
 
-          {/* Secondary controls row on mobile, split on desktop */}
-          <div className='flex items-center justify-between gap-4 md:contents'>
-            {/* Punctuation pause - left on desktop */}
-            <div className='flex items-center md:order-1 md:min-w-[140px] md:flex-1'>
-              <label className='flex cursor-pointer items-center gap-1.5 text-xs font-medium opacity-80 md:gap-2'>
-                <span className='hidden sm:inline'>{_('Pause:')}</span>
-                <span className='sm:hidden'>{_('Pause:')}</span>
-                <select
-                  className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30 md:px-2'
-                  style={{ color: 'inherit' }}
-                  value={state.punctuationPauseMs}
-                  onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
-                >
-                  {controller.getPunctuationPauseOptions().map((option) => (
-                    <option key={option} value={option}>
-                      {option}ms
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          <button
+            aria-label={_('Increase speed')}
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.increaseSpeed()}
+            title={_('Faster (Right/Up)')}
+          >
+            <IoAdd className='h-4 w-4 md:h-5 md:w-5' />
+          </button>
 
-            {/* Speed controls - right on desktop */}
-            <div className='flex items-center justify-end gap-1.5 md:order-3 md:min-w-[140px] md:flex-1 md:gap-2'>
+          <button
+            aria-label={_('Skip forward 15 words')}
+            className='flex cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.skipForward(15)}
+            title={_('Forward 15 words (Shift+Right)')}
+          >
+            <IoPlaySkipForward className='h-5 w-5 md:h-6 md:w-6' />
+            <span className='text-xs font-semibold opacity-80'>15</span>
+          </button>
+
+          <button
+            aria-label={_('Settings')}
+            className={clsx(
+              'absolute right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95',
+              showSettings && 'bg-gray-500/15',
+            )}
+            onClick={() => setShowSettings((prev) => !prev)}
+            title={_('Settings')}
+          >
+            <IoSettingsSharp className='h-4 w-4 md:h-5 md:w-5' />
+          </button>
+        </div>
+
+        {/* Settings row (collapsible) */}
+        {showSettings && (
+          <div className='mt-3 flex flex-wrap items-center justify-evenly gap-x-8 gap-y-4 text-xs md:justify-center'>
+            {/* Punctuation pause */}
+            <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Pause')}</span>
+              <select
+                className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                style={{ color: 'inherit' }}
+                value={state.punctuationPauseMs}
+                onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
+              >
+                {controller.getPunctuationPauseOptions().map((option) => (
+                  <option key={option} value={option}>
+                    {option}ms
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Font size */}
+            <div className='flex items-center gap-0.5'>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Font')}</span>
               <button
-                aria-label={_('Decrease speed')}
-                className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-10 md:w-10'
-                onClick={() => controller.decreaseSpeed()}
-                title={_('Slower (Left/Down)')}
+                aria-label={_('Decrease font size')}
+                className='flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+                onClick={() => updateFontSize(fontSizeIndex - 1)}
+                disabled={fontSizeIndex <= 0}
               >
-                <IoRemove className='h-4 w-4 md:h-5 md:w-5' />
+                <IoRemove className='h-3 w-3' />
               </button>
-              <span
-                aria-label={_('Current speed')}
-                className='min-w-10 text-center text-sm font-medium md:min-w-12'
-              >
-                {state.wpm}
+              <span className='min-w-4 text-center font-medium tabular-nums'>
+                {fontSizeIndex + 1}
               </span>
               <button
-                aria-label={_('Increase speed')}
-                className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-10 md:w-10'
-                onClick={() => controller.increaseSpeed()}
-                title={_('Faster (Right/Up)')}
+                aria-label={_('Increase font size')}
+                className='flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+                onClick={() => updateFontSize(fontSizeIndex + 1)}
+                disabled={fontSizeIndex >= FONT_SIZE_OPTIONS.length - 1}
               >
-                <IoAdd className='h-4 w-4 md:h-5 md:w-5' />
+                <IoAdd className='h-3 w-3' />
               </button>
             </div>
+
+            {/* ORP color */}
+            <div className='flex items-center gap-1.5'>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Focus')}</span>
+              {ORP_COLOR_OPTIONS.map((color, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => updateOrpColor(idx)}
+                  className={clsx(
+                    'h-6 min-h-6 w-6 min-w-6 rounded-full border-2 transition-transform',
+                    orpColorIndex === idx
+                      ? 'scale-110 border-current'
+                      : 'border-transparent hover:scale-105',
+                  )}
+                  style={{ backgroundColor: color || accentColor }}
+                  aria-label={idx === 0 ? _('Theme color') : `Color ${idx}`}
+                  title={idx === 0 ? _('Theme color') : undefined}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

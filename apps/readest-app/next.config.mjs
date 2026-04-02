@@ -59,6 +59,14 @@ const nextConfig = {
           'marked',
         ]),
   ],
+  async rewrites() {
+    return [
+      {
+        source: '/reader/:ids',
+        destination: '/reader?ids=:ids',
+      },
+    ];
+  },
   async headers() {
     return [
       {

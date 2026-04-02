@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
+import { tauriHandleSetAlwaysOnTop } from '@/utils/window';
 import Reader from './components/Reader';
 
 // This is only used for the Tauri app in the app router
@@ -24,6 +25,9 @@ export default function Page() {
         checkAppReleaseNotes();
       }
     };
+    if (appService?.hasWindow && settings.alwaysOnTop) {
+      tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
+    }
     doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService?.hasUpdater, settings.autoCheckUpdates]);

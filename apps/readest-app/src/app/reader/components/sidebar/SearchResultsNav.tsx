@@ -3,6 +3,7 @@ import React from 'react';
 import { Insets } from '@/types/misc';
 import { BookSearchMatch, BookSearchResult } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReaderStore } from '@/store/readerStore';
 import { useSearchNav } from '../../hooks/useSearchNav';
 import ContentNavBar from './ContentNavBar';
 
@@ -25,8 +26,9 @@ const SearchResultsNav: React.FC<SearchResultsNavProps> = ({ bookKey, gridInsets
     handleNextResult,
   } = useSearchNav(bookKey);
   const _ = useTranslation();
+  const { hoveredBookKey } = useReaderStore();
 
-  if (!showSearchNav) {
+  if (!showSearchNav || hoveredBookKey === bookKey) {
     return null;
   }
 

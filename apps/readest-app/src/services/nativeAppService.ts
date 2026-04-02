@@ -42,6 +42,8 @@ import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
 import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
+import { DatabaseOpts, DatabaseService } from '@/types/database';
+import { SchemaType } from '@/services/database/migrate';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
@@ -59,6 +61,14 @@ declare global {
 }
 
 const OS_TYPE = osType();
+
+const safeDecodePath = (input: string) => {
+  try {
+    return decodeURI(input);
+  } catch {
+    return input;
+  }
+};
 
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
@@ -193,12 +203,13 @@ export const nativeFileSystem: FileSystem = {
     return this.getURL(path);
   },
   async openFile(path: string, base: BaseDir, name?: string) {
-    const { fp, baseDir } = this.resolvePath(path, base);
-    let fname = name || getFilename(fp);
+    const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
+    const { fp, baseDir } = this.resolvePath(normalizedPath, base);
+    let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
       return await new RemoteFile(path, fname).open();
     } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
-      fname = await basename(path);
+      fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
         // If the URI is from shared internal storage (like /storage/emulated/0),
         // we can access it directly using the path — no need to copy.
@@ -219,17 +230,22 @@ export const nativeFileSystem: FileSystem = {
     } else if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
     } else {
-      if (OS_TYPE === 'android') {
+      if (OS_TYPE === 'android' || OS_TYPE === 'ios') {
         // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
         // see https://issues.chromium.org/issues/40739128
+        // On iOS, importing picker Inbox files should also use NativeFile to avoid fetch/HEAD issues.
         return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       } else {
         // NOTE: RemoteFile currently performs about 2× faster than NativeFile
         // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
         // Once the bug is resolved, we should switch back to using NativeFile.
-        const prefix = await this.getPrefix(base);
-        const absolutePath = prefix ? await join(prefix, path) : path;
-        return await new RemoteFile(this.getURL(absolutePath), fname).open();
+        try {
+          const prefix = await this.getPrefix(base);
+          const absolutePath = prefix ? await join(prefix, path) : path;
+          return await new RemoteFile(this.getURL(absolutePath), fname).open();
+        } catch {
+          return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
+        }
       }
     }
   },
@@ -427,6 +443,14 @@ export class NativeAppService extends BaseAppService {
   override isOnlineCatalogsAccessible = true;
 
   private execDir?: string = undefined;
+  private customRootDir?: string = undefined;
+
+  constructor(customRootDir?: string) {
+    super();
+    if (customRootDir) {
+      this.customRootDir = customRootDir;
+    }
+  }
 
   override async init() {
     const execDir = await invoke<string>('get_executable_dir');
@@ -443,9 +467,9 @@ export class NativeAppService extends BaseAppService {
       });
     }
     const settings = await this.loadSettings();
-    if (settings.customRootDir) {
+    if (this.customRootDir || settings.customRootDir) {
       this.fs.resolvePath = getPathResolver({
-        customRootDir: settings.customRootDir,
+        customRootDir: this.customRootDir || settings.customRootDir,
         isPortable: this.isPortableApp,
         execDir,
       });
@@ -514,7 +538,8 @@ export class NativeAppService extends BaseAppService {
       multiple: true,
       filters: [{ name, extensions }],
     });
-    return Array.isArray(selected) ? selected : selected ? [selected] : [];
+    const files = Array.isArray(selected) ? selected : selected ? [selected] : [];
+    return OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
   }
 
   async saveFile(
@@ -551,6 +576,21 @@ export class NativeAppService extends BaseAppService {
 
   async ask(message: string): Promise<boolean> {
     return await ask(message);
+  }
+
+  async openDatabase(
+    schema: SchemaType,
+    path: string,
+    base: BaseDir,
+    opts?: DatabaseOpts,
+  ): Promise<DatabaseService> {
+    const fullPath = await this.resolveFilePath(path, base);
+    const { NativeDatabaseService } = await import('./database/nativeDatabaseService');
+    const db = await NativeDatabaseService.open(`sqlite:${fullPath}`, opts);
+    const { migrate } = await import('./database/migrate');
+    const { getMigrations } = await import('./database/migrations');
+    await migrate(db, getMigrations(schema));
+    return db;
   }
 
   async migrate20251029() {

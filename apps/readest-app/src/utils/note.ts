@@ -3,7 +3,7 @@ import nunjucks from 'nunjucks';
 export type NoteTemplateData = {
   title: string;
   author: string;
-  exportDate: number;
+  exportDate: number | string;
   chapters: {
     title: string;
     annotations: {
@@ -211,6 +211,22 @@ env.addFilter('join', (value: unknown[], separator = '') => {
 env.addFilter('nl2br', (value: string) => {
   if (!value || typeof value !== 'string') return '';
   return value.replace(/\n/g, '<br>\n');
+});
+
+/**
+ * Formats text as a markdown block quote, prefixing every line with `> `.
+ */
+export function formatBlockQuote(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => `> ${line}`)
+    .join('\n');
+}
+
+// Add 'blockquote' filter (prefix every line with > for markdown block quotes)
+env.addFilter('blockquote', (value: string) => {
+  if (!value || typeof value !== 'string') return '';
+  return formatBlockQuote(value);
 });
 
 /**

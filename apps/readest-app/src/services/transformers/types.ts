@@ -4,6 +4,7 @@ export type TransformContext = {
   bookKey: string;
   viewSettings: ViewSettings;
   userLocale: string;
+  isFixedLayout: boolean;
   primaryLanguage?: string;
   width?: number;
   height?: number;
