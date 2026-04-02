@@ -180,4 +180,67 @@ describe('HardcoverClient', () => {
     const variables = lastCall[1];
     expect(variables.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  test('should promote an existing user book to currently reading before syncing progress', async () => {
+    const book = {
+      createdAt: 1711737600000,
+      metadata: { isbn: '1234567890' },
+    } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
+    });
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        data: {
+          editions: [
+            {
+              id: 101,
+              pages: 100,
+              book: {
+                id: 202,
+                pages: 100,
+                user_books: [
+                  {
+                    id: 303,
+                    status_id: 1,
+                    user_book_reads: [],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      }),
+    });
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { update_user_book: { id: 303, error: null } } }),
+    });
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { insert_user_book_read: { id: 404, error: null } } }),
+    });
+
+    await client.pushProgress(book, config);
+
+    const calls = (fetch as any).mock.calls.map((call: [string, { body: string }]) =>
+      JSON.parse(call[1].body),
+    );
+    expect(calls[2].query).toContain('mutation UpdateUserBook');
+    expect(calls[2].variables).toEqual({
+      user_book_id: 303,
+      object: { status_id: 2 },
+    });
+    expect(calls[3].query).toContain('mutation InsertRead');
+    expect(calls[3].variables).toMatchObject({
+      user_book_id: 303,
+      progress_pages: 25,
+      edition_id: 101,
+      started_at: '2024-03-29',
+    });
+  });
 });

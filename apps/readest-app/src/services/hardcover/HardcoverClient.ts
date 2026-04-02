@@ -295,11 +295,27 @@ export class HardcoverClient {
     return null;
   }
 
+  private async updateUserBookStatus(context: BookContext, statusId: number): Promise<void> {
+    if (!context.userBook || context.userBook.status_id === statusId) return;
+
+    await this.request(MUTATION_UPDATE_USER_BOOK, {
+      user_book_id: context.userBook.id,
+      object: { status_id: statusId },
+    });
+
+    context.userBook.status_id = statusId;
+  }
+
   private async ensureBookInLibrary(book: Book, isReading = true): Promise<BookContext | null> {
     const context = await this.fetchBookContext(book);
     if (!context) return null;
 
-    if (context.userBook) return context;
+    if (context.userBook) {
+      if (isReading) {
+        await this.updateUserBookStatus(context, 2);
+      }
+      return context;
+    }
 
     const data = await this.request<
       { object: { book_id: number; edition_id: number; status_id: number } },
@@ -352,10 +368,7 @@ export class HardcoverClient {
     }
 
     if (percent >= 100) {
-      await this.request(MUTATION_UPDATE_USER_BOOK, {
-        user_book_id: context.userBook.id,
-        object: { status_id: 3 },
-      });
+      await this.updateUserBookStatus(context, 3);
     }
   }
 
