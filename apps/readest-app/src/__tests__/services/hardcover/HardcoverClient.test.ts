@@ -154,7 +154,7 @@ describe('HardcoverClient', () => {
     vi.useRealTimers();
   });
 
-  test('should produce the expected date formats for journal and progress payloads', () => {
+  test('should produce the expected date formats for journal and progress payloads', async () => {
     const note = { 
       updatedAt: 1711737600000, // 2026-03-29 ...
       type: 'annotation',
@@ -172,12 +172,25 @@ describe('HardcoverClient', () => {
 
     // Test progress payload (started_at)
     const book = { createdAt: 1711737600000 } as Book;
-    // We can spy on request to see the variables passed
+    vi.spyOn(client as any, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 2,
+      pages: 100,
+      bookId: 1,
+      bookPages: 100,
+      userBook: {
+        id: 3,
+        status_id: 2,
+        user_book_reads: [],
+      },
+    });
     const requestSpy = vi.spyOn(client as any, 'request').mockResolvedValue({});
-    (client as any).pushProgress(book, config);
-    
-    const lastCall = requestSpy.mock.calls[requestSpy.mock.calls.length - 1];
-    const variables = lastCall[1];
+    await (client as any).pushProgress(book, config);
+
+    const progressCall = requestSpy.mock.calls.find((call: [string, unknown]) => {
+      const [query] = call;
+      return typeof query === 'string' && query.includes('mutation InsertRead');
+    });
+    const variables = progressCall?.[1];
     expect(variables.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
@@ -187,6 +200,59 @@ describe('HardcoverClient', () => {
       metadata: { isbn: '1234567890' },
     } as Book;
     const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(client as any, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 101,
+      pages: 100,
+      bookId: 202,
+      bookPages: 100,
+      userBook: {
+        id: 303,
+        status_id: 1,
+        user_book_reads: [],
+      },
+    });
+    const requestSpy = vi.spyOn(client as any, 'request').mockResolvedValue({});
+
+    await client.pushProgress(book, config);
+
+    const calls = requestSpy.mock.calls.map((call: [string, unknown]) => {
+      const [query, variables] = call;
+      return { query, variables };
+    });
+    expect(calls[0].query).toContain('mutation UpdateUserBook');
+    expect(calls[0].variables).toEqual({
+      user_book_id: 303,
+      object: { status_id: 2 },
+    });
+    expect(calls[1].query).toContain('mutation InsertRead');
+    expect(calls[1].variables).toMatchObject({
+      user_book_id: 303,
+      progress_pages: 25,
+      edition_id: 101,
+      started_at: '2024-03-29',
+    });
+  });
+
+  test('should not promote an existing user book when syncing notes only', async () => {
+    const book = {
+      hash: 'book-hash',
+      title: 'Test Book',
+      author: 'Test Author',
+      metadata: { isbn: '1234567890' },
+    } as unknown as Book;
+    const config = {
+      progress: [25, 100],
+      booknotes: [
+        {
+          id: 'note-1',
+          type: 'annotation',
+          text: 'Shared Text',
+          note: 'Some note',
+          cfi: 'epubcfi(/6/4[chap1]!/4/2,10/10)',
+        },
+      ] as BookNote[],
+    } as BookConfig;
 
     (fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -206,7 +272,7 @@ describe('HardcoverClient', () => {
                 user_books: [
                   {
                     id: 303,
-                    status_id: 1,
+                    status_id: 3,
                     user_book_reads: [],
                   },
                 ],
@@ -218,29 +284,17 @@ describe('HardcoverClient', () => {
     });
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ data: { update_user_book: { id: 303, error: null } } }),
-    });
-    (fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ data: { insert_user_book_read: { id: 404, error: null } } }),
+      json: () => Promise.resolve({ data: { insert_reading_journal: { id: 999 } } }),
     });
 
-    await client.pushProgress(book, config);
-
+    const result = await client.syncBookNotes(book, config);
     const calls = (fetch as any).mock.calls.map((call: [string, { body: string }]) =>
       JSON.parse(call[1].body),
     );
-    expect(calls[2].query).toContain('mutation UpdateUserBook');
-    expect(calls[2].variables).toEqual({
-      user_book_id: 303,
-      object: { status_id: 2 },
-    });
-    expect(calls[3].query).toContain('mutation InsertRead');
-    expect(calls[3].variables).toMatchObject({
-      user_book_id: 303,
-      progress_pages: 25,
-      edition_id: 101,
-      started_at: '2024-03-29',
-    });
+
+    expect(result.inserted).toBe(1);
+    expect(calls.some((call: { query: string }) => call.query.includes('mutation UpdateUserBook'))).toBe(
+      false,
+    );
   });
 });

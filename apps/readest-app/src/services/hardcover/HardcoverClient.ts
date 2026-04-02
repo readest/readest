@@ -310,12 +310,7 @@ export class HardcoverClient {
     const context = await this.fetchBookContext(book);
     if (!context) return null;
 
-    if (context.userBook) {
-      if (isReading) {
-        await this.updateUserBookStatus(context, 2);
-      }
-      return context;
-    }
+    if (context.userBook) return context;
 
     const data = await this.request<
       { object: { book_id: number; edition_id: number; status_id: number } },
@@ -341,6 +336,8 @@ export class HardcoverClient {
   async pushProgress(book: Book, config: BookConfig): Promise<void> {
     const context = await this.ensureBookInLibrary(book, true);
     if (!context?.userBook) return;
+
+    await this.updateUserBookStatus(context, 2);
 
     const current = config.progress?.[0] ?? book.progress?.[0] ?? 0;
     const total = config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
