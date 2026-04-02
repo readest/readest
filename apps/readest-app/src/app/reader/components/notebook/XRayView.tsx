@@ -394,10 +394,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   const handleUpdate = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
-    if (snapshot?.state?.processing) {
-      setErrorMessage(_('X-Ray is currently processing.'));
-      return;
-    }
+    if (snapshot?.state?.processing) return;
 
     if (aiSettings.provider !== 'ai-gateway') {
       setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
@@ -445,10 +442,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   const handleRebuild = useCallback(async () => {
     if (!aiSettings?.enabled || !bookHash) return;
-    if (snapshot?.state?.processing) {
-      setErrorMessage(_('X-Ray is currently processing.'));
-      return;
-    }
+    if (snapshot?.state?.processing) return;
 
     if (aiSettings.provider !== 'ai-gateway') {
       setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
@@ -1295,7 +1289,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           <div className='border-base-300/60 bg-base-100/90 text-base-content relative z-10 flex flex-col gap-2 rounded-2xl border px-4 py-3 text-[11px] font-semibold uppercase tracking-wide shadow-sm'>
             <div className='flex items-center gap-2'>
               <span className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
-              <span>{_('xray-ing')}</span>
+              <span>{_('Processing X-Ray')}</span>
             </div>
             <span className='text-base-content/70 text-[10px] font-medium uppercase tracking-wide'>
               {processingLabel.range}

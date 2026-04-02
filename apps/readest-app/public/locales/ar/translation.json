@@ -1033,7 +1033,7 @@
   "Themes": "المواضيع",
   "Timeline": "الجدول الزمني",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "جاري معالجة X-Ray",
   "Set status for {{count}} book(s)_zero": "تعيين الحالة للكتب",
   "Set status for {{count}} book(s)_two": "تعيين الحالة للكتابين",
   "Set status for {{count}} book(s)_few": "تعيين الحالة لـ {{count}} كتب",
@@ -1284,7 +1284,6 @@
   "Select reading speed": "اختر سرعة القراءة",
   "Drag to seek": "اسحب للتقديم",
   "Punctuation Delay": "تأخير علامات الترقيم",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "إعادة المعالجة من البداية إلى الصفحة الحالية (مع الاحتفاظ بذاكرة التخزين المؤقت)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "جاري معالجة ص. {{start}}-{{end}} من {{total}}"
 }

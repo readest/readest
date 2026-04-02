@@ -993,7 +993,7 @@
   "Themes": "கருப்பொருள்கள்",
   "Timeline": "காலவரிசை",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray செயலாக்கப்படுகிறது",
   "Loading": "ஏற்றுகிறது...",
   "Exit Paragraph Mode": "பத்தி பயன்முறையிலிருந்து வெளியேறு",
   "Paragraph Mode": "பத்தி பயன்முறை",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "படிக்கும் வேகத்தைத் தேர்ந்தெடுக்கவும்",
   "Drag to seek": "தேட இழுக்கவும்",
   "Punctuation Delay": "நிறுத்தக்குறி தாமதம்",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "ஆரம்பத்தில் இருந்து தற்போதைய பக்கம் வரை மீண்டும் செயலாக்கவும் (தற்காலிக சேமிப்பை வைத்திருக்கிறது)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "{{total}} இல் {{start}}-{{end}} பக்கம் செயலாக்கப்படுகிறது"
 }

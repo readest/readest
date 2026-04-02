@@ -685,7 +685,7 @@
   "Add OPDS Catalog": "Προσθήκη Καταλόγου OPDS",
   "Catalog Name": "Όνομα Καταλόγου",
   "My Calibre Library": "Η Βιβλιοθήκη μου στο Calibre",
-  "OPDS URL": "OPDS URL",
+  "OPDS URL": "URL OPDS",
   "Username (optional)": "Όνομα χρήστη (προαιρετικό)",
   "Password (optional)": "Κωδικός πρόσβασης (προαιρετικό)",
   "Description (optional)": "Περιγραφή (προαιρετική)",
@@ -993,7 +993,7 @@
   "Themes": "Θέματα",
   "Timeline": "Χρονολόγιο",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Επεξεργασία X-Ray",
   "Loading": "Φόρτωση...",
   "Exit Paragraph Mode": "Έξοδος από τη λειτουργία παραγράφου",
   "Paragraph Mode": "Λειτουργία παραγράφου",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "Επιλέξτε ταχύτητα ανάγνωσης",
   "Drag to seek": "Σύρετε για αναζήτηση",
   "Punctuation Delay": "Καθυστέρηση στίξης",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Επανεπεξεργασία από την αρχή μέχρι την τρέχουσα σελίδα (διατηρεί την προσωρινή μνήμη)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Επεξεργασία σελ. {{start}}-{{end}} από {{total}}"
 }

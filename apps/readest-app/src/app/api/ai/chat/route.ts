@@ -4,9 +4,11 @@ import type { ModelMessage } from 'ai';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
-    if (!user || !token) {
-      return Response.json({ error: 'Not authenticated' }, { status: 403 });
+    if (process.env.NODE_ENV !== 'development') {
+      const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+      if (!user || !token) {
+        return Response.json({ error: 'Not authenticated' }, { status: 403 });
+      }
     }
 
     const { messages, system, apiKey, model } = await req.json();

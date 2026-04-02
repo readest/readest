@@ -993,7 +993,7 @@
   "Themes": "තේමා",
   "Timeline": "කාලරාමුව",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray සැකසෙමින් පවතී",
   "Loading": "පූරණය වෙමින් පවතී...",
   "Exit Paragraph Mode": "ඡේද ප්‍රකාරයෙන් ඉවත් වන්න",
   "Paragraph Mode": "ඡේද ප්‍රකාරය",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "කියවීමේ වේගය තෝරන්න",
   "Drag to seek": "සෙවීමට ඇදගන්න",
   "Punctuation Delay": "විරාම ලකුණු ප්‍රමාදය",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "මුල සිට වත්මන් පිටුව දක්වා නැවත සකසන්න (කැචය සුරකියි)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "{{total}} කින් {{start}}-{{end}} පිටුව සැකසෙමින් පවතී"
 }

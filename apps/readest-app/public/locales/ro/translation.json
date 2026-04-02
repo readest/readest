@@ -1166,5 +1166,11 @@
   "TTS Media Info Update Frequency": "Frecvența actualizării informațiilor media TTS",
   "Select reading speed": "Selectați viteza de citire",
   "Drag to seek": "Trageți pentru a căuta",
-  "Punctuation Delay": "Întârziere punctuație"
+  "Punctuation Delay": "Întârziere punctuație",
+  "Update X-Ray": "Actualizează X-Ray",
+  "Rebuild X-Ray": "Reconstruiește X-Ray",
+  "Reprocess from scratch to current page (keeps cache)": "Reprocesează de la zero până la pagina curentă (păstrează memoria cache)",
+  "Incremental update to current page": "Actualizare incrementală până la pagina curentă",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Se procesează p. {{start}}-{{end}} din {{total}}",
+  "Processing X-Ray": "Se procesează X-Ray"
 }

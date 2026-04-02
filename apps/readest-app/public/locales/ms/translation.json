@@ -982,7 +982,7 @@
   "Themes": "Tema",
   "Timeline": "Garis masa",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Memproses X-Ray",
   "Loading": "Memuatkan...",
   "Exit Paragraph Mode": "Keluar dari Mod Perenggan",
   "Paragraph Mode": "Mod Perenggan",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "Pilih kelajuan membaca",
   "Drag to seek": "Seret untuk mencari",
   "Punctuation Delay": "Kelewatan tanda baca",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Proses semula dari awal ke halaman semasa (simpan cache)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Memproses m/s. {{start}}-{{end}} daripada {{total}}"
 }

@@ -993,7 +993,7 @@
   "Themes": "Teman",
   "Timeline": "Tidslinje",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray bearbetas",
   "Loading": "Laddar...",
   "Exit Paragraph Mode": "Avsluta styckeläge",
   "Paragraph Mode": "Styckeläge",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "Välj läshastighet",
   "Drag to seek": "Dra för att söka",
   "Punctuation Delay": "Skiljeteckenfördröjning",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Bearbeta om från början till aktuell sida (behåller cachen)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Bearbetar s. {{start}}-{{end}} av {{total}}"
 }

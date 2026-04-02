@@ -982,7 +982,7 @@
   "Themes": "主題",
   "Timeline": "時間軸",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray 處理中",
   "Loading": "正在載入",
   "Exit Paragraph Mode": "退出段落模式",
   "Paragraph Mode": "段落模式",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "選擇朗讀速度",
   "Drag to seek": "拖曳以定位",
   "Punctuation Delay": "標點符號停頓",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "從頭重新處理到當前頁（保留快取）",
+  "Processing p. {{start}}-{{end}} of {{total}}": "正在處理第 {{start}}-{{end}} 頁（共 {{total}} 頁）"
 }

@@ -689,7 +689,7 @@
   "Add OPDS Catalog": "Añadir catálogo OPDS",
   "Catalog Name": "Nombre del catálogo",
   "My Calibre Library": "Mi biblioteca Calibre",
-  "OPDS URL": "URL OPDS",
+  "OPDS URL": "OPDS URL",
   "Username (optional)": "Usuario (opcional)",
   "Password (optional)": "Contraseña (opcional)",
   "Description (optional)": "Descripción (opcional)",
@@ -1003,7 +1003,7 @@
   "Themes": "Temas",
   "Timeline": "Cronología",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Procesando X-Ray",
   "Set status for {{count}} book(s)_many": "Establecer estado para {{count}} libros",
   "Loading": "Cargando...",
   "Exit Paragraph Mode": "Salir del modo de párrafo",
@@ -1245,7 +1245,6 @@
   "Select reading speed": "Seleccionar velocidad de lectura",
   "Drag to seek": "Arrastra para buscar",
   "Punctuation Delay": "Retraso de puntuación",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Volver a procesar desde el principio hasta la página actual (mantiene caché)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Procesando p. {{start}}-{{end}} de {{total}}"
 }

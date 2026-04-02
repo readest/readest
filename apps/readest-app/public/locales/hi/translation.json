@@ -993,7 +993,7 @@
   "Themes": "थीम",
   "Timeline": "समयरेखा",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray 처리 중",
   "Loading": "लोड हो रहा है...",
   "Exit Paragraph Mode": "पैराग्राफ मोड से बाहर निकलें",
   "Paragraph Mode": "पैराग्राफ मोड",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "पढ़ने की गति चुनें",
   "Drag to seek": "खोजने के लिए खींचें",
   "Punctuation Delay": "विराम चिह्न विलंब",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "शुरुआत से वर्तमान पृष्ठ तक फिर से प्रोसेस करें (कैश रखता है)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "प्रोसेसिंग पृष्ठ {{start}}-{{end}} / {{total}}"
 }

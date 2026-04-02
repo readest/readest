@@ -993,7 +993,7 @@
   "Themes": "Temalar",
   "Timeline": "Zaman Çizelgesi",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray işleniyor",
   "Loading": "Yükleniyor...",
   "Exit Paragraph Mode": "Paragraf modundan çık",
   "Paragraph Mode": "Paragraf modu",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "Okuma hızını seçin",
   "Drag to seek": "Aramak için sürükleyin",
   "Punctuation Delay": "Noktalama gecikmesi",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Baştan geçerli sayfaya kadar yeniden işle (önbelleği korur)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "İşlenen sayfa {{start}}-{{end}} / {{total}}"
 }

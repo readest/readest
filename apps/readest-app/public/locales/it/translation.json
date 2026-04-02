@@ -1003,7 +1003,7 @@
   "Themes": "Temi",
   "Timeline": "Cronologia",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Elaborazione X-Ray",
   "Set status for {{count}} book(s)_many": "Imposta stato per {{count}} libri",
   "Loading": "Caricamento...",
   "Exit Paragraph Mode": "Esci dalla modalità paragrafo",
@@ -1245,7 +1245,6 @@
   "Select reading speed": "Seleziona velocità di lettura",
   "Drag to seek": "Trascina per cercare",
   "Punctuation Delay": "Ritardo punteggiatura",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Rielabora dall'inizio alla pagina corrente (mantiene la cache)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Elaborazione p. {{start}}-{{end}} di {{total}}"
 }

@@ -1013,7 +1013,7 @@
   "Themes": "Темы",
   "Timeline": "Хронология",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Обработка X-Ray",
   "Set status for {{count}} book(s)_few": "Установить статус для {{count}} книг",
   "Set status for {{count}} book(s)_many": "Установить статус для {{count}} книг",
   "Loading": "Загрузка...",
@@ -1258,7 +1258,6 @@
   "Select reading speed": "Выберите скорость чтения",
   "Drag to seek": "Перетащите для перемотки",
   "Punctuation Delay": "Задержка на знаках препинания",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Переработать с начала до текущей страницы (сохранить кэш)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Обработка стр. {{start}}-{{end}} из {{total}}"
 }

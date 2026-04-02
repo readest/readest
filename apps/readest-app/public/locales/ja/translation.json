@@ -982,7 +982,7 @@
   "Themes": "テーマ",
   "Timeline": "タイムライン",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray処理中",
   "Loading": "読み込み中",
   "Exit Paragraph Mode": "段落モードを終了",
   "Paragraph Mode": "段落モード",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "読み上げ速度を選択",
   "Drag to seek": "ドラッグしてシーク",
   "Punctuation Delay": "句読点の遅延",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "最初から現在のページまで再処理 (キャッシュを保持)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "処理中 p. {{start}}-{{end}} / {{total}}"
 }

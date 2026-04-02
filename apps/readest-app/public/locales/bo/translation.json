@@ -982,7 +982,7 @@
   "Themes": "བརྗོད་དོན།",
   "Timeline": "དུས་ཚིགས་རེའུ་མིག",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray སྒྲིག་སྦྱོར་བྱེད་བཞིན་པ།",
   "Loading": "ལེན་བཞིན་པ།...",
   "Exit Paragraph Mode": "དུམ་མཚམས་རྣམ་པ་ནས་ཕྱིར་ཐོན།",
   "Paragraph Mode": "དུམ་མཚམས་རྣམ་པ།",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "ཀློག་པའི་མྱུར་ཚད་འདེམས།",
   "Drag to seek": "འཚོལ་བར་འདྲུད།",
   "Punctuation Delay": "ཚེག་ཤད་ཕྱིར་འགྱངས།",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "མགོ་ནས་ད་ལྟའི་ཤོག་ངོས་བར་བསྐྱར་དུ་ལས་སྣོན་བྱེད་པ། (གསོག་ཆས་ཉར་ཚགས།)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "ལས་སྣོན་བྱེད་བཞིན་པ། ཤོག་ངོས། {{start}}-{{end}} ཁྱོན་བསྡོམས། {{total}}"
 }

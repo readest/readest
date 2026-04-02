@@ -1013,7 +1013,7 @@
   "Themes": "Motywy",
   "Timeline": "Oś czasu",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "Przetwarzanie X-Ray",
   "Set status for {{count}} book(s)_few": "Ustaw status dla {{count}} książek",
   "Set status for {{count}} book(s)_many": "Ustaw status dla {{count}} książek",
   "Loading": "Ładowanie...",
@@ -1258,7 +1258,6 @@
   "Select reading speed": "Wybierz prędkość czytania",
   "Drag to seek": "Przeciągnij, aby przewinąć",
   "Punctuation Delay": "Opóźnienie interpunkcji",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Przetwórz ponownie od początku do obecnej strony (zachowuje pamięć podręczną)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Przetwarzanie str. {{start}}-{{end}} z {{total}}"
 }

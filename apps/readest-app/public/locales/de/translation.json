@@ -685,7 +685,7 @@
   "Add OPDS Catalog": "OPDS-Katalog hinzufügen",
   "Catalog Name": "Katalogname",
   "My Calibre Library": "Meine Calibre-Bibliothek",
-  "OPDS URL": "OPDS-URL",
+  "OPDS URL": "OPDS URL",
   "Username (optional)": "Benutzername (optional)",
   "Password (optional)": "Passwort (optional)",
   "Description (optional)": "Beschreibung (optional)",
@@ -954,7 +954,7 @@
   "Search Settings": "Einstellungen suchen",
   "Page Margins": "Seitenränder",
   "AI Provider": "KI-Anbieter",
-  "Ollama URL": "Ollama-URL",
+  "Ollama URL": "Ollama URL",
   "Ollama Model": "Ollama-Modell",
   "AI Gateway Model": "AI Gateway-Modell",
   "Actions": "Aktionen",
@@ -993,7 +993,7 @@
   "Themes": "Themen",
   "Timeline": "Zeitstrahl",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray wird verarbeitet",
   "Loading": "Laden...",
   "Exit Paragraph Mode": "Absatzmodus verlassen",
   "Paragraph Mode": "Absatzmodus",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "Lesegeschwindigkeit wählen",
   "Drag to seek": "Ziehen zum Suchen",
   "Punctuation Delay": "Satzzeichen-Verzögerung",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "Von Grund auf bis zur aktuellen Seite neu verarbeiten (behält Cache)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Verarbeite S. {{start}}-{{end}} von {{total}}"
 }

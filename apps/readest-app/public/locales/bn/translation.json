@@ -993,7 +993,7 @@
   "Themes": "থিমসমূহ",
   "Timeline": "সময়রেখা",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray প্রক্রিয়াকরণ হচ্ছে",
   "Loading": "লোড হচ্ছে...",
   "Exit Paragraph Mode": "অনুচ্ছেদ মোড থেকে প্রস্থান করুন",
   "Paragraph Mode": "অনুচ্ছেদ মোড",
@@ -1232,7 +1232,6 @@
   "Select reading speed": "পড়ার গতি নির্বাচন করুন",
   "Drag to seek": "খুঁজতে টানুন",
   "Punctuation Delay": "বিরাম চিহ্ন বিলম্ব",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "বর্তমান পৃষ্ঠা পর্যন্ত একদম শুরু থেকে পুনরায় প্রক্রিয়া করুন (ক্যাশে রাখবে)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "প্রক্রিয়াকরণ হচ্ছে পৃষ্ঠা {{start}}-{{end}} / {{total}}"
 }

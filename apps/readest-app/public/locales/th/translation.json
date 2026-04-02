@@ -681,7 +681,7 @@
   "Add OPDS Catalog": "เพิ่มแคตตาล็อก OPDS",
   "Catalog Name": "ชื่อแคตตาล็อก",
   "My Calibre Library": "ห้องสมุด Calibre ของฉัน",
-  "OPDS URL": "URL OPDS",
+  "OPDS URL": "OPDS URL",
   "Username (optional)": "ชื่อผู้ใช้ (ไม่บังคับ)",
   "Password (optional)": "รหัสผ่าน (ไม่บังคับ)",
   "Description (optional)": "คำอธิบาย (ไม่บังคับ)",
@@ -982,7 +982,7 @@
   "Themes": "ธีม",
   "Timeline": "ไทม์ไลน์",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "กำลังประมวลผล X-Ray",
   "Loading": "กำลังโหลด...",
   "Exit Paragraph Mode": "ออกจากโหมดพารากราฟ",
   "Paragraph Mode": "โหมดพารากราฟ",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "เลือกความเร็วในการอ่าน",
   "Drag to seek": "ลากเพื่อค้นหา",
   "Punctuation Delay": "หน่วงเวลาเครื่องหมายวรรคตอน",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "ประมวลผลใหม่ตั้งแต่เริ่มต้นจนถึงปัจจุบัน (เก็บแคช)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "กำลังประมวลผลหน้า {{start}}-{{end}} จาก {{total}}"
 }

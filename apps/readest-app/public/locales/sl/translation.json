@@ -1179,5 +1179,11 @@
   "TTS Media Info Update Frequency": "Pogostost posodabljanja podatkov o medijih TTS",
   "Select reading speed": "Izberite hitrost branja",
   "Drag to seek": "Povlecite za iskanje",
-  "Punctuation Delay": "Zamik ločil"
+  "Punctuation Delay": "Zamik ločil",
+  "Update X-Ray": "Posodobi X-Ray",
+  "Rebuild X-Ray": "Znova zgradi X-Ray",
+  "Reprocess from scratch to current page (keeps cache)": "Ponovno obdela od začetka do trenutne strani (ohrani predpomnilnik)",
+  "Incremental update to current page": "Postopna posodobitev do trenutne strani",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Obdelava str. {{start}}-{{end}} od {{total}}",
+  "Processing X-Ray": "Obdelava X-Ray"
 }

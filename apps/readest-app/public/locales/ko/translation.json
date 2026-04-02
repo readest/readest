@@ -982,7 +982,7 @@
   "Themes": "테마",
   "Timeline": "타임라인",
   "X-Ray": "X-Ray",
-  "xray-ing": "xray-ing",
+  "Processing X-Ray": "X-Ray 처리 중",
   "Loading": "로드 중...",
   "Exit Paragraph Mode": "단락 모드 종료",
   "Paragraph Mode": "단락 모드",
@@ -1219,7 +1219,6 @@
   "Select reading speed": "읽기 속도 선택",
   "Drag to seek": "드래그하여 탐색",
   "Punctuation Delay": "구두점 지연",
-  "Reprocess from scratch to current page (keeps cache)": "Reprocess from scratch to current page (keeps cache)",
-  "Processing p. {{start}}-{{end}} of {{total}}": "Processing p. {{start}}-{{end}} of {{total}}",
-  "X-Ray is currently processing.": "X-Ray is currently processing."
+  "Reprocess from scratch to current page (keeps cache)": "처음부터 현재 페이지까지 다시 처리 (캐시 유지)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "처리 중 p. {{start}}-{{end}} / {{total}}"
 }
