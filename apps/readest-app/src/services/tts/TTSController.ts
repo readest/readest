@@ -7,6 +7,7 @@ import { createRejectFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
+import { CambAITTSClient } from './CambAITTSClient';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { isValidLang } from '@/utils/lang';
@@ -41,9 +42,11 @@ export class TTSController extends EventTarget {
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
   ttsEdgeClient: TTSClient;
+  ttsCambClient: TTSClient;
   ttsNativeClient: TTSClient | null = null;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
+  ttsCambVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
 
@@ -59,6 +62,7 @@ export class TTSController extends EventTarget {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this, appService);
+    this.ttsCambClient = new CambAITTSClient(this, appService);
     // TODO: implement native TTS client for iOS and PC
     if (appService?.isAndroidApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
@@ -75,6 +79,10 @@ export class TTSController extends EventTarget {
     const availableClients = [];
     if (await this.ttsEdgeClient.init()) {
       availableClients.push(this.ttsEdgeClient);
+    }
+    if (await this.ttsCambClient.init()) {
+      availableClients.push(this.ttsCambClient);
+      this.ttsCambVoices = await this.ttsCambClient.getAllVoices();
     }
     if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
       availableClients.push(this.ttsNativeClient);
@@ -471,6 +479,7 @@ export class TTSController extends EventTarget {
 
   async setPrimaryLang(lang: string) {
     if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
+    if (this.ttsCambClient.initialized) this.ttsCambClient.setPrimaryLang(lang);
     if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
     if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
   }
@@ -484,9 +493,10 @@ export class TTSController extends EventTarget {
   async getVoices(lang: string) {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
+    const ttsCambVoices = await this.ttsCambClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
 
-    const voicesGroups = [...ttsNativeVoices, ...ttsEdgeVoices, ...ttsWebVoices];
+    const voicesGroups = [...ttsNativeVoices, ...ttsCambVoices, ...ttsEdgeVoices, ...ttsWebVoices];
     return voicesGroups;
   }
 
@@ -495,11 +505,17 @@ export class TTSController extends EventTarget {
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
+    const useCambTTS = !!this.ttsCambVoices.find(
+      (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
+    );
     const useNativeTTS = !!this.ttsNativeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
+      await this.ttsClient.setRate(this.ttsRate);
+    } else if (useCambTTS) {
+      this.ttsClient = this.ttsCambClient;
       await this.ttsClient.setRate(this.ttsRate);
     } else if (useNativeTTS) {
       if (!this.ttsNativeClient) {
@@ -554,6 +570,9 @@ export class TTSController extends EventTarget {
     }
     if (this.ttsEdgeClient.initialized) {
       await this.ttsEdgeClient.shutdown();
+    }
+    if (this.ttsCambClient.initialized) {
+      await this.ttsCambClient.shutdown();
     }
     if (this.ttsNativeClient?.initialized) {
       await this.ttsNativeClient.shutdown();

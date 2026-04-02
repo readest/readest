@@ -26,6 +26,12 @@ vi.mock('@/services/tts/NativeTTSClient', () => ({
   }),
 }));
 
+vi.mock('@/services/tts/CambAITTSClient', () => ({
+  CambAITTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    Object.assign(this, createMockTTSClient('camb-ai'));
+  }),
+}));
+
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
     getPreferredClient: vi.fn().mockReturnValue(null),
@@ -353,14 +359,18 @@ describe('TTSController', () => {
       const edgeVoices: TTSVoicesGroup[] = [
         { id: 'eg', name: 'Edge', voices: [{ id: 'e1', name: 'E1', lang: 'en-US' }] },
       ];
+      const cambVoices: TTSVoicesGroup[] = [
+        { id: 'cg', name: 'CAMB AI', voices: [{ id: 'c1', name: 'C1', lang: 'en-US' }] },
+      ];
       const webVoices: TTSVoicesGroup[] = [
         { id: 'wg', name: 'Web', voices: [{ id: 'w1', name: 'W1', lang: 'en-US' }] },
       ];
       vi.mocked(controller.ttsEdgeClient.getVoices).mockResolvedValue(edgeVoices);
+      vi.mocked(controller.ttsCambClient.getVoices).mockResolvedValue(cambVoices);
       vi.mocked(controller.ttsWebClient.getVoices).mockResolvedValue(webVoices);
 
       const result = await controller.getVoices('en');
-      expect(result).toEqual([...edgeVoices, ...webVoices]);
+      expect(result).toEqual([...cambVoices, ...edgeVoices, ...webVoices]);
     });
 
     test('includes native voices when available', async () => {
@@ -373,6 +383,7 @@ describe('TTSController', () => {
       ];
       vi.mocked(c.ttsNativeClient!.getVoices).mockResolvedValue(nativeVoices);
       vi.mocked(c.ttsEdgeClient.getVoices).mockResolvedValue([]);
+      vi.mocked(c.ttsCambClient.getVoices).mockResolvedValue([]);
       vi.mocked(c.ttsWebClient.getVoices).mockResolvedValue([]);
 
       const result = await c.getVoices('en');
