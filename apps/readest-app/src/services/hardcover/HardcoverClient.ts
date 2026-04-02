@@ -73,14 +73,16 @@ export class HardcoverClient {
   }
 
   private async throttleRequest() {
-    const queued = this.requestQueue.catch(() => undefined).then(async () => {
-      const now = Date.now();
-      const elapsed = now - this.lastRequestTime;
-      if (elapsed < this.minRequestIntervalMs) {
-        await sleep(this.minRequestIntervalMs - elapsed);
-      }
-      this.lastRequestTime = Date.now();
-    });
+    const queued = this.requestQueue
+      .catch(() => undefined)
+      .then(async () => {
+        const now = Date.now();
+        const elapsed = now - this.lastRequestTime;
+        if (elapsed < this.minRequestIntervalMs) {
+          await sleep(this.minRequestIntervalMs - elapsed);
+        }
+        this.lastRequestTime = Date.now();
+      });
 
     this.requestQueue = queued;
     await queued;
