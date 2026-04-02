@@ -186,9 +186,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const surfaceStyle = useMemo(
     () =>
       ({
-        backgroundColor: 'oklch(var(--b1) / 0.16)',
+        backgroundColor: 'oklch(var(--b1) / 0.13)',
         boxShadow:
-          '0 18px 42px oklch(var(--bc) / 0.08), 0 4px 12px oklch(var(--bc) / 0.04), inset 0 1px 0 oklch(var(--b1) / 0.22)',
+          '0 10px 24px oklch(var(--bc) / 0.05), 0 1px 3px oklch(var(--bc) / 0.04), inset 0 1px 0 oklch(var(--b1) / 0.16)',
       }) as React.CSSProperties,
     [],
   );
