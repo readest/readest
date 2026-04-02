@@ -605,10 +605,12 @@ export class RSVPController extends EventTarget {
             range.setStart(node, wordStart);
             range.setEnd(node, wordStart + word.length);
 
+            // Generate CFI for this word for position tracking
             let cfi: string | undefined;
             try {
               cfi = this.view.getCFI(docIndex, range);
             } catch {
+              // CFI generation failed, will fall back to word index
               cfi = undefined;
             }
 
@@ -654,6 +656,7 @@ export class RSVPController extends EventTarget {
     const hasCJK = containsCJK(word);
 
     if (hasCJK) {
+      // For CJK characters, center the ORP since each character is more balanced
       return Math.floor(word.length / 2);
     }
 
@@ -671,12 +674,14 @@ export class RSVPController extends EventTarget {
     const hasCJK = containsCJK(word);
 
     if (hasCJK) {
+      // CJK characters are information-dense, adjust pause based on character count
+      // With semantic segmentation, words can vary in length
       const len = word.length;
-      if (len >= 5) return 1.4;
+      if (len >= 5) return 1.4; // Longer compound words
       if (len >= 4) return 1.3;
       if (len >= 3) return 1.2;
       if (len >= 2) return 1.0;
-      return 0.9;
+      return 0.9; // Single characters
     }
 
     if (word.length > 12) return 1.3;
