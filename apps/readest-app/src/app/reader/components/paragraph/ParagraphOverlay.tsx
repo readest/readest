@@ -123,7 +123,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
 }) => {
   const { appService } = useEnv();
   const [paragraphs, setParagraphs] = useState<ParagraphContent[]>([]);
-  const [shellSize, setShellSize] = useState<{ width: number; height: number } | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isOverlayMounted, setIsOverlayMounted] = useState(false);
   const [isChangingSection, setIsChangingSection] = useState(false);
@@ -131,7 +130,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const paragraphIdCounter = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const activeMeasureRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const onCloseRef = useRef(onClose);
 
@@ -198,18 +196,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       }) as React.CSSProperties,
     [],
   );
-  const shellStyle = useMemo(
-    () =>
-      ({
-        ...surfaceStyle,
-        width: shellSize ? `${shellSize.width}px` : undefined,
-        height: shellSize ? `${shellSize.height}px` : undefined,
-        transitionProperty: 'width, height, opacity, transform',
-        transitionDuration: '320ms',
-        transitionTimingFunction: 'cubic-bezier(0.22,1,0.36,1)',
-      }) as React.CSSProperties,
-    [shellSize, surfaceStyle],
-  );
   const fallbackPresentation = useMemo(
     (): ParagraphPresentation => ({
       dir: layoutContext.rtl ? 'rtl' : 'ltr',
@@ -243,38 +229,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     },
     [extractContent, fallbackPresentation],
   );
-
-  useEffect(() => {
-    const element = activeMeasureRef.current;
-    if (!element) return;
-
-    const updateShellSize = () => {
-      const rect = element.getBoundingClientRect();
-      const width = Math.ceil(Math.max(rect.width, element.scrollWidth, element.offsetWidth)) + 4;
-      const height =
-        Math.ceil(Math.max(rect.height, element.scrollHeight, element.offsetHeight)) + 4;
-
-      setShellSize((previous) => {
-        if (previous?.width === width && previous?.height === height) {
-          return previous;
-        }
-
-        return { width, height };
-      });
-    };
-
-    updateShellSize();
-    const observer = new ResizeObserver(updateShellSize);
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [activeParagraph?.id]);
-
-  useEffect(() => {
-    if (!isVisible) {
-      setShellSize(null);
-    }
-  }, [isVisible]);
 
   useEffect(() => {
     let sectionChangeTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -530,22 +484,21 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
           }
         `}</style>
         {activeParagraph ? (
-          <div className='relative self-center overflow-hidden rounded-[2rem]' style={shellStyle}>
-            <div
-              ref={activeMeasureRef}
-              className={clsx(
-                'relative',
-                layoutContext.vertical ? 'inline-flex items-center justify-center' : 'w-full',
-              )}
-              style={frameStyle}
-            >
-              <AnimatedParagraph
-                key={activeParagraph.id}
-                html={activeParagraph.html}
-                presentation={activeParagraph.presentation}
-                style={contentStyle}
-              />
-            </div>
+          <div
+            className={clsx(
+              'relative rounded-[2rem]',
+              layoutContext.vertical
+                ? 'inline-flex items-center justify-center self-center overflow-visible'
+                : 'w-full overflow-auto',
+            )}
+            style={{ ...frameStyle, ...surfaceStyle }}
+          >
+            <AnimatedParagraph
+              key={activeParagraph.id}
+              html={activeParagraph.html}
+              presentation={activeParagraph.presentation}
+              style={contentStyle}
+            />
           </div>
         ) : isChangingSection ? (
           <SectionTransitionIndicator isVisible={isChangingSection} direction={sectionDirection} />
