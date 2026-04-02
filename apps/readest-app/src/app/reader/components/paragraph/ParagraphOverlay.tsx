@@ -42,11 +42,11 @@ const AnimatedParagraph: React.FC<{
       lang={presentation.lang}
       dir={presentation.dir}
       className={clsx(
-        'paragraph-content text-base-content w-full',
-        'transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        state === 'entering' && 'translate-y-2 opacity-0 blur-[1px]',
-        state === 'active' && 'translate-y-0 opacity-100 blur-0',
-        state === 'exiting' && '-translate-y-2 opacity-0 blur-[2px]',
+        'paragraph-content text-base-content transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        presentation.vertical ? 'mx-auto w-auto max-w-none' : 'w-full',
+        state === 'entering' && 'translate-y-2 opacity-0',
+        state === 'active' && 'translate-y-0 opacity-100',
+        state === 'exiting' && '-translate-y-2 opacity-0',
       )}
       style={{
         ...style,
@@ -172,13 +172,15 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       paddingInline: layoutContext.vertical
         ? 'clamp(0.85rem, 2.8vw, 1.2rem)'
         : 'clamp(1rem, 4vw, 2rem)',
-      width: layoutContext.vertical ? 'fit-content' : '100%',
-      minInlineSize: layoutContext.vertical ? '4.75rem' : undefined,
+      width: layoutContext.vertical ? 'auto' : '100%',
+      inlineSize: layoutContext.vertical ? 'fit-content' : undefined,
+      blockSize: layoutContext.vertical ? 'fit-content' : undefined,
+      minInlineSize: layoutContext.vertical ? '5.25rem' : undefined,
       maxInlineSize: layoutContext.vertical
-        ? `min(calc(100dvh - ${topInset + bottomInset + 88}px), 22rem)`
+        ? `min(calc(100dvh - ${topInset + bottomInset + 80}px), 24rem)`
         : `min(calc(100vw - (${viewportPadding} * 2)), 66ch)`,
       maxBlockSize: layoutContext.vertical
-        ? 'min(calc(100vw - 2.5rem), 24rem)'
+        ? 'min(calc(100vw - 1.5rem), 28rem)'
         : `min(calc(100dvh - ${topInset + bottomInset + 132}px), 38rem)`,
       marginInline: 'auto',
     } as React.CSSProperties;
@@ -186,9 +188,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const surfaceStyle = useMemo(
     () =>
       ({
-        backgroundColor: 'oklch(var(--b1) / 0.11)',
-        backgroundImage:
-          'linear-gradient(180deg, oklch(var(--b1) / 0.24) 0%, oklch(var(--b1) / 0.14) 18%, oklch(var(--b1) / 0.1) 58%, oklch(var(--bc) / 0.03) 100%)',
+        backgroundColor: 'oklch(var(--b1) / 0.14)',
         backdropFilter: 'blur(8px) saturate(108%)',
         WebkitBackdropFilter: 'blur(8px) saturate(108%)',
       }) as React.CSSProperties,
@@ -523,9 +523,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
             dir={exitingParagraph.presentation.dir}
             className={clsx(
               'paragraph-content text-base-content/18 absolute rounded-[2rem]',
-              'pointer-events-none transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-              '-translate-y-2 opacity-0 blur-[2px]',
-              layoutContext.vertical ? 'w-auto max-w-full' : 'w-full',
+              'pointer-events-none transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+              '-translate-y-2 opacity-0',
+              layoutContext.vertical ? 'mx-auto w-auto max-w-none' : 'w-full',
             )}
             style={{
               ...contentStyle,
@@ -549,9 +549,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         {activeParagraph ? (
           <div
             className={clsx(
-              'relative overflow-hidden rounded-[2rem]',
-              'overflow-auto',
-              layoutContext.vertical ? 'w-auto max-w-full self-center' : 'w-full',
+              'relative rounded-[2rem]',
+              layoutContext.vertical
+                ? 'inline-flex items-center justify-center self-center overflow-visible'
+                : 'w-full overflow-auto',
             )}
             style={{ ...frameStyle, ...surfaceStyle }}
           >
