@@ -1030,7 +1030,6 @@
   "words": "كلمات",
   "{{time}} left": "متبقي {{time}}",
   "Reading progress": "تقدم القراءة",
-  "Click to seek": "انقر للتمرير",
   "Skip back 15 words": "تخطي للخلف 15 كلمة",
   "Back 15 words (Shift+Left)": "للخلف 15 كلمة (Shift+اليسار)",
   "Pause (Space)": "إيقاف مؤقت (المسافة)",
@@ -1203,5 +1202,8 @@
   "Every Sentence": "كل جملة",
   "Every Paragraph": "كل فقرة",
   "Every Chapter": "كل فصل",
-  "TTS Media Info Update Frequency": "تردد تحديث معلومات وسائط TTS"
+  "TTS Media Info Update Frequency": "تردد تحديث معلومات وسائط TTS",
+  "Select reading speed": "اختر سرعة القراءة",
+  "Drag to seek": "اسحب للتقديم",
+  "Punctuation Delay": "تأخير علامات الترقيم"
 }

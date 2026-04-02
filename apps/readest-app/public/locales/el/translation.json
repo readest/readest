@@ -982,7 +982,6 @@
   "words": "λέξεις",
   "{{time}} left": "{{time}} απομένουν",
   "Reading progress": "Πρόοδος ανάγνωσης",
-  "Click to seek": "Κάντε κλικ για αναζήτηση",
   "Skip back 15 words": "Επιστροφή 15 λέξεων",
   "Back 15 words (Shift+Left)": "Πίσω 15 λέξεις (Shift+Αριστερά)",
   "Pause (Space)": "Παύση (Διάστημα)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "Κάθε πρόταση",
   "Every Paragraph": "Κάθε παράγραφο",
   "Every Chapter": "Κάθε κεφάλαιο",
-  "TTS Media Info Update Frequency": "Συχνότητα ενημέρωσης πληροφοριών μέσων TTS"
+  "TTS Media Info Update Frequency": "Συχνότητα ενημέρωσης πληροφοριών μέσων TTS",
+  "Select reading speed": "Επιλέξτε ταχύτητα ανάγνωσης",
+  "Drag to seek": "Σύρετε για αναζήτηση",
+  "Punctuation Delay": "Καθυστέρηση στίξης"
 }

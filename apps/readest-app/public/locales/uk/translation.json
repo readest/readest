@@ -1006,7 +1006,6 @@
   "words": "слів",
   "{{time}} left": "залишилося {{time}}",
   "Reading progress": "Прогрес читання",
-  "Click to seek": "Натисніть для пошуку",
   "Skip back 15 words": "Назад на 15 слів",
   "Back 15 words (Shift+Left)": "Назад на 15 слів (Shift+Стрілка вліво)",
   "Pause (Space)": "Пауза (Пробіл)",
@@ -1177,5 +1176,8 @@
   "Every Sentence": "Кожне речення",
   "Every Paragraph": "Кожен абзац",
   "Every Chapter": "Кожен розділ",
-  "TTS Media Info Update Frequency": "Частота оновлення медіа-інформації TTS"
+  "TTS Media Info Update Frequency": "Частота оновлення медіа-інформації TTS",
+  "Select reading speed": "Виберіть швидкість читання",
+  "Drag to seek": "Перетягніть для пошуку",
+  "Punctuation Delay": "Затримка на розділових знаках"
 }

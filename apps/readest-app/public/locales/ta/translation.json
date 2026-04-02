@@ -982,7 +982,6 @@
   "words": "வார்த்தைகள்",
   "{{time}} left": "{{time}} மீதமுள்ளது",
   "Reading progress": "வாசிப்பு முன்னேற்றம்",
-  "Click to seek": "தேட கிளிக் செய்க",
   "Skip back 15 words": "15 வார்த்தைகள் பின்னால் செல்",
   "Back 15 words (Shift+Left)": "15 வார்த்தைகள் பின்னால் செல் (Shift+Left)",
   "Pause (Space)": "நிறுத்து (Space)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "ஒவ்வொரு வாக்கியமும்",
   "Every Paragraph": "ஒவ்வொரு பத்தியும்",
   "Every Chapter": "ஒவ்வொரு அத்தியாயமும்",
-  "TTS Media Info Update Frequency": "TTS ஊடக தகவல் புதுப்பிப்பு அதிர்வெண்"
+  "TTS Media Info Update Frequency": "TTS ஊடக தகவல் புதுப்பிப்பு அதிர்வெண்",
+  "Select reading speed": "படிக்கும் வேகத்தைத் தேர்ந்தெடுக்கவும்",
+  "Drag to seek": "தேட இழுக்கவும்",
+  "Punctuation Delay": "நிறுத்தக்குறி தாமதம்"
 }

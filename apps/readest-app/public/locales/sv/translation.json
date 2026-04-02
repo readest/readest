@@ -982,7 +982,6 @@
   "words": "ord",
   "{{time}} left": "{{time}} kvar",
   "Reading progress": "Läsningens framsteg",
-  "Click to seek": "Klicka för att söka",
   "Skip back 15 words": "Hoppa bakåt 15 ord",
   "Back 15 words (Shift+Left)": "Bakåt 15 ord (Shift+Vänster)",
   "Pause (Space)": "Pausa (Mellanslag)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "Varje mening",
   "Every Paragraph": "Varje stycke",
   "Every Chapter": "Varje kapitel",
-  "TTS Media Info Update Frequency": "Uppdateringsfrekvens för TTS-medieinformation"
+  "TTS Media Info Update Frequency": "Uppdateringsfrekvens för TTS-medieinformation",
+  "Select reading speed": "Välj läshastighet",
+  "Drag to seek": "Dra för att söka",
+  "Punctuation Delay": "Skiljeteckenfördröjning"
 }

@@ -982,7 +982,6 @@
   "words": "शब्द",
   "{{time}} left": "{{time}} शेष",
   "Reading progress": "पठन प्रगति",
-  "Click to seek": "सीक करने के लिए क्लिक करें",
   "Skip back 15 words": "15 शब्द पीछे",
   "Back 15 words (Shift+Left)": "15 शब्द पीछे (Shift+Left)",
   "Pause (Space)": "विराम (Space)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "हर वाक्य",
   "Every Paragraph": "हर पैराग्राफ",
   "Every Chapter": "हर अध्याय",
-  "TTS Media Info Update Frequency": "TTS मीडिया जानकारी अपडेट आवृत्ति"
+  "TTS Media Info Update Frequency": "TTS मीडिया जानकारी अपडेट आवृत्ति",
+  "Select reading speed": "पढ़ने की गति चुनें",
+  "Drag to seek": "खोजने के लिए खींचें",
+  "Punctuation Delay": "विराम चिह्न विलंब"
 }

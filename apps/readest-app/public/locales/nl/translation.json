@@ -982,7 +982,6 @@
   "words": "woorden",
   "{{time}} left": "{{time}} over",
   "Reading progress": "Leesvoortgang",
-  "Click to seek": "Klik om te zoeken",
   "Skip back 15 words": "15 woorden terug",
   "Back 15 words (Shift+Left)": "15 woorden terug (Shift+Links)",
   "Pause (Space)": "Pauze (Spatie)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "Elke zin",
   "Every Paragraph": "Elke alinea",
   "Every Chapter": "Elk hoofdstuk",
-  "TTS Media Info Update Frequency": "TTS media-info updatefrequentie"
+  "TTS Media Info Update Frequency": "TTS media-info updatefrequentie",
+  "Select reading speed": "Leessnelheid selecteren",
+  "Drag to seek": "Sleep om te zoeken",
+  "Punctuation Delay": "Leesteken-vertraging"
 }

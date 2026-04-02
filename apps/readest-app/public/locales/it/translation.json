@@ -994,7 +994,6 @@
   "words": "parole",
   "{{time}} left": "{{time}} rimanenti",
   "Reading progress": "Progresso lettura",
-  "Click to seek": "Clicca per cercare",
   "Skip back 15 words": "Indietro di 15 parole",
   "Back 15 words (Shift+Left)": "Indietro di 15 parole (Shift+Sinistra)",
   "Pause (Space)": "Pausa (Spazio)",
@@ -1164,5 +1163,8 @@
   "Every Sentence": "Ogni frase",
   "Every Paragraph": "Ogni paragrafo",
   "Every Chapter": "Ogni capitolo",
-  "TTS Media Info Update Frequency": "Frequenza aggiornamento info multimediali TTS"
+  "TTS Media Info Update Frequency": "Frequenza aggiornamento info multimediali TTS",
+  "Select reading speed": "Seleziona velocità di lettura",
+  "Drag to seek": "Trascina per cercare",
+  "Punctuation Delay": "Ritardo punteggiatura"
 }

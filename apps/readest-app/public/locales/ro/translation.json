@@ -548,7 +548,6 @@
   "words": "cuvinte",
   "{{time}} left": "Timp rămas: {{time}}",
   "Reading progress": "Progresul citirii",
-  "Click to seek": "Faceți clic pentru a derula",
   "Skip back 15 words": "Săriți înapoi 15 cuvinte",
   "Back 15 words (Shift+Left)": "Înapoi 15 cuvinte (Shift+Stânga)",
   "Decrease speed": "Scade viteza",
@@ -1164,5 +1163,8 @@
   "Every Sentence": "La fiecare propoziție",
   "Every Paragraph": "La fiecare paragraf",
   "Every Chapter": "La fiecare capitol",
-  "TTS Media Info Update Frequency": "Frecvența actualizării informațiilor media TTS"
+  "TTS Media Info Update Frequency": "Frecvența actualizării informațiilor media TTS",
+  "Select reading speed": "Selectați viteza de citire",
+  "Drag to seek": "Trageți pentru a căuta",
+  "Punctuation Delay": "Întârziere punctuație"
 }

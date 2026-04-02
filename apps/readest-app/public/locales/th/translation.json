@@ -970,7 +970,6 @@
   "words": "คำ",
   "{{time}} left": "เหลือ {{time}}",
   "Reading progress": "ความคืบหน้าการอ่าน",
-  "Click to seek": "คลิกเพื่อค้นหาตำแหน่ง",
   "Skip back 15 words": "ย้อนกลับ 15 คำ",
   "Back 15 words (Shift+Left)": "ย้อนกลับ 15 คำ (Shift+ซ้าย)",
   "Pause (Space)": "หยุดชั่วคราว (Space)",
@@ -1138,5 +1137,8 @@
   "Every Sentence": "ทุกประโยค",
   "Every Paragraph": "ทุกย่อหน้า",
   "Every Chapter": "ทุกบท",
-  "TTS Media Info Update Frequency": "ความถี่ในการอัปเดตข้อมูลสื่อ TTS"
+  "TTS Media Info Update Frequency": "ความถี่ในการอัปเดตข้อมูลสื่อ TTS",
+  "Select reading speed": "เลือกความเร็วในการอ่าน",
+  "Drag to seek": "ลากเพื่อค้นหา",
+  "Punctuation Delay": "หน่วงเวลาเครื่องหมายวรรคตอน"
 }

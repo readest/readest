@@ -982,7 +982,6 @@
   "words": "වචන",
   "{{time}} left": "{{time}} ඉතිරිව ඇත",
   "Reading progress": "කියවීමේ ප්‍රගතිය",
-  "Click to seek": "සොයා බැලීමට ක්ලික් කරන්න",
   "Skip back 15 words": "වචන 15ක් පසුපසට",
   "Back 15 words (Shift+Left)": "වචන 15ක් පසුපසට (Shift+Left)",
   "Pause (Space)": "විරාමය (Space)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "සෑම වාක්‍යයක්ම",
   "Every Paragraph": "සෑම ඡේදයක්ම",
   "Every Chapter": "සෑම පරිච්ඡේදයක්ම",
-  "TTS Media Info Update Frequency": "TTS මාධ්‍ය තොරතුරු යාවත්කාලීන සංඛ්‍යාතය"
+  "TTS Media Info Update Frequency": "TTS මාධ්‍ය තොරතුරු යාවත්කාලීන සංඛ්‍යාතය",
+  "Select reading speed": "කියවීමේ වේගය තෝරන්න",
+  "Drag to seek": "සෙවීමට ඇදගන්න",
+  "Punctuation Delay": "විරාම ලකුණු ප්‍රමාදය"
 }

@@ -970,7 +970,6 @@
   "words": "perkataan",
   "{{time}} left": "{{time}} tinggal",
   "Reading progress": "Kemajuan membaca",
-  "Click to seek": "Klik untuk cari",
   "Skip back 15 words": "Langkau belakang 15 perkataan",
   "Back 15 words (Shift+Left)": "Belakang 15 perkataan (Shift+Kiri)",
   "Pause (Space)": "Jeda (Ruang)",
@@ -1138,5 +1137,8 @@
   "Every Sentence": "Setiap Ayat",
   "Every Paragraph": "Setiap Perenggan",
   "Every Chapter": "Setiap Bab",
-  "TTS Media Info Update Frequency": "Kekerapan Kemas Kini Info Media TTS"
+  "TTS Media Info Update Frequency": "Kekerapan Kemas Kini Info Media TTS",
+  "Select reading speed": "Pilih kelajuan membaca",
+  "Drag to seek": "Seret untuk mencari",
+  "Punctuation Delay": "Kelewatan tanda baca"
 }

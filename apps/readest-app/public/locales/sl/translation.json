@@ -523,7 +523,6 @@
   "words": "besed",
   "{{time}} left": "{{time}} do konca",
   "Reading progress": "Napredek branja",
-  "Click to seek": "Kliknite za iskanje",
   "Skip back 15 words": "Skoči nazaj za 15 besed",
   "Back 15 words (Shift+Left)": "Nazaj za 15 besed (Shift+Levo)",
   "Pause": "Premor",
@@ -1177,5 +1176,8 @@
   "Every Sentence": "Vsak stavek",
   "Every Paragraph": "Vsak odstavek",
   "Every Chapter": "Vsako poglavje",
-  "TTS Media Info Update Frequency": "Pogostost posodabljanja podatkov o medijih TTS"
+  "TTS Media Info Update Frequency": "Pogostost posodabljanja podatkov o medijih TTS",
+  "Select reading speed": "Izberite hitrost branja",
+  "Drag to seek": "Povlecite za iskanje",
+  "Punctuation Delay": "Zamik ločil"
 }

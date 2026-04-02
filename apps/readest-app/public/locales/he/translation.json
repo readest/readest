@@ -493,7 +493,6 @@
   "words": "מילים",
   "{{time}} left": "נותרו {{time}}",
   "Reading progress": "התקדמות קריאה",
-  "Click to seek": "לחץ לחיפוש",
   "Skip back 15 words": "קפוץ 15 מילים אחורה",
   "Back 15 words (Shift+Left)": "15 מילים אחורה (Shift+Left)",
   "Pause": "השהה",
@@ -1164,5 +1163,8 @@
   "Every Sentence": "כל משפט",
   "Every Paragraph": "כל פסקה",
   "Every Chapter": "כל פרק",
-  "TTS Media Info Update Frequency": "תדירות עדכון פרטי מדיה TTS"
+  "TTS Media Info Update Frequency": "תדירות עדכון פרטי מדיה TTS",
+  "Select reading speed": "בחר מהירות קריאה",
+  "Drag to seek": "גרור לחיפוש",
+  "Punctuation Delay": "השהיית פיסוק"
 }

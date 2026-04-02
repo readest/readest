@@ -982,7 +982,6 @@
   "words": "kelime",
   "{{time}} left": "{{time}} kaldı",
   "Reading progress": "Okuma ilerlemesi",
-  "Click to seek": "Konum aramak için tıkla",
   "Skip back 15 words": "15 kelime geri atla",
   "Back 15 words (Shift+Left)": "15 kelime geri (Shift+Sol)",
   "Pause (Space)": "Duraklat (Boşluk)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "Her Cümle",
   "Every Paragraph": "Her Paragraf",
   "Every Chapter": "Her Bölüm",
-  "TTS Media Info Update Frequency": "TTS Medya Bilgisi Güncelleme Sıklığı"
+  "TTS Media Info Update Frequency": "TTS Medya Bilgisi Güncelleme Sıklığı",
+  "Select reading speed": "Okuma hızını seçin",
+  "Drag to seek": "Aramak için sürükleyin",
+  "Punctuation Delay": "Noktalama gecikmesi"
 }

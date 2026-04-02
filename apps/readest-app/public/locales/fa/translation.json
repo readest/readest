@@ -982,7 +982,6 @@
   "words": "کلمات",
   "{{time}} left": "{{time}} باقی‌مانده",
   "Reading progress": "پیشرفت مطالعه",
-  "Click to seek": "برای جستجو کلیک کنید",
   "Skip back 15 words": "۱۵ کلمه به عقب",
   "Back 15 words (Shift+Left)": "۱۵ کلمه به عقب (Shift+Left)",
   "Pause (Space)": "توقف (Space)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "هر جمله",
   "Every Paragraph": "هر پاراگراف",
   "Every Chapter": "هر فصل",
-  "TTS Media Info Update Frequency": "تناوب به‌روزرسانی اطلاعات رسانه TTS"
+  "TTS Media Info Update Frequency": "تناوب به‌روزرسانی اطلاعات رسانه TTS",
+  "Select reading speed": "انتخاب سرعت خواندن",
+  "Drag to seek": "بکشید برای جستجو",
+  "Punctuation Delay": "تأخیر نشانه‌گذاری"
 }

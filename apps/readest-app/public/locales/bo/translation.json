@@ -970,7 +970,6 @@
   "words": "ཚིག",
   "{{time}} left": "དུས་ཚོད་ {{time}} ལྷག་ཡོད།",
   "Reading progress": "ཀློག་པའི་འཕེལ་རིམ།",
-  "Click to seek": "གནས་ས་འཚོལ་བར་གནོན་པ།",
   "Skip back 15 words": "ཚིག་ ༡༥ རྒྱབ་ལ་བཤུད་པ།",
   "Back 15 words (Shift+Left)": "ཚིག་ ༡༥ རྒྱབ་ལ་བཤུད་པ། (Shift+Left)",
   "Pause (Space)": "མཚམས་འཇོག་པ། (Space)",
@@ -1138,5 +1137,8 @@
   "Every Sentence": "ཚིག་གྲུབ་རེ་རེ",
   "Every Paragraph": "དུམ་མཚམས་རེ་རེ",
   "Every Chapter": "ལེའུ་རེ་རེ",
-  "TTS Media Info Update Frequency": "TTS སྨྱན་བྱད་ཆ་འཕྲིན་གསར་སྒྱུར་ཐེངས་གྲངས"
+  "TTS Media Info Update Frequency": "TTS སྨྱན་བྱད་ཆ་འཕྲིན་གསར་སྒྱུར་ཐེངས་གྲངས",
+  "Select reading speed": "ཀློག་པའི་མྱུར་ཚད་འདེམས།",
+  "Drag to seek": "འཚོལ་བར་འདྲུད།",
+  "Punctuation Delay": "ཚེག་ཤད་ཕྱིར་འགྱངས།"
 }

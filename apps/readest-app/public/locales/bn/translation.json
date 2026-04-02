@@ -982,7 +982,6 @@
   "words": "শব্দ",
   "{{time}} left": "{{time}} বাকি",
   "Reading progress": "পড়ার অগ্রগতি",
-  "Click to seek": "খুঁজতে ক্লিক করুন",
   "Skip back 15 words": "১৫ শব্দ পিছিয়ে যান",
   "Back 15 words (Shift+Left)": "১৫ শব্দ পিছিয়ে যান (Shift+Left)",
   "Pause (Space)": "বিরতি (Space)",
@@ -1151,5 +1150,8 @@
   "Every Sentence": "প্রতিটি বাক্য",
   "Every Paragraph": "প্রতিটি অনুচ্ছেদ",
   "Every Chapter": "প্রতিটি অধ্যায়",
-  "TTS Media Info Update Frequency": "TTS মিডিয়া তথ্য আপডেট ফ্রিকোয়েন্সি"
+  "TTS Media Info Update Frequency": "TTS মিডিয়া তথ্য আপডেট ফ্রিকোয়েন্সি",
+  "Select reading speed": "পড়ার গতি নির্বাচন করুন",
+  "Drag to seek": "খুঁজতে টানুন",
+  "Punctuation Delay": "বিরাম চিহ্ন বিলম্ব"
 }

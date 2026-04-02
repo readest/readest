@@ -970,7 +970,6 @@
   "words": "từ",
   "{{time}} left": "còn lại {{time}}",
   "Reading progress": "Tiến độ đọc",
-  "Click to seek": "Nhấp để tua",
   "Skip back 15 words": "Lùi lại 15 từ",
   "Back 15 words (Shift+Left)": "Lùi lại 15 từ (Shift+Trái)",
   "Pause (Space)": "Tạm dừng (Khoảng trắng)",
@@ -1138,5 +1137,8 @@
   "Every Sentence": "Mỗi câu",
   "Every Paragraph": "Mỗi đoạn văn",
   "Every Chapter": "Mỗi chương",
-  "TTS Media Info Update Frequency": "Tần suất cập nhật thông tin phương tiện TTS"
+  "TTS Media Info Update Frequency": "Tần suất cập nhật thông tin phương tiện TTS",
+  "Select reading speed": "Chọn tốc độ đọc",
+  "Drag to seek": "Kéo để tìm kiếm",
+  "Punctuation Delay": "Độ trễ dấu câu"
 }

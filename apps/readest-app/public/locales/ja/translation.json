@@ -970,7 +970,6 @@
   "words": "単語",
   "{{time}} left": "残り {{time}}",
   "Reading progress": "読書の進捗",
-  "Click to seek": "クリックしてシーク",
   "Skip back 15 words": "15単語戻る",
   "Back 15 words (Shift+Left)": "15単語戻る (Shift+左)",
   "Pause (Space)": "一時停止 (Space)",
@@ -1138,5 +1137,8 @@
   "Every Sentence": "文ごと",
   "Every Paragraph": "段落ごと",
   "Every Chapter": "章ごと",
-  "TTS Media Info Update Frequency": "TTSメディア情報の更新頻度"
+  "TTS Media Info Update Frequency": "TTSメディア情報の更新頻度",
+  "Select reading speed": "読み上げ速度を選択",
+  "Drag to seek": "ドラッグしてシーク",
+  "Punctuation Delay": "句読点の遅延"
 }

@@ -1006,7 +1006,6 @@
   "words": "слов",
   "{{time}} left": "осталось {{time}}",
   "Reading progress": "Прогресс чтения",
-  "Click to seek": "Нажмите для поиска",
   "Skip back 15 words": "Назад на 15 слов",
   "Back 15 words (Shift+Left)": "Назад на 15 слов (Shift+Влево)",
   "Pause (Space)": "Пауза (Пробел)",
@@ -1177,5 +1176,8 @@
   "Every Sentence": "Каждое предложение",
   "Every Paragraph": "Каждый абзац",
   "Every Chapter": "Каждая глава",
-  "TTS Media Info Update Frequency": "Частота обновления медиа-информации TTS"
+  "TTS Media Info Update Frequency": "Частота обновления медиа-информации TTS",
+  "Select reading speed": "Выберите скорость чтения",
+  "Drag to seek": "Перетащите для перемотки",
+  "Punctuation Delay": "Задержка на знаках препинания"
 }
