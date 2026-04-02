@@ -178,7 +178,12 @@ describe('HardcoverClient', () => {
     // request() does NOT call authenticate() so only 2 mock values are needed
 
     // First request fails with 429 then succeeds
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests', json: async () => ({}) });
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      json: async () => ({}),
+    });
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ data: { result: 'ok' } }),
@@ -186,7 +191,9 @@ describe('HardcoverClient', () => {
 
     // Speed up sleep for test
     vi.useFakeTimers();
-    const requestPromise = clientApi.request<{ var: number }, { result: string }>('query', { var: 1 });
+    const requestPromise = clientApi.request<{ var: number }, { result: string }>('query', {
+      var: 1,
+    });
 
     // Wait for the 429 retry
     await vi.runAllTimersAsync();
