@@ -5,6 +5,7 @@ import { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
 import { saveViewSettings } from '@/helpers/settings';
 import { ParagraphIterator } from '@/utils/paragraph';
+import { getParagraphPresentation } from '@/utils/paragraphPresentation';
 import { DEFAULT_PARAGRAPH_MODE_CONFIG } from '@/services/constants';
 
 interface UseParagraphModeProps {
@@ -205,6 +206,13 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     if (focusResetTimerRef.current) {
       clearTimeout(focusResetTimerRef.current);
     }
+
+    const presentation = getParagraphPresentation(
+      range.startContainer.ownerDocument,
+      range,
+      getViewSettings(bookKeyRef.current),
+    );
+
     isFocusingRef.current = true;
     const docIndex = currentDocIndexRef.current;
     const renderer = view.renderer as FoliateView['renderer'] & {
@@ -224,8 +232,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       range,
       index: iterator.currentIndex,
       total: iterator.length,
+      presentation,
     });
-  }, [viewRef]);
+  }, [getViewSettings, viewRef]);
 
   const waitForNewSection = useCallback(
     async (oldIndex: number | undefined, maxAttempts: number = 15): Promise<boolean> => {
