@@ -25,7 +25,6 @@ interface ParagraphContent {
   id: number;
   html: string;
   presentation: ParagraphPresentation;
-  state: 'entering' | 'active' | 'exiting';
 }
 
 const getParagraphTextAlign = (presentation: ParagraphPresentation) =>
@@ -34,18 +33,15 @@ const getParagraphTextAlign = (presentation: ParagraphPresentation) =>
 const AnimatedParagraph: React.FC<{
   html: string;
   presentation: ParagraphPresentation;
-  state: 'entering' | 'active' | 'exiting';
   style: React.CSSProperties;
-}> = ({ html, presentation, state, style }) => {
+}> = ({ html, presentation, style }) => {
   return (
     <div
       lang={presentation.lang}
       dir={presentation.dir}
       className={clsx(
-        'paragraph-content text-base-content transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        'paragraph-content text-base-content',
         presentation.vertical ? 'mx-auto w-auto max-w-none' : 'w-full',
-        state !== 'exiting' && 'translate-y-0 opacity-100',
-        state === 'exiting' && '-translate-y-2 opacity-0',
       )}
       style={{
         ...style,
@@ -129,7 +125,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const activeMeasureRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const onCloseRef = useRef(onClose);
-  const animationTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -154,11 +149,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     } as React.CSSProperties;
   }, [viewSettings]);
 
-  const activePresentation =
-    paragraphs.find((p) => p.state === 'active' || p.state === 'entering')?.presentation ??
-    undefined;
-  const activeParagraph = paragraphs.find((p) => p.state === 'active' || p.state === 'entering');
-  const exitingParagraph = paragraphs.find((p) => p.state === 'exiting');
+  const activePresentation = paragraphs[0]?.presentation ?? undefined;
+  const activeParagraph = paragraphs[0];
   const layoutContext = useMemo(
     () => getParagraphLayoutContext(activePresentation ?? viewSettings),
     [activePresentation, viewSettings],
@@ -238,30 +230,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       const newId = ++paragraphIdCounter.current;
       const nextPresentation = presentation ?? fallbackPresentation;
 
-      setParagraphs((prev) => {
-        const updated = prev
-          .filter((p) => p.state !== 'exiting')
-          .map((p) => ({ ...p, state: p.state === 'active' ? ('exiting' as const) : p.state }));
-        return [
-          ...updated,
-          { id: newId, html, presentation: nextPresentation, state: 'active' as const },
-        ];
-      });
-
-      const cleanupTimer = setTimeout(() => {
-        setParagraphs((prev) => prev.filter((p) => p.state !== 'exiting'));
-      }, 320);
-      animationTimersRef.current.push(cleanupTimer);
+      setParagraphs([{ id: newId, html, presentation: nextPresentation }]);
     },
     [extractContent, fallbackPresentation],
   );
-
-  useEffect(() => {
-    return () => {
-      animationTimersRef.current.forEach((timer) => clearTimeout(timer));
-      animationTimersRef.current = [];
-    };
-  }, []);
 
   useEffect(() => {
     const element = activeMeasureRef.current;
@@ -331,12 +303,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     const handleSectionChanging = (event: CustomEvent) => {
       if (event.detail?.bookKey !== bookKey) return;
       setSectionDirection(event.detail?.direction || 'next');
-      setParagraphs((prev) => prev.map((p) => ({ ...p, state: 'exiting' as const })));
+      setParagraphs([]);
       setIsChangingSection(true);
-      sectionChangeTimeoutId = setTimeout(() => {
-        setParagraphs((prev) => prev.filter((p) => p.state !== 'exiting'));
-        sectionChangeTimeoutId = null;
-      }, 280);
     };
 
     eventDispatcher.on('paragraph-focus', handleFocus);
@@ -554,34 +522,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         `}</style>
         {activeParagraph ? (
           <div className='relative self-center overflow-hidden rounded-[2rem]' style={shellStyle}>
-            {exitingParagraph && !isChangingSection ? (
-              <div className='pointer-events-none absolute inset-0 flex -translate-y-2 items-center justify-center overflow-hidden rounded-[inherit] opacity-0 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'>
-                <div
-                  lang={exitingParagraph.presentation.lang}
-                  dir={exitingParagraph.presentation.dir}
-                  className={clsx(
-                    'paragraph-content text-base-content/18',
-                    exitingParagraph.presentation.vertical ? 'mx-auto w-auto max-w-none' : 'w-full',
-                  )}
-                  style={{
-                    ...contentStyle,
-                    ...frameStyle,
-                    direction: exitingParagraph.presentation.dir,
-                    writingMode: exitingParagraph.presentation
-                      .writingMode as React.CSSProperties['writingMode'],
-                    textOrientation: exitingParagraph.presentation
-                      .textOrientation as React.CSSProperties['textOrientation'],
-                    unicodeBidi: exitingParagraph.presentation
-                      .unicodeBidi as React.CSSProperties['unicodeBidi'],
-                    textAlign: getParagraphTextAlign(
-                      exitingParagraph.presentation,
-                    ) as React.CSSProperties['textAlign'],
-                  }}
-                  dangerouslySetInnerHTML={{ __html: exitingParagraph.html }}
-                />
-              </div>
-            ) : null}
-
             <div
               ref={activeMeasureRef}
               className={clsx(
@@ -594,7 +534,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
                 key={activeParagraph.id}
                 html={activeParagraph.html}
                 presentation={activeParagraph.presentation}
-                state={activeParagraph.state}
                 style={contentStyle}
               />
             </div>
