@@ -397,10 +397,13 @@ export class HardcoverClient {
     const percent = totalPages > 0 ? (boundedPage / totalPages) * 100 : 0;
 
     let entry = '';
-    if (note.text) {
-      entry += `> "${note.text}"\n\n`;
+    if (note.text?.trim()) {
+      entry += note.text.trim();
     }
     if (note.note) {
+      if (entry) {
+        entry += '\n\n━━━\n\n';
+      }
       entry += note.note;
     }
 

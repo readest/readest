@@ -32,7 +32,7 @@ type HardcoverClientTestApi = {
     note: BookNote,
     config: BookConfig,
     context: TestBookContext,
-  ) => { action_at: string };
+  ) => { action_at: string; entry: string; event: string };
   ensureBookInLibrary: (book: Book, isReading?: boolean) => Promise<TestBookContext | null>;
   pushProgress: (book: Book, config: BookConfig) => Promise<void>;
 };
@@ -251,6 +251,30 @@ describe('HardcoverClient', () => {
     expect(progressCall).toBeDefined();
     const variables = progressCall?.[1] as { started_at?: string } | undefined;
     expect(variables?.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('should format multiline quote text with a short divider before the note', () => {
+    const note = {
+      id: '1',
+      type: 'annotation',
+      text: "She smiled. 'Are you, Overseer? Still?'\n\n'What do you mean?'",
+      note: 'Follow-up note',
+    } as BookNote;
+    const config = { progress: [5, 100] } as BookConfig;
+    const context: TestBookContext = {
+      editionId: 2,
+      pages: 100,
+      bookId: 1,
+      bookPages: 100,
+      userBook: null,
+    };
+
+    const payload = clientApi.buildJournalPayload(note, config, context);
+
+    expect(payload.event).toBe('note');
+    expect(payload.entry).toBe(
+      "She smiled. 'Are you, Overseer? Still?'\n\n'What do you mean?'\n\n━━━\n\nFollow-up note",
+    );
   });
 
   test('should promote an existing user book to currently reading before syncing progress', async () => {
