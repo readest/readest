@@ -35,13 +35,22 @@ const AnimatedParagraph: React.FC<{
   presentation: ParagraphPresentation;
   style: React.CSSProperties;
 }> = ({ html, presentation, style }) => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(false);
+    const frame = requestAnimationFrame(() => setIsReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, [html]);
+
   return (
     <div
       lang={presentation.lang}
       dir={presentation.dir}
       className={clsx(
-        'paragraph-content text-base-content',
+        'paragraph-content text-base-content transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
         presentation.vertical ? 'mx-auto w-auto max-w-none' : 'w-full',
+        isReady ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
       style={{
         ...style,
