@@ -3,26 +3,37 @@
 import clsx from 'clsx';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { ViewSettings } from '@/types/book';
+import { Insets } from '@/types/misc';
+import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
+import {
+  getParagraphActionForKey,
+  getParagraphActionForZone,
+  getParagraphLayoutContext,
+  ParagraphPresentation,
+} from '@/utils/paragraphPresentation';
 
 interface ParagraphOverlayProps {
   bookKey: string;
   dimOpacity: number;
   viewSettings?: ViewSettings;
+  gridInsets?: Insets;
   onClose?: () => void;
 }
 
 interface ParagraphContent {
   id: number;
   html: string;
+  presentation: ParagraphPresentation;
   state: 'entering' | 'active' | 'exiting';
 }
 
 const AnimatedParagraph: React.FC<{
   html: string;
+  presentation: ParagraphPresentation;
   state: 'entering' | 'active' | 'exiting';
   style: React.CSSProperties;
-}> = ({ html, state, style }) => {
+}> = ({ html, presentation, state, style }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -36,6 +47,8 @@ const AnimatedParagraph: React.FC<{
   return (
     <div
       ref={contentRef}
+      lang={presentation.lang}
+      dir={presentation.dir}
       className={clsx(
         'paragraph-content text-base-content w-full',
         'duration-400 transition-all ease-out',
@@ -44,7 +57,15 @@ const AnimatedParagraph: React.FC<{
           (showContent ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'),
         state === 'exiting' && '-translate-y-8 opacity-0',
       )}
-      style={{ ...style, transformOrigin: 'center top' }}
+      style={{
+        ...style,
+        direction: presentation.dir,
+        writingMode: presentation.writingMode as React.CSSProperties['writingMode'],
+        textOrientation: presentation.textOrientation as React.CSSProperties['textOrientation'],
+        unicodeBidi: presentation.unicodeBidi as React.CSSProperties['unicodeBidi'],
+        textAlign: presentation.textAlign as React.CSSProperties['textAlign'],
+        transformOrigin: 'center top',
+      }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -102,8 +123,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   bookKey,
   dimOpacity,
   viewSettings,
+  gridInsets = { top: 0, right: 0, bottom: 0, left: 0 },
   onClose,
 }) => {
+  const { appService } = useEnv();
   const [paragraphs, setParagraphs] = useState<ParagraphContent[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [isOverlayMounted, setIsOverlayMounted] = useState(false);
@@ -114,6 +137,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
   const onCloseRef = useRef(onClose);
+  const animationTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -132,8 +156,48 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       letterSpacing: viewSettings.letterSpacing ? `${viewSettings.letterSpacing}px` : undefined,
       wordSpacing: viewSettings.wordSpacing ? `${viewSettings.wordSpacing}px` : undefined,
       fontWeight: viewSettings.fontWeight || 400,
+      WebkitFontSmoothing: 'antialiased',
+      fontKerning: 'normal',
+      textRendering: 'optimizeLegibility',
     } as React.CSSProperties;
   }, [viewSettings]);
+
+  const activePresentation =
+    paragraphs.find((p) => p.state === 'active' || p.state === 'entering')?.presentation ??
+    undefined;
+  const layoutContext = useMemo(
+    () => getParagraphLayoutContext(activePresentation ?? viewSettings),
+    [activePresentation, viewSettings],
+  );
+  const frameStyle = useMemo(() => {
+    const topInset = appService?.hasSafeAreaInset ? gridInsets.top : 0;
+    const bottomInset = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+    const viewportPadding = `clamp(1rem, 4vw, 2.5rem)`;
+
+    return {
+      paddingBlock: layoutContext.vertical
+        ? 'clamp(0.9rem, 2.6vh, 1.5rem)'
+        : 'clamp(1rem, 3vh, 1.75rem)',
+      paddingInline: layoutContext.vertical
+        ? 'clamp(0.85rem, 3vw, 1.4rem)'
+        : 'clamp(1rem, 4vw, 2rem)',
+      maxInlineSize: layoutContext.vertical
+        ? `min(calc(100dvh - ${topInset + bottomInset + 72}px), 34rem)`
+        : `min(calc(100vw - (${viewportPadding} * 2)), 66ch)`,
+      maxBlockSize: layoutContext.vertical
+        ? 'min(calc(100vw - 2.5rem), 24rem)'
+        : `min(calc(100dvh - ${topInset + bottomInset + 132}px), 36rem)`,
+    } as React.CSSProperties;
+  }, [appService?.hasSafeAreaInset, gridInsets.bottom, gridInsets.top, layoutContext.vertical]);
+  const fallbackPresentation = useMemo(
+    (): ParagraphPresentation => ({
+      dir: layoutContext.rtl ? 'rtl' : 'ltr',
+      writingMode: layoutContext.writingMode,
+      vertical: layoutContext.vertical,
+      rtl: layoutContext.rtl,
+    }),
+    [layoutContext.rtl, layoutContext.vertical, layoutContext.writingMode],
+  );
 
   const extractContent = useCallback((range: Range): string => {
     try {
@@ -147,33 +211,46 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   }, []);
 
   const addParagraph = useCallback(
-    (range: Range) => {
+    (range: Range, presentation?: ParagraphPresentation) => {
       const html = extractContent(range);
       if (!html) return;
 
       const newId = ++paragraphIdCounter.current;
+      const nextPresentation = presentation ?? fallbackPresentation;
 
       setParagraphs((prev) => {
         const updated = prev
           .filter((p) => p.state !== 'exiting')
           .map((p) => ({ ...p, state: p.state === 'active' ? ('exiting' as const) : p.state }));
-        return [...updated, { id: newId, html, state: 'entering' as const }];
+        return [
+          ...updated,
+          { id: newId, html, presentation: nextPresentation, state: 'entering' as const },
+        ];
       });
 
       requestAnimationFrame(() => {
-        setTimeout(() => {
+        const activateTimer = setTimeout(() => {
           setParagraphs((prev) =>
             prev.map((p) => (p.id === newId ? { ...p, state: 'active' as const } : p)),
           );
         }, 30);
+        animationTimersRef.current.push(activateTimer);
       });
 
-      setTimeout(() => {
+      const cleanupTimer = setTimeout(() => {
         setParagraphs((prev) => prev.filter((p) => p.state !== 'exiting'));
       }, 450);
+      animationTimersRef.current.push(cleanupTimer);
     },
-    [extractContent],
+    [extractContent, fallbackPresentation],
   );
+
+  useEffect(() => {
+    return () => {
+      animationTimersRef.current.forEach((timer) => clearTimeout(timer));
+      animationTimersRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     let sectionChangeTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -181,6 +258,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     const handleFocus = (event: CustomEvent) => {
       if (event.detail?.bookKey !== bookKey) return;
       const range = event.detail?.range;
+      const presentation = event.detail?.presentation;
       if (range) {
         if (sectionChangeTimeoutId) {
           clearTimeout(sectionChangeTimeoutId);
@@ -190,7 +268,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         setIsVisible(true);
         requestAnimationFrame(() => {
           setIsOverlayMounted(true);
-          requestAnimationFrame(() => addParagraph(range));
+          requestAnimationFrame(() => addParagraph(range, presentation));
         });
       }
     };
@@ -239,31 +317,28 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      switch (e.key) {
-        case 'Escape':
-        case 'Backspace':
-          e.preventDefault();
-          onCloseRef.current?.();
-          break;
-        case 'ArrowDown':
-        case 'ArrowRight':
-        case ' ':
-        case 'j':
-          e.preventDefault();
-          eventDispatcher.dispatch('paragraph-next', { bookKey });
-          break;
-        case 'ArrowUp':
-        case 'ArrowLeft':
-        case 'k':
-          e.preventDefault();
-          eventDispatcher.dispatch('paragraph-prev', { bookKey });
-          break;
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        e.preventDefault();
+        onCloseRef.current?.();
+        return;
+      }
+
+      const action = getParagraphActionForKey(e.key, activePresentation ?? viewSettings);
+      if (action === 'next') {
+        e.preventDefault();
+        eventDispatcher.dispatch('paragraph-next', { bookKey });
+        return;
+      }
+
+      if (action === 'prev') {
+        e.preventDefault();
+        eventDispatcher.dispatch('paragraph-prev', { bookKey });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isVisible, bookKey]);
+  }, [activePresentation, bookKey, isVisible, viewSettings]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -297,13 +372,25 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         const touchEndX = moveEvent.touches[0]?.clientX ?? 0;
         const diffY = touchStartY - touchEndY;
         const diffX = touchStartX - touchEndX;
+        const horizontalAction =
+          diffX > 0
+            ? getParagraphActionForZone('right', activePresentation ?? viewSettings)
+            : getParagraphActionForZone('left', activePresentation ?? viewSettings);
 
-        if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
-          if (diffY > 0) {
-            eventDispatcher.dispatch('paragraph-next', { bookKey });
-          } else {
-            eventDispatcher.dispatch('paragraph-prev', { bookKey });
-          }
+        if (layoutContext.vertical && Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
+          eventDispatcher.dispatch(diffY > 0 ? 'paragraph-next' : 'paragraph-prev', { bookKey });
+          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchend', handleTouchEnd);
+        } else if (
+          !layoutContext.vertical &&
+          Math.abs(diffX) > Math.abs(diffY) &&
+          Math.abs(diffX) > 50 &&
+          horizontalAction
+        ) {
+          eventDispatcher.dispatch(
+            horizontalAction === 'next' ? 'paragraph-next' : 'paragraph-prev',
+            { bookKey },
+          );
           document.removeEventListener('touchmove', handleTouchMove);
           document.removeEventListener('touchend', handleTouchEnd);
         }
@@ -317,7 +404,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       document.addEventListener('touchmove', handleTouchMove);
       document.addEventListener('touchend', handleTouchEnd);
     },
-    [bookKey],
+    [activePresentation, bookKey, layoutContext.vertical, viewSettings],
   );
 
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
@@ -339,17 +426,34 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       }
       lastTapTimeRef.current = now;
 
-      const containerWidth = contentRef.current?.offsetWidth ?? window.innerWidth;
       const rect = contentRef.current?.getBoundingClientRect();
-      const clickX = e.clientX - (rect?.left ?? 0);
+      if (!rect) return;
 
-      if (clickX < containerWidth / 3) {
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      const zone = layoutContext.vertical
+        ? clickY < rect.height / 3
+          ? 'top'
+          : clickY > (rect.height * 2) / 3
+            ? 'bottom'
+            : null
+        : clickX < rect.width / 3
+          ? 'left'
+          : clickX > (rect.width * 2) / 3
+            ? 'right'
+            : null;
+
+      const action = zone
+        ? getParagraphActionForZone(zone, activePresentation ?? viewSettings)
+        : null;
+      if (action === 'prev') {
         eventDispatcher.dispatch('paragraph-prev', { bookKey });
-      } else if (clickX > (containerWidth * 2) / 3) {
+      } else if (action === 'next') {
         eventDispatcher.dispatch('paragraph-next', { bookKey });
       }
     },
-    [bookKey],
+    [activePresentation, bookKey, layoutContext.vertical, viewSettings],
   );
 
   if (!isVisible) return null;
@@ -375,6 +479,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         backgroundColor: `oklch(var(--b1) / ${Math.min(dimOpacity + 0.4, 0.92)})`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
+        paddingTop: appService?.hasSafeAreaInset ? `${gridInsets.top}px` : undefined,
+        paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : undefined,
       }}
       onClick={handleBackdropClick}
       onTouchStart={handleTouchStart}
@@ -383,29 +489,78 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         ref={contentRef}
-        className='relative flex w-full max-w-3xl cursor-default flex-col items-center px-8'
+        className={clsx(
+          'relative flex w-full cursor-default flex-col items-center px-4 sm:px-6',
+          layoutContext.vertical ? 'justify-center' : '',
+        )}
         onClick={handleContentClick}
       >
+        <style>{`
+          .paragraph-content {
+            text-wrap: pretty;
+          }
+
+          .paragraph-content :is(h1, h2, h3, h4, h5, h6) {
+            line-height: 1.2;
+            text-wrap: balance;
+            margin-block-end: 0.45em;
+          }
+
+          .paragraph-content > :first-child {
+            margin-block-start: 0;
+          }
+
+          .paragraph-content > :last-child {
+            margin-block-end: 0;
+          }
+        `}</style>
         {exitingParagraph && !isChangingSection && (
           <div
             key={exitingParagraph.id}
+            lang={exitingParagraph.presentation.lang}
+            dir={exitingParagraph.presentation.dir}
             className={clsx(
               'paragraph-content text-base-content/20 absolute w-full',
               'duration-400 transition-all ease-out',
               '-translate-y-12 scale-95 opacity-0',
+              'not-eink:bg-base-100/15 rounded-[2rem] shadow-[0_18px_45px_rgba(15,23,42,0.08)]',
             )}
-            style={contentStyle}
+            style={{
+              ...contentStyle,
+              ...frameStyle,
+              direction: exitingParagraph.presentation.dir,
+              writingMode: exitingParagraph.presentation
+                .writingMode as React.CSSProperties['writingMode'],
+              textOrientation: exitingParagraph.presentation
+                .textOrientation as React.CSSProperties['textOrientation'],
+              unicodeBidi: exitingParagraph.presentation
+                .unicodeBidi as React.CSSProperties['unicodeBidi'],
+              textAlign: exitingParagraph.presentation
+                .textAlign as React.CSSProperties['textAlign'],
+            }}
             dangerouslySetInnerHTML={{ __html: exitingParagraph.html }}
           />
         )}
 
         {activeParagraph ? (
-          <AnimatedParagraph
-            key={activeParagraph.id}
-            html={activeParagraph.html}
-            state={activeParagraph.state}
-            style={contentStyle}
-          />
+          <div
+            className={clsx(
+              'relative w-full overflow-hidden rounded-[2rem]',
+              'overflow-auto',
+              'not-eink:bg-base-100/20 not-eink:ring-base-content/8 not-eink:ring-1',
+              'not-eink:shadow-[0_24px_60px_rgba(15,23,42,0.12)]',
+              'supports-[backdrop-filter]:not-eink:bg-base-100/18',
+            )}
+            style={frameStyle}
+          >
+            <AnimatedParagraph
+              key={activeParagraph.id}
+              html={activeParagraph.html}
+              presentation={activeParagraph.presentation}
+              state={activeParagraph.state}
+              style={contentStyle}
+            />
+          </div>
         ) : isChangingSection ? (
           <SectionTransitionIndicator isVisible={isChangingSection} direction={sectionDirection} />
         ) : null}
