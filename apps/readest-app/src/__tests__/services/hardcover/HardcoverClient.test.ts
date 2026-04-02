@@ -188,12 +188,13 @@ describe('HardcoverClient', () => {
     const requestSpy = vi.spyOn(client as any, 'request').mockResolvedValue({});
     await (client as any).pushProgress(book, config);
 
-    const progressCall = requestSpy.mock.calls.find((call: [string, unknown]) => {
-      const [query] = call;
+    const progressCall = requestSpy.mock.calls.find((call) => {
+      const query = call[0];
       return typeof query === 'string' && query.includes('mutation InsertRead');
     });
-    const variables = progressCall?.[1];
-    expect(variables.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(progressCall).toBeDefined();
+    const variables = progressCall?.[1] as { started_at?: string } | undefined;
+    expect(variables?.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   test('should promote an existing user book to currently reading before syncing progress', async () => {
@@ -218,17 +219,25 @@ describe('HardcoverClient', () => {
 
     await client.pushProgress(book, config);
 
-    const calls = requestSpy.mock.calls.map((call: [string, unknown]) => {
-      const [query, variables] = call;
-      return { query, variables };
+    const calls = requestSpy.mock.calls.map((call) => {
+      return {
+        query: String(call[0]),
+        variables: call[1] as Record<string, unknown> | undefined,
+      };
     });
-    expect(calls[0].query).toContain('mutation UpdateUserBook');
-    expect(calls[0].variables).toEqual({
+    const firstCall = calls[0];
+    const secondCall = calls[1];
+    if (!firstCall || !secondCall) {
+      throw new Error('Expected both UpdateUserBook and InsertRead calls');
+    }
+
+    expect(firstCall.query).toContain('mutation UpdateUserBook');
+    expect(firstCall.variables).toEqual({
       user_book_id: 303,
       object: { status_id: 2 },
     });
-    expect(calls[1].query).toContain('mutation InsertRead');
-    expect(calls[1].variables).toMatchObject({
+    expect(secondCall.query).toContain('mutation InsertRead');
+    expect(secondCall.variables).toMatchObject({
       user_book_id: 303,
       progress_pages: 25,
       edition_id: 101,

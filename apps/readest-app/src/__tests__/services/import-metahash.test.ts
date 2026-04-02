@@ -258,6 +258,10 @@ describe('importBook metaHash deduplication', () => {
 
     const mockFile = new File(['new content'], 'test.epub', { type: 'application/epub+zip' });
     const result = await service.importBook(mockFile, books);
+    expect(result).not.toBeNull();
+    if (!result) {
+      throw new Error('Expected importBook to return an imported book');
+    }
 
     expect(result.metadata?.isbn).toBe('9780316033664');
   });
