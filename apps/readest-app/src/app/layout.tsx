@@ -54,10 +54,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <meta name='mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
         <meta name='apple-mobile-web-app-title' content='Readest' />
-        <meta name='theme-color' content='#ffffff' media='(prefers-color-scheme: light)' />
-        <meta name='theme-color' content='#1a1a1a' media='(prefers-color-scheme: dark)' />
         <link rel='apple-touch-icon' sizes='180x180' href='/apple-touch-icon.png' />
         <link rel='icon' href='/favicon.ico' />
         <link rel='manifest' href='/manifest.json' />
