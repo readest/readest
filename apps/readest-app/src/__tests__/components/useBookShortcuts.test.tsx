@@ -29,6 +29,9 @@ const currentViewSettings = {
   defaultFontSize: 16,
   lineHeight: 1.5,
   readingRulerEnabled: true,
+  writingMode: 'horizontal-tb',
+  vertical: false,
+  rtl: false,
   paragraphMode: { enabled: false },
 };
 
@@ -120,6 +123,10 @@ describe('useBookShortcuts', () => {
     vi.clearAllMocks();
     shortcutState.actions = null;
     currentViewSettings.readingRulerEnabled = true;
+    currentViewSettings.writingMode = 'horizontal-tb';
+    currentViewSettings.vertical = false;
+    currentViewSettings.rtl = false;
+    currentViewSettings.paragraphMode.enabled = false;
     mockView.book.dir = 'ltr';
   });
 
@@ -169,5 +176,31 @@ describe('useBookShortcuts', () => {
     shortcutState.actions?.['onGoNext']?.();
 
     expect(mockView.next).toHaveBeenCalledWith(72);
+  });
+
+  it('routes paragraph shortcuts using rtl reading order when paragraph mode is enabled', () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    currentViewSettings.paragraphMode.enabled = true;
+    currentViewSettings.rtl = true;
+
+    render(<Harness />);
+    shortcutState.actions?.['onGoLeft']?.();
+
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: 'book-1' });
+  });
+
+  it('routes paragraph shortcuts using vertical reading order when paragraph mode is enabled', () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    currentViewSettings.paragraphMode.enabled = true;
+    currentViewSettings.writingMode = 'vertical-rl';
+    currentViewSettings.vertical = true;
+    currentViewSettings.rtl = true;
+
+    render(<Harness />);
+    shortcutState.actions?.['onGoLeft']?.();
+    shortcutState.actions?.['onGoUp']?.();
+
+    expect(dispatchSpy).toHaveBeenNthCalledWith(1, 'paragraph-next', { bookKey: 'book-1' });
+    expect(dispatchSpy).toHaveBeenNthCalledWith(2, 'paragraph-prev', { bookKey: 'book-1' });
   });
 });
