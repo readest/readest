@@ -9,7 +9,7 @@ describe('HardcoverSyncMapStore', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock Database
     mockDb = {
       select: vi.fn().mockResolvedValue([]),
@@ -60,7 +60,10 @@ describe('HardcoverSyncMapStore', () => {
       synced_at: Date.now(),
     };
 
-    window.localStorage.setItem(`hardcover-note-mapping:${bookHash}:${noteId}`, JSON.stringify(mapping));
+    window.localStorage.setItem(
+      `hardcover-note-mapping:${bookHash}:${noteId}`,
+      JSON.stringify(mapping),
+    );
 
     await store.loadForBook(bookHash);
     const result = await store.getMapping(bookHash, noteId);
@@ -72,7 +75,7 @@ describe('HardcoverSyncMapStore', () => {
   test('should load from SQLite on native', async () => {
     // Force native path by removing window.localStorage
     vi.stubGlobal('window', {});
-    
+
     const bookHash = 'test-book-hash';
     const noteId = 'note-1';
     const mapping = {
@@ -89,17 +92,23 @@ describe('HardcoverSyncMapStore', () => {
     const result = await store.getMapping(bookHash, noteId);
 
     expect(result).toEqual(mapping);
-    expect(mockAppService.openDatabase).toHaveBeenCalledWith('hardcover-sync', 'hardcover-sync.db', 'Data');
+    expect(mockAppService.openDatabase).toHaveBeenCalledWith(
+      'hardcover-sync',
+      'hardcover-sync.db',
+      'Data',
+    );
   });
 
   test('upsertMapping should mark as modified and flush should save to localStorage', async () => {
     const bookHash = 'test-book-hash';
     const noteId = 'note-1';
-    
+
     await store.upsertMapping(bookHash, noteId, 456, 'def');
     await store.flush();
 
-    const stored = JSON.parse(window.localStorage.getItem(`hardcover-note-mapping:${bookHash}:${noteId}`)!);
+    const stored = JSON.parse(
+      window.localStorage.getItem(`hardcover-note-mapping:${bookHash}:${noteId}`)!,
+    );
     expect(stored.hardcover_journal_id).toBe(456);
     expect(stored.payload_hash).toBe('def');
   });
@@ -107,7 +116,7 @@ describe('HardcoverSyncMapStore', () => {
   test('getMappingByPayloadHash should return the latest mapping', async () => {
     const bookHash = 'test-book-hash';
     const payloadHash = 'shared-payload';
-    
+
     const mapping1 = {
       book_hash: bookHash,
       note_id: 'note-1',
@@ -123,8 +132,14 @@ describe('HardcoverSyncMapStore', () => {
       synced_at: 2000,
     };
 
-    window.localStorage.setItem(`hardcover-note-mapping:${bookHash}:note-1`, JSON.stringify(mapping1));
-    window.localStorage.setItem(`hardcover-note-mapping:${bookHash}:note-2`, JSON.stringify(mapping2));
+    window.localStorage.setItem(
+      `hardcover-note-mapping:${bookHash}:note-1`,
+      JSON.stringify(mapping1),
+    );
+    window.localStorage.setItem(
+      `hardcover-note-mapping:${bookHash}:note-2`,
+      JSON.stringify(mapping2),
+    );
 
     const result = await store.getMappingByPayloadHash(bookHash, payloadHash);
     expect(result!.note_id).toBe('note-2');

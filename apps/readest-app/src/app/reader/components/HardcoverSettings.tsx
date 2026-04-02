@@ -37,10 +37,7 @@ export const HardcoverSettingsWindow: React.FC = () => {
     const el = document.getElementById('hardcover_settings_window');
     el?.addEventListener('setHardcoverSettingsVisibility', handleCustomEvent as EventListener);
     return () => {
-      el?.removeEventListener(
-        'setHardcoverSettingsVisibility',
-        handleCustomEvent as EventListener,
-      );
+      el?.removeEventListener('setHardcoverSettingsVisibility', handleCustomEvent as EventListener);
     };
   }, []);
 

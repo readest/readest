@@ -54,7 +54,9 @@ const extractIsbnCandidates = (value: unknown): string[] => {
   if (!trimmed) return [];
 
   const candidates = [trimmed];
-  const prefixedMatches = trimmed.match(/(?:^|[\s,;])(?:urn:)?isbn:([0-9xX-]{10,17})(?=$|[\s,;])/gi);
+  const prefixedMatches = trimmed.match(
+    /(?:^|[\s,;])(?:urn:)?isbn:([0-9xX-]{10,17})(?=$|[\s,;])/gi,
+  );
   if (prefixedMatches) {
     for (const match of prefixedMatches) {
       candidates.push(match.replace(/^[\s,;]+/, '').replace(/^(?:urn:)?isbn:/i, ''));

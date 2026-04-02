@@ -63,7 +63,8 @@ export class HardcoverClient {
   private async paceRequest() {
     const now = Date.now();
     const elapsed = now - this.lastRequestTime;
-    if (elapsed < 1150) { // Keep just under 55 req / minute
+    if (elapsed < 1150) {
+      // Keep just under 55 req / minute
       await sleep(1150 - elapsed);
     }
     this.lastRequestTime = Date.now();
@@ -122,10 +123,10 @@ export class HardcoverClient {
 
   private async authenticate() {
     if (this.userId) return;
-    const data = await this.request<Record<string, never>, { me: { id: number } | Array<{ id: number }> }>(
-      QUERY_GET_USER_ID,
-      {},
-    );
+    const data = await this.request<
+      Record<string, never>,
+      { me: { id: number } | Array<{ id: number }> }
+    >(QUERY_GET_USER_ID, {});
     const me = Array.isArray(data.me) ? data.me[0] : data.me;
     if (!me?.id) {
       throw new Error('Invalid Hardcover token: user ID not found');
@@ -340,7 +341,8 @@ export class HardcoverClient {
     await this.updateUserBookStatus(context, 2);
 
     const current = config.progress?.[0] ?? book.progress?.[0] ?? 0;
-    const total = config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
+    const total =
+      config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
     if (total <= 0) return;
 
     const pagesRead = Math.min(Math.max(current, 0), total);
@@ -370,11 +372,7 @@ export class HardcoverClient {
   }
 
   private buildJournalPayload(note: BookNote, config: BookConfig, context: BookContext) {
-    const totalPages =
-      config.progress?.[1] ??
-      context.pages ??
-      context.bookPages ??
-      0;
+    const totalPages = config.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
     const fallbackPage = config.progress?.[0] ?? 0;
     const page = note.page && note.page > 0 ? note.page : fallbackPage;
     const boundedPage = Math.max(0, Math.min(page, totalPages || page));
@@ -401,7 +399,10 @@ export class HardcoverClient {
     };
   }
 
-  private async insertJournal(context: BookContext, payload: Record<string, unknown>): Promise<number> {
+  private async insertJournal(
+    context: BookContext,
+    payload: Record<string, unknown>,
+  ): Promise<number> {
     const data = await this.request<
       Record<string, unknown>,
       { insert_reading_journal?: { id?: number; errors?: unknown } }

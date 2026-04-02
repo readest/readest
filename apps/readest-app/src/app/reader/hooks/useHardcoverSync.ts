@@ -52,8 +52,6 @@ export const useHardcoverSync = (bookKey: string) => {
         (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
     );
 
-
-
     if (eligibleNotes.length === 0) {
       eventDispatcher.dispatch('toast', {
         message: _('No annotations or excerpts to sync for this book.'),

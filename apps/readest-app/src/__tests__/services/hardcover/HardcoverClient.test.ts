@@ -10,7 +10,7 @@ describe('HardcoverClient', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock HardcoverSyncMapStore
     mockMapStore = {
       getMapping: vi.fn().mockResolvedValue(null),
@@ -45,7 +45,7 @@ describe('HardcoverClient', () => {
         isbn: '0743273567',
       },
     } as unknown as Book;
-    
+
     const isbn = (client as any).extractISBN(book);
     expect(isbn).toBe('0743273567');
   });
@@ -53,10 +53,7 @@ describe('HardcoverClient', () => {
   test('should extract ISBN from alternative identifiers', () => {
     const book = {
       metadata: {
-        identifier: [
-          { scheme: 'ISBN', value: '9780679783268' },
-          'urn:isbn:0679783261'
-        ],
+        identifier: [{ scheme: 'ISBN', value: '9780679783268' }, 'urn:isbn:0679783261'],
       },
     } as unknown as Book;
 
@@ -65,13 +62,13 @@ describe('HardcoverClient', () => {
   });
 
   test('should deduplicate notes correctly in syncBookNotes', async () => {
-    const book = { 
-      hash: 'book-hash', 
-      title: 'Test Book', 
+    const book = {
+      hash: 'book-hash',
+      title: 'Test Book',
       author: 'Test',
-      metadata: { isbn: '1234567890' } // Add ISBN to trigger QUERY_GET_EDITION
+      metadata: { isbn: '1234567890' }, // Add ISBN to trigger QUERY_GET_EDITION
     } as unknown as Book;
-    
+
     const config = {
       booknotes: [
         {
@@ -92,7 +89,7 @@ describe('HardcoverClient', () => {
           type: 'annotation',
           text: 'Other Text',
           note: '',
-        }
+        },
       ] as BookNote[],
     } as BookConfig;
 
@@ -103,20 +100,25 @@ describe('HardcoverClient', () => {
     });
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ 
-        data: { 
-          editions: [{ 
-            id: 101, 
-            book: { 
-              id: 202, 
-              user_books: [{ 
-                id: 303,
-                user_book_reads: []
-              }] 
-            } 
-          }] 
-        } 
-      }), // fetchContext (QUERY_GET_EDITION)
+      json: () =>
+        Promise.resolve({
+          data: {
+            editions: [
+              {
+                id: 101,
+                book: {
+                  id: 202,
+                  user_books: [
+                    {
+                      id: 303,
+                      user_book_reads: [],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }), // fetchContext (QUERY_GET_EDITION)
     });
     (fetch as any).mockResolvedValue({
       ok: true,
@@ -134,7 +136,7 @@ describe('HardcoverClient', () => {
 
   test('should handle rate limiting with retries', async () => {
     // request() does NOT call authenticate() so only 2 mock values are needed
-    
+
     // First request fails with 429 then succeeds
     (fetch as any).mockResolvedValueOnce({ ok: false, status: 429 });
     (fetch as any).mockResolvedValueOnce({
@@ -145,7 +147,7 @@ describe('HardcoverClient', () => {
     // Speed up sleep for test
     vi.useFakeTimers();
     const requestPromise = (client as any).request('query', { var: 1 });
-    
+
     // Wait for the 429 retry
     await vi.runAllTimersAsync();
     const result = await requestPromise;
@@ -155,11 +157,11 @@ describe('HardcoverClient', () => {
   });
 
   test('should produce the expected date formats for journal and progress payloads', async () => {
-    const note = { 
+    const note = {
       updatedAt: 1711737600000, // 2026-03-29 ...
       type: 'annotation',
       text: 'Test',
-      id: '1'
+      id: '1',
     } as BookNote;
     const config = { progress: [5, 100] } as BookConfig;
     const context = { pages: 100, bookId: 1, editionId: 2 } as any;
@@ -260,27 +262,28 @@ describe('HardcoverClient', () => {
     });
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({
-        data: {
-          editions: [
-            {
-              id: 101,
-              pages: 100,
-              book: {
-                id: 202,
+      json: () =>
+        Promise.resolve({
+          data: {
+            editions: [
+              {
+                id: 101,
                 pages: 100,
-                user_books: [
-                  {
-                    id: 303,
-                    status_id: 3,
-                    user_book_reads: [],
-                  },
-                ],
+                book: {
+                  id: 202,
+                  pages: 100,
+                  user_books: [
+                    {
+                      id: 303,
+                      status_id: 3,
+                      user_book_reads: [],
+                    },
+                  ],
+                },
               },
-            },
-          ],
-        },
-      }),
+            ],
+          },
+        }),
     });
     (fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -293,8 +296,8 @@ describe('HardcoverClient', () => {
     );
 
     expect(result.inserted).toBe(1);
-    expect(calls.some((call: { query: string }) => call.query.includes('mutation UpdateUserBook'))).toBe(
-      false,
-    );
+    expect(
+      calls.some((call: { query: string }) => call.query.includes('mutation UpdateUserBook')),
+    ).toBe(false);
   });
 });

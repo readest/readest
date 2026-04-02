@@ -82,7 +82,10 @@ export class HardcoverSyncMapStore {
     if (this.isWebStorageAvailable()) {
       try {
         for (const row of this.mappings.values()) {
-          window.localStorage.setItem(this.getStorageKey(row.book_hash, row.note_id), JSON.stringify(row));
+          window.localStorage.setItem(
+            this.getStorageKey(row.book_hash, row.note_id),
+            JSON.stringify(row),
+          );
         }
         this.modified = false;
       } catch (error) {

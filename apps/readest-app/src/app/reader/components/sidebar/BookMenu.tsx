@@ -47,8 +47,9 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const viewSettings = getViewSettings(sideBarBookKey!);
 
   const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
-  const hardcoverSyncEnabledForBook =
-    !!(sideBarBookKey && getConfig(sideBarBookKey)?.hardcoverSyncEnabled);
+  const hardcoverSyncEnabledForBook = !!(
+    sideBarBookKey && getConfig(sideBarBookKey)?.hardcoverSyncEnabled
+  );
 
   const handleParallelView = (id: string) => {
     openParallelView(id);
