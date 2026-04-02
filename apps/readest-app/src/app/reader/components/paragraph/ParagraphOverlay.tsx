@@ -28,34 +28,25 @@ interface ParagraphContent {
   state: 'entering' | 'active' | 'exiting';
 }
 
+const getParagraphTextAlign = (presentation: ParagraphPresentation) =>
+  presentation.textAlign || (presentation.vertical ? 'center' : undefined);
+
 const AnimatedParagraph: React.FC<{
   html: string;
   presentation: ParagraphPresentation;
   state: 'entering' | 'active' | 'exiting';
   style: React.CSSProperties;
 }> = ({ html, presentation, state, style }) => {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    const timer = requestAnimationFrame(() => setIsReady(true));
-    return () => cancelAnimationFrame(timer);
-  }, [html]);
-
-  const showContent = state === 'active' && isReady;
-
   return (
     <div
-      ref={contentRef}
       lang={presentation.lang}
       dir={presentation.dir}
       className={clsx(
         'paragraph-content text-base-content w-full',
-        'duration-400 transition-all ease-out',
-        state === 'entering' && 'translate-y-4 opacity-0',
-        state === 'active' &&
-          (showContent ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'),
-        state === 'exiting' && '-translate-y-8 opacity-0',
+        'transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        state === 'entering' && 'translate-y-2 opacity-0 blur-[1px]',
+        state === 'active' && 'translate-y-0 opacity-100 blur-0',
+        state === 'exiting' && '-translate-y-2 opacity-0 blur-[2px]',
       )}
       style={{
         ...style,
@@ -63,7 +54,7 @@ const AnimatedParagraph: React.FC<{
         writingMode: presentation.writingMode as React.CSSProperties['writingMode'],
         textOrientation: presentation.textOrientation as React.CSSProperties['textOrientation'],
         unicodeBidi: presentation.unicodeBidi as React.CSSProperties['unicodeBidi'],
-        textAlign: presentation.textAlign as React.CSSProperties['textAlign'],
+        textAlign: getParagraphTextAlign(presentation) as React.CSSProperties['textAlign'],
         transformOrigin: 'center top',
       }}
       dangerouslySetInnerHTML={{ __html: html }}
@@ -176,19 +167,31 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
 
     return {
       paddingBlock: layoutContext.vertical
-        ? 'clamp(0.9rem, 2.6vh, 1.5rem)'
+        ? 'clamp(0.9rem, 2.4vh, 1.35rem)'
         : 'clamp(1rem, 3vh, 1.75rem)',
       paddingInline: layoutContext.vertical
-        ? 'clamp(0.85rem, 3vw, 1.4rem)'
+        ? 'clamp(0.85rem, 2.8vw, 1.2rem)'
         : 'clamp(1rem, 4vw, 2rem)',
+      width: layoutContext.vertical ? 'fit-content' : '100%',
+      minInlineSize: layoutContext.vertical ? '4.75rem' : undefined,
       maxInlineSize: layoutContext.vertical
-        ? `min(calc(100dvh - ${topInset + bottomInset + 72}px), 34rem)`
+        ? `min(calc(100dvh - ${topInset + bottomInset + 88}px), 22rem)`
         : `min(calc(100vw - (${viewportPadding} * 2)), 66ch)`,
       maxBlockSize: layoutContext.vertical
         ? 'min(calc(100vw - 2.5rem), 24rem)'
-        : `min(calc(100dvh - ${topInset + bottomInset + 132}px), 36rem)`,
+        : `min(calc(100dvh - ${topInset + bottomInset + 132}px), 38rem)`,
+      marginInline: 'auto',
     } as React.CSSProperties;
   }, [appService?.hasSafeAreaInset, gridInsets.bottom, gridInsets.top, layoutContext.vertical]);
+  const surfaceStyle = useMemo(
+    () =>
+      ({
+        backgroundColor: 'oklch(var(--b1) / 0.16)',
+        boxShadow:
+          '0 18px 42px oklch(var(--bc) / 0.08), 0 4px 12px oklch(var(--bc) / 0.04), inset 0 1px 0 oklch(var(--b1) / 0.22)',
+      }) as React.CSSProperties,
+    [],
+  );
   const fallbackPresentation = useMemo(
     (): ParagraphPresentation => ({
       dir: layoutContext.rtl ? 'rtl' : 'ltr',
@@ -229,17 +232,14 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       });
 
       requestAnimationFrame(() => {
-        const activateTimer = setTimeout(() => {
-          setParagraphs((prev) =>
-            prev.map((p) => (p.id === newId ? { ...p, state: 'active' as const } : p)),
-          );
-        }, 30);
-        animationTimersRef.current.push(activateTimer);
+        setParagraphs((prev) =>
+          prev.map((p) => (p.id === newId ? { ...p, state: 'active' as const } : p)),
+        );
       });
 
       const cleanupTimer = setTimeout(() => {
         setParagraphs((prev) => prev.filter((p) => p.state !== 'exiting'));
-      }, 450);
+      }, 320);
       animationTimersRef.current.push(cleanupTimer);
     },
     [extractContent, fallbackPresentation],
@@ -295,7 +295,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       sectionChangeTimeoutId = setTimeout(() => {
         setParagraphs((prev) => prev.filter((p) => p.state !== 'exiting'));
         sectionChangeTimeoutId = null;
-      }, 400);
+      }, 280);
     };
 
     eventDispatcher.on('paragraph-focus', handleFocus);
@@ -491,7 +491,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         ref={contentRef}
         className={clsx(
           'relative flex w-full cursor-default flex-col items-center px-4 sm:px-6',
-          layoutContext.vertical ? 'justify-center' : '',
+          layoutContext.vertical ? 'justify-center py-2' : '',
         )}
         onClick={handleContentClick}
       >
@@ -520,14 +520,15 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
             lang={exitingParagraph.presentation.lang}
             dir={exitingParagraph.presentation.dir}
             className={clsx(
-              'paragraph-content text-base-content/20 absolute w-full',
-              'duration-400 transition-all ease-out',
-              '-translate-y-12 scale-95 opacity-0',
-              'not-eink:bg-base-100/15 rounded-[2rem] shadow-[0_18px_45px_rgba(15,23,42,0.08)]',
+              'paragraph-content text-base-content/18 absolute rounded-[2rem]',
+              'pointer-events-none transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+              '-translate-y-2 opacity-0 blur-[2px]',
+              layoutContext.vertical ? 'w-auto max-w-full' : 'w-full',
             )}
             style={{
               ...contentStyle,
               ...frameStyle,
+              ...surfaceStyle,
               direction: exitingParagraph.presentation.dir,
               writingMode: exitingParagraph.presentation
                 .writingMode as React.CSSProperties['writingMode'],
@@ -535,8 +536,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
                 .textOrientation as React.CSSProperties['textOrientation'],
               unicodeBidi: exitingParagraph.presentation
                 .unicodeBidi as React.CSSProperties['unicodeBidi'],
-              textAlign: exitingParagraph.presentation
-                .textAlign as React.CSSProperties['textAlign'],
+              textAlign: getParagraphTextAlign(
+                exitingParagraph.presentation,
+              ) as React.CSSProperties['textAlign'],
             }}
             dangerouslySetInnerHTML={{ __html: exitingParagraph.html }}
           />
@@ -545,13 +547,11 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         {activeParagraph ? (
           <div
             className={clsx(
-              'relative w-full overflow-hidden rounded-[2rem]',
+              'relative overflow-hidden rounded-[2rem]',
               'overflow-auto',
-              'not-eink:bg-base-100/20 not-eink:ring-base-content/8 not-eink:ring-1',
-              'not-eink:shadow-[0_24px_60px_rgba(15,23,42,0.12)]',
-              'supports-[backdrop-filter]:not-eink:bg-base-100/18',
+              layoutContext.vertical ? 'w-auto max-w-full self-center' : 'w-full',
             )}
-            style={frameStyle}
+            style={{ ...frameStyle, ...surfaceStyle }}
           >
             <AnimatedParagraph
               key={activeParagraph.id}
