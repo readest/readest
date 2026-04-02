@@ -60,7 +60,7 @@ mutation UpdateUserBook($user_book_id: Int!, $object: UserBookUpdateInput!) {
 `;
 
 export const MUTATION_INSERT_READ = `
-mutation InsertRead($user_book_id: Int!, $edition_id: Int!, $progress_pages: Int!, $started_at: timestamptz!) {
+mutation InsertRead($user_book_id: Int!, $edition_id: Int!, $progress_pages: Int!, $started_at: date!) {
   insert_user_book_read(
     user_book_id: $user_book_id
     user_book_read: {
@@ -73,7 +73,7 @@ mutation InsertRead($user_book_id: Int!, $edition_id: Int!, $progress_pages: Int
 `;
 
 export const MUTATION_UPDATE_READ = `
-mutation UpdateRead($id: Int!, $progress_pages: Int!, $edition_id: Int!, $started_at: timestamptz!) {
+mutation UpdateRead($id: Int!, $progress_pages: Int!, $edition_id: Int!, $started_at: date!) {
   update_user_book_read(
     id: $id
     object: {

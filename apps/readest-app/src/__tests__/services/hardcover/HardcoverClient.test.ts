@@ -154,7 +154,7 @@ describe('HardcoverClient', () => {
     vi.useRealTimers();
   });
 
-  test('should produce full ISO timestamps for journal and progress payloads', () => {
+  test('should produce the expected date formats for journal and progress payloads', () => {
     const note = { 
       updatedAt: 1711737600000, // 2026-03-29 ...
       type: 'annotation',
@@ -178,7 +178,6 @@ describe('HardcoverClient', () => {
     
     const lastCall = requestSpy.mock.calls[requestSpy.mock.calls.length - 1];
     const variables = lastCall[1];
-    expect(variables.started_at.length).toBeGreaterThan(10);
-    expect(variables.started_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(variables.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

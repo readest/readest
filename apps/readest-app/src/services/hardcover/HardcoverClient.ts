@@ -56,6 +56,10 @@ export class HardcoverClient {
     return date.toISOString().replace(/\.\d+/, '').replace('Z', '+00:00');
   }
 
+  private formatDay(date: Date): string {
+    return date.toISOString().slice(0, 10);
+  }
+
   private async paceRequest() {
     const now = Date.now();
     const elapsed = now - this.lastRequestTime;
@@ -329,7 +333,7 @@ export class HardcoverClient {
     const pagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (pagesRead / total) * 100 : 0;
     const activeRead = context.userBook.user_book_reads?.[0];
-    const startedAt = new Date(book.createdAt || Date.now()).toISOString();
+    const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
       await this.request(MUTATION_UPDATE_READ, {
