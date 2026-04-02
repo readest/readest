@@ -1,5 +1,5 @@
 import React from 'react';
-import { MdRadioButtonChecked, MdClose, MdAdd } from 'react-icons/md';
+import { MdRadioButtonChecked, MdClose, MdAdd, MdPlayCircleOutline } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Select from '@/components/Select';
@@ -8,6 +8,7 @@ interface Texture {
   id: string;
   url?: string;
   blobUrl?: string;
+  animated?: boolean;
   loaded?: boolean;
 }
 
@@ -65,6 +66,12 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
               <MdRadioButtonChecked
                 size={iconSize24}
                 className='absolute right-2 top-2 rounded-full bg-white text-indigo-500'
+              />
+            )}
+            {texture.animated && (
+              <MdPlayCircleOutline
+                size={iconSize24}
+                className='absolute bottom-2 left-2 text-white drop-shadow-md'
               />
             )}
             {!predefinedTextures.find((t) => t.id === texture.id) && (
