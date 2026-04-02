@@ -34,12 +34,14 @@ type BookContext = {
 const isTauriEnv = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 export class HardcoverClient {
+  private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
   private lastRequestTime = 0;
+  private requestQueue: Promise<void> = Promise.resolve();
 
   constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
     // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
@@ -60,14 +62,18 @@ export class HardcoverClient {
     return date.toISOString().slice(0, 10);
   }
 
-  private async paceRequest() {
-    const now = Date.now();
-    const elapsed = now - this.lastRequestTime;
-    if (elapsed < 1150) {
-      // Keep just under 55 req / minute
-      await sleep(1150 - elapsed);
-    }
-    this.lastRequestTime = Date.now();
+  private async throttleRequest() {
+    const queued = this.requestQueue.catch(() => undefined).then(async () => {
+      const now = Date.now();
+      const elapsed = now - this.lastRequestTime;
+      if (elapsed < this.minRequestIntervalMs) {
+        await sleep(this.minRequestIntervalMs - elapsed);
+      }
+      this.lastRequestTime = Date.now();
+    });
+
+    this.requestQueue = queued;
+    await queued;
   }
 
   private async request<TVariables, TData>(
@@ -76,7 +82,7 @@ export class HardcoverClient {
     retries = 3,
     backoffMs = 2000,
   ): Promise<TData> {
-    await this.paceRequest();
+    await this.throttleRequest();
 
     const res = await fetch(this.endpoint, {
       method: 'POST',
@@ -449,12 +455,13 @@ export class HardcoverClient {
     );
 
     // Readest can keep both an excerpt (quote) and an annotation (quote + note)
-    // for the same highlight, sometimes with slight CFI trailing offset differences.
-    // We group by the CFI base node and text to safely dedupe.
+    // for the same highlight. We normalize EPUB CFI range offsets so the same
+    // range with small trailing offset differences still dedupes, while keeping
+    // the rest of the range path intact.
     const getDedupKey = (n: BookNote) => {
       const text = n.text?.trim() || '';
-      const cfiNode = n.cfi ? n.cfi.split(',')[0] : '';
-      return `${cfiNode}|${text}`;
+      const normalizedCfi = n.cfi ? n.cfi.replace(/:\d+/g, '') : '';
+      return `${normalizedCfi}|${text}`;
     };
 
     const annotationWithNoteKeys = new Set<string>();

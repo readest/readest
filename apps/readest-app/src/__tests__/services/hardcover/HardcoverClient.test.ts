@@ -116,13 +116,13 @@ describe('HardcoverClient', () => {
           type: 'annotation',
           text: 'Shared Text',
           note: 'Some note',
-          cfi: 'epubcfi(/6/4[chap1]!/4/2,10/10)',
+          cfi: 'epubcfi(/6/4[chap1]!/4/2,/1:10,/1:22)',
         },
         {
           id: 'note-2',
           type: 'excerpt',
           text: 'Shared Text',
-          cfi: 'epubcfi(/6/4[chap1]!/4/2,10/12)', // Slightly different CFI trailing offset
+          cfi: 'epubcfi(/6/4[chap1]!/4/2,/1:10,/1:23)', // Slightly different end offset only
         },
         {
           id: 'note-3',
@@ -171,6 +171,8 @@ describe('HardcoverClient', () => {
     // note-2: skipped (excerpt at same location/text as note-1)
     // note-3: kept (annotation with no note, but no conflicts)
     expect(results.inserted).toBe(2);
+    expect(results.skipped).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
