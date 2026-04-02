@@ -39,6 +39,18 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 
+global.ResizeObserver = class ResizeObserver {
+  constructor(private readonly callback: ResizeObserverCallback) {}
+
+  observe(target: Element) {
+    this.callback([{ target } as ResizeObserverEntry], this);
+  }
+
+  disconnect() {}
+
+  unobserve() {}
+} as typeof ResizeObserver;
+
 const createDoc = (body: string): Document =>
   new DOMParser().parseFromString(`<html><body>${body}</body></html>`, 'text/html');
 
