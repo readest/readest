@@ -3,8 +3,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Helper method to wait for a middleware to execute before continuing
 // And to throw an error when an error happens in a middleware
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: Function) => {
+export const runMiddleware = (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: (req: NextApiRequest, res: NextApiResponse, cb: (result: unknown) => void) => void,
+) => {
   return new Promise((resolve, reject) => {
     fn(req, res, (result: unknown) => {
       if (result instanceof Error) {

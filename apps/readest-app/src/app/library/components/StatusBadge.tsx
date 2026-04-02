@@ -19,6 +19,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status, children, className }
         'rounded-[1px] px-0.5',
         'text-[8px] font-bold uppercase leading-none tracking-wider',
         'h-3.5',
+        isFinished && 'status-badge-finished',
+        !isFinished && 'status-badge-unread',
         // finished: green/emerald
         isFinished && 'bg-emerald-100 dark:bg-emerald-900/90',
         isFinished && 'border border-emerald-300/50 dark:border-emerald-700/50',

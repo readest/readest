@@ -235,10 +235,12 @@ describe('Paginator multi-view architecture', () => {
         { index: 5, offset: 150, size: 200 },
       ];
       const detectPrimary = (visibleStart: number) => {
+        let offset = 0;
         for (const view of views) {
-          if (visibleStart < view.offset + view.size) {
+          if (visibleStart < offset + view.size - 1) {
             return view.index;
           }
+          offset += view.size;
         }
         return views[views.length - 1]?.index;
       };
@@ -248,6 +250,33 @@ describe('Paginator multi-view architecture', () => {
       expect(detectPrimary(125)).toBe(4); // in second view
       expect(detectPrimary(150)).toBe(5); // at boundary → third view
       expect(detectPrimary(300)).toBe(5); // in third view
+    });
+
+    it('should handle floating-point precision at view boundaries (Android DPR)', () => {
+      // On Android with non-integer DPR, container scrollLeft and accumulated
+      // getBoundingClientRect() sizes diverge by tiny amounts (~0.0001px).
+      // Real trace: visibleStart=1570.9090576171875, accumulated offset+viewSize=1570.9091796875
+      // Fix: 1px tolerance so sub-pixel drift doesn't pick the wrong view.
+      const viewSize = 785.45458984375;
+      const detectPrimary = (visibleStart: number) => {
+        let offset = 0;
+        const views = [
+          { index: 1, size: viewSize },
+          { index: 2, size: viewSize },
+          { index: 3, size: viewSize },
+        ];
+        for (const view of views) {
+          if (visibleStart < offset + view.size - 1) {
+            return view.index;
+          }
+          offset += view.size;
+        }
+        return views[views.length - 1]?.index;
+      };
+      // visibleStart from scrollLeft: 2 * viewSize computed differently than sum of rects
+      const visibleStart = 1570.9090576171875; // container.scrollLeft
+      // With tolerance, this should detect index 3 (not 2)
+      expect(detectPrimary(visibleStart)).toBe(3);
     });
   });
 

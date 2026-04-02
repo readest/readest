@@ -14,6 +14,7 @@ import { viewPagination } from './usePagination';
 import { getStyles } from '@/utils/style';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
+import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 
 interface UseBookShortcutsProps {
   sideBarBookKey: string | null;
@@ -33,6 +34,18 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const fontSize = viewSettings?.defaultFontSize ?? 16;
   const lineHeight = viewSettings?.lineHeight ?? 1.6;
   const distance = fontSize * lineHeight * 3;
+
+  const moveReadingRuler = (side: 'left' | 'right' | 'up' | 'down') => {
+    if (!sideBarBookKey) return false;
+
+    const viewSettings = getViewSettings(sideBarBookKey);
+    if (!viewSettings?.readingRulerEnabled) return false;
+
+    return eventDispatcher.dispatchSync('reading-ruler-move', {
+      bookKey: sideBarBookKey,
+      direction: getReadingRulerMoveDirection(side, getView(sideBarBookKey)?.book.dir),
+    });
+  };
 
   const toggleScrollMode = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
@@ -55,6 +68,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('left')) return;
     viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance);
   };
 
@@ -65,6 +79,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('right')) return;
     viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance);
   };
 
@@ -76,6 +91,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('up')) return;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'up', 'pan', distance);
   };
@@ -88,6 +104,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('down')) return;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'down', 'pan', distance);
   };
@@ -113,10 +130,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const goPrev = () => {
+    if (moveReadingRuler('up')) return;
     getView(sideBarBookKey)?.prev(distance);
   };
 
   const goNext = () => {
+    if (moveReadingRuler('down')) return;
     getView(sideBarBookKey)?.next(distance);
   };
 

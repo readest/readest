@@ -118,7 +118,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       const templateData = {
         title: bookTitle,
         author: bookAuthor,
-        exportDate: new Date().getTime(),
+        exportDate: Date.now(),
         chapters: sortedGroups.map((group) => ({
           title: group.label || _('Untitled'),
           annotations: group.booknotes.map((note) => ({

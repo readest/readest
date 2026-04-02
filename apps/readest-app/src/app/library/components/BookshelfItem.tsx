@@ -149,8 +149,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
         setLoading(false);
-        return available;
       }
+      return available;
     }
     return true;
   };

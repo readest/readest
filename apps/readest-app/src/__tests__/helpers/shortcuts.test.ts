@@ -56,6 +56,41 @@ describe('TTS navigation shortcuts', () => {
   });
 });
 
+describe('No identical keybinding lists across actions (#3675)', () => {
+  // Pre-existing pairs where two actions intentionally share the exact
+  // same key list — both handlers guard on runtime context.
+  // TODO: consider giving these distinct bindings to avoid the same
+  // class of bug as #3675.
+  const KNOWN_PAIRS: ReadonlySet<string> = new Set([
+    'onSearchSelection,onShowSearchBar', // ctrl+f / cmd+f
+    'onCloseWindow,onWikipediaSelection', // ctrl+w / cmd+w
+  ]);
+
+  it('should not have two actions with exactly the same key list', async () => {
+    const shortcuts = await getDefaults();
+    const keyListToActions = new Map<string, string[]>();
+    for (const [name, entry] of Object.entries(shortcuts)) {
+      const id = [...entry.keys].sort().join(',').toLowerCase();
+      const actions = keyListToActions.get(id) ?? [];
+      actions.push(name);
+      keyListToActions.set(id, actions);
+    }
+    const duplicates: string[] = [];
+    for (const [keys, actions] of keyListToActions) {
+      if (actions.length > 1) {
+        const pairId = [...actions].sort().join(',');
+        if (!KNOWN_PAIRS.has(pairId)) {
+          duplicates.push(`[${keys}] is shared by: ${actions.join(', ')}`);
+        }
+      }
+    }
+    expect(
+      duplicates,
+      `Actions with identical keybinding lists:\n${duplicates.join('\n')}`,
+    ).toEqual([]);
+  });
+});
+
 describe('getShortcutsForDisplay', () => {
   it('returns sections in the correct order', async () => {
     const mod = await getModule();

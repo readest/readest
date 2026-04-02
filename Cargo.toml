@@ -4,6 +4,9 @@ members = [
   "packages/tauri/crates/tauri",
   "packages/tauri-plugins/plugins/fs"
 ]
+exclude = [
+  "packages/qcms"
+]
 resolver = "2"
 
 [workspace.dependencies]
@@ -21,6 +24,9 @@ glob = "0.3"
 zbus = "5.9"
 dunce = "1"
 url = "2"
+tar = "0.4.45"
+nix = "0.20.2"
+glib = "0.20.0"
 
 [workspace.package]
 authors = ["Bilingify LLC"]

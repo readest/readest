@@ -23,5 +23,15 @@ export default defineConfig({
       '**/*.browser.test.ts',
       '**/*.tauri.test.ts',
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/__tests__/**',
+        'src/**/test/**',
+      ],
+    },
   },
 });

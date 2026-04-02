@@ -16,3 +16,6 @@
 [submodule "apps/readest-app/.claude/skills/gstack"]
 	path = apps/readest-app/.claude/skills/gstack
 	url = https://github.com/garrytan/gstack.git
+[submodule "packages/qcms"]
+	path = packages/qcms
+	url = https://github.com/mozilla/pdf.js.qcms.git

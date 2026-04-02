@@ -39,7 +39,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'General',
   },
   onToggleBookmark: {
-    keys: ['ctrl+d', 'cmd+d'],
+    keys: ['ctrl+b', 'cmd+b'],
     description: _('Toggle Bookmark'),
     section: 'General',
   },
@@ -270,12 +270,12 @@ export type ShortcutConfig = {
 };
 
 export const SHORTCUT_SECTIONS = [
-  'General',
-  'Navigation',
-  'Text to Speech',
-  'Selection',
-  'Zoom',
-  'Window',
+  _('General'),
+  _('Navigation'),
+  _('Text to Speech'),
+  _('Selection'),
+  _('Zoom'),
+  _('Window'),
 ] as const;
 
 type ShortcutDisplayItem = {

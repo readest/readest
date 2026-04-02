@@ -22,7 +22,6 @@ export async function deleteBook(
   book: Book,
   deleteAction: DeleteAction,
 ): Promise<void> {
-  console.log('Deleting book with action:', deleteAction, book.title);
   if (deleteAction === 'local' || deleteAction === 'both') {
     const localDeleteFps =
       deleteAction === 'local'
@@ -44,7 +43,6 @@ export async function deleteBook(
   if ((deleteAction === 'cloud' || deleteAction === 'both') && book.uploadedAt) {
     const fps = [getRemoteBookFilename(book), getCoverFilename(book)];
     for (const fp of fps) {
-      console.log('Deleting uploaded file:', fp);
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
       try {
         deleteCloudFile(cfp);

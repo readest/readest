@@ -15,7 +15,6 @@ export interface RsvpState {
   wpm: number;
   punctuationPauseMs: number;
   progress: number;
-  resumedFromIndex: number | null;
 }
 
 export interface RsvpPosition {

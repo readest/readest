@@ -1,0 +1,125 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.9/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "ignoreUnknown": true },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "css": { "linter": { "enabled": false } },
+  "linter": {
+    "enabled": true,
+    "includes": [
+      "**",
+      "!.next/**",
+      "!.open-next/**",
+      "!.wrangler/**",
+      "!.claude/**",
+      "!dist/**",
+      "!out/**",
+      "!build/**",
+      "!public/**",
+      "!src-tauri/**",
+      "!next-env.d.ts",
+      "!i18next-scanner.config.cjs"
+    ],
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "recommended": true,
+        "useKeyWithClickEvents": "off",
+        "useKeyWithMouseEvents": "off",
+        "noSvgWithoutTitle": "off",
+        "noLabelWithoutControl": "off",
+        "useSemanticElements": "off",
+        "noAriaHiddenOnFocusable": "off",
+        "noInteractiveElementToNoninteractiveRole": "off",
+        "noNoninteractiveElementToInteractiveRole": "off",
+        "noNoninteractiveElementInteractions": "off",
+        "noStaticElementInteractions": "off",
+        "noNoninteractiveTabindex": "off",
+        "useButtonType": "off",
+        "useAriaPropsSupportedByRole": "off",
+        "useFocusableInteractive": "off",
+        "noAutofocus": "off"
+      },
+      "complexity": {
+        "noForEach": "off",
+        "noStaticOnlyClass": "off",
+        "noUselessSwitchCase": "off",
+        "noUselessFragments": "off",
+        "noUselessCatch": "off",
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off",
+        "noThisInStatic": "off",
+        "useArrowFunction": "off",
+        "noUselessEscapeInRegex": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn",
+        "useExhaustiveDependencies": "off",
+        "useHookAtTopLevel": "error",
+        "useJsxKeyInIterable": "error",
+        "noChildrenProp": "error",
+        "noNextAsyncClientComponent": "warn",
+        "noSwitchDeclarations": "off",
+        "noUndeclaredVariables": "off",
+        "noEmptyCharacterClassInRegex": "off",
+        "useParseIntRadix": "off",
+        "noEmptyPattern": "off"
+      },
+      "nursery": {
+        "noBeforeInteractiveScriptOutsideDocument": "warn",
+        "noDuplicateEnumValues": "error",
+        "noSyncScripts": "warn",
+        "useInlineScriptId": "error"
+      },
+      "performance": {
+        "noImgElement": "off",
+        "noUnwantedPolyfillio": "warn",
+        "useGoogleFontPreconnect": "warn"
+      },
+      "security": {
+        "noBlankTarget": "off",
+        "noDangerouslySetInnerHtmlWithChildren": "off",
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "useImportType": "off",
+        "noParameterAssign": "off",
+        "useDefaultParameterLast": "off",
+        "noUselessElse": "off",
+        "noHeadElement": "warn",
+        "noCommonJs": "off",
+        "useFilenamingConvention": "off",
+        "useNamingConvention": "off",
+        "noUnusedTemplateLiteral": "off",
+        "useTemplate": "off",
+        "useExponentiationOperator": "off",
+        "useNodejsImportProtocol": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noArrayIndexKey": "off",
+        "noAssignInExpressions": "off",
+        "noDoubleEquals": "off",
+        "noDocumentImportInPage": "error",
+        "noHeadImportInDocument": "error",
+        "useGoogleFontDisplay": "warn",
+        "noCommentText": "error",
+        "noDuplicateJsxProps": "error",
+        "noAsyncPromiseExecutor": "off",
+        "noImplicitAnyLet": "off",
+        "noControlCharactersInRegex": "off",
+        "noEmptyBlockStatements": "off",
+        "useIterableCallbackReturn": "off",
+        "noGlobalIsNan": "off",
+        "noConfusingVoidType": "off",
+        "noConstEnum": "off"
+      }
+    }
+  },
+  "javascript": {
+    "globals": ["React"]
+  }
+}

@@ -186,16 +186,21 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     const groups = currentBookshelfItems.filter((item): item is BooksGroup => 'books' in item);
 
     // Sort books within each group
-    const withinGroupSorter = createWithinGroupSorter(groupBy, sortBy, uiLanguage);
+    // For series groups, series index is always ascending; sort direction applies to fallback only
+    const sortAscending = sortOrder === 'asc';
+    const withinGroupSorter = createWithinGroupSorter(groupBy, sortBy, uiLanguage, sortAscending);
     groups.forEach((group) => {
-      group.books.sort((a, b) => withinGroupSorter(a, b) * sortOrderMultiplier);
+      group.books.sort(withinGroupSorter);
     });
 
     // Sort ungrouped books - use within-group sorter if we're inside a group
     // (for series, this ensures books are sorted by series index)
     const bookSorter = createBookSorter(sortBy, uiLanguage);
     if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
-      ungroupedBooks.sort((a, b) => withinGroupSorter(a, b) * sortOrderMultiplier);
+      ungroupedBooks.sort(withinGroupSorter);
+      // When inside a group, books are already sorted correctly — return directly
+      // to avoid the merge sort below overriding the within-group sort order
+      return ungroupedBooks;
     } else {
       ungroupedBooks.sort((a, b) => bookSorter(a, b) * sortOrderMultiplier);
     }

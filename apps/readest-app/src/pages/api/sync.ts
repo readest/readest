@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       // TODO: Remove this hotfix for the initial race condition for books sync
       if (results.books?.length === 0 && since.getTime() < 1000) {
         const dummyHash = '00000000000000000000000000000000';
-        const now = new Date().getTime();
+        const now = Date.now();
         results.books.push({
           user_id: user.id,
           id: dummyHash,
