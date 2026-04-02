@@ -62,6 +62,16 @@ export class HardcoverClient {
     return date.toISOString().slice(0, 10);
   }
 
+  private normalizeNoteDedupCfi(cfi: string | null | undefined): string {
+    return cfi ? cfi.replace(/:\d+/g, '') : '';
+  }
+
+  private getNoteDedupKey(note: BookNote): string {
+    const text = note.text?.trim() || '';
+    const normalizedCfi = this.normalizeNoteDedupCfi(note.cfi);
+    return `${normalizedCfi}|${text}`;
+  }
+
   private async throttleRequest() {
     const queued = this.requestQueue.catch(() => undefined).then(async () => {
       const now = Date.now();
@@ -458,21 +468,15 @@ export class HardcoverClient {
     // for the same highlight. We normalize EPUB CFI range offsets so the same
     // range with small trailing offset differences still dedupes, while keeping
     // the rest of the range path intact.
-    const getDedupKey = (n: BookNote) => {
-      const text = n.text?.trim() || '';
-      const normalizedCfi = n.cfi ? n.cfi.replace(/:\d+/g, '') : '';
-      return `${normalizedCfi}|${text}`;
-    };
-
     const annotationWithNoteKeys = new Set<string>();
     for (const note of rawNotes) {
       if (note.type === 'annotation' && note.note?.trim()) {
-        annotationWithNoteKeys.add(getDedupKey(note));
+        annotationWithNoteKeys.add(this.getNoteDedupKey(note));
       }
     }
 
     const notes = rawNotes.filter((note) => {
-      const key = getDedupKey(note);
+      const key = this.getNoteDedupKey(note);
       if (!annotationWithNoteKeys.has(key)) return true;
 
       // When a note-bearing annotation exists for the same location and text,
