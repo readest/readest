@@ -124,11 +124,6 @@ jobs:
             release: linux
             arch: aarch64
             rust_target: aarch64-unknown-linux-gnu
-          - os: ubuntu-22.04-arm
-            release: linux
-            arch: armhf
-            rust_target: arm-unknown-linux-gnueabihf
-            args: '--target arm-unknown-linux-gnueabihf --bundles deb'
           - os: macos-latest
             release: macos
             arch: aarch64
@@ -154,7 +149,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: setup node
         uses: actions/setup-node@v6
@@ -171,7 +166,7 @@ jobs:
 
       - name: setup Android SDK (for Android build only)
         if: matrix.config.release == 'android'
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: install NDK (for Android build only)
         if: matrix.config.release == 'android'
@@ -208,6 +203,7 @@ jobs:
           echo 'PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig' >> $GITHUB_ENV
           echo 'PKG_CONFIG_SYSROOT_DIR=/usr/arm-linux-gnueabihf' >> $GITHUB_ENV
           echo 'CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc' >> $GITHUB_ENV
+          echo 'CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUSTFLAGS=--cfg=io_uring_skip_arch_check' >> $GITHUB_ENV
 
       - name: create .env.local file for Next.js
         run: |

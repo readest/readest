@@ -8,6 +8,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
+import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 
 export type ScrollSource = 'touch' | 'mouse';
 
@@ -116,6 +117,13 @@ export const usePagination = (
     const bookData = getBookData(bookKey);
     if (!viewState?.inited || !bookData) return;
 
+    const dispatchReadingRulerMove = (side: PaginationSide) => {
+      return eventDispatcher.dispatchSync('reading-ruler-move', {
+        bookKey,
+        direction: getReadingRulerMoveDirection(side, viewRef.current?.book.dir),
+      });
+    };
+
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         const viewSettings = getViewSettings(bookKey)!;
@@ -151,29 +159,32 @@ export const usePagination = (
               ) {
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
-              } else {
-                if (hoveredBookKey) {
-                  setHoveredBookKey(null);
-                  return;
-                }
-                if (!viewSettings.disableClick! && screenX >= viewCenterX) {
-                  if (viewSettings.fullscreenClickArea) {
-                    viewPagination(viewRef.current, viewSettings, 'down');
-                  } else if (viewSettings.swapClickArea) {
-                    viewPagination(viewRef.current, viewSettings, 'left');
-                  } else {
-                    viewPagination(viewRef.current, viewSettings, 'right');
-                  }
-                } else if (!viewSettings.disableClick! && screenX < viewCenterX) {
-                  if (viewSettings.fullscreenClickArea) {
-                    viewPagination(viewRef.current, viewSettings, 'down');
-                  } else if (viewSettings.swapClickArea) {
-                    viewPagination(viewRef.current, viewSettings, 'right');
-                  } else {
-                    viewPagination(viewRef.current, viewSettings, 'left');
-                  }
-                }
+                return;
               }
+
+              if (hoveredBookKey) {
+                setHoveredBookKey(null);
+                return;
+              }
+
+              const side: PaginationSide =
+                screenX >= viewCenterX
+                  ? viewSettings.fullscreenClickArea
+                    ? 'down'
+                    : viewSettings.swapClickArea
+                      ? 'left'
+                      : 'right'
+                  : viewSettings.fullscreenClickArea
+                    ? 'down'
+                    : viewSettings.swapClickArea
+                      ? 'right'
+                      : 'left';
+
+              if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove(side)) {
+                return;
+              }
+
+              viewPagination(viewRef.current, viewSettings, side);
             }
           }
         } else if (
@@ -206,8 +217,14 @@ export const usePagination = (
         const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
+          if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
+            return;
+          }
           viewPagination(viewRef.current, viewSettings, 'up');
         } else if (keyName === 'VolumeDown') {
+          if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('down')) {
+            return;
+          }
           viewPagination(viewRef.current, viewSettings, 'down');
         }
       } else if (
@@ -242,45 +259,6 @@ export const usePagination = (
     }
   };
 
-  const handleContinuousScroll = (mode: ScrollSource, scrollDelta: number, threshold: number) => {
-    const renderer = viewRef.current?.renderer;
-    const viewSettings = getViewSettings(bookKey)!;
-    const bookData = getBookData(bookKey)!;
-    // Continuous scroll is not supported in pre-paginated layout unless scrolled mode is active
-    if (bookData.bookDoc?.rendition?.layout === 'pre-paginated' && !viewSettings.scrolled) return;
-
-    if (renderer && viewSettings.scrolled && viewSettings.continuousScroll) {
-      const doScroll = () => {
-        // may have overscroll where the start is greater than 0
-        if (renderer.start <= scrollDelta && scrollDelta > threshold) {
-          setTimeout(() => {
-            viewRef.current?.prev(renderer.start + 1);
-          }, 100);
-          // sometimes viewSize has subpixel value that the end never reaches
-        } else if (
-          Math.ceil(renderer.end) - scrollDelta >= renderer.viewSize &&
-          scrollDelta < -threshold
-        ) {
-          setTimeout(() => {
-            viewRef.current?.next(renderer.viewSize - Math.floor(renderer.end) + 1);
-          }, 100);
-        }
-      };
-      if (mode === 'mouse') {
-        // we can always get mouse wheel events
-        doScroll();
-      } else if (mode === 'touch') {
-        // when the document height is less than the viewport height, we can't get the relocate event
-        if (renderer.size >= renderer.viewSize) {
-          doScroll();
-        } else {
-          // scroll after the relocate event
-          renderer.addEventListener('relocate', () => doScroll(), { once: true });
-        }
-      }
-    }
-  };
-
   useEffect(() => {
     if (!appService?.isMobileApp) return;
 
@@ -301,6 +279,5 @@ export const usePagination = (
 
   return {
     handlePageFlip,
-    handleContinuousScroll,
   };
 };

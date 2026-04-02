@@ -19,6 +19,7 @@ export const findParentPath = (toc: TOCItem[], href: string): TOCItem[] => {
 };
 
 export const findTocItemBS = (toc: TOCItem[], cfi: string): TOCItem | null => {
+  if (!cfi) return null;
   let left = 0;
   let right = toc.length - 1;
   let result: TOCItem | null = null;
@@ -192,7 +193,9 @@ const updateTocLocation = (
     item.id ??= index++;
     if (item.href) {
       const id = bookDoc.splitTOCHref(item.href)[0]!;
-      const section = sectionsMap[item.href] || sectionsMap[id];
+      const exactMatch = sectionsMap[item.href];
+      const baseMatch = sectionsMap[id];
+      const section = (exactMatch?.cfi ? exactMatch : null) || baseMatch || exactMatch;
       if (section) {
         item.cfi = section.cfi;
         if (

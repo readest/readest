@@ -32,7 +32,7 @@ export class TTSController extends EventTarget {
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
-  #isPreloading: boolean = false;
+
   #ttsSectionIndex: number = -1;
 
   state: TTSState = 'stopped';
@@ -97,13 +97,23 @@ export class TTSController extends EventTarget {
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
   }
 
+  #getPrimaryContent() {
+    const contents = this.view.renderer.getContents();
+    const primaryIndex = this.view.renderer.primaryIndex;
+    return (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
+      | {
+          doc: Document;
+          index?: number;
+          overlayer?: Overlayer;
+        }
+      | undefined;
+  }
+
   #getHighlighter() {
     return (range: Range) => {
-      const { doc, index, overlayer } = this.view.renderer.getContents()[0] as {
-        doc: Document;
-        index?: number;
-        overlayer?: Overlayer;
-      };
+      const content = this.#getPrimaryContent();
+      if (!content) return;
+      const { doc, index, overlayer } = content;
       if (!doc || index === undefined || index !== this.#ttsSectionIndex) {
         return;
       }
@@ -120,7 +130,8 @@ export class TTSController extends EventTarget {
   }
 
   #clearHighlighter() {
-    const { overlayer } = (this.view.renderer.getContents()?.[0] || {}) as { overlayer: Overlayer };
+    const content = this.#getPrimaryContent();
+    const overlayer = content?.overlayer as Overlayer | undefined;
     overlayer?.remove(HIGHLIGHT_KEY);
   }
 
@@ -131,7 +142,7 @@ export class TTSController extends EventTarget {
 
   async initViewTTS(index?: number) {
     if (this.#ttsSectionIndex === -1) {
-      const fromSectionIndex = (index || this.view.renderer.getContents()[0]?.index) ?? 0;
+      const fromSectionIndex = (index || this.#getPrimaryContent()?.index) ?? 0;
       await this.#initTTSForSection(fromSectionIndex);
     }
   }
@@ -149,7 +160,7 @@ export class TTSController extends EventTarget {
 
     this.#ttsSectionIndex = sectionIndex;
 
-    const currentSection = this.view.renderer.getContents()[0];
+    const currentSection = this.#getPrimaryContent();
     if (currentSection?.index !== sectionIndex) {
       await this.onSectionChange?.(sectionIndex);
     }
@@ -250,7 +261,6 @@ export class TTSController extends EventTarget {
     const tts = this.view.tts;
     if (!tts) return;
 
-    this.#isPreloading = true;
     const ssmls: string[] = [];
     for (let i = 0; i < count; i++) {
       const ssml = await this.#preprocessSSML(tts.next());
@@ -260,7 +270,6 @@ export class TTSController extends EventTarget {
     for (let i = 0; i < ssmls.length; i++) {
       tts.prev();
     }
-    this.#isPreloading = false;
     await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
   }
 
@@ -522,15 +531,11 @@ export class TTSController extends EventTarget {
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (mark && mark.name !== '-1') {
-      if (this.#isPreloading) {
-        setTimeout(() => this.dispatchSpeakMark(mark), 500);
-      } else {
+      try {
         const range = this.view.tts?.setMark(mark.name);
-        try {
-          const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
-          this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
-        } catch {}
-      }
+        const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+      } catch {}
     }
   }
 

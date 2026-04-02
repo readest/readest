@@ -53,32 +53,29 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  const { page = 0, pages = 0 } = view?.renderer || {};
-  const current = page;
-  const total = pages;
-  const pagesLeft = Math.max(total - current - 1, 0);
-  const timeLeftStr =
-    total - 1 > current
-      ? _('{{time}} min left in chapter', {
-          time: formatNumber(
-            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
-            localize,
-            lang,
-          ),
+  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
+  const pagesLeft = bookData?.isFixedLayout
+    ? 1
+    : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
+  const showPagesLeft = total > 0 || bookData?.isFixedLayout;
+  const timeLeftStr = showPagesLeft
+    ? _('{{time}} min left in chapter', {
+        time: formatNumber(
+          Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+          localize,
+          lang,
+        ),
+      })
+    : '';
+  const pagesLeftStr = showPagesLeft
+    ? localize
+      ? _('{{number}} pages left in chapter', {
+          number: formatNumber(pagesLeft, localize, lang),
         })
-      : '';
-  const pagesLeftStr =
-    total - 1 > current
-      ? localize
-        ? _('{{number}} pages left in chapter', {
-            number: formatNumber(pagesLeft, localize, lang),
-          })
-        : _('{{count}} pages left in chapter', {
-            count: pagesLeft,
-          })
-      : '';
-
-  const showPagesLeft = total - 1 > current;
+      : _('{{count}} pages left in chapter', {
+          count: pagesLeft,
+        })
+    : '';
 
   const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
 
@@ -149,6 +146,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   }, [progressBarMode]);
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
+  const showStatusInfo =
+    (progressBarMode === 'all' ||
+      progressBarMode.includes('battery') ||
+      progressBarMode.includes('time')) &&
+    (hasTimeInfo || hasBatteryInfo);
 
   return (
     <div
@@ -199,7 +201,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       >
         {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
           hasRemainingInfo && (
-            <div className='remaining-info flex-1 overflow-hidden whitespace-nowrap text-start'>
+            <div
+              className={clsx(
+                'remaining-info flex-1 whitespace-nowrap text-start',
+                showStatusInfo && 'overflow-hidden',
+              )}
+            >
               {viewSettings.showRemainingTime ? (
                 <span className='time-left-label text-start'>{timeLeftStr}</span>
               ) : viewSettings.showRemainingPages && showPagesLeft ? (
@@ -223,23 +230,20 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             </div>
           )}
 
-        {(progressBarMode === 'all' ||
-          progressBarMode.includes('battery') ||
-          progressBarMode.includes('time')) &&
-          progressInfo && (
-            <StatusInfo
-              showTime={
-                (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
-              }
-              use24Hour={viewSettings.use24HourClock}
-              showBattery={
-                (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
-              }
-              showBatteryPercentage={viewSettings.showBatteryPercentage}
-              isVertical={isVertical}
-              isEink={isEink}
-            />
-          )}
+        {showStatusInfo && (
+          <StatusInfo
+            showTime={
+              (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
+            }
+            use24Hour={viewSettings.use24HourClock}
+            showBattery={
+              (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
+            }
+            showBatteryPercentage={viewSettings.showBatteryPercentage}
+            isVertical={isVertical}
+            isEink={isEink}
+          />
+        )}
 
         <div className='progress-info flex-1 items-center overflow-hidden whitespace-nowrap text-end tabular-nums'>
           {(progressBarMode === 'all' || progressBarMode.includes('progress')) && (

@@ -4,10 +4,11 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCommandPalette } from '@/components/command-palette';
 import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
-import { PiDotsThreeVerticalBold, PiRobot } from 'react-icons/pi';
+import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
@@ -24,13 +25,14 @@ import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
-import { useCommandPalette } from '@/components/command-palette';
+import TTSPanel from './TTSPanel';
 
 export type SettingsPanelType =
   | 'Font'
   | 'Layout'
   | 'Color'
   | 'Control'
+  | 'TTS'
   | 'Language'
   | 'AI'
   | 'Custom';
@@ -90,6 +92,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Language'),
     },
     {
+      tab: 'TTS',
+      icon: PiSpeakerHigh,
+      label: _('TTS'),
+    },
+    {
       tab: 'AI',
       icon: PiRobot,
       label: _('AI Assistant'),
@@ -133,6 +140,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Layout: null,
     Color: null,
     Control: null,
+    TTS: null,
     Language: null,
     AI: null,
     Custom: null,
@@ -165,6 +173,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         layout: 'Layout',
         color: 'Color',
         control: 'Control',
+        tts: 'TTS',
         language: 'Language',
         ai: 'AI',
         custom: 'Custom',
@@ -200,7 +209,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!container) return;
 
     const checkButtonWidths = () => {
-      const threshold = (container.clientWidth - 64) * 0.22;
+      const threshold = (container.clientWidth - 64) / tabConfig.filter((t) => !t.disabled).length;
       const hideLabel = Array.from(container.querySelectorAll('button')).some((button) => {
         const labelSpan = button.querySelector('span');
         const labelText = labelSpan?.textContent || '';
@@ -372,6 +381,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             bookKey={bookKey}
             onRegisterReset={(fn) => registerResetFunction('Control', fn)}
           />
+        )}
+        {activePanel === 'TTS' && (
+          <TTSPanel bookKey={bookKey} onRegisterReset={(fn) => registerResetFunction('TTS', fn)} />
         )}
         {activePanel === 'Language' && (
           <LangPanel

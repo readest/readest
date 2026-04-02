@@ -82,11 +82,11 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
 
       <div
         className={clsx(
-          'absolute left-2 z-10 -translate-y-1/2',
+          'absolute left-2 -translate-y-1/2',
           'flex items-center gap-1',
           'transition-opacity duration-300',
           isPageNavigationButtonsVisible
-            ? 'top-1/2 opacity-100'
+            ? 'top-1/2 z-10 opacity-100'
             : `${appService?.isAndroidApp ? 'bottom-2' : 'pointer-events-none bottom-12'} opacity-0`,
         )}
       >
@@ -130,11 +130,11 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
 
       <div
         className={clsx(
-          'absolute right-2 z-10 -translate-y-1/2',
+          'absolute right-2 -translate-y-1/2',
           'flex items-center gap-1',
           'transition-opacity duration-300',
           isPageNavigationButtonsVisible
-            ? 'top-1/2 opacity-100'
+            ? 'top-1/2 z-10 opacity-100'
             : `${appService?.isAndroidApp ? 'bottom-2' : 'pointer-events-none bottom-12'} opacity-0`,
         )}
       >

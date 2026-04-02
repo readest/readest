@@ -836,8 +836,18 @@ class NativeBridgePlugin: Plugin {
       return invoke.reject("URI and destination path must be provided")
     }
 
-    guard let uri = URL(string: uriString) else {
-      return invoke.reject("Invalid URI")
+    let uri: URL
+    if uriString.hasPrefix("file://") {
+      let path = String(uriString.dropFirst("file://".count))
+      guard let decodedPath = path.removingPercentEncoding else {
+        return invoke.reject("Invalid URI encoding")
+      }
+      uri = URL(fileURLWithPath: decodedPath)
+    } else {
+      guard let parsed = URL(string: uriString) else {
+        return invoke.reject("Invalid URI")
+      }
+      uri = parsed
     }
 
     let fileManager = FileManager.default

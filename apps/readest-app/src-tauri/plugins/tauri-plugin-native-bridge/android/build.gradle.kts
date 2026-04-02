@@ -30,10 +30,21 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    flavorDimensions += "store"
+    productFlavors {
+        create("foss") {
+            dimension = "store"
+        }
+        create("googleplay") {
+            dimension = "store"
+        }
+    }
 }
 
 dependencies {
-    implementation("com.android.billingclient:billing-ktx:7.1.1")
+    "googleplayImplementation"("com.android.billingclient:billing-ktx:7.1.1")
+    "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.browser:browser:1.8.0")

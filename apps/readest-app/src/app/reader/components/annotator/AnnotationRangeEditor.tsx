@@ -9,7 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
-import { getHighlightColorHex } from '../../utils/annotatorUtil';
+import { getExternalDragHandle, getHighlightColorHex } from '../../utils/annotatorUtil';
 import MagnifierLoupe from './MagnifierLoupe';
 
 interface HandleProps {
@@ -136,6 +136,7 @@ interface AnnotationRangeEditorProps {
   annotation: BookNote;
   selection: TextSelection;
   handleColor: HighlightColor;
+  externalDragPoint?: Point | null;
   getAnnotationText: (range: Range) => Promise<string>;
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>;
   onStartEdit: () => void;
@@ -147,6 +148,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   annotation,
   selection,
   handleColor,
+  externalDragPoint,
   getAnnotationText,
   setSelection,
   onStartEdit,
@@ -247,12 +249,17 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
     return null;
   }
 
-  const showLoupe = loupePoint !== null && appService?.isMobile && !viewSettings?.vertical;
+  const loupeDragPoint = externalDragPoint;
+  const effectiveLoupePoint = loupePoint ?? loupeDragPoint;
+  const activeHandle =
+    draggingHandle ?? getExternalDragHandle(currentStart, currentEnd, loupeDragPoint);
+
+  const showLoupe = appService?.isMobile && !viewSettings?.isEink && !viewSettings?.vertical;
 
   return (
     <div className='pointer-events-none fixed inset-0 z-50'>
       <Handle
-        hidden={draggingHandle === 'end'}
+        hidden={activeHandle === 'end' || loupeDragPoint !== null}
         position={currentStart}
         isVertical={isVertical}
         type='start'
@@ -262,7 +269,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
         onDragEnd={handleDragEnd}
       />
       <Handle
-        hidden={draggingHandle === 'start'}
+        hidden={activeHandle === 'start' || loupeDragPoint !== null}
         position={currentEnd}
         isVertical={isVertical}
         type='end'
@@ -271,10 +278,10 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
         onDrag={handleEndDrag}
         onDragEnd={handleDragEnd}
       />
-      {showLoupe && (
+      {showLoupe && effectiveLoupePoint && (
         <MagnifierLoupe
           bookKey={bookKey}
-          dragPoint={loupePoint}
+          dragPoint={effectiveLoupePoint}
           isVertical={isVertical}
           color={handleColorHex}
         />

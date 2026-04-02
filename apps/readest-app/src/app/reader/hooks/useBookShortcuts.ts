@@ -8,11 +8,13 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useCommandPalette } from '@/components/command-palette';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
+import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { viewPagination } from './usePagination';
 import { getStyles } from '@/utils/style';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
+import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 
 interface UseBookShortcutsProps {
   sideBarBookKey: string | null;
@@ -32,6 +34,18 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const fontSize = viewSettings?.defaultFontSize ?? 16;
   const lineHeight = viewSettings?.lineHeight ?? 1.6;
   const distance = fontSize * lineHeight * 3;
+
+  const moveReadingRuler = (side: 'left' | 'right' | 'up' | 'down') => {
+    if (!sideBarBookKey) return false;
+
+    const viewSettings = getViewSettings(sideBarBookKey);
+    if (!viewSettings?.readingRulerEnabled) return false;
+
+    return eventDispatcher.dispatchSync('reading-ruler-move', {
+      bookKey: sideBarBookKey,
+      direction: getReadingRulerMoveDirection(side, getView(sideBarBookKey)?.book.dir),
+    });
+  };
 
   const toggleScrollMode = () => {
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
@@ -54,6 +68,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('left')) return;
     viewPagination(getView(sideBarBookKey), viewSettings, 'left', 'pan', distance);
   };
 
@@ -64,6 +79,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('right')) return;
     viewPagination(getView(sideBarBookKey), viewSettings, 'right', 'pan', distance);
   };
 
@@ -75,6 +91,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-prev', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('up')) return;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'up', 'pan', distance);
   };
@@ -87,6 +104,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch('paragraph-next', { bookKey: sideBarBookKey });
       return;
     }
+    if (moveReadingRuler('down')) return;
     if (view?.renderer.scrolled && event instanceof MessageEvent) return;
     viewPagination(view, viewSettings, 'down', 'pan', distance);
   };
@@ -112,10 +130,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const goPrev = () => {
+    if (moveReadingRuler('up')) return;
     getView(sideBarBookKey)?.prev(distance);
   };
 
   const goNext = () => {
+    if (moveReadingRuler('down')) return;
     getView(sideBarBookKey)?.next(distance);
   };
 
@@ -230,6 +250,34 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch(viewState?.ttsEnabled ? 'tts-stop' : 'tts-speak', { bookKey });
   };
 
+  const ttsPlayPause = () => {
+    if (!sideBarBookKey) return false;
+    const viewState = getViewState(sideBarBookKey);
+    if (!viewState?.ttsEnabled) return false;
+    eventDispatcher.dispatch('tts-toggle-play', { bookKey: sideBarBookKey });
+    return true;
+  };
+
+  const ttsGoNextSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-forward', { bookKey: sideBarBookKey, byMark: true });
+  };
+
+  const ttsGoPreviousSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: true });
+  };
+
+  const ttsGoNextParagraph = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-forward', { bookKey: sideBarBookKey, byMark: false });
+  };
+
+  const ttsGoPreviousParagraph = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: false });
+  };
+
   const toggleBookmark = () => {
     if (!sideBarBookKey) return;
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
@@ -280,6 +328,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onShowSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,
+      onTTSPlayPause: ttsPlayPause,
+      onTTSGoNextSentence: ttsGoNextSentence,
+      onTTSGoPreviousSentence: ttsGoPreviousSentence,
+      onTTSGoNextParagraph: ttsGoNextParagraph,
+      onTTSGoPreviousParagraph: ttsGoPreviousParagraph,
       onReloadPage: reloadPage,
       onCloseWindow: closeWindow,
       onQuitApp: quitApp,
@@ -301,6 +354,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onZoomOut: zoomOut,
       onResetZoom: resetZoom,
       onOpenCommandPalette: openCommandPalette,
+      onOpenShortcutsHelp: () => setShortcutsDialogVisible(true),
     },
     [sideBarBookKey, bookKeys],
   );

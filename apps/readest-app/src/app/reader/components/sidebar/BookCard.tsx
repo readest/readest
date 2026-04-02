@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { MdInfoOutline } from 'react-icons/md';
 import { Book } from '@/types/book';
 import { useThemeStore } from '@/store/themeStore';

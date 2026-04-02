@@ -213,4 +213,32 @@ export function bookTests(
       expect(loaded.progress).toEqual([10, 200]);
     });
   });
+
+  describe('Refresh metadata', () => {
+    it('should refresh metadata for a single book', async () => {
+      const service = getService();
+      const books: Book[] = [];
+      const book = await service.importBook(await getBookFile('sample-alice.epub'), books);
+      expect(book).not.toBeNull();
+
+      // Clear metadata to simulate a book imported before metadata parsing was added
+      book!.metadata = undefined;
+      book!.primaryLanguage = undefined;
+
+      const result = await service.refreshBookMetadata(book!);
+      expect(result).toBe(true);
+      expect(book!.metadata).toBeDefined();
+    });
+
+    it('should not update updatedAt', async () => {
+      const service = getService();
+      const books: Book[] = [];
+      const book = await service.importBook(await getBookFile('sample-alice.epub'), books);
+      expect(book).not.toBeNull();
+
+      const oldUpdatedAt = book!.updatedAt;
+      await service.refreshBookMetadata(book!);
+      expect(book!.updatedAt).toBe(oldUpdatedAt);
+    });
+  });
 }

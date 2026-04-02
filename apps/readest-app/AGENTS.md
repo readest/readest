@@ -22,7 +22,7 @@ pnpm tauri:dev:test        # Start Tauri app with webdriver
 pnpm test:tauri            # Run Tauri integration tests
 
 # Linting & Formatting
-pnpm lint                  # ESLint
+pnpm lint                  # Biome (linter) + tsgo (type check)
 pnpm format                # Prettier (runs from monorepo root)
 pnpm format:check          # Check formatting without writing
 
@@ -58,7 +58,7 @@ Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Cu
 
 ## Project Rules
 
-Rules are in `.claude/rules/`: test-first, typescript, build-constraints, verification.
+Rules are in `.claude/rules/`: test-first, typescript, verification.
 
 ### i18n
 
@@ -67,3 +67,25 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 ### Safe Area Insets
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
+
+## Web Browsing & QA (gstack)
+
+For all web browsing, QA testing, and site interaction, use the `/browse` skill from gstack. **Never use `mcp__claude-in-chrome__*` tools directly.**
+
+Available gstack skills:
+
+- `/plan-ceo-review` — CEO/founder-mode plan review
+- `/plan-eng-review` — Eng manager-mode plan review
+- `/plan-design-review` — Designer's eye review of a live site
+- `/design-consultation` — Design system consultation
+- `/review` — Pre-landing PR review
+- `/ship` — Ship workflow (merge, test, review, bump, PR)
+- `/browse` — Fast headless browser for QA and site interaction
+- `/qa` — QA test and fix bugs
+- `/qa-only` — QA report only (no fixes)
+- `/qa-design-review` — Designer's eye QA with fixes
+- `/setup-browser-cookies` — Import cookies for authenticated testing
+- `/retro` — Weekly engineering retrospective
+- `/document-release` — Post-ship documentation update
+
+If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.

@@ -15,6 +15,7 @@ import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
+import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { useTTSMediaSession } from './useTTSMediaSession';
@@ -47,6 +48,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const followingTTSLocationRef = useRef(true);
   const sectionChangingTimestampRef = useRef(0);
+  const previousSectionLabelRef = useRef<string | undefined>(undefined);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
@@ -59,12 +61,56 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     deinitMediaSession,
   } = useTTSMediaSession({ bookKey });
 
+  const handleTTSForward = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; byMark?: boolean } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      await ttsController.forward(detail?.byMark ?? false);
+    }
+  };
+
+  const handleTTSBackward = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; byMark?: boolean } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      await ttsController.backward(detail?.byMark ?? false);
+    }
+  };
+
+  const handleTTSTogglePlay = async (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const ttsController = ttsControllerRef.current;
+    if (!ttsController) return;
+    if (ttsController.state === 'playing') {
+      setIsPlaying(false);
+      setIsPaused(true);
+      await ttsController.pause();
+    } else {
+      setIsPlaying(true);
+      setIsPaused(false);
+      if (ttsController.state === 'paused') {
+        await ttsController.resume();
+      } else {
+        await ttsController.start();
+      }
+    }
+  };
+
   useEffect(() => {
     eventDispatcher.on('tts-speak', handleTTSSpeak);
     eventDispatcher.on('tts-stop', handleTTSStop);
+    eventDispatcher.on('tts-forward', handleTTSForward);
+    eventDispatcher.on('tts-backward', handleTTSBackward);
+    eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
       eventDispatcher.off('tts-stop', handleTTSStop);
+      eventDispatcher.off('tts-forward', handleTTSForward);
+      eventDispatcher.off('tts-backward', handleTTSBackward);
+      eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
       if (ttsControllerRef.current) {
         ttsControllerRef.current.shutdown();
         ttsControllerRef.current = null;
@@ -90,23 +136,39 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
     const handleSpeakMark = (e: Event) => {
       const progress = getProgress(bookKey);
+      const viewSettings = getViewSettings(bookKey);
       const { sectionLabel } = progress || {};
       const mark = (e as CustomEvent<TTSMark>).detail;
+      const ttsMediaMetadata = viewSettings?.ttsMediaMetadata ?? 'sentence';
 
-      if (mediaSessionRef.current) {
+      const metadata = buildTTSMediaMetadata({
+        markText: mark?.text || '',
+        markName: mark?.name || '',
+        sectionLabel: sectionLabel || '',
+        title,
+        author,
+        ttsMediaMetadata,
+        previousSectionLabel: previousSectionLabelRef.current,
+      });
+
+      if (ttsMediaMetadata === 'chapter') {
+        previousSectionLabelRef.current = sectionLabel;
+      }
+
+      if (metadata.shouldUpdate && mediaSessionRef.current) {
         const mediaSession = mediaSessionRef.current;
         if (mediaSession instanceof TauriMediaSession) {
           mediaSession.updateMetadata({
-            title: mark?.text || '',
-            artist: sectionLabel || title,
-            album: author,
+            title: metadata.title,
+            artist: metadata.artist,
+            album: metadata.album,
             artwork: '',
           });
         } else {
           mediaSession.metadata = new MediaMetadata({
-            title: mark?.text || '',
-            artist: sectionLabel || title,
-            album: author,
+            title: metadata.title,
+            artist: metadata.artist,
+            album: metadata.album,
             artwork: [{ src: coverImageUrl || '/icon.png', sizes: '512x512', type: 'image/png' }],
           });
         }
@@ -131,7 +193,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         return;
       }
 
-      const { doc, index: viewSectionIndex } = view.renderer.getContents()[0] as {
+      const hlContents = view.renderer.getContents();
+      const hlPrimaryIdx = view.renderer.primaryIndex;
+      const { doc, index: viewSectionIndex } = (hlContents.find((x) => x.index === hlPrimaryIdx) ??
+        hlContents[0]) as {
         doc: Document;
         index?: number;
       };
@@ -146,11 +211,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         view.renderer.scrollToAnchor?.(range);
       } else {
         const rect = range.getBoundingClientRect();
-        const { start, size, viewSize, sideProp } = view.renderer;
-        const positionStart = rect[sideProp === 'height' ? 'y' : 'x'] + viewSettings.marginTopPx;
-        const positionEnd = rect[sideProp === 'height' ? 'height' : 'width'] + positionStart;
-        const offsetStart = view.book.dir === 'rtl' ? viewSize - positionStart : positionStart;
-        const offsetEnd = view.book.dir === 'rtl' ? viewSize - positionEnd : positionEnd;
+        const { start, end, sideProp } = view.renderer;
+        const rangeTop = rect[sideProp === 'height' ? 'y' : 'x'];
+        const rangeBottom = rangeTop + rect[sideProp === 'height' ? 'height' : 'width'];
 
         const showHeader = viewSettings.showHeader;
         const showFooter = viewSettings.showFooter;
@@ -158,11 +221,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         const headerScrollOverlap = showHeader && showBarsOnScroll ? 44 : 0;
         const footerScrollOverlap = showFooter && showBarsOnScroll ? 44 : 0;
         const scrollingOverlap = viewSettings.scrollingOverlap;
-        const endInNextView = offsetEnd > start + size - footerScrollOverlap - scrollingOverlap;
-        const startInPrevView = offsetStart < start + headerScrollOverlap + scrollingOverlap;
-        if (endInNextView || startInPrevView) {
-          const scrollTo = offsetStart - headerScrollOverlap - scrollingOverlap;
-          view.renderer.scrollToAnchor?.(scrollTo / viewSize);
+        const outOfView =
+          rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
+          rangeTop < start + headerScrollOverlap + scrollingOverlap;
+        if (outOfView) {
+          view.renderer.scrollToAnchor?.(range);
         }
       }
     };
@@ -341,6 +404,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         setShowIndicator(false);
         setShowBackToCurrentTTSLocation(false);
       }
+      previousSectionLabelRef.current = undefined;
       if (appService?.isIOSApp) {
         await invokeUseBackgroundAudio({ enabled: false });
       }

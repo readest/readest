@@ -3,6 +3,7 @@ import { FoliateView } from '@/types/view';
 
 type FoliateEventHandler = {
   onLoad?: (event: Event) => void;
+  onStabilized?: (event: Event) => void;
   onRelocate?: (event: Event) => void;
   onLinkClick?: (event: Event) => void;
   onRendererRelocate?: (event: Event) => void;
@@ -13,6 +14,7 @@ type FoliateEventHandler = {
 
 export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEventHandler) => {
   const onLoad = handlers?.onLoad;
+  const onStabilized = handlers?.onStabilized;
   const onRelocate = handlers?.onRelocate;
   const onLinkClick = handlers?.onLinkClick;
   const onRendererRelocate = handlers?.onRendererRelocate;
@@ -23,6 +25,7 @@ export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEve
   useEffect(() => {
     if (!view) return;
     if (onLoad) view.addEventListener('load', onLoad);
+    if (onStabilized) view.renderer.addEventListener('stabilized', onStabilized);
     if (onRelocate) view.addEventListener('relocate', onRelocate);
     if (onLinkClick) view.addEventListener('link', onLinkClick);
     if (onRendererRelocate) view.renderer.addEventListener('relocate', onRendererRelocate);
@@ -32,6 +35,7 @@ export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEve
 
     return () => {
       if (onLoad) view.removeEventListener('load', onLoad);
+      if (onStabilized) view.renderer.removeEventListener('stabilized', onStabilized);
       if (onRelocate) view.removeEventListener('relocate', onRelocate);
       if (onLinkClick) view.removeEventListener('link', onLinkClick);
       if (onRendererRelocate) view.renderer.removeEventListener('relocate', onRendererRelocate);

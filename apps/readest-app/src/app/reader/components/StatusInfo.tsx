@@ -47,10 +47,10 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
               opacity={isEink ? 1.0 : 0.75}
             />
             <rect
-              x='1.5'
-              y='1.5'
-              width={(batteryLevel / 100) * 19}
-              height='9'
+              x='0.5'
+              y='0.5'
+              width={(batteryLevel / 100) * 21}
+              height='11'
               rx='1'
               fill='currentColor'
               opacity={isEink ? 1.0 : 0.3}

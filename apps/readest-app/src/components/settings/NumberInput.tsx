@@ -31,46 +31,36 @@ const NumberInput: React.FC<NumberInputProps> = ({
   'data-setting-id': settingId,
 }) => {
   const _ = useTranslation();
-  const [localValue, setLocalValue] = useState(value);
+  const [displayValue, setDisplayValue] = useState(String(value));
   const numberStep = step || 1;
 
   useEffect(() => {
-    setLocalValue(value);
+    setDisplayValue(String(value));
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    // Allow empty string or valid numbers without leading zeros
-    if (value === '' || /^[1-9]\d*\.?\d*$|^0?\.?\d*$/.test(value)) {
-      const newValue = value === '' ? 0 : parseFloat(value);
-      setLocalValue(newValue);
-
-      if (!isNaN(newValue)) {
-        const roundedValue = Math.round(newValue * 10) / 10;
-        onChange(Math.max(min, Math.min(max, roundedValue)));
-      }
+    const raw = e.target.value;
+    // Allow empty string or valid number fragments while typing
+    if (raw === '' || /^[0-9]*\.?[0-9]*$/.test(raw)) {
+      setDisplayValue(raw);
     }
   };
 
-  const increment = () => {
-    const newValue = Math.min(max, localValue + numberStep);
-    const roundedValue = Math.round(newValue * 10) / 10;
-    setLocalValue(roundedValue);
-    onChange(roundedValue);
+  const commitValue = (v: number) => {
+    const clamped = Math.round(Math.max(min, Math.min(max, v)) * 10) / 10;
+    setDisplayValue(String(clamped));
+    onChange(clamped);
   };
 
-  const decrement = () => {
-    const newValue = Math.max(min, localValue - numberStep);
-    const roundedValue = Math.round(newValue * 10) / 10;
-    setLocalValue(roundedValue);
-    onChange(roundedValue);
-  };
+  const currentNumericValue = parseFloat(displayValue) || 0;
 
-  const handleOnBlur = () => {
-    const newValue = Math.max(min, Math.min(max, localValue));
-    setLocalValue(newValue);
-    onChange(newValue);
+  const increment = () => commitValue(currentNumericValue + numberStep);
+  const decrement = () => commitValue(currentNumericValue - numberStep);
+  const handleOnBlur = () => commitValue(currentNumericValue);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    commitValue(currentNumericValue);
+    (document.activeElement as HTMLElement)?.blur();
   };
 
   return (
@@ -78,26 +68,28 @@ const NumberInput: React.FC<NumberInputProps> = ({
       <span className='text-base-content line-clamp-2'>{label}</span>
       {iconSize && <span style={{ minWidth: `${iconSize}px` }} />}
       <div className='text-base-content flex items-center gap-2'>
-        <input
-          type='text'
-          inputMode='decimal'
-          disabled={disabled}
-          value={localValue}
-          onChange={handleChange}
-          onBlur={handleOnBlur}
-          className={clsx(
-            'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent pe-3 !outline-none',
-            label && 'py-1 ps-1 text-right',
-            disabled && 'input-disabled cursor-not-allowed disabled:bg-transparent',
-            inputClassName,
-          )}
-          onFocus={(e) => e.target.select()}
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type='text'
+            inputMode='decimal'
+            disabled={disabled}
+            value={displayValue}
+            onChange={handleChange}
+            onBlur={handleOnBlur}
+            className={clsx(
+              'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent pe-3 !outline-none',
+              label && 'py-1 ps-1 text-right',
+              disabled && 'input-disabled cursor-not-allowed disabled:bg-transparent',
+              inputClassName,
+            )}
+            onFocus={(e) => e.target.select()}
+          />
+        </form>
         <button
           tabIndex={disabled ? -1 : 0}
           aria-label={_('Decrease')}
           onClick={decrement}
-          className={`btn btn-circle btn-sm ${localValue <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${currentNumericValue <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
           <FiMinus className='h-4 w-4' />
         </button>
@@ -105,7 +97,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
           tabIndex={disabled ? -1 : 0}
           aria-label={_('Increase')}
           onClick={increment}
-          className={`btn btn-circle btn-sm ${localValue >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${currentNumericValue >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
         >
           <FiPlus className='h-4 w-4' />
         </button>

@@ -91,7 +91,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const getValue = (record: Record<string, unknown>, key: string): unknown => record[key];
 
-const toString = (value: unknown): string => (typeof value === 'string' ? value : '');
+const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 const toNumber = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) return Math.floor(value);
@@ -107,7 +107,7 @@ const normalizeStrings = (value: unknown): string[] => {
     return normalizeStrings(value.split(/[,;|]/g));
   }
   if (!Array.isArray(value)) return [];
-  const values = value.map((item) => toString(item).trim()).filter(Boolean);
+  const values = value.map((item) => asString(item).trim()).filter(Boolean);
   const seen = new Set<string>();
   const output: string[] = [];
   for (const entry of values) {
@@ -130,7 +130,7 @@ const evidenceCache = new WeakMap<
 >();
 
 const normalizeEntityType = (value: unknown): XRayEntityType | null => {
-  const raw = toString(value).trim().toLowerCase();
+  const raw = asString(value).trim().toLowerCase();
   if (['theme', 'motif', 'mood', 'tone', 'emotion', 'feeling', 'sentiment'].includes(raw)) {
     return null;
   }
@@ -208,7 +208,7 @@ const normalizeEntityType = (value: unknown): XRayEntityType | null => {
 };
 
 const normalizeRelationshipType = (value: unknown): string => {
-  const raw = toString(value).trim().toLowerCase();
+  const raw = asString(value).trim().toLowerCase();
   if (!raw) return 'related_to';
   const normalized = raw.replace(/\s+/g, '_');
   const map: Record<string, string> = {
@@ -279,8 +279,8 @@ const normalizeRelationshipType = (value: unknown): string => {
 };
 
 const normalizeEvidenceItem = (item: Record<string, unknown>): XRayExtractionEvidence | null => {
-  const quote = toString(getValue(item, 'quote'));
-  const chunkId = toString(getValue(item, 'chunkId') || getValue(item, 'chunk_id'));
+  const quote = asString(getValue(item, 'quote'));
+  const chunkId = asString(getValue(item, 'chunkId') || getValue(item, 'chunk_id'));
   const page = toNumber(
     getValue(item, 'page') ?? getValue(item, 'pageNumber') ?? getValue(item, 'page_number'),
   );
@@ -324,8 +324,8 @@ const normalizeFacts = (item: Record<string, unknown>): XRayExtractionFact[] => 
     return facts
       .map((fact) => {
         const evidence = normalizeEvidence(getValue(fact, 'evidence'), fact);
-        const key = toString(getValue(fact, 'key') || getValue(fact, 'name')) || 'fact';
-        const value = toString(getValue(fact, 'value') || getValue(fact, 'description'));
+        const key = asString(getValue(fact, 'key') || getValue(fact, 'name')) || 'fact';
+        const value = asString(getValue(fact, 'value') || getValue(fact, 'description'));
         return {
           key,
           value,
@@ -338,7 +338,7 @@ const normalizeFacts = (item: Record<string, unknown>): XRayExtractionFact[] => 
 
   const evidence = normalizeEvidence(getValue(item, 'evidence'), item);
   if (evidence.length === 0) return [];
-  const value = toString(getValue(item, 'description')) || 'Mentioned in text';
+  const value = asString(getValue(item, 'description')) || 'Mentioned in text';
   return [
     {
       key: 'mention',
@@ -354,7 +354,7 @@ const normalizeEntities = (input: unknown): XRayExtractionV1['entities'] => {
   const entities = input
     .filter(isRecord)
     .map((entity) => {
-      const name = toString(
+      const name = asString(
         getValue(entity, 'name') || getValue(entity, 'title') || getValue(entity, 'entity'),
       );
       const type = normalizeEntityType(getValue(entity, 'type'));
@@ -366,10 +366,10 @@ const normalizeEntities = (input: unknown): XRayExtractionV1['entities'] => {
         type,
         aliases: Array.isArray(getValue(entity, 'aliases'))
           ? (getValue(entity, 'aliases') as unknown[])
-              .map((alias) => toString(alias))
+              .map((alias) => asString(alias))
               .filter(Boolean)
           : [],
-        description: toString(getValue(entity, 'description')),
+        description: asString(getValue(entity, 'description')),
         first_seen_page:
           toNumber(
             getValue(entity, 'first_seen_page') ??
@@ -395,17 +395,17 @@ const normalizeRelationships = (input: unknown): XRayExtractionV1['relationships
       const evidence = normalizeEvidence(getValue(rel, 'evidence'), rel);
       const pageFallback = evidence[0]?.page ?? toNumber(getValue(rel, 'page')) ?? 0;
       return {
-        source: toString(
+        source: asString(
           getValue(rel, 'source') || getValue(rel, 'from') || getValue(rel, 'subject'),
         ),
-        target: toString(getValue(rel, 'target') || getValue(rel, 'to') || getValue(rel, 'object')),
+        target: asString(getValue(rel, 'target') || getValue(rel, 'to') || getValue(rel, 'object')),
         type: normalizeRelationshipType(
           getValue(rel, 'type') ||
             getValue(rel, 'relationship') ||
             getValue(rel, 'relation') ||
             'related_to',
         ),
-        description: toString(getValue(rel, 'description')),
+        description: asString(getValue(rel, 'description')),
         evidence,
         inferred: getValue(rel, 'inferred') === true,
         first_seen_page: toNumber(getValue(rel, 'first_seen_page') ?? pageFallback) ?? 0,
@@ -425,22 +425,22 @@ const normalizeEvents = (input: unknown): XRayExtractionV1['events'] => {
       const pageFallback = evidence[0]?.page ?? toNumber(getValue(event, 'page')) ?? 0;
       return {
         page: toNumber(getValue(event, 'page') ?? pageFallback) ?? 0,
-        summary: toString(
+        summary: asString(
           getValue(event, 'summary') || getValue(event, 'event') || getValue(event, 'description'),
         ),
         importance: toNumber(getValue(event, 'importance')) ?? 5,
         involved_entities: Array.isArray(getValue(event, 'involved_entities'))
           ? (getValue(event, 'involved_entities') as unknown[])
-              .map((entity) => toString(entity))
+              .map((entity) => asString(entity))
               .filter(Boolean)
           : [],
         evidence,
         arc: (() => {
-          const raw = toString(getValue(event, 'arc')).trim();
+          const raw = asString(getValue(event, 'arc')).trim();
           if (!raw) return undefined;
           return raw.toLowerCase().replace(/\s+/g, '_');
         })(),
-        tone: toString(getValue(event, 'tone')) || undefined,
+        tone: asString(getValue(event, 'tone')) || undefined,
         emotions: normalizeStrings(getValue(event, 'emotions')),
       };
     })
@@ -454,21 +454,21 @@ const normalizeClaims = (input: unknown): XRayExtractionV1['claims'] => {
     .map((claim) => {
       const evidence = normalizeEvidence(getValue(claim, 'evidence'), claim);
       return {
-        type: toString(getValue(claim, 'type') || 'claim') || 'claim',
+        type: asString(getValue(claim, 'type') || 'claim') || 'claim',
         subject:
-          toString(
+          asString(
             getValue(claim, 'subject') ||
               getValue(claim, 'supporter') ||
               getValue(claim, 'speaker') ||
               getValue(claim, 'source'),
           ) || undefined,
-        object: toString(getValue(claim, 'object') || getValue(claim, 'target')) || undefined,
-        description: toString(
+        object: asString(getValue(claim, 'object') || getValue(claim, 'target')) || undefined,
+        description: asString(
           getValue(claim, 'description') ||
             getValue(claim, 'claim') ||
             getValue(claim, 'statement'),
         ),
-        status: toString(
+        status: asString(
           getValue(claim, 'status'),
         ).toUpperCase() as XRayExtractionV1['claims'][number]['status'],
         evidence,

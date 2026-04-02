@@ -389,16 +389,16 @@ describe('createChapterRegexps — structure', () => {
     expect(api.createChapterRegexps('zh').length).toBe(2);
   });
 
-  it('should produce one regexp for English', () => {
+  it('should produce two regexps for English', () => {
     const api = getApi();
-    expect(api.createChapterRegexps('en').length).toBe(1);
+    expect(api.createChapterRegexps('en').length).toBe(2);
   });
 
-  it('should produce one regexp for any non-zh language', () => {
+  it('should produce two regexps for any non-zh language', () => {
     const api = getApi();
-    expect(api.createChapterRegexps('fr').length).toBe(1);
-    expect(api.createChapterRegexps('ja').length).toBe(1);
-    expect(api.createChapterRegexps('de').length).toBe(1);
+    expect(api.createChapterRegexps('fr').length).toBe(2);
+    expect(api.createChapterRegexps('ja').length).toBe(2);
+    expect(api.createChapterRegexps('de').length).toBe(2);
   });
 
   it('Chinese first regex should be case-insensitive with unicode flag', () => {

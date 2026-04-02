@@ -201,6 +201,7 @@ export const handleClick = (
         footnote:
           footnote.getAttribute('data-wr-footernote') ||
           footnote.getAttribute('zy-footnote') ||
+          footnote.querySelector('img')?.getAttribute('alt') ||
           footnote.getAttribute('alt') ||
           element?.getAttribute('alt') ||
           '',

@@ -59,6 +59,20 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.10.1" date="2026-03-22">
+      <description>
+        <ul>
+          <li>Reading: Added continuous scroll and spread layout support for EPUBs</li>
+          <li>Reading: Added current time and battery display in footer</li>
+          <li>Reading: Added TTS, annotation support, pinch-to-zoom, and scroll mode for PDFs</li>
+          <li>Library: Added backup/restore to a zip file and batch metadata refresh</li>
+          <li>KOReader: Added bookmark and annotation sync between KOReader and Readest devices</li>
+          <li>Footnotes: Added back navigation with link history and more responsive popup sizing</li>
+          <li>Annotations: Added loupe display when selecting text in instant annotation mode</li>
+          <li>Text-to-Speech: Fixed TTS reading position tracking in scrolled mode</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.101" date="2026-02-28">
       <description>
         <ul>
@@ -222,20 +236,6 @@
           <li>Layout: Improved image display in paginated mode so images won't exceed the available height</li>
           <li>TXT: Improved performance and stability when opening and parsing TXT files</li>
           <li>Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.92" date="2025-11-18">
-      <description>
-        <ul>
-          <li>Bookshelf: Added support for nested groups to organize your books more flexibly</li>
-          <li>Sync: Improved reliability by automatically retrying failed book syncs</li>
-          <li>Sync: Improved token refresh so login sessions stay active longer on KOReader</li>
-          <li>E-Ink: Enhanced readability on the library page for E-Ink devices</li>
-          <li>UI: Storage capacity is now displayed with precise values in the user profile</li>
-          <li>Reader: You can now import files directly into the currently selected book group</li>
-          <li>Account: You can now update the email address linked to your Readest account</li>
-          <li>Footnotes: Added compatibility for more footnote formats</li>
         </ul>
       </description>
     </release>

@@ -32,11 +32,13 @@ import {
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
+  getThemeCode,
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
+import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
 import {
   handleKeydown,
@@ -199,12 +201,15 @@ const FoliateViewer: React.FC<{
   }, [getView, getProgress, bookKey]);
 
   const docLoadHandler = (event: Event) => {
-    setLoading(false);
     docLoaded.current = true;
+    if (bookDoc.rendition?.layout === 'pre-paginated') {
+      setLoading(false); // Fixed layout doesn't emit 'stabilized' event
+    }
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
     if (detail.doc) {
-      const writingDir = viewRef.current?.renderer.setStyles && getDirection(detail.doc);
+      const renderer = viewRef.current?.renderer;
+      const writingDir = renderer?.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
       const bookData = getBookData(bookKey)!;
 
@@ -231,6 +236,13 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings);
+        const themeCode = getThemeCode();
+        if (themeCode && renderer) {
+          renderer.pageColors = {
+            background: themeCode.bg,
+            foreground: themeCode.fg,
+          };
+        }
       }
 
       applyImageStyle(detail.doc);
@@ -255,10 +267,23 @@ const FoliateViewer: React.FC<{
       }
 
       setTimeout(() => {
+        const sectionIndex = detail.index;
         const booknotes = config.booknotes || [];
         booknotes
-          .filter((item) => !item.deletedAt && item.type === 'annotation' && item.style)
-          .forEach((annotation) => viewRef.current?.addAnnotation(annotation));
+          .filter(
+            (item) =>
+              !item.deletedAt &&
+              item.type === 'annotation' &&
+              item.style &&
+              getIndexFromCfi(item.cfi) === sectionIndex,
+          )
+          .map((annotation) => {
+            try {
+              viewRef.current?.addAnnotation(annotation);
+            } catch (err) {
+              console.warn('Failed to add annotation', { annotation, error: err });
+            }
+          });
       }, 100);
 
       if (!detail.doc.isEventListenersAdded) {
@@ -296,6 +321,10 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  const stabilizedHandler = useCallback(() => {
+    setLoading(false);
+  }, []);
+
   const docRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     if (detail.reason !== 'scroll' && detail.reason !== 'page') return;
@@ -313,9 +342,9 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  const { handlePageFlip, handleContinuousScroll } = usePagination(bookKey, viewRef, containerRef);
-  const mouseHandlers = useMouseEvent(bookKey, handlePageFlip, handleContinuousScroll);
-  const touchHandlers = useTouchEvent(bookKey, handlePageFlip, handleContinuousScroll);
+  const { handlePageFlip } = usePagination(bookKey, viewRef, containerRef);
+  const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
+  const touchHandlers = useTouchEvent(bookKey, handlePageFlip);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
@@ -417,6 +446,7 @@ const FoliateViewer: React.FC<{
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
+    onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
   });
@@ -583,6 +613,11 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
+      if (viewSettings.noContinuousScroll) {
+        viewRef.current?.renderer.setAttribute('no-continuous-scroll', '');
+      } else {
+        viewRef.current?.renderer.removeAttribute('no-continuous-scroll');
+      }
     }
   };
 
@@ -599,6 +634,15 @@ const FoliateViewer: React.FC<{
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
+
+      if (bookDoc.rendition?.layout === 'pre-paginated') {
+        if (themeCode && viewRef.current?.renderer) {
+          viewRef.current.renderer.pageColors = {
+            background: themeCode.bg,
+            foreground: themeCode.fg,
+          };
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -659,6 +703,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.showBarsOnScroll,
     viewSettings?.showMarginsOnScroll,
     viewSettings?.scrolled,
+    viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,
   ]);
 

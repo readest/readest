@@ -9,6 +9,7 @@ import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
 import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -66,7 +67,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   );
   const iconSize = useResponsiveSize(16);
 
-  const { isSyncing } = useLibraryStore();
+  const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
+  const [refreshMetadataProgress, setRefreshMetadataProgress] = useState('');
+  const { isSyncing, setLibrary } = useLibraryStore();
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -181,6 +184,47 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const handleSetRootDir = () => {
     setMigrateDataDirDialogVisible(true);
     setIsDropdownOpen?.(false);
+  };
+
+  const handleBackupRestore = () => {
+    setIsDropdownOpen?.(false);
+    setBackupDialogVisible(true);
+  };
+
+  const handleRefreshMetadata = async () => {
+    if (!appService || isRefreshingMetadata) return;
+    setIsRefreshingMetadata(true);
+    setRefreshMetadataProgress(_('Loading library...'));
+    try {
+      const books = await appService.loadLibraryBooks();
+      const activeBooks = books.filter((b) => !b.deletedAt);
+      let refreshed = 0;
+      for (let i = 0; i < activeBooks.length; i++) {
+        setRefreshMetadataProgress(`${i + 1} / ${activeBooks.length}`);
+        try {
+          if (await appService.refreshBookMetadata(activeBooks[i]!)) {
+            refreshed++;
+          }
+        } catch {
+          // Skip books whose files can't be opened
+        }
+      }
+      setLibrary(books);
+      await appService.saveLibraryBooks(books);
+      setRefreshMetadataProgress(_('{{count}} books refreshed', { count: refreshed }));
+      onPullLibrary(true);
+      setTimeout(() => {
+        setIsRefreshingMetadata(false);
+        setRefreshMetadataProgress('');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to refresh metadata:', error);
+      setRefreshMetadataProgress(_('Failed to refresh metadata'));
+      setTimeout(() => {
+        setIsRefreshingMetadata(false);
+        setRefreshMetadataProgress('');
+      }, 2000);
+    }
   };
 
   const openSettingsDialog = () => {
@@ -368,34 +412,30 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         onClick={cycleThemeMode}
       />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
-      {appService?.canCustomizeRootDir && (
-        <>
-          <hr aria-hidden='true' className='border-base-200 my-1' />
-          <MenuItem label={_('Advanced Settings')}>
-            <ul
-              className='ms-0 flex flex-col before:hidden'
-              style={{
-                paddingInlineStart: `${iconSize}px`,
-              }}
-            >
-              <MenuItem
-                label={_('Change Data Location')}
-                noIcon={!appService?.isAndroidApp}
-                onClick={handleSetRootDir}
-              />
-              {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
-                <MenuItem
-                  label={_('Save Book Cover')}
-                  tooltip={_('Auto-save last book cover')}
-                  description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
-                  toggled={!!savedBookCoverForLockScreen}
-                  onClick={handleSetSavedBookCoverForLockScreen}
-                />
-              )}
-            </ul>
-          </MenuItem>
-        </>
-      )}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem label={_('Advanced Settings')}>
+        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+          {appService?.canCustomizeRootDir && (
+            <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
+          )}
+          <MenuItem label={_('Backup & Restore')} onClick={handleBackupRestore} />
+          <MenuItem
+            label={_('Refresh Metadata')}
+            description={refreshMetadataProgress}
+            onClick={handleRefreshMetadata}
+            disabled={isRefreshingMetadata}
+          />
+          {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
+            <MenuItem
+              label={_('Save Book Cover')}
+              tooltip={_('Auto-save last book cover')}
+              description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
+              toggled={!!savedBookCoverForLockScreen}
+              onClick={handleSetSavedBookCoverForLockScreen}
+            />
+          )}
+        </ul>
+      </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />

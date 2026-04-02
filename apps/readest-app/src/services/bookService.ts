@@ -527,6 +527,37 @@ export async function fetchBookDetails(
   return bookDoc.metadata;
 }
 
+/**
+ * Refresh metadata for a single book by re-opening and re-parsing its file.
+ * Updates series info, language, and other metadata fields without modifying
+ * user-edited titles or reading progress.
+ * Returns true if the metadata was successfully refreshed.
+ */
+export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<boolean> {
+  const { file } = await loadBookContent(fs, book);
+  const { book: bookDoc } = await new DocumentLoader(file).open();
+  if (!bookDoc) return false;
+
+  book.metadata = bookDoc.metadata;
+  book.metaHash = getMetadataHash(bookDoc.metadata);
+  const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
+  if (primaryLanguage) {
+    book.primaryLanguage = primaryLanguage;
+  }
+
+  // Update series info from metadata
+  if (book.metadata?.belongsTo?.series) {
+    const belongsTo = book.metadata.belongsTo.series;
+    const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
+    if (series) {
+      book.metadata.series = formatTitle(series.name);
+      book.metadata.seriesIndex = parseFloat(series.position || '0');
+    }
+  }
+
+  return true;
+}
+
 export async function exportBook(
   fs: FileSystem,
   book: Book,
@@ -535,18 +566,17 @@ export async function exportBook(
   saveFile: (
     filename: string,
     content: ArrayBuffer,
-    filepath: string,
-    mimeType?: string,
+    options?: { filePath?: string; mimeType?: string },
   ) => Promise<boolean>,
 ): Promise<boolean> {
   const { file } = await loadBookContent(fs, book);
   const content = await file.arrayBuffer();
   const filename = `${makeSafeFilename(book.title)}.${book.format.toLowerCase()}`;
-  let filepath = await resolveFilePath(getLocalBookFilename(book), 'Books');
-  const fileType = file.type || 'application/octet-stream';
-  if (getFilename(filepath) !== filename) {
-    await copyFile(filepath, filename, 'Temp');
-    filepath = await resolveFilePath(filename, 'Temp');
+  let filePath = await resolveFilePath(getLocalBookFilename(book), 'Books');
+  const mimeType = file.type || 'application/octet-stream';
+  if (getFilename(filePath) !== filename) {
+    await copyFile(filePath, filename, 'Temp');
+    filePath = await resolveFilePath(filename, 'Temp');
   }
-  return await saveFile(filename, content, filepath, fileType);
+  return await saveFile(filename, content, { filePath, mimeType });
 }

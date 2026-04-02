@@ -328,29 +328,25 @@ const TransferQueuePanel: React.FC = () => {
         </div>
 
         {/* Footer actions */}
-        <div className='border-base-300 flex items-center justify-between border-t p-4'>
-          <div className='flex items-center gap-2'>
-            {stats.failed > 0 && (
-              <button onClick={retryAllFailed} className='btn btn-ghost btn-sm gap-1'>
-                <MdRefresh size={iconSize - 2} />
-                {_('Retry All')}
-              </button>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            {stats.completed > 0 && (
-              <button onClick={clearCompleted} className='btn btn-ghost btn-sm gap-1'>
-                <MdDeleteSweep size={iconSize - 2} />
-                {_('Clear Completed')}
-              </button>
-            )}
-            {stats.failed > 0 && (
-              <button onClick={clearFailed} className='btn btn-ghost btn-sm gap-1'>
-                <MdDeleteSweep size={iconSize - 2} />
-                {_('Clear Failed')}
-              </button>
-            )}
-          </div>
+        <div className='border-base-300 flex flex-wrap items-center justify-evenly gap-2 border-t p-4'>
+          {stats.failed > 0 && (
+            <button onClick={retryAllFailed} className='btn btn-ghost btn-sm gap-1'>
+              <MdRefresh size={iconSize - 2} />
+              {_('Retry All')}
+            </button>
+          )}
+          {stats.completed > 0 && (
+            <button onClick={clearCompleted} className='btn btn-ghost btn-sm gap-1'>
+              <MdDeleteSweep size={iconSize - 2} />
+              {_('Clear Completed')}
+            </button>
+          )}
+          {stats.failed > 0 && (
+            <button onClick={clearFailed} className='btn btn-ghost btn-sm gap-1'>
+              <MdDeleteSweep size={iconSize - 2} />
+              {_('Clear Failed')}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -22,6 +22,7 @@ export const useTheme = ({
   const isEink = settings?.globalViewSettings?.isEink;
   const isColorEink = settings?.globalViewSettings?.isColorEink;
   const isBwEink = isEink && !isColorEink;
+  const highlightOpacity = settings?.globalViewSettings?.highlightOpacity ?? 0.4;
   const {
     themeColor,
     isDarkMode,
@@ -130,17 +131,18 @@ export const useTheme = ({
     const colorScheme = isDarkMode ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
     document.documentElement.style.setProperty('color-scheme', colorScheme);
+    document.documentElement.style.setProperty('--scroll-bg-opacity', isBwEink ? '1.0' : '0.5');
     document.documentElement.style.setProperty(
       '--overlayer-highlight-opacity',
-      isBwEink ? '1.0' : '0.3',
+      isBwEink ? '1.0' : String(highlightOpacity),
     );
     document.documentElement.style.setProperty(
       '--overlayer-highlight-blend-mode',
-      isBwEink ? 'difference' : isDarkMode ? 'lighten' : 'normal',
+      isBwEink ? 'difference' : isDarkMode ? 'screen' : 'multiply',
     );
     document.documentElement.style.setProperty(
       '--bg-texture-blend-mode',
       isDarkMode ? 'lighten' : 'multiply',
     );
-  }, [themeColor, isDarkMode, isBwEink]);
+  }, [themeColor, isDarkMode, isBwEink, highlightOpacity]);
 };

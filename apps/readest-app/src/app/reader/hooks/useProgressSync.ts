@@ -55,7 +55,9 @@ export const useProgressSync = (bookKey: string) => {
       const book = getBookData(bookKey)?.book;
       if (config && view && book && config.progress && config.progress[0] > 0) {
         try {
-          const content = view.renderer.getContents()[0];
+          const contents = view.renderer.getContents();
+          const primaryIndex = view.renderer.primaryIndex;
+          const content = contents.find((x) => x.index === primaryIndex) ?? contents[0];
           if (content && !FIXED_LAYOUT_FORMATS.has(book.format)) {
             const { doc, index } = content;
             const xpointerResult = await getXPointerFromCFI(config.location!, doc, index || 0);
@@ -126,7 +128,9 @@ export const useProgressSync = (bookKey: string) => {
       const bookData = getBookData(bookKey);
       const view = getView(bookKey);
       if (xPointer && view && bookData && bookData.bookDoc) {
-        const content = view.renderer.getContents()[0];
+        const pContents = view.renderer.getContents();
+        const pIdx = view.renderer.primaryIndex;
+        const content = pContents.find((x) => x.index === pIdx) ?? pContents[0];
         const koProgress = normalizeProgressXPointer(xPointer);
         const candidateCFI = await getCFIFromXPointer(
           koProgress,

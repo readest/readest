@@ -162,6 +162,25 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         bookDoc = doc.book;
       }
       const config = await appService.loadBookConfig(book, settings);
+      // Import annotations from third-party readers on first open
+      if (bookDoc.metadata.identifier) {
+        const { getAnnotationProviders } = await import('@/services/annotation');
+        for (const provider of getAnnotationProviders()) {
+          if (provider.isAvailable(appService)) {
+            const merged = await provider.importAnnotations(
+              appService,
+              bookDoc.metadata.identifier,
+              config,
+            );
+            if (merged !== config) {
+              Object.assign(config, merged);
+              await appService.saveBookConfig(book, config, settings);
+            }
+          }
+        }
+      }
+      // Filter out invalid booknotes
+      config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
       await updateToc(
         bookDoc,
         config.viewSettings?.sortedTOC ?? false,

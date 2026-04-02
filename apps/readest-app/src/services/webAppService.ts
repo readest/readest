@@ -328,10 +328,10 @@ export class WebAppService extends BaseAppService {
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    mimeType?: string,
+    options?: { filePath?: string; mimeType?: string },
   ): Promise<boolean> {
     try {
-      const blob = new Blob([content], { type: mimeType || 'application/octet-stream' });
+      const blob = new Blob([content], { type: options?.mimeType || 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

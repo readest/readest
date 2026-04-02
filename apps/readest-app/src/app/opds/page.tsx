@@ -483,7 +483,6 @@ export default function BrowserPage() {
         console.error('Download error:', e);
         throw e;
       }
-      return;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, state.baseURL, appService, libraryLoaded],
@@ -495,7 +494,7 @@ export default function BrowserPage() {
       const username = usernameRef.current || '';
       const password = passwordRef.current || '';
       if (!username && !password) {
-        return url;
+        return needsProxy(url) ? getProxiedURL(url, '', true) : url;
       }
 
       const cachedKey = `img_${md5(url)}.png`;

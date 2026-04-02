@@ -8,6 +8,7 @@
 
 # testing
 /coverage
+.test-sandbox-node/
 
 # next.js
 /.next/
@@ -66,3 +67,5 @@ src-tauri/gen
 /dist/
 
 .claude/settings.local.json
+.claude/skills
+

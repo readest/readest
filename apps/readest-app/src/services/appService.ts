@@ -72,8 +72,7 @@ export abstract class BaseAppService implements AppService {
   abstract saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    filepath: string,
-    mimeType?: string,
+    options?: { filePath?: string; mimeType?: string },
   ): Promise<boolean>;
   abstract ask(message: string): Promise<boolean>;
   abstract openDatabase(
@@ -300,6 +299,10 @@ export abstract class BaseAppService implements AppService {
       this.copyFile.bind(this),
       this.saveFile.bind(this),
     );
+  }
+
+  async refreshBookMetadata(book: Book): Promise<boolean> {
+    return BookSvc.refreshBookMetadata(this.fs, book);
   }
 
   async isBookAvailable(book: Book): Promise<boolean> {

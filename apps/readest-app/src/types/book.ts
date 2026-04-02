@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { TTSMediaMetadataMode } from '@/services/tts/types';
 import { AnnotationToolType } from './annotator';
 
 export type BookFormat =
@@ -84,7 +85,9 @@ export interface BookNote {
   metaHash?: string;
   id: string;
   type: BookNoteType;
-  cfi: string;
+  cfi: string; // Canonicalized CFI for the note location
+  xpointer0?: string; // Start XPointer for the note location
+  xpointer1?: string; // End XPointer for the note location
   page?: number;
   text?: string;
   style?: HighlightStyle;
@@ -118,12 +121,12 @@ export interface BookLayout {
   compactMarginPx?: number; // deprecated
   gapPercent: number;
   scrolled: boolean;
+  noContinuousScroll: boolean;
   disableClick: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
   volumeKeysToFlip: boolean;
-  continuousScroll: boolean;
   maxColumnCount: number;
   maxInlineSize: number;
   maxBlockSize: number;
@@ -152,6 +155,7 @@ export interface BookStyle {
   backgroundTextureId: string;
   backgroundOpacity: number;
   backgroundSize: string;
+  highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
   userStylesheet: string;
@@ -232,6 +236,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsMediaMetadata: TTSMediaMetadataMode;
 }
 
 export interface TranslatorConfig {
@@ -360,6 +365,7 @@ export interface BookConfig {
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
+  foliateImportedAt?: number;
 
   updatedAt: number;
 }

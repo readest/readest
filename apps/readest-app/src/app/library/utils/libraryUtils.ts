@@ -270,17 +270,27 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 
 /**
  * Create a sorter for books within a group.
- * For series groups: sort by seriesIndex first, then by global sort for items without index.
+ * For series groups: sort by seriesIndex first (always ascending), then by global sort for items without index.
  * For author groups: follow global sort setting.
+ * @param sortAscending - When true (default), sort direction is ascending. Series index is always
+ *   ascending regardless of this flag; the flag only affects the fallback sort for books without
+ *   series index and non-series groupings.
  */
 export const createWithinGroupSorter =
-  (groupBy: LibraryGroupByType, sortBy: LibrarySortByType, uiLanguage: string) =>
+  (
+    groupBy: LibraryGroupByType,
+    sortBy: LibrarySortByType,
+    uiLanguage: string,
+    sortAscending: boolean = true,
+  ) =>
   (a: Book, b: Book): number => {
+    const sortDirection = sortAscending ? 1 : -1;
+
     if (groupBy === LibraryGroupByType.Series) {
       const aIndex = a.metadata?.seriesIndex;
       const bIndex = b.metadata?.seriesIndex;
 
-      // Both have series index - sort by index
+      // Both have series index - always sort ascending by index
       if (aIndex != null && bIndex != null) {
         return aIndex - bIndex;
       }
@@ -289,12 +299,12 @@ export const createWithinGroupSorter =
       if (aIndex != null) return -1;
       if (bIndex != null) return 1;
 
-      // Neither has series index - fall back to global sort
-      return createBookSorter(sortBy, uiLanguage)(a, b);
+      // Neither has series index - fall back to global sort with direction
+      return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
     }
 
-    // For author and other groupings, use global sort
-    return createBookSorter(sortBy, uiLanguage)(a, b);
+    // For author and other groupings, use global sort with direction
+    return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
   };
 
 /**
@@ -341,6 +351,7 @@ export const getGroupSortValue = (
 
   if (books.length === 0) {
     return sortBy === LibrarySortByType.Title ||
+      sortBy === LibrarySortByType.Series ||
       sortBy === LibrarySortByType.Author ||
       sortBy === LibrarySortByType.Format
       ? group.name
@@ -349,6 +360,7 @@ export const getGroupSortValue = (
 
   switch (sortBy) {
     case LibrarySortByType.Title:
+    case LibrarySortByType.Series:
     case LibrarySortByType.Format:
       return group.name;
 

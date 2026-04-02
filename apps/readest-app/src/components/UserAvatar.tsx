@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { IconType } from 'react-icons';
 
@@ -67,7 +68,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     >
       {url ? (
         <div>
-          <img
+          <Image
             src={cachedImageUrl || url}
             alt='User Avatar'
             className={clsx('rounded-full', className, borderClassName)}

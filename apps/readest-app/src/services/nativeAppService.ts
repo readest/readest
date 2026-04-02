@@ -545,14 +545,13 @@ export class NativeAppService extends BaseAppService {
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    filepath: string,
-    mimeType?: string,
+    options?: { filePath?: string; mimeType?: string },
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      if (this.isIOSApp) {
-        await shareFile(filepath, {
-          mimeType: mimeType || 'application/octet-stream',
+      if (this.isIOSApp && options?.filePath) {
+        await shareFile(options.filePath, {
+          mimeType: options?.mimeType || 'application/octet-stream',
         });
       } else {
         const filePath = await saveDialog({

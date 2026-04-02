@@ -4,7 +4,7 @@ import { RiFontSize, RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
-import { PiRobot, PiSun, PiMoon } from 'react-icons/pi';
+import { PiRobot, PiSpeakerHigh, PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdRefresh } from 'react-icons/md';
 import { IconType } from 'react-icons';
@@ -151,6 +151,7 @@ const panelIcons: Record<SettingsPanelType, IconType> = {
   Layout: RiDashboardLine,
   Color: VscSymbolColor,
   Control: LiaHandPointerSolid,
+  TTS: PiSpeakerHigh,
   Language: RiTranslate,
   AI: PiRobot,
   Custom: IoAccessibilityOutline,
@@ -365,10 +366,16 @@ const colorPanelItems = [
     section: 'Highlight',
   },
   {
-    id: 'settings.color.ttsHighlightStyle',
+    id: 'settings.tts.ttsHighlightStyle',
     labelKey: _('TTS Highlighting'),
     keywords: ['tts', 'highlight', 'style', 'speech', 'read', 'aloud'],
     section: 'Highlight',
+  },
+  {
+    id: 'settings.tts.mediaMetadata',
+    labelKey: _('TTS Media Info Update Frequency'),
+    keywords: ['tts', 'media', 'metadata', 'bluetooth', 'notification', 'chapter', 'paragraph'],
+    section: 'TTS',
   },
   {
     id: 'settings.color.readingRuler',
@@ -393,9 +400,9 @@ const controlPanelItems = [
     section: 'Scroll',
   },
   {
-    id: 'settings.control.continuousScroll',
-    labelKey: _('Continuous Scroll'),
-    keywords: ['continuous', 'scroll', 'endless', 'infinite'],
+    id: 'settings.control.scroll.noContinuousScroll',
+    labelKey: _('Single Section Scroll'),
+    keywords: ['single', 'section', 'scroll', 'continuous', 'one', 'chapter'],
     section: 'Scroll',
   },
   {

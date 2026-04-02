@@ -39,7 +39,7 @@ export type StripeAvailablePlan = AvailablePlan & {
 export const fetchStripePlans = async () => {
   const response = await fetch(WEB_STRIPE_PLANS_URL);
   const data = await response.json();
-  return data && data instanceof Array ? data : [];
+  return data && Array.isArray(data) ? data : [];
 };
 
 export const createStripeCheckoutSession = async (

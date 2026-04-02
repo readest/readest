@@ -27,7 +27,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const [isScrolledMode, setScrolledMode] = useState(viewSettings.scrolled);
-  const [isContinuousScroll, setIsContinuousScroll] = useState(viewSettings.continuousScroll);
+  const [noContinuousScroll, setNoContinuousScroll] = useState(viewSettings.noContinuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
@@ -56,7 +56,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
-      continuousScroll: setIsContinuousScroll,
+      noContinuousScroll: setNoContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
       volumeKeysToFlip: setVolumeKeysToFlip,
@@ -91,14 +91,20 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [isScrolledMode]);
 
   useEffect(() => {
+    if (noContinuousScroll === viewSettings.noContinuousScroll) return;
+    saveViewSettings(envConfig, bookKey, 'noContinuousScroll', noContinuousScroll);
+    if (noContinuousScroll) {
+      getView(bookKey)?.renderer.setAttribute('no-continuous-scroll', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('no-continuous-scroll');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noContinuousScroll]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'hideScrollbar', hideScrollbar, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hideScrollbar]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'continuousScroll', isContinuousScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isContinuousScroll]);
 
   useEffect(() => {
     if (scrollingOverlap === viewSettings.scrollingOverlap) return;
@@ -242,14 +248,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 onChange={() => setScrolledMode(!isScrolledMode)}
               />
             </div>
-            <div className='config-item' data-setting-id='settings.control.continuousScroll'>
-              <span className=''>{_('Continuous Scroll')}</span>
+            <div
+              className='config-item'
+              data-setting-id='settings.control.scroll.noContinuousScroll'
+            >
+              <span className=''>{_('Single Section Scroll')}</span>
               <input
                 type='checkbox'
                 className='toggle'
-                checked={isContinuousScroll}
-                disabled={bookData?.isFixedLayout}
-                onChange={() => setIsContinuousScroll(!isContinuousScroll)}
+                checked={noContinuousScroll}
+                disabled={!viewSettings.scrolled}
+                onChange={() => setNoContinuousScroll(!noContinuousScroll)}
               />
             </div>
             <NumberInput
