@@ -3,9 +3,48 @@ import { HardcoverClient } from '@/services/hardcover/HardcoverClient';
 import type { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
 import type { Book, BookConfig, BookNote } from '@/types/book';
 
+type MockFetchResponse = {
+  ok: boolean;
+  status?: number;
+  statusText?: string;
+  json: () => Promise<unknown>;
+};
+
+type MockFetch = ReturnType<typeof vi.fn<(...args: unknown[]) => Promise<MockFetchResponse>>>;
+
+type TestBookContext = {
+  editionId: number;
+  pages: number | null;
+  bookId: number;
+  bookPages: number | null;
+  userBook: {
+    id: number;
+    status_id: number;
+    user_book_reads: Array<{ id: number; started_at?: string | null }>;
+  } | null;
+};
+
+type HardcoverClientTestApi = {
+  token: string;
+  extractISBN: (book: Book) => string | null;
+  request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
+  buildJournalPayload: (
+    note: BookNote,
+    config: BookConfig,
+    context: TestBookContext,
+  ) => { action_at: string };
+  ensureBookInLibrary: (book: Book, isReading?: boolean) => Promise<TestBookContext | null>;
+  pushProgress: (book: Book, config: BookConfig) => Promise<void>;
+};
+
+type RequestSpyCall = [query: string, variables?: unknown];
+type FetchMockCall = [input: unknown, init?: { body?: string }];
+
 describe('HardcoverClient', () => {
   let mockMapStore: HardcoverSyncMapStore;
   let client: HardcoverClient;
+  let clientApi: HardcoverClientTestApi;
+  let fetchMock: MockFetch;
   const mockSettings = { accessToken: 'test-token' };
 
   beforeEach(() => {
@@ -21,22 +60,23 @@ describe('HardcoverClient', () => {
     } as unknown as HardcoverSyncMapStore;
 
     // Mock global fetch
-    const mockFetch = vi.fn().mockResolvedValue({
+    fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve({ data: { me: { id: 1 } } }),
     });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.stubGlobal('fetch', fetchMock);
 
     client = new HardcoverClient(mockSettings, mockMapStore);
+    clientApi = client as unknown as HardcoverClientTestApi;
   });
 
   test('should normalize accessToken correctly', () => {
     const rawClient = new HardcoverClient({ accessToken: 'raw-jwt' }, mockMapStore);
-    expect((rawClient as any).token).toBe('Bearer raw-jwt');
+    expect((rawClient as unknown as HardcoverClientTestApi).token).toBe('Bearer raw-jwt');
 
     const bearClient = new HardcoverClient({ accessToken: 'Bearer already-has' }, mockMapStore);
-    expect((bearClient as any).token).toBe('Bearer already-has');
+    expect((bearClient as unknown as HardcoverClientTestApi).token).toBe('Bearer already-has');
   });
 
   test('should extract ISBN from metadata', () => {
@@ -46,7 +86,7 @@ describe('HardcoverClient', () => {
       },
     } as unknown as Book;
 
-    const isbn = (client as any).extractISBN(book);
+    const isbn = clientApi.extractISBN(book);
     expect(isbn).toBe('0743273567');
   });
 
@@ -57,7 +97,7 @@ describe('HardcoverClient', () => {
       },
     } as unknown as Book;
 
-    const isbn = (client as any).extractISBN(book);
+    const isbn = clientApi.extractISBN(book);
     expect(isbn).toBe('9780679783268');
   });
 
@@ -94,11 +134,11 @@ describe('HardcoverClient', () => {
     } as BookConfig;
 
     // Setup mocks for authenticate & fetch context & insert
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ data: { me: { id: 1 } } }), // authenticate
     });
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -120,7 +160,7 @@ describe('HardcoverClient', () => {
           },
         }), // fetchContext (QUERY_GET_EDITION)
     });
-    (fetch as any).mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: { insert_reading_journal: { id: 999 } } }), // generic inserts
     });
@@ -138,15 +178,15 @@ describe('HardcoverClient', () => {
     // request() does NOT call authenticate() so only 2 mock values are needed
 
     // First request fails with 429 then succeeds
-    (fetch as any).mockResolvedValueOnce({ ok: false, status: 429 });
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests', json: async () => ({}) });
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ data: { result: 'ok' } }),
     });
 
     // Speed up sleep for test
     vi.useFakeTimers();
-    const requestPromise = (client as any).request('query', { var: 1 });
+    const requestPromise = clientApi.request<{ var: number }, { result: string }>('query', { var: 1 });
 
     // Wait for the 429 retry
     await vi.runAllTimersAsync();
@@ -164,17 +204,23 @@ describe('HardcoverClient', () => {
       id: '1',
     } as BookNote;
     const config = { progress: [5, 100] } as BookConfig;
-    const context = { pages: 100, bookId: 1, editionId: 2 } as any;
+    const context: TestBookContext = {
+      editionId: 2,
+      pages: 100,
+      bookId: 1,
+      bookPages: 100,
+      userBook: null,
+    };
 
     // Test journal payload
-    const payload = (client as any).buildJournalPayload(note, config, context);
+    const payload = clientApi.buildJournalPayload(note, config, context);
     // Should be full ISO (e.g. 2026-03-29T16:00:00.000Z), length > 20
     expect(payload.action_at.length).toBeGreaterThan(10);
     expect(payload.action_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
     // Test progress payload (started_at)
     const book = { createdAt: 1711737600000 } as Book;
-    vi.spyOn(client as any, 'ensureBookInLibrary').mockResolvedValue({
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
       editionId: 2,
       pages: 100,
       bookId: 1,
@@ -185,10 +231,11 @@ describe('HardcoverClient', () => {
         user_book_reads: [],
       },
     });
-    const requestSpy = vi.spyOn(client as any, 'request').mockResolvedValue({});
-    await (client as any).pushProgress(book, config);
+    const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
+    await clientApi.pushProgress(book, config);
 
-    const progressCall = requestSpy.mock.calls.find((call) => {
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const progressCall = requestCalls.find((call) => {
       const query = call[0];
       return typeof query === 'string' && query.includes('mutation InsertRead');
     });
@@ -204,7 +251,7 @@ describe('HardcoverClient', () => {
     } as Book;
     const config = { progress: [25, 100] } as BookConfig;
 
-    vi.spyOn(client as any, 'ensureBookInLibrary').mockResolvedValue({
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
       editionId: 101,
       pages: 100,
       bookId: 202,
@@ -215,11 +262,12 @@ describe('HardcoverClient', () => {
         user_book_reads: [],
       },
     });
-    const requestSpy = vi.spyOn(client as any, 'request').mockResolvedValue({});
+    const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
 
     await client.pushProgress(book, config);
 
-    const calls = requestSpy.mock.calls.map((call) => {
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const calls = requestCalls.map((call) => {
       return {
         query: String(call[0]),
         variables: call[1] as Record<string, unknown> | undefined,
@@ -265,11 +313,11 @@ describe('HardcoverClient', () => {
       ] as BookNote[],
     } as BookConfig;
 
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ data: { me: { id: 1 } } }),
     });
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -294,15 +342,14 @@ describe('HardcoverClient', () => {
           },
         }),
     });
-    (fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ data: { insert_reading_journal: { id: 999 } } }),
     });
 
     const result = await client.syncBookNotes(book, config);
-    const calls = (fetch as any).mock.calls.map((call: [string, { body: string }]) =>
-      JSON.parse(call[1].body),
-    );
+    const fetchCalls = fetchMock.mock.calls as FetchMockCall[];
+    const calls = fetchCalls.map((call) => JSON.parse(call[1]?.body ?? '{}'));
 
     expect(result.inserted).toBe(1);
     expect(

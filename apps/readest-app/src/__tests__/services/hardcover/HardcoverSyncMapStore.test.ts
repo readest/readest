@@ -2,9 +2,15 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
 import type { AppService } from '@/types/system';
 
+type MockDb = {
+  select: ReturnType<typeof vi.fn>;
+  execute: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+};
+
 describe('HardcoverSyncMapStore', () => {
   let mockAppService: AppService;
-  let mockDb: any;
+  let mockDb: MockDb;
   let store: HardcoverSyncMapStore;
 
   beforeEach(() => {
@@ -111,6 +117,27 @@ describe('HardcoverSyncMapStore', () => {
     );
     expect(stored.hardcover_journal_id).toBe(456);
     expect(stored.payload_hash).toBe('def');
+  });
+
+  test('flush should persist mappings to SQLite on native', async () => {
+    vi.stubGlobal('window', {});
+
+    const bookHash = 'test-book-hash';
+    const noteId = 'note-1';
+
+    await store.upsertMapping(bookHash, noteId, 456, 'def');
+    await store.flush();
+
+    expect(mockAppService.openDatabase).toHaveBeenCalledWith(
+      'hardcover-sync',
+      'hardcover-sync.db',
+      'Data',
+    );
+    expect(mockDb.execute).toHaveBeenCalledTimes(1);
+    expect(mockDb.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO hardcover_note_mappings'),
+      expect.arrayContaining([bookHash, noteId, 456, 'def']),
+    );
   });
 
   test('getMappingByPayloadHash should return the latest mapping', async () => {
