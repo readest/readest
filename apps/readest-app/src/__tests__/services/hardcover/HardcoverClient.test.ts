@@ -178,6 +178,7 @@ describe('HardcoverClient', () => {
 
   test('should handle rate limiting with retries', async () => {
     // request() does NOT call authenticate() so only 2 mock values are needed
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // First request fails with 429 then succeeds
     fetchMock.mockResolvedValueOnce({
