@@ -56,7 +56,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
-  const currentWord = state.words[state.currentIndex] ?? null;
+  const currentWord = controller.currentDisplayWord;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
@@ -850,6 +850,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 <IoAdd className='h-3 w-3' />
               </button>
             </div>
+
+            {/* Split hyphenated words */}
+            <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
+              <input
+                type='checkbox'
+                className='cursor-pointer'
+                checked={state.splitHyphens}
+                onChange={(e) => controller.setSplitHyphens(e.target.checked)}
+              />
+              <span className='font-medium opacity-50'>{_('Split Hyphens')}</span>
+            </label>
 
             {/* ORP color */}
             <div className='flex items-center gap-1.5'>
