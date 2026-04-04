@@ -67,6 +67,7 @@ const EMPTY_NEW_CATALOG = {
   username: '',
   password: '',
   customHeadersInput: '',
+  proxyConsent: false,
 };
 
 export function CatalogManager() {
@@ -80,8 +81,14 @@ export function CatalogManager() {
   const [showPassword, setShowPassword] = useState(false);
   const [urlError, setUrlError] = useState('');
   const [headerError, setHeaderError] = useState('');
+  const [proxyConsentError, setProxyConsentError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const popularCatalogs = appService?.isOnlineCatalogsAccessible ? POPULAR_CATALOGS : [];
+  const hasSensitiveWebOPDSInput =
+    newCatalog.username.trim().length > 0 ||
+    newCatalog.password.trim().length > 0 ||
+    newCatalog.customHeadersInput.trim().length > 0;
+  const isWebCatalogProxyWarningRequired = isWebAppPlatform() && hasSensitiveWebOPDSInput;
 
   const saveCatalogs = (updatedCatalogs: OPDSCatalog[]) => {
     setCatalogs(updatedCatalogs);
@@ -112,9 +119,19 @@ export function CatalogManager() {
       return;
     }
 
+    if (isWebCatalogProxyWarningRequired && !newCatalog.proxyConsent) {
+      setProxyConsentError(
+        _(
+          'Please confirm that this OPDS connection will be proxied through Readest servers on the web app before continuing.',
+        ),
+      );
+      return;
+    }
+
     setIsValidating(true);
     setUrlError('');
     setHeaderError('');
+    setProxyConsentError('');
 
     const validation = await validateOPDSCatalog(
       newCatalog.url,
@@ -145,6 +162,7 @@ export function CatalogManager() {
     setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
     setHeaderError('');
+    setProxyConsentError('');
     setIsValidating(false);
     setShowAddDialog(false);
   };
@@ -172,6 +190,7 @@ export function CatalogManager() {
     setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
     setHeaderError('');
+    setProxyConsentError('');
     setShowPassword(false);
   };
 
@@ -368,7 +387,10 @@ export function CatalogManager() {
                   <input
                     type='text'
                     value={newCatalog.username}
-                    onChange={(e) => setNewCatalog({ ...newCatalog, username: e.target.value })}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, username: e.target.value });
+                      setProxyConsentError('');
+                    }}
                     placeholder={_('Username')}
                     className='input input-bordered placeholder:text-sm'
                     disabled={isValidating}
@@ -384,7 +406,10 @@ export function CatalogManager() {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={newCatalog.password}
-                      onChange={(e) => setNewCatalog({ ...newCatalog, password: e.target.value })}
+                      onChange={(e) => {
+                        setNewCatalog({ ...newCatalog, password: e.target.value });
+                        setProxyConsentError('');
+                      }}
                       placeholder={_('Password')}
                       className='input input-bordered w-full pr-10 placeholder:text-sm'
                       disabled={isValidating}
@@ -414,6 +439,7 @@ export function CatalogManager() {
                     onChange={(e) => {
                       setNewCatalog({ ...newCatalog, customHeadersInput: e.target.value });
                       setHeaderError('');
+                      setProxyConsentError('');
                     }}
                     placeholder={formatOPDSCustomHeadersInput({
                       'CF-Access-Client-Id': 'your-client-id',
@@ -435,6 +461,33 @@ export function CatalogManager() {
                     </div>
                   )}
                 </div>
+
+                {isWebCatalogProxyWarningRequired && (
+                  <div className='form-control border-warning/30 bg-warning/10 rounded-lg border p-4'>
+                    <label className='label cursor-pointer items-start justify-start gap-3 p-0'>
+                      <input
+                        type='checkbox'
+                        className='checkbox checkbox-sm mt-0.5'
+                        checked={newCatalog.proxyConsent}
+                        onChange={(e) => {
+                          setNewCatalog({ ...newCatalog, proxyConsent: e.target.checked });
+                          setProxyConsentError('');
+                        }}
+                        disabled={isValidating}
+                      />
+                      <span className='label-text text-sm leading-6'>
+                        {_(
+                          'I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.',
+                        )}
+                      </span>
+                    </label>
+                    {proxyConsentError && (
+                      <div className='label px-0 pb-0 pt-2'>
+                        <span className='label-text-alt text-error'>{proxyConsentError}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className='form-control'>
                   <div className='label'>
