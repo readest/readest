@@ -118,7 +118,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                     onChange={(e) => updateColorLabel(color, e.target.value)}
                     placeholder={_('Name')}
                     maxLength={20}
-                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-16 text-center text-xs'
+                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
                   />
                   <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                     <div
@@ -168,7 +168,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                   onChange={(e) => setNewColorLabel(e.target.value)}
                   placeholder={_('Name')}
                   maxLength={20}
-                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-20 text-center text-xs'
+                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-28 text-center text-xs'
                 />
                 <button
                   onClick={handleAddUserColor}
@@ -194,7 +194,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                       onChange={(e) => updateColorLabel(hex, e.target.value)}
                       placeholder={_('Name')}
                       maxLength={20}
-                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-16 text-center text-xs'
+                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
                     />
                     <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                       <div
