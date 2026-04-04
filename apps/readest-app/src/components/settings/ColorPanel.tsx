@@ -8,6 +8,8 @@ import {
   themes,
 } from '@/styles/themes';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
+import { useSyncContext } from '@/context/SyncContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -21,6 +23,7 @@ import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
+import { createHighlightPrefsSyncConfig } from '@/services/highlightPrefsSync';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
 import ThemeColorSelector from './color/ThemeColorSelector';
@@ -31,6 +34,8 @@ import ReadingRulerSettings from './color/ReadingRulerSettings';
 
 const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
+  const { user } = useAuth();
+  const { syncClient } = useSyncContext();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor, saveCustomTheme } =
     useThemeStore();
   const { envConfig, appService } = useEnv();
@@ -56,6 +61,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   );
   const [userHighlightColors, setUserHighlightColors] = useState(
     settings.globalReadSettings.userHighlightColors || [],
+  );
+  const [highlightColorLabels, setHighlightColorLabels] = useState(
+    settings.globalReadSettings.highlightColorLabels || {},
   );
 
   const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
@@ -94,6 +102,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setBackgroundSize('cover');
     setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
     setUserHighlightColors([]);
+    setHighlightColorLabels({});
     deactivateAtmosphere();
   };
 
@@ -267,18 +276,48 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveCustomTextures(envConfig);
   };
 
+  const syncHighlightPreferences = async (nextSettings: typeof settings) => {
+    if (!user) return;
+    try {
+      await syncClient.pushChanges({ configs: [createHighlightPrefsSyncConfig(nextSettings)] });
+    } catch (error) {
+      console.warn('Failed to sync highlight preferences', error);
+    }
+  };
+
+  const saveHighlightPreferences = async (
+    updater: (globalReadSettings: typeof settings.globalReadSettings) => void,
+  ) => {
+    const nextSettings = {
+      ...settings,
+      globalReadSettings: { ...settings.globalReadSettings },
+    };
+    updater(nextSettings.globalReadSettings);
+    nextSettings.globalReadSettings.highlightColorsUpdatedAt = Date.now();
+    setSettings(nextSettings);
+    await saveSettings(envConfig, nextSettings);
+    await syncHighlightPreferences(nextSettings);
+  };
+
   const handleHighlightColorsChange = (colors: typeof customHighlightColors) => {
     setCustomHighlightColors(colors);
-    settings.globalReadSettings.customHighlightColors = colors;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    void saveHighlightPreferences((globalReadSettings) => {
+      globalReadSettings.customHighlightColors = colors;
+    });
   };
 
   const handleUserHighlightColorsChange = (colors: string[]) => {
     setUserHighlightColors(colors);
-    settings.globalReadSettings.userHighlightColors = colors;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    void saveHighlightPreferences((globalReadSettings) => {
+      globalReadSettings.userHighlightColors = colors;
+    });
+  };
+
+  const handleHighlightColorLabelsChange = (labels: Record<string, string>) => {
+    setHighlightColorLabels(labels);
+    void saveHighlightPreferences((globalReadSettings) => {
+      globalReadSettings.highlightColorLabels = labels;
+    });
   };
 
   return (
@@ -352,10 +391,12 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <HighlightColorsEditor
             customHighlightColors={customHighlightColors}
             userHighlightColors={userHighlightColors}
+            highlightColorLabels={highlightColorLabels}
             highlightOpacity={highlightOpacity}
             isEink={viewSettings.isEink}
             onChange={handleHighlightColorsChange}
             onUserColorsChange={handleUserHighlightColorsChange}
+            onHighlightColorLabelsChange={handleHighlightColorLabelsChange}
             onOpacityChange={setHighlightOpacity}
             data-setting-id='settings.color.highlightColors'
           />
