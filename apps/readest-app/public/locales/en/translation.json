@@ -23,13 +23,5 @@
   "Set status for {{count}} book(s)_one": "Set status for {{count}} book",
   "Set status for {{count}} book(s)_other": "Set status for {{count}} books",
   "{{count}} book(s) synced_one": "{{count}} book synced",
-  "{{count}} book(s) synced_other": "{{count}} books synced",
-  "red": "red",
-  "violet": "violet",
-  "blue": "blue",
-  "green": "green",
-  "yellow": "yellow",
-  "highlight": "highlight",
-  "underline": "underline",
-  "squiggly": "squiggly"
+  "{{count}} book(s) synced_other": "{{count}} books synced"
 }
