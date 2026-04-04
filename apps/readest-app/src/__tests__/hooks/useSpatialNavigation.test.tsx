@@ -1,6 +1,6 @@
 import { cleanup, render, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import {
   useSpatialNavigation,
   _resetLastKeyboardTime,
