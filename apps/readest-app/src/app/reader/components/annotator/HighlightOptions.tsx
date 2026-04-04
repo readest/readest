@@ -71,9 +71,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
+  const suppressColorClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressColorClickRef = useRef(false);
   const dragStateRef = useRef({
     active: false,
-    pointerId: -1,
     startX: 0,
     startScrollLeft: 0,
     moved: false,
@@ -95,6 +96,13 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     if (previewTimerRef.current) {
       clearTimeout(previewTimerRef.current);
       previewTimerRef.current = null;
+    }
+  };
+
+  const clearSuppressColorClickTimer = () => {
+    if (suppressColorClickTimerRef.current) {
+      clearTimeout(suppressColorClickTimerRef.current);
+      suppressColorClickTimerRef.current = null;
     }
   };
 
@@ -152,24 +160,22 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 
     dragStateRef.current = {
       active: true,
-      pointerId: event.pointerId,
       startX: event.clientX,
       startScrollLeft: strip.scrollLeft,
       moved: false,
     };
     setIsDraggingColorStrip(false);
-    strip.setPointerCapture(event.pointerId);
   };
 
   const handleColorStripPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const strip = colorStripRef.current;
     const drag = dragStateRef.current;
-    if (!strip || !drag.active || drag.pointerId !== event.pointerId) {
+    if (!strip || !drag.active) {
       return;
     }
 
     const deltaX = event.clientX - drag.startX;
-    if (!drag.moved && Math.abs(deltaX) >= 3) {
+    if (!drag.moved && Math.abs(deltaX) >= 6) {
       drag.moved = true;
       setIsDraggingColorStrip(true);
     }
@@ -180,38 +186,29 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   };
 
   const handleColorStripPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const strip = colorStripRef.current;
     const drag = dragStateRef.current;
-    if (!drag.active || drag.pointerId !== event.pointerId) {
+    if (!drag.active || event.pointerType !== 'mouse') {
       return;
     }
 
+    const moved = drag.moved;
     drag.active = false;
-    if (strip?.hasPointerCapture(event.pointerId)) {
-      strip.releasePointerCapture(event.pointerId);
-    }
-
-    if (drag.moved) {
-      requestAnimationFrame(() => {
-        drag.moved = false;
-        setIsDraggingColorStrip(false);
-      });
-    } else {
-      setIsDraggingColorStrip(false);
-    }
-  };
-
-  const suppressColorClickWhileDragging = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!dragStateRef.current.moved) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    dragStateRef.current.moved = false;
+    drag.moved = false;
     setIsDraggingColorStrip(false);
+
+    if (moved) {
+      clearSuppressColorClickTimer();
+      suppressColorClickRef.current = true;
+      suppressColorClickTimerRef.current = setTimeout(() => {
+        suppressColorClickRef.current = false;
+      }, 120);
+    }
   };
 
   const handleColorClick = (color: HighlightColor) => {
+    if (dragStateRef.current.active || suppressColorClickRef.current) {
+      return;
+    }
     if (suppressTapRef.current) {
       suppressTapRef.current = false;
       return;
@@ -223,6 +220,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     return () => {
       clearLongPressTimer();
       clearPreviewTimer();
+      clearSuppressColorClickTimer();
+      suppressColorClickRef.current = false;
+      dragStateRef.current.active = false;
+      dragStateRef.current.moved = false;
     };
   }, []);
 
@@ -248,7 +249,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   return (
     <div
       className={clsx(
-        'highlight-options absolute flex items-center justify-between gap-4',
+        'highlight-options absolute flex items-center gap-4',
         isVertical ? 'flex-col' : 'flex-row',
       )}
       style={{
@@ -323,7 +324,9 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         ref={colorStripRef}
         className={clsx(
           'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
-          isVertical ? 'flex-col overflow-y-auto py-2' : 'flex-row overflow-x-auto px-2',
+          isVertical
+            ? 'flex-col overflow-y-auto py-2'
+            : 'min-w-0 flex-1 flex-row overflow-x-auto px-2',
           !isVertical && 'cursor-grab',
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
@@ -332,7 +335,6 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         onPointerUp={handleColorStripPointerEnd}
         onPointerCancel={handleColorStripPointerEnd}
         onPointerLeave={handleColorStripPointerEnd}
-        onClickCapture={suppressColorClickWhileDragging}
         style={{
           ...(isVertical ? { width: size28 } : { height: size28 }),
           scrollbarWidth: 'none',
