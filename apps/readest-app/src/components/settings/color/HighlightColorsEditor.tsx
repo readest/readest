@@ -202,12 +202,12 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                   >
                     <input
                       type='text'
-                      value={highlightColorLabels[normalizeColorKey(hex)] || ''}
+                      value={_(highlightColorLabels[normalizeColorKey(hex)] || '')}
                       onChange={(e) => updateColorLabel(hex, e.target.value)}
                       placeholder={_('Name')}
                       maxLength={20}
                       className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
-                      title={highlightColorLabels[normalizeColorKey(hex)] || ''}
+                      title={_(highlightColorLabels[normalizeColorKey(hex)] || '')}
                     />
                     <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                       <div
