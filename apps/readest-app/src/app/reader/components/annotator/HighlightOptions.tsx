@@ -51,7 +51,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   selectedColor: _selectedColor,
   onHandleHighlight,
 }) => {
-  const t = useTranslation();
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
@@ -109,7 +109,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const resolveHighlightLabel = (color: HighlightColor) => {
     const label = getHighlightColorLabel(settings, color);
     if (label === color && !color.startsWith('#')) {
-      return t(color);
+      return _(color);
     }
     return label;
   };
@@ -277,7 +277,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         {styles.map((style) => (
           <button
             key={style}
-            aria-label={t('Select {{style}} style', { style: t(style) })}
+            aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
             className='not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0'
             style={{ width: size28, height: size28, minHeight: size28 }}
@@ -358,7 +358,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               )}
               <button
                 key={color}
-                aria-label={t('Select {{color}} color', { color: resolveHighlightLabel(color) })}
+                aria-label={_('Select {{color}} color', { color: resolveHighlightLabel(color) })}
                 title={resolveHighlightLabel(color)}
                 onClick={() => handleColorClick(color)}
                 onPointerDown={(event) => handleColorPointerDown(event, color)}
