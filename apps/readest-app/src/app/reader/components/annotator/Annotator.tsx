@@ -37,6 +37,7 @@ import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
 import WikipediaPopup from './WikipediaPopup';
+import XRayPopup from './XRayPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
@@ -70,6 +71,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
   const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
+  const [showXRayPopup, setShowXRayPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -100,6 +102,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     showAnnotPopup ||
     showWiktionaryPopup ||
     showWikipediaPopup ||
+    showXRayPopup ||
     showDeepLPopup ||
     showProofreadPopup;
 
@@ -201,6 +204,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowAnnotPopup(false);
       setShowWiktionaryPopup(false);
       setShowWikipediaPopup(false);
+      setShowXRayPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -760,6 +764,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowWikipediaPopup(true);
   };
 
+  const handleXRay = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setShowXRayPopup(true);
+  };
+
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
@@ -932,6 +942,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
       case 'wikipedia':
         return { tooltipText: _(label), Icon, onClick: handleWikipedia };
+      case 'xray':
+        return { tooltipText: _(label), Icon, onClick: handleXRay };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -969,6 +981,19 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <WikipediaPopup
           text={selection?.text as string}
           lang={bookData.bookDoc?.metadata.language as string}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
+        />
+      )}
+      {showXRayPopup && trianglePosition && dictPopupPosition && (
+        <XRayPopup
+          term={selection?.text as string}
+          bookKey={bookKey}
+          language={bookData.bookDoc?.metadata.language as string}
+          maxPageIncluded={progress?.pageinfo?.current ?? 0}
           position={dictPopupPosition}
           trianglePosition={trianglePosition}
           popupWidth={dictPopupWidth}

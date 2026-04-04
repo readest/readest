@@ -22,7 +22,9 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   const { getBookData } = useBookDataStore();
   const {
     conversations,
-    isLoadingHistory,
+    isLoadingConversations,
+    isLoadingMessages,
+    activeConversationId,
     loadConversations,
     setActiveConversation,
     deleteConversation,
@@ -107,7 +109,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
     [handleSaveRename],
   );
 
-  if (isLoadingHistory) {
+  if (isLoadingConversations) {
     return (
       <div className='flex h-full items-center justify-center p-4'>
         <div className='border-primary size-5 animate-spin rounded-full border-2 border-t-transparent' />
@@ -139,6 +141,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                 className={clsx(
                   'group flex cursor-pointer items-start gap-2 px-3 py-2.5',
                   'hover:bg-base-300/50 transition-colors duration-150',
+                  activeConversationId === conversation.id && 'bg-base-200/70',
                 )}
               >
                 <div
@@ -168,7 +171,9 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                           onKeyDown={handleKeyDown}
                           className={clsx(
                             'input input-xs input-bordered w-full',
-                            'bg-base-100 text-base-content',
+                            'bg-base-100 text-base-content shadow-none',
+                            'focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0',
+                            'focus:border-base-300',
                           )}
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
@@ -196,6 +201,9 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                         <p className='text-base-content/50 text-xs'>
                           {dayjs(conversation.updatedAt).format('MMM D, YYYY h:mm A')}
                         </p>
+                        {activeConversationId === conversation.id && isLoadingMessages && (
+                          <p className='text-base-content/40 text-[11px]'>{_('Loading...')}</p>
+                        )}
                       </>
                     )}
                   </div>

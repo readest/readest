@@ -1166,5 +1166,11 @@
   "TTS Media Info Update Frequency": "תדירות עדכון פרטי מדיה TTS",
   "Select reading speed": "בחר מהירות קריאה",
   "Drag to seek": "גרור לחיפוש",
-  "Punctuation Delay": "השהיית פיסוק"
+  "Punctuation Delay": "השהיית פיסוק",
+  "Update X-Ray": "עדכן X-Ray",
+  "Rebuild X-Ray": "בנה מחדש את X-Ray",
+  "Incremental update to current page": "עדכון הדרגתי עד לעמוד הנוכחי",
+  "Reprocess from scratch to current page (keeps cache)": "עיבוד מחדש מההתחלה עד לעמוד הנוכחי (שומר מטמון)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "מעבד עמ' {{start}}-{{end}} מתוך {{total}}",
+  "Processing X-Ray": "מעבד X-Ray"
 }

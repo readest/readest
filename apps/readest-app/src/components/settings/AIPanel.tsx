@@ -112,6 +112,7 @@ const AIPanel: React.FC = () => {
       const newAiSettings: AISettings = { ...currentAiSettings, [key]: value };
       const newSettings = { ...currentSettings, aiSettings: newAiSettings };
 
+      settingsRef.current = newSettings;
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
     },
@@ -129,15 +130,29 @@ const AIPanel: React.FC = () => {
       const models = data.models?.map((m: { name: string }) => m.name) || [];
 
       setOllamaModels(models);
-      if (models.length > 0 && !models.includes(ollamaModel)) {
-        setOllamaModel(models[0]!);
+      if (models.length > 0) {
+        const fallbackModel = models[0]!;
+        const nextOllamaModel = models.includes(ollamaModel) ? ollamaModel : fallbackModel;
+        const nextEmbeddingModel = models.includes(ollamaEmbeddingModel)
+          ? ollamaEmbeddingModel
+          : fallbackModel;
+
+        if (nextOllamaModel !== ollamaModel) {
+          setOllamaModel(nextOllamaModel);
+          await saveAiSetting('ollamaModel', nextOllamaModel);
+        }
+
+        if (nextEmbeddingModel !== ollamaEmbeddingModel) {
+          setOllamaEmbeddingModel(nextEmbeddingModel);
+          await saveAiSetting('ollamaEmbeddingModel', nextEmbeddingModel);
+        }
       }
     } catch (_err) {
       setOllamaModels([]);
     } finally {
       setFetchingModels(false);
     }
-  }, [ollamaUrl, ollamaModel, enabled]);
+  }, [enabled, ollamaEmbeddingModel, ollamaModel, ollamaUrl, saveAiSetting]);
 
   useEffect(() => {
     if (provider === 'ollama' && enabled) {

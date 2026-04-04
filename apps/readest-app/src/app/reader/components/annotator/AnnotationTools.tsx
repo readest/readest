@@ -8,6 +8,7 @@ import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
 import { FaHeadphones } from 'react-icons/fa6';
 import { IoIosBuild } from 'react-icons/io';
+import { LuNotebookText } from 'react-icons/lu';
 import { AnnotationToolType } from '@/types/annotator';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -69,6 +70,13 @@ export const annotationToolButtons = createAnnotationToolButtons([
     label: _('Wikipedia'),
     tooltip: _('Look up text in Wikipedia after selection'),
     Icon: FaWikipediaW,
+    quickAction: true,
+  },
+  {
+    type: 'xray',
+    label: _('X-Ray'),
+    tooltip: _('Look up text in X-Ray after selection'),
+    Icon: LuNotebookText,
     quickAction: true,
   },
   {
