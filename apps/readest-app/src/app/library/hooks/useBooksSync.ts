@@ -4,8 +4,13 @@ import { useSync } from '@/hooks/useSync';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
+import { SYNC_BOOKS_INTERVAL_SEC, SYNC_HIGHLIGHT_PREFS_BOOK_HASH } from '@/services/constants';
+import {
+  applyHighlightPrefsPayloadToSettings,
+  extractHighlightPrefsPayloadFromConfigs,
+} from '@/services/highlightPrefsSync';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
@@ -13,10 +18,12 @@ import { eventDispatcher } from '@/utils/event';
 export const useBooksSync = () => {
   const _ = useTranslation();
   const { user } = useAuth();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
   const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
-  const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { useSyncInited, syncedBooks, syncedConfigs, syncBooks, syncConfigs, lastSyncedAtBooks } =
+    useSync();
   const isPullingRef = useRef(false);
 
   const getNewBooks = useCallback(() => {
@@ -49,6 +56,7 @@ export const useBooksSync = () => {
           'pull',
           (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined,
         );
+        await syncConfigs([], SYNC_HIGHLIGHT_PREFS_BOOK_HASH, undefined, 'pull');
         if (verbose) {
           eventDispatcher.dispatch('toast', {
             type: 'info',
@@ -59,8 +67,20 @@ export const useBooksSync = () => {
         isPullingRef.current = false;
       }
     },
-    [_, user, libraryLoaded, syncBooks],
+    [_, user, libraryLoaded, syncBooks, syncConfigs],
   );
+
+  useEffect(() => {
+    const payload = extractHighlightPrefsPayloadFromConfigs(syncedConfigs);
+    if (!payload) return;
+
+    const localUpdatedAt = settings.globalReadSettings.highlightColorsUpdatedAt ?? 0;
+    if (payload.highlightColorsUpdatedAt <= localUpdatedAt) return;
+
+    const nextSettings = applyHighlightPrefsPayloadToSettings(settings, payload);
+    setSettings(nextSettings);
+    void saveSettings(envConfig, nextSettings);
+  }, [envConfig, saveSettings, setSettings, settings, syncedConfigs]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
