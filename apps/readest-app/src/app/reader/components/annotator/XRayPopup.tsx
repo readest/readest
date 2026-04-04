@@ -5,6 +5,7 @@ import { Position } from '@/utils/sel';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useNotebookStore } from '@/store/notebookStore';
 import { useReaderStore } from '@/store/readerStore';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import { lookupTerm } from '@/services/ai/xrayService';
@@ -40,6 +41,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
   const { settings } = useSettingsStore();
   const { getConfig } = useBookDataStore();
   const { getView } = useReaderStore();
+  const setNotebookActiveTab = useNotebookStore((state) => state.setNotebookActiveTab);
   const aiSettings = settings?.aiSettings;
   const providerUnsupported = aiSettings?.enabled && aiSettings.provider !== 'ai-gateway';
   const [result, setResult] = useState<XRayLookupResult | null>(null);
@@ -161,6 +163,11 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
     onDismiss?.();
   };
 
+  const handleOpenAI = () => {
+    setNotebookActiveTab('ai');
+    onDismiss?.();
+  };
+
   return (
     <div>
       <Popup
@@ -185,9 +192,18 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
               {_('X-Ray extraction currently requires AI Gateway.')}
             </p>
           ) : isIndexed === false ? (
-            <p className='text-base-content/60 text-xs'>
-              {_('Book must be indexed first. Open AI Assistant to index.')}
-            </p>
+            <div className='space-y-2'>
+              <p className='text-base-content/60 text-xs'>
+                {_('Book must be indexed first. Open AI Assistant to index.')}
+              </p>
+              <button
+                type='button'
+                className='btn btn-ghost btn-xs h-7 min-h-7'
+                onClick={handleOpenAI}
+              >
+                {_('AI')}
+              </button>
+            </div>
           ) : loading ? (
             <div className='flex items-center gap-2 text-xs'>
               <div className='border-primary size-4 animate-spin rounded-full border-2 border-t-transparent' />
@@ -215,7 +231,14 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
                       }
                       title={_('Jump to quote')}
                     >
-                      &ldquo;{evidence.quote}&rdquo; (p.{evidence.page + 1})
+                      <div>
+                        &ldquo;{evidence.quote}&rdquo; (p.{evidence.page + 1})
+                      </div>
+                      {!evidence.inferred && evidence.chunkId !== 'inferred' && (
+                        <div className='text-base-content/45 mt-1 text-[10px] font-medium uppercase tracking-wide'>
+                          {_('Jump to quote')}
+                        </div>
+                      )}
                       {evidence.inferred && (
                         <span className='text-base-content/50 ml-1 text-[10px]'>
                           {_('Inferred')}
