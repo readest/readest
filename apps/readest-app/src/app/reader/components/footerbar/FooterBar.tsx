@@ -224,6 +224,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       {/* Hover trigger area */}
       <div
         role='none'
+        tabIndex={-1}
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
