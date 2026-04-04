@@ -10,9 +10,16 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveSysSettings } from '@/helpers/settings';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { getHighlightColorLabel } from '../../utils/annotatorUtil';
+import { stubTranslation as _ } from '@/utils/misc';
 
-const styles: HighlightStyle[] = ['highlight', 'underline', 'squiggly'];
-const defaultColors: HighlightColor[] = ['red', 'violet', 'blue', 'green', 'yellow'];
+const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
+const defaultColors = [
+  _('red'),
+  _('violet'),
+  _('blue'),
+  _('green'),
+  _('yellow'),
+] as HighlightColor[];
 
 const getColorHex = (
   customColors: Record<HighlightColor, string>,
@@ -44,7 +51,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   selectedColor: _selectedColor,
   onHandleHighlight,
 }) => {
-  const _ = useTranslation();
+  const t = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
@@ -102,7 +109,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const resolveHighlightLabel = (color: HighlightColor) => {
     const label = getHighlightColorLabel(settings, color);
     if (label === color && !color.startsWith('#')) {
-      return _(color);
+      return t(color);
     }
     return label;
   };
@@ -270,7 +277,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         {styles.map((style) => (
           <button
             key={style}
-            aria-label={_('Select {{style}} style', { style: _(style) })}
+            aria-label={t('Select {{style}} style', { style: t(style) })}
             onClick={() => handleSelectStyle(style)}
             className='not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0'
             style={{ width: size28, height: size28, minHeight: size28 }}
@@ -351,7 +358,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               )}
               <button
                 key={color}
-                aria-label={_('Select {{color}} color', { color: resolveHighlightLabel(color) })}
+                aria-label={t('Select {{color}} color', { color: resolveHighlightLabel(color) })}
                 title={resolveHighlightLabel(color)}
                 onClick={() => handleColorClick(color)}
                 onPointerDown={(event) => handleColorPointerDown(event, color)}
