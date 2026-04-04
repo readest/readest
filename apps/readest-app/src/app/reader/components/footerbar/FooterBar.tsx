@@ -1,6 +1,7 @@
 import clsx from 'clsx';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -159,11 +160,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
       if (event instanceof CustomEvent) {
         if (event.detail.keyName === 'Back') {
           setHoveredBookKey('');
+          (document.activeElement as HTMLElement)?.blur();
           return true;
         }
       } else {
         if (event.key === 'Escape') {
           setHoveredBookKey('');
+          (document.activeElement as HTMLElement)?.blur();
         }
         event.stopPropagation();
       }
@@ -187,6 +190,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
+
+  const footerBarRef = useRef<HTMLDivElement>(null);
+  useSpatialNavigation(footerBarRef, isVisible);
 
   const commonProps: FooterBarChildProps = {
     bookKey,
@@ -236,6 +242,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
       {/* Main footer container */}
       <div
+        ref={footerBarRef}
         role='contentinfo'
         aria-label={_('Footer Bar')}
         className={containerClasses}
