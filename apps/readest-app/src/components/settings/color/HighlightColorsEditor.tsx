@@ -111,14 +111,14 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
               const position =
                 index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
               return (
-                <div key={color} className='flex flex-col items-center gap-2'>
+                <div key={color} className='flex min-w-0 flex-col items-center gap-2'>
                   <input
                     type='text'
                     value={highlightColorLabels[color] || ''}
                     onChange={(e) => updateColorLabel(color, e.target.value)}
                     placeholder={_('Name')}
                     maxLength={20}
-                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
+                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-20 text-center text-xs'
                   />
                   <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                     <div
@@ -168,7 +168,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                   onChange={(e) => setNewColorLabel(e.target.value)}
                   placeholder={_('Name')}
                   maxLength={20}
-                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-28 text-center text-xs'
+                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
                 />
                 <button
                   onClick={handleAddUserColor}
@@ -187,14 +187,17 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
             {userHighlightColors.length > 0 && (
               <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
                 {userHighlightColors.map((hex, index) => (
-                  <div key={hex} className='group relative flex flex-col items-center gap-2'>
+                  <div
+                    key={hex}
+                    className='group relative flex min-w-0 flex-col items-center gap-2'
+                  >
                     <input
                       type='text'
                       value={highlightColorLabels[normalizeColorKey(hex)] || ''}
                       onChange={(e) => updateColorLabel(hex, e.target.value)}
                       placeholder={_('Name')}
                       maxLength={20}
-                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
+                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-20 text-center text-xs'
                     />
                     <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                       <div
