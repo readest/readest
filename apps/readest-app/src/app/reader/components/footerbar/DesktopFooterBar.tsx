@@ -17,6 +17,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   progressValid,
   progressFraction,
   navigationHandlers,
+  isMobileLayout,
   onSpeakText,
 }) => {
   const _ = useTranslation();
@@ -67,7 +68,11 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
 
   return (
     <div
-      className='hidden h-8 w-full items-center gap-x-4 overflow-x-auto px-4 sm:flex'
+      className={
+        isMobileLayout
+          ? 'hidden'
+          : 'hidden h-8 w-full items-center gap-x-4 overflow-x-auto px-4 sm:flex'
+      }
       style={{
         bottom: isMobile ? `${gridInsets.bottom * 0.33}px` : '0px',
         scrollbarWidth: 'none',

@@ -27,6 +27,7 @@ export interface FooterBarChildProps {
   progressValid: boolean;
   gridInsets: Insets;
   actionTab: string;
+  isMobileLayout: boolean;
   onSetActionTab: (tab: string) => void;
   onSpeakText: () => void;
 }

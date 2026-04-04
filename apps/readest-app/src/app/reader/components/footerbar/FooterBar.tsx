@@ -194,6 +194,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const footerBarRef = useRef<HTMLDivElement>(null);
   useSpatialNavigation(footerBarRef, isVisible);
 
+  const isPortrait = window.innerWidth <= window.innerHeight;
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
+  const isMobileLayout = isMobile || (!!appService?.isAndroidApp && isPortrait);
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -201,6 +205,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     progressValid,
     progressFraction,
     navigationHandlers,
+    isMobileLayout,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
   };
@@ -210,20 +215,23 @@ const FooterBar: React.FC<FooterBarProps> = ({
     (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
-    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col sm:h-[52px]',
-    'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
+    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
+    isMobileLayout ? '' : 'sm:h-[52px]',
+    isMobileLayout ? '' : 'sm:bg-base-100 sm:border-none',
+    'border-base-300/50 border-t',
     'transition-[opacity,transform] duration-300',
-    window.innerWidth < 640 ? 'fixed' : 'absolute',
+    isMobileLayout ? 'fixed' : window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center',
+    !isMobileLayout &&
+      (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center'),
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
-      : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
+      : isMobileLayout
+        ? 'pointer-events-none translate-y-full opacity-0'
+        : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
-
-  const isMobile = appService?.isMobile || window.innerWidth < 640;
 
   return (
     <>

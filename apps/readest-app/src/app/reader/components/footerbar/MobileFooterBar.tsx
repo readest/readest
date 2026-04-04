@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { FooterBarChildProps } from './types';
@@ -13,15 +14,16 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   progressValid,
   progressFraction,
   navigationHandlers,
+  isMobileLayout,
   onSetActionTab,
 }) => {
-  const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+  const isMobile = isMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
   const sliderHeight = useResponsiveSize(28);
   const marginIconSize = useResponsiveSize(20);
   const bottomOffset = isMobile ? `${gridInsets.bottom * 0.33 + 64}px` : '64px';
 
   return (
-    <>
+    <div className={clsx(isMobileLayout && 'force-mobile-layout')}>
       <ColorPanel actionTab={actionTab} bottomOffset={bottomOffset} />
       <NavigationPanel
         bookKey={bookKey}
@@ -42,9 +44,10 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         bookKey={bookKey}
         actionTab={actionTab}
         gridInsets={gridInsets}
+        isMobileLayout={isMobileLayout}
         onSetActionTab={onSetActionTab!}
       />
-    </>
+    </div>
   );
 };
 
