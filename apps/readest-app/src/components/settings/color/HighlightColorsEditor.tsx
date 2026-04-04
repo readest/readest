@@ -105,7 +105,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     <div>
       <h2 className='mb-2 font-medium'>{_('Highlight Colors')}</h2>
       <div className='card border-base-200 bg-base-100 overflow-visible border shadow'>
-        <div className='grid grid-cols-3 gap-3 p-4 sm:grid-cols-5'>
+        <div className='grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
           {(['red', 'violet', 'blue', 'green', 'yellow'] as HighlightColor[]).map(
             (color, index, array) => {
               const position =
@@ -118,7 +118,8 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                     onChange={(e) => updateColorLabel(color, e.target.value)}
                     placeholder={_('Name')}
                     maxLength={20}
-                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-20 text-center text-xs'
+                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
+                    title={highlightColorLabels[color] || ''}
                   />
                   <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                     <div
@@ -148,7 +149,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
               <span className='font-normal'>
                 {_('Custom Colors')} ({userHighlightColors.length}/{MAX_USER_HIGHLIGHT_COLORS})
               </span>
-              <div className='flex items-center gap-2'>
+              <div className='flex flex-wrap items-center gap-2'>
                 <div className='border-base-300 h-6 w-6 rounded-full border-2 shadow-sm'>
                   <div
                     className='h-full w-full rounded-full'
@@ -197,7 +198,8 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                       onChange={(e) => updateColorLabel(hex, e.target.value)}
                       placeholder={_('Name')}
                       maxLength={20}
-                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-20 text-center text-xs'
+                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
+                      title={highlightColorLabels[normalizeColorKey(hex)] || ''}
                     />
                     <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                       <div
