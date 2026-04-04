@@ -1,4 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+
+// Track last pointer activity to distinguish keyboard vs mouse activation
+let lastPointerTime = 0;
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointermove',
+    () => {
+      lastPointerTime = Date.now();
+    },
+    true,
+  );
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      lastPointerTime = Date.now();
+    },
+    true,
+  );
+}
 
 function getButtons(container: HTMLElement): HTMLButtonElement[] {
   return Array.from(container.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
@@ -37,9 +56,17 @@ export function useSpatialNavigation(
   containerRef: React.RefObject<HTMLElement | null>,
   isVisible: boolean,
 ) {
-  // Auto-focus first button when toolbar becomes visible
+  // Auto-focus first button when toolbar becomes visible via keyboard (not mouse hover)
+  const wasKeyboardActivated = useRef(false);
   useEffect(() => {
-    if (!isVisible) return;
+    if (isVisible) {
+      // If no recent pointer activity, this was keyboard-activated (Enter key)
+      wasKeyboardActivated.current = Date.now() - lastPointerTime > 200;
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible || !wasKeyboardActivated.current) return;
     const container = containerRef.current;
     if (!container) return;
     const timer = setTimeout(() => focusFirstButton(container), 100);
