@@ -3,6 +3,10 @@ import { HighlightColor } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { Point } from '@/utils/sel';
 
+export const normalizeHighlightColorKey = (color: HighlightColor): string => {
+  return color.startsWith('#') ? color.trim().toLowerCase() : color;
+};
+
 export const getHighlightColorHex = (
   settings: SystemSettings,
   color?: HighlightColor,
@@ -11,6 +15,16 @@ export const getHighlightColorHex = (
   if (color.startsWith('#')) return color;
   const customColors = settings.globalReadSettings.customHighlightColors;
   return customColors?.[color] ?? HIGHLIGHT_COLOR_HEX[color];
+};
+
+export const getHighlightColorLabel = (settings: SystemSettings, color: HighlightColor): string => {
+  const labels = settings.globalReadSettings.highlightColorLabels || {};
+  const key = normalizeHighlightColorKey(color);
+  const label = labels[key] || (color.startsWith('#') ? labels[color] : labels[color]);
+  if (typeof label === 'string' && label.trim()) {
+    return label.trim();
+  }
+  return color;
 };
 
 export function getExternalDragHandle(
