@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "කියවීමේ ප්‍රගතිය Hardcover වෙත සමමුහුර්ත විය",
   "Hardcover progress sync failed: {{error}}": "Hardcover ප්‍රගති සමමුහුර්තකරණය අසාර්ථකයි: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "පවතින මූලාශ්‍ර හඳුනාගැනීම තබාගන්න"
+  "Keep existing source identifier": "පවතින මූලාශ්‍ර හඳුනාගැනීම තබාගන්න",
+  "Toggle Toolbar": "මෙවලම් තීරුව ටොගල් කරන්න"
 }

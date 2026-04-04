@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "독서 진행 상황이 Hardcover에 동기화됨",
   "Hardcover progress sync failed: {{error}}": "Hardcover 진행 상황 동기화 실패: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "기존 소스 식별자 유지"
+  "Keep existing source identifier": "기존 소스 식별자 유지",
+  "Toggle Toolbar": "도구 모음 전환"
 }

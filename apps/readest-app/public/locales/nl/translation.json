@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "Leesvoortgang gesynchroniseerd met Hardcover",
   "Hardcover progress sync failed: {{error}}": "Synchronisatie van Hardcover-voortgang mislukt: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Bestaande bronidentificatie behouden"
+  "Keep existing source identifier": "Bestaande bronidentificatie behouden",
+  "Toggle Toolbar": "Werkbalk in-/uitschakelen"
 }

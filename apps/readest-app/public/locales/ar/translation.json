@@ -1234,5 +1234,6 @@
   "Reading progress synced to Hardcover": "تمت مزامنة تقدم القراءة إلى Hardcover",
   "Hardcover progress sync failed: {{error}}": "فشلت مزامنة تقدم Hardcover: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "الإبقاء على معرف المصدر الحالي"
+  "Keep existing source identifier": "الإبقاء على معرف المصدر الحالي",
+  "Toggle Toolbar": "تبديل شريط الأدوات"
 }

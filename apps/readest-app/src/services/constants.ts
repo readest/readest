@@ -834,6 +834,7 @@ export const TRANSLATED_LANGS = {
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
   ro: 'Română',
+  hu: 'Magyar',
 };
 
 export const TRANSLATOR_LANGS: Record<string, string> = {
@@ -843,7 +844,6 @@ export const TRANSLATOR_LANGS: Record<string, string> = {
   fi: 'Suomi',
   da: 'Dansk',
   cs: 'Čeština',
-  hu: 'Magyar',
   km: 'ខ្មែរ',
   ro: 'Română',
   bg: 'Български',

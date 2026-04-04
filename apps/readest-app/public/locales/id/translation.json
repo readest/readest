@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "Progres membaca disinkronkan ke Hardcover",
   "Hardcover progress sync failed: {{error}}": "Sinkronisasi progres Hardcover gagal: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Pertahankan pengidentifikasi sumber yang ada"
+  "Keep existing source identifier": "Pertahankan pengidentifikasi sumber yang ada",
+  "Toggle Toolbar": "Alihkan Bilah Alat"
 }

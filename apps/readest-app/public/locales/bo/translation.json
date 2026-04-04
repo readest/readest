@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "ཀློག་འགྲོས་ Hardcover ལ་ཟླ་སྒྲིག་བྱས་ཟིན།",
   "Hardcover progress sync failed: {{error}}": "Hardcover ཀློག་འགྲོས་ཟླ་སྒྲིག་མི་ཚོགས: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "ཡོད་བཞིན་པའི་འབྱུང་ཁུངས་ཐོབ་ཐང་གཞག"
+  "Keep existing source identifier": "ཡོད་བཞིན་པའི་འབྱུང་ཁུངས་ཐོབ་ཐང་གཞག",
+  "Toggle Toolbar": "ལག་ཆའི་ཚན་བར་བརྗེ་བ།"
 }
