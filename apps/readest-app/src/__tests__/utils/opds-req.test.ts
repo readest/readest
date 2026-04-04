@@ -88,6 +88,7 @@ describe('opdsReq', () => {
         'CF-Access-Client-Secret': 'secret',
       });
     });
+
     it('should strip credentials from URL before proxying', () => {
       const imageUrl = 'http://user:pass@my-opds-server.local/covers/book.jpg';
       const proxied = getProxiedURL(imageUrl);

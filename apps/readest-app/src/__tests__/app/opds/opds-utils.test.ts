@@ -546,8 +546,12 @@ describe('opdsUtils', () => {
       expect(result.isValid).toBe(false);
     });
 
-    it('should pass username and password to fetchWithAuth', async () => {
+    it('should pass auth and custom headers to fetchWithAuth', async () => {
       const xmlFeed = `<feed xmlns="http://www.w3.org/2005/Atom"><title>Auth Feed</title></feed>`;
+      const customHeaders = {
+        'CF-Access-Client-Id': 'client-id',
+        'CF-Access-Client-Secret': 'client-secret',
+      };
 
       mockFetchWithAuth.mockResolvedValue({
         ok: true,
@@ -556,7 +560,7 @@ describe('opdsUtils', () => {
         headers: new Headers(),
       } as Response);
 
-      await validateOPDSURL('https://example.com/opds', 'user', 'pass', true);
+      await validateOPDSURL('https://example.com/opds', 'user', 'pass', true, customHeaders);
 
       expect(mockFetchWithAuth).toHaveBeenCalledWith(
         'https://example.com/opds',
@@ -564,6 +568,7 @@ describe('opdsUtils', () => {
         'pass',
         true,
         expect.objectContaining({ signal: expect.anything() }),
+        customHeaders,
       );
     });
   });
