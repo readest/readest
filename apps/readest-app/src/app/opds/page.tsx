@@ -42,6 +42,7 @@ import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
 import { Navigation } from './components/Navigation';
+import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -88,6 +89,7 @@ export default function BrowserPage() {
   const catalogId = searchParams?.get('id') || '';
   const usernameRef = useRef<string | null | undefined>(undefined);
   const passwordRef = useRef<string | null | undefined>(undefined);
+  const customHeadersRef = useRef<Record<string, string>>({});
   const startURLRef = useRef<string | null | undefined>(undefined);
   const loadingOPDSRef = useRef(false);
   const historyIndexRef = useRef(-1);
@@ -172,7 +174,8 @@ export default function BrowserPage() {
         const useProxy = isWebAppPlatform();
         const username = usernameRef.current || '';
         const password = passwordRef.current || '';
-        const res = await fetchWithAuth(url, username, password, useProxy);
+        const customHeaders = customHeadersRef.current;
+        const res = await fetchWithAuth(url, username, password, useProxy, {}, customHeaders);
 
         if (!res.ok) {
           if (isSearch && res.status === 404) {
@@ -322,6 +325,7 @@ export default function BrowserPage() {
         usernameRef.current = null;
         passwordRef.current = null;
       }
+      customHeadersRef.current = normalizeOPDSCustomHeaders(catalog?.customHeaders);
       if (libraryLoaded) {
         loadOPDS(url);
       }
@@ -423,17 +427,21 @@ export default function BrowserPage() {
         } else {
           const username = usernameRef.current || '';
           const password = passwordRef.current || '';
+          const customHeaders = customHeadersRef.current;
           const useProxy = needsProxy(url);
-          let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
+          let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
           const headers: Record<string, string> = {
             'User-Agent': READEST_OPDS_USER_AGENT,
             Accept: '*/*',
+            ...(!useProxy ? customHeaders : {}),
           };
           if (username || password) {
-            const authHeader = await probeAuth(url, username, password, useProxy);
+            const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
             if (authHeader) {
-              headers['Authorization'] = authHeader;
-              downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
+              if (!useProxy) {
+                headers['Authorization'] = authHeader;
+              }
+              downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
             }
           }
 
@@ -493,7 +501,8 @@ export default function BrowserPage() {
       if (!appService) return url;
       const username = usernameRef.current || '';
       const password = passwordRef.current || '';
-      if (!username && !password) {
+      const customHeaders = customHeadersRef.current;
+      if (!username && !password && Object.keys(customHeaders).length === 0) {
         return needsProxy(url) ? getProxiedURL(url, '', true) : url;
       }
 
@@ -504,13 +513,17 @@ export default function BrowserPage() {
         return await appService.getImageURL(cachedPath);
       } else {
         const useProxy = needsProxy(url);
-        let downloadUrl = useProxy ? getProxiedURL(url, '', true) : url;
-        const headers: Record<string, string> = {};
+        let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+        const headers: Record<string, string> = {
+          ...(!useProxy ? customHeaders : {}),
+        };
         if (username || password) {
-          const authHeader = await probeAuth(url, username, password, useProxy);
+          const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
           if (authHeader) {
-            headers['Authorization'] = authHeader;
-            downloadUrl = useProxy ? getProxiedURL(url, authHeader, true) : url;
+            if (!useProxy) {
+              headers['Authorization'] = authHeader;
+            }
+            downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
           }
         }
         await downloadFile({

@@ -1,21 +1,27 @@
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { NextRequest, NextResponse } from 'next/server';
+import { deserializeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 
 async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
   // Cloudflare Workers incorrectly decodes %26 to & in the url parameter value,
   // causing query parameters within the proxied URL (like &start_index=26) to be
   // treated as separate top-level parameters instead of part of the url value.
   // We work around this by manually extracting the url parameter - capturing everything
-  // from 'url=' until we hit our known parameters (&stream= or &auth=), then decoding it.
+  // from 'url=' until we hit our known parameters (&stream=, &auth=, or &headers=), then decoding it.
   const fullUrl = request.url;
   const urlParamStart = fullUrl.indexOf('url=') + 4;
   const streamParam = fullUrl.lastIndexOf('&stream=');
   const authParam = fullUrl.lastIndexOf('&auth=');
-  const urlParamEnd = Math.min(...[streamParam, authParam].filter((i) => i > 0), fullUrl.length);
+  const headersParam = fullUrl.lastIndexOf('&headers=');
+  const urlParamEnd = Math.min(
+    ...[streamParam, authParam, headersParam].filter((i) => i > 0),
+    fullUrl.length,
+  );
   const encodedUrl = fullUrl.substring(urlParamStart, urlParamEnd);
   const url = decodeURIComponent(encodedUrl);
   const auth = request.nextUrl.searchParams.get('auth');
   const stream = request.nextUrl.searchParams.get('stream');
+  const customHeaders = deserializeOPDSCustomHeaders(request.nextUrl.searchParams.get('headers'));
 
   if (!url) {
     return NextResponse.json(
@@ -35,13 +41,17 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
-    const headers: HeadersInit = {
+    const headers = new Headers({
       'User-Agent': READEST_OPDS_USER_AGENT,
       Accept: 'application/atom+xml, application/xml, text/xml, application/json, */*',
-    };
+    });
+
+    for (const [key, value] of Object.entries(customHeaders)) {
+      headers.set(key, value);
+    }
 
     if (auth) {
-      headers['Authorization'] = auth;
+      headers.set('Authorization', auth);
     }
 
     const response = await fetch(url, {

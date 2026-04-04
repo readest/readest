@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deserializeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 
 // Mock environment for web platform
 vi.mock('@/services/environment', () => ({
@@ -72,6 +73,20 @@ describe('opdsReq', () => {
       const proxied = getProxiedURL(imageUrl, auth, true);
       // URLSearchParams encodes spaces as '+' rather than '%20'
       expect(proxied).toContain('auth=Basic+dXNlcjpwYXNz');
+    });
+
+    it('should include serialized custom headers in the proxy URL', () => {
+      const imageUrl = 'http://my-opds-server.local/covers/book.jpg';
+      const proxied = getProxiedURL(imageUrl, '', true, {
+        'CF-Access-Client-Id': 'client-id',
+        'CF-Access-Client-Secret': 'secret',
+      });
+      const params = new URL(proxied, 'https://web.readest.com').searchParams;
+
+      expect(deserializeOPDSCustomHeaders(params.get('headers'))).toEqual({
+        'CF-Access-Client-Id': 'client-id',
+        'CF-Access-Client-Secret': 'secret',
+      });
     });
 
     it('should strip credentials from URL before proxying', () => {
