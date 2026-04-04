@@ -1,5 +1,7 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { isTauriAppPlatform } from '@/services/environment';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
 import {
   QUERY_GET_USER_ID,
@@ -31,8 +33,6 @@ type BookContext = {
   } | null;
 };
 
-const isTauriEnv = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
@@ -51,7 +51,7 @@ export class HardcoverClient {
   }
 
   private get endpoint() {
-    return isTauriEnv() ? this.directEndpoint : this.proxyEndpoint;
+    return isTauriAppPlatform() ? this.directEndpoint : this.proxyEndpoint;
   }
 
   private formatDate(date: Date): string {
@@ -96,7 +96,8 @@ export class HardcoverClient {
   ): Promise<TData> {
     await this.throttleRequest();
 
-    const res = await fetch(this.endpoint, {
+    const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
+    const res = await fetchFn(this.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,11 +248,19 @@ export class HardcoverClient {
       document?: { id?: number; pages?: number; featured_edition_id?: number };
     };
 
-    const bookId = hit.id ?? hit.document?.id;
-    if (!bookId) return null;
+    const rawBookId = hit.id ?? hit.document?.id;
+    if (!rawBookId) return null;
 
-    const editionId = hit.featured_edition_id ?? hit.document?.featured_edition_id ?? bookId;
-    const pages = hit.pages ?? hit.document?.pages ?? null;
+    const bookId = Number(rawBookId);
+    const editionId = Number(
+      hit.featured_edition_id ?? hit.document?.featured_edition_id ?? bookId,
+    );
+    const pages =
+      hit.pages != null
+        ? Number(hit.pages)
+        : hit.document?.pages != null
+          ? Number(hit.document.pages)
+          : null;
 
     return {
       editionId,
