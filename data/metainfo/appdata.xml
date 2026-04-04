@@ -59,6 +59,23 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.10.2" date="2026-04-05">
+      <description>
+        <ul>
+          <li>Reading: Added single section scroll option, keyboard shortcuts help dialog, and reading ruler improvements</li>
+          <li>Reading: Fixed Adobe font deobfuscation and applied theme colors to PDFs</li>
+          <li>Reading: Fixed paginator freeze, image sizing on resize, and vertical writing mode compatibility</li>
+          <li>Annotations: Fixed annotations grouped under wrong chapter and added highlight opacity setting</li>
+          <li>Text-to-Speech: Added dedicated TTS settings tab with highlight opacity and keyboard shortcuts for navigation</li>
+          <li>Sync: Added Hardcover.app sync integration and improved KOSync progress accuracy</li>
+          <li>KOReader Plugin: Added full annotation sync option and fixed sync-related crashes</li>
+          <li>OPDS: Added custom catalog headers with web proxy consent and fixed feed display issues</li>
+          <li>Speed Reading: Added per-chapter progress bar and speed selector dropdown</li>
+          <li>Android: Added D-pad navigation for Android TV remote controller</li>
+          <li>Theme: Added atmosphere Easter egg with video overlay and ambient audio</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.10.1" date="2026-03-22">
       <description>
         <ul>
@@ -225,17 +242,6 @@
           <li>E-ink: Improved sidebar and notebook background colors for e-ink devices</li>
           <li>Android: The Back button now works properly in menus, dialogs, and alerts</li>
           <li>iOS: Fixed occasional failures when opening books on older iOS versions (16.4 and below)</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.93" date="2025-11-20">
-      <description>
-        <ul>
-          <li>Sync: Improved reliability for new accounts so your books sync correctly from the start</li>
-          <li>Library: Fixed an occasional issue where returning to the library could get stuck</li>
-          <li>Layout: Improved image display in paginated mode so images won't exceed the available height</li>
-          <li>TXT: Improved performance and stability when opening and parsing TXT files</li>
-          <li>Fonts: Fixed an issue where monospace fonts were not applied correctly in code blocks</li>
         </ul>
       </description>
     </release>
