@@ -31,7 +31,7 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
       case 'ai':
         return _('AI');
       case 'xray':
-        return _('XRay');
+        return _('X-Ray');
       default:
         return '';
     }
