@@ -1,19 +1,18 @@
 import { useEffect, useRef } from 'react';
 
-// Track last pointer activity to distinguish keyboard vs mouse activation
-let lastPointerTime = 0;
+// Track last keyboard activity to distinguish keyboard vs mouse activation.
+// Pointer events from iframes don't bubble to the main document, but keyboard
+// events always reach here via useShortcuts on window.
+let lastKeyboardTime = 0;
+/** @internal Reset for testing only */
+export function _resetLastKeyboardTime() {
+  lastKeyboardTime = 0;
+}
 if (typeof document !== 'undefined') {
   document.addEventListener(
-    'pointermove',
+    'keydown',
     () => {
-      lastPointerTime = Date.now();
-    },
-    true,
-  );
-  document.addEventListener(
-    'pointerdown',
-    () => {
-      lastPointerTime = Date.now();
+      lastKeyboardTime = Date.now();
     },
     true,
   );
@@ -60,8 +59,8 @@ export function useSpatialNavigation(
   const wasKeyboardActivated = useRef(false);
   useEffect(() => {
     if (isVisible) {
-      // If no recent pointer activity, this was keyboard-activated (Enter key)
-      wasKeyboardActivated.current = Date.now() - lastPointerTime > 200;
+      // If recent keyboard activity, this was keyboard-activated (Enter key)
+      wasKeyboardActivated.current = Date.now() - lastKeyboardTime < 200;
     }
   }, [isVisible]);
 

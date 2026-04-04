@@ -1,7 +1,10 @@
 import { cleanup, render, act } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React, { useRef } from 'react';
-import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import {
+  useSpatialNavigation,
+  _resetLastKeyboardTime,
+} from '@/app/reader/hooks/useSpatialNavigation';
 
 function TestToolbar({ isVisible }: { isVisible: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,22 +53,38 @@ function pressKey(element: HTMLElement, key: string) {
   return { event, stopPropagationCalled: spy.mock.calls.length > 0 };
 }
 
+function simulateKeyboardActivation() {
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+}
+
 async function waitForAutoFocus() {
   await act(() => new Promise((r) => setTimeout(r, 150)));
 }
 
 describe('useToolbarKeyNavigation', () => {
+  beforeEach(() => {
+    _resetLastKeyboardTime();
+  });
   afterEach(() => cleanup());
 
   describe('auto-focus', () => {
-    it('focuses first enabled button when visible', async () => {
+    it('focuses first enabled button when keyboard-activated', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
       expect(document.activeElement).toBe(document.querySelector('[data-testid="btn-1"]'));
     });
 
     it('does not auto-focus when not visible', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={false} />);
+      await waitForAutoFocus();
+      expect(document.activeElement).not.toBe(document.querySelector('[data-testid="btn-1"]'));
+    });
+
+    it('does not auto-focus when mouse-activated (no recent keyboard)', async () => {
+      // No simulateKeyboardActivation() — simulates mouse hover activation
+      render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
       expect(document.activeElement).not.toBe(document.querySelector('[data-testid="btn-1"]'));
     });
@@ -73,6 +92,7 @@ describe('useToolbarKeyNavigation', () => {
 
   describe('left/right navigation', () => {
     it('ArrowRight moves focus to the next button', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
 
@@ -85,6 +105,7 @@ describe('useToolbarKeyNavigation', () => {
     });
 
     it('ArrowLeft moves focus to the previous button', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
 
@@ -97,6 +118,7 @@ describe('useToolbarKeyNavigation', () => {
     });
 
     it('ArrowRight does not go past the last enabled button', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
 
@@ -107,6 +129,7 @@ describe('useToolbarKeyNavigation', () => {
     });
 
     it('ArrowLeft does not go before the first button', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
 
@@ -116,6 +139,7 @@ describe('useToolbarKeyNavigation', () => {
     });
 
     it('ArrowRight calls stopPropagation', async () => {
+      simulateKeyboardActivation();
       render(<TestToolbar isVisible={true} />);
       await waitForAutoFocus();
 
