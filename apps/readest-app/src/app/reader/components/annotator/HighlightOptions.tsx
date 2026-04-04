@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -8,6 +8,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveSysSettings } from '@/helpers/settings';
+import { LONG_HOLD_THRESHOLD } from '@/services/constants';
+import { getHighlightColorLabel } from '../../utils/annotatorUtil';
 import { stubTranslation as _ } from '@/utils/misc';
 
 const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
@@ -63,10 +65,75 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const userColors = globalReadSettings.userHighlightColors ?? [];
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(_selectedStyle);
   const [selectedColor, setSelectedColor] = useState<HighlightColor>(_selectedColor);
+  const [previewColor, setPreviewColor] = useState<HighlightColor | null>(null);
+  const [previewLabel, setPreviewLabel] = useState('');
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressTapRef = useRef(false);
   const size16 = useResponsiveSize(16);
   const size28 = useResponsiveSize(28);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const clearPreviewTimer = () => {
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+  };
+
+  const resolveHighlightLabel = (color: HighlightColor) => {
+    const label = getHighlightColorLabel(settings, color);
+    if (label === color && !color.startsWith('#')) {
+      return _(color);
+    }
+    return label;
+  };
+
+  const showHighlightLabelPreview = (color: HighlightColor) => {
+    setPreviewColor(color);
+    setPreviewLabel(resolveHighlightLabel(color));
+    clearPreviewTimer();
+    previewTimerRef.current = setTimeout(() => {
+      setPreviewColor(null);
+      setPreviewLabel('');
+    }, 2200);
+  };
+
+  const handleColorPointerDown = (color: HighlightColor) => {
+    clearLongPressTimer();
+    suppressTapRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      suppressTapRef.current = true;
+      showHighlightLabelPreview(color);
+    }, LONG_HOLD_THRESHOLD);
+  };
+
+  const handleColorPointerEnd = () => {
+    clearLongPressTimer();
+  };
+
+  const handleColorClick = (color: HighlightColor) => {
+    if (suppressTapRef.current) {
+      suppressTapRef.current = false;
+      return;
+    }
+    handleSelectColor(color);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearLongPressTimer();
+      clearPreviewTimer();
+    };
+  }, []);
 
   const handleSelectStyle = (style: HighlightStyle) => {
     const newGlobalReadSettings = { ...globalReadSettings, highlightStyle: style };
@@ -176,11 +243,23 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           .concat(userColors)
           .filter((c) => (isBwEink ? selectedColor === c : true))
           .map((color) => (
-            <div key={color} className='flex items-center justify-center'>
+            <div key={color} className='relative flex items-center justify-center'>
+              {previewColor === color && previewLabel && (
+                <div
+                  className='eink-bordered pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-800 px-2 py-0.5 text-[10px] text-white'
+                  style={{ maxWidth: 120 }}
+                >
+                  {previewLabel}
+                </div>
+              )}
               <button
                 key={color}
                 aria-label={_('Select {{color}} color', { color: _(color) })}
-                onClick={() => handleSelectColor(color)}
+                onClick={() => handleColorClick(color)}
+                onPointerDown={() => handleColorPointerDown(color)}
+                onPointerUp={handleColorPointerEnd}
+                onPointerLeave={handleColorPointerEnd}
+                onPointerCancel={handleColorPointerEnd}
                 style={{
                   width: size16,
                   height: size16,
