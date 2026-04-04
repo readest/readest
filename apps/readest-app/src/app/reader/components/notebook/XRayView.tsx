@@ -2,9 +2,11 @@ import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Fzf, byLengthAsc } from 'fzf';
 import { PiGraph } from 'react-icons/pi';
+import { LuChevronDown, LuCircleX, LuList, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useNotebookStore } from '@/store/notebookStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
@@ -70,12 +72,10 @@ interface EntityView {
   lastSeenPage: number;
   mentions: EntityMention[];
   relevanceScore: number;
-  isRelevantNow: boolean;
   isLocked: boolean;
   onPage: boolean;
   inChapter: boolean;
   category: 'people' | 'places' | 'organizations' | 'artifacts' | 'concepts' | 'events';
-  related: Array<{ id: string; label: string; type: string; evidence?: XRayEvidence }>;
   searchText: string;
   isInferred: boolean;
 }
@@ -126,6 +126,19 @@ const ensureSentence = (value: string): string => {
   return `${trimmed}.`;
 };
 
+const noticeStyles = {
+  error: {
+    container: 'bg-error/10 border-error/30',
+    tone: 'text-error',
+    message: 'text-error/80',
+  },
+  warning: {
+    container: 'bg-warning/10 border-warning/30',
+    tone: 'text-warning',
+    message: 'text-warning/80',
+  },
+} as const;
+
 const buildRelationshipPairs = (
   relationships: XRayRelationship[],
   entityById: Map<string, XRayEntity>,
@@ -160,6 +173,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getBookData, getConfig } = useBookDataStore();
+  const setNotebookActiveTab = useNotebookStore((state) => state.setNotebookActiveTab);
   const progress = useReaderStore((state) => state.getProgress(bookKey));
   const getView = useReaderStore((state) => state.getView);
   const bookData = getBookData(bookKey);
@@ -193,6 +207,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [jumpingEvidenceKey, setJumpingEvidenceKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedGraphEntity, setSelectedGraphEntity] = useState<XRayEntity | null>(null);
+  const [showEntityRefine, setShowEntityRefine] = useState(false);
+  const [showRelationshipRefine, setShowRelationshipRefine] = useState(false);
   const hasLoadedRef = useRef(false);
   const loadInFlightRef = useRef(false);
   const pendingLoadRef = useRef<{ silent: boolean } | null>(null);
@@ -290,6 +306,55 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         return error;
     }
   }, [snapshot?.state?.lastError, _]);
+
+  const isActionDisabled = useMemo(
+    () =>
+      isUpdating ||
+      isRebuilding ||
+      providerUnsupported ||
+      notIndexed ||
+      Boolean(snapshot?.state?.processing),
+    [isUpdating, isRebuilding, providerUnsupported, notIndexed, snapshot?.state?.processing],
+  );
+
+  const activeNotice = useMemo(() => {
+    const openAiAssistant = () => setNotebookActiveTab('ai');
+
+    const message = errorMessage || stateErrorMessage;
+    if (message) {
+      return {
+        tone: 'error' as const,
+        title: _('Error'),
+        message,
+        actionLabel: null,
+        onAction: null,
+      };
+    }
+    if (providerUnsupported) {
+      return {
+        tone: 'warning' as const,
+        title: _('AI Gateway required'),
+        message: _('X-Ray extraction currently requires AI Gateway. Switch provider in Settings.'),
+        actionLabel: null,
+        onAction: null,
+      };
+    }
+    if (notIndexed) {
+      return {
+        tone: 'warning' as const,
+        title: _('Book not indexed'),
+        message: _('Book must be indexed first. Open AI Assistant to index.'),
+        actionLabel: _('AI'),
+        onAction: openAiAssistant,
+      };
+    }
+    return null;
+  }, [errorMessage, stateErrorMessage, providerUnsupported, notIndexed, setNotebookActiveTab, _]);
+
+  const activeNoticeStyle = useMemo(() => {
+    if (!activeNotice) return null;
+    return noticeStyles[activeNotice.tone];
+  }, [activeNotice]);
 
   const tabs = useMemo(
     () => [
@@ -681,6 +746,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return relationshipGroups.filter((group) => group.entityId === relationshipFilter);
   }, [relationshipFilter, relationshipGroups]);
 
+  const relationshipSummaryCount = useMemo(() => {
+    if (relationshipFilter === 'all') return groupedRelationshipView.length;
+    return groupedRelationshipView[0]?.connections.length ?? 0;
+  }, [groupedRelationshipView, relationshipFilter]);
+
   const buildPairSummary = useCallback((pair: RelationshipPair): string => {
     const descriptions = uniqueStrings(
       pair.relationships.map((rel) => rel.description || '').filter(Boolean),
@@ -905,17 +975,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         lastSeenPage,
         mentions: mentionsSorted,
         relevanceScore,
-        isRelevantNow: stats.onPage || stats.inChapter,
         isLocked: stats.lockedCount > 0,
         onPage: stats.onPage,
         inChapter: stats.inChapter,
-        related,
         searchText,
         category,
         isInferred,
       };
     });
-  }, [entities, mentionStats, relatedByEntity, currentPage, getEntitySummaryText]);
+  }, [entities, mentionStats, relatedByEntity, getEntitySummaryText]);
 
   const categoryCounts = useMemo(() => {
     const counts = {
@@ -933,12 +1001,63 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     return counts;
   }, [entityViews]);
 
+  const entityCategoryOptions = useMemo(
+    () =>
+      [
+        { id: 'all', label: _('All'), count: categoryCounts.all },
+        { id: 'people', label: _('People'), count: categoryCounts.people },
+        { id: 'places', label: _('Places'), count: categoryCounts.places },
+        {
+          id: 'organizations',
+          label: _('Organizations'),
+          count: categoryCounts.organizations,
+        },
+        { id: 'artifacts', label: _('Artifacts'), count: categoryCounts.artifacts },
+        { id: 'concepts', label: _('Concepts'), count: categoryCounts.concepts },
+        { id: 'events', label: _('Events'), count: categoryCounts.events },
+      ] as const,
+    [_, categoryCounts],
+  );
+
+  const entityScopeOptions = useMemo(
+    () =>
+      [
+        { id: 'page', label: _('Page'), tooltip: _('Only entities on this page') },
+        {
+          id: 'chapter',
+          label: _('Chapter'),
+          tooltip: _('Only entities in this chapter'),
+        },
+        { id: 'book', label: _('Book'), tooltip: _('All entities in the book') },
+      ] as const,
+    [_],
+  );
+
   const scopeAvailability = useMemo(
     () => ({
       page: entityViews.some((view) => view.onPage),
       chapter: entityViews.some((view) => view.inChapter),
     }),
     [entityViews],
+  );
+
+  const defaultEntityScope = useMemo<'page' | 'chapter' | 'book'>(() => {
+    if (scopeAvailability.page) return 'page';
+    if (scopeAvailability.chapter) return 'chapter';
+    return 'book';
+  }, [scopeAvailability.chapter, scopeAvailability.page]);
+
+  const entityFilterCount = useMemo(
+    () =>
+      Number(entityScope !== defaultEntityScope) +
+      Number(entityCategory !== 'all') +
+      Number(entitySort !== 'relevance'),
+    [defaultEntityScope, entityCategory, entityScope, entitySort],
+  );
+
+  const relationshipFilterCount = useMemo(
+    () => Number(relationshipFilter !== 'all') + Number(relationshipView !== 'list'),
+    [relationshipFilter, relationshipView],
   );
 
   const entitySearchIds = useMemo(() => {
@@ -1030,30 +1149,13 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const pillBase =
     'inline-flex h-5 items-center justify-center rounded-full px-2 text-[10px] font-semibold leading-[1] tracking-wide border';
 
-  const pillVariants = {
-    mention:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    lastSeen:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    onPage:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    inChapter:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    neutral:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    success:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    danger:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-    warning:
-      'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
-  };
-
-  const getPillClass = (variant: keyof typeof pillVariants) =>
-    clsx(pillBase, pillVariants[variant] || pillVariants.neutral);
-
-  const renderPill = (variant: keyof typeof pillVariants, content: React.ReactNode) => (
-    <span className={getPillClass(variant)}>
+  const renderPill = (content: React.ReactNode) => (
+    <span
+      className={clsx(
+        pillBase,
+        'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+      )}
+    >
       <span className='relative top-[0.5px]'>{content}</span>
     </span>
   );
@@ -1090,41 +1192,43 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
   const renderEntityCard = (item: EntityView) => {
     return (
-      <div key={item.entity.id} className='border-base-300/60 rounded-md border p-3'>
-        <div className='flex items-start justify-between gap-2'>
-          <div className='min-w-0'>
-            <div className='flex flex-wrap items-center gap-2'>
-              <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
-              <div className='flex flex-wrap items-center gap-1.5 text-[10px]'>
-                {renderPill('mention', `${_('Mentions')}: ${item.mentionCount}`)}
-                {renderPill('lastSeen', `${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
-                {item.isInferred && renderPill('warning', _('Inferred'))}
+      <details key={item.entity.id} className='border-base-300/60 bg-base-100/30 rounded-md border'>
+        <summary className='cursor-pointer list-none p-3 [&::-webkit-details-marker]:hidden'>
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0 flex-1'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
+                <div className='text-base-content/55 text-[10px] font-medium uppercase tracking-wide'>
+                  {getEntityTypeLabel(item.entity.type)}
+                </div>
+              </div>
+              <p className='text-base-content/70 mt-1 line-clamp-2 text-xs leading-relaxed'>
+                {item.oneLiner}
+              </p>
+              <div className='mt-2 flex flex-wrap items-center gap-1.5 text-[10px]'>
+                {renderPill(`${_('Mentions')}: ${item.mentionCount}`)}
+                {renderPill(`${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
+                {item.isInferred && renderPill(_('Inferred'))}
+                {item.isLocked && renderPill(_('Locked until later'))}
               </div>
             </div>
+            <LuChevronDown className='text-base-content/45 mt-0.5 size-3.5 shrink-0' />
           </div>
-          <div className='text-base-content/60 shrink-0 text-xs'>
-            {getEntityTypeLabel(item.entity.type)}
+        </summary>
+        <div className='border-base-300/50 border-t px-3 pb-3 pt-2'>
+          <div className='text-base-content/55 mb-2 text-[11px] font-medium'>
+            {_('Mentions')} ({item.mentionCount})
           </div>
+          {item.mentions.length === 0 ? (
+            <p className='text-base-content/50 text-[11px]'>{_('No mentions yet')}</p>
+          ) : (
+            <div className='space-y-1'>{item.mentions.map(renderMention)}</div>
+          )}
+          {item.isLocked && (
+            <div className='text-base-content/50 mt-2 text-[11px]'>{_('Locked until later')}</div>
+          )}
         </div>
-        <p className='text-base-content/70 mt-1 text-xs'>{item.oneLiner}</p>
-
-        <details className='mt-2'>
-          <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-            {_('Quotes')} ({item.mentionCount})
-          </summary>
-          <div className='mt-2'>
-            {item.mentions.length === 0 ? (
-              <p className='text-base-content/50 text-[11px]'>{_('No quotes yet')}</p>
-            ) : (
-              item.mentions.map(renderMention)
-            )}
-          </div>
-        </details>
-
-        {item.isLocked && (
-          <div className='text-base-content/50 mt-2 text-[11px]'>{_('Locked until later')}</div>
-        )}
-      </div>
+      </details>
     );
   };
 
@@ -1262,6 +1366,27 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     }
   }, [snapshot?.state?.processing]);
 
+  useEffect(() => {
+    if (activeTab !== 'entities') {
+      setShowEntityRefine(false);
+    }
+    if (activeTab !== 'relationships') {
+      setShowRelationshipRefine(false);
+      setSelectedGraphEntity(null);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (relationshipView !== 'graph' && selectedGraphEntity) {
+      setSelectedGraphEntity(null);
+    }
+  }, [relationshipView, selectedGraphEntity]);
+
+  useEffect(() => {
+    setShowEntityRefine(false);
+    setShowRelationshipRefine(false);
+  }, [bookHash]);
+
   if (!aiSettings?.enabled) {
     return (
       <div className='flex h-full items-center justify-center p-4 text-center text-sm'>
@@ -1303,7 +1428,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           </div>
         </div>
       )}
-      <div className='px-3'>
+      <div className='space-y-2 px-3'>
         <div className='flex items-center justify-between gap-2'>
           <div className='dropdown dropdown-start'>
             <button
@@ -1313,31 +1438,14 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
               onClick={(event) => event.currentTarget.focus()}
             >
               {_('X-Ray')}
-              <svg
-                className='text-base-content/60 size-3'
-                viewBox='0 0 20 20'
-                fill='currentColor'
-                aria-hidden='true'
-              >
-                <path
-                  fillRule='evenodd'
-                  d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.293l3.71-4.06a.75.75 0 1 1 1.1 1.02l-4.25 4.65a.75.75 0 0 1-1.1 0l-4.25-4.65a.75.75 0 0 1 .02-1.06Z'
-                  clipRule='evenodd'
-                />
-              </svg>
+              <LuChevronDown className='text-base-content/60 size-3' aria-hidden='true' />
             </button>
             <ul className='dropdown-content bgcolor-base-200 no-triangle xray-scrollbar menu menu-sm rounded-box absolute z-[1] mt-2 w-44 p-1 shadow'>
               <li>
                 <button
                   type='button'
                   onClick={handleUpdate}
-                  disabled={
-                    isUpdating ||
-                    isRebuilding ||
-                    providerUnsupported ||
-                    notIndexed ||
-                    Boolean(snapshot?.state?.processing)
-                  }
+                  disabled={isActionDisabled}
                   title={_('Incremental update to current page')}
                 >
                   {isUpdating ? _('Loading...') : _('Update X-Ray')}
@@ -1347,13 +1455,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 <button
                   type='button'
                   onClick={handleRebuild}
-                  disabled={
-                    isUpdating ||
-                    isRebuilding ||
-                    providerUnsupported ||
-                    notIndexed ||
-                    Boolean(snapshot?.state?.processing)
-                  }
+                  disabled={isActionDisabled}
                   title={_('Reprocess from scratch to current page (keeps cache)')}
                 >
                   {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
@@ -1362,11 +1464,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             </ul>
           </div>
           <div className='lg:tooltip lg:tooltip-bottom' title={asOfTooltip}>
-            <div className='text-base-content/70 flex items-center gap-1 whitespace-nowrap text-xs'>
+            <div className='text-base-content/70 flex items-center gap-1 whitespace-nowrap text-xs tabular-nums'>
               <span>{_('As Of Page')}</span>
               <span className='text-base-content font-medium'>{currentPage + 1}</span>
               {pendingLabel && (
-                <span className='text-base-content/50 ml-1 text-[11px]'>
+                <span className='text-base-content/50 ml-1 text-[11px] tabular-nums'>
                   {_('Pending')}: {_('p.')}
                   {pendingLabel}
                 </span>
@@ -1374,85 +1476,34 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             </div>
           </div>
         </div>
+
+        {activeNotice && (
+          <div
+            className={clsx('rounded-md border px-3 py-2 text-xs', activeNoticeStyle?.container)}
+          >
+            <div className={clsx('flex items-start gap-2', activeNoticeStyle?.tone)}>
+              {activeNotice.tone === 'error' ? (
+                <LuCircleX className='mt-0.5 h-4 w-4 flex-shrink-0' aria-hidden='true' />
+              ) : (
+                <LuTriangleAlert className='mt-0.5 h-4 w-4 flex-shrink-0' aria-hidden='true' />
+              )}
+              <div>
+                <p className='font-medium'>{activeNotice.title}</p>
+                <p className={clsx('mt-1', activeNoticeStyle?.message)}>{activeNotice.message}</p>
+                {activeNotice.actionLabel && activeNotice.onAction && (
+                  <button
+                    type='button'
+                    className='btn btn-ghost btn-xs mt-2 h-7 min-h-7 rounded-md px-2 normal-case'
+                    onClick={activeNotice.onAction}
+                  >
+                    {activeNotice.actionLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Indexing warning */}
-      {notIndexed && (
-        <div className='bg-warning/10 border-warning/30 m-3 rounded-md border px-3 py-2 text-xs'>
-          <div className='text-warning flex items-start gap-2'>
-            <svg
-              className='mt-0.5 h-4 w-4 flex-shrink-0'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-              />
-            </svg>
-            <div>
-              <p className='font-medium'>{_('Book not indexed')}</p>
-              <p className='text-warning/80 mt-1'>
-                {_('Book must be indexed first. Open AI Assistant to index.')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {providerUnsupported && (
-        <div className='bg-warning/10 border-warning/30 m-3 rounded-md border px-3 py-2 text-xs'>
-          <div className='text-warning flex items-start gap-2'>
-            <svg
-              className='mt-0.5 h-4 w-4 flex-shrink-0'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-              />
-            </svg>
-            <div>
-              <p className='font-medium'>{_('AI Gateway required')}</p>
-              <p className='text-warning/80 mt-1'>
-                {_('X-Ray extraction currently requires AI Gateway. Switch provider in Settings.')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error message */}
-      {(errorMessage || stateErrorMessage) && (
-        <div className='bg-error/10 border-error/30 m-3 rounded-md border px-3 py-2 text-xs'>
-          <div className='text-error flex items-start gap-2'>
-            <svg
-              className='mt-0.5 h-4 w-4 flex-shrink-0'
-              fill='none'
-              viewBox='0 0 24 24'
-              stroke='currentColor'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M6 18L18 6M6 6l12 12'
-              />
-            </svg>
-            <div>
-              <p className='font-medium'>{_('Error')}</p>
-              <p className='text-error/80 mt-1'>{errorMessage || stateErrorMessage}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className='flex flex-wrap gap-2 px-3 py-2'>
         {tabs.map((tab) => (
@@ -1471,138 +1522,131 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       <div className='xray-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-6'>
         {activeTab === 'entities' && (
           <div className='space-y-3'>
-            <div className='flex flex-wrap items-center gap-2 text-xs'>
+            <div className='flex items-center gap-2'>
               <input
-                className='input input-bordered input-xs focus:border-base-300 h-7 w-full max-w-xs pt-0.5 shadow-none focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0'
+                className='input input-bordered input-xs focus:border-base-300 h-8 min-w-0 flex-1 pt-0.5 shadow-none focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0'
                 value={entitySearch}
                 onChange={(event) => setEntitySearch(event.target.value)}
                 placeholder={_('Search Entities')}
               />
+              <button
+                type='button'
+                className='btn btn-ghost btn-xs h-8 min-h-8 shrink-0 rounded-md px-2 text-[11px]'
+                onClick={() => setShowEntityRefine((prev) => !prev)}
+              >
+                {_('Refine')}
+                {entityFilterCount > 0 && (
+                  <span className='bg-base-300/80 text-base-content inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px]'>
+                    {entityFilterCount}
+                  </span>
+                )}
+                <LuChevronDown
+                  className={clsx(
+                    'text-base-content/60 size-3 transition-transform duration-200',
+                    showEntityRefine && 'rotate-180',
+                  )}
+                  aria-hidden='true'
+                />
+              </button>
             </div>
 
-            <div className='flex flex-wrap items-center gap-2 text-xs'>
-              <div className='bg-base-200 flex w-full min-w-0 max-w-full flex-wrap items-center gap-1 rounded-lg p-1'>
-                {(
-                  [
-                    { id: 'all', label: _('All'), count: categoryCounts.all },
-                    { id: 'people', label: _('People'), count: categoryCounts.people },
-                    { id: 'places', label: _('Places'), count: categoryCounts.places },
-                    {
-                      id: 'organizations',
-                      label: _('Organizations'),
-                      count: categoryCounts.organizations,
-                    },
-                    { id: 'artifacts', label: _('Artifacts'), count: categoryCounts.artifacts },
-                    { id: 'concepts', label: _('Concepts'), count: categoryCounts.concepts },
-                    { id: 'events', label: _('Events'), count: categoryCounts.events },
-                  ] as const
-                )
-                  .filter((item) => item.id === 'all' || item.count > 0)
-                  .map((item) => (
-                    <button
-                      key={item.id}
-                      className={clsx(
-                        'inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium leading-none',
-                        entityCategory === item.id
-                          ? 'bg-base-100 text-base-content shadow-sm'
-                          : 'text-base-content/70 hover:bg-base-100/50 bg-transparent',
-                      )}
-                      onClick={() => setEntityCategory(item.id)}
-                    >
-                      <span className='leading-none'>{item.label}</span>
-                      <span className='text-base-content/70 bg-base-100/70 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] leading-none'>
-                        <span className='relative top-[0.5px]'>{item.count}</span>
-                      </span>
-                    </button>
-                  ))}
-              </div>
-
-              <div className='bg-base-200 flex items-center gap-1 rounded-lg p-1'>
-                {(
-                  [
-                    { id: 'page', label: _('Page'), tooltip: _('Only entities on this page') },
-                    {
-                      id: 'chapter',
-                      label: _('Chapter'),
-                      tooltip: _('Only entities in this chapter'),
-                    },
-                    { id: 'book', label: _('Book'), tooltip: _('All entities in the book') },
-                  ] as const
-                ).map((item) => {
-                  const isDisabled =
-                    item.id === 'page'
-                      ? !scopeAvailability.page
-                      : item.id === 'chapter'
-                        ? !scopeAvailability.chapter
-                        : false;
-                  return (
-                    <div
-                      key={item.id}
-                      className='lg:tooltip lg:tooltip-bottom'
-                      title={item.tooltip}
-                    >
-                      <button
-                        className={clsx(
-                          'btn btn-xs rounded-md border-none px-2',
-                          entityScope === item.id && !isDisabled
-                            ? 'bg-base-100 text-base-content shadow-sm'
-                            : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                          isDisabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
-                        )}
-                        onClick={() => setEntityScope(item.id)}
-                        disabled={isDisabled}
+            {showEntityRefine && (
+              <div className='bg-base-200/55 border-base-300/50 space-y-2 rounded-md border p-2'>
+                <div className='bg-base-200 flex items-center gap-1 rounded-lg p-1'>
+                  {entityScopeOptions.map((item) => {
+                    const isDisabled =
+                      item.id === 'page'
+                        ? !scopeAvailability.page
+                        : item.id === 'chapter'
+                          ? !scopeAvailability.chapter
+                          : false;
+                    return (
+                      <div
+                        key={item.id}
+                        className='lg:tooltip lg:tooltip-bottom'
+                        title={item.tooltip}
                       >
-                        {item.label}
+                        <button
+                          className={clsx(
+                            'btn btn-xs rounded-md border-none px-2',
+                            entityScope === item.id && !isDisabled
+                              ? 'bg-base-100 text-base-content shadow-sm'
+                              : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                            isDisabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
+                          )}
+                          onClick={() => setEntityScope(item.id)}
+                          disabled={isDisabled}
+                        >
+                          {item.label}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className='bg-base-200 flex w-full min-w-0 max-w-full flex-wrap items-center gap-1 rounded-lg p-1'>
+                  {entityCategoryOptions
+                    .filter((item) => item.id === 'all' || item.count > 0)
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        className={clsx(
+                          'inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium leading-none',
+                          entityCategory === item.id
+                            ? 'bg-base-100 text-base-content shadow-sm'
+                            : 'text-base-content/70 hover:bg-base-100/50 bg-transparent',
+                        )}
+                        onClick={() => setEntityCategory(item.id)}
+                      >
+                        <span className='leading-none'>{item.label}</span>
+                        <span className='text-base-content/70 bg-base-100/70 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] leading-none'>
+                          <span className='relative top-[0.5px]'>{item.count}</span>
+                        </span>
                       </button>
-                    </div>
-                  );
-                })}
-              </div>
+                    ))}
+                </div>
 
-              <div className='bg-base-200 ml-auto flex items-center gap-1 rounded-lg p-1'>
-                <button
-                  className={clsx(
-                    'btn btn-xs rounded-md border-none px-2',
-                    entitySort === 'relevance'
-                      ? 'bg-base-100 text-base-content shadow-sm'
-                      : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                  )}
-                  onClick={() => setEntitySort('relevance')}
-                >
-                  {_('Relevance')}
-                </button>
-                <button
-                  className={clsx(
-                    'btn btn-xs rounded-md border-none px-2',
-                    entitySort === 'alphabetical'
-                      ? 'bg-base-100 text-base-content shadow-sm'
-                      : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                  )}
-                  onClick={() => setEntitySort('alphabetical')}
-                >
-                  {_('A-Z')}
-                </button>
+                <div className='bg-base-200 flex w-fit items-center gap-1 rounded-lg p-1'>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      entitySort === 'relevance'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setEntitySort('relevance')}
+                  >
+                    {_('Relevance')}
+                  </button>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      entitySort === 'alphabetical'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setEntitySort('alphabetical')}
+                  >
+                    {_('A-Z')}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {entitySearch.trim() && (
+            {(entitySearch.trim() || entityFilterCount > 0) && (
               <p className='text-base-content/50 text-[11px]'>
-                {_('Matches')}: {entitySearchIds ? entitySearchIds.size : 0}
+                {entitySearch.trim()
+                  ? `${_('Matches')}: ${entitySearchIds ? entitySearchIds.size : 0}`
+                  : `${_('Showing')}: ${currentEntities.length}`}
               </p>
             )}
 
             {entityViews.length === 0 ? (
               <p className='text-base-content/60 text-sm'>{_('No entities yet')}</p>
+            ) : currentEntities.length === 0 ? (
+              <p className='text-base-content/60 text-sm'>{_('None found')}</p>
             ) : (
-              <div className='space-y-4'>
-                <div className='space-y-3'>
-                  {currentEntities.length === 0 ? (
-                    <p className='text-base-content/60 text-sm'>{_('None found')}</p>
-                  ) : (
-                    currentEntities.map(renderEntityCard)
-                  )}
-                </div>
-              </div>
+              <div className='space-y-3'>{currentEntities.map(renderEntityCard)}</div>
             )}
           </div>
         )}
@@ -1640,59 +1684,81 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
 
         {activeTab === 'relationships' && (
           <div className='space-y-3'>
-            <div className='flex w-full flex-wrap items-center gap-2 text-xs'>
-              <span className='text-base-content/60 whitespace-nowrap'>
-                {_('Filter by Entity')}
-              </span>
-              <select
-                className='select select-bordered select-xs h-7 w-full min-w-0 focus:outline-none focus:outline-offset-0 focus:ring-0 focus:ring-offset-0 sm:w-auto'
-                value={relationshipFilter}
-                onChange={(event) => setRelationshipFilter(event.target.value)}
-              >
-                <option value='all'>{_('All Entities')}</option>
-                {relationshipEntities
-                  .slice()
-                  .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
-                  .map((entity) => (
-                    <option key={entity.id} value={entity.id}>
-                      {entity.canonicalName}
-                    </option>
-                  ))}
-              </select>
-              <div className='bg-base-200 ml-0 flex w-full items-center justify-start gap-1 rounded-lg p-1 sm:ml-auto sm:w-auto sm:justify-end'>
-                <button
-                  className={clsx(
-                    'btn btn-xs rounded-md border-none px-2',
-                    relationshipView === 'list'
-                      ? 'bg-base-100 text-base-content shadow-sm'
-                      : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                  )}
-                  onClick={() => setRelationshipView('list')}
-                  title={_('List View')}
-                >
-                  <svg className='size-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M4 6h16M4 12h16M4 18h16'
-                    />
-                  </svg>
-                </button>
-                <button
-                  className={clsx(
-                    'btn btn-xs rounded-md border-none px-2',
-                    relationshipView === 'graph'
-                      ? 'bg-base-100 text-base-content shadow-sm'
-                      : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
-                  )}
-                  onClick={() => setRelationshipView('graph')}
-                  title={_('Graph View')}
-                >
-                  <PiGraph className='size-4' />
-                </button>
+            <div className='flex w-full items-center gap-2 text-xs'>
+              <div className='text-base-content/60 text-[11px] tabular-nums'>
+                {_('Connections')}: {relationshipSummaryCount}
               </div>
+              <button
+                type='button'
+                className='btn btn-ghost btn-xs ml-auto h-7 min-h-7 rounded-md px-2 text-[11px]'
+                onClick={() => setShowRelationshipRefine((prev) => !prev)}
+              >
+                {_('Refine')}
+                {relationshipFilterCount > 0 && (
+                  <span className='bg-base-300/80 text-base-content inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px]'>
+                    {relationshipFilterCount}
+                  </span>
+                )}
+                <LuChevronDown
+                  className={clsx(
+                    'text-base-content/60 size-3 transition-transform duration-200',
+                    showRelationshipRefine && 'rotate-180',
+                  )}
+                  aria-hidden='true'
+                />
+              </button>
             </div>
+
+            {showRelationshipRefine && (
+              <div className='bg-base-200/55 border-base-300/50 space-y-2 rounded-md border p-2'>
+                <div className='flex w-full flex-wrap items-center gap-2 text-xs'>
+                  <select
+                    className='select select-bordered select-xs h-7 w-full min-w-0 focus:outline-none focus:outline-offset-0 focus:ring-0 focus:ring-offset-0 sm:w-auto'
+                    value={relationshipFilter}
+                    onChange={(event) => setRelationshipFilter(event.target.value)}
+                  >
+                    <option value='all'>{_('All Entities')}</option>
+                    {relationshipEntities
+                      .slice()
+                      .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
+                      .map((entity) => (
+                        <option key={entity.id} value={entity.id}>
+                          {entity.canonicalName}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className='bg-base-200 flex w-fit items-center gap-1 rounded-lg p-1'>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      relationshipView === 'list'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setRelationshipView('list')}
+                    title={_('List View')}
+                  >
+                    <LuList className='size-3.5' aria-hidden='true' />
+                    {_('List')}
+                  </button>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      relationshipView === 'graph'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setRelationshipView('graph')}
+                    title={_('Graph View')}
+                  >
+                    <PiGraph className='size-3.5' />
+                    {_('Graph')}
+                  </button>
+                </div>
+              </div>
+            )}
             {relationshipView === 'graph' ? (
               <div className='space-y-3'>
                 <div className='border-base-300 h-[300px] w-full min-w-0 overflow-hidden rounded-md border'>
@@ -1730,7 +1796,9 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 )}
               </div>
             ) : groupedRelationshipView.length === 0 ? (
-              <p className='text-base-content/60 text-sm'>{_('No relationships yet')}</p>
+              <p className='text-base-content/60 text-sm'>
+                {relationshipFilter === 'all' ? _('No relationships yet') : _('None found')}
+              </p>
             ) : (
               <div className='space-y-3'>
                 {relationshipFilter !== 'all' && relationshipFilterEntity && (
@@ -1744,59 +1812,42 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                   </div>
                 )}
                 {groupedRelationshipView.map((group) => {
-                  const preview = group.connections.slice(0, 4);
                   return (
-                    <div
+                    <details
                       key={group.entityId}
-                      className='border-base-300/60 hover:border-base-300 rounded-md border p-3 transition-colors'
+                      className='border-base-300/60 bg-base-100/30 rounded-md border'
                     >
-                      <div className='flex flex-wrap items-center gap-2 text-xs'>
-                        <span className='text-sm font-semibold'>{group.entity.canonicalName}</span>
-                        <span className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
-                          {_('Connections')}: {group.totalConnections}
-                        </span>
-                        <span className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
-                          {_('Last Seen')}: {_('p.')}
-                          {group.lastSeenPage + 1}
-                        </span>
-                      </div>
-                      <p className='text-base-content/70 mt-2 text-xs'>
-                        {getRelationshipSummaryText(group.entity)}
-                      </p>
-                      {preview.length > 0 && (
-                        <div className='mt-2 flex flex-wrap gap-1'>
-                          {preview.map((connection) => (
-                            <span
-                              key={`${group.entityId}-${connection.target.id}`}
-                              className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
-                            >
-                              {connection.target.canonicalName}
-                            </span>
-                          ))}
-                          {group.totalConnections > preview.length && (
-                            <span className='text-base-content/50 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'>
-                              +{group.totalConnections - preview.length}
-                            </span>
-                          )}
+                      <summary className='cursor-pointer list-none p-3 [&::-webkit-details-marker]:hidden'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <div className='min-w-0 flex-1'>
+                            <div className='flex flex-wrap items-center gap-1.5 text-xs'>
+                              <span className='text-sm font-semibold'>
+                                {group.entity.canonicalName}
+                              </span>
+                              {renderPill(`${_('Connections')}: ${group.totalConnections}`)}
+                              {renderPill(`${_('Last Seen')}: ${_('p.')}${group.lastSeenPage + 1}`)}
+                            </div>
+                            <p className='text-base-content/70 mt-1 line-clamp-2 text-xs leading-relaxed'>
+                              {getRelationshipSummaryText(group.entity)}
+                            </p>
+                          </div>
+                          <LuChevronDown className='text-base-content/45 mt-0.5 size-3.5 shrink-0' />
                         </div>
-                      )}
-                      <details className='mt-2'>
-                        <summary className='text-base-content/60 cursor-pointer text-[11px]'>
-                          {_('Connections')} ({group.totalConnections})
-                        </summary>
-                        <div className='mt-2 space-y-2'>
-                          {group.connections.map((connection) => {
-                            const evidence = connection.evidence;
-                            return (
-                              <div
-                                key={`${group.entityId}-${connection.target.id}-detail`}
-                                className='border-base-300/60 rounded-md border p-2'
-                              >
-                                <div className='flex flex-wrap items-center gap-2 text-xs'>
-                                  <span className='text-base-content/80 font-medium'>
-                                    {connection.target.canonicalName}
-                                  </span>
-                                  <div className='flex flex-wrap gap-1'>
+                      </summary>
+                      <div className='border-base-300/50 space-y-2 border-t px-3 pb-3 pt-2'>
+                        {group.connections.map((connection) => {
+                          const evidence = connection.evidence;
+                          return (
+                            <div
+                              key={`${group.entityId}-${connection.target.id}-detail`}
+                              className='border-base-300/60 bg-base-100/40 rounded-md border p-2'
+                            >
+                              <div className='flex items-start gap-2'>
+                                <div className='min-w-0 flex-1'>
+                                  <div className='flex flex-wrap items-center gap-1.5 text-xs'>
+                                    <span className='text-base-content/85 font-medium'>
+                                      {connection.target.canonicalName}
+                                    </span>
                                     {connection.labels.map((label) => (
                                       <span
                                         key={`${group.entityId}-${connection.target.id}-${label}`}
@@ -1805,39 +1856,44 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                                         {label}
                                       </span>
                                     ))}
+                                    {connection.isInferred && (
+                                      <span className='text-base-content/50 text-[10px]'>
+                                        {_('Inferred')}
+                                      </span>
+                                    )}
                                   </div>
-                                  {connection.isInferred && (
-                                    <span className='text-base-content/50 text-[10px]'>
-                                      {_('Inferred')}
-                                    </span>
+                                  {evidence && (
+                                    <button
+                                      type='button'
+                                      className='hover:bg-base-200/40 mt-2 block w-full rounded-md px-1 py-1 text-left disabled:opacity-60'
+                                      onClick={() => handleEvidenceJump(evidence)}
+                                      disabled={
+                                        evidence.inferred ||
+                                        evidence.chunkId === 'inferred' ||
+                                        jumpingEvidenceKey ===
+                                          `${evidence.chunkId}:${evidence.page}`
+                                      }
+                                      title={_('Jump to quote')}
+                                    >
+                                      <div className='text-base-content/70 text-[11px] leading-relaxed'>
+                                        &ldquo;{formatQuote(evidence.quote, 120)}&rdquo;
+                                      </div>
+                                      <div className='text-base-content/45 mt-1 text-[10px] font-medium uppercase tracking-wide'>
+                                        {_('Jump to quote')}
+                                      </div>
+                                    </button>
                                   )}
-                                  <span className='text-base-content/50 ml-auto text-[10px]'>
-                                    {_('Last Seen')}: {_('p.')}
-                                    {connection.lastSeenPage + 1}
-                                  </span>
                                 </div>
-                                {evidence && (
-                                  <button
-                                    type='button'
-                                    className='text-base-content/50 mt-2 text-left text-[11px] hover:underline disabled:opacity-60'
-                                    onClick={() => handleEvidenceJump(evidence)}
-                                    disabled={
-                                      evidence.inferred ||
-                                      evidence.chunkId === 'inferred' ||
-                                      jumpingEvidenceKey === `${evidence.chunkId}:${evidence.page}`
-                                    }
-                                    title={_('Jump to quote')}
-                                  >
-                                    &ldquo;{formatQuote(evidence.quote, 120)}&rdquo; (p.
-                                    {evidence.page + 1})
-                                  </button>
-                                )}
+                                <span className='text-base-content/50 shrink-0 text-[10px]'>
+                                  {_('p.')}
+                                  {connection.lastSeenPage + 1}
+                                </span>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </details>
-                    </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
                   );
                 })}
               </div>
