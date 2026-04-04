@@ -20,7 +20,7 @@ export const getHighlightColorHex = (
 export const getHighlightColorLabel = (settings: SystemSettings, color: HighlightColor): string => {
   const labels = settings.globalReadSettings.highlightColorLabels || {};
   const key = normalizeHighlightColorKey(color);
-  const label = labels[key];
+  const label = labels[key] || labels[color];
   if (typeof label === 'string' && label.trim()) {
     return label.trim();
   }
