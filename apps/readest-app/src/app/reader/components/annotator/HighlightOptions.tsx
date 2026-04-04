@@ -70,6 +70,15 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
+  const colorStripRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef({
+    active: false,
+    pointerId: -1,
+    startX: 0,
+    startScrollLeft: 0,
+    moved: false,
+  });
+  const [isDraggingColorStrip, setIsDraggingColorStrip] = useState(false);
   const size16 = useResponsiveSize(16);
   const size28 = useResponsiveSize(28);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
@@ -124,6 +133,82 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 
   const handleColorPointerEnd = () => {
     clearLongPressTimer();
+  };
+
+  const handleColorStripPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (isVertical || event.pointerType !== 'mouse') {
+      return;
+    }
+    const target = event.target as HTMLElement;
+    const isColorButton = Boolean(target.closest('button'));
+    if (!isColorButton) {
+      return;
+    }
+
+    const strip = colorStripRef.current;
+    if (!strip) {
+      return;
+    }
+
+    dragStateRef.current = {
+      active: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: strip.scrollLeft,
+      moved: false,
+    };
+    setIsDraggingColorStrip(false);
+    strip.setPointerCapture(event.pointerId);
+  };
+
+  const handleColorStripPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const strip = colorStripRef.current;
+    const drag = dragStateRef.current;
+    if (!strip || !drag.active || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - drag.startX;
+    if (!drag.moved && Math.abs(deltaX) >= 3) {
+      drag.moved = true;
+      setIsDraggingColorStrip(true);
+    }
+    if (drag.moved) {
+      strip.scrollLeft = drag.startScrollLeft - deltaX;
+      event.preventDefault();
+    }
+  };
+
+  const handleColorStripPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const strip = colorStripRef.current;
+    const drag = dragStateRef.current;
+    if (!drag.active || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    drag.active = false;
+    if (strip?.hasPointerCapture(event.pointerId)) {
+      strip.releasePointerCapture(event.pointerId);
+    }
+
+    if (drag.moved) {
+      requestAnimationFrame(() => {
+        drag.moved = false;
+        setIsDraggingColorStrip(false);
+      });
+    } else {
+      setIsDraggingColorStrip(false);
+    }
+  };
+
+  const suppressColorClickWhileDragging = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.moved) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragStateRef.current.moved = false;
+    setIsDraggingColorStrip(false);
   };
 
   const handleColorClick = (color: HighlightColor) => {
@@ -235,14 +320,25 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
       </div>
 
       <div
+        ref={colorStripRef}
         className={clsx(
           'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
           isVertical ? 'flex-col overflow-y-auto py-2' : 'flex-row overflow-x-auto px-2',
+          !isVertical && 'cursor-grab',
+          !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
+        onPointerDown={handleColorStripPointerDown}
+        onPointerMove={handleColorStripPointerMove}
+        onPointerUp={handleColorStripPointerEnd}
+        onPointerCancel={handleColorStripPointerEnd}
+        onPointerLeave={handleColorStripPointerEnd}
+        onClickCapture={suppressColorClickWhileDragging}
         style={{
           ...(isVertical ? { width: size28 } : { height: size28 }),
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
+          WebkitUserSelect: isDraggingColorStrip ? 'none' : undefined,
+          userSelect: isDraggingColorStrip ? 'none' : undefined,
         }}
       >
         {defaultColors
