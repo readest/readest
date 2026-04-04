@@ -14,8 +14,11 @@ interface HighlightColorsEditorProps {
   highlightOpacity: number;
   isEink: boolean;
   onChange: (colors: Record<HighlightColor, string>) => void;
-  onUserColorsChange: (colors: string[]) => void;
-  onHighlightColorLabelsChange: (labels: Record<string, string>) => void;
+  onHighlightPrefsChange: (
+    colors: string[],
+    labels: Record<string, string>,
+    options?: { skipUserColors?: boolean; skipLabels?: boolean },
+  ) => void;
   onOpacityChange: (opacity: number) => void;
 }
 
@@ -26,8 +29,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
   highlightOpacity,
   isEink,
   onChange,
-  onUserColorsChange,
-  onHighlightColorLabelsChange,
+  onHighlightPrefsChange,
   onOpacityChange,
 }) => {
   const _ = useTranslation();
@@ -46,7 +48,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     } else {
       updatedLabels[key] = normalizedLabel;
     }
-    onHighlightColorLabelsChange(updatedLabels);
+    onHighlightPrefsChange(userHighlightColors, updatedLabels, { skipUserColors: true });
   };
 
   const highlightPreviewStyle: React.CSSProperties = {
@@ -68,10 +70,14 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     );
     if (!hasColor) {
       const updatedColors = [...userHighlightColors, normalizedColor];
-      onUserColorsChange(updatedColors);
+      let updatedLabels = highlightColorLabels;
       if (newColorLabel.trim()) {
-        updateColorLabel(normalizedColor, newColorLabel);
+        updatedLabels = {
+          ...highlightColorLabels,
+          [normalizedColor]: newColorLabel.trim(),
+        };
       }
+      onHighlightPrefsChange(updatedColors, updatedLabels);
       setNewColorLabel('');
     }
   };
@@ -81,8 +87,9 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     const updatedColors = userHighlightColors.filter(
       (color) => normalizeColorKey(color) !== normalizedHex,
     );
-    onUserColorsChange(updatedColors);
-    updateColorLabel(normalizedHex, '');
+    const updatedLabels = { ...highlightColorLabels };
+    delete updatedLabels[normalizedHex];
+    onHighlightPrefsChange(updatedColors, updatedLabels);
   };
 
   const handleUserColorChange = (oldHex: string, newHex: string) => {
@@ -91,14 +98,15 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     const updatedColors = userHighlightColors.map((color) =>
       normalizeColorKey(color) === oldKey ? newKey : color,
     );
-    onUserColorsChange(updatedColors);
+    const updatedLabels = { ...highlightColorLabels };
     const label = highlightColorLabels[oldKey];
-    if (label && !highlightColorLabels[newKey]) {
-      updateColorLabel(newKey, label);
+    if (label && !updatedLabels[newKey]) {
+      updatedLabels[newKey] = label;
     }
     if (oldKey !== newKey) {
-      updateColorLabel(oldKey, '');
+      delete updatedLabels[oldKey];
     }
+    onHighlightPrefsChange(updatedColors, updatedLabels);
   };
 
   return (
