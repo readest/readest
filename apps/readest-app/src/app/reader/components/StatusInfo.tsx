@@ -29,12 +29,17 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
     <div
       className={clsx(
         'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums',
-        isVertical ? 'my-auto flex-col' : 'flex-row',
+        isVertical ? 'my-auto' : 'flex-row',
       )}
     >
       {showTime && <span>{formattedTime}</span>}
       {showBattery && batteryLevel !== null && (
-        <span className='relative inline-flex translate-y-[-0.5px] items-center justify-center'>
+        <span
+          className={clsx(
+            'relative inline-flex items-center justify-center',
+            isVertical ? 'my-[6.5px] rotate-90' : 'translate-y-[-0.5px]',
+          )}
+        >
           <svg width='25' height='12' viewBox='0 0 25 12' fill='none'>
             <rect
               x='0.5'
@@ -65,6 +70,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
             <span
               className={clsx(
                 'absolute text-[8px] font-medium leading-none invert',
+                isVertical && '[writing-mode:horizontal-tb]',
                 isEink ? 'text-black mix-blend-difference' : 'text-base-300 mix-blend-luminosity',
               )}
               style={{ left: '11px', transform: 'translateX(-50%)' }}

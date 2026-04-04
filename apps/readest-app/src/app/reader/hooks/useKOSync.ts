@@ -9,7 +9,7 @@ import { Book, BookProgress, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { getCFIFromXPointer, normalizeProgressXPointer, XCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
@@ -74,7 +74,7 @@ export const useKOSync = (bookKey: string) => {
           const { doc, index: spineIndex } = content;
           const converter = new XCFI(doc, spineIndex || 0);
           const xpointerResult = converter.cfiToXPointer(cfi);
-          koProgress = normalizeProgressXPointer(xpointerResult.xpointer);
+          koProgress = xpointerResult.xpointer;
         }
       } catch (error) {
         console.error('Failed to convert CFI to XPointer', error);
@@ -90,6 +90,9 @@ export const useKOSync = (bookKey: string) => {
 
   const applyRemoteProgress = async (book: Book, bookDoc: BookDoc, remote: KoSyncProgress) => {
     const view = getView(bookKey);
+    const bookData = getBookData(bookKey);
+    if (!view || !bookData) return;
+
     if (FIXED_LAYOUT_FORMATS.has(book.format)) {
       const pageToGo = parseInt(remote.progress!, 10);
       if (isNaN(pageToGo)) return;
@@ -97,10 +100,10 @@ export const useKOSync = (bookKey: string) => {
     } else {
       if (!remote.progress?.startsWith('/body')) return;
       try {
-        const apContents = view?.renderer.getContents() ?? [];
-        const apPrimaryIdx = view?.renderer.primaryIndex;
-        const content = apContents.find((x) => x.index === apPrimaryIdx) ?? apContents[0];
-        const koProgress = normalizeProgressXPointer(remote.progress);
+        const content = view?.renderer
+          .getContents()
+          .find((x) => x.index === view?.renderer.primaryIndex);
+        const koProgress = remote.progress;
         const cfi = await getCFIFromXPointer(koProgress, content?.doc, content?.index, bookDoc);
         view?.goTo(cfi);
       } catch (error) {

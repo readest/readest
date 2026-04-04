@@ -29,6 +29,9 @@ const currentViewSettings = {
   defaultFontSize: 16,
   lineHeight: 1.5,
   readingRulerEnabled: true,
+  writingMode: 'horizontal-tb',
+  vertical: false,
+  rtl: false,
   paragraphMode: { enabled: false },
 };
 
@@ -120,6 +123,10 @@ describe('useBookShortcuts', () => {
     vi.clearAllMocks();
     shortcutState.actions = null;
     currentViewSettings.readingRulerEnabled = true;
+    currentViewSettings.writingMode = 'horizontal-tb';
+    currentViewSettings.vertical = false;
+    currentViewSettings.rtl = false;
+    currentViewSettings.paragraphMode.enabled = false;
     mockView.book.dir = 'ltr';
   });
 

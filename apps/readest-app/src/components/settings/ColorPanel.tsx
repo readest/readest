@@ -19,6 +19,7 @@ import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
+import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -73,6 +74,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   } = useCustomTextureStore();
   const resetToDefaults = useResetViewSettings();
   const { selectFiles } = useFileSelector(appService, _);
+  const { activate: activateAtmosphere, deactivate: deactivateAtmosphere } = useAtmosphereStore();
 
   const handleReset = () => {
     resetToDefaults({
@@ -92,6 +94,17 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setBackgroundSize('cover');
     setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
     setUserHighlightColors([]);
+    deactivateAtmosphere();
+  };
+
+  const handleTextureSelect = (id: string) => {
+    setSelectedTextureId(id);
+    const isAnimated = PREDEFINED_TEXTURES.some((t) => t.id === id && t.animated);
+    if (isAnimated) {
+      activateAtmosphere();
+    } else {
+      deactivateAtmosphere();
+    }
   };
 
   useEffect(() => {
@@ -328,7 +341,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             selectedTextureId={selectedTextureId}
             backgroundOpacity={backgroundOpacity}
             backgroundSize={backgroundSize}
-            onTextureSelect={setSelectedTextureId}
+            onTextureSelect={handleTextureSelect}
             onOpacityChange={setBackgroundOpacity}
             onSizeChange={setBackgroundSize}
             onImportImage={handleImportImage}
