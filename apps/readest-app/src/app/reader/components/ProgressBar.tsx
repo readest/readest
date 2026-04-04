@@ -155,6 +155,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <div
       role='presentation'
+      tabIndex={-1}
       className={clsx(
         'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
