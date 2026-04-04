@@ -9,6 +9,7 @@ import {
   type Node as VisNode,
   type Edge as VisEdge,
 } from 'vis-network/standalone';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import type { XRayEntity, XRayRelationship } from '@/services/ai/types';
 
@@ -32,6 +33,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   onNodeClick,
   selectedEntityId,
 }) => {
+  const _ = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<Network | null>(null);
   const nodesRef = useRef<DataSet<VisNode> | null>(null);
@@ -406,7 +408,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
         const types = Array.from(new Set(connections.map((rel) => rel.type))).slice(0, 3);
         popup.innerHTML = `
           <div class="font-semibold">${node.canonicalName}</div>
-          <div class="text-[11px] text-base-content/70">Connections: ${connections.length}</div>
+          <div class="text-[11px] text-base-content/70">${_('Connections')}: ${connections.length}</div>
           ${types.length > 0 ? `<div class="text-[11px] text-base-content/70">${types.join(', ')}</div>` : ''}
         `;
         popup.style.cssText = `
@@ -457,6 +459,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
     applyEdges,
     onNodeClick,
     schedulePhysicsStop,
+    _,
   ]);
 
   useEffect(() => {
@@ -512,7 +515,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   if (entities.length === 0 || relationships.length === 0) {
     return (
       <div className='flex h-full items-center justify-center p-4'>
-        <p className='text-base-content/60 text-sm'>No relationships to display yet</p>
+        <p className='text-base-content/60 text-sm'>{_('No relationships yet')}</p>
       </div>
     );
   }
