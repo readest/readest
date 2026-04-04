@@ -126,6 +126,7 @@ const Notebook: React.FC = ({}) => {
   };
 
   const handleTabChange = (tab: NotebookTab) => {
+    if (tab === notebookActiveTab) return;
     setNotebookActiveTab(tab);
     const globalReadSettings = settings.globalReadSettings;
     const newGlobalReadSettings = { ...globalReadSettings, notebookActiveTab: tab };
