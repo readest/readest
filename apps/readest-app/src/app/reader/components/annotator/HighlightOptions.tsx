@@ -10,16 +10,9 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveSysSettings } from '@/helpers/settings';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { getHighlightColorLabel } from '../../utils/annotatorUtil';
-import { stubTranslation as _ } from '@/utils/misc';
 
-const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
-const defaultColors = [
-  _('red'),
-  _('violet'),
-  _('blue'),
-  _('green'),
-  _('yellow'),
-] as HighlightColor[];
+const styles: HighlightStyle[] = ['highlight', 'underline', 'squiggly'];
+const defaultColors: HighlightColor[] = ['red', 'violet', 'blue', 'green', 'yellow'];
 
 const getColorHex = (
   customColors: Record<HighlightColor, string>,
