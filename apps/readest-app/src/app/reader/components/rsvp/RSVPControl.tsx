@@ -103,12 +103,7 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
 
 const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
-  const {
-    getView,
-    getProgress,
-    getViewSettings: _getViewSettings,
-    setProgress: _setProgress,
-  } = useReaderStore();
+  const { getView, getProgress } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const { themeCode } = useThemeStore();
 
@@ -250,18 +245,16 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
           // Navigate to the saved position's section
           view.goTo(cfi);
 
-          // Wait for navigation, then reload and start RSVP
+          // Wait for navigation, then start RSVP — start() handles word extraction
+          // and position recovery from storage directly, so loadNextPageContent()
+          // must not be called here (it would clear the saved position first)
           setTimeout(() => {
             const progress = getProgress(bookKey);
             if (progress?.location) {
               controller.setCurrentCfi(progress.location);
             }
-            controller.loadNextPageContent();
-            // Small delay to ensure content is loaded
-            setTimeout(() => {
-              controller.start();
-              setIsActive(true);
-            }, 100);
+            controller.start();
+            setIsActive(true);
           }, 500);
         }
       };
@@ -390,11 +383,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const view = getView(bookKey);
       if (!view) return;
 
-      // Navigate to chapter
-      view.goTo(href);
-
-      // Wait for navigation, then reload RSVP content
-      setTimeout(() => {
+      const onRelocate = () => {
+        view.removeEventListener('relocate', onRelocate);
         const controller = controllerRef.current;
         if (controller) {
           const progress = getProgress(bookKey);
@@ -403,7 +393,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
           }
           controller.loadNextPageContent();
         }
-      }, 500);
+      };
+      view.addEventListener('relocate', onRelocate);
+      view.goTo(href);
     },
     [bookKey, getProgress, getView],
   );
@@ -412,25 +404,29 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     const view = getView(bookKey);
     if (!view) return;
 
-    // Remove RSVP highlight when moving to next page
     removeRsvpHighlight();
 
-    // RSVP extracts ALL words from the current section via renderer.getContents().
-    // When RSVP runs out of words and calls this function, it means the entire
-    // chapter/section has been read, so we need to go to the next section.
-    await view.renderer.nextSection?.();
+    const indexBefore = view.renderer.primaryIndex;
 
-    // Wait for section change, then load new content
-    setTimeout(() => {
+    const onRelocate = () => {
+      view.removeEventListener('relocate', onRelocate);
       const controller = controllerRef.current;
-      if (controller) {
-        const progress = getProgress(bookKey);
-        if (progress?.location) {
-          controller.setCurrentCfi(progress.location);
-        }
-        controller.loadNextPageContent();
+      if (!controller) return;
+
+      // Pause at the end of the book instead of advancing
+      if (view.renderer.primaryIndex === indexBefore) {
+        controller.pause();
+        return;
       }
-    }, 500);
+
+      const progress = getProgress(bookKey);
+      if (progress?.location) {
+        controller.setCurrentCfi(progress.location);
+      }
+      controller.loadNextPageContent();
+    };
+    view.addEventListener('relocate', onRelocate);
+    await view.renderer.nextSection?.();
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
   // Get current chapter info

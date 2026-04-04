@@ -207,9 +207,7 @@ export class ParagraphIterator {
           this.#index = i;
           return block;
         }
-      } catch {
-        continue;
-      }
+      } catch {}
     }
     return this.first();
   }
@@ -232,9 +230,7 @@ export class ParagraphIterator {
           this.#index = i;
           return block;
         }
-      } catch {
-        continue;
-      }
+      } catch {}
     }
 
     try {

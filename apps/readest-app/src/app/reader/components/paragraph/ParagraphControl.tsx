@@ -38,6 +38,7 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
         bookKey={bookKey}
         dimOpacity={DIM_OPACITY}
         viewSettings={viewSettings ?? undefined}
+        gridInsets={gridInsets}
         onClose={toggleParagraphMode}
       />
       <ParagraphBar
@@ -48,6 +49,7 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
         onPrev={goToPrevParagraph}
         onNext={goToNextParagraph}
         onClose={toggleParagraphMode}
+        viewSettings={viewSettings ?? undefined}
         gridInsets={gridInsets}
       />
     </>

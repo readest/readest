@@ -24,3 +24,8 @@
 - TTS uses independent section tracking (`#ttsSectionIndex`) decoupled from view
 - Safe area insets flow: Native plugin -> useSafeAreaInsets hook -> component styles
 - Dropdown menus use `DropdownContext` (not blur-based) for screen reader compat
+
+## Workflow
+- [Always rebase before PR](feedback_pr_rebase.md) — rebase onto origin/main before creating PRs
+- [New branch per PR](feedback_pr_new_branch.md) — always create a fresh branch from main for each new PR/issue
+- [Upgrade gstack locally](feedback_gstack_upgrade.md) — always upgrade from the project's .claude/skills/gstack, not global

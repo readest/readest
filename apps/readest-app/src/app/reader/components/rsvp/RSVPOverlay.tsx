@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
-import { RsvpState, RsvpWord, RSVPController } from '@/services/rsvp';
+import { RsvpState, RSVPController } from '@/services/rsvp';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
 import {
@@ -56,9 +56,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
-  const [currentWord, setCurrentWord] = useState<RsvpWord | null>(controller.currentWord);
+  const currentWord = state.words[state.currentIndex] ?? null;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
+  const chapterDropdownRef = useRef<HTMLDivElement>(null);
+  const [showWpmDropdown, setShowWpmDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(() => {
     try {
@@ -105,6 +107,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
+  const isDraggingProgressBar = useRef(false);
+  const wasPlayingBeforeDrag = useRef(false);
+  const [isProgressBarDragging, setIsProgressBarDragging] = useState(false);
   const SWIPE_THRESHOLD = 50;
   const TAP_THRESHOLD = 10;
 
@@ -128,7 +133,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     const handleStateChange = (e: Event) => {
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
-      setCurrentWord(controller.currentWord);
 
       // Update context window only when current word falls outside or nears edge
       const idx = newState.currentIndex;
@@ -223,6 +227,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
   }, [state.active, controller, onClose]);
 
+  const effectiveChapterHref = currentChapterHref;
+
   // Word display helpers
   const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
   const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
@@ -272,6 +278,19 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state.currentIndex, contextCollapsed]);
 
+  useEffect(() => {
+    if (!showChapterDropdown) return;
+    const raf = requestAnimationFrame(() => {
+      const container = chapterDropdownRef.current;
+      if (!container) return;
+      const activeItem = container.querySelector<HTMLElement>('[data-active="true"]');
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'center' });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showChapterDropdown]);
+
   const toggleContext = useCallback(() => {
     setContextCollapsed((prev) => {
       const next = !prev;
@@ -305,23 +324,26 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
-    if (!currentChapterHref) return _('Select Chapter');
-    const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
+    if (!effectiveChapterHref) return _('Select Chapter');
+    const exactMatch = flatChapters.find((c) => c.href === effectiveChapterHref);
+    if (exactMatch) return exactMatch.label;
+    const normalizedCurrent = effectiveChapterHref.split('#')[0]?.replace(/^\//, '') || '';
     const chapter = flatChapters.find((c) => {
       const normalizedHref = c.href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     });
     return chapter?.label || _('Select Chapter');
-  }, [_, currentChapterHref, flatChapters]);
+  }, [_, effectiveChapterHref, flatChapters]);
 
   const isChapterActive = useCallback(
     (href: string): boolean => {
-      if (!currentChapterHref) return false;
-      const normalizedCurrent = currentChapterHref.split('#')[0]?.replace(/^\//, '') || '';
+      if (!effectiveChapterHref) return false;
+      if (href === effectiveChapterHref) return true;
+      const normalizedCurrent = effectiveChapterHref.split('#')[0]?.replace(/^\//, '') || '';
       const normalizedHref = href.split('#')[0]?.replace(/^\//, '') || '';
       return normalizedHref === normalizedCurrent;
     },
-    [currentChapterHref],
+    [effectiveChapterHref],
   );
 
   // Touch handlers
@@ -369,23 +391,39 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   };
 
-  // Progress bar click handler
-  const handleProgressBarClick = (event: React.MouseEvent) => {
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const percentage = (clickX / rect.width) * 100;
-
+  const handleWordClick = (wordIndex: number) => {
     const wasPlaying = state.playing;
-    if (wasPlaying) {
-      controller.pause();
-    }
+    if (wasPlaying) controller.pause();
+    controller.seekToIndex(wordIndex);
+    if (wasPlaying) setTimeout(() => controller.resume(), 50);
+  };
 
-    controller.seekToPosition(percentage);
+  const getProgressBarPercentage = (clientX: number, target: HTMLElement): number => {
+    const rect = target.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    return (x / rect.width) * 100;
+  };
 
-    if (wasPlaying) {
-      setTimeout(() => controller.resume(), 50);
-    }
+  const handleProgressBarPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDraggingProgressBar.current = true;
+    setIsProgressBarDragging(true);
+    wasPlayingBeforeDrag.current = state.playing;
+    if (state.playing) controller.pause();
+    controller.seekToPosition(getProgressBarPercentage(event.clientX, event.currentTarget));
+  };
+
+  const handleProgressBarPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingProgressBar.current) return;
+    controller.seekToPosition(getProgressBarPercentage(event.clientX, event.currentTarget));
+  };
+
+  const handleProgressBarPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingProgressBar.current) return;
+    isDraggingProgressBar.current = false;
+    setIsProgressBarDragging(false);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (wasPlayingBeforeDrag.current) setTimeout(() => controller.resume(), 50);
   };
 
   const handleChapterSelect = (href: string) => {
@@ -428,7 +466,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         <button
           aria-label={_('Close Speed Reading')}
           title={_('Close')}
-          className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-gray-500/20 active:scale-95'
+          className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-gray-500/20'
           onClick={onClose}
         >
           <IoClose className='h-5 w-5' />
@@ -437,7 +475,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         {/* Chapter selector */}
         <div className='relative min-w-0 flex-1'>
           <button
-            className='flex w-full items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20 active:scale-[0.98]'
+            className='flex w-full items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20'
             onClick={() => setShowChapterDropdown(!showChapterDropdown)}
           >
             <span className='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left'>
@@ -457,12 +495,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <>
               <Overlay onDismiss={() => setShowChapterDropdown(false)} />
               <div
+                ref={chapterDropdownRef}
                 className='absolute left-0 right-0 top-full z-[100] mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-gray-500/20 px-2 shadow-2xl'
                 style={{ backgroundColor: bgColor }}
               >
                 {flatChapters.map((chapter, idx) => (
                   <button
                     key={`${chapter.href}-${idx}`}
+                    data-active={isChapterActive(chapter.href) ? 'true' : undefined}
                     className={clsx(
                       'block w-full rounded-md border-none bg-transparent px-4 py-2.5 text-left text-sm transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
                       isChapterActive(chapter.href) &&
@@ -479,10 +519,53 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           )}
         </div>
 
-        {/* WPM badge */}
-        <div className='shrink-0 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums'>
-          <span className='font-semibold'>{state.wpm}</span>
-          <span className='ml-0.5 text-xs opacity-50'>WPM</span>
+        {/* WPM selector */}
+        <div className='relative shrink-0'>
+          <button
+            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20'
+            onClick={() => setShowWpmDropdown(!showWpmDropdown)}
+            aria-label={_('Select reading speed')}
+            title={_('Select reading speed')}
+          >
+            <span className='font-semibold'>{state.wpm}</span>
+            <span className='ml-0.5 text-xs opacity-50'>WPM</span>
+            <svg
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2.5'
+              className='ml-0.5 h-3 w-3 shrink-0 opacity-50'
+            >
+              <path d='M6 9l6 6 6-6' />
+            </svg>
+          </button>
+          {showWpmDropdown && (
+            <>
+              <Overlay onDismiss={() => setShowWpmDropdown(false)} />
+              <div
+                className='absolute right-0 top-full z-[100] mt-1.5 max-h-64 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
+                style={{ backgroundColor: bgColor }}
+              >
+                {controller.getWpmOptions().map((wpm) => (
+                  <button
+                    key={wpm}
+                    className={clsx(
+                      'flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md border-none bg-transparent px-4 py-1.5 text-sm tabular-nums transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
+                      state.wpm === wpm &&
+                        'bg-[color-mix(in_srgb,var(--rsvp-accent)_15%,transparent)] font-semibold',
+                    )}
+                    onClick={() => {
+                      controller.setWpm(wpm);
+                      setShowWpmDropdown(false);
+                    }}
+                  >
+                    <span>{wpm}</span>
+                    <span className='text-xs opacity-40'>WPM</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -517,6 +600,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div
             ref={contextPanelRef}
             className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             <div className='text-left text-base leading-relaxed md:text-lg'>
               {contextWords.map((w, i) => {
@@ -526,8 +611,20 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                   <span
                     key={wordIndex}
                     ref={isCurrent ? contextWordRef : undefined}
-                    className={isCurrent ? undefined : 'opacity-70'}
+                    role={isCurrent ? undefined : 'button'}
+                    tabIndex={isCurrent ? undefined : 0}
+                    className={
+                      isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'
+                    }
                     style={isCurrent ? { color: effectiveOrpColor } : undefined}
+                    onClick={isCurrent ? undefined : () => handleWordClick(wordIndex)}
+                    onKeyDown={
+                      isCurrent
+                        ? undefined
+                        : (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') handleWordClick(wordIndex);
+                          }
+                    }
                   >
                     {w.text}{' '}
                   </span>
@@ -618,21 +715,24 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             aria-valuemin={0}
             aria-valuemax={100}
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
-            onClick={handleProgressBarClick}
+            onPointerDown={handleProgressBarPointerDown}
+            onPointerMove={handleProgressBarPointerMove}
+            onPointerUp={handleProgressBarPointerUp}
+            onPointerCancel={handleProgressBarPointerUp}
             onKeyDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (e.key === 'ArrowLeft') controller.skipBackward();
               else if (e.key === 'ArrowRight') controller.skipForward();
             }}
-            title={_('Click to seek')}
+            title={_('Drag to seek')}
           >
             <div
-              className='absolute left-0 top-0 h-full rounded transition-[width] duration-100'
+              className={`absolute left-0 top-0 h-full rounded ${isProgressBarDragging ? '' : 'transition-[width] duration-100'}`}
               style={{ width: `${state.progress}%`, backgroundColor: accentColor }}
             />
             <div
-              className='absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow transition-[left] duration-100'
+              className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow ${isProgressBarDragging ? '' : 'transition-[left] duration-100'}`}
               style={{ left: `${state.progress}%`, backgroundColor: accentColor }}
             />
           </div>
@@ -712,7 +812,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div className='mt-3 flex flex-wrap items-center justify-evenly gap-x-8 gap-y-4 text-xs md:justify-center'>
             {/* Punctuation pause */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Pause')}</span>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
                 className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}

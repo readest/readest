@@ -24,6 +24,7 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
   const lockableFields = [
     'title',
     'author',
+    'isbn',
     'publisher',
     'published',
     'language',
@@ -130,6 +131,17 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
           }
         }
         break;
+
+      case 'isbn':
+        if (value.trim()) {
+          validationResult = validateISBN(value);
+          if (!validationResult.isValid) {
+            console.warn(`Invalid ISBN for field ${field}:`, validationResult.error);
+            setFieldErrors((prev) => ({ ...prev, [field]: validationResult.error || '' }));
+            return false;
+          }
+        }
+        break;
     }
 
     setFieldErrors((prev) => {
@@ -167,11 +179,11 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
   const handleAutoRetrieve = async () => {
     setSearchLoading(true);
     try {
-      const isbnValidation = validateISBN(editedMeta.identifier || '');
+      const isbnValidation = validateISBN(editedMeta.isbn || '');
       const results = await searchMetadata({
         title: formatTitle(editedMeta.title),
         author: formatAuthors(editedMeta.author),
-        isbn: isbnValidation.isValid ? editedMeta.identifier : undefined,
+        isbn: isbnValidation.isValid ? editedMeta.isbn : undefined,
         language: getPrimaryLanguage(editedMeta.language),
       });
       const metadataSources = results.map((result) => ({
@@ -198,6 +210,18 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
         return;
       }
       switch (key) {
+        case 'identifier': {
+          const candidate = String(value);
+          const isbnValidation = validateISBN(candidate);
+          if (!lockedFields['isbn'] && isbnValidation.isValid) {
+            newMeta['isbn'] = candidate;
+            newSources['isbn'] = `${selectedSource.sourceName}-${selectedSource.confidence}`;
+          } else {
+            newMeta[key] = value;
+            newSources[key] = `${selectedSource.sourceName}-${selectedSource.confidence}`;
+          }
+          return;
+        }
         default:
           newMeta[key] = value;
       }

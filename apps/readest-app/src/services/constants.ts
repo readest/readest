@@ -16,6 +16,7 @@ import {
   ViewSettings,
 } from '@/types/book';
 import {
+  HardcoverSettings,
   KOSyncSettings,
   LibraryGroupByType,
   LibrarySortByType,
@@ -73,6 +74,12 @@ export const DEFAULT_READWISE_SETTINGS = {
   lastSyncedAt: 0,
 } as ReadwiseSettings;
 
+export const DEFAULT_HARDCOVER_SETTINGS = {
+  enabled: false,
+  accessToken: '',
+  lastSyncedAt: 0,
+} as HardcoverSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -103,6 +110,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
+  hardcover: DEFAULT_HARDCOVER_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
@@ -179,6 +187,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   compactMarginRightPx: 16,
   gapPercent: 5,
   scrolled: false,
+  noContinuousScroll: false,
   disableClick: false,
   fullscreenClickArea: false,
   swapClickArea: false,
@@ -217,6 +226,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   backgroundTextureId: 'none',
   backgroundOpacity: 0.6,
   backgroundSize: 'cover',
+  highlightOpacity: 0.4,
   codeHighlighting: false,
   codeLanguage: 'auto-detect',
   userStylesheet: '',
@@ -294,6 +304,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsLocation: '',
   showTTSBar: false,
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
+  ttsMediaMetadata: 'sentence',
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
@@ -822,6 +833,7 @@ export const TRANSLATED_LANGS = {
   si: 'සිංහල',
   'zh-CN': '简体中文',
   'zh-TW': '正體中文',
+  ro: 'Română',
 };
 
 export const TRANSLATOR_LANGS: Record<string, string> = {

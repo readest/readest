@@ -2,6 +2,8 @@ package com.readest.native_tts
 
 import android.Manifest
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.app.Activity
 import android.content.Context
 import android.provider.Settings
@@ -110,25 +112,33 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     companion object {
         private const val TAG = "NativeTTSPlugin"
         private const val CHANNEL_NAME = "tts_events"
+        private const val IDLE_TIMEOUT_MS = 30L * 60 * 1000 // 30 minutes
         var NOTIFICATION_TITLE = "Read Aloud"
         var NOTIFICATION_TEXT = "Ready to read aloud"
         var FOREGROUND_SERVICE_TITLE = "Read Aloud"
         var FOREGROUND_SERVICE_TEXT = "Ready to read aloud"
     }
-    
+
     private var textToSpeech: TextToSpeech? = null
     private var isInitialized = AtomicBoolean(false)
     private var isPaused = AtomicBoolean(false)
     private var isSpeaking = AtomicBoolean(false)
     private var currentRate = AtomicReference<Float>(1.0f)
     private var currentPitch = AtomicReference<Float>(1.0f)
-    
+
     private val eventChannels = ConcurrentHashMap<String, Channel<TTSMessageEvent>>()
     private val speakingJobs = ConcurrentHashMap<String, Job>()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    private val idleHandler = Handler(Looper.getMainLooper())
+    private val idleShutdownRunnable = Runnable {
+        Log.d(TAG, "Idle timeout reached, shutting down TTS engine to save battery")
+        shutdownTTSEngine()
+    }
+
     @Command
     fun init(invoke: Invoke) {
+        cancelIdleTimer()
         coroutineScope.launch {
             try {
                 val success = initializeTTS()
@@ -215,34 +225,46 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     
     @Command
     fun speak(invoke: Invoke) {
+        cancelIdleTimer()
+
         val args = invoke.parseArgs(SpeakArgs::class.java)
         val text = args.text ?: ""
-        
+
         if (text.isEmpty()) {
             invoke.reject("Text cannot be empty")
             return
         }
-        
+
         val utteranceId = UUID.randomUUID().toString()
-        
+
         coroutineScope.launch {
             try {
+                // Re-initialize TTS engine if it was shut down by the idle timer
+                if (!isInitialized.get()) {
+                    val success = initializeTTS()
+                    if (!success) {
+                        invoke.reject("Failed to re-initialize TTS engine")
+                        return@launch
+                    }
+                    Log.d(TAG, "TTS engine re-initialized after idle shutdown")
+                }
+
                 val eventChannel = Channel<TTSMessageEvent>(Channel.UNLIMITED)
                 eventChannels[utteranceId] = eventChannel
-                
+
                 val speakJob = launch {
                     speakText(text, utteranceId, args.preload ?: false)
                 }
                 speakingJobs[utteranceId] = speakJob
-                
+
                 val result = JSObject().apply {
                     put("utteranceId", utteranceId)
                 }
                 invoke.resolve(result)
-                
+
                 // Start sending events to the frontend
                 startEventStream(utteranceId)
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start speaking", e)
                 invoke.reject("Failed to start speaking: ${e.message}")
@@ -317,6 +339,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             if (textToSpeech?.stop() == TextToSpeech.SUCCESS) {
                 isPaused.set(true)
+                startIdleTimer()
                 invoke.resolve()
             } else {
                 invoke.reject("Failed to pause TTS")
@@ -328,6 +351,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     
     @Command
     fun resume(invoke: Invoke) {
+        cancelIdleTimer()
         try {
             isPaused.set(false)
             invoke.resolve()
@@ -346,7 +370,8 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 eventChannels.values.forEach { it.close() }
                 speakingJobs.clear()
                 eventChannels.clear()
-                
+                startIdleTimer()
+
                 invoke.resolve()
             } else {
                 invoke.reject("Failed to stop TTS")
@@ -377,57 +402,67 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             invoke.reject("Exception setting pitch: ${e.message}")
         }
     }
-    
+
     @Command
     fun set_voice(invoke: Invoke) {
         val args = invoke.parseArgs(SetVoiceArgs::class.java)
-        try {
-            val voices = textToSpeech?.voices
-            val targetVoice = voices?.find { voice ->
-                val languageTag = voice.locale.toLanguageTag()
-                voice.name == args.voice || (languageTag.contains(voice.name) && languageTag == args.voice)
-            }
-            
-            if (targetVoice != null) {
-                val result = textToSpeech?.setVoice(targetVoice)
-                if (result == TextToSpeech.SUCCESS) {
-                    invoke.resolve()
-                } else {
-                    invoke.reject("Failed to set voice: ${args.voice}")
+        coroutineScope.launch {
+            try {
+                if (!isInitialized.get()) {
+                    initializeTTS()
                 }
-            } else {
-                invoke.reject("Voice not found: ${args.voice}")
+                val voices = textToSpeech?.voices
+                val targetVoice = voices?.find { voice ->
+                    val languageTag = voice.locale.toLanguageTag()
+                    voice.name == args.voice || (languageTag.contains(voice.name) && languageTag == args.voice)
+                }
+
+                if (targetVoice != null) {
+                    val result = textToSpeech?.setVoice(targetVoice)
+                    if (result == TextToSpeech.SUCCESS) {
+                        invoke.resolve()
+                    } else {
+                        invoke.reject("Failed to set voice: ${args.voice}")
+                    }
+                } else {
+                    invoke.reject("Voice not found: ${args.voice}")
+                }
+            } catch (e: Exception) {
+                invoke.reject("Exception setting voice: ${e.message}")
             }
-        } catch (e: Exception) {
-            invoke.reject("Exception setting voice: ${e.message}")
         }
     }
     
     @Command
     fun get_all_voices(invoke: Invoke) {
-        try {
-            val voices = textToSpeech?.voices?.map { voice ->
-                val voiceName = voice.name
-                val language = voice.locale.toLanguageTag()
-                val (id, name) = if (language.contains(voiceName)) {
-                    language to language
-                } else {
-                    voiceName to voiceName
+        coroutineScope.launch {
+            try {
+                if (!isInitialized.get()) {
+                    initializeTTS()
                 }
-                JSObject().apply {
-                    put("id", id)
-                    put("name", name)
-                    put("lang", language)
-                    put("disabled", false)
+                val voices = textToSpeech?.voices?.map { voice ->
+                    val voiceName = voice.name
+                    val language = voice.locale.toLanguageTag()
+                    val (id, name) = if (language.contains(voiceName)) {
+                        language to language
+                    } else {
+                        voiceName to voiceName
+                    }
+                    JSObject().apply {
+                        put("id", id)
+                        put("name", name)
+                        put("lang", language)
+                        put("disabled", false)
+                    }
+                } ?: emptyList()
+
+                val result = JSObject().apply {
+                    put("voices", JSONArray(voices))
                 }
-            } ?: emptyList()
-            
-            val result = JSObject().apply {
-                put("voices", JSONArray(voices))
+                invoke.resolve(result)
+            } catch (e: Exception) {
+                invoke.reject("Exception getting voices: ${e.message}")
             }
-            invoke.resolve(result)
-        } catch (e: Exception) {
-            invoke.reject("Exception getting voices: ${e.message}")
         }
     }
 
@@ -516,6 +551,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             val intent = Intent(activity, MediaPlaybackService::class.java)
             if (active) {
+                cancelIdleTimer()
                 MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
@@ -530,13 +566,49 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
     
+    private fun startIdleTimer() {
+        idleHandler.removeCallbacks(idleShutdownRunnable)
+        idleHandler.postDelayed(idleShutdownRunnable, IDLE_TIMEOUT_MS)
+    }
+
+    private fun cancelIdleTimer() {
+        idleHandler.removeCallbacks(idleShutdownRunnable)
+    }
+
+    private fun shutdownTTSEngine() {
+        try {
+            val intent = Intent(activity, MediaPlaybackService::class.java)
+            activity.stopService(intent)
+            MediaPlaybackService.pluginEventTrigger = null
+
+            textToSpeech?.shutdown()
+            textToSpeech = null
+            isInitialized.set(false)
+            isSpeaking.set(false)
+            isPaused.set(false)
+
+            speakingJobs.values.forEach { it.cancel() }
+            eventChannels.values.forEach { it.close() }
+            speakingJobs.clear()
+            eventChannels.clear()
+
+            Log.d(TAG, "TTS engine shut down due to idle timeout")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during idle TTS shutdown", e)
+        }
+    }
+
     fun destroy() {
         try {
+            cancelIdleTimer()
+
             val intent = Intent(activity, MediaPlaybackService::class.java)
             activity.stopService(intent)
 
             coroutineScope.cancel()
             textToSpeech?.shutdown()
+            textToSpeech = null
+            isInitialized.set(false)
             eventChannels.values.forEach { it.close() }
             eventChannels.clear()
             speakingJobs.values.forEach { it.cancel() }

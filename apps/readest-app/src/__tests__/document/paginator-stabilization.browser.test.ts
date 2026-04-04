@@ -1,33 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
+import type { Renderer } from '@/types/view';
 
 // Vite serves fixture files; fetch the EPUB at runtime in the browser.
 const EPUB_URL = new URL('../fixtures/data/sample-alice.epub', import.meta.url).href;
-
-interface PaginatorElement extends HTMLElement {
-  open: (book: BookDoc) => void;
-  goTo: (target: {
-    index: number;
-    anchor?: number | (() => number);
-    select?: boolean;
-  }) => Promise<void>;
-  prev: () => Promise<void>;
-  next: () => Promise<void>;
-  destroy: () => void;
-  getContents: () => Array<{ index: number; doc: Document; overlayer: unknown }>;
-  setStyles: (styles: string | [string, string]) => void;
-  render: () => void;
-  scrollToAnchor: (anchor: number | Range, select?: boolean, smooth?: boolean) => Promise<void>;
-  primaryIndex: number;
-  pages: number;
-  page: number;
-  size: number;
-  viewSize: number;
-  scrolled: boolean;
-  columnCount: number;
-  sections: Array<{ linear?: string; load: () => Promise<string> }>;
-}
 
 let book: BookDoc;
 
@@ -59,7 +36,7 @@ const waitForStabilized = (el: HTMLElement, timeout = 10000) =>
   });
 
 /** Wait until `getContents().length >= n` or timeout. */
-const waitForViews = async (el: PaginatorElement, n: number, timeout = 10000) => {
+const waitForViews = async (el: Renderer, n: number, timeout = 10000) => {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     if (el.getContents().length >= n) return;
@@ -68,7 +45,7 @@ const waitForViews = async (el: PaginatorElement, n: number, timeout = 10000) =>
 };
 
 /** Wait for fill to complete by polling until getContents count stabilizes. */
-const waitForFillComplete = async (el: PaginatorElement, timeout = 10000) => {
+const waitForFillComplete = async (el: Renderer, timeout = 10000) => {
   const start = Date.now();
   let lastCount = -1;
   let stableFor = 0;
@@ -86,7 +63,7 @@ const waitForFillComplete = async (el: PaginatorElement, timeout = 10000) => {
 };
 
 describe('Paginator stabilization (browser)', () => {
-  let paginator: PaginatorElement;
+  let paginator: Renderer;
 
   // Suppress unhandled errors from paginator's #replaceBackground firing
   // after views are destroyed (queued iframe loads from rapid navigation).
@@ -106,7 +83,7 @@ describe('Paginator stabilization (browser)', () => {
   });
 
   const createPaginator = () => {
-    const el = document.createElement('foliate-paginator') as PaginatorElement;
+    const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
       width: '800px',
       height: '600px',
@@ -255,7 +232,7 @@ describe('Paginator stabilization (browser)', () => {
       await waitForFillComplete(paginator);
 
       const stabilizedFromRender = waitForStabilized(paginator);
-      paginator.render();
+      paginator.render?.();
       // render() dispatches stabilized in a RAF
       await stabilizedFromRender;
       // If we get here, stabilized was emitted
@@ -269,7 +246,7 @@ describe('Paginator stabilization (browser)', () => {
 
       const indexBefore = paginator.primaryIndex;
       const stabilized = waitForStabilized(paginator);
-      paginator.render();
+      paginator.render?.();
       await stabilized;
       expect(paginator.primaryIndex).toBe(indexBefore);
     });

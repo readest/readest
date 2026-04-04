@@ -28,6 +28,7 @@ import { deserializeConfig, serializeConfig } from '@/utils/serializer';
 import { ClosableFile } from '@/utils/file';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { svg2png } from '@/utils/svg';
+import { normalizeMetadataIsbn } from '@/utils/isbn';
 import { BookFileNotFoundError } from './errors';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
@@ -228,6 +229,7 @@ export async function importBook(
       if (!loadedBook) {
         throw new Error('Unsupported or corrupted book file');
       }
+      normalizeMetadataIsbn(loadedBook.metadata);
       const metadataTitle = formatTitle(loadedBook.metadata.title);
       if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
         loadedBook.metadata.title = getBaseFilename(filename);

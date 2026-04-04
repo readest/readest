@@ -35,6 +35,7 @@ const options = {
     'si',
     'zh-CN',
     'zh-TW',
+    'ro',
   ],
   ns: ['translation'],
   defaultNs: 'translation',

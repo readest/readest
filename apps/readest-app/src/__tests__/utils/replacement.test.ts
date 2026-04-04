@@ -1103,8 +1103,7 @@ describe('proofreadTransformer', () => {
           enabled: true,
           isRegex: false,
           caseSensitive: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          order: undefined as any,
+          order: 0,
           wholeWord: true,
         },
       ];

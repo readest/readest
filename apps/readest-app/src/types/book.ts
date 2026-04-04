@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { TTSMediaMetadataMode } from '@/services/tts/types';
 import { AnnotationToolType } from './annotator';
 
 export type BookFormat =
@@ -120,6 +121,7 @@ export interface BookLayout {
   compactMarginPx?: number; // deprecated
   gapPercent: number;
   scrolled: boolean;
+  noContinuousScroll: boolean;
   disableClick: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
@@ -153,6 +155,7 @@ export interface BookStyle {
   backgroundTextureId: string;
   backgroundOpacity: number;
   backgroundSize: string;
+  highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
   userStylesheet: string;
@@ -233,6 +236,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsMediaMetadata: TTSMediaMetadataMode;
 }
 
 export interface TranslatorConfig {
@@ -362,6 +366,9 @@ export interface BookConfig {
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
   foliateImportedAt?: number;
+
+  // Per-book switch for hardcover exports in reader menu.
+  hardcoverSyncEnabled?: boolean;
 
   updatedAt: number;
 }

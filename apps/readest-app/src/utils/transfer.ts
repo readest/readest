@@ -64,9 +64,10 @@ export const webDownload = async (
   const responseHeaders = Object.fromEntries(response.headers.entries());
   const contentLength =
     response.headers.get('Content-Length') || response.headers.get('X-Content-Length');
-  if (!contentLength) throw new Error('Cannot track progress: Content-Length missing');
+  if (!contentLength && onProgress)
+    throw new Error('Cannot track progress: Content-Length missing');
 
-  const totalSize = parseInt(contentLength, 10);
+  const totalSize = parseInt(contentLength || '0', 10);
   let receivedSize = 0;
   const reader = response.body!.getReader();
   const chunks: Uint8Array[] = [];

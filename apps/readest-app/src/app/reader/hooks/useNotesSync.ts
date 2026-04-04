@@ -86,7 +86,18 @@ export const useNotesSync = (bookKey: string) => {
             );
           }
           if (cfi) {
-            converted.push({ ...note, cfi, updatedAt: Date.now() });
+            let page = note.page;
+            if (view) {
+              try {
+                const progress = await view.getCFIProgress(cfi);
+                if (progress) {
+                  page = progress.location.current + 1;
+                }
+              } catch {
+                // Page resolution failed — keep original page
+              }
+            }
+            converted.push({ ...note, cfi, page, updatedAt: Date.now() });
           }
         } catch {
           // Conversion failed — discard note
@@ -177,7 +188,7 @@ export const useNotesSync = (bookKey: string) => {
       convertedNotes.forEach((note) => {
         if (note.cfi) {
           const index = getIndexFromCfi(note.cfi);
-          if (index === view?.renderer.primaryIndex) {
+          if (!note.deletedAt && index === view?.renderer.primaryIndex) {
             view.addAnnotation(note);
           }
         }

@@ -67,11 +67,7 @@ export function PublicationCard({
   }, [publication.links, linksByRel]);
 
   return (
-    <div
-      role='none'
-      onClick={onClick}
-      className='card bg-base-100 cursor-pointer transition-shadow'
-    >
+    <div role='none' onClick={onClick} className='card cursor-pointer transition-shadow'>
       <figure className='bg-base-200 relative aspect-[28/41] rounded-none shadow-md'>
         <CachedImage
           src={imageUrl}

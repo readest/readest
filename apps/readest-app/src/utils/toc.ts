@@ -193,7 +193,9 @@ const updateTocLocation = (
     item.id ??= index++;
     if (item.href) {
       const id = bookDoc.splitTOCHref(item.href)[0]!;
-      const section = sectionsMap[item.href] || sectionsMap[id];
+      const exactMatch = sectionsMap[item.href];
+      const baseMatch = sectionsMap[id];
+      const section = (exactMatch?.cfi ? exactMatch : null) || baseMatch || exactMatch;
       if (section) {
         item.cfi = section.cfi;
         if (

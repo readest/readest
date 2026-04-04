@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SILENCE_DATA } from '@/services/tts';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
@@ -15,7 +16,7 @@ export const useTTSMediaSession = ({ bookKey }: UseTTSMediaSessionProps) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
-  const { getProgress } = useReaderStore();
+  const { getProgress, getViewSettings } = useReaderStore();
 
   const mediaSessionRef = useRef<TauriMediaSession | MediaSession | null>(null);
   const unblockerAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -60,9 +61,11 @@ export const useTTSMediaSession = ({ bookKey }: UseTTSMediaSessionProps) => {
     if (mediaSession instanceof TauriMediaSession) {
       const bookData = getBookData(bookKey);
       const progress = getProgress(bookKey);
+      const viewSettings = getViewSettings(bookKey);
       if (!bookData || !bookData.book) return;
       const { title, author, coverImageUrl } = bookData.book;
       const { sectionLabel } = progress || {};
+      const ttsMediaMetadataMode = viewSettings?.ttsMediaMetadata ?? 'sentence';
 
       let artworkImage = '/icon.png';
       try {
@@ -79,10 +82,18 @@ export const useTTSMediaSession = ({ bookKey }: UseTTSMediaSessionProps) => {
         foregroundServiceTitle: _('Read Aloud'),
         foregroundServiceText: _('Ready to read aloud'),
       });
+      const metadata = buildTTSMediaMetadata({
+        markText: title,
+        markName: '0',
+        sectionLabel: sectionLabel || '',
+        title,
+        author,
+        ttsMediaMetadata: ttsMediaMetadataMode,
+      });
       mediaSession.updateMetadata({
-        title: title,
-        artist: sectionLabel || title,
-        album: author,
+        title: metadata.title,
+        artist: metadata.artist,
+        album: metadata.album,
         artwork: artworkImage,
       });
     }

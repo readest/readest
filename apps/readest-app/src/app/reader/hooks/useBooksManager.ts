@@ -49,7 +49,7 @@ const useBooksManager = () => {
   };
 
   const getNextBookKey = (bookKey: string) => {
-    const index = bookKeys.findIndex((key) => key === bookKey);
+    const index = bookKeys.indexOf(bookKey);
     const nextIndex = (index + 1) % bookKeys.length;
     return bookKeys[nextIndex]!;
   };

@@ -4,10 +4,13 @@ import { TxtToEpubConverter } from '@/utils/txt';
 /**
  * Access private createChapterRegexps via a thin test subclass.
  */
+type TxtConverterPrivateAPI = {
+  createChapterRegexps(language: string): RegExp[];
+};
+
 class TestableConverter extends TxtToEpubConverter {
   getChapterRegexps(language: string): RegExp[] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (this as any).createChapterRegexps(language);
+    return (this as unknown as TxtConverterPrivateAPI).createChapterRegexps(language);
   }
 }
 

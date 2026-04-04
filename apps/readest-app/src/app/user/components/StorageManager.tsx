@@ -241,10 +241,11 @@ const StorageManager = () => {
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1e6) return `${Math.round((bytes / 1024) * 10) / 10} KB`;
+    const inGB = bytes > 1e9;
+    const value = bytes / 1024 / 1024 / (inGB ? 1024 : 1);
+    return `${Math.round(value * 10) / 10} ${inGB ? 'GB' : 'MB'}`;
   };
 
   const formatDate = (dateString: string): string => {

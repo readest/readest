@@ -245,6 +245,26 @@ describe('importBook metaHash deduplication', () => {
     // Should create a new entry, not override existing
     expect(result).not.toBe(existingBook);
   });
+
+  it('should promote extracted ISBN into metadata.isbn during import', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc({
+      ...TEST_METADATA,
+      identifier: 'calibre:abc123',
+      altIdentifier: ['urn:isbn:9780316033664', 'mobi-asin:B004J4XGN6'],
+    });
+
+    const mockFile = new File(['new content'], 'test.epub', { type: 'application/epub+zip' });
+    const result = await service.importBook(mockFile, books);
+    expect(result).not.toBeNull();
+    if (!result) {
+      throw new Error('Expected importBook to return an imported book');
+    }
+
+    expect(result.metadata?.isbn).toBe('9780316033664');
+  });
 });
 
 describe('importBook metaHash aggregation', () => {

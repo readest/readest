@@ -738,3 +738,86 @@ html[data-nav-direction='back'] ::view-transition-new(root) {
     }
   }
 }
+
+/* Atmosphere overlay */
+#atmosphere-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out, ease-out);
+}
+
+body.atmosphere #atmosphere-overlay {
+  opacity: 0.5;
+}
+
+@keyframes spin-cw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes spin-ccw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-180deg);
+  }
+}
+
+.animate-spin-cw {
+  animation: spin-cw 0.6s ease-in-out;
+}
+
+.animate-spin-ccw {
+  animation: spin-ccw 0.6s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(-8deg);
+  }
+  20% {
+    transform: rotate(8deg);
+  }
+  30% {
+    transform: rotate(-8deg);
+  }
+  40% {
+    transform: rotate(8deg);
+  }
+  50% {
+    transform: rotate(-6deg);
+  }
+  60% {
+    transform: rotate(6deg);
+  }
+  70% {
+    transform: rotate(-4deg);
+  }
+  80% {
+    transform: rotate(4deg);
+  }
+  90% {
+    transform: rotate(-2deg);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.8s ease-in-out;
+}
