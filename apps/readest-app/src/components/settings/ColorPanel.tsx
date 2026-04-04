@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   applyCustomTheme,
   CustomTheme,
@@ -60,7 +60,6 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [highlightColorLabels, setHighlightColorLabels] = useState(
     settings.globalReadSettings.highlightColorLabels || {},
   );
-  const highlightPrefsSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
   const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
@@ -272,30 +271,18 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveCustomTextures(envConfig);
   };
 
-  const saveHighlightPreferences = async (
-    updater: (globalReadSettings: typeof settings.globalReadSettings) => void,
-  ) => {
-    highlightPrefsSaveQueueRef.current = highlightPrefsSaveQueueRef.current
-      .catch(() => undefined)
-      .then(async () => {
-        const latestSettings = useSettingsStore.getState().settings;
-        const nextSettings = {
-          ...latestSettings,
-          globalReadSettings: { ...latestSettings.globalReadSettings },
-        };
-        updater(nextSettings.globalReadSettings);
-        setSettings(nextSettings);
-        await saveSettings(envConfig, nextSettings);
-      });
-
-    await highlightPrefsSaveQueueRef.current;
-  };
-
   const handleHighlightColorsChange = (colors: typeof customHighlightColors) => {
     setCustomHighlightColors(colors);
-    void saveHighlightPreferences((globalReadSettings) => {
-      globalReadSettings.customHighlightColors = colors;
-    });
+    const latestSettings = useSettingsStore.getState().settings;
+    const nextSettings = {
+      ...latestSettings,
+      globalReadSettings: {
+        ...latestSettings.globalReadSettings,
+        customHighlightColors: colors,
+      },
+    };
+    setSettings(nextSettings);
+    saveSettings(envConfig, nextSettings);
   };
 
   const handleHighlightPrefsChange = (
@@ -305,14 +292,22 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   ) => {
     setUserHighlightColors(colors);
     setHighlightColorLabels(labels);
-    void saveHighlightPreferences((globalReadSettings) => {
-      if (!options?.skipUserColors) {
-        globalReadSettings.userHighlightColors = colors;
-      }
-      if (!options?.skipLabels) {
-        globalReadSettings.highlightColorLabels = labels;
-      }
-    });
+    const latestSettings = useSettingsStore.getState().settings;
+    const nextGlobalReadSettings = {
+      ...latestSettings.globalReadSettings,
+    };
+    if (!options?.skipUserColors) {
+      nextGlobalReadSettings.userHighlightColors = colors;
+    }
+    if (!options?.skipLabels) {
+      nextGlobalReadSettings.highlightColorLabels = labels;
+    }
+    const nextSettings = {
+      ...latestSettings,
+      globalReadSettings: nextGlobalReadSettings,
+    };
+    setSettings(nextSettings);
+    saveSettings(envConfig, nextSettings);
   };
 
   return (
