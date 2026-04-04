@@ -97,13 +97,21 @@ export const validateOPDSURL = async (
   username?: string,
   password?: string,
   useProxy = false,
+  customHeaders: Record<string, string> = {},
 ): Promise<ValidationResult> => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    const res = await fetchWithAuth(url, username, password, useProxy, {
-      signal: controller.signal,
-    });
+    const res = await fetchWithAuth(
+      url,
+      username,
+      password,
+      useProxy,
+      {
+        signal: controller.signal,
+      },
+      customHeaders,
+    );
     clearTimeout(timeout);
 
     if (!res.ok) {

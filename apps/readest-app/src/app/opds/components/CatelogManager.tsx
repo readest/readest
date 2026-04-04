@@ -12,6 +12,11 @@ import { saveSysSettings } from '@/helpers/settings';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { validateOPDSURL } from '../utils/opdsUtils';
+import {
+  formatOPDSCustomHeadersInput,
+  hasOPDSCustomHeaders,
+  parseOPDSCustomHeadersInput,
+} from '../utils/customHeaders';
 import ModalPortal from '@/components/ModalPortal';
 
 const POPULAR_CATALOGS: OPDSCatalog[] = [
@@ -49,10 +54,20 @@ async function validateOPDSCatalog(
   url: string,
   username?: string,
   password?: string,
+  customHeaders?: Record<string, string>,
 ): Promise<{ valid: boolean; error?: string }> {
-  const result = await validateOPDSURL(url, username, password, isWebAppPlatform());
+  const result = await validateOPDSURL(url, username, password, isWebAppPlatform(), customHeaders);
   return { valid: result.isValid, error: result.error };
 }
+
+const EMPTY_NEW_CATALOG = {
+  name: '',
+  url: '',
+  description: '',
+  username: '',
+  password: '',
+  customHeadersInput: '',
+};
 
 export function CatalogManager() {
   const _ = useTranslation();
@@ -61,15 +76,10 @@ export function CatalogManager() {
   const { settings } = useSettingsStore();
   const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() => settings.opdsCatalogs || []);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newCatalog, setNewCatalog] = useState({
-    name: '',
-    url: '',
-    description: '',
-    username: '',
-    password: '',
-  });
+  const [newCatalog, setNewCatalog] = useState(EMPTY_NEW_CATALOG);
   const [showPassword, setShowPassword] = useState(false);
   const [urlError, setUrlError] = useState('');
+  const [headerError, setHeaderError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const popularCatalogs = appService?.isOnlineCatalogsAccessible ? POPULAR_CATALOGS : [];
 
@@ -80,6 +90,12 @@ export function CatalogManager() {
 
   const handleAddCatalog = async () => {
     if (!newCatalog.name || !newCatalog.url) return;
+
+    const parsedHeaders = parseOPDSCustomHeadersInput(newCatalog.customHeadersInput);
+    if (parsedHeaders.error) {
+      setHeaderError(parsedHeaders.error);
+      return;
+    }
 
     const urlLower = newCatalog.url.trim().toLowerCase();
     if (!urlLower.startsWith('http://') && !urlLower.startsWith('https://')) {
@@ -98,11 +114,13 @@ export function CatalogManager() {
 
     setIsValidating(true);
     setUrlError('');
+    setHeaderError('');
 
     const validation = await validateOPDSCatalog(
       newCatalog.url,
       newCatalog.username || undefined,
       newCatalog.password || undefined,
+      parsedHeaders.headers,
     );
 
     if (!validation.valid) {
@@ -118,11 +136,15 @@ export function CatalogManager() {
       description: newCatalog.description,
       username: newCatalog.username || undefined,
       password: newCatalog.password || undefined,
+      customHeaders: hasOPDSCustomHeaders(parsedHeaders.headers)
+        ? parsedHeaders.headers
+        : undefined,
     };
 
     saveCatalogs([catalog, ...catalogs]);
-    setNewCatalog({ name: '', url: '', description: '', username: '', password: '' });
+    setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
+    setHeaderError('');
     setIsValidating(false);
     setShowAddDialog(false);
   };
@@ -141,14 +163,15 @@ export function CatalogManager() {
 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
-    if (catalog.username) params.set('id', catalog.id);
+    params.set('id', catalog.id);
     router.push(`/opds?${params.toString()}`);
   };
 
   const handleCloseDialog = () => {
     setShowAddDialog(false);
-    setNewCatalog({ name: '', url: '', description: '', username: '', password: '' });
+    setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
+    setHeaderError('');
     setShowPassword(false);
   };
 
@@ -214,6 +237,11 @@ export function CatalogManager() {
                       {catalog.username && (
                         <p className='text-base-content/50 mt-1 text-xs'>
                           {_('Username')}: {catalog.username}
+                        </p>
+                      )}
+                      {hasOPDSCustomHeaders(catalog.customHeaders) && (
+                        <p className='text-base-content/50 mt-1 text-xs'>
+                          {_('Custom Headers')}: {Object.keys(catalog.customHeaders || {}).length}
                         </p>
                       )}
                     </div>
@@ -317,7 +345,10 @@ export function CatalogManager() {
                   <input
                     type='url'
                     value={newCatalog.url}
-                    onChange={(e) => setNewCatalog({ ...newCatalog, url: e.target.value })}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, url: e.target.value });
+                      setUrlError('');
+                    }}
                     placeholder='https://example.com/opds'
                     className='input input-bordered placeholder:text-sm'
                     disabled={isValidating}
@@ -372,6 +403,37 @@ export function CatalogManager() {
                       )}
                     </button>
                   </div>
+                </div>
+
+                <div className='form-control'>
+                  <div className='label'>
+                    <span className='label-text'>{_('Custom Headers (optional)')}</span>
+                  </div>
+                  <textarea
+                    value={newCatalog.customHeadersInput}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, customHeadersInput: e.target.value });
+                      setHeaderError('');
+                    }}
+                    placeholder={formatOPDSCustomHeadersInput({
+                      'CF-Access-Client-Id': 'your-client-id',
+                      'CF-Access-Client-Secret': 'your-client-secret',
+                    })}
+                    className='textarea textarea-bordered font-mono text-sm placeholder:text-xs'
+                    rows={4}
+                    disabled={isValidating}
+                    spellCheck={false}
+                  />
+                  <div className='label'>
+                    <span className='label-text-alt text-base-content/60'>
+                      {_('Add one header per line using "Header-Name: value".')}
+                    </span>
+                  </div>
+                  {headerError && (
+                    <div className='label pt-0'>
+                      <span className='label-text-alt text-error'>{headerError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className='form-control'>
