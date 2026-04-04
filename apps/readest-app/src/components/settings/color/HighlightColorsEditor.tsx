@@ -10,24 +10,44 @@ const MAX_USER_HIGHLIGHT_COLORS = 10;
 interface HighlightColorsEditorProps {
   customHighlightColors: Record<HighlightColor, string>;
   userHighlightColors: string[];
+  highlightColorLabels: Record<string, string>;
   highlightOpacity: number;
   isEink: boolean;
   onChange: (colors: Record<HighlightColor, string>) => void;
   onUserColorsChange: (colors: string[]) => void;
+  onHighlightColorLabelsChange: (labels: Record<string, string>) => void;
   onOpacityChange: (opacity: number) => void;
 }
 
 const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
   customHighlightColors,
   userHighlightColors,
+  highlightColorLabels,
   highlightOpacity,
   isEink,
   onChange,
   onUserColorsChange,
+  onHighlightColorLabelsChange,
   onOpacityChange,
 }) => {
   const _ = useTranslation();
   const [newColor, setNewColor] = useState('#808080');
+  const [newColorLabel, setNewColorLabel] = useState('');
+
+  const normalizeColorKey = (value: string) =>
+    value.startsWith('#') ? value.trim().toLowerCase() : value;
+
+  const updateColorLabel = (color: string, label: string) => {
+    const key = normalizeColorKey(color);
+    const normalizedLabel = label.trim();
+    const updatedLabels = { ...highlightColorLabels };
+    if (!normalizedLabel) {
+      delete updatedLabels[key];
+    } else {
+      updatedLabels[key] = normalizedLabel;
+    }
+    onHighlightColorLabelsChange(updatedLabels);
+  };
 
   const highlightPreviewStyle: React.CSSProperties = {
     opacity: highlightOpacity,
@@ -42,20 +62,43 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
 
   const handleAddUserColor = () => {
     if (userHighlightColors.length >= MAX_USER_HIGHLIGHT_COLORS) return;
-    if (!userHighlightColors.includes(newColor)) {
-      const updatedColors = [...userHighlightColors, newColor];
+    const normalizedColor = normalizeColorKey(newColor);
+    const hasColor = userHighlightColors.some(
+      (color) => normalizeColorKey(color) === normalizedColor,
+    );
+    if (!hasColor) {
+      const updatedColors = [...userHighlightColors, normalizedColor];
       onUserColorsChange(updatedColors);
+      if (newColorLabel.trim()) {
+        updateColorLabel(normalizedColor, newColorLabel);
+      }
+      setNewColorLabel('');
     }
   };
 
   const handleDeleteUserColor = (hex: string) => {
-    const updatedColors = userHighlightColors.filter((c) => c !== hex);
+    const normalizedHex = normalizeColorKey(hex);
+    const updatedColors = userHighlightColors.filter(
+      (color) => normalizeColorKey(color) !== normalizedHex,
+    );
     onUserColorsChange(updatedColors);
+    updateColorLabel(normalizedHex, '');
   };
 
   const handleUserColorChange = (oldHex: string, newHex: string) => {
-    const updatedColors = userHighlightColors.map((c) => (c === oldHex ? newHex : c));
+    const oldKey = normalizeColorKey(oldHex);
+    const newKey = normalizeColorKey(newHex);
+    const updatedColors = userHighlightColors.map((color) =>
+      normalizeColorKey(color) === oldKey ? newKey : color,
+    );
     onUserColorsChange(updatedColors);
+    const label = highlightColorLabels[oldKey];
+    if (label && !highlightColorLabels[newKey]) {
+      updateColorLabel(newKey, label);
+    }
+    if (oldKey !== newKey) {
+      updateColorLabel(oldKey, '');
+    }
   };
 
   return (
@@ -69,6 +112,14 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                 index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
               return (
                 <div key={color} className='flex flex-col items-center gap-2'>
+                  <input
+                    type='text'
+                    value={highlightColorLabels[color] || ''}
+                    onChange={(e) => updateColorLabel(color, e.target.value)}
+                    placeholder={_('Name')}
+                    maxLength={20}
+                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-16 text-center text-xs'
+                  />
                   <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                     <div
                       className='h-full w-full rounded-full'
@@ -111,11 +162,20 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                   pickerPosition='right'
                   onChange={setNewColor}
                 />
+                <input
+                  type='text'
+                  value={newColorLabel}
+                  onChange={(e) => setNewColorLabel(e.target.value)}
+                  placeholder={_('Name')}
+                  maxLength={20}
+                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-20 text-center text-xs'
+                />
                 <button
                   onClick={handleAddUserColor}
                   disabled={
-                    userHighlightColors.includes(newColor) ||
-                    userHighlightColors.length >= MAX_USER_HIGHLIGHT_COLORS
+                    userHighlightColors.some(
+                      (color) => normalizeColorKey(color) === normalizeColorKey(newColor),
+                    ) || userHighlightColors.length >= MAX_USER_HIGHLIGHT_COLORS
                   }
                   className='btn btn-ghost btn-sm gap-1 bg-transparent disabled:bg-transparent disabled:opacity-40'
                 >
@@ -128,6 +188,14 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
               <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
                 {userHighlightColors.map((hex, index) => (
                   <div key={hex} className='group relative flex flex-col items-center gap-2'>
+                    <input
+                      type='text'
+                      value={highlightColorLabels[normalizeColorKey(hex)] || ''}
+                      onChange={(e) => updateColorLabel(hex, e.target.value)}
+                      placeholder={_('Name')}
+                      maxLength={20}
+                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-16 text-center text-xs'
+                    />
                     <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
                       <div
                         className='h-full w-full rounded-full'
