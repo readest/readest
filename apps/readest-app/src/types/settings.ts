@@ -49,6 +49,7 @@ export interface ReadSettings {
   highlightStyles: Record<HighlightStyle, HighlightColor>;
   customHighlightColors: Record<HighlightColor, string>;
   userHighlightColors: string[];
+  highlightColorLabels: Record<string, string>;
   customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
 }
