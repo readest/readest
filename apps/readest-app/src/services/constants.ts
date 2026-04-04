@@ -158,7 +158,6 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   customHighlightColors: HIGHLIGHT_COLOR_HEX,
   userHighlightColors: [],
   highlightColorLabels: {},
-  highlightColorsUpdatedAt: 0,
   customTtsHighlightColors: [],
 };
 
@@ -718,8 +717,6 @@ export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes
 export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://storage.readest.com';
 
 export const READEST_OPDS_USER_AGENT = 'Readest/1.0 (OPDS Browser)';
-
-export const SYNC_HIGHLIGHT_PREFS_BOOK_HASH = '__readest_highlight_prefs__';
 
 export const SYNC_PROGRESS_INTERVAL_SEC = 3;
 export const SYNC_NOTES_INTERVAL_SEC = 5;

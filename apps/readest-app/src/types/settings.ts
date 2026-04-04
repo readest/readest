@@ -50,7 +50,6 @@ export interface ReadSettings {
   customHighlightColors: Record<HighlightColor, string>;
   userHighlightColors: string[];
   highlightColorLabels: Record<string, string>;
-  highlightColorsUpdatedAt: number;
   customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
 }
