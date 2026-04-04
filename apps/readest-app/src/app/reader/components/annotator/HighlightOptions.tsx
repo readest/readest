@@ -107,7 +107,13 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     }, 2200);
   };
 
-  const handleColorPointerDown = (color: HighlightColor) => {
+  const handleColorPointerDown = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    color: HighlightColor,
+  ) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+      return;
+    }
     clearLongPressTimer();
     suppressTapRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
@@ -254,9 +260,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               )}
               <button
                 key={color}
-                aria-label={_('Select {{color}} color', { color: _(color) })}
+                aria-label={_('Select {{color}} color', { color: resolveHighlightLabel(color) })}
+                title={resolveHighlightLabel(color)}
                 onClick={() => handleColorClick(color)}
-                onPointerDown={() => handleColorPointerDown(color)}
+                onPointerDown={(event) => handleColorPointerDown(event, color)}
                 onPointerUp={handleColorPointerEnd}
                 onPointerLeave={handleColorPointerEnd}
                 onPointerCancel={handleColorPointerEnd}
