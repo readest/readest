@@ -319,7 +319,7 @@ export class RSVPController extends EventTarget {
         this.clearCountdown();
         onComplete();
       }
-    }, 800);
+    }, 500);
   }
 
   private clearCountdown(): void {
