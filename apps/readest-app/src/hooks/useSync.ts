@@ -160,13 +160,14 @@ export function useSync(bookKey?: string) {
     }
   };
 
-  const pushChanges = async (payload: SyncData) => {
+  const pushChanges = async (payload: SyncData): Promise<boolean> => {
     setSyncing(true);
     setSyncError(null);
 
     try {
       const result = await syncClient.pushChanges(payload);
       setSyncResult(result);
+      return true;
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
@@ -174,6 +175,7 @@ export function useSync(bookKey?: string) {
       } else {
         setSyncError('Error pushing changes');
       }
+      return false;
     } finally {
       setSyncing(false);
     }
@@ -203,7 +205,10 @@ export function useSync(bookKey?: string) {
     async (bookConfigs?: BookConfig[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!bookId && !lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && bookConfigs?.length) {
-        await pushChanges({ configs: bookConfigs });
+        const pushed = await pushChanges({ configs: bookConfigs });
+        if (pushed && bookId && bookKey) {
+          setConfig(bookKey, { lastPushedAtConfig: Date.now() });
+        }
       }
       if (op === 'pull' || op === 'both') {
         await pullChanges(
@@ -224,7 +229,10 @@ export function useSync(bookKey?: string) {
     async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!lastSyncedAtInited) return;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {
-        await pushChanges({ notes: bookNotes });
+        const pushed = await pushChanges({ notes: bookNotes });
+        if (pushed && bookId && bookKey) {
+          setConfig(bookKey, { lastPushedAtNotes: Date.now() });
+        }
       }
       if (op === 'pull' || op === 'both') {
         await pullChanges(

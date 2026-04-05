@@ -372,6 +372,8 @@ export interface BookConfig {
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
+  lastPushedAtConfig?: number;
+  lastPushedAtNotes?: number;
   foliateImportedAt?: number;
 
   // Per-book switch for hardcover exports in reader menu.

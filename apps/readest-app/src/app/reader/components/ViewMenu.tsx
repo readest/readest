@@ -157,7 +157,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keepCoverSpread]);
 
-  const lastSyncTime = Math.max(config?.lastSyncedAtConfig || 0, config?.lastSyncedAtNotes || 0);
+  const lastSyncTime = Math.max(
+    config?.lastSyncedAtConfig || 0,
+    config?.lastSyncedAtNotes || 0,
+    config?.lastPushedAtConfig || 0,
+    config?.lastPushedAtNotes || 0,
+  );
 
   return (
     <Menu
