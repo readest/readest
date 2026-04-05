@@ -250,6 +250,7 @@ export class RSVPController extends EventTarget {
         setTimeout(() => this.start(retryCount + 1), 150 * (retryCount + 1));
         return;
       }
+      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
       return;
     }
 
@@ -551,7 +552,7 @@ export class RSVPController extends EventTarget {
         setTimeout(() => this.loadNextPageContent(retryCount + 1), 200 * (retryCount + 1));
         return;
       }
-      this.pause();
+      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
       return;
     }
 
