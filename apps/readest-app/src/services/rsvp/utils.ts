@@ -181,7 +181,7 @@ export function segmentCJKText(text: string): string[] {
  */
 export function getHyphenParts(word: string): string[] {
   if (!/[a-zA-Z]-[a-zA-Z]/.test(word)) return [word];
-  const parts = word.split(/(?<=[a-zA-Z])-(?=[a-zA-Z])/);
+  const parts = word.split(/-(?=[a-zA-Z])/);
   return parts.map((part, i) => (i < parts.length - 1 ? part + '-' : part));
 }
 
