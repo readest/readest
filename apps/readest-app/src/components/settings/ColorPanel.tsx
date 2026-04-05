@@ -20,7 +20,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
-import { HighlightColor } from '@/types/book';
+import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -55,12 +55,12 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [customHighlightColors, setCustomHighlightColors] = useState(
     settings.globalReadSettings.customHighlightColors,
   );
-  const [userHighlightColors, setUserHighlightColors] = useState(
-    settings.globalReadSettings.userHighlightColors || [],
+  const [userHighlightColors, setUserHighlightColors] = useState<UserHighlightColor[]>(
+    settings.globalReadSettings.userHighlightColors ?? [],
   );
-  const [highlightColorLabels, setHighlightColorLabels] = useState(
-    settings.globalReadSettings.highlightColorLabels || {},
-  );
+  const [defaultHighlightLabels, setDefaultHighlightLabels] = useState<
+    Partial<Record<DefaultHighlightColor, string>>
+  >(settings.globalReadSettings.defaultHighlightLabels ?? {});
 
   const [readingRulerEnabled, setReadingRulerEnabled] = useState(viewSettings.readingRulerEnabled);
   const [readingRulerLines, setReadingRulerLines] = useState(viewSettings.readingRulerLines);
@@ -98,7 +98,7 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     setBackgroundSize('cover');
     setCustomHighlightColors(HIGHLIGHT_COLOR_HEX);
     setUserHighlightColors([]);
-    setHighlightColorLabels({});
+    setDefaultHighlightLabels({});
     deactivateAtmosphere();
   };
 
@@ -272,18 +272,25 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveCustomTextures(envConfig);
   };
 
-  const handleHighlightColorsChange = (colors: Record<HighlightColor, string>) => {
+  const handleCustomHighlightColorsChange = (colors: Record<HighlightColor, string>) => {
     setCustomHighlightColors(colors);
     settings.globalReadSettings.customHighlightColors = colors;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
 
-  const handleHighlightPrefsChange = (colors: string[], labels: Record<string, string>) => {
+  const handleUserHighlightColorsChange = (colors: UserHighlightColor[]) => {
     setUserHighlightColors(colors);
-    setHighlightColorLabels(labels);
     settings.globalReadSettings.userHighlightColors = colors;
-    settings.globalReadSettings.highlightColorLabels = labels;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+  };
+
+  const handleDefaultHighlightLabelsChange = (
+    labels: Partial<Record<DefaultHighlightColor, string>>,
+  ) => {
+    setDefaultHighlightLabels(labels);
+    settings.globalReadSettings.defaultHighlightLabels = labels;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
@@ -359,11 +366,12 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <HighlightColorsEditor
             customHighlightColors={customHighlightColors}
             userHighlightColors={userHighlightColors}
-            highlightColorLabels={highlightColorLabels}
+            defaultHighlightLabels={defaultHighlightLabels}
             highlightOpacity={highlightOpacity}
             isEink={viewSettings.isEink}
-            onChange={handleHighlightColorsChange}
-            onHighlightPrefsChange={handleHighlightPrefsChange}
+            onCustomHighlightColorsChange={handleCustomHighlightColorsChange}
+            onUserHighlightColorsChange={handleUserHighlightColorsChange}
+            onDefaultHighlightLabelsChange={handleDefaultHighlightLabelsChange}
             onOpacityChange={setHighlightOpacity}
             data-setting-id='settings.color.highlightColors'
           />

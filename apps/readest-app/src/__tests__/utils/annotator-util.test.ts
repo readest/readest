@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   getExternalDragHandle,
   getHighlightColorLabel,
-  normalizeHighlightColorKey,
   toParentViewportPoint,
 } from '@/app/reader/utils/annotatorUtil';
 import { Point } from '@/utils/sel';
+import { UserHighlightColor } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 
 describe('getExternalDragHandle', () => {
@@ -106,33 +106,37 @@ describe('toParentViewportPoint', () => {
   });
 });
 
-describe('highlight color label helpers', () => {
-  const makeSettings = (labels: Record<string, string>): SystemSettings =>
+describe('getHighlightColorLabel', () => {
+  const makeSettings = (
+    userHighlightColors: UserHighlightColor[],
+    defaultHighlightLabels: Partial<Record<string, string>> = {},
+  ): SystemSettings =>
     ({
       globalReadSettings: {
-        highlightColorLabels: labels,
+        userHighlightColors,
+        defaultHighlightLabels,
       },
     }) as SystemSettings;
 
-  it('normalizes hex color keys to lowercase', () => {
-    expect(normalizeHighlightColorKey('#AABBCC')).toBe('#aabbcc');
-    expect(normalizeHighlightColorKey('#aabbcc')).toBe('#aabbcc');
-    expect(normalizeHighlightColorKey('yellow')).toBe('yellow');
-  });
-
-  it('returns custom label for built-in color key', () => {
-    const settings = makeSettings({ yellow: 'Foreshadowing' });
+  it('returns the user-set label for a built-in color', () => {
+    const settings = makeSettings([], { yellow: 'Foreshadowing' });
     expect(getHighlightColorLabel(settings, 'yellow')).toBe('Foreshadowing');
   });
 
-  it('returns custom label for hex key regardless of case', () => {
-    const settings = makeSettings({ '#aabbcc': 'Romance' });
+  it('returns the user-set label for a hex color, matching case-insensitively', () => {
+    const settings = makeSettings([{ hex: '#aabbcc', label: 'Romance' }]);
     expect(getHighlightColorLabel(settings, '#AABBCC')).toBe('Romance');
   });
 
-  it('falls back to the color value when label is missing', () => {
-    const settings = makeSettings({});
-    expect(getHighlightColorLabel(settings, 'green')).toBe('green');
-    expect(getHighlightColorLabel(settings, '#123456')).toBe('#123456');
+  it('returns undefined when the user has not set a label', () => {
+    const settings = makeSettings([]);
+    expect(getHighlightColorLabel(settings, 'green')).toBeUndefined();
+    expect(getHighlightColorLabel(settings, '#123456')).toBeUndefined();
+  });
+
+  it('ignores labels that collapse to whitespace', () => {
+    const settings = makeSettings([{ hex: '#abcdef', label: '   ' }], { red: '  ' });
+    expect(getHighlightColorLabel(settings, '#abcdef')).toBeUndefined();
+    expect(getHighlightColorLabel(settings, 'red')).toBeUndefined();
   });
 });

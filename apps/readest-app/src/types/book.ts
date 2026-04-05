@@ -19,6 +19,13 @@ export type ReadingStatus = 'unread' | 'reading' | 'finished';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 // Predefined highlight colors, can be extended with custom hex colors
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
+export const DEFAULT_HIGHLIGHT_COLORS = ['red', 'yellow', 'green', 'blue', 'violet'] as const;
+export type DefaultHighlightColor = (typeof DEFAULT_HIGHLIGHT_COLORS)[number];
+// A user-added highlight color with optional label
+export interface UserHighlightColor {
+  hex: string;
+  label?: string;
+}
 export type ReadingRulerColor = 'transparent' | 'yellow' | 'green' | 'blue' | 'rose';
 
 export interface ParagraphModeConfig {

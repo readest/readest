@@ -1,32 +1,29 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
-import { HighlightColor, HighlightStyle } from '@/types/book';
+import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useDragScroll } from '@/hooks/useDragScroll';
 import { saveSysSettings } from '@/helpers/settings';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { getHighlightColorLabel } from '../../utils/annotatorUtil';
 import { stubTranslation as _ } from '@/utils/misc';
 
+// Register strings for the i18next extractor. These keys are translated by the
+// component via `useTranslation` below.
 const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
-const defaultColors = [
-  _('red'),
-  _('violet'),
-  _('blue'),
-  _('green'),
-  _('yellow'),
-] as HighlightColor[];
+void [_('red'), _('yellow'), _('green'), _('blue'), _('violet')];
 
 const getColorHex = (
   customColors: Record<HighlightColor, string>,
   color: HighlightColor,
 ): string => {
   if (color.startsWith('#')) return color;
-  return customColors[color as HighlightColor] ?? color;
+  return customColors[color] ?? color;
 };
 
 interface HighlightOptionsProps {
@@ -41,6 +38,7 @@ interface HighlightOptionsProps {
 
 const OPTIONS_HEIGHT_PIX = 28;
 const OPTIONS_PADDING_PIX = 16;
+const LABEL_PREVIEW_MS = 2200;
 
 const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   isVertical,
@@ -63,27 +61,27 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const customColors = globalReadSettings.customHighlightColors;
   const userColors = globalReadSettings.userHighlightColors ?? [];
+  const allColors: HighlightColor[] = [
+    ...DEFAULT_HIGHLIGHT_COLORS,
+    ...userColors.map((c) => c.hex),
+  ];
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(_selectedStyle);
   const [selectedColor, setSelectedColor] = useState<HighlightColor>(_selectedColor);
   const [previewColor, setPreviewColor] = useState<HighlightColor | null>(null);
-  const [previewLabel, setPreviewLabel] = useState('');
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
-  const suppressColorClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const suppressColorClickRef = useRef(false);
-  const dragStateRef = useRef({
-    active: false,
-    startX: 0,
-    startScrollLeft: 0,
-    moved: false,
-  });
-  const [isDraggingColorStrip, setIsDraggingColorStrip] = useState(false);
   const size16 = useResponsiveSize(16);
   const size28 = useResponsiveSize(28);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
+
+  const {
+    isDragging: isDraggingColorStrip,
+    pointerHandlers: stripPointerHandlers,
+    shouldSuppressClick: shouldSuppressStripClick,
+  } = useDragScroll(colorStripRef, { enabled: !isVertical });
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
@@ -99,29 +97,23 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     }
   };
 
-  const clearSuppressColorClickTimer = () => {
-    if (suppressColorClickTimerRef.current) {
-      clearTimeout(suppressColorClickTimerRef.current);
-      suppressColorClickTimerRef.current = null;
-    }
-  };
-
-  const resolveHighlightLabel = (color: HighlightColor) => {
-    const label = getHighlightColorLabel(settings, color);
-    if (label === color && !color.startsWith('#')) {
-      return _(color);
-    }
-    return label;
+  /**
+   * Translate a color's label. Order of preference:
+   *   1. user-set label (custom string, shown verbatim)
+   *   2. translated default name (only for the 5 predefined colors)
+   *   3. the color value itself (hex fallback)
+   */
+  const resolveHighlightLabel = (color: HighlightColor): string => {
+    const userLabel = getHighlightColorLabel(settings, color);
+    if (userLabel) return userLabel;
+    if (!color.startsWith('#')) return _(color);
+    return color;
   };
 
   const showHighlightLabelPreview = (color: HighlightColor) => {
     setPreviewColor(color);
-    setPreviewLabel(resolveHighlightLabel(color));
     clearPreviewTimer();
-    previewTimerRef.current = setTimeout(() => {
-      setPreviewColor(null);
-      setPreviewLabel('');
-    }, 2200);
+    previewTimerRef.current = setTimeout(() => setPreviewColor(null), LABEL_PREVIEW_MS);
   };
 
   const handleColorPointerDown = (
@@ -143,72 +135,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     clearLongPressTimer();
   };
 
-  const handleColorStripPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (isVertical || event.pointerType !== 'mouse') {
-      return;
-    }
-    const target = event.target as HTMLElement;
-    const isColorButton = Boolean(target.closest('button'));
-    if (!isColorButton) {
-      return;
-    }
-
-    const strip = colorStripRef.current;
-    if (!strip) {
-      return;
-    }
-
-    dragStateRef.current = {
-      active: true,
-      startX: event.clientX,
-      startScrollLeft: strip.scrollLeft,
-      moved: false,
-    };
-    setIsDraggingColorStrip(false);
-  };
-
-  const handleColorStripPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const strip = colorStripRef.current;
-    const drag = dragStateRef.current;
-    if (!strip || !drag.active) {
-      return;
-    }
-
-    const deltaX = event.clientX - drag.startX;
-    if (!drag.moved && Math.abs(deltaX) >= 6) {
-      drag.moved = true;
-      setIsDraggingColorStrip(true);
-    }
-    if (drag.moved) {
-      strip.scrollLeft = drag.startScrollLeft - deltaX;
-      event.preventDefault();
-    }
-  };
-
-  const handleColorStripPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragStateRef.current;
-    if (!drag.active || event.pointerType !== 'mouse') {
-      return;
-    }
-
-    const moved = drag.moved;
-    drag.active = false;
-    drag.moved = false;
-    setIsDraggingColorStrip(false);
-
-    if (moved) {
-      clearSuppressColorClickTimer();
-      suppressColorClickRef.current = true;
-      suppressColorClickTimerRef.current = setTimeout(() => {
-        suppressColorClickRef.current = false;
-      }, 120);
-    }
-  };
-
   const handleColorClick = (color: HighlightColor) => {
-    if (dragStateRef.current.active || suppressColorClickRef.current) {
-      return;
-    }
+    if (shouldSuppressStripClick()) return;
     if (suppressTapRef.current) {
       suppressTapRef.current = false;
       return;
@@ -220,10 +148,6 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     return () => {
       clearLongPressTimer();
       clearPreviewTimer();
-      clearSuppressColorClickTimer();
-      suppressColorClickRef.current = false;
-      dragStateRef.current.active = false;
-      dragStateRef.current.moved = false;
     };
   }, []);
 
@@ -322,6 +246,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 
       <div
         ref={colorStripRef}
+        {...stripPointerHandlers}
         className={clsx(
           'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
           isVertical
@@ -330,11 +255,6 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           !isVertical && 'cursor-grab',
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
-        onPointerDown={handleColorStripPointerDown}
-        onPointerMove={handleColorStripPointerMove}
-        onPointerUp={handleColorStripPointerEnd}
-        onPointerCancel={handleColorStripPointerEnd}
-        onPointerLeave={handleColorStripPointerEnd}
         style={{
           ...(isVertical ? { width: size28 } : { height: size28 }),
           scrollbarWidth: 'none',
@@ -343,45 +263,46 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           userSelect: isDraggingColorStrip ? 'none' : undefined,
         }}
       >
-        {defaultColors
-          .concat(userColors)
+        {allColors
           .filter((c) => (isBwEink ? selectedColor === c : true))
-          .map((color) => (
-            <div key={color} className='relative flex items-center justify-center'>
-              {previewColor === color && previewLabel && (
-                <div
-                  className='eink-bordered pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-800 px-2 py-0.5 text-[10px] text-white'
-                  style={{ maxWidth: 120 }}
-                >
-                  {previewLabel}
-                </div>
-              )}
-              <button
-                key={color}
-                aria-label={_('Select {{color}} color', { color: resolveHighlightLabel(color) })}
-                title={resolveHighlightLabel(color)}
-                onClick={() => handleColorClick(color)}
-                onPointerDown={(event) => handleColorPointerDown(event, color)}
-                onPointerUp={handleColorPointerEnd}
-                onPointerLeave={handleColorPointerEnd}
-                onPointerCancel={handleColorPointerEnd}
-                style={{
-                  width: size16,
-                  height: size16,
-                  backgroundColor:
-                    selectedColor !== color ? customColors[color] || color : 'transparent',
-                }}
-                className='rounded-full p-0'
-              >
-                {selectedColor === color && (
-                  <FaCheckCircle
-                    size={size16}
-                    style={{ fill: isBwEink ? einkFgColor : customColors[color] || color }}
-                  />
+          .map((color) => {
+            const label = resolveHighlightLabel(color);
+            const swatchColor = customColors[color] || color;
+            return (
+              <div key={color} className='relative flex items-center justify-center'>
+                {previewColor === color && (
+                  <div
+                    className='eink-bordered pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-800 px-2 py-0.5 text-[10px] text-white'
+                    style={{ maxWidth: 120 }}
+                  >
+                    {label}
+                  </div>
                 )}
-              </button>
-            </div>
-          ))}
+                <button
+                  aria-label={_('Select {{color}} color', { color: label })}
+                  title={label}
+                  onClick={() => handleColorClick(color)}
+                  onPointerDown={(event) => handleColorPointerDown(event, color)}
+                  onPointerUp={handleColorPointerEnd}
+                  onPointerLeave={handleColorPointerEnd}
+                  onPointerCancel={handleColorPointerEnd}
+                  style={{
+                    width: size16,
+                    height: size16,
+                    backgroundColor: selectedColor !== color ? swatchColor : 'transparent',
+                  }}
+                  className='rounded-full p-0'
+                >
+                  {selectedColor === color && (
+                    <FaCheckCircle
+                      size={size16}
+                      style={{ fill: isBwEink ? einkFgColor : swatchColor }}
+                    />
+                  )}
+                </button>
+              </div>
+            );
+          })}
       </div>
     </div>
   );

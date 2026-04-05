@@ -1,10 +1,12 @@
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
-import { HighlightColor } from '@/types/book';
+import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { Point } from '@/utils/sel';
 
-export const normalizeHighlightColorKey = (color: HighlightColor): string => {
-  return color.startsWith('#') ? color.trim().toLowerCase() : color;
+export const isDefaultHighlightColor = (
+  color: HighlightColor,
+): color is (typeof DEFAULT_HIGHLIGHT_COLORS)[number] => {
+  return (DEFAULT_HIGHLIGHT_COLORS as readonly string[]).includes(color);
 };
 
 export const getHighlightColorHex = (
@@ -17,14 +19,25 @@ export const getHighlightColorHex = (
   return customColors?.[color] ?? HIGHLIGHT_COLOR_HEX[color];
 };
 
-export const getHighlightColorLabel = (settings: SystemSettings, color: HighlightColor): string => {
-  const labels = settings.globalReadSettings.highlightColorLabels || {};
-  const key = normalizeHighlightColorKey(color);
-  const label = labels[key] || labels[color];
-  if (typeof label === 'string' && label.trim()) {
-    return label.trim();
+/**
+ * Returns a user-defined label for the given color, or `undefined` when none is set.
+ * Callers that want to fall back to a translated default name should handle that in
+ * the component layer (where `useTranslation` is available).
+ */
+export const getHighlightColorLabel = (
+  settings: SystemSettings,
+  color: HighlightColor,
+): string | undefined => {
+  const { defaultHighlightLabels, userHighlightColors } = settings.globalReadSettings;
+  if (color.startsWith('#')) {
+    const hex = color.trim().toLowerCase();
+    const entry = userHighlightColors?.find((c) => c.hex === hex);
+    return entry?.label?.trim() || undefined;
   }
-  return color;
+  if (isDefaultHighlightColor(color)) {
+    return defaultHighlightLabels?.[color]?.trim() || undefined;
+  }
+  return undefined;
 };
 
 export function getExternalDragHandle(
