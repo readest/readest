@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.10.4": {
+      "date": "2026-04-06",
+      "notes": [
+        "Annotations: You can now name your highlight colors, and your custom names sync across devices",
+        "Annotations: Fixed highlights that stayed on the page after being deleted from the sidebar",
+        "Speed Reading: Added an option to split long words, a faster countdown",
+        "Text-to-Speech: Fixed double playback when tapping the play button in quick succession",
+        "Accessibility: Dropdown menus now open reliably when activated with the keyboard",
+        "Reading: Background textures now display correctly when you override the theme background color",
+        "Translation: Temporarily disabled the Yandex provider while its service is unavailable"
+      ]
+    },
     "0.10.2": {
       "date": "2026-04-05",
       "notes": [

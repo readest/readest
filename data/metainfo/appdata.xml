@@ -59,6 +59,19 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.10.4" date="2026-04-06">
+      <description>
+        <ul>
+          <li>Annotations: You can now name your highlight colors, and your custom names sync across devices</li>
+          <li>Annotations: Fixed highlights that stayed on the page after being deleted from the sidebar</li>
+          <li>Speed Reading: Added an option to split long words, a faster countdown</li>
+          <li>Text-to-Speech: Fixed double playback when tapping the play button in quick succession</li>
+          <li>Accessibility: Dropdown menus now open reliably when activated with the keyboard</li>
+          <li>Reading: Background textures now display correctly when you override the theme background color</li>
+          <li>Translation: Temporarily disabled the Yandex provider while its service is unavailable</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.10.2" date="2026-04-05">
       <description>
         <ul>
@@ -222,26 +235,6 @@
           <li>Android: Fixed highlighting of the current sentence when using native Android text-to-speech</li>
           <li>Android: Back button handling now works correctly on Android 15 and above</li>
           <li>Android: You can now open files shared from other apps</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.94" date="2025-12-02">
-      <description>
-        <ul>
-          <li>OPDS: You can now browse and download ebooks directly from OPDS catalogs</li>
-          <li>PDF: Added a hand-tool mode that makes navigating PDF pages easier</li>
-          <li>Covers: You can now choose a folder to save the latest book cover image</li>
-          <li>CJK: Added one-tap conversion between Simplified and Traditional Chinese</li>
-          <li>Shortcuts: Use Ctrl + mouse wheel to quickly zoom in or out</li>
-          <li>Library: Added a new option to adjust cover sizes in grid view</li>
-          <li>Windows: Added Ebook thumbnails with book covers in Windows Explorer</li>
-          <li>TTS: Fixed an issue where the page would scroll when showing the annotator</li>
-          <li>Annotations: Resolved layout shifts when selecting text in paginated mode on Android</li>
-          <li>Files: Improved backup handling to prevent file corruption</li>
-          <li>Layout: Fixed text clipping caused by negative indents</li>
-          <li>E-ink: Improved sidebar and notebook background colors for e-ink devices</li>
-          <li>Android: The Back button now works properly in menus, dialogs, and alerts</li>
-          <li>iOS: Fixed occasional failures when opening books on older iOS versions (16.4 and below)</li>
         </ul>
       </description>
     </release>
