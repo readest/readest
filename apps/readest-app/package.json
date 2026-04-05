@@ -146,7 +146,7 @@
     "lunr": "^2.3.9",
     "marked": "^15.0.12",
     "nanoid": "^5.1.6",
-    "next": "16.2.1",
+    "next": "16.2.2",
     "next-view-transitions": "^0.3.5",
     "nunjucks": "^3.2.4",
     "overlayscrollbars": "^2.11.4",
@@ -229,5 +229,11 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18",
     "wrangler": "^4.77.0"
-  }
+  },
+  "browserslist": [
+    "chrome 92",
+    "edge 92",
+    "firefox 92",
+    "safari 15.2"
+  ]
 }
