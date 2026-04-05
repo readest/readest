@@ -128,6 +128,7 @@ const getColorStyles = (
   isEink: boolean,
 ) => {
   const { bg, fg, primary, isDarkMode } = themeCode;
+  const hasBackgroundTexture = !!backgroundTextureId && backgroundTextureId !== 'none';
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -153,9 +154,9 @@ const getColorStyles = (
     }
     section, aside, blockquote, article, nav, header, footer, main, figure,
     div, p, font, h1, h2, h3, h4, h5, h6, li, span {
-      ${overrideColor ? `background-color: ${bg} !important;` : ''}
-      ${overrideColor ? `color: ${fg} !important;` : ''}
-      ${overrideColor ? `border-color: ${fg} !important;` : ''}
+      ${overrideColor && !hasBackgroundTexture ? `background-color: ${bg} !important;` : ''}
+      ${overrideColor && !hasBackgroundTexture ? `color: ${fg} !important;` : ''}
+      ${overrideColor && !hasBackgroundTexture ? `border-color: ${fg} !important;` : ''}
     }
     pre, span { /* inline code blocks */
       ${overrideColor ? `background-color: ${bg} !important;` : ''}
