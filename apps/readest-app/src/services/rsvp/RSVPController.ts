@@ -1,6 +1,6 @@
 import { FoliateView } from '@/types/view';
 import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } from './types';
-import { containsCJK, splitTextIntoWords } from './utils';
+import { containsCJK, splitTextIntoWords, getHyphenParts } from './utils';
 import { compare as compareCFI } from 'foliate-js/epubcfi.js';
 import { XCFI } from '@/utils/xcfi';
 
@@ -10,9 +10,11 @@ const MAX_WPM = 1000;
 const WPM_STEP = 50;
 const DEFAULT_PUNCTUATION_PAUSE_MS = 100;
 const PUNCTUATION_PAUSE_OPTIONS = [25, 50, 75, 100, 125, 150, 175, 200];
+const DEFAULT_SPLIT_HYPHENS = false;
 const STORAGE_KEY_PREFIX = 'readest_rsvp_wpm_';
 const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
+const SPLIT_HYPHENS_KEY = 'readest_rsvp_split_hyphens';
 
 export class RSVPController extends EventTarget {
   private view: FoliateView;
@@ -24,8 +26,10 @@ export class RSVPController extends EventTarget {
     playing: false,
     words: [],
     currentIndex: 0,
+    currentPartIndex: 0,
     wpm: DEFAULT_WPM,
     punctuationPauseMs: DEFAULT_PUNCTUATION_PAUSE_MS,
+    splitHyphens: DEFAULT_SPLIT_HYPHENS,
     progress: 0,
   };
 
@@ -52,6 +56,10 @@ export class RSVPController extends EventTarget {
     if (savedPause) {
       this.state.punctuationPauseMs = savedPause;
     }
+    const savedSplitHyphens = this.loadSplitHyphensFromStorage();
+    if (savedSplitHyphens !== null) {
+      this.state.splitHyphens = savedSplitHyphens;
+    }
   }
 
   get currentState(): RsvpState {
@@ -67,6 +75,16 @@ export class RSVPController extends EventTarget {
       return this.state.words[this.state.currentIndex]!;
     }
     return null;
+  }
+
+  get currentDisplayWord(): RsvpWord | null {
+    const word = this.currentWord;
+    if (!word) return null;
+    if (!this.state.splitHyphens) return word;
+    const parts = getHyphenParts(word.text);
+    if (parts.length <= 1) return word;
+    const partText = parts[this.state.currentPartIndex] ?? word.text;
+    return { ...word, text: partText, orpIndex: this.calculateORP(partText) };
   }
 
   get currentCountdown(): number | null {
@@ -128,6 +146,30 @@ export class RSVPController extends EventTarget {
 
   private saveWpmToStorage(wpm: number): void {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${this.bookId}`, wpm.toString());
+  }
+
+  getSplitHyphens(): boolean {
+    return this.state.splitHyphens;
+  }
+
+  setSplitHyphens(value: boolean): void {
+    this.state.splitHyphens = value;
+    try {
+      localStorage.setItem(SPLIT_HYPHENS_KEY, value ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+    this.emitStateChange();
+  }
+
+  private loadSplitHyphensFromStorage(): boolean | null {
+    try {
+      const stored = localStorage.getItem(SPLIT_HYPHENS_KEY);
+      if (stored !== null) return stored === '1';
+    } catch {
+      /* ignore */
+    }
+    return null;
   }
 
   setCurrentCfi(cfi: string | null): void {
@@ -208,6 +250,7 @@ export class RSVPController extends EventTarget {
         setTimeout(() => this.start(retryCount + 1), 150 * (retryCount + 1));
         return;
       }
+      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
       return;
     }
 
@@ -277,7 +320,7 @@ export class RSVPController extends EventTarget {
         this.clearCountdown();
         onComplete();
       }
-    }, 800);
+    }, 500);
   }
 
   private clearCountdown(): void {
@@ -323,6 +366,7 @@ export class RSVPController extends EventTarget {
       playing: false,
       words: [],
       currentIndex: 0,
+      currentPartIndex: 0,
     };
     this.emitStateChange();
   }
@@ -475,11 +519,13 @@ export class RSVPController extends EventTarget {
       this.state.words.length - 1,
       this.state.currentIndex + count,
     );
+    this.state.currentPartIndex = 0;
     this.emitStateChange();
   }
 
   skipBackward(count: number = 10): void {
     this.state.currentIndex = Math.max(0, this.state.currentIndex - count);
+    this.state.currentPartIndex = 0;
     this.emitStateChange();
   }
 
@@ -487,12 +533,14 @@ export class RSVPController extends EventTarget {
     if (this.state.words.length === 0) return;
     const newIndex = Math.floor((percentage / 100) * this.state.words.length);
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, newIndex));
+    this.state.currentPartIndex = 0;
     this.emitStateChange();
   }
 
   seekToIndex(index: number): void {
     if (this.state.words.length === 0) return;
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
+    this.state.currentPartIndex = 0;
     this.emitStateChange();
   }
 
@@ -504,7 +552,7 @@ export class RSVPController extends EventTarget {
         setTimeout(() => this.loadNextPageContent(retryCount + 1), 200 * (retryCount + 1));
         return;
       }
-      this.pause();
+      this.dispatchEvent(new CustomEvent('rsvp-request-next-page'));
       return;
     }
 
@@ -514,6 +562,7 @@ export class RSVPController extends EventTarget {
       playing: false,
       words,
       currentIndex: 0,
+      currentPartIndex: 0,
     };
     this.emitStateChange();
 
@@ -536,8 +585,8 @@ export class RSVPController extends EventTarget {
       return;
     }
 
-    const word = this.state.words[this.state.currentIndex]!;
-    const duration = this.getWordDisplayDuration(word, this.state.wpm);
+    const displayWord = this.currentDisplayWord!;
+    const duration = this.getWordDisplayDuration(displayWord, this.state.wpm);
 
     this.playbackTimer = setTimeout(() => {
       this.advanceToNextWord();
@@ -545,6 +594,17 @@ export class RSVPController extends EventTarget {
   }
 
   private advanceToNextWord(): void {
+    const word = this.currentWord;
+    if (word && this.state.splitHyphens) {
+      const parts = getHyphenParts(word.text);
+      if (this.state.currentPartIndex < parts.length - 1) {
+        this.state.currentPartIndex += 1;
+        this.emitStateChange();
+        this.scheduleNextWord();
+        return;
+      }
+    }
+
     const newIndex = this.state.currentIndex + 1;
 
     if (newIndex >= this.state.words.length) {
@@ -553,6 +613,7 @@ export class RSVPController extends EventTarget {
     }
 
     this.state.currentIndex = newIndex;
+    this.state.currentPartIndex = 0;
     this.emitStateChange();
 
     this.scheduleNextWord();

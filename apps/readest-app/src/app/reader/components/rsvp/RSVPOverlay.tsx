@@ -56,7 +56,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
-  const currentWord = state.words[state.currentIndex] ?? null;
+  const currentWord = controller.currentDisplayWord;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
@@ -93,15 +93,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
     return 0;
   });
-  // Context window: only rebuild the rendered word list when the current word
-  // falls outside the window or nears its edge, keeping the DOM stable.
-  const [contextWindow, setContextWindow] = useState(() => {
-    if (!state || state.words.length === 0) return { start: 0, end: 0 };
-    return {
-      start: Math.max(0, state.currentIndex - 50),
-      end: Math.min(state.words.length, state.currentIndex + 151),
-    };
-  });
+  const [contextWindow, setContextWindow] = useState(() => ({
+    start: 0,
+    end: state.words.length,
+  }));
   const contextWordRef = useRef<HTMLSpanElement>(null);
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -134,25 +129,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
 
-      // Update context window only when current word falls outside or nears edge
-      const idx = newState.currentIndex;
+      // Reset context window to show all words when the chapter changes
       const total = newState.words.length;
       setContextWindow((prev) => {
-        if (total === 0) return { start: 0, end: 0 };
-        // Outside window — reset
-        if (idx < prev.start || idx >= prev.end) {
-          return {
-            start: Math.max(0, idx - 50),
-            end: Math.min(total, idx + 151),
-          };
-        }
-        // Near end of window — extend forward
-        const windowSize = prev.end - prev.start;
-        if (idx - prev.start > windowSize * 0.8) {
-          return { start: prev.start, end: Math.min(total, prev.end + 100) };
-        }
-        // No change — return same reference to avoid re-render
-        return prev;
+        if (total === prev.end && prev.start === 0) return prev;
+        return { start: 0, end: total };
       });
     };
 
@@ -849,6 +830,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               >
                 <IoAdd className='h-3 w-3' />
               </button>
+            </div>
+
+            {/* Split hyphenated words */}
+            <div className='config-item gap-2'>
+              <span className='opacity-50'>{_('Split Hyphens')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={state.splitHyphens}
+                onChange={(e) => controller.setSplitHyphens(e.target.checked)}
+              />
             </div>
 
             {/* ORP color */}
