@@ -16,7 +16,7 @@ interface NavigationBarProps {
   bookKey: string;
   actionTab: string;
   gridInsets: Insets;
-  isMobileLayout: boolean;
+  forceMobileLayout: boolean;
   onSetActionTab: (tab: string) => void;
 }
 
@@ -24,10 +24,10 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   bookKey,
   actionTab,
   gridInsets,
-  isMobileLayout,
+  forceMobileLayout,
   onSetActionTab,
 }) => {
-  const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+  const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getViewState } = useReaderStore();
@@ -40,7 +40,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
     <div
       className={clsx(
         'bg-base-200 z-30 mt-auto flex w-full justify-between px-8 py-4',
-        !isMobileLayout && 'sm:hidden',
+        !forceMobileLayout && 'sm:hidden',
       )}
       style={{
         paddingBottom: appService?.isAndroidApp

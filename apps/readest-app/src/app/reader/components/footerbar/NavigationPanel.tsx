@@ -21,6 +21,7 @@ interface NavigationPanelProps {
   viewSettings?: ViewSettings;
   bottomOffset: string;
   sliderHeight: number;
+  forceMobileLayout: boolean;
 }
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -32,6 +33,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   viewSettings,
   bottomOffset,
   sliderHeight,
+  forceMobileLayout,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -58,7 +60,8 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   );
 
   const classes = clsx(
-    'footerbar-progress-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
+    'footerbar-progress-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    !forceMobileLayout && 'sm:hidden',
     actionTab === 'progress'
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
       : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',

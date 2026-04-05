@@ -441,13 +441,6 @@ foliate-fxl {
   mask: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.9) 50%, rgba(0, 0, 0, 0.5) 100%);
 }
 
-/* Force mobile footer bar layout on Android portrait (overrides sm:hidden breakpoint) */
-@media (min-width: 640px) {
-  .force-mobile-layout .sm\:hidden {
-    display: flex;
-  }
-}
-
 .visible-focus-inset-2:focus-visible {
   outline: none;
   box-shadow:

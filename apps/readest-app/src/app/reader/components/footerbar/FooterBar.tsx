@@ -11,10 +11,10 @@ import { eventDispatcher } from '@/utils/event';
 import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
 import { viewPagination } from '../../hooks/usePagination';
+import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
-import { RSVPControl } from '../rsvp';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -194,9 +194,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const footerBarRef = useRef<HTMLDivElement>(null);
   useSpatialNavigation(footerBarRef, isVisible);
 
-  const isPortrait = window.innerWidth <= window.innerHeight;
-  const isMobile = appService?.isMobile || window.innerWidth < 640;
-  const isMobileLayout = isMobile || (!!appService?.isAndroidApp && isPortrait);
+  // Force the mobile footer bar on mobile tablets/foldables in portrait mode
+  // where the viewport width exceeds the `sm:` (640px) breakpoint. Phones
+  // (innerWidth < 640) are intentionally excluded so their styling and panel
+  // slide-down animation remain exactly as before — see #3742 / #3746.
+  const forceMobileLayout =
+    !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
 
   const commonProps: FooterBarChildProps = {
     bookKey,
@@ -205,7 +208,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     progressValid,
     progressFraction,
     navigationHandlers,
-    isMobileLayout,
+    forceMobileLayout,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
   };
@@ -216,22 +219,23 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
-    isMobileLayout ? '' : 'sm:h-[52px]',
-    isMobileLayout ? '' : 'sm:bg-base-100 sm:border-none',
+    !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
     'border-base-300/50 border-t',
     'transition-[opacity,transform] duration-300',
-    isMobileLayout ? 'fixed' : window.innerWidth < 640 ? 'fixed' : 'absolute',
+    forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    !isMobileLayout &&
+    !forceMobileLayout &&
       (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center'),
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
-      : isMobileLayout
+      : forceMobileLayout
         ? 'pointer-events-none translate-y-full opacity-0'
         : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
+
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
 
   return (
     <>

@@ -32,6 +32,7 @@ interface FontLayoutPanelProps {
   actionTab: string;
   bottomOffset: string;
   marginIconSize: number;
+  forceMobileLayout: boolean;
 }
 
 export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
@@ -39,6 +40,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   actionTab,
   bottomOffset,
   marginIconSize,
+  forceMobileLayout,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -91,7 +93,8 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   }, []);
 
   const classes = clsx(
-    'footerbar-font-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
+    'footerbar-font-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    !forceMobileLayout && 'sm:hidden',
     actionTab === 'font'
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
       : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
