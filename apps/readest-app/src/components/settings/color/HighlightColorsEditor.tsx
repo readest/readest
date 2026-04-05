@@ -14,11 +14,7 @@ interface HighlightColorsEditorProps {
   highlightOpacity: number;
   isEink: boolean;
   onChange: (colors: Record<HighlightColor, string>) => void;
-  onHighlightPrefsChange: (
-    colors: string[],
-    labels: Record<string, string>,
-    options?: { skipUserColors?: boolean; skipLabels?: boolean },
-  ) => void;
+  onHighlightPrefsChange: (colors: string[], labels: Record<string, string>) => void;
   onOpacityChange: (opacity: number) => void;
 }
 
@@ -48,7 +44,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     } else {
       updatedLabels[key] = normalizedLabel;
     }
-    onHighlightPrefsChange(userHighlightColors, updatedLabels, { skipUserColors: true });
+    onHighlightPrefsChange(userHighlightColors, updatedLabels);
   };
 
   const highlightPreviewStyle: React.CSSProperties = {
@@ -151,90 +147,85 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
           )}
         </div>
 
-        {(userHighlightColors.length > 0 || true) && (
-          <div className='border-base-200 border-t p-4'>
-            <div className='mb-2 flex items-center justify-between'>
-              <span className='font-normal'>
-                {_('Custom Colors')} ({userHighlightColors.length}/{MAX_USER_HIGHLIGHT_COLORS})
-              </span>
-              <div className='flex flex-wrap items-center gap-2'>
-                <div className='border-base-300 h-6 w-6 rounded-full border-2 shadow-sm'>
-                  <div
-                    className='h-full w-full rounded-full'
-                    style={{ backgroundColor: newColor, ...highlightPreviewStyle }}
-                  />
-                </div>
-                <ColorInput
-                  label=''
-                  value={newColor}
-                  compact={true}
-                  pickerPosition='right'
-                  onChange={setNewColor}
+        <div className='border-base-200 border-t p-4'>
+          <div className='mb-2 flex items-center justify-between'>
+            <span className='font-normal'>
+              {_('Custom Colors')} ({userHighlightColors.length}/{MAX_USER_HIGHLIGHT_COLORS})
+            </span>
+            <div className='flex flex-wrap items-center gap-2'>
+              <div className='border-base-300 h-6 w-6 rounded-full border-2 shadow-sm'>
+                <div
+                  className='h-full w-full rounded-full'
+                  style={{ backgroundColor: newColor, ...highlightPreviewStyle }}
                 />
-                <input
-                  type='text'
-                  value={newColorLabel}
-                  onChange={(e) => setNewColorLabel(e.target.value)}
-                  placeholder={_('Name')}
-                  maxLength={20}
-                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
-                />
-                <button
-                  onClick={handleAddUserColor}
-                  disabled={
-                    userHighlightColors.some(
-                      (color) => normalizeColorKey(color) === normalizeColorKey(newColor),
-                    ) || userHighlightColors.length >= MAX_USER_HIGHLIGHT_COLORS
-                  }
-                  className='btn btn-ghost btn-sm gap-1 bg-transparent disabled:bg-transparent disabled:opacity-40'
-                >
-                  <span className='text-xs'>{_('Add')}</span>
-                </button>
               </div>
+              <ColorInput
+                label=''
+                value={newColor}
+                compact={true}
+                pickerPosition='right'
+                onChange={setNewColor}
+              />
+              <input
+                type='text'
+                value={newColorLabel}
+                onChange={(e) => setNewColorLabel(e.target.value)}
+                placeholder={_('Name')}
+                maxLength={20}
+                className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
+              />
+              <button
+                onClick={handleAddUserColor}
+                disabled={
+                  userHighlightColors.some(
+                    (color) => normalizeColorKey(color) === normalizeColorKey(newColor),
+                  ) || userHighlightColors.length >= MAX_USER_HIGHLIGHT_COLORS
+                }
+                className='btn btn-ghost btn-sm gap-1 bg-transparent disabled:bg-transparent disabled:opacity-40'
+              >
+                <span className='text-xs'>{_('Add')}</span>
+              </button>
             </div>
-
-            {userHighlightColors.length > 0 && (
-              <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
-                {userHighlightColors.map((hex, index) => (
-                  <div
-                    key={hex}
-                    className='group relative flex min-w-0 flex-col items-center gap-2'
-                  >
-                    <input
-                      type='text'
-                      value={_(highlightColorLabels[normalizeColorKey(hex)] || '')}
-                      onChange={(e) => updateColorLabel(hex, e.target.value)}
-                      placeholder={_('Name')}
-                      maxLength={20}
-                      className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
-                      title={_(highlightColorLabels[normalizeColorKey(hex)] || '')}
-                    />
-                    <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
-                      <div
-                        className='h-full w-full rounded-full'
-                        style={{ backgroundColor: hex, ...highlightPreviewStyle }}
-                      />
-                    </div>
-                    <ColorInput
-                      label=''
-                      value={hex}
-                      compact={true}
-                      pickerPosition={index === 0 ? 'left' : 'center'}
-                      onChange={(value: string) => handleUserColorChange(hex, value)}
-                    />
-                    <button
-                      onClick={() => handleDeleteUserColor(hex)}
-                      className='absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100'
-                      title={_('Delete')}
-                    >
-                      <MdClose size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
+
+          {userHighlightColors.length > 0 && (
+            <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
+              {userHighlightColors.map((hex, index) => (
+                <div key={hex} className='group relative flex min-w-0 flex-col items-center gap-2'>
+                  <input
+                    type='text'
+                    value={highlightColorLabels[normalizeColorKey(hex)] || ''}
+                    onChange={(e) => updateColorLabel(hex, e.target.value)}
+                    placeholder={_('Name')}
+                    maxLength={20}
+                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
+                    title={highlightColorLabels[normalizeColorKey(hex)] || ''}
+                  />
+                  <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
+                    <div
+                      className='h-full w-full rounded-full'
+                      style={{ backgroundColor: hex, ...highlightPreviewStyle }}
+                    />
+                  </div>
+                  <ColorInput
+                    label=''
+                    value={hex}
+                    compact={true}
+                    pickerPosition={index === 0 ? 'left' : 'center'}
+                    onChange={(value: string) => handleUserColorChange(hex, value)}
+                  />
+                  <button
+                    onClick={() => handleDeleteUserColor(hex)}
+                    className='absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100'
+                    title={_('Delete')}
+                  >
+                    <MdClose size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <NumberInput
           label={_('Opacity')}

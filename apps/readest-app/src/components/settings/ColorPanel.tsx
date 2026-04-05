@@ -20,6 +20,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
+import { HighlightColor } from '@/types/book';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -271,26 +272,18 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     saveCustomTextures(envConfig);
   };
 
-  const handleHighlightColorsChange = (colors: typeof customHighlightColors) => {
+  const handleHighlightColorsChange = (colors: Record<HighlightColor, string>) => {
     setCustomHighlightColors(colors);
     settings.globalReadSettings.customHighlightColors = colors;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
 
-  const handleHighlightPrefsChange = (
-    colors: string[],
-    labels: Record<string, string>,
-    options?: { skipUserColors?: boolean; skipLabels?: boolean },
-  ) => {
+  const handleHighlightPrefsChange = (colors: string[], labels: Record<string, string>) => {
     setUserHighlightColors(colors);
     setHighlightColorLabels(labels);
-    if (!options?.skipUserColors) {
-      settings.globalReadSettings.userHighlightColors = colors;
-    }
-    if (!options?.skipLabels) {
-      settings.globalReadSettings.highlightColorLabels = labels;
-    }
+    settings.globalReadSettings.userHighlightColors = colors;
+    settings.globalReadSettings.highlightColorLabels = labels;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
