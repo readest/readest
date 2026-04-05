@@ -4,6 +4,7 @@ import React from 'react';
 type Option = {
   value: string;
   label: string;
+  disabled?: boolean;
 };
 
 type SelectProps = {
@@ -28,6 +29,7 @@ export default function Select({
       onKeyDown={(e) => e.stopPropagation()}
       className={clsx(
         'select bg-base-200 h-8 min-h-8 max-w-[60%] truncate rounded-md border-none text-sm',
+        'focus:outline-none focus:ring-0 focus-visible:outline-none',
         className,
       )}
       disabled={disabled}
@@ -35,8 +37,8 @@ export default function Select({
         textAlignLast: 'end',
       }}
     >
-      {options.map(({ value, label }) => (
-        <option key={value} value={value}>
+      {options.map(({ value, label, disabled: optionDisabled }) => (
+        <option key={value} value={value} disabled={optionDisabled}>
           {label}
         </option>
       ))}

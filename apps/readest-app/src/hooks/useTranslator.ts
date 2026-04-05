@@ -1,6 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ErrorCodes, getTranslator, getTranslators, TranslatorName } from '@/services/translators';
+import {
+  ErrorCodes,
+  getTranslator,
+  getTranslators,
+  isTranslatorAvailable,
+  TranslatorName,
+} from '@/services/translators';
 import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
 import { polish, preprocess } from '@/services/translators';
 import { eventDispatcher } from '@/utils/event';
@@ -26,9 +32,7 @@ export function useTranslator({
   }, [provider, sourceLang, targetLang]);
 
   useEffect(() => {
-    const availableTranslators = getTranslators().filter(
-      (t) => (t.authRequired ? !!token : true) && !t.quotaExceeded,
-    );
+    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
     const selectedTranslator =
       availableTranslators.find((t) => t.name === provider) || availableTranslators[0]!;
     const selectedProviderName = selectedTranslator.name as TranslatorName;

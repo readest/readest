@@ -49,6 +49,10 @@ export const yandexProvider: TranslationProvider = {
   name: 'yandex',
   label: _('Yandex Translate'),
   authRequired: false,
+  // The upstream translate.toil.cc relay is currently down. Keep the
+  // implementation in tree so we can re-enable it simply by flipping this
+  // flag to `false` (or deleting the line) once the service is healthy.
+  disabled: true,
   translate: async (texts: string[], sourceLang: string, targetLang: string): Promise<string[]> => {
     if (!texts.length) return [];
 

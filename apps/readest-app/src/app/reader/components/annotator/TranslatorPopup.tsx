@@ -6,7 +6,12 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATOR_LANGS } from '@/services/constants';
-import { UseTranslatorOptions, getTranslators } from '@/services/translators';
+import {
+  UseTranslatorOptions,
+  getTranslatorDisplayLabel,
+  getTranslators,
+  isTranslatorAvailable,
+} from '@/services/translators';
 import Select from '@/components/Select';
 
 const notSupportedLangs = [''];
@@ -31,6 +36,7 @@ interface TranslatorPopupProps {
 interface TranslatorType {
   name: string;
   label: string;
+  disabled: boolean;
 }
 
 const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
@@ -71,9 +77,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
   const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const requestedProvider = event.target.value;
-    const availableTranslators = getTranslators().filter(
-      (t) => (t.authRequired ? !!token : true) && !t.quotaExceeded,
-    );
+    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
     const selectedTranslator =
       availableTranslators.find((t) => t.name === requestedProvider) || availableTranslators[0]!;
     if (selectedTranslator) {
@@ -84,15 +88,11 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   };
 
   useEffect(() => {
-    const availableProviders = translators.map((t) => {
-      let label = t.label;
-      if (t.authRequired && !token) {
-        label = `${label} (${_('Login Required')})`;
-      } else if (t.quotaExceeded) {
-        label = `${label} (${_('Quota Exceeded')})`;
-      }
-      return { name: t.name, label };
-    });
+    const availableProviders = translators.map((t) => ({
+      name: t.name,
+      label: getTranslatorDisplayLabel(t, !!token, _),
+      disabled: !!t.disabled,
+    }));
     setProviders(availableProviders);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translators]);
@@ -214,7 +214,11 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
             value={provider}
             onChange={handleProviderChange}
-            options={providers.map(({ name: value, label }) => ({ value, label }))}
+            options={providers.map(({ name: value, label, disabled }) => ({
+              value,
+              label,
+              disabled,
+            }))}
           />
         </div>
       </Popup>
