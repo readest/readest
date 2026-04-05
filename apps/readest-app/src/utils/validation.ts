@@ -90,7 +90,7 @@ export const validateAndNormalizeDate = (dateInput: string): ValidationResult<st
     }
 
     // Check if year is reasonable (between 1000 and current year + 10)
-    const year = date.getFullYear();
+    const year = parseInt(cleaned.substring(0, 4));
     const currentYear = new Date().getFullYear();
     if (year < 1000 || year > currentYear + 10) {
       return {
