@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "पढ़ने की प्रगति Hardcover से सिंक हो गई",
   "Hardcover progress sync failed: {{error}}": "Hardcover प्रगति सिंक विफल: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "मौजूदा स्रोत पहचानकर्ता रखें"
+  "Keep existing source identifier": "मौजूदा स्रोत पहचानकर्ता रखें",
+  "Toggle Toolbar": "टूलबार टॉगल करें"
 }

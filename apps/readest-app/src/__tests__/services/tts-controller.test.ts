@@ -635,6 +635,56 @@ describe('TTSController', () => {
     });
   });
 
+  describe('preloadNextSSML', () => {
+    test('calls tts.next() and tts.prev() synchronously without async gaps between them', async () => {
+      // This test verifies the fix for a race condition where async gaps between
+      // tts.next() calls in preloadNextSSML allowed #speak() to interleave and
+      // read corrupted #ranges state (replaced by next() for a different block).
+      const callOrder: string[] = [];
+      let asyncOpHappened = false;
+
+      mockView.tts = {
+        next: vi.fn().mockImplementation(() => {
+          if (asyncOpHappened) {
+            callOrder.push('next-after-async');
+          } else {
+            callOrder.push('next');
+          }
+          return '<speak>chunk</speak>';
+        }),
+        prev: vi.fn().mockImplementation(() => {
+          callOrder.push('prev');
+        }),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+
+      // Use preprocessCallback to detect when async processing happens
+      controller.preprocessCallback = async (ssml: string) => {
+        asyncOpHappened = true;
+        callOrder.push('preprocess');
+        return ssml;
+      };
+
+      await controller.preloadNextSSML(2);
+
+      // All next() calls should happen before any preprocess (async operation)
+      const firstPreprocessIdx = callOrder.indexOf('preprocess');
+      const nextIndices = callOrder.map((op, i) => (op === 'next' ? i : -1)).filter((i) => i >= 0);
+      const prevIndices = callOrder.map((op, i) => (op === 'prev' ? i : -1)).filter((i) => i >= 0);
+
+      // All next() calls must come before any async preprocessing
+      for (const idx of nextIndices) {
+        expect(idx).toBeLessThan(firstPreprocessIdx);
+      }
+      // All prev() calls must come before any async preprocessing
+      for (const idx of prevIndices) {
+        expect(idx).toBeLessThan(firstPreprocessIdx);
+      }
+      // No next() should happen after an async operation
+      expect(callOrder).not.toContain('next-after-async');
+    });
+  });
+
   describe('initViewTTS', () => {
     test('does nothing when already initialised (section index != -1)', async () => {
       // Manually set section index via a reflect access workaround

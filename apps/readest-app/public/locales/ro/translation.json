@@ -1195,5 +1195,6 @@
   "Reading progress synced to Hardcover": "Progresul lecturii sincronizat cu Hardcover",
   "Hardcover progress sync failed: {{error}}": "Sincronizarea progresului Hardcover a eșuat: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Păstrați identificatorul sursă existent"
+  "Keep existing source identifier": "Păstrați identificatorul sursă existent",
+  "Toggle Toolbar": "Comutare bară de instrumente"
 }

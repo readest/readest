@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "Läsframsteg synkroniserat med Hardcover",
   "Hardcover progress sync failed: {{error}}": "Synkronisering av Hardcover-framsteg misslyckades: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Behåll befintlig källidentifierare"
+  "Keep existing source identifier": "Behåll befintlig källidentifierare",
+  "Toggle Toolbar": "Visa/dölj verktygsfältet"
 }

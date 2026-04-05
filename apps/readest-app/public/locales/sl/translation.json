@@ -1208,5 +1208,6 @@
   "Reading progress synced to Hardcover": "Napredek branja sinhroniziran s Hardcover",
   "Hardcover progress sync failed: {{error}}": "Sinhronizacija napredka Hardcover ni uspela: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Ohrani obstoječi identifikator vira"
+  "Keep existing source identifier": "Ohrani obstoječi identifikator vira",
+  "Toggle Toolbar": "Preklopi orodno vrstico"
 }

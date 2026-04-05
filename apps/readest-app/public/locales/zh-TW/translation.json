@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "閱讀進度已同步到 Hardcover",
   "Hardcover progress sync failed: {{error}}": "Hardcover 進度同步失敗：{{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "保留現有來源識別碼"
+  "Keep existing source identifier": "保留現有來源識別碼",
+  "Toggle Toolbar": "切換工具列"
 }

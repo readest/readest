@@ -1208,5 +1208,6 @@
   "Reading progress synced to Hardcover": "Прогрес читання синхронізовано з Hardcover",
   "Hardcover progress sync failed: {{error}}": "Помилка синхронізації прогресу Hardcover: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Зберегти наявний ідентифікатор джерела"
+  "Keep existing source identifier": "Зберегти наявний ідентифікатор джерела",
+  "Toggle Toolbar": "Перемкнути панель інструментів"
 }

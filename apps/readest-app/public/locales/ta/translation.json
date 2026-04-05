@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "வாசிப்பு முன்னேற்றம் Hardcover உடன் ஒத்திசைக்கப்பட்டது",
   "Hardcover progress sync failed: {{error}}": "Hardcover முன்னேற்ற ஒத்திசைவு தோல்வி: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "ஏற்கனவே உள்ள மூல அடையாளங்காட்டியை வைத்திருக்கவும்"
+  "Keep existing source identifier": "ஏற்கனவே உள்ள மூல அடையாளங்காட்டியை வைத்திருக்கவும்",
+  "Toggle Toolbar": "கருவிப்பட்டியை நிலைமாற்று"
 }

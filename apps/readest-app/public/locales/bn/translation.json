@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "পড়ার অগ্রগতি Hardcover-এ সিঙ্ক হয়েছে",
   "Hardcover progress sync failed: {{error}}": "Hardcover অগ্রগতি সিঙ্ক ব্যর্থ: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "বিদ্যমান উৎস শনাক্তকারী রাখুন"
+  "Keep existing source identifier": "বিদ্যমান উৎস শনাক্তকারী রাখুন",
+  "Toggle Toolbar": "টুলবার টগল করুন"
 }

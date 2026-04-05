@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "読書の進捗がHardcoverに同期されました",
   "Hardcover progress sync failed: {{error}}": "Hardcover進捗の同期に失敗: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "既存のソース識別子を保持"
+  "Keep existing source identifier": "既存のソース識別子を保持",
+  "Toggle Toolbar": "ツールバーの表示切替"
 }

@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "پیشرفت مطالعه با Hardcover همگام‌سازی شد",
   "Hardcover progress sync failed: {{error}}": "همگام‌سازی پیشرفت Hardcover ناموفق: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "حفظ شناسه منبع موجود"
+  "Keep existing source identifier": "حفظ شناسه منبع موجود",
+  "Toggle Toolbar": "تغییر نوار ابزار"
 }

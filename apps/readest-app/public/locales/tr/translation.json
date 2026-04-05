@@ -1182,5 +1182,6 @@
   "Reading progress synced to Hardcover": "Okuma ilerlemesi Hardcover ile senkronize edildi",
   "Hardcover progress sync failed: {{error}}": "Hardcover ilerleme senkronizasyonu başarısız: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Mevcut kaynak tanımlayıcısını koru"
+  "Keep existing source identifier": "Mevcut kaynak tanımlayıcısını koru",
+  "Toggle Toolbar": "Araç Çubuğunu Aç/Kapat"
 }

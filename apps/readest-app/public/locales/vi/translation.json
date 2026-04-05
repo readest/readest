@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "Tiến trình đọc đã đồng bộ với Hardcover",
   "Hardcover progress sync failed: {{error}}": "Đồng bộ tiến trình Hardcover thất bại: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Giữ mã định danh nguồn hiện tại"
+  "Keep existing source identifier": "Giữ mã định danh nguồn hiện tại",
+  "Toggle Toolbar": "Bật/tắt thanh công cụ"
 }

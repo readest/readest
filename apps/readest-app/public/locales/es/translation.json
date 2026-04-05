@@ -1195,5 +1195,6 @@
   "Reading progress synced to Hardcover": "Progreso de lectura sincronizado con Hardcover",
   "Hardcover progress sync failed: {{error}}": "Error al sincronizar progreso de Hardcover: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "Mantener el identificador de origen existente"
+  "Keep existing source identifier": "Mantener el identificador de origen existente",
+  "Toggle Toolbar": "Alternar barra de herramientas"
 }

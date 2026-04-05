@@ -1169,5 +1169,6 @@
   "Reading progress synced to Hardcover": "ความคืบหน้าการอ่านซิงค์กับ Hardcover แล้ว",
   "Hardcover progress sync failed: {{error}}": "การซิงค์ความคืบหน้า Hardcover ล้มเหลว: {{error}}",
   "ISBN": "ISBN",
-  "Keep existing source identifier": "เก็บตัวระบุแหล่งที่มาที่มีอยู่"
+  "Keep existing source identifier": "เก็บตัวระบุแหล่งที่มาที่มีอยู่",
+  "Toggle Toolbar": "สลับแถบเครื่องมือ"
 }

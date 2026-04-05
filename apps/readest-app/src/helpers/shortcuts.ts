@@ -78,6 +78,11 @@ const DEFAULT_SHORTCUTS = {
     description: _('Toggle Paragraph Mode'),
     section: 'General',
   },
+  onToggleToolbar: {
+    keys: ['Enter'],
+    description: _('Toggle Toolbar'),
+    section: 'General',
+  },
   onHighlightSelection: {
     keys: ['ctrl+h', 'cmd+h'],
     description: _('Highlight Selection'),
