@@ -120,7 +120,6 @@ const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       width: POPUP_W,
       height: WRAPPER_H,
       overflow: 'visible',
-      zoom: 2, // Chromium-only: renders at 2x for sharper screenshots
     }}
   >
     {children}
