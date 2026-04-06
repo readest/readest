@@ -9,6 +9,7 @@
 # testing
 /coverage
 .test-sandbox-node/
+.vitest-attachments/
 
 # next.js
 /.next/

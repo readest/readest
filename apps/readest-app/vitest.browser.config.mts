@@ -1,4 +1,5 @@
 import tsconfigPaths from 'vite-tsconfig-paths';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { loadEnvFile } from './vitest.env.mts';
@@ -7,7 +8,7 @@ import { loadEnvFile } from './vitest.env.mts';
 const env = { ...loadEnvFile('.env'), ...loadEnvFile('.env.web') };
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths(), react()],
   define: {
     'process.env': JSON.stringify(env),
   },
@@ -42,7 +43,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.browser.test.ts'],
+    include: ['src/**/*.browser.test.ts', 'src/**/*.browser.test.tsx'],
     onConsoleLog(_log, type) {
       if (type === 'stdout') return false;
     },

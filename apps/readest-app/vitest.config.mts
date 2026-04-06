@@ -21,6 +21,7 @@ export default defineConfig({
       '**/dist/**',
       '**/.claude/**',
       '**/*.browser.test.ts',
+      '**/*.browser.test.tsx',
       '**/*.tauri.test.ts',
     ],
     coverage: {

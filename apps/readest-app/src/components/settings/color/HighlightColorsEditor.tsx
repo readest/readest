@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import React, { useEffect, useRef, useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import {
   DEFAULT_HIGHLIGHT_COLORS,
@@ -25,40 +26,90 @@ interface HighlightColorsEditorProps {
 }
 
 /**
- * Text input that commits on blur instead of on every keystroke, so we don't
- * thrash the settings store while the user is typing a label.
+ * Popover that appears on click of a color circle, allowing the user to
+ * view and edit the label for that color.
  */
-const LabelInput: React.FC<{
+const LabelPopover: React.FC<{
   label: string;
   onCommit: (next: string) => void;
-  placeholder: string;
-  className: string;
-}> = ({ label, onCommit, placeholder, className }) => {
+  onClose: () => void;
+}> = ({ label, onCommit, onClose }) => {
+  const _ = useTranslation();
   const [draft, setDraft] = useState(label);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setDraft(label);
-  }, [label]);
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        commit();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
 
   const commit = () => {
     const trimmed = draft.trim();
     if (trimmed !== label) onCommit(trimmed);
+    onClose();
   };
 
   return (
-    <input
-      type='text'
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
-      }}
-      placeholder={placeholder}
-      maxLength={20}
-      className={className}
-      title={draft}
-    />
+    <div
+      ref={popoverRef}
+      className='bg-base-100 border-base-300 absolute -top-9 left-1/2 z-50 -translate-x-1/2 rounded-md border px-1 py-0.5 shadow-lg'
+    >
+      <input
+        ref={inputRef}
+        type='text'
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') onClose();
+        }}
+        placeholder={_('Name')}
+        maxLength={20}
+        className='bg-base-100 w-20 text-center text-xs outline-none'
+      />
+    </div>
+  );
+};
+
+/**
+ * A color circle that shows label on hover and opens a label editor on click.
+ */
+const ColorCircle: React.FC<{
+  hex: string;
+  label: string;
+  highlightPreviewStyle: React.CSSProperties;
+  onLabelCommit: (next: string) => void;
+}> = ({ hex, label, highlightPreviewStyle, onLabelCommit }) => {
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <div className='relative flex flex-col items-center'>
+      {editing && (
+        <LabelPopover label={label} onCommit={onLabelCommit} onClose={() => setEditing(false)} />
+      )}
+      <div
+        className='border-base-300 h-8 w-8 cursor-pointer rounded-full border-2 shadow-sm'
+        title={label || undefined}
+        onClick={() => setEditing(true)}
+      >
+        <div
+          className='h-full w-full rounded-full'
+          style={{ backgroundColor: hex, ...highlightPreviewStyle }}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -77,7 +128,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
 }) => {
   const _ = useTranslation();
   const [newColor, setNewColor] = useState('#808080');
-  const [newColorLabel, setNewColorLabel] = useState('');
 
   const highlightPreviewStyle: React.CSSProperties = {
     opacity: highlightOpacity,
@@ -113,9 +163,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     const hex = normalizeHex(newColor);
     if (!hex.startsWith('#')) return;
     if (userHighlightColors.some((entry) => entry.hex === hex)) return;
-    const label = newColorLabel.trim();
-    onUserHighlightColorsChange([...userHighlightColors, label ? { hex, label } : { hex }]);
-    setNewColorLabel('');
+    onUserHighlightColorsChange([...userHighlightColors, { hex }]);
   };
 
   const handleDeleteUserColor = (hex: string) => {
@@ -127,7 +175,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     const oldKey = normalizeHex(oldHex);
     const newKey = normalizeHex(newHex);
     if (oldKey === newKey) return;
-    // Drop the rename if it collides with another existing color.
     if (userHighlightColors.some((entry) => entry.hex === newKey)) return;
     onUserHighlightColorsChange(
       userHighlightColors.map((entry) =>
@@ -144,26 +191,17 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
     <div>
       <h2 className='mb-2 font-medium'>{_('Highlight Colors')}</h2>
       <div className='card border-base-200 bg-base-100 overflow-visible border shadow'>
-        <div className='grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+        <div className='grid grid-cols-3 gap-3 p-4 sm:grid-cols-5'>
           {DEFAULT_HIGHLIGHT_COLORS.map((color, index, array) => {
             const position = index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
             return (
-              <div key={color} className='flex min-w-0 flex-col items-center gap-2'>
-                <LabelInput
+              <div key={color} className='flex flex-col items-center gap-2'>
+                <ColorCircle
+                  hex={customHighlightColors[color]!}
                   label={defaultHighlightLabels[color] ?? ''}
-                  onCommit={(next) => handleDefaultLabelChange(color, next)}
-                  placeholder={_('Name')}
-                  className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
+                  highlightPreviewStyle={highlightPreviewStyle}
+                  onLabelCommit={(next) => handleDefaultLabelChange(color, next)}
                 />
-                <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
-                  <div
-                    className='h-full w-full rounded-full'
-                    style={{
-                      backgroundColor: customHighlightColors[color],
-                      ...highlightPreviewStyle,
-                    }}
-                  />
-                </div>
                 <ColorInput
                   label=''
                   value={customHighlightColors[color]!}
@@ -177,11 +215,16 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
         </div>
 
         <div className='border-base-200 border-t p-4'>
-          <div className='mb-2 flex items-center justify-between'>
+          <div
+            className={clsx(
+              'flex items-center justify-between',
+              userHighlightColors.length > 0 && 'mb-4',
+            )}
+          >
             <span className='font-normal'>
               {_('Custom Colors')} ({userHighlightColors.length}/{MAX_USER_HIGHLIGHT_COLORS})
             </span>
-            <div className='flex flex-wrap items-center gap-2'>
+            <div className='flex items-center gap-2'>
               <div className='border-base-300 h-6 w-6 rounded-full border-2 shadow-sm'>
                 <div
                   className='h-full w-full rounded-full'
@@ -194,14 +237,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                 compact={true}
                 pickerPosition='right'
                 onChange={setNewColor}
-              />
-              <input
-                type='text'
-                value={newColorLabel}
-                onChange={(e) => setNewColorLabel(e.target.value)}
-                placeholder={_('Name')}
-                maxLength={20}
-                className='input input-xs bg-base-100 border-base-200/75 h-6 w-24 text-center text-xs'
               />
               <button
                 onClick={handleAddUserColor}
@@ -218,19 +253,13 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
           {userHighlightColors.length > 0 && (
             <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
               {userHighlightColors.map(({ hex, label }, index) => (
-                <div key={hex} className='group relative flex min-w-0 flex-col items-center gap-2'>
-                  <LabelInput
+                <div key={hex} className='group relative flex flex-col items-center gap-2'>
+                  <ColorCircle
+                    hex={hex}
                     label={label ?? ''}
-                    onCommit={(next) => handleUserLabelChange(hex, next)}
-                    placeholder={_('Name')}
-                    className='input input-xs bg-base-100 border-base-200/75 h-6 w-full min-w-0 max-w-24 text-center text-xs'
+                    highlightPreviewStyle={highlightPreviewStyle}
+                    onLabelCommit={(next) => handleUserLabelChange(hex, next)}
                   />
-                  <div className='border-base-300 h-8 w-8 rounded-full border-2 shadow-sm'>
-                    <div
-                      className='h-full w-full rounded-full'
-                      style={{ backgroundColor: hex, ...highlightPreviewStyle }}
-                    />
-                  </div>
                   <ColorInput
                     label=''
                     value={hex}
@@ -251,15 +280,17 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
           )}
         </div>
 
-        <NumberInput
-          label={_('Opacity')}
-          value={highlightOpacity}
-          onChange={onOpacityChange}
-          disabled={isEink}
-          min={0}
-          max={1}
-          step={0.1}
-        />
+        <div className='border-base-200 border-t'>
+          <NumberInput
+            label={_('Opacity')}
+            value={highlightOpacity}
+            onChange={onOpacityChange}
+            disabled={isEink}
+            min={0}
+            max={1}
+            step={0.1}
+          />
+        </div>
       </div>
     </div>
   );

@@ -173,7 +173,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   return (
     <div
       className={clsx(
-        'highlight-options absolute flex items-center gap-4',
+        'highlight-options absolute flex items-center justify-between gap-4',
         isVertical ? 'flex-col' : 'flex-row',
       )}
       style={{
@@ -249,9 +249,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         {...stripPointerHandlers}
         className={clsx(
           'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
-          isVertical
-            ? 'flex-col overflow-y-auto py-2'
-            : 'min-w-0 flex-1 flex-row overflow-x-auto px-2',
+          isVertical ? 'flex-col overflow-y-auto py-2' : 'min-w-0 flex-row overflow-x-auto px-2',
           !isVertical && 'cursor-grab',
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
