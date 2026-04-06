@@ -49,7 +49,13 @@ export default defineConfig({
     },
     browser: {
       enabled: true,
-      provider: playwright(),
+      headless: true,
+      provider: playwright({
+        contextOptions: {
+          viewport: { width: 1920, height: 1080 },
+          deviceScaleFactor: 2,
+        },
+      }),
       instances: [{ browser: 'chromium' }],
       expect: {
         toMatchScreenshot: {
