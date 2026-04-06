@@ -7,6 +7,7 @@ import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOK,
   QUERY_GET_EDITION,
+  QUERY_GET_BOOK_USER_DATA,
   MUTATION_INSERT_USER_BOOK,
   MUTATION_UPDATE_USER_BOOK,
   MUTATION_INSERT_READ,
@@ -74,11 +75,15 @@ export class HardcoverClient {
     return !!edition && edition.reading_format_id !== 2;
   }
 
-  private getHardcoverProgressPages(current: number, total: number, context: BookContext): number {
+  private getHardcoverProgressPages(
+    current: number,
+    total: number,
+    context: BookContext,
+  ): number | null {
     const boundedCurrent = Math.min(Math.max(current, 0), total);
     const hardcoverTotal = context.pages ?? context.bookPages ?? 0;
     if (total <= 0 || hardcoverTotal <= 0) {
-      return boundedCurrent;
+      return null;
     }
 
     const scaledPages = Math.round((boundedCurrent / total) * hardcoverTotal);
@@ -364,7 +369,57 @@ export class HardcoverClient {
     }
 
     if (book.title && book.author) {
-      return this.searchBookByTitle(book.title, book.author);
+      const titleContext = await this.searchBookByTitle(book.title, book.author);
+      if (!titleContext || !this.userId) return titleContext;
+
+      const bookResult = await this.request<
+        { book_id: number; user_id: number },
+        {
+          editions?: Array<{
+            book: {
+              id: number;
+              pages: number | null;
+              user_books?: Array<{
+                id: number;
+                status_id: number;
+                edition?: {
+                  id: number;
+                  pages: number | null;
+                  reading_format_id?: number | null;
+                } | null;
+                user_book_reads?: Array<{
+                  id: number;
+                  started_at: string | null;
+                  edition?: {
+                    id: number;
+                    pages: number | null;
+                    reading_format_id?: number | null;
+                  } | null;
+                }>;
+              }>;
+            };
+          }>;
+        }
+      >(QUERY_GET_BOOK_USER_DATA, { book_id: titleContext.bookId, user_id: this.userId });
+
+      const bookData = bookResult.editions?.[0]?.book;
+      if (!bookData) return titleContext;
+
+      const userBook = bookData.user_books?.[0];
+      const activeRead = userBook?.user_book_reads?.[0];
+      const selectedEdition =
+        (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
+        (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null);
+
+      return {
+        ...titleContext,
+        editionId: selectedEdition?.id ?? titleContext.editionId,
+        pages: selectedEdition?.pages ?? titleContext.pages,
+        bookPages: bookData.pages ?? titleContext.bookPages,
+        userBook: userBook
+          ? { ...userBook, user_book_reads: userBook.user_book_reads ?? [] }
+          : null,
+      };
     }
 
     return null;
@@ -409,10 +464,11 @@ export class HardcoverClient {
       { object: { book_id: number; edition_id: number; status_id: number } },
       {
         insert_user_book: {
+          error?: string | null;
           user_book: {
             id: number;
             user_book_reads?: ActiveRead[];
-          };
+          } | null;
         };
       }
     >(MUTATION_INSERT_USER_BOOK, {
@@ -423,12 +479,19 @@ export class HardcoverClient {
       },
     });
 
+    const newUserBook = data.insert_user_book?.user_book;
+    if (!newUserBook?.id) {
+      throw new Error(
+        `Hardcover insert_user_book failed: ${data.insert_user_book?.error ?? 'no user_book returned'}`,
+      );
+    }
+
     return {
       ...context,
       userBook: {
-        id: data.insert_user_book.user_book.id,
+        id: newUserBook.id,
         status_id: isReading ? 2 : 1,
-        user_book_reads: data.insert_user_book.user_book.user_book_reads ?? [],
+        user_book_reads: newUserBook.user_book_reads ?? [],
       },
     };
   }
@@ -447,6 +510,7 @@ export class HardcoverClient {
     const localPagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
     const progressPages = this.getHardcoverProgressPages(current, total, context);
+    if (progressPages === null) return;
     const activeRead = context.userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 

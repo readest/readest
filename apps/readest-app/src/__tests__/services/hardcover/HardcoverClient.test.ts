@@ -598,4 +598,118 @@ describe('HardcoverClient', () => {
       calls.some((call: { query: string }) => call.query.includes('mutation UpdateUserBook')),
     ).toBe(false);
   });
+
+  test('should throw when insert_user_book returns a null user_book', async () => {
+    const book = { title: 'Test Book', author: 'Test Author' } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(clientApi, 'fetchBookContext').mockResolvedValue({
+      editionId: 101,
+      pages: 100,
+      bookId: 202,
+      bookPages: 100,
+      userBook: null,
+    } as TestBookContext);
+
+    vi.spyOn(clientApi, 'request').mockImplementation(async (query) => {
+      if (String(query).includes('mutation InsertUserBook')) {
+        return { insert_user_book: { error: 'conflict', user_book: null } };
+      }
+      return {};
+    });
+
+    await expect(client.pushProgress(book, config)).rejects.toThrow('insert_user_book failed');
+  });
+
+  test('should skip progress push when Hardcover edition page count is unknown', async () => {
+    const book = { createdAt: 1711737600000, metadata: { isbn: '1234567890' } } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 101,
+      pages: null,
+      bookId: 202,
+      bookPages: null,
+      userBook: { id: 303, status_id: 2, user_book_reads: [] },
+    } as TestBookContext);
+    const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
+
+    await client.pushProgress(book, config);
+
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const insertReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation InsertRead'),
+    );
+    const updateReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation UpdateRead'),
+    );
+    expect(insertReadCall).toBeUndefined();
+    expect(updateReadCall).toBeUndefined();
+  });
+
+  test('should apply edition preference when resolving context via title search', async () => {
+    const book = { title: 'Test Book', author: 'Test Author' } as Book;
+
+    // authenticate
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
+    });
+    // QUERY_SEARCH_BOOK
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: {
+            search: {
+              results: [{ id: 202, pages: 300, featured_edition_id: 101 }],
+            },
+          },
+        }),
+    });
+    // QUERY_GET_BOOK_USER_DATA
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: {
+            editions: [
+              {
+                book: {
+                  id: 202,
+                  pages: 300,
+                  user_books: [
+                    {
+                      id: 303,
+                      status_id: 2,
+                      edition: { id: 404, pages: 310, reading_format_id: 1 },
+                      user_book_reads: [
+                        {
+                          id: 505,
+                          started_at: '2026-03-29',
+                          edition: { id: 606, pages: 400, reading_format_id: 1 },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }),
+    });
+
+    const context = await clientApi.fetchBookContext(book);
+
+    expect(context).toMatchObject({
+      editionId: 606,
+      pages: 400,
+      bookId: 202,
+      bookPages: 300,
+      userBook: { id: 303 },
+    });
+  });
 });
