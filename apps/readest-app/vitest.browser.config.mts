@@ -59,8 +59,9 @@ export default defineConfig({
             allowedMismatchedPixelRatio: 0.02,
           },
           // Strip platform from the path so one baseline works on macOS and Linux.
-          resolveScreenshotPath: ({ arg, browserName, ext, testFileName }) =>
-            `__screenshots__/${testFileName}/${arg}-${browserName}${ext}`,
+          // The path is relative to the project root (not the test file).
+          resolveScreenshotPath: ({ arg, browserName, ext, testFileDirectory, testFileName }) =>
+            `${testFileDirectory}/__screenshots__/${testFileName}/${arg}-${browserName}${ext}`,
         },
       },
     },
