@@ -254,6 +254,74 @@ describe('HardcoverClient', () => {
     expect(variables?.started_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
+  test('should prefer the active user read edition when resolving Hardcover context', async () => {
+    const book = {
+      metadata: {
+        isbn: '9780679783268',
+      },
+    } as unknown as Book;
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: {
+            editions: [
+              {
+                id: 101,
+                pages: 320,
+                reading_format_id: 1,
+                book: {
+                  id: 202,
+                  pages: 500,
+                  user_books: [
+                    {
+                      id: 303,
+                      status_id: 2,
+                      edition: {
+                        id: 404,
+                        pages: 410,
+                        reading_format_id: 1,
+                      },
+                      user_book_reads: [
+                        {
+                          id: 505,
+                          started_at: '2026-03-29',
+                          edition: {
+                            id: 606,
+                            pages: 400,
+                            reading_format_id: 1,
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }),
+    });
+
+    const context = await clientApi.ensureBookInLibrary(book, true);
+
+    expect(context).toMatchObject({
+      editionId: 606,
+      pages: 400,
+      bookId: 202,
+      bookPages: 500,
+      userBook: {
+        id: 303,
+      },
+    });
+  });
+
   test('should format multiline quote text with a short divider before the note', () => {
     const note = {
       id: '1',
@@ -323,6 +391,39 @@ describe('HardcoverClient', () => {
       user_book_id: 303,
       progress_pages: 25,
       edition_id: 101,
+      started_at: '2024-03-29',
+    });
+  });
+
+  test('should scale progress pages from local percentage to Hardcover edition pages', async () => {
+    const book = {
+      createdAt: 1711737600000,
+      metadata: { isbn: '1234567890' },
+    } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 101,
+      pages: 400,
+      bookId: 202,
+      bookPages: 400,
+      userBook: {
+        id: 303,
+        status_id: 2,
+        user_book_reads: [],
+      },
+    });
+    const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
+
+    await client.pushProgress(book, config);
+
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+    expect(insertReadCall).toBeDefined();
+    expect(insertReadCall?.[1]).toMatchObject({
+      user_book_id: 303,
+      edition_id: 101,
+      progress_pages: 100,
       started_at: '2024-03-29',
     });
   });

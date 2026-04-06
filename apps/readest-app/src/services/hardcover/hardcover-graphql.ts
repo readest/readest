@@ -23,12 +23,18 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
   ) {
     id
     pages
+    reading_format_id
     book {
       id
       pages
       user_books(where: { user_id: { _eq: $user_id } }) {
         id
         status_id
+        edition {
+          id
+          pages
+          reading_format_id
+        }
         user_book_reads(
           where: { finished_at: { _is_null: true } }
           order_by: { started_at: desc }
@@ -36,7 +42,11 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
         ) {
           id
           started_at
-          edition { id pages }
+          edition {
+            id
+            pages
+            reading_format_id
+          }
         }
       }
     }

@@ -62,6 +62,29 @@ export class HardcoverClient {
     return date.toISOString().slice(0, 10);
   }
 
+  private isReadableEdition(edition?: {
+    id: number;
+    pages: number | null;
+    reading_format_id?: number | null;
+  } | null): edition is { id: number; pages: number | null; reading_format_id?: number | null } {
+    return !!edition && edition.reading_format_id !== 2;
+  }
+
+  private getHardcoverProgressPages(current: number, total: number, context: BookContext): number {
+    const boundedCurrent = Math.min(Math.max(current, 0), total);
+    const hardcoverTotal = context.pages ?? context.bookPages ?? 0;
+    if (total <= 0 || hardcoverTotal <= 0) {
+      return boundedCurrent;
+    }
+
+    const scaledPages = Math.round((boundedCurrent / total) * hardcoverTotal);
+    if (boundedCurrent <= 0) {
+      return 0;
+    }
+
+    return Math.min(Math.max(scaledPages, 1), hardcoverTotal);
+  }
+
   private normalizeNoteDedupCfi(cfi: string | null | undefined): string {
     return cfi ? cfi.replace(/:\d+/g, '') : '';
   }
@@ -282,13 +305,27 @@ export class HardcoverClient {
           editions?: Array<{
             id: number;
             pages: number | null;
+            reading_format_id?: number | null;
             book: {
               id: number;
               pages: number | null;
               user_books?: Array<{
                 id: number;
                 status_id: number;
-                user_book_reads?: Array<{ id: number; started_at: string | null }>;
+                edition?: {
+                  id: number;
+                  pages: number | null;
+                  reading_format_id?: number | null;
+                } | null;
+                user_book_reads?: Array<{
+                  id: number;
+                  started_at: string | null;
+                  edition?: {
+                    id: number;
+                    pages: number | null;
+                    reading_format_id?: number | null;
+                  } | null;
+                }>;
               }>;
             };
           }>;
@@ -301,9 +338,15 @@ export class HardcoverClient {
       const edition = data.editions?.[0];
       if (edition) {
         const userBook = edition.book.user_books?.[0];
+        const activeRead = userBook?.user_book_reads?.[0];
+        const selectedEdition =
+          (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
+          (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null) ??
+          (this.isReadableEdition(edition) ? edition : null);
+
         return {
-          editionId: edition.id,
-          pages: edition.pages,
+          editionId: selectedEdition?.id ?? edition.id,
+          pages: selectedEdition?.pages ?? edition.pages,
           bookId: edition.book.id,
           bookPages: edition.book.pages,
           userBook: userBook
@@ -372,15 +415,16 @@ export class HardcoverClient {
       config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
     if (total <= 0) return;
 
-    const pagesRead = Math.min(Math.max(current, 0), total);
-    const percent = total > 0 ? (pagesRead / total) * 100 : 0;
+    const localPagesRead = Math.min(Math.max(current, 0), total);
+    const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
+    const progressPages = this.getHardcoverProgressPages(current, total, context);
     const activeRead = context.userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
       await this.request(MUTATION_UPDATE_READ, {
         id: activeRead.id,
-        progress_pages: pagesRead,
+        progress_pages: progressPages,
         edition_id: context.editionId,
         started_at: activeRead.started_at || startedAt,
       });
@@ -388,7 +432,7 @@ export class HardcoverClient {
       await this.request(MUTATION_INSERT_READ, {
         user_book_id: context.userBook.id,
         edition_id: context.editionId,
-        progress_pages: pagesRead,
+        progress_pages: progressPages,
         started_at: startedAt,
       });
     }
