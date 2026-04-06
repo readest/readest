@@ -33,6 +33,8 @@ type BookContext = {
   } | null;
 };
 
+type ActiveRead = { id: number; started_at: string | null };
+
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
@@ -366,15 +368,33 @@ export class HardcoverClient {
     return null;
   }
 
+  private hydrateUserBookReads(
+    context: BookContext,
+    reads?: Array<{ id: number; started_at: string | null }> | null,
+  ): void {
+    if (!context.userBook) return;
+    context.userBook.user_book_reads = reads ?? [];
+  }
+
   private async updateUserBookStatus(context: BookContext, statusId: number): Promise<void> {
     if (!context.userBook || context.userBook.status_id === statusId) return;
 
-    await this.request(MUTATION_UPDATE_USER_BOOK, {
+    const data = await this.request<
+      { user_book_id: number; object: { status_id: number } },
+      {
+        update_user_book?: {
+          user_book?: {
+            user_book_reads?: ActiveRead[];
+          };
+        };
+      }
+    >(MUTATION_UPDATE_USER_BOOK, {
       user_book_id: context.userBook.id,
       object: { status_id: statusId },
     });
 
     context.userBook.status_id = statusId;
+    this.hydrateUserBookReads(context, data.update_user_book?.user_book?.user_book_reads);
   }
 
   private async ensureBookInLibrary(book: Book, isReading = true): Promise<BookContext | null> {
@@ -385,7 +405,14 @@ export class HardcoverClient {
 
     const data = await this.request<
       { object: { book_id: number; edition_id: number; status_id: number } },
-      { insert_user_book: { user_book: { id: number } } }
+      {
+        insert_user_book: {
+          user_book: {
+            id: number;
+            user_book_reads?: ActiveRead[];
+          };
+        };
+      }
     >(MUTATION_INSERT_USER_BOOK, {
       object: {
         book_id: context.bookId,
@@ -399,7 +426,7 @@ export class HardcoverClient {
       userBook: {
         id: data.insert_user_book.user_book.id,
         status_id: isReading ? 2 : 1,
-        user_book_reads: [],
+        user_book_reads: data.insert_user_book.user_book.user_book_reads ?? [],
       },
     };
   }

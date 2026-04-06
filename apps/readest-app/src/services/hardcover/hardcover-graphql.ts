@@ -58,14 +58,37 @@ export const MUTATION_INSERT_USER_BOOK = `
 mutation InsertUserBook($object: UserBookCreateInput!) {
   insert_user_book(object: $object) {
     error
-    user_book { id }
+    user_book {
+      id
+      user_book_reads(
+        where: { finished_at: { _is_null: true } }
+        order_by: { started_at: desc }
+        limit: 1
+      ) {
+        id
+        started_at
+      }
+    }
   }
 }
 `;
 
 export const MUTATION_UPDATE_USER_BOOK = `
 mutation UpdateUserBook($user_book_id: Int!, $object: UserBookUpdateInput!) {
-  update_user_book(id: $user_book_id, object: $object) { id error }
+  update_user_book(id: $user_book_id, object: $object) {
+    id
+    error
+    user_book {
+      user_book_reads(
+        where: { finished_at: { _is_null: true } }
+        order_by: { started_at: desc }
+        limit: 1
+      ) {
+        id
+        started_at
+      }
+    }
+  }
 }
 `;
 

@@ -28,6 +28,7 @@ type HardcoverClientTestApi = {
   token: string;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
+  fetchBookContext: (book: Book) => Promise<TestBookContext | null>;
   buildJournalPayload: (
     note: BookNote,
     config: BookConfig,
@@ -389,6 +390,102 @@ describe('HardcoverClient', () => {
     expect(secondCall.query).toContain('mutation InsertRead');
     expect(secondCall.variables).toMatchObject({
       user_book_id: 303,
+      progress_pages: 25,
+      edition_id: 101,
+      started_at: '2024-03-29',
+    });
+  });
+
+  test('should reuse the active read returned when promoting a book to currently reading', async () => {
+    const book = {
+      createdAt: 1711737600000,
+      metadata: { isbn: '1234567890' },
+    } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 101,
+      pages: 100,
+      bookId: 202,
+      bookPages: 100,
+      userBook: {
+        id: 303,
+        status_id: 1,
+        user_book_reads: [],
+      },
+    });
+
+    const requestSpy = vi.spyOn(clientApi, 'request').mockImplementation(async (query) => {
+      if (String(query).includes('mutation UpdateUserBook')) {
+        return {
+          update_user_book: {
+            user_book: {
+              user_book_reads: [{ id: 404, started_at: '2024-03-29' }],
+            },
+          },
+        };
+      }
+
+      return {};
+    });
+
+    await client.pushProgress(book, config);
+
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const updateReadCall = requestCalls.find((call) => String(call[0]).includes('mutation UpdateRead'));
+    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+
+    expect(updateReadCall).toBeDefined();
+    expect(insertReadCall).toBeUndefined();
+    expect(updateReadCall?.[1]).toMatchObject({
+      id: 404,
+      progress_pages: 25,
+      edition_id: 101,
+      started_at: '2024-03-29',
+    });
+  });
+
+  test('should reuse the active read returned when adding a book through sync', async () => {
+    const book = {
+      createdAt: 1711737600000,
+      title: 'Test Book',
+      author: 'Test Author',
+    } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    vi.spyOn(clientApi, 'fetchBookContext').mockResolvedValue({
+      editionId: 101,
+      pages: 100,
+      bookId: 202,
+      bookPages: 100,
+      userBook: null,
+    } as TestBookContext);
+
+    const requestSpy = vi.spyOn(clientApi, 'request').mockImplementation(async (query) => {
+      if (String(query).includes('mutation InsertUserBook')) {
+        return {
+          insert_user_book: {
+            user_book: {
+              id: 303,
+              user_book_reads: [{ id: 404, started_at: '2024-03-29' }],
+            },
+          },
+        };
+      }
+
+      return {};
+    });
+
+    await client.pushProgress(book, config);
+
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const updateReadCall = requestCalls.find((call) => String(call[0]).includes('mutation UpdateRead'));
+    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+
+    expect(updateReadCall).toBeDefined();
+    expect(insertReadCall).toBeUndefined();
+    expect(updateReadCall?.[1]).toMatchObject({
+      id: 404,
       progress_pages: 25,
       edition_id: 101,
       started_at: '2024-03-29',
