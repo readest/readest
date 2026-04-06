@@ -1,6 +1,6 @@
 import { FileSystem } from '@/types/system';
-import { SystemSettings } from '@/types/settings';
-import { ViewSettings } from '@/types/book';
+import { ReadSettings, SystemSettings } from '@/types/settings';
+import { DEFAULT_HIGHLIGHT_COLORS, UserHighlightColor, ViewSettings } from '@/types/book';
 import { v4 as uuidv4 } from 'uuid';
 import {
   DEFAULT_BOOK_LAYOUT,
@@ -50,6 +50,55 @@ export function getDefaultViewSettings(ctx: Context): ViewSettings {
   };
 }
 
+/**
+ * Normalize highlight color prefs into the current shape:
+ * - `userHighlightColors` becomes `UserHighlightColor[]`. Legacy `string[]` entries
+ *   are lifted into `{ hex }`. A legacy `highlightColorLabels` map (shipped only in
+ *   draft builds of this feature) is folded in: hex entries attach to matching user
+ *   colors, named entries move into `defaultHighlightLabels`.
+ */
+export function migrateHighlightColorPrefs(read: ReadSettings): void {
+  const rawUser = (read.userHighlightColors ?? []) as unknown[];
+  const userColors: UserHighlightColor[] = rawUser
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return { hex: entry.trim().toLowerCase() };
+      }
+      if (entry && typeof entry === 'object' && 'hex' in entry) {
+        const { hex, label } = entry as UserHighlightColor;
+        return {
+          hex: typeof hex === 'string' ? hex.trim().toLowerCase() : '',
+          ...(label?.trim() ? { label: label.trim() } : {}),
+        };
+      }
+      return { hex: '' };
+    })
+    .filter((entry) => entry.hex.startsWith('#'));
+
+  read.defaultHighlightLabels = { ...(read.defaultHighlightLabels ?? {}) };
+
+  const legacyLabels = (read as unknown as { highlightColorLabels?: unknown }).highlightColorLabels;
+  if (legacyLabels && typeof legacyLabels === 'object') {
+    const labels = legacyLabels as Record<string, unknown>;
+    for (const name of DEFAULT_HIGHLIGHT_COLORS) {
+      const value = labels[name];
+      if (typeof value === 'string' && value.trim() && !read.defaultHighlightLabels[name]) {
+        read.defaultHighlightLabels[name] = value.trim();
+      }
+    }
+    for (const entry of userColors) {
+      if (entry.label) continue;
+      const value = labels[entry.hex];
+      if (typeof value === 'string' && value.trim()) {
+        entry.label = value.trim();
+      }
+    }
+    delete (read as unknown as { highlightColorLabels?: unknown }).highlightColorLabels;
+  }
+
+  read.userHighlightColors = userColors;
+}
+
 export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   const defaultSettings: SystemSettings = {
     ...DEFAULT_SYSTEM_SETTINGS,
@@ -85,6 +134,7 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     ...(ctx.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
     ...settings.globalReadSettings,
   };
+  migrateHighlightColorPrefs(settings.globalReadSettings);
   settings.globalViewSettings = {
     ...getDefaultViewSettings(ctx),
     ...settings.globalViewSettings,

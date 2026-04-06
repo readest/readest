@@ -5,6 +5,7 @@ import { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
 import { saveViewSettings } from '@/helpers/settings';
 import { ParagraphIterator } from '@/utils/paragraph';
+import { getParagraphPresentation } from '@/utils/paragraphPresentation';
 import { DEFAULT_PARAGRAPH_MODE_CONFIG } from '@/services/constants';
 
 interface UseParagraphModeProps {
@@ -52,6 +53,17 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
   const paragraphConfig = getViewSettings(bookKey)?.paragraphMode ?? DEFAULT_PARAGRAPH_MODE_CONFIG;
 
+  const getPrimaryContent = useCallback(() => {
+    const view = viewRef.current;
+    if (!view) return null;
+
+    const contents = view.renderer.getContents();
+    if (contents.length === 0) return null;
+
+    const primaryIndex = view.renderer.primaryIndex;
+    return contents.find((content) => content.index === primaryIndex) ?? contents[0] ?? null;
+  }, [viewRef]);
+
   const updateStateFromIterator = useCallback(
     (isLoading = false) => {
       const iterator = iteratorRef.current;
@@ -88,10 +100,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         const view = viewRef.current;
         if (!view) return false;
 
-        const contents = view.renderer.getContents();
-        if (contents.length === 0) return false;
-
-        const { doc, index: docIndex } = contents[0] ?? {};
+        const content = getPrimaryContent();
+        const { doc, index } = content ?? {};
+        const docIndex = index ?? view.renderer.primaryIndex;
         if (!doc) return false;
 
         currentDocIndexRef.current = docIndex;
@@ -180,7 +191,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     initPromiseRef.current = initPromise;
     return initPromise;
-  }, [viewRef, getProgress, updateStateFromIterator]);
+  }, [getPrimaryContent, viewRef, getProgress, updateStateFromIterator]);
 
   const focusCurrentParagraph = useCallback(async () => {
     const view = viewRef.current;
@@ -195,6 +206,13 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     if (focusResetTimerRef.current) {
       clearTimeout(focusResetTimerRef.current);
     }
+
+    const presentation = getParagraphPresentation(
+      range.startContainer.ownerDocument,
+      range,
+      getViewSettings(bookKeyRef.current),
+    );
+
     isFocusingRef.current = true;
     const docIndex = currentDocIndexRef.current;
     const renderer = view.renderer as FoliateView['renderer'] & {
@@ -214,8 +232,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       range,
       index: iterator.currentIndex,
       total: iterator.length,
+      presentation,
     });
-  }, [viewRef]);
+  }, [getViewSettings, viewRef]);
 
   const waitForNewSection = useCallback(
     async (oldIndex: number | undefined, maxAttempts: number = 15): Promise<boolean> => {
@@ -223,15 +242,19 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       if (!view) return false;
 
       for (let i = 0; i < maxAttempts; i++) {
-        const contents = view.renderer.getContents();
-        if (contents.length > 0 && contents[0]?.doc && contents[0]?.index !== oldIndex) {
+        const primaryContent = getPrimaryContent();
+        if (
+          primaryContent?.doc &&
+          view.renderer.primaryIndex >= 0 &&
+          view.renderer.primaryIndex !== oldIndex
+        ) {
           return true;
         }
         await new Promise((r) => setTimeout(r, 50 * (i + 1)));
       }
       return false;
     },
-    [viewRef],
+    [getPrimaryContent, viewRef],
   );
 
   const goToNextParagraph = useCallback(async () => {

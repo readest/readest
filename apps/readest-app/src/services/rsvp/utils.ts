@@ -168,6 +168,24 @@ export function segmentCJKText(text: string): string[] {
 }
 
 /**
+ * Split a hyphenated word into display parts, keeping a trailing hyphen on
+ * all but the last part. Only splits on hyphens that are directly between two
+ * letters (letter-hyphen-letter), so tokens like "--", "-word", "word-", and
+ * "foo--bar" are returned unchanged.
+ *
+ * Examples:
+ *   "well-known"  → ["well-", "known"]
+ *   "a-b-c"       → ["a-", "b-", "c"]
+ *   "--"          → ["--"]
+ *   "hello"       → ["hello"]
+ */
+export function getHyphenParts(word: string): string[] {
+  if (!/[a-zA-Z]-[a-zA-Z]/.test(word)) return [word];
+  const parts = word.split(/-(?=[a-zA-Z])/);
+  return parts.map((part, i) => (i < parts.length - 1 ? part + '-' : part));
+}
+
+/**
  * Split text into words, handling both CJK and non-CJK text
  */
 export function splitTextIntoWords(text: string): string[] {

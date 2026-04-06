@@ -106,7 +106,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
 
   const handleKeyDown = (event: CustomEvent) => {
     if (event.detail.keyName === 'Back') {
-      if (getIsSideBarVisible() && !isSideBarPinned) {
+      const { hoveredBookKey, setHoveredBookKey } = useReaderStore.getState();
+      if (hoveredBookKey) {
+        setHoveredBookKey('');
+        (document.activeElement as HTMLElement)?.blur();
+      } else if (getIsSideBarVisible() && !isSideBarPinned) {
         setSideBarVisible(false);
       } else if (getIsNotebookVisible() && !isNotebookPinned) {
         setNotebookVisible(false);

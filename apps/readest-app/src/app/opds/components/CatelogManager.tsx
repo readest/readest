@@ -12,6 +12,11 @@ import { saveSysSettings } from '@/helpers/settings';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { validateOPDSURL } from '../utils/opdsUtils';
+import {
+  formatOPDSCustomHeadersInput,
+  hasOPDSCustomHeaders,
+  parseOPDSCustomHeadersInput,
+} from '../utils/customHeaders';
 import ModalPortal from '@/components/ModalPortal';
 
 const POPULAR_CATALOGS: OPDSCatalog[] = [
@@ -49,10 +54,21 @@ async function validateOPDSCatalog(
   url: string,
   username?: string,
   password?: string,
+  customHeaders?: Record<string, string>,
 ): Promise<{ valid: boolean; error?: string }> {
-  const result = await validateOPDSURL(url, username, password, isWebAppPlatform());
+  const result = await validateOPDSURL(url, username, password, isWebAppPlatform(), customHeaders);
   return { valid: result.isValid, error: result.error };
 }
+
+const EMPTY_NEW_CATALOG = {
+  name: '',
+  url: '',
+  description: '',
+  username: '',
+  password: '',
+  customHeadersInput: '',
+  proxyConsent: false,
+};
 
 export function CatalogManager() {
   const _ = useTranslation();
@@ -61,17 +77,18 @@ export function CatalogManager() {
   const { settings } = useSettingsStore();
   const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() => settings.opdsCatalogs || []);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newCatalog, setNewCatalog] = useState({
-    name: '',
-    url: '',
-    description: '',
-    username: '',
-    password: '',
-  });
+  const [newCatalog, setNewCatalog] = useState(EMPTY_NEW_CATALOG);
   const [showPassword, setShowPassword] = useState(false);
   const [urlError, setUrlError] = useState('');
+  const [headerError, setHeaderError] = useState('');
+  const [proxyConsentError, setProxyConsentError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const popularCatalogs = appService?.isOnlineCatalogsAccessible ? POPULAR_CATALOGS : [];
+  const hasSensitiveWebOPDSInput =
+    newCatalog.username.trim().length > 0 ||
+    newCatalog.password.trim().length > 0 ||
+    newCatalog.customHeadersInput.trim().length > 0;
+  const isWebCatalogProxyWarningRequired = isWebAppPlatform() && hasSensitiveWebOPDSInput;
 
   const saveCatalogs = (updatedCatalogs: OPDSCatalog[]) => {
     setCatalogs(updatedCatalogs);
@@ -80,6 +97,12 @@ export function CatalogManager() {
 
   const handleAddCatalog = async () => {
     if (!newCatalog.name || !newCatalog.url) return;
+
+    const parsedHeaders = parseOPDSCustomHeadersInput(newCatalog.customHeadersInput);
+    if (parsedHeaders.error) {
+      setHeaderError(parsedHeaders.error);
+      return;
+    }
 
     const urlLower = newCatalog.url.trim().toLowerCase();
     if (!urlLower.startsWith('http://') && !urlLower.startsWith('https://')) {
@@ -96,13 +119,25 @@ export function CatalogManager() {
       return;
     }
 
+    if (isWebCatalogProxyWarningRequired && !newCatalog.proxyConsent) {
+      setProxyConsentError(
+        _(
+          'Please confirm that this OPDS connection will be proxied through Readest servers on the web app before continuing.',
+        ),
+      );
+      return;
+    }
+
     setIsValidating(true);
     setUrlError('');
+    setHeaderError('');
+    setProxyConsentError('');
 
     const validation = await validateOPDSCatalog(
       newCatalog.url,
       newCatalog.username || undefined,
       newCatalog.password || undefined,
+      parsedHeaders.headers,
     );
 
     if (!validation.valid) {
@@ -118,11 +153,16 @@ export function CatalogManager() {
       description: newCatalog.description,
       username: newCatalog.username || undefined,
       password: newCatalog.password || undefined,
+      customHeaders: hasOPDSCustomHeaders(parsedHeaders.headers)
+        ? parsedHeaders.headers
+        : undefined,
     };
 
     saveCatalogs([catalog, ...catalogs]);
-    setNewCatalog({ name: '', url: '', description: '', username: '', password: '' });
+    setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
+    setHeaderError('');
+    setProxyConsentError('');
     setIsValidating(false);
     setShowAddDialog(false);
   };
@@ -141,14 +181,16 @@ export function CatalogManager() {
 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
-    if (catalog.username) params.set('id', catalog.id);
+    params.set('id', catalog.id);
     router.push(`/opds?${params.toString()}`);
   };
 
   const handleCloseDialog = () => {
     setShowAddDialog(false);
-    setNewCatalog({ name: '', url: '', description: '', username: '', password: '' });
+    setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
+    setHeaderError('');
+    setProxyConsentError('');
     setShowPassword(false);
   };
 
@@ -214,6 +256,11 @@ export function CatalogManager() {
                       {catalog.username && (
                         <p className='text-base-content/50 mt-1 text-xs'>
                           {_('Username')}: {catalog.username}
+                        </p>
+                      )}
+                      {hasOPDSCustomHeaders(catalog.customHeaders) && (
+                        <p className='text-base-content/50 mt-1 text-xs'>
+                          {_('Custom Headers')}: {Object.keys(catalog.customHeaders || {}).length}
                         </p>
                       )}
                     </div>
@@ -317,7 +364,10 @@ export function CatalogManager() {
                   <input
                     type='url'
                     value={newCatalog.url}
-                    onChange={(e) => setNewCatalog({ ...newCatalog, url: e.target.value })}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, url: e.target.value });
+                      setUrlError('');
+                    }}
                     placeholder='https://example.com/opds'
                     className='input input-bordered placeholder:text-sm'
                     disabled={isValidating}
@@ -337,7 +387,10 @@ export function CatalogManager() {
                   <input
                     type='text'
                     value={newCatalog.username}
-                    onChange={(e) => setNewCatalog({ ...newCatalog, username: e.target.value })}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, username: e.target.value });
+                      setProxyConsentError('');
+                    }}
                     placeholder={_('Username')}
                     className='input input-bordered placeholder:text-sm'
                     disabled={isValidating}
@@ -353,7 +406,10 @@ export function CatalogManager() {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={newCatalog.password}
-                      onChange={(e) => setNewCatalog({ ...newCatalog, password: e.target.value })}
+                      onChange={(e) => {
+                        setNewCatalog({ ...newCatalog, password: e.target.value });
+                        setProxyConsentError('');
+                      }}
                       placeholder={_('Password')}
                       className='input input-bordered w-full pr-10 placeholder:text-sm'
                       disabled={isValidating}
@@ -373,6 +429,65 @@ export function CatalogManager() {
                     </button>
                   </div>
                 </div>
+
+                <div className='form-control'>
+                  <div className='label'>
+                    <span className='label-text'>{_('Custom Headers (optional)')}</span>
+                  </div>
+                  <textarea
+                    value={newCatalog.customHeadersInput}
+                    onChange={(e) => {
+                      setNewCatalog({ ...newCatalog, customHeadersInput: e.target.value });
+                      setHeaderError('');
+                      setProxyConsentError('');
+                    }}
+                    placeholder={formatOPDSCustomHeadersInput({
+                      'CF-Access-Client-Id': 'your-client-id',
+                      'CF-Access-Client-Secret': 'your-client-secret',
+                    })}
+                    className='textarea textarea-bordered font-mono text-sm placeholder:text-xs'
+                    rows={4}
+                    disabled={isValidating}
+                    spellCheck={false}
+                  />
+                  <div className='label'>
+                    <span className='label-text-alt text-base-content/60'>
+                      {_('Add one header per line using "Header-Name: value".')}
+                    </span>
+                  </div>
+                  {headerError && (
+                    <div className='label pt-0'>
+                      <span className='label-text-alt text-error'>{headerError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {isWebCatalogProxyWarningRequired && (
+                  <div className='form-control border-warning/30 bg-warning/10 rounded-lg border p-4'>
+                    <label className='label cursor-pointer items-start justify-start gap-3 p-0'>
+                      <input
+                        type='checkbox'
+                        className='checkbox checkbox-sm mt-0.5'
+                        checked={newCatalog.proxyConsent}
+                        onChange={(e) => {
+                          setNewCatalog({ ...newCatalog, proxyConsent: e.target.checked });
+                          setProxyConsentError('');
+                        }}
+                        disabled={isValidating}
+                      />
+                      <span className='label-text text-sm leading-6'>
+                        {_(
+                          'I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.',
+                        )}
+                      </span>
+                    </label>
+                    {proxyConsentError && (
+                      <div className='label px-0 pb-0 pt-2'>
+                        <span className='label-text-alt text-error'>{proxyConsentError}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className='form-control'>
                   <div className='label'>

@@ -42,6 +42,18 @@ vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: vi.fn(),
 }));
 
+// Stub Supabase so importing the full providers registry (which pulls in
+// deepl.ts → @/utils/access → @/utils/supabase) doesn't instantiate a real
+// GoTrueClient on every `vi.resetModules()` round. Without this, each test
+// that dynamically imports the registry logs a "Multiple GoTrueClient
+// instances" warning from the real Supabase client.
+vi.mock('@/utils/supabase', () => ({
+  supabase: {
+    auth: { getSession: vi.fn().mockResolvedValue({ data: { session: null } }) },
+    from: vi.fn(),
+  },
+}));
+
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
@@ -314,5 +326,77 @@ describe('azureProvider', () => {
     const { azureProvider } = await import('@/services/translators/providers/azure');
     expect(azureProvider.name).toBe('azure');
     expect(azureProvider.label).toBe('Azure Translator');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Provider registry — disabled providers stay visible but unselectable
+// ---------------------------------------------------------------------------
+describe('provider registry disabled handling', () => {
+  // No `vi.resetModules()` here — these tests only inspect static provider
+  // metadata, so resolving the registry once is enough. Resetting between
+  // each test would re-evaluate the full import chain and churn module
+  // state for no benefit.
+
+  it('keeps yandex in getTranslators() so the UI can render it', async () => {
+    const { getTranslators } = await import('@/services/translators/providers');
+    const names = getTranslators().map((t) => t.name);
+    expect(names).toContain('yandex');
+  });
+
+  it('exposes yandex as disabled so callers can grey it out', async () => {
+    const { getTranslator } = await import('@/services/translators/providers');
+    const yandex = getTranslator('yandex');
+    expect(yandex).toBeDefined();
+    expect(yandex!.disabled).toBe(true);
+  });
+
+  it('isTranslatorAvailable returns false for disabled providers', async () => {
+    const { getTranslator, isTranslatorAvailable } =
+      await import('@/services/translators/providers');
+    const yandex = getTranslator('yandex')!;
+    expect(isTranslatorAvailable(yandex, true)).toBe(false);
+    expect(isTranslatorAvailable(yandex, false)).toBe(false);
+  });
+
+  it('isTranslatorAvailable returns false for authRequired without token', async () => {
+    const { isTranslatorAvailable } = await import('@/services/translators/providers');
+    const authed = { name: 'x', label: 'X', authRequired: true, translate: async () => [] };
+    expect(isTranslatorAvailable(authed, false)).toBe(false);
+    expect(isTranslatorAvailable(authed, true)).toBe(true);
+  });
+
+  it('isTranslatorAvailable returns false when quota is exceeded', async () => {
+    const { isTranslatorAvailable } = await import('@/services/translators/providers');
+    const exhausted = { name: 'x', label: 'X', quotaExceeded: true, translate: async () => [] };
+    expect(isTranslatorAvailable(exhausted, true)).toBe(false);
+  });
+
+  it('getTranslatorDisplayLabel appends a Unavailable suffix for disabled providers', async () => {
+    const { getTranslator, getTranslatorDisplayLabel } =
+      await import('@/services/translators/providers');
+    const yandex = getTranslator('yandex')!;
+    const label = getTranslatorDisplayLabel(yandex, true, (s) => s);
+    expect(label).toBe('Yandex Translate (Unavailable)');
+  });
+
+  it('getTranslatorDisplayLabel prefers the disabled suffix over other statuses', async () => {
+    const { getTranslatorDisplayLabel } = await import('@/services/translators/providers');
+    const both = {
+      name: 'x',
+      label: 'X',
+      disabled: true,
+      authRequired: true,
+      quotaExceeded: true,
+      translate: async () => [],
+    };
+    expect(getTranslatorDisplayLabel(both, false, (s) => s)).toBe('X (Unavailable)');
+  });
+
+  it('getTranslatorDisplayLabel returns the plain label for healthy providers', async () => {
+    const { getTranslator, getTranslatorDisplayLabel } =
+      await import('@/services/translators/providers');
+    const google = getTranslator('google')!;
+    expect(getTranslatorDisplayLabel(google, true, (s) => s)).toBe('Google Translate');
   });
 });

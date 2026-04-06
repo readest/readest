@@ -2,12 +2,20 @@
 
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
+import {
+  MdChevronLeft,
+  MdChevronRight,
+  MdClose,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+} from 'react-icons/md';
+import { ViewSettings } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getParagraphButtonDirections } from '@/utils/paragraphPresentation';
 
 const INITIAL_SHOW_DURATION = 2500;
 const HIDE_DELAY = 2000;
@@ -21,6 +29,7 @@ interface ParagraphBarProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  viewSettings?: ViewSettings;
   gridInsets: Insets;
 }
 
@@ -41,12 +50,14 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   onPrev,
   onNext,
   onClose,
+  viewSettings,
   gridInsets,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { hoveredBookKey } = useReaderStore();
   const iconSize = useResponsiveSize(18);
+  const buttonDirections = getParagraphButtonDirections(viewSettings);
 
   const [isBarVisible, setIsBarVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,6 +156,18 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   const isVisible = isBarVisible && !isHiddenByHover;
   const progress =
     totalParagraphs > 0 ? Math.round(((currentIndex + 1) / totalParagraphs) * 100) : 0;
+  const PrevIcon =
+    buttonDirections.prev === 'up'
+      ? MdKeyboardArrowUp
+      : buttonDirections.prev === 'right'
+        ? MdChevronRight
+        : MdChevronLeft;
+  const NextIcon =
+    buttonDirections.next === 'down'
+      ? MdKeyboardArrowDown
+      : buttonDirections.next === 'left'
+        ? MdChevronLeft
+        : MdChevronRight;
 
   return (
     <>
@@ -201,7 +224,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             title={_('Previous Paragraph')}
             aria-label={_('Previous Paragraph')}
           >
-            <MdChevronLeft size={iconSize} />
+            <PrevIcon size={iconSize} />
           </button>
 
           <div className='bg-base-content/10 mx-1 h-4 w-px' />
@@ -244,7 +267,7 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             title={_('Next Paragraph')}
             aria-label={_('Next Paragraph')}
           >
-            <MdChevronRight size={iconSize} />
+            <NextIcon size={iconSize} />
           </button>
 
           <button

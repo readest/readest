@@ -6,6 +6,7 @@ export interface BackgroundTexture {
   name: string;
   path?: string;
   url?: string;
+  animated?: boolean;
 
   downloadedAt?: number;
   deletedAt?: number;
@@ -34,7 +35,7 @@ export const PREDEFINED_TEXTURES: BackgroundTexture[] = [
 
 export function getTextureName(path: string): string {
   const fileName = getFilename(path);
-  return fileName.replace(/\.(jpg|jpeg|png|gif|bmp|webp)$/i, '');
+  return fileName.replace(/\.(jpg|jpeg|png|gif|bmp|webp|mp4)$/i, '');
 }
 
 export function getTextureId(name: string): string {

@@ -34,6 +34,7 @@ const SUPPORTED_LNGS = [
   'zh-CN',
   'zh-TW',
   'ro',
+  'hu',
 ];
 
 const isBrowser = typeof window !== 'undefined';

@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { FaHeadphones } from 'react-icons/fa6';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
@@ -17,6 +18,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   progressValid,
   progressFraction,
   navigationHandlers,
+  forceMobileLayout,
   onSpeakText,
 }) => {
   const _ = useTranslation();
@@ -67,7 +69,10 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
 
   return (
     <div
-      className='hidden h-8 w-full items-center gap-x-4 overflow-x-auto px-4 sm:flex'
+      className={clsx(
+        'hidden h-8 w-full items-center gap-x-4 overflow-x-auto px-4',
+        !forceMobileLayout && 'sm:flex',
+      )}
       style={{
         bottom: isMobile ? `${gridInsets.bottom * 0.33}px` : '0px',
         scrollbarWidth: 'none',

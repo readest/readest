@@ -96,7 +96,11 @@ const Dropdown: React.FC<DropdownProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      if (!isOpen) setIsDropdownOpen(true);
+      // Let the native button click (dispatched by the browser for Enter/Space
+      // on a focused button) drive the toggle — toggling here would race with
+      // that click and cancel it out. We still stop propagation so global
+      // shortcuts bound to Enter/Space (e.g. next page in the reader) don't
+      // fire while a dropdown button is focused.
       e.stopPropagation();
     } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);

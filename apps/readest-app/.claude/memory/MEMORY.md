@@ -16,6 +16,9 @@
 - `src/app/reader/components/FoliateViewer.tsx` - Reader view orchestration
 - `src/app/reader/components/annotator/Annotator.tsx` - Annotation lifecycle
 
+## Feature Notes
+- [D-pad Navigation](dpad-navigation.md) — Android TV remote / keyboard arrow navigation design, key files, and pitfalls
+
 ## Architecture Notes
 - foliate-js is a git submodule at `packages/foliate-js/`
 - Multiview paginator: loads adjacent sections in background, multiple View/Overlayer instances per book

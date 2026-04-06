@@ -18,6 +18,7 @@ import { getLocale } from '@/utils/misc';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
+import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
@@ -74,6 +75,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
               <CommandPaletteProvider>
                 {children}
                 <CommandPalette />
+                <AtmosphereOverlay />
               </CommandPaletteProvider>
             </DropdownProvider>
           </SyncProvider>

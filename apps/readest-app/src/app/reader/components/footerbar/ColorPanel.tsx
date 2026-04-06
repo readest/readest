@@ -21,9 +21,14 @@ const SCREEN_BRIGHTNESS_LIMITS = {
 interface ColorPanelProps {
   actionTab: string;
   bottomOffset: string;
+  forceMobileLayout: boolean;
 }
 
-export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset }) => {
+export const ColorPanel: React.FC<ColorPanelProps> = ({
+  actionTab,
+  bottomOffset,
+  forceMobileLayout,
+}) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -72,7 +77,8 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({ actionTab, bottomOffset 
   };
 
   const classes = clsx(
-    'footerbar-color-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all sm:hidden',
+    'footerbar-color-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    !forceMobileLayout && 'sm:hidden',
     actionTab === 'color'
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
       : 'pointer-events-none invisible translate-y-full overflow-hidden pb-0 pt-0 ease-in',
