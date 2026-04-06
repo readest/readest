@@ -51,6 +51,18 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
+      expect: {
+        toMatchScreenshot: {
+          comparatorName: 'pixelmatch',
+          comparatorOptions: {
+            threshold: 0.1,
+            allowedMismatchedPixelRatio: 0.02,
+          },
+          // Strip platform from the path so one baseline works on macOS and Linux.
+          resolveScreenshotPath: ({ arg, browserName, ext, testFileName }) =>
+            `__screenshots__/${testFileName}/${arg}-${browserName}${ext}`,
+        },
+      },
     },
   },
 });
