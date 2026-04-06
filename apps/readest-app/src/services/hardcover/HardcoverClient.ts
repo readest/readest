@@ -64,11 +64,13 @@ export class HardcoverClient {
     return date.toISOString().slice(0, 10);
   }
 
-  private isReadableEdition(edition?: {
-    id: number;
-    pages: number | null;
-    reading_format_id?: number | null;
-  } | null): edition is { id: number; pages: number | null; reading_format_id?: number | null } {
+  private isReadableEdition(
+    edition?: {
+      id: number;
+      pages: number | null;
+      reading_format_id?: number | null;
+    } | null,
+  ): edition is { id: number; pages: number | null; reading_format_id?: number | null } {
     return !!edition && edition.reading_format_id !== 2;
   }
 

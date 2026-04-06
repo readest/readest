@@ -432,8 +432,12 @@ describe('HardcoverClient', () => {
     await client.pushProgress(book, config);
 
     const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
-    const updateReadCall = requestCalls.find((call) => String(call[0]).includes('mutation UpdateRead'));
-    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+    const updateReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation UpdateRead'),
+    );
+    const insertReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation InsertRead'),
+    );
 
     expect(updateReadCall).toBeDefined();
     expect(insertReadCall).toBeUndefined();
@@ -479,8 +483,12 @@ describe('HardcoverClient', () => {
     await client.pushProgress(book, config);
 
     const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
-    const updateReadCall = requestCalls.find((call) => String(call[0]).includes('mutation UpdateRead'));
-    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+    const updateReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation UpdateRead'),
+    );
+    const insertReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation InsertRead'),
+    );
 
     expect(updateReadCall).toBeDefined();
     expect(insertReadCall).toBeUndefined();
@@ -515,7 +523,9 @@ describe('HardcoverClient', () => {
     await client.pushProgress(book, config);
 
     const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
-    const insertReadCall = requestCalls.find((call) => String(call[0]).includes('mutation InsertRead'));
+    const insertReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation InsertRead'),
+    );
     expect(insertReadCall).toBeDefined();
     expect(insertReadCall?.[1]).toMatchObject({
       user_book_id: 303,
