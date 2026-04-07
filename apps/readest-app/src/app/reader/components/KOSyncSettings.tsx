@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { Fragment, useState, useEffect, useMemo, useCallback } from 'react';
 import { md5 } from 'js-md5';
 import { type as osType } from '@tauri-apps/plugin-os';
 import { useEnv } from '@/context/EnvContext';
@@ -218,7 +218,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-4 p-2 sm:p-4'>
           {isConfigured ? (
-            <>
+            <Fragment key='configured'>
               <div className='text-center'>
                 <p className='text-base-content/80 text-sm'>
                   {_('Sync as {{userDisplayName}}', {
@@ -230,7 +230,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 <span className='text-base-content/80'>{_('Sync Server Connected')}</span>
                 <input
                   type='checkbox'
-                  key='sync_enabled_checkbox'
                   className='toggle'
                   checked={settings.kosync.enabled}
                   onChange={() => handleDisconnect()}
@@ -270,16 +269,15 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 </label>
                 <input
                   type='text'
-                  key='sync_device_name_input'
                   placeholder={osName ? `Readest (${osName})` : 'Readest'}
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                   value={deviceName}
                   onChange={handleDeviceNameChange}
                 />
               </div>
-            </>
+            </Fragment>
           ) : (
-            <>
+            <Fragment key='login'>
               <p className='text-base-content/70 text-center text-sm'>
                 {_('Connect to your KOReader Sync server.')}
               </p>
@@ -289,7 +287,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 </label>
                 <input
                   type='text'
-                  key='sync_server_url_input'
                   placeholder='https://koreader.sync.server'
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                   spellCheck='false'
@@ -304,7 +301,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
                   </label>
                   <input
                     type='text'
-                    key='sync_username_input'
                     placeholder={_('Your Username')}
                     className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                     spellCheck='false'
@@ -319,7 +315,6 @@ export const KOSyncSettingsWindow: React.FC = () => {
                   </label>
                   <input
                     type='password'
-                    key='sync_password_input'
                     placeholder={_('Your Password')}
                     className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                     value={password}
@@ -338,7 +333,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
               {connectionStatus && (
                 <div className='text-error h-4 text-center text-sm'>{connectionStatus}</div>
               )}
-            </>
+            </Fragment>
           )}
         </div>
       )}
