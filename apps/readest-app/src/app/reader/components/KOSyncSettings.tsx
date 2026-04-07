@@ -230,6 +230,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 <span className='text-base-content/80'>{_('Sync Server Connected')}</span>
                 <input
                   type='checkbox'
+                  key='sync_enabled_checkbox'
                   className='toggle'
                   checked={settings.kosync.enabled}
                   onChange={() => handleDisconnect()}
@@ -269,6 +270,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 </label>
                 <input
                   type='text'
+                  key='sync_device_name_input'
                   placeholder={osName ? `Readest (${osName})` : 'Readest'}
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                   value={deviceName}
@@ -287,6 +289,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 </label>
                 <input
                   type='text'
+                  key='sync_server_url_input'
                   placeholder='https://koreader.sync.server'
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                   spellCheck='false'
@@ -301,6 +304,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                   </label>
                   <input
                     type='text'
+                    key='sync_username_input'
                     placeholder={_('Your Username')}
                     className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                     spellCheck='false'
@@ -315,6 +319,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                   </label>
                   <input
                     type='password'
+                    key='sync_password_input'
                     placeholder={_('Your Password')}
                     className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                     value={password}
