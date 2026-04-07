@@ -14,26 +14,29 @@ const getItemIdentifier = (item: TOCItem) => {
   return `toc-item-${item.id}-${href}`;
 };
 
+const flattenTOC = (items: TOCItem[], expandedItems: Set<string>, depth = 0): FlatTOCItem[] => {
+  const result: FlatTOCItem[] = [];
+  items.forEach((item, index) => {
+    const isExpanded = expandedItems.has(getItemIdentifier(item));
+    result.push({ item, depth, index, isExpanded });
+    if (item.subitems && isExpanded) {
+      result.push(...flattenTOC(item.subitems, expandedItems, depth + 1));
+    }
+  });
+  return result;
+};
+
 const useFlattenedTOC = (toc: TOCItem[], expandedItems: Set<string>) => {
-  return useMemo(() => {
-    const flattenTOC = (items: TOCItem[], depth = 0): FlatTOCItem[] => {
-      const result: FlatTOCItem[] = [];
-      items.forEach((item, index) => {
-        const isExpanded = expandedItems.has(getItemIdentifier(item));
-        result.push({ item, depth, index, isExpanded });
-        if (item.subitems && isExpanded) {
-          result.push(...flattenTOC(item.subitems, depth + 1));
-        }
-      });
-      return result;
-    };
-    return flattenTOC(toc);
-  }, [toc, expandedItems]);
+  return useMemo(() => flattenTOC(toc, expandedItems), [toc, expandedItems]);
+};
+
+const computeExpandedSet = (toc: TOCItem[], href: string | undefined): Set<string> => {
+  const topLevel = toc.filter((item) => item.subitems?.length).map(getItemIdentifier);
+  const parents = href ? findParentPath(toc, href).map(getItemIdentifier).filter(Boolean) : [];
+  return new Set([...topLevel, ...parents]);
 };
 
 // Custom scroller with CSS-only auto-hide overlay scrollbar.
-// Works across all Tauri targets (WebView2/WKWebView/WebKitGTK/Android).
-// On mobile the WebView hides scrollbars natively, so the CSS is a no-op there.
 const TOCScroller = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => <div {...props} ref={ref} className='toc-scroller' />,
 );
@@ -50,17 +53,15 @@ const TOCView: React.FC<{
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const progress = getProgress(bookKey);
 
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
+    computeExpandedSet(toc, progress?.sectionHref),
+  );
   const [containerHeight, setContainerHeight] = useState(400);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
   const userScrolledRef = useRef(false);
-  // Set to true when the sidebar opens; the flatItems effect executes the scroll
-  // after expandParents has updated flatItems, ensuring the correct index.
-  const needsScrollRef = useRef(false);
-  // activeHrefRef kept fresh each render so the flatItems effect doesn't need it as a dep.
-  const activeHrefRef = useRef<string | null>(null);
+  const pendingScrollRef = useRef(false);
 
   useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
 
@@ -94,7 +95,6 @@ const TOCView: React.FC<{
 
   const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
   const flatItems = useFlattenedTOC(toc, expandedItems);
-  activeHrefRef.current = activeHref;
 
   const handleToggleExpand = useCallback((item: TOCItem) => {
     const itemId = getItemIdentifier(item);
@@ -119,50 +119,28 @@ const TOCView: React.FC<{
     [bookKey, getView],
   );
 
-  // Expands all top-level items with subitems plus the ancestor chain of href.
-  // Merging both prevents the "expand then collapse" flicker seen when only
-  // parent-chain items were set (replacing previously expanded top-level items).
-  const expandParents = useCallback((items: TOCItem[], href: string | undefined) => {
-    const topLevelWithSubitems = items
-      .filter((item) => item.subitems?.length)
-      .map((item) => getItemIdentifier(item));
-    const parentItems = href
-      ? findParentPath(items, href)
-          .map((item) => getItemIdentifier(item))
-          .filter(Boolean)
-      : [];
-    setExpandedItems(new Set([...topLevelWithSubitems, ...parentItems]));
-  }, []);
-
-  useEffect(() => {
-    if (!isSideBarVisible || sideBarBookKey !== bookKey) return;
-    expandParents(toc, progress?.sectionHref);
-  }, [toc, progress, sideBarBookKey, isSideBarVisible, bookKey, expandParents]);
-
-  // When the sidebar opens, mark that a scroll is needed and reset on close.
+  // Recompute expansion when sidebar opens or chapter/toc changes,
+  // then mark a scroll as pending.
   useEffect(() => {
     if (!isSideBarVisible || sideBarBookKey !== bookKey) {
       userScrolledRef.current = false;
-      needsScrollRef.current = false;
+      pendingScrollRef.current = false;
       return;
     }
-    if (!userScrolledRef.current) {
-      needsScrollRef.current = true;
-    }
-  }, [isSideBarVisible, sideBarBookKey, bookKey]);
+    if (userScrolledRef.current) return;
+    setExpandedItems(computeExpandedSet(toc, progress?.sectionHref));
+    if (progress?.sectionHref) pendingScrollRef.current = true;
+  }, [isSideBarVisible, sideBarBookKey, bookKey, toc, progress]);
 
-  // Execute the scroll after flatItems settles (expandParents runs first, updating
-  // flatItems, then this effect fires with the correct indices).
+  // Execute smooth scroll after flatItems re-renders with the updated expanded set.
   useEffect(() => {
-    if (!needsScrollRef.current) return;
-    const href = activeHrefRef.current;
-    if (!href) return;
-    const idx = flatItems.findIndex((f) => f.item.href === href);
+    if (!pendingScrollRef.current || !activeHref) return;
+    const idx = flatItems.findIndex((f) => f.item.href === activeHref);
     if (idx !== -1) {
-      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'auto' });
-      needsScrollRef.current = false;
+      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'smooth' });
+      pendingScrollRef.current = false;
     }
-  }, [flatItems]);
+  }, [flatItems, activeHref]);
 
   return (
     <div ref={containerRef} className='toc-list mt-2 rounded' role='tree'>
