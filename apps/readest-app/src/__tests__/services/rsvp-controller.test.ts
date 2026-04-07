@@ -116,4 +116,31 @@ describe('RSVPController', () => {
       expect(controller.currentDisplayWord?.text).toBe('hello');
     });
   });
+
+  describe('duplicate word blank insertion', () => {
+    test('inserts blank between two consecutive identical words', () => {
+      const doc = makeDoc('the the cat');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words;
+      expect(words[0]!.text).toBe('the');
+      expect(words[1]!.text).toBe(' ');
+      expect(words[2]!.text).toBe('the');
+      expect(words[3]!.text).toBe('cat');
+    });
+
+    test('does not insert blank between different words', () => {
+      const doc = makeDoc('the cat');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words;
+      expect(words.length).toBe(2);
+      expect(words[0]!.text).toBe('the');
+      expect(words[1]!.text).toBe('cat');
+    });
+  });
 });
