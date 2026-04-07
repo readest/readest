@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { md5 } from 'js-md5';
 import { type as osType } from '@tauri-apps/plugin-os';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -147,7 +146,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
       ...settings.kosync,
       serverUrl: url,
       username,
-      userkey: md5(password),
+      userkey: password,
       deviceName,
       enabled: true,
     };

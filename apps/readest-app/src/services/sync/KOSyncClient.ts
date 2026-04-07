@@ -21,6 +21,7 @@ export interface KoSyncProgress {
 export class KOSyncClient {
   private config: KOSyncSettings;
   private isLanServer: boolean;
+  private usesHttpAuth: boolean = false;
 
   constructor(config: KOSyncSettings) {
     this.config = config;
@@ -34,53 +35,81 @@ export class KOSyncClient {
       method?: 'GET' | 'POST' | 'PUT';
       body?: BodyInit | null;
       headers?: HeadersInit;
-      useAuth?: boolean;
+      useAuth?: boolean | { username: string; userkey: string };
     } = {},
   ): Promise<Response> {
     const { method = 'GET', body, headers: additionalHeaders, useAuth = true } = options;
 
-    const headers = new Headers(additionalHeaders || {});
-    if (useAuth) {
-      headers.set('X-Auth-User', this.config.username);
-      headers.set('X-Auth-Key', this.config.userkey);
-    }
+    const buildHeaders = (): Headers => {
+      const headers = new Headers(additionalHeaders || {});
+      if (useAuth) {
+        const username = typeof useAuth === 'boolean' ? this.config.username : useAuth.username;
+        const userkey = typeof useAuth === 'boolean' ? this.config.userkey : useAuth.userkey;
 
-    if (this.isLanServer || isTauriAppPlatform()) {
-      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-      const directUrl = `${this.config.serverUrl}${endpoint}`;
-
-      return fetch(directUrl, {
-        method,
-        headers: {
-          accept: 'application/vnd.koreader.v1+json',
-          ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
-          ...Object.fromEntries(headers.entries()),
-        },
-        body,
-        danger: {
-          acceptInvalidCerts: true,
-          acceptInvalidHostnames: true,
-        },
-      });
-    }
-
-    const proxyUrl = `${getAPIBaseUrl()}/kosync`;
-
-    const proxyBody: KoSyncProxyPayload = {
-      serverUrl: this.config.serverUrl,
-      endpoint,
-      method,
-      headers: Object.fromEntries(headers.entries()),
-      body: body ? JSON.parse(body as string) : undefined,
+        if (this.usesHttpAuth) {
+          const encodedAuth = Buffer.from(`${username}:${userkey}`, 'utf-8').toString('base64');
+          headers.set('Authorization', `Basic ${encodedAuth}`);
+        } else {
+          headers.set('X-Auth-User', username);
+          headers.set('X-Auth-Key', md5(userkey));
+        }
+      }
+      return headers;
     };
 
-    return fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(proxyBody),
-    });
+    const attempt = async (): Promise<Response> => {
+      const headers = buildHeaders();
+
+      if (this.isLanServer || isTauriAppPlatform()) {
+        const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+        const directUrl = `${this.config.serverUrl}${endpoint}`;
+
+        return await fetch(directUrl, {
+          method,
+          headers: {
+            accept: 'application/vnd.koreader.v1+json',
+            ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+            ...Object.fromEntries(headers.entries()),
+          },
+          body,
+          danger: {
+            acceptInvalidCerts: true,
+            acceptInvalidHostnames: true,
+          },
+        });
+      }
+
+      const proxyUrl = `${getAPIBaseUrl()}/kosync`;
+      const proxyBody: KoSyncProxyPayload = {
+        serverUrl: this.config.serverUrl,
+        endpoint,
+        method,
+        headers: Object.fromEntries(headers.entries()),
+        body: body ? JSON.parse(body as string) : undefined,
+      };
+
+      return await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(proxyBody),
+      });
+    };
+
+    let response = await attempt();
+    if (response.status === 401) {
+      // traditional auth failed; attempt one more time with HTTP auth
+      this.usesHttpAuth = true;
+
+      response = await attempt();
+      if (!response.ok) {
+        // this one failed too, revert to traditional auth
+        this.usesHttpAuth = false;
+      }
+    }
+
+    return response;
   }
 
   /**
@@ -93,15 +122,12 @@ export class KOSyncClient {
     username: string,
     password: string,
   ): Promise<{ success: boolean; message?: string }> {
-    const userkey = md5(password);
+    const userkey = password;
 
     try {
       const authResponse = await this.request('/users/auth', {
         method: 'GET',
-        headers: {
-          'X-Auth-User': username,
-          'X-Auth-Key': userkey,
-        },
+        useAuth: true,
       });
 
       if (authResponse.ok) {
