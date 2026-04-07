@@ -5,8 +5,6 @@ import * as React from 'react';
 import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
-import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from 'overlayscrollbars-react';
-import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
@@ -134,28 +132,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const iconSize = useResponsiveSize(18);
   const viewSettings = settings.globalViewSettings;
   const demoBooks = useDemoBooks();
-  const osRef = useRef<OverlayScrollbarsComponentRef>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
   const getScrollKey = (group: string) => `library-scroll-${group || 'all'}`;
 
   const saveScrollPosition = (group: string) => {
-    const viewport = osRef.current?.osInstance()?.elements().viewport;
-    if (viewport) {
-      const scrollTop = viewport.scrollTop;
-      sessionStorage.setItem(getScrollKey(group), scrollTop.toString());
+    if (scrollRef.current) {
+      sessionStorage.setItem(getScrollKey(group), scrollRef.current.scrollTop.toString());
     }
   };
 
   const restoreScrollPosition = useCallback((group: string) => {
     const savedPosition = sessionStorage.getItem(getScrollKey(group));
-    if (savedPosition) {
-      const scrollTop = parseInt(savedPosition, 10);
-      const viewport = osRef.current?.osInstance()?.elements().viewport;
-      if (viewport) {
-        viewport.scrollTop = scrollTop;
-      }
+    if (savedPosition && scrollRef.current) {
+      scrollRef.current.scrollTop = parseInt(savedPosition, 10);
     }
   }, []);
 
@@ -890,22 +882,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       )}
       {showBookshelf &&
         (libraryBooks.some((book) => !book.deletedAt) ? (
-          <OverlayScrollbarsComponent
-            defer
+          <div
+            ref={scrollRef}
             aria-label={_('Your Bookshelf')}
-            ref={osRef}
-            className='flex-grow'
-            options={{ scrollbars: { autoHide: 'scroll' } }}
-            events={{
-              initialized: (instance) => {
-                const { content } = instance.elements();
-                if (content) {
-                  containerRef.current = content as HTMLDivElement;
-                }
-              },
-            }}
+            className='library-scroller flex-grow'
           >
             <div
+              ref={containerRef}
               className={clsx('scroll-container drop-zone flex-grow', isDragging && 'drag-over')}
               style={{
                 paddingTop: '0px',
@@ -931,7 +914,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handlePushLibrary={pushLibrary}
               />
             </div>
-          </OverlayScrollbarsComponent>
+          </div>
         ) : (
           <div className='hero drop-zone h-screen items-center justify-center'>
             <DropIndicator />

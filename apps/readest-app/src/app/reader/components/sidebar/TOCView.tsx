@@ -1,17 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FixedSizeList as VirtualList } from 'react-window';
+import { Virtuoso, VirtuosoHandle, Components } from 'react-virtuoso';
 
-import { useOverlayScrollbars } from 'overlayscrollbars-react';
-import 'overlayscrollbars/overlayscrollbars.css';
 import { SectionItem, TOCItem } from '@/libs/document';
-import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { findParentPath } from '@/utils/toc';
 import { eventDispatcher } from '@/utils/event';
-import { getContentMd5 } from '@/utils/misc';
 import { useTextTranslation } from '../../hooks/useTextTranslation';
-import { FlatTOCItem, StaticListRow, VirtualListRow } from './TOCItem';
+import { FlatTOCItem, StaticListRow } from './TOCItem';
 
 const getItemIdentifier = (item: TOCItem) => {
   const href = item.href || '';
@@ -31,87 +27,42 @@ const useFlattenedTOC = (toc: TOCItem[], expandedItems: Set<string>) => {
       });
       return result;
     };
-
     return flattenTOC(toc);
   }, [toc, expandedItems]);
 };
+
+// Custom scroller with CSS-only auto-hide overlay scrollbar.
+// Works across all Tauri targets (WebView2/WKWebView/WebKitGTK/Android).
+// On mobile the WebView hides scrollbars natively, so the CSS is a no-op there.
+const TOCScroller = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  (props, ref) => <div {...props} ref={ref} className='toc-scroller' />,
+);
+TOCScroller.displayName = 'TOCScroller';
+
+const VIRTUOSO_COMPONENTS: Components = { Scroller: TOCScroller };
 
 const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
   sections?: SectionItem[];
-}> = ({ bookKey, toc, sections }) => {
-  const { appService } = useEnv();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+}> = ({ bookKey, toc }) => {
+  const { getView, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
-  const viewSettings = getViewSettings(bookKey)!;
   const progress = getProgress(bookKey);
 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [containerHeight, setContainerHeight] = useState(400);
 
-  const hasInteractedWithTOCRef = useRef(false);
-  const lastInteractionTimeRef = useRef<number>(0);
-  const prevSideBarVisibleRef = useRef(false);
-  const interactionCooldownMs = 10000;
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const listOuterRef = useRef<HTMLDivElement | null>(null);
-  const vitualListRef = useRef<VirtualList | null>(null);
-  const staticListRef = useRef<HTMLDivElement | null>(null);
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+  const userScrolledRef = useRef(false);
+  // Set to true when the sidebar opens; the flatItems effect executes the scroll
+  // after expandParents has updated flatItems, ensuring the correct index.
+  const needsScrollRef = useRef(false);
+  // activeHrefRef kept fresh each render so the flatItems effect doesn't need it as a dep.
+  const activeHrefRef = useRef<string | null>(null);
 
-  const [initialize] = useOverlayScrollbars({
-    defer: true,
-    options: {
-      scrollbars: {
-        autoHide: 'scroll',
-      },
-      showNativeOverlaidScrollbars: false,
-    },
-    events: {
-      initialized(osInstance) {
-        const { viewport } = osInstance.elements();
-        viewport.style.overflowX = `var(--os-viewport-overflow-x)`;
-        viewport.style.overflowY = `var(--os-viewport-overflow-y)`;
-      },
-    },
-  });
-
-  const isInCooldown = useCallback(() => {
-    if (!hasInteractedWithTOCRef.current) return false;
-    return Date.now() - lastInteractionTimeRef.current < interactionCooldownMs;
-  }, []);
-
-  const handleInteraction = useCallback(() => {
-    hasInteractedWithTOCRef.current = true;
-    lastInteractionTimeRef.current = Date.now();
-  }, []);
-
-  useEffect(() => {
-    const { current: root } = containerRef;
-    const { current: virtualOuter } = listOuterRef;
-
-    if (root && virtualOuter) {
-      initialize({
-        target: root,
-        elements: {
-          viewport: virtualOuter,
-        },
-      });
-
-      virtualOuter.addEventListener('scroll', handleInteraction);
-      return () => {
-        virtualOuter.removeEventListener('scroll', handleInteraction);
-      };
-    }
-    return;
-  }, [initialize, handleInteraction]);
-
-  useTextTranslation(
-    bookKey,
-    containerRef.current || staticListRef.current,
-    false,
-    'translation-target-toc',
-  );
+  useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
 
   useEffect(() => {
     const updateHeight = () => {
@@ -135,50 +86,28 @@ const TOCView: React.FC<{
         resizeObserver.observe(parentContainer);
       }
     }
-
-    const staticList = staticListRef.current;
-    let scrollContainer: Element | null = null;
-
-    if (staticList) {
-      scrollContainer = staticList.parentElement;
-      if (scrollContainer) {
-        scrollContainer.addEventListener('scroll', handleInteraction);
-      }
-    }
-
     return () => {
       window.removeEventListener('resize', updateHeight);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-      if (scrollContainer) {
-        scrollContainer.removeEventListener('scroll', handleInteraction);
-      }
+      if (resizeObserver) resizeObserver.disconnect();
     };
-  }, [expandedItems, handleInteraction]);
+  }, []);
 
   const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
   const flatItems = useFlattenedTOC(toc, expandedItems);
-  const activeItemIndex = useMemo(() => {
-    return flatItems.findIndex((item) => item.item.href === activeHref);
-  }, [flatItems, activeHref]);
+  activeHrefRef.current = activeHref;
 
-  const handleToggleExpand = useCallback(
-    (item: TOCItem) => {
-      const itemId = getItemIdentifier(item);
-      handleInteraction();
-      setExpandedItems((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(itemId)) {
-          newSet.delete(itemId);
-        } else {
-          newSet.add(itemId);
-        }
-        return newSet;
-      });
-    },
-    [handleInteraction],
-  );
+  const handleToggleExpand = useCallback((item: TOCItem) => {
+    const itemId = getItemIdentifier(item);
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  }, []);
 
   const handleItemClick = useCallback(
     (item: TOCItem) => {
@@ -190,147 +119,72 @@ const TOCView: React.FC<{
     [bookKey, getView],
   );
 
-  const expandParents = useCallback((toc: TOCItem[], href: string) => {
-    const parentItems = findParentPath(toc, href)
-      .map((item) => getItemIdentifier(item))
-      .filter(Boolean);
-    setExpandedItems(new Set(parentItems));
+  // Expands all top-level items with subitems plus the ancestor chain of href.
+  // Merging both prevents the "expand then collapse" flicker seen when only
+  // parent-chain items were set (replacing previously expanded top-level items).
+  const expandParents = useCallback((items: TOCItem[], href: string | undefined) => {
+    const topLevelWithSubitems = items
+      .filter((item) => item.subitems?.length)
+      .map((item) => getItemIdentifier(item));
+    const parentItems = href
+      ? findParentPath(items, href)
+          .map((item) => getItemIdentifier(item))
+          .filter(Boolean)
+      : [];
+    setExpandedItems(new Set([...topLevelWithSubitems, ...parentItems]));
   }, []);
 
-  const scrollToActiveItem = useCallback(
-    (shouldFocus = false) => {
-      if (!activeHref) return;
-
-      if (vitualListRef.current) {
-        const activeIndex = flatItems.findIndex((flatItem) => flatItem.item.href === activeHref);
-        if (activeIndex !== -1) {
-          vitualListRef.current.scrollToItem(activeIndex, 'center');
-        }
-      }
-
-      if (staticListRef.current) {
-        const hrefMd5 = activeHref ? getContentMd5(activeHref) : '';
-        const activeItem = staticListRef.current?.querySelector<HTMLElement>(
-          `[data-href="${hrefMd5}"]`,
-        );
-        if (activeItem) {
-          const container = staticListRef.current.parentElement!;
-          const containerRect = container.getBoundingClientRect();
-          const itemRect = activeItem.getBoundingClientRect();
-          const isVisible =
-            itemRect.top >= containerRect.top && itemRect.bottom <= containerRect.bottom;
-          if (!isVisible) {
-            activeItem.scrollIntoView({ behavior: 'instant', block: 'center' });
-          }
-          if (shouldFocus) {
-            activeItem.focus({ preventScroll: true });
-          }
-        }
-      }
-    },
-    [flatItems, activeHref],
-  );
-
-  const virtualItemSize = useMemo(() => {
-    return window.innerWidth >= 640 && !viewSettings?.translationEnabled ? 37 : 57;
-  }, [viewSettings?.translationEnabled]);
-
-  const virtualListData = useMemo(
-    () => ({
-      flatItems,
-      itemSize: virtualItemSize,
-      bookKey,
-      activeHref,
-      onToggleExpand: handleToggleExpand,
-      onItemClick: handleItemClick,
-    }),
-    [flatItems, virtualItemSize, bookKey, activeHref, handleToggleExpand, handleItemClick],
-  );
-
-  // Initialize expandedItems to expand top-level items with subitems.
-  // This ensures chapters are visible even when the initial position
-  // (e.g., cover page) has no TOC entry and progress.sectionHref is undefined.
   useEffect(() => {
-    setExpandedItems((prev) => {
-      if (prev.size > 0) return prev;
-      const topLevelWithSubitems = toc
-        .filter((item) => item.subitems?.length)
-        .map((item) => getItemIdentifier(item));
-      return topLevelWithSubitems.length > 0 ? new Set(topLevelWithSubitems) : prev;
-    });
-  }, [toc]);
+    if (!isSideBarVisible || sideBarBookKey !== bookKey) return;
+    expandParents(toc, progress?.sectionHref);
+  }, [toc, progress, sideBarBookKey, isSideBarVisible, bookKey, expandParents]);
 
+  // When the sidebar opens, mark that a scroll is needed and reset on close.
   useEffect(() => {
-    if (!progress) return;
-    if (!isSideBarVisible) return;
-    if (sideBarBookKey !== bookKey) return;
-    if (isInCooldown()) return;
-    hasInteractedWithTOCRef.current = false;
-
-    const { sectionHref: currentHref } = progress;
-    if (currentHref) {
-      expandParents(toc, currentHref);
+    if (!isSideBarVisible || sideBarBookKey !== bookKey) {
+      userScrolledRef.current = false;
+      needsScrollRef.current = false;
+      return;
     }
-  }, [toc, progress, sideBarBookKey, isSideBarVisible, bookKey, expandParents, isInCooldown]);
-
-  useEffect(() => {
-    if (isInCooldown()) return;
-    hasInteractedWithTOCRef.current = false;
-
-    if (flatItems.length > 0) {
-      setTimeout(scrollToActiveItem, appService?.isAndroidApp ? 300 : 100);
+    if (!userScrolledRef.current) {
+      needsScrollRef.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, scrollToActiveItem, isInCooldown]);
+  }, [isSideBarVisible, sideBarBookKey, bookKey]);
 
+  // Execute the scroll after flatItems settles (expandParents runs first, updating
+  // flatItems, then this effect fires with the correct indices).
   useEffect(() => {
-    const wasVisible = prevSideBarVisibleRef.current;
-    prevSideBarVisibleRef.current = isSideBarVisible;
-
-    if (isSideBarVisible && !wasVisible && sideBarBookKey === bookKey) {
-      setTimeout(() => scrollToActiveItem(true), appService?.isAndroidApp ? 400 : 200);
+    if (!needsScrollRef.current) return;
+    const href = activeHrefRef.current;
+    if (!href) return;
+    const idx = flatItems.findIndex((f) => f.item.href === href);
+    if (idx !== -1) {
+      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'auto' });
+      needsScrollRef.current = false;
     }
-  }, [isSideBarVisible, sideBarBookKey, bookKey, scrollToActiveItem, appService]);
+  }, [flatItems]);
 
-  const useVirtualization = sections && sections.length > 256;
-
-  return useVirtualization ? (
-    <div
-      className='virtual-list mt-2 rounded'
-      data-overlayscrollbars-initialize=''
-      role='tree'
-      ref={containerRef}
-    >
-      <VirtualList
-        ref={vitualListRef}
-        outerRef={listOuterRef}
-        width='100%'
-        height={containerHeight}
-        itemCount={flatItems.length}
-        itemSize={virtualItemSize}
-        itemData={virtualListData}
-        overscanCount={20}
-        initialScrollOffset={
-          appService?.isAndroidApp && activeItemIndex >= 0
-            ? Math.max(0, activeItemIndex * virtualItemSize - containerHeight / 2)
-            : undefined
-        }
-      >
-        {VirtualListRow}
-      </VirtualList>
-    </div>
-  ) : (
-    <div className='static-list mt-2 rounded' role='tree' ref={staticListRef}>
-      {flatItems.map((flatItem, index) => (
-        <StaticListRow
-          key={`static-row-${index}`}
-          bookKey={bookKey}
-          flatItem={flatItem}
-          activeHref={activeHref}
-          onToggleExpand={handleToggleExpand}
-          onItemClick={handleItemClick}
-        />
-      ))}
+  return (
+    <div ref={containerRef} className='toc-list mt-2 rounded' role='tree'>
+      <Virtuoso
+        ref={virtuosoRef}
+        components={VIRTUOSO_COMPONENTS}
+        onScroll={() => {
+          userScrolledRef.current = true;
+        }}
+        style={{ height: containerHeight }}
+        totalCount={flatItems.length}
+        itemContent={(index) => (
+          <StaticListRow
+            bookKey={bookKey}
+            flatItem={flatItems[index]!}
+            activeHref={activeHref}
+            onToggleExpand={handleToggleExpand}
+            onItemClick={handleItemClick}
+          />
+        )}
+        overscan={500}
+      />
     </div>
   );
 };
