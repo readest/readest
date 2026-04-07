@@ -35,7 +35,7 @@ export class KOSyncClient {
       method?: 'GET' | 'POST' | 'PUT';
       body?: BodyInit | null;
       headers?: HeadersInit;
-      useAuth?: boolean | { username: string; userkey: string };
+      useAuth?: boolean;
     } = {},
   ): Promise<Response> {
     const { method = 'GET', body, headers: additionalHeaders, useAuth = true } = options;
@@ -43,15 +43,12 @@ export class KOSyncClient {
     const buildHeaders = (): Headers => {
       const headers = new Headers(additionalHeaders || {});
       if (useAuth) {
-        const username = typeof useAuth === 'boolean' ? this.config.username : useAuth.username;
-        const userkey = typeof useAuth === 'boolean' ? this.config.userkey : useAuth.userkey;
-
-        if (this.usesHttpAuth) {
-          const encodedAuth = Buffer.from(`${username}:${userkey}`, 'utf-8').toString('base64');
-          headers.set('Authorization', `Basic ${encodedAuth}`);
+        if (this.usesHttpAuth && this.config.password) {
+          const credentials = btoa(`${this.config.username}:${this.config.password}`);
+          headers.set('Authorization', `Basic ${credentials}`);
         } else {
-          headers.set('X-Auth-User', username);
-          headers.set('X-Auth-Key', md5(userkey));
+          headers.set('X-Auth-User', this.config.username);
+          headers.set('X-Auth-Key', this.config.userkey);
         }
       }
       return headers;
@@ -122,7 +119,7 @@ export class KOSyncClient {
     username: string,
     password: string,
   ): Promise<{ success: boolean; message?: string }> {
-    const userkey = password;
+    const userkey = md5(password);
 
     try {
       const authResponse = await this.request('/users/auth', {

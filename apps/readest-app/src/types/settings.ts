@@ -59,6 +59,7 @@ export interface KOSyncSettings {
   serverUrl: string;
   username: string;
   userkey: string;
+  password?: string;
   deviceId: string;
   deviceName: string;
   checksumMethod: KOSyncChecksumMethod;
