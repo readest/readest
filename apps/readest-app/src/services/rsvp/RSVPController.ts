@@ -711,16 +711,12 @@ export class RSVPController extends EventTarget {
 
     walk(element);
 
-    // Insert a blank word between consecutive identical words so the user
-    // can perceive the word boundary (ISI — inter-stimulus interval)
-    const result: RsvpWord[] = [];
-    for (let i = 0; i < words.length; i++) {
-      result.push(words[i]!);
-      if (i + 1 < words.length && words[i]!.text === words[i + 1]!.text) {
-        result.push({ text: ' ', orpIndex: 0, pauseMultiplier: 0.5 });
-      }
-    }
-    return result;
+    // Insert a blank ISI frame between consecutive identical words.
+    return words.flatMap((word, i) =>
+      i + 1 < words.length && word.text === words[i + 1]!.text
+        ? [word, { text: ' ', orpIndex: 0, pauseMultiplier: 0.5 }]
+        : [word],
+    );
   }
 
   private calculateORP(word: string): number {

@@ -822,66 +822,40 @@ body.atmosphere #atmosphere-overlay {
   animation: shake 0.8s ease-in-out;
 }
 
-/* Shared auto-hide overlay scrollbar style for library and sidebar scrollers.
-   Matches OverlayScrollbars os-theme-dark/light: 10px wide, solid thumb, border-radius 10px.
-   oklch(var(--bc) / α) adapts to dark/light theme automatically.
-   On touch devices the WebView hides scrollbars natively. */
 .library-scroller,
 .sidebar-scroller {
   overflow-y: auto;
   overflow-x: hidden;
 }
 .library-scroller::-webkit-scrollbar,
-.sidebar-scroller::-webkit-scrollbar {
-  width: 10px;
-}
-.library-scroller::-webkit-scrollbar-track,
-.sidebar-scroller::-webkit-scrollbar-track {
-  background: transparent;
-}
-.library-scroller::-webkit-scrollbar-thumb,
-.sidebar-scroller::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 10px;
-  transition: background 0.3s;
-}
-.library-scroller:hover::-webkit-scrollbar-thumb,
-.sidebar-scroller:hover::-webkit-scrollbar-thumb {
-  background: oklch(var(--bc) / 0.44);
-}
-.library-scroller:hover::-webkit-scrollbar-thumb:hover,
-.sidebar-scroller:hover::-webkit-scrollbar-thumb:hover {
-  background: oklch(var(--bc) / 0.55);
-}
-.library-scroller:hover::-webkit-scrollbar-thumb:active,
-.sidebar-scroller:hover::-webkit-scrollbar-thumb:active {
-  background: oklch(var(--bc) / 0.66);
-}
-
-/* TOC sidebar scroller — CSS-only auto-hide overlay scrollbar.
-   No scrollbar-width/scrollbar-color so Chrome uses webkit pseudo-elements exclusively
-   (mixing both causes the "two sizes" track+thumb look).
-   Thumb fills the full 10px — no border padding trick — so it renders as a single
-   solid element matching the OverlayScrollbars thumb visually.
-   oklch(var(--bc) / α) adapts to dark/light theme automatically.
-   On touch devices the WebView hides scrollbars natively. */
+.sidebar-scroller::-webkit-scrollbar,
 .toc-scroller::-webkit-scrollbar {
   width: 10px;
 }
+.library-scroller::-webkit-scrollbar-track,
+.sidebar-scroller::-webkit-scrollbar-track,
 .toc-scroller::-webkit-scrollbar-track {
   background: transparent;
 }
+.library-scroller::-webkit-scrollbar-thumb,
+.sidebar-scroller::-webkit-scrollbar-thumb,
 .toc-scroller::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 10px;
   transition: background 0.3s;
 }
+.library-scroller:hover::-webkit-scrollbar-thumb,
+.sidebar-scroller:hover::-webkit-scrollbar-thumb,
 .toc-scroller:hover::-webkit-scrollbar-thumb {
   background: oklch(var(--bc) / 0.44);
 }
+.library-scroller:hover::-webkit-scrollbar-thumb:hover,
+.sidebar-scroller:hover::-webkit-scrollbar-thumb:hover,
 .toc-scroller:hover::-webkit-scrollbar-thumb:hover {
   background: oklch(var(--bc) / 0.55);
 }
+.library-scroller:hover::-webkit-scrollbar-thumb:active,
+.sidebar-scroller:hover::-webkit-scrollbar-thumb:active,
 .toc-scroller:hover::-webkit-scrollbar-thumb:active {
   background: oklch(var(--bc) / 0.66);
 }

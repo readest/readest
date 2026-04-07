@@ -83,7 +83,7 @@ const SidebarContent: React.FC<{
               )}
             >
               {targetTab === 'toc' && bookDoc.toc && (
-                <TOCView toc={bookDoc.toc} sections={bookDoc.sections} bookKey={sideBarBookKey} />
+                <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
               )}
               {targetTab === 'annotations' && (
                 <div className='sidebar-scroller h-full'>

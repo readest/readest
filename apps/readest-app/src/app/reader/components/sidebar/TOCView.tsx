@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso, VirtuosoHandle, Components } from 'react-virtuoso';
 
-import { SectionItem, TOCItem } from '@/libs/document';
+import { TOCItem } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { findParentPath } from '@/utils/toc';
@@ -26,17 +26,12 @@ const flattenTOC = (items: TOCItem[], expandedItems: Set<string>, depth = 0): Fl
   return result;
 };
 
-const useFlattenedTOC = (toc: TOCItem[], expandedItems: Set<string>) => {
-  return useMemo(() => flattenTOC(toc, expandedItems), [toc, expandedItems]);
-};
-
 const computeExpandedSet = (toc: TOCItem[], href: string | undefined): Set<string> => {
   const topLevel = toc.filter((item) => item.subitems?.length).map(getItemIdentifier);
   const parents = href ? findParentPath(toc, href).map(getItemIdentifier).filter(Boolean) : [];
   return new Set([...topLevel, ...parents]);
 };
 
-// Custom scroller with CSS-only auto-hide overlay scrollbar.
 const TOCScroller = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => <div {...props} ref={ref} className='toc-scroller' />,
 );
@@ -47,7 +42,6 @@ const VIRTUOSO_COMPONENTS: Components = { Scroller: TOCScroller };
 const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
-  sections?: SectionItem[];
 }> = ({ bookKey, toc }) => {
   const { getView, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
@@ -93,8 +87,8 @@ const TOCView: React.FC<{
     };
   }, []);
 
-  const activeHref = useMemo(() => progress?.sectionHref || null, [progress?.sectionHref]);
-  const flatItems = useFlattenedTOC(toc, expandedItems);
+  const activeHref = progress?.sectionHref ?? null;
+  const flatItems = useMemo(() => flattenTOC(toc, expandedItems), [toc, expandedItems]);
 
   const handleToggleExpand = useCallback((item: TOCItem) => {
     const itemId = getItemIdentifier(item);
@@ -119,8 +113,6 @@ const TOCView: React.FC<{
     [bookKey, getView],
   );
 
-  // Recompute expansion when sidebar opens or chapter/toc changes,
-  // then mark a scroll as pending.
   useEffect(() => {
     if (!isSideBarVisible || sideBarBookKey !== bookKey) {
       userScrolledRef.current = false;
@@ -132,7 +124,6 @@ const TOCView: React.FC<{
     if (progress?.sectionHref) pendingScrollRef.current = true;
   }, [isSideBarVisible, sideBarBookKey, bookKey, toc, progress]);
 
-  // Execute smooth scroll after flatItems re-renders with the updated expanded set.
   useEffect(() => {
     if (!pendingScrollRef.current || !activeHref) return;
     const idx = flatItems.findIndex((f) => f.item.href === activeHref);
