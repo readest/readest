@@ -157,7 +157,17 @@ describe('themeStore', () => {
         bg: '#1a1a1a',
         fg: '#ffffff',
         primary: '#4d9fff',
-        palette: { 'base-100': '#1a1a1a' },
+        palette: {
+          'base-100': '#1a1a1a',
+          'base-200': '#2a2a2a',
+          'base-300': '#3a3a3a',
+          'base-content': '#ffffff',
+          neutral: '#333333',
+          'neutral-content': '#ffffff',
+          primary: '#4d9fff',
+          secondary: '#6c757d',
+          accent: '#4d9fff',
+        },
         isDarkMode: true,
       };
       mockGetThemeCode.mockReturnValueOnce(darkThemeCode);
