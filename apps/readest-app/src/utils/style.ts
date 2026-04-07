@@ -764,6 +764,20 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     return selector + block;
   });
 
+  // clip hardcoded pixel widths to available width when they exceed viewport
+  css = css.replace(ruleRegex, (match, selector, block) => {
+    const widthMatch = /(?:^|[^a-z-])width\s*:\s*(\d+(?:\.\d+)?)px/.exec(block);
+    const pxWidth = widthMatch ? parseFloat(widthMatch[1] ?? '0') : 0;
+    if (pxWidth > vw && !/max-width\s*:/.test(block)) {
+      block = block.replace(
+        /}$/,
+        ' max-width: calc(var(--available-width) * 1px); box-sizing: border-box; }',
+      );
+      return selector + block;
+    }
+    return match;
+  });
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors

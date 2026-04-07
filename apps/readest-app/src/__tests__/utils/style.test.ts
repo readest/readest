@@ -268,6 +268,46 @@ describe('transformStylesheet', () => {
     });
   });
 
+  describe('hardcoded pixel width clamping', () => {
+    it('adds max-width and border-box when width exceeds viewport', () => {
+      const css = '.calibre8 { display: block; width: 1200px; padding: 2em 0 0 1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('max-width: calc(var(--available-width) * 1px)');
+      expect(result).toContain('box-sizing: border-box');
+    });
+
+    it('does not clamp when width is smaller than viewport', () => {
+      const css = '.box { width: 450px; padding: 2em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width when one already exists', () => {
+      const css = '.box { width: 1200px; max-width: 100%; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      const matches = result.match(/max-width/g);
+      expect(matches).toHaveLength(1);
+    });
+
+    it('does not affect max-width or min-width properties', () => {
+      const css = '.box { max-width: 1200px; min-width: 200px; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width for non-pixel width values', () => {
+      const css = '.box { width: 50%; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width for em width values', () => {
+      const css = '.box { width: 20em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+  });
+
   describe('preserves unrelated CSS', () => {
     it('passes through CSS without any matching patterns unchanged', () => {
       const css = '.custom { display: flex; padding: 10px; margin: 5px; }';
