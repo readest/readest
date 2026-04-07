@@ -84,4 +84,36 @@ describe('RSVPController', () => {
       expect(controller.currentState.words[0]!.text).toBe('Foo');
     });
   });
+
+  describe('currentDisplayWord', () => {
+    test('returns full word when splitHyphens is false', () => {
+      const doc = makeDoc('well-known');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setSplitHyphens(false);
+      controller.start();
+
+      expect(controller.currentDisplayWord?.text).toBe('well-known');
+    });
+
+    test('returns first part only when splitHyphens is true', () => {
+      const doc = makeDoc('well-known');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setSplitHyphens(true);
+      controller.start();
+
+      expect(controller.currentDisplayWord?.text).toBe('well-');
+    });
+
+    test('returns unsplit word when splitHyphens is true but no hyphen pattern', () => {
+      const doc = makeDoc('hello');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setSplitHyphens(true);
+      controller.start();
+
+      expect(controller.currentDisplayWord?.text).toBe('hello');
+    });
+  });
 });

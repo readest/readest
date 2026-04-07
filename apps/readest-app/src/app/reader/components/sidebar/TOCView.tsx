@@ -247,6 +247,19 @@ const TOCView: React.FC<{
     [flatItems, virtualItemSize, bookKey, activeHref, handleToggleExpand, handleItemClick],
   );
 
+  // Initialize expandedItems to expand top-level items with subitems.
+  // This ensures chapters are visible even when the initial position
+  // (e.g., cover page) has no TOC entry and progress.sectionHref is undefined.
+  useEffect(() => {
+    setExpandedItems((prev) => {
+      if (prev.size > 0) return prev;
+      const topLevelWithSubitems = toc
+        .filter((item) => item.subitems?.length)
+        .map((item) => getItemIdentifier(item));
+      return topLevelWithSubitems.length > 0 ? new Set(topLevelWithSubitems) : prev;
+    });
+  }, [toc]);
+
   useEffect(() => {
     if (!progress) return;
     if (!isSideBarVisible) return;
