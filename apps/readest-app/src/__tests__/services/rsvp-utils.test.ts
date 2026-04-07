@@ -274,5 +274,17 @@ describe('rsvp/utils', () => {
     test('returns trailing-hyphen word unchanged', () => {
       expect(getHyphenParts('word-')).toEqual(['word-']);
     });
+
+    test('splits on ellipsis between letters with trailing ellipsis on non-last parts', () => {
+      expect(getHyphenParts('a...b')).toEqual(['a...', 'b']);
+    });
+
+    test('splits mixed hyphens and ellipses preserving each delimiter', () => {
+      expect(getHyphenParts('foo-bar...baz')).toEqual(['foo-', 'bar...', 'baz']);
+    });
+
+    test('returns ellipsis-only unchanged', () => {
+      expect(getHyphenParts('...')).toEqual(['...']);
+    });
   });
 });
