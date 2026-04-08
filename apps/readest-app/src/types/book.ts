@@ -154,7 +154,6 @@ export interface BookStyle {
   textIndent: number;
   fullJustification: boolean;
   hyphenation: boolean;
-  invertImgColorInDark: boolean;
   theme: string;
   overrideFont: boolean;
   overrideLayout: boolean;
@@ -172,6 +171,8 @@ export interface BookStyle {
   zoomMode: 'fit-page' | 'fit-width' | 'original-size' | 'custom';
   spreadMode: 'auto' | 'none';
   keepCoverSpread: boolean;
+  invertImgColorInDark: boolean;
+  applyThemeToPDF: boolean;
 }
 
 export interface BookFont {

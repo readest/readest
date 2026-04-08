@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover 进度同步失败：{{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "保留现有来源标识符",
-  "Toggle Toolbar": "切换工具栏"
+  "Toggle Toolbar": "切换工具栏",
+  "Split Hyphens": "拆分连字符",
+  "Apply Theme Colors to PDF": "将主题颜色应用于 PDF",
+  "Name": "名称",
+  "Unavailable": "不可用"
 }

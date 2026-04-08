@@ -219,7 +219,6 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   textIndent: 0,
   fullJustification: true,
   hyphenation: true,
-  invertImgColorInDark: false,
   theme: 'light',
   overrideFont: false,
   overrideLayout: false,
@@ -236,6 +235,8 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   zoomMode: 'fit-page',
   spreadMode: 'auto',
   keepCoverSpread: true,
+  invertImgColorInDark: false,
+  applyThemeToPDF: false,
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {

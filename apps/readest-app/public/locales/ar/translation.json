@@ -1235,5 +1235,9 @@
   "Hardcover progress sync failed: {{error}}": "فشلت مزامنة تقدم Hardcover: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "الإبقاء على معرف المصدر الحالي",
-  "Toggle Toolbar": "تبديل شريط الأدوات"
+  "Toggle Toolbar": "تبديل شريط الأدوات",
+  "Split Hyphens": "تقسيم الواصلات",
+  "Apply Theme Colors to PDF": "تطبيق ألوان السمة على PDF",
+  "Name": "الاسم",
+  "Unavailable": "غير متاح"
 }

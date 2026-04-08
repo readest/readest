@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "همگام‌سازی پیشرفت Hardcover ناموفق: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "حفظ شناسه منبع موجود",
-  "Toggle Toolbar": "تغییر نوار ابزار"
+  "Toggle Toolbar": "تغییر نوار ابزار",
+  "Split Hyphens": "تقسیم خط‌تیره‌ها",
+  "Apply Theme Colors to PDF": "اعمال رنگ‌های پوسته روی PDF",
+  "Name": "نام",
+  "Unavailable": "ناموجود"
 }

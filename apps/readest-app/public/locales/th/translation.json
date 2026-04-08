@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "การซิงค์ความคืบหน้า Hardcover ล้มเหลว: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "เก็บตัวระบุแหล่งที่มาที่มีอยู่",
-  "Toggle Toolbar": "สลับแถบเครื่องมือ"
+  "Toggle Toolbar": "สลับแถบเครื่องมือ",
+  "Split Hyphens": "แยกยัติภังค์",
+  "Apply Theme Colors to PDF": "ใช้สีธีมกับ PDF",
+  "Name": "ชื่อ",
+  "Unavailable": "ไม่พร้อมใช้งาน"
 }

@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover प्रगति सिंक विफल: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "मौजूदा स्रोत पहचानकर्ता रखें",
-  "Toggle Toolbar": "टूलबार टॉगल करें"
+  "Toggle Toolbar": "टूलबार टॉगल करें",
+  "Split Hyphens": "हाइफ़न विभाजित करें",
+  "Apply Theme Colors to PDF": "PDF पर थीम रंग लागू करें",
+  "Name": "नाम",
+  "Unavailable": "अनुपलब्ध"
 }

@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Đồng bộ tiến trình Hardcover thất bại: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Giữ mã định danh nguồn hiện tại",
-  "Toggle Toolbar": "Bật/tắt thanh công cụ"
+  "Toggle Toolbar": "Bật/tắt thanh công cụ",
+  "Split Hyphens": "Tách gạch nối",
+  "Apply Theme Colors to PDF": "Áp dụng màu chủ đề cho PDF",
+  "Name": "Tên",
+  "Unavailable": "Không khả dụng"
 }

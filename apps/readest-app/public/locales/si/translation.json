@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover ප්‍රගති සමමුහුර්තකරණය අසාර්ථකයි: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "පවතින මූලාශ්‍ර හඳුනාගැනීම තබාගන්න",
-  "Toggle Toolbar": "මෙවලම් තීරුව ටොගල් කරන්න"
+  "Toggle Toolbar": "මෙවලම් තීරුව ටොගල් කරන්න",
+  "Split Hyphens": "හයිෆන් බෙදන්න",
+  "Apply Theme Colors to PDF": "PDF වෙත තේමා වර්ණ යොදන්න",
+  "Name": "නම",
+  "Unavailable": "ලබාගත නොහැක"
 }

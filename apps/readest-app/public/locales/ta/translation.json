@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover முன்னேற்ற ஒத்திசைவு தோல்வி: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "ஏற்கனவே உள்ள மூல அடையாளங்காட்டியை வைத்திருக்கவும்",
-  "Toggle Toolbar": "கருவிப்பட்டியை நிலைமாற்று"
+  "Toggle Toolbar": "கருவிப்பட்டியை நிலைமாற்று",
+  "Split Hyphens": "ஹைபன்களைப் பிரி",
+  "Apply Theme Colors to PDF": "PDF-க்கு தீம் நிறங்களைப் பயன்படுத்து",
+  "Name": "பெயர்",
+  "Unavailable": "கிடைக்கவில்லை"
 }

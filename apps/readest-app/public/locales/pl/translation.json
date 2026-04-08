@@ -1209,5 +1209,9 @@
   "Hardcover progress sync failed: {{error}}": "Synchronizacja postępu Hardcover nie powiodła się: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Zachowaj istniejący identyfikator źródła",
-  "Toggle Toolbar": "Przełącz pasek narzędzi"
+  "Toggle Toolbar": "Przełącz pasek narzędzi",
+  "Split Hyphens": "Dziel łączniki",
+  "Apply Theme Colors to PDF": "Zastosuj kolory motywu do PDF",
+  "Name": "Nazwa",
+  "Unavailable": "Niedostępne"
 }

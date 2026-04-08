@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover-Fortschrittssynchronisierung fehlgeschlagen: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Vorhandene Quellkennung beibehalten",
-  "Toggle Toolbar": "Symbolleiste umschalten"
+  "Toggle Toolbar": "Symbolleiste umschalten",
+  "Split Hyphens": "Bindestriche trennen",
+  "Apply Theme Colors to PDF": "Designfarben auf PDF anwenden",
+  "Name": "Name",
+  "Unavailable": "Nicht verfügbar"
 }

@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Synkronisering av Hardcover-framsteg misslyckades: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Behåll befintlig källidentifierare",
-  "Toggle Toolbar": "Visa/dölj verktygsfältet"
+  "Toggle Toolbar": "Visa/dölj verktygsfältet",
+  "Split Hyphens": "Dela bindestreck",
+  "Apply Theme Colors to PDF": "Tillämpa temafärger på PDF",
+  "Name": "Namn",
+  "Unavailable": "Inte tillgängligt"
 }

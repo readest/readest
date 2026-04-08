@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover অগ্রগতি সিঙ্ক ব্যর্থ: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "বিদ্যমান উৎস শনাক্তকারী রাখুন",
-  "Toggle Toolbar": "টুলবার টগল করুন"
+  "Toggle Toolbar": "টুলবার টগল করুন",
+  "Split Hyphens": "হাইফেন বিভক্ত করুন",
+  "Apply Theme Colors to PDF": "PDF-এ থিম রং প্রয়োগ করুন",
+  "Name": "নাম",
+  "Unavailable": "অনুপলব্ধ"
 }

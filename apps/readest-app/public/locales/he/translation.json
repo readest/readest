@@ -1196,5 +1196,9 @@
   "Hardcover progress sync failed: {{error}}": "סנכרון התקדמות Hardcover נכשל: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "שמור על מזהה המקור הקיים",
-  "Toggle Toolbar": "הצג/הסתר סרגל כלים"
+  "Toggle Toolbar": "הצג/הסתר סרגל כלים",
+  "Split Hyphens": "פיצול מקפים",
+  "Apply Theme Colors to PDF": "החל צבעי ערכת נושא על PDF",
+  "Name": "שם",
+  "Unavailable": "לא זמין"
 }

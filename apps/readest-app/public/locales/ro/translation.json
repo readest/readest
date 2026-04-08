@@ -1196,5 +1196,9 @@
   "Hardcover progress sync failed: {{error}}": "Sincronizarea progresului Hardcover a eșuat: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Păstrați identificatorul sursă existent",
-  "Toggle Toolbar": "Comutare bară de instrumente"
+  "Toggle Toolbar": "Comutare bară de instrumente",
+  "Split Hyphens": "Desparte cratimele",
+  "Apply Theme Colors to PDF": "Aplică culorile temei la PDF",
+  "Name": "Nume",
+  "Unavailable": "Indisponibil"
 }

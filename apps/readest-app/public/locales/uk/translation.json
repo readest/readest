@@ -1209,5 +1209,9 @@
   "Hardcover progress sync failed: {{error}}": "Помилка синхронізації прогресу Hardcover: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Зберегти наявний ідентифікатор джерела",
-  "Toggle Toolbar": "Перемкнути панель інструментів"
+  "Toggle Toolbar": "Перемкнути панель інструментів",
+  "Split Hyphens": "Розділити дефіси",
+  "Apply Theme Colors to PDF": "Застосувати кольори теми до PDF",
+  "Name": "Ім'я",
+  "Unavailable": "Недоступно"
 }

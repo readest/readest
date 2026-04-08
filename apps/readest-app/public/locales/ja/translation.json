@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover進捗の同期に失敗: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "既存のソース識別子を保持",
-  "Toggle Toolbar": "ツールバーの表示切替"
+  "Toggle Toolbar": "ツールバーの表示切替",
+  "Split Hyphens": "ハイフンで分割",
+  "Apply Theme Colors to PDF": "テーマカラーをPDFに適用",
+  "Name": "名前",
+  "Unavailable": "利用不可"
 }

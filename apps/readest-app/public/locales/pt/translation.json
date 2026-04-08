@@ -1196,5 +1196,9 @@
   "Hardcover progress sync failed: {{error}}": "Falha na sincronização de progresso do Hardcover: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Manter o identificador de origem existente",
-  "Toggle Toolbar": "Alternar barra de ferramentas"
+  "Toggle Toolbar": "Alternar barra de ferramentas",
+  "Split Hyphens": "Dividir hífens",
+  "Apply Theme Colors to PDF": "Aplicar cores do tema ao PDF",
+  "Name": "Nome",
+  "Unavailable": "Indisponível"
 }

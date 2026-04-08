@@ -1183,5 +1183,9 @@
   "Sunset": "Naplemente",
   "Reveal in Finder": "Megjelenítés a Finderben",
   "Reveal in File Explorer": "Megjelenítés a Fájlkezelőben",
-  "Reveal in Folder": "Megjelenítés a mappában"
+  "Reveal in Folder": "Megjelenítés a mappában",
+  "Split Hyphens": "Kötőjelek felosztása",
+  "Apply Theme Colors to PDF": "Téma színeinek alkalmazása PDF-re",
+  "Name": "Név",
+  "Unavailable": "Nem elérhető"
 }

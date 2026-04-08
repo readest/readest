@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover ཀློག་འགྲོས་ཟླ་སྒྲིག་མི་ཚོགས: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "ཡོད་བཞིན་པའི་འབྱུང་ཁུངས་ཐོབ་ཐང་གཞག",
-  "Toggle Toolbar": "ལག་ཆའི་ཚན་བར་བརྗེ་བ།"
+  "Toggle Toolbar": "ལག་ཆའི་ཚན་བར་བརྗེ་བ།",
+  "Split Hyphens": "སྦྲེལ་རྟགས་གཅད་པ",
+  "Apply Theme Colors to PDF": "PDF ལ་བརྗོད་དོན་ཚོས་གཞི་སྤྱོད་པ",
+  "Name": "མིང",
+  "Unavailable": "རག་མི་ཐུབ"
 }

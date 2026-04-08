@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Αποτυχία συγχρονισμού προόδου Hardcover: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Διατήρηση υπάρχοντος αναγνωριστικού πηγής",
-  "Toggle Toolbar": "Εναλλαγή γραμμής εργαλείων"
+  "Toggle Toolbar": "Εναλλαγή γραμμής εργαλείων",
+  "Split Hyphens": "Διαχωρισμός παύλων",
+  "Apply Theme Colors to PDF": "Εφαρμογή χρωμάτων θέματος σε PDF",
+  "Name": "Όνομα",
+  "Unavailable": "Μη διαθέσιμο"
 }

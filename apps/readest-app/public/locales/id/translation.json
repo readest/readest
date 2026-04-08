@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Sinkronisasi progres Hardcover gagal: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Pertahankan pengidentifikasi sumber yang ada",
-  "Toggle Toolbar": "Alihkan Bilah Alat"
+  "Toggle Toolbar": "Alihkan Bilah Alat",
+  "Split Hyphens": "Pisahkan Tanda Hubung",
+  "Apply Theme Colors to PDF": "Terapkan Warna Tema ke PDF",
+  "Name": "Nama",
+  "Unavailable": "Tidak Tersedia"
 }

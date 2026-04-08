@@ -1170,5 +1170,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover 진행 상황 동기화 실패: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "기존 소스 식별자 유지",
-  "Toggle Toolbar": "도구 모음 전환"
+  "Toggle Toolbar": "도구 모음 전환",
+  "Split Hyphens": "하이픈 분리",
+  "Apply Theme Colors to PDF": "PDF에 테마 색상 적용",
+  "Name": "이름",
+  "Unavailable": "사용 불가"
 }

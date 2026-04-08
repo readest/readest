@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Hardcover ilerleme senkronizasyonu başarısız: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Mevcut kaynak tanımlayıcısını koru",
-  "Toggle Toolbar": "Araç Çubuğunu Aç/Kapat"
+  "Toggle Toolbar": "Araç Çubuğunu Aç/Kapat",
+  "Split Hyphens": "Tireleri Böl",
+  "Apply Theme Colors to PDF": "Tema Renklerini PDF'ye Uygula",
+  "Name": "Ad",
+  "Unavailable": "Kullanılamaz"
 }

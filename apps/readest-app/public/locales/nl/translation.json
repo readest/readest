@@ -1183,5 +1183,9 @@
   "Hardcover progress sync failed: {{error}}": "Synchronisatie van Hardcover-voortgang mislukt: {{error}}",
   "ISBN": "ISBN",
   "Keep existing source identifier": "Bestaande bronidentificatie behouden",
-  "Toggle Toolbar": "Werkbalk in-/uitschakelen"
+  "Toggle Toolbar": "Werkbalk in-/uitschakelen",
+  "Split Hyphens": "Afbreekstreepjes splitsen",
+  "Apply Theme Colors to PDF": "Themakleuren toepassen op PDF",
+  "Name": "Naam",
+  "Unavailable": "Niet beschikbaar"
 }
