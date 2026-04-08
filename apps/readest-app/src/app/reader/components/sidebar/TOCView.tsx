@@ -55,7 +55,9 @@ const TOCView: React.FC<{
   const containerRef = useRef<HTMLDivElement | null>(null);
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
   const userScrolledRef = useRef(false);
+  const scrollCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingScrollRef = useRef(false);
+  const visibleCenterRef = useRef(0);
 
   useTextTranslation(bookKey, containerRef.current, false, 'translation-target-toc');
 
@@ -125,21 +127,33 @@ const TOCView: React.FC<{
   }, [isSideBarVisible, sideBarBookKey, bookKey, toc, progress]);
 
   useEffect(() => {
-    if (!pendingScrollRef.current || !activeHref) return;
-    const idx = flatItems.findIndex((f) => f.item.href === activeHref);
-    if (idx !== -1) {
-      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'smooth' });
+    if (!pendingScrollRef.current || !activeHref || !isSideBarVisible) return;
+    const timer = setTimeout(() => {
+      const idx = flatItems.findIndex((f) => f.item.href === activeHref);
+      if (idx !== -1) {
+        const distance = Math.abs(idx - visibleCenterRef.current);
+        const behavior = distance > 16 ? 'auto' : 'smooth';
+        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
+      }
       pendingScrollRef.current = false;
-    }
-  }, [flatItems, activeHref]);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [flatItems, activeHref, isSideBarVisible]);
 
   return (
-    <div ref={containerRef} className='toc-list mt-2 rounded' role='tree'>
+    <div ref={containerRef} className='toc-list rounded' role='tree'>
       <Virtuoso
         ref={virtuosoRef}
         components={VIRTUOSO_COMPONENTS}
+        rangeChanged={({ startIndex, endIndex }) => {
+          visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
+        }}
         onScroll={() => {
           userScrolledRef.current = true;
+          if (scrollCooldownRef.current) clearTimeout(scrollCooldownRef.current);
+          scrollCooldownRef.current = setTimeout(() => {
+            userScrolledRef.current = false;
+          }, 10000);
         }}
         style={{ height: containerHeight }}
         totalCount={flatItems.length}

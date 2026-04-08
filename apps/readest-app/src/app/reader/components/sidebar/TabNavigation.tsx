@@ -38,7 +38,7 @@ const TabNavigation: React.FC<{
   return (
     <div
       className={clsx(
-        'bottom-tab border-base-300/50 bg-base-200/20 flex w-full border-t',
+        'bottom-tab border-base-300/50 bg-base-200 flex w-full border-t',
         appService?.hasRoundedWindow && 'rounded-window-bottom-left',
       )}
       dir='ltr'

@@ -43,13 +43,16 @@ const SidebarContent: React.FC<{
   }, [aiEnabled, activeTab, targetTab]);
 
   const handleTabChange = (tab: string) => {
-    setFade(true);
-    const timeout = setTimeout(() => {
-      if (activeTab === tab && isMobile) {
+    if (activeTab === tab) {
+      if (isMobile) {
         setHoveredBookKey(sideBarBookKey);
         setSideBarVisible(false);
-        return;
       }
+      return;
+    }
+
+    setFade(true);
+    const timeout = setTimeout(() => {
       setTargetTab(tab);
       setFade(false);
       setConfig(sideBarBookKey!, config);
