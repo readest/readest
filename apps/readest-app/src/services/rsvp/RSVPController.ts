@@ -208,6 +208,17 @@ export class RSVPController extends EventTarget {
     localStorage.removeItem(`${POSITION_KEY_PREFIX}${this.bookId}`);
   }
 
+  seedPosition(position: RsvpPosition): void {
+    const storageKey = `${POSITION_KEY_PREFIX}${this.bookId}`;
+    if (!localStorage.getItem(storageKey)) {
+      localStorage.setItem(storageKey, JSON.stringify(position));
+    }
+  }
+
+  getStoredPosition(): RsvpPosition | null {
+    return this.loadPositionFromStorage();
+  }
+
   private getSpineIndex(cfi: string): number {
     try {
       return XCFI.extractSpineIndex(cfi);

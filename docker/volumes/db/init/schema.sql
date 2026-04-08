@@ -37,6 +37,7 @@ CREATE TABLE public.book_configs (
   location text NULL,
   xpointer text NULL,
   progress jsonb NULL,
+  rsvp_position text NULL,
   search_config jsonb NULL,
   view_settings jsonb NULL,
   created_at timestamp with time zone NULL DEFAULT now(),

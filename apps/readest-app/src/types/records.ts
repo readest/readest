@@ -26,6 +26,7 @@ export interface DBBookConfig {
   location?: string;
   xpointer?: string;
   progress?: string;
+  rsvp_position?: string;
   search_config?: string;
   view_settings?: string;
 
