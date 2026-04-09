@@ -58,7 +58,7 @@ export const manageSyntaxHighlighting = (doc: Document, viewSettings: ViewSettin
     if (styleElement) styleElement.remove();
     doc.querySelectorAll('pre').forEach((block) => {
       if ((block as HTMLElement).dataset['highlighted']) {
-        block.innerHTML = block.textContent || '';
+        block.textContent = block.textContent || '';
       }
     });
     return;
@@ -78,7 +78,7 @@ export const manageSyntaxHighlighting = (doc: Document, viewSettings: ViewSettin
 
   codeBlocks.forEach((block) => {
     // remove any previously applied classes by hljs
-    block.innerHTML = block.textContent || '';
+    block.textContent = block.textContent || '';
     block.className = block.className.replace(/language-\S+/g, '');
     block.classList.remove('hljs');
     block.removeAttribute('data-highlighted');
