@@ -391,6 +391,9 @@ jobs:
 
   upload-to-r2:
     needs: [get-release, build-tauri]
+    permissions:
+      contents: read
+      actions: write
     uses: ./.github/workflows/upload-to-r2.yml
     with:
       tag: ${{ needs.get-release.outputs.release_tag }}
