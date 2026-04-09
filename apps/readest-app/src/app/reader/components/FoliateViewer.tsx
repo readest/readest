@@ -342,7 +342,7 @@ const FoliateViewer: React.FC<{
 
   const { handlePageFlip } = usePagination(bookKey, viewRef, containerRef);
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
-  const touchHandlers = useTouchEvent(bookKey, handlePageFlip);
+  const touchHandlers = useTouchEvent(bookKey);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);

@@ -9,6 +9,7 @@ import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
+import { useTouchInterceptor } from './useTouchInterceptor';
 
 export type ScrollSource = 'touch' | 'mouse';
 
@@ -227,21 +228,6 @@ export const usePagination = (
           }
           viewPagination(viewRef.current, viewSettings, 'down');
         }
-      } else if (
-        msg.type === 'touch-swipe' &&
-        bookData.isFixedLayout &&
-        !viewSettings?.scrolled &&
-        !isPanningView(viewRef.current, viewSettings)
-      ) {
-        const { deltaX, deltaY, deltaT } = msg.detail;
-        const vx = Math.abs(deltaX / deltaT);
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30 && vx > 0.2) {
-          if (deltaX > 0) {
-            viewPagination(viewRef.current, viewSettings, 'left');
-          } else {
-            viewPagination(viewRef.current, viewSettings, 'right');
-          }
-        }
       }
     } else {
       if (msg.type === 'click') {
@@ -276,6 +262,28 @@ export const usePagination = (
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Touch swipe page flip for fixed-layout books — registered as a touch interceptor
+  // so it participates in the priority-based consumption chain.
+  useTouchInterceptor(
+    `swipe-flip-${bookKey}`,
+    (bk, detail) => {
+      if (bk !== bookKey || detail.phase !== 'end') return false;
+      const bookData = getBookData(bookKey);
+      const viewSettings = getViewSettings(bookKey);
+      if (!bookData?.isFixedLayout || viewSettings?.scrolled) return false;
+      if (isPanningView(viewRef.current, viewSettings)) return false;
+
+      const { deltaX, deltaY, deltaT } = detail;
+      const vx = Math.abs(deltaX / (deltaT || 1));
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30 && vx > 0.2) {
+        viewPagination(viewRef.current, viewSettings, deltaX > 0 ? 'left' : 'right');
+        return true;
+      }
+      return false;
+    },
+    0,
+  );
 
   return {
     handlePageFlip,
