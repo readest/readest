@@ -547,7 +547,13 @@ export class TxtToEpubConverter {
   ): number {
     const { language } = metadata;
     const { fallbackParagraphsPerChapter } = option;
-    const trimmedSegment = segment.replace(/<!--.*?-->/g, '').trim();
+    let sanitizedSegment = segment;
+    let previousSegment: string;
+    do {
+      previousSegment = sanitizedSegment;
+      sanitizedSegment = sanitizedSegment.replace(/<!--.*?-->/g, '');
+    } while (sanitizedSegment !== previousSegment);
+    const trimmedSegment = sanitizedSegment.trim();
     if (!trimmedSegment) return 0;
 
     const chapterRegexps = this.createChapterRegexps(language);
