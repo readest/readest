@@ -66,7 +66,9 @@
     "check:translations": "count=$(grep -rno '__STRING_NOT_TRANSLATED__' public/locales/* | wc -l); if [ \"$count\" -gt 0 ]; then echo '❌ Untranslated strings found!'; exit 1; else echo '✅ All strings translated.'; fi",
     "check:lookbehind-regex": "count=$(grep -rnoE '\\(\\?<[!=]' .next/static/chunks/* out/_next/static/chunks/* | wc -l); if [ \"$count\" -gt 0 ]; then echo '❌ Lookbehind regex found in output!'; exit 1; else echo '✅ No lookbehind regex found.'; fi",
     "check:all": "pnpm check:translations && pnpm check:lookbehind-regex",
-    "build-check": "pnpm build && pnpm build-web && pnpm check:all"
+    "build-check": "pnpm build && pnpm build-web && pnpm check:all",
+    "worktree:new": "pnpm exec tsx scripts/worktree-new.ts",
+    "worktree:rm": "pnpm exec tsx scripts/worktree-rm.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.49",

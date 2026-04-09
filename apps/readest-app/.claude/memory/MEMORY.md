@@ -34,3 +34,4 @@
 - [New branch per PR](feedback_pr_new_branch.md) — always create a fresh branch from main for each new PR/issue
 - [Upgrade gstack locally](feedback_gstack_upgrade.md) — always upgrade from the project's .claude/skills/gstack, not global
 - [No lookbehind regex](feedback_no_lookbehind_regex.md) — never use `(?<=)` or `(?<!)` in JS/TS; build check rejects them
+- [Use worktree](feedback_use_worktree.md) — always `pnpm worktree:new` before PR review, issue fix, or feature work

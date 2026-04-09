@@ -178,6 +178,7 @@ For Android:
 # Initialize the Android environment (run once)
 rm apps/readest-app/src-tauri/gen/android
 pnpm tauri android init
+pnpm tauri icon ../../data/icons/readest-book.png
 git checkout apps/readest-app/src-tauri/gen/android
 
 pnpm tauri android dev
@@ -190,6 +191,7 @@ For iOS:
 ```bash
 # Set up the iOS environment (run once)
 pnpm tauri ios init
+pnpm tauri icon ../../data/icons/readest-book.png
 
 pnpm tauri ios dev
 # or if you want to dev on a real device
