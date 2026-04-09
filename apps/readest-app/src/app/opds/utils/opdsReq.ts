@@ -274,19 +274,36 @@ export const probeFilename = async (headers: Record<string, string>) => {
       /filename\*\s*=\s*(?:utf-8|UTF-8)'[^']*'([^;\s]+)/i,
     );
     if (extendedMatch?.[1]) {
-      return decodeURIComponent(extendedMatch[1]);
+      try {
+        return decodeURIComponent(extendedMatch[1]);
+      } catch (e) {
+        // If decoding fails, ignore and proceed to the next format
+        console.warn('Failed to decode filename*', e);
+      }
     }
 
-    // 2. Try standard format with quotes (supports spaces)
-    const quotedMatch = contentDisposition.match(/filename\s*=\s*["']([^"']+)["']/i);
-    if (quotedMatch?.[1]) {
-      return decodeURIComponent(quotedMatch[1]);
+    // 2. Try standard quoted format (supports spaces, apostrophes, and escaped quotes)
+    const quotedMatch = contentDisposition.match(/filename\s*=\s*(["'])((?:(?!\1)[^\\]|\\.)*)\1/i);
+    if (quotedMatch?.[2]) {
+      // Unescape characters (e.g., \" becomes ")
+      const unescaped = quotedMatch[2].replace(/\\(.)/g, '$1');
+      try {
+        // Attempt to decode in case the server incorrectly applied URL encoding
+        return decodeURIComponent(unescaped);
+      } catch {
+        // If decoding fails (e.g., literal '%' symbols), return the unescaped string as-is
+        return unescaped;
+      }
     }
 
     // 3. Fallback: standard format without quotes
     const plainMatch = contentDisposition.match(/filename\s*=\s*([^;\s]+)/i);
     if (plainMatch?.[1]) {
-      return decodeURIComponent(plainMatch[1]);
+      try {
+        return decodeURIComponent(plainMatch[1]);
+      } catch {
+        return plainMatch[1];
+      }
     }
   }
 
