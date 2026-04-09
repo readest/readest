@@ -19,10 +19,16 @@ const highlight = vi.fn();
 /**
  * Build a document that mimics a rendered PDF page with text layer,
  * matching the structure that pdf.js produces in the iframe.
+ * When withLineBreaks is true, inserts <br> between spans (matching real PDF.js output).
  */
-const createPDFTextLayerDoc = (textSpans: string[], annotationText?: string): Document => {
+const createPDFTextLayerDoc = (
+  textSpans: string[],
+  annotationText?: string,
+  withLineBreaks?: boolean,
+): Document => {
   const parser = new DOMParser();
-  const spans = textSpans.map((t) => `<span>${t}</span>`).join('');
+  const separator = withLineBreaks ? '<br>' : '';
+  const spans = textSpans.map((t) => `<span>${t}</span>`).join(separator);
   const annotation = annotationText
     ? `<div class="annotationLayer"><a href="#">${annotationText}</a></div>`
     : '<div class="annotationLayer"></div>';
@@ -38,7 +44,7 @@ const createPDFTextLayerDoc = (textSpans: string[], annotationText?: string): Do
 
 /** Node filter matching what TTSController uses for PDFs */
 const pdfNodeFilter = createRejectFilter({
-  tags: ['rt', 'canvas'],
+  tags: ['rt', 'canvas', 'br'],
   classes: ['annotationLayer'],
   contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
 });
@@ -98,6 +104,183 @@ describe('PDF TTS', () => {
 
       expect(ssml).toBeTruthy();
       expect(ssml).toContain('<mark');
+    });
+  });
+
+  describe('TTS with PDF line breaks (br elements)', () => {
+    it('should not produce SSML break elements for br tags in PDF text layer', () => {
+      const doc = createPDFTextLayerDoc(
+        ['Alice was beginning to get very ', 'tired of sitting by her sister '],
+        undefined,
+        true,
+      );
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+      const ssml = tts.start();
+
+      expect(ssml).toBeTruthy();
+      // The SSML should NOT contain <break> elements for PDF line breaks
+      expect(ssml).not.toMatch(/<break\s*\/?\s*>/);
+      // But the text should still be continuous
+      const text = stripTags(ssml!);
+      expect(text).toContain('Alice');
+      expect(text).toContain('tired');
+    });
+
+    it('should read through PDF line breaks without interruption', () => {
+      const doc = createPDFTextLayerDoc(
+        [
+          'This is the first line of a paragraph ',
+          'and this continues on the second line ',
+          'ending on the third line.',
+        ],
+        undefined,
+        true,
+      );
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+      const ssml = tts.start();
+
+      expect(ssml).toBeTruthy();
+      const text = stripTags(ssml!);
+      // All text should be in a single block without breaks
+      expect(text).toContain('first line');
+      expect(text).toContain('second line');
+      expect(text).toContain('third line');
+      // No SSML break elements
+      expect(ssml).not.toMatch(/<break\s*\/?\s*>/);
+    });
+  });
+
+  describe('PDF sentence-level block splitting', () => {
+    it('should split multiple sentences into separate TTS blocks', () => {
+      const doc = createPDFTextLayerDoc([
+        'Alice was beginning to get very tired. ',
+        'She had nothing to do. ',
+        'The day was warm and sunny.',
+      ]);
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const blocks: string[] = [];
+      let ssml = tts.start();
+      while (ssml) {
+        blocks.push(stripTags(ssml));
+        ssml = tts.next();
+      }
+
+      // Each sentence should be its own block
+      expect(blocks.length).toBe(3);
+      expect(blocks[0]).toContain('Alice was beginning');
+      expect(blocks[1]).toContain('She had nothing');
+      expect(blocks[2]).toContain('The day was warm');
+    });
+
+    it('should handle sentences that span across multiple spans', () => {
+      const doc = createPDFTextLayerDoc([
+        'Alice was beginning to get very ',
+        'tired of sitting by her sister. She had ',
+        'nothing to do.',
+      ]);
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const blocks: string[] = [];
+      let ssml = tts.start();
+      while (ssml) {
+        blocks.push(stripTags(ssml));
+        ssml = tts.next();
+      }
+
+      expect(blocks.length).toBe(2);
+      expect(blocks[0]).toContain('tired of sitting');
+      expect(blocks[1]).toContain('nothing to do');
+    });
+
+    it('should handle a single sentence as one block', () => {
+      const doc = createPDFTextLayerDoc(['Just one sentence here.']);
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const blocks: string[] = [];
+      let ssml = tts.start();
+      while (ssml) {
+        blocks.push(stripTags(ssml));
+        ssml = tts.next();
+      }
+
+      expect(blocks.length).toBe(1);
+      expect(blocks[0]).toContain('Just one sentence here');
+    });
+
+    it('should handle sentences with br elements between lines', () => {
+      const doc = createPDFTextLayerDoc(
+        [
+          'First sentence on line one. ',
+          'Second sentence starts here ',
+          'and continues on line three.',
+        ],
+        undefined,
+        true,
+      );
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const blocks: string[] = [];
+      let ssml = tts.start();
+      while (ssml) {
+        const text = stripTags(ssml);
+        blocks.push(text);
+        // No break elements in any block
+        expect(ssml).not.toMatch(/<break\s*\/?\s*>/);
+        ssml = tts.next();
+      }
+
+      expect(blocks.length).toBe(2);
+      expect(blocks[0]).toContain('First sentence');
+      expect(blocks[1]).toContain('Second sentence');
+      expect(blocks[1]).toContain('line three');
+    });
+
+    it('should produce word marks within each sentence block', () => {
+      const doc = createPDFTextLayerDoc(['Hello world. Goodbye world.']);
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const ssml = tts.start();
+      expect(ssml).toBeTruthy();
+      expect(ssml).toContain('<mark');
+      expect(stripTags(ssml!)).toContain('Hello');
+      expect(stripTags(ssml!)).not.toContain('Goodbye');
+
+      const ssml2 = tts.next();
+      expect(ssml2).toBeTruthy();
+      expect(ssml2).toContain('<mark');
+      expect(stripTags(ssml2!)).toContain('Goodbye');
+    });
+
+    it('should align marks with sentence text when sentence spans multiple spans', () => {
+      // Sentence boundary falls in the middle of span 2:
+      // "Alice was beginning to get " + "very tired. She had nothing " + "to do."
+      // Sentence 1: "Alice was beginning to get very tired. "
+      // Sentence 2: "She had nothing to do."
+      const doc = createPDFTextLayerDoc([
+        'Alice was beginning to get ',
+        'very tired. She had nothing ',
+        'to do.',
+      ]);
+      const tts = new TTS(doc, textWalker, pdfNodeFilter, highlight, 'word');
+
+      const ssml1 = tts.start();
+      expect(ssml1).toBeTruthy();
+      const text1 = stripTags(ssml1!);
+      // First block must contain ONLY sentence 1 words
+      expect(text1).toContain('Alice');
+      expect(text1).toContain('tired');
+      expect(text1).not.toContain('She');
+      expect(text1).not.toContain('nothing');
+
+      const ssml2 = tts.next();
+      expect(ssml2).toBeTruthy();
+      const text2 = stripTags(ssml2!);
+      // Second block must contain ONLY sentence 2 words
+      expect(text2).toContain('She');
+      expect(text2).toContain('nothing');
+      expect(text2).not.toContain('Alice');
+      expect(text2).not.toContain('tired');
     });
   });
 

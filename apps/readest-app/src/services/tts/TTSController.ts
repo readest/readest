@@ -194,13 +194,14 @@ export class TTSController extends EventTarget {
       doc,
       textWalker,
       createRejectFilter({
-        tags: ['rt'],
+        tags: ['rt', 'canvas', 'br'],
+        classes: ['annotationLayer'],
         contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
       }),
       this.#getHighlighter(),
       granularity,
     );
-    console.log(`Initialized TTS for section ${sectionIndex}`);
+    console.log(`[TTS] Initialized TTS for section ${sectionIndex}`);
 
     return true;
   }
@@ -314,7 +315,7 @@ export class TTSController extends EventTarget {
 
     this.#currentSpeakPromise = new Promise(async (resolve, reject) => {
       try {
-        console.log('TTS speak');
+        console.log('[TTS] speak');
         this.state = 'playing';
 
         signal.addEventListener('abort', () => {
@@ -333,7 +334,7 @@ export class TTSController extends EventTarget {
               await this.stop();
             }
           }
-          console.log('no SSML, skipping for', this.#nossmlCnt);
+          console.log('[TTS] no SSML, skipping for', this.#nossmlCnt);
           return;
         } else {
           this.#nossmlCnt = 0;
