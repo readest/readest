@@ -269,6 +269,7 @@ export const probeAuth = async (
 export const probeFilename = async (headers: Record<string, string>) => {
   const contentDisposition = headers['content-disposition'];
   if (contentDisposition) {
+    // 1. Try RFC 5987 format (filename*=utf-8''encoded_name)
     const extendedMatch = contentDisposition.match(
       /filename\*\s*=\s*(?:utf-8|UTF-8)'[^']*'([^;\s]+)/i,
     );
@@ -276,7 +277,14 @@ export const probeFilename = async (headers: Record<string, string>) => {
       return decodeURIComponent(extendedMatch[1]);
     }
 
-    const plainMatch = contentDisposition.match(/filename\s*=\s*["']?([^"';\s]+)["']?/i);
+    // 2. Try standard format with quotes (supports spaces)
+    const quotedMatch = contentDisposition.match(/filename\s*=\s*["']([^"']+)["']/i);
+    if (quotedMatch?.[1]) {
+      return decodeURIComponent(quotedMatch[1]);
+    }
+
+    // 3. Fallback: standard format without quotes
+    const plainMatch = contentDisposition.match(/filename\s*=\s*([^;\s]+)/i);
     if (plainMatch?.[1]) {
       return decodeURIComponent(plainMatch[1]);
     }
