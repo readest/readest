@@ -147,7 +147,7 @@ async function processFileKeys(
         const downloadUrl = await getDownloadSignedUrl(fileRecord.file_key, 1800);
         return { fileKey, downloadUrl };
       } catch (error) {
-        console.error(`Error creating signed URL for ${fileKey}:`, error);
+        console.error('Error creating signed URL for %s:', fileKey, error);
         return { fileKey, downloadUrl: undefined };
       }
     }),
