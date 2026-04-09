@@ -551,7 +551,7 @@ export class TxtToEpubConverter {
     let previousSegment: string;
     do {
       previousSegment = sanitizedSegment;
-      sanitizedSegment = sanitizedSegment.replace(/<!--.*?-->/g, '');
+      sanitizedSegment = sanitizedSegment.replace(/<!--.*?-->/gs, '');
     } while (sanitizedSegment !== previousSegment);
     const trimmedSegment = sanitizedSegment.trim();
     if (!trimmedSegment) return 0;
