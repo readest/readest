@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useState } from 'react';
-import { IoAdd, IoTrash, IoOpenOutline, IoBook, IoEyeOff, IoEye } from 'react-icons/io5';
+import { IoAdd, IoTrash, IoOpenOutline, IoBook, IoEyeOff, IoEye, IoPencil } from 'react-icons/io5';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -77,6 +77,7 @@ export function CatalogManager() {
   const { settings } = useSettingsStore();
   const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() => settings.opdsCatalogs || []);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingCatalogId, setEditingCatalogId] = useState<string | null>(null);
   const [newCatalog, setNewCatalog] = useState(EMPTY_NEW_CATALOG);
   const [showPassword, setShowPassword] = useState(false);
   const [urlError, setUrlError] = useState('');
@@ -147,7 +148,7 @@ export function CatalogManager() {
     }
 
     const catalog: OPDSCatalog = {
-      id: Date.now().toString(),
+      id: editingCatalogId || Date.now().toString(),
       name: newCatalog.name,
       url: newCatalog.url,
       description: newCatalog.description,
@@ -158,13 +159,33 @@ export function CatalogManager() {
         : undefined,
     };
 
-    saveCatalogs([catalog, ...catalogs]);
+    if (editingCatalogId) {
+      saveCatalogs(catalogs.map((c) => (c.id === editingCatalogId ? catalog : c)));
+    } else {
+      saveCatalogs([catalog, ...catalogs]);
+    }
+
     setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
     setHeaderError('');
     setProxyConsentError('');
     setIsValidating(false);
+    setEditingCatalogId(null);
     setShowAddDialog(false);
+  };
+
+  const handleEditCatalog = (catalog: OPDSCatalog) => {
+    setNewCatalog({
+      name: catalog.name,
+      url: catalog.url,
+      description: catalog.description || '',
+      username: catalog.username || '',
+      password: catalog.password || '',
+      customHeadersInput: formatOPDSCustomHeadersInput(catalog.customHeaders),
+      proxyConsent: false,
+    });
+    setEditingCatalogId(catalog.id);
+    setShowAddDialog(true);
   };
 
   const handleAddPopularCatalog = (popularCatalog: OPDSCatalog) => {
@@ -192,6 +213,7 @@ export function CatalogManager() {
     setHeaderError('');
     setProxyConsentError('');
     setShowPassword(false);
+    setEditingCatalogId(null);
   };
 
   return (
@@ -239,13 +261,22 @@ export function CatalogManager() {
                           {catalog.icon && <span className=''>{catalog.icon}</span>}
                           {catalog.name}
                         </h3>
-                        <button
-                          onClick={() => handleRemoveCatalog(catalog.id)}
-                          className='btn btn-ghost btn-xs btn-square'
-                          title='Remove'
-                        >
-                          <IoTrash className='h-4 w-4' />
-                        </button>
+                        <div className='flex gap-1'>
+                          <button
+                            onClick={() => handleEditCatalog(catalog)}
+                            className='btn btn-ghost btn-xs btn-square'
+                            title={_('Edit')}
+                          >
+                            <IoPencil className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveCatalog(catalog.id)}
+                            className='btn btn-ghost btn-xs btn-square'
+                            title={_('Remove')}
+                          >
+                            <IoTrash className='h-4 w-4' />
+                          </button>
+                        </div>
                       </div>
                       {catalog.description && (
                         <p className='text-base-content/70 mb-2 line-clamp-1 h-6 text-sm sm:line-clamp-2 sm:h-10'>
@@ -329,12 +360,14 @@ export function CatalogManager() {
         </div>
       </section>
 
-      {/* Add Catalog Dialog */}
+      {/* Add/Edit Catalog Dialog */}
       {showAddDialog && (
         <ModalPortal>
           <dialog className='modal modal-open'>
             <div className='modal-box'>
-              <h3 className='mb-4 text-lg font-bold'>{_('Add OPDS Catalog')}</h3>
+              <h3 className='mb-4 text-lg font-bold'>
+                {editingCatalogId ? _('Edit OPDS Catalog') : _('Add OPDS Catalog')}
+              </h3>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -518,6 +551,8 @@ export function CatalogManager() {
                         <span className='loading loading-spinner loading-sm'></span>
                         {_('Validating...')}
                       </>
+                    ) : editingCatalogId ? (
+                      _('Save Changes')
                     ) : (
                       _('Add Catalog')
                     )}
