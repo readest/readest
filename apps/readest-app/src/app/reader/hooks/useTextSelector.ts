@@ -31,6 +31,7 @@ export const useTextSelector = (
   const lastPointerType = useRef<string>('mouse');
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
+  const annotationStartPoint = useRef<Point | null>(null);
 
   const {
     isInstantAnnotationEnabled,
@@ -92,6 +93,7 @@ export const useTextSelector = (
   const startInstantAnnotating = (ev: PointerEvent) => {
     isInstantAnnotating.current = true;
     isInstantAnnotated.current = false;
+    annotationStartPoint.current = { x: ev.clientX, y: ev.clientY };
     if (view) view.renderer.scrollLocked = true;
     (ev.target as HTMLElement).style.userSelect = 'none';
   };
@@ -99,6 +101,7 @@ export const useTextSelector = (
   const stopInstantAnnotating = (ev: PointerEvent) => {
     isInstantAnnotating.current = false;
     isInstantAnnotated.current = false;
+    annotationStartPoint.current = null;
     if (view) view.renderer.scrollLocked = false;
     (ev.target as HTMLElement).style.userSelect = '';
   };
@@ -117,6 +120,21 @@ export const useTextSelector = (
 
   const handlePointerMove = (doc: Document, index: number, ev: PointerEvent) => {
     if (isInstantAnnotating.current) {
+      // In scroll mode, detect gesture direction before committing to annotation.
+      // Cancel if the gesture is along the scroll axis (vertical for normal, horizontal
+      // for vertical writing mode) since the user likely intends to scroll.
+      if (!isInstantAnnotated.current && annotationStartPoint.current) {
+        const dx = Math.abs(ev.clientX - annotationStartPoint.current.x);
+        const dy = Math.abs(ev.clientY - annotationStartPoint.current.y);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const viewSettings = getViewSettings(bookKey);
+        const isScrollGesture = viewSettings?.vertical ? dy < 3 * dx : dx < 3 * dy;
+        if (distance >= 10 && isScrollGesture) {
+          stopInstantAnnotating(ev);
+          handleInstantAnnotationPointerCancel();
+          return;
+        }
+      }
       ev.preventDefault();
       isInstantAnnotated.current = handleInstantAnnotationPointerMove(doc, index, ev);
     }
@@ -173,7 +191,7 @@ export const useTextSelector = (
     isTouchStarted.current = true;
   };
   const handleTouchMove = (ev: TouchEvent) => {
-    if (isInstantAnnotating.current && isInstantAnnotated.current) {
+    if (isInstantAnnotating.current) {
       ev.preventDefault();
     }
   };
@@ -181,8 +199,14 @@ export const useTextSelector = (
     isTouchStarted.current = false;
   };
   const handleSelectionchange = (doc: Document, index: number) => {
-    // Available on iOS, Android and Desktop, fired when the selection is changed
-    if (osPlatform !== 'android' || !appService?.isAndroidApp) return;
+    // Available on iOS, Android and Desktop, fired when the selection is changed.
+    // On Android native app, this is the primary way to detect text selection.
+    // On web with touch/pen in scroll mode, pointerup never fires (pointercancel
+    // fires instead when browser takes over for scrolling), so we also handle
+    // selectionchange for touch/pen input to pick up native text selections.
+    const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
+    const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
+    if (!isAndroid && !isTouchInput) return;
 
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
