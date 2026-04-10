@@ -3,12 +3,11 @@ import React, { useCallback, useEffect } from 'react';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
-import { getNavigationIcon, getNavigationLabel, getNavigationHandler } from './utils';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { ViewSettings } from '@/types/book';
 import { NavigationHandlers } from './types';
+import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
 
@@ -18,7 +17,6 @@ interface NavigationPanelProps {
   progressFraction: number;
   progressValid: boolean;
   navigationHandlers: NavigationHandlers;
-  viewSettings?: ViewSettings;
   bottomOffset: string;
   sliderHeight: number;
   forceMobileLayout: boolean;
@@ -30,15 +28,15 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   progressFraction,
   progressValid,
   navigationHandlers,
-  viewSettings,
   bottomOffset,
   sliderHeight,
   forceMobileLayout,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getView } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const viewSettings = getViewSettings(bookKey);
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
@@ -92,17 +90,13 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             <RiArrowLeftDoubleLine />,
             <RiArrowRightDoubleLine />,
           )}
-          onClick={getNavigationHandler(
-            viewSettings?.rtl,
-            navigationHandlers.onPrevSection,
-            navigationHandlers.onNextSection,
-          )}
-          label={getNavigationLabel(viewSettings?.rtl, _('Previous Section'), _('Next Section'))}
+          onClick={navigationHandlers.onPrevSection}
+          label={_('Previous Section')}
         />
         <Button
           icon={getNavigationIcon(viewSettings?.rtl, <RiArrowLeftSLine />, <RiArrowRightSLine />)}
           onClick={navigationHandlers.onPrevPage}
-          label={getNavigationLabel(viewSettings?.rtl, _('Previous Page'), _('Next Page'))}
+          label={_('Previous Page')}
         />
         <Button
           icon={getNavigationIcon(
@@ -127,7 +121,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
         <Button
           icon={getNavigationIcon(viewSettings?.rtl, <RiArrowRightSLine />, <RiArrowLeftSLine />)}
           onClick={navigationHandlers.onNextPage}
-          label={getNavigationLabel(viewSettings?.rtl, _('Next Page'), _('Previous Page'))}
+          label={_('Next Page')}
         />
         <Button
           icon={getNavigationIcon(
@@ -135,12 +129,8 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             <RiArrowRightDoubleLine />,
             <RiArrowLeftDoubleLine />,
           )}
-          onClick={getNavigationHandler(
-            viewSettings?.rtl,
-            navigationHandlers.onNextSection,
-            navigationHandlers.onPrevSection,
-          )}
-          label={getNavigationLabel(viewSettings?.rtl, _('Next Section'), _('Previous Section'))}
+          onClick={navigationHandlers.onNextSection}
+          label={_('Next Section')}
         />
       </div>
     </div>
