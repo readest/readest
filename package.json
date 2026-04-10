@@ -13,7 +13,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\""
   },
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",
     "@sindresorhus/tsconfig": "^6.0.0",

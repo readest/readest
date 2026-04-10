@@ -82,7 +82,7 @@
     "@emnapi/runtime": "^1.7.1",
     "@fabianlars/tauri-plugin-oauth": "2",
     "@napi-rs/wasm-runtime": "^1.1.1",
-    "@opennextjs/cloudflare": "^1.17.3",
+    "@opennextjs/cloudflare": "^1.19.0",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -230,7 +230,7 @@
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18",
-    "wrangler": "^4.77.0"
+    "wrangler": "^4.81.1"
   },
   "browserslist": [
     "chrome 92",

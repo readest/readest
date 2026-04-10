@@ -4,7 +4,30 @@ import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
 import { fetchWithAuth } from '@/utils/fetch';
-import { getNodeAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+
+// Cloudflare Workers expose a global `WebSocketPair` that is not available in
+// browsers or Node.js. The Node `ws` package (used transitively via
+// `isomorphic-ws`) cannot run on Workers because it relies on
+// `http.createConnection`, which the Workers runtime does not implement.
+// Detecting Workers lets us use the fetch-based WebSocket upgrade pattern
+// (`fetch(..., { headers: { Upgrade: 'websocket' } })`) instead.
+const isCloudflareWorkers = () =>
+  typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !== 'undefined';
+
+// The WebSocket returned by a Cloudflare Workers upgrade response must be
+// `accept()`ed before use. This minimal interface captures the bits we need
+// without pulling in `@cloudflare/workers-types`.
+interface AcceptableWebSocket {
+  accept(): void;
+  send(data: string | ArrayBuffer | ArrayBufferView): void;
+  close(code?: number, reason?: string): void;
+  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
+  addEventListener(type: 'close', listener: () => void): void;
+  addEventListener(type: 'error', listener: (event: unknown) => void): void;
+}
+
+type UpgradeResponse = Response & { webSocket?: AcceptableWebSocket };
 
 const EDGE_SPEECH_URL =
   'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
@@ -277,7 +300,7 @@ export class EdgeSpeechTTS {
   }
 
   async #fetchEdgeSpeechHttp({ lang, text, voice, rate }: EdgeTTSPayload): Promise<Response> {
-    const url = getNodeAPIBaseUrl() + '/tts/edge';
+    const url = getAPIBaseUrl() + '/tts/edge';
 
     const response = await fetchWithAuth(url, {
       method: 'POST',
@@ -420,6 +443,142 @@ export class EdgeSpeechTTS {
         } catch (error) {
           reject(new Error(`WebSocket error occurred: ${error}`));
         }
+      });
+    } else if (isCloudflareWorkers()) {
+      return new Promise<Response>((resolve, reject) => {
+        (async () => {
+          try {
+            // Cloudflare Workers cannot use the `ws` npm package because it
+            // relies on `http.createConnection`. Instead, WebSockets are
+            // opened by calling `fetch()` with an `Upgrade: websocket`
+            // header. The response has status 101 and a `webSocket`
+            // property that must be `accept()`ed before sending data.
+            const upgradeUrl = url.replace(/^wss:\/\//i, 'https://');
+            const upgradeResponse = (await fetch(upgradeUrl, {
+              headers: {
+                ...baseHeaders,
+                Upgrade: 'websocket',
+              },
+            })) as UpgradeResponse;
+
+            if (upgradeResponse.status !== 101 || !upgradeResponse.webSocket) {
+              return reject(
+                new Error(`WebSocket upgrade failed with status ${upgradeResponse.status}`),
+              );
+            }
+
+            const ws = upgradeResponse.webSocket;
+            let audioData = new ArrayBuffer(0);
+            let settled = false;
+            // Cloudflare Workers deliver binary WebSocket frames as `Blob`,
+            // whose conversion to bytes (`blob.arrayBuffer()`) is async.
+            // Chain every binary message through this promise so frames are
+            // appended in receive order and `turn.end` (or `close`) can
+            // await the tail before finalizing the audio payload.
+            let pendingBinary: Promise<void> = Promise.resolve();
+
+            const appendBinary = (buffer: ArrayBufferLike) => {
+              const dataView = new DataView(buffer);
+              const headerLength = dataView.getInt16(0);
+              if (buffer.byteLength > headerLength + 2) {
+                const newBody = new Uint8Array(buffer).slice(2 + headerLength);
+                const merged = new Uint8Array(audioData.byteLength + newBody.byteLength);
+                merged.set(new Uint8Array(audioData), 0);
+                merged.set(newBody, audioData.byteLength);
+                audioData = merged.buffer;
+              }
+            };
+
+            const enqueueBinary = (getBuffer: () => Promise<ArrayBufferLike> | ArrayBufferLike) => {
+              pendingBinary = pendingBinary.then(async () => {
+                if (settled) return;
+                const buffer = await getBuffer();
+                if (settled) return;
+                appendBinary(buffer);
+              });
+            };
+
+            const finalize = () => {
+              if (settled) return;
+              settled = true;
+              if (!audioData.byteLength) {
+                reject(new Error('No audio data received.'));
+              } else {
+                resolve(new Response(audioData));
+              }
+            };
+
+            const onMessage = (event: { data: unknown }) => {
+              if (settled) return;
+              const data = event.data;
+              if (typeof data === 'string') {
+                const { headers } = getHeadersAndData(data);
+                if (headers['Path'] === 'turn.end') {
+                  // Wait for any in-flight Blob decodes to complete before
+                  // deciding whether audio was received.
+                  pendingBinary
+                    .then(() => {
+                      try {
+                        ws.close();
+                      } catch {
+                        // ignore close failures
+                      }
+                      finalize();
+                    })
+                    .catch(() => {
+                      if (settled) return;
+                      settled = true;
+                      reject(new Error('No audio data received.'));
+                    });
+                }
+                return;
+              }
+              if (data instanceof ArrayBuffer) {
+                enqueueBinary(() => data);
+                return;
+              }
+              if (data instanceof Uint8Array) {
+                enqueueBinary(() =>
+                  data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+                );
+                return;
+              }
+              if (typeof Blob !== 'undefined' && data instanceof Blob) {
+                // Cloudflare Workers path: convert Blob -> ArrayBuffer asynchronously.
+                enqueueBinary(() => (data as Blob).arrayBuffer());
+                return;
+              }
+            };
+
+            ws.addEventListener('message', onMessage);
+            ws.addEventListener('close', () => {
+              if (settled) return;
+              // Drain any pending Blob decodes that may still be in-flight.
+              pendingBinary
+                .then(() => finalize())
+                .catch(() => {
+                  if (settled) return;
+                  settled = true;
+                  reject(new Error('No audio data received.'));
+                });
+            });
+            ws.addEventListener('error', () => {
+              if (settled) return;
+              settled = true;
+              reject(new Error('WebSocket error occurred.'));
+            });
+
+            ws.accept();
+            ws.send(config);
+            ws.send(content);
+          } catch (error) {
+            reject(
+              new Error(
+                `WebSocket error occurred: ${error instanceof Error ? error.message : String(error)}`,
+              ),
+            );
+          }
+        })();
       });
     } else {
       return new Promise((resolve, reject) => {

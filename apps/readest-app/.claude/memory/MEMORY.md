@@ -18,6 +18,7 @@
 
 ## Feature Notes
 - [D-pad Navigation](dpad-navigation.md) — Android TV remote / keyboard arrow navigation design, key files, and pitfalls
+- [Cloudflare Workers WebSocket](cloudflare-workers-websocket.md) — use fetch() Upgrade pattern (not `ws` npm); CF delivers binary frames as Blob (must serialize async decodes)
 
 ## Architecture Notes
 - foliate-js is a git submodule at `packages/foliate-js/`
