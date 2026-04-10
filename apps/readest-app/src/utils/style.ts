@@ -725,25 +725,17 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
       if (!/display\s*:/.test(block)) {
         block = block.replace(/}$/, ' display: flow-root !important; }');
       }
-      if (!/width\s*:/.test(block) && directions.includes('left') && directions.includes('right')) {
+      if (directions.includes('left') && directions.includes('right')) {
         block = block
-          .replace(
-            /}$/,
-            ' width: calc(var(--_max-width) + var(--page-margin-left) + var(--page-margin-right)) !important; }',
-          )
-          .replace(/}$/, ' max-width: calc(var(--full-width) * 1px) !important; }');
+          .replace(/}$/, ' width: calc(var(--available-width) * 1px) !important; }')
+          .replace(/}$/, ' min-width: calc(var(--available-width) * 1px) !important; }')
+          .replace(/}$/, ' max-width: calc(var(--available-width) * 1px) !important; }');
       }
-      if (
-        !/height\s*:/.test(block) &&
-        directions.includes('top') &&
-        directions.includes('bottom')
-      ) {
+      if (directions.includes('top') && directions.includes('bottom')) {
         block = block
-          .replace(
-            /}$/,
-            ' height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important; }',
-          )
-          .replace(/}$/, ' max-height: calc(var(--full-height) * 1px) !important; }');
+          .replace(/}$/, ' height: calc(var(--available-height) * 1px) !important; }')
+          .replace(/}$/, ' min-height: calc(var(--available-height) * 1px) !important; }')
+          .replace(/}$/, ' max-height: calc(var(--available-height) * 1px) !important; }');
       }
     }
     return selector + block;
