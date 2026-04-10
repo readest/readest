@@ -97,11 +97,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
       {!viewSettings?.showPaginationButtons && (
         <Button
           icon={getNavigationIcon(viewSettings?.rtl, <RiArrowLeftSLine />, <RiArrowRightSLine />)}
-          onClick={getNavigationHandler(
-            viewSettings?.rtl,
-            navigationHandlers.onPrevPage,
-            navigationHandlers.onNextPage,
-          )}
+          onClick={navigationHandlers.onPrevPage}
           label={getNavigationLabel(viewSettings?.rtl, _('Previous Page'), _('Next Page'))}
         />
       )}
@@ -144,11 +140,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
       {!viewSettings?.showPaginationButtons && (
         <Button
           icon={getNavigationIcon(viewSettings?.rtl, <RiArrowRightSLine />, <RiArrowLeftSLine />)}
-          onClick={getNavigationHandler(
-            viewSettings?.rtl,
-            navigationHandlers.onNextPage,
-            navigationHandlers.onPrevPage,
-          )}
+          onClick={navigationHandlers.onNextPage}
           label={getNavigationLabel(viewSettings?.rtl, _('Next Page'), _('Previous Page'))}
         />
       )}

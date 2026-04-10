@@ -55,7 +55,7 @@ export const viewPagination = (
 ) => {
   if (!view || !viewSettings) return;
   const renderer = view.renderer;
-  if (view.book.dir === 'rtl') {
+  if (viewSettings.rtl) {
     side = swapLeftRight(side);
   }
   if (renderer.scrolled) {
