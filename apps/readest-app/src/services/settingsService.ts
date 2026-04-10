@@ -39,13 +39,13 @@ export function getDefaultViewSettings(ctx: Context): ViewSettings {
     ...DEFAULT_BOOK_STYLE,
     ...DEFAULT_BOOK_FONT,
     ...DEFAULT_BOOK_LANGUAGE,
-    ...(ctx.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
-    ...(ctx.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
-    ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
     ...DEFAULT_VIEW_CONFIG,
     ...DEFAULT_TTS_CONFIG,
     ...DEFAULT_SCREEN_CONFIG,
     ...DEFAULT_ANNOTATOR_CONFIG,
+    ...(ctx.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
+    ...(ctx.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
+    ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
     ...{ ...DEFAULT_TRANSLATOR_CONFIG, translateTargetLang: getTargetLang() },
   };
 }
