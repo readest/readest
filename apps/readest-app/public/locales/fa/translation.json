@@ -1187,5 +1187,8 @@
   "Split Hyphens": "تقسیم خط‌تیره‌ها",
   "Apply Theme Colors to PDF": "اعمال رنگ‌های پوسته روی PDF",
   "Name": "نام",
-  "Unavailable": "ناموجود"
+  "Unavailable": "ناموجود",
+  "Remove": "حذف",
+  "Edit OPDS Catalog": "ویرایش کاتالوگ OPDS",
+  "Save Changes": "ذخیره تغییرات"
 }

@@ -1213,5 +1213,8 @@
   "Split Hyphens": "Dziel łączniki",
   "Apply Theme Colors to PDF": "Zastosuj kolory motywu do PDF",
   "Name": "Nazwa",
-  "Unavailable": "Niedostępne"
+  "Unavailable": "Niedostępne",
+  "Remove": "Usuń",
+  "Edit OPDS Catalog": "Edytuj katalog OPDS",
+  "Save Changes": "Zapisz zmiany"
 }

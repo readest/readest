@@ -1200,5 +1200,8 @@
   "Split Hyphens": "Séparer les traits d'union",
   "Apply Theme Colors to PDF": "Appliquer les couleurs du thème au PDF",
   "Name": "Nom",
-  "Unavailable": "Indisponible"
+  "Unavailable": "Indisponible",
+  "Remove": "Supprimer",
+  "Edit OPDS Catalog": "Modifier le catalogue OPDS",
+  "Save Changes": "Enregistrer les modifications"
 }

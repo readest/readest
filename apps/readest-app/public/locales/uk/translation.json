@@ -1213,5 +1213,8 @@
   "Split Hyphens": "Розділити дефіси",
   "Apply Theme Colors to PDF": "Застосувати кольори теми до PDF",
   "Name": "Ім'я",
-  "Unavailable": "Недоступно"
+  "Unavailable": "Недоступно",
+  "Remove": "Видалити",
+  "Edit OPDS Catalog": "Редагувати каталог OPDS",
+  "Save Changes": "Зберегти зміни"
 }

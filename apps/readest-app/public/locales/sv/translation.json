@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Dela bindestreck",
   "Apply Theme Colors to PDF": "Tillämpa temafärger på PDF",
   "Name": "Namn",
-  "Unavailable": "Inte tillgängligt"
+  "Unavailable": "Inte tillgängligt",
+  "Remove": "Ta bort",
+  "Edit OPDS Catalog": "Redigera OPDS-katalog",
+  "Save Changes": "Spara ändringar"
 }

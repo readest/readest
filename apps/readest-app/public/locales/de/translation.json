@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Bindestriche trennen",
   "Apply Theme Colors to PDF": "Designfarben auf PDF anwenden",
   "Name": "Name",
-  "Unavailable": "Nicht verfügbar"
+  "Unavailable": "Nicht verfügbar",
+  "Remove": "Entfernen",
+  "Edit OPDS Catalog": "OPDS-Katalog bearbeiten",
+  "Save Changes": "Änderungen speichern"
 }

@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Afbreekstreepjes splitsen",
   "Apply Theme Colors to PDF": "Themakleuren toepassen op PDF",
   "Name": "Naam",
-  "Unavailable": "Niet beschikbaar"
+  "Unavailable": "Niet beschikbaar",
+  "Remove": "Verwijderen",
+  "Edit OPDS Catalog": "OPDS-catalogus bewerken",
+  "Save Changes": "Wijzigingen opslaan"
 }

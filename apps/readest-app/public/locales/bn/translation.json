@@ -1187,5 +1187,8 @@
   "Split Hyphens": "হাইফেন বিভক্ত করুন",
   "Apply Theme Colors to PDF": "PDF-এ থিম রং প্রয়োগ করুন",
   "Name": "নাম",
-  "Unavailable": "অনুপলব্ধ"
+  "Unavailable": "অনুপলব্ধ",
+  "Remove": "সরান",
+  "Edit OPDS Catalog": "OPDS ক্যাটালগ সম্পাদনা",
+  "Save Changes": "পরিবর্তন সংরক্ষণ"
 }

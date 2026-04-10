@@ -1200,5 +1200,8 @@
   "Split Hyphens": "פיצול מקפים",
   "Apply Theme Colors to PDF": "החל צבעי ערכת נושא על PDF",
   "Name": "שם",
-  "Unavailable": "לא זמין"
+  "Unavailable": "לא זמין",
+  "Remove": "הסר",
+  "Edit OPDS Catalog": "עריכת קטלוג OPDS",
+  "Save Changes": "שמור שינויים"
 }

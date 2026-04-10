@@ -1174,5 +1174,8 @@
   "Split Hyphens": "แยกยัติภังค์",
   "Apply Theme Colors to PDF": "ใช้สีธีมกับ PDF",
   "Name": "ชื่อ",
-  "Unavailable": "ไม่พร้อมใช้งาน"
+  "Unavailable": "ไม่พร้อมใช้งาน",
+  "Remove": "ลบ",
+  "Edit OPDS Catalog": "แก้ไขแคตตาล็อก OPDS",
+  "Save Changes": "บันทึกการเปลี่ยนแปลง"
 }

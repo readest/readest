@@ -1213,5 +1213,8 @@
   "Split Hyphens": "Razdeli vezaje",
   "Apply Theme Colors to PDF": "Uporabi barve teme za PDF",
   "Name": "Ime",
-  "Unavailable": "Nedosegljivo"
+  "Unavailable": "Nedosegljivo",
+  "Remove": "Odstrani",
+  "Edit OPDS Catalog": "Uredi katalog OPDS",
+  "Save Changes": "Shrani spremembe"
 }

@@ -1239,5 +1239,8 @@
   "Split Hyphens": "تقسيم الواصلات",
   "Apply Theme Colors to PDF": "تطبيق ألوان السمة على PDF",
   "Name": "الاسم",
-  "Unavailable": "غير متاح"
+  "Unavailable": "غير متاح",
+  "Remove": "إزالة",
+  "Edit OPDS Catalog": "تعديل كتالوج OPDS",
+  "Save Changes": "حفظ التغييرات"
 }

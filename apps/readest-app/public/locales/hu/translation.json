@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Kötőjelek felosztása",
   "Apply Theme Colors to PDF": "Téma színeinek alkalmazása PDF-re",
   "Name": "Név",
-  "Unavailable": "Nem elérhető"
+  "Unavailable": "Nem elérhető",
+  "Remove": "Eltávolítás",
+  "Edit OPDS Catalog": "OPDS katalógus szerkesztése",
+  "Save Changes": "Módosítások mentése"
 }

@@ -1174,5 +1174,8 @@
   "Split Hyphens": "拆分連字號",
   "Apply Theme Colors to PDF": "將主題顏色套用至 PDF",
   "Name": "名稱",
-  "Unavailable": "無法使用"
+  "Unavailable": "無法使用",
+  "Remove": "移除",
+  "Edit OPDS Catalog": "編輯 OPDS 目錄",
+  "Save Changes": "儲存變更"
 }

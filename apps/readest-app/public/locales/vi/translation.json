@@ -1174,5 +1174,8 @@
   "Split Hyphens": "Tách gạch nối",
   "Apply Theme Colors to PDF": "Áp dụng màu chủ đề cho PDF",
   "Name": "Tên",
-  "Unavailable": "Không khả dụng"
+  "Unavailable": "Không khả dụng",
+  "Remove": "Xóa",
+  "Edit OPDS Catalog": "Chỉnh sửa danh mục OPDS",
+  "Save Changes": "Lưu thay đổi"
 }

@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Tireleri Böl",
   "Apply Theme Colors to PDF": "Tema Renklerini PDF'ye Uygula",
   "Name": "Ad",
-  "Unavailable": "Kullanılamaz"
+  "Unavailable": "Kullanılamaz",
+  "Remove": "Kaldır",
+  "Edit OPDS Catalog": "OPDS Kataloğunu Düzenle",
+  "Save Changes": "Değişiklikleri Kaydet"
 }

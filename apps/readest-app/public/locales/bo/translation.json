@@ -1174,5 +1174,8 @@
   "Split Hyphens": "སྦྲེལ་རྟགས་གཅད་པ",
   "Apply Theme Colors to PDF": "PDF ལ་བརྗོད་དོན་ཚོས་གཞི་སྤྱོད་པ",
   "Name": "མིང",
-  "Unavailable": "རག་མི་ཐུབ"
+  "Unavailable": "རག་མི་ཐུབ",
+  "Remove": "བསུབ།",
+  "Edit OPDS Catalog": "OPDS དཀར་ཆག་རྩོམ་སྒྲིག",
+  "Save Changes": "བསྒྱུར་བཅོས་ཉར་ཚགས།"
 }

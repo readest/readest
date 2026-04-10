@@ -1174,5 +1174,8 @@
   "Split Hyphens": "ハイフンで分割",
   "Apply Theme Colors to PDF": "テーマカラーをPDFに適用",
   "Name": "名前",
-  "Unavailable": "利用不可"
+  "Unavailable": "利用不可",
+  "Remove": "削除",
+  "Edit OPDS Catalog": "OPDSカタログを編集",
+  "Save Changes": "変更を保存"
 }

@@ -1187,5 +1187,8 @@
   "Split Hyphens": "Διαχωρισμός παύλων",
   "Apply Theme Colors to PDF": "Εφαρμογή χρωμάτων θέματος σε PDF",
   "Name": "Όνομα",
-  "Unavailable": "Μη διαθέσιμο"
+  "Unavailable": "Μη διαθέσιμο",
+  "Remove": "Αφαίρεση",
+  "Edit OPDS Catalog": "Επεξεργασία καταλόγου OPDS",
+  "Save Changes": "Αποθήκευση αλλαγών"
 }

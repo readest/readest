@@ -1174,5 +1174,8 @@
   "Split Hyphens": "하이픈 분리",
   "Apply Theme Colors to PDF": "PDF에 테마 색상 적용",
   "Name": "이름",
-  "Unavailable": "사용 불가"
+  "Unavailable": "사용 불가",
+  "Remove": "삭제",
+  "Edit OPDS Catalog": "OPDS 카탈로그 편집",
+  "Save Changes": "변경 사항 저장"
 }

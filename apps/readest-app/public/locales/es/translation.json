@@ -1200,5 +1200,8 @@
   "Split Hyphens": "Dividir guiones",
   "Apply Theme Colors to PDF": "Aplicar colores del tema al PDF",
   "Name": "Nombre",
-  "Unavailable": "No disponible"
+  "Unavailable": "No disponible",
+  "Remove": "Eliminar",
+  "Edit OPDS Catalog": "Editar catálogo OPDS",
+  "Save Changes": "Guardar cambios"
 }
