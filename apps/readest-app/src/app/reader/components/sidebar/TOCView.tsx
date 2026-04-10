@@ -43,9 +43,10 @@ const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ bookKey, toc }) => {
-  const { getView, getProgress } = useReaderStore();
+  const { getView, getViewSettings, getProgress } = useReaderStore();
   const { sideBarBookKey, isSideBarVisible } = useSidebarStore();
   const progress = getProgress(bookKey);
+  const isEink = !!getViewSettings(bookKey)?.isEink;
 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
     computeExpandedSet(toc, progress?.sectionHref),
@@ -131,14 +132,18 @@ const TOCView: React.FC<{
     const timer = setTimeout(() => {
       const idx = flatItems.findIndex((f) => f.item.href === activeHref);
       if (idx !== -1) {
+        // Eink displays ghost previous frames during smooth JS scroll
+        // animations; force an instant jump to avoid the artifact. A CSS-only
+        // fix is impossible because scrollTo({ behavior: 'smooth' }) overrides
+        // CSS scroll-behavior and is not a CSS transition.
         const distance = Math.abs(idx - visibleCenterRef.current);
-        const behavior = distance > 16 ? 'auto' : 'smooth';
+        const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
         virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
       }
       pendingScrollRef.current = false;
     }, 100);
     return () => clearTimeout(timer);
-  }, [flatItems, activeHref, isSideBarVisible]);
+  }, [flatItems, activeHref, isSideBarVisible, isEink]);
 
   return (
     <div ref={containerRef} className='toc-list rounded' role='tree'>
