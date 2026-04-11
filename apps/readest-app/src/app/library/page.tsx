@@ -61,6 +61,7 @@ import { BackupWindow } from './components/BackupWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
+import { useLibraryNavigation } from './hooks/useLibraryNavigation';
 import { Toast } from '@/components/Toast';
 import {
   createBookGroups,
@@ -151,31 +152,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   }, []);
 
-  // Unified navigation function that handles scroll position and direction
-  const handleLibraryNavigation = useCallback(
-    (targetGroup: string) => {
-      const currentGroup = searchParams?.get('group') || '';
-
-      // Save current scroll position BEFORE navigation
-      saveScrollPosition(currentGroup);
-
-      // Detect and set navigation direction
-      const direction = currentGroup && !targetGroup ? 'back' : 'forward';
-      document.documentElement.setAttribute('data-nav-direction', direction);
-
-      // Build query params
-      const params = new URLSearchParams(searchParams?.toString());
-      if (targetGroup) {
-        params.set('group', targetGroup);
-      } else {
-        params.delete('group');
-      }
-
-      navigateToLibrary(router, `${params.toString()}`);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [searchParams, router],
-  );
+  // Unified navigation function that handles scroll position and direction.
+  // Uses a plain Next.js router (via useLibraryNavigation) instead of the
+  // view-transition-wrapped useAppRouter, because next-view-transitions@0.3.5
+  // is incompatible with Next.js 16.2 RSC navigation when only search params
+  // change for the same pathname (e.g. /library?group=foo -> /library), which
+  // previously broke the breadcrumb "All" button on the first click after
+  // entering a group. See https://github.com/readest/readest/issues/3782 and
+  // https://github.com/shuding/next-view-transitions/issues/65.
+  const handleLibraryNavigation = useLibraryNavigation(searchParams, saveScrollPosition);
 
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   useUICSS();
