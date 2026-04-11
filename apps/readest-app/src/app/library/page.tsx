@@ -39,6 +39,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
 import { lockScreenOrientation, selectDirectory } from '@/utils/bridge';
 import { requestStoragePermission } from '@/utils/permission';
@@ -243,6 +244,25 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [searchParams, router],
   );
+
+  const handleBackUpOneGroupLevel = () => {
+    if (!currentGroupPath) return;
+    const segments = currentGroupPath.split('/');
+    const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : undefined;
+    const parentGroupId = parentPath ? getGroupId(parentPath) || '' : '';
+    setIsSelectAll(false);
+    setIsSelectNone(false);
+    handleLibraryNavigation(parentGroupId);
+  };
+
+  const handleBackUpOneGroupLevelRef = useRef(handleBackUpOneGroupLevel);
+  handleBackUpOneGroupLevelRef.current = handleBackUpOneGroupLevel;
+  const triggerBackUpOneGroupLevel = useCallback(() => handleBackUpOneGroupLevelRef.current(), []);
+
+  useKeyDownActions({
+    onCancel: triggerBackUpOneGroupLevel,
+    enabled: !!appService?.isAndroidApp && !!currentGroupPath,
+  });
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {
