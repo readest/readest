@@ -15,6 +15,7 @@ interface LibraryState {
   selectedBooks: Set<string>; // hashes for books, ids for groups
   groups: Record<string, string>;
   hashIndex: Map<string, number>; // hash -> array index for O(1) lookup
+  visibleLibrary: Book[];
   setIsSyncing: (syncing: boolean) => void;
   setSyncProgress: (progress: number) => void;
   setSelectedBooks: (ids: string[]) => void;
@@ -60,12 +61,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   selectedBooks: new Set(),
   groups: {},
   hashIndex: new Map(),
+  visibleLibrary: [],
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
 
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
   setSyncProgress: (progress: number) => set({ syncProgress: progress }),
-  getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
+  getVisibleLibrary: () => get().visibleLibrary,
   getBookByHash: (hash: string) => {
     const { library, hashIndex } = get();
     const idx = hashIndex.get(hash);
@@ -79,7 +81,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setCheckLastOpenBooks: (check) => set({ checkLastOpenBooks: check }),
   setLibrary: (books) => {
-    set({ library: books, libraryLoaded: true, hashIndex: buildHashIndex(books) });
+    set({
+      library: books,
+      libraryLoaded: true,
+      hashIndex: buildHashIndex(books),
+      visibleLibrary: books.filter((b) => !b.deletedAt),
+    });
     get().refreshGroups();
   },
 
@@ -104,7 +111,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (idx !== undefined) {
       library[idx] = book;
     }
-    set({ library: [...library], hashIndex: buildHashIndex(library) });
+    set({
+      library: [...library],
+      hashIndex: buildHashIndex(library),
+      visibleLibrary: library.filter((b) => !b.deletedAt),
+    });
     await appService.saveLibraryBooks(library);
   },
   updateBooks: async (envConfig: EnvConfigType, books: Book[]) => {
@@ -114,7 +125,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const { library, refreshGroups } = get();
 
     const newLibrary = Array.from(new Map([...library, ...books].map((b) => [b.hash, b])).values());
-    set({ library: newLibrary, hashIndex: buildHashIndex(newLibrary) });
+    set({
+      library: newLibrary,
+      hashIndex: buildHashIndex(newLibrary),
+      visibleLibrary: newLibrary.filter((b) => !b.deletedAt),
+    });
     refreshGroups();
     await appService.saveLibraryBooks(newLibrary);
   },

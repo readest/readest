@@ -34,6 +34,7 @@ describe('libraryStore', () => {
       selectedBooks: new Set(),
       groups: {},
       hashIndex: new Map(),
+      visibleLibrary: [],
     });
   });
 
@@ -129,12 +130,11 @@ describe('libraryStore', () => {
 
   describe('getVisibleLibrary', () => {
     test('filters out books with deletedAt set', () => {
-      const books = [
-        makeBook({ hash: 'a', deletedAt: null }),
-        makeBook({ hash: 'b', deletedAt: 12345 }),
-        makeBook({ hash: 'c' }),
-      ];
-      useLibraryStore.setState({ library: books });
+      const bookA = makeBook({ hash: 'a', deletedAt: null });
+      const bookB = makeBook({ hash: 'b', deletedAt: 12345 });
+      const bookC = makeBook({ hash: 'c' });
+      const books = [bookA, bookB, bookC];
+      useLibraryStore.setState({ library: books, visibleLibrary: [bookA, bookC] });
 
       const visible = useLibraryStore.getState().getVisibleLibrary();
       expect(visible).toHaveLength(2);
@@ -143,7 +143,7 @@ describe('libraryStore', () => {
 
     test('returns all books when none are deleted', () => {
       const books = [makeBook({ hash: 'a' }), makeBook({ hash: 'b' })];
-      useLibraryStore.setState({ library: books });
+      useLibraryStore.setState({ library: books, visibleLibrary: books });
 
       const visible = useLibraryStore.getState().getVisibleLibrary();
       expect(visible).toHaveLength(2);
