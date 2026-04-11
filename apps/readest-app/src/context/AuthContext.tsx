@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useState, useContext, useMemo, ReactNode, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
@@ -97,11 +97,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {}
   };
 
-  return (
-    <AuthContext.Provider value={{ token, user, login, logout, refresh }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ token, user, login, logout, refresh }),
+    [token, user, login, logout, refresh],
   );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

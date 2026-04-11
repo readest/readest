@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 import { EnvConfigType } from '../services/environment';
 import { AppService } from '@/types/system';
 import env from '../services/environment';
@@ -28,7 +28,8 @@ export const EnvProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [envConfig]);
 
-  return <EnvContext.Provider value={{ envConfig, appService }}>{children}</EnvContext.Provider>;
+  const value = useMemo(() => ({ envConfig, appService }), [envConfig, appService]);
+  return <EnvContext.Provider value={value}>{children}</EnvContext.Provider>;
 };
 
 export const useEnv = (): EnvContextType => {
