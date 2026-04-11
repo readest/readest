@@ -96,7 +96,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setLibrary,
     getGroupId,
     getGroupName,
-    refreshGroups,
     checkOpenWithBooks,
     checkLastOpenBooks,
     setCheckOpenWithBooks,
@@ -249,7 +248,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         const appService = await envConfig.getAppService();
         const settings = await appService.loadSettings();
         setSettings(settings);
-        refreshGroups();
       });
       return () => {
         unlisten.then((fn) => fn());
