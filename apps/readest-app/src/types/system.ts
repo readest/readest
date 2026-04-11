@@ -1,5 +1,5 @@
 import { SystemSettings } from './settings';
-import { Book, BookConfig, BookContent, BookLookupIndex, ViewSettings } from './book';
+import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
@@ -125,15 +125,7 @@ export interface AppService {
   deleteFont(font: CustomFont): Promise<void>;
   importImage(file?: string | File): Promise<CustomTextureInfo | null>;
   deleteImage(texture: CustomTextureInfo): Promise<void>;
-  importBook(
-    file: string | File,
-    books: Book[],
-    saveBook?: boolean,
-    saveCover?: boolean,
-    overwrite?: boolean,
-    transient?: boolean,
-    lookupIndex?: BookLookupIndex,
-  ): Promise<Book | null>;
+  importBook(file: string | File, books: Book[], options?: ImportBookOptions): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;

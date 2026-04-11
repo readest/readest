@@ -13,7 +13,7 @@ import {
 } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
-import { Book, BookConfig, BookContent, BookLookupIndex, ViewSettings } from '@/types/book';
+import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from '@/types/book';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
 
 import { getOSPlatform } from '@/utils/misc';
@@ -220,24 +220,13 @@ export abstract class BaseAppService implements AppService {
   async importBook(
     file: string | File,
     books: Book[],
-    saveBook: boolean = true,
-    saveCover: boolean = true,
-    overwrite: boolean = false,
-    transient: boolean = false,
-    lookupIndex?: BookLookupIndex,
+    options: ImportBookOptions = {},
   ): Promise<Book | null> {
-    return BookSvc.importBook(
-      this.fs,
-      file,
-      books,
-      saveBook,
-      saveCover,
-      overwrite,
-      transient,
-      this.saveBookConfig.bind(this),
-      this.generateCoverImageUrl.bind(this),
-      lookupIndex,
-    );
+    return BookSvc.importBook(this.fs, file, books, {
+      saveBookConfig: this.saveBookConfig.bind(this),
+      generateCoverImageUrl: this.generateCoverImageUrl.bind(this),
+      ...options,
+    });
   }
 
   async deleteBook(book: Book, deleteAction: DeleteAction): Promise<void> {

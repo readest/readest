@@ -8,6 +8,7 @@ import {
   BookLookupIndex,
   BookNote,
   FIXED_LAYOUT_FORMATS,
+  ImportBookOptions,
 } from '@/types/book';
 import {
   getDir,
@@ -204,6 +205,16 @@ export async function mergeBooks(
 
 // --- Book Import ---
 
+/**
+ * Options consumed by bookService.importBook. Extends the user-facing
+ * ImportBookOptions with the required AppService callbacks that are bound by
+ * the AppService wrapper.
+ */
+export interface ImportBookInternalOptions extends ImportBookOptions {
+  saveBookConfig: (book: Book, config: BookConfig) => Promise<void>;
+  generateCoverImageUrl: (book: Book) => Promise<string>;
+}
+
 export async function importBook(
   fs: FileSystem,
   // file might be:
@@ -214,14 +225,17 @@ export async function importBook(
   // 4. File object from browsers
   file: string | File,
   books: Book[],
-  saveBook: boolean,
-  saveCover: boolean,
-  overwrite: boolean,
-  transient: boolean,
-  saveBookConfigFn: (book: Book, config: BookConfig) => Promise<void>,
-  generateCoverImageUrlFn: (book: Book) => Promise<string>,
-  lookupIndex?: BookLookupIndex,
+  options: ImportBookInternalOptions,
 ): Promise<Book | null> {
+  const {
+    saveBookConfig: saveBookConfigFn,
+    generateCoverImageUrl: generateCoverImageUrlFn,
+    saveBook = true,
+    saveCover = true,
+    overwrite = false,
+    transient = false,
+    lookupIndex,
+  } = options;
   try {
     let loadedBook: BookDoc;
     let format: BookFormat;

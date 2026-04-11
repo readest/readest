@@ -46,6 +46,24 @@ export interface BookLookupIndex {
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
 }
 
+/**
+ * User-facing options for AppService.importBook. The bookService implementation
+ * extends this with required callbacks (saveBookConfig / generateCoverImageUrl)
+ * that are bound by the AppService instance.
+ */
+export interface ImportBookOptions {
+  /** Whether to copy the file into the Books directory. Defaults to true. */
+  saveBook?: boolean;
+  /** Whether to extract and save a cover image. Defaults to true. */
+  saveCover?: boolean;
+  /** Whether to overwrite an existing file at the same path. Defaults to false. */
+  overwrite?: boolean;
+  /** Whether the import is transient (not stored long-term). Defaults to false. */
+  transient?: boolean;
+  /** Pre-built lookup index for O(1) dedup during batch imports. */
+  lookupIndex?: BookLookupIndex;
+}
+
 export interface Book {
   // if Book is a remote book we just lazy load the book content via url
   url?: string;

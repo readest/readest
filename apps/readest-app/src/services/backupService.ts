@@ -302,7 +302,7 @@ export async function restoreFromBackupZip(
     // Import the book file from the extracted location
     try {
       const filePath = await appService.resolveFilePath(bookEntry.filename, 'Books');
-      const imported = await appService.importBook(filePath, currentBooks, true, true, true);
+      const imported = await appService.importBook(filePath, currentBooks, { overwrite: true });
       if (imported) {
         currentBooksMap.set(imported.hash, imported);
         booksAdded++;

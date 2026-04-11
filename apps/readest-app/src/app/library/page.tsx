@@ -295,7 +295,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         console.log('Open with book:', file);
         try {
           const temp = appService.isMobile ? false : !settings.autoImportBooksOnOpen;
-          const book = await appService.importBook(file, libraryBooks, true, true, false, temp);
+          const book = await appService.importBook(file, libraryBooks, { transient: temp });
           if (book) {
             bookIds.push(book.hash);
           }
@@ -500,15 +500,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const file = selectedFile.file || selectedFile.path;
       if (!file) return null;
       try {
-        const book = await appService?.importBook(
-          file,
-          library,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          lookupIndex,
-        );
+        const book = await appService?.importBook(file, library, { lookupIndex });
         if (!book) return null;
         const { path, basePath } = selectedFile;
         if (groupId) {

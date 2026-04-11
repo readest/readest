@@ -241,7 +241,7 @@ describe('importBook metaHash deduplication', () => {
     fs.openFile.mockResolvedValue(new File(['content'], 'test.epub'));
 
     // Transient import requires string file path
-    const result = await service.importBook('/path/to/test.epub', books, true, true, false, true);
+    const result = await service.importBook('/path/to/test.epub', books, { transient: true });
 
     // Should create a new entry, not override existing
     expect(result).not.toBe(existingBook);
@@ -617,7 +617,7 @@ describe('importBook with BookLookupIndex', () => {
     setupMockBookDoc();
 
     const mockFile = new File(['content'], 'test.epub', { type: 'application/epub+zip' });
-    const result = await service.importBook(mockFile, books, true, true, false, false, lookupIndex);
+    const result = await service.importBook(mockFile, books, { lookupIndex });
 
     expect(result).not.toBeNull();
     expect(result?.hash).toBe('imported-hash');
@@ -643,7 +643,7 @@ describe('importBook with BookLookupIndex', () => {
     setupMockBookDoc();
 
     const mockFile = new File(['content'], 'test.epub', { type: 'application/epub+zip' });
-    const result = await service.importBook(mockFile, books, true, true, false, false, lookupIndex);
+    const result = await service.importBook(mockFile, books, { lookupIndex });
 
     // Should reuse the existing book object via lookup index
     expect(result).toBe(existingBook);

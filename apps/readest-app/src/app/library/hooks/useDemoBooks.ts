@@ -32,7 +32,7 @@ export const useDemoBooks = () => {
         const appService = await envConfig.getAppService();
         const demoBooks = libraries[userLang] || (libraries.en as DemoBooks);
         const books = await Promise.all(
-          demoBooks.library.map((url) => appService.importBook(url, [], false, true)),
+          demoBooks.library.map((url) => appService.importBook(url, [], { saveBook: false })),
         );
         setBooks(books.filter((book) => book !== null) as Book[]);
       } catch (error) {

@@ -61,7 +61,7 @@ export function bookTests(
       const first = await service.importBook(file1, books);
 
       const file2 = await getBookFile('sample-alice.epub');
-      const second = await service.importBook(file2, books, true, true, true);
+      const second = await service.importBook(file2, books, { overwrite: true });
 
       expect(books).toHaveLength(1);
       expect(second!.hash).toBe(first!.hash);
