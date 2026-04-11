@@ -62,7 +62,6 @@ import { BackupWindow } from './components/BackupWindow';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
-import { useLibraryNavigation } from './hooks/useLibraryNavigation';
 import { Toast } from '@/components/Toast';
 import {
   createBookGroups,
@@ -152,16 +151,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   }, []);
 
-  // Unified navigation function that handles scroll position and direction.
-  // Uses a plain Next.js router (via useLibraryNavigation) instead of the
-  // view-transition-wrapped useAppRouter, because next-view-transitions@0.3.5
-  // is incompatible with Next.js 16.2 RSC navigation when only search params
-  // change for the same pathname (e.g. /library?group=foo -> /library), which
-  // previously broke the breadcrumb "All" button on the first click after
-  // entering a group. See https://github.com/readest/readest/issues/3782 and
-  // https://github.com/shuding/next-view-transitions/issues/65.
-  const handleLibraryNavigation = useLibraryNavigation(searchParams, saveScrollPosition);
-
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   useUICSS();
 
@@ -205,6 +194,55 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useEffect(() => {
     sessionStorage.setItem('lastLibraryParams', searchParams?.toString() || '');
   }, [searchParams]);
+
+  // Strip the empty `group=` param that `handleLibraryNavigation` sets as a
+  // workaround for a Next.js 16.2 static-export regression (see the NOTE
+  // above `handleLibraryNavigation` for full context). This effect runs
+  // after the router.replace() has committed, so React has already
+  // re-rendered with the new (empty) group state; we're only rewriting the
+  // URL cosmetically via window.history.replaceState — Next.js' patched
+  // replaceState will pick up the new canonical URL without triggering
+  // another navigation.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (searchParams?.get('group') !== '') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('group');
+    const cleanHref = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, '', cleanHref);
+  }, [searchParams]);
+
+  // Unified navigation function that handles scroll position and direction.
+  // Workaround for a Next.js 16.2 static-export regression: navigating to a
+  // same-pathname URL with an empty search string causes `router.replace()`
+  // to silently no-op (e.g. `/library?group=foo` -> `/library`), which broke
+  // the breadcrumb "All" button. By always calling `params.set('group',
+  // targetGroup)` — including when `targetGroup` is an empty string — the
+  // resulting URL becomes `/library?group=` instead of `/library`, which
+  // Next.js does commit. The trailing empty `group=` is stripped via a
+  // cleanup effect below (purely cosmetic URL rewrite). See
+  // https://github.com/readest/readest/issues/3782.
+  const handleLibraryNavigation = useCallback(
+    (targetGroup: string) => {
+      const currentGroup = searchParams?.get('group') || '';
+
+      // Save current scroll position BEFORE navigation
+      saveScrollPosition(currentGroup);
+
+      // Detect and set navigation direction
+      const direction = currentGroup && !targetGroup ? 'back' : 'forward';
+      document.documentElement.setAttribute('data-nav-direction', direction);
+
+      // Build query params — always `set` so the search string is non-empty
+      // even when targetGroup is '' (the Next.js 16.2 workaround).
+      const params = new URLSearchParams(searchParams?.toString());
+      params.set('group', targetGroup);
+
+      navigateToLibrary(router, `${params.toString()}`);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchParams, router],
+  );
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {
