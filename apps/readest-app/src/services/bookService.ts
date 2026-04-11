@@ -5,6 +5,7 @@ import {
   BookConfig,
   BookContent,
   BookFormat,
+  BookLookupIndex,
   BookNote,
   FIXED_LAYOUT_FORMATS,
 } from '@/types/book';
@@ -31,11 +32,6 @@ import { svg2png } from '@/utils/svg';
 import { normalizeMetadataIsbn } from '@/utils/isbn';
 import { BookFileNotFoundError } from './errors';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-
-export interface BookLookupIndex {
-  byHash: Map<string, Book>;
-  byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
-}
 
 export function buildBookLookupIndex(books: Book[]): BookLookupIndex {
   const byHash = new Map<string, Book>();

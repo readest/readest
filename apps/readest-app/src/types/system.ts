@@ -1,5 +1,5 @@
 import { SystemSettings } from './settings';
-import { Book, BookConfig, BookContent, ViewSettings } from './book';
+import { Book, BookConfig, BookContent, BookLookupIndex, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
@@ -132,7 +132,7 @@ export interface AppService {
     saveCover?: boolean,
     overwrite?: boolean,
     transient?: boolean,
-    lookupIndex?: import('@/services/bookService').BookLookupIndex,
+    lookupIndex?: BookLookupIndex,
   ): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;

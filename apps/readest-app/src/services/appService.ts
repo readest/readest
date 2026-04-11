@@ -13,7 +13,7 @@ import {
 } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
-import { Book, BookConfig, BookContent, ViewSettings } from '@/types/book';
+import { Book, BookConfig, BookContent, BookLookupIndex, ViewSettings } from '@/types/book';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
 
 import { getOSPlatform } from '@/utils/misc';
@@ -224,7 +224,7 @@ export abstract class BaseAppService implements AppService {
     saveCover: boolean = true,
     overwrite: boolean = false,
     transient: boolean = false,
-    lookupIndex?: BookSvc.BookLookupIndex,
+    lookupIndex?: BookLookupIndex,
   ): Promise<Book | null> {
     return BookSvc.importBook(
       this.fs,

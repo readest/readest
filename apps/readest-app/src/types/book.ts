@@ -34,6 +34,18 @@ export interface ParagraphModeConfig {
 
 export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 
+/**
+ * Lookup tables built from a Book[] for O(1) hash and metaHash queries during
+ * batch import. Mutated in place by importBook so subsequent files in the
+ * same batch see books added by earlier files. Defined here (rather than in
+ * services/bookService) so the AppService interface in types/system can
+ * reference it without an inline `import(...)` type.
+ */
+export interface BookLookupIndex {
+  byHash: Map<string, Book>;
+  byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+}
+
 export interface Book {
   // if Book is a remote book we just lazy load the book content via url
   url?: string;
