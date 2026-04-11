@@ -96,6 +96,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setLibrary,
     getGroupId,
     getGroupName,
+    refreshGroups,
     checkOpenWithBooks,
     checkLastOpenBooks,
     setCheckOpenWithBooks,
@@ -241,27 +242,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   }, [appService]);
 
-  const handleRefreshLibrary = useCallback(async () => {
-    const appService = await envConfig.getAppService();
-    const settings = await appService.loadSettings();
-    const library = await appService.loadLibraryBooks();
-    setSettings(settings);
-    setLibrary(library);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [envConfig, appService]);
-
   useEffect(() => {
     if (appService?.hasWindow) {
       const currentWebview = getCurrentWebview();
       const unlisten = currentWebview.listen('close-reader-window', async () => {
-        handleRefreshLibrary();
+        const appService = await envConfig.getAppService();
+        const settings = await appService.loadSettings();
+        setSettings(settings);
+        refreshGroups();
       });
       return () => {
         unlisten.then((fn) => fn());
       };
     }
     return;
-  }, [appService, handleRefreshLibrary]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService, envConfig]);
 
   const handleImportBookFiles = useCallback(async (event: CustomEvent) => {
     const selectedFiles: SelectedFile[] = event.detail.files;
