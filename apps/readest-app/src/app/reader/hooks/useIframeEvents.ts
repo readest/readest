@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
@@ -11,7 +11,8 @@ export const useMouseEvent = (
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
 ) => {
   const { hoveredBookKey } = useReaderStore();
-  const debounceFlip = debounce(handlePageFlip, 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debounceFlip = useMemo(() => debounce(handlePageFlip, 100), []);
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
