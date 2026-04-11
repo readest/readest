@@ -1,6 +1,6 @@
 [submodule "packages/foliate-js"]
 	path = packages/foliate-js
-	url = https://github.com/readest/foliate-js.git
+	url = https://github.com/johannesmauerer/foliate-js.git
 [submodule "packages/tauri"]
 	path = packages/tauri
 	url = https://github.com/readest/tauri.git
