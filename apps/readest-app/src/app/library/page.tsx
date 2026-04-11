@@ -96,7 +96,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setLibrary,
     getGroupId,
     getGroupName,
-    refreshGroups,
     checkOpenWithBooks,
     checkLastOpenBooks,
     setCheckOpenWithBooks,
@@ -280,7 +279,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   }, [handleImportBookFiles]);
 
   useEffect(() => {
-    refreshGroups();
     if (!libraryBooks.some((book) => !book.deletedAt)) {
       handleSetSelectMode(false);
     }
