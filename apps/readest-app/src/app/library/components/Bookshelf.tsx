@@ -3,6 +3,14 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
+import {
+  Virtuoso,
+  VirtuosoGrid,
+  type Components,
+  type GridComponents,
+  type GridListProps,
+  type ListProps,
+} from 'react-virtuoso';
 import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import {
   LibraryCoverFitType,
@@ -46,6 +54,13 @@ interface BookshelfProps {
   isSelectMode: boolean;
   isSelectAll: boolean;
   isSelectNone: boolean;
+  /**
+   * The DOM element whose `overflow-y: auto` backs the bookshelf scroll.
+   * Passed to react-virtuoso as `customScrollParent` so virtualization uses
+   * the parent page scroller (and existing pull-to-refresh / scroll save /
+   * restore logic keeps working).
+   */
+  scrollParentEl: HTMLDivElement | null;
   handleImportBooks: () => void;
   handleBookDownload: (
     book: Book,
@@ -60,11 +75,76 @@ interface BookshelfProps {
   booksTransferProgress: { [key: string]: number | null };
 }
 
+/**
+ * Context passed to the custom Virtuoso `List` components so they can render
+ * grid styles that depend on runtime settings without being re-created on
+ * every Bookshelf render (which would break Virtuoso's component identity).
+ */
+type BookshelfListContext = {
+  autoColumns: boolean;
+  fixedColumns: number;
+};
+
+const BOOKSHELF_GRID_CLASSES =
+  'bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2 ' +
+  'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12';
+
+const BOOKSHELF_LIST_CLASSES = 'bookshelf-items transform-wrapper flex flex-col';
+
+/**
+ * Custom List component for VirtuosoGrid. Tags the wrapping element with the
+ * `transform-wrapper` class that `usePullToRefresh` transforms during a pull
+ * gesture, and applies the runtime `libraryColumns` override when the user
+ * has opted out of the responsive auto grid.
+ */
+const BookshelfGridList: GridComponents<BookshelfListContext>['List'] = React.forwardRef<
+  HTMLDivElement,
+  GridListProps & { context?: BookshelfListContext }
+>(({ children, className, style, context, 'data-testid': testId }, ref) => (
+  <div
+    ref={ref}
+    data-testid={testId}
+    className={clsx(BOOKSHELF_GRID_CLASSES, className)}
+    style={{
+      ...style,
+      gridTemplateColumns:
+        context && !context.autoColumns
+          ? `repeat(${context.fixedColumns}, minmax(0, 1fr))`
+          : undefined,
+    }}
+  >
+    {children}
+  </div>
+));
+BookshelfGridList.displayName = 'BookshelfGridList';
+
+/**
+ * Custom List component for the linear Virtuoso (list view). Same purpose as
+ * BookshelfGridList — carries the `transform-wrapper` class for pull-to-
+ * refresh.
+ */
+const BookshelfLinearList: Components['List'] = React.forwardRef<HTMLDivElement, ListProps>(
+  ({ children, style, 'data-testid': testId }, ref) => (
+    <div ref={ref} data-testid={testId} className={BOOKSHELF_LIST_CLASSES} style={style}>
+      {children}
+    </div>
+  ),
+);
+BookshelfLinearList.displayName = 'BookshelfLinearList';
+
+const GRID_VIRTUOSO_COMPONENTS: GridComponents<BookshelfListContext> = {
+  List: BookshelfGridList,
+};
+const LIST_VIRTUOSO_COMPONENTS: Components = {
+  List: BookshelfLinearList,
+};
+
 const Bookshelf: React.FC<BookshelfProps> = ({
   libraryBooks,
   isSelectMode,
   isSelectAll,
   isSelectNone,
+  scrollParentEl,
   handleImportBooks,
   handleBookUpload,
   handleBookDownload,
@@ -396,61 +476,30 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, []);
 
   const selectedBooks = getSelectedBooks();
+  const isGridMode = viewMode === 'grid';
+  const hasItems = sortedBookshelfItems.length > 0;
+  // In grid mode the Import-Books "+" tile is rendered as an extra grid cell
+  // after all books. We represent it to Virtuoso as an extra index past the
+  // last book; list mode doesn't have an import tile.
+  const gridTotalCount = hasItems ? sortedBookshelfItems.length + 1 : 0;
 
-  return (
-    <div className='bookshelf'>
-      <div
-        ref={autofocusRef}
-        tabIndex={-1}
-        className={clsx(
-          'bookshelf-items transform-wrapper focus:outline-none',
-          viewMode === 'grid' && 'grid flex-1 grid-cols-3 gap-x-4 px-4 sm:gap-x-0 sm:px-2',
-          viewMode === 'grid' && 'sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12',
-          viewMode === 'list' && 'flex flex-col',
-        )}
-        style={{
-          gridTemplateColumns:
-            viewMode === 'grid' && !settings.libraryAutoColumns
-              ? `repeat(${settings.libraryColumns}, minmax(0, 1fr))`
-              : undefined,
-        }}
-        role='main'
-        aria-label={_('Bookshelf')}
-      >
-        {sortedBookshelfItems.map((item) => (
-          <BookshelfItem
-            key={`library-item-${'hash' in item ? item.hash : item.id}`}
-            item={item}
-            mode={viewMode as LibraryViewModeType}
-            coverFit={coverFit as LibraryCoverFitType}
-            isSelectMode={isSelectMode}
-            itemSelected={
-              'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id)
-            }
-            setLoading={setLoading}
-            toggleSelection={toggleSelection}
-            handleGroupBooks={groupSelectedBooks}
-            handleBookUpload={handleBookUpload}
-            handleBookDownload={handleBookDownload}
-            handleBookDelete={handleBookDelete}
-            handleSetSelectMode={handleSetSelectMode}
-            handleShowDetailsBook={handleShowDetailsBook}
-            handleLibraryNavigation={handleLibraryNavigation}
-            handleUpdateReadingStatus={handleUpdateReadingStatus}
-            transferProgress={
-              'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
-            }
-          />
-        ))}
-        {viewMode === 'grid' && currentBookshelfItems.length > 0 && (
+  const listContext = useMemo<BookshelfListContext>(
+    () => ({
+      autoColumns: settings.libraryAutoColumns,
+      fixedColumns: settings.libraryColumns,
+    }),
+    [settings.libraryAutoColumns, settings.libraryColumns],
+  );
+
+  const renderBookshelfItem = useCallback(
+    (index: number) => {
+      if (isGridMode && index === sortedBookshelfItems.length) {
+        return (
           <div
             className={clsx('bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4')}
             style={
-              coverFit === 'fit' && viewMode === 'grid'
-                ? {
-                    display: 'flex',
-                    paddingBottom: `${iconSize15 + 24}px`,
-                  }
+              coverFit === 'fit'
+                ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
                 : undefined
             }
           >
@@ -468,8 +517,96 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               </div>
             </button>
           </div>
-        )}
-      </div>
+        );
+      }
+      const item = sortedBookshelfItems[index];
+      if (!item) return null;
+      const itemSelected =
+        'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id);
+      return (
+        <BookshelfItem
+          item={item}
+          mode={viewMode as LibraryViewModeType}
+          coverFit={coverFit as LibraryCoverFitType}
+          isSelectMode={isSelectMode}
+          itemSelected={itemSelected}
+          setLoading={setLoading}
+          toggleSelection={toggleSelection}
+          handleGroupBooks={groupSelectedBooks}
+          handleBookUpload={handleBookUpload}
+          handleBookDownload={handleBookDownload}
+          handleBookDelete={handleBookDelete}
+          handleSetSelectMode={handleSetSelectMode}
+          handleShowDetailsBook={handleShowDetailsBook}
+          handleLibraryNavigation={handleLibraryNavigation}
+          handleUpdateReadingStatus={handleUpdateReadingStatus}
+          transferProgress={
+            'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
+          }
+        />
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      sortedBookshelfItems,
+      selectedBooks,
+      isGridMode,
+      viewMode,
+      coverFit,
+      isSelectMode,
+      booksTransferProgress,
+      iconSize15,
+      handleImportBooks,
+      toggleSelection,
+      handleBookUpload,
+      handleBookDownload,
+      handleBookDelete,
+      handleSetSelectMode,
+      handleShowDetailsBook,
+      handleLibraryNavigation,
+      handleUpdateReadingStatus,
+    ],
+  );
+
+  const computeItemKey = useCallback(
+    (index: number) => {
+      if (isGridMode && index === sortedBookshelfItems.length) {
+        return 'library-import-tile';
+      }
+      const item = sortedBookshelfItems[index];
+      if (!item) return `library-item-${index}`;
+      return `library-item-${'hash' in item ? item.hash : item.id}`;
+    },
+    [sortedBookshelfItems, isGridMode],
+  );
+
+  return (
+    <div
+      ref={autofocusRef}
+      tabIndex={-1}
+      role='main'
+      aria-label={_('Bookshelf')}
+      className='bookshelf focus:outline-none'
+    >
+      {scrollParentEl && hasItems && isGridMode && (
+        <VirtuosoGrid<unknown, BookshelfListContext>
+          customScrollParent={scrollParentEl}
+          totalCount={gridTotalCount}
+          components={GRID_VIRTUOSO_COMPONENTS}
+          context={listContext}
+          computeItemKey={computeItemKey}
+          itemContent={renderBookshelfItem}
+        />
+      )}
+      {scrollParentEl && hasItems && !isGridMode && (
+        <Virtuoso
+          customScrollParent={scrollParentEl}
+          totalCount={sortedBookshelfItems.length}
+          components={LIST_VIRTUOSO_COMPONENTS}
+          computeItemKey={computeItemKey}
+          itemContent={renderBookshelfItem}
+        />
+      )}
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />

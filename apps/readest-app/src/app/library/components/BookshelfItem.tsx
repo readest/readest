@@ -388,7 +388,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   };
 
   return (
-    <div className={clsx(mode === 'list' && 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
+    <div className={clsx(mode === 'grid' ? 'h-full' : 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
       <div
         className={clsx(
           'visible-focus-inset-2 group',

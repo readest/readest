@@ -134,6 +134,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const viewSettings = settings.globalViewSettings;
   const demoBooks = useDemoBooks();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  // Mirror `scrollRef` in state so react-virtuoso's `customScrollParent` (which
+  // only reads the prop once per mount cycle) always sees a real element
+  // rather than `null` on the Bookshelf's first render.
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null);
+  const attachScrollRef = useCallback((el: HTMLDivElement | null) => {
+    scrollRef.current = el;
+    setScrollEl(el);
+  }, []);
   const containerRef: React.MutableRefObject<HTMLDivElement | null> = useRef(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -162,7 +170,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
-    containerRef,
+    scrollRef,
     pullLibrary.bind(null, false, true),
     pullLibrary.bind(null, true, true),
   );
@@ -942,7 +950,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       {showBookshelf &&
         (libraryBooks.some((book) => !book.deletedAt) ? (
           <div
-            ref={scrollRef}
+            ref={attachScrollRef}
             aria-label={_('Your Bookshelf')}
             className='library-scroller flex-grow'
           >
@@ -962,6 +970,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 isSelectMode={isSelectMode}
                 isSelectAll={isSelectAll}
                 isSelectNone={isSelectNone}
+                scrollParentEl={scrollEl}
                 handleImportBooks={handleImportBooksFromFiles}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
