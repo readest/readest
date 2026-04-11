@@ -24,10 +24,15 @@ export interface OPDSCatalog {
   username?: string;
   password?: string;
   customHeaders?: Record<string, string>;
+  autoDownload?: boolean;
+  lastCheckedAt?: number;
+  downloadedEntryIds?: string[];
 }
 
 export interface OPDSFeed {
   metadata: {
+    id?: string;
+    updated?: string;
     title?: string;
     subtitle?: string;
   };
@@ -40,6 +45,8 @@ export interface OPDSFeed {
 
 export interface OPDSPublication {
   metadata: {
+    id?: string;
+    updated?: string;
     title: string;
     subtitle?: string;
     author?: OPDSPerson[];

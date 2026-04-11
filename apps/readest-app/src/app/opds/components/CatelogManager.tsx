@@ -2,7 +2,16 @@
 
 import clsx from 'clsx';
 import { useState } from 'react';
-import { IoAdd, IoTrash, IoOpenOutline, IoBook, IoEyeOff, IoEye, IoPencil } from 'react-icons/io5';
+import {
+  IoAdd,
+  IoTrash,
+  IoOpenOutline,
+  IoBook,
+  IoEyeOff,
+  IoEye,
+  IoPencil,
+  IoCloudDownloadOutline,
+} from 'react-icons/io5';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -68,6 +77,7 @@ const EMPTY_NEW_CATALOG = {
   password: '',
   customHeadersInput: '',
   proxyConsent: false,
+  autoDownload: false,
 };
 
 export function CatalogManager() {
@@ -157,6 +167,7 @@ export function CatalogManager() {
       customHeaders: hasOPDSCustomHeaders(parsedHeaders.headers)
         ? parsedHeaders.headers
         : undefined,
+      autoDownload: newCatalog.autoDownload || undefined,
     };
 
     if (editingCatalogId) {
@@ -183,6 +194,7 @@ export function CatalogManager() {
       password: catalog.password || '',
       customHeadersInput: formatOPDSCustomHeadersInput(catalog.customHeaders),
       proxyConsent: false,
+      autoDownload: catalog.autoDownload || false,
     });
     setEditingCatalogId(catalog.id);
     setShowAddDialog(true);
@@ -198,6 +210,10 @@ export function CatalogManager() {
 
   const handleRemoveCatalog = (id: string) => {
     saveCatalogs(catalogs.filter((c) => c.id !== id));
+  };
+
+  const handleToggleAutoDownload = (id: string) => {
+    saveCatalogs(catalogs.map((c) => (c.id === id ? { ...c, autoDownload: !c.autoDownload } : c)));
   };
 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
@@ -295,6 +311,20 @@ export function CatalogManager() {
                         </p>
                       )}
                     </div>
+                  </div>
+                  <div className='mt-2 flex items-center gap-2'>
+                    <label className='label cursor-pointer gap-2 p-0'>
+                      <input
+                        type='checkbox'
+                        className='toggle toggle-sm toggle-primary'
+                        checked={!!catalog.autoDownload}
+                        onChange={() => handleToggleAutoDownload(catalog.id)}
+                      />
+                      <span className='label-text text-xs'>
+                        <IoCloudDownloadOutline className='mr-1 inline h-3.5 w-3.5' />
+                        {_('Auto-download')}
+                      </span>
+                    </label>
                   </div>
                   <div className='card-actions mt-4 justify-end'>
                     <button
@@ -534,6 +564,26 @@ export function CatalogManager() {
                     rows={2}
                     disabled={isValidating}
                   />
+                </div>
+
+                <div className='form-control'>
+                  <label className='label cursor-pointer justify-start gap-3 p-0'>
+                    <input
+                      type='checkbox'
+                      className='toggle toggle-sm toggle-primary'
+                      checked={newCatalog.autoDownload}
+                      onChange={(e) =>
+                        setNewCatalog({ ...newCatalog, autoDownload: e.target.checked })
+                      }
+                      disabled={isValidating}
+                    />
+                    <div>
+                      <span className='label-text'>{_('Auto-download new items')}</span>
+                      <p className='text-base-content/60 text-xs'>
+                        {_('Automatically download new publications when the app syncs')}
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className='modal-action'>

@@ -4,8 +4,11 @@ import { useSync } from '@/hooks/useSync';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
+import { syncAllOPDSCatalogs } from '@/services/opdsSyncService';
+import { saveSysSettings } from '@/helpers/settings';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
@@ -13,7 +16,7 @@ import { eventDispatcher } from '@/utils/event';
 export const useBooksSync = () => {
   const _ = useTranslation();
   const { user } = useAuth();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
   const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
@@ -185,5 +188,61 @@ export const useBooksSync = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedBooks, updateLibrary, debouncedUpdateLibrary]);
 
-  return { pullLibrary, pushLibrary };
+  const isSyncingOPDSRef = useRef(false);
+
+  const pullOPDSCatalogs = useCallback(
+    async (verbose = false) => {
+      if (!appService || !libraryLoaded) return;
+      if (isSyncingOPDSRef.current) return;
+
+      const { settings } = useSettingsStore.getState();
+      const catalogs = settings.opdsCatalogs ?? [];
+      const hasAutoDownload = catalogs.some((c) => c.autoDownload && !c.disabled);
+      if (!hasAutoDownload) return;
+
+      try {
+        isSyncingOPDSRef.current = true;
+        const librarySnapshot = [...useLibraryStore.getState().library];
+        const { newBooks, totalNewBooks, updatedCatalogs } = await syncAllOPDSCatalogs(
+          catalogs,
+          appService,
+          librarySnapshot,
+        );
+
+        if (totalNewBooks > 0) {
+          // Merge new books into the current store state (which may have changed during sync)
+          const currentLibrary = useLibraryStore.getState().library;
+          const existingHashes = new Set(currentLibrary.map((b) => b.hash));
+          const uniqueNewBooks = newBooks.filter((b) => !existingHashes.has(b.hash));
+          if (uniqueNewBooks.length > 0) {
+            const merged = [...uniqueNewBooks, ...currentLibrary];
+            setLibrary(merged);
+            appService.saveLibraryBooks(merged);
+          }
+        }
+
+        saveSysSettings(envConfig, 'opdsCatalogs', updatedCatalogs);
+
+        if (verbose && totalNewBooks > 0) {
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            message: _('{{count}} new item(s) downloaded from OPDS', { count: totalNewBooks }),
+          });
+        }
+      } catch (error) {
+        console.error('OPDS sync error:', error);
+      } finally {
+        isSyncingOPDSRef.current = false;
+      }
+    },
+    [_, envConfig, appService, libraryLoaded, setLibrary],
+  );
+
+  // Trigger OPDS sync on startup (after library is loaded)
+  useEffect(() => {
+    if (!libraryLoaded) return;
+    pullOPDSCatalogs();
+  }, [libraryLoaded, pullOPDSCatalogs]);
+
+  return { pullLibrary, pushLibrary, pullOPDSCatalogs };
 };

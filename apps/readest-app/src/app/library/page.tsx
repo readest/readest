@@ -166,13 +166,19 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenWithBooks();
   useTransferQueue(libraryLoaded);
 
-  const { pullLibrary, pushLibrary } = useBooksSync();
+  const { pullLibrary, pushLibrary, pullOPDSCatalogs } = useBooksSync();
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
     scrollRef,
-    pullLibrary.bind(null, false, true),
-    pullLibrary.bind(null, true, true),
+    async () => {
+      await pullLibrary(false, true);
+      await pullOPDSCatalogs(true);
+    },
+    async () => {
+      await pullLibrary(true, true);
+      await pullOPDSCatalogs(true);
+    },
   );
   useScreenWakeLock(settings.screenWakeLock);
 
