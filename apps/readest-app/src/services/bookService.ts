@@ -240,7 +240,7 @@ export async function importBook(
 
     const hash = await partialMD5(fileobj);
     const metaHash = getMetadataHash(loadedBook.metadata);
-    let existingBook = books.filter((b) => b.hash === hash)[0];
+    let existingBook = books.find((b) => b.hash === hash);
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
     if (existingBook) {
