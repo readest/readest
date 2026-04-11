@@ -78,15 +78,20 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     settings: SystemSettings,
   ) => {
     const appService = await envConfig.getAppService();
-    const { library, setLibrary } = useLibraryStore.getState();
-    const bookIndex = library.findIndex((b) => b.hash === bookKey.split('-')[0]);
-    if (bookIndex == -1) return;
-    const book = library.splice(bookIndex, 1)[0]!;
+    const { library, hashIndex, rebuildHashIndex } = useLibraryStore.getState();
+    const hash = bookKey.split('-')[0]!;
+    const idx = hashIndex.get(hash);
+    if (idx === undefined) return;
+
+    // Move book to front of library (most recently read)
+    const book = library[idx]!;
     book.progress = config.progress;
     book.updatedAt = Date.now();
     book.downloadedAt = book.downloadedAt || Date.now();
+    library.splice(idx, 1);
     library.unshift(book);
-    setLibrary([...library]);
+    rebuildHashIndex();
+
     config.updatedAt = Date.now();
     await appService.saveBookConfig(book, config, settings);
     await appService.saveLibraryBooks(library);

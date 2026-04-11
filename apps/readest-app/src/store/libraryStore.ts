@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Book, BookGroupType, BooksGroup } from '@/types/book';
+import { Book, BookGroupType, BooksGroup, ReadingStatus } from '@/types/book';
 import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
 import { BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
@@ -14,25 +14,41 @@ interface LibraryState {
   currentBookshelf: (Book | BooksGroup)[];
   selectedBooks: Set<string>; // hashes for books, ids for groups
   groups: Record<string, string>;
+  hashIndex: Map<string, number>; // hash -> array index for O(1) lookup
   setIsSyncing: (syncing: boolean) => void;
   setSyncProgress: (progress: number) => void;
   setSelectedBooks: (ids: string[]) => void;
   getSelectedBooks: () => string[];
   toggleSelectedBook: (id: string) => void;
   getVisibleLibrary: () => Book[];
+  getBookByHash: (hash: string) => Book | undefined;
   setCheckOpenWithBooks: (check: boolean) => void;
   setCheckLastOpenBooks: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
+  updateBookProgress: (
+    hash: string,
+    progress: [number, number],
+    readingStatus?: ReadingStatus,
+  ) => void;
   updateBook: (envConfig: EnvConfigType, book: Book) => void;
   updateBooks: (envConfig: EnvConfigType, books: Book[]) => void;
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
   refreshGroups: () => void;
+  rebuildHashIndex: () => void;
   addGroup: (name: string) => BookGroupType;
   getGroups: () => BookGroupType[];
   getGroupId: (path: string) => string | undefined;
   getGroupName: (id: string) => string | undefined;
   getParentPath: (path: string) => string | undefined;
   getGroupsByParent: (parentPath?: string) => BookGroupType[];
+}
+
+function buildHashIndex(books: Book[]): Map<string, number> {
+  const index = new Map<string, number>();
+  for (let i = 0; i < books.length; i++) {
+    index.set(books[i]!.hash, i);
+  }
+  return index;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -43,12 +59,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   currentBookshelf: [],
   selectedBooks: new Set(),
   groups: {},
+  hashIndex: new Map(),
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
 
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
   setSyncProgress: (progress: number) => set({ syncProgress: progress }),
   getVisibleLibrary: () => get().library.filter((book) => !book.deletedAt),
+  getBookByHash: (hash: string) => {
+    const { library, hashIndex } = get();
+    const idx = hashIndex.get(hash);
+    return idx !== undefined ? library[idx] : undefined;
+  },
 
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => {
     set({ currentBookshelf: bookshelf });
@@ -57,18 +79,32 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setCheckLastOpenBooks: (check) => set({ checkLastOpenBooks: check }),
   setLibrary: (books) => {
-    const { refreshGroups } = get();
-    set({ library: books, libraryLoaded: true });
-    refreshGroups();
+    set({ library: books, libraryLoaded: true, hashIndex: buildHashIndex(books) });
+    get().refreshGroups();
   },
+
+  // Lightweight progress update — no array copy, no refreshGroups
+  updateBookProgress: (hash, progress, readingStatus?) => {
+    const { library, hashIndex } = get();
+    const idx = hashIndex.get(hash);
+    if (idx === undefined) return;
+    const book = library[idx]!;
+    library[idx] = { ...book, progress, readingStatus, updatedAt: Date.now() };
+    set({ library });
+  },
+
+  rebuildHashIndex: () => {
+    set({ hashIndex: buildHashIndex(get().library) });
+  },
+
   updateBook: async (envConfig: EnvConfigType, book: Book) => {
     const appService = await envConfig.getAppService();
-    const { library } = get();
-    const bookIndex = library.findIndex((b) => b.hash === book.hash);
-    if (bookIndex !== -1) {
-      library[bookIndex] = book;
+    const { library, hashIndex } = get();
+    const idx = hashIndex.get(book.hash);
+    if (idx !== undefined) {
+      library[idx] = book;
     }
-    set({ library: [...library] });
+    set({ library: [...library], hashIndex: buildHashIndex(library) });
     await appService.saveLibraryBooks(library);
   },
   updateBooks: async (envConfig: EnvConfigType, books: Book[]) => {
@@ -78,7 +114,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const { library, refreshGroups } = get();
 
     const newLibrary = Array.from(new Map([...library, ...books].map((b) => [b.hash, b])).values());
-    set({ library: newLibrary });
+    set({ library: newLibrary, hashIndex: buildHashIndex(newLibrary) });
     refreshGroups();
     await appService.saveLibraryBooks(newLibrary);
   },

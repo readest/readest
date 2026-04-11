@@ -26,7 +26,11 @@ vi.mock('@/store/libraryStore', () => {
   return {
     useLibraryStore: create(() => ({
       library: [],
+      hashIndex: new Map(),
       setLibrary: vi.fn(),
+      getBookByHash: vi.fn(),
+      updateBookProgress: vi.fn(),
+      rebuildHashIndex: vi.fn(),
     })),
   };
 });

@@ -33,6 +33,7 @@ describe('libraryStore', () => {
       currentBookshelf: [],
       selectedBooks: new Set(),
       groups: {},
+      hashIndex: new Map(),
     });
   });
 
@@ -46,6 +47,16 @@ describe('libraryStore', () => {
       expect(state.libraryLoaded).toBe(true);
     });
 
+    test('builds hash index on setLibrary', () => {
+      const books = [makeBook({ hash: 'a' }), makeBook({ hash: 'b' })];
+      useLibraryStore.getState().setLibrary(books);
+
+      const state = useLibraryStore.getState();
+      expect(state.hashIndex.get('a')).toBe(0);
+      expect(state.hashIndex.get('b')).toBe(1);
+      expect(state.hashIndex.size).toBe(2);
+    });
+
     test('calls refreshGroups after setting library', () => {
       const book = makeBook({ hash: 'a', groupName: 'Fiction' });
       useLibraryStore.getState().setLibrary([book]);
@@ -53,6 +64,66 @@ describe('libraryStore', () => {
       const groups = useLibraryStore.getState().getGroups();
       expect(groups).toHaveLength(1);
       expect(groups[0]!.name).toBe('Fiction');
+    });
+  });
+
+  describe('getBookByHash', () => {
+    test('returns the book for a known hash', () => {
+      const books = [makeBook({ hash: 'a', title: 'Book A' }), makeBook({ hash: 'b' })];
+      useLibraryStore.getState().setLibrary(books);
+
+      expect(useLibraryStore.getState().getBookByHash('a')?.title).toBe('Book A');
+    });
+
+    test('returns undefined for unknown hash', () => {
+      useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
+      expect(useLibraryStore.getState().getBookByHash('nonexistent')).toBeUndefined();
+    });
+  });
+
+  describe('updateBookProgress', () => {
+    test('updates progress and readingStatus in-place', () => {
+      const books = [makeBook({ hash: 'a', progress: [1, 100], readingStatus: 'unread' })];
+      useLibraryStore.getState().setLibrary(books);
+
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], undefined);
+
+      const book = useLibraryStore.getState().getBookByHash('a');
+      expect(book?.progress).toEqual([50, 100]);
+      expect(book?.readingStatus).toBeUndefined();
+      expect(book?.updatedAt).toBeGreaterThan(0);
+    });
+
+    test('does nothing for unknown hash', () => {
+      useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
+      useLibraryStore.getState().updateBookProgress('nonexistent', [1, 1]);
+      expect(useLibraryStore.getState().library).toHaveLength(1);
+    });
+
+    test('marks book as finished at 100%', () => {
+      const books = [makeBook({ hash: 'a' })];
+      useLibraryStore.getState().setLibrary(books);
+
+      useLibraryStore.getState().updateBookProgress('a', [100, 100], 'finished');
+
+      expect(useLibraryStore.getState().getBookByHash('a')?.readingStatus).toBe('finished');
+    });
+  });
+
+  describe('rebuildHashIndex', () => {
+    test('rebuilds index after manual array mutation', () => {
+      const books = [makeBook({ hash: 'a' }), makeBook({ hash: 'b' })];
+      useLibraryStore.getState().setLibrary(books);
+
+      // Simulate manual splice + unshift (like saveConfig does)
+      const { library } = useLibraryStore.getState();
+      const [book] = library.splice(1, 1);
+      library.unshift(book!);
+      useLibraryStore.getState().rebuildHashIndex();
+
+      const state = useLibraryStore.getState();
+      expect(state.hashIndex.get('b')).toBe(0);
+      expect(state.hashIndex.get('a')).toBe(1);
     });
   });
 
