@@ -3,6 +3,25 @@ import { md5 } from 'js-md5';
 
 export const uniqueId = () => Math.random().toString(36).substring(2, 9);
 
+// Schedule non critical work to run after the browser is idle.
+// Falls back to setTimeout on platforms without requestIdleCallback (iOS WebKit).
+export const runIdleTask = (cb: () => void, timeoutMs = 2000): void => {
+  if (typeof window === 'undefined') {
+    cb();
+    return;
+  }
+  const ric = (
+    window as unknown as {
+      requestIdleCallback?: (fn: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (typeof ric === 'function') {
+    ric(cb, { timeout: timeoutMs });
+  } else {
+    setTimeout(cb, 1);
+  }
+};
+
 export const randomMd5 = () => md5(Math.random().toString());
 
 export const getContentMd5 = (content: unknown) => md5(JSON.stringify(content));

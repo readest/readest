@@ -148,6 +148,14 @@ export const updateToc = async (
   const sections = bookDoc?.sections || [];
   if (!items.length || !sections.length) return;
 
+  // Resolve lazy per-section TOC subitems (no-op on non-EPUB bookDocs).
+  // This is the expensive XHTML-loading path that used to run eagerly in
+  // foliate-js EPUB.init(); now updateToc owns it, and updateToc itself
+  // runs off the critical path in initViewState.
+  if (bookDoc.ensureSubItemsResolved) {
+    await bookDoc.ensureSubItemsResolved();
+  }
+
   // Step 1: Apply Chinese variant conversion if needed
   if (convertChineseVariant && convertChineseVariant !== 'none') {
     await initSimpleCC();

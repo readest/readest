@@ -77,6 +77,8 @@ export interface BookDoc {
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
+  // Resolves per-section TOC subitems lazily. Safe to call multiple times.
+  ensureSubItemsResolved?: () => Promise<void>;
 }
 
 export const EXTS: Record<BookFormat, string> = {

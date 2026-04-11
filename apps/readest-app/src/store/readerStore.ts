@@ -20,7 +20,7 @@ import { SUPPORTED_LANGNAMES } from '@/services/constants';
 import { useSettingsStore } from './settingsStore';
 import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
-import { uniqueId } from '@/utils/misc';
+import { runIdleTask, uniqueId } from '@/utils/misc';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -162,30 +162,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         bookDoc = doc.book;
       }
       const config = await appService.loadBookConfig(book, settings);
-      // Import annotations from third-party readers on first open
-      if (bookDoc.metadata.identifier) {
-        const { getAnnotationProviders } = await import('@/services/annotation');
-        for (const provider of getAnnotationProviders()) {
-          if (provider.isAvailable(appService)) {
-            const merged = await provider.importAnnotations(
-              appService,
-              bookDoc.metadata.identifier,
-              config,
-            );
-            if (merged !== config) {
-              Object.assign(config, merged);
-              await appService.saveBookConfig(book, config, settings);
-            }
-          }
-        }
-      }
       // Filter out invalid booknotes
       config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
-      await updateToc(
-        bookDoc,
-        config.viewSettings?.sortedTOC ?? false,
-        config.viewSettings?.convertChineseVariant ?? 'none',
-      );
       if (!bookDoc.metadata.title) {
         bookDoc.metadata.title = getBaseFilename(file.name);
       }
@@ -211,9 +189,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             book.metadata.seriesIndex ?? parseFloat(series.position || '0');
         }
       }
-      // TODO: uncomment this when we can ensure metaHash is correctly generated for all books
-      // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
-      book.metaHash = getMetadataHash(bookDoc.metadata);
+      // Reuse cached metaHash when present, metadata rarely changes between opens
+      book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
 
       const isFixedLayout =
         bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(book.format);
@@ -247,6 +224,59 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           },
         },
       }));
+
+      // Defer expensive post-open work (TOC location indexing and third-party
+      // annotation imports) off the critical path. These do not block first
+      // paint. The foliate view mounts on the stored bookDoc and the sidebar
+      // re-renders once these complete.
+      runIdleTask(() => {
+        updateToc(
+          bookDoc!,
+          config.viewSettings?.sortedTOC ?? false,
+          config.viewSettings?.convertChineseVariant ?? 'none',
+        )
+          .then(() => {
+            // Write bookDoc back so TOC sidebar re-subscribes with resolved locations.
+            const latest = useBookDataStore.getState().booksData[id];
+            if (!latest || latest.bookDoc !== bookDoc) return;
+            useBookDataStore.setState((state) => ({
+              booksData: {
+                ...state.booksData,
+                [id]: { ...latest, bookDoc: bookDoc! },
+              },
+            }));
+          })
+          .catch((err) => console.error('Deferred updateToc failed:', err));
+      });
+      if (bookDoc.metadata.identifier) {
+        runIdleTask(() => {
+          (async () => {
+            const { getAnnotationProviders } = await import('@/services/annotation');
+            for (const provider of getAnnotationProviders()) {
+              if (provider.isAvailable(appService)) {
+                const merged = await provider.importAnnotations(
+                  appService,
+                  bookDoc!.metadata.identifier!,
+                  config,
+                );
+                if (merged !== config) {
+                  Object.assign(config, merged);
+                  await appService.saveBookConfig(book, config, settings);
+                  const latest = useBookDataStore.getState().booksData[id];
+                  if (latest) {
+                    useBookDataStore.setState((state) => ({
+                      booksData: {
+                        ...state.booksData,
+                        [id]: { ...latest, config: { ...config } },
+                      },
+                    }));
+                  }
+                }
+              }
+            }
+          })().catch((err) => console.error('Deferred annotation import failed:', err));
+        });
+      }
     } catch (error) {
       console.error(error);
       set((state) => ({
