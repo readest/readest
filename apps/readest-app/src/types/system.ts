@@ -132,6 +132,7 @@ export interface AppService {
     saveCover?: boolean,
     overwrite?: boolean,
     transient?: boolean,
+    lookupIndex?: import('@/services/bookService').BookLookupIndex,
   ): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;

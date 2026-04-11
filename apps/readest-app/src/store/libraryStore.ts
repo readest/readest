@@ -26,13 +26,21 @@ interface LibraryState {
   setCheckOpenWithBooks: (check: boolean) => void;
   setCheckLastOpenBooks: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
+  // The third parameter is required (no `?`) so a future caller cannot
+  // accidentally clear `readingStatus` by omitting it. Pass the desired final
+  // value explicitly: the existing `readingStatus`, `undefined` to clear, or
+  // a new status like 'finished'.
   updateBookProgress: (
     hash: string,
     progress: [number, number],
-    readingStatus?: ReadingStatus,
+    readingStatus: ReadingStatus | undefined,
   ) => void;
-  updateBook: (envConfig: EnvConfigType, book: Book) => void;
-  updateBooks: (envConfig: EnvConfigType, books: Book[]) => void;
+  updateBook: (envConfig: EnvConfigType, book: Book) => Promise<void>;
+  updateBooks: (
+    envConfig: EnvConfigType,
+    books: Book[],
+    options?: { skipSave?: boolean },
+  ) => Promise<void>;
   setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
   refreshGroups: () => void;
   rebuildHashIndex: () => void;
@@ -90,14 +98,27 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     get().refreshGroups();
   },
 
-  // Lightweight progress update — no array copy, no refreshGroups
-  updateBookProgress: (hash, progress, readingStatus?) => {
+  // Immutable lightweight progress update — skips refreshGroups (which is the
+  // expensive O(n) MD5 path) but still creates new array references for
+  // `library` and `visibleLibrary` so Zustand subscribers re-render correctly
+  // and the visibleLibrary cache stays in sync.
+  updateBookProgress: (hash, progress, readingStatus) => {
     const { library, hashIndex } = get();
     const idx = hashIndex.get(hash);
     if (idx === undefined) return;
     const book = library[idx]!;
-    library[idx] = { ...book, progress, readingStatus, updatedAt: Date.now() };
-    set({ library });
+    const updatedBook: Book = {
+      ...book,
+      progress,
+      readingStatus,
+      updatedAt: Date.now(),
+    };
+    const newLibrary = library.slice();
+    newLibrary[idx] = updatedBook;
+    set({
+      library: newLibrary,
+      visibleLibrary: newLibrary.filter((b) => !b.deletedAt),
+    });
   },
 
   rebuildHashIndex: () => {
@@ -108,20 +129,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const appService = await envConfig.getAppService();
     const { library, hashIndex } = get();
     const idx = hashIndex.get(book.hash);
-    if (idx !== undefined) {
-      library[idx] = book;
-    }
+    // Build the new library immutably — never mutate the previous-state array.
+    const newLibrary =
+      idx !== undefined
+        ? [...library.slice(0, idx), book, ...library.slice(idx + 1)]
+        : library.slice();
     set({
-      library: [...library],
-      hashIndex: buildHashIndex(library),
-      visibleLibrary: library.filter((b) => !b.deletedAt),
+      library: newLibrary,
+      hashIndex: buildHashIndex(newLibrary),
+      visibleLibrary: newLibrary.filter((b) => !b.deletedAt),
     });
-    await appService.saveLibraryBooks(library);
+    await appService.saveLibraryBooks(newLibrary);
   },
-  updateBooks: async (envConfig: EnvConfigType, books: Book[]) => {
+  updateBooks: async (
+    envConfig: EnvConfigType,
+    books: Book[],
+    options?: { skipSave?: boolean },
+  ) => {
     if (!books?.length) return;
 
-    const appService = await envConfig.getAppService();
     const { library, refreshGroups } = get();
 
     const newLibrary = Array.from(new Map([...library, ...books].map((b) => [b.hash, b])).values());
@@ -131,7 +157,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       visibleLibrary: newLibrary.filter((b) => !b.deletedAt),
     });
     refreshGroups();
-    await appService.saveLibraryBooks(newLibrary);
+
+    if (!options?.skipSave) {
+      const appService = await envConfig.getAppService();
+      await appService.saveLibraryBooks(newLibrary);
+    }
   },
 
   setSelectedBooks: (ids: string[]) => {

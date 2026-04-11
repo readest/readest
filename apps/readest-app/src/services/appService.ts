@@ -224,6 +224,7 @@ export abstract class BaseAppService implements AppService {
     saveCover: boolean = true,
     overwrite: boolean = false,
     transient: boolean = false,
+    lookupIndex?: BookSvc.BookLookupIndex,
   ): Promise<Book | null> {
     return BookSvc.importBook(
       this.fs,
@@ -235,6 +236,7 @@ export abstract class BaseAppService implements AppService {
       transient,
       this.saveBookConfig.bind(this),
       this.generateCoverImageUrl.bind(this),
+      lookupIndex,
     );
   }
 

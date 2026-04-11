@@ -24,7 +24,7 @@ interface BookDataState {
     bookKey: string,
     config: BookConfig,
     settings: SystemSettings,
-  ) => void;
+  ) => Promise<void>;
   updateBooknotes: (key: string, booknotes: BookNote[]) => BookConfig | undefined;
   getBookData: (keyOrId: string) => BookData | null;
   clearBookData: (keyOrId: string) => void;
@@ -77,23 +77,28 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     settings: SystemSettings,
   ) => {
     const appService = await envConfig.getAppService();
-    const { library, hashIndex, rebuildHashIndex } = useLibraryStore.getState();
+    const { library, hashIndex, setLibrary } = useLibraryStore.getState();
     const hash = bookKey.split('-')[0]!;
     const idx = hashIndex.get(hash);
     if (idx === undefined) return;
 
-    // Move book to front of library (most recently read)
-    const book = library[idx]!;
-    book.progress = config.progress;
-    book.updatedAt = Date.now();
-    book.downloadedAt = book.downloadedAt || Date.now();
-    library.splice(idx, 1);
-    library.unshift(book);
-    rebuildHashIndex();
+    // Immutably move the book to the front of the library with updated
+    // progress and timestamps. We do NOT mutate the existing book object or
+    // the existing library array — Zustand subscribers see fresh references
+    // and the visibleLibrary cache stays in sync via setLibrary's full update.
+    const original = library[idx]!;
+    const updatedBook: Book = {
+      ...original,
+      progress: config.progress,
+      updatedAt: Date.now(),
+      downloadedAt: original.downloadedAt || Date.now(),
+    };
+    const newLibrary = [updatedBook, ...library.slice(0, idx), ...library.slice(idx + 1)];
+    setLibrary(newLibrary);
 
     config.updatedAt = Date.now();
-    await appService.saveBookConfig(book, config, settings);
-    await appService.saveLibraryBooks(library);
+    await appService.saveBookConfig(updatedBook, config, settings);
+    await appService.saveLibraryBooks(useLibraryStore.getState().library);
   },
   updateBooknotes: (key: string, booknotes: BookNote[]) => {
     let updatedConfig: BookConfig | undefined;

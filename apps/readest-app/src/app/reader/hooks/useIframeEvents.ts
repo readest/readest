@@ -11,8 +11,24 @@ export const useMouseEvent = (
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
 ) => {
   const { hoveredBookKey } = useReaderStore();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debounceFlip = useMemo(() => debounce(handlePageFlip, 100), []);
+  // Keep the latest handlePageFlip in a ref so the debounced wrapper (created
+  // once via useMemo) always invokes the most recent closure. Without this
+  // ref, the empty-deps useMemo would freeze the first-render handler and any
+  // state captured in subsequent re-renders would be invisible to wheel-driven
+  // page flips.
+  const handlePageFlipRef = useRef(handlePageFlip);
+  useEffect(() => {
+    handlePageFlipRef.current = handlePageFlip;
+  }, [handlePageFlip]);
+  const debounceFlip = useMemo(
+    () =>
+      debounce(
+        (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) =>
+          handlePageFlipRef.current(msg),
+        100,
+      ),
+    [],
+  );
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
