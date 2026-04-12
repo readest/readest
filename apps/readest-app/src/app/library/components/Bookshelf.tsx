@@ -3,6 +3,8 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
+import { useOverlayScrollbars } from 'overlayscrollbars-react';
+import 'overlayscrollbars/overlayscrollbars.css';
 import {
   Virtuoso,
   VirtuosoGrid,
@@ -54,13 +56,7 @@ interface BookshelfProps {
   isSelectMode: boolean;
   isSelectAll: boolean;
   isSelectNone: boolean;
-  /**
-   * The DOM element whose `overflow-y: auto` backs the bookshelf scroll.
-   * Passed to react-virtuoso as `customScrollParent` so virtualization uses
-   * the parent page scroller (and existing pull-to-refresh / scroll save /
-   * restore logic keeps working).
-   */
-  scrollParentEl: HTMLDivElement | null;
+  onScrollerRef: (el: HTMLDivElement | null) => void;
   handleImportBooks: () => void;
   handleBookDownload: (
     book: Book,
@@ -91,12 +87,6 @@ const BOOKSHELF_GRID_CLASSES =
 
 const BOOKSHELF_LIST_CLASSES = 'bookshelf-items transform-wrapper flex flex-col';
 
-/**
- * Custom List component for VirtuosoGrid. Tags the wrapping element with the
- * `transform-wrapper` class that `usePullToRefresh` transforms during a pull
- * gesture, and applies the runtime `libraryColumns` override when the user
- * has opted out of the responsive auto grid.
- */
 const BookshelfGridList: GridComponents<BookshelfListContext>['List'] = React.forwardRef<
   HTMLDivElement,
   GridListProps & { context?: BookshelfListContext }
@@ -118,11 +108,6 @@ const BookshelfGridList: GridComponents<BookshelfListContext>['List'] = React.fo
 ));
 BookshelfGridList.displayName = 'BookshelfGridList';
 
-/**
- * Custom List component for the linear Virtuoso (list view). Same purpose as
- * BookshelfGridList — carries the `transform-wrapper` class for pull-to-
- * refresh.
- */
 const BookshelfLinearList: Components['List'] = React.forwardRef<HTMLDivElement, ListProps>(
   ({ children, style, 'data-testid': testId }, ref) => (
     <div ref={ref} data-testid={testId} className={BOOKSHELF_LIST_CLASSES} style={style}>
@@ -134,9 +119,11 @@ BookshelfLinearList.displayName = 'BookshelfLinearList';
 
 const GRID_VIRTUOSO_COMPONENTS: GridComponents<BookshelfListContext> = {
   List: BookshelfGridList,
+  Footer: () => <div style={{ height: 34 }} />,
 };
 const LIST_VIRTUOSO_COMPONENTS: Components = {
   List: BookshelfLinearList,
+  Footer: () => <div style={{ height: 34 }} />,
 };
 
 const Bookshelf: React.FC<BookshelfProps> = ({
@@ -144,7 +131,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   isSelectMode,
   isSelectAll,
   isSelectNone,
-  scrollParentEl,
+  onScrollerRef,
   handleImportBooks,
   handleBookUpload,
   handleBookDownload,
@@ -475,6 +462,40 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     };
   }, []);
 
+  // OverlayScrollbars + Virtuoso integration: Virtuoso manages its own
+  // scroller; OverlayScrollbars wraps it for overlay scrollbar rendering.
+  const osRootRef = useRef<HTMLDivElement>(null);
+  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const [initialize, osInstance] = useOverlayScrollbars({
+    defer: true,
+    options: { scrollbars: { autoHide: 'scroll' } },
+    events: {
+      initialized(instance) {
+        const { viewport } = instance.elements();
+        viewport.style.overflowX = 'var(--os-viewport-overflow-x)';
+        viewport.style.overflowY = 'var(--os-viewport-overflow-y)';
+      },
+    },
+  });
+
+  useEffect(() => {
+    const root = osRootRef.current;
+    if (scroller && root) {
+      initialize({ target: root, elements: { viewport: scroller } });
+    }
+    return () => osInstance()?.destroy();
+  }, [scroller, initialize, osInstance]);
+
+  // Expose the Virtuoso scroller to the parent for pull-to-refresh & scroll save.
+  const handleScrollerRef = useCallback(
+    (el: HTMLElement | Window | null) => {
+      const div = el instanceof HTMLElement ? el : null;
+      setScroller(div);
+      onScrollerRef(div as HTMLDivElement | null);
+    },
+    [onScrollerRef],
+  );
+
   const selectedBooks = getSelectedBooks();
   const isGridMode = viewMode === 'grid';
   const hasItems = sortedBookshelfItems.length > 0;
@@ -586,29 +607,31 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       tabIndex={-1}
       role='main'
       aria-label={_('Bookshelf')}
-      className='bookshelf focus:outline-none'
+      className='bookshelf min-h-0 flex-grow focus:outline-none'
     >
-      {scrollParentEl && hasItems && isGridMode && (
-        <VirtuosoGrid<unknown, BookshelfListContext>
-          customScrollParent={scrollParentEl}
-          overscan={200}
-          totalCount={gridTotalCount}
-          components={GRID_VIRTUOSO_COMPONENTS}
-          context={listContext}
-          computeItemKey={computeItemKey}
-          itemContent={renderBookshelfItem}
-        />
-      )}
-      {scrollParentEl && hasItems && !isGridMode && (
-        <Virtuoso
-          customScrollParent={scrollParentEl}
-          overscan={200}
-          totalCount={sortedBookshelfItems.length}
-          components={LIST_VIRTUOSO_COMPONENTS}
-          computeItemKey={computeItemKey}
-          itemContent={renderBookshelfItem}
-        />
-      )}
+      <div ref={osRootRef} data-overlayscrollbars-initialize='' className='h-full'>
+        {hasItems && isGridMode && (
+          <VirtuosoGrid<unknown, BookshelfListContext>
+            overscan={200}
+            totalCount={gridTotalCount}
+            components={GRID_VIRTUOSO_COMPONENTS}
+            context={listContext}
+            computeItemKey={computeItemKey}
+            itemContent={renderBookshelfItem}
+            scrollerRef={handleScrollerRef}
+          />
+        )}
+        {hasItems && !isGridMode && (
+          <Virtuoso
+            overscan={200}
+            totalCount={sortedBookshelfItems.length}
+            components={LIST_VIRTUOSO_COMPONENTS}
+            computeItemKey={computeItemKey}
+            itemContent={renderBookshelfItem}
+            scrollerRef={handleScrollerRef}
+          />
+        )}
+      </div>
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />

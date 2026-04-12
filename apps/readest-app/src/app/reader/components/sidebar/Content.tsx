@@ -6,6 +6,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import 'overlayscrollbars/overlayscrollbars.css';
 
 import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
@@ -75,7 +77,14 @@ const SidebarContent: React.FC<{
         {targetTab === 'history' ? (
           <ChatHistoryView bookKey={sideBarBookKey} />
         ) : (
-          <div className='min-h-0 flex-1'>
+          <OverlayScrollbarsComponent
+            className='min-h-0 flex-1'
+            options={{
+              scrollbars: { autoHide: 'scroll', clickScroll: true },
+              showNativeOverlaidScrollbars: false,
+            }}
+            defer
+          >
             <div
               className={clsx(
                 'scroll-container h-full transition-opacity duration-300 ease-in-out',
@@ -89,21 +98,13 @@ const SidebarContent: React.FC<{
                 <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
               )}
               {targetTab === 'annotations' && (
-                <div className='sidebar-scroller h-full'>
-                  <BooknoteView
-                    type='annotation'
-                    toc={bookDoc.toc ?? []}
-                    bookKey={sideBarBookKey}
-                  />
-                </div>
+                <BooknoteView type='annotation' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
               )}
               {targetTab === 'bookmarks' && (
-                <div className='sidebar-scroller h-full'>
-                  <BooknoteView type='bookmark' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
-                </div>
+                <BooknoteView type='bookmark' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
               )}
             </div>
-          </div>
+          </OverlayScrollbarsComponent>
         )}
       </div>
       <div

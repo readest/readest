@@ -6,7 +6,10 @@ import { useDrag } from '@/hooks/useDrag';
 
 const VELOCITY_THRESHOLD = 0.5;
 
-export const useSwipeToDismiss = (onDismiss: () => void) => {
+export const useSwipeToDismiss = (
+  onDismiss: () => void,
+  onDragMove?: (data: { clientY: number }) => void,
+) => {
   const { appService } = useEnv();
 
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -26,6 +29,8 @@ export const useSwipeToDismiss = (onDismiss: () => void) => {
       panel.style.transform = `translateY(${newTop * 100}%)`;
       overlay.style.opacity = `${1 - heightFraction}`;
     }
+
+    onDragMove?.(data);
   };
 
   const handleVerticalDragEnd = (data: { velocity: number; clientY: number }) => {
@@ -52,6 +57,7 @@ export const useSwipeToDismiss = (onDismiss: () => void) => {
       panel.style.transform = 'translateY(0%)';
       overlay.style.transition = 'opacity 0.3s ease-out';
       overlay.style.opacity = '0.8';
+      onDragMove?.({ clientY: 0 });
       if (appService?.hasHaptics) {
         impactFeedback('medium');
       }

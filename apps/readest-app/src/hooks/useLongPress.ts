@@ -35,6 +35,7 @@ export const useLongPress = (
 ): UseLongPressResult => {
   const [pressing, setPressing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const pressDelayRef = useRef<ReturnType<typeof setTimeout>>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const pointerId = useRef<number | null>(null);
   const hasPointerEventsRef = useRef(false);
@@ -48,6 +49,10 @@ export const useLongPress = (
     pointerId.current = null;
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (pressDelayRef.current) {
+      clearTimeout(pressDelayRef.current);
+      pressDelayRef.current = null;
     }
   }, []);
 
@@ -65,7 +70,10 @@ export const useLongPress = (
       pointerId.current = e.pointerId;
       startPosRef.current = { x: e.clientX, y: e.clientY };
       isLongPressTriggered.current = false;
-      setPressing(true);
+
+      pressDelayRef.current = setTimeout(() => {
+        setPressing(true);
+      }, 100);
 
       timerRef.current = setTimeout(() => {
         if (startPosRef.current) {

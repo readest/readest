@@ -38,6 +38,7 @@ const SideBar = ({}) => {
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const searchTermRef = useRef(searchTerm);
   const isMobile = window.innerWidth < 640;
+  const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
   const {
     sideBarWidth,
     isSideBarPinned,
@@ -74,7 +75,10 @@ const SideBar = ({}) => {
     overlayRef,
     panelHeight: sidebarHeight,
     handleVerticalDragStart,
-  } = useSwipeToDismiss(() => setSideBarVisible(false));
+  } = useSwipeToDismiss(
+    () => setSideBarVisible(false),
+    (data) => setIsFullHeightInMobile(data.clientY < 44),
+  );
 
   useEffect(() => {
     if (isSideBarVisible) {
@@ -191,9 +195,11 @@ const SideBar = ({}) => {
           width: isMobile ? '100%' : `${sideBarWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_SIDEBAR_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isSideBarPinned ? 'relative' : 'absolute',
-          paddingTop: systemUIVisible
-            ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-            : `${safeAreaInsets?.top || 0}px`,
+          paddingTop: isFullHeightInMobile
+            ? systemUIVisible
+              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
+              : `${safeAreaInsets?.top || 0}px`
+            : '0px',
         }}
       >
         <style jsx>{`
@@ -229,7 +235,7 @@ const SideBar = ({}) => {
               aria-label={_('Resize Sidebar')}
               aria-orientation='vertical'
               aria-valuenow={sidebarHeight.current}
-              className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+              className='drag-handle flex h-6 max-h-6 min-h-6 w-full cursor-row-resize items-center justify-center'
               onMouseDown={handleVerticalDragStart}
               onTouchStart={handleVerticalDragStart}
             >

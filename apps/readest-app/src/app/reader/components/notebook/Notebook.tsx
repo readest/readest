@@ -51,14 +51,18 @@ const Notebook: React.FC = ({}) => {
   const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<BookNote[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const isMobile = window.innerWidth < 640;
+  const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
 
   const {
     panelRef: notebookRef,
     overlayRef,
     panelHeight: notebookHeight,
     handleVerticalDragStart,
-  } = useSwipeToDismiss(() => setNotebookVisible(false));
-  const isMobile = window.innerWidth < 640;
+  } = useSwipeToDismiss(
+    () => setNotebookVisible(false),
+    (data) => setIsFullHeightInMobile(data.clientY < 44),
+  );
 
   const onNavigateEvent = async () => {
     const pinButton = document.querySelector('.sidebar-pin-btn');
@@ -254,7 +258,7 @@ const Notebook: React.FC = ({}) => {
         ref={notebookRef}
         className={clsx(
           'notebook-container right-0 flex min-w-60 select-none flex-col',
-          'full-height font-sans text-base font-normal sm:text-sm',
+          'full-height font-sans text-base font-normal transition-[padding-top] duration-300 sm:text-sm',
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
@@ -267,9 +271,11 @@ const Notebook: React.FC = ({}) => {
           width: isMobile ? '100%' : `${notebookWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
-          paddingTop: systemUIVisible
-            ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-            : `${safeAreaInsets?.top || 0}px`,
+          paddingTop: isFullHeightInMobile
+            ? systemUIVisible
+              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
+              : `${safeAreaInsets?.top || 0}px`
+            : '0px',
         }}
       >
         <style jsx>{`
@@ -305,7 +311,7 @@ const Notebook: React.FC = ({}) => {
               aria-label={_('Resize Notebook')}
               aria-orientation='vertical'
               aria-valuenow={notebookHeight.current}
-              className='drag-handle flex h-10 w-full cursor-row-resize items-center justify-center'
+              className='drag-handle flex h-6 max-h-6 min-h-6 w-full cursor-row-resize items-center justify-center'
               onMouseDown={handleVerticalDragStart}
               onTouchStart={handleVerticalDragStart}
             >

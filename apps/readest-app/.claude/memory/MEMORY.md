@@ -20,6 +20,9 @@
 - [D-pad Navigation](dpad-navigation.md) — Android TV remote / keyboard arrow navigation design, key files, and pitfalls
 - [Cloudflare Workers WebSocket](cloudflare-workers-websocket.md) — use fetch() Upgrade pattern (not `ws` npm); CF delivers binary frames as Blob (must serialize async decodes)
 
+## Patterns
+- [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) — useOverlayScrollbars hook integration for overlay scrollbars on mobile webviews
+
 ## Architecture Notes
 - foliate-js is a git submodule at `packages/foliate-js/`
 - Multiview paginator: loads adjacent sections in background, multiple View/Overlayer instances per book
