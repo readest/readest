@@ -241,6 +241,16 @@ export async function importBook(
     let format: BookFormat;
     let filename: string;
     let fileobj: File;
+    let zipEntries:
+      | Array<{
+          filename: string;
+          offset: number;
+          compressedSize: number;
+          uncompressedSize: number;
+          compressionMethod: number;
+          directory: boolean;
+        }>
+      | undefined;
 
     if (transient && typeof file !== 'string') {
       throw new Error('Transient import is only supported for file paths');
@@ -261,7 +271,10 @@ export async function importBook(
       if (!fileobj || fileobj.size === 0) {
         throw new Error('Invalid or empty book file');
       }
-      ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
+      const openResult = await new DocumentLoader(fileobj).open();
+      loadedBook = openResult.book;
+      format = openResult.format;
+      zipEntries = openResult.zipEntries;
       if (!loadedBook) {
         throw new Error('Unsupported or corrupted book file');
       }
@@ -380,6 +393,20 @@ export async function importBook(
         }
       } else {
         await fs.writeFile(bookFilename, 'Books', fileobj);
+      }
+    }
+    // Write EPUB cache for fast re-open (directory already exists at this point)
+    if (format === 'EPUB' && zipEntries && saveBook) {
+      try {
+        const { serializeEpubCache, EPUB_CACHE_FILENAME } = await import('@/libs/epubCacheUtils');
+        const cache = serializeEpubCache(zipEntries);
+        await fs.writeFile(
+          `${getDir(book)}/${EPUB_CACHE_FILENAME}`,
+          'Books',
+          JSON.stringify(cache),
+        );
+      } catch {
+        // Cache write failure is non-fatal
       }
     }
     if (saveCover && (!(await fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {

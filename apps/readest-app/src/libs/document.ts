@@ -33,6 +33,7 @@ export interface SectionItem {
   pageSpread?: 'left' | 'right' | 'center' | '';
   subitems?: Array<SectionItem>;
 
+  load: () => Promise<string | null>;
   createDocument: () => Promise<Document>;
 }
 
@@ -77,8 +78,10 @@ export interface BookDoc {
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
-  // Resolves per-section TOC subitems lazily. Safe to call multiple times.
+  // Optional: present on EPUB bookDocs (see foliate-js epub.js).
   ensureSubItemsResolved?: () => Promise<void>;
+  // Resolves a CFI string to a section index + anchor. EPUB only.
+  resolveCFI?: (cfi: string) => { index: number; anchor?: unknown } | null;
 }
 
 export const EXTS: Record<BookFormat, string> = {
@@ -195,9 +198,30 @@ export class DocumentLoader {
     );
   }
 
-  public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
+  public async open(): Promise<{
+    book: BookDoc;
+    format: BookFormat;
+    zipEntries?: Array<{
+      filename: string;
+      offset: number;
+      compressedSize: number;
+      uncompressedSize: number;
+      compressionMethod: number;
+      directory: boolean;
+    }>;
+  }> {
     let book = null;
     let format: BookFormat = 'EPUB';
+    let zipEntries:
+      | Array<{
+          filename: string;
+          offset: number;
+          compressedSize: number;
+          uncompressedSize: number;
+          compressionMethod: number;
+          directory: boolean;
+        }>
+      | undefined;
     if (!this.file.size) {
       throw new Error('File is empty');
     }
@@ -220,6 +244,24 @@ export class DocumentLoader {
           const { EPUB } = await import('foliate-js/epub.js');
           book = await new EPUB(loader).init();
           format = 'EPUB';
+          // Expose ZIP entry metadata for EPUB cache generation
+          zipEntries = entries.map(
+            (e: {
+              filename: string;
+              offset: number;
+              compressedSize: number;
+              uncompressedSize: number;
+              compressionMethod: number;
+              directory: boolean;
+            }) => ({
+              filename: e.filename,
+              offset: e.offset,
+              compressedSize: e.compressedSize,
+              uncompressedSize: e.uncompressedSize,
+              compressionMethod: e.compressionMethod,
+              directory: e.directory,
+            }),
+          );
         }
       } else if (await this.isPDF()) {
         const { makePDF } = await import('foliate-js/pdf.js');
@@ -252,7 +294,11 @@ export class DocumentLoader {
       }
       throw e;
     }
-    return { book, format } as { book: BookDoc; format: BookFormat };
+    return { book, format, zipEntries } as {
+      book: BookDoc;
+      format: BookFormat;
+      zipEntries?: typeof zipEntries;
+    };
   }
 }
 

@@ -485,6 +485,24 @@ const FoliateViewer: React.FC<{
       viewRef.current = view;
       setFoliateView(bookKey, view);
 
+      // Prefetch the target section's content in the background while styles
+      // and attributes are being applied below. The foliate-js Loader caches
+      // blob URLs (#cache Map), so paginator's goTo will hit cache instead
+      // of re-decompressing from ZIP. Overlaps ~200-300ms of section load
+      // with the style/attribute setup that follows.
+      const prefetchLocation = config.location;
+      if (prefetchLocation && typeof bookDoc.resolveCFI === 'function') {
+        const resolved = bookDoc.resolveCFI(prefetchLocation);
+        if (resolved?.index != null && bookDoc.sections[resolved.index]) {
+          bookDoc.sections[resolved.index]!.load().catch(() => {});
+        }
+      } else if (bookDoc.sections?.length) {
+        const firstLinear = bookDoc.sections.findIndex((s) => s.linear !== 'no');
+        if (firstLinear >= 0) {
+          bookDoc.sections[firstLinear]!.load().catch(() => {});
+        }
+      }
+
       const { book } = view;
 
       book.transformTarget?.addEventListener('load', async (event: Event) => {

@@ -122,6 +122,11 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     isPrimary = true,
     reload = false,
   ) => {
+    // Preload the foliate-view module in parallel with file I/O and EPUB
+    // parsing below. By the time FoliateViewer mounts, the module is already
+    // in the browser's module cache and its `await import(...)` resolves instantly.
+    import('foliate-js/view.js').catch(() => {});
+
     const booksData = useBookDataStore.getState().booksData;
     const bookData = booksData[id];
     set((state) => ({
@@ -157,9 +162,51 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       if (!bookDoc || !file || reload) {
         const content = (await appService.loadBookContent(book)) as BookContent;
         file = content.file;
-        console.log('Loading book', key);
-        const doc = await new DocumentLoader(file).open();
-        bookDoc = doc.book;
+
+        // Try the cached EPUB path: skip ZIP getEntries() scan entirely,
+        // use Blob.slice + DecompressionStream for reads instead of zip.js.
+        let usedCache = false;
+        if (!reload && book.format === 'EPUB') {
+          try {
+            const { EPUB_CACHE_FILENAME, openEpubWithCache } =
+              await import('@/libs/epubCacheUtils');
+            const cachePath = `${id}/${EPUB_CACHE_FILENAME}`;
+            if (await appService.exists(cachePath, 'Books')) {
+              const cacheJson = (await appService.readFile(cachePath, 'Books', 'text')) as string;
+              const cache = JSON.parse(cacheJson);
+              if (cache?.version >= 1) {
+                const result = await openEpubWithCache(file, cache);
+                bookDoc = result.book;
+                usedCache = true;
+              }
+            }
+          } catch {
+            // Cache miss or corrupt — fall through to full parse
+          }
+        }
+
+        if (!usedCache) {
+          console.log('Loading book', key);
+          const doc = await new DocumentLoader(file).open();
+          bookDoc = doc.book;
+          // Write cache for next open (fire-and-forget, EPUB only)
+          if (book.format === 'EPUB' && doc.zipEntries) {
+            (async () => {
+              try {
+                const { serializeEpubCache, EPUB_CACHE_FILENAME } =
+                  await import('@/libs/epubCacheUtils');
+                const cache = serializeEpubCache(doc.zipEntries!);
+                const cachePath = `${id}/${EPUB_CACHE_FILENAME}`;
+                await appService.writeFile(cachePath, 'Books', JSON.stringify(cache));
+              } catch {
+                // Non-fatal
+              }
+            })();
+          }
+        }
+      }
+      if (!bookDoc || !file) {
+        throw new Error('Failed to load book document');
       }
       const config = await appService.loadBookConfig(book, settings);
       // Filter out invalid booknotes
