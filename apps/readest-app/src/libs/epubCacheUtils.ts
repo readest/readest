@@ -34,26 +34,10 @@ export interface EpubCache {
 
 // ── Serialization (import time) ───────────────────────────────────────
 
-interface ZipJsEntry {
-  filename: string;
-  offset: number;
-  compressedSize: number;
-  uncompressedSize: number;
-  compressionMethod: number;
-  directory: boolean;
-}
-
-export function serializeEpubCache(zipEntries: ZipJsEntry[]): EpubCache {
+export function serializeEpubCache(zipEntries: CachedZipEntry[]): EpubCache {
   return {
     version: EPUB_CACHE_VERSION,
-    entries: zipEntries.map((e) => ({
-      filename: e.filename,
-      offset: e.offset,
-      compressedSize: e.compressedSize,
-      uncompressedSize: e.uncompressedSize,
-      compressionMethod: e.compressionMethod,
-      directory: e.directory,
-    })),
+    entries: zipEntries,
   };
 }
 

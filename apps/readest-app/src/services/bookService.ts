@@ -24,6 +24,7 @@ import {
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
+import type { CachedZipEntry } from '@/libs/epubCacheUtils';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -241,16 +242,7 @@ export async function importBook(
     let format: BookFormat;
     let filename: string;
     let fileobj: File;
-    let zipEntries:
-      | Array<{
-          filename: string;
-          offset: number;
-          compressedSize: number;
-          uncompressedSize: number;
-          compressionMethod: number;
-          directory: boolean;
-        }>
-      | undefined;
+    let zipEntries: CachedZipEntry[] | undefined;
 
     if (transient && typeof file !== 'string') {
       throw new Error('Transient import is only supported for file paths');

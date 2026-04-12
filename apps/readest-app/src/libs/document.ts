@@ -1,3 +1,4 @@
+import type { CachedZipEntry } from '@/libs/epubCacheUtils';
 import { BookFormat } from '@/types/book';
 import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import { configureZip } from '@/utils/zip';
@@ -201,27 +202,11 @@ export class DocumentLoader {
   public async open(): Promise<{
     book: BookDoc;
     format: BookFormat;
-    zipEntries?: Array<{
-      filename: string;
-      offset: number;
-      compressedSize: number;
-      uncompressedSize: number;
-      compressionMethod: number;
-      directory: boolean;
-    }>;
+    zipEntries?: CachedZipEntry[];
   }> {
     let book = null;
     let format: BookFormat = 'EPUB';
-    let zipEntries:
-      | Array<{
-          filename: string;
-          offset: number;
-          compressedSize: number;
-          uncompressedSize: number;
-          compressionMethod: number;
-          directory: boolean;
-        }>
-      | undefined;
+    let zipEntries: CachedZipEntry[] | undefined;
     if (!this.file.size) {
       throw new Error('File is empty');
     }
@@ -244,24 +229,16 @@ export class DocumentLoader {
           const { EPUB } = await import('foliate-js/epub.js');
           book = await new EPUB(loader).init();
           format = 'EPUB';
-          // Expose ZIP entry metadata for EPUB cache generation
-          zipEntries = entries.map(
-            (e: {
-              filename: string;
-              offset: number;
-              compressedSize: number;
-              uncompressedSize: number;
-              compressionMethod: number;
-              directory: boolean;
-            }) => ({
-              filename: e.filename,
-              offset: e.offset,
-              compressedSize: e.compressedSize,
-              uncompressedSize: e.uncompressedSize,
-              compressionMethod: e.compressionMethod,
-              directory: e.directory,
-            }),
-          );
+          // Expose ZIP entry metadata for EPUB cache generation.
+          // Pick only the fields we need — zip.js entries carry extra baggage.
+          zipEntries = entries.map((e) => ({
+            filename: e.filename,
+            offset: e.offset,
+            compressedSize: e.compressedSize,
+            uncompressedSize: e.uncompressedSize,
+            compressionMethod: e.compressionMethod,
+            directory: e.directory,
+          }));
         }
       } else if (await this.isPDF()) {
         const { makePDF } = await import('foliate-js/pdf.js');
@@ -297,7 +274,7 @@ export class DocumentLoader {
     return { book, format, zipEntries } as {
       book: BookDoc;
       format: BookFormat;
-      zipEntries?: typeof zipEntries;
+      zipEntries?: CachedZipEntry[];
     };
   }
 }
