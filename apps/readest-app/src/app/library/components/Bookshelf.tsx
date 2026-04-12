@@ -591,6 +591,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       {scrollParentEl && hasItems && isGridMode && (
         <VirtuosoGrid<unknown, BookshelfListContext>
           customScrollParent={scrollParentEl}
+          overscan={200}
           totalCount={gridTotalCount}
           components={GRID_VIRTUOSO_COMPONENTS}
           context={listContext}
@@ -601,6 +602,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       {scrollParentEl && hasItems && !isGridMode && (
         <Virtuoso
           customScrollParent={scrollParentEl}
+          overscan={200}
           totalCount={sortedBookshelfItems.length}
           components={LIST_VIRTUOSO_COMPONENTS}
           computeItemKey={computeItemKey}

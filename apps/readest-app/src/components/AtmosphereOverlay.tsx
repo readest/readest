@@ -16,20 +16,15 @@ const AtmosphereOverlay = () => {
   useEffect(() => {
     const video = videoRef.current;
     const audio = audioRef.current;
-    if (!video || !audio) return;
 
     if (active) {
       document.body.classList.add('atmosphere');
-      video.play().catch(() => {});
+      video?.play()?.catch(() => {});
       if (!isInitialMount.current) {
-        audio.play().catch(() => {});
+        audio?.play()?.catch(() => {});
       }
     } else {
       document.body.classList.remove('atmosphere');
-      video.pause();
-      video.currentTime = 0;
-      audio.pause();
-      audio.currentTime = 0;
     }
     isInitialMount.current = false;
   }, [active]);
@@ -38,23 +33,27 @@ const AtmosphereOverlay = () => {
     const audio = audioRef.current;
     if (!audio || !active) return;
     audio.src = audioSrc;
-    audio.play().catch(() => {});
+    audio.play()?.catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioSrc]);
 
   return (
     <>
-      <video
-        ref={videoRef}
-        id='atmosphere-overlay'
-        src='/assets/komorebi.mp4'
-        loop
-        muted
-        playsInline
-        preload='none'
-      />
-      {/* biome-ignore lint/a11y/useMediaCaption: ambient background audio, no spoken content */}
-      <audio ref={audioRef} id='forest-audio' src={audioSrc} loop preload='none' />
+      {active && (
+        <video
+          ref={videoRef}
+          id='atmosphere-overlay'
+          src='/assets/komorebi.mp4'
+          loop
+          muted
+          playsInline
+          preload='none'
+        />
+      )}
+      {active && (
+        // biome-ignore lint/a11y/useMediaCaption: ambient background audio, no spoken content
+        <audio ref={audioRef} id='forest-audio' src={audioSrc} loop preload='none' />
+      )}
     </>
   );
 };
