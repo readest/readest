@@ -21,6 +21,7 @@ overrides:
   lodash: '>=4.18.0'
   lodash-es: '>=4.18.0'
   basic-ftp: '>=5.2.2'
+  qs: '>=6.14.2'
   '@babel/runtime': '>=7.26.10'
   '@babel/helpers': '>=7.26.10'
   mdast-util-gfm-autolink-literal: 2.0.1
@@ -7249,8 +7250,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  qs@6.14.1:
-    resolution: {integrity: sha512-4EK3+xJl8Ts67nLYNwqw/dsFVnCf+qR7RgXSK9jEEm9unao3njwMDdmsdvoKBKHzxd7tCYz5e5M+SnMjdtXGQQ==}
+  qs@6.15.1:
+    resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
     engines: {node: '>=0.6'}
 
   query-selector-shadow-dom@1.0.1:
@@ -13303,7 +13304,7 @@ snapshots:
       http-errors: 2.0.1
       iconv-lite: 0.7.2
       on-finished: 2.4.1
-      qs: 6.14.1
+      qs: 6.15.1
       raw-body: 3.0.2
       type-is: 2.0.1
     transitivePeerDependencies:
@@ -14342,7 +14343,7 @@ snapshots:
       once: 1.4.0
       parseurl: 1.3.3
       proxy-addr: 2.0.7
-      qs: 6.14.1
+      qs: 6.15.1
       range-parser: 1.2.1
       router: 2.2.0
       send: 1.2.1
@@ -14651,7 +14652,7 @@ snapshots:
       extend: 3.0.2
       gaxios: 7.1.3
       google-auth-library: 10.5.0
-      qs: 6.14.1
+      qs: 6.15.1
       url-template: 2.0.8
     transitivePeerDependencies:
       - supports-color
@@ -16533,7 +16534,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  qs@6.14.1:
+  qs@6.15.1:
     dependencies:
       side-channel: 1.1.0
 
@@ -17345,7 +17346,7 @@ snapshots:
 
   stripe@18.5.0(@types/node@22.19.7):
     dependencies:
-      qs: 6.14.1
+      qs: 6.15.1
     optionalDependencies:
       '@types/node': 22.19.7
 

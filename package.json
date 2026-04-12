@@ -46,6 +46,7 @@
       "lodash": ">=4.18.0",
       "lodash-es": ">=4.18.0",
       "basic-ftp": ">=5.2.2",
+      "qs": ">=6.14.2",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10",
       "mdast-util-gfm-autolink-literal": "2.0.1",
