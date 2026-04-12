@@ -4,7 +4,7 @@ export const configureZip = async (configuration?: Partial<Configuration>) => {
   const { configure } = await import('@zip.js/zip.js');
   configure({
     useWebWorkers: false,
-    useCompressionStream: false,
+    useCompressionStream: true,
     ...(configuration ? configuration : {}),
   });
 };
