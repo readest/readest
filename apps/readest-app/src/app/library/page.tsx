@@ -476,7 +476,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       isInitiating.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     const group = searchParams?.get('group') || '';
