@@ -13,7 +13,7 @@
 import type { BookDoc } from '@/libs/document';
 import type { BookFormat } from '@/types/book';
 
-// ── Cache schema ──────────────────────────────────────────────────────
+// Cache schema
 
 export const EPUB_CACHE_VERSION = 1;
 export const EPUB_CACHE_FILENAME = 'epub-cache.json';
@@ -32,7 +32,7 @@ export interface EpubCache {
   entries: CachedZipEntry[];
 }
 
-// ── Serialization (import time) ───────────────────────────────────────
+// Serialization (import time)
 
 export function serializeEpubCache(zipEntries: CachedZipEntry[]): EpubCache {
   return {
@@ -41,7 +41,7 @@ export function serializeEpubCache(zipEntries: CachedZipEntry[]): EpubCache {
   };
 }
 
-// ── ZIP entry reader via Blob.slice ───────────────────────────────────
+// ZIP entry reader via Blob.slice
 
 async function readZipEntryRaw(file: File, entry: CachedZipEntry): Promise<ArrayBuffer> {
   // The local file header is 30 bytes fixed + variable-length name + extra.
@@ -79,7 +79,7 @@ async function readZipEntryAsBlob(file: File, entry: CachedZipEntry, type: strin
   return new Blob([buf], { type });
 }
 
-// ── Cached loader reconstruction ──────────────────────────────────────
+// Cached loader reconstruction
 
 /**
  * Build a loader object matching the shape that foliate-js EPUB constructor
@@ -112,7 +112,7 @@ export function makeCachedZipLoader(file: File, cache: EpubCache) {
   return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
 }
 
-// ── Open with cache ───────────────────────────────────────────────────
+// Open with cache
 
 /**
  * Open an EPUB using the cached ZIP entry index. Skips zip.js getEntries()
