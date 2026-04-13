@@ -59,6 +59,22 @@
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
   <releases>
+    <release version="0.10.6" date="2026-04-13">
+      <description>
+        <ul>
+          <li>Library: Much faster browsing for large collections</li>
+          <li>Reading: Added an option to keep the book's original paragraph layout</li>
+          <li>Reading: Fixed page navigation for Arabic books</li>
+          <li>PDF: Fixed TTS reading interruptions at line breaks in PDFs</li>
+          <li>PDF: You can now apply your chosen theme colors to PDFs</li>
+          <li>Sync: Added HTTP Basic auth support for CWA</li>
+          <li>Sync: Improved progress sync with Hardcover.app</li>
+          <li>OPDS: You can now edit your registered catalogs, with better handling of download filenames</li>
+          <li>Speed Reading: Your reading position now syncs across devices</li>
+          <li>Platform: Fixed window buttons on macOS, reduced crashes on iOS</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.10.4" date="2026-04-06">
       <description>
         <ul>
@@ -214,27 +230,6 @@
           <li>Settings: Screen brightness adjustments now apply only to the reader view</li>
           <li>iOS: You can now open files directly in Readest from the Files app</li>
           <li>macOS: Added a global menu option to open files with Readest</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.95" date="2025-12-08">
-      <description>
-        <ul>
-          <li>OPDS: You can now search, browse, and download ebooks directly from OPDS catalogs</li>
-          <li>OPDS: Improved compatibility with Calibre Web for reliable downloads</li>
-          <li>OPDS: Fixed an issue where book covers from self-hosted Calibre OPDS servers did not display correctly</li>
-          <li>Cloud Storage: You can view and delete files stored in your cloud storage directly from the app</li>
-          <li>Bookshelf: Added support for importing books from a folder recursively</li>
-          <li>Bookshelf: You can now rename your bookshelf groups</li>
-          <li>EPUB: Added support for SVG covers from Standard Ebooks</li>
-          <li>Annotations: Keyboard shortcuts no longer copy selected text into the notebook</li>
-          <li>Footnotes: Footnote popups now scale properly on small screens</li>
-          <li>Touch/Styli: Removed the context menu for smoother interaction on touch and stylus devices</li>
-          <li>Layout: Devices with unfoldable screens now automatically switch to a two-column layout</li>
-          <li>PDF: Improved zoomed-in navigation and hand-tool behavior for smoother page navigation</li>
-          <li>Android: Fixed highlighting of the current sentence when using native Android text-to-speech</li>
-          <li>Android: Back button handling now works correctly on Android 15 and above</li>
-          <li>Android: You can now open files shared from other apps</li>
         </ul>
       </description>
     </release>
