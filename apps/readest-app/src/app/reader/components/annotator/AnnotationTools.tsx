@@ -36,7 +36,13 @@ function createAnnotationToolButtons<T extends AnnotationToolType>(
 }
 
 export const annotationToolButtons = createAnnotationToolButtons([
-  { type: 'copy', label: _('Copy'), tooltip: _('Copy text after selection'), Icon: FiCopy },
+  {
+    type: 'copy',
+    label: _('Copy'),
+    tooltip: _('Copy text after selection'),
+    Icon: FiCopy,
+    quickAction: true,
+  },
   {
     type: 'highlight',
     label: _('Highlight'),
