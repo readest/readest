@@ -253,7 +253,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
           {userHighlightColors.length > 0 && (
             <div className='grid grid-cols-3 gap-3 sm:grid-cols-5'>
               {userHighlightColors.map(({ hex, label }, index) => (
-                <div key={hex} className='group relative flex flex-col items-center gap-2'>
+                <div key={index} className='group relative flex flex-col items-center gap-2'>
                   <ColorCircle
                     hex={hex}
                     label={label ?? ''}
