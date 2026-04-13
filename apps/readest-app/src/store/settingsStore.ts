@@ -10,14 +10,12 @@ interface SettingsState {
   settings: SystemSettings;
   settingsDialogBookKey: string;
   isSettingsDialogOpen: boolean;
-  isSettingsGlobal: boolean;
   fontPanelView: FontPanelView;
   activeSettingsItemId: string | null;
   setSettings: (settings: SystemSettings) => void;
   saveSettings: (envConfig: EnvConfigType, settings: SystemSettings) => void;
   setSettingsDialogBookKey: (bookKey: string) => void;
   setSettingsDialogOpen: (open: boolean) => void;
-  setSettingsGlobal: (global: boolean) => void;
   setFontPanelView: (view: FontPanelView) => void;
   setActiveSettingsItemId: (id: string | null) => void;
 
@@ -28,7 +26,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   settings: {} as SystemSettings,
   settingsDialogBookKey: '',
   isSettingsDialogOpen: false,
-  isSettingsGlobal: true,
   fontPanelView: 'main-fonts',
   activeSettingsItemId: null,
   setSettings: (settings) => set({ settings }),
@@ -38,7 +35,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
   setSettingsDialogBookKey: (bookKey) => set({ settingsDialogBookKey: bookKey }),
   setSettingsDialogOpen: (open) => set({ isSettingsDialogOpen: open }),
-  setSettingsGlobal: (global) => set({ isSettingsGlobal: global }),
   setFontPanelView: (view) => set({ fontPanelView: view }),
   setActiveSettingsItemId: (id) => set({ activeSettingsItemId: id }),
 

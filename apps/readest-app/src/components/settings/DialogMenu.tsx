@@ -4,7 +4,9 @@ import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReaderStore } from '@/store/readerStore';
 import { useCustomFontStore } from '@/store/customFontStore';
+import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelType } from './SettingsDialog';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
@@ -26,11 +28,14 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { setFontPanelView, isSettingsGlobal, setSettingsGlobal } = useSettingsStore();
+  const { setFontPanelView } = useSettingsStore();
+  const { getViewSettings } = useReaderStore();
   const { getAllFonts, removeFont, saveCustomFonts } = useCustomFontStore();
+  const viewSettings = getViewSettings(bookKey);
+  const isSettingsGlobal = viewSettings?.isGlobal ?? true;
 
   const handleToggleGlobal = () => {
-    setSettingsGlobal(!isSettingsGlobal);
+    saveViewSettings(envConfig, bookKey, 'isGlobal', !isSettingsGlobal, true, false);
     setIsDropdownOpen?.(false);
   };
 

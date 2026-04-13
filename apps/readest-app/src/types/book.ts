@@ -261,6 +261,8 @@ export interface ViewConfig {
   isEink: boolean;
   isColorEink: boolean;
 
+  paragraphMode: ParagraphModeConfig;
+
   readingRulerEnabled: boolean;
   readingRulerLines: number;
   readingRulerPosition: number;
@@ -333,6 +335,10 @@ export interface ProofreadRulesConfig {
   proofreadRules?: ProofreadRule[];
 }
 
+export interface ViewSettingsConfig {
+  isGlobal: boolean;
+}
+
 export interface ViewSettings
   extends
     BookLayout,
@@ -344,9 +350,8 @@ export interface ViewSettings
     TranslatorConfig,
     ScreenConfig,
     ProofreadRulesConfig,
-    AnnotatorConfig {
-  paragraphMode?: ParagraphModeConfig;
-}
+    AnnotatorConfig,
+    ViewSettingsConfig {}
 
 export interface BookProgress {
   location: string;

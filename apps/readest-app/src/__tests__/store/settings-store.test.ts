@@ -66,7 +66,6 @@ describe('settingsStore', () => {
       settings: {} as SystemSettings,
       settingsDialogBookKey: '',
       isSettingsDialogOpen: false,
-      isSettingsGlobal: true,
       fontPanelView: 'main-fonts',
       activeSettingsItemId: null,
     });
@@ -115,19 +114,6 @@ describe('settingsStore', () => {
       useSettingsStore.getState().setSettingsDialogOpen(true);
       useSettingsStore.getState().setSettingsDialogOpen(false);
       expect(useSettingsStore.getState().isSettingsDialogOpen).toBe(false);
-    });
-  });
-
-  describe('setSettingsGlobal', () => {
-    test('sets global mode to true', () => {
-      useSettingsStore.getState().setSettingsGlobal(false);
-      useSettingsStore.getState().setSettingsGlobal(true);
-      expect(useSettingsStore.getState().isSettingsGlobal).toBe(true);
-    });
-
-    test('sets global mode to false', () => {
-      useSettingsStore.getState().setSettingsGlobal(false);
-      expect(useSettingsStore.getState().isSettingsGlobal).toBe(false);
     });
   });
 
