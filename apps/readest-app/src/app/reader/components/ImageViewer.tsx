@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useState, useRef, useEffect } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { Insets } from '@/types/misc';
 import ZoomControls from './ZoomControls';
 
@@ -38,6 +39,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Escape (desktop) and Android Back key → close the viewer.
+  useKeyDownActions({ onCancel: onClose });
 
   const hideZoomLabelAfterDelay = () => {
     if (zoomLabelTimeoutRef.current) {
@@ -79,10 +83,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
 
-    if (e.key === 'Escape') {
-      onClose();
-      return;
-    }
+    // Escape is handled by useKeyDownActions (also covers Android Back key).
 
     // Arrow key navigation
     if (e.key === 'ArrowLeft' && onPrevious) {

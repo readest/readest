@@ -776,7 +776,7 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     if (pxWidth > vw && !/max-width\s*:/.test(block)) {
       block = block.replace(
         /}$/,
-        ' max-width: calc(var(--available-width) * 1px); box-sizing: border-box; }',
+        ' width: 100%; max-width: calc(var(--available-width) * 1px); box-sizing: border-box; }',
       );
       return selector + block;
     }
