@@ -238,46 +238,24 @@ const getColorStyles = (
   return colorStyles;
 };
 
-const getLayoutStyles = (
-  overrideLayout: boolean,
+const getPageLayoutStyles = (
   marginTop: number,
   marginRight: number,
   marginBottom: number,
   marginLeft: number,
-  paragraphMargin: number,
-  lineSpacing: number,
-  wordSpacing: number,
-  letterSpacing: number,
-  textIndent: number,
-  justify: boolean,
-  hyphenate: boolean,
   zoomLevel: number,
   writingMode: string,
   vertical: boolean,
-) => {
-  const layoutStyle = `
+) => `
   @namespace epub "http://www.idpf.org/2007/ops";
   html {
-    --default-text-align: ${justify ? 'justify' : 'start'};
     --margin-top: ${marginTop}px;
     --margin-right: ${marginRight}px;
     --margin-bottom: ${marginBottom}px;
     --margin-left: ${marginLeft}px;
-    hanging-punctuation: allow-end last;
-    orphans: 2;
-    widows: 2;
-  }
-  [align="left"] { text-align: left; }
-  [align="right"] { text-align: right; }
-  [align="center"] { text-align: center; }
-  [align="justify"] { text-align: justify; }
-  :is(hgroup, header) p {
-      text-align: unset;
-      hyphens: unset;
   }
   html, body {
     ${writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`}
-    text-align: var(--default-text-align);
     max-height: unset;
     -webkit-touch-callout: none;
     -webkit-user-select: text;
@@ -305,6 +283,116 @@ const getLayoutStyles = (
     content: '';
     position: absolute;
     inset: -10px;
+  }
+  pre {
+    white-space: pre-wrap !important;
+  }
+
+  .epubtype-footnote,
+  aside[epub|type~="endnote"],
+  aside[epub|type~="footnote"],
+  aside[epub|type~="note"],
+  aside[epub|type~="rearnote"] {
+    display: none;
+  }
+
+  /* Now begins really dirty hacks to fix some badly designed epubs */
+  body {
+    line-height: unset;
+  }
+
+  .duokan-footnote-content,
+  .duokan-footnote-item {
+    display: none;
+  }
+
+  div:has(> img, > svg) {
+    max-width: 100% !important;
+  }
+
+  body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
+    max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  /* some epubs set insane inline-block for p */
+  p {
+    display: block;
+  }
+
+  /* inline images without dimension */
+  .ie6 img {
+    width: unset;
+    height: unset;
+  }
+  sup img {
+    height: 1em;
+  }
+  img.has-text-siblings {
+    ${vertical ? 'width: 1em;' : 'height: 1em;'}
+    vertical-align: baseline;
+  }
+  :is(div) > img.has-text-siblings[style*="object-fit"] {
+    display: block;
+    height: auto;
+    vertical-align: unset;
+  }
+  .duokan-footnote img:not([class]) {
+    width: 0.8em;
+    height: 0.8em;
+  }
+  div:has(img.singlepage) {
+    position: relative;
+    width: auto;
+    height: auto;
+  }
+
+  /* page break */
+  body.paginated-mode div[style*="page-break-after: always"],
+  body.paginated-mode div[style*="page-break-after:always"],
+  body.paginated-mode p[style*="page-break-after: always"],
+  body.paginated-mode p[style*="page-break-after:always"] {
+    margin-bottom: calc(var(--available-height) * 1px);
+  }
+
+  .br {
+    display: flow-root;
+  }
+
+  .h5_mainbody {
+    overflow: unset !important;
+  }
+`;
+
+// Paragraph-scoped CSS controlled by the Paragraph section of the Layout
+// panel. Gated by BookStyle.useBookLayout: when true, this chunk is skipped
+// and the book's own paragraph formatting takes over.
+const getParagraphLayoutStyles = (
+  overrideLayout: boolean,
+  paragraphMargin: number,
+  lineSpacing: number,
+  wordSpacing: number,
+  letterSpacing: number,
+  textIndent: number,
+  justify: boolean,
+  hyphenate: boolean,
+  vertical: boolean,
+) => `
+  html {
+    --default-text-align: ${justify ? 'justify' : 'start'};
+    hanging-punctuation: allow-end last;
+    orphans: 2;
+    widows: 2;
+  }
+  html, body {
+    text-align: var(--default-text-align);
+  }
+  [align="left"] { text-align: left; }
+  [align="right"] { text-align: right; }
+  [align="center"] { text-align: center; }
+  [align="justify"] { text-align: justify; }
+  :is(hgroup, header) p {
+      text-align: unset;
+      hyphens: unset;
   }
   p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span))) {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
@@ -374,22 +462,11 @@ const getLayoutStyles = (
     orphans: 1;
   }
 
-  pre {
-    white-space: pre-wrap !important;
-  }
-
-  .epubtype-footnote,
-  aside[epub|type~="endnote"],
-  aside[epub|type~="footnote"],
-  aside[epub|type~="note"],
-  aside[epub|type~="rearnote"] {
-    display: none;
-  }
-
-  /* Now begins really dirty hacks to fix some badly designed epubs */
-  body {
-    line-height: unset;
-  }
+  /* workaround for some badly designed epubs */
+  div.left *, p.left * { text-align: left; }
+  div.right *, p.right * { text-align: right; }
+  div.center *, p.center * { text-align: center; }
+  div.justify *, p.justify * { text-align: justify; }
 
   img.pi {
     ${vertical ? 'transform: rotate(90deg);' : ''}
@@ -399,79 +476,10 @@ const getLayoutStyles = (
     ${vertical ? `vertical-align: unset;` : ''}
   }
 
-  .duokan-footnote-content,
-  .duokan-footnote-item {
-    display: none;
-  }
-
-  div:has(> img, > svg) {
-    max-width: 100% !important;
-  }
-
-  body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
-    max-height: calc(var(--available-height) * 0.8 * 1px);
-  }
-
-  /* some epubs set insane inline-block for p */
-  p {
-    display: block;
-  }
-
-  /* inline images without dimension */
-  .ie6 img {
-    width: unset;
-    height: unset;
-  }
-  sup img {
-    height: 1em;
-  }
-  img.has-text-siblings {
-    ${vertical ? 'width: 1em;' : 'height: 1em;'}
-    vertical-align: baseline;
-  }
-  :is(div) > img.has-text-siblings[style*="object-fit"] {
-    display: block;
-    height: auto;
-    vertical-align: unset;
-  }
-  .duokan-footnote img:not([class]) {
-    width: 0.8em;
-    height: 0.8em;
-  }
-  div:has(img.singlepage) {
-    position: relative;
-    width: auto;
-    height: auto;
-  }
-
-  /* page break */
-  body.paginated-mode div[style*="page-break-after: always"],
-  body.paginated-mode div[style*="page-break-after:always"],
-  body.paginated-mode p[style*="page-break-after: always"],
-  body.paginated-mode p[style*="page-break-after:always"] {
-    margin-bottom: calc(var(--available-height) * 1px);
-  }
-
-  /* workaround for some badly designed epubs */
-  div.left *, p.left * { text-align: left; }
-  div.right *, p.right * { text-align: right; }
-  div.center *, p.center * { text-align: center; }
-  div.justify *, p.justify * { text-align: justify; }
-
-  .br {
-    display: flow-root;
-  }
-
-  .h5_mainbody {
-    overflow: unset !important;
-  }
-
   .nonindent, .noindent {
     text-indent: unset !important;
   }
 `;
-  return layoutStyle;
-};
 
 export const getFootnoteStyles = () => `
   .duokan-footnote-content,
@@ -587,23 +595,28 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   if (!themeCode) {
     themeCode = getThemeCode();
   }
-  const layoutStyles = getLayoutStyles(
-    viewSettings.overrideLayout!,
+  const pageLayoutStyles = getPageLayoutStyles(
     viewSettings.marginTopPx,
     viewSettings.marginRightPx,
     viewSettings.marginBottomPx,
     viewSettings.marginLeftPx,
-    viewSettings.paragraphMargin!,
-    viewSettings.lineHeight!,
-    viewSettings.wordSpacing!,
-    viewSettings.letterSpacing!,
-    viewSettings.textIndent!,
-    viewSettings.fullJustification!,
-    viewSettings.hyphenation!,
     1.0,
     viewSettings.writingMode!,
     viewSettings.vertical!,
   );
+  const paragraphLayoutStyles = viewSettings.useBookLayout
+    ? ''
+    : getParagraphLayoutStyles(
+        viewSettings.overrideLayout!,
+        viewSettings.paragraphMargin!,
+        viewSettings.lineHeight!,
+        viewSettings.wordSpacing!,
+        viewSettings.letterSpacing!,
+        viewSettings.textIndent!,
+        viewSettings.fullJustification!,
+        viewSettings.hyphenation!,
+        viewSettings.vertical!,
+      );
   // scale the font size on-the-fly so that we can sync the same font size on different devices
   const isMobile = ['ios', 'android'].includes(getOSPlatform());
   const fontScale = isMobile ? 1.25 : 1;
@@ -629,7 +642,7 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${layoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
+  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
 };
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {

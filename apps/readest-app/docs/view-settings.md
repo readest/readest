@@ -167,6 +167,30 @@ const handleReset = () => {
 
 The hook resolves the default by reading from `getDefaultViewSettings(ctx)` and calls each provided setter with that value, which then fires your `useEffect` and persists the change.
 
+### Step 5 — Register in the Command Palette
+
+If your setting has a visible row in a panel, register it in the matching `*PanelItems` array in `src/services/commandRegistry.ts`. This wires it into the command-palette fuzzy search so users can jump straight to it.
+
+```ts
+// src/services/commandRegistry.ts
+const layoutPanelItems = [
+  // ...existing entries
+  {
+    id: 'settings.layout.myNewToggle',
+    labelKey: _('My New Toggle'),
+    keywords: ['search', 'terms', 'for', 'discoverability'],
+    section: 'Paragraph',
+  },
+];
+```
+
+- `id` must match the `data-setting-id` attribute on the panel row. The palette uses it to scroll/highlight the target control.
+- `labelKey` uses `stubTranslation` (imported as `_`) so the extractor picks it up — the same string that appears in the panel.
+- `keywords` broadens fuzzy-search hits beyond the label; include synonyms, related jargon, and the panel section name.
+- `section` groups the entry in the palette results (matches the panel's sub-header: `Layout`, `Paragraph`, `Page`, `Header & Footer`, etc.).
+
+Skip this step only for settings that don't surface as a user-visible row (hidden toggles, flags used by other settings).
+
 ### Don'ts
 
 - **Don't make the field optional** just to skip providing a default. Add a default in Step 2 instead.
@@ -182,3 +206,4 @@ The hook resolves the default by reading from `getDefaultViewSettings(ctx)` and 
 - [ ] Read via `getViewSettings(bookKey) || settings.globalViewSettings`
 - [ ] Write via `saveViewSettings(envConfig, bookKey, 'key', value)`
 - [ ] Reset setter wired into `useResetViewSettings` if the panel has a reset menu
+- [ ] Command-palette entry added to the matching `*PanelItems` array in `src/services/commandRegistry.ts`, with an `id` that matches the panel row's `data-setting-id`

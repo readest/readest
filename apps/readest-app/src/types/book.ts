@@ -185,9 +185,6 @@ export interface BookStyle {
   fullJustification: boolean;
   hyphenation: boolean;
   theme: string;
-  overrideFont: boolean;
-  overrideLayout: boolean;
-  overrideColor: boolean;
   backgroundTextureId: string;
   backgroundOpacity: number;
   backgroundSize: string;
@@ -196,6 +193,11 @@ export interface BookStyle {
   codeLanguage: string;
   userStylesheet: string;
   userUIStylesheet: string;
+
+  overrideFont: boolean;
+  overrideLayout: boolean;
+  overrideColor: boolean;
+  useBookLayout: boolean;
 
   // fixed-layout specific
   zoomMode: 'fit-page' | 'fit-width' | 'original-size' | 'custom';
