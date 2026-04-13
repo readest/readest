@@ -36,6 +36,7 @@ use tauri_plugin_native_bridge::{NativeBridgeExt, OpenExternalUrlRequest};
 use tauri_plugin_oauth::start;
 #[cfg(not(target_os = "android"))]
 use tauri_plugin_opener::OpenerExt;
+use tauri::webview::ScrollBarStyle;
 use transfer_file::{download_file, upload_file};
 
 #[cfg(desktop)]
@@ -394,7 +395,9 @@ pub fn run() {
 
                 #[cfg(target_os = "windows")]
                 {
-                    builder = builder.transparent(false);
+                    builder = builder
+                        .transparent(false)
+                        .scroll_bar_style(ScrollBarStyle::FluentOverlay);
                 }
                 #[cfg(target_os = "linux")]
                 {

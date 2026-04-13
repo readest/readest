@@ -1,5 +1,5 @@
-import { useRouter, redirect } from 'next/navigation';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { redirect, useRouter } from 'next/navigation';
+import { getCurrentWindow, ScrollBarStyle } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
@@ -21,6 +21,10 @@ const createReaderWindow = (appService: AppService, url: string) => {
     transparent: !appService.isMacOSApp,
     shadow: appService.isMacOSApp ? undefined : true,
     titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+    // Enum ScrollBarStyle is exported as type by tauri, so it cannot be used directly.
+    scrollBarStyle: (appService.osPlatform === 'windows'
+      ? 'fluentOverlay'
+      : 'default') as unknown as ScrollBarStyle,
   });
   win.once('tauri://created', () => {
     console.log('new window created');
