@@ -1,6 +1,68 @@
 import { FileHandle, open, BaseDirectory, SeekMode } from '@tauri-apps/plugin-fs';
 import { getOSPlatform } from './misc';
 
+class ChunkLRUCache {
+  #maxItems: number;
+  #order: number[] = [];
+  #cache: Map<number, ArrayBuffer> = new Map();
+
+  constructor(maxItems: number) {
+    this.#maxItems = maxItems;
+  }
+
+  /** [start, end) exclusive-end. Returns the cached hit or undefined. */
+  findChunk(start: number, end: number): { chunkStart: number; buffer: ArrayBuffer } | undefined {
+    for (const chunkStart of this.#cache.keys()) {
+      const buffer = this.#cache.get(chunkStart)!;
+      if (start >= chunkStart && end <= chunkStart + buffer.byteLength) {
+        this.#touch(chunkStart);
+        return { chunkStart, buffer };
+      }
+    }
+    return undefined;
+  }
+
+  set(chunkStart: number, buffer: ArrayBuffer): void {
+    this.#cache.set(chunkStart, buffer);
+    this.#touch(chunkStart);
+    this.#evict();
+  }
+
+  clear(): void {
+    this.#cache.clear();
+    this.#order = [];
+  }
+
+  #touch(chunkStart: number): void {
+    const i = this.#order.indexOf(chunkStart);
+    if (i > -1) this.#order.splice(i, 1);
+    this.#order.unshift(chunkStart);
+  }
+
+  #evict(): void {
+    while (this.#cache.size > this.#maxItems) {
+      const key = this.#order.pop();
+      if (key !== undefined) this.#cache.delete(key);
+    }
+  }
+}
+
+async function withPendingDedup<T>(
+  pending: Map<string, Promise<T>>,
+  key: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const existing = pending.get(key);
+  if (existing) return existing;
+  const promise = fn();
+  pending.set(key, promise);
+  try {
+    return await promise;
+  } finally {
+    pending.delete(key);
+  }
+}
+
 class DeferredBlob extends Blob {
   #dataPromise: Promise<ArrayBuffer>;
   #type: string;
@@ -25,22 +87,8 @@ class DeferredBlob extends Blob {
     return new ReadableStream({
       start: async (controller) => {
         const data = await this.#dataPromise;
-        const reader = new ReadableStream({
-          start(controller) {
-            controller.enqueue(new Uint8Array(data));
-            controller.close();
-          },
-        }).getReader();
-        const pump = () =>
-          reader.read().then(({ done, value }): Promise<void> => {
-            if (done) {
-              controller.close();
-              return Promise.resolve();
-            }
-            controller.enqueue(value);
-            return pump();
-          });
-        return pump();
+        controller.enqueue(new Uint8Array(data));
+        controller.close();
       },
     });
   }
@@ -66,8 +114,7 @@ export class NativeFile extends File implements ClosableFile {
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 1024;
   static MAX_CACHE_ITEMS_SIZE = 50;
-  #order: number[] = [];
-  #cache: Map<number, ArrayBuffer> = new Map();
+  #lru = new ChunkLRUCache(NativeFile.MAX_CACHE_ITEMS_SIZE);
   #pendingReads: Map<string, Promise<ArrayBuffer>> = new Map();
 
   constructor(fp: string, name?: string, baseDir: BaseDirectory | null = null, type = '') {
@@ -90,8 +137,7 @@ export class NativeFile extends File implements ClosableFile {
       await this.#handle.close();
       this.#handle = null;
     }
-    this.#cache.clear();
-    this.#order = [];
+    this.#lru.clear();
   }
 
   override get name() {
@@ -139,33 +185,15 @@ export class NativeFile extends File implements ClosableFile {
       }
     }
 
-    const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
-      const buffer = this.#cache.get(chunkStart)!;
-      return start >= chunkStart && end <= chunkStart + buffer.byteLength;
-    });
-
-    if (cachedChunkStart !== undefined) {
-      this.#updateAccessOrder(cachedChunkStart);
-      const buffer = this.#cache.get(cachedChunkStart)!;
-      const offset = start - cachedChunkStart;
-      return buffer.slice(offset, offset + size);
+    const hit = this.#lru.findChunk(start, end);
+    if (hit) {
+      const offset = start - hit.chunkStart;
+      return hit.buffer.slice(offset, offset + size);
     }
 
-    const readKey = `${start}-${end}`;
-    const pendingRead = this.#pendingReads.get(readKey);
-
-    if (pendingRead) {
-      return pendingRead;
-    }
-
-    const readPromise = this.#readAndCacheChunkSafe(start, size);
-    this.#pendingReads.set(readKey, readPromise);
-
-    try {
-      return await readPromise;
-    } finally {
-      this.#pendingReads.delete(readKey);
-    }
+    return withPendingDedup(this.#pendingReads, `${start}-${end}`, () =>
+      this.#readAndCacheChunkSafe(start, size),
+    );
   }
 
   async #readAndCacheChunkSafe(start: number, size: number): Promise<ArrayBuffer> {
@@ -180,31 +208,12 @@ export class NativeFile extends File implements ClosableFile {
       await handle.read(buffer);
 
       // Only one thread reaches here per unique range
-      this.#cache.set(chunkStart, buffer.buffer);
-      this.#updateAccessOrder(chunkStart);
-      this.#ensureCacheSize();
+      this.#lru.set(chunkStart, buffer.buffer);
 
       const offset = start - chunkStart;
       return buffer.buffer.slice(offset, offset + size);
     } finally {
       await handle.close();
-    }
-  }
-
-  #updateAccessOrder(chunkStart: number) {
-    const index = this.#order.indexOf(chunkStart);
-    if (index > -1) {
-      this.#order.splice(index, 1);
-    }
-    this.#order.unshift(chunkStart);
-  }
-
-  #ensureCacheSize() {
-    while (this.#cache.size > NativeFile.MAX_CACHE_ITEMS_SIZE) {
-      const oldestKey = this.#order.pop();
-      if (oldestKey !== undefined) {
-        this.#cache.delete(oldestKey);
-      }
     }
   }
 
@@ -335,7 +344,7 @@ export class IDBFile extends File implements ClosableFile {
 
   override slice(start = 0, end = this.size, contentType = ''): Blob {
     if (!this.#blob) throw new Error('IDBFile not opened');
-    return new DeferredBlob(this.#blob.slice(start, end).arrayBuffer(), contentType);
+    return this.#blob.slice(start, end, contentType);
   }
 
   override async arrayBuffer(): Promise<ArrayBuffer> {
@@ -355,12 +364,11 @@ export class RemoteFile extends File implements ClosableFile {
   #lastModified: number;
   #size: number = -1;
   #type: string = '';
-  #order: number[] = [];
-  #cache: Map<number, ArrayBuffer> = new Map(); // LRU cache
   #pendingFetches: Map<string, Promise<ArrayBuffer>> = new Map();
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
   static MAX_CACHE_ITEMS_SIZE: number = 128;
+  #lru = new ChunkLRUCache(RemoteFile.MAX_CACHE_ITEMS_SIZE);
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
     const basename = url.split('/').pop() || 'remote-file';
@@ -417,8 +425,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   async close(): Promise<void> {
-    this.#cache.clear();
-    this.#order = [];
+    this.#lru.clear();
   }
 
   async fetchRangePart(start: number, end: number) {
@@ -454,32 +461,16 @@ export class RemoteFile extends File implements ClosableFile {
     } else if (rangeSize > RemoteFile.MAX_CACHE_CHUNK_SIZE) {
       return this.fetchRangePart(start, end);
     } else {
-      const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
-        const buffer = this.#cache.get(chunkStart)!;
-        const bufferSize = buffer.byteLength;
-        return start >= chunkStart && end <= chunkStart + bufferSize;
-      });
-      if (cachedChunkStart !== undefined) {
-        this.#updateAccessOrder(cachedChunkStart);
-        const buffer = this.#cache.get(cachedChunkStart)!;
-        const offset = start - cachedChunkStart;
-        return buffer.slice(offset, offset + rangeSize);
+      // end is inclusive; findChunk uses exclusive end convention
+      const hit = this.#lru.findChunk(start, end + 1);
+      if (hit) {
+        const offset = start - hit.chunkStart;
+        return hit.buffer.slice(offset, offset + rangeSize);
       }
 
-      const fetchKey = `${start}-${end}`;
-      const pendingFetch = this.#pendingFetches.get(fetchKey);
-
-      if (pendingFetch) {
-        return pendingFetch;
-      }
-
-      const fetchPromise = this.#fetchAndCacheChunkSafe(start, end, rangeSize);
-      this.#pendingFetches.set(fetchKey, fetchPromise);
-      try {
-        return await fetchPromise;
-      } finally {
-        this.#pendingFetches.delete(fetchKey);
-      }
+      return withPendingDedup(this.#pendingFetches, `${start}-${end}`, () =>
+        this.#fetchAndCacheChunkSafe(start, end, rangeSize),
+      );
     }
   }
 
@@ -493,29 +484,10 @@ export class RemoteFile extends File implements ClosableFile {
     const buffer = await this.fetchRangePart(chunkStart, chunkEnd);
 
     // Only one thread reaches here per unique range
-    this.#cache.set(chunkStart, buffer);
-    this.#updateAccessOrder(chunkStart);
-    this.#ensureCacheSize();
+    this.#lru.set(chunkStart, buffer);
 
     const offset = start - chunkStart;
     return buffer.slice(offset, offset + rangeSize);
-  }
-
-  #updateAccessOrder(chunkStart: number) {
-    const index = this.#order.indexOf(chunkStart);
-    if (index > -1) {
-      this.#order.splice(index, 1);
-    }
-    this.#order.unshift(chunkStart);
-  }
-
-  #ensureCacheSize() {
-    while (this.#cache.size > RemoteFile.MAX_CACHE_ITEMS_SIZE) {
-      const oldestKey = this.#order.pop();
-      if (oldestKey !== undefined) {
-        this.#cache.delete(oldestKey);
-      }
-    }
   }
 
   override slice(start = 0, end = this.size, contentType = this.type): Blob {

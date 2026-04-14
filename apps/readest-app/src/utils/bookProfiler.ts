@@ -34,10 +34,6 @@ class BookProfiler {
   startSession(bookName: string): void {
     this.sessionId = ++sessionCounter;
     this.activeBookName = bookName;
-    const existing = this.sessions.get(bookName);
-    if (existing) {
-      this.sessions.delete(bookName);
-    }
     this.sessions.set(bookName, {
       bookName,
       startWall: performance.now(),
@@ -131,7 +127,6 @@ class BookProfiler {
     const divider = `├${'─'.repeat(MARK_COL)}┬${'─'.repeat(NUM_COL)}┬${'─'.repeat(NUM_COL + 1)}┤`;
     const header = `│ ${'Checkpoint'.padEnd(MARK_COL - 2)} │ ${'Elapsed'.padEnd(NUM_COL - 2)} │ ${'Delta'.padEnd(NUM_COL - 1)} │`;
     const rowDivider = `├${'─'.repeat(MARK_COL)}┼${'─'.repeat(NUM_COL)}┼${'─'.repeat(NUM_COL + 1)}┤`;
-    const bottomDivider = `├${'─'.repeat(MARK_COL)}┼${'─'.repeat(NUM_COL)}┼${'─'.repeat(NUM_COL + 1)}┤`;
     const bottomBorder = `└${'─'.repeat(MARK_COL)}┴${'─'.repeat(NUM_COL)}┴${'─'.repeat(NUM_COL + 1)}┘`;
 
     const rows = session.entries.map((entry, i) => {
@@ -162,7 +157,7 @@ class BookProfiler {
       header,
       rowDivider,
       ...rows,
-      bottomDivider,
+      rowDivider,
       totalRow,
       bottomBorder,
     ].join('\n');
