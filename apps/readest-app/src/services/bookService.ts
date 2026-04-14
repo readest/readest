@@ -276,6 +276,16 @@ export async function importBook(
 
     const hash = await partialMD5(fileobj);
     const metaHash = getMetadataHash(loadedBook.metadata);
+
+    // Write TOC cache non-blocking so subsequent opens can skip parsing
+    if (loadedBook.toc) {
+      const tocData = JSON.stringify({
+        toc: loadedBook.toc,
+        pageList: loadedBook.pageList ?? null,
+        landmarks: loadedBook.landmarks ?? null,
+      });
+      fs.writeFile(`${hash}/toc.json`, 'Cache', tocData).catch(console.warn);
+    }
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);

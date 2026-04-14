@@ -1,6 +1,7 @@
 import { BookFormat } from '@/types/book';
 import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import { configureZip } from '@/utils/zip';
+import type { BaseDir } from '@/types/system';
 import * as epubcfi from 'foliate-js/epubcfi.js';
 
 export const CFI = epubcfi;
@@ -73,10 +74,29 @@ export interface BookDoc {
   };
   dir: string;
   toc?: Array<TOCItem>;
+  pageList?: Array<TOCItem>;
+  landmarks?: Array<TOCItem>;
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
+}
+
+interface TOCFileSystem {
+  readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
+  writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
+  exists(path: string, base: BaseDir): Promise<boolean>;
+}
+
+export interface TOCCacheContext {
+  bookHash: string;
+  fs: TOCFileSystem;
+}
+
+interface CachedTOCData {
+  toc: TOCItem[] | null;
+  pageList: TOCItem[] | null;
+  landmarks: TOCItem[] | null;
 }
 
 export const EXTS: Record<BookFormat, string> = {
@@ -107,9 +127,22 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
 
 export class DocumentLoader {
   private file: File;
+  private cacheContext?: TOCCacheContext;
 
-  constructor(file: File) {
+  constructor(file: File, cacheContext?: TOCCacheContext) {
     this.file = file;
+    this.cacheContext = cacheContext;
+  }
+
+  private async readTOCCache(): Promise<CachedTOCData | null> {
+    if (!this.cacheContext) return null;
+    const { bookHash, fs } = this.cacheContext;
+    try {
+      const text = (await fs.readFile(`${bookHash}/toc.json`, 'Cache', 'text')) as string;
+      return JSON.parse(text) as CachedTOCData;
+    } catch {
+      return null;
+    }
   }
 
   private async isZip(): Promise<boolean> {
@@ -199,6 +232,8 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
+    // Start cache read immediately so it runs in parallel with ZIP IO below
+    const tocCachePromise = this.readTOCCache();
     try {
       if (await this.isZip()) {
         const loader = await this.makeZipLoader();
@@ -218,7 +253,8 @@ export class DocumentLoader {
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
           performance.mark('[epub-open] module-imported');
-          book = await new EPUB(loader).init();
+          const cachedTOC = await tocCachePromise;
+          book = await new EPUB(loader).init({ cachedTOC });
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {

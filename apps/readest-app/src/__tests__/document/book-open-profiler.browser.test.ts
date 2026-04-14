@@ -1,9 +1,10 @@
 /// <reference types="vite/client" />
 import { describe, it, beforeAll, afterEach, afterAll } from 'vitest';
-import { DocumentLoader, type BookDoc } from '@/libs/document';
+import { DocumentLoader, type BookDoc, type TOCCacheContext } from '@/libs/document';
 import type { FoliateView } from '@/types/view';
 import { bookProfiler, type ProfileSession } from '@/utils/bookProfiler';
 import { WebAppService } from '@/services/webAppService';
+import { partialMD5 } from '@/utils/md5';
 
 const MIME_TYPES: Record<string, string> = {
   epub: 'application/epub+zip',
@@ -71,6 +72,8 @@ describe('Book-open profiler (browser)', () => {
   let view: FoliateView | null = null;
   let service: WebAppService;
   const allSessions: ProfileSession[] = [];
+  /** Maps fixture filename → book hash for TOC cache lookup */
+  const fixtureHashes = new Map<string, string>();
 
   beforeAll(async () => {
     // Set up WebAppService with IDB — same code path as the web app.
@@ -84,6 +87,30 @@ describe('Book-open profiler (browser)', () => {
       const resp = await fetch(fixture.url);
       const buffer = await resp.arrayBuffer();
       await service.fs.writeFile(fixture.name, 'Books', buffer);
+    }
+
+    // Pre-cache TOC for every EPUB fixture so the profiled run uses the fast path.
+    for (const fixture of FIXTURES) {
+      if (fixture.mime !== 'application/epub+zip') continue;
+      const file = await service.fs.openFile(fixture.name, 'Books', fixture.name);
+      const hash = await partialMD5(file);
+      fixtureHashes.set(fixture.name, hash);
+      try {
+        const { book } = await new DocumentLoader(file).open();
+        if (book.toc) {
+          await service.fs.writeFile(
+            `${hash}/toc.json`,
+            'Cache',
+            JSON.stringify({
+              toc: book.toc ?? null,
+              pageList: book.pageList ?? null,
+              landmarks: book.landmarks ?? null,
+            }),
+          );
+        }
+      } catch {
+        // Non-EPUB or parse error — skip caching for this fixture
+      }
     }
 
     // Import and register the foliate-view custom element once for the suite.
@@ -133,9 +160,13 @@ describe('Book-open profiler (browser)', () => {
       bookProfiler.injectSubMarks('[load-content]');
 
       // ── Stage 1: DocumentLoader.open() — parses the book ──
+      const bookHash = fixtureHashes.get(fixture.name);
+      const cacheContext: TOCCacheContext | undefined = bookHash
+        ? { bookHash, fs: service.fs }
+        : undefined;
       let bookDoc: BookDoc;
       try {
-        const result = await new DocumentLoader(file).open();
+        const result = await new DocumentLoader(file, cacheContext).open();
         bookDoc = result.book;
       } catch (e) {
         console.warn(`Skipping ${fixture.name}: DocumentLoader failed — ${e}`);

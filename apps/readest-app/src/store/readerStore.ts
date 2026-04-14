@@ -162,7 +162,10 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         bookProfiler.mark('loadBookContent-done');
         bookProfiler.injectSubMarks('[load-content]');
         console.log('Loading book', key);
-        const doc = await new DocumentLoader(file).open();
+        const doc = await new DocumentLoader(file, {
+          bookHash: book.hash,
+          fs: appService,
+        }).open();
         bookDoc = doc.book;
         bookProfiler.mark('documentLoader-done');
         bookProfiler.injectSubMarks('[epub-open]');
