@@ -134,22 +134,6 @@ if (/^\d+$/.test(arg)) {
 console.error('\n--- Rebasing onto origin/main ---');
 execSync('git rebase origin/main', { stdio: gitStdio, cwd: worktreePath });
 
-// Symlink shared directories into the new worktree, pointing at the bare repo's
-// git common dir so all worktrees share the same settings without duplication.
-const gitCommonDir = execSync('git rev-parse --git-common-dir', {
-  encoding: 'utf8',
-  cwd: repoRoot,
-}).trim();
-for (const dir of ['.claude', '.local-settings']) {
-  const sharedDir = path.resolve(repoRoot, gitCommonDir, dir);
-  const newDir = path.join(worktreePath, dir);
-  fs.mkdirSync(sharedDir, { recursive: true });
-  if (!fs.existsSync(newDir)) {
-    // 'junction' works without elevated privileges on Windows; ignored on Unix
-    fs.symlinkSync(sharedDir, newDir, 'junction');
-  }
-}
-
 // Repoint submodule URLs to local .git/modules/ clones to avoid remote fetches.
 // Submodules without a local cache fall back to the remote URL.
 console.error('\n--- Initializing submodules (using local objects) ---');
@@ -250,7 +234,7 @@ if (fs.existsSync(androidGenDir)) {
     stdio: gitStdio,
     cwd: dstAppDir,
   });
-  execSync(`git checkout ${appRelPath}/src-tauri/gen/android`, {
+  execSync(`git checkout ${appRelPath}/src-tauri/gen/android ${appRelPath}/src-tauri/icons`, {
     stdio: gitStdio,
     cwd: worktreePath,
   });
