@@ -23,7 +23,7 @@ import {
 } from '@/utils/book';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
-import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
+import { BookDoc, DocumentLoader, EXTS, buildSubitemsData } from '@/libs/document';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -286,6 +286,13 @@ export async function importBook(
       });
       fs.writeFile(`${hash}/toc.json`, 'Cache', tocData).catch(console.warn);
     }
+
+    // Write subitems cache non-blocking so subsequent opens skip regex computation
+    fs.writeFile(
+      `${hash}/subitems.json`,
+      'Cache',
+      JSON.stringify(buildSubitemsData(loadedBook.sections)),
+    ).catch(console.warn);
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);

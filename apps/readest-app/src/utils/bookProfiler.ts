@@ -116,14 +116,20 @@ class BookProfiler {
   }
 
   formatSession(session: ProfileSession): string {
-    const MARK_COL = 26;
     const NUM_COL = 12;
+    const MARK_COL = Math.max(
+      26,
+      ...session.entries.map((e) => {
+        const label = e.indent > 0 ? `  ── ${e.mark}` : e.mark;
+        return label.length + 2;
+      }),
+    );
 
     const title = `  Book: ${session.bookName}`;
     const totalMs = session.entries[session.entries.length - 1]?.elapsedMs ?? 0;
 
-    const topBorder = `┌${'─'.repeat(MARK_COL + NUM_COL * 2 + 5)}┐`;
-    const titleLine = `│ ${title.padEnd(MARK_COL + NUM_COL * 2 + 3)} │`;
+    const topBorder = `┌${'─'.repeat(MARK_COL + NUM_COL * 2 + 3)}┐`;
+    const titleLine = `│ ${title.padEnd(MARK_COL + NUM_COL * 2 + 1)} │`;
     const divider = `├${'─'.repeat(MARK_COL)}┬${'─'.repeat(NUM_COL)}┬${'─'.repeat(NUM_COL + 1)}┤`;
     const header = `│ ${'Checkpoint'.padEnd(MARK_COL - 2)} │ ${'Elapsed'.padEnd(NUM_COL - 2)} │ ${'Delta'.padEnd(NUM_COL - 1)} │`;
     const rowDivider = `├${'─'.repeat(MARK_COL)}┼${'─'.repeat(NUM_COL)}┼${'─'.repeat(NUM_COL + 1)}┤`;

@@ -99,6 +99,32 @@ interface CachedTOCData {
   landmarks: TOCItem[] | null;
 }
 
+export interface SectionSubitemData {
+  id: string;
+  href: string;
+  cfi?: string;
+  size: number;
+  linear: string;
+}
+
+export type CachedSubitemsData = Record<string, SectionSubitemData[]>;
+
+export function buildSubitemsData(sections: SectionItem[]): CachedSubitemsData {
+  const data: CachedSubitemsData = {};
+  for (const section of sections) {
+    if (section.subitems?.length) {
+      data[section.id] = section.subitems.map((s) => ({
+        id: s.id,
+        href: s.href ?? '',
+        cfi: s.cfi,
+        size: s.size,
+        linear: s.linear,
+      }));
+    }
+  }
+  return data;
+}
+
 export const EXTS: Record<BookFormat, string> = {
   EPUB: 'epub',
   PDF: 'pdf',
@@ -140,6 +166,17 @@ export class DocumentLoader {
     try {
       const text = (await fs.readFile(`${bookHash}/toc.json`, 'Cache', 'text')) as string;
       return JSON.parse(text) as CachedTOCData;
+    } catch {
+      return null;
+    }
+  }
+
+  private async readSubitemsCache(): Promise<CachedSubitemsData | null> {
+    if (!this.cacheContext) return null;
+    const { bookHash, fs } = this.cacheContext;
+    try {
+      const text = (await fs.readFile(`${bookHash}/subitems.json`, 'Cache', 'text')) as string;
+      return JSON.parse(text) as CachedSubitemsData;
     } catch {
       return null;
     }
@@ -232,8 +269,9 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
-    // Start cache read immediately so it runs in parallel with ZIP IO below
+    // Start cache reads immediately so they run in parallel with ZIP IO below
     const tocCachePromise = this.readTOCCache();
+    const subitemsCachePromise = this.readSubitemsCache();
     try {
       if (await this.isZip()) {
         const loader = await this.makeZipLoader();
@@ -254,8 +292,17 @@ export class DocumentLoader {
           const { EPUB } = await import('foliate-js/epub.js');
           performance.mark('[epub-open] module-imported');
           const cachedTOC = await tocCachePromise;
-          book = await new EPUB(loader).init({ cachedTOC });
+          const cachedSubitems = await subitemsCachePromise;
+          book = await new EPUB(loader).init({ cachedTOC, cachedSubitems });
           format = 'EPUB';
+          // Lazy-write subitems cache on miss so existing books benefit on next open
+          if (!cachedSubitems && this.cacheContext) {
+            const { bookHash, fs } = this.cacheContext;
+            const subitemsData = buildSubitemsData((book as unknown as BookDoc).sections);
+            fs.writeFile(`${bookHash}/subitems.json`, 'Cache', JSON.stringify(subitemsData)).catch(
+              console.warn,
+            );
+          }
         }
       } else if (await this.isPDF()) {
         const { makePDF } = await import('foliate-js/pdf.js');

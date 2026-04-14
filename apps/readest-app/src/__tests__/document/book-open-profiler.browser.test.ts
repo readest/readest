@@ -1,6 +1,11 @@
 /// <reference types="vite/client" />
 import { describe, it, beforeAll, afterEach, afterAll } from 'vitest';
-import { DocumentLoader, type BookDoc, type TOCCacheContext } from '@/libs/document';
+import {
+  DocumentLoader,
+  buildSubitemsData,
+  type BookDoc,
+  type TOCCacheContext,
+} from '@/libs/document';
 import type { FoliateView } from '@/types/view';
 import { bookProfiler, type ProfileSession } from '@/utils/bookProfiler';
 import { WebAppService } from '@/services/webAppService';
@@ -108,6 +113,11 @@ describe('Book-open profiler (browser)', () => {
             }),
           );
         }
+        await service.fs.writeFile(
+          `${hash}/subitems.json`,
+          'Cache',
+          JSON.stringify(buildSubitemsData(book.sections)),
+        );
       } catch {
         // Non-EPUB or parse error — skip caching for this fixture
       }

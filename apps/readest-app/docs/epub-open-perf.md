@@ -73,3 +73,46 @@ At import time, the parsed TOC (`toc`, `pageList`, `landmarks`) is written to `C
 | `src/services/bookService.ts`                               | Non-blocking TOC cache write at import time                                   |
 | `src/store/readerStore.ts`                                  | Passes `{ bookHash, fs }` cache context to `DocumentLoader`                   |
 | `src/__tests__/document/book-open-profiler.browser.test.ts` | Pre-caches TOC for all fixtures; passes `cacheContext` in profiled run        |
+
+---
+
+# EPUB Open Performance: Disk-Cached Subitems
+
+## Change Summary
+
+`#updateSubItems()` in `epub.js` builds per-section TOC fragment metadata by loading every chapter's HTML and running regex searches to locate heading positions. For large books (e.g. War and Peace with hundreds of chapters) this takes ~480 ms on every open.
+
+The same cache-at-import pattern used for the TOC now applies to subitems. At import time, the computed `section.subitems` arrays are serialised to `Cache/<hash>/subitems.json` as a non-blocking write. On every subsequent open, `DocumentLoader` reads that file in parallel with the TOC cache and the ZIP scan, passing the result to `EPUB.init()`, which assigns subitems directly to sections and returns early — skipping all HTML loading and regex work.
+
+For books already imported before this change, `DocumentLoader` lazy-writes `subitems.json` after the first open with a cache context, so the second open benefits automatically without requiring a re-import.
+
+Added granular profiler sub-marks inside `#updateSubItems()` (`subitems-toc-grouped`, `subitems-sections-grouped`, `subitems-built`) to pinpoint which phase was slow. Also fixed `bookProfiler` table formatting: `MARK_COL` is now computed dynamically from the longest label in the session so sub-mark rows never overflow the column.
+
+## war-peace-noimages.epub — Before vs After
+
+| Checkpoint                  | Before (no subitems cache) | After (disk-cached subitems) | Change      |
+| --------------------------- | -------------------------- | ---------------------------- | ----------- |
+| `zip-entries-read`          | +5.7 ms                    | +5.7 ms                      | —           |
+| `module-imported`           | +0.1 ms                    | +0.1 ms                      | —           |
+| `container-loaded`          | +1.5 ms                    | +1.5 ms                      | —           |
+| `opf-loaded`                | +2.9 ms                    | +2.9 ms                      | —           |
+| `spine-mapped`              | +3.5 ms                    | +3.5 ms                      | —           |
+| `toc-loaded`                | +0.0 ms                    | +0.0 ms                      | —           |
+| `subitems-toc-grouped`      | +0.0 ms                    | +0.0 ms                      | —           |
+| `subitems-sections-grouped` | +0.3 ms                    | +0.3 ms                      | —           |
+| `subitems-built`            | **+466.2 ms**              | **+0.0 ms**                  | **−466 ms** |
+| `subitems-done`             | +0.0 ms                    | +0.0 ms                      | —           |
+| `documentLoader-done`       | ~502 ms total              | ~35 ms total                 | **−93%**    |
+
+> **Before** timing: War and Peace epub, second open with TOC cache warm but no subitems cache.
+> **After** timing: second open with both TOC and subitems caches warm; `subitems-built` drops to ~0 ms because subitems are applied directly from the JSON cache.
+
+## Key Files Changed
+
+| File                                                        | Change                                                                                                                  |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `packages/foliate-js/epub.js`                               | `#updateSubItems(cachedSubitems)` short-circuits to direct assignment when cache is present; added diagnostic sub-marks |
+| `src/libs/document.ts`                                      | Reads `subitems.json` in parallel; lazy-writes on cache miss; exports `buildSubitemsData`                               |
+| `src/services/bookService.ts`                               | Non-blocking subitems cache write at import time via `buildSubitemsData`                                                |
+| `src/utils/bookProfiler.ts`                                 | `MARK_COL` computed dynamically; fixed top-border width formula                                                         |
+| `src/__tests__/document/book-open-profiler.browser.test.ts` | Pre-caches subitems for all EPUB fixtures in `beforeAll`                                                                |

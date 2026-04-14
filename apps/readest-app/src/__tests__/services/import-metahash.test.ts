@@ -112,6 +112,7 @@ const TEST_METADATA = {
 function setupMockBookDoc(metadata: Record<string, unknown> = TEST_METADATA) {
   const bookDoc = {
     metadata,
+    sections: [],
     getCover: vi.fn().mockResolvedValue(null),
   };
   mockOpen.mockResolvedValue({ book: bookDoc, format: 'EPUB' });
