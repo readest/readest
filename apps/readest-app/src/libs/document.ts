@@ -23,6 +23,16 @@ export interface TOCItem {
   subitems?: TOCItem[];
 }
 
+export interface SectionFragment {
+  id: string;
+  href: string;
+  cfi: string;
+  size: number;
+  linear: string;
+  location?: Location;
+  fragments?: Array<SectionFragment>;
+}
+
 export interface SectionItem {
   id: string;
   cfi: string;
@@ -31,8 +41,9 @@ export interface SectionItem {
   href?: string;
   location?: Location;
   pageSpread?: 'left' | 'right' | 'center' | '';
-  subitems?: Array<SectionItem>;
+  fragments?: Array<SectionFragment>;
 
+  loadText?: () => Promise<string | null>;
   createDocument: () => Promise<Document>;
 }
 

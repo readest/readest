@@ -35,6 +35,9 @@ export const getCoverFilename = (book: Book) => {
 export const getConfigFilename = (book: Book) => {
   return `${book.hash}/config.json`;
 };
+export const getBookNavFilename = (book: Book) => {
+  return `${book.hash}/nav.json`;
+};
 export const isBookFile = (filename: string) => {
   return Object.values(EXTS).includes(filename.split('.').pop()!);
 };

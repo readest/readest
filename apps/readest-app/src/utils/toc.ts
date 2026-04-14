@@ -1,7 +1,30 @@
 import { ConvertChineseVariant } from '@/types/book';
-import { SectionItem, TOCItem, CFI, BookDoc } from '@/libs/document';
+import { SectionFragment, SectionItem, TOCItem, CFI, BookDoc } from '@/libs/document';
 import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
 import { SIZE_PER_LOC } from '@/services/constants';
+
+// -----------------------------------------------------------------------------
+// Book navigation artifact (persisted to Books/{hash}/nav.json).
+// Bump BOOK_NAV_VERSION whenever computeBookNav output semantics change
+// (TOC grouping heuristic, fragment CFI/size math, hierarchy rules).
+// v2: fragment CFIs are derived from the section DOM via CFI.joinIndir instead
+//     of inherited from the TOC item (ported from foliate-js 317051e).
+// -----------------------------------------------------------------------------
+
+export const BOOK_NAV_VERSION = 2;
+
+export type { SectionFragment };
+
+export interface BookNavSection {
+  id: string;
+  fragments: SectionFragment[];
+}
+
+export interface BookNav {
+  version: number;
+  toc: TOCItem[];
+  sections: Record<string, BookNavSection>;
+}
 
 export const findParentPath = (toc: TOCItem[], href: string): TOCItem[] => {
   for (const item of toc) {
@@ -58,34 +81,34 @@ const calculateCumulativeSizes = (sections: SectionItem[]): number[] => {
   }, []);
 };
 
-// Helper: Process subitems recursively to assign locations
-const processSubitemLocations = (
-  subitems: SectionItem[],
+// Helper: Process fragments recursively to assign locations
+const processFragmentLocations = (
+  fragments: SectionFragment[],
   parentByteOffset: number,
   parentLocation: { current: number; next: number; total: number },
   totalLocations: number,
 ) => {
   let currentByteOffset = parentByteOffset;
 
-  subitems.forEach((subitem, index) => {
-    const nextSubitem = index < subitems.length - 1 ? subitems[index + 1] : null;
+  fragments.forEach((fragment, index) => {
+    const nextFragment = index < fragments.length - 1 ? fragments[index + 1] : null;
 
-    currentByteOffset += subitem.size || 0;
-    const nextByteOffset = nextSubitem
-      ? currentByteOffset + (nextSubitem.size || 0)
+    currentByteOffset += fragment.size || 0;
+    const nextByteOffset = nextFragment
+      ? currentByteOffset + (nextFragment.size || 0)
       : parentLocation.next * SIZE_PER_LOC;
 
-    subitem.location = {
+    fragment.location = {
       current: Math.floor(currentByteOffset / SIZE_PER_LOC),
       next: Math.floor(nextByteOffset / SIZE_PER_LOC),
       total: totalLocations,
     };
 
-    if (subitem.subitems?.length) {
-      processSubitemLocations(
-        subitem.subitems,
+    if (fragment.fragments?.length) {
+      processFragmentLocations(
+        fragment.fragments,
         currentByteOffset,
-        subitem.location,
+        fragment.location,
         totalLocations,
       );
     }
@@ -108,29 +131,38 @@ const updateSectionLocations = (
       total: totalLocations,
     };
 
-    if (section.subitems?.length) {
-      processSubitemLocations(section.subitems, baseOffset, section.location, totalLocations);
+    if (section.fragments?.length) {
+      processFragmentLocations(section.fragments, baseOffset, section.location, totalLocations);
     }
   });
 };
 
-// Helper: Recursively add subitems to sections map
-const addSubitemsToMap = (subitems: SectionItem[], map: Record<string, SectionItem>) => {
-  for (const subitem of subitems) {
-    if (subitem.href) map[subitem.href] = subitem;
-    if (subitem.subitems?.length) addSubitemsToMap(subitem.subitems, map);
+// Narrow type that both SectionItem and SectionFragment satisfy — the fields
+// read by updateTocLocation when mapping TOC items to their section/fragment.
+interface LocatedEntry {
+  id: string;
+  href?: string;
+  cfi: string;
+  location?: SectionFragment['location'];
+}
+
+// Helper: Recursively add fragments to sections map
+const addFragmentsToMap = (fragments: SectionFragment[], map: Record<string, LocatedEntry>) => {
+  for (const fragment of fragments) {
+    if (fragment.href) map[fragment.href] = fragment;
+    if (fragment.fragments?.length) addFragmentsToMap(fragment.fragments, map);
   }
 };
 
-// Helper: Create sections lookup map including all subitems
+// Helper: Create sections lookup map including all fragments
 type Href = string;
-type SectionsMap = Record<Href, SectionItem>;
+type SectionsMap = Record<Href, LocatedEntry>;
 const createSectionsMap = (sections: SectionItem[]) => {
   const map: SectionsMap = {};
 
   for (const section of sections) {
     map[section.id] = section;
-    if (section.subitems?.length) addSubitemsToMap(section.subitems, map);
+    if (section.fragments?.length) addFragmentsToMap(section.fragments, map);
   }
 
   return map;
@@ -160,7 +192,7 @@ export const updateToc = async (
   const totalSize = cumulativeSizes[cumulativeSizes.length - 1]! + sizes[sizes.length - 1]!;
   const totalLocations = Math.floor(totalSize / SIZE_PER_LOC);
 
-  // Step 3: Update locations to sections and subitems
+  // Step 3: Update locations to sections and fragments
   updateSectionLocations(sections, cumulativeSizes, sizes, totalLocations);
 
   // Step 4: Create sections map and update TOC locations
@@ -222,4 +254,274 @@ const sortTocItems = (items: TOCItem[]): void => {
     }
     return 0;
   });
+};
+
+// -----------------------------------------------------------------------------
+// computeBookNav / hydrateBookNav
+// -----------------------------------------------------------------------------
+
+const cloneTocItems = (items: TOCItem[]): TOCItem[] =>
+  items.map((item) => ({
+    ...item,
+    subitems: item.subitems ? cloneTocItems(item.subitems) : undefined,
+  }));
+
+// Ported from foliate-js: restructure TOC so that fragment-linked subitems under
+// the same section are regrouped under a natural parent when one exists.
+const groupTocSubitems = (bookDoc: BookDoc, items: TOCItem[]): void => {
+  const splitHref = (href: string) => bookDoc.splitTOCHref(href);
+
+  const groupBySection = (subitems: TOCItem[]) => {
+    const grouped = new Map<string, TOCItem[]>();
+    for (const subitem of subitems) {
+      const [sectionId] = splitHref(subitem.href) as [string | undefined];
+      const key = sectionId ?? '';
+      const bucket = grouped.get(key) ?? [];
+      bucket.push(subitem);
+      grouped.set(key, bucket);
+    }
+    return grouped;
+  };
+
+  const separateParentAndFragments = (sectionId: string, subitems: TOCItem[]) => {
+    let parent: TOCItem | null = null;
+    const fragments: TOCItem[] = [];
+    for (const subitem of subitems) {
+      const [, fragmentId] = splitHref(subitem.href) as [string | undefined, string | undefined];
+      if (!fragmentId || subitem.href === sectionId) {
+        parent = subitem;
+      } else {
+        fragments.push(subitem);
+      }
+    }
+    return { parent, fragments };
+  };
+
+  for (const item of items) {
+    if (!item.subitems?.length) continue;
+
+    const groupedBySection = groupBySection(item.subitems);
+    if (groupedBySection.size <= 3) continue;
+
+    const newSubitems: TOCItem[] = [];
+    for (const [sectionId, subitems] of groupedBySection.entries()) {
+      if (item.href === sectionId) {
+        newSubitems.push(...subitems);
+        continue;
+      }
+      if (subitems.length === 1) {
+        newSubitems.push(subitems[0]!);
+      } else {
+        const { parent, fragments } = separateParentAndFragments(sectionId, subitems);
+        if (parent) {
+          parent.subitems = fragments.length > 0 ? fragments : parent.subitems;
+          newSubitems.push(parent);
+        } else {
+          newSubitems.push(...subitems);
+        }
+      }
+    }
+    item.subitems = newSubitems;
+  }
+};
+
+const findFragmentPosition = (html: string, fragmentId: string | undefined): number => {
+  if (!fragmentId) return html.length;
+  const patterns = [
+    new RegExp(`\\sid=["']${CSS.escape(fragmentId)}["']`, 'i'),
+    new RegExp(`\\sname=["']${CSS.escape(fragmentId)}["']`, 'i'),
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && typeof match.index === 'number') return match.index;
+  }
+  return -1;
+};
+
+const calculateFragmentSize = (
+  content: string,
+  fragmentId: string | undefined,
+  prevFragmentId: string | undefined,
+): number => {
+  const endPos = findFragmentPosition(content, fragmentId);
+  if (endPos < 0) return 0;
+  const startPos = prevFragmentId ? findFragmentPosition(content, prevFragmentId) : 0;
+  const validStartPos = Math.max(0, startPos);
+  if (endPos < validStartPos) return 0;
+  return new Blob([content.substring(validStartPos, endPos)]).size;
+};
+
+const collectAllTocItems = (items: TOCItem[]): TOCItem[] => {
+  const out: TOCItem[] = [];
+  const walk = (xs: TOCItem[]) => {
+    for (const x of xs) {
+      out.push(x);
+      if (x.subitems?.length) walk(x.subitems);
+    }
+  };
+  walk(items);
+  return out;
+};
+
+interface SectionGroup {
+  base: TOCItem | null;
+  fragments: TOCItem[];
+}
+
+const groupItemsBySection = (bookDoc: BookDoc, items: TOCItem[]): Map<string, SectionGroup> => {
+  const groups = new Map<string, SectionGroup>();
+  for (const item of items) {
+    if (!item.href) continue;
+    const [sectionId, fragmentId] = bookDoc.splitTOCHref(item.href) as [
+      string | undefined,
+      string | undefined,
+    ];
+    if (!sectionId) continue;
+    let group = groups.get(sectionId);
+    if (!group) {
+      group = { base: null, fragments: [] };
+      groups.set(sectionId, group);
+    }
+    const isBase = !fragmentId || item.href === sectionId;
+    if (isBase) group.base = item;
+    else group.fragments.push(item);
+  }
+  return groups;
+};
+
+const getHTMLFragmentElement = (doc: Document, id: string | undefined): Element | null => {
+  if (!id) return null;
+  return doc.getElementById(id) ?? doc.querySelector(`[name="${CSS.escape(id)}"]`);
+};
+
+type CFIModule = {
+  joinIndir: (...xs: string[]) => string;
+  fromElements: (elements: Element[]) => string[];
+};
+
+const buildFragmentCfi = (section: SectionItem, element: Element | null): string => {
+  const cfiLib = CFI as unknown as CFIModule;
+  const rel = element ? (cfiLib.fromElements([element])[0] ?? '') : '';
+  return cfiLib.joinIndir(section.cfi, rel);
+};
+
+const buildSectionFragments = (
+  section: SectionItem,
+  fragments: TOCItem[],
+  base: TOCItem | null,
+  content: string,
+  doc: Document,
+  splitHref: (href: string) => Array<string | number>,
+): SectionFragment[] => {
+  const out: SectionFragment[] = [];
+  for (let i = 0; i < fragments.length; i++) {
+    const fragment = fragments[i]!;
+    const [, rawFragmentId] = splitHref(fragment.href) as [string | undefined, string | undefined];
+    const fragmentId = rawFragmentId;
+
+    const prev = i > 0 ? fragments[i - 1] : base;
+    const [, rawPrevFragmentId] = prev
+      ? (splitHref(prev.href) as [string | undefined, string | undefined])
+      : [undefined, undefined];
+    const prevFragmentId = rawPrevFragmentId;
+
+    const element = getHTMLFragmentElement(doc, fragmentId);
+    const cfi = buildFragmentCfi(section, element);
+    const size = calculateFragmentSize(content, fragmentId, prevFragmentId);
+
+    out.push({
+      id: fragment.href,
+      href: fragment.href,
+      cfi,
+      size,
+      linear: section.linear,
+    });
+  }
+  return out;
+};
+
+/**
+ * Compute a per-book navigation artifact from a freshly opened BookDoc.
+ * Expensive: for each referenced section, loads the HTML text and parses the
+ * XHTML DOM to compute per-fragment CFIs (via CFI.joinIndir) and byte-size
+ * offsets between TOC-fragment anchors. Intended to run on cache miss; the
+ * result is persisted to Books/{hash}/nav.json and replayed via
+ * hydrateBookNav on subsequent opens.
+ */
+export const computeBookNav = async (bookDoc: BookDoc): Promise<BookNav> => {
+  const tocClone = cloneTocItems(bookDoc.toc ?? []);
+  const sections: Record<string, BookNavSection> = {};
+
+  if (tocClone.length) {
+    groupTocSubitems(bookDoc, tocClone);
+  }
+
+  const bookSections = bookDoc.sections ?? [];
+  if (!tocClone.length || !bookSections.length) {
+    return { version: BOOK_NAV_VERSION, toc: tocClone, sections };
+  }
+
+  const sectionMap = new Map(bookSections.map((s) => [s.id, s]));
+  const allItems = collectAllTocItems(tocClone);
+  const groups = groupItemsBySection(bookDoc, allItems);
+  const splitHref = (href: string) => bookDoc.splitTOCHref(href);
+
+  for (const [sectionId, { base, fragments }] of groups.entries()) {
+    const section = sectionMap.get(sectionId);
+    if (!section || fragments.length === 0) continue;
+    if (!section.loadText) continue;
+
+    const content = await section.loadText();
+    if (!content) continue;
+
+    let doc: Document | null = null;
+    try {
+      doc = await section.createDocument();
+    } catch (e) {
+      console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
+    }
+    if (!doc) continue;
+
+    const sectionFragments = buildSectionFragments(
+      section,
+      fragments,
+      base,
+      content,
+      doc,
+      splitHref,
+    );
+    if (sectionFragments.length > 0) {
+      sections[sectionId] = { id: sectionId, fragments: sectionFragments };
+    }
+  }
+
+  return { version: BOOK_NAV_VERSION, toc: tocClone, sections };
+};
+
+const cloneSectionFragments = (fragments: SectionFragment[]): SectionFragment[] =>
+  fragments.map((f) => ({
+    id: f.id,
+    href: f.href,
+    cfi: f.cfi,
+    size: f.size,
+    linear: f.linear,
+    fragments: f.fragments ? cloneSectionFragments(f.fragments) : undefined,
+  }));
+
+/**
+ * Apply a cached BookNav onto a freshly opened BookDoc, replacing its TOC
+ * with the cached (post-grouping) version and attaching per-section
+ * fragments to the corresponding Section objects. No I/O.
+ */
+export const hydrateBookNav = (bookDoc: BookDoc, bookNav: BookNav): void => {
+  bookDoc.toc = cloneTocItems(bookNav.toc);
+  const bookSections = bookDoc.sections ?? [];
+  for (const section of bookSections) {
+    const cached = bookNav.sections[section.id];
+    if (cached?.fragments?.length) {
+      section.fragments = cloneSectionFragments(cached.fragments);
+    } else {
+      section.fragments = undefined;
+    }
+  }
 };

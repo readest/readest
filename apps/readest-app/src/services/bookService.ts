@@ -15,12 +15,14 @@ import {
   getLocalBookFilename,
   getCoverFilename,
   getConfigFilename,
+  getBookNavFilename,
   INIT_BOOK_CONFIG,
   formatTitle,
   formatAuthors,
   getPrimaryLanguage,
   getMetadataHash,
 } from '@/utils/book';
+import type { BookNav } from '@/utils/toc';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
@@ -557,6 +559,23 @@ export async function saveBookConfig(
     serializedConfig = JSON.stringify(config);
   }
   await fs.writeFile(getConfigFilename(book), 'Books', serializedConfig);
+}
+
+export async function loadBookNav(fs: FileSystem, book: Book): Promise<BookNav | null> {
+  try {
+    const path = getBookNavFilename(book);
+    if (!(await fs.exists(path, 'Books'))) return null;
+    const str = (await fs.readFile(path, 'Books', 'text')) as string;
+    const parsed = JSON.parse(str) as BookNav;
+    if (!parsed || typeof parsed.version !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveBookNav(fs: FileSystem, book: Book, nav: BookNav): Promise<void> {
+  await fs.writeFile(getBookNavFilename(book), 'Books', JSON.stringify(nav));
 }
 
 export async function fetchBookDetails(
