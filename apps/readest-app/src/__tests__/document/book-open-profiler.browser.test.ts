@@ -238,7 +238,6 @@ describe('Book-open profiler (browser)', () => {
       const session = bookProfiler.endSession();
       if (session) {
         allSessions.push(session);
-        console.warn('\n' + bookProfiler.formatSession(session));
       }
     }, 90_000);
   }
