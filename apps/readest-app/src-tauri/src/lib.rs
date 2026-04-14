@@ -28,6 +28,8 @@ mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
+#[cfg(target_os = "windows")]
+use tauri::webview::ScrollBarStyle;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
 #[cfg(target_os = "android")]
 use tauri_plugin_native_bridge::register_select_directory_callback;
@@ -36,7 +38,6 @@ use tauri_plugin_native_bridge::{NativeBridgeExt, OpenExternalUrlRequest};
 use tauri_plugin_oauth::start;
 #[cfg(not(target_os = "android"))]
 use tauri_plugin_opener::OpenerExt;
-use tauri::webview::ScrollBarStyle;
 use transfer_file::{download_file, upload_file};
 
 #[cfg(desktop)]
