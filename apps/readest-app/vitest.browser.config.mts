@@ -1,3 +1,4 @@
+import path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
@@ -14,6 +15,14 @@ export default defineConfig({
   },
   resolve: {
     conditions: ['development'],
+    alias: {
+      // @pdfjs/pdf.min.mjs is not a real npm package — it's a bare specifier used
+      // inside foliate-js/pdf.js that expects the pdfjs-dist bundle to be pre-loaded.
+      // Point it at the actual file so Vite can resolve it in the test environment.
+      '@pdfjs/pdf.min.mjs': path.resolve(
+        '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build/pdf.min.mjs',
+      ),
+    },
   },
   optimizeDeps: {
     include: [

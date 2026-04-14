@@ -204,6 +204,7 @@ export class DocumentLoader {
         const loader = await this.makeZipLoader();
         const { entries } = loader;
 
+        performance.mark('[epub-open] zip-entries-read');
         if (this.isCBZ()) {
           const { makeComicBook } = await import('foliate-js/comic-book.js');
           book = await makeComicBook(loader, this.file);
@@ -216,6 +217,7 @@ export class DocumentLoader {
           format = 'FBZ';
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
+          performance.mark('[epub-open] module-imported');
           book = await new EPUB(loader).init();
           format = 'EPUB';
         }

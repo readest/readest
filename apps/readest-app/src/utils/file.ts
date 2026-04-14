@@ -277,6 +277,78 @@ export class NativeFile extends File implements ClosableFile {
   }
 }
 
+export class IDBFile extends File implements ClosableFile {
+  #path: string;
+  #name: string;
+  #size: number = -1;
+  #type: string;
+  #blob: Blob | null = null;
+  #getRecord: (path: string) => Promise<{ content: Blob | ArrayBuffer | string }>;
+  #migrateFn: ((path: string, blob: Blob) => void) | undefined;
+
+  constructor(
+    path: string,
+    getRecord: (path: string) => Promise<{ content: Blob | ArrayBuffer | string }>,
+    migrateFn?: (path: string, blob: Blob) => void,
+    name?: string,
+    type = '',
+  ) {
+    super([], name || path, { type });
+    this.#path = path;
+    this.#name = name || path;
+    this.#type = type;
+    this.#getRecord = getRecord;
+    this.#migrateFn = migrateFn;
+  }
+
+  async open(): Promise<this> {
+    const record = await this.#getRecord(this.#path);
+    const { content } = record;
+    if (content instanceof Blob) {
+      // Already a Blob — browser keeps bytes on disk, lazy slice is free.
+      this.#blob = content;
+    } else {
+      // Legacy ArrayBuffer record: wrap in Blob so slice() works, then
+      // fire-and-forget migration so the next open gets the lazy path.
+      this.#blob = new Blob([content as ArrayBuffer | string]);
+      this.#migrateFn?.(this.#path, this.#blob);
+    }
+    this.#size = this.#blob.size;
+    return this;
+  }
+
+  async close(): Promise<void> {
+    this.#blob = null;
+  }
+
+  override get name() {
+    return this.#name;
+  }
+
+  override get type() {
+    return this.#type;
+  }
+
+  override get size() {
+    return this.#size;
+  }
+
+  override slice(start = 0, end = this.size, contentType = ''): Blob {
+    if (!this.#blob) throw new Error('IDBFile not opened');
+    return new DeferredBlob(this.#blob.slice(start, end).arrayBuffer(), contentType);
+  }
+
+  override async arrayBuffer(): Promise<ArrayBuffer> {
+    if (!this.#blob) throw new Error('IDBFile not opened');
+    return this.#blob.arrayBuffer();
+  }
+
+  override async text(): Promise<string> {
+    if (!this.#blob) throw new Error('IDBFile not opened');
+    return this.#blob.text();
+  }
+}
+
 export class RemoteFile extends File implements ClosableFile {
   url: string;
   #name: string;

@@ -496,12 +496,18 @@ export async function getBookFileSize(fs: FileSystem, book: Book): Promise<numbe
 export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookContent> {
   let file: File;
   const fp = getLocalBookFilename(book);
-  if (await fs.exists(fp, 'Books')) {
+  performance.mark('[load-content] exists-start');
+  const exists = await fs.exists(fp, 'Books');
+  performance.mark('[load-content] exists-done');
+  if (exists) {
     file = await fs.openFile(fp, 'Books');
+    performance.mark('[load-content] openFile-local-done');
   } else if (book.filePath) {
     file = await fs.openFile(book.filePath, 'None');
+    performance.mark('[load-content] openFile-filepath-done');
   } else if (book.url) {
     file = await fs.openFile(book.url, 'None');
+    performance.mark('[load-content] openFile-url-done');
   } else {
     // 0.9.64 has a bug that book.title might be modified but the filename is not updated
     const bookDir = getDir(book);
@@ -510,6 +516,7 @@ export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookC
       const bookFile = files.find((f) => f.path.endsWith(`.${EXTS[book.format]}`));
       if (bookFile) {
         file = await fs.openFile(`${bookDir}/${bookFile.path}`, 'Books');
+        performance.mark('[load-content] openFile-dir-done');
       } else {
         throw new BookFileNotFoundError();
       }

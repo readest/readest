@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { bookProfiler } from '@/utils/bookProfiler';
 
 import {
   BookContent,
@@ -145,6 +146,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       },
     }));
     try {
+      bookProfiler.mark('initViewState-start');
       const appService = await envConfig.getAppService();
       const { settings } = useSettingsStore.getState();
       const { getBookByHash } = useLibraryStore.getState();
@@ -157,11 +159,16 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       if (!bookDoc || !file || reload) {
         const content = (await appService.loadBookContent(book)) as BookContent;
         file = content.file;
+        bookProfiler.mark('loadBookContent-done');
+        bookProfiler.injectSubMarks('[load-content]');
         console.log('Loading book', key);
         const doc = await new DocumentLoader(file).open();
         bookDoc = doc.book;
+        bookProfiler.mark('documentLoader-done');
+        bookProfiler.injectSubMarks('[epub-open]');
       }
       const config = await appService.loadBookConfig(book, settings);
+      bookProfiler.mark('loadBookConfig-done');
       // Import annotations from third-party readers on first open
       if (bookDoc.metadata.identifier) {
         const { getAnnotationProviders } = await import('@/services/annotation');

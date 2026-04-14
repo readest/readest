@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { bookProfiler } from '@/utils/bookProfiler';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig, PageInfo } from '@/types/book';
@@ -320,6 +321,8 @@ const FoliateViewer: React.FC<{
   };
 
   const stabilizedHandler = useCallback(() => {
+    bookProfiler.mark('stabilized');
+    bookProfiler.endSession();
     setLoading(false);
   }, []);
 
@@ -456,8 +459,10 @@ const FoliateViewer: React.FC<{
     setTimeout(() => setLoading(true), 200);
 
     const openBook = async () => {
+      bookProfiler.mark('openBook-start');
       console.log('Opening book', bookKey);
       await import('foliate-js/view.js');
+      bookProfiler.mark('foliate-import-done');
       const view = wrappedFoliateView(document.createElement('foliate-view') as FoliateView);
       view.id = `foliate-view-${bookKey}`;
       containerRef.current?.appendChild(view);
@@ -481,6 +486,7 @@ const FoliateViewer: React.FC<{
       }
 
       await view.open(bookDoc);
+      bookProfiler.mark('view-open-done');
       // make sure we can listen renderer events after opening book
       viewRef.current = view;
       setFoliateView(bookKey, view);
@@ -562,6 +568,7 @@ const FoliateViewer: React.FC<{
       } else {
         await view.goToFraction(0);
       }
+      bookProfiler.mark('view-init-done');
       setViewInited(bookKey, true);
     };
 
