@@ -236,6 +236,12 @@ const layoutPanelItems = [
     section: 'Layout',
   },
   {
+    id: 'settings.layout.useBookLayout',
+    labelKey: _('Use Book Layout'),
+    keywords: ['paragraph', 'book', 'layout', 'default', 'original', 'preserve'],
+    section: 'Paragraph',
+  },
+  {
     id: 'settings.layout.paragraphMargin',
     labelKey: _('Paragraph Margin'),
     keywords: ['paragraph', 'margin', 'spacing', 'gap'],

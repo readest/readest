@@ -28,6 +28,8 @@ mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
+#[cfg(target_os = "windows")]
+use tauri::webview::ScrollBarStyle;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
 #[cfg(target_os = "android")]
 use tauri_plugin_native_bridge::register_select_directory_callback;
@@ -394,7 +396,9 @@ pub fn run() {
 
                 #[cfg(target_os = "windows")]
                 {
-                    builder = builder.transparent(false);
+                    builder = builder
+                        .transparent(false)
+                        .scroll_bar_style(ScrollBarStyle::FluentOverlay);
                 }
                 #[cfg(target_os = "linux")]
                 {

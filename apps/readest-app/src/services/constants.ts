@@ -14,6 +14,7 @@ import {
   TTSConfig,
   ViewConfig,
   ViewSettings,
+  ViewSettingsConfig,
 } from '@/types/book';
 import {
   HardcoverSettings,
@@ -220,9 +221,6 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   fullJustification: true,
   hyphenation: true,
   theme: 'light',
-  overrideFont: false,
-  overrideLayout: false,
-  overrideColor: false,
   backgroundTextureId: 'none',
   backgroundOpacity: 0.6,
   backgroundSize: 'cover',
@@ -231,6 +229,11 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   codeLanguage: 'auto-detect',
   userStylesheet: '',
   userUIStylesheet: '',
+
+  overrideFont: false,
+  overrideLayout: false,
+  overrideColor: false,
+  useBookLayout: false,
 
   zoomMode: 'fit-page',
   spreadMode: 'auto',
@@ -265,6 +268,10 @@ export const DEFAULT_EINK_VIEW_SETTINGS: Partial<ViewSettings> = {
   volumeKeysToFlip: true,
 };
 
+export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
+  enabled: false,
+};
+
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   sideBarTab: 'toc',
   uiLanguage: '',
@@ -292,6 +299,8 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   animated: false,
   isEink: false,
   isColorEink: false,
+
+  paragraphMode: DEFAULT_PARAGRAPH_MODE_CONFIG,
 
   readingRulerEnabled: false,
   readingRulerLines: 2,
@@ -344,15 +353,15 @@ export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
   screenOrientation: 'auto',
 };
 
-export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
-  enabled: false,
-};
-
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {
   scope: 'book',
   matchCase: false,
   matchWholeWords: false,
   matchDiacritics: false,
+};
+
+export const DEFAULT_VIEW_SETTINGS_CONFIG: ViewSettingsConfig = {
+  isGlobal: true,
 };
 
 export const SYSTEM_SETTINGS_VERSION = 1;

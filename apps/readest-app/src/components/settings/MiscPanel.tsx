@@ -16,7 +16,7 @@ type CSSType = 'book' | 'reader';
 const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
-  const { settings, isSettingsGlobal, setSettings } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { getView, getViewSettings, setViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
@@ -90,20 +90,10 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       setDraftContentStylesheet(formattedCSS);
       setDraftContentStylesheetSaved(true);
       viewSettings.userStylesheet = formattedCSS;
-
-      if (isSettingsGlobal) {
-        settings.globalViewSettings.userStylesheet = formattedCSS;
-        setSettings(settings);
-      }
     } else {
       setDraftUIStylesheet(formattedCSS);
       setDraftUIStylesheetSaved(true);
       viewSettings.userUIStylesheet = formattedCSS;
-
-      if (isSettingsGlobal) {
-        settings.globalViewSettings.userUIStylesheet = formattedCSS;
-        setSettings(settings);
-      }
     }
 
     setViewSettings(bookKey, { ...viewSettings });

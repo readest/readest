@@ -185,9 +185,6 @@ export interface BookStyle {
   fullJustification: boolean;
   hyphenation: boolean;
   theme: string;
-  overrideFont: boolean;
-  overrideLayout: boolean;
-  overrideColor: boolean;
   backgroundTextureId: string;
   backgroundOpacity: number;
   backgroundSize: string;
@@ -196,6 +193,11 @@ export interface BookStyle {
   codeLanguage: string;
   userStylesheet: string;
   userUIStylesheet: string;
+
+  overrideFont: boolean;
+  overrideLayout: boolean;
+  overrideColor: boolean;
+  useBookLayout: boolean;
 
   // fixed-layout specific
   zoomMode: 'fit-page' | 'fit-width' | 'original-size' | 'custom';
@@ -260,6 +262,8 @@ export interface ViewConfig {
   animated: boolean;
   isEink: boolean;
   isColorEink: boolean;
+
+  paragraphMode: ParagraphModeConfig;
 
   readingRulerEnabled: boolean;
   readingRulerLines: number;
@@ -333,6 +337,10 @@ export interface ProofreadRulesConfig {
   proofreadRules?: ProofreadRule[];
 }
 
+export interface ViewSettingsConfig {
+  isGlobal: boolean;
+}
+
 export interface ViewSettings
   extends
     BookLayout,
@@ -344,9 +352,8 @@ export interface ViewSettings
     TranslatorConfig,
     ScreenConfig,
     ProofreadRulesConfig,
-    AnnotatorConfig {
-  paragraphMode?: ParagraphModeConfig;
-}
+    AnnotatorConfig,
+    ViewSettingsConfig {}
 
 export interface BookProgress {
   location: string;

@@ -442,7 +442,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
             if (windowInsets != null) {
                 val insets = windowInsets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() or
                     WindowInsetsCompat.Type.displayCutout()
                 )
                 val density = activity.resources.displayMetrics.density

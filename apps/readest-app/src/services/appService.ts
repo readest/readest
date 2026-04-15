@@ -14,6 +14,7 @@ import {
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from '@/types/book';
+import type { BookNav } from '@/services/nav';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
 
 import { getOSPlatform } from '@/utils/misc';
@@ -318,6 +319,14 @@ export abstract class BaseAppService implements AppService {
 
   async saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings) {
     return BookSvc.saveBookConfig(this.fs, book, config, settings);
+  }
+
+  async loadBookNav(book: Book) {
+    return BookSvc.loadBookNav(this.fs, book);
+  }
+
+  async saveBookNav(book: Book, nav: BookNav) {
+    return BookSvc.saveBookNav(this.fs, book, nav);
   }
 
   async loadLibraryBooks(): Promise<Book[]> {
