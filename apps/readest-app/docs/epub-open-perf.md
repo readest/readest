@@ -116,3 +116,36 @@ Added granular profiler sub-marks inside `#updateSubItems()` (`subitems-toc-grou
 | `src/services/bookService.ts`                               | Non-blocking subitems cache write at import time via `buildSubitemsData`                                                |
 | `src/utils/bookProfiler.ts`                                 | `MARK_COL` computed dynamically; fixed top-border width formula                                                         |
 | `src/__tests__/document/book-open-profiler.browser.test.ts` | Pre-caches subitems for all EPUB fixtures in `beforeAll`                                                                |
+
+---
+
+# PDF Open Performance: Disk-Cached Metadata and TOC
+
+## Change Summary
+
+Every PDF open called `pdfjsLib.getDocument()` (unavoidable — needed for rendering), then sequentially called `pdf.getPage(1)`, `pdf.getMetadata()`, and `pdf.getOutline()` + recursive `makeTOCItem()` on every open. There was no caching equivalent to EPUB's `book.json`.
+
+Added `Cache/<hash>/pdf.json` storing `{ version, toc, metadata, viewport }`. Written non-blocking at import time (and lazily on first open with a cache context). On subsequent opens `makePDF()` receives the cached data and skips the three sequential calls entirely. The remaining cost is `pdfjsLib.getDocument()` itself — range-request instrumentation confirmed that only 2 range requests totalling 88 KB are made, with ~3 ms of actual IO; the remaining ~63 ms is PDF.js worker/WASM initialization, which cannot be avoided.
+
+## test.pdf — Before vs After
+
+| Checkpoint                                         | Before (no cache) | After (disk-cached) | Change      |
+| -------------------------------------------------- | ----------------- | ------------------- | ----------- |
+| `getDocument-done (2 ranges, 88.1 KB, 63 ms idle)` | +261.3 ms         | +66.4 ms            | **−195 ms** |
+| `getPage1-done`                                    | +7.7 ms           | — (skipped)         | **−7.7 ms** |
+| `getMetadata-done`                                 | +3.4 ms           | — (skipped)         | **−3.4 ms** |
+| `getOutline-done`                                  | +7.6 ms           | — (skipped)         | **−7.6 ms** |
+| `cache-applied`                                    | —                 | +0.0 ms             |             |
+| `documentLoader-done`                              | ~281 ms total     | ~68 ms total        | **−76%**    |
+
+> The 63 ms "idle" inside `getDocument` is PDF.js worker + WASM init — ~3 ms is actual file IO. Switching from range transport to a full `arrayBuffer()` read would save at most ~3 ms and is not worth the memory cost.
+
+## Key Files Changed
+
+| File                                                        | Change                                                                                                    |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `packages/foliate-js/pdf.js`                                | `makePDF(file, cachedData)` fast path skips getPage/getMetadata/getOutline; range request profiling marks |
+| `src/libs/document.ts`                                      | `CachedPDFData` type, `buildPDFCache()`, `readPDFCache()`; PDF branch in `open()` reads/writes cache      |
+| `src/services/bookService.ts`                               | Non-blocking `pdf.json` write at import time; `book.json` write gated to non-PDF formats                  |
+| `src/store/readerStore.ts`                                  | `injectSubMarks('[pdf-open]')` for profiler sub-tree                                                      |
+| `src/__tests__/document/book-open-profiler.browser.test.ts` | Pre-caches PDF fixtures; injects `[pdf-open]` sub-marks                                                   |
