@@ -23,7 +23,7 @@ import {
 } from '@/utils/book';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
-import { BookDoc, DocumentLoader, EXTS, buildBookCache } from '@/libs/document';
+import { BookDoc, DocumentLoader, EXTS, buildBookCache, buildPDFCache } from '@/libs/document';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -277,10 +277,16 @@ export async function importBook(
     const hash = await partialMD5(fileobj);
     const metaHash = getMetadataHash(loadedBook.metadata);
 
-    // Write unified book cache non-blocking so subsequent opens skip all parsing
-    fs.writeFile(`${hash}/book.json`, 'Cache', JSON.stringify(buildBookCache(loadedBook))).catch(
-      console.warn,
-    );
+    // Write format-specific cache non-blocking so subsequent opens skip all parsing
+    if (format === 'PDF') {
+      fs.writeFile(`${hash}/pdf.json`, 'Cache', JSON.stringify(buildPDFCache(loadedBook))).catch(
+        console.warn,
+      );
+    } else {
+      fs.writeFile(`${hash}/book.json`, 'Cache', JSON.stringify(buildBookCache(loadedBook))).catch(
+        console.warn,
+      );
+    }
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);

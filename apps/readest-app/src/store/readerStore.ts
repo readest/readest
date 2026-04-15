@@ -169,6 +169,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         bookDoc = doc.book;
         bookProfiler.mark('documentLoader-done');
         bookProfiler.injectSubMarks('[epub-open]');
+        bookProfiler.injectSubMarks('[pdf-open]');
       }
       const config = await appService.loadBookConfig(book, settings);
       bookProfiler.mark('loadBookConfig-done');

@@ -137,6 +137,13 @@ export interface CachedBookData {
   subitems: Record<string, SectionSubitemData[]>;
 }
 
+export interface CachedPDFData {
+  version: 1;
+  toc: TOCItem[] | null;
+  metadata: unknown;
+  viewport: { width: number; height: number };
+}
+
 // epub.js exposes these after init() — present on the raw object, not typed in BookDoc
 type EpubInstance = {
   resources: {
@@ -188,6 +195,16 @@ export function buildBookCache(book: BookDoc): CachedBookData {
     media: epub.media,
     dir: epub.dir,
     subitems,
+  };
+}
+
+export function buildPDFCache(book: BookDoc): CachedPDFData {
+  const rendition = book.rendition as { viewport?: { width: number; height: number } };
+  return {
+    version: 1,
+    toc: book.toc ?? null,
+    metadata: book.metadata,
+    viewport: rendition?.viewport ?? { width: 0, height: 0 },
   };
 }
 
@@ -271,6 +288,17 @@ export class DocumentLoader {
         dir: null,
         subitems,
       } satisfies CachedBookData;
+    } catch {
+      return null;
+    }
+  }
+
+  private async readPDFCache(): Promise<CachedPDFData | null> {
+    if (!this.cacheContext) return null;
+    const { bookHash, fs } = this.cacheContext;
+    try {
+      const text = (await fs.readFile(`${bookHash}/pdf.json`, 'Cache', 'text')) as string;
+      return JSON.parse(text) as CachedPDFData;
     } catch {
       return null;
     }
@@ -363,8 +391,9 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
-    // Start cache read immediately so it runs in parallel with ZIP IO below
+    // Start cache reads immediately so they run in parallel with format detection IO
     const bookCachePromise = this.readBookCache();
+    const pdfCachePromise = this.readPDFCache();
     try {
       if (await this.isZip()) {
         const loader = await this.makeZipLoader();
@@ -406,8 +435,18 @@ export class DocumentLoader {
         }
       } else if (await this.isPDF()) {
         const { makePDF } = await import('foliate-js/pdf.js');
-        book = await makePDF(this.file);
+        const cachedPDF = await pdfCachePromise;
+        book = await makePDF(this.file, cachedPDF);
         format = 'PDF';
+        // Lazy-write pdf.json on cache miss so existing books benefit on next open
+        if (!cachedPDF && this.cacheContext) {
+          const { bookHash, fs } = this.cacheContext;
+          fs.writeFile(
+            `${bookHash}/pdf.json`,
+            'Cache',
+            JSON.stringify(buildPDFCache(book as unknown as BookDoc)),
+          ).catch(console.warn);
+        }
       } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
         const fflate = await import('foliate-js/vendor/fflate.js');
         const { MOBI } = await import('foliate-js/mobi.js');

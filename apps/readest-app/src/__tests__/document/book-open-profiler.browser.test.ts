@@ -3,6 +3,7 @@ import { describe, it, beforeAll, afterEach, afterAll } from 'vitest';
 import {
   DocumentLoader,
   buildBookCache,
+  buildPDFCache,
   type BookDoc,
   type TOCCacheContext,
 } from '@/libs/document';
@@ -94,21 +95,28 @@ describe('Book-open profiler (browser)', () => {
       await service.fs.writeFile(fixture.name, 'Books', buffer);
     }
 
-    // Pre-cache TOC for every EPUB fixture so the profiled run uses the fast path.
+    // Pre-cache every fixture so the profiled run uses the fast path.
     for (const fixture of FIXTURES) {
-      if (fixture.mime !== 'application/epub+zip') continue;
       const file = await service.fs.openFile(fixture.name, 'Books', fixture.name);
       const hash = await partialMD5(file);
       fixtureHashes.set(fixture.name, hash);
       try {
-        const { book } = await new DocumentLoader(file).open();
-        await service.fs.writeFile(
-          `${hash}/book.json`,
-          'Cache',
-          JSON.stringify(buildBookCache(book)),
-        );
+        const { book, format } = await new DocumentLoader(file).open();
+        if (format === 'PDF') {
+          await service.fs.writeFile(
+            `${hash}/pdf.json`,
+            'Cache',
+            JSON.stringify(buildPDFCache(book)),
+          );
+        } else {
+          await service.fs.writeFile(
+            `${hash}/book.json`,
+            'Cache',
+            JSON.stringify(buildBookCache(book)),
+          );
+        }
       } catch {
-        // Non-EPUB or parse error — skip caching for this fixture
+        // Parse error — skip caching for this fixture
       }
     }
 
@@ -174,6 +182,7 @@ describe('Book-open profiler (browser)', () => {
       }
       bookProfiler.mark('documentLoader-done');
       bookProfiler.injectSubMarks('[epub-open]');
+      bookProfiler.injectSubMarks('[pdf-open]');
 
       // In the standalone test there is no config system; mark immediately
       // so the 9-mark schema is preserved for comparison with app timing.
