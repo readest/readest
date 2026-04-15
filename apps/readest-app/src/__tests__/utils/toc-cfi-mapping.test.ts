@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DocumentLoader, CFI } from '@/libs/document';
 import type { BookDoc, TOCItem } from '@/libs/document';
-import { updateToc, findTocItemBS } from '@/utils/toc';
+import { computeBookNav, hydrateBookNav, updateToc, findTocItemBS } from '@/services/nav';
 
 // Simulates an annotation deep inside a section, past the chapter heading.
 // Section CFIs look like `epubcfi(/6/2)` and TOC item CFIs point at the heading
@@ -54,6 +54,11 @@ describe('TOC-to-CFI mapping with fragment hrefs (#3688)', () => {
     const loader = new DocumentLoader(file);
     const result = await loader.open();
     book = result.book;
+    // Mirror the production open flow in readerStore: build (or hydrate) the
+    // BookNav — which bakes section/fragment locations and TOC cfi+location —
+    // and then apply per-open settings via updateToc.
+    const nav = await computeBookNav(book);
+    hydrateBookNav(book, nav);
     await updateToc(book, false, 'none');
   }, 30000);
 

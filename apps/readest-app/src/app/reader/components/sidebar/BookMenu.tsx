@@ -17,7 +17,7 @@ import { eventDispatcher } from '@/utils/event';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { navigateToLogin } from '@/utils/nav';
-import { saveSysSettings } from '@/helpers/settings';
+import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { setKOSyncSettingsWindowVisible } from '@/app/reader/components/KOSyncSettings';
 import { setReadwiseSettingsWindowVisible } from '@/app/reader/components/ReadwiseSettings';
 import { setHardcoverSettingsWindowVisible } from '@/app/reader/components/HardcoverSettings';
@@ -39,7 +39,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const { user } = useAuth();
   const { settings } = useSettingsStore();
   const { getConfig, setConfig, saveConfig } = useBookDataStore();
-  const { bookKeys, recreateViewer, getViewSettings, setViewSettings } = useReaderStore();
+  const { bookKeys, recreateViewer, getViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
@@ -75,10 +75,11 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setIsSortedTOC((prev) => !prev);
     setIsDropdownOpen?.(false);
     if (sideBarBookKey) {
-      const viewSettings = getViewSettings(sideBarBookKey)!;
-      viewSettings.sortedTOC = !isSortedTOC;
-      setViewSettings(sideBarBookKey, viewSettings);
-      recreateViewer(envConfig, sideBarBookKey);
+      saveViewSettings(envConfig, sideBarBookKey, 'sortedTOC', !isSortedTOC, true, false).then(
+        () => {
+          recreateViewer(envConfig, sideBarBookKey);
+        },
+      );
     }
   };
   const handleSetParallel = () => {

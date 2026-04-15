@@ -22,7 +22,7 @@ import {
   getPrimaryLanguage,
   getMetadataHash,
 } from '@/utils/book';
-import type { BookNav } from '@/utils/toc';
+import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';

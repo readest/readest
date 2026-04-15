@@ -40,7 +40,7 @@ vi.mock('@/utils/misc', () => ({
 }));
 
 // These are transitive imports needed by readerStore
-vi.mock('@/utils/toc', () => ({ updateToc: vi.fn() }));
+vi.mock('@/services/nav', () => ({ updateToc: vi.fn() }));
 vi.mock('@/utils/book', () => ({
   formatTitle: vi.fn((t: string) => t),
   getMetadataHash: vi.fn(() => 'hash'),

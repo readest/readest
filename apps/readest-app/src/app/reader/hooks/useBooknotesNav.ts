@@ -4,7 +4,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { isCfiInLocation } from '@/utils/cfi';
-import { findTocItemBS } from '@/utils/toc';
+import { findTocItemBS } from '@/services/nav';
 import { BookNoteType } from '@/types/book';
 import { TOCItem } from '@/libs/document';
 

@@ -11,7 +11,7 @@ import {
   BOOK_NAV_VERSION,
   type BookNav,
   type SectionFragment,
-} from '@/utils/toc';
+} from '@/services/nav';
 
 // Polyfill CSS.escape for jsdom
 if (typeof globalThis['CSS'] === 'undefined') {

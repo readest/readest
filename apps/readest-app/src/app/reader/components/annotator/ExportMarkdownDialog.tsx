@@ -195,7 +195,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
           }
           if (pageStr || timestampStr) {
             lines.push('');
-            const infoStr = pageStr ? `${pageStr} · ${timestampStr}`.trim() : timestampStr;
+            const infoStr =
+              pageStr && timestampStr
+                ? `${pageStr} · ${timestampStr}`.trim()
+                : pageStr || timestampStr;
             lines.push(`*${infoStr}*`);
           }
 
