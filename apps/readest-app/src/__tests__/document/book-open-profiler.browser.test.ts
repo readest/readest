@@ -2,7 +2,7 @@
 import { describe, it, beforeAll, afterEach, afterAll } from 'vitest';
 import {
   DocumentLoader,
-  buildSubitemsData,
+  buildBookCache,
   type BookDoc,
   type TOCCacheContext,
 } from '@/libs/document';
@@ -102,21 +102,10 @@ describe('Book-open profiler (browser)', () => {
       fixtureHashes.set(fixture.name, hash);
       try {
         const { book } = await new DocumentLoader(file).open();
-        if (book.toc) {
-          await service.fs.writeFile(
-            `${hash}/toc.json`,
-            'Cache',
-            JSON.stringify({
-              toc: book.toc ?? null,
-              pageList: book.pageList ?? null,
-              landmarks: book.landmarks ?? null,
-            }),
-          );
-        }
         await service.fs.writeFile(
-          `${hash}/subitems.json`,
+          `${hash}/book.json`,
           'Cache',
-          JSON.stringify(buildSubitemsData(book.sections)),
+          JSON.stringify(buildBookCache(book)),
         );
       } catch {
         // Non-EPUB or parse error — skip caching for this fixture
