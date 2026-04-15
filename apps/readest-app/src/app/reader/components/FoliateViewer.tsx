@@ -562,9 +562,23 @@ const FoliateViewer: React.FC<{
       }
       applyMarginAndGap();
 
+      // Register stabilized listener before init to prevent a race condition:
+      // the epub cache makes open+init fast enough that 'stabilized' can fire
+      // before useFoliateEvents registers its listener (which requires a React
+      // re-render triggered by setFoliateView). Using { once: true } so it
+      // auto-removes; useFoliateEvents handles all subsequent stabilized events.
+      view.renderer.addEventListener('stabilized', stabilizedHandler, { once: true });
+
       const lastLocation = config.location;
       if (lastLocation) {
         await view.init({ lastLocation });
+        // If the CFI in lastLocation is malformed or resolves to an invalid
+        // section index (-1), renderer.goTo() silently no-ops and primaryIndex
+        // stays at -1. Detect this and fall back to the start of the book so
+        // the spinner doesn't hang indefinitely.
+        if (view.renderer.primaryIndex < 0) {
+          await view.goToFraction(0);
+        }
       } else {
         await view.goToFraction(0);
       }
@@ -572,7 +586,10 @@ const FoliateViewer: React.FC<{
       setViewInited(bookKey, true);
     };
 
-    openBook();
+    openBook().catch((e) => {
+      console.error('Failed to open book:', e);
+      setLoading(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

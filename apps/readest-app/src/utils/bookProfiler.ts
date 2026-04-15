@@ -182,3 +182,7 @@ class BookProfiler {
 }
 
 export const bookProfiler = new BookProfiler();
+
+if (typeof window !== 'undefined') {
+  (window as Record<string, unknown>).__bookProfiler = bookProfiler;
+}
