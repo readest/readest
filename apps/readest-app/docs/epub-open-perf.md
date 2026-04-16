@@ -149,3 +149,103 @@ Added `Cache/<hash>/pdf.json` storing `{ version, toc, metadata, viewport }`. Wr
 | `src/services/bookService.ts`                               | Non-blocking `pdf.json` write at import time; `book.json` write gated to non-PDF formats                  |
 | `src/store/readerStore.ts`                                  | `injectSubMarks('[pdf-open]')` for profiler sub-tree                                                      |
 | `src/__tests__/document/book-open-profiler.browser.test.ts` | Pre-caches PDF fixtures; injects `[pdf-open]` sub-marks                                                   |
+
+---
+
+# Full App Open Performance: End-to-End Parallelism
+
+## Change Summary
+
+The previous optimizations focused on the isolated `DocumentLoader` pipeline. This session measured the full click-to-content path using a Playwright script (`scripts/measure-book-open-time.ts`) with a persistent Firefox profile. Three categories of sequential I/O were identified and parallelized.
+
+**Baseline** (War and Peace EPUB, all caches warm): **~3200 ms wall / ~3700 ms io**
+
+The profiler revealed four stacked bottlenecks:
+
+| Phase                          | Before   | After   | Root cause                                                                                             |
+| ------------------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `libraryLoaded` gate           | ~400 ms  | ~250 ms | `loadSettings()` + `loadLibraryBooks()` were sequential                                                |
+| `loadBookConfig` delta         | ~150 ms  | ~1 ms   | Ran after `documentLoader-done`; only needs `book` + `settings`                                        |
+| `loadBookNav` (dev cache miss) | ~2618 ms | ~13 ms  | `NODE_ENV === 'production'` guard forced recompute on every dev open                                   |
+| `foliate-import-done` delta    | ~121 ms  | ~1 ms   | `import('foliate-js/view.js')` started in FoliateViewer useEffect instead of alongside `initViewState` |
+
+## War and Peace — Before vs After
+
+```
+Measuring: "War and Peace"  (5 runs)  →  http://localhost:3000
+
+BEFORE (all optimizations):          AFTER:
+  Run 1:  wall=3219 ms  io=3712 ms     Run 1:  wall=720 ms  io=395 ms
+  Run 2:  wall=3104 ms  io=3221 ms     Run 2:  wall=712 ms  io=527 ms
+  Run 3:  wall=3007 ms  io=2972 ms     Run 3:  wall=821 ms  io=487 ms
+                                        Run 4:  wall=686 ms  io=465 ms
+                                        Run 5:  wall=664 ms  io=448 ms
+  avg:    ~3110 ms                      avg:     721 ms
+```
+
+**Total reduction: ~2400 ms (4.3× faster)**
+
+## bookProfiler breakdown (last run, after)
+
+```
+┌─────────────────────────────────────────────────────┐
+│   Book: War and Peace                               │
+├──────────────────────────┬────────────┬─────────────┤
+│ Checkpoint               │ Elapsed    │ Delta       │
+├──────────────────────────┼────────────┼─────────────┤
+│ initViewState-start      │     0.0 ms │           — │
+│ loadBookContent-done     │    17.0 ms │    +17.0 ms │
+│   ├─ exists-done         │    13.0 ms │    +13.0 ms │
+│   └─ openFile-local-done │    17.0 ms │     +4.0 ms │
+│ documentLoader-done      │   100.0 ms │    +83.0 ms │
+│   ├─ zip-entries-read    │    77.0 ms │    +60.0 ms │
+│   ├─ module-imported     │    99.0 ms │    +22.0 ms │
+│   ├─ ...                 │   ...      │    ...      │
+│ loadBookConfig-done      │   100.0 ms │     +1.0 ms │  ← parallel
+│ loadBookNav-done         │   113.0 ms │    +13.0 ms │  ← cache hit
+│ openBook-start           │   161.0 ms │    +48.0 ms │
+│ foliate-import-done      │   162.0 ms │     +1.0 ms │  ← preloaded
+│ view-open-done           │   181.0 ms │    +19.0 ms │
+│ stabilized               │   486.0 ms │   +305.0 ms │
+├──────────────────────────┼────────────┼─────────────┤
+│ TOTAL                    │   486.0 ms │             │
+└──────────────────────────┴────────────┴─────────────┘
+```
+
+## Remaining bottlenecks
+
+The `stabilized` delta (+305 ms) is the browser's rendering pipeline inside `foliate-paginator#display()`:
+
+1. **`view.load()` awaits `iframe.onload`** (~150-200 ms): browser parses section HTML, resolves CSS, does initial layout
+2. **`columnize()`** (~50-80 ms): applies CSS column properties, forces a second layout pass to compute page breaks
+3. **`scrollToAnchor()`** (~30-50 ms): locates the saved position in the paginated column layout
+
+These are browser-native rendering costs. Optimizing them requires changes inside `foliate-js/paginator.js` (e.g. section content preloading, deferred column layout).
+
+The 48 ms gap from `loadBookNav-done` to `openBook-start` is React rendering overhead (setState → re-render → FoliateViewer mount → useEffect).
+
+## CDN Book Local Caching
+
+Books served via `book.url` (CDN-hosted) use `RemoteFile` which makes range requests on every open. On first open, `zip-entries-read` costs ~800ms (CDN latency). After the first open, the epub is now cached locally in IDB so subsequent opens use `IDBFile` instead.
+
+**Hamlet (CDN book) — First open vs Second open:**
+
+| Checkpoint         | First open (CDN) | Second open (IDB) | Change      |
+| ------------------ | ---------------- | ----------------- | ----------- |
+| `openFile-*-done`  | 26ms (url)       | 18ms (local)      | −8ms        |
+| `zip-entries-read` | 807ms            | 43ms              | **−764ms**  |
+| `stabilized` TOTAL | 3661ms           | 574ms             | **−3087ms** |
+
+The fix: after opening via `RemoteFile`, a fire-and-forget `fetch(book.url)` downloads the full epub and writes it to IDB (`Readest/Books/{hash}/{filename}`). The background download completed in ~1s for Hamlet (~200KB). Subsequent opens detect the local file via `fs.exists()` and use the fast IDB path.
+
+## Key Files Changed
+
+| File                                          | Change                                                                                                                                                                                                                                                     |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/hooks/useLibrary.ts`                     | `loadSettings()` + `loadLibraryBooks()` parallelized with `Promise.all`                                                                                                                                                                                    |
+| `src/store/readerStore.ts`                    | `loadBookConfig` + `loadBookNav` cache read fired in parallel with `loadBookContent → DocumentLoader.open()` chain; removed `NODE_ENV === 'production'` guard so nav cache is used in dev; added `bookProfiler.startSession()` and `loadBookNav-done` mark |
+| `src/services/nav/index.ts`                   | `computeBookNav` section loop parallelized with `Promise.all` (helps cold-start cache miss)                                                                                                                                                                |
+| `src/app/reader/components/ReaderContent.tsx` | `import('foliate-js/view.js')` fired alongside `initViewState` so module is cached before `FoliateViewer` mounts                                                                                                                                           |
+| `src/utils/bookProfiler.ts`                   | Added `loadBookNav-done` mark type                                                                                                                                                                                                                         |
+| `src/services/bookService.ts`                 | CDN books (`book.url`) trigger fire-and-forget background download to IDB after first open                                                                                                                                                                 |
+| `scripts/measure-book-open-time.ts`           | New Playwright script for end-to-end perf measurement                                                                                                                                                                                                      |

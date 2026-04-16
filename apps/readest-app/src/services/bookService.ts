@@ -521,6 +521,11 @@ export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookC
   } else if (book.url) {
     file = await fs.openFile(book.url, 'None');
     performance.mark('[load-content] openFile-url-done');
+    // Cache locally so subsequent opens read from IDB instead of re-fetching from CDN
+    fetch(book.url)
+      .then((r) => r.arrayBuffer())
+      .then((buf) => fs.writeFile(fp, 'Books', buf))
+      .catch(console.warn);
   } else {
     // 0.9.64 has a bug that book.title might be modified but the filename is not updated
     const bookDir = getDir(book);

@@ -25,12 +25,12 @@ import path from 'path';
 import os from 'os';
 import { firefox } from 'playwright';
 
-const BASE_URL = process.env.READEST_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env['READEST_URL'] ?? 'http://localhost:3000';
 const BOOK_NAME = process.argv[2] ?? 'War and Peace';
 const RUNS = Math.max(1, parseInt(process.argv[3] ?? '3', 10));
-const HEADLESS = process.env.HEADLESS !== 'false';
+const HEADLESS = process.env['HEADLESS'] !== 'false';
 const USER_DATA_DIR =
-  process.env.USER_DATA_DIR ?? path.join(os.homedir(), '.local/share/readest-perf-ff');
+  process.env['USER_DATA_DIR'] ?? path.join(os.homedir(), '.local/share/readest-perf-ff');
 
 interface RunResult {
   run: number;
@@ -164,7 +164,9 @@ async function main() {
     if (!bp) return null;
     const sessions = bp.getSessions();
     if (!sessions.length) return null;
-    return bp.formatSession(sessions[sessions.length - 1]);
+    const last = sessions[sessions.length - 1];
+    if (!last) return null;
+    return bp.formatSession(last);
   });
 
   if (profilerOutput) {

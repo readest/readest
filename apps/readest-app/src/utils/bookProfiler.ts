@@ -3,6 +3,7 @@ export type ProfileMark =
   | 'loadBookContent-done'
   | 'documentLoader-done'
   | 'loadBookConfig-done'
+  | 'loadBookNav-done'
   | 'openBook-start'
   | 'foliate-import-done'
   | 'view-open-done'
@@ -184,5 +185,5 @@ class BookProfiler {
 export const bookProfiler = new BookProfiler();
 
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).__bookProfiler = bookProfiler;
+  (window as unknown as Record<string, unknown>)['__bookProfiler'] = bookProfiler;
 }

@@ -97,32 +97,40 @@ export const computeBookNav = async (bookDoc: BookDoc): Promise<BookNav> => {
   const groups = groupItemsBySection(bookDoc, allItems);
   const splitHref = (href: string) => bookDoc.splitTOCHref(href);
 
-  for (const [sectionId, { base, fragments }] of groups.entries()) {
-    const section = sectionMap.get(sectionId);
-    if (!section || fragments.length === 0) continue;
-    if (!section.loadText) continue;
+  const sectionEntries = await Promise.all(
+    [...groups.entries()].map(async ([sectionId, { base, fragments }]) => {
+      const section = sectionMap.get(sectionId);
+      if (!section || fragments.length === 0 || !section.loadText) return null;
 
-    const content = await section.loadText();
-    if (!content) continue;
+      const content = await section.loadText();
+      if (!content) return null;
 
-    let doc: Document | null = null;
-    try {
-      doc = await section.createDocument();
-    } catch (e) {
-      console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
-    }
-    if (!doc) continue;
+      let doc: Document | null = null;
+      try {
+        doc = await section.createDocument();
+      } catch (e) {
+        console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
+      }
+      if (!doc) return null;
 
-    const sectionFragments = buildSectionFragments(
-      section,
-      fragments,
-      base,
-      content,
-      doc,
-      splitHref,
-    );
-    if (sectionFragments.length > 0) {
-      sections[sectionId] = { id: sectionId, fragments: sectionFragments };
+      const sectionFragments = buildSectionFragments(
+        section,
+        fragments,
+        base,
+        content,
+        doc,
+        splitHref,
+      );
+      return sectionFragments.length > 0
+        ? ([sectionId, { id: sectionId, fragments: sectionFragments }] as const)
+        : null;
+    }),
+  );
+
+  for (const entry of sectionEntries) {
+    if (entry) {
+      const [sectionId, navSection] = entry;
+      sections[sectionId] = navSection;
     }
   }
 
