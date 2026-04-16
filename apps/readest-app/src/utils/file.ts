@@ -218,7 +218,6 @@ export class NativeFile extends File implements ClosableFile {
   }
 
   override slice(start = 0, end = this.size, contentType = this.type): Blob {
-    // console.log(`Slicing: ${start}-${end}, size: ${end - start}`);
     const dataPromise = this.readData(start, end);
     return new DeferredBlob(dataPromise, contentType);
   }
@@ -431,7 +430,6 @@ export class RemoteFile extends File implements ClosableFile {
   async fetchRangePart(start: number, end: number) {
     start = Math.max(0, start);
     end = Math.min(this.size - 1, end);
-    // console.log(`Fetching range: ${start}-${end}, size: ${end - start + 1}`);
     const response = await fetch(this.url, { headers: { Range: `bytes=${start}-${end}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch range: ${response.status}`);
@@ -491,9 +489,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   override slice(start = 0, end = this.size, contentType = this.type): Blob {
-    // console.log(`Slicing: ${start}-${end}, size: ${end - start}`);
     const dataPromise = this.fetchRange(start, end - 1);
-
     return new DeferredBlob(dataPromise, contentType);
   }
 

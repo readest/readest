@@ -53,14 +53,12 @@ export const buildSectionFragments = (
   const out: SectionFragment[] = [];
   for (let i = 0; i < fragments.length; i++) {
     const fragment = fragments[i]!;
-    const [, rawFragmentId] = splitHref(fragment.href) as [string | undefined, string | undefined];
-    const fragmentId = rawFragmentId;
+    const [, fragmentId] = splitHref(fragment.href) as [string | undefined, string | undefined];
 
     const prev = i > 0 ? fragments[i - 1] : base;
-    const [, rawPrevFragmentId] = prev
+    const [, prevFragmentId] = prev
       ? (splitHref(prev.href) as [string | undefined, string | undefined])
       : [undefined, undefined];
-    const prevFragmentId = rawPrevFragmentId;
 
     const element = getHTMLFragmentElement(doc, fragmentId);
     const cfi = buildFragmentCfi(section, element);

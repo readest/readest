@@ -184,6 +184,6 @@ class BookProfiler {
 
 export const bookProfiler = new BookProfiler();
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
   (window as unknown as Record<string, unknown>)['__bookProfiler'] = bookProfiler;
 }
