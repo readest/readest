@@ -64,6 +64,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     setBookKeys(initialBookKeys);
     const uniqueIds = new Set<string>();
     console.log('Initialize books', initialBookKeys);
+    // Preload foliate-js in parallel with initViewState so the module is
+    // cached by the time FoliateViewer's useEffect calls import('foliate-js/view.js').
+    import('foliate-js/view.js').catch(() => {});
+
     initialBookKeys.forEach((key, index) => {
       const id = key.split('-')[0]!;
       const isPrimary = !uniqueIds.has(id);

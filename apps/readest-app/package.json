@@ -19,6 +19,7 @@
     "test": "dotenv -e .env -e .env.test.local -- vitest",
     "test:coverage": "dotenv -e .env -e .env.test.local -- vitest run --coverage",
     "test:browser": "dotenv -e .env -e .env.test.local -- vitest run --config vitest.browser.config.mts",
+    "perf:open": "../../node_modules/.pnpm/node_modules/.bin/tsx scripts/measure-book-open-time.ts",
     "test:tauri": "bash scripts/test-tauri.sh",
     "test:pr:web": "pnpm test -- --watch=false && pnpm test:browser",
     "test:pr:tauri": "bash scripts/test-tauri.sh",

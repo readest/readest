@@ -2,7 +2,7 @@ import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/type
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
-import { RemoteFile } from '@/utils/file';
+import { IDBFile, RemoteFile } from '@/utils/file';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
 import {
@@ -79,10 +79,31 @@ const indexedDBFileSystem: FileSystem = {
   async openFile(path: string, base: BaseDir, filename?: string) {
     if (isValidURL(path)) {
       return await new RemoteFile(path, filename).open();
-    } else {
-      const content = await this.readFile(path, base, 'binary');
-      return new File([content], filename || path);
     }
+    const { fp } = this.resolvePath(path, base);
+    const getRecord = async (resolvedPath: string) => {
+      const db = await openIndexedDB();
+      return new Promise<{ content: Blob | ArrayBuffer | string }>((resolve, reject) => {
+        const tx = db.transaction('files', 'readonly');
+        const req = tx.objectStore('files').get(resolvedPath);
+        req.onsuccess = () => {
+          if (req.result) resolve(req.result);
+          else reject(new Error(`File not found: ${resolvedPath}`));
+        };
+        req.onerror = () => reject(req.error);
+      });
+    };
+    // Migrate legacy ArrayBuffer records to Blob in the background so the
+    // next open gets the lazy path without paying the full IDB read cost.
+    const migrateFn = (resolvedPath: string, blob: Blob) => {
+      openIndexedDB()
+        .then((db) => {
+          const tx = db.transaction('files', 'readwrite');
+          tx.objectStore('files').put({ path: resolvedPath, content: blob });
+        })
+        .catch(() => {});
+    };
+    return new IDBFile(fp, getRecord, migrateFn, filename || path).open();
   },
   async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
     const { fp } = this.resolvePath(dstPath, base);
@@ -143,14 +164,20 @@ const indexedDBFileSystem: FileSystem = {
     const { fp } = this.resolvePath(path, base);
     const db = await openIndexedDB();
 
-    if (content instanceof File) {
-      content = await content.arrayBuffer();
-    }
+    // Store binary content as Blob so IDBFile can return lazy slice references
+    // without materialising the full buffer into the V8 heap on each open().
+    const blobContent: Blob | string =
+      content instanceof Blob || content instanceof File
+        ? new Blob([content], { type: (content as Blob).type })
+        : content instanceof ArrayBuffer
+          ? new Blob([content])
+          : (content as string);
+
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction('files', 'readwrite');
       const store = transaction.objectStore('files');
 
-      store.put({ path: fp, content });
+      store.put({ path: fp, content: blobContent });
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -279,6 +306,25 @@ const indexedDBFileSystem: FileSystem = {
   },
 };
 
+function migrateIDBArrayBuffersToBlob(): void {
+  openIndexedDB()
+    .then((db) => {
+      const tx = db.transaction('files', 'readwrite');
+      const store = tx.objectStore('files');
+      const req = store.openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null;
+        if (!cursor) return;
+        const { path, content } = cursor.value as { path: string; content: unknown };
+        if (content instanceof ArrayBuffer) {
+          cursor.update({ path, content: new Blob([content]) });
+        }
+        cursor.continue();
+      };
+    })
+    .catch(() => {});
+}
+
 export class WebAppService extends BaseAppService {
   fs = indexedDBFileSystem;
   override isMobile = ['android', 'ios'].includes(getOSPlatform());
@@ -289,6 +335,7 @@ export class WebAppService extends BaseAppService {
     await this.loadSettings();
     await this.prepareBooksDir();
     await this.runMigrations();
+    migrateIDBArrayBuffersToBlob();
   }
 
   override async runMigrations() {

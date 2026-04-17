@@ -25,7 +25,7 @@ import {
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
-import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
+import { BookDoc, DocumentLoader, EXTS, buildBookCache, buildPDFCache } from '@/libs/document';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
 import { deserializeConfig, serializeConfig } from '@/utils/serializer';
@@ -278,6 +278,17 @@ export async function importBook(
 
     const hash = await partialMD5(fileobj);
     const metaHash = getMetadataHash(loadedBook.metadata);
+
+    // Write format-specific cache non-blocking so subsequent opens skip all parsing
+    if (format === 'PDF') {
+      fs.writeFile(`${hash}/pdf.json`, 'Cache', JSON.stringify(buildPDFCache(loadedBook))).catch(
+        console.warn,
+      );
+    } else {
+      fs.writeFile(`${hash}/book.json`, 'Cache', JSON.stringify(buildBookCache(loadedBook))).catch(
+        console.warn,
+      );
+    }
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
@@ -498,12 +509,23 @@ export async function getBookFileSize(fs: FileSystem, book: Book): Promise<numbe
 export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookContent> {
   let file: File;
   const fp = getLocalBookFilename(book);
-  if (await fs.exists(fp, 'Books')) {
+  performance.mark('[load-content] exists-start');
+  const exists = await fs.exists(fp, 'Books');
+  performance.mark('[load-content] exists-done');
+  if (exists) {
     file = await fs.openFile(fp, 'Books');
+    performance.mark('[load-content] openFile-local-done');
   } else if (book.filePath) {
     file = await fs.openFile(book.filePath, 'None');
+    performance.mark('[load-content] openFile-filepath-done');
   } else if (book.url) {
     file = await fs.openFile(book.url, 'None');
+    performance.mark('[load-content] openFile-url-done');
+    // Cache locally so subsequent opens read from IDB instead of re-fetching from CDN
+    fetch(book.url)
+      .then((r) => r.arrayBuffer())
+      .then((buf) => fs.writeFile(fp, 'Books', buf))
+      .catch(console.warn);
   } else {
     // 0.9.64 has a bug that book.title might be modified but the filename is not updated
     const bookDir = getDir(book);
@@ -512,6 +534,7 @@ export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookC
       const bookFile = files.find((f) => f.path.endsWith(`.${EXTS[book.format]}`));
       if (bookFile) {
         file = await fs.openFile(`${bookDir}/${bookFile.path}`, 'Books');
+        performance.mark('[load-content] openFile-dir-done');
       } else {
         throw new BookFileNotFoundError();
       }

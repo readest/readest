@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { bookProfiler } from '@/utils/bookProfiler';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
 import { BookConfig, PageInfo } from '@/types/book';
@@ -320,6 +321,8 @@ const FoliateViewer: React.FC<{
   };
 
   const stabilizedHandler = useCallback(() => {
+    bookProfiler.mark('stabilized');
+    bookProfiler.endSession();
     setLoading(false);
   }, []);
 
@@ -456,8 +459,10 @@ const FoliateViewer: React.FC<{
     setTimeout(() => setLoading(true), 200);
 
     const openBook = async () => {
+      bookProfiler.mark('openBook-start');
       console.log('Opening book', bookKey);
       await import('foliate-js/view.js');
+      bookProfiler.mark('foliate-import-done');
       const view = wrappedFoliateView(document.createElement('foliate-view') as FoliateView);
       view.id = `foliate-view-${bookKey}`;
       containerRef.current?.appendChild(view);
@@ -481,6 +486,7 @@ const FoliateViewer: React.FC<{
       }
 
       await view.open(bookDoc);
+      bookProfiler.mark('view-open-done');
       // make sure we can listen renderer events after opening book
       viewRef.current = view;
       setFoliateView(bookKey, view);
@@ -556,16 +562,34 @@ const FoliateViewer: React.FC<{
       }
       applyMarginAndGap();
 
+      // Register stabilized listener before init to prevent a race condition:
+      // the epub cache makes open+init fast enough that 'stabilized' can fire
+      // before useFoliateEvents registers its listener (which requires a React
+      // re-render triggered by setFoliateView). Using { once: true } so it
+      // auto-removes; useFoliateEvents handles all subsequent stabilized events.
+      view.renderer.addEventListener('stabilized', stabilizedHandler, { once: true });
+
       const lastLocation = config.location;
       if (lastLocation) {
         await view.init({ lastLocation });
+        // If the CFI in lastLocation is malformed or resolves to an invalid
+        // section index (-1), renderer.goTo() silently no-ops and primaryIndex
+        // stays at -1. Detect this and fall back to the start of the book so
+        // the spinner doesn't hang indefinitely.
+        if (view.renderer.primaryIndex < 0) {
+          await view.goToFraction(0);
+        }
       } else {
         await view.goToFraction(0);
       }
+      bookProfiler.mark('view-init-done');
       setViewInited(bookKey, true);
     };
 
-    openBook();
+    openBook().catch((e) => {
+      console.error('Failed to open book:', e);
+      setLoading(false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -108,6 +108,8 @@ const updateTocLocation = (
       const id = splitTOCHref(item.href)[0]!;
       const exactMatch = sectionsMap[item.href];
       const baseMatch = sectionsMap[id];
+      // Prefer fragment match only when it has a CFI (some fragments are size-only
+      // stubs without one); fall back to the base section, then the stub fragment.
       const section = (exactMatch?.cfi ? exactMatch : null) || baseMatch || exactMatch;
       if (section) {
         item.cfi = section.cfi;

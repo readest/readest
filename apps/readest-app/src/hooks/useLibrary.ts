@@ -15,9 +15,12 @@ export const useLibrary = () => {
     isInitiating.current = true;
     const initLibrary = async () => {
       const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
+      const [settings, books] = await Promise.all([
+        appService.loadSettings(),
+        appService.loadLibraryBooks(),
+      ]);
       setSettings(settings);
-      setLibrary(await appService.loadLibraryBooks());
+      setLibrary(books);
       setLibraryLoaded(true);
     };
 

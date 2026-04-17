@@ -112,6 +112,22 @@ const TEST_METADATA = {
 function setupMockBookDoc(metadata: Record<string, unknown> = TEST_METADATA) {
   const bookDoc = {
     metadata,
+    sections: [],
+    toc: null,
+    pageList: null,
+    landmarks: null,
+    dir: null,
+    rendition: {},
+    media: {},
+    opfPath: '',
+    resources: {
+      manifest: [],
+      spine: [],
+      cfis: [],
+      navPath: null,
+      ncxPath: null,
+      pageProgressionDirection: null,
+    },
     getCover: vi.fn().mockResolvedValue(null),
   };
   mockOpen.mockResolvedValue({ book: bookDoc, format: 'EPUB' });

@@ -1,6 +1,7 @@
 import { BookFormat } from '@/types/book';
 import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import { configureZip } from '@/utils/zip';
+import type { BaseDir } from '@/types/system';
 import * as epubcfi from 'foliate-js/epubcfi.js';
 
 export const CFI = epubcfi;
@@ -42,6 +43,7 @@ export interface SectionItem {
   location?: Location;
   pageSpread?: 'left' | 'right' | 'center' | '';
   fragments?: Array<SectionFragment>;
+  subitems?: Array<SectionSubitemData>;
 
   loadText?: () => Promise<string | null>;
   createDocument: () => Promise<Document>;
@@ -84,10 +86,138 @@ export interface BookDoc {
   };
   dir: string;
   toc?: Array<TOCItem>;
+  pageList?: Array<TOCItem>;
+  landmarks?: Array<TOCItem>;
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
+}
+
+interface TOCFileSystem {
+  readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
+  writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
+  exists(path: string, base: BaseDir): Promise<boolean>;
+}
+
+export interface TOCCacheContext {
+  bookHash: string;
+  fs: TOCFileSystem;
+}
+
+export interface SectionSubitemData {
+  id: string;
+  href: string;
+  cfi?: string;
+  size: number;
+  linear: string;
+}
+
+type CachedManifestItem = {
+  href: string;
+  id: string;
+  mediaType: string;
+  properties?: string[];
+  mediaOverlay?: string;
+};
+
+type CachedSpineItem = {
+  idref: string;
+  id?: string;
+  linear?: string;
+  properties?: string[];
+};
+
+export interface CachedBookData {
+  version: 1;
+  toc: TOCItem[] | null;
+  pageList: TOCItem[] | null;
+  landmarks: TOCItem[] | null;
+  opfPath: string;
+  navPath: string | null;
+  ncxPath: string | null;
+  pageProgressionDirection: string | null;
+  spine: CachedSpineItem[];
+  manifest: CachedManifestItem[];
+  cfis: string[];
+  guide?: Array<{ label: string; type: string[]; href: string }>;
+  coverId?: string;
+  metadata: unknown;
+  rendition: Record<string, unknown>;
+  media: Record<string, unknown>;
+  dir: string | null;
+  subitems: Record<string, SectionSubitemData[]>;
+}
+
+export interface CachedPDFData {
+  version: 1;
+  toc: TOCItem[] | null;
+  metadata: unknown;
+  viewport: { width: number; height: number };
+}
+
+// epub.js exposes these after init() — present on the raw object, not typed in BookDoc
+type EpubInstance = {
+  resources: {
+    manifest: CachedManifestItem[];
+    spine: CachedSpineItem[];
+    cfis: string[];
+    navPath: string | null;
+    ncxPath: string | null;
+    pageProgressionDirection: string | null;
+    guide?: Array<{ label: string; type: string[]; href: string }>;
+    cover?: CachedManifestItem;
+  };
+  opfPath?: string;
+  rendition: Record<string, unknown>;
+  media: Record<string, unknown>;
+  dir: string | null;
+};
+
+export function buildBookCache(book: BookDoc): CachedBookData {
+  const epub = book as unknown as EpubInstance;
+  const subitems: Record<string, SectionSubitemData[]> = {};
+  for (const section of book.sections) {
+    if (section.subitems?.length) {
+      subitems[section.id] = section.subitems.map((s) => ({
+        id: s.id,
+        href: s.href ?? '',
+        cfi: s.cfi,
+        size: s.size,
+        linear: s.linear,
+      }));
+    }
+  }
+  return {
+    version: 1,
+    toc: book.toc ?? null,
+    pageList: book.pageList ?? null,
+    landmarks: book.landmarks ?? null,
+    opfPath: epub.opfPath ?? '',
+    navPath: epub.resources.navPath ?? null,
+    ncxPath: epub.resources.ncxPath ?? null,
+    pageProgressionDirection: epub.resources.pageProgressionDirection ?? null,
+    spine: epub.resources.spine,
+    manifest: epub.resources.manifest,
+    cfis: epub.resources.cfis,
+    guide: epub.resources.guide,
+    coverId: epub.resources.cover?.id,
+    metadata: book.metadata,
+    rendition: epub.rendition,
+    media: epub.media,
+    dir: epub.dir,
+    subitems,
+  };
+}
+
+export function buildPDFCache(book: BookDoc): CachedPDFData {
+  const rendition = book.rendition as { viewport?: { width: number; height: number } };
+  return {
+    version: 1,
+    toc: book.toc ?? null,
+    metadata: book.metadata,
+    viewport: rendition?.viewport ?? { width: 0, height: 0 },
+  };
 }
 
 export const EXTS: Record<BookFormat, string> = {
@@ -118,9 +248,72 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
 
 export class DocumentLoader {
   private file: File;
+  private cacheContext?: TOCCacheContext;
 
-  constructor(file: File) {
+  constructor(file: File, cacheContext?: TOCCacheContext) {
     this.file = file;
+    this.cacheContext = cacheContext;
+  }
+
+  private async readBookCache(): Promise<CachedBookData | null> {
+    if (!this.cacheContext) return null;
+    const { bookHash, fs } = this.cacheContext;
+    // Try unified book.json first
+    try {
+      const text = (await fs.readFile(`${bookHash}/book.json`, 'Cache', 'text')) as string;
+      return JSON.parse(text) as CachedBookData;
+    } catch {
+      // fall through to legacy files
+    }
+    // Backward compat: read old toc.json + subitems.json separately
+    try {
+      const [tocText, subitemsText] = await Promise.all([
+        fs.readFile(`${bookHash}/toc.json`, 'Cache', 'text').catch(() => null),
+        fs.readFile(`${bookHash}/subitems.json`, 'Cache', 'text').catch(() => null),
+      ]);
+      if (!tocText && !subitemsText) return null;
+      const toc = tocText
+        ? (JSON.parse(tocText as string) as {
+            toc: TOCItem[] | null;
+            pageList: TOCItem[] | null;
+            landmarks: TOCItem[] | null;
+          })
+        : null;
+      const subitems = subitemsText
+        ? (JSON.parse(subitemsText as string) as Record<string, SectionSubitemData[]>)
+        : {};
+      return {
+        version: 1,
+        toc: toc?.toc ?? null,
+        pageList: toc?.pageList ?? null,
+        landmarks: toc?.landmarks ?? null,
+        opfPath: '',
+        navPath: null,
+        ncxPath: null,
+        pageProgressionDirection: null,
+        spine: [],
+        manifest: [],
+        cfis: [],
+        metadata: null,
+        rendition: {},
+        media: {},
+        dir: null,
+        subitems,
+      } satisfies CachedBookData;
+    } catch {
+      return null;
+    }
+  }
+
+  private async readPDFCache(): Promise<CachedPDFData | null> {
+    if (!this.cacheContext) return null;
+    const { bookHash, fs } = this.cacheContext;
+    try {
+      const text = (await fs.readFile(`${bookHash}/pdf.json`, 'Cache', 'text')) as string;
+      return JSON.parse(text) as CachedPDFData;
+    } catch {
+      return null;
+    }
   }
 
   private async isZip(): Promise<boolean> {
@@ -210,11 +403,15 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
+    // Start cache reads immediately so they run in parallel with format detection IO
+    const bookCachePromise = this.readBookCache();
+    const pdfCachePromise = this.readPDFCache();
     try {
       if (await this.isZip()) {
         const loader = await this.makeZipLoader();
         const { entries } = loader;
 
+        performance.mark('[epub-open] zip-entries-read');
         if (this.isCBZ()) {
           const { makeComicBook } = await import('foliate-js/comic-book.js');
           book = await makeComicBook(loader, this.file);
@@ -227,13 +424,41 @@ export class DocumentLoader {
           format = 'FBZ';
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
-          book = await new EPUB(loader).init();
+          performance.mark('[epub-open] module-imported');
+          const cachedOPF = await bookCachePromise;
+          // Only use fast OPF path when opfPath is present (full book.json cache)
+          const cachedTOC = cachedOPF?.opfPath ? null : cachedOPF;
+          const cachedSubitems = cachedOPF?.opfPath ? null : (cachedOPF?.subitems ?? null);
+          book = await new EPUB(loader).init({
+            cachedOPF: cachedOPF?.opfPath ? cachedOPF : null,
+            cachedTOC,
+            cachedSubitems,
+          });
           format = 'EPUB';
+          // Lazy-write unified book.json on cache miss so existing books benefit on next open
+          if (!cachedOPF?.opfPath && this.cacheContext) {
+            const { bookHash, fs } = this.cacheContext;
+            fs.writeFile(
+              `${bookHash}/book.json`,
+              'Cache',
+              JSON.stringify(buildBookCache(book as unknown as BookDoc)),
+            ).catch(console.warn);
+          }
         }
       } else if (await this.isPDF()) {
         const { makePDF } = await import('foliate-js/pdf.js');
-        book = await makePDF(this.file);
+        const cachedPDF = await pdfCachePromise;
+        book = await makePDF(this.file, cachedPDF);
         format = 'PDF';
+        // Lazy-write pdf.json on cache miss so existing books benefit on next open
+        if (!cachedPDF && this.cacheContext) {
+          const { bookHash, fs } = this.cacheContext;
+          fs.writeFile(
+            `${bookHash}/pdf.json`,
+            'Cache',
+            JSON.stringify(buildPDFCache(book as unknown as BookDoc)),
+          ).catch(console.warn);
+        }
       } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
         const fflate = await import('foliate-js/vendor/fflate.js');
         const { MOBI } = await import('foliate-js/mobi.js');

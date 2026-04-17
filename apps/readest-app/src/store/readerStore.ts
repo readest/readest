@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { bookProfiler } from '@/utils/bookProfiler';
 
 import {
   BookContent,
@@ -152,16 +153,32 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       if (!book) {
         throw new Error('Book not found');
       }
+      bookProfiler.startSession(book.sourceTitle ?? book.title ?? id);
+      bookProfiler.mark('initViewState-start');
       let bookDoc = bookData?.bookDoc;
       let file = bookData?.file;
+      // Fire config + nav cache reads in parallel with content loading —
+      // neither depends on bookDoc, so they can overlap the expensive I/O.
+      const configPromise = appService.loadBookConfig(book, settings);
+      const navCachePromise =
+        book.format === 'EPUB' ? appService.loadBookNav(book) : Promise.resolve(null);
       if (!bookDoc || !file || reload) {
         const content = (await appService.loadBookContent(book)) as BookContent;
         file = content.file;
+        bookProfiler.mark('loadBookContent-done');
+        bookProfiler.injectSubMarks('[load-content]');
         console.log('Loading book', key);
-        const doc = await new DocumentLoader(file).open();
+        const doc = await new DocumentLoader(file, {
+          bookHash: book.hash,
+          fs: appService,
+        }).open();
         bookDoc = doc.book;
+        bookProfiler.mark('documentLoader-done');
+        bookProfiler.injectSubMarks('[epub-open]');
+        bookProfiler.injectSubMarks('[pdf-open]');
       }
-      const config = await appService.loadBookConfig(book, settings);
+      const config = await configPromise;
+      bookProfiler.mark('loadBookConfig-done');
       // Import annotations from third-party readers on first open
       if (bookDoc.metadata.identifier) {
         const { getAnnotationProviders } = await import('@/services/annotation');
@@ -183,8 +200,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
       // Load cached book navigation (TOC + section fragments) or compute and persist.
       if (book.format === 'EPUB' && bookDoc.rendition?.layout !== 'pre-paginated') {
-        const cachedNav = await appService.loadBookNav(book);
-        if (cachedNav?.version === BOOK_NAV_VERSION && process.env.NODE_ENV === 'production') {
+        const cachedNav = await navCachePromise;
+        if (cachedNav?.version === BOOK_NAV_VERSION) {
           hydrateBookNav(bookDoc, cachedNav);
         } else {
           const freshNav = await computeBookNav(bookDoc);
@@ -196,6 +213,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
         }
       }
+      bookProfiler.mark('loadBookNav-done');
       await updateToc(
         bookDoc,
         config.viewSettings?.sortedTOC ?? false,
