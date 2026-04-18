@@ -12,7 +12,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent, useLongPressEvent } from '../hooks/useIframeEvents';
-import { usePagination } from '../hooks/usePagination';
+import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -196,6 +196,12 @@ const FoliateViewer: React.FC<{
     }
   }, [getView, getProgress, bookKey]);
 
+  const skipToNextSection = useCallback(() => {
+    const view = getView(bookKey);
+    const viewSettings = getViewSettings(bookKey);
+    viewPagination(view, viewSettings, 'down', 'section');
+  }, [bookKey]);
+
   const docLoadHandler = (event: Event) => {
     docLoaded.current = true;
     if (bookDoc.rendition?.layout === 'pre-paginated') {
@@ -249,9 +255,11 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      handleA11yNavigation(viewRef.current, detail.doc, detail.index, {
+      handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
         skipToLastPosLabel: _('Skip to last reading position'),
+        skipToNextSectionCallback: skipToNextSection,
+        skipToNextSectionLabel: _('End of this section. Continue to the next.'),
       });
 
       // Inline scripts in tauri platforms are not executed by default
