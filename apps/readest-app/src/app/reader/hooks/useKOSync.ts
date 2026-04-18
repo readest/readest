@@ -320,7 +320,7 @@ export const useKOSync = (bookKey: string) => {
       pullProgress();
     } else {
       pushProgress();
-      pushProgress.flush?.();
+      pushProgress.flush();
     }
   });
 

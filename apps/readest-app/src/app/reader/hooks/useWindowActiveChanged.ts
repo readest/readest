@@ -1,9 +1,10 @@
 // used to execute a callback when the "active" state of the current window changes.
-// On web abd mobile, "active" means "is visible". On desktop, the 'visibilitychange'
-// event is unrelaible, so "active" means "has focus".
+// On web and mobile, "active" means "is visible". On desktop, the 'visibilitychange'
+// event is unreliable, so "active" means "has focus".
 
 import { useEffect, useRef } from 'react';
-import environment from '@/services/environment';
+
+import { useEnv } from '@/context/EnvContext';
 
 export type ActiveCallback = (isActive: boolean) => void;
 
@@ -12,11 +13,10 @@ async function activeChangedDesktop(onChange: ActiveCallback): Promise<Cleanup> 
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const appWindow = getCurrentWindow();
 
-  const unFocus = await appWindow.listen('tauri://focus', () => onChange(true));
-  const unBlur = await appWindow.listen('tauri://blur', () => onChange(false));
+  const unlisten = await appWindow.onFocusChanged(({ payload: isActive }) => onChange(isActive));
+
   return () => {
-    unFocus();
-    unBlur();
+    unlisten();
   };
 }
 async function activeChangedOther(onChange: ActiveCallback): Promise<Cleanup> {
@@ -28,6 +28,10 @@ async function activeChangedOther(onChange: ActiveCallback): Promise<Cleanup> {
 
 export function useWindowActiveChanged(callback: ActiveCallback) {
   const onActiveChanged = useRef<ActiveCallback>(callback);
+  const { appService } = useEnv();
+
+  const subscribe = appService?.isDesktopApp ? activeChangedDesktop : activeChangedOther;
+
   useEffect(() => {
     onActiveChanged.current = callback;
   }, [callback]);
@@ -39,12 +43,7 @@ export function useWindowActiveChanged(callback: ActiveCallback) {
       onActiveChanged.current?.(isActive);
     };
 
-    environment
-      .getAppService()
-      .then(({ isDesktopApp }) => {
-        return isDesktopApp ? activeChangedDesktop : activeChangedOther;
-      })
-      .then((sub) => sub(onChange))
+    subscribe(onChange)
       .then((cleanup) => {
         if (isAlive) {
           unsub = cleanup;
@@ -52,11 +51,14 @@ export function useWindowActiveChanged(callback: ActiveCallback) {
           // component was already unmounted, just clean up immediately
           cleanup();
         }
+      })
+      .catch((e) => {
+        console.error('Could not listen for window active changes', e);
       });
 
     return () => {
       isAlive = false;
       unsub?.();
     };
-  }, []);
+  }, [subscribe]);
 }
