@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
+import { PiUserCircle, PiUserCircleCheck, PiGear, PiChartBar } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
@@ -232,6 +232,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setSettingsDialogOpen(true);
   };
 
+  const openStatistics = () => {
+    router.push('/statistics');
+    setIsDropdownOpen?.(false);
+  };
+
   const handleSetSavedBookCoverForLockScreen = async () => {
     if (!(await requestStoragePermission()) && appService?.distChannel === 'readest') return;
 
@@ -411,6 +416,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         Icon={themeMode === 'dark' ? PiMoon : themeMode === 'light' ? PiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openStatistics} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Advanced Settings')}>
