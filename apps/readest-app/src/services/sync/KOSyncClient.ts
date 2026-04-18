@@ -95,7 +95,8 @@ export class KOSyncClient {
     };
 
     let response = await attempt();
-    if (response.status === 401) {
+    // some versions of CWA return status code 400 for auth failure, so check for both.
+    if (response.status === 401 || response.status === 400) {
       // traditional auth failed; attempt one more time with HTTP auth
       this.usesHttpAuth = true;
 
