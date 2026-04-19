@@ -11,11 +11,24 @@ import type { AISettings, AIProviderName } from '@/services/ai/types';
 import { isTauriAppPlatform } from '@/services/environment';
 import { DEFAULT_SMART_ASK_SETTINGS } from '@/services/smartAsk/types';
 import type { SmartAskSettings, SmartAskProvider } from '@/services/smartAsk/types';
+import { clearSmartAskCache } from '@/services/smartAsk/cache';
+import {
+  SMART_ASK_PROVIDER_OPTIONS,
+  getSmartAskModelsEndpoint,
+  getSmartAskProviderConfig,
+  normalizeSmartAskProvider,
+  smartAskProviderNeedsApiKey,
+  smartAskProviderSupportsApiKey,
+} from '@/services/smartAsk/providers';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
 
 const CUSTOM_MODEL_VALUE = '__custom__';
+
+function normalizeSmartAskQuestionDirections(directions: string[]): string[] {
+  return Array.from(new Set(directions.map((item) => item.trim()).filter(Boolean))).slice(0, 12);
+}
 
 interface ModelOption {
   id: string;
@@ -99,21 +112,30 @@ const AIPanel: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const smartAskSettings: SmartAskSettings =
-    settings?.smartAskSettings ?? DEFAULT_SMART_ASK_SETTINGS;
+  const smartAskSettings: SmartAskSettings = {
+    ...DEFAULT_SMART_ASK_SETTINGS,
+    ...settings?.smartAskSettings,
+  };
   const [smartAskEnabled, setSmartAskEnabled] = useState(smartAskSettings.enabled);
   const [smartAskProvider, setSmartAskProvider] = useState<SmartAskProvider>(
-    smartAskSettings.provider,
+    normalizeSmartAskProvider(smartAskSettings.provider),
   );
   const [smartAskBaseUrl, setSmartAskBaseUrl] = useState(smartAskSettings.baseUrl);
   const [smartAskModel, setSmartAskModel] = useState(smartAskSettings.model);
   const [smartAskApiKey, setSmartAskApiKey] = useState(smartAskSettings.apiKey);
   const [smartAskMaxChars, setSmartAskMaxChars] = useState(smartAskSettings.maxContextChars);
+  const [smartAskQuestionDirections, setSmartAskQuestionDirections] = useState(
+    normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections),
+  );
+  const [smartAskQuestionDirectionDraft, setSmartAskQuestionDirectionDraft] = useState('');
+  const [smartAskCacheEnabled, setSmartAskCacheEnabled] = useState(smartAskSettings.cacheEnabled);
+  const [smartAskCacheTtl, setSmartAskCacheTtl] = useState(smartAskSettings.cacheTtlMinutes);
   const [smartAskModels, setSmartAskModels] = useState<string[]>([]);
   const [fetchingSmartAskModels, setFetchingSmartAskModels] = useState(false);
 
   const isMounted = useRef(false);
   const modelOptions = getModelOptions();
+  const smartAskProviderConfig = getSmartAskProviderConfig(smartAskProvider);
 
   const settingsRef = useRef(settings);
   useEffect(() => {
@@ -218,28 +240,34 @@ const AIPanel: React.FC = () => {
     if (!smartAskBaseUrl || !smartAskEnabled) return;
     setFetchingSmartAskModels(true);
     try {
-      const base = smartAskBaseUrl.replace(/\/$/, '');
-      const targetUrl = smartAskProvider === 'ollama' ? `${base}/api/tags` : `${base}/v1/models`;
+      const providerConfig = getSmartAskProviderConfig(smartAskProvider);
+      const targetUrl = getSmartAskModelsEndpoint({
+        ...DEFAULT_SMART_ASK_SETTINGS,
+        provider: smartAskProvider,
+        baseUrl: smartAskBaseUrl,
+        model: smartAskModel,
+        apiKey: smartAskApiKey,
+      });
       let fetchUrl = targetUrl;
       const fetchHeaders: Record<string, string> = {};
+      const apiKey = smartAskProviderSupportsApiKey(smartAskProvider) ? smartAskApiKey : '';
+      let fetchInit: RequestInit | undefined;
       if (!isTauriAppPlatform()) {
-        const proxyUrl = new URL('/api/smartask/models', window.location.origin);
-        proxyUrl.searchParams.set('url', targetUrl);
-        if (smartAskProvider === 'openai-compatible' && smartAskApiKey) {
-          proxyUrl.searchParams.set('auth', `Bearer ${smartAskApiKey}`);
-        }
-        fetchUrl = proxyUrl.toString();
-      } else if (smartAskProvider === 'openai-compatible' && smartAskApiKey) {
-        fetchHeaders['Authorization'] = `Bearer ${smartAskApiKey}`;
+        fetchUrl = '/api/smartask/models';
+        fetchInit = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: targetUrl, apiKey: apiKey || undefined }),
+        };
+      } else if (apiKey) {
+        fetchHeaders['Authorization'] = `Bearer ${apiKey}`;
+        fetchInit = { headers: fetchHeaders };
       }
-      const response = await fetch(
-        fetchUrl,
-        Object.keys(fetchHeaders).length ? { headers: fetchHeaders } : undefined,
-      );
+      const response = await fetch(fetchUrl, fetchInit);
       if (!response.ok) throw new Error('Failed to fetch models');
       const data: unknown = await response.json();
       let models: string[] = [];
-      if (smartAskProvider === 'ollama') {
+      if (providerConfig.protocol === 'ollama') {
         const d = data as { models?: { name: string }[] };
         models = d.models?.map((m) => m.name) ?? [];
       } else {
@@ -264,18 +292,28 @@ const AIPanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [smartAskEnabled, smartAskProvider, smartAskBaseUrl]);
 
-  const saveSmartAskSetting = useCallback(
-    async (key: keyof SmartAskSettings, value: SmartAskSettings[keyof SmartAskSettings]) => {
+  const saveSmartAskSettingsPatch = useCallback(
+    async (patch: Partial<SmartAskSettings>) => {
       const currentSettings = settingsRef.current;
       if (!currentSettings) return;
-      const current: SmartAskSettings =
-        currentSettings.smartAskSettings ?? DEFAULT_SMART_ASK_SETTINGS;
-      const newSmartAskSettings: SmartAskSettings = { ...current, [key]: value };
+      const current: SmartAskSettings = {
+        ...DEFAULT_SMART_ASK_SETTINGS,
+        ...currentSettings.smartAskSettings,
+      };
+      const newSmartAskSettings: SmartAskSettings = { ...current, ...patch };
       const newSettings = { ...currentSettings, smartAskSettings: newSmartAskSettings };
+      settingsRef.current = newSettings;
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
     },
     [envConfig, setSettings, saveSettings],
+  );
+
+  const saveSmartAskSetting = useCallback(
+    async (key: keyof SmartAskSettings, value: SmartAskSettings[keyof SmartAskSettings]) => {
+      await saveSmartAskSettingsPatch({ [key]: value });
+    },
+    [saveSmartAskSettingsPatch],
   );
 
   useEffect(() => {
@@ -326,6 +364,32 @@ const AIPanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [smartAskMaxChars]);
 
+  useEffect(() => {
+    if (!isMounted.current) return;
+    const normalized = normalizeSmartAskQuestionDirections(smartAskQuestionDirections);
+    const saved = normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections);
+    if (JSON.stringify(normalized) !== JSON.stringify(saved)) {
+      saveSmartAskSetting('questionDirections', normalized);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartAskQuestionDirections]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+    if (smartAskCacheEnabled !== smartAskSettings.cacheEnabled) {
+      saveSmartAskSetting('cacheEnabled', smartAskCacheEnabled);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartAskCacheEnabled]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+    if (smartAskCacheTtl !== smartAskSettings.cacheTtlMinutes) {
+      saveSmartAskSetting('cacheTtlMinutes', smartAskCacheTtl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartAskCacheTtl]);
+
   // Get the effective model ID to use (either selected or custom)
   const getEffectiveModelId = useCallback(() => {
     if (selectedModel === CUSTOM_MODEL_VALUE && customModelStatus === 'valid') {
@@ -362,6 +426,38 @@ const AIPanel: React.FC = () => {
       setCustomModelError('');
       setCustomModelPricing(null);
     }
+  };
+
+  const handleSmartAskProviderChange = (value: SmartAskProvider) => {
+    const nextConfig = getSmartAskProviderConfig(value);
+    const nextApiKey = nextConfig.requiresApiKey || nextConfig.supportsApiKey ? smartAskApiKey : '';
+
+    setSmartAskProvider(value);
+    setSmartAskBaseUrl(nextConfig.defaultBaseUrl);
+    setSmartAskModel('');
+    setSmartAskModels([]);
+    if (!nextApiKey) {
+      setSmartAskApiKey('');
+    }
+    void saveSmartAskSettingsPatch({
+      provider: value,
+      baseUrl: nextConfig.defaultBaseUrl,
+      model: '',
+      apiKey: nextApiKey,
+    });
+  };
+
+  const addSmartAskQuestionDirection = () => {
+    const direction = smartAskQuestionDirectionDraft.trim();
+    if (!direction) return;
+    setSmartAskQuestionDirections((current) =>
+      normalizeSmartAskQuestionDirections([...current, direction]),
+    );
+    setSmartAskQuestionDirectionDraft('');
+  };
+
+  const removeSmartAskQuestionDirection = (index: number) => {
+    setSmartAskQuestionDirections((current) => current.filter((_, i) => i !== index));
   };
 
   const validateCustomModel = async () => {
@@ -702,25 +798,19 @@ const AIPanel: React.FC = () => {
         <h2 className='mb-2 font-medium'>{_('SmartAsk Provider')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span>{_('Ollama (Local)')}</span>
-              <input
-                type='radio'
-                name='smartask-provider'
-                className='radio'
-                checked={smartAskProvider === 'ollama'}
-                onChange={() => setSmartAskProvider('ollama')}
-              />
-            </div>
-            <div className='config-item'>
-              <span>{_('OpenAI-compatible')}</span>
-              <input
-                type='radio'
-                name='smartask-provider'
-                className='radio'
-                checked={smartAskProvider === 'openai-compatible'}
-                onChange={() => setSmartAskProvider('openai-compatible')}
-              />
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <span>{_('Provider')}</span>
+              <select
+                className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                value={normalizeSmartAskProvider(smartAskProvider)}
+                onChange={(e) => handleSmartAskProviderChange(e.target.value as SmartAskProvider)}
+              >
+                {SMART_ASK_PROVIDER_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
               <span>{_('Base URL')}</span>
@@ -729,7 +819,7 @@ const AIPanel: React.FC = () => {
                 className='input input-bordered input-sm w-full'
                 value={smartAskBaseUrl}
                 onChange={(e) => setSmartAskBaseUrl(e.target.value)}
-                placeholder='http://127.0.0.1:11434'
+                placeholder={smartAskProviderConfig.defaultBaseUrl}
               />
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
@@ -764,13 +854,17 @@ const AIPanel: React.FC = () => {
                   className='input input-bordered input-sm w-full'
                   value={smartAskModel}
                   onChange={(e) => setSmartAskModel(e.target.value)}
-                  placeholder='qwen2.5:7b'
+                  placeholder={smartAskProviderConfig.modelPlaceholder}
                 />
               )}
             </div>
-            {smartAskProvider === 'openai-compatible' && (
+            {smartAskProviderSupportsApiKey(smartAskProvider) && (
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <span>{_('API Key')}</span>
+                <span>
+                  {smartAskProviderNeedsApiKey(smartAskProvider)
+                    ? _('API Key')
+                    : _('API Key (Optional)')}
+                </span>
                 <input
                   type='password'
                   className='input input-bordered input-sm w-full'
@@ -791,6 +885,91 @@ const AIPanel: React.FC = () => {
                 onChange={(e) => setSmartAskMaxChars(Number(e.target.value))}
               />
             </div>
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <div className='flex w-full items-center justify-between gap-2'>
+                <span>{_('Question Directions')}</span>
+                <span className='text-base-content/50 text-xs'>
+                  {smartAskQuestionDirections.length}/12
+                </span>
+              </div>
+              {smartAskQuestionDirections.length > 0 && (
+                <div className='flex w-full flex-col gap-1'>
+                  {smartAskQuestionDirections.map((direction, index) => (
+                    <div
+                      key={`${direction}-${index}`}
+                      className='bg-base-200 flex items-center gap-2 rounded p-1.5'
+                    >
+                      <span className='line-clamp-2 flex-1 text-xs'>{direction}</span>
+                      <button
+                        type='button'
+                        className='btn btn-ghost btn-xs'
+                        onClick={() => removeSmartAskQuestionDirection(index)}
+                      >
+                        {_('Remove')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className='flex w-full gap-2'>
+                <input
+                  type='text'
+                  className='input input-bordered input-sm flex-1'
+                  value={smartAskQuestionDirectionDraft}
+                  placeholder={_('e.g. explain names, translate, historical background')}
+                  maxLength={120}
+                  onChange={(e) => setSmartAskQuestionDirectionDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSmartAskQuestionDirection();
+                    }
+                  }}
+                />
+                <button
+                  type='button'
+                  className='btn btn-outline btn-sm'
+                  disabled={
+                    !smartAskQuestionDirectionDraft.trim() ||
+                    smartAskQuestionDirections.length >= 12
+                  }
+                  onClick={addSmartAskQuestionDirection}
+                >
+                  {_('Add')}
+                </button>
+              </div>
+            </div>
+            <div className='config-item'>
+              <span>{_('Cache Responses')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={smartAskCacheEnabled}
+                onChange={() => setSmartAskCacheEnabled((v) => !v)}
+              />
+            </div>
+            {smartAskCacheEnabled && (
+              <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+                <div className='flex w-full items-center justify-between gap-2'>
+                  <span>{_('Cache TTL Minutes')}</span>
+                  <button
+                    type='button'
+                    className='btn btn-outline btn-xs'
+                    onClick={clearSmartAskCache}
+                  >
+                    {_('Clear Cache')}
+                  </button>
+                </div>
+                <input
+                  type='number'
+                  className='input input-bordered input-sm w-full'
+                  value={smartAskCacheTtl}
+                  min={10}
+                  max={10080}
+                  onChange={(e) => setSmartAskCacheTtl(Number(e.target.value))}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

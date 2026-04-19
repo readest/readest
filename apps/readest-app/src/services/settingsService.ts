@@ -24,6 +24,7 @@ import {
   DEFAULT_VIEW_SETTINGS_CONFIG,
 } from './constants';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import { DEFAULT_SMART_ASK_SETTINGS } from './smartAsk/types';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
 
@@ -144,6 +145,10 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   settings.aiSettings = {
     ...DEFAULT_AI_SETTINGS,
     ...settings.aiSettings,
+  };
+  settings.smartAskSettings = {
+    ...DEFAULT_SMART_ASK_SETTINGS,
+    ...settings.smartAskSettings,
   };
 
   settings.localBooksDir = await ctx.fs.getPrefix('Books');

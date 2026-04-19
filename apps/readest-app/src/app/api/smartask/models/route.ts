@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url');
-  const auth = request.nextUrl.searchParams.get('auth');
+interface ModelsRequestBody {
+  endpoint?: string;
+  apiKey?: string;
+}
 
-  if (!url) {
-    return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 });
+async function fetchModels(endpoint: string | null, apiKey?: string) {
+  if (!endpoint) {
+    return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
   }
 
+  let parsedUrl: URL;
   try {
-    new URL(url);
+    parsedUrl = new URL(endpoint);
   } catch {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+  }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    return NextResponse.json({ error: 'Unsupported URL protocol' }, { status: 400 });
   }
 
   try {
     const headers: HeadersInit = { Accept: 'application/json' };
-    if (auth) {
-      headers['Authorization'] = auth;
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
-    const response = await fetch(url, { headers });
+    const response = await fetch(endpoint, { headers });
     if (!response.ok) {
       return NextResponse.json(
         { error: `Upstream error ${response.status}` },
@@ -36,4 +42,15 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const { endpoint, apiKey } = (await request.json()) as ModelsRequestBody;
+  return fetchModels(endpoint ?? null, apiKey);
+}
+
+export async function GET(request: NextRequest) {
+  const endpoint = request.nextUrl.searchParams.get('url');
+  const auth = request.nextUrl.searchParams.get('auth');
+  return fetchModels(endpoint, auth?.replace(/^Bearer\s+/i, ''));
 }

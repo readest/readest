@@ -1,10 +1,21 @@
 import { isTauriAppPlatform } from '@/services/environment';
 import type { SmartAskSettings } from './types';
+import { buildSmartAskCacheKey, readSmartAskCache, writeSmartAskCache } from './cache';
+import type { SmartAskChatMessage, SmartAskLogEntry } from './logging';
+import {
+  getSmartAskChatEndpoint,
+  getSmartAskThinkingControlParams,
+  normalizeBaseUrl,
+  normalizeSmartAskProvider,
+  smartAskProviderSupportsApiKey,
+} from './providers';
 
 export const SMART_ASK_SEPARATOR = '===DETAILS===';
 
+export type SmartAskCallLogger = (entry: SmartAskLogEntry) => void | Promise<void>;
+
 const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了一段文字，但没有明确提出问题。
-你需要根据选取的问题，猜测用户的问题，并用读者的语言回答。
+你需要根据选取的文字和上下文，猜测用户最可能的问题，并用读者的语言回答。
 
 ### 常见问题类型
 - 出现较为生僻，或者为专有名词 -> 含义
@@ -24,20 +35,30 @@ const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了
 [标签] 2-4 句话，包含具体解释、背景或深层含义。
 
 规则：
-- 标签：1-2 个词的名词，例如：含义、背景、意义、关联、启示
+- 标签：如含义、背景、成语、人物、地点
 - 简述：不要使用"这是指……"或"它的意思是……"等废话
 - 详述：不要重复简述的内容
 - 纯文本输出 — 不使用 markdown，不使用代码块
+- 直接给出结果，不输出 <think>、推理过程或内部思考
 
 示例：
 [含义] 通过理性验证的系统性知识，有别于意见或技艺。
-[意义] 为"真正的理解需要超越继承的信念"这一论点奠定基础。
 
 ===DETAILS===
 
 [含义] Episteme（ἐπιστήμη）指通过逻辑论证验证的知识，与 doxa（意见）或 techne（技艺技能）相对。柏拉图用它指对永恒真理的认识；福柯后来将其重新诠释为界定某一历史时代思想结构的隐性框架。
+`;
 
-[意义] Doxa 是由感知和社会环境塑造的意见，而 episteme 则通过理性主张普遍有效性。这种对比揭示了论点的核心：继承的假设无法作为真正知识的基础。`;
+const FOLLOW_UP_SYSTEM_PROMPT = `你是一位阅读助手。用户会基于选中文字、上下文和你之前的解释继续提问。
+请直接回答用户问题，保持简洁、准确，并优先使用用户的语言。
+不要输出 <think>、推理过程或内部思考。`;
+
+function formatQuestionDirections(settings: SmartAskSettings): string {
+  const directions = settings.questionDirections.map((item) => item.trim()).filter(Boolean);
+  if (directions.length === 0) return '';
+
+  return `Preferred question directions:\n${directions.map((item) => `- ${item}`).join('\n')}`;
+}
 
 /**
  * Streams SmartAsk insights from an OpenAI-compatible endpoint.
@@ -51,85 +72,207 @@ export async function* streamSmartAsk(
   settings: SmartAskSettings,
   uiLanguage: string,
   signal?: AbortSignal,
+  logger?: SmartAskCallLogger,
 ): AsyncGenerator<string> {
-  const baseUrl = settings.baseUrl.replace(/\/$/, '');
-  const chatEndpoint = `${baseUrl}/v1/chat/completions`;
+  const directions = formatQuestionDirections(settings);
+  const userMessage = [
+    `Answer in language: ${uiLanguage}`,
+    directions,
+    `Context:\n${context}`,
+    `Selected text:\n${selectedText}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  const cacheKey =
+    settings.cacheEnabled && !signal?.aborted
+      ? buildSmartAskCacheKey({
+          provider: normalizeSmartAskProvider(settings.provider),
+          baseUrl: normalizeBaseUrl(settings.baseUrl),
+          model: settings.model,
+          questionDirections: settings.questionDirections,
+          uiLanguage,
+          selectedText,
+          context,
+        })
+      : '';
+  const cachedText = cacheKey ? readSmartAskCache(cacheKey, settings.cacheTtlMinutes) : null;
+  if (cachedText) {
+    yield cachedText;
+    return;
+  }
 
-  const userMessage = `Answer in language: ${uiLanguage}\n\nContext:\n${context}\n\nSelected text:\n${selectedText}`;
+  let responseText = '';
+  let completed = false;
+
+  try {
+    for await (const delta of streamChatCompletions(
+      [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      settings,
+      signal,
+      logger,
+    )) {
+      responseText += delta;
+      yield delta;
+    }
+    completed = true;
+  } finally {
+    if (completed && cacheKey && !signal?.aborted && responseText.trim()) {
+      writeSmartAskCache(cacheKey, responseText);
+    }
+  }
+}
+
+export async function* streamSmartAskFollowUp(
+  question: string,
+  selectedText: string,
+  context: string,
+  previousAnswer: string,
+  settings: SmartAskSettings,
+  uiLanguage: string,
+  signal?: AbortSignal,
+  logger?: SmartAskCallLogger,
+): AsyncGenerator<string> {
+  const directions = formatQuestionDirections(settings);
+  const userMessage = [
+    `Answer in language: ${uiLanguage}`,
+    directions,
+    `Context:\n${context}`,
+    `Selected text:\n${selectedText}`,
+    previousAnswer.trim() ? `Previous answer:\n${previousAnswer}` : '',
+    `Question:\n${question}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  yield* streamChatCompletions(
+    [
+      { role: 'system', content: FOLLOW_UP_SYSTEM_PROMPT },
+      { role: 'user', content: userMessage },
+    ],
+    settings,
+    signal,
+    logger,
+  );
+}
+
+async function* streamChatCompletions(
+  messages: SmartAskChatMessage[],
+  settings: SmartAskSettings,
+  signal?: AbortSignal,
+  logger?: SmartAskCallLogger,
+): AsyncGenerator<string> {
+  const chatEndpoint = getSmartAskChatEndpoint(settings);
+  const apiKey = smartAskProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
+  const startedAt = Date.now();
+  const timestamp = new Date(startedAt).toISOString();
 
   const chatBody = {
     model: settings.model,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userMessage },
-    ],
+    messages,
     stream: true,
     temperature: 0.3,
+    ...getSmartAskThinkingControlParams(settings),
   };
-
-  let response: Response;
-  if (isTauriAppPlatform()) {
-    response = await fetch(chatEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {}),
-      },
-      body: JSON.stringify(chatBody),
-      signal,
-    });
-  } else {
-    response = await fetch('/api/smartask/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        endpoint: chatEndpoint,
-        apiKey: settings.apiKey || undefined,
-        body: chatBody,
-      }),
-      signal,
-    });
-  }
-
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '');
-    throw new Error(`SmartAsk API error ${response.status}: ${errorBody}`);
-  }
-
-  if (!response.body) {
-    throw new Error('SmartAsk: response body is null');
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let sseBuffer = '';
+  let responseText = '';
+  let status: number | undefined;
 
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    let response: Response;
+    if (isTauriAppPlatform()) {
+      response = await fetch(chatEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify(chatBody),
+        signal,
+      });
+    } else {
+      response = await fetch('/api/smartask/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: chatEndpoint,
+          apiKey: apiKey || undefined,
+          body: chatBody,
+        }),
+        signal,
+      });
+    }
 
-      sseBuffer += decoder.decode(value, { stream: true });
-      const lines = sseBuffer.split('\n');
-      sseBuffer = lines.pop() ?? '';
+    status = response.status;
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data:')) continue;
-        const data = trimmed.slice(5).trim();
-        if (data === '[DONE]') continue;
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`SmartAsk API error ${response.status}: ${errorBody}`);
+    }
 
-        try {
-          const parsed: unknown = JSON.parse(data);
-          const delta = extractDelta(parsed);
-          if (delta) yield delta;
-        } catch {
-          // malformed SSE line — skip
+    if (!response.body) {
+      throw new Error('SmartAsk: response body is null');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const delta = extractDeltaFromSseLine(line);
+          if (delta) {
+            responseText += delta;
+            yield delta;
+          }
         }
       }
+    } finally {
+      reader.releaseLock();
     }
-  } finally {
-    reader.releaseLock();
+    await logger?.({
+      timestamp,
+      endpoint: chatEndpoint,
+      requestBody: chatBody,
+      messages,
+      responseText,
+      status,
+      durationMs: Date.now() - startedAt,
+    });
+  } catch (error) {
+    await logger?.({
+      timestamp,
+      endpoint: chatEndpoint,
+      requestBody: chatBody,
+      messages,
+      responseText,
+      error: error instanceof Error ? error.message : 'SmartAsk request failed',
+      status,
+      durationMs: Date.now() - startedAt,
+    });
+    throw error;
+  }
+}
+
+function extractDeltaFromSseLine(line: string): string {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('data:')) return '';
+  const data = trimmed.slice(5).trim();
+  if (!data || data === '[DONE]') return '';
+
+  try {
+    return extractDelta(JSON.parse(data));
+  } catch {
+    return '';
   }
 }
 
@@ -152,6 +295,17 @@ function extractDelta(parsed: unknown): string {
           typeof (delta as { content: unknown }).content === 'string'
         ) {
           return (delta as { content: string }).content;
+        }
+      }
+      if (choice !== null && typeof choice === 'object' && 'message' in choice) {
+        const message = (choice as { message: unknown }).message;
+        if (
+          message !== null &&
+          typeof message === 'object' &&
+          'content' in message &&
+          typeof (message as { content: unknown }).content === 'string'
+        ) {
+          return (message as { content: string }).content;
         }
       }
     }

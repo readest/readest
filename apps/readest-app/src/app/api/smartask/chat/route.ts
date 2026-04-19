@@ -1,51 +1,45 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { NextRequest } from 'next/server';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
-const LOG_DIR = path.join(process.cwd(), 'logs', 'smartask');
+import {
+  createSmartAskLogFilename,
+  extractSmartAskDeltaFromSseText,
+  formatSmartAskLog,
+  getSmartAskMessagesFromBody,
+} from '@/services/smartAsk/logging';
 
-interface ChatBody {
-  model?: string;
-  temperature?: number;
-  messages?: { role: string; content: string }[];
-}
+export const runtime = 'nodejs';
 
-async function writeDebugLog(endpoint: string, requestBody: unknown, responseText: string) {
+async function writeSmartAskLog(entry: {
+  timestamp: string;
+  endpoint: string;
+  body: unknown;
+  responseText?: string;
+  error?: string;
+  status?: number;
+  durationMs?: number;
+}) {
   try {
-    await fs.mkdir(LOG_DIR, { recursive: true });
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-
-    const body = requestBody as ChatBody;
-    const sections: string[] = [
-      `# SmartAsk Debug Log`,
-      ``,
-      `**Time**: ${new Date().toISOString()}`,
-      `**Endpoint**: ${endpoint}`,
-      `**Model**: ${body.model ?? ''}`,
-      `**Temperature**: ${body.temperature ?? ''}`,
-    ];
-
-    for (const msg of body.messages ?? []) {
-      const role = msg.role[0]!.toUpperCase() + msg.role.slice(1);
-      sections.push(``, `## ${role}`, ``, msg.content);
-    }
-
-    sections.push(``, `## Response`, ``, responseText);
-
-    await fs.writeFile(path.join(LOG_DIR, `${ts}.md`), sections.join('\n'), 'utf-8');
-  } catch {
-    // logging is best-effort — never fail the request
+    const logDir = path.join(process.cwd(), 'logs', 'smartask');
+    await mkdir(logDir, { recursive: true });
+    await writeFile(
+      path.join(logDir, createSmartAskLogFilename(new Date(entry.timestamp))),
+      formatSmartAskLog({
+        timestamp: entry.timestamp,
+        endpoint: entry.endpoint,
+        requestBody: entry.body,
+        messages: getSmartAskMessagesFromBody(entry.body),
+        responseText: entry.responseText,
+        error: entry.error,
+        status: entry.status,
+        durationMs: entry.durationMs,
+      }),
+      'utf-8',
+    );
+  } catch (error) {
+    console.error('Failed to write SmartAsk log', error);
   }
-}
-
-function extractTextDelta(parsed: unknown): string {
-  if (parsed === null || typeof parsed !== 'object') return '';
-  const choices = (parsed as Record<string, unknown>)['choices'];
-  if (!Array.isArray(choices) || choices.length === 0) return '';
-  const delta = (choices[0] as Record<string, unknown>)['delta'];
-  if (delta === null || typeof delta !== 'object') return '';
-  const content = (delta as Record<string, unknown>)['content'];
-  return typeof content === 'string' ? content : '';
 }
 
 export async function POST(request: NextRequest) {
@@ -54,15 +48,21 @@ export async function POST(request: NextRequest) {
     apiKey?: string;
     body: unknown;
   };
+  const startedAt = Date.now();
+  const timestamp = new Date(startedAt).toISOString();
 
   if (!endpoint) {
     return Response.json({ error: 'Missing endpoint' }, { status: 400 });
   }
 
+  let parsedEndpoint: URL;
   try {
-    new URL(endpoint);
+    parsedEndpoint = new URL(endpoint);
   } catch {
     return Response.json({ error: 'Invalid endpoint URL' }, { status: 400 });
+  }
+  if (!['http:', 'https:'].includes(parsedEndpoint.protocol)) {
+    return Response.json({ error: 'Unsupported endpoint protocol' }, { status: 400 });
   }
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -75,51 +75,63 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
+      signal: request.signal,
     });
 
     if (!upstream.ok) {
       const text = await upstream.text().catch(() => '');
+      await writeSmartAskLog({
+        timestamp,
+        endpoint,
+        body,
+        error: `Upstream error ${upstream.status}: ${text}`,
+        status: upstream.status,
+        durationMs: Date.now() - startedAt,
+      });
       return Response.json(
         { error: `Upstream error ${upstream.status}: ${text}` },
         { status: upstream.status },
       );
     }
+    const upstreamBody = upstream.body;
+    if (!upstreamBody) {
+      return Response.json({ error: 'Upstream response body is empty' }, { status: 502 });
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = upstream.body!.getReader();
+        const reader = upstreamBody.getReader();
         const decoder = new TextDecoder();
         let sseBuffer = '';
         let responseText = '';
-
+        let errorMessage = '';
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            controller.enqueue(value);
-
             sseBuffer += decoder.decode(value, { stream: true });
             const lines = sseBuffer.split('\n');
             sseBuffer = lines.pop() ?? '';
-
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith('data:')) continue;
-              const data = trimmed.slice(5).trim();
-              if (data === '[DONE]') continue;
-              try {
-                const delta = extractTextDelta(JSON.parse(data));
-                if (delta) responseText += delta;
-              } catch {
-                // malformed SSE line — skip
-              }
-            }
+            responseText += extractSmartAskDeltaFromSseText(lines.join('\n'));
+            controller.enqueue(value);
           }
-        } catch {
+          sseBuffer += decoder.decode();
+          responseText += extractSmartAskDeltaFromSseText(sseBuffer);
+        } catch (error) {
+          errorMessage = error instanceof Error ? error.message : 'Upstream stream failed';
           // upstream closed or aborted — stop cleanly
         } finally {
+          reader.releaseLock();
+          await writeSmartAskLog({
+            timestamp,
+            endpoint,
+            body,
+            responseText,
+            error: errorMessage || undefined,
+            status: upstream.status,
+            durationMs: Date.now() - startedAt,
+          });
           controller.close();
-          void writeDebugLog(endpoint, body, responseText);
         }
       },
     });
@@ -132,6 +144,14 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    await writeSmartAskLog({
+      timestamp,
+      endpoint,
+      body,
+      error: error instanceof Error ? error.message : 'Failed to reach upstream',
+      status: 500,
+      durationMs: Date.now() - startedAt,
+    });
     return Response.json(
       { error: error instanceof Error ? error.message : 'Failed to reach upstream' },
       { status: 500 },

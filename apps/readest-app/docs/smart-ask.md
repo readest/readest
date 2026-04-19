@@ -1,182 +1,144 @@
-# SmartAsk — 选中文字智能问答功能
+# SmartAsk - 选中文字智能问答
 
 ## 功能概述
 
-用户在阅读时选中一段文字，点击工具栏中的 **SmartAsk** 按钮，系统立刻以该段文字为核心，结合当前章节上下文，调用 AI 生成 2–3 个读者最可能产生的疑问并逐一给出简短回答，以浮动弹窗内联展示，不打断阅读思绪。
+SmartAsk 面向阅读中的短暂停顿：用户选中文本后点击 **Ask AI**，弹窗会结合选中文本、同段落剩余文字和相邻章节块，生成几条最可能有帮助的解释。结果先流式展示简述，再按需展开详细说明，尽量不打断当前阅读流程。
 
----
+## 代码地图
 
-## 相关代码地图
+| 文件                                                      | 职责                                                |
+| --------------------------------------------------------- | --------------------------------------------------- |
+| `src/app/reader/components/annotator/AnnotationTools.tsx` | 注册 `smartask` 工具按钮                            |
+| `src/app/reader/components/annotator/Annotator.tsx`       | 控制 SmartAsk 弹窗打开和定位                        |
+| `src/app/reader/components/annotator/SmartAskPopup.tsx`   | 弹窗 UI、流式状态、错误状态和输出解析               |
+| `src/components/settings/AIPanel.tsx`                     | SmartAsk provider、模型、上下文、问题方向和缓存设置 |
+| `src/services/smartAsk/types.ts`                          | 设置、provider 和结果类型                           |
+| `src/services/smartAsk/providers.ts`                      | Provider 预设、端点拼接、thinking 参数和旧配置兼容  |
+| `src/services/smartAsk/contextExtractor.ts`               | 从阅读 DOM 提取选区上下文                           |
+| `src/services/smartAsk/client.ts`                         | Chat Completions 请求、SSE 解析和缓存接入           |
+| `src/services/smartAsk/cache.ts`                          | 本地响应缓存                                        |
+| `src/app/api/smartask/chat/route.ts`                      | Web 环境下的流式请求代理                            |
+| `src/app/api/smartask/models/route.ts`                    | Web 环境下的模型列表代理                            |
 
-### 现有文件（需修改）
+## Provider 策略
 
-| 文件                                                                                                                    | 修改内容                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [`src/types/annotator.ts`](../src/types/annotator.ts)                                                                   | `AnnotationToolType` 联合类型中添加 `'smartask'`                               |
-| [`src/types/settings.ts`](../src/types/settings.ts)                                                                     | `SystemSettings` 中添加 `smartAskSettings: SmartAskSettings`                   |
-| [`src/app/reader/components/annotator/AnnotationTools.tsx`](../src/app/reader/components/annotator/AnnotationTools.tsx) | `annotationToolButtons` 数组中注册新按钮                                       |
-| [`src/app/reader/components/annotator/Annotator.tsx`](../src/app/reader/components/annotator/Annotator.tsx)             | 添加 `showSmartAskPopup` 状态、`handleSmartAsk()` 回调、渲染 `<SmartAskPopup>` |
-| [`src/components/settings/AIPanel.tsx`](../src/components/settings/AIPanel.tsx)                                         | 添加 SmartAsk 设置区块（provider / baseUrl / model / apiKey）                  |
+SmartAsk 主要以 OpenAI Chat Completions 协议作为统一调用面。Ollama 使用其兼容的 `/v1/chat/completions`，模型列表走 `/api/tags`；常见云 provider 使用 `/v1/chat/completions` 和 `/v1/models`；LM Studio REST 使用原生 REST v0 的 `/api/v0/chat/completions` 和 `/api/v0/models`。
 
-### 新建文件
+内置 provider:
 
-| 文件                                                    | 用途                                                        |
-| ------------------------------------------------------- | ----------------------------------------------------------- |
-| `src/services/smartAsk/types.ts`                        | `SmartAskSettings`、`SmartAskResult`、`SmartAskQA` 类型定义 |
-| `src/services/smartAsk/contextExtractor.ts`             | 从当前页 DOM 提取上下文文字（轻量 RAG）                     |
-| `src/services/smartAsk/client.ts`                       | 直接 fetch Ollama/OpenAI-compatible API，流式返回           |
-| `src/app/reader/components/annotator/SmartAskPopup.tsx` | 弹窗 UI，仿照 `XRayPopup` 结构                              |
+| Provider          | 默认 Base URL                                             | API Key  |
+| ----------------- | --------------------------------------------------------- | -------- |
+| Ollama            | `http://127.0.0.1:11434`                                  | 不需要   |
+| OpenAI            | `https://api.openai.com`                                  | 需要     |
+| DeepSeek          | `https://api.deepseek.com`                                | 需要     |
+| OpenRouter        | `https://openrouter.ai/api`                               | 需要     |
+| Groq              | `https://api.groq.com/openai`                             | 需要     |
+| Gemini            | `https://generativelanguage.googleapis.com/v1beta/openai` | 需要     |
+| LM Studio REST    | `http://localhost:1234`                                   | 可选     |
+| OpenAI-compatible | 用户自定义                                                | 通常需要 |
 
----
+历史配置中的 `openai-compatible` 会在 UI 层归一化为 `custom-openai-compatible`，避免旧设置失效。
 
-## 架构设计
+## Thinking 控制
 
-### 1. 独立服务层（`src/services/smartAsk/`）
+各家 LLM API 没有统一的 `thinking=false` 标准。SmartAsk 不在 UI 暴露 thinking 开关；该功能默认追求快速直答，代码路径会尽量关闭 thinking，不能关闭时压到最低或仅通过 prompt 约束直接回答。LM Studio REST 使用原生 `reasoning` 参数，固定发送 `"off"`。
 
-完全独立于 `src/services/ai/`，仅依赖标准 `fetch`，不引入 Vercel AI SDK 等重型依赖。
+| Provider                 | 请求参数策略                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Ollama                   | `think: false`；`gpt-oss` 模型只能降到 `think: "low"`                                                      |
+| OpenRouter               | `reasoning: { effort: "none", exclude: true }`                                                             |
+| Gemini OpenAI-compatible | `gemini-2.5` 非 Pro 模型使用 `reasoning_effort: "none"`；Gemini 3 Flash 使用 `reasoning_effort: "minimal"` |
+| OpenAI                   | 对 `o*`、`gpt-5*`、`gpt-oss*` 等 reasoning 模型使用 `reasoning_effort: "minimal"`                          |
+| LM Studio REST           | `reasoning: "off"`                                                                                         |
+| DeepSeek / Groq / Custom | 不注入非标准字段，依赖 prompt 约束；需要真正关闭时应选择非 reasoning 模型                                  |
 
-```
-src/services/smartAsk/
-├── types.ts           ← 类型定义
-├── contextExtractor.ts ← 上下文提取
-└── client.ts          ← API 调用 + 流式解析
-```
+无论 provider 是否支持参数，系统 prompt 都要求不输出 `<think>`、推理过程或内部思考。
 
-### 2. 设置类型（`SmartAskSettings`）
+## 上下文提取
 
-```typescript
-// src/services/smartAsk/types.ts
+`extractContext(selection, maxChars)` 的目标是低延迟提取足够的局部语境，而不是构建全书索引。
 
-export type SmartAskProvider = 'ollama' | 'openai-compatible';
+策略：
 
-export interface SmartAskSettings {
-  enabled: boolean;
-  provider: SmartAskProvider;
-  baseUrl: string; // Ollama: http://127.0.0.1:11434  |  OpenAI-compatible: https://api.openai.com
-  model: string; // 例: 'qwen2.5:7b' / 'gpt-4o-mini'
-  apiKey?: string; // OpenAI-compatible 需要; Ollama 不需要
-  maxContextChars: number; // 上下文字符数上限，默认 1500
-}
+1. 找到选区起止位置最近的块级祖先。
+2. 在 `article`、`main` 或 `body` 范围内按文档顺序收集可读块。
+3. 跳过 `script`、`style`、`canvas`、`iframe` 等非正文内容。
+4. 优先保留同段落中选区前后的文字。
+5. 再按预算向前、向后收集相邻块。
+6. 输出固定结构：
 
-export interface SmartAskQA {
-  question: string;
-  answer: string;
-}
-
-export interface SmartAskResult {
-  qas: SmartAskQA[];
-}
-```
-
-### 3. 上下文提取策略（`contextExtractor.ts`）
-
-**目标**：用最低代价取得"所选文字的前后章节段落"，供 AI 理解语境。
-
-**方案**：直接从当前加载的 iframe/shadow DOM 读取文本节点，取选中段落所在的 `<p>` 或容器块，向前/向后各取若干字符，拼接为上下文字符串。
-
-```typescript
-// 伪代码
-export function extractContext(selection: TextSelection, maxChars: number): string {
-  // 1. 从 selection.range 找到最近的块级祖先
-  // 2. 取其 previousSibling / nextSibling 的 textContent
-  // 3. 拼接直到达到 maxChars 上限
-  // 4. 返回: "[上文...]\n【选中】{selection.text}【/选中】\n[下文...]"
-}
+```text
+Before:
+...
+Selected:
+...
+After:
+...
 ```
 
-这是"零索引 RAG"——无需预处理，实时提取，延迟极低。
+`maxContextChars` 默认 2000，设置面板允许在 500 到 3000 之间调整。
 
-### 4. AI 调用（`client.ts`）
+## 问题方向
 
-统一走 OpenAI-compatible `/v1/chat/completions` 接口：
+设置面板支持维护 `questionDirections` 列表，用来提示模型优先从哪些方向生成初始解释，例如“地名背景”“人物关系”“文言翻译”。这些方向会进入初始 SmartAsk 和追问请求的 user message，但不会覆盖用户追问本身。
 
-- **Ollama**：`{baseUrl}/v1/chat/completions`（Ollama ≥ 0.1.24 支持此端点）
-- **OpenAI-compatible**：`{baseUrl}/v1/chat/completions`
+缓存 key 包含 `questionDirections`，因此调整方向后不会命中旧方向下的缓存结果。
 
-```typescript
-// 流式生成，yield SmartAskQA[]
-export async function* streamSmartAsk(
-  selectedText: string,
-  context: string,
-  settings: SmartAskSettings,
-  uiLanguage: string,
-): AsyncGenerator<SmartAskResult>
+## 调用流程
+
+```text
+用户选中文字
+  -> Annotator 打开 SmartAskPopup
+  -> extractContext(selection, maxContextChars)
+  -> streamSmartAsk(selectedText, context, settings, locale)
+  -> 命中缓存则直接返回完整文本
+  -> 未命中则调用 provider 的 Chat Completions stream
+  -> SmartAskPopup 解析简述和详述并流式渲染
+  -> 完整响应写入本地缓存
+  -> 每次真实 LLM call 写入 logs/smartask/*.md 调试日志
 ```
 
-**Prompt 设计**：
+Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/smartask/chat` 代理，避免浏览器 CORS 限制。模型列表在 Web 环境通过 `POST /api/smartask/models` 代理，API key 放在请求体中，不再放入查询字符串。
 
-```
-System:
-你是一位阅读助手。用户正在阅读一本书，选中了一段文字。
-请根据选中文字和上下文，预判读者最可能产生的 2-3 个疑问，并给出简短、准确的回答。
-以 JSON 数组格式输出：[{"question":"...","answer":"..."}]
-回答语言：{uiLanguage}
+## 调试日志
 
-User:
-上下文：
-{context}
+每一次 SmartAsk chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。
 
-选中文字：
-{selectedText}
-```
+- Web/dev 代理路径写入 `logs/smartask/`。
+- Tauri 直连路径优先写入当前工作目录的 `logs/smartask/`，失败时回退到系统应用 Log 目录。
+- 日志包含 endpoint、model、temperature、status、duration、messages、请求 body、响应文本或错误信息。
+- 命中缓存时不会写新日志，因为没有发生新的 LLM call。
 
-输出解析：累积流式 token，在 `]` 出现后尝试解析 JSON。
+## 输出格式
 
-### 5. 弹窗 UI（`SmartAskPopup.tsx`）
+模型输出使用纯文本分段，避免在流式 JSON 未闭合时解析失败。
 
-参考 `XRayPopup.tsx` 的结构：
+```text
+[含义] 一句简洁说明
+[背景] 一句简洁说明
 
-```
-┌──────────────────────────────┐
-│ "选中文字摘要..." （截断显示）  │
-├──────────────────────────────┤
-│ ⏳ 加载中...                   │  ← loading 态
-│ ──────────────────────────── │
-│ Q: 这个词是什么意思？           │  ← streaming 中逐条出现
-│ A: 指的是...                  │
-│ ──────────────────────────── │
-│ Q: 作者为何在此...             │
-│ A: 因为...                    │
-└──────────────────────────────┘
+===DETAILS===
+
+[含义] 2-4 句话详细说明。
+
+[背景] 2-4 句话详细说明。
 ```
 
-尺寸：`480 × 280`（参考 dict/translator popup），复用现有 `getPopupPosition()` 定位逻辑。
+弹窗会先展示 `===DETAILS===` 前的简述，收到详情后提供展开按钮。
 
----
+## 缓存
 
-## 数据流
+SmartAsk 缓存保存在浏览器 `localStorage`：
 
-```
-用户选中文字 → handleSmartAsk()
-    ↓
-extractContext(selection, maxChars)   ← 从当前 DOM 实时提取
-    ↓
-streamSmartAsk(text, context, settings, lang)
-    ├── 构造 OpenAI-compatible 请求
-    ├── fetch → stream → parse JSON tokens
-    └── yield SmartAskResult (逐步更新)
-    ↓
-SmartAskPopup 渲染 Q&A 列表
-```
+- key 使用 provider、base URL、model、界面语言、选中文本和上下文的哈希，不把原文放进 key。
+- value 只保存模型响应文本。
+- 默认开启，TTL 为 24 小时。
+- 最多保留 50 条，超出后按创建时间淘汰。
+- 设置面板支持关闭缓存、调整 TTL 和清空缓存。
 
----
+缓存仅用于完全相同输入的重复查询；换模型、换 provider、换上下文或换语言都会重新请求。
 
-## 设置项
-
-在 `AIPanel.tsx` 新增 SmartAsk 区块，包含：
-
-| 字段              | 类型     | 说明                           |
-| ----------------- | -------- | ------------------------------ |
-| `enabled`         | toggle   | 开关                           |
-| `provider`        | select   | `Ollama` / `OpenAI-compatible` |
-| `baseUrl`         | text     | API 基础 URL                   |
-| `model`           | text     | 模型名称                       |
-| `apiKey`          | password | 仅 OpenAI-compatible 时显示    |
-| `maxContextChars` | number   | 上下文字符数（500–3000）       |
-
----
-
-## 默认值
+## 设置默认值
 
 ```typescript
 export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
@@ -185,30 +147,26 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
   baseUrl: 'http://127.0.0.1:11434',
   model: '',
   apiKey: '',
-  maxContextChars: 1500,
+  maxContextChars: 2000,
+  questionDirections: [],
+  cacheEnabled: true,
+  cacheTtlMinutes: 24 * 60,
 };
 ```
 
----
+`loadSettings()` 会将默认值合并到旧配置，保证新增字段不会是 `undefined`。
 
-## 国际化
+## 安全和隐私
 
-新增的界面字符串通过 `useTranslation()` / `stubTranslation` 处理，遵循 [i18n 规范](./i18n.md)。涉及字符串：
+- Web 代理只允许 `http` 和 `https` endpoint。
+- 模型列表代理支持 `POST`，避免 API key 进入 URL。
+- 代理不再写本地 `logs/smartask` 文件，减少构建兼容风险和敏感内容落盘。
+- 选中文本、上下文和模型响应仍会发送给用户配置的 provider；UI 需要让用户自行选择可信 provider。
 
-- `'SmartAsk'`
-- `'Ask AI about this passage'`（tooltip）
-- `'Analyzing...'`
-- `'Enable AI in Settings'`
-- `'SmartAsk model not configured'`
-- `'Failed to get AI response'`
+## 测试
 
----
+新增测试覆盖：
 
-## 开发顺序
-
-1. **类型层**：`src/services/smartAsk/types.ts` + `src/types/annotator.ts` + `src/types/settings.ts`
-2. **服务层**：`contextExtractor.ts` + `client.ts`
-3. **弹窗 UI**：`SmartAskPopup.tsx`
-4. **集成**：`AnnotationTools.tsx` + `Annotator.tsx`
-5. **设置 UI**：`AIPanel.tsx`
-6. **测试**：单元测试 for `contextExtractor` + `client`（mock fetch）
+- `contextExtractor`: 嵌套正文、同段落前后文、跳过脚本和样式内容。
+- `providers`: endpoint 拼接、旧 provider 兼容、API key 需求。
+- `cache`: key 稳定性、TTL 过期、清理 SmartAsk 缓存。
