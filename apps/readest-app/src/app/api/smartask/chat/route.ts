@@ -38,7 +38,7 @@ async function writeSmartAskLog(entry: {
       'utf-8',
     );
   } catch (error) {
-    console.error('Failed to write SmartAsk log', error);
+    console.error('Failed to write Inline Insight log', error);
   }
 }
 

@@ -131,7 +131,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
         try {
           await appService.writeFile(`smartask/${filename}`, 'Log', content);
         } catch (fallbackError) {
-          console.error('Failed to write SmartAsk log', error, fallbackError);
+          console.error('Failed to write Inline Insight log', error, fallbackError);
         }
       }
     };
@@ -241,9 +241,11 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
           </p>
 
           {!smartAskSettings.enabled ? (
-            <p className='text-base-content/60 text-xs'>{_('Enable SmartAsk in Settings')}</p>
+            <p className='text-base-content/60 text-xs'>{_('Enable Inline Insight in Settings')}</p>
           ) : !smartAskSettings.model ? (
-            <p className='text-base-content/60 text-xs'>{_('SmartAsk model not configured')}</p>
+            <p className='text-base-content/60 text-xs'>
+              {_('Inline Insight model not configured')}
+            </p>
           ) : error ? (
             <p className='text-error text-xs'>{error}</p>
           ) : (

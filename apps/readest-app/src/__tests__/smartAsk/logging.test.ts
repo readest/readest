@@ -6,7 +6,7 @@ import {
   getSmartAskMessagesFromBody,
 } from '@/services/smartAsk/logging';
 
-describe('SmartAsk logging', () => {
+describe('Inline Insight logging', () => {
   it('builds filesystem-safe markdown filenames', () => {
     expect(createSmartAskLogFilename(new Date('2026-04-18T09:25:17.869Z'))).toBe(
       '2026-04-18T09-25-17-869Z.md',
@@ -32,7 +32,7 @@ describe('SmartAsk logging', () => {
       durationMs: 123,
     });
 
-    expect(markdown).toContain('# SmartAsk Debug Log');
+    expect(markdown).toContain('# Inline Insight Debug Log');
     expect(markdown).toContain('**Model**: qwen');
     expect(markdown).toContain('## System');
     expect(markdown).toContain('system prompt');

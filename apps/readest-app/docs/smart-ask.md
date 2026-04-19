@@ -1,28 +1,33 @@
-# SmartAsk - 选中文字智能问答
+# Inline Insight - 随文智解
+
+product name: Inline Insight
+internal codename: smartAsk
 
 ## 功能概述
 
-SmartAsk 面向阅读中的短暂停顿：用户选中文本后点击 **Ask AI**，弹窗会结合选中文本、同段落剩余文字和相邻章节块，生成几条最可能有帮助的解释。结果先流式展示简述，再按需展开详细说明，尽量不打断当前阅读流程。
+结合上下文的免输入查询，极大地保持阅读的沉浸感和连贯性，是阅读体验
+
+选中文本后点击查询图标，弹窗会结合选中文本、同段落剩余文字和相邻章节块，猜测读者意图，生成几条最有帮助的几项解释。
 
 ## 代码地图
 
-| 文件                                                      | 职责                                                |
-| --------------------------------------------------------- | --------------------------------------------------- |
-| `src/app/reader/components/annotator/AnnotationTools.tsx` | 注册 `smartask` 工具按钮                            |
-| `src/app/reader/components/annotator/Annotator.tsx`       | 控制 SmartAsk 弹窗打开和定位                        |
-| `src/app/reader/components/annotator/SmartAskPopup.tsx`   | 弹窗 UI、流式状态、错误状态和输出解析               |
-| `src/components/settings/AIPanel.tsx`                     | SmartAsk provider、模型、上下文、问题方向和缓存设置 |
-| `src/services/smartAsk/types.ts`                          | 设置、provider 和结果类型                           |
-| `src/services/smartAsk/providers.ts`                      | Provider 预设、端点拼接、thinking 参数和旧配置兼容  |
-| `src/services/smartAsk/contextExtractor.ts`               | 从阅读 DOM 提取选区上下文                           |
-| `src/services/smartAsk/client.ts`                         | Chat Completions 请求、SSE 解析和缓存接入           |
-| `src/services/smartAsk/cache.ts`                          | 本地响应缓存                                        |
-| `src/app/api/smartask/chat/route.ts`                      | Web 环境下的流式请求代理                            |
-| `src/app/api/smartask/models/route.ts`                    | Web 环境下的模型列表代理                            |
+| 文件                                                      | 职责                                                      |
+| --------------------------------------------------------- | --------------------------------------------------------- |
+| `src/app/reader/components/annotator/AnnotationTools.tsx` | 注册 `smartask` 工具按钮                                  |
+| `src/app/reader/components/annotator/Annotator.tsx`       | 控制 Inline Insight 弹窗打开和定位                        |
+| `src/app/reader/components/annotator/SmartAskPopup.tsx`   | 弹窗 UI、流式状态、错误状态和输出解析                     |
+| `src/components/settings/AIPanel.tsx`                     | Inline Insight provider、模型、上下文、问题方向和缓存设置 |
+| `src/services/smartAsk/types.ts`                          | 设置、provider 和结果类型                                 |
+| `src/services/smartAsk/providers.ts`                      | Provider 预设、端点拼接、thinking 参数和旧配置兼容        |
+| `src/services/smartAsk/contextExtractor.ts`               | 从阅读 DOM 提取选区上下文                                 |
+| `src/services/smartAsk/client.ts`                         | Chat Completions 请求、SSE 解析和缓存接入                 |
+| `src/services/smartAsk/cache.ts`                          | 本地响应缓存                                              |
+| `src/app/api/smartask/chat/route.ts`                      | Web 环境下的流式请求代理                                  |
+| `src/app/api/smartask/models/route.ts`                    | Web 环境下的模型列表代理                                  |
 
 ## Provider 策略
 
-SmartAsk 主要以 OpenAI Chat Completions 协议作为统一调用面。Ollama 使用其兼容的 `/v1/chat/completions`，模型列表走 `/api/tags`；常见云 provider 使用 `/v1/chat/completions` 和 `/v1/models`；LM Studio REST 使用原生 REST v0 的 `/api/v0/chat/completions` 和 `/api/v0/models`。
+Inline Insight 主要以 OpenAI Chat Completions 协议作为统一调用面。Ollama 使用其兼容的 `/v1/chat/completions`，模型列表走 `/api/tags`；常见云 provider 使用 `/v1/chat/completions` 和 `/v1/models`；LM Studio REST 使用原生 REST v0 的 `/api/v0/chat/completions` 和 `/api/v0/models`。
 
 内置 provider:
 
@@ -41,7 +46,7 @@ SmartAsk 主要以 OpenAI Chat Completions 协议作为统一调用面。Ollama 
 
 ## Thinking 控制
 
-各家 LLM API 没有统一的 `thinking=false` 标准。SmartAsk 不在 UI 暴露 thinking 开关；该功能默认追求快速直答，代码路径会尽量关闭 thinking，不能关闭时压到最低或仅通过 prompt 约束直接回答。LM Studio REST 使用原生 `reasoning` 参数，固定发送 `"off"`。
+各家 LLM API 没有统一的 `thinking=false` 标准。Inline Insight 不在 UI 暴露 thinking 开关；该功能默认追求快速直答，代码路径会尽量关闭 thinking，不能关闭时压到最低或仅通过 prompt 约束直接回答。LM Studio REST 使用原生 `reasoning` 参数，固定发送 `"off"`。
 
 | Provider                 | 请求参数策略                                                                                               |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
@@ -80,7 +85,7 @@ After:
 
 ## 问题方向
 
-设置面板支持维护 `questionDirections` 列表，用来提示模型优先从哪些方向生成初始解释，例如“地名背景”“人物关系”“文言翻译”。这些方向会进入初始 SmartAsk 和追问请求的 user message，但不会覆盖用户追问本身。
+设置面板支持维护 `questionDirections` 列表，用来提示模型优先从哪些方向生成初始解释，例如“地名背景”“人物关系”“文言翻译”。这些方向会进入初始 Inline Insight 和追问请求的 user message，但不会覆盖用户追问本身。
 
 缓存 key 包含 `questionDirections`，因此调整方向后不会命中旧方向下的缓存结果。
 
@@ -102,7 +107,7 @@ Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/smartask/chat`
 
 ## 调试日志
 
-每一次 SmartAsk chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。
+每一次 Inline Insight chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。
 
 - Web/dev 代理路径写入 `logs/smartask/`。
 - Tauri 直连路径优先写入当前工作目录的 `logs/smartask/`，失败时回退到系统应用 Log 目录。
@@ -128,7 +133,7 @@ Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/smartask/chat`
 
 ## 缓存
 
-SmartAsk 缓存保存在浏览器 `localStorage`：
+Inline Insight 缓存保存在浏览器 `localStorage`：
 
 - key 使用 provider、base URL、model、界面语言、选中文本和上下文的哈希，不把原文放进 key。
 - value 只保存模型响应文本。
@@ -169,4 +174,4 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
 
 - `contextExtractor`: 嵌套正文、同段落前后文、跳过脚本和样式内容。
 - `providers`: endpoint 拼接、旧 provider 兼容、API key 需求。
-- `cache`: key 稳定性、TTL 过期、清理 SmartAsk 缓存。
+- `cache`: key 稳定性、TTL 过期、清理 Inline Insight 缓存。

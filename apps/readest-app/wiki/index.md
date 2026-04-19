@@ -2,11 +2,11 @@
 
 ## Sources
 
-- [[sources/commit-6168aae-smartask]] - 最近一次 SmartAsk commit 的功能和代码来源摘要。
+- [[sources/commit-6168aae-smartask]] - 最近一次 Inline Insight commit 的功能和代码来源摘要。
 
 ## Syntheses
 
-- [[syntheses/smartask-design]] - SmartAsk 当前设计、优化决策和后续风险。
+- [[syntheses/smartask-design]] - Inline Insight 当前设计、优化决策和后续风险。
 
 ## Logs
 

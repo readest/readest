@@ -4,20 +4,20 @@ source: git commit 6168aae2867de437e33c1c793c99f89b2e52c9e4
 date: 2026-04-18
 ---
 
-# Commit 6168aae - Add "SmarkAsk"
+# Commit 6168aae - Add Inline Insight
 
 ## Summary
 
-最近一次 commit 在 Readest 电子书阅读器中加入 SmartAsk：用户选中文本后，可以通过注释工具栏触发 AI 弹窗，结合局部上下文生成简短解释和详情。
+最近一次 commit 在 Readest 电子书阅读器中加入 Inline Insight：用户选中文本后，可以通过注释工具栏触发 AI 弹窗，结合局部上下文生成简短解释和详情。
 
 ## Changed Areas
 
 - `src/types/annotator.ts` 增加 `smartask` 工具类型。
 - `src/types/settings.ts` 增加 `smartAskSettings`。
 - `src/app/reader/components/annotator/AnnotationTools.tsx` 注册 Ask AI 按钮。
-- `src/app/reader/components/annotator/Annotator.tsx` 管理 SmartAsk 弹窗状态。
+- `src/app/reader/components/annotator/Annotator.tsx` 管理 Inline Insight 弹窗状态。
 - `src/app/reader/components/annotator/SmartAskPopup.tsx` 负责弹窗、流式加载和输出展示。
-- `src/components/settings/AIPanel.tsx` 增加 SmartAsk 配置。
+- `src/components/settings/AIPanel.tsx` 增加 Inline Insight 配置。
 - `src/services/smartAsk/*` 增加类型、上下文提取和客户端请求逻辑。
 - `src/app/api/smartask/*` 增加 Web 代理接口。
 - `docs/smart-ask.md` 记录初版设计。

@@ -16,7 +16,7 @@ const input = {
   context: 'Before\nSelected\nafter',
 };
 
-describe('SmartAsk cache', () => {
+describe('Inline Insight cache', () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -64,7 +64,7 @@ describe('SmartAsk cache', () => {
     expect(localStorage.getItem(key)).toBeNull();
   });
 
-  it('clears SmartAsk entries only', () => {
+  it('clears Inline Insight entries only', () => {
     const key = buildSmartAskCacheKey(input);
     writeSmartAskCache(key, 'cached answer');
     localStorage.setItem('other', 'keep');

@@ -27,7 +27,7 @@ export function formatSmartAskLog(entry: SmartAskLogEntry): string {
       : '';
 
   return [
-    '# SmartAsk Debug Log',
+    '# Inline Insight Debug Log',
     '',
     `**Time**: ${entry.timestamp}`,
     `**Endpoint**: ${entry.endpoint}`,

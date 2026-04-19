@@ -61,7 +61,7 @@ function formatQuestionDirections(settings: SmartAskSettings): string {
 }
 
 /**
- * Streams SmartAsk insights from an OpenAI-compatible endpoint.
+ * Streams Inline Insight output from an OpenAI-compatible endpoint.
  * Yields raw text delta chunks as they arrive.
  * The output format is two sections separated by SMART_ASK_SEPARATOR:
  *   brief lines first, then detail paragraphs.
@@ -208,11 +208,11 @@ async function* streamChatCompletions(
 
     if (!response.ok) {
       const errorBody = await response.text().catch(() => '');
-      throw new Error(`SmartAsk API error ${response.status}: ${errorBody}`);
+      throw new Error(`Inline Insight API error ${response.status}: ${errorBody}`);
     }
 
     if (!response.body) {
-      throw new Error('SmartAsk: response body is null');
+      throw new Error('Inline Insight: response body is null');
     }
 
     const reader = response.body.getReader();
@@ -255,7 +255,7 @@ async function* streamChatCompletions(
       requestBody: chatBody,
       messages,
       responseText,
-      error: error instanceof Error ? error.message : 'SmartAsk request failed',
+      error: error instanceof Error ? error.message : 'Inline Insight request failed',
       status,
       durationMs: Date.now() - startedAt,
     });

@@ -249,11 +249,11 @@ const SmartAskSettingsPanel: React.FC = () => {
   return (
     <>
       <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('SmartAsk')}</h2>
+        <h2 className='mb-2 font-medium'>{_('Inline Insight')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
             <div className='config-item'>
-              <span>{_('Enable SmartAsk')}</span>
+              <span>{_('Enable Inline Insight')}</span>
               <input
                 type='checkbox'
                 className='toggle'
@@ -268,7 +268,7 @@ const SmartAskSettingsPanel: React.FC = () => {
       <div
         className={clsx('w-full', !smartAskEnabled && 'pointer-events-none select-none opacity-50')}
       >
-        <h2 className='mb-2 font-medium'>{_('SmartAsk Provider')}</h2>
+        <h2 className='mb-2 font-medium'>{_('Inline Insight Provider')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>

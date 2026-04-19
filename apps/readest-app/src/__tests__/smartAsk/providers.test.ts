@@ -10,7 +10,7 @@ import {
   smartAskProviderSupportsApiKey,
 } from '@/services/smartAsk/providers';
 
-describe('SmartAsk providers', () => {
+describe('Inline Insight providers', () => {
   it('maps the legacy OpenAI-compatible provider to the custom preset', () => {
     expect(normalizeSmartAskProvider('openai-compatible')).toBe('custom-openai-compatible');
     expect(getSmartAskProviderConfig('openai-compatible').label).toBe('OpenAI-compatible');
