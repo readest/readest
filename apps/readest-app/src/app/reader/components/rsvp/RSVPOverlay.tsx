@@ -34,6 +34,20 @@ const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
 const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
 const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
 
+// Context window: render only a sliding window of words around the current index.
+// Why: full-chapter rendering can be thousands of spans, and iOS WebKit's layout cost
+// for getBoundingClientRect (used by auto-scroll) scales with DOM size, which throttles
+// the word-advance interval well below the configured WPM.
+const CONTEXT_WINDOW_SIZE = 500;
+const CONTEXT_WINDOW_SLIDE_THRESHOLD = 100;
+
+const computeContextWindow = (total: number, currentIndex: number) => {
+  if (total <= CONTEXT_WINDOW_SIZE) return { start: 0, end: total };
+  const half = Math.floor(CONTEXT_WINDOW_SIZE / 2);
+  const start = Math.max(0, Math.min(total - CONTEXT_WINDOW_SIZE, currentIndex - half));
+  return { start, end: start + CONTEXT_WINDOW_SIZE };
+};
+
 interface RSVPOverlayProps {
   gridInsets: Insets;
   controller: RSVPController;
@@ -93,10 +107,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
     return 0;
   });
-  const [contextWindow, setContextWindow] = useState(() => ({
-    start: 0,
-    end: state.words.length,
-  }));
+  const [contextWindow, setContextWindow] = useState(() =>
+    computeContextWindow(state.words.length, state.currentIndex),
+  );
   const contextWordRef = useRef<HTMLSpanElement>(null);
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
@@ -128,13 +141,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     const handleStateChange = (e: Event) => {
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
-
-      // Reset context window to show all words when the chapter changes
-      const total = newState.words.length;
-      setContextWindow((prev) => {
-        if (total === prev.end && prev.start === 0) return prev;
-        return { start: 0, end: total };
-      });
     };
 
     const handleCountdownChange = (e: Event) => {
@@ -241,6 +247,25 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     [state.words, contextWindow],
   );
 
+  // Slide/reset the context window as currentIndex moves or the chapter changes.
+  useEffect(() => {
+    const total = state.words.length;
+    const cur = state.currentIndex;
+    setContextWindow((prev) => {
+      if (total <= CONTEXT_WINDOW_SIZE) {
+        if (prev.start === 0 && prev.end === total) return prev;
+        return { start: 0, end: total };
+      }
+      const currentSize = prev.end - prev.start;
+      const outOfBounds = cur < prev.start || cur >= prev.end;
+      const nearStartEdge = prev.start > 0 && cur < prev.start + CONTEXT_WINDOW_SLIDE_THRESHOLD;
+      const nearEndEdge = prev.end < total && cur >= prev.end - CONTEXT_WINDOW_SLIDE_THRESHOLD;
+      const sizeMismatch = currentSize !== CONTEXT_WINDOW_SIZE || prev.end > total;
+      if (!outOfBounds && !nearStartEdge && !nearEndEdge && !sizeMismatch) return prev;
+      return computeContextWindow(total, cur);
+    });
+  }, [state.currentIndex, state.words]);
+
   // Auto-scroll: keep highlighted word away from top/bottom edges
   useEffect(() => {
     const panel = contextPanelRef.current;
@@ -257,7 +282,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     } else if (wordRect.bottom > panelRect.bottom - margin) {
       panel.scrollTop += wordRect.top - topLine;
     }
-  }, [state.currentIndex, contextCollapsed]);
+  }, [state.currentIndex, contextCollapsed, contextWindow]);
 
   useEffect(() => {
     if (!showChapterDropdown) return;
