@@ -9,6 +9,7 @@ import Select from '@/components/Select';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import { clearInlineInsightCache } from '@/services/inlineInsight/cache';
+import { SYSTEM_PROMPT } from '@/services/inlineInsight/client';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 import type { InlineInsightProvider, InlineInsightSettings } from '@/services/inlineInsight/types';
 import { getLocale } from '@/utils/misc';
@@ -53,6 +54,9 @@ const InlineInsightSettingsPanel: React.FC = () => {
   );
   const [inlineInsightTargetLanguage, setInlineInsightTargetLanguage] = useState(
     inlineInsightSettings.targetLanguage,
+  );
+  const [inlineInsightSystemPrompt, setInlineInsightSystemPrompt] = useState(
+    inlineInsightSettings.systemPrompt,
   );
   const [inlineInsightQuestionDirections, setInlineInsightQuestionDirections] = useState(
     normalizeInlineInsightQuestionDirections(inlineInsightSettings.questionDirections),
@@ -254,6 +258,16 @@ const InlineInsightSettingsPanel: React.FC = () => {
 
   useEffect(() => {
     if (!isMounted.current) return;
+    const normalized = inlineInsightSystemPrompt.trim() ? inlineInsightSystemPrompt : '';
+    if (normalized !== inlineInsightSettings.systemPrompt) {
+      clearInlineInsightCache();
+      saveInlineInsightSetting('systemPrompt', normalized);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inlineInsightSystemPrompt]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
     const normalized = normalizeInlineInsightQuestionDirections(inlineInsightQuestionDirections);
     const saved = normalizeInlineInsightQuestionDirections(
       inlineInsightSettings.questionDirections,
@@ -315,6 +329,10 @@ const InlineInsightSettingsPanel: React.FC = () => {
 
   const handleSelectTargetLanguage = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setInlineInsightTargetLanguage(event.target.value);
+  };
+
+  const resetInlineInsightSystemPrompt = () => {
+    setInlineInsightSystemPrompt('');
   };
 
   return (
@@ -444,6 +462,26 @@ const InlineInsightSettingsPanel: React.FC = () => {
               />
               <span className='text-base-content/50 text-xs'>
                 {_('Leave empty to follow the interface language.')}
+              </span>
+            </div>
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <div className='flex w-full items-center justify-between gap-2'>
+                <span>{_('System Prompt')}</span>
+                <button
+                  type='button'
+                  className='btn btn-ghost btn-xs'
+                  onClick={resetInlineInsightSystemPrompt}
+                >
+                  {_('Reset')}
+                </button>
+              </div>
+              <textarea
+                className='textarea textarea-bordered textarea-sm min-h-40 w-full font-mono text-xs'
+                value={inlineInsightSystemPrompt || SYSTEM_PROMPT}
+                onChange={(e) => setInlineInsightSystemPrompt(e.target.value)}
+              />
+              <span className='text-base-content/50 text-xs'>
+                {_('Leave unchanged to use the default prompt. Reset clears custom changes.')}
               </span>
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>

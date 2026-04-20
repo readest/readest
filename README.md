@@ -8,10 +8,10 @@ Button:
 ![Inline Insight button](data/screenshots/inline-insight-btn.jpg)
 
 Brief View:
-![Inline Insight brief view](data/screenshots/inline-insight-example-term.jpg)
+![Inline Insight brief view](data/screenshots/inline-insight-example-location.jpg)
 
 Expanded View:
-![Inline Insight expanded view](data/screenshots/inline-insight-example-term-expand.jpg)
+![Inline Insight expanded view](data/screenshots/inline-insight-example-location-expanded.jpg)
 
 ### Features
 
@@ -29,6 +29,7 @@ Expanded View:
 - Adds a local response cache to avoid repeated model calls for the same selected text and context.
 - Supports follow-up questions inside the Inline Insight popup.
 - Allows a target answer language to be configured; by default, it follows the Readest UI language.
+- Allows the initial Inline Insight system prompt to be customized from the settings panel.
 - Adds configurable answer directions in the settings panel, such as character relationships, place background, classical Chinese translation, historical context, and literary function.
 - Writes real LLM call logs during local development to `apps/readest-app/logs/inlineinsight/` for request and response debugging.
 
@@ -38,7 +39,7 @@ Expanded View:
 2. Enable **Inline Insight**.
 3. Choose a provider, then fill in the Base URL, model name, and API key.
 4. Optional: set the target answer language. Leave it empty to follow the Readest UI language.
-5. Optional: add answer directions to guide the default explanation style.
+5. Optional: customize the initial system prompt or add answer directions to guide the default explanation style.
 6. Open a book, select text, and click **Ask AI** in the annotation toolbar.
 7. Read the brief answer in the popup, expand details, or type a follow-up question in the compact input at the bottom.
 

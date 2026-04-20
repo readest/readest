@@ -89,8 +89,11 @@ After:
 
 设置面板也支持 `targetLanguage`。默认留空时跟随 Readest 的 UI 语言；用户填写目标语言后，初始解释和追问都会使用该语言，而不再强制使用 UI 语言。
 
+设置面板允许修改初始解释使用的 `systemPrompt`。留空时使用内置英文默认 prompt；追问请求继续使用固定英文 `FOLLOW_UP_SYSTEM_PROMPT`，不暴露自定义入口。
+
 缓存 key 包含 `questionDirections`，因此调整方向后不会命中旧方向下的缓存结果。
 缓存 key 也包含实际发送给 LLM 的目标语言，因此不同目标语言不会互相复用旧响应。
+当 `systemPrompt` 变化时，设置面板会直接清空 Inline Insight 缓存。
 
 ## 调用流程
 
@@ -157,6 +160,7 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   apiKey: '',
   maxContextChars: 2000,
   targetLanguage: '',
+  systemPrompt: '',
   questionDirections: [],
   cacheEnabled: true,
   cacheTtlMinutes: 24 * 60,

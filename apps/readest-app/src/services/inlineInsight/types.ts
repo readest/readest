@@ -17,6 +17,7 @@ export interface InlineInsightSettings {
   apiKey: string;
   maxContextChars: number;
   targetLanguage: string;
+  systemPrompt: string;
   questionDirections: string[];
   cacheEnabled: boolean;
   cacheTtlMinutes: number;
@@ -30,6 +31,7 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   apiKey: '',
   maxContextChars: 2000,
   targetLanguage: '',
+  systemPrompt: '',
   questionDirections: [],
   cacheEnabled: true,
   cacheTtlMinutes: 24 * 60,
