@@ -1,39 +1,53 @@
 ## Readest Inline Insight Fork
 
-Fork 基于 [Readest](https://github.com/readest/readest)，提供结合上下文的免输入查询功能。
+This fork is based on [Readest](https://github.com/readest/readest) and adds a context-aware, zero-input LLM lookup flow.
 
-Inline Insight 的目标是快速直答，不要求用户先组织问题；弹窗会先展示简短解释，再允许展开详情，也可以在弹窗底部继续追问。
+Inline Insight is designed for quick answers while reading. You do not need to formulate a question first: select text, open the popup, read a short explanation, expand details when needed, or ask a follow-up directly from the bottom of the popup.
 
-[Inline Insight 截图]
+Button:
+![Inline Insight button](data/screenshots/inline-insight-btn.jpg)
 
-[Inline Insight 演示视频]
+Brief View:
+![Inline Insight brief view](data/screenshots/inline-insight-example-term.jpg)
 
-### 这个 Fork 的主要改动
+Expanded View:
+![Inline Insight expanded view](data/screenshots/inline-insight-example-term-expand.jpg)
 
-- 在选中文本后的标注工具栏中增加 **Ask AI** 动作。
-- 自动提取选区附近上下文，包括同段落前后文和相邻正文块。
-- 支持 Ollama、OpenAI、DeepSeek、OpenRouter、Groq、Gemini OpenAI-compatible API、LM Studio REST API 和自定义 OpenAI-compatible 接口。
-- 针对快速阅读场景，默认关闭或尽量降低 provider 支持的 reasoning/thinking 参数。
-- 增加本地响应缓存，重复查询相同文本和上下文时可避免再次调用模型。
-- 支持在 Inline Insight 弹窗中继续追问。
-- 设置面板支持预设提问方向，例如人物关系、地名背景、文言翻译、历史背景、文学功能等。
-- 本地开发时会把真实 LLM 调用日志写入 `apps/readest-app/logs/smartask/`，便于调试请求和响应。
+### Features
 
-### 基本用法
+- One click LLM query. (Expanded into detailed explanation)
+- Follow up question
+- Query cache
+- User defined "question directions"
 
-1. 打开 **Settings** -> **AI**。
-2. 启用 **Inline Insight**。
-3. 选择 provider，并填写 Base URL、模型名称和 API Key。
-4. 可选：添加提问方向，用来引导模型的默认解释角度。
-5. 打开一本书，选中文字，点击标注工具栏中的 **Ask AI**。
-6. 在弹窗中查看简述、展开详情，或在底部输入框继续追问。
+### Fork Changes
 
-本地模型配置示例：
+- Adds an **Ask AI** action to the annotation toolbar after text selection.
+- Extracts nearby context automatically, including text before and after the selection in the same paragraph and adjacent content blocks.
+- Supports Ollama, OpenAI, DeepSeek, OpenRouter, Groq, Gemini OpenAI-compatible API, LM Studio REST API, and custom OpenAI-compatible endpoints.
+- Disables or minimizes provider-supported reasoning/thinking parameters by default for faster reading-time responses.
+- Adds a local response cache to avoid repeated model calls for the same selected text and context.
+- Supports follow-up questions inside the Inline Insight popup.
+- Allows a target answer language to be configured; by default, it follows the Readest UI language.
+- Adds configurable answer directions in the settings panel, such as character relationships, place background, classical Chinese translation, historical context, and literary function.
+- Writes real LLM call logs during local development to `apps/readest-app/logs/smartask/` for request and response debugging.
 
-- **Ollama**：启动 Ollama，选择 `Ollama`，Base URL 使用 `http://127.0.0.1:11434`，模型填写已安装模型。
-- **LM Studio**：启动 LM Studio Local Server，选择 `LM Studio REST`，Base URL 使用 `http://localhost:1234`，模型填写已加载模型。
+### Basic Usage
 
-更多设计和实现细节见 [Inline Insight 文档](apps/readest-app/docs/smart-ask.md)。
+1. Open **Settings** -> **AI**.
+2. Enable **Inline Insight**.
+3. Choose a provider, then fill in the Base URL, model name, and API key.
+4. Optional: set the target answer language. Leave it empty to follow the Readest UI language.
+5. Optional: add answer directions to guide the default explanation style.
+6. Open a book, select text, and click **Ask AI** in the annotation toolbar.
+7. Read the brief answer in the popup, expand details, or type a follow-up question in the compact input at the bottom.
+
+Local model examples:
+
+- **Ollama**: start Ollama, choose `Ollama`, set Base URL to `http://127.0.0.1:11434`, and enter an installed model name.
+- **LM Studio**: start LM Studio Local Server, choose `LM Studio REST`, set Base URL to `http://localhost:1234`, and enter the loaded model name.
+
+See [Inline Insight documentation](apps/readest-app/docs/smart-ask.md) for more design and implementation details.
 
 ---
 
