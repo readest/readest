@@ -407,7 +407,12 @@ export class TTSController extends EventTarget {
 
   async start() {
     await this.initViewTTS();
-    const ssml = this.state.includes('paused') ? this.view.tts?.resume() : this.view.tts?.start();
+    // Always resume from the current list position instead of calling tts.start().
+    // tts.start() resets the TTS list to position 0 (section beginning), which is
+    // wrong when state transiently becomes 'stopped' during forward()/backward()
+    // — a fast play tap in that window would otherwise jump back to section start.
+    // tts.resume() falls back to tts.next() on a fresh TTS, so it's safe at init.
+    const ssml = this.view.tts?.resume();
     if (this.state.includes('paused')) {
       this.resume();
     }

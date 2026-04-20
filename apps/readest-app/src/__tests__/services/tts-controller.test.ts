@@ -570,6 +570,39 @@ describe('TTSController', () => {
     });
   });
 
+  describe('start', () => {
+    test('uses tts.resume() not tts.start() when state is stopped (play/pause race fix)', async () => {
+      // Repro: `forward()` transitions state to 'stopped' transiently between its
+      // `await this.stop()` and the follow-up navigation. If the user taps play
+      // in that window, `start()` previously called `tts.start()` — which resets
+      // the TTS list to position 0 (section beginning) instead of resuming the
+      // current paragraph. The fix: always use `tts.resume()` (which itself
+      // falls back to `next()` on a fresh TTS), so there's no way `start()`
+      // ever rewinds to the top of a section.
+      await controller.initViewTTS(0);
+
+      const ttsStartMock = vi.fn().mockReturnValue('<speak>section-start</speak>');
+      const ttsResumeMock = vi.fn().mockReturnValue('<speak>current</speak>');
+      const tts = mockView.tts as unknown as {
+        start: typeof ttsStartMock;
+        resume: typeof ttsResumeMock;
+        next: ReturnType<typeof vi.fn>;
+        prev: ReturnType<typeof vi.fn>;
+      };
+      tts.start = ttsStartMock;
+      tts.resume = ttsResumeMock;
+      tts.next = vi.fn().mockReturnValue(undefined);
+      tts.prev = vi.fn();
+
+      // Simulate the race: state is 'stopped' (transient during forward())
+      controller.state = 'stopped';
+      await controller.start();
+
+      expect(ttsResumeMock).toHaveBeenCalled();
+      expect(ttsStartMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('forward and backward', () => {
     test('forward sets forward-paused state when not playing', async () => {
       // Set up controller with a mock tts on the view
