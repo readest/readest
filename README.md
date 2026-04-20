@@ -4,14 +4,11 @@ This fork is based on [Readest](https://github.com/readest/readest) and adds a c
 
 Inline Insight is designed for quick answers while reading. You do not need to formulate a question first: select text, open the popup, read a short explanation, expand details when needed, or ask a follow-up directly from the bottom of the popup.
 
-Button:
-![Inline Insight button](data/screenshots/inline-insight-btn.jpg)
+<img src="data/screenshots/inline-insight-btn.jpg" alt="Inline Insight button" width="500" />
 
-Brief View:
-![Inline Insight brief view](data/screenshots/inline-insight-example-location.jpg)
+<img src="data/screenshots/inline-insight-example-location.jpg" alt="Inline Insight brief view" width="500" />
 
-Expanded View:
-![Inline Insight expanded view](data/screenshots/inline-insight-example-location-expanded.jpg)
+<img src="data/screenshots/inline-insight-example-location-expanded.jpg" alt="Inline Insight expanded view" width="500" />
 
 ### Features
 
