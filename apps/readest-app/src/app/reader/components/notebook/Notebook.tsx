@@ -60,7 +60,10 @@ const Notebook: React.FC = ({}) => {
     panelHeight: notebookHeight,
     handleVerticalDragStart,
   } = useSwipeToDismiss(
-    () => setNotebookVisible(false),
+    () => {
+      setNotebookVisible(false);
+      setIsFullHeightInMobile(isMobile);
+    },
     (data) => setIsFullHeightInMobile(data.clientY < 44),
   );
 

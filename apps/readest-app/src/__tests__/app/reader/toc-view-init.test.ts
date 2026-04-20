@@ -41,6 +41,39 @@ const flattenTOC = (items: TOCItem[], expandedItems: Set<string>, depth = 0): TO
   return result;
 };
 
+// Helpers mirrored from TOCView.tsx for the initial-scroll-target logic.
+// These drive the Virtuoso `initialTopMostItemIndex` prop, which avoids the
+// race where a setTimeout-based scrollToIndex fires before Virtuoso has
+// finished its first layout pass.
+const findParentPath = (items: TOCItem[], href: string, path: TOCItem[] = []): TOCItem[] => {
+  for (const item of items) {
+    const newPath = [...path, item];
+    if (item.href === href) return path;
+    if (item.subitems) {
+      const found = findParentPath(item.subitems, href, newPath);
+      if (found.length > 0) return found;
+    }
+  }
+  return [];
+};
+
+const computeExpandedSet = (toc: TOCItem[], href: string | undefined): Set<string> => {
+  const topLevel = toc.filter((item) => item.subitems?.length).map(getItemIdentifier);
+  const parents = href ? findParentPath(toc, href).map(getItemIdentifier).filter(Boolean) : [];
+  return new Set([...topLevel, ...parents]);
+};
+
+const getInitialScrollTarget = (
+  toc: TOCItem[],
+  href: string | undefined,
+): { index: number; expanded: Set<string> } => {
+  const expanded = computeExpandedSet(toc, href);
+  if (!href) return { index: 0, expanded };
+  const flat = flattenTOC(toc, expanded);
+  const idx = flat.findIndex((item) => item.href === href);
+  return { index: idx > 0 ? idx : 0, expanded };
+};
+
 describe('TOC sidebar initialization', () => {
   const nestedTOC: TOCItem[] = [
     {
@@ -110,5 +143,64 @@ describe('TOC sidebar initialization', () => {
       const expandedItems = getInitialExpandedItems([]);
       expect(expandedItems.size).toBe(0);
     });
+  });
+});
+
+/**
+ * Regression test for TOC auto-scroll race condition.
+ *
+ * When the TOC opens with an existing book progress, the view must scroll to
+ * the current item. The previous implementation used a 300 ms setTimeout to
+ * trigger `scrollToIndex` after mount. That races with Virtuoso's internal
+ * layout stabilization: under load the timer occasionally fires first, the
+ * TOC scrolls to the target, and then Virtuoso's late layout pass snaps the
+ * list back to the top.
+ *
+ * Fix: compute the initial scroll target synchronously during mount so it
+ * can be fed to Virtuoso's `initialTopMostItemIndex` prop, which Virtuoso
+ * uses to perform the first scroll itself — no setTimeout race.
+ */
+describe('TOC initial scroll target', () => {
+  const nestedTOC: TOCItem[] = [
+    {
+      id: 0,
+      label: 'Book',
+      href: undefined,
+      subitems: [
+        { id: 1, label: 'Chapter 1', href: 'ch1.html' },
+        { id: 2, label: 'Chapter 2', href: 'ch2.html' },
+        { id: 3, label: 'Chapter 3', href: 'ch3.html' },
+      ],
+    } as unknown as TOCItem,
+  ];
+
+  const flatTOC: TOCItem[] = [
+    { id: 1, label: 'Chapter 1', href: 'ch1.html' } as unknown as TOCItem,
+    { id: 2, label: 'Chapter 2', href: 'ch2.html' } as unknown as TOCItem,
+    { id: 3, label: 'Chapter 3', href: 'ch3.html' } as unknown as TOCItem,
+  ];
+
+  it('returns index 0 when no current href is provided', () => {
+    const { index, expanded } = getInitialScrollTarget(nestedTOC, undefined);
+    expect(index).toBe(0);
+    // Top-level container is still expanded so the list renders its chapters.
+    expect(expanded.size).toBe(1);
+  });
+
+  it('resolves the current chapter inside a nested TOC with parents expanded', () => {
+    const { index, expanded } = getInitialScrollTarget(nestedTOC, 'ch3.html');
+    // flat order is Book, Ch1, Ch2, Ch3 → current chapter sits at index 3.
+    expect(index).toBe(3);
+    expect(expanded.has(getItemIdentifier(nestedTOC[0]!))).toBe(true);
+  });
+
+  it('resolves the current chapter inside a flat TOC', () => {
+    const { index } = getInitialScrollTarget(flatTOC, 'ch2.html');
+    expect(index).toBe(1);
+  });
+
+  it('falls back to index 0 when the href cannot be found', () => {
+    const { index } = getInitialScrollTarget(nestedTOC, 'missing.html');
+    expect(index).toBe(0);
   });
 });

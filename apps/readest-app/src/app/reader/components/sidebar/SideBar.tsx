@@ -76,7 +76,10 @@ const SideBar = ({}) => {
     panelHeight: sidebarHeight,
     handleVerticalDragStart,
   } = useSwipeToDismiss(
-    () => setSideBarVisible(false),
+    () => {
+      setSideBarVisible(false);
+      setIsFullHeightInMobile(isMobile);
+    },
     (data) => setIsFullHeightInMobile(data.clientY < 44),
   );
 

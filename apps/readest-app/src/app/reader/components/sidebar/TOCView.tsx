@@ -34,6 +34,23 @@ const computeExpandedSet = (toc: TOCItem[], href: string | undefined): Set<strin
   return new Set([...topLevel, ...parents]);
 };
 
+const setsHaveSameContents = (a: Set<string>, b: Set<string>): boolean => {
+  if (a.size !== b.size) return false;
+  for (const item of a) if (!b.has(item)) return false;
+  return true;
+};
+
+const getInitialScrollTarget = (
+  toc: TOCItem[],
+  href: string | undefined,
+): { index: number; expanded: Set<string> } => {
+  const expanded = computeExpandedSet(toc, href);
+  if (!href) return { index: 0, expanded };
+  const flat = flattenTOC(toc, expanded);
+  const idx = flat.findIndex((f) => f.item.href === href);
+  return { index: idx > 0 ? idx : 0, expanded };
+};
+
 const TOCView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
@@ -43,9 +60,8 @@ const TOCView: React.FC<{
   const progress = getProgress(bookKey);
   const isEink = !!getViewSettings(bookKey)?.isEink;
 
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() =>
-    computeExpandedSet(toc, progress?.sectionHref),
-  );
+  const [initialScrollTarget] = useState(() => getInitialScrollTarget(toc, progress?.sectionHref));
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(initialScrollTarget.expanded);
   const [containerHeight, setContainerHeight] = useState(400);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -54,6 +70,7 @@ const TOCView: React.FC<{
   const scrollCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingScrollRef = useRef(false);
   const visibleCenterRef = useRef(0);
+  const initialScrollHandledRef = useRef(initialScrollTarget.index > 0);
 
   // OverlayScrollbars + Virtuoso integration (same pattern as Bookshelf)
   const osRootRef = useRef<HTMLDivElement>(null);
@@ -66,6 +83,16 @@ const TOCView: React.FC<{
         const { viewport } = instance.elements();
         viewport.style.overflowX = 'var(--os-viewport-overflow-x)';
         viewport.style.overflowY = 'var(--os-viewport-overflow-y)';
+        const target = initialScrollTarget.index;
+        if (target > 0) {
+          requestAnimationFrame(() => {
+            virtuosoRef.current?.scrollToIndex({
+              index: target,
+              align: 'center',
+              behavior: 'auto',
+            });
+          });
+        }
       },
     },
   });
@@ -145,26 +172,32 @@ const TOCView: React.FC<{
       return;
     }
     if (userScrolledRef.current) return;
-    setExpandedItems(computeExpandedSet(toc, progress?.sectionHref));
-    if (progress?.sectionHref) pendingScrollRef.current = true;
+    setExpandedItems((prev) => {
+      const next = computeExpandedSet(toc, progress?.sectionHref);
+      return setsHaveSameContents(prev, next) ? prev : next;
+    });
+    if (progress?.sectionHref) {
+      if (initialScrollHandledRef.current) {
+        initialScrollHandledRef.current = false;
+      } else {
+        pendingScrollRef.current = true;
+      }
+    }
   }, [isSideBarVisible, sideBarBookKey, bookKey, toc, progress]);
 
   useEffect(() => {
     if (!pendingScrollRef.current || !activeHref || !isSideBarVisible) return;
-    const timer = setTimeout(() => {
-      const idx = flatItems.findIndex((f) => f.item.href === activeHref);
-      if (idx !== -1) {
-        // Eink displays ghost previous frames during smooth JS scroll
-        // animations; force an instant jump to avoid the artifact. A CSS-only
-        // fix is impossible because scrollTo({ behavior: 'smooth' }) overrides
-        // CSS scroll-behavior and is not a CSS transition.
-        const distance = Math.abs(idx - visibleCenterRef.current);
-        const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
-        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
-      }
-      pendingScrollRef.current = false;
-    }, 200);
-    return () => clearTimeout(timer);
+    const idx = flatItems.findIndex((f) => f.item.href === activeHref);
+    if (idx !== -1) {
+      // Eink displays ghost previous frames during smooth JS scroll
+      // animations; force an instant jump to avoid the artifact. A CSS-only
+      // fix is impossible because scrollTo({ behavior: 'smooth' }) overrides
+      // CSS scroll-behavior and is not a CSS transition.
+      const distance = Math.abs(idx - visibleCenterRef.current);
+      const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
+      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
+    }
+    pendingScrollRef.current = false;
   }, [flatItems, activeHref, isSideBarVisible, isEink]);
 
   return (
@@ -173,6 +206,11 @@ const TOCView: React.FC<{
         <Virtuoso
           ref={virtuosoRef}
           scrollerRef={handleScrollerRef}
+          initialTopMostItemIndex={
+            initialScrollTarget.index > 0
+              ? { index: initialScrollTarget.index, align: 'center' }
+              : 0
+          }
           rangeChanged={({ startIndex, endIndex }) => {
             visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
           }}
