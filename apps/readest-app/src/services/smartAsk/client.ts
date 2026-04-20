@@ -15,7 +15,8 @@ export const SMART_ASK_SEPARATOR = '===DETAILS===';
 export type SmartAskCallLogger = (entry: SmartAskLogEntry) => void | Promise<void>;
 
 const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了一段文字，但没有明确提出问题。
-你需要根据选取的文字和上下文，猜测用户最可能的问题，并用读者的语言回答。
+你需要根据选取的文字和上下文，猜测用户最可能的问题，并严格使用用户消息中指定的目标语言回答。
+上下文、选中文字、问题方向和示例可能使用其他语言；不要跟随它们的语言，最终输出只能使用目标语言。
 
 ### 常见问题类型
 - 出现较为生僻，或者为专有名词 -> 含义
@@ -40,6 +41,7 @@ const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了
 - 详述：不要重复简述的内容
 - 纯文本输出 — 不使用 markdown，不使用代码块
 - 直接给出结果，不输出 <think>、推理过程或内部思考
+- 语言：必须使用用户消息指定的目标语言；如果上下文语言与目标语言不同，仍然只用目标语言回答
 
 示例：
 [含义] 通过理性验证的系统性知识，有别于意见或技艺。
@@ -50,8 +52,17 @@ const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了
 `;
 
 const FOLLOW_UP_SYSTEM_PROMPT = `你是一位阅读助手。用户会基于选中文字、上下文和你之前的解释继续提问。
-请直接回答用户问题，保持简洁、准确，并优先使用用户的语言。
+请直接回答用户问题，保持简洁、准确，并严格使用用户消息中指定的目标语言。
+上下文、选中文字、先前回答和用户问题可能使用其他语言；不要跟随它们的语言，最终输出只能使用目标语言。
 不要输出 <think>、推理过程或内部思考。`;
+
+function formatLanguageInstruction(uiLanguage: string): string {
+  return [
+    `TARGET LANGUAGE: ${uiLanguage}`,
+    `You must write the entire answer in ${uiLanguage}.`,
+    `Do not answer in the language of the selected text or context unless it is ${uiLanguage}.`,
+  ].join('\n');
+}
 
 function formatQuestionDirections(settings: SmartAskSettings): string {
   const directions = settings.questionDirections.map((item) => item.trim()).filter(Boolean);
@@ -75,11 +86,13 @@ export async function* streamSmartAsk(
   logger?: SmartAskCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
+  const languageInstruction = formatLanguageInstruction(uiLanguage);
   const userMessage = [
-    `Answer in language: ${uiLanguage}`,
+    languageInstruction,
     directions,
     `Context:\n${context}`,
     `Selected text:\n${selectedText}`,
+    languageInstruction,
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -136,13 +149,15 @@ export async function* streamSmartAskFollowUp(
   logger?: SmartAskCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
+  const languageInstruction = formatLanguageInstruction(uiLanguage);
   const userMessage = [
-    `Answer in language: ${uiLanguage}`,
+    languageInstruction,
     directions,
     `Context:\n${context}`,
     `Selected text:\n${selectedText}`,
     previousAnswer.trim() ? `Previous answer:\n${previousAnswer}` : '',
     `Question:\n${question}`,
+    languageInstruction,
   ]
     .filter(Boolean)
     .join('\n\n');

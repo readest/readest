@@ -16,6 +16,7 @@ export interface SmartAskSettings {
   model: string;
   apiKey: string;
   maxContextChars: number;
+  targetLanguage: string;
   questionDirections: string[];
   cacheEnabled: boolean;
   cacheTtlMinutes: number;
@@ -28,6 +29,7 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
   model: '',
   apiKey: '',
   maxContextChars: 2000,
+  targetLanguage: '',
   questionDirections: [],
   cacheEnabled: true,
   cacheTtlMinutes: 24 * 60,

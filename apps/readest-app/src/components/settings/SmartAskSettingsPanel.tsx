@@ -5,10 +5,13 @@ import { PiArrowsClockwise } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import Select from '@/components/Select';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TRANSLATED_LANGS } from '@/services/constants';
 import { clearSmartAskCache } from '@/services/smartAsk/cache';
 import { DEFAULT_SMART_ASK_SETTINGS } from '@/services/smartAsk/types';
 import type { SmartAskProvider, SmartAskSettings } from '@/services/smartAsk/types';
+import { getLocale } from '@/utils/misc';
 import {
   SMART_ASK_PROVIDER_OPTIONS,
   getSmartAskModelsEndpoint,
@@ -20,6 +23,13 @@ import {
 
 function normalizeSmartAskQuestionDirections(directions: string[]): string[] {
   return Array.from(new Set(directions.map((item) => item.trim()).filter(Boolean))).slice(0, 12);
+}
+
+function getLangOptions(langs: Record<string, string>, followLabel: string) {
+  const options = Object.entries(langs).map(([value, label]) => ({ value, label }));
+  options.sort((a, b) => a.label.localeCompare(b.label));
+  options.unshift({ value: '', label: followLabel });
+  return options;
 }
 
 const SmartAskSettingsPanel: React.FC = () => {
@@ -39,6 +49,9 @@ const SmartAskSettingsPanel: React.FC = () => {
   const [smartAskModel, setSmartAskModel] = useState(smartAskSettings.model);
   const [smartAskApiKey, setSmartAskApiKey] = useState(smartAskSettings.apiKey);
   const [smartAskMaxChars, setSmartAskMaxChars] = useState(smartAskSettings.maxContextChars);
+  const [smartAskTargetLanguage, setSmartAskTargetLanguage] = useState(
+    smartAskSettings.targetLanguage,
+  );
   const [smartAskQuestionDirections, setSmartAskQuestionDirections] = useState(
     normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections),
   );
@@ -51,6 +64,30 @@ const SmartAskSettingsPanel: React.FC = () => {
   const isMounted = useRef(false);
   const settingsRef = useRef(settings);
   const smartAskProviderConfig = getSmartAskProviderConfig(smartAskProvider);
+  const getCurrentUILangOption = () => {
+    const uiLanguage = settings?.globalViewSettings.uiLanguage ?? '';
+    return {
+      value: uiLanguage,
+      label:
+        uiLanguage === ''
+          ? getLocale()
+          : TRANSLATED_LANGS[uiLanguage as keyof typeof TRANSLATED_LANGS],
+    };
+  };
+  const getTargetLanguageOptions = () => {
+    const currentUILang = getCurrentUILangOption();
+    const options = getLangOptions(
+      TRANSLATED_LANGS,
+      `${_('Interface Language')} (${currentUILang.label})`,
+    );
+    if (
+      smartAskTargetLanguage &&
+      !options.some((option) => option.value === smartAskTargetLanguage)
+    ) {
+      options.push({ value: smartAskTargetLanguage, label: smartAskTargetLanguage });
+    }
+    return options;
+  };
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -190,6 +227,15 @@ const SmartAskSettingsPanel: React.FC = () => {
 
   useEffect(() => {
     if (!isMounted.current) return;
+    const normalized = smartAskTargetLanguage.trim();
+    if (normalized !== smartAskSettings.targetLanguage) {
+      saveSmartAskSetting('targetLanguage', normalized);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartAskTargetLanguage]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
     const normalized = normalizeSmartAskQuestionDirections(smartAskQuestionDirections);
     const saved = normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections);
     if (JSON.stringify(normalized) !== JSON.stringify(saved)) {
@@ -244,6 +290,10 @@ const SmartAskSettingsPanel: React.FC = () => {
 
   const removeSmartAskQuestionDirection = (index: number) => {
     setSmartAskQuestionDirections((current) => current.filter((_, i) => i !== index));
+  };
+
+  const handleSelectTargetLanguage = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSmartAskTargetLanguage(event.target.value);
   };
 
   return (
@@ -357,6 +407,18 @@ const SmartAskSettingsPanel: React.FC = () => {
                 max={3000}
                 onChange={(e) => setSmartAskMaxChars(Number(e.target.value))}
               />
+            </div>
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <span>{_('Target Language')}</span>
+              <Select
+                value={smartAskTargetLanguage}
+                onChange={handleSelectTargetLanguage}
+                options={getTargetLanguageOptions()}
+                className='max-w-full'
+              />
+              <span className='text-base-content/50 text-xs'>
+                {_('Leave empty to follow the interface language.')}
+              </span>
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
               <div className='flex w-full items-center justify-between gap-2'>

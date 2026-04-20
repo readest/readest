@@ -99,6 +99,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
     }),
     [settings?.smartAskSettings],
   );
+  const targetLanguage = smartAskSettings.targetLanguage.trim() || getLocale();
 
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,14 +148,12 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
 
     const context = extractContext(selection, smartAskSettings.maxContextChars);
     contextRef.current = context;
-    const lang = getLocale();
-
     try {
       for await (const delta of streamSmartAsk(
         selection.text,
         context,
         smartAskSettings,
-        lang,
+        targetLanguage,
         abortRef.current.signal,
         smartAskLogger,
       )) {
@@ -167,7 +166,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
         setLoading(false);
       }
     }
-  }, [selection, smartAskSettings, smartAskLogger, _]);
+  }, [selection, smartAskSettings, smartAskLogger, targetLanguage, _]);
 
   useEffect(() => {
     run();
@@ -202,7 +201,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
         context,
         text,
         smartAskSettings,
-        getLocale(),
+        targetLanguage,
         followUpAbortRef.current.signal,
         smartAskLogger,
       )) {

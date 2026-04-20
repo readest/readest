@@ -87,7 +87,10 @@ After:
 
 设置面板支持维护 `questionDirections` 列表，用来提示模型优先从哪些方向生成初始解释，例如“地名背景”“人物关系”“文言翻译”。这些方向会进入初始 Inline Insight 和追问请求的 user message，但不会覆盖用户追问本身。
 
+设置面板也支持 `targetLanguage`。默认留空时跟随 Readest 的 UI 语言；用户填写目标语言后，初始解释和追问都会使用该语言，而不再强制使用 UI 语言。
+
 缓存 key 包含 `questionDirections`，因此调整方向后不会命中旧方向下的缓存结果。
+缓存 key 也包含实际发送给 LLM 的目标语言，因此不同目标语言不会互相复用旧响应。
 
 ## 调用流程
 
@@ -153,6 +156,7 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
   model: '',
   apiKey: '',
   maxContextChars: 2000,
+  targetLanguage: '',
   questionDirections: [],
   cacheEnabled: true,
   cacheTtlMinutes: 24 * 60,
