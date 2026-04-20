@@ -806,6 +806,8 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     .replace(/font-size\s*:\s*(\d*\.?\d+)(px|rem|em|%)?/gi, (_, size, unit = 'px') => {
       return `font-size: max(${size}${unit}, var(--min-font-size, 8px))`;
     })
+    // remove no-op backdrop-filter: brightness(100%); see #3895
+    .replace(/backdrop-filter\s*:\s*brightness\(100%\)\s*[;]?/gi, '')
     .replace(/(\d*\.?\d+)vw/gi, (_, d) => (parseFloat(d) * vw) / 100 + 'px')
     .replace(/(\d*\.?\d+)vh/gi, (_, d) => (parseFloat(d) * vh) / 100 + 'px')
     .replace(/([\s;])-webkit-user-select\s*:\s*none/gi, '$1-webkit-user-select: unset')
