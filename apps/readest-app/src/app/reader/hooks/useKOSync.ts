@@ -10,7 +10,6 @@ import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
-
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
@@ -33,7 +32,7 @@ export const useKOSync = (bookKey: string) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getProgress, getView } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig, setConfig } = useBookDataStore();
 
   const [kosyncClient, setKOSyncClient] = useState<KOSyncClient | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('idle');
@@ -66,6 +65,7 @@ export const useKOSync = (bookKey: string) => {
       percentage = totalPages > 0 ? (page + 1) / totalPages : 0;
     } else {
       const view = getView(bookKey);
+      const config = getConfig(bookKey);
       const cfi = progress.location;
       if (!view || !cfi) return null;
       try {
@@ -77,6 +77,9 @@ export const useKOSync = (bookKey: string) => {
           const converter = new XCFI(doc, spineIndex || 0);
           const xpointerResult = converter.cfiToXPointer(cfi);
           koProgress = xpointerResult.xpointer;
+          setConfig(bookKey, { xpointer: koProgress });
+        } else if (config?.xpointer) {
+          koProgress = config.xpointer;
         }
       } catch (error) {
         console.error('Failed to convert CFI to XPointer', error);
@@ -88,7 +91,7 @@ export const useKOSync = (bookKey: string) => {
     }
 
     return { koProgress, percentage };
-  }, [bookKey, getProgress, getBookData, getView]);
+  }, [bookKey, getProgress, getBookData, getView, getConfig, setConfig]);
 
   const applyRemoteProgress = async (book: Book, bookDoc: BookDoc, remote: KoSyncProgress) => {
     const view = getView(bookKey);

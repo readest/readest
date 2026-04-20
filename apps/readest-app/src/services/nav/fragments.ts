@@ -38,8 +38,13 @@ type CFIModule = {
 
 const buildFragmentCfi = (section: SectionItem, element: Element | null): string => {
   const cfiLib = CFI as unknown as CFIModule;
-  const rel = element ? (cfiLib.fromElements([element])[0] ?? '') : '';
-  return cfiLib.joinIndir(section.cfi, rel);
+  try {
+    const rel = element ? (cfiLib.fromElements([element])[0] ?? '') : '';
+    return cfiLib.joinIndir(section.cfi, rel);
+  } catch (e) {
+    console.warn('Failed to build CFI for fragment, falling back to section CFI:', e);
+    return section.cfi;
+  }
 };
 
 export const buildSectionFragments = (
