@@ -26,4 +26,4 @@
 
 ## [2026-04-19] fix | Inline Insight call logging
 
-恢复 Inline Insight 每次 chat completion 调用的 markdown 调试日志。Web 代理写 `logs/smartask`，Tauri 直连优先写当前目录的 `logs/smartask` 并回退到应用 Log 目录。
+恢复 Inline Insight 每次 chat completion 调用的 markdown 调试日志。Web 代理写 `logs/inlineinsight`，Tauri 直连优先写当前目录的 `logs/inlineinsight` 并回退到应用 Log 目录。

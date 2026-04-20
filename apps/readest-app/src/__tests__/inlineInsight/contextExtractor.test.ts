@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractContext } from '@/services/smartAsk/contextExtractor';
+import { extractContext } from '@/services/inlineInsight/contextExtractor';
 import type { TextSelection } from '@/utils/sel';
 
 const createDoc = (body: string): Document =>
@@ -16,7 +16,7 @@ function createSelection(doc: Document, text: string): TextSelection {
       range.setStart(node, offset);
       range.setEnd(node, offset + text.length);
       return {
-        key: 'smartask-test',
+        key: 'inlineinsight-test',
         text,
         page: 1,
         range,

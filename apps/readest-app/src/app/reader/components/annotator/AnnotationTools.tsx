@@ -99,7 +99,7 @@ export const annotationToolButtons = createAnnotationToolButtons([
     Icon: IoIosBuild,
   },
   {
-    type: 'smartask',
+    type: 'inlineinsight',
     label: _('Ask AI'),
     tooltip: _('Ask AI about the selected text'),
     Icon: BsStars,

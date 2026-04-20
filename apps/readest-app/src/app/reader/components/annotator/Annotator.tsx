@@ -40,7 +40,7 @@ import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
-import SmartAskPopup from './SmartAskPopup';
+import InlineInsightPopup from './InlineInsightPopup';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -73,7 +73,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
-  const [showSmartAskPopup, setShowSmartAskPopup] = useState(false);
+  const [showInlineInsightPopup, setShowInlineInsightPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -104,7 +104,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     showWikipediaPopup ||
     showDeepLPopup ||
     showProofreadPopup ||
-    showSmartAskPopup;
+    showInlineInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -206,7 +206,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowWikipediaPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
-      setShowSmartAskPopup(false);
+      setShowInlineInsightPopup(false);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -797,10 +797,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-  const handleSmartAsk = () => {
+  const handleInlineInsight = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
-    setShowSmartAskPopup(true);
+    setShowInlineInsightPopup(true);
   };
 
   const handleStartEditAnnotation = useCallback(() => {
@@ -957,8 +957,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
-      case 'smartask':
-        return { tooltipText: _(label), Icon, onClick: handleSmartAsk };
+      case 'inlineinsight':
+        return { tooltipText: _(label), Icon, onClick: handleInlineInsight };
       default:
         return { tooltipText: '', Icon, onClick: () => {} };
     }
@@ -1027,8 +1027,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onDismiss={handleDismissPopupAndSelection}
         />
       )}
-      {showSmartAskPopup && trianglePosition && dictPopupPosition && selection && (
-        <SmartAskPopup
+      {showInlineInsightPopup && trianglePosition && dictPopupPosition && selection && (
+        <InlineInsightPopup
           selection={selection}
           position={dictPopupPosition}
           trianglePosition={trianglePosition}

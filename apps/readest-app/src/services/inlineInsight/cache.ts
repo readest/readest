@@ -1,7 +1,7 @@
-const CACHE_PREFIX = 'readest.smartAsk.v1.';
+const CACHE_PREFIX = 'readest.inlineInsight.v1.';
 const MAX_CACHE_ENTRIES = 50;
 
-export interface SmartAskCacheInput {
+export interface InlineInsightCacheInput {
   provider: string;
   baseUrl: string;
   model: string;
@@ -11,12 +11,12 @@ export interface SmartAskCacheInput {
   context: string;
 }
 
-interface SmartAskCacheEntry {
+interface InlineInsightCacheEntry {
   createdAt: number;
   text: string;
 }
 
-export function buildSmartAskCacheKey(input: SmartAskCacheInput): string {
+export function buildInlineInsightCacheKey(input: InlineInsightCacheInput): string {
   return `${CACHE_PREFIX}${hashString(
     JSON.stringify([
       input.provider,
@@ -30,14 +30,14 @@ export function buildSmartAskCacheKey(input: SmartAskCacheInput): string {
   )}`;
 }
 
-export function readSmartAskCache(key: string, ttlMinutes: number): string | null {
+export function readInlineInsightCache(key: string, ttlMinutes: number): string | null {
   const storage = getLocalStorage();
   if (!storage || ttlMinutes <= 0) return null;
 
   try {
     const raw = storage.getItem(key);
     if (!raw) return null;
-    const entry = JSON.parse(raw) as Partial<SmartAskCacheEntry>;
+    const entry = JSON.parse(raw) as Partial<InlineInsightCacheEntry>;
     if (typeof entry.createdAt !== 'number' || typeof entry.text !== 'string') return null;
     if (!entry.text.trim()) {
       storage.removeItem(key);
@@ -55,7 +55,7 @@ export function readSmartAskCache(key: string, ttlMinutes: number): string | nul
   }
 }
 
-export function writeSmartAskCache(key: string, text: string): void {
+export function writeInlineInsightCache(key: string, text: string): void {
   const storage = getLocalStorage();
   const normalizedText = text.trim();
   if (!storage || !normalizedText) return;
@@ -63,19 +63,22 @@ export function writeSmartAskCache(key: string, text: string): void {
   try {
     storage.setItem(
       key,
-      JSON.stringify({ createdAt: Date.now(), text: normalizedText } satisfies SmartAskCacheEntry),
+      JSON.stringify({
+        createdAt: Date.now(),
+        text: normalizedText,
+      } satisfies InlineInsightCacheEntry),
     );
-    pruneSmartAskCache(storage);
+    pruneInlineInsightCache(storage);
   } catch {
     // localStorage can be unavailable or full; cache failures should not affect reading.
   }
 }
 
-export function clearSmartAskCache(): void {
+export function clearInlineInsightCache(): void {
   const storage = getLocalStorage();
   if (!storage) return;
 
-  for (const key of getSmartAskCacheKeys(storage)) {
+  for (const key of getInlineInsightCacheKeys(storage)) {
     storage.removeItem(key);
   }
 }
@@ -89,11 +92,11 @@ function getLocalStorage(): Storage | null {
   }
 }
 
-function pruneSmartAskCache(storage: Storage): void {
-  const entries = getSmartAskCacheKeys(storage)
+function pruneInlineInsightCache(storage: Storage): void {
+  const entries = getInlineInsightCacheKeys(storage)
     .map((key) => {
       try {
-        const entry = JSON.parse(storage.getItem(key) ?? '') as Partial<SmartAskCacheEntry>;
+        const entry = JSON.parse(storage.getItem(key) ?? '') as Partial<InlineInsightCacheEntry>;
         return { key, createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : 0 };
       } catch {
         return { key, createdAt: 0 };
@@ -106,7 +109,7 @@ function pruneSmartAskCache(storage: Storage): void {
   }
 }
 
-function getSmartAskCacheKeys(storage: Storage): string[] {
+function getInlineInsightCacheKeys(storage: Storage): string[] {
   const keys: string[] = [];
   for (let i = 0; i < storage.length; i++) {
     const key = storage.key(i);

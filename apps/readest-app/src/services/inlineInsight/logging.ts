@@ -1,24 +1,24 @@
-export type SmartAskChatMessage = {
+export type InlineInsightChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
 };
 
-export interface SmartAskLogEntry {
+export interface InlineInsightLogEntry {
   timestamp: string;
   endpoint: string;
   requestBody: unknown;
-  messages: SmartAskChatMessage[];
+  messages: InlineInsightChatMessage[];
   responseText?: string;
   error?: string;
   status?: number;
   durationMs?: number;
 }
 
-export function createSmartAskLogFilename(date = new Date()): string {
+export function createInlineInsightLogFilename(date = new Date()): string {
   return `${date.toISOString().replace(/[:.]/g, '-')}.md`;
 }
 
-export function formatSmartAskLog(entry: SmartAskLogEntry): string {
+export function formatInlineInsightLog(entry: InlineInsightLogEntry): string {
   const body = isRecord(entry.requestBody) ? entry.requestBody : {};
   const model = typeof body['model'] === 'string' ? body['model'] : '';
   const temperature =
@@ -55,19 +55,19 @@ export function formatSmartAskLog(entry: SmartAskLogEntry): string {
   ].join('\n');
 }
 
-export function getSmartAskMessagesFromBody(body: unknown): SmartAskChatMessage[] {
+export function getInlineInsightMessagesFromBody(body: unknown): InlineInsightChatMessage[] {
   if (!isRecord(body) || !Array.isArray(body['messages'])) return [];
 
   return body['messages'].flatMap((message) => {
     if (!isRecord(message)) return [];
     const role = message['role'];
     const content = message['content'];
-    if (!isSmartAskRole(role) || typeof content !== 'string') return [];
+    if (!isInlineInsightRole(role) || typeof content !== 'string') return [];
     return [{ role, content }];
   });
 }
 
-export function extractSmartAskDeltaFromSseText(text: string): string {
+export function extractInlineInsightDeltaFromSseText(text: string): string {
   return text
     .split('\n')
     .map((line) => extractDeltaFromSseLine(line))
@@ -102,7 +102,7 @@ function extractDelta(parsed: unknown): string {
   return '';
 }
 
-function formatRole(role: SmartAskChatMessage['role']): string {
+function formatRole(role: InlineInsightChatMessage['role']): string {
   switch (role) {
     case 'system':
       return 'System';
@@ -113,7 +113,7 @@ function formatRole(role: SmartAskChatMessage['role']): string {
   }
 }
 
-function isSmartAskRole(value: unknown): value is SmartAskChatMessage['role'] {
+function isInlineInsightRole(value: unknown): value is InlineInsightChatMessage['role'] {
   return value === 'system' || value === 'user' || value === 'assistant';
 }
 

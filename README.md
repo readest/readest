@@ -30,7 +30,7 @@ Expanded View:
 - Supports follow-up questions inside the Inline Insight popup.
 - Allows a target answer language to be configured; by default, it follows the Readest UI language.
 - Adds configurable answer directions in the settings panel, such as character relationships, place background, classical Chinese translation, historical context, and literary function.
-- Writes real LLM call logs during local development to `apps/readest-app/logs/smartask/` for request and response debugging.
+- Writes real LLM call logs during local development to `apps/readest-app/logs/inlineinsight/` for request and response debugging.
 
 ### Basic Usage
 
@@ -47,7 +47,7 @@ Local model examples:
 - **Ollama**: start Ollama, choose `Ollama`, set Base URL to `http://127.0.0.1:11434`, and enter an installed model name.
 - **LM Studio**: start LM Studio Local Server, choose `LM Studio REST`, set Base URL to `http://localhost:1234`, and enter the loaded model name.
 
-See [Inline Insight documentation](apps/readest-app/docs/smart-ask.md) for more design and implementation details.
+See [Inline Insight documentation](apps/readest-app/docs/inline-insight.md) for more design and implementation details.
 
 ---
 

@@ -1,4 +1,4 @@
-export type SmartAskProvider =
+export type InlineInsightProvider =
   | 'ollama'
   | 'openai'
   | 'deepseek'
@@ -9,9 +9,9 @@ export type SmartAskProvider =
   | 'custom-openai-compatible'
   | 'openai-compatible';
 
-export interface SmartAskSettings {
+export interface InlineInsightSettings {
   enabled: boolean;
-  provider: SmartAskProvider;
+  provider: InlineInsightProvider;
   baseUrl: string;
   model: string;
   apiKey: string;
@@ -22,7 +22,7 @@ export interface SmartAskSettings {
   cacheTtlMinutes: number;
 }
 
-export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
+export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   enabled: false,
   provider: 'ollama',
   baseUrl: 'http://127.0.0.1:11434',
@@ -35,12 +35,12 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
   cacheTtlMinutes: 24 * 60,
 };
 
-export interface SmartAskQA {
+export interface InlineInsightQA {
   question: string;
   brief: string;
   detail: string;
 }
 
-export interface SmartAskResult {
-  qas: SmartAskQA[];
+export interface InlineInsightResult {
+  qas: InlineInsightQA[];
 }

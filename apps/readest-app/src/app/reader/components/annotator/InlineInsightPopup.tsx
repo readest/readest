@@ -8,17 +8,20 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { getLocale } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
-import { DEFAULT_SMART_ASK_SETTINGS } from '@/services/smartAsk/types';
-import { extractContext } from '@/services/smartAsk/contextExtractor';
+import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
+import { extractContext } from '@/services/inlineInsight/contextExtractor';
 import {
-  streamSmartAsk,
-  streamSmartAskFollowUp,
-  SMART_ASK_SEPARATOR,
-} from '@/services/smartAsk/client';
-import type { SmartAskCallLogger } from '@/services/smartAsk/client';
-import { createSmartAskLogFilename, formatSmartAskLog } from '@/services/smartAsk/logging';
+  streamInlineInsight,
+  streamInlineInsightFollowUp,
+  INLINE_INSIGHT_SEPARATOR,
+} from '@/services/inlineInsight/client';
+import type { InlineInsightCallLogger } from '@/services/inlineInsight/client';
+import {
+  createInlineInsightLogFilename,
+  formatInlineInsightLog,
+} from '@/services/inlineInsight/logging';
 
-interface SmartAskPopupProps {
+interface InlineInsightPopupProps {
   selection: TextSelection;
   position: Position;
   trianglePosition: Position;
@@ -81,7 +84,7 @@ const InsightItem: React.FC<{ brief: Insight; detail?: string }> = ({ brief, det
   );
 };
 
-const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
+const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   selection,
   position,
   trianglePosition,
@@ -92,14 +95,14 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
   const _ = useTranslation();
   const { settings } = useSettingsStore();
   const { appService } = useEnv();
-  const smartAskSettings = useMemo(
+  const inlineInsightSettings = useMemo(
     () => ({
-      ...DEFAULT_SMART_ASK_SETTINGS,
-      ...settings?.smartAskSettings,
+      ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+      ...settings?.inlineInsightSettings,
     }),
-    [settings?.smartAskSettings],
+    [settings?.inlineInsightSettings],
   );
-  const targetLanguage = smartAskSettings.targetLanguage.trim() || getLocale();
+  const targetLanguage = inlineInsightSettings.targetLanguage.trim() || getLocale();
 
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -114,23 +117,23 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
   const followUpAbortRef = useRef<AbortController | null>(null);
   const contextRef = useRef('');
 
-  const sepIdx = text.indexOf(SMART_ASK_SEPARATOR);
+  const sepIdx = text.indexOf(INLINE_INSIGHT_SEPARATOR);
   const briefRaw = sepIdx >= 0 ? text.slice(0, sepIdx) : text;
-  const detailRaw = sepIdx >= 0 ? text.slice(sepIdx + SMART_ASK_SEPARATOR.length) : '';
+  const detailRaw = sepIdx >= 0 ? text.slice(sepIdx + INLINE_INSIGHT_SEPARATOR.length) : '';
   const briefItems = parseSection(briefRaw);
   const detailItems = parseSection(detailRaw);
   const detailMap = Object.fromEntries(detailItems.map((d) => [d.label, d.content]));
-  const smartAskLogger = useMemo<SmartAskCallLogger | undefined>(() => {
+  const inlineInsightLogger = useMemo<InlineInsightCallLogger | undefined>(() => {
     if (!appService || !isTauriAppPlatform()) return undefined;
 
     return async (entry) => {
-      const filename = createSmartAskLogFilename(new Date(entry.timestamp));
-      const content = formatSmartAskLog(entry);
+      const filename = createInlineInsightLogFilename(new Date(entry.timestamp));
+      const content = formatInlineInsightLog(entry);
       try {
-        await appService.writeFile(`logs/smartask/${filename}`, 'None', content);
+        await appService.writeFile(`logs/inlineinsight/${filename}`, 'None', content);
       } catch (error) {
         try {
-          await appService.writeFile(`smartask/${filename}`, 'Log', content);
+          await appService.writeFile(`inlineinsight/${filename}`, 'Log', content);
         } catch (fallbackError) {
           console.error('Failed to write Inline Insight log', error, fallbackError);
         }
@@ -139,23 +142,23 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
   }, [appService]);
 
   const run = useCallback(async () => {
-    if (!smartAskSettings.enabled || !smartAskSettings.model) return;
+    if (!inlineInsightSettings.enabled || !inlineInsightSettings.model) return;
 
     abortRef.current = new AbortController();
     setLoading(true);
     setError('');
     setText('');
 
-    const context = extractContext(selection, smartAskSettings.maxContextChars);
+    const context = extractContext(selection, inlineInsightSettings.maxContextChars);
     contextRef.current = context;
     try {
-      for await (const delta of streamSmartAsk(
+      for await (const delta of streamInlineInsight(
         selection.text,
         context,
-        smartAskSettings,
+        inlineInsightSettings,
         targetLanguage,
         abortRef.current.signal,
-        smartAskLogger,
+        inlineInsightLogger,
       )) {
         setText((prev) => prev + delta);
         setLoading(false);
@@ -166,7 +169,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
         setLoading(false);
       }
     }
-  }, [selection, smartAskSettings, smartAskLogger, targetLanguage, _]);
+  }, [selection, inlineInsightSettings, inlineInsightLogger, targetLanguage, _]);
 
   useEffect(() => {
     run();
@@ -180,7 +183,12 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
   const handleFollowUpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const question = followUpQuestion.trim();
-    if (!question || followUpLoading || !smartAskSettings.enabled || !smartAskSettings.model) {
+    if (
+      !question ||
+      followUpLoading ||
+      !inlineInsightSettings.enabled ||
+      !inlineInsightSettings.model
+    ) {
       return;
     }
 
@@ -191,19 +199,19 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
     setFollowUpLoading(true);
 
     const context =
-      contextRef.current || extractContext(selection, smartAskSettings.maxContextChars);
+      contextRef.current || extractContext(selection, inlineInsightSettings.maxContextChars);
     contextRef.current = context;
 
     try {
-      for await (const delta of streamSmartAskFollowUp(
+      for await (const delta of streamInlineInsightFollowUp(
         question,
         selection.text,
         context,
         text,
-        smartAskSettings,
+        inlineInsightSettings,
         targetLanguage,
         followUpAbortRef.current.signal,
-        smartAskLogger,
+        inlineInsightLogger,
       )) {
         setFollowUpAnswer((prev) => prev + delta);
       }
@@ -239,9 +247,9 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
             &ldquo;{selectedPreview}&rdquo;
           </p>
 
-          {!smartAskSettings.enabled ? (
+          {!inlineInsightSettings.enabled ? (
             <p className='text-base-content/60 text-xs'>{_('Enable Inline Insight in Settings')}</p>
-          ) : !smartAskSettings.model ? (
+          ) : !inlineInsightSettings.model ? (
             <p className='text-base-content/60 text-xs'>
               {_('Inline Insight model not configured')}
             </p>
@@ -267,7 +275,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
               ))}
             </div>
           )}
-          {!followUpOpen && smartAskSettings.enabled && smartAskSettings.model && (
+          {!followUpOpen && inlineInsightSettings.enabled && inlineInsightSettings.model && (
             <button
               type='button'
               className='btn btn-circle btn-xs btn-ghost bg-base-100/80 absolute bottom-2 right-2'
@@ -277,7 +285,7 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
               <PiChatCircle className='size-4' />
             </button>
           )}
-          {followUpOpen && smartAskSettings.enabled && smartAskSettings.model && (
+          {followUpOpen && inlineInsightSettings.enabled && inlineInsightSettings.model && (
             <form
               className='border-base-content/10 flex flex-shrink-0 flex-col gap-1.5 border-t pt-2'
               onSubmit={handleFollowUpSubmit}
@@ -319,4 +327,4 @@ const SmartAskPopup: React.FC<SmartAskPopupProps> = ({
   );
 };
 
-export default SmartAskPopup;
+export default InlineInsightPopup;

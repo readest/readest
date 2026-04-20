@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createSmartAskLogFilename,
-  extractSmartAskDeltaFromSseText,
-  formatSmartAskLog,
-  getSmartAskMessagesFromBody,
-} from '@/services/smartAsk/logging';
+  createInlineInsightLogFilename,
+  extractInlineInsightDeltaFromSseText,
+  formatInlineInsightLog,
+  getInlineInsightMessagesFromBody,
+} from '@/services/inlineInsight/logging';
 
 describe('Inline Insight logging', () => {
   it('builds filesystem-safe markdown filenames', () => {
-    expect(createSmartAskLogFilename(new Date('2026-04-18T09:25:17.869Z'))).toBe(
+    expect(createInlineInsightLogFilename(new Date('2026-04-18T09:25:17.869Z'))).toBe(
       '2026-04-18T09-25-17-869Z.md',
     );
   });
@@ -22,11 +22,11 @@ describe('Inline Insight logging', () => {
         { role: 'user', content: 'user prompt' },
       ],
     };
-    const markdown = formatSmartAskLog({
+    const markdown = formatInlineInsightLog({
       timestamp: '2026-04-18T09:25:17.869Z',
       endpoint: 'http://localhost:1234/api/v0/chat/completions',
       requestBody: body,
-      messages: getSmartAskMessagesFromBody(body),
+      messages: getInlineInsightMessagesFromBody(body),
       responseText: 'answer',
       status: 200,
       durationMs: 123,
@@ -49,6 +49,6 @@ describe('Inline Insight logging', () => {
       'data: [DONE]',
     ].join('\n');
 
-    expect(extractSmartAskDeltaFromSseText(sse)).toBe('hello');
+    expect(extractInlineInsightDeltaFromSseText(sse)).toBe('hello');
   });
 });

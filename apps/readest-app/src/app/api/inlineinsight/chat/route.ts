@@ -3,15 +3,15 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
-  createSmartAskLogFilename,
-  extractSmartAskDeltaFromSseText,
-  formatSmartAskLog,
-  getSmartAskMessagesFromBody,
-} from '@/services/smartAsk/logging';
+  createInlineInsightLogFilename,
+  extractInlineInsightDeltaFromSseText,
+  formatInlineInsightLog,
+  getInlineInsightMessagesFromBody,
+} from '@/services/inlineInsight/logging';
 
 export const runtime = 'nodejs';
 
-async function writeSmartAskLog(entry: {
+async function writeInlineInsightLog(entry: {
   timestamp: string;
   endpoint: string;
   body: unknown;
@@ -21,15 +21,15 @@ async function writeSmartAskLog(entry: {
   durationMs?: number;
 }) {
   try {
-    const logDir = path.join(process.cwd(), 'logs', 'smartask');
+    const logDir = path.join(process.cwd(), 'logs', 'inlineinsight');
     await mkdir(logDir, { recursive: true });
     await writeFile(
-      path.join(logDir, createSmartAskLogFilename(new Date(entry.timestamp))),
-      formatSmartAskLog({
+      path.join(logDir, createInlineInsightLogFilename(new Date(entry.timestamp))),
+      formatInlineInsightLog({
         timestamp: entry.timestamp,
         endpoint: entry.endpoint,
         requestBody: entry.body,
-        messages: getSmartAskMessagesFromBody(entry.body),
+        messages: getInlineInsightMessagesFromBody(entry.body),
         responseText: entry.responseText,
         error: entry.error,
         status: entry.status,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     if (!upstream.ok) {
       const text = await upstream.text().catch(() => '');
-      await writeSmartAskLog({
+      await writeInlineInsightLog({
         timestamp,
         endpoint,
         body,
@@ -112,17 +112,17 @@ export async function POST(request: NextRequest) {
             sseBuffer += decoder.decode(value, { stream: true });
             const lines = sseBuffer.split('\n');
             sseBuffer = lines.pop() ?? '';
-            responseText += extractSmartAskDeltaFromSseText(lines.join('\n'));
+            responseText += extractInlineInsightDeltaFromSseText(lines.join('\n'));
             controller.enqueue(value);
           }
           sseBuffer += decoder.decode();
-          responseText += extractSmartAskDeltaFromSseText(sseBuffer);
+          responseText += extractInlineInsightDeltaFromSseText(sseBuffer);
         } catch (error) {
           errorMessage = error instanceof Error ? error.message : 'Upstream stream failed';
           // upstream closed or aborted — stop cleanly
         } finally {
           reader.releaseLock();
-          await writeSmartAskLog({
+          await writeInlineInsightLog({
             timestamp,
             endpoint,
             body,
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    await writeSmartAskLog({
+    await writeInlineInsightLog({
       timestamp,
       endpoint,
       body,

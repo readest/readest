@@ -1,18 +1,22 @@
 import { isTauriAppPlatform } from '@/services/environment';
-import type { SmartAskSettings } from './types';
-import { buildSmartAskCacheKey, readSmartAskCache, writeSmartAskCache } from './cache';
-import type { SmartAskChatMessage, SmartAskLogEntry } from './logging';
+import type { InlineInsightSettings } from './types';
 import {
-  getSmartAskChatEndpoint,
-  getSmartAskThinkingControlParams,
+  buildInlineInsightCacheKey,
+  readInlineInsightCache,
+  writeInlineInsightCache,
+} from './cache';
+import type { InlineInsightChatMessage, InlineInsightLogEntry } from './logging';
+import {
+  getInlineInsightChatEndpoint,
+  getInlineInsightThinkingControlParams,
   normalizeBaseUrl,
-  normalizeSmartAskProvider,
-  smartAskProviderSupportsApiKey,
+  normalizeInlineInsightProvider,
+  inlineInsightProviderSupportsApiKey,
 } from './providers';
 
-export const SMART_ASK_SEPARATOR = '===DETAILS===';
+export const INLINE_INSIGHT_SEPARATOR = '===DETAILS===';
 
-export type SmartAskCallLogger = (entry: SmartAskLogEntry) => void | Promise<void>;
+export type InlineInsightCallLogger = (entry: InlineInsightLogEntry) => void | Promise<void>;
 
 const SYSTEM_PROMPT = `你是一位阅读助手。用户从一本书中选取了一段文字，但没有明确提出问题。
 你需要根据选取的文字和上下文，猜测用户最可能的问题，并严格使用用户消息中指定的目标语言回答。
@@ -64,7 +68,7 @@ function formatLanguageInstruction(uiLanguage: string): string {
   ].join('\n');
 }
 
-function formatQuestionDirections(settings: SmartAskSettings): string {
+function formatQuestionDirections(settings: InlineInsightSettings): string {
   const directions = settings.questionDirections.map((item) => item.trim()).filter(Boolean);
   if (directions.length === 0) return '';
 
@@ -74,16 +78,16 @@ function formatQuestionDirections(settings: SmartAskSettings): string {
 /**
  * Streams Inline Insight output from an OpenAI-compatible endpoint.
  * Yields raw text delta chunks as they arrive.
- * The output format is two sections separated by SMART_ASK_SEPARATOR:
+ * The output format is two sections separated by INLINE_INSIGHT_SEPARATOR:
  *   brief lines first, then detail paragraphs.
  */
-export async function* streamSmartAsk(
+export async function* streamInlineInsight(
   selectedText: string,
   context: string,
-  settings: SmartAskSettings,
+  settings: InlineInsightSettings,
   uiLanguage: string,
   signal?: AbortSignal,
-  logger?: SmartAskCallLogger,
+  logger?: InlineInsightCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
   const languageInstruction = formatLanguageInstruction(uiLanguage);
@@ -98,8 +102,8 @@ export async function* streamSmartAsk(
     .join('\n\n');
   const cacheKey =
     settings.cacheEnabled && !signal?.aborted
-      ? buildSmartAskCacheKey({
-          provider: normalizeSmartAskProvider(settings.provider),
+      ? buildInlineInsightCacheKey({
+          provider: normalizeInlineInsightProvider(settings.provider),
           baseUrl: normalizeBaseUrl(settings.baseUrl),
           model: settings.model,
           questionDirections: settings.questionDirections,
@@ -108,7 +112,7 @@ export async function* streamSmartAsk(
           context,
         })
       : '';
-  const cachedText = cacheKey ? readSmartAskCache(cacheKey, settings.cacheTtlMinutes) : null;
+  const cachedText = cacheKey ? readInlineInsightCache(cacheKey, settings.cacheTtlMinutes) : null;
   if (cachedText) {
     yield cachedText;
     return;
@@ -133,20 +137,20 @@ export async function* streamSmartAsk(
     completed = true;
   } finally {
     if (completed && cacheKey && !signal?.aborted && responseText.trim()) {
-      writeSmartAskCache(cacheKey, responseText);
+      writeInlineInsightCache(cacheKey, responseText);
     }
   }
 }
 
-export async function* streamSmartAskFollowUp(
+export async function* streamInlineInsightFollowUp(
   question: string,
   selectedText: string,
   context: string,
   previousAnswer: string,
-  settings: SmartAskSettings,
+  settings: InlineInsightSettings,
   uiLanguage: string,
   signal?: AbortSignal,
-  logger?: SmartAskCallLogger,
+  logger?: InlineInsightCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
   const languageInstruction = formatLanguageInstruction(uiLanguage);
@@ -174,13 +178,13 @@ export async function* streamSmartAskFollowUp(
 }
 
 async function* streamChatCompletions(
-  messages: SmartAskChatMessage[],
-  settings: SmartAskSettings,
+  messages: InlineInsightChatMessage[],
+  settings: InlineInsightSettings,
   signal?: AbortSignal,
-  logger?: SmartAskCallLogger,
+  logger?: InlineInsightCallLogger,
 ): AsyncGenerator<string> {
-  const chatEndpoint = getSmartAskChatEndpoint(settings);
-  const apiKey = smartAskProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
+  const chatEndpoint = getInlineInsightChatEndpoint(settings);
+  const apiKey = inlineInsightProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
   const startedAt = Date.now();
   const timestamp = new Date(startedAt).toISOString();
 
@@ -189,7 +193,7 @@ async function* streamChatCompletions(
     messages,
     stream: true,
     temperature: 0.3,
-    ...getSmartAskThinkingControlParams(settings),
+    ...getInlineInsightThinkingControlParams(settings),
   };
   let responseText = '';
   let status: number | undefined;
@@ -207,7 +211,7 @@ async function* streamChatCompletions(
         signal,
       });
     } else {
-      response = await fetch('/api/smartask/chat', {
+      response = await fetch('/api/inlineinsight/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

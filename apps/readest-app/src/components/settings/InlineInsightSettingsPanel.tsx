@@ -8,20 +8,20 @@ import { useSettingsStore } from '@/store/settingsStore';
 import Select from '@/components/Select';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TRANSLATED_LANGS } from '@/services/constants';
-import { clearSmartAskCache } from '@/services/smartAsk/cache';
-import { DEFAULT_SMART_ASK_SETTINGS } from '@/services/smartAsk/types';
-import type { SmartAskProvider, SmartAskSettings } from '@/services/smartAsk/types';
+import { clearInlineInsightCache } from '@/services/inlineInsight/cache';
+import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
+import type { InlineInsightProvider, InlineInsightSettings } from '@/services/inlineInsight/types';
 import { getLocale } from '@/utils/misc';
 import {
-  SMART_ASK_PROVIDER_OPTIONS,
-  getSmartAskModelsEndpoint,
-  getSmartAskProviderConfig,
-  normalizeSmartAskProvider,
-  smartAskProviderNeedsApiKey,
-  smartAskProviderSupportsApiKey,
-} from '@/services/smartAsk/providers';
+  INLINE_INSIGHT_PROVIDER_OPTIONS,
+  getInlineInsightModelsEndpoint,
+  getInlineInsightProviderConfig,
+  normalizeInlineInsightProvider,
+  inlineInsightProviderNeedsApiKey,
+  inlineInsightProviderSupportsApiKey,
+} from '@/services/inlineInsight/providers';
 
-function normalizeSmartAskQuestionDirections(directions: string[]): string[] {
+function normalizeInlineInsightQuestionDirections(directions: string[]): string[] {
   return Array.from(new Set(directions.map((item) => item.trim()).filter(Boolean))).slice(0, 12);
 }
 
@@ -32,38 +32,45 @@ function getLangOptions(langs: Record<string, string>, followLabel: string) {
   return options;
 }
 
-const SmartAskSettingsPanel: React.FC = () => {
+const InlineInsightSettingsPanel: React.FC = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
 
-  const smartAskSettings: SmartAskSettings = {
-    ...DEFAULT_SMART_ASK_SETTINGS,
-    ...settings?.smartAskSettings,
+  const inlineInsightSettings: InlineInsightSettings = {
+    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+    ...settings?.inlineInsightSettings,
   };
-  const [smartAskEnabled, setSmartAskEnabled] = useState(smartAskSettings.enabled);
-  const [smartAskProvider, setSmartAskProvider] = useState<SmartAskProvider>(
-    normalizeSmartAskProvider(smartAskSettings.provider),
+  const [inlineInsightEnabled, setInlineInsightEnabled] = useState(inlineInsightSettings.enabled);
+  const [inlineInsightProvider, setInlineInsightProvider] = useState<InlineInsightProvider>(
+    normalizeInlineInsightProvider(inlineInsightSettings.provider),
   );
-  const [smartAskBaseUrl, setSmartAskBaseUrl] = useState(smartAskSettings.baseUrl);
-  const [smartAskModel, setSmartAskModel] = useState(smartAskSettings.model);
-  const [smartAskApiKey, setSmartAskApiKey] = useState(smartAskSettings.apiKey);
-  const [smartAskMaxChars, setSmartAskMaxChars] = useState(smartAskSettings.maxContextChars);
-  const [smartAskTargetLanguage, setSmartAskTargetLanguage] = useState(
-    smartAskSettings.targetLanguage,
+  const [inlineInsightBaseUrl, setInlineInsightBaseUrl] = useState(inlineInsightSettings.baseUrl);
+  const [inlineInsightModel, setInlineInsightModel] = useState(inlineInsightSettings.model);
+  const [inlineInsightApiKey, setInlineInsightApiKey] = useState(inlineInsightSettings.apiKey);
+  const [inlineInsightMaxChars, setInlineInsightMaxChars] = useState(
+    inlineInsightSettings.maxContextChars,
   );
-  const [smartAskQuestionDirections, setSmartAskQuestionDirections] = useState(
-    normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections),
+  const [inlineInsightTargetLanguage, setInlineInsightTargetLanguage] = useState(
+    inlineInsightSettings.targetLanguage,
   );
-  const [smartAskQuestionDirectionDraft, setSmartAskQuestionDirectionDraft] = useState('');
-  const [smartAskCacheEnabled, setSmartAskCacheEnabled] = useState(smartAskSettings.cacheEnabled);
-  const [smartAskCacheTtl, setSmartAskCacheTtl] = useState(smartAskSettings.cacheTtlMinutes);
-  const [smartAskModels, setSmartAskModels] = useState<string[]>([]);
-  const [fetchingSmartAskModels, setFetchingSmartAskModels] = useState(false);
+  const [inlineInsightQuestionDirections, setInlineInsightQuestionDirections] = useState(
+    normalizeInlineInsightQuestionDirections(inlineInsightSettings.questionDirections),
+  );
+  const [inlineInsightQuestionDirectionDraft, setInlineInsightQuestionDirectionDraft] =
+    useState('');
+  const [inlineInsightCacheEnabled, setInlineInsightCacheEnabled] = useState(
+    inlineInsightSettings.cacheEnabled,
+  );
+  const [inlineInsightCacheTtl, setInlineInsightCacheTtl] = useState(
+    inlineInsightSettings.cacheTtlMinutes,
+  );
+  const [inlineInsightModels, setInlineInsightModels] = useState<string[]>([]);
+  const [fetchingInlineInsightModels, setFetchingInlineInsightModels] = useState(false);
 
   const isMounted = useRef(false);
   const settingsRef = useRef(settings);
-  const smartAskProviderConfig = getSmartAskProviderConfig(smartAskProvider);
+  const inlineInsightProviderConfig = getInlineInsightProviderConfig(inlineInsightProvider);
   const getCurrentUILangOption = () => {
     const uiLanguage = settings?.globalViewSettings.uiLanguage ?? '';
     return {
@@ -81,10 +88,10 @@ const SmartAskSettingsPanel: React.FC = () => {
       `${_('Interface Language')} (${currentUILang.label})`,
     );
     if (
-      smartAskTargetLanguage &&
-      !options.some((option) => option.value === smartAskTargetLanguage)
+      inlineInsightTargetLanguage &&
+      !options.some((option) => option.value === inlineInsightTargetLanguage)
     ) {
-      options.push({ value: smartAskTargetLanguage, label: smartAskTargetLanguage });
+      options.push({ value: inlineInsightTargetLanguage, label: inlineInsightTargetLanguage });
     }
     return options;
   };
@@ -97,16 +104,16 @@ const SmartAskSettingsPanel: React.FC = () => {
     isMounted.current = true;
   }, []);
 
-  const saveSmartAskSettingsPatch = useCallback(
-    async (patch: Partial<SmartAskSettings>) => {
+  const saveInlineInsightSettingsPatch = useCallback(
+    async (patch: Partial<InlineInsightSettings>) => {
       const currentSettings = settingsRef.current;
       if (!currentSettings) return;
-      const current: SmartAskSettings = {
-        ...DEFAULT_SMART_ASK_SETTINGS,
-        ...currentSettings.smartAskSettings,
+      const current: InlineInsightSettings = {
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        ...currentSettings.inlineInsightSettings,
       };
-      const newSmartAskSettings: SmartAskSettings = { ...current, ...patch };
-      const newSettings = { ...currentSettings, smartAskSettings: newSmartAskSettings };
+      const newInlineInsightSettings: InlineInsightSettings = { ...current, ...patch };
+      const newSettings = { ...currentSettings, inlineInsightSettings: newInlineInsightSettings };
       settingsRef.current = newSettings;
       setSettings(newSettings);
       await saveSettings(envConfig, newSettings);
@@ -114,31 +121,36 @@ const SmartAskSettingsPanel: React.FC = () => {
     [envConfig, setSettings, saveSettings],
   );
 
-  const saveSmartAskSetting = useCallback(
-    async (key: keyof SmartAskSettings, value: SmartAskSettings[keyof SmartAskSettings]) => {
-      await saveSmartAskSettingsPatch({ [key]: value });
+  const saveInlineInsightSetting = useCallback(
+    async (
+      key: keyof InlineInsightSettings,
+      value: InlineInsightSettings[keyof InlineInsightSettings],
+    ) => {
+      await saveInlineInsightSettingsPatch({ [key]: value });
     },
-    [saveSmartAskSettingsPatch],
+    [saveInlineInsightSettingsPatch],
   );
 
-  const fetchSmartAskModels = useCallback(async () => {
-    if (!smartAskBaseUrl || !smartAskEnabled) return;
-    setFetchingSmartAskModels(true);
+  const fetchInlineInsightModels = useCallback(async () => {
+    if (!inlineInsightBaseUrl || !inlineInsightEnabled) return;
+    setFetchingInlineInsightModels(true);
     try {
-      const providerConfig = getSmartAskProviderConfig(smartAskProvider);
-      const targetUrl = getSmartAskModelsEndpoint({
-        ...DEFAULT_SMART_ASK_SETTINGS,
-        provider: smartAskProvider,
-        baseUrl: smartAskBaseUrl,
-        model: smartAskModel,
-        apiKey: smartAskApiKey,
+      const providerConfig = getInlineInsightProviderConfig(inlineInsightProvider);
+      const targetUrl = getInlineInsightModelsEndpoint({
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        provider: inlineInsightProvider,
+        baseUrl: inlineInsightBaseUrl,
+        model: inlineInsightModel,
+        apiKey: inlineInsightApiKey,
       });
       let fetchUrl = targetUrl;
       const fetchHeaders: Record<string, string> = {};
-      const apiKey = smartAskProviderSupportsApiKey(smartAskProvider) ? smartAskApiKey : '';
+      const apiKey = inlineInsightProviderSupportsApiKey(inlineInsightProvider)
+        ? inlineInsightApiKey
+        : '';
       let fetchInit: RequestInit | undefined;
       if (!isTauriAppPlatform()) {
-        fetchUrl = '/api/smartask/models';
+        fetchUrl = '/api/inlineinsight/models';
         fetchInit = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -159,119 +171,128 @@ const SmartAskSettingsPanel: React.FC = () => {
         const d = data as { data?: { id: string }[] };
         models = d.data?.map((m) => m.id) ?? [];
       }
-      setSmartAskModels(models);
-      if (models.length > 0 && !models.includes(smartAskModel)) {
-        setSmartAskModel(models[0]!);
+      setInlineInsightModels(models);
+      if (models.length > 0 && !models.includes(inlineInsightModel)) {
+        setInlineInsightModel(models[0]!);
       }
     } catch {
-      setSmartAskModels([]);
+      setInlineInsightModels([]);
     } finally {
-      setFetchingSmartAskModels(false);
+      setFetchingInlineInsightModels(false);
     }
-  }, [smartAskBaseUrl, smartAskProvider, smartAskApiKey, smartAskModel, smartAskEnabled]);
+  }, [
+    inlineInsightBaseUrl,
+    inlineInsightProvider,
+    inlineInsightApiKey,
+    inlineInsightModel,
+    inlineInsightEnabled,
+  ]);
 
   useEffect(() => {
-    if (smartAskEnabled) {
-      fetchSmartAskModels();
+    if (inlineInsightEnabled) {
+      fetchInlineInsightModels();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskEnabled, smartAskProvider, smartAskBaseUrl]);
+  }, [inlineInsightEnabled, inlineInsightProvider, inlineInsightBaseUrl]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskEnabled !== smartAskSettings.enabled) {
-      saveSmartAskSetting('enabled', smartAskEnabled);
+    if (inlineInsightEnabled !== inlineInsightSettings.enabled) {
+      saveInlineInsightSetting('enabled', inlineInsightEnabled);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskEnabled]);
+  }, [inlineInsightEnabled]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskProvider !== smartAskSettings.provider) {
-      saveSmartAskSetting('provider', smartAskProvider);
+    if (inlineInsightProvider !== inlineInsightSettings.provider) {
+      saveInlineInsightSetting('provider', inlineInsightProvider);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskProvider]);
+  }, [inlineInsightProvider]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskBaseUrl !== smartAskSettings.baseUrl) {
-      saveSmartAskSetting('baseUrl', smartAskBaseUrl);
+    if (inlineInsightBaseUrl !== inlineInsightSettings.baseUrl) {
+      saveInlineInsightSetting('baseUrl', inlineInsightBaseUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskBaseUrl]);
+  }, [inlineInsightBaseUrl]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskModel !== smartAskSettings.model) {
-      saveSmartAskSetting('model', smartAskModel);
+    if (inlineInsightModel !== inlineInsightSettings.model) {
+      saveInlineInsightSetting('model', inlineInsightModel);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskModel]);
+  }, [inlineInsightModel]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskApiKey !== smartAskSettings.apiKey) {
-      saveSmartAskSetting('apiKey', smartAskApiKey);
+    if (inlineInsightApiKey !== inlineInsightSettings.apiKey) {
+      saveInlineInsightSetting('apiKey', inlineInsightApiKey);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskApiKey]);
+  }, [inlineInsightApiKey]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskMaxChars !== smartAskSettings.maxContextChars) {
-      saveSmartAskSetting('maxContextChars', smartAskMaxChars);
+    if (inlineInsightMaxChars !== inlineInsightSettings.maxContextChars) {
+      saveInlineInsightSetting('maxContextChars', inlineInsightMaxChars);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskMaxChars]);
+  }, [inlineInsightMaxChars]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    const normalized = smartAskTargetLanguage.trim();
-    if (normalized !== smartAskSettings.targetLanguage) {
-      saveSmartAskSetting('targetLanguage', normalized);
+    const normalized = inlineInsightTargetLanguage.trim();
+    if (normalized !== inlineInsightSettings.targetLanguage) {
+      saveInlineInsightSetting('targetLanguage', normalized);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskTargetLanguage]);
+  }, [inlineInsightTargetLanguage]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    const normalized = normalizeSmartAskQuestionDirections(smartAskQuestionDirections);
-    const saved = normalizeSmartAskQuestionDirections(smartAskSettings.questionDirections);
+    const normalized = normalizeInlineInsightQuestionDirections(inlineInsightQuestionDirections);
+    const saved = normalizeInlineInsightQuestionDirections(
+      inlineInsightSettings.questionDirections,
+    );
     if (JSON.stringify(normalized) !== JSON.stringify(saved)) {
-      saveSmartAskSetting('questionDirections', normalized);
+      saveInlineInsightSetting('questionDirections', normalized);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskQuestionDirections]);
+  }, [inlineInsightQuestionDirections]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskCacheEnabled !== smartAskSettings.cacheEnabled) {
-      saveSmartAskSetting('cacheEnabled', smartAskCacheEnabled);
+    if (inlineInsightCacheEnabled !== inlineInsightSettings.cacheEnabled) {
+      saveInlineInsightSetting('cacheEnabled', inlineInsightCacheEnabled);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskCacheEnabled]);
+  }, [inlineInsightCacheEnabled]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (smartAskCacheTtl !== smartAskSettings.cacheTtlMinutes) {
-      saveSmartAskSetting('cacheTtlMinutes', smartAskCacheTtl);
+    if (inlineInsightCacheTtl !== inlineInsightSettings.cacheTtlMinutes) {
+      saveInlineInsightSetting('cacheTtlMinutes', inlineInsightCacheTtl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAskCacheTtl]);
+  }, [inlineInsightCacheTtl]);
 
-  const handleSmartAskProviderChange = (value: SmartAskProvider) => {
-    const nextConfig = getSmartAskProviderConfig(value);
-    const nextApiKey = nextConfig.requiresApiKey || nextConfig.supportsApiKey ? smartAskApiKey : '';
+  const handleInlineInsightProviderChange = (value: InlineInsightProvider) => {
+    const nextConfig = getInlineInsightProviderConfig(value);
+    const nextApiKey =
+      nextConfig.requiresApiKey || nextConfig.supportsApiKey ? inlineInsightApiKey : '';
 
-    setSmartAskProvider(value);
-    setSmartAskBaseUrl(nextConfig.defaultBaseUrl);
-    setSmartAskModel('');
-    setSmartAskModels([]);
+    setInlineInsightProvider(value);
+    setInlineInsightBaseUrl(nextConfig.defaultBaseUrl);
+    setInlineInsightModel('');
+    setInlineInsightModels([]);
     if (!nextApiKey) {
-      setSmartAskApiKey('');
+      setInlineInsightApiKey('');
     }
-    void saveSmartAskSettingsPatch({
+    void saveInlineInsightSettingsPatch({
       provider: value,
       baseUrl: nextConfig.defaultBaseUrl,
       model: '',
@@ -279,21 +300,21 @@ const SmartAskSettingsPanel: React.FC = () => {
     });
   };
 
-  const addSmartAskQuestionDirection = () => {
-    const direction = smartAskQuestionDirectionDraft.trim();
+  const addInlineInsightQuestionDirection = () => {
+    const direction = inlineInsightQuestionDirectionDraft.trim();
     if (!direction) return;
-    setSmartAskQuestionDirections((current) =>
-      normalizeSmartAskQuestionDirections([...current, direction]),
+    setInlineInsightQuestionDirections((current) =>
+      normalizeInlineInsightQuestionDirections([...current, direction]),
     );
-    setSmartAskQuestionDirectionDraft('');
+    setInlineInsightQuestionDirectionDraft('');
   };
 
-  const removeSmartAskQuestionDirection = (index: number) => {
-    setSmartAskQuestionDirections((current) => current.filter((_, i) => i !== index));
+  const removeInlineInsightQuestionDirection = (index: number) => {
+    setInlineInsightQuestionDirections((current) => current.filter((_, i) => i !== index));
   };
 
   const handleSelectTargetLanguage = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSmartAskTargetLanguage(event.target.value);
+    setInlineInsightTargetLanguage(event.target.value);
   };
 
   return (
@@ -307,8 +328,8 @@ const SmartAskSettingsPanel: React.FC = () => {
               <input
                 type='checkbox'
                 className='toggle'
-                checked={smartAskEnabled}
-                onChange={() => setSmartAskEnabled((v) => !v)}
+                checked={inlineInsightEnabled}
+                onChange={() => setInlineInsightEnabled((v) => !v)}
               />
             </div>
           </div>
@@ -316,7 +337,10 @@ const SmartAskSettingsPanel: React.FC = () => {
       </div>
 
       <div
-        className={clsx('w-full', !smartAskEnabled && 'pointer-events-none select-none opacity-50')}
+        className={clsx(
+          'w-full',
+          !inlineInsightEnabled && 'pointer-events-none select-none opacity-50',
+        )}
       >
         <h2 className='mb-2 font-medium'>{_('Inline Insight Provider')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
@@ -325,10 +349,12 @@ const SmartAskSettingsPanel: React.FC = () => {
               <span>{_('Provider')}</span>
               <select
                 className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                value={normalizeSmartAskProvider(smartAskProvider)}
-                onChange={(e) => handleSmartAskProviderChange(e.target.value as SmartAskProvider)}
+                value={normalizeInlineInsightProvider(inlineInsightProvider)}
+                onChange={(e) =>
+                  handleInlineInsightProviderChange(e.target.value as InlineInsightProvider)
+                }
               >
-                {SMART_ASK_PROVIDER_OPTIONS.map((option) => (
+                {INLINE_INSIGHT_PROVIDER_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.label}
                   </option>
@@ -340,9 +366,9 @@ const SmartAskSettingsPanel: React.FC = () => {
               <input
                 type='text'
                 className='input input-bordered input-sm w-full'
-                value={smartAskBaseUrl}
-                onChange={(e) => setSmartAskBaseUrl(e.target.value)}
-                placeholder={smartAskProviderConfig.defaultBaseUrl}
+                value={inlineInsightBaseUrl}
+                onChange={(e) => setInlineInsightBaseUrl(e.target.value)}
+                placeholder={inlineInsightProviderConfig.defaultBaseUrl}
               />
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
@@ -350,22 +376,22 @@ const SmartAskSettingsPanel: React.FC = () => {
                 <span>{_('Model')}</span>
                 <button
                   className='btn btn-ghost btn-xs'
-                  onClick={fetchSmartAskModels}
-                  disabled={fetchingSmartAskModels}
+                  onClick={fetchInlineInsightModels}
+                  disabled={fetchingInlineInsightModels}
                   title={_('Refresh Models')}
                 >
                   <PiArrowsClockwise
-                    className={clsx('size-4', fetchingSmartAskModels && 'animate-spin')}
+                    className={clsx('size-4', fetchingInlineInsightModels && 'animate-spin')}
                   />
                 </button>
               </div>
-              {smartAskModels.length > 0 ? (
+              {inlineInsightModels.length > 0 ? (
                 <select
                   className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                  value={smartAskModel}
-                  onChange={(e) => setSmartAskModel(e.target.value)}
+                  value={inlineInsightModel}
+                  onChange={(e) => setInlineInsightModel(e.target.value)}
                 >
-                  {smartAskModels.map((m) => (
+                  {inlineInsightModels.map((m) => (
                     <option key={m} value={m}>
                       {m}
                     </option>
@@ -375,24 +401,24 @@ const SmartAskSettingsPanel: React.FC = () => {
                 <input
                   type='text'
                   className='input input-bordered input-sm w-full'
-                  value={smartAskModel}
-                  onChange={(e) => setSmartAskModel(e.target.value)}
-                  placeholder={smartAskProviderConfig.modelPlaceholder}
+                  value={inlineInsightModel}
+                  onChange={(e) => setInlineInsightModel(e.target.value)}
+                  placeholder={inlineInsightProviderConfig.modelPlaceholder}
                 />
               )}
             </div>
-            {smartAskProviderSupportsApiKey(smartAskProvider) && (
+            {inlineInsightProviderSupportsApiKey(inlineInsightProvider) && (
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
                 <span>
-                  {smartAskProviderNeedsApiKey(smartAskProvider)
+                  {inlineInsightProviderNeedsApiKey(inlineInsightProvider)
                     ? _('API Key')
                     : _('API Key (Optional)')}
                 </span>
                 <input
                   type='password'
                   className='input input-bordered input-sm w-full'
-                  value={smartAskApiKey}
-                  onChange={(e) => setSmartAskApiKey(e.target.value)}
+                  value={inlineInsightApiKey}
+                  onChange={(e) => setInlineInsightApiKey(e.target.value)}
                   placeholder='sk-...'
                 />
               </div>
@@ -402,16 +428,16 @@ const SmartAskSettingsPanel: React.FC = () => {
               <input
                 type='number'
                 className='input input-bordered input-sm w-full'
-                value={smartAskMaxChars}
+                value={inlineInsightMaxChars}
                 min={500}
                 max={3000}
-                onChange={(e) => setSmartAskMaxChars(Number(e.target.value))}
+                onChange={(e) => setInlineInsightMaxChars(Number(e.target.value))}
               />
             </div>
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
               <span>{_('Target Language')}</span>
               <Select
-                value={smartAskTargetLanguage}
+                value={inlineInsightTargetLanguage}
                 onChange={handleSelectTargetLanguage}
                 options={getTargetLanguageOptions()}
                 className='max-w-full'
@@ -424,12 +450,12 @@ const SmartAskSettingsPanel: React.FC = () => {
               <div className='flex w-full items-center justify-between gap-2'>
                 <span>{_('Question Directions')}</span>
                 <span className='text-base-content/50 text-xs'>
-                  {smartAskQuestionDirections.length}/12
+                  {inlineInsightQuestionDirections.length}/12
                 </span>
               </div>
-              {smartAskQuestionDirections.length > 0 && (
+              {inlineInsightQuestionDirections.length > 0 && (
                 <div className='flex w-full flex-col gap-1'>
-                  {smartAskQuestionDirections.map((direction, index) => (
+                  {inlineInsightQuestionDirections.map((direction, index) => (
                     <div
                       key={`${direction}-${index}`}
                       className='bg-base-200 flex items-center gap-2 rounded p-1.5'
@@ -438,7 +464,7 @@ const SmartAskSettingsPanel: React.FC = () => {
                       <button
                         type='button'
                         className='btn btn-ghost btn-xs'
-                        onClick={() => removeSmartAskQuestionDirection(index)}
+                        onClick={() => removeInlineInsightQuestionDirection(index)}
                       >
                         {_('Remove')}
                       </button>
@@ -450,14 +476,14 @@ const SmartAskSettingsPanel: React.FC = () => {
                 <input
                   type='text'
                   className='input input-bordered input-sm flex-1'
-                  value={smartAskQuestionDirectionDraft}
+                  value={inlineInsightQuestionDirectionDraft}
                   placeholder={_('e.g. explain names, translate, historical background')}
                   maxLength={120}
-                  onChange={(e) => setSmartAskQuestionDirectionDraft(e.target.value)}
+                  onChange={(e) => setInlineInsightQuestionDirectionDraft(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      addSmartAskQuestionDirection();
+                      addInlineInsightQuestionDirection();
                     }
                   }}
                 />
@@ -465,10 +491,10 @@ const SmartAskSettingsPanel: React.FC = () => {
                   type='button'
                   className='btn btn-outline btn-sm'
                   disabled={
-                    !smartAskQuestionDirectionDraft.trim() ||
-                    smartAskQuestionDirections.length >= 12
+                    !inlineInsightQuestionDirectionDraft.trim() ||
+                    inlineInsightQuestionDirections.length >= 12
                   }
-                  onClick={addSmartAskQuestionDirection}
+                  onClick={addInlineInsightQuestionDirection}
                 >
                   {_('Add')}
                 </button>
@@ -479,18 +505,18 @@ const SmartAskSettingsPanel: React.FC = () => {
               <input
                 type='checkbox'
                 className='toggle'
-                checked={smartAskCacheEnabled}
-                onChange={() => setSmartAskCacheEnabled((v) => !v)}
+                checked={inlineInsightCacheEnabled}
+                onChange={() => setInlineInsightCacheEnabled((v) => !v)}
               />
             </div>
-            {smartAskCacheEnabled && (
+            {inlineInsightCacheEnabled && (
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
                 <div className='flex w-full items-center justify-between gap-2'>
                   <span>{_('Cache TTL Minutes')}</span>
                   <button
                     type='button'
                     className='btn btn-outline btn-xs'
-                    onClick={clearSmartAskCache}
+                    onClick={clearInlineInsightCache}
                   >
                     {_('Clear Cache')}
                   </button>
@@ -498,10 +524,10 @@ const SmartAskSettingsPanel: React.FC = () => {
                 <input
                   type='number'
                   className='input input-bordered input-sm w-full'
-                  value={smartAskCacheTtl}
+                  value={inlineInsightCacheTtl}
                   min={10}
                   max={10080}
-                  onChange={(e) => setSmartAskCacheTtl(Number(e.target.value))}
+                  onChange={(e) => setInlineInsightCacheTtl(Number(e.target.value))}
                 />
               </div>
             )}
@@ -512,4 +538,4 @@ const SmartAskSettingsPanel: React.FC = () => {
   );
 };
 
-export default SmartAskSettingsPanel;
+export default InlineInsightSettingsPanel;

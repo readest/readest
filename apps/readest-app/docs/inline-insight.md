@@ -1,7 +1,7 @@
 # Inline Insight - 随文智解
 
 product name: Inline Insight
-internal codename: smartAsk
+internal codename: inlineInsight
 
 ## 功能概述
 
@@ -11,19 +11,19 @@ internal codename: smartAsk
 
 ## 代码地图
 
-| 文件                                                      | 职责                                                      |
-| --------------------------------------------------------- | --------------------------------------------------------- |
-| `src/app/reader/components/annotator/AnnotationTools.tsx` | 注册 `smartask` 工具按钮                                  |
-| `src/app/reader/components/annotator/Annotator.tsx`       | 控制 Inline Insight 弹窗打开和定位                        |
-| `src/app/reader/components/annotator/SmartAskPopup.tsx`   | 弹窗 UI、流式状态、错误状态和输出解析                     |
-| `src/components/settings/AIPanel.tsx`                     | Inline Insight provider、模型、上下文、问题方向和缓存设置 |
-| `src/services/smartAsk/types.ts`                          | 设置、provider 和结果类型                                 |
-| `src/services/smartAsk/providers.ts`                      | Provider 预设、端点拼接、thinking 参数和旧配置兼容        |
-| `src/services/smartAsk/contextExtractor.ts`               | 从阅读 DOM 提取选区上下文                                 |
-| `src/services/smartAsk/client.ts`                         | Chat Completions 请求、SSE 解析和缓存接入                 |
-| `src/services/smartAsk/cache.ts`                          | 本地响应缓存                                              |
-| `src/app/api/smartask/chat/route.ts`                      | Web 环境下的流式请求代理                                  |
-| `src/app/api/smartask/models/route.ts`                    | Web 环境下的模型列表代理                                  |
+| 文件                                                         | 职责                                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------- |
+| `src/app/reader/components/annotator/AnnotationTools.tsx`    | 注册 `inlineinsight` 工具按钮                             |
+| `src/app/reader/components/annotator/Annotator.tsx`          | 控制 Inline Insight 弹窗打开和定位                        |
+| `src/app/reader/components/annotator/InlineInsightPopup.tsx` | 弹窗 UI、流式状态、错误状态和输出解析                     |
+| `src/components/settings/AIPanel.tsx`                        | Inline Insight provider、模型、上下文、问题方向和缓存设置 |
+| `src/services/inlineInsight/types.ts`                        | 设置、provider 和结果类型                                 |
+| `src/services/inlineInsight/providers.ts`                    | Provider 预设、端点拼接、thinking 参数和旧配置兼容        |
+| `src/services/inlineInsight/contextExtractor.ts`             | 从阅读 DOM 提取选区上下文                                 |
+| `src/services/inlineInsight/client.ts`                       | Chat Completions 请求、SSE 解析和缓存接入                 |
+| `src/services/inlineInsight/cache.ts`                        | 本地响应缓存                                              |
+| `src/app/api/inlineinsight/chat/route.ts`                    | Web 环境下的流式请求代理                                  |
+| `src/app/api/inlineinsight/models/route.ts`                  | Web 环境下的模型列表代理                                  |
 
 ## Provider 策略
 
@@ -96,24 +96,24 @@ After:
 
 ```text
 用户选中文字
-  -> Annotator 打开 SmartAskPopup
+  -> Annotator 打开 InlineInsightPopup
   -> extractContext(selection, maxContextChars)
-  -> streamSmartAsk(selectedText, context, settings, locale)
+  -> streamInlineInsight(selectedText, context, settings, locale)
   -> 命中缓存则直接返回完整文本
   -> 未命中则调用 provider 的 Chat Completions stream
-  -> SmartAskPopup 解析简述和详述并流式渲染
+  -> InlineInsightPopup 解析简述和详述并流式渲染
   -> 完整响应写入本地缓存
-  -> 每次真实 LLM call 写入 logs/smartask/*.md 调试日志
+  -> 每次真实 LLM call 写入 logs/inlineinsight/*.md 调试日志
 ```
 
-Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/smartask/chat` 代理，避免浏览器 CORS 限制。模型列表在 Web 环境通过 `POST /api/smartask/models` 代理，API key 放在请求体中，不再放入查询字符串。
+Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/inlineinsight/chat` 代理，避免浏览器 CORS 限制。模型列表在 Web 环境通过 `POST /api/inlineinsight/models` 代理，API key 放在请求体中，不再放入查询字符串。
 
 ## 调试日志
 
 每一次 Inline Insight chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。
 
-- Web/dev 代理路径写入 `logs/smartask/`。
-- Tauri 直连路径优先写入当前工作目录的 `logs/smartask/`，失败时回退到系统应用 Log 目录。
+- Web/dev 代理路径写入 `logs/inlineinsight/`。
+- Tauri 直连路径优先写入当前工作目录的 `logs/inlineinsight/`，失败时回退到系统应用 Log 目录。
 - 日志包含 endpoint、model、temperature、status、duration、messages、请求 body、响应文本或错误信息。
 - 命中缓存时不会写新日志，因为没有发生新的 LLM call。
 
@@ -149,7 +149,7 @@ Inline Insight 缓存保存在浏览器 `localStorage`：
 ## 设置默认值
 
 ```typescript
-export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
+export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   enabled: false,
   provider: 'ollama',
   baseUrl: 'http://127.0.0.1:11434',
@@ -169,7 +169,7 @@ export const DEFAULT_SMART_ASK_SETTINGS: SmartAskSettings = {
 
 - Web 代理只允许 `http` 和 `https` endpoint。
 - 模型列表代理支持 `POST`，避免 API key 进入 URL。
-- 代理不再写本地 `logs/smartask` 文件，减少构建兼容风险和敏感内容落盘。
+- 代理不再写本地 `logs/inlineinsight` 文件，减少构建兼容风险和敏感内容落盘。
 - 选中文本、上下文和模型响应仍会发送给用户配置的 provider；UI 需要让用户自行选择可信 provider。
 
 ## 测试
