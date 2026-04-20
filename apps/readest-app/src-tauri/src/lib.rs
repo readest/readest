@@ -197,10 +197,9 @@ pub fn run() {
     let builder = builder.plugin(
         tauri_plugin_single_instance::Builder::new()
             .callback(move |app, argv, cwd| {
-                let _ = app
-                    .get_webview_window("main")
-                    .expect("no main window")
-                    .set_focus();
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_focus();
+                }
                 let files = get_files_from_argv(argv.clone());
                 if !files.is_empty() {
                     allow_file_in_scopes(app, files.clone());
@@ -377,7 +376,9 @@ pub fn run() {
                     true
                 });
 
-            #[cfg(desktop)]
+            #[cfg(target_os = "macos")]
+            let win_builder = win_builder.inner_size(1280.0, 800.0).resizable(true);
+            #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
 
             #[cfg(target_os = "macos")]
