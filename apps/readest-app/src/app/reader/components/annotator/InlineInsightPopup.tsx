@@ -37,18 +37,28 @@ const InsightItem: React.FC<{
   actionSlot?: React.ReactNode;
 }> = ({ brief, detail, actionSlot }) => {
   const [expanded, setExpanded] = useState(false);
-  const hasActions = Boolean(detail || actionSlot);
+  const [stableDetail, setStableDetail] = useState(detail ?? '');
+  const canToggleDetail = Boolean(stableDetail);
+  const hasActions = Boolean(canToggleDetail || actionSlot);
+
+  useEffect(() => {
+    // Detail text arrives incrementally while streaming. Keep the longest parsed version so
+    // temporary parser gaps do not collapse an expanded item back to its brief text.
+    if (detail && detail.length >= stableDetail.length) {
+      setStableDetail(detail);
+    }
+  }, [detail, stableDetail.length]);
 
   return (
     <div className='rounded p-1'>
       <p className='text-base-content/80 select-text text-xs leading-relaxed'>
         <span className='text-base-content mr-1 font-semibold'>[{brief.label}]</span>
-        {expanded && detail ? detail : brief.content}
+        {expanded && canToggleDetail ? stableDetail : brief.content}
       </p>
       {hasActions && (
         <div className='mt-1 flex items-center justify-between gap-2'>
           <div className='min-w-0'>
-            {detail && (
+            {canToggleDetail && (
               <button
                 type='button'
                 className='text-base-content/50 flex items-center gap-0.5 text-[10px] hover:underline'
