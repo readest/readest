@@ -14,6 +14,7 @@ import {
   streamInlineInsight,
   streamInlineInsightFollowUp,
   INLINE_INSIGHT_SEPARATOR,
+  isInlineInsightDebugLoggingEnabled,
 } from '@/services/inlineInsight/client';
 import type { InlineInsightCallLogger } from '@/services/inlineInsight/client';
 import {
@@ -124,7 +125,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   const detailItems = parseSection(detailRaw);
   const detailMap = Object.fromEntries(detailItems.map((d) => [d.label, d.content]));
   const inlineInsightLogger = useMemo<InlineInsightCallLogger | undefined>(() => {
-    if (!appService || !isTauriAppPlatform()) return undefined;
+    if (!isInlineInsightDebugLoggingEnabled() || !appService || !isTauriAppPlatform()) {
+      return undefined;
+    }
 
     return async (entry) => {
       const filename = createInlineInsightLogFilename(new Date(entry.timestamp));

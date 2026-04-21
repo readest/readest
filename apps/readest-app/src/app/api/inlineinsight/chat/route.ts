@@ -11,6 +11,10 @@ import {
 
 export const runtime = 'nodejs';
 
+function isInlineInsightDebugLoggingEnabled(): boolean {
+  return process.env['INLINE_INSIGHT_DEBUG_LOGGING'] === 'true';
+}
+
 async function writeInlineInsightLog(entry: {
   timestamp: string;
   endpoint: string;
@@ -50,6 +54,7 @@ export async function POST(request: NextRequest) {
   };
   const startedAt = Date.now();
   const timestamp = new Date(startedAt).toISOString();
+  const debugLogging = isInlineInsightDebugLoggingEnabled();
 
   if (!endpoint) {
     return Response.json({ error: 'Missing endpoint' }, { status: 400 });
@@ -80,14 +85,16 @@ export async function POST(request: NextRequest) {
 
     if (!upstream.ok) {
       const text = await upstream.text().catch(() => '');
-      await writeInlineInsightLog({
-        timestamp,
-        endpoint,
-        body,
-        error: `Upstream error ${upstream.status}: ${text}`,
-        status: upstream.status,
-        durationMs: Date.now() - startedAt,
-      });
+      if (debugLogging) {
+        await writeInlineInsightLog({
+          timestamp,
+          endpoint,
+          body,
+          error: `Upstream error ${upstream.status}: ${text}`,
+          status: upstream.status,
+          durationMs: Date.now() - startedAt,
+        });
+      }
       return Response.json(
         { error: `Upstream error ${upstream.status}: ${text}` },
         { status: upstream.status },
@@ -122,15 +129,17 @@ export async function POST(request: NextRequest) {
           // upstream closed or aborted — stop cleanly
         } finally {
           reader.releaseLock();
-          await writeInlineInsightLog({
-            timestamp,
-            endpoint,
-            body,
-            responseText,
-            error: errorMessage || undefined,
-            status: upstream.status,
-            durationMs: Date.now() - startedAt,
-          });
+          if (debugLogging) {
+            await writeInlineInsightLog({
+              timestamp,
+              endpoint,
+              body,
+              responseText,
+              error: errorMessage || undefined,
+              status: upstream.status,
+              durationMs: Date.now() - startedAt,
+            });
+          }
           controller.close();
         }
       },
@@ -144,14 +153,16 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    await writeInlineInsightLog({
-      timestamp,
-      endpoint,
-      body,
-      error: error instanceof Error ? error.message : 'Failed to reach upstream',
-      status: 500,
-      durationMs: Date.now() - startedAt,
-    });
+    if (debugLogging) {
+      await writeInlineInsightLog({
+        timestamp,
+        endpoint,
+        body,
+        error: error instanceof Error ? error.message : 'Failed to reach upstream',
+        status: 500,
+        durationMs: Date.now() - startedAt,
+      });
+    }
     return Response.json(
       { error: error instanceof Error ? error.message : 'Failed to reach upstream' },
       { status: 500 },

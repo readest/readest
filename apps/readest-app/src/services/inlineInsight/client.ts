@@ -18,6 +18,10 @@ export const INLINE_INSIGHT_SEPARATOR = '===DETAILS===';
 
 export type InlineInsightCallLogger = (entry: InlineInsightLogEntry) => void | Promise<void>;
 
+export function isInlineInsightDebugLoggingEnabled(): boolean {
+  return process.env['NEXT_PUBLIC_INLINE_INSIGHT_DEBUG_LOGGING'] === 'true';
+}
+
 export const SYSTEM_PROMPT = `You are a reading assistant. The user selected text from a book, but may not have asked an explicit question.
 Infer the most likely reading question from the selected text and surrounding context, then answer strictly in the target language specified in the user message.
 The context, selected text, question directions, and examples may use another language. Do not follow their language. The final output must use only the target language.

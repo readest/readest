@@ -106,14 +106,16 @@ After:
   -> 未命中则调用 provider 的 Chat Completions stream
   -> InlineInsightPopup 解析简述和详述并流式渲染
   -> 完整响应写入本地缓存
-  -> 每次真实 LLM call 写入 logs/inlineinsight/*.md 调试日志
+  -> 开启 INLINE_INSIGHT_DEBUG_LOGGING 时，每次真实 LLM call 写入 logs/inlineinsight/*.md 调试日志
 ```
 
 Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/inlineinsight/chat` 代理，避免浏览器 CORS 限制。模型列表在 Web 环境通过 `POST /api/inlineinsight/models` 代理，API key 放在请求体中，不再放入查询字符串。
 
 ## 调试日志
 
-每一次 Inline Insight chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。
+设置 `INLINE_INSIGHT_DEBUG_LOGGING=true` 后，每一次 Inline Insight chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。该开关默认关闭，仅建议在本地开发调试时开启。`pnpm dev-web` 默认启用该环境变量。
+
+Tauri 直连路径在前端判断 `NEXT_PUBLIC_INLINE_INSIGHT_DEBUG_LOGGING=true` 后写日志。Web 代理路径在服务端判断 `INLINE_INSIGHT_DEBUG_LOGGING=true` 后写日志。
 
 - Web/dev 代理路径写入 `logs/inlineinsight/`。
 - Tauri 直连路径优先写入当前工作目录的 `logs/inlineinsight/`，失败时回退到系统应用 Log 目录。
@@ -173,7 +175,7 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
 
 - Web 代理只允许 `http` 和 `https` endpoint。
 - 模型列表代理支持 `POST`，避免 API key 进入 URL。
-- 代理不再写本地 `logs/inlineinsight` 文件，减少构建兼容风险和敏感内容落盘。
+- 仅在环境变量显式开启时写本地 `logs/inlineinsight` 文件，减少敏感内容落盘。
 - 选中文本、上下文和模型响应仍会发送给用户配置的 provider；UI 需要让用户自行选择可信 provider。
 
 ## 测试

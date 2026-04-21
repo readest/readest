@@ -28,7 +28,7 @@ Inline Insight is designed for quick answers while reading. You do not need to f
 - Allows a target answer language to be configured; by default, it follows the Readest UI language.
 - Allows the initial Inline Insight system prompt to be customized from the settings panel.
 - Adds configurable answer directions in the settings panel, such as character relationships, place background, classical Chinese translation, historical context, and literary function.
-- Writes real LLM call logs during local development to `apps/readest-app/logs/inlineinsight/` for request and response debugging.
+- Can write real LLM call logs during local development when `INLINE_INSIGHT_DEBUG_LOGGING=true`.
 
 ### Basic Usage
 
