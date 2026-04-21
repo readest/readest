@@ -6,7 +6,7 @@ export interface InlineInsightCacheInput {
   baseUrl: string;
   model: string;
   questionDirections: string[];
-  uiLanguage: string;
+  targetLanguage: string;
   selectedText: string;
   context: string;
 }
@@ -17,13 +17,15 @@ interface InlineInsightCacheEntry {
 }
 
 export function buildInlineInsightCacheKey(input: InlineInsightCacheInput): string {
+  // Hash the semantic inputs so repeated lookups can reuse results without leaking raw
+  // book text into storage keys.
   return `${CACHE_PREFIX}${hashString(
     JSON.stringify([
       input.provider,
       input.baseUrl,
       input.model,
       input.questionDirections,
-      input.uiLanguage,
+      input.targetLanguage,
       input.selectedText,
       input.context,
     ]),
@@ -40,6 +42,8 @@ export function readInlineInsightCache(key: string, ttlMinutes: number): string 
     const entry = JSON.parse(raw) as Partial<InlineInsightCacheEntry>;
     if (typeof entry.createdAt !== 'number' || typeof entry.text !== 'string') return null;
     if (!entry.text.trim()) {
+      // Older versions could persist empty payloads; drop them eagerly so they do not keep
+      // shadowing future successful requests.
       storage.removeItem(key);
       return null;
     }
@@ -93,6 +97,7 @@ function getLocalStorage(): Storage | null {
 }
 
 function pruneInlineInsightCache(storage: Storage): void {
+  // Keep cache maintenance local and cheap: sort by freshness and drop the oldest tail.
   const entries = getInlineInsightCacheKeys(storage)
     .map((key) => {
       try {
@@ -121,6 +126,7 @@ function getInlineInsightCacheKeys(storage: Storage): string[] {
 }
 
 function hashString(value: string): string {
+  // FNV-1a is sufficient here: deterministic, fast, and compact for local cache keys.
   let hash = 0x811c9dc5;
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i);

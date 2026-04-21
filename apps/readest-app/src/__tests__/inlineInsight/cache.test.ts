@@ -11,7 +11,7 @@ const input = {
   baseUrl: 'http://127.0.0.1:11434',
   model: 'qwen2.5:7b',
   questionDirections: [],
-  uiLanguage: 'zh-CN',
+  targetLanguage: 'zh-CN',
   selectedText: 'episteme',
   context: 'Before\nSelected\nafter',
 };

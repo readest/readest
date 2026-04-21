@@ -24,6 +24,8 @@ export function extractContext(selection: TextSelection, maxChars: number): stri
     const endBlock = findBlockAncestor(range.endContainer) ?? startBlock;
     if (!startBlock) return selectedText;
 
+    // Split the remaining character budget around the selection so the model sees
+    // just enough local context on both sides without pulling in a whole chapter.
     const budget = Math.max(0, maxChars - selectedText.length);
     const beforeBudget = Math.floor(budget / 2);
     const afterBudget = budget - beforeBudget;
@@ -106,6 +108,8 @@ function collectReadableBlocks(root: Element): Element[] {
       if (SKIP_TAGS.has(el.tagName)) return nodeFilter.FILTER_REJECT;
       if (!BLOCK_TAGS.has(el.tagName)) return nodeFilter.FILTER_SKIP;
       if (!normalizeText(el.textContent ?? '')) return nodeFilter.FILTER_SKIP;
+      // Only keep leaf-level readable blocks. Parent containers tend to duplicate the same
+      // text as their descendants and make the final context much noisier.
       return hasChildBlock(el) ? nodeFilter.FILTER_SKIP : nodeFilter.FILTER_ACCEPT;
     },
   });

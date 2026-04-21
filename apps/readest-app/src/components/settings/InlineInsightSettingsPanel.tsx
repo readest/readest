@@ -101,6 +101,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
   };
 
   useEffect(() => {
+    // Effects below save incremental field changes. Keep a ref to the latest settings so
+    // asynchronous saves always merge against the newest snapshot.
     settingsRef.current = settings;
   }, [settings]);
 
@@ -154,6 +156,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
         : '';
       let fetchInit: RequestInit | undefined;
       if (!isTauriAppPlatform()) {
+        // Browser builds fetch through the local proxy so provider CORS policy does not
+        // block model discovery.
         fetchUrl = '/api/inlineinsight/models';
         fetchInit = {
           method: 'POST',
@@ -260,6 +264,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
     if (!isMounted.current) return;
     const normalized = inlineInsightSystemPrompt.trim() ? inlineInsightSystemPrompt : '';
     if (normalized !== inlineInsightSettings.systemPrompt) {
+      // Prompt edits can change the model output substantially, so invalidate previous
+      // Inline Insight cache entries before saving the new prompt.
       clearInlineInsightCache();
       saveInlineInsightSetting('systemPrompt', normalized);
     }

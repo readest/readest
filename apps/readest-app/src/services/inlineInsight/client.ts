@@ -65,11 +65,11 @@ Answer the user's question directly, concisely, and accurately. Use strictly the
 The context, selected text, previous answer, and user question may use another language. Do not follow their language. The final output must use only the target language.
 Do not output <think>, reasoning traces, or internal thoughts.`;
 
-function formatLanguageInstruction(uiLanguage: string): string {
+function formatTargetLanguageInstruction(targetLanguage: string): string {
   return [
-    `TARGET LANGUAGE: ${uiLanguage}`,
-    `You must write the entire answer in ${uiLanguage}.`,
-    `Do not answer in the language of the selected text or context unless it is ${uiLanguage}.`,
+    `TARGET LANGUAGE: ${targetLanguage}`,
+    `You must write the entire answer in ${targetLanguage}.`,
+    `Do not answer in the language of the selected text or context unless it is ${targetLanguage}.`,
   ].join('\n');
 }
 
@@ -90,12 +90,12 @@ export async function* streamInlineInsight(
   selectedText: string,
   context: string,
   settings: InlineInsightSettings,
-  uiLanguage: string,
+  targetLanguage: string,
   signal?: AbortSignal,
   logger?: InlineInsightCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
-  const languageInstruction = formatLanguageInstruction(uiLanguage);
+  const languageInstruction = formatTargetLanguageInstruction(targetLanguage);
   const systemPrompt = settings.systemPrompt.trim() || SYSTEM_PROMPT;
   const userMessage = [
     languageInstruction,
@@ -113,7 +113,7 @@ export async function* streamInlineInsight(
           baseUrl: normalizeBaseUrl(settings.baseUrl),
           model: settings.model,
           questionDirections: settings.questionDirections,
-          uiLanguage,
+          targetLanguage,
           selectedText,
           context,
         })
@@ -154,12 +154,12 @@ export async function* streamInlineInsightFollowUp(
   context: string,
   previousAnswer: string,
   settings: InlineInsightSettings,
-  uiLanguage: string,
+  targetLanguage: string,
   signal?: AbortSignal,
   logger?: InlineInsightCallLogger,
 ): AsyncGenerator<string> {
   const directions = formatQuestionDirections(settings);
-  const languageInstruction = formatLanguageInstruction(uiLanguage);
+  const languageInstruction = formatTargetLanguageInstruction(targetLanguage);
   const userMessage = [
     languageInstruction,
     directions,
@@ -207,6 +207,7 @@ async function* streamChatCompletions(
   try {
     let response: Response;
     if (isTauriAppPlatform()) {
+      // Tauri can call the provider directly, which avoids the browser's CORS restrictions.
       response = await fetch(chatEndpoint, {
         method: 'POST',
         headers: {
@@ -217,6 +218,8 @@ async function* streamChatCompletions(
         signal,
       });
     } else {
+      // The web build proxies requests through Next.js so custom endpoints and API keys
+      // do not depend on provider-side CORS support.
       response = await fetch('/api/inlineinsight/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -253,6 +256,8 @@ async function* streamChatCompletions(
         const lines = sseBuffer.split('\n');
         sseBuffer = lines.pop() ?? '';
 
+        // Preserve any incomplete trailing frame in `sseBuffer`; only fully separated lines
+        // are safe to parse as SSE events.
         for (const line of lines) {
           const delta = extractDeltaFromSseLine(line);
           if (delta) {

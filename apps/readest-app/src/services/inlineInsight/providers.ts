@@ -137,14 +137,20 @@ export function getInlineInsightThinkingControlParams(
 
   switch (provider) {
     case 'ollama':
+      // Ollama exposes a provider-specific `think` switch. `gpt-oss` rejects plain false,
+      // so we request the lowest supported mode instead of turning it off outright.
       return model.includes('gpt-oss') ? { think: 'low' } : { think: false };
     case 'openrouter':
+      // OpenRouter accepts a structured reasoning config and can explicitly exclude it.
       return { reasoning: { effort: 'none', exclude: true } };
     case 'gemini':
+      // Gemini support varies by family. Only send the parameter where the API accepts it.
       if (isGemini25ThinkingOptionalModel(model)) return { reasoning_effort: 'none' };
       if (isGemini3FlashModel(model)) return { reasoning_effort: 'minimal' };
       return {};
     case 'openai':
+      // OpenAI reasoning-capable models do not have a universal "off", so we bias them
+      // toward the fastest available reasoning level.
       return isOpenAIReasoningModel(model) ? { reasoning_effort: 'minimal' } : {};
     default:
       return {};

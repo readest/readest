@@ -16,6 +16,8 @@ async function fetchModels(endpoint: string | null, apiKey?: string) {
   } catch {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
   }
+  // This endpoint is a lightweight proxy. Restrict schemes so a user-provided base URL
+  // cannot be abused to read local files or other non-HTTP resources.
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
     return NextResponse.json({ error: 'Unsupported URL protocol' }, { status: 400 });
   }

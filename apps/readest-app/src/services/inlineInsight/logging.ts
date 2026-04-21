@@ -1,3 +1,5 @@
+import type { AppService } from '@/types/system';
+
 export type InlineInsightChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -12,6 +14,22 @@ export interface InlineInsightLogEntry {
   error?: string;
   status?: number;
   durationMs?: number;
+}
+
+export function createInlineInsightTauriLogger(appService: AppService) {
+  return async (entry: InlineInsightLogEntry) => {
+    const filename = createInlineInsightLogFilename(new Date(entry.timestamp));
+    const content = formatInlineInsightLog(entry);
+    try {
+      await appService.writeFile(`logs/inlineinsight/${filename}`, 'None', content);
+    } catch (error) {
+      try {
+        await appService.writeFile(`inlineinsight/${filename}`, 'Log', content);
+      } catch (fallbackError) {
+        console.error('Failed to write Inline Insight log', error, fallbackError);
+      }
+    }
+  };
 }
 
 export function createInlineInsightLogFilename(date = new Date()): string {
@@ -68,6 +86,8 @@ export function getInlineInsightMessagesFromBody(body: unknown): InlineInsightCh
 }
 
 export function extractInlineInsightDeltaFromSseText(text: string): string {
+  // Some providers flush multiple SSE frames in a single chunk, so parse line-by-line and
+  // concatenate only the text-bearing deltas.
   return text
     .split('\n')
     .map((line) => extractDeltaFromSseLine(line))
@@ -93,6 +113,8 @@ function extractDelta(parsed: unknown): string {
   const choice = parsed['choices'][0];
   if (!isRecord(choice)) return '';
 
+  // Streaming responses usually emit `delta.content`, while some compatible endpoints only
+  // send `message.content` in the final event. Support both shapes in one parser.
   if (isRecord(choice['delta']) && typeof choice['delta']['content'] === 'string') {
     return choice['delta']['content'];
   }

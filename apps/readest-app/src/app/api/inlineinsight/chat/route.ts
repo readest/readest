@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return Response.json({ error: 'Invalid endpoint URL' }, { status: 400 });
   }
+  // The proxy intentionally only forwards HTTP(S) requests to user-configured LLM servers.
   if (!['http:', 'https:'].includes(parsedEndpoint.protocol)) {
     return Response.json({ error: 'Unsupported endpoint protocol' }, { status: 400 });
   }
@@ -119,6 +120,8 @@ export async function POST(request: NextRequest) {
             sseBuffer += decoder.decode(value, { stream: true });
             const lines = sseBuffer.split('\n');
             sseBuffer = lines.pop() ?? '';
+            // Each upstream chunk may contain partial SSE frames. Only parse complete lines
+            // and keep the unfinished tail for the next read.
             responseText += extractInlineInsightDeltaFromSseText(lines.join('\n'));
             controller.enqueue(value);
           }
