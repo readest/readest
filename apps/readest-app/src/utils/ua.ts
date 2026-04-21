@@ -69,3 +69,9 @@ export const parseWebViewVersion = (appService: AppService | null): number => {
   const versionMatch = webViewInfo.match(/([0-9]+)\./);
   return versionMatch ? parseFloat(versionMatch[1]!) : 0;
 };
+
+export const isSafariBrowser = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  return /Safari/.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
+};

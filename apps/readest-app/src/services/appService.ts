@@ -57,6 +57,7 @@ export abstract class BaseAppService implements AppService {
   hasIAP = false;
   canCustomizeRootDir = false;
   canReadExternalDir = false;
+  supportsCanvasContext2DFilter = true;
   distChannel = 'readest' as DistChannel;
   storefrontRegionCode: string | null = null;
   isOnlineCatalogsAccessible = true;
