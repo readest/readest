@@ -31,34 +31,43 @@ interface InlineInsightPopupProps {
   onDismiss?: () => void;
 }
 
-const InsightItem: React.FC<{ brief: InlineInsightItem; detail?: string }> = ({
-  brief,
-  detail,
-}) => {
+const InsightItem: React.FC<{
+  brief: InlineInsightItem;
+  detail?: string;
+  actionSlot?: React.ReactNode;
+}> = ({ brief, detail, actionSlot }) => {
   const [expanded, setExpanded] = useState(false);
+  const hasActions = Boolean(detail || actionSlot);
 
   return (
-    <div className='border-base-content/10 rounded border p-2'>
+    <div className='rounded p-1'>
       <p className='text-base-content/80 select-text text-xs leading-relaxed'>
         <span className='text-base-content mr-1 font-semibold'>[{brief.label}]</span>
         {expanded && detail ? detail : brief.content}
       </p>
-      {detail && (
-        <button
-          type='button'
-          className='text-base-content/50 mt-1 flex items-center gap-0.5 text-[10px] hover:underline'
-          onClick={() => setExpanded((v) => !v)}
-        >
-          {expanded ? (
-            <>
-              <PiCaretUp className='size-3' /> Less
-            </>
-          ) : (
-            <>
-              <PiCaretDown className='size-3' /> More
-            </>
-          )}
-        </button>
+      {hasActions && (
+        <div className='mt-1 flex items-center justify-between gap-2'>
+          <div className='min-w-0'>
+            {detail && (
+              <button
+                type='button'
+                className='text-base-content/50 flex items-center gap-0.5 text-[10px] hover:underline'
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? (
+                  <>
+                    <PiCaretUp className='size-3' /> Less
+                  </>
+                ) : (
+                  <>
+                    <PiCaretDown className='size-3' /> More
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          {actionSlot}
+        </div>
       )}
     </div>
   );
@@ -245,9 +254,6 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     }
   };
 
-  const selectedPreview =
-    selection.text.length > 60 ? `${selection.text.slice(0, 60)}…` : selection.text;
-
   return (
     <div>
       <Popup
@@ -259,15 +265,11 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
         onDismiss={onDismiss}
       >
         <div
-          className='text-base-content relative flex flex-col gap-2 overflow-hidden p-3'
+          className='text-base-content relative flex flex-col gap-2 overflow-hidden p-2.5'
           style={{
             maxHeight: `${followUpOpen ? popupHeight + 160 : popupHeight}px`,
           }}
         >
-          <p className='text-base-content/50 truncate text-[11px] italic'>
-            &ldquo;{selectedPreview}&rdquo;
-          </p>
-
           {!settings.enabled ? (
             <p className='text-base-content/60 text-xs'>{_('Enable Inline Insight in Settings')}</p>
           ) : !settings.model ? (
@@ -278,8 +280,8 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
             <p className='text-error text-xs'>{error}</p>
           ) : (
             <div
-              className='flex min-h-0 flex-col gap-2 overflow-y-auto pb-6'
-              style={{ maxHeight: `${Math.max(120, popupHeight - 44)}px` }}
+              className='flex min-h-0 flex-col gap-1.5 overflow-y-auto'
+              style={{ maxHeight: `${Math.max(120, popupHeight - (followUpOpen ? 60 : 20))}px` }}
             >
               {loading && briefItems.length === 0 && (
                 <div className='flex items-center gap-2 text-xs'>
@@ -292,19 +294,36 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
                   key={`${brief.label}-${index}`}
                   brief={brief}
                   detail={detailMap[brief.label]}
+                  actionSlot={
+                    !followUpOpen &&
+                    settings.enabled &&
+                    settings.model &&
+                    index === briefItems.length - 1 && (
+                      <button
+                        type='button'
+                        className='text-base-content/50 flex shrink-0 items-center gap-1 text-[10px] hover:underline'
+                        aria-label={_('Ask follow-up')}
+                        onClick={() => setFollowUpOpen(true)}
+                      >
+                        <PiChatCircle className='size-3.5' />
+                        {_('Follow-up')}
+                      </button>
+                    )
+                  }
                 />
               ))}
+              {!loading && briefItems.length === 0 && (
+                <button
+                  type='button'
+                  className='text-base-content/50 flex items-center justify-end gap-1 text-[10px] hover:underline'
+                  aria-label={_('Ask follow-up')}
+                  onClick={() => setFollowUpOpen(true)}
+                >
+                  <PiChatCircle className='size-3.5' />
+                  {_('Follow-up')}
+                </button>
+              )}
             </div>
-          )}
-          {!followUpOpen && settings.enabled && settings.model && (
-            <button
-              type='button'
-              className='btn btn-circle btn-xs btn-ghost bg-base-100/80 absolute bottom-2 right-2'
-              aria-label={_('Ask follow-up')}
-              onClick={() => setFollowUpOpen(true)}
-            >
-              <PiChatCircle className='size-4' />
-            </button>
           )}
           {followUpOpen && settings.enabled && settings.model && (
             <InlineInsightFollowUpPanel
