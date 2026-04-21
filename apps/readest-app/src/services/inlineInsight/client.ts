@@ -1,4 +1,5 @@
 import { isTauriAppPlatform } from '@/services/environment';
+import { TRANSLATOR_LANGS } from '@/services/constants';
 import type { InlineInsightSettings } from './types';
 import {
   buildInlineInsightCacheKey,
@@ -52,12 +53,13 @@ Rules:
 - Give the answer directly; do not output <think>, reasoning traces, or internal thoughts
 - Language: you must use the target language specified in the user message. If the context language differs from the target language, still answer only in the target language. This includes the text inside [] tags.
 
-Example:
-[meaning] Systematic knowledge verified by reason, distinct from opinion or craft.
+<example>
+[Meaning] Systematic knowledge verified by reason, distinct from opinion or craft.
 
 ===DETAILS===
 
-[meaning] Episteme (ἐπιστήμη) refers to knowledge validated through logical argument, in contrast with doxa (opinion) or techne (craft or skill). Plato used it for knowledge of eternal truths, while Foucault later reinterpreted it as the implicit framework that structures thought in a historical period.
+[Meaning] Episteme (ἐπιστήμη) refers to knowledge validated through logical argument, in contrast with doxa (opinion) or techne (craft or skill). Plato used it for knowledge of eternal truths, while Foucault later reinterpreted it as the implicit framework that structures thought in a historical period.
+</example>
 `;
 
 const FOLLOW_UP_SYSTEM_PROMPT = `You are a reading assistant. The user will ask follow-up questions based on selected text, context, and your previous explanation.
@@ -65,11 +67,19 @@ Answer the user's question directly, concisely, and accurately. Use strictly the
 The context, selected text, previous answer, and user question may use another language. Do not follow their language. The final output must use only the target language.
 Do not output <think>, reasoning traces, or internal thoughts.`;
 
+function formatTargetLanguageLabel(targetLanguage: string): string {
+  const normalized = targetLanguage.trim();
+  if (!normalized) return 'the requested language';
+
+  return TRANSLATOR_LANGS[normalized as keyof typeof TRANSLATOR_LANGS] ?? normalized;
+}
+
 function formatTargetLanguageInstruction(targetLanguage: string): string {
+  const targetLanguageLabel = formatTargetLanguageLabel(targetLanguage);
   return [
-    `TARGET LANGUAGE: ${targetLanguage}`,
-    `You must write the entire answer in ${targetLanguage}.`,
-    `Do not answer in the language of the selected text or context unless it is ${targetLanguage}.`,
+    `TARGET LANGUAGE: ${targetLanguageLabel}`,
+    `You must write the entire answer in ${targetLanguageLabel}.`,
+    `Do not answer in the language of the selected text or context unless it is ${targetLanguageLabel}.`,
   ].join('\n');
 }
 
