@@ -42,8 +42,6 @@ Inline Insight 主要以 OpenAI Chat Completions 协议作为统一调用面。O
 | LM Studio REST    | `http://localhost:1234`                                   | 可选     |
 | OpenAI-compatible | 用户自定义                                                | 通常需要 |
 
-历史配置中的 `openai-compatible` 会在 UI 层归一化为 `custom-openai-compatible`，避免旧设置失效。
-
 ## Thinking 控制
 
 各家 LLM API 没有统一的 `thinking=false` 标准。Inline Insight 不在 UI 暴露 thinking 开关；该功能默认追求快速直答，代码路径会尽量关闭 thinking，不能关闭时压到最低或仅通过 prompt 约束直接回答。LM Studio REST 使用原生 `reasoning` 参数，固定发送 `"off"`。

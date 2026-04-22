@@ -5,15 +5,15 @@ import {
   getInlineInsightModelsEndpoint,
   getInlineInsightProviderConfig,
   getMinimalThinkingParams,
-  normalizeInlineInsightProvider,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
 } from '@/services/inlineInsight/providers';
 
 describe('Inline Insight providers', () => {
-  it('maps the legacy OpenAI-compatible provider to the custom preset', () => {
-    expect(normalizeInlineInsightProvider('openai-compatible')).toBe('custom-openai-compatible');
-    expect(getInlineInsightProviderConfig('openai-compatible').label).toBe('OpenAI-compatible');
+  it('uses the custom OpenAI-compatible preset directly', () => {
+    expect(getInlineInsightProviderConfig('custom-openai-compatible').label).toBe(
+      'OpenAI-compatible',
+    );
   });
 
   it('builds provider endpoints from the configured base URL', () => {
@@ -52,16 +52,15 @@ describe('Inline Insight providers', () => {
     expect(inlineInsightProviderSupportsApiKey('lmstudio-rest')).toBe(true);
   });
 
-  it('adds provider-specific thinking suppression parameters when supported', () => {
-    expect(getMinimalThinkingParams(DEFAULT_INLINE_INSIGHT_SETTINGS)).toEqual({
-      think: false,
-    });
+  it('only adds thinking suppression parameters for providers with known-safe request shapes', () => {
+    expect(getMinimalThinkingParams(DEFAULT_INLINE_INSIGHT_SETTINGS)).toEqual({});
     expect(
       getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        provider: 'openrouter',
+        provider: 'gemini',
+        model: 'gemini-3.1-flash-lite-preview',
       }),
-    ).toEqual({ reasoning: { effort: 'none', exclude: true } });
+    ).toEqual({ reasoning_effort: 'minimal' });
     expect(
       getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
@@ -69,6 +68,13 @@ describe('Inline Insight providers', () => {
         model: 'gemini-2.5-flash',
       }),
     ).toEqual({ reasoning_effort: 'none' });
+    expect(
+      getMinimalThinkingParams({
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        provider: 'gemini',
+        model: 'gemini-2.5-pro',
+      }),
+    ).toEqual({});
     expect(
       getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,

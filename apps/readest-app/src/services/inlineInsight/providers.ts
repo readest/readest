@@ -3,7 +3,7 @@ import type { InlineInsightProvider, InlineInsightSettings } from './types';
 type InlineInsightProviderProtocol = 'ollama' | 'openai-compatible' | 'lmstudio-rest';
 
 export interface InlineInsightProviderConfig {
-  id: Exclude<InlineInsightProvider, 'openai-compatible'>;
+  id: InlineInsightProvider;
   label: string;
   protocol: InlineInsightProviderProtocol;
   defaultBaseUrl: string;
@@ -80,18 +80,11 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
   },
 ];
 
-export function normalizeInlineInsightProvider(
-  provider: InlineInsightProvider,
-): InlineInsightProviderConfig['id'] {
-  return provider === 'openai-compatible' ? 'custom-openai-compatible' : provider;
-}
-
 export function getInlineInsightProviderConfig(
   provider: InlineInsightProvider,
 ): InlineInsightProviderConfig {
-  const normalized = normalizeInlineInsightProvider(provider);
   return (
-    INLINE_INSIGHT_PROVIDER_OPTIONS.find((option) => option.id === normalized) ??
+    INLINE_INSIGHT_PROVIDER_OPTIONS.find((option) => option.id === provider) ??
     INLINE_INSIGHT_PROVIDER_OPTIONS[0]!
   );
 }
@@ -126,7 +119,7 @@ export function inlineInsightProviderSupportsApiKey(provider: InlineInsightProvi
 }
 
 export function getMinimalThinkingParams(settings: InlineInsightSettings): Record<string, unknown> {
-  const provider = normalizeInlineInsightProvider(settings.provider);
+  const provider = settings.provider;
   const model = settings.model.toLowerCase();
 
   // See https://ai.google.dev/gemini-api/docs/openai#thinking

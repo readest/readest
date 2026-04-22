@@ -6,8 +6,13 @@ export type InlineInsightProvider =
   | 'groq'
   | 'gemini'
   | 'lmstudio-rest'
-  | 'custom-openai-compatible'
-  | 'openai-compatible';
+  | 'custom-openai-compatible';
+
+export interface InlineInsightProviderProfile {
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+}
 
 export interface InlineInsightSettings {
   enabled: boolean;
@@ -15,6 +20,7 @@ export interface InlineInsightSettings {
   baseUrl: string;
   model: string;
   apiKey: string;
+  providerProfiles: Partial<Record<InlineInsightProvider, InlineInsightProviderProfile>>;
   maxContextChars: number;
   targetLanguage: string;
   systemPrompt: string;
@@ -28,6 +34,7 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   baseUrl: 'http://127.0.0.1:11434',
   model: '',
   apiKey: '',
+  providerProfiles: {},
   maxContextChars: 2000,
   targetLanguage: '',
   systemPrompt: '',

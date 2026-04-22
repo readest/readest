@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createInlineInsightLogFilename,
   extractInlineInsightDeltaFromSseText,
+  extractInlineInsightStreamDeltaFromSseText,
   formatInlineInsightLog,
   getInlineInsightMessagesFromBody,
 } from '@/services/inlineInsight/logging';
@@ -28,6 +29,7 @@ describe('Inline Insight logging', () => {
       requestBody: body,
       messages: getInlineInsightMessagesFromBody(body),
       responseText: 'answer',
+      reasoningText: 'thinking trace',
       status: 200,
       durationMs: 123,
     });
@@ -40,6 +42,8 @@ describe('Inline Insight logging', () => {
     expect(markdown).toContain('user prompt');
     expect(markdown).toContain('## Response');
     expect(markdown).toContain('answer');
+    expect(markdown).toContain('## Reasoning');
+    expect(markdown).toContain('thinking trace');
   });
 
   it('extracts streamed chat deltas from SSE text', () => {
@@ -50,5 +54,18 @@ describe('Inline Insight logging', () => {
     ].join('\n');
 
     expect(extractInlineInsightDeltaFromSseText(sse)).toBe('hello');
+  });
+
+  it('extracts both content and reasoning deltas from SSE text', () => {
+    const sse = [
+      'data: {"choices":[{"delta":{"reasoning_content":"thi"}}]}',
+      'data: {"choices":[{"delta":{"reasoning_content":"nk"}}]}',
+      'data: {"choices":[{"delta":{"content":"done"}}]}',
+    ].join('\n');
+
+    expect(extractInlineInsightStreamDeltaFromSseText(sse)).toEqual({
+      content: 'done',
+      reasoning: 'think',
+    });
   });
 });

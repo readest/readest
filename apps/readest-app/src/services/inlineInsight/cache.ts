@@ -1,6 +1,6 @@
 import type { InlineInsightChatMessage } from './logging';
 import type { InlineInsightProvider } from './types';
-import { normalizeBaseUrl, normalizeInlineInsightProvider } from './providers';
+import { normalizeBaseUrl } from './providers';
 
 const CACHE_PREFIX = 'readest.inlineInsight.v1.';
 const MAX_CACHE_ENTRIES = 200;
@@ -12,7 +12,7 @@ export class InlineInsightCacheInput {
     readonly model: string,
     readonly messages: InlineInsightChatMessage[],
   ) {
-    this.provider = normalizeInlineInsightProvider(provider);
+    this.provider = provider;
     this.baseUrl = normalizeBaseUrl(baseUrl);
   }
 
