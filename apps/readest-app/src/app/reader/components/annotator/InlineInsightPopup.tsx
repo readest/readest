@@ -143,6 +143,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   const _ = useTranslation();
   const { settings: _settings_store } = useSettingsStore();
   const [loading, setLoading] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [error, setError] = useState('');
 
   const settings = useMemo(
@@ -165,6 +166,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
 
     abortRef.current = new AbortController();
     setLoading(true);
+    setThinking(false);
     setError('');
     setAnswer('');
 
@@ -172,14 +174,18 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     contextRef.current = context;
 
     try {
-      for await (const delta of streamInlineInsight(
+      for await (const chunk of streamInlineInsight(
         selection.text,
         context,
         settings,
         targetLanguage,
         abortRef.current.signal,
       )) {
-        setAnswer((prev) => prev + delta);
+        if (chunk.type === 'reasoning') {
+          setThinking(true);
+          continue;
+        }
+        setAnswer((prev) => prev + chunk.text);
         setLoading(false);
       }
     } catch (err) {
@@ -226,7 +232,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     contextRef.current = context;
 
     try {
-      for await (const delta of streamInlineInsightFollowUp(
+      for await (const chunk of streamInlineInsightFollowUp(
         question,
         selection.text,
         context,
@@ -235,7 +241,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
         targetLanguage,
         followUpAbortRef.current.signal,
       )) {
-        setFollowUpAnswer((prev) => prev + delta);
+        if (chunk.type === 'content') {
+          setFollowUpAnswer((prev) => prev + chunk.text);
+        }
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
@@ -278,7 +286,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
               {loading && briefItems.length === 0 && (
                 <div className='flex items-center gap-2 text-xs'>
                   <div className='border-primary size-4 animate-spin rounded-full border-2 border-t-transparent' />
-                  {_('Analyzing...')}
+                  {thinking ? _('Thinking...') : _('Analyzing...')}
                 </div>
               )}
               {briefItems.map((brief, index) => (

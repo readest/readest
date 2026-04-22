@@ -1,7 +1,10 @@
 import { isWebAppPlatform } from '@/services/environment';
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { InlineInsightCacheInput, readInlineInsightCache, writeInlineInsightCache } from './cache';
-import type { InlineInsightChatMessage } from './logging';
+import {
+  extractInlineInsightStreamDeltaFromSseLine,
+  type InlineInsightChatMessage,
+} from './logging';
 import type { InlineInsightSettings } from './types';
 import {
   getInlineInsightChatEndpoint,
@@ -9,55 +12,9 @@ import {
   inlineInsightProviderSupportsApiKey,
 } from './providers';
 
-function extractDeltaFromSseLine(line: string): string {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith('data:')) return '';
-  const data = trimmed.slice(5).trim();
-  if (!data || data === '[DONE]') return '';
-
-  try {
-    return extractDelta(JSON.parse(data));
-  } catch {
-    return '';
-  }
-}
-
-function extractDelta(parsed: unknown): string {
-  if (
-    parsed !== null &&
-    typeof parsed === 'object' &&
-    'choices' in parsed &&
-    Array.isArray((parsed as Record<string, unknown>)['choices'])
-  ) {
-    const choices = (parsed as { choices: unknown[] }).choices;
-    if (choices.length > 0) {
-      const choice = choices[0];
-      if (choice !== null && typeof choice === 'object' && 'delta' in choice) {
-        const delta = (choice as { delta: unknown }).delta;
-        if (
-          delta !== null &&
-          typeof delta === 'object' &&
-          'content' in delta &&
-          typeof (delta as { content: unknown }).content === 'string'
-        ) {
-          return (delta as { content: string }).content;
-        }
-      }
-      if (choice !== null && typeof choice === 'object' && 'message' in choice) {
-        const message = (choice as { message: unknown }).message;
-        if (
-          message !== null &&
-          typeof message === 'object' &&
-          'content' in message &&
-          typeof (message as { content: unknown }).content === 'string'
-        ) {
-          return (message as { content: string }).content;
-        }
-      }
-    }
-  }
-  return '';
-}
+export type InlineInsightStreamChunk =
+  | { type: 'content'; text: string }
+  | { type: 'reasoning'; text: string };
 
 export const INLINE_INSIGHT_SEPARATOR = '===DETAILS===';
 
@@ -132,12 +89,12 @@ async function* streamInlineInsightCached(
   messages: InlineInsightChatMessage[],
   settings: InlineInsightSettings,
   signal?: AbortSignal,
-): AsyncGenerator<string> {
+): AsyncGenerator<InlineInsightStreamChunk> {
   const cacheKey = buildInlineInsightCacheKey(settings, messages);
   if (settings.cacheEnabled) {
     const cachedText = readInlineInsightCache(cacheKey);
     if (cachedText) {
-      yield cachedText;
+      yield { type: 'content', text: cachedText };
       return;
     }
   }
@@ -146,9 +103,11 @@ async function* streamInlineInsightCached(
   let completed = false;
 
   try {
-    for await (const delta of streamChatCompletions(messages, settings, signal)) {
-      responseText += delta;
-      yield delta;
+    for await (const chunk of streamChatCompletions(messages, settings, signal)) {
+      if (chunk.type === 'content') {
+        responseText += chunk.text;
+      }
+      yield chunk;
     }
     completed = true;
   } finally {
@@ -169,7 +128,7 @@ export async function* streamInlineInsight(
   settings: InlineInsightSettings,
   targetLanguage: string,
   signal?: AbortSignal,
-): AsyncGenerator<string> {
+): AsyncGenerator<InlineInsightStreamChunk> {
   const directions = formatQuestionDirections(settings);
   const languageInstruction = formatTargetLanguageInstruction(targetLanguage);
   const systemPrompt = settings.systemPrompt.trim() || SYSTEM_PROMPT;
@@ -200,7 +159,7 @@ export async function* streamInlineInsightFollowUp(
   settings: InlineInsightSettings,
   targetLanguage: string,
   signal?: AbortSignal,
-): AsyncGenerator<string> {
+): AsyncGenerator<InlineInsightStreamChunk> {
   const directions = formatQuestionDirections(settings);
   const languageInstruction = formatTargetLanguageInstruction(targetLanguage);
   previousAnswer = previousAnswer.trim();
@@ -230,7 +189,7 @@ async function* streamChatCompletions(
   messages: InlineInsightChatMessage[],
   settings: InlineInsightSettings,
   signal?: AbortSignal,
-): AsyncGenerator<string> {
+): AsyncGenerator<InlineInsightStreamChunk> {
   const chatEndpoint = getInlineInsightChatEndpoint(settings);
   const apiKey = inlineInsightProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
 
@@ -293,9 +252,12 @@ async function* streamChatCompletions(
       // Preserve any incomplete trailing frame in `sseBuffer`; only fully separated lines
       // are safe to parse as SSE events.
       for (const line of lines) {
-        const delta = extractDeltaFromSseLine(line);
-        if (delta) {
-          yield delta;
+        const delta = extractInlineInsightStreamDeltaFromSseLine(line);
+        if (delta.reasoning) {
+          yield { type: 'reasoning', text: delta.reasoning };
+        }
+        if (delta.content) {
+          yield { type: 'content', text: delta.content };
         }
       }
     }

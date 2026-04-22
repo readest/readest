@@ -9,9 +9,15 @@ export interface InlineInsightLogEntry {
   requestBody: unknown;
   messages: InlineInsightChatMessage[];
   responseText?: string;
+  reasoningText?: string;
   error?: string;
   status?: number;
   durationMs?: number;
+}
+
+export interface InlineInsightStreamDelta {
+  content: string;
+  reasoning: string;
 }
 
 export function createInlineInsightLogFilename(date = new Date()): string {
@@ -52,6 +58,7 @@ export function formatInlineInsightLog(entry: InlineInsightLogEntry): string {
     '',
     entry.error ?? entry.responseText ?? '',
     '',
+    entry.reasoningText ? ['## Reasoning', '', entry.reasoningText, ''].join('\n') : '',
   ].join('\n');
 }
 
@@ -68,42 +75,54 @@ export function getInlineInsightMessagesFromBody(body: unknown): InlineInsightCh
 }
 
 export function extractInlineInsightDeltaFromSseText(text: string): string {
+  return extractInlineInsightStreamDeltaFromSseText(text).content;
+}
+
+export function extractInlineInsightStreamDeltaFromSseText(text: string): InlineInsightStreamDelta {
   // Some providers flush multiple SSE frames in a single chunk, so parse line-by-line and
   // concatenate only the text-bearing deltas.
-  return text
-    .split('\n')
-    .map((line) => extractDeltaFromSseLine(line))
-    .join('');
+  return text.split('\n').reduce(
+    (result, line) => {
+      const delta = extractInlineInsightStreamDeltaFromSseLine(line);
+      result.content += delta.content;
+      result.reasoning += delta.reasoning;
+      return result;
+    },
+    { content: '', reasoning: '' } satisfies InlineInsightStreamDelta,
+  );
 }
 
-function extractDeltaFromSseLine(line: string): string {
+export function extractInlineInsightStreamDeltaFromSseLine(line: string): InlineInsightStreamDelta {
   const trimmed = line.trim();
-  if (!trimmed.startsWith('data:')) return '';
+  if (!trimmed.startsWith('data:')) return { content: '', reasoning: '' };
   const data = trimmed.slice(5).trim();
-  if (!data || data === '[DONE]') return '';
+  if (!data || data === '[DONE]') return { content: '', reasoning: '' };
 
   try {
-    return extractDelta(JSON.parse(data));
+    return extractInlineInsightStreamDelta(JSON.parse(data));
   } catch {
-    return '';
+    return { content: '', reasoning: '' };
   }
 }
 
-function extractDelta(parsed: unknown): string {
-  if (!isRecord(parsed) || !Array.isArray(parsed['choices'])) return '';
+function extractInlineInsightStreamDelta(parsed: unknown): InlineInsightStreamDelta {
+  if (!isRecord(parsed) || !Array.isArray(parsed['choices'])) {
+    return { content: '', reasoning: '' };
+  }
 
   const choice = parsed['choices'][0];
-  if (!isRecord(choice)) return '';
+  if (!isRecord(choice)) return { content: '', reasoning: '' };
+  const delta = isRecord(choice['delta']) ? choice['delta'] : null;
+  const message = isRecord(choice['message']) ? choice['message'] : null;
 
-  // Streaming responses usually emit `delta.content`, while some compatible endpoints only
-  // send `message.content` in the final event. Support both shapes in one parser.
-  if (isRecord(choice['delta']) && typeof choice['delta']['content'] === 'string') {
-    return choice['delta']['content'];
-  }
-  if (isRecord(choice['message']) && typeof choice['message']['content'] === 'string') {
-    return choice['message']['content'];
-  }
-  return '';
+  return {
+    // Streaming responses usually emit `delta.content`, while some compatible endpoints only
+    // send `message.content` in the final event. Support both shapes in one parser.
+    content: extractTextField(delta, ['content']) || extractTextField(message, ['content']),
+    reasoning:
+      extractTextField(delta, ['reasoning_content', 'reasoning', 'thinking']) ||
+      extractTextField(message, ['reasoning_content', 'reasoning', 'thinking']),
+  };
 }
 
 function formatRole(role: InlineInsightChatMessage['role']): string {
@@ -123,4 +142,26 @@ function isInlineInsightRole(value: unknown): value is InlineInsightChatMessage[
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
+}
+
+function extractTextField(container: Record<string, unknown> | null, keys: string[]): string {
+  if (!container) return '';
+  for (const key of keys) {
+    const text = readTextLikeValue(container[key]);
+    if (text) return text;
+  }
+  return '';
+}
+
+function readTextLikeValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => readTextLikeValue(item)).join('');
+  }
+  if (isRecord(value)) {
+    if (typeof value['text'] === 'string') return value['text'];
+    if (typeof value['content'] === 'string') return value['content'];
+    if (typeof value['value'] === 'string') return value['value'];
+  }
+  return '';
 }

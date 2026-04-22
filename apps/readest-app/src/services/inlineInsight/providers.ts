@@ -127,49 +127,31 @@ export function inlineInsightProviderSupportsApiKey(provider: InlineInsightProvi
 
 export function getMinimalThinkingParams(settings: InlineInsightSettings): Record<string, unknown> {
   const provider = normalizeInlineInsightProvider(settings.provider);
+  const model = settings.model.toLowerCase();
+
+  // See https://ai.google.dev/gemini-api/docs/openai#thinking
+  if (provider === 'gemini') {
+    if (model.includes('gemini-2.5') && !model.includes('pro')) {
+      return { reasoning_effort: 'none' };
+    }
+    if (model.includes('gemini-3')) {
+      return { reasoning_effort: 'minimal' };
+    }
+  }
+
+  // Likely working well
+  if (provider === 'openrouter') {
+    return { reasoning: { effort: 'none' } };
+  }
+
+  // Likely not working, but won't crash
   if (provider === 'lmstudio-rest') {
     return { reasoning: 'off' };
   }
 
-  const model = settings.model.toLowerCase();
+  // if (provider === 'ollama') {
+  //   return { reasoning_effort: 'none' };
+  // }
 
-  switch (provider) {
-    case 'ollama':
-      // Ollama exposes a provider-specific `think` switch. `gpt-oss` rejects plain false,
-      // so we request the lowest supported mode instead of turning it off outright.
-      return model.includes('gpt-oss') ? { think: 'low' } : { think: false };
-    case 'openrouter':
-      // OpenRouter accepts a structured reasoning config and can explicitly exclude it.
-      return { reasoning: { effort: 'none', exclude: true } };
-    case 'gemini':
-      // Gemini support varies by family. Only send the parameter where the API accepts it.
-      if (isGemini25ThinkingOptionalModel(model)) return { reasoning_effort: 'none' };
-      if (isGemini3FlashModel(model)) return { reasoning_effort: 'minimal' };
-      return {};
-    case 'openai':
-      // OpenAI reasoning-capable models do not have a universal "off", so we bias them
-      // toward the fastest available reasoning level.
-      return isOpenAIReasoningModel(model) ? { reasoning_effort: 'minimal' } : {};
-    default:
-      return {};
-  }
-}
-
-function isOpenAIReasoningModel(model: string): boolean {
-  return (
-    /^o\d/.test(model) ||
-    model.startsWith('gpt-5') ||
-    model.startsWith('gpt-oss') ||
-    model.includes('/o') ||
-    model.includes('/gpt-5') ||
-    model.includes('/gpt-oss')
-  );
-}
-
-function isGemini25ThinkingOptionalModel(model: string): boolean {
-  return model.includes('gemini-2.5') && !model.includes('pro');
-}
-
-function isGemini3FlashModel(model: string): boolean {
-  return model.includes('gemini-3') && model.includes('flash');
+  return {};
 }

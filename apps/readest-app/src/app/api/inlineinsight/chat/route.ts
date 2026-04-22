@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import {
   createInlineInsightLogFilename,
-  extractInlineInsightDeltaFromSseText,
+  extractInlineInsightStreamDeltaFromSseText,
   formatInlineInsightLog,
   getInlineInsightMessagesFromBody,
 } from '@/services/inlineInsight/logging';
@@ -20,6 +20,7 @@ async function writeInlineInsightLog(entry: {
   endpoint: string;
   body: unknown;
   responseText?: string;
+  reasoningText?: string;
   error?: string;
   status?: number;
   durationMs?: number;
@@ -35,6 +36,7 @@ async function writeInlineInsightLog(entry: {
         requestBody: entry.body,
         messages: getInlineInsightMessagesFromBody(entry.body),
         responseText: entry.responseText,
+        reasoningText: entry.reasoningText,
         error: entry.error,
         status: entry.status,
         durationMs: entry.durationMs,
@@ -114,6 +116,7 @@ export async function POST(request: NextRequest) {
         const decoder = new TextDecoder();
         let sseBuffer = '';
         let responseText = '';
+        let reasoningText = '';
         let errorMessage = '';
         try {
           while (true) {
@@ -124,11 +127,15 @@ export async function POST(request: NextRequest) {
             sseBuffer = lines.pop() ?? '';
             // Each upstream chunk may contain partial SSE frames. Only parse complete lines
             // and keep the unfinished tail for the next read.
-            responseText += extractInlineInsightDeltaFromSseText(lines.join('\n'));
+            const delta = extractInlineInsightStreamDeltaFromSseText(lines.join('\n'));
+            responseText += delta.content;
+            reasoningText += delta.reasoning;
             controller.enqueue(value);
           }
           sseBuffer += decoder.decode();
-          responseText += extractInlineInsightDeltaFromSseText(sseBuffer);
+          const delta = extractInlineInsightStreamDeltaFromSseText(sseBuffer);
+          responseText += delta.content;
+          reasoningText += delta.reasoning;
         } catch (error) {
           errorMessage = error instanceof Error ? error.message : 'Upstream stream failed';
           // upstream closed or aborted — stop cleanly
@@ -140,6 +147,7 @@ export async function POST(request: NextRequest) {
               endpoint,
               body,
               responseText,
+              reasoningText,
               error: errorMessage || undefined,
               status: upstream.status,
               durationMs: Date.now() - startedAt,
