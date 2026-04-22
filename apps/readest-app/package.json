@@ -155,6 +155,7 @@
     "nunjucks": "^3.2.4",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
+    "partial-json": "^0.1.7",
     "posthog-js": "^1.246.0",
     "react": "19.2.5",
     "react-color": "^2.19.3",

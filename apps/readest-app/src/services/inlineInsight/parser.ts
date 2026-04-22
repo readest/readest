@@ -1,4 +1,4 @@
-import { INLINE_INSIGHT_SEPARATOR } from './client';
+import { Allow, parse } from 'partial-json';
 
 export interface InlineInsightItem {
   label: string;
@@ -12,40 +12,57 @@ export interface ParsedInlineInsightSections {
 }
 
 export function parseInlineInsightSections(text: string): ParsedInlineInsightSections {
-  const separatorIndex = text.indexOf(INLINE_INSIGHT_SEPARATOR);
-  const briefRaw = separatorIndex >= 0 ? text.slice(0, separatorIndex) : text;
-  const detailRaw =
-    separatorIndex >= 0 ? text.slice(separatorIndex + INLINE_INSIGHT_SEPARATOR.length) : '';
-  const briefItems = parseInlineInsightItems(briefRaw);
-  const detailItems = parseInlineInsightItems(detailRaw);
+  const parsed = parseInlineInsightPayload(text);
+  const originalBriefItems = normalizeInlineInsightItems(parsed?.brief);
+  const originalDetailItems = normalizeInlineInsightItems(parsed?.details);
+  const briefLabels = new Set(originalBriefItems.map((item) => item.label));
+  const matchedDetailItems = originalDetailItems.filter((item) => briefLabels.has(item.label));
+  const displayBriefItems = [
+    ...originalBriefItems,
+    // Small models sometimes keep the detail item but drift on the brief label. Show those
+    // orphaned details in the brief list as well so the popup still surfaces the answer.
+    ...originalDetailItems.filter((item) => !briefLabels.has(item.label)),
+  ];
 
   return {
-    briefItems,
-    detailItems,
-    // Details are keyed by label because the prompt guarantees the same ordering and tag set
-    // across the brief and detailed sections.
-    detailMap: Object.fromEntries(detailItems.map((item) => [item.label, item.content])),
+    briefItems: displayBriefItems,
+    detailItems: matchedDetailItems,
+    detailMap: Object.fromEntries(matchedDetailItems.map((item) => [item.label, item.content])),
   };
 }
 
-function parseInlineInsightItems(text: string): InlineInsightItem[] {
-  const seen = new Set<string>();
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .flatMap((line) => {
-      const match = line.match(/^\[([^\]]+)\]\s+(.+)/);
-      if (!match) return [];
+interface InlineInsightPayload {
+  brief?: unknown;
+  details?: unknown;
+}
 
-      const item = { label: match[1]!, content: match[2]! };
+function parseInlineInsightPayload(text: string): InlineInsightPayload | null {
+  const jsonStart = text.indexOf('{');
+  if (jsonStart < 0) return null;
 
-      // Workaround: Models can repeat the same line while streaming. Deduplicate here so the popup
-      // remains stable even if the transport emits overlapping chunks.
-      const key = `${item.label}\n${item.content}`;
-      if (seen.has(key)) return [];
-      seen.add(key);
+  try {
+    return parse(text.slice(jsonStart), Allow.STR | Allow.OBJ | Allow.ARR) as InlineInsightPayload;
+  } catch {
+    return null;
+  }
+}
 
-      return [item];
-    });
+function normalizeInlineInsightItems(value: unknown): InlineInsightItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (item === null || typeof item !== 'object') return [];
+
+    const label =
+      typeof (item as { label?: unknown }).label === 'string'
+        ? (item as { label: string }).label.trim()
+        : '';
+    const content =
+      typeof (item as { content?: unknown }).content === 'string'
+        ? (item as { content: string }).content.trim()
+        : '';
+    if (!label || !content) return [];
+
+    return [{ label, content }];
+  });
 }

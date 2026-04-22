@@ -65,38 +65,22 @@ export const SYSTEM_PROMPT = `You are a reading assistant. The user selected tex
 Infer the most likely reading question from the selected text and surrounding context, then answer strictly in the target language specified in the user message.
 The context, selected text, question directions, and examples may use another language. Do not follow their language. The final output must use only the target language.
 
-### Common Insight Types (Tags)
-- Unfamiliar term or proper noun -> meaning
-- Rare character or word -> pronunciation
-- Non-modern or difficult prose -> translation
-- Person, place, historical event, allusion, metaphor, or literary function -> concise explanation
-
-### Output Format
-
-The output must have exactly two sections, separated by a single line containing ===DETAILS===.
-
-First section: one short line for each insight:
-[tag] One concise sentence.
-
-===DETAILS===
-
-Second section: one detailed paragraph for each insight, in the same order:
-[tag] 2-4 sentences with explanation, background, or deeper meaning.
-
 Rules:
-- Tags: examples include meaning, background, idiom, person, place, translation, allusion
-- Brief lines: avoid filler such as "This means..." or "It refers to..."
-- Details: do not merely repeat the brief line
-- Plain text only: no markdown and no code blocks
+- Output a single JSON object only. No markdown, no code fences, no prose before or after JSON.
+- Start output immediately with {"brief":[
+- The root object must contain exactly two keys in this order: "brief", then "details"
+- "brief" must be an array of objects: {"label":"...","content":"..."}
+- "details" must be an array of objects: {"label":"...","content":"..."}
+- Generate every brief item first, then generate every detail item
+- Keep the same labels and the same order in both arrays
+- Each brief content must be one concise sentence
+- Each detail content must be 2-4 sentences and must add useful context beyond the brief content
+- Labels should be short categories such as "meaning", "background", "translation", "person", "place", "allusion"
 - Give the answer directly; do not output <think>, reasoning traces, or internal thoughts
-- Language: you must use the target language specified in the user message. If the context language differs from the target language, still answer only in the target language. This includes the text inside [] tags.
+- Language: you must use the target language specified in the user message. If the context language differs from the target language, still answer only in the target language. This includes "label" and "content" values.
 
 <example>
-[Meaning] Systematic knowledge verified by reason, distinct from opinion or craft.
-
-===DETAILS===
-
-[Meaning] Episteme (ἐπιστήμη) refers to knowledge validated through logical argument, in contrast with doxa (opinion) or techne (craft or skill). Plato used it for knowledge of eternal truths, while Foucault later reinterpreted it as the implicit framework that structures thought in a historical period.
+{"brief":[{"label":"Meaning","content":"Systematic knowledge verified by reason, distinct from opinion or craft."}],"details":[{"label":"Meaning","content":"Episteme refers to knowledge validated through logical argument, in contrast with doxa or techne. Plato used it for knowledge of enduring truths, and Foucault later reused the term for the hidden framework that shapes thought in a historical era."}]}
 </example>
 `;
 
@@ -177,8 +161,7 @@ async function* streamInlineInsightCached(
 /**
  * Streams Inline Insight output from an OpenAI-compatible endpoint.
  * Yields raw text delta chunks as they arrive.
- * The output format is two sections separated by INLINE_INSIGHT_SEPARATOR:
- *   brief lines first, then detail paragraphs.
+ * The model emits a single JSON object whose `brief` array is streamed before `details`.
  */
 export async function* streamInlineInsight(
   selectedText: string,
