@@ -40,6 +40,10 @@ Inline Insight is designed for quick answers while reading. You do not need to f
 6. Open a book, select text, and click **Ask AI** in the annotation toolbar.
 7. Read the brief answer in the popup, expand details, or type a follow-up question in the compact input at the bottom.
 
+Development note:
+
+- In `next dev` / `pnpm dev-web`, opening the Inline Insight popup may print a transient `Error: aborted` message in the terminal. This appears to be a development-mode streaming/runtime artifact and does not affect the actual Inline Insight response. Caused by `reactStrictMode`.
+
 Local model examples:
 
 - **Ollama**: start Ollama, choose `Ollama`, set Base URL to `http://127.0.0.1:11434`, and enter an installed model name.
