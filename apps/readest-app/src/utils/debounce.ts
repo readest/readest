@@ -1,10 +1,15 @@
 interface DebounceOptions {
   emitLast?: boolean;
+  leading?: boolean;
 }
 
 /**
  * Debounces a function by waiting `delay` ms after the last call before executing it.
  * If `emitLast` is false, it cancels the call instead of delaying it.
+ * If `leading` is true, fires immediately on the first call and ignores subsequent
+ * calls until `delay` ms of silence has elapsed — useful for burst-style inputs
+ * (e.g. trackpad wheel events with inertia) where the user expects an immediate
+ * response per gesture rather than a delay until the burst ends.
  *
  * @returns A debounced function with additional `flush` and `cancel` methods.
  */
@@ -17,6 +22,20 @@ export const debounce = <T extends (...args: Parameters<T>) => void | Promise<vo
   let lastArgs: Parameters<T> | null = null;
 
   const debounced = (...args: Parameters<T>): void => {
+    if (options.leading) {
+      const shouldFire = !timeout;
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => {
+        timeout = null;
+      }, delay);
+      if (shouldFire) {
+        func(...args);
+      }
+      return;
+    }
+
     lastArgs = args;
     if (timeout) {
       clearTimeout(timeout);

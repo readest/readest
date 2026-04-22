@@ -20,12 +20,16 @@ export const useMouseEvent = (
   useEffect(() => {
     handlePageFlipRef.current = handlePageFlip;
   }, [handlePageFlip]);
+  // Use a leading-edge debounce so trackpad two-finger swipes feel responsive:
+  // the first wheel event in a gesture flips the page immediately and further
+  // events (including inertia tails) are swallowed until 500ms of silence.
   const debounceFlip = useMemo(
     () =>
       debounce(
         (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) =>
           handlePageFlipRef.current(msg),
-        100,
+        500,
+        { leading: true },
       ),
     [],
   );

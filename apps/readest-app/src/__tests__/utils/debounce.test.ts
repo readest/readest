@@ -144,6 +144,63 @@ describe('debounce', () => {
   });
 
   // -----------------------------------------------------------------------
+  // leading: true
+  // -----------------------------------------------------------------------
+  describe('leading: true', () => {
+    it('fires immediately on the first call', () => {
+      const fn = vi.fn();
+      const debounced = debounce(fn, 100, { leading: true });
+      debounced('first');
+      expect(fn).toHaveBeenCalledOnce();
+      expect(fn).toHaveBeenCalledWith('first');
+    });
+
+    it('ignores subsequent calls during the silence window', () => {
+      const fn = vi.fn();
+      const debounced = debounce(fn, 100, { leading: true });
+      debounced('first');
+      for (let i = 0; i < 10; i++) {
+        vi.advanceTimersByTime(50);
+        debounced(`burst-${i}`);
+      }
+      // Despite continuous calls every 50ms resetting the timer,
+      // only the first one fires.
+      expect(fn).toHaveBeenCalledOnce();
+      expect(fn).toHaveBeenCalledWith('first');
+    });
+
+    it('allows the next call to fire after the silence window elapses', () => {
+      const fn = vi.fn();
+      const debounced = debounce(fn, 100, { leading: true });
+      debounced('first');
+      vi.advanceTimersByTime(150); // window elapses with no new calls
+      debounced('second');
+      expect(fn).toHaveBeenCalledTimes(2);
+      expect(fn).toHaveBeenLastCalledWith('second');
+    });
+
+    it('extends the silence window on each call', () => {
+      const fn = vi.fn();
+      const debounced = debounce(fn, 100, { leading: true });
+      debounced('first');
+      expect(fn).toHaveBeenCalledOnce();
+      // Keep calling at 50ms intervals — each resets the cooldown timer,
+      // so even after >100ms total, the cooldown is still active.
+      vi.advanceTimersByTime(50);
+      debounced();
+      vi.advanceTimersByTime(50);
+      debounced();
+      vi.advanceTimersByTime(50);
+      debounced();
+      expect(fn).toHaveBeenCalledOnce();
+      vi.advanceTimersByTime(100); // finally silence elapses
+      debounced('next');
+      expect(fn).toHaveBeenCalledTimes(2);
+      expect(fn).toHaveBeenLastCalledWith('next');
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // Edge cases
   // -----------------------------------------------------------------------
   describe('edge cases', () => {
