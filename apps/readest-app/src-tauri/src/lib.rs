@@ -411,9 +411,28 @@ pub fn run() {
                 builder
             };
 
-            win_builder.build().unwrap();
+            #[cfg(not(target_os = "macos"))]
+            {
+                win_builder.build().unwrap();
+            }
             // let win = win_builder.build().unwrap();
             // win.open_devtools();
+
+            #[cfg(target_os = "macos")]
+            {
+                let window = win_builder.build().unwrap();
+                // On macOS, closing a window (via Cmd+W or the red traffic light) should
+                // not quit the app — only Cmd+Q should. Hide the window instead so the
+                // app keeps running in the dock, and restore it when the user reopens
+                // the app from the dock.
+                let window_for_close = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_for_close.hide();
+                    }
+                });
+            }
 
             #[cfg(target_os = "macos")]
             macos::menu::setup_macos_menu(app.handle())?;
@@ -428,18 +447,34 @@ pub fn run() {
             #[allow(unused_variables)]
             |app_handle, event| {
                 #[cfg(target_os = "macos")]
-                if let tauri::RunEvent::Opened { urls } = event {
-                    let files = urls
-                        .into_iter()
-                        .filter_map(|url| url.to_file_path().ok())
-                        .collect::<Vec<_>>();
+                match event {
+                    tauri::RunEvent::Opened { urls } => {
+                        let files = urls
+                            .into_iter()
+                            .filter_map(|url| url.to_file_path().ok())
+                            .collect::<Vec<_>>();
 
-                    let app_handler_clone = app_handle.clone();
-                    allow_file_in_scopes(app_handle, files.clone());
-                    app_handle.listen("window-ready", move |_| {
-                        println!("Window is ready, proceeding to handle files.");
-                        set_window_open_with_files(&app_handler_clone, files.clone());
-                    });
+                        let app_handler_clone = app_handle.clone();
+                        allow_file_in_scopes(app_handle, files.clone());
+                        app_handle.listen("window-ready", move |_| {
+                            println!("Window is ready, proceeding to handle files.");
+                            set_window_open_with_files(&app_handler_clone, files.clone());
+                        });
+                    }
+                    // When the user reopens the app from the dock after closing all
+                    // windows, re-show the main window instead of leaving the dock
+                    // icon inert.
+                    tauri::RunEvent::Reopen {
+                        has_visible_windows: false,
+                        ..
+                    } => {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            let _ = window.unminimize();
+                        }
+                    }
+                    _ => {}
                 }
             },
         );
