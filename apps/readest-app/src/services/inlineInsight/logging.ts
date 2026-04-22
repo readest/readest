@@ -1,5 +1,3 @@
-import type { AppService } from '@/types/system';
-
 export type InlineInsightChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -14,22 +12,6 @@ export interface InlineInsightLogEntry {
   error?: string;
   status?: number;
   durationMs?: number;
-}
-
-export function createInlineInsightTauriLogger(appService: AppService) {
-  return async (entry: InlineInsightLogEntry) => {
-    const filename = createInlineInsightLogFilename(new Date(entry.timestamp));
-    const content = formatInlineInsightLog(entry);
-    try {
-      await appService.writeFile(`logs/inlineinsight/${filename}`, 'None', content);
-    } catch (error) {
-      try {
-        await appService.writeFile(`inlineinsight/${filename}`, 'Log', content);
-      } catch (fallbackError) {
-        console.error('Failed to write Inline Insight log', error, fallbackError);
-      }
-    }
-  };
 }
 
 export function createInlineInsightLogFilename(date = new Date()): string {

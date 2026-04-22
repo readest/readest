@@ -47,11 +47,10 @@ async function writeInlineInsightLog(entry: {
 }
 
 export async function POST(request: NextRequest) {
-  const { endpoint, apiKey, body } = (await request.json()) as {
-    endpoint: string;
-    apiKey?: string;
-    body: unknown;
-  };
+  // Proxies requests from web build to skip CORS requirement. Return as stream
+  const endpoint = request.headers.get('X-InlineInsight-Endpoint') ?? '';
+  const apiKey = request.headers.get('X-InlineInsight-Api-Key') ?? undefined;
+  const body = (await request.json()) as unknown;
   const startedAt = Date.now();
   const timestamp = new Date(startedAt).toISOString();
   const debugLogging = isInlineInsightDebugLoggingEnabled();
@@ -84,6 +83,7 @@ export async function POST(request: NextRequest) {
       signal: request.signal,
     });
 
+    // POST Error handling
     if (!upstream.ok) {
       const text = await upstream.text().catch(() => '');
       if (debugLogging) {
@@ -101,11 +101,13 @@ export async function POST(request: NextRequest) {
         { status: upstream.status },
       );
     }
+
     const upstreamBody = upstream.body;
     if (!upstreamBody) {
       return Response.json({ error: 'Upstream response body is empty' }, { status: 502 });
     }
 
+    // Streaming
     const stream = new ReadableStream({
       async start(controller) {
         const reader = upstreamBody.getReader();

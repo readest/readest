@@ -1,20 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  buildInlineInsightCacheKey,
   clearInlineInsightCache,
+  InlineInsightCacheInput,
   readInlineInsightCache,
   writeInlineInsightCache,
 } from '@/services/inlineInsight/cache';
 
-const input = {
-  provider: 'ollama',
-  baseUrl: 'http://127.0.0.1:11434',
-  model: 'qwen2.5:7b',
-  questionDirections: [],
-  targetLanguage: 'zh-CN',
-  selectedText: 'episteme',
-  context: 'Before\nSelected\nafter',
-};
+const input = new InlineInsightCacheInput('ollama', 'http://127.0.0.1:11434', 'qwen2.5:7b', [
+  { role: 'system', content: 'Use zh-CN' },
+  { role: 'user', content: 'Context:\nBefore\nSelected\nafter\n\nSelected text:\nepisteme' },
+]);
 
 describe('Inline Insight cache', () => {
   beforeEach(() => {
@@ -22,15 +17,15 @@ describe('Inline Insight cache', () => {
   });
 
   it('builds stable keys without storing raw context in the key', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
 
-    expect(key).toBe(buildInlineInsightCacheKey(input));
-    expect(key).not.toContain(input.selectedText);
-    expect(key).not.toContain(input.context);
+    expect(key).toBe(input.buildKey());
+    expect(key).not.toContain('episteme');
+    expect(key).not.toContain('Before\nSelected\nafter');
   });
 
   it('reads cached responses before TTL expiry', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
 
     writeInlineInsightCache(key, 'cached answer');
 
@@ -38,7 +33,7 @@ describe('Inline Insight cache', () => {
   });
 
   it('does not write empty responses', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
 
     writeInlineInsightCache(key, '   \n');
 
@@ -46,7 +41,7 @@ describe('Inline Insight cache', () => {
   });
 
   it('removes old empty responses when reading', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
     localStorage.setItem(key, JSON.stringify({ createdAt: Date.now(), text: '   ' }));
 
     expect(readInlineInsightCache(key, 60)).toBeNull();
@@ -54,7 +49,7 @@ describe('Inline Insight cache', () => {
   });
 
   it('expires old responses', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
     localStorage.setItem(
       key,
       JSON.stringify({ createdAt: Date.now() - 2 * 60 * 1000, text: 'old answer' }),
@@ -65,7 +60,7 @@ describe('Inline Insight cache', () => {
   });
 
   it('clears Inline Insight entries only', () => {
-    const key = buildInlineInsightCacheKey(input);
+    const key = input.buildKey();
     writeInlineInsightCache(key, 'cached answer');
     localStorage.setItem('other', 'keep');
 

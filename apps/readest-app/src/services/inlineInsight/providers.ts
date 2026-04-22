@@ -125,9 +125,7 @@ export function inlineInsightProviderSupportsApiKey(provider: InlineInsightProvi
   return config.requiresApiKey || config.supportsApiKey === true;
 }
 
-export function getInlineInsightThinkingControlParams(
-  settings: InlineInsightSettings,
-): Record<string, unknown> {
+export function getMinimalThinkingParams(settings: InlineInsightSettings): Record<string, unknown> {
   const provider = normalizeInlineInsightProvider(settings.provider);
   if (provider === 'lmstudio-rest') {
     return { reasoning: 'off' };

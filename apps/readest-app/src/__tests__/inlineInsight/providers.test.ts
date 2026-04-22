@@ -4,7 +4,7 @@ import {
   getInlineInsightChatEndpoint,
   getInlineInsightModelsEndpoint,
   getInlineInsightProviderConfig,
-  getInlineInsightThinkingControlParams,
+  getMinimalThinkingParams,
   normalizeInlineInsightProvider,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
@@ -53,24 +53,24 @@ describe('Inline Insight providers', () => {
   });
 
   it('adds provider-specific thinking suppression parameters when supported', () => {
-    expect(getInlineInsightThinkingControlParams(DEFAULT_INLINE_INSIGHT_SETTINGS)).toEqual({
+    expect(getMinimalThinkingParams(DEFAULT_INLINE_INSIGHT_SETTINGS)).toEqual({
       think: false,
     });
     expect(
-      getInlineInsightThinkingControlParams({
+      getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
         provider: 'openrouter',
       }),
     ).toEqual({ reasoning: { effort: 'none', exclude: true } });
     expect(
-      getInlineInsightThinkingControlParams({
+      getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
         provider: 'gemini',
         model: 'gemini-2.5-flash',
       }),
     ).toEqual({ reasoning_effort: 'none' });
     expect(
-      getInlineInsightThinkingControlParams({
+      getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
         provider: 'lmstudio-rest',
       }),
@@ -79,7 +79,7 @@ describe('Inline Insight providers', () => {
 
   it('does not add unknown thinking suppression parameters for generic providers', () => {
     expect(
-      getInlineInsightThinkingControlParams({
+      getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
         provider: 'custom-openai-compatible',
       }),

@@ -5,22 +5,14 @@ import Popup from '@/components/Popup';
 import { Position, TextSelection } from '@/utils/sel';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useEnv } from '@/context/EnvContext';
 import { getLocale } from '@/utils/misc';
-import { isTauriAppPlatform } from '@/services/environment';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 import { extractContext } from '@/services/inlineInsight/contextExtractor';
-import {
-  streamInlineInsight,
-  streamInlineInsightFollowUp,
-  isInlineInsightDebugLoggingEnabled,
-} from '@/services/inlineInsight/client';
+import { streamInlineInsight, streamInlineInsightFollowUp } from '@/services/inlineInsight/client';
 import {
   parseInlineInsightSections,
   type InlineInsightItem,
 } from '@/services/inlineInsight/parser';
-import type { InlineInsightCallLogger } from '@/services/inlineInsight/client';
-import { createInlineInsightTauriLogger } from '@/services/inlineInsight/logging';
 
 interface InlineInsightPopupProps {
   selection: TextSelection;
@@ -150,7 +142,6 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
 }) => {
   const _ = useTranslation();
   const { settings: _settings_store } = useSettingsStore();
-  const { appService } = useEnv();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -168,13 +159,6 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
 
   const abortRef = useRef<AbortController | null>(null);
   const contextRef = useRef('');
-  const inlineInsightLogger = useMemo<InlineInsightCallLogger | undefined>(() => {
-    if (!isInlineInsightDebugLoggingEnabled() || !appService || !isTauriAppPlatform()) {
-      return undefined;
-    }
-
-    return createInlineInsightTauriLogger(appService);
-  }, [appService]);
 
   const callLLM = useCallback(async () => {
     if (!settings.enabled || !settings.model) return;
@@ -194,7 +178,6 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
         settings,
         targetLanguage,
         abortRef.current.signal,
-        inlineInsightLogger,
       )) {
         setAnswer((prev) => prev + delta);
         setLoading(false);
@@ -205,7 +188,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
         setLoading(false);
       }
     }
-  }, [selection, settings, inlineInsightLogger, targetLanguage, _]);
+  }, [selection, settings, targetLanguage, _]);
 
   useEffect(() => {
     callLLM();
@@ -251,7 +234,6 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
         settings,
         targetLanguage,
         followUpAbortRef.current.signal,
-        inlineInsightLogger,
       )) {
         setFollowUpAnswer((prev) => prev + delta);
       }
