@@ -66,9 +66,6 @@ const InlineInsightSettingsPanel: React.FC = () => {
   const [inlineInsightCacheEnabled, setInlineInsightCacheEnabled] = useState(
     inlineInsightSettings.cacheEnabled,
   );
-  const [inlineInsightCacheTtl, setInlineInsightCacheTtl] = useState(
-    inlineInsightSettings.cacheTtlMinutes,
-  );
   const [inlineInsightModels, setInlineInsightModels] = useState<string[]>([]);
   const [fetchingInlineInsightModels, setFetchingInlineInsightModels] = useState(false);
 
@@ -291,14 +288,6 @@ const InlineInsightSettingsPanel: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inlineInsightCacheEnabled]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (inlineInsightCacheTtl !== inlineInsightSettings.cacheTtlMinutes) {
-      saveInlineInsightSetting('cacheTtlMinutes', inlineInsightCacheTtl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inlineInsightCacheTtl]);
 
   const handleInlineInsightProviderChange = (value: InlineInsightProvider) => {
     const nextConfig = getInlineInsightProviderConfig(value);
@@ -556,7 +545,7 @@ const InlineInsightSettingsPanel: React.FC = () => {
             {inlineInsightCacheEnabled && (
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
                 <div className='flex w-full items-center justify-between gap-2'>
-                  <span>{_('Cache TTL Minutes')}</span>
+                  <span>{_('Cached responses are reused until you clear them.')}</span>
                   <button
                     type='button'
                     className='btn btn-outline btn-xs'
@@ -565,14 +554,6 @@ const InlineInsightSettingsPanel: React.FC = () => {
                     {_('Clear Cache')}
                   </button>
                 </div>
-                <input
-                  type='number'
-                  className='input input-bordered input-sm w-full'
-                  value={inlineInsightCacheTtl}
-                  min={10}
-                  max={10080}
-                  onChange={(e) => setInlineInsightCacheTtl(Number(e.target.value))}
-                />
               </div>
             )}
           </div>

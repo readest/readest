@@ -18,7 +18,7 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
     label: 'Ollama (Local)',
     protocol: 'ollama',
     defaultBaseUrl: 'http://127.0.0.1:11434',
-    modelPlaceholder: 'qwen2.5:7b',
+    modelPlaceholder: 'qwen3.5:9b',
     requiresApiKey: false,
   },
   {
@@ -26,7 +26,7 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
     label: 'OpenAI',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'https://api.openai.com',
-    modelPlaceholder: 'gpt-4.1-mini',
+    modelPlaceholder: 'gpt-5.4-mini',
     requiresApiKey: true,
   },
   {
@@ -42,7 +42,7 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
     label: 'OpenRouter',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'https://openrouter.ai/api',
-    modelPlaceholder: 'openai/gpt-4.1-mini',
+    modelPlaceholder: 'openai/gpt-5.4-mini',
     requiresApiKey: true,
   },
   {
@@ -58,7 +58,7 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
     label: 'Gemini',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    modelPlaceholder: 'gemini-2.5-flash-lite',
+    modelPlaceholder: 'gemini-3.1-flash-lite-preview',
     requiresApiKey: true,
   },
   {
@@ -66,7 +66,7 @@ export const INLINE_INSIGHT_PROVIDER_OPTIONS: InlineInsightProviderConfig[] = [
     label: 'LM Studio REST',
     protocol: 'lmstudio-rest',
     defaultBaseUrl: 'http://localhost:1234',
-    modelPlaceholder: 'openai/gpt-oss-20b',
+    modelPlaceholder: 'qwen/qwen3.5-9b',
     requiresApiKey: false,
     supportsApiKey: true,
   },

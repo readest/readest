@@ -29,7 +29,7 @@ describe('Inline Insight cache', () => {
 
     writeInlineInsightCache(key, 'cached answer');
 
-    expect(readInlineInsightCache(key, 60)).toBe('cached answer');
+    expect(readInlineInsightCache(key)).toBe('cached answer');
   });
 
   it('does not write empty responses', () => {
@@ -42,20 +42,9 @@ describe('Inline Insight cache', () => {
 
   it('removes old empty responses when reading', () => {
     const key = input.buildKey();
-    localStorage.setItem(key, JSON.stringify({ createdAt: Date.now(), text: '   ' }));
+    localStorage.setItem(key, '   ');
 
-    expect(readInlineInsightCache(key, 60)).toBeNull();
-    expect(localStorage.getItem(key)).toBeNull();
-  });
-
-  it('expires old responses', () => {
-    const key = input.buildKey();
-    localStorage.setItem(
-      key,
-      JSON.stringify({ createdAt: Date.now() - 2 * 60 * 1000, text: 'old answer' }),
-    );
-
-    expect(readInlineInsightCache(key, 1)).toBeNull();
+    expect(readInlineInsightCache(key)).toBeNull();
     expect(localStorage.getItem(key)).toBeNull();
   });
 

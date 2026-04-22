@@ -143,11 +143,11 @@ Tauri 直连路径在前端判断 `NEXT_PUBLIC_INLINE_INSIGHT_DEBUG_LOGGING=true
 
 Inline Insight 缓存保存在浏览器 `localStorage`：
 
-- key 使用 provider、base URL、model、界面语言、选中文本和上下文的哈希，不把原文放进 key。
-- value 只保存模型响应文本。
-- 默认开启，TTL 为 24 小时。
-- 最多保留 50 条，超出后按创建时间淘汰。
-- 设置面板支持关闭缓存、调整 TTL 和清空缓存。
+- key 使用 provider、base URL、model 和完整 messages 的哈希，不把原文放进 key。
+- value 直接保存模型响应文本。
+- 最多保留 200 条，超出后按创建时间淘汰。
+- 默认开启。
+- 设置面板支持关闭缓存和清空缓存。
 
 缓存仅用于完全相同输入的重复查询；换模型、换 provider、换上下文或换语言都会重新请求。
 
@@ -165,7 +165,6 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   systemPrompt: '',
   questionDirections: [],
   cacheEnabled: true,
-  cacheTtlMinutes: 24 * 60,
 };
 ```
 
@@ -184,4 +183,4 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
 
 - `contextExtractor`: 嵌套正文、同段落前后文、跳过脚本和样式内容。
 - `providers`: endpoint 拼接、旧 provider 兼容、API key 需求。
-- `cache`: key 稳定性、TTL 过期、清理 Inline Insight 缓存。
+- `cache`: key 稳定性、清理空缓存、清空 Inline Insight 缓存。

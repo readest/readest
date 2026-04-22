@@ -135,7 +135,7 @@ async function* streamInlineInsightCached(
 ): AsyncGenerator<string> {
   const cacheKey = buildInlineInsightCacheKey(settings, messages);
   if (settings.cacheEnabled) {
-    const cachedText = readInlineInsightCache(cacheKey, settings.cacheTtlMinutes);
+    const cachedText = readInlineInsightCache(cacheKey);
     if (cachedText) {
       yield cachedText;
       return;

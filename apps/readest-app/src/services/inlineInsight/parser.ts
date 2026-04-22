@@ -16,18 +16,20 @@ export function parseInlineInsightSections(text: string): ParsedInlineInsightSec
   const originalBriefItems = normalizeInlineInsightItems(parsed?.brief);
   const originalDetailItems = normalizeInlineInsightItems(parsed?.details);
   const briefLabels = new Set(originalBriefItems.map((item) => item.label));
-  const matchedDetailItems = originalDetailItems.filter((item) => briefLabels.has(item.label));
-  const displayBriefItems = [
+
+  // Workaround for brief/detail mismatching.
+  // By design, brief/detail should align, but some model may not follow this rule.
+  // (mismatched detail item -> brief item)
+  const finalDetailItems = originalDetailItems.filter((item) => briefLabels.has(item.label));
+  const finalBriefItems = [
     ...originalBriefItems,
-    // Small models sometimes keep the detail item but drift on the brief label. Show those
-    // orphaned details in the brief list as well so the popup still surfaces the answer.
     ...originalDetailItems.filter((item) => !briefLabels.has(item.label)),
   ];
 
   return {
-    briefItems: displayBriefItems,
-    detailItems: matchedDetailItems,
-    detailMap: Object.fromEntries(matchedDetailItems.map((item) => [item.label, item.content])),
+    briefItems: finalBriefItems,
+    detailItems: finalDetailItems,
+    detailMap: Object.fromEntries(finalDetailItems.map((item) => [item.label, item.content])),
   };
 }
 

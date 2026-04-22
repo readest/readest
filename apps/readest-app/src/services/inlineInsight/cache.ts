@@ -3,7 +3,7 @@ import type { InlineInsightProvider } from './types';
 import { normalizeBaseUrl, normalizeInlineInsightProvider } from './providers';
 
 const CACHE_PREFIX = 'readest.inlineInsight.v1.';
-const MAX_CACHE_ENTRIES = 50;
+const MAX_CACHE_ENTRIES = 200;
 
 export class InlineInsightCacheInput {
   constructor(
@@ -28,31 +28,18 @@ export class InlineInsightCacheInput {
   }
 }
 
-interface InlineInsightCacheEntry {
-  createdAt: number;
-  text: string;
-}
-
-export function readInlineInsightCache(key: string, ttlMinutes: number): string | null {
+export function readInlineInsightCache(key: string): string | null {
   const storage = getLocalStorage();
-  if (!storage || ttlMinutes <= 0) return null;
+  if (!storage) return null;
 
   try {
-    const raw = storage.getItem(key);
-    if (!raw) return null;
-    const entry = JSON.parse(raw) as Partial<InlineInsightCacheEntry>;
-    if (typeof entry.createdAt !== 'number' || typeof entry.text !== 'string') return null;
-    if (!entry.text.trim()) {
+    const value = storage.getItem(key);
+    if (typeof value !== 'string') return null;
+    if (!value.trim()) {
       storage.removeItem(key);
       return null;
     }
-
-    const ttlMs = ttlMinutes * 60 * 1000;
-    if (Date.now() - entry.createdAt > ttlMs) {
-      storage.removeItem(key);
-      return null;
-    }
-    return entry.text;
+    return value;
   } catch {
     return null;
   }
@@ -64,13 +51,7 @@ export function writeInlineInsightCache(key: string, text: string): void {
   if (!storage || !normalizedText) return;
 
   try {
-    storage.setItem(
-      key,
-      JSON.stringify({
-        createdAt: Date.now(),
-        text: normalizedText,
-      } satisfies InlineInsightCacheEntry),
-    );
+    storage.setItem(key, normalizedText);
     pruneInlineInsightCache(storage);
   } catch {
     // localStorage can be unavailable or full; cache failures should not affect reading.
@@ -96,19 +77,12 @@ function getLocalStorage(): Storage | null {
 }
 
 function pruneInlineInsightCache(storage: Storage): void {
-  const entries = getInlineInsightCacheKeys(storage)
-    .map((key) => {
-      try {
-        const entry = JSON.parse(storage.getItem(key) ?? '') as Partial<InlineInsightCacheEntry>;
-        return { key, createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : 0 };
-      } catch {
-        return { key, createdAt: 0 };
-      }
-    })
-    .sort((a, b) => b.createdAt - a.createdAt);
+  const keys = getInlineInsightCacheKeys(storage);
+  const overflowCount = keys.length - MAX_CACHE_ENTRIES;
+  if (overflowCount <= 0) return;
 
-  for (const entry of entries.slice(MAX_CACHE_ENTRIES)) {
-    storage.removeItem(entry.key);
+  for (const key of keys.slice(0, overflowCount)) {
+    storage.removeItem(key);
   }
 }
 

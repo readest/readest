@@ -20,7 +20,6 @@ export interface InlineInsightSettings {
   systemPrompt: string;
   questionDirections: string[];
   cacheEnabled: boolean;
-  cacheTtlMinutes: number;
 }
 
 export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
@@ -34,7 +33,6 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   systemPrompt: '',
   questionDirections: [],
   cacheEnabled: true,
-  cacheTtlMinutes: 24 * 60,
 };
 
 export interface InlineInsightQA {
