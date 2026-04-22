@@ -68,9 +68,10 @@ const Notebook: React.FC = ({}) => {
   );
 
   const onNavigateEvent = async () => {
-    const pinButton = document.querySelector('.sidebar-pin-btn');
+    const pinButton = document.querySelector('.notebook-pin-btn');
     const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
-    if (isPinButtonHidden) {
+    const pinned = useNotebookStore.getState().isNotebookPinned;
+    if (isPinButtonHidden || !pinned) {
       setNotebookVisible(false);
     }
   };
