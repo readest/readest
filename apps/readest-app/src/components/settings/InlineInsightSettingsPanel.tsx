@@ -261,96 +261,108 @@ const InlineInsightSettingsPanel: React.FC = () => {
         <h2 className='mb-2 font-medium'>{_('Inline Insight Provider')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
-            <div className='config-item gap-3'>
-              <span className='line-clamp-2 min-w-10'>{_('Provider')}</span>
-              <select
-                className='select select-bordered select-sm bg-base-100 text-base-content ml-auto w-44 text-center'
-                value={provider}
-                onChange={(e) => handleProviderChange(e.target.value as InlineInsightProvider)}
-              >
-                {INLINE_INSIGHT_PROVIDER_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className='config-item gap-3'>
-              <span className='line-clamp-2 min-w-10'>{_('API Host')}</span>
-              <div className='ml-auto flex w-80 flex-col items-end gap-1'>
-                {canEditApiHost ? (
-                  <input
-                    type='text'
-                    className='input input-bordered input-sm max-w-56 text-center'
-                    value={apiHostInput}
-                    onChange={(e) => setApiHostInput(e.target.value)}
-                    onBlur={(e) => commitApiHost(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        commitApiHost(apiHostInput);
-                      }
-                    }}
-                    placeholder={getApiHostFromInlineInsightChatUrl(providerConfig.defaultChatUrl)}
-                  />
-                ) : (
-                  <div className='input input-bordered input-sm bg-base-200 text-base-content/70 flex w-full items-center text-left'>
-                    {getApiHostFromInlineInsightChatUrl(providerConfig.defaultChatUrl)}
-                  </div>
-                )}
-                <span className='text-base-content/60 w-full text-right text-xs'>
-                  {canEditApiHost ? resolvedUrls.chatUrl : draft.chatUrl}
-                </span>
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <div className='flex w-full flex-col gap-2'>
+                <span>{_('Provider')}</span>
+                <select
+                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  value={provider}
+                  onChange={(e) => handleProviderChange(e.target.value as InlineInsightProvider)}
+                >
+                  {INLINE_INSIGHT_PROVIDER_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div className='config-item gap-3'>
-              <span className='line-clamp-2 min-w-10'>{_('Model')}</span>
-              <div className='ml-auto flex min-w-44 max-w-60 items-center justify-end gap-2'>
-                <button
-                  className='btn btn-ghost btn-xs'
-                  onClick={fetchModels}
-                  disabled={fetchingModels}
-                  title={_('Refresh Models')}
-                >
-                  <PiArrowsClockwise className={clsx('size-4', fetchingModels && 'animate-spin')} />
-                </button>
-                {models.length > 0 ? (
-                  <select
-                    className='select select-bordered select-sm bg-base-100 text-base-content min-w-0 max-w-48 flex-1 text-center'
-                    value={draft.model}
-                    onChange={(e) => updateDraft({ model: e.target.value })}
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <div className='flex w-full flex-col gap-2'>
+                <span>{_('API Host')}</span>
+                <div className='flex w-full flex-col gap-1'>
+                  {canEditApiHost ? (
+                    <input
+                      type='text'
+                      className='input input-bordered input-sm w-full'
+                      value={apiHostInput}
+                      onChange={(e) => setApiHostInput(e.target.value)}
+                      onBlur={(e) => commitApiHost(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          commitApiHost(apiHostInput);
+                        }
+                      }}
+                      placeholder={getApiHostFromInlineInsightChatUrl(
+                        providerConfig.defaultChatUrl,
+                      )}
+                    />
+                  ) : (
+                    <div className='input input-bordered input-sm bg-base-200 text-base-content/70 flex w-full items-center text-left'>
+                      {getApiHostFromInlineInsightChatUrl(providerConfig.defaultChatUrl)}
+                    </div>
+                  )}
+                  <span className='text-base-content/60 text-xs'>
+                    {canEditApiHost ? resolvedUrls.chatUrl : draft.chatUrl}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+              <div className='flex w-full flex-col gap-2'>
+                <span>{_('Model')}</span>
+                <div className='flex w-full items-center gap-2'>
+                  {models.length > 0 ? (
+                    <select
+                      className='select select-bordered select-sm bg-base-100 text-base-content w-0 min-w-0 flex-1'
+                      value={draft.model}
+                      onChange={(e) => updateDraft({ model: e.target.value })}
+                    >
+                      {models.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type='text'
+                      className='input input-bordered input-sm flex-1'
+                      value={draft.model}
+                      onChange={(e) => updateDraft({ model: e.target.value })}
+                      placeholder={providerConfig.modelPlaceholder}
+                    />
+                  )}
+                  <button
+                    className='btn btn-ghost btn-xs'
+                    onClick={fetchModels}
+                    disabled={fetchingModels}
+                    title={_('Refresh Models')}
                   >
-                    {models.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type='text'
-                    className='input input-bordered input-sm min-w-0 flex-1 text-center'
-                    value={draft.model}
-                    onChange={(e) => updateDraft({ model: e.target.value })}
-                    placeholder={providerConfig.modelPlaceholder}
-                  />
-                )}
+                    <PiArrowsClockwise
+                      className={clsx('size-4', fetchingModels && 'animate-spin')}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
             {inlineInsightProviderSupportsApiKey(provider) && (
-              <div className='config-item gap-3'>
-                <span className='line-clamp-2 min-w-10'>
-                  {inlineInsightProviderNeedsApiKey(provider)
-                    ? _('API Key')
-                    : _('API Key (Optional)')}
-                </span>
-                <input
-                  type='password'
-                  className='input input-bordered input-sm ml-auto w-80 text-center'
-                  value={draft.apiKey}
-                  onChange={(e) => updateDraft({ apiKey: e.target.value })}
-                  placeholder='sk-...'
-                />
+              <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
+                <div className='flex w-full flex-col gap-2'>
+                  <span>
+                    {inlineInsightProviderNeedsApiKey(provider)
+                      ? _('API Key')
+                      : _('API Key (Optional)')}
+                  </span>
+                  <input
+                    type='password'
+                    className='input input-bordered input-sm w-full'
+                    value={draft.apiKey}
+                    onChange={(e) => updateDraft({ apiKey: e.target.value })}
+                    placeholder='sk-...'
+                  />
+                </div>
               </div>
             )}
             <div className='config-item gap-3'>
