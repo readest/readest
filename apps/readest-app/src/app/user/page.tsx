@@ -181,10 +181,10 @@ const ProfilePage = () => {
     try {
       const purchases = await restoreIAPPurchases();
       if (purchases.length > 0) {
-        purchases
+        const restoredPurchases = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-        const purchase = purchases[0];
+        const purchase = restoredPurchases[0];
 
         if (!purchase) {
           throw new Error('No purchases found in the array');
