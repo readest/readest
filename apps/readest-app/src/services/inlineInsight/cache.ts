@@ -1,29 +1,28 @@
 import type { InlineInsightChatMessage } from './logging';
-import type { InlineInsightProvider } from './types';
-import { normalizeBaseUrl } from './providers';
+import type { InlineInsightProvider, InlineInsightSettings } from './types';
 
 const CACHE_PREFIX = 'readest.inlineInsight.v1.';
 const MAX_CACHE_ENTRIES = 200;
 
 export class InlineInsightCacheInput {
   constructor(
-    provider: InlineInsightProvider,
-    baseUrl: string,
-    readonly model: string,
+    settings: InlineInsightSettings,
     readonly messages: InlineInsightChatMessage[],
   ) {
-    this.provider = provider;
-    this.baseUrl = normalizeBaseUrl(baseUrl);
+    this.provider = settings.provider;
+    this.model = settings.model;
+    this.chatUrl = settings.chatUrl;
   }
 
-  readonly provider: string;
-  readonly baseUrl: string;
+  readonly provider: InlineInsightProvider;
+  readonly model: string;
+  readonly chatUrl: string;
 
   buildKey(): string {
     // Hash the request identity so repeated lookups can reuse results without leaking raw
     // book text into storage keys.
     return `${CACHE_PREFIX}${hashString(
-      JSON.stringify([this.provider, this.baseUrl, this.model, this.messages]),
+      JSON.stringify([this.provider, this.chatUrl, this.model, this.messages]),
     )}`;
   }
 }

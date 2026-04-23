@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 import {
+  buildInlineInsightUrlsFromApiHost,
+  getApiHostFromInlineInsightChatUrl,
   getProviderDefaultConfig,
-  getInlineInsightChatEndpoint,
-  getInlineInsightModelsEndpoint,
   getMinimalThinkingParams,
+  inlineInsightProviderAllowsCustomApiHost,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
 } from '@/services/inlineInsight/providers';
@@ -14,40 +15,50 @@ describe('Inline Insight providers', () => {
     expect(getProviderDefaultConfig('custom-openai-compatible').label).toBe('OpenAI-compatible');
   });
 
-  it('builds provider endpoints from the configured base URL', () => {
-    const settings = {
-      ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-      provider: 'deepseek' as const,
-      baseUrl: 'https://api.deepseek.com/',
-    };
-
-    expect(getInlineInsightChatEndpoint(settings)).toBe(
-      'https://api.deepseek.com/v1/chat/completions',
-    );
-    expect(getInlineInsightModelsEndpoint(settings)).toBe('https://api.deepseek.com/v1/models');
+  it('derives OpenAI-compatible endpoint pairs from an API host', () => {
+    expect(buildInlineInsightUrlsFromApiHost('https://api.deepseek.com/')).toEqual({
+      chatUrl: 'https://api.deepseek.com/v1/chat/completions',
+      modelUrl: 'https://api.deepseek.com/v1/models',
+    });
   });
 
-  it('uses Ollama model tags and no API key requirement for local models', () => {
-    expect(getInlineInsightModelsEndpoint(DEFAULT_INLINE_INSIGHT_SETTINGS)).toBe(
-      'http://127.0.0.1:11434/api/tags',
+  it('removes repeated endpoint suffixes while deriving endpoint pairs', () => {
+    expect(buildInlineInsightUrlsFromApiHost('http://localhost:1234/v1')).toEqual({
+      chatUrl: 'http://localhost:1234/v1/chat/completions',
+      modelUrl: 'http://localhost:1234/v1/models',
+    });
+    expect(buildInlineInsightUrlsFromApiHost('http://localhost:1234/chat/completions')).toEqual({
+      chatUrl: 'http://localhost:1234/v1/chat/completions',
+      modelUrl: 'http://localhost:1234/v1/models',
+    });
+    expect(getApiHostFromInlineInsightChatUrl('http://localhost:1234/v1/chat/completions')).toBe(
+      'http://localhost:1234',
     );
+  });
+
+  it('uses OpenAI-compatible defaults and no API key requirement for Ollama local models', () => {
+    expect(getProviderDefaultConfig('ollama').defaultModelUrl).toBe(
+      'http://127.0.0.1:11434/v1/models',
+    );
+    expect(inlineInsightProviderAllowsCustomApiHost('ollama')).toBe(true);
     expect(inlineInsightProviderNeedsApiKey('ollama')).toBe(false);
     expect(inlineInsightProviderNeedsApiKey('openai')).toBe(true);
   });
 
-  it('builds LM Studio REST endpoints and treats API keys as optional', () => {
-    const settings = {
-      ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-      provider: 'lmstudio-rest' as const,
-      baseUrl: 'http://localhost:1234/',
-    };
-
-    expect(getInlineInsightChatEndpoint(settings)).toBe(
-      'http://localhost:1234/api/v0/chat/completions',
+  it('uses OpenAI-compatible LM Studio defaults and treats API keys as optional', () => {
+    expect(getProviderDefaultConfig('lmstudio').defaultChatUrl).toBe(
+      'http://localhost:1234/v1/chat/completions',
     );
-    expect(getInlineInsightModelsEndpoint(settings)).toBe('http://localhost:1234/api/v0/models');
-    expect(inlineInsightProviderNeedsApiKey('lmstudio-rest')).toBe(false);
-    expect(inlineInsightProviderSupportsApiKey('lmstudio-rest')).toBe(true);
+    expect(getProviderDefaultConfig('lmstudio').defaultModelUrl).toBe(
+      'http://localhost:1234/v1/models',
+    );
+    expect(inlineInsightProviderAllowsCustomApiHost('lmstudio')).toBe(true);
+    expect(inlineInsightProviderNeedsApiKey('lmstudio')).toBe(false);
+    expect(inlineInsightProviderSupportsApiKey('lmstudio')).toBe(true);
+  });
+
+  it('marks hosted providers as non-editable in the UI', () => {
+    expect(inlineInsightProviderAllowsCustomApiHost('openai')).toBe(false);
   });
 
   it('only adds thinking suppression parameters for providers with known-safe request shapes', () => {
@@ -82,7 +93,7 @@ describe('Inline Insight providers', () => {
     expect(
       getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        provider: 'lmstudio-rest',
+        provider: 'lmstudio',
       }),
     ).toEqual({ reasoning: 'off' });
   });

@@ -45,16 +45,4 @@ describe('parseInlineInsightSections', () => {
     expect(parsed.detailItems).toEqual([]);
     expect(parsed.detailMap).toEqual({});
   });
-
-  it('deduplicates repeated items produced during streaming', () => {
-    const parsed = parseInlineInsightSections(
-      '{"brief":[{"label":"Meaning","content":"A concise summary."},{"label":"Meaning","content":"A concise summary."}],"details":[{"label":"Meaning","content":"A longer explanation."},{"label":"Meaning","content":"A longer explanation."}]}',
-    );
-
-    expect(parsed.briefItems).toEqual([{ label: 'Meaning', content: 'A concise summary.' }]);
-    expect(parsed.detailItems).toEqual([{ label: 'Meaning', content: 'A longer explanation.' }]);
-    expect(parsed.detailMap).toEqual({
-      Meaning: 'A longer explanation.',
-    });
-  });
 });

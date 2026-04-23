@@ -5,11 +5,12 @@ export type InlineInsightProvider =
   | 'openrouter'
   | 'groq'
   | 'gemini'
-  | 'lmstudio-rest'
+  | 'lmstudio'
   | 'custom-openai-compatible';
 
 export interface InlineInsightProviderProfile {
-  baseUrl: string;
+  chatUrl: string;
+  modelUrl: string;
   model: string;
   apiKey: string;
 }
@@ -17,7 +18,8 @@ export interface InlineInsightProviderProfile {
 export interface InlineInsightSettings {
   enabled: boolean;
   provider: InlineInsightProvider;
-  baseUrl: string;
+  chatUrl: string;
+  modelUrl: string;
   model: string;
   apiKey: string;
   providerProfiles: Partial<Record<InlineInsightProvider, InlineInsightProviderProfile>>;
@@ -31,7 +33,8 @@ export interface InlineInsightSettings {
 export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   enabled: false,
   provider: 'ollama',
-  baseUrl: 'http://127.0.0.1:11434',
+  chatUrl: 'http://127.0.0.1:11434/v1/chat/completions',
+  modelUrl: 'http://127.0.0.1:11434/v1/models',
   model: '',
   apiKey: '',
   providerProfiles: {},

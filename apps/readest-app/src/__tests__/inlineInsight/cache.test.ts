@@ -5,11 +5,21 @@ import {
   readInlineInsightCache,
   writeInlineInsightCache,
 } from '@/services/inlineInsight/cache';
+import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 
-const input = new InlineInsightCacheInput('ollama', 'http://127.0.0.1:11434', 'qwen2.5:7b', [
-  { role: 'system', content: 'Use zh-CN' },
-  { role: 'user', content: 'Context:\nBefore\nSelected\nafter\n\nSelected text:\nepisteme' },
-]);
+const input = new InlineInsightCacheInput(
+  {
+    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+    provider: 'ollama',
+    model: 'qwen2.5:7b',
+    chatUrl: 'http://127.0.0.1:11434/v1/chat/completions',
+    modelUrl: 'http://127.0.0.1:11434/v1/models',
+  },
+  [
+    { role: 'system', content: 'Use zh-CN' },
+    { role: 'user', content: 'Context:\nBefore\nSelected\nafter\n\nSelected text:\nepisteme' },
+  ],
+);
 
 describe('Inline Insight cache', () => {
   beforeEach(() => {

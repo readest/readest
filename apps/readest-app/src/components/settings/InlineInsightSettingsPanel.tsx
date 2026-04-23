@@ -14,7 +14,10 @@ import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types'
 import type { InlineInsightProvider, InlineInsightSettings } from '@/services/inlineInsight/types';
 import { getLocale } from '@/utils/misc';
 import {
+  buildInlineInsightUrlsFromApiHost,
+  getApiHostFromInlineInsightChatUrl,
   getProviderDefaultConfig,
+  inlineInsightProviderAllowsCustomApiHost,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
 } from '@/services/inlineInsight/providers';
@@ -46,11 +49,17 @@ const InlineInsightSettingsPanel: React.FC = () => {
     saveSettings: saveAppSettings,
   } = useSettingsStore();
 
-  const initialSettings: InlineInsightSettings =
-    appSettings?.inlineInsightSettings ?? DEFAULT_INLINE_INSIGHT_SETTINGS;
+  const mergedSettings: InlineInsightSettings = {
+    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+    ...appSettings?.inlineInsightSettings,
+  };
+  const initialSettings: InlineInsightSettings = mergedSettings;
   const [draft, setDraft] = useState<InlineInsightSettings>(() => ({
     ...initialSettings,
   }));
+  const [apiHostInput, setApiHostInput] = useState(() =>
+    getApiHostFromInlineInsightChatUrl(initialSettings.chatUrl),
+  );
   const [questionDirectionDraft, setQuestionDirectionDraft] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
@@ -59,6 +68,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
   const previousPromptRef = useRef(draft.systemPrompt);
   const provider = draft.provider;
   const providerConfig = getProviderDefaultConfig(provider);
+  const canEditApiHost = inlineInsightProviderAllowsCustomApiHost(provider);
+  const resolvedUrls = buildInlineInsightUrlsFromApiHost(apiHostInput);
 
   useEffect(() => {
     hasMounted.current = true;
@@ -102,13 +113,14 @@ const InlineInsightSettingsPanel: React.FC = () => {
   };
 
   const fetchModels = useCallback(async () => {
-    if (!draft.baseUrl || !draft.enabled) return;
+    if (!draft.modelUrl || !draft.enabled) return;
     setFetchingModels(true);
     try {
       const nextModels = await fetchInlineInsightModels({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
         provider: draft.provider,
-        baseUrl: draft.baseUrl,
+        chatUrl: draft.chatUrl,
+        modelUrl: draft.modelUrl,
         model: draft.model,
         apiKey: draft.apiKey,
       });
@@ -130,38 +142,71 @@ const InlineInsightSettingsPanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.enabled, draft.provider]);
 
+  useEffect(() => {
+    if (!draft.enabled) return;
+    if (!inlineInsightProviderNeedsApiKey(draft.provider)) return;
+    if (!draft.apiKey.trim()) return;
+    fetchModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.apiKey]);
+
   const updateDraft = useCallback((patch: Partial<InlineInsightSettings>) => {
     setDraft((current) => ({ ...current, ...patch }));
   }, []);
 
   const handleProviderChange = (value: InlineInsightProvider) => {
     const nextConfig = getProviderDefaultConfig(value);
+    const nextCanEditApiHost = inlineInsightProviderAllowsCustomApiHost(value);
     const providerProfiles = {
       ...draft.providerProfiles,
       [provider]: {
-        baseUrl: draft.baseUrl,
+        chatUrl: draft.chatUrl,
+        modelUrl: draft.modelUrl,
         model: draft.model,
         apiKey: draft.apiKey,
       },
     };
     const nextProfile = {
-      baseUrl: nextConfig.defaultBaseUrl,
+      chatUrl: nextConfig.defaultChatUrl,
+      modelUrl: nextConfig.defaultModelUrl,
       model: '',
       apiKey: '',
       ...providerProfiles[value],
     };
+    const nextUrls = nextCanEditApiHost
+      ? {
+          chatUrl: nextProfile.chatUrl,
+          modelUrl: nextProfile.modelUrl,
+        }
+      : {
+          chatUrl: nextConfig.defaultChatUrl,
+          modelUrl: nextConfig.defaultModelUrl,
+        };
     const nextApiKey =
       nextConfig.requiresApiKey || nextConfig.supportsApiKey ? nextProfile.apiKey : '';
 
     setModels([]);
+    setApiHostInput(getApiHostFromInlineInsightChatUrl(nextUrls.chatUrl));
     updateDraft({
       provider: value,
-      baseUrl: nextProfile.baseUrl,
+      chatUrl: nextUrls.chatUrl,
+      modelUrl: nextUrls.modelUrl,
       model: nextProfile.model,
       apiKey: nextApiKey,
       providerProfiles,
     });
   };
+
+  const commitApiHost = useCallback(
+    (input: string) => {
+      const trimmed = input.trim();
+      if (!trimmed) return;
+      const nextUrls = buildInlineInsightUrlsFromApiHost(trimmed);
+      setApiHostInput(getApiHostFromInlineInsightChatUrl(nextUrls.chatUrl));
+      updateDraft(nextUrls);
+    },
+    [updateDraft],
+  );
 
   const addQuestionDirection = () => {
     const nextQuestionDirections = addQuestionDirectionItem(
@@ -231,14 +276,32 @@ const InlineInsightSettingsPanel: React.FC = () => {
               </select>
             </div>
             <div className='config-item gap-3'>
-              <span className='line-clamp-2 min-w-10'>{_('Base URL')}</span>
-              <input
-                type='text'
-                className='input input-bordered input-sm ml-auto max-w-64 text-left'
-                value={draft.baseUrl}
-                onChange={(e) => updateDraft({ baseUrl: e.target.value })}
-                placeholder={providerConfig.defaultBaseUrl}
-              />
+              <span className='line-clamp-2 min-w-10'>{_('API Host')}</span>
+              <div className='ml-auto flex w-80 flex-col items-end gap-1'>
+                {canEditApiHost ? (
+                  <input
+                    type='text'
+                    className='input input-bordered input-sm max-w-56 text-center'
+                    value={apiHostInput}
+                    onChange={(e) => setApiHostInput(e.target.value)}
+                    onBlur={(e) => commitApiHost(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commitApiHost(apiHostInput);
+                      }
+                    }}
+                    placeholder={getApiHostFromInlineInsightChatUrl(providerConfig.defaultChatUrl)}
+                  />
+                ) : (
+                  <div className='input input-bordered input-sm bg-base-200 text-base-content/70 flex w-full items-center text-left'>
+                    {getApiHostFromInlineInsightChatUrl(providerConfig.defaultChatUrl)}
+                  </div>
+                )}
+                <span className='text-base-content/60 w-full text-right text-xs'>
+                  {canEditApiHost ? resolvedUrls.chatUrl : draft.chatUrl}
+                </span>
+              </div>
             </div>
             <div className='config-item gap-3'>
               <span className='line-clamp-2 min-w-10'>{_('Model')}</span>

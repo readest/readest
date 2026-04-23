@@ -3,24 +3,52 @@ import type { InlineInsightProvider, InlineInsightSettings } from './types';
 
 export { getProviderDefaultConfig };
 
-export function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.trim().replace(/\/+$/, '');
+const CHAT_SUFFIX = '/v1/chat/completions';
+const MODELS_SUFFIX = '/v1/models';
+const HOST_SUFFIX_CANDIDATES = [
+  CHAT_SUFFIX,
+  '/chat/completions',
+  MODELS_SUFFIX,
+  '/models',
+  '/v1/chat',
+  '/chat',
+  '/v1',
+];
+
+function trimTrailingSlashes(url: string): string {
+  return url.trim().replace(/\/+$/, '');
 }
 
-export function getInlineInsightChatEndpoint(settings: InlineInsightSettings): string {
-  const config = getProviderDefaultConfig(settings.provider);
-  const baseUrl = normalizeBaseUrl(settings.baseUrl);
-  return config.protocol === 'lmstudio-rest'
-    ? `${baseUrl}/api/v0/chat/completions`
-    : `${baseUrl}/v1/chat/completions`;
+function stripKnownEndpointSuffix(url: string): string {
+  let current = trimTrailingSlashes(url);
+  for (const suffix of HOST_SUFFIX_CANDIDATES) {
+    if (current.endsWith(suffix)) {
+      current = current.slice(0, -suffix.length);
+      break;
+    }
+  }
+  return trimTrailingSlashes(current);
 }
 
-export function getInlineInsightModelsEndpoint(settings: InlineInsightSettings): string {
-  const config = getProviderDefaultConfig(settings.provider);
-  const baseUrl = normalizeBaseUrl(settings.baseUrl);
-  if (config.protocol === 'ollama') return `${baseUrl}/api/tags`;
-  if (config.protocol === 'lmstudio-rest') return `${baseUrl}/api/v0/models`;
-  return `${baseUrl}/v1/models`;
+export function buildInlineInsightUrlsFromApiHost(input: string): {
+  chatUrl: string;
+  modelUrl: string;
+} {
+  const host = stripKnownEndpointSuffix(input);
+  return {
+    chatUrl: `${host}${CHAT_SUFFIX}`,
+    modelUrl: `${host}${MODELS_SUFFIX}`,
+  };
+}
+
+export function getApiHostFromInlineInsightChatUrl(chatUrl: string): string {
+  return stripKnownEndpointSuffix(chatUrl);
+}
+
+export function inlineInsightProviderAllowsCustomApiHost(provider: InlineInsightProvider): boolean {
+  return (
+    provider === 'ollama' || provider === 'lmstudio' || provider === 'custom-openai-compatible'
+  );
 }
 
 export function inlineInsightProviderNeedsApiKey(provider: InlineInsightProvider): boolean {
@@ -51,10 +79,7 @@ export function getMinimalThinkingParams(settings: InlineInsightSettings): Recor
     return { reasoning: { effort: 'none' } };
   }
 
-  // Likely not working, but won't crash
-  if (provider === 'lmstudio-rest') {
-    return { reasoning: 'off' };
-  }
+  // LM Studio: no way to control reasoning
 
   return {};
 }

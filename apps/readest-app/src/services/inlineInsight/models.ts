@@ -1,14 +1,9 @@
 import { isTauriAppPlatform } from '@/services/environment';
 import type { InlineInsightSettings } from './types';
-import {
-  getInlineInsightModelsEndpoint,
-  getProviderDefaultConfig,
-  inlineInsightProviderSupportsApiKey,
-} from './providers';
+import { inlineInsightProviderSupportsApiKey } from './providers';
 
 export async function fetchInlineInsightModels(settings: InlineInsightSettings): Promise<string[]> {
-  const targetUrl = getInlineInsightModelsEndpoint(settings);
-  const providerConfig = getProviderDefaultConfig(settings.provider);
+  const targetUrl = settings.modelUrl;
   const apiKey = inlineInsightProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
 
   let response: Response;
@@ -29,11 +24,6 @@ export async function fetchInlineInsightModels(settings: InlineInsightSettings):
   }
 
   const data: unknown = await response.json();
-  if (providerConfig.protocol === 'ollama') {
-    const ollamaData = data as { models?: { name: string }[] };
-    return ollamaData.models?.map((item) => item.name) ?? [];
-  }
-
   const openAiLikeData = data as { data?: { id: string }[] };
   return openAiLikeData.data?.map((item) => item.id) ?? [];
 }

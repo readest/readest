@@ -6,11 +6,7 @@ import {
 } from './logging';
 import { buildInlineInsightFollowUpMessages, buildInlineInsightMessages } from './prompts';
 import type { InlineInsightSettings } from './types';
-import {
-  getInlineInsightChatEndpoint,
-  getMinimalThinkingParams,
-  inlineInsightProviderSupportsApiKey,
-} from './providers';
+import { getMinimalThinkingParams, inlineInsightProviderSupportsApiKey } from './providers';
 
 export type InlineInsightStreamChunk =
   | { type: 'content'; text: string }
@@ -20,12 +16,7 @@ function buildInlineInsightCacheKey(
   settings: InlineInsightSettings,
   messages: InlineInsightChatMessage[],
 ): string {
-  return new InlineInsightCacheInput(
-    settings.provider,
-    settings.baseUrl,
-    settings.model,
-    messages,
-  ).buildKey();
+  return new InlineInsightCacheInput(settings, messages).buildKey();
 }
 
 async function* streamInlineInsightCached(
@@ -101,7 +92,7 @@ async function* streamChatCompletions(
   settings: InlineInsightSettings,
   signal?: AbortSignal,
 ): AsyncGenerator<InlineInsightStreamChunk> {
-  const chatEndpoint = getInlineInsightChatEndpoint(settings);
+  const chatEndpoint = settings.chatUrl;
   const apiKey = inlineInsightProviderSupportsApiKey(settings.provider) ? settings.apiKey : '';
 
   const chatBody = {
