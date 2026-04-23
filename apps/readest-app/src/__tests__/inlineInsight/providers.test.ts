@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 import {
+  getProviderDefaultConfig,
   getInlineInsightChatEndpoint,
   getInlineInsightModelsEndpoint,
-  getInlineInsightProviderConfig,
   getMinimalThinkingParams,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
@@ -11,9 +11,7 @@ import {
 
 describe('Inline Insight providers', () => {
   it('uses the custom OpenAI-compatible preset directly', () => {
-    expect(getInlineInsightProviderConfig('custom-openai-compatible').label).toBe(
-      'OpenAI-compatible',
-    );
+    expect(getProviderDefaultConfig('custom-openai-compatible').label).toBe('OpenAI-compatible');
   });
 
   it('builds provider endpoints from the configured base URL', () => {
@@ -75,6 +73,12 @@ describe('Inline Insight providers', () => {
         model: 'gemini-2.5-pro',
       }),
     ).toEqual({});
+    expect(
+      getMinimalThinkingParams({
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        provider: 'openrouter',
+      }),
+    ).toEqual({ reasoning: { effort: 'none' } });
     expect(
       getMinimalThinkingParams({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,

@@ -41,13 +41,3 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   questionDirections: [],
   cacheEnabled: true,
 };
-
-export interface InlineInsightQA {
-  question: string;
-  brief: string;
-  detail: string;
-}
-
-export interface InlineInsightResult {
-  qas: InlineInsightQA[];
-}

@@ -8,6 +8,7 @@ import {
   formatInlineInsightLog,
   getInlineInsightMessagesFromBody,
 } from '@/services/inlineInsight/logging';
+import { isEndpointProtocolValid } from '@/services/inlineInsight/utils';
 
 export const runtime = 'nodejs';
 
@@ -61,15 +62,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Missing endpoint' }, { status: 400 });
   }
 
-  let parsedEndpoint: URL;
-  try {
-    parsedEndpoint = new URL(endpoint);
-  } catch {
+  if (!isEndpointProtocolValid(endpoint)) {
     return Response.json({ error: 'Invalid endpoint URL' }, { status: 400 });
-  }
-  // The proxy intentionally only forwards HTTP(S) requests to user-configured LLM servers.
-  if (!['http:', 'https:'].includes(parsedEndpoint.protocol)) {
-    return Response.json({ error: 'Unsupported endpoint protocol' }, { status: 400 });
   }
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };

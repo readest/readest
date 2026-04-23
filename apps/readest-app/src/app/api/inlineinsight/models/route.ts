@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isEndpointProtocolValid } from '@/services/inlineInsight/utils';
 
 interface ModelsRequestBody {
   endpoint?: string;
@@ -10,16 +11,8 @@ async function fetchModels(endpoint: string | null, apiKey?: string) {
     return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
   }
 
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(endpoint);
-  } catch {
+  if (!isEndpointProtocolValid(endpoint)) {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
-  }
-  // This endpoint is a lightweight proxy. Restrict schemes so a user-provided base URL
-  // cannot be abused to read local files or other non-HTTP resources.
-  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    return NextResponse.json({ error: 'Unsupported URL protocol' }, { status: 400 });
   }
 
   try {

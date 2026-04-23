@@ -146,10 +146,8 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     ...DEFAULT_AI_SETTINGS,
     ...settings.aiSettings,
   };
-  settings.inlineInsightSettings = {
-    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-    ...settings.inlineInsightSettings,
-  };
+  settings.inlineInsightSettings =
+    settings.inlineInsightSettings ?? DEFAULT_INLINE_INSIGHT_SETTINGS;
 
   settings.localBooksDir = await ctx.fs.getPrefix('Books');
 

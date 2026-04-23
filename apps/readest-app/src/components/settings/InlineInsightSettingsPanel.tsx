@@ -6,28 +6,19 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import Select from '@/components/Select';
-import { isTauriAppPlatform } from '@/services/environment';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import { clearInlineInsightCache } from '@/services/inlineInsight/cache';
-import { SYSTEM_PROMPT } from '@/services/inlineInsight/client';
+import { fetchInlineInsightModels } from '@/services/inlineInsight/models';
+import { SYSTEM_PROMPT } from '@/services/inlineInsight/prompts';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
-import type {
-  InlineInsightProvider,
-  InlineInsightProviderProfile,
-  InlineInsightSettings,
-} from '@/services/inlineInsight/types';
+import type { InlineInsightProvider, InlineInsightSettings } from '@/services/inlineInsight/types';
 import { getLocale } from '@/utils/misc';
 import {
-  INLINE_INSIGHT_PROVIDER_OPTIONS,
-  getInlineInsightModelsEndpoint,
-  getInlineInsightProviderConfig,
+  getProviderDefaultConfig,
   inlineInsightProviderNeedsApiKey,
   inlineInsightProviderSupportsApiKey,
 } from '@/services/inlineInsight/providers';
-
-function normalizeInlineInsightQuestionDirections(directions: string[]): string[] {
-  return Array.from(new Set(directions.map((item) => item.trim()).filter(Boolean))).slice(0, 12);
-}
+import { INLINE_INSIGHT_PROVIDER_OPTIONS } from '@/services/inlineInsight/providerConfigs';
 
 function getLangOptions(langs: Record<string, string>, followLabel: string) {
   const options = Object.entries(langs).map(([value, label]) => ({ value, label }));
@@ -36,61 +27,59 @@ function getLangOptions(langs: Record<string, string>, followLabel: string) {
   return options;
 }
 
-function getInlineInsightProviderProfile(
-  settings: InlineInsightSettings,
-  provider: InlineInsightProvider,
-): InlineInsightProviderProfile {
-  const providerConfig = getInlineInsightProviderConfig(provider);
-  const fallback =
-    settings.provider === provider
-      ? {
-          baseUrl: settings.baseUrl,
-          model: settings.model,
-          apiKey: settings.apiKey,
-        }
-      : {
-          baseUrl: providerConfig.defaultBaseUrl,
-          model: '',
-          apiKey: '',
-        };
+const MAX_QUESTION_DIRECTIONS = 30;
 
-  return {
-    ...fallback,
-    ...settings.providerProfiles[provider],
-  };
+function addQuestionDirectionItem(current: string[], draft: string): string[] {
+  const direction = draft.trim();
+  if (!direction || current.includes(direction)) {
+    return current;
+  }
+  return [...current, direction].slice(0, MAX_QUESTION_DIRECTIONS);
 }
 
 const InlineInsightSettingsPanel: React.FC = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const {
+    settings: appSettings,
+    setSettings: setAppSettings,
+    saveSettings: saveAppSettings,
+  } = useSettingsStore();
 
-  const panelSettings: InlineInsightSettings = {
-    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-    ...settings?.inlineInsightSettings,
-  };
-  const [enabled, setEnabled] = useState(panelSettings.enabled);
-  const [provider, setProvider] = useState<InlineInsightProvider>(panelSettings.provider);
-  const currentProviderProfile = getInlineInsightProviderProfile(panelSettings, provider);
-  const [baseUrl, setBaseUrl] = useState(currentProviderProfile.baseUrl);
-  const [model, setModel] = useState(currentProviderProfile.model);
-  const [apiKey, setApiKey] = useState(currentProviderProfile.apiKey);
-  const [maxChars, setMaxChars] = useState(panelSettings.maxContextChars);
-  const [targetLanguage, setTargetLanguage] = useState(panelSettings.targetLanguage);
-  const [systemPrompt, setSystemPrompt] = useState(panelSettings.systemPrompt);
-  const [questionDirections, setQuestionDirections] = useState(
-    normalizeInlineInsightQuestionDirections(panelSettings.questionDirections),
-  );
+  const initialSettings: InlineInsightSettings =
+    appSettings?.inlineInsightSettings ?? DEFAULT_INLINE_INSIGHT_SETTINGS;
+  const [draft, setDraft] = useState<InlineInsightSettings>(() => ({
+    ...initialSettings,
+  }));
   const [questionDirectionDraft, setQuestionDirectionDraft] = useState('');
-  const [cacheEnabled, setCacheEnabled] = useState(panelSettings.cacheEnabled);
   const [models, setModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
 
-  const isMounted = useRef(false);
-  const settingsRef = useRef(settings);
-  const providerConfig = getInlineInsightProviderConfig(provider);
+  const hasMounted = useRef(false);
+  const previousPromptRef = useRef(draft.systemPrompt);
+  const provider = draft.provider;
+  const providerConfig = getProviderDefaultConfig(provider);
+
+  useEffect(() => {
+    hasMounted.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted.current) return;
+    if (JSON.stringify(draft) === JSON.stringify(initialSettings)) return;
+
+    if (draft.systemPrompt !== previousPromptRef.current) {
+      clearInlineInsightCache();
+      previousPromptRef.current = draft.systemPrompt;
+    }
+
+    const nextSettings = { ...appSettings, inlineInsightSettings: draft };
+    setAppSettings(nextSettings);
+    void saveAppSettings(envConfig, nextSettings);
+  }, [draft, envConfig, appSettings, saveAppSettings, setAppSettings, initialSettings]);
+
   const getCurrentUILangOption = () => {
-    const uiLanguage = settings?.globalViewSettings.uiLanguage ?? '';
+    const uiLanguage = appSettings?.globalViewSettings.uiLanguage ?? '';
     return {
       value: uiLanguage,
       label:
@@ -99,239 +88,60 @@ const InlineInsightSettingsPanel: React.FC = () => {
           : TRANSLATED_LANGS[uiLanguage as keyof typeof TRANSLATED_LANGS],
     };
   };
+
   const getTargetLanguageOptions = () => {
     const currentUILang = getCurrentUILangOption();
     const options = getLangOptions(
       TRANSLATED_LANGS,
       `${_('Interface Language')} (${currentUILang.label})`,
     );
-    if (targetLanguage && !options.some((option) => option.value === targetLanguage)) {
-      options.push({ value: targetLanguage, label: targetLanguage });
+    if (draft.targetLanguage && !options.some((option) => option.value === draft.targetLanguage)) {
+      options.push({ value: draft.targetLanguage, label: draft.targetLanguage });
     }
     return options;
   };
 
-  useEffect(() => {
-    // Effects below save incremental field changes. Keep a ref to the latest settings so
-    // asynchronous saves always merge against the newest snapshot.
-    settingsRef.current = settings;
-  }, [settings]);
-
-  useEffect(() => {
-    isMounted.current = true;
-  }, []);
-
-  const saveSettingsPatch = useCallback(
-    async (patch: Partial<InlineInsightSettings>) => {
-      const currentSettings = settingsRef.current;
-      if (!currentSettings) return;
-      const current: InlineInsightSettings = {
-        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        ...currentSettings.inlineInsightSettings,
-      };
-      const newInlineInsightSettings: InlineInsightSettings = { ...current, ...patch };
-      const newSettings = { ...currentSettings, inlineInsightSettings: newInlineInsightSettings };
-      settingsRef.current = newSettings;
-      setSettings(newSettings);
-      await saveSettings(envConfig, newSettings);
-    },
-    [envConfig, setSettings, saveSettings],
-  );
-
-  const saveSetting = useCallback(
-    async (
-      key: keyof InlineInsightSettings,
-      value: InlineInsightSettings[keyof InlineInsightSettings],
-    ) => {
-      await saveSettingsPatch({ [key]: value });
-    },
-    [saveSettingsPatch],
-  );
-
-  const saveProviderProfileField = useCallback(
-    async (
-      key: keyof InlineInsightProviderProfile,
-      value: InlineInsightProviderProfile[keyof InlineInsightProviderProfile],
-    ) => {
-      const currentSettings = settingsRef.current;
-      if (!currentSettings) return;
-      const current: InlineInsightSettings = {
-        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        ...currentSettings.inlineInsightSettings,
-      };
-      const currentProfile = getInlineInsightProviderProfile(current, provider);
-      await saveSettingsPatch({
-        [key]: value,
-        providerProfiles: {
-          ...current.providerProfiles,
-          [provider]: {
-            ...currentProfile,
-            [key]: value,
-          },
-        },
-      });
-    },
-    [provider, saveSettingsPatch],
-  );
-
   const fetchModels = useCallback(async () => {
-    if (!baseUrl || !enabled) return;
+    if (!draft.baseUrl || !draft.enabled) return;
     setFetchingModels(true);
     try {
-      const providerConfig = getInlineInsightProviderConfig(provider);
-      const targetUrl = getInlineInsightModelsEndpoint({
+      const nextModels = await fetchInlineInsightModels({
         ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        provider,
-        baseUrl,
-        model,
-        apiKey,
+        provider: draft.provider,
+        baseUrl: draft.baseUrl,
+        model: draft.model,
+        apiKey: draft.apiKey,
       });
-      let fetchUrl = targetUrl;
-      const fetchHeaders: Record<string, string> = {};
-      const providerApiKey = inlineInsightProviderSupportsApiKey(provider) ? apiKey : '';
-      let fetchInit: RequestInit | undefined;
-      if (!isTauriAppPlatform()) {
-        // Browser builds fetch through the local proxy so provider CORS policy does not
-        // block model discovery.
-        fetchUrl = '/api/inlineinsight/models';
-        fetchInit = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: targetUrl, apiKey: providerApiKey || undefined }),
-        };
-      } else if (providerApiKey) {
-        fetchHeaders['Authorization'] = `Bearer ${providerApiKey}`;
-        fetchInit = { headers: fetchHeaders };
-      }
-      const response = await fetch(fetchUrl, fetchInit);
-      if (!response.ok) throw new Error('Failed to fetch models');
-      const data: unknown = await response.json();
-      let models: string[] = [];
-      if (providerConfig.protocol === 'ollama') {
-        const d = data as { models?: { name: string }[] };
-        models = d.models?.map((m) => m.name) ?? [];
-      } else {
-        const d = data as { data?: { id: string }[] };
-        models = d.data?.map((m) => m.id) ?? [];
-      }
-      setModels(models);
-      if (models.length > 0 && !models.includes(model)) {
-        setModel(models[0]!);
+      setModels(nextModels);
+      if (nextModels.length > 0 && !nextModels.includes(draft.model)) {
+        setDraft((current) => ({ ...current, model: nextModels[0]! }));
       }
     } catch {
       setModels([]);
     } finally {
       setFetchingModels(false);
     }
-  }, [baseUrl, provider, apiKey, model, enabled]);
+  }, [draft]);
 
   useEffect(() => {
-    if (enabled) {
+    if (draft.enabled) {
       fetchModels();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, provider, baseUrl]);
+  }, [draft.enabled, draft.provider]);
 
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (enabled !== panelSettings.enabled) {
-      saveSetting('enabled', enabled);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (provider !== panelSettings.provider) {
-      saveSetting('provider', provider);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (baseUrl !== currentProviderProfile.baseUrl) {
-      saveProviderProfileField('baseUrl', baseUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseUrl]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (model !== currentProviderProfile.model) {
-      saveProviderProfileField('model', model);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (apiKey !== currentProviderProfile.apiKey) {
-      saveProviderProfileField('apiKey', apiKey);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (maxChars !== panelSettings.maxContextChars) {
-      saveSetting('maxContextChars', maxChars);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxChars]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    const normalized = targetLanguage.trim();
-    if (normalized !== panelSettings.targetLanguage) {
-      saveSetting('targetLanguage', normalized);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetLanguage]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    const normalized = systemPrompt.trim() ? systemPrompt : '';
-    if (normalized !== panelSettings.systemPrompt) {
-      // Prompt edits can change the model output substantially, so invalidate previous
-      // Inline Insight cache entries before saving the new prompt.
-      clearInlineInsightCache();
-      saveSetting('systemPrompt', normalized);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [systemPrompt]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    const normalized = normalizeInlineInsightQuestionDirections(questionDirections);
-    const saved = normalizeInlineInsightQuestionDirections(panelSettings.questionDirections);
-    if (JSON.stringify(normalized) !== JSON.stringify(saved)) {
-      saveSetting('questionDirections', normalized);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionDirections]);
-
-  useEffect(() => {
-    if (!isMounted.current) return;
-    if (cacheEnabled !== panelSettings.cacheEnabled) {
-      saveSetting('cacheEnabled', cacheEnabled);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheEnabled]);
+  const updateDraft = useCallback((patch: Partial<InlineInsightSettings>) => {
+    setDraft((current) => ({ ...current, ...patch }));
+  }, []);
 
   const handleProviderChange = (value: InlineInsightProvider) => {
-    const nextConfig = getInlineInsightProviderConfig(value);
-    const currentSettings = settingsRef.current;
-    const currentPanelSettings: InlineInsightSettings = {
-      ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-      ...currentSettings?.inlineInsightSettings,
-    };
+    const nextConfig = getProviderDefaultConfig(value);
     const providerProfiles = {
-      ...currentPanelSettings.providerProfiles,
+      ...draft.providerProfiles,
       [provider]: {
-        baseUrl,
-        model,
-        apiKey,
+        baseUrl: draft.baseUrl,
+        model: draft.model,
+        apiKey: draft.apiKey,
       },
     };
     const nextProfile = {
@@ -343,12 +153,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
     const nextApiKey =
       nextConfig.requiresApiKey || nextConfig.supportsApiKey ? nextProfile.apiKey : '';
 
-    setProvider(value);
-    setBaseUrl(nextProfile.baseUrl);
-    setModel(nextProfile.model);
     setModels([]);
-    setApiKey(nextApiKey);
-    void saveSettingsPatch({
+    updateDraft({
       provider: value,
       baseUrl: nextProfile.baseUrl,
       model: nextProfile.model,
@@ -358,24 +164,31 @@ const InlineInsightSettingsPanel: React.FC = () => {
   };
 
   const addQuestionDirection = () => {
-    const direction = questionDirectionDraft.trim();
-    if (!direction) return;
-    setQuestionDirections((current) =>
-      normalizeInlineInsightQuestionDirections([...current, direction]),
+    const nextQuestionDirections = addQuestionDirectionItem(
+      draft.questionDirections,
+      questionDirectionDraft,
     );
+    if (nextQuestionDirections === draft.questionDirections) return;
+    setDraft((current) => ({
+      ...current,
+      questionDirections: nextQuestionDirections,
+    }));
     setQuestionDirectionDraft('');
   };
 
   const removeQuestionDirection = (index: number) => {
-    setQuestionDirections((current) => current.filter((_, i) => i !== index));
+    setDraft((current) => ({
+      ...current,
+      questionDirections: current.questionDirections.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSelectTargetLanguage = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setTargetLanguage(event.target.value);
+    updateDraft({ targetLanguage: event.target.value.trim() });
   };
 
   const resetSystemPrompt = () => {
-    setSystemPrompt('');
+    updateDraft({ systemPrompt: '' });
   };
 
   return (
@@ -389,15 +202,17 @@ const InlineInsightSettingsPanel: React.FC = () => {
               <input
                 type='checkbox'
                 className='toggle'
-                checked={enabled}
-                onChange={() => setEnabled((v) => !v)}
+                checked={draft.enabled}
+                onChange={() => updateDraft({ enabled: !draft.enabled })}
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className={clsx('w-full', !enabled && 'pointer-events-none select-none opacity-50')}>
+      <div
+        className={clsx('w-full', !draft.enabled && 'pointer-events-none select-none opacity-50')}
+      >
         <h2 className='mb-2 font-medium'>{_('Inline Insight Provider')}</h2>
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
@@ -420,8 +235,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
               <input
                 type='text'
                 className='input input-bordered input-sm ml-auto max-w-64 text-left'
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
+                value={draft.baseUrl}
+                onChange={(e) => updateDraft({ baseUrl: e.target.value })}
                 placeholder={providerConfig.defaultBaseUrl}
               />
             </div>
@@ -439,8 +254,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
                 {models.length > 0 ? (
                   <select
                     className='select select-bordered select-sm bg-base-100 text-base-content min-w-0 max-w-48 flex-1 text-center'
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
+                    value={draft.model}
+                    onChange={(e) => updateDraft({ model: e.target.value })}
                   >
                     {models.map((m) => (
                       <option key={m} value={m}>
@@ -452,8 +267,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
                   <input
                     type='text'
                     className='input input-bordered input-sm min-w-0 flex-1 text-center'
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
+                    value={draft.model}
+                    onChange={(e) => updateDraft({ model: e.target.value })}
                     placeholder={providerConfig.modelPlaceholder}
                   />
                 )}
@@ -469,8 +284,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
                 <input
                   type='password'
                   className='input input-bordered input-sm ml-auto w-80 text-center'
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  value={draft.apiKey}
+                  onChange={(e) => updateDraft({ apiKey: e.target.value })}
                   placeholder='sk-...'
                 />
               </div>
@@ -480,16 +295,16 @@ const InlineInsightSettingsPanel: React.FC = () => {
               <input
                 type='number'
                 className='input input-bordered input-sm ml-auto w-32 text-center'
-                value={maxChars}
+                value={draft.maxContextChars}
                 min={500}
                 max={3000}
-                onChange={(e) => setMaxChars(Number(e.target.value))}
+                onChange={(e) => updateDraft({ maxContextChars: Number(e.target.value) })}
               />
             </div>
             <div className='config-item gap-3'>
               <span className='line-clamp-2 min-w-10'>{_('Target Language')}</span>
               <Select
-                value={targetLanguage}
+                value={draft.targetLanguage}
                 onChange={handleSelectTargetLanguage}
                 options={getTargetLanguageOptions()}
                 className='ml-auto w-36 text-center'
@@ -504,8 +319,8 @@ const InlineInsightSettingsPanel: React.FC = () => {
               </div>
               <textarea
                 className='textarea textarea-bordered textarea-sm min-h-40 w-full font-mono text-xs'
-                value={systemPrompt || SYSTEM_PROMPT}
-                onChange={(e) => setSystemPrompt(e.target.value)}
+                value={draft.systemPrompt || SYSTEM_PROMPT}
+                onChange={(e) => updateDraft({ systemPrompt: e.target.value })}
               />
               <span className='text-base-content/50 text-xs'>
                 {_('Leave unchanged to use the default prompt. Reset clears custom changes.')}
@@ -514,11 +329,13 @@ const InlineInsightSettingsPanel: React.FC = () => {
             <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
               <div className='flex w-full items-center justify-between gap-2'>
                 <span>{_('Question Directions')}</span>
-                <span className='text-base-content/50 text-xs'>{questionDirections.length}/12</span>
+                <span className='text-base-content/50 text-xs'>
+                  {draft.questionDirections.length}/{MAX_QUESTION_DIRECTIONS}
+                </span>
               </div>
-              {questionDirections.length > 0 && (
+              {draft.questionDirections.length > 0 && (
                 <div className='flex w-full flex-col gap-1'>
-                  {questionDirections.map((direction, index) => (
+                  {draft.questionDirections.map((direction, index) => (
                     <div
                       key={`${direction}-${index}`}
                       className='bg-base-200 flex items-center gap-2 rounded p-1.5'
@@ -553,7 +370,10 @@ const InlineInsightSettingsPanel: React.FC = () => {
                 <button
                   type='button'
                   className='btn btn-outline btn-sm'
-                  disabled={!questionDirectionDraft.trim() || questionDirections.length >= 12}
+                  disabled={
+                    !questionDirectionDraft.trim() ||
+                    draft.questionDirections.length >= MAX_QUESTION_DIRECTIONS
+                  }
                   onClick={addQuestionDirection}
                 >
                   {_('Add')}
@@ -565,11 +385,11 @@ const InlineInsightSettingsPanel: React.FC = () => {
               <input
                 type='checkbox'
                 className='toggle'
-                checked={cacheEnabled}
-                onChange={() => setCacheEnabled((v) => !v)}
+                checked={draft.cacheEnabled}
+                onChange={() => updateDraft({ cacheEnabled: !draft.cacheEnabled })}
               />
             </div>
-            {cacheEnabled && (
+            {draft.cacheEnabled && (
               <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
                 <div className='flex w-full items-center justify-between gap-2'>
                   <span>{_('LLM response cache')}</span>

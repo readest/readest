@@ -191,8 +191,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         setError((err as Error).message || _('Failed to get AI response'));
-        setLoading(false);
       }
+    } finally {
+      setLoading(false);
     }
   }, [selection, settings, targetLanguage, _]);
 
