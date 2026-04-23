@@ -34,12 +34,38 @@ describe('Inline Insight cache', () => {
     expect(key).not.toContain('Before\nSelected\nafter');
   });
 
-  it('reads cached responses before TTL expiry', () => {
+  it('reads cached responses using the current request identity only', () => {
     const key = input.buildKey();
 
     writeInlineInsightCache(key, 'cached answer');
 
     expect(readInlineInsightCache(key)).toBe('cached answer');
+  });
+
+  it('uses chatUrl, model, and messages as part of the cache identity', () => {
+    const differentChatUrl = new InlineInsightCacheInput(
+      {
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        provider: 'ollama',
+        model: 'qwen2.5:7b',
+        chatUrl: 'http://127.0.0.1:11434/custom/chat',
+        modelUrl: 'http://127.0.0.1:11434/v1/models',
+      },
+      input.messages,
+    );
+    const differentModel = new InlineInsightCacheInput(
+      {
+        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+        provider: 'ollama',
+        model: 'qwen2.5:14b',
+        chatUrl: 'http://127.0.0.1:11434/v1/chat/completions',
+        modelUrl: 'http://127.0.0.1:11434/v1/models',
+      },
+      input.messages,
+    );
+
+    expect(differentChatUrl.buildKey()).not.toBe(input.buildKey());
+    expect(differentModel.buildKey()).not.toBe(input.buildKey());
   });
 
   it('does not write empty responses', () => {

@@ -84,4 +84,20 @@ describe('extractContext', () => {
     expect(context).not.toContain('secret script text');
     expect(context).not.toContain('hidden');
   });
+
+  it('respects the character budget around the selection', () => {
+    const doc = createDoc(`
+      <main>
+        <p>1234567890 1234567890 1234567890 before target after 1234567890 1234567890 1234567890</p>
+      </main>
+    `);
+
+    const context = extractContext(createSelection(doc, 'target'), 20);
+
+    expect(context).toContain('Selected:\ntarget');
+    expect(context).toContain('Before:\n');
+    expect(context).toContain('After:\n');
+    expect(context).not.toContain('1234567890 1234567890 1234567890 before');
+    expect(context).not.toContain('after 1234567890 1234567890 1234567890');
+  });
 });

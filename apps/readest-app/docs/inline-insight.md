@@ -1,74 +1,178 @@
-# Inline Insight - 随文智解
+# Inline Insight Development Documentation
 
-product name: Inline Insight
-internal codename: inlineInsight
+## Code Structure
 
-## 功能概述
+Key entry points are listed below.
 
-结合上下文的免输入查询，极大地保持阅读的沉浸感和连贯性，是阅读体验
+| File                                                         | Responsibility                                                         |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `src/app/reader/components/annotator/InlineInsightPopup.tsx` | Main popup component. Initial request, follow-up, stream rendering     |
+| `src/components/settings/InlineInsightSettingsPanel.tsx`     | Settings editing, API Host auto-completion, provider/profile switching |
+| `src/services/inlineInsight/client.ts`                       | Sending chat requests, handling streams, cache integration             |
+| `src/services/inlineInsight/contextExtractor.ts`             | Extracting local context from the reading DOM                          |
+| `src/services/inlineInsight/parser.ts`                       | Parsing the partial JSON returned by the LLM stream                    |
+| `src/services/inlineInsight/prompts.ts`                      | Building LLM prompts/messages                                          |
+| `src/services/inlineInsight/providers.ts`                    | Provider helper rules, API Host auto-completion, thinking parameters   |
+| `src/services/inlineInsight/providerConfigs.ts`              | Provider default configuration tables                                  |
+| `src/services/inlineInsight/cache.ts`                        | Local response caching                                                 |
+| `src/services/inlineInsight/logging.ts`                      | Stream delta extraction and debug log formatting                       |
+| `src/app/api/inlineinsight/chat/route.ts`                    | Chat streaming proxy in the Web environment                            |
+| `src/app/api/inlineinsight/models/route.ts`                  | Models list proxy in the Web environment                               |
 
-选中文本后点击查询图标，弹窗会结合选中文本、同段落剩余文字和相邻章节块，猜测读者意图，生成几条最有帮助的几项解释。
+Suggested code reading order:
 
-## 代码地图
+1. `InlineInsightPopup.tsx`
+2. `client.ts`
+3. `parser.ts`
+4. `contextExtractor.ts`
+5. `InlineInsightSettingsPanel.tsx`
+6. `providers.ts` / `providerConfigs.ts`
+7. The two `route.ts` files
 
-| 文件                                                         | 职责                                                      |
-| ------------------------------------------------------------ | --------------------------------------------------------- |
-| `src/app/reader/components/annotator/AnnotationTools.tsx`    | 注册 `inlineinsight` 工具按钮                             |
-| `src/app/reader/components/annotator/Annotator.tsx`          | 控制 Inline Insight 弹窗打开和定位                        |
-| `src/app/reader/components/annotator/InlineInsightPopup.tsx` | 弹窗 UI、流式状态、错误状态和输出解析                     |
-| `src/components/settings/AIPanel.tsx`                        | Inline Insight provider、模型、上下文、问题方向和缓存设置 |
-| `src/services/inlineInsight/types.ts`                        | 设置、provider 和结果类型                                 |
-| `src/services/inlineInsight/providers.ts`                    | Provider 预设、端点拼接、thinking 参数和旧配置兼容        |
-| `src/services/inlineInsight/contextExtractor.ts`             | 从阅读 DOM 提取选区上下文                                 |
-| `src/services/inlineInsight/client.ts`                       | Chat Completions 请求、SSE 解析和缓存接入                 |
-| `src/services/inlineInsight/cache.ts`                        | 本地响应缓存                                              |
-| `src/app/api/inlineinsight/chat/route.ts`                    | Web 环境下的流式请求代理                                  |
-| `src/app/api/inlineinsight/models/route.ts`                  | Web 环境下的模型列表代理                                  |
+## Inline Insight Settings
 
-## Provider 策略
+The core Settings type is `InlineInsightSettings`, defined in [types.ts](/C:/Users/manfred/workspace/_fork/readest/apps/readest-app/src/services/inlineInsight/types.ts).
 
-Inline Insight 主要以 OpenAI Chat Completions 协议作为统一调用面。Ollama 使用其兼容的 `/v1/chat/completions`，模型列表走 `/api/tags`；常见云 provider 使用 `/v1/chat/completions` 和 `/v1/models`；LM Studio REST 使用原生 REST v0 的 `/api/v0/chat/completions` 和 `/api/v0/models`。
+Current fields:
 
-内置 provider:
+- `enabled`
+- `provider`
+- `chatUrl`
+- `modelUrl`
+- `model`
+- `apiKey`
+- `providerProfiles`
+- `maxContextChars`
+- `targetLanguage`
+- `systemPrompt`
+- `questionDirections`
+- `cacheEnabled`
 
-| Provider          | 默认 Base URL                                             | API Key  |
-| ----------------- | --------------------------------------------------------- | -------- |
-| Ollama            | `http://127.0.0.1:11434`                                  | 不需要   |
-| OpenAI            | `https://api.openai.com`                                  | 需要     |
-| DeepSeek          | `https://api.deepseek.com`                                | 需要     |
-| OpenRouter        | `https://openrouter.ai/api`                               | 需要     |
-| Groq              | `https://api.groq.com/openai`                             | 需要     |
-| Gemini            | `https://generativelanguage.googleapis.com/v1beta/openai` | 需要     |
-| LM Studio REST    | `http://localhost:1234`                                   | 可选     |
-| OpenAI-compatible | 用户自定义                                                | 通常需要 |
+### providerProfiles
 
-## Thinking 控制
+Supported LLM Providers
 
-各家 LLM API 没有统一的 `thinking=false` 标准。Inline Insight 不在 UI 暴露 thinking 开关；该功能默认追求快速直答，代码路径会尽量关闭 thinking，不能关闭时压到最低或仅通过 prompt 约束直接回答。LM Studio REST 使用原生 `reasoning` 参数，固定发送 `"off"`。
+- Official providers: `openai`, `deepseek`, `openrouter`, `groq`, `gemini`
+- Local or custom providers: `ollama`, `lmstudio`, `custom-openai-compatible`
 
-| Provider                 | 请求参数策略                                                                                               |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Ollama                   | `think: false`；`gpt-oss` 模型只能降到 `think: "low"`                                                      |
-| OpenRouter               | `reasoning: { effort: "none", exclude: true }`                                                             |
-| Gemini OpenAI-compatible | `gemini-2.5` 非 Pro 模型使用 `reasoning_effort: "none"`；Gemini 3 Flash 使用 `reasoning_effort: "minimal"` |
-| OpenAI                   | 对 `o*`、`gpt-5*`、`gpt-oss*` 等 reasoning 模型使用 `reasoning_effort: "minimal"`                          |
-| LM Studio REST           | `reasoning: "off"`                                                                                         |
-| DeepSeek / Groq / Custom | 不注入非标准字段，依赖 prompt 约束；需要真正关闭时应选择非 reasoning 模型                                  |
+`providerProfiles` is used to save the corresponding API information separately for each provider:
 
-无论 provider 是否支持参数，系统 prompt 都要求不输出 `<think>`、推理过程或内部思考。
+- `chatUrl`
+- `modelUrl`
+- `model`
+- `apiKey`
 
-## 上下文提取
+## Runtime Flow
 
-`extractContext(selection, maxChars)` 的目标是低延迟提取足够的局部语境，而不是构建全书索引。
+### Initial Request (Clicking the Inline Insight button)
 
-策略：
+The flow is as follows:
 
-1. 找到选区起止位置最近的块级祖先。
-2. 在 `article`、`main` 或 `body` 范围内按文档顺序收集可读块。
-3. 跳过 `script`、`style`、`canvas`、`iframe` 等非正文内容。
-4. 优先保留同段落中选区前后的文字。
-5. 再按预算向前、向后收集相邻块。
-6. 输出固定结构：
+```text
+selection
+  -> extractContext
+  -> buildInlineInsightMessages
+  -> streamInlineInsight
+  -> optional cache read
+  -> streamChatCompletions
+  -> parseInlineInsightSections
+  -> popup render
+  -> optional cache write
+```
+
+Detailed steps:
+
+1. The user selects text and triggers the popup.
+2. `InlineInsightPopup.tsx` calls `callLLM()` after mounting.
+3. `extractContext(selection, maxContextChars)` extracts `Before / Selected / After` from the current reading DOM.
+4. `buildInlineInsightMessages(...)` assembles system + user messages.
+5. `streamInlineInsight(...)` first attempts a cache hit.
+6. If not cached, it enters `streamChatCompletions(...)`.
+7. The LLM returns partial JSON via SSE streaming.
+8. `parseInlineInsightSections(answer)` incrementally parses during each render:
+   - `briefItems`
+   - `detailItems`
+   - `detailMap`
+9. The popup first displays the brief; once details are ready, it allows the user to toggle `More / Less`.
+
+### Follow-up
+
+The flow is as follows:
+
+```text
+follow-up question
+  -> reuse contextRef
+  -> buildInlineInsightFollowUpMessages
+  -> streamInlineInsightFollowUp
+  -> streamChatCompletions
+  -> append follow-up answer
+```
+
+### Proxy for Web
+
+- Web
+  - chat routes to `/api/inlineinsight/chat`
+  - models route to `/api/inlineinsight/models`
+  - Purpose: To bypass browser CORS and avoid exposing the API key directly in frontend cross-origin requests.
+
+## Lifecycle Notes
+
+### Popup Lifecycle
+
+`InlineInsightPopup.tsx` is the primary runtime state container.
+
+States related to the initial request:
+
+- `loading`
+- `thinking`
+- `error`
+- `answer`
+- `abortRef`
+- `contextRef`
+
+Meanings:
+
+- `loading`
+  - `true` when the request has been sent, but there are no displayable results yet.
+- `thinking`
+  - `true` when a reasoning chunk has been received, but the main content hasn't started yet.
+- `error`
+  - Initial request failure information.
+- `answer`
+  - The currently accumulated main body text.
+- `abortRef`
+  - The `AbortController` for the current initial request.
+- `contextRef`
+  - The fixed context of the current passage, reused for follow-ups.
+
+In `useEffect(..., [])`:
+
+- Triggers `callLLM()` once on mount.
+- Aborts the initial request and follow-up request on unmount.
+
+### Follow-up Lifecycle
+
+Follow-up has an independent set of states:
+
+- `followUpOpen`
+- `followUpQuestion`
+- `followUpAnswer`
+- `followUpLoading`
+- `followUpError`
+- `followUpAbortRef`
+
+## Context Extraction
+
+The goal of `extractContext(selection, maxChars)` is to retrieve a short snippet of context that is most helpful for the current selection.
+
+Strategy:
+
+1. Find the nearest block ancestor of the selection's start and end positions.
+2. Collect readable blocks within the `article` / `main` / `body` scope.
+3. Skip non-content nodes like `script`, `style`, `iframe`, `canvas`, etc.
+4. Prioritize retaining text before and after the selection within the same block.
+5. Then expand to adjacent blocks backwards and forwards based on the character budget.
+6. Output a fixed format:
 
 ```text
 Before:
@@ -79,106 +183,117 @@ After:
 ...
 ```
 
-`maxContextChars` 默认 2000，设置面板允许在 500 到 3000 之间调整。
+## Streaming Format and Parsing
 
-## 问题方向
+The current output protocol is a JSON object:
 
-设置面板支持维护 `questionDirections` 列表，用来提示模型优先从哪些方向生成初始解释，例如“地名背景”“人物关系”“文言翻译”。这些方向会进入初始 Inline Insight 和追问请求的 user message，但不会覆盖用户追问本身。
-
-设置面板也支持 `targetLanguage`。默认留空时跟随 Readest 的 UI 语言；用户填写目标语言后，初始解释和追问都会使用该语言，而不再强制使用 UI 语言。
-
-设置面板允许修改初始解释使用的 `systemPrompt`。留空时使用内置英文默认 prompt；追问请求继续使用固定英文 `FOLLOW_UP_SYSTEM_PROMPT`，不暴露自定义入口。
-
-缓存 key 包含 `questionDirections`，因此调整方向后不会命中旧方向下的缓存结果。
-缓存 key 也包含实际发送给 LLM 的目标语言，因此不同目标语言不会互相复用旧响应。
-当 `systemPrompt` 变化时，设置面板会直接清空 Inline Insight 缓存。
-
-## 调用流程
-
-```text
-用户选中文字
-  -> Annotator 打开 InlineInsightPopup
-  -> extractContext(selection, maxContextChars)
-  -> streamInlineInsight(selectedText, context, settings, locale)
-  -> 命中缓存则直接返回完整文本
-  -> 未命中则调用 provider 的 Chat Completions stream
-  -> InlineInsightPopup 解析简述和详述并流式渲染
-  -> 完整响应写入本地缓存
-  -> 开启 INLINE_INSIGHT_DEBUG_LOGGING 时，每次真实 LLM call 写入 logs/inlineinsight/*.md 调试日志
+```json
+{
+  "brief": [{ "label": "Meaning", "content": "..." }],
+  "details": [{ "label": "Meaning", "content": "..." }]
+}
 ```
 
-Tauri 环境直接请求 provider 端点；Web 环境通过 `/api/inlineinsight/chat` 代理，避免浏览器 CORS 限制。模型列表在 Web 环境通过 `POST /api/inlineinsight/models` 代理，API key 放在请求体中，不再放入查询字符串。
+The parsing layer is handled by `parser.ts`:
 
-## 调试日志
+- Allows parsing of incomplete JSON text, outputting it to the user as quickly as possible.
+- If a label in `details` does not have a corresponding `brief`, this detail will be displayed directly as a brief.
 
-设置 `INLINE_INSIGHT_DEBUG_LOGGING=true` 后，每一次 Inline Insight chat completion 调用都会生成 markdown 日志，文件名使用 ISO 时间并替换 `:` 和 `.`，例如 `2026-04-18T09-25-17-869Z.md`。该开关默认关闭，仅建议在本地开发调试时开启。`pnpm dev-web` 默认启用该环境变量。
+## Provider Rules
 
-Tauri 直连路径在前端判断 `NEXT_PUBLIC_INLINE_INSIGHT_DEBUG_LOGGING=true` 后写日志。Web 代理路径在服务端判断 `INLINE_INSIGHT_DEBUG_LOGGING=true` 后写日志。
+Provider default configurations are defined in [providerConfigs.ts](/C:/Users/manfred/workspace/_fork/readest/apps/readest-app/src/services/inlineInsight/providerConfigs.ts).
 
-- Web/dev 代理路径写入 `logs/inlineinsight/`。
-- Tauri 直连路径优先写入当前工作目录的 `logs/inlineinsight/`，失败时回退到系统应用 Log 目录。
-- 日志包含 endpoint、model、temperature、status、duration、messages、请求 body、响应文本或错误信息。
-- 命中缓存时不会写新日志，因为没有发生新的 LLM call。
+`providers.ts` is responsible for three types of helper logic:
 
-## 输出格式
+1. `getProviderDefaultConfig(provider)`
+2. API Host auto-completion and reverse deduction:
+   - `buildInlineInsightUrlsFromApiHost`
+   - `getApiHostFromInlineInsightChatUrl`
+3. Thinking parameters:
+   - `getMinimalThinkingParams`
 
-模型输出使用纯文本分段，避免在流式 JSON 未闭合时解析失败。
+Current rule highlights:
 
-```text
-[含义] 一句简洁说明
-[背景] 一句简洁说明
+- `ollama`, `lmstudio`, `custom-openai-compatible`
+  - Allow editing the API Host.
+- hosted provider
+  - Do not allow editing the API Host.
+- `getMinimalThinkingParams` only injects additional fields for explicitly verified providers.
 
-===DETAILS===
+## Cache
 
-[含义] 2-4 句话详细说明。
+The cache is only responsible for reusing the body results of completely identical requests.
 
-[背景] 2-4 句话详细说明。
-```
+Current location:
 
-弹窗会先展示 `===DETAILS===` 前的简述，收到详情后提供展开按钮。
+- `src/services/inlineInsight/cache.ts`
 
-## 缓存
+Current design:
 
-Inline Insight 缓存保存在浏览器 `localStorage`：
+- Key inputs:
+  - `provider`
+  - `chatUrl`
+  - `model`
+  - `messages`
+- Value:
+  - The complete final body string.
+- Does not cache empty responses.
+- No TTL (Time-To-Live).
+- Retains a maximum of 200 entries.
 
-- key 使用 provider、base URL、model 和完整 messages 的哈希，不把原文放进 key。
-- value 直接保存模型响应文本。
-- 最多保留 200 条，超出后按创建时间淘汰。
-- 默认开启。
-- 设置面板支持关闭缓存和清空缓存。
+## Web Proxy
 
-缓存仅用于完全相同输入的重复查询；换模型、换 provider、换上下文或换语言都会重新请求。
+### chat route
 
-## 设置默认值
+`src/app/api/inlineinsight/chat/route.ts`
 
-```typescript
-export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
-  enabled: false,
-  provider: 'ollama',
-  baseUrl: 'http://127.0.0.1:11434',
-  model: '',
-  apiKey: '',
-  maxContextChars: 2000,
-  targetLanguage: '',
-  systemPrompt: '',
-  questionDirections: [],
-  cacheEnabled: true,
-};
-```
+Responsibilities:
 
-`loadSettings()` 会将默认值合并到旧配置，保证新增字段不会是 `undefined`。
+- Forwards chat requests in the Web environment.
+- Forwards the frontend body exactly as-is to the upstream `settings.chatUrl`.
+- Preserves SSE streaming output.
+- When debug logging is enabled, extracts while forwarding:
+  - `responseText`
+  - `reasoningText`
 
-## 安全和隐私
+### models route
 
-- Web 代理只允许 `http` 和 `https` endpoint。
-- 模型列表代理支持 `POST`，避免 API key 进入 URL。
-- 仅在环境变量显式开启时写本地 `logs/inlineinsight` 文件，减少敏感内容落盘。
-- 选中文本、上下文和模型响应仍会发送给用户配置的 provider；UI 需要让用户自行选择可信 provider。
+`src/app/api/inlineinsight/models/route.ts`
 
-## 测试
+Responsibilities:
 
-新增测试覆盖：
+- Forwards model list requests in the Web environment.
+- Proxies `settings.modelUrl`.
+- Forwards the API key as the Authorization header.
 
-- `contextExtractor`: 嵌套正文、同段落前后文、跳过脚本和样式内容。
-- `providers`: endpoint 拼接、旧 provider 兼容、API key 需求。
-- `cache`: key 稳定性、清理空缓存、清空 Inline Insight 缓存。
+## Testing Notes
+
+Testing directory:
+
+- `providers.test.ts`
+  - Provider default configurations
+  - API Host auto-completion
+  - Hosted provider read-only semantics
+  - Thinking parameter strategy
+
+- `cache.test.ts`
+  - Cache key strictly depends on the current actual input
+  - Empty responses are not written
+  - `clearInlineInsightCache()` only clears Inline Insight keys
+
+- `parser.test.ts`
+  - Complete JSON
+  - Partial brief JSON
+  - Partial detail JSON
+  - Unmatched detail fallbacks to brief
+
+- `logging.test.ts`
+  - Log file names
+  - Markdown log format
+  - SSE content / reasoning extraction
+
+- `contextExtractor.test.ts`
+  - Nested content blocks
+  - Prioritized context within the same block
+  - Skipping script/style
+  - Character budget truncation

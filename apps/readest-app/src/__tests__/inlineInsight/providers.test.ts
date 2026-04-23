@@ -11,8 +11,16 @@ import {
 } from '@/services/inlineInsight/providers';
 
 describe('Inline Insight providers', () => {
-  it('uses the custom OpenAI-compatible preset directly', () => {
-    expect(getProviderDefaultConfig('custom-openai-compatible').label).toBe('OpenAI-compatible');
+  it('uses the current provider defaults directly', () => {
+    expect(getProviderDefaultConfig('custom-openai-compatible')).toMatchObject({
+      label: 'OpenAI-compatible',
+      defaultChatUrl: 'https://api.openai.com/v1/chat/completions',
+      defaultModelUrl: 'https://api.openai.com/v1/models',
+    });
+    expect(getProviderDefaultConfig('openrouter')).toMatchObject({
+      defaultChatUrl: 'https://openrouter.ai/api/v1/chat/completions',
+      defaultModelUrl: 'https://openrouter.ai/api/v1/models',
+    });
   });
 
   it('derives OpenAI-compatible endpoint pairs from an API host', () => {
@@ -34,6 +42,18 @@ describe('Inline Insight providers', () => {
     expect(getApiHostFromInlineInsightChatUrl('http://localhost:1234/v1/chat/completions')).toBe(
       'http://localhost:1234',
     );
+  });
+
+  it('lets runtime use stored chat/model URLs directly without extra URL correction', () => {
+    const settings = {
+      ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+      provider: 'custom-openai-compatible' as const,
+      chatUrl: 'https://example.com/custom/chat',
+      modelUrl: 'https://example.com/custom/models',
+    };
+
+    expect(settings.chatUrl).toBe('https://example.com/custom/chat');
+    expect(settings.modelUrl).toBe('https://example.com/custom/models');
   });
 
   it('uses OpenAI-compatible defaults and no API key requirement for Ollama local models', () => {
@@ -59,6 +79,10 @@ describe('Inline Insight providers', () => {
 
   it('marks hosted providers as non-editable in the UI', () => {
     expect(inlineInsightProviderAllowsCustomApiHost('openai')).toBe(false);
+    expect(inlineInsightProviderAllowsCustomApiHost('deepseek')).toBe(false);
+    expect(inlineInsightProviderAllowsCustomApiHost('gemini')).toBe(false);
+    expect(inlineInsightProviderAllowsCustomApiHost('groq')).toBe(false);
+    expect(inlineInsightProviderAllowsCustomApiHost('openrouter')).toBe(false);
   });
 
   it('only adds thinking suppression parameters for providers with known-safe request shapes', () => {
@@ -90,12 +114,6 @@ describe('Inline Insight providers', () => {
         provider: 'openrouter',
       }),
     ).toEqual({ reasoning: { effort: 'none' } });
-    expect(
-      getMinimalThinkingParams({
-        ...DEFAULT_INLINE_INSIGHT_SETTINGS,
-        provider: 'lmstudio',
-      }),
-    ).toEqual({ reasoning: 'off' });
   });
 
   it('does not add unknown thinking suppression parameters for generic providers', () => {

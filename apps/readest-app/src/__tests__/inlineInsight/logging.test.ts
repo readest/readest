@@ -25,7 +25,7 @@ describe('Inline Insight logging', () => {
     };
     const markdown = formatInlineInsightLog({
       timestamp: '2026-04-18T09:25:17.869Z',
-      endpoint: 'http://localhost:1234/api/v0/chat/completions',
+      endpoint: 'http://localhost:1234/v1/chat/completions',
       requestBody: body,
       messages: getInlineInsightMessagesFromBody(body),
       responseText: 'answer',
