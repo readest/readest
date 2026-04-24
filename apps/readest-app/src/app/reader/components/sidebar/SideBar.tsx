@@ -63,9 +63,8 @@ const SideBar = ({}) => {
   };
 
   const onNavigateEvent = async () => {
-    const pinButton = document.querySelector('.sidebar-pin-btn');
-    const isPinButtonHidden = !pinButton || window.getComputedStyle(pinButton).display === 'none';
-    if (isPinButtonHidden) {
+    const { isSideBarPinned } = useSidebarStore.getState();
+    if (!isSideBarPinned) {
       setSideBarVisible(false);
     }
   };
