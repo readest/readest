@@ -81,4 +81,4 @@ tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
-rsproperties = "0.3"
+libc = "0.2"

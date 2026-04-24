@@ -17,6 +17,7 @@ dependencies = [
  "discord-rich-presence",
  "futures",
  "futures-util",
+ "libc",
  "log",
  "objc",
  "objc-foundation",
@@ -27,7 +28,6 @@ dependencies = [
  "rand 0.8.6",
  "read-progress-stream",
  "reqwest 0.12.28",
- "rsproperties",
  "serde",
  "serde_json",
  "tauri",
@@ -5082,12 +5082,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
-name = "pretty-hex"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a65843dfefbafd3c879c683306959a6de478443ffe9c9adf02f5976432402d7"
-
-[[package]]
 name = "prettyplease"
 version = "0.2.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5840,20 +5834,6 @@ checksum = "8ba9ce64a8f45d7fc86358410bb1a82e8c987504c0d4900e9141d69a9f26c885"
 dependencies = [
  "bytemuck",
  "byteorder",
-]
-
-[[package]]
-name = "rsproperties"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b98d55abde44982a00d67a84809166ea8f5c143abc86818f555485f19766cfe4"
-dependencies = [
- "log",
- "pretty-hex",
- "rustix 1.1.4",
- "thiserror 2.0.18",
- "zerocopy",
- "zerocopy-derive",
 ]
 
 [[package]]

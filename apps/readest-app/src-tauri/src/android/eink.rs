@@ -46,9 +46,21 @@ const EINK_MODELS: &[&str] = &[
 ];
 
 fn get_system_property(prop: &str) -> Option<String> {
-    rsproperties::get::<String>(prop)
-        .ok()
-        .filter(|s| !s.is_empty())
+    use std::ffi::CString;
+    let name = CString::new(prop).ok()?;
+    let mut buf = [0u8; libc::PROP_VALUE_MAX as usize];
+    // SAFETY: __system_property_get writes at most PROP_VALUE_MAX bytes (including the
+    // trailing NUL) into the provided buffer and returns the number of bytes written
+    // excluding the NUL. `name` is a valid NUL-terminated C string for the duration
+    // of the call.
+    let len = unsafe {
+        libc::__system_property_get(name.as_ptr(), buf.as_mut_ptr() as *mut libc::c_char)
+    };
+    if len <= 0 {
+        return None;
+    }
+    let value = std::str::from_utf8(&buf[..len as usize]).ok()?;
+    (!value.is_empty()).then(|| value.to_owned())
 }
 
 /// Check if the current Android device is an e-ink device.
