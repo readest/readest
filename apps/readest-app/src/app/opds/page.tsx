@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { md5 } from 'js-md5';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
+import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from './utils/opdsParser';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -140,11 +140,11 @@ export default function BrowserPage() {
           formData[param.name] = param.value || '';
         }
       });
-      const map = new Map<string | null, Map<string | null, string>>();
+      const map = new Map<string | undefined, Map<string, string>>();
 
       for (const param of search.params || []) {
         const value = formData[param.name] || '';
-        const ns = param.ns ?? null;
+        const ns = param.ns ?? undefined;
 
         if (map.has(ns)) {
           map.get(ns)!.set(param.name, value);
@@ -383,8 +383,8 @@ export default function BrowserPage() {
                 required: true,
               },
             ],
-            search: (map: Map<string | null, Map<string | null, string>>) => {
-              const defaultParams = map.get(null);
+            search: (map: Map<string | undefined, Map<string, string>>) => {
+              const defaultParams = map.get(undefined);
               const searchTerms = defaultParams?.get('searchTerms') || '';
               const decodedURL = decodeURIComponent(searchURL);
               return decodedURL.replace('{searchTerms}', encodeURIComponent(searchTerms));
@@ -494,6 +494,51 @@ export default function BrowserPage() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, state.baseURL, appService, libraryLoaded],
+  );
+
+  const handleStream = useCallback(
+    async (href: string, count: number, title: string, author: string) => {
+      if (!appService || !libraryLoaded) return;
+      try {
+        const url = resolveURL(href, state.baseURL);
+        const username = usernameRef.current || '';
+        const password = passwordRef.current || '';
+        const customHeaders = customHeadersRef.current;
+        const useProxy = needsProxy(url);
+        let streamUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+
+        if (username || password) {
+          const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
+          if (authHeader) {
+            streamUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+          }
+        }
+
+        const streamData = {
+          template: streamUrl,
+          count,
+          title,
+          author,
+        };
+
+        const virtualFile = new File([], 'pse://' + encodeURIComponent(JSON.stringify(streamData)));
+        const { library, setLibrary } = useLibraryStore.getState();
+        const book = await appService.importBook(virtualFile, library, { transient: true });
+        if (book) {
+          setLibrary(library);
+          import('@/utils/nav').then(({ navigateToReader }) => {
+            navigateToReader(router, [book.hash]);
+          });
+        }
+      } catch (e) {
+        console.error('Stream error:', e);
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to start stream') + `:\n${e instanceof Error ? e.message : e}`,
+        });
+      }
+    },
+    [state.baseURL, appService, libraryLoaded, router, _],
   );
 
   const handleGenerateCachedImageUrl = useCallback(
@@ -673,6 +718,7 @@ export default function BrowserPage() {
             publication={publication}
             baseURL={state.baseURL}
             onDownload={handleDownload}
+            onStream={handleStream}
             resolveURL={resolveURL}
             onGenerateCachedImageUrl={handleGenerateCachedImageUrl}
           />

@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
-import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
+import { OPDSPublication, REL, SYMBOL } from '@/types/opds';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { formatDate, formatLanguage } from '@/utils/book';
@@ -26,6 +26,7 @@ interface PublicationViewProps {
     type?: string,
     onProgress?: (progress: { progress: number; total: number }) => void,
   ) => Promise<Book | null | undefined>;
+  onStream?: (href: string, count: number, title: string, author: string) => void;
   onGenerateCachedImageUrl: (url: string) => Promise<string>;
 }
 
@@ -34,6 +35,7 @@ export function PublicationView({
   baseURL,
   resolveURL,
   onDownload,
+  onStream,
   onGenerateCachedImageUrl,
 }: PublicationViewProps) {
   const _ = useTranslation();
@@ -54,7 +56,7 @@ export function PublicationView({
     return covers?.[0] || publication.images?.[0];
   }, [publication.images]);
 
-  const imageUrl = coverImage ? resolveURL(coverImage.href, baseURL) : null;
+  const imageUrl = coverImage?.href ? resolveURL(coverImage.href, baseURL) : null;
 
   const authors = useMemo(() => {
     const author = publication.metadata?.author;
@@ -66,13 +68,17 @@ export function PublicationView({
   }, [publication.metadata?.author]);
 
   const acquisitionLinks = useMemo(() => {
-    const links: Array<{ rel: string; links: OPDSLink[] }> = [];
+    const links: Array<{ rel: string; links: any[] }> = [];
     for (const [rel, linkList] of Array.from(linksByRel.entries())) {
       if (rel?.startsWith(REL.ACQ)) {
         links.push({ rel, links: linkList });
       }
     }
     return links;
+  }, [linksByRel]);
+
+  const streamLinks = useMemo(() => {
+    return linksByRel.get(REL.STREAM) || [];
   }, [linksByRel]);
 
   const handleActionButton = async (href: string, type?: string) => {
@@ -157,8 +163,8 @@ export function PublicationView({
             )}
           </div>
 
-          {acquisitionLinks.length > 0 && (
-            <div className='flex flex-wrap gap-2'>
+          {(acquisitionLinks.length > 0 || streamLinks.length > 0) && (
+            <div className='flex flex-wrap items-center gap-2'>
               {acquisitionLinks.map(({ rel, links }) => (
                 <div key={rel} className='flex gap-1'>
                   {links.length === 1 || downloadedBook ? (
@@ -209,6 +215,38 @@ export function PublicationView({
                   )}
                 </div>
               ))}
+
+              {streamLinks.map((link, idx) => {
+                const countRaw =
+                  link.properties?.['pse:count'] ||
+                  link.properties?.numberOfItems ||
+                  link['pse:count'] ||
+                  link.count ||
+                  '0';
+                const count = parseInt(String(countRaw), 10);
+
+                if (count > 0) {
+                  return (
+                    <button
+                      key={`stream-${idx}`}
+                      onClick={() =>
+                        onStream?.(
+                          link.href || '',
+                          count,
+                          publication.metadata?.title || '',
+                          authors?.join(', ') || '',
+                        )
+                      }
+                      disabled={downloading || !!downloadedBook}
+                      className={clsx('btn btn-secondary min-w-20 rounded-3xl')}
+                    >
+                      {_('Read (Stream)')}
+                    </button>
+                  );
+                }
+                return null;
+              })}
+
               <div className='flex h-12 w-12 items-center justify-center'>
                 {downloading && progress && progress > 0 && (
                   <div
@@ -240,10 +278,7 @@ export function PublicationView({
             {content ? (
               <div
                 dangerouslySetInnerHTML={{
-                  __html:
-                    content.type === 'html' || content.type === 'xhtml'
-                      ? content.value
-                      : content.value,
+                  __html: typeof content === 'string' ? content : content.value,
                 }}
               />
             ) : (
@@ -271,9 +306,9 @@ export function PublicationView({
                       ? publication.metadata.publisher
                       : Array.isArray(publication.metadata.publisher)
                         ? publication.metadata.publisher
-                            .map((p) => (typeof p === 'string' ? p : p.name))
+                            .map((p: any) => (typeof p === 'string' ? p : p.name))
                             .join(', ')
-                        : publication.metadata.publisher.name}
+                        : (publication.metadata.publisher as any).name}
                   </td>
                 </tr>
               )}

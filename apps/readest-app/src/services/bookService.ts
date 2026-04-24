@@ -244,8 +244,8 @@ export async function importBook(
     let filename: string;
     let fileobj: File;
 
-    if (transient && typeof file !== 'string') {
-      throw new Error('Transient import is only supported for file paths');
+    if (transient && typeof file !== 'string' && !(file instanceof File)) {
+      throw new Error('Transient import requires a string path or File object');
     }
 
     try {
@@ -261,7 +261,9 @@ export async function importBook(
         ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
       }
       if (!fileobj || fileobj.size === 0) {
-        throw new Error('Invalid or empty book file');
+        if (!(fileobj instanceof File && fileobj.name.startsWith('pse://'))) {
+          throw new Error('Invalid or empty book file');
+        }
       }
       ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
       if (!loadedBook) {
@@ -276,7 +278,11 @@ export async function importBook(
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
 
-    const hash = await partialMD5(fileobj);
+    const hash =
+      fileobj instanceof File && fileobj.name.startsWith('pse://')
+        ? md5(fileobj.name).slice(0, 16)
+        : await partialMD5(fileobj);
+
     const metaHash = getMetadataHash(loadedBook.metadata);
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
@@ -451,6 +457,9 @@ export async function importBook(
         book.filePath = file;
         if (existingBook) existingBook.filePath = file;
       }
+    } else if (file instanceof File && file.name.startsWith('pse://')) {
+      book.url = file.name;
+      if (existingBook) existingBook.url = file.name;
     }
     book.coverImageUrl = await generateCoverImageUrlFn(book);
     const f = file as ClosableFile;
@@ -498,7 +507,10 @@ export async function getBookFileSize(fs: FileSystem, book: Book): Promise<numbe
 export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookContent> {
   let file: File;
   const fp = getLocalBookFilename(book);
-  if (await fs.exists(fp, 'Books')) {
+
+  if (book.url?.startsWith('pse://')) {
+    file = new File([], book.url);
+  } else if (await fs.exists(fp, 'Books')) {
     file = await fs.openFile(fp, 'Books');
   } else if (book.filePath) {
     file = await fs.openFile(book.filePath, 'None');

@@ -42,7 +42,7 @@ export function PublicationCard({
   }, [publication.images]);
 
   const imageLink = coverImage || thumbnailImage;
-  const imageUrl = imageLink ? resolveURL(imageLink.href, baseURL) : null;
+  const imageUrl = imageLink?.href ? resolveURL(imageLink.href, baseURL) : null;
 
   const authors = useMemo(() => {
     const author = publication.metadata?.author;
@@ -56,8 +56,14 @@ export function PublicationCard({
   const price = useMemo(() => {
     const priceLink = publication.links?.find((link) => link.properties?.price);
     if (priceLink?.properties?.price) {
-      const { currency, value } = priceLink.properties.price;
-      return `${currency} ${value}`;
+      const priceObj = Array.isArray(priceLink.properties.price)
+        ? priceLink.properties.price[0]
+        : priceLink.properties.price;
+
+      if (priceObj) {
+        const { currency, value } = priceObj;
+        return `${currency ? currency + ' ' : ''}${value}`;
+      }
     }
     if (linksByRel.has(REL.ACQ + '/open-access')) {
       return _('Open Access');
