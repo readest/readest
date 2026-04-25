@@ -83,7 +83,7 @@ export interface OPDSSearch {
 }
 
 export interface OPDSBaseLink {
-  rel?: string[];
+  rel?: string | string[];
   href?: string;
   type?: string;
   title?: string;

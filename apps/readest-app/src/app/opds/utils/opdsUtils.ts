@@ -1,4 +1,4 @@
-import { isOPDSCatalog } from './opdsParser';
+import { isOPDSCatalog } from 'foliate-js/opds.js';
 import { OPDSBaseLink } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';

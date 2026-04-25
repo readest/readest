@@ -44,17 +44,17 @@ describe('OPDS feed parsing', () => {
 
     it('should separate navigation and publication entries in mixed feeds', () => {
       const doc = parseXML(copypartyRootFeed);
-      const feed = getFeed(doc);
+      const feed = getFeed(doc) as OPDSFeed;
 
       // Should have navigation items (the "Sub/" folder)
       expect(feed.navigation).toBeDefined();
       expect(feed.navigation!).toHaveLength(1);
-      expect(feed.navigation![0].title).toBe('Sub/');
+      expect(feed.navigation![0]!.title).toBe('Sub/');
 
       // Should have publication items (the book)
       expect(feed.publications).toBeDefined();
       expect(feed.publications!).toHaveLength(1);
-      expect(feed.publications![0].metadata.title).toBe(
+      expect(feed.publications![0]!.metadata.title).toBe(
         'Children of the Fleet - Orson Scott Card.epub',
       );
     });
@@ -82,15 +82,15 @@ describe('OPDS feed parsing', () => {
 </feed>`;
 
       const doc = parseXML(subFeed);
-      const feed = getFeed(doc);
+      const feed = getFeed(doc) as OPDSFeed;
 
       expect(feed.navigation).toBeUndefined();
       expect(feed.publications).toBeDefined();
       expect(feed.publications!).toHaveLength(2);
-      expect(feed.publications![0].metadata.title).toBe(
+      expect(feed.publications![0]!.metadata.title).toBe(
         'Children of the Fleet - Orson Scott Card.epub',
       );
-      expect(feed.publications![1].metadata.title).toBe(
+      expect(feed.publications![1]!.metadata.title).toBe(
         'Earth Afire - Orson Scott Card & Aaron Johnston.epub',
       );
     });
@@ -116,13 +116,13 @@ describe('OPDS feed parsing', () => {
 </feed>`;
 
       const doc = parseXML(navFeed);
-      const feed = getFeed(doc);
+      const feed = getFeed(doc) as OPDSFeed;
 
       expect(feed.publications).toBeUndefined();
       expect(feed.navigation).toBeDefined();
       expect(feed.navigation!).toHaveLength(2);
-      expect(feed.navigation![0].title).toBe('Fiction/');
-      expect(feed.navigation![1].title).toBe('Non-Fiction/');
+      expect(feed.navigation![0]!.title).toBe('Fiction/');
+      expect(feed.navigation![1]!.title).toBe('Non-Fiction/');
     });
 
     it('should parse entry id and updated fields from publications', () => {
@@ -155,15 +155,15 @@ describe('OPDS feed parsing', () => {
 </feed>`;
 
       const doc = parseXML(reverseFeed);
-      const feed = getFeed(doc);
+      const feed = getFeed(doc) as OPDSFeed;
 
       expect(feed.publications).toBeDefined();
       expect(feed.publications!).toHaveLength(1);
-      expect(feed.publications![0].metadata.title).toBe('Some Book.epub');
+      expect(feed.publications![0]!.metadata.title).toBe('Some Book.epub');
 
       expect(feed.navigation).toBeDefined();
       expect(feed.navigation!).toHaveLength(1);
-      expect(feed.navigation![0].title).toBe('Sub/');
+      expect(feed.navigation![0]!.title).toBe('Sub/');
     });
   });
 

@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { md5 } from 'js-md5';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from './utils/opdsParser';
+import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -229,7 +229,7 @@ export default function BrowserPage() {
               addToHistory(url, newState, 'feed', null);
             }
           } else if (localName === 'entry') {
-            const publication = getPublication(doc.documentElement);
+            const publication = getPublication(doc.documentElement) as OPDSPublication;
             const newState = {
               publication,
               baseURL: responseURL,
@@ -244,7 +244,7 @@ export default function BrowserPage() {
               addToHistory(url, newState, 'publication', null);
             }
           } else if (localName === 'OpenSearchDescription') {
-            const search = getOpenSearch(doc);
+            const search = getOpenSearch(doc) as OPDSSearch;
             const newState = {
               search,
               baseURL: responseURL,

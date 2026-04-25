@@ -1,10 +1,13 @@
 import { getFeed, isOPDSCatalog } from 'foliate-js/opds.js';
 import type {
+  OPDSAcquisitionLink,
+  OPDSBaseLink,
   OPDSCatalog,
   OPDSFeed,
-  OPDSLink,
+  OPDSGenericLink,
   OPDSNavigationItem,
   OPDSPublication,
+  OPDSStreamLink,
 } from '@/types/opds';
 import { REL } from '@/types/opds';
 import { MIMETYPES } from '@/libs/document';
@@ -33,7 +36,11 @@ const MIME_XML = 'application/xml';
 // landing document, not the file).
 const SAFE_ACQ_RELS = [REL.ACQ, `${REL.ACQ}/open-access`];
 
-function isSafeAcquisitionLink(link: OPDSLink): boolean {
+type AnyAcqLink = OPDSAcquisitionLink | OPDSStreamLink | OPDSGenericLink;
+type ValidAcqLink = OPDSAcquisitionLink & { href: string };
+
+function isSafeAcquisitionLink(link: AnyAcqLink): link is ValidAcqLink {
+  if (!link.href) return false;
   if (link.properties?.indirectAcquisition?.length) return false;
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel ?? ''];
   return rels.some((r) => SAFE_ACQ_RELS.includes(r));
@@ -57,7 +64,7 @@ const INFERENCE_RULES: ReadonlyArray<{ mime: string; href: RegExp; title: RegExp
   { mime: 'application/x-fictionbook+xml', href: /\.fb2(?:[?#]|$)/i, title: /\bfb2\b/i },
 ];
 
-function inferMediaType(link: OPDSLink): string {
+function inferMediaType(link: ValidAcqLink): string {
   const title = link.title ?? '';
   for (const rule of INFERENCE_RULES) {
     if (rule.href.test(link.href) || rule.title.test(title)) return rule.mime;
@@ -65,7 +72,7 @@ function inferMediaType(link: OPDSLink): string {
   return '';
 }
 
-function getEffectiveMediaType(link: OPDSLink): string {
+function getEffectiveMediaType(link: ValidAcqLink): string {
   const declared = parseMediaType(link.type)?.mediaType ?? '';
   // Treat octet-stream as "the server didn't actually tell us" — most
   // OPDS feeds emit a real media type for known formats, and falling back
@@ -74,7 +81,7 @@ function getEffectiveMediaType(link: OPDSLink): string {
   return inferMediaType(link);
 }
 
-function isAdvancedEpub(link: OPDSLink, mediaType: string): boolean {
+function isAdvancedEpub(link: ValidAcqLink, mediaType: string): boolean {
   if (mediaType !== 'application/epub+zip') return false;
   const version = parseMediaType(link.type)?.parameters?.['version'];
   if (version && /^3(\.|$)/.test(version)) return true;
@@ -85,7 +92,7 @@ function isAdvancedEpub(link: OPDSLink, mediaType: string): boolean {
   return false;
 }
 
-function getFormatTier(link: OPDSLink): FormatTier {
+function getFormatTier(link: ValidAcqLink): FormatTier {
   const mediaType = getEffectiveMediaType(link);
   if (MIMETYPES.EPUB.includes(mediaType)) {
     return isAdvancedEpub(link, mediaType) ? 0 : 1;
@@ -115,7 +122,7 @@ function getFormatTier(link: OPDSLink): FormatTier {
  *
  * Returns undefined when no safe link exists — the entry is skipped.
  */
-export function getAcquisitionLink(pub: OPDSPublication): OPDSLink | undefined {
+export function getAcquisitionLink(pub: OPDSPublication): ValidAcqLink | undefined {
   const acqLinks = pub.links.filter(isSafeAcquisitionLink);
   if (acqLinks.length === 0) return undefined;
 
@@ -188,7 +195,7 @@ export function collectNewEntries(
     seenInBatch.add(entryId);
     items.push({
       entryId,
-      title: pub.metadata.title,
+      title: pub.metadata.title || acqLink.title || 'Untitled',
       acquisitionHref: acqLink.href,
       mimeType: acqLink.type ?? 'application/octet-stream',
       updated: pub.metadata.updated,
@@ -249,7 +256,7 @@ async function fetchFeed(
   return null;
 }
 
-type LinkLike = Pick<OPDSLink, 'href' | 'rel' | 'title'> | OPDSNavigationItem;
+type LinkLike = Pick<OPDSBaseLink, 'href' | 'rel' | 'title'> | OPDSNavigationItem;
 
 function hasRel(item: LinkLike, target: string): boolean {
   const rels = Array.isArray(item.rel) ? item.rel : [item.rel ?? ''];

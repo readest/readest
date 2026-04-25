@@ -231,14 +231,18 @@ export class DocumentLoader {
         getComment: async () => null,
       };
       const { makeComicBook } = await import('foliate-js/comic-book.js');
-      const comicBook = (await makeComicBook(loader, this.file)) as any;
-      comicBook.metadata = {
-        ...(comicBook.metadata || {}),
-        title: data.title,
-        author: data.author,
-      };
-      comicBook.dir = 'auto';
-      book = comicBook as BookDoc;
+      const rawComicBook = await makeComicBook(loader, this.file);
+
+      book = {
+        ...rawComicBook,
+        dir: 'auto',
+        metadata: {
+          ...(rawComicBook.metadata || {}),
+          title: data.title,
+          author: data.author,
+        } as BookMetadata,
+      } as BookDoc;
+
       return { book, format: 'CBZ' };
     }
 
