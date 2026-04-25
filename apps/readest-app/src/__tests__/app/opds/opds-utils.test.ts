@@ -52,7 +52,7 @@ import {
   MIME,
   validateOPDSURL,
 } from '@/app/opds/utils/opdsUtils';
-import type { OPDSLink } from '@/types/opds';
+import type { OPDSBaseLink } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
 
 const mockFetchWithAuth = vi.mocked(fetchWithAuth);
@@ -195,70 +195,63 @@ describe('opdsUtils', () => {
 
   describe('isSearchLink', () => {
     it('should return true for a search link with OPENSEARCH type', () => {
-      const link: OPDSLink = {
-        rel: 'search',
+      const link: OPDSBaseLink = {
+        rel: ['search'],
         href: '/search',
         type: MIME.OPENSEARCH,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(true);
     });
 
     it('should return true for a search link with ATOM type', () => {
-      const link: OPDSLink = {
-        rel: 'search',
+      const link: OPDSBaseLink = {
+        rel: ['search'],
         href: '/search',
         type: MIME.ATOM,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(true);
     });
 
     it('should return true when rel is an array containing "search"', () => {
-      const link: OPDSLink = {
+      const link: OPDSBaseLink = {
         rel: ['self', 'search'],
         href: '/search',
         type: MIME.OPENSEARCH,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(true);
     });
 
     it('should return false when rel does not include "search"', () => {
-      const link: OPDSLink = {
-        rel: 'self',
+      const link: OPDSBaseLink = {
+        rel: ['self'],
         href: '/search',
         type: MIME.OPENSEARCH,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(false);
     });
 
     it('should return false when type is not OPENSEARCH or ATOM', () => {
-      const link: OPDSLink = {
-        rel: 'search',
+      const link: OPDSBaseLink = {
+        rel: ['search'],
         href: '/search',
         type: 'text/html',
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(false);
     });
 
     it('should return false when rel is undefined', () => {
-      const link: OPDSLink = {
+      const link: OPDSBaseLink = {
         href: '/search',
         type: MIME.OPENSEARCH,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(false);
     });
 
     it('should return false when rel is an empty array', () => {
-      const link: OPDSLink = {
+      const link: OPDSBaseLink = {
         rel: [],
         href: '/search',
         type: MIME.ATOM,
-        properties: {},
       };
       expect(isSearchLink(link)).toBe(false);
     });

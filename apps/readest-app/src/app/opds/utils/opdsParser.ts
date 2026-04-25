@@ -51,13 +51,18 @@ export const groupByArray = <T, K>(arr: T[] | undefined, f: (el: T) => K | K[]):
 const parseMediaType = (str?: string | null) => {
   if (!str) return undefined;
   const [mediaType, ...ps] = str.split(/ *; */);
+  if (!mediaType) return undefined;
   return {
     mediaType: mediaType.toLowerCase(),
-    parameters: Object.fromEntries(
-      ps.map((p) => {
+    parameters: ps.reduce(
+      (acc, p) => {
         const [name, val] = p.split('=');
-        return [name.toLowerCase(), val?.replace(/(^"|"$)/g, '')];
-      }),
+        if (name) {
+          acc[name.toLowerCase()] = val?.replace(/(^"|"$)/g, '');
+        }
+        return acc;
+      },
+      {} as Record<string, string | undefined>,
     ),
   };
 };
@@ -67,7 +72,7 @@ export const isOPDSCatalog = (str?: string | null) => {
   if (!parsed) return false;
   const { mediaType, parameters } = parsed;
   if (mediaType === MIME.OPDS2) return true;
-  return mediaType === MIME.ATOM && parameters.profile?.toLowerCase() === 'opds-catalog';
+  return mediaType === MIME.ATOM && parameters['profile']?.toLowerCase() === 'opds-catalog';
 };
 
 export const isOPDSSearch = (str?: string | null) => {
@@ -268,9 +273,9 @@ export const getFeed = (doc: Document): OPDSFeed => {
     const entryLinks = entryChildren.filter(filter('link')).map(getLink);
     const entryLinksByRel = groupByArray(entryLinks, (link) => link.rel || []);
 
-    const isPub = Array.from(entryLinksByRel.keys()).some(
-      (rel) => rel.startsWith(REL.ACQ) || rel === 'preview' || rel === REL.STREAM,
-    );
+    const isPub = Array.from(entryLinksByRel.keys()).some((rel) => {
+      return rel.startsWith(REL.ACQ) || rel === 'preview' || rel === REL.STREAM;
+    });
 
     const groupLinks = entryLinksByRel.get(REL.GROUP) ?? entryLinksByRel.get('collection');
     const groupLink = groupLinks?.length
@@ -374,8 +379,8 @@ export const getSearch = async (link: OPDSGenericLink): Promise<OPDSSearch> => {
       title: link.title ?? undefined,
     },
     search: (map: Map<string | undefined, Map<string, string>>) =>
-      replace(link.href, map.get(undefined)),
-    params: Array.from(getVariables(link.href), (name: string) => ({ name })),
+      replace(link.href || '', map.get(undefined)),
+    params: Array.from(getVariables(link.href || ''), (name: string) => ({ name })),
   };
 };
 
@@ -416,11 +421,12 @@ export const getOpenSearch = (doc: Document): OPDSSearch => {
     params: Array.from(template.matchAll(regex), ([, prefix, param, optional]) => {
       const namespace = prefix ? $url.lookupNamespaceURI(prefix) : undefined;
       const ns = namespace === defaultNS ? undefined : namespace;
+      const safeParam = param || '';
       return {
         ns: ns || undefined,
-        name: param,
+        name: safeParam,
         required: !optional,
-        value: ns && ns !== defaultNS ? undefined : (defaultMap.get(param) ?? undefined),
+        value: ns && ns !== defaultNS ? undefined : (defaultMap.get(safeParam) ?? undefined),
       };
     }),
   };
