@@ -130,3 +130,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (workspace had pre-existing unrelated modifications); `pnpm.cmd --filter @readest/readest-app lint` (pass); `pnpm.cmd tauri dev` (background) — Next.js reached “Ready”, then Cargo build **failed** (exit **101**): native `aegis` C compile, `errno.h` not found under `clang-cl` (typical missing MSVC Windows SDK / Developer shell), unrelated to `productName` branding.
 - **Validation:** Lint passed; full `tauri dev` not verified in this environment.
 - **Notes / Next:** Eddy: run `pnpm.cmd tauri dev` from **x64 Native Tools Command Prompt for VS** (or otherwise ensure Windows SDK headers on `INCLUDE`) and confirm the window title shows **Citadel**. If iOS `dev-ios` script path breaks after a future `productName`-driven IPA rename, adjust script in a separate scoped task.
+
+**[2026-04-26 23:30:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-006`
+- **Task:** Replace Tauri bundle icons with Citadel handoff exports (paths already listed in `tauri.conf.json` `bundle.icon`).
+- **Status:** Implemented (`[~]`); human icon verification pending (requires successful `tauri dev` / `tauri build` on a machine with working native toolchain).
+- **Action:** Confirmed `bundle.icon` targets `icons/32x32.png`, `icons/128x128.png`, `icons/128x128@2x.png`, `icons/icon.icns`, `icons/icon.ico` — no `tauri.conf.json` edits. Copied `Agents/handoff/citadel_app_icon.ico` → `icons/icon.ico`, `citadel_app_icon.icns` → `icons/icon.icns`, `citadel_app_icon_256.png` → `icons/128x128@2x.png` (256×256). Downsampled `citadel_app_icon_512.png` with high-quality bicubic to `icons/128x128.png` (128×128) and `icons/32x32.png` (32×32). Did not change Android/iOS/StoreLogo assets (not in `bundle.icon`). **Note:** `git status --short` before work showed unrelated dirty files (plugins autogen, etc.); this task only replaced the five bundle icon binaries above plus agent docs.
+- **Files Touched:** `apps/readest-app/src-tauri/icons/icon.ico`, `apps/readest-app/src-tauri/icons/icon.icns`, `apps/readest-app/src-tauri/icons/32x32.png`, `apps/readest-app/src-tauri/icons/128x128.png`, `apps/readest-app/src-tauri/icons/128x128@2x.png`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`. (Sources read only: `Agents/handoff/citadel_app_icon_*.png/.ico/.icns`, `tauri.conf.json`.)
+- **Commands Run:** `git status --short` (pre: not clean — unrelated paths); PowerShell `System.Drawing` copy/resize for PNGs + `Copy-Item` for `.ico`/`.icns`; `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
+- **Validation:** Lint passed; PNG dimensions verified 32×32, 128×128, 256×256 for `@2x`.
+- **Notes / Next:** Eddy: confirm visually in OS shell after build. Optional later task: refresh `icons/ios/**`, `icons/android/**`, and Windows `Square*` tiles if those targets are shipped and should match Citadel.

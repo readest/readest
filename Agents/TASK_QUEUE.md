@@ -217,3 +217,25 @@
 
 - `pnpm.cmd --filter @readest/readest-app lint`
 - `pnpm.cmd tauri dev` — confirm window/title bar shows Citadel.
+
+---
+
+### [~] CT-006 — Tauri bundle icons → Citadel handoff exports
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect / edit:**
+
+- `Agents/handoff/**`
+- `apps/readest-app/src-tauri/tauri.conf.json`
+- `apps/readest-app/src-tauri/icons/**`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Replace Windows/macOS bundle icons referenced by Tauri with Citadel exports from `Agents/handoff/` (same paths in `tauri.conf.json`).
+
+**Validation:**
+
+- `git status --short`
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Human: taskbar / window / installer icon looks correct after a real `tauri build` or dev run in a VS Native Tools environment.
