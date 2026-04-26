@@ -399,3 +399,41 @@
 - `pnpm.cmd --filter @readest/readest-app lint`
 - `git status --short`
 - Human visual verification required.
+
+---
+
+### [x] CT-013 — Library simplification batch
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/services/commandRegistry.ts`
+
+**Allowed files to edit:**
+
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+
+**Goal:** Continue reducing first-glance library overwhelm by de-emphasizing advanced controls, improving settings/menu rhythm, and refining tile/empty-state hierarchy without behavior rewrites.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- Human visual verification required.

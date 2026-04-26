@@ -281,6 +281,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const savedBookCoverPath = settings.savedBookCoverForLockScreenPath;
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
+  const sectionLabelClass =
+    'px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-base-content/45';
 
   return (
     <Menu
@@ -351,7 +353,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
-
+      <p className={sectionLabelClass}>{_('Reading & Sync')}</p>
       <MenuItem
         label={_('Auto Upload Books to Cloud')}
         toggled={isAutoUpload}
@@ -380,6 +382,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         />
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
+      <p className={sectionLabelClass}>{_('Library View')}</p>
       {appService?.hasWindow && (
         <MenuItem
           label={_('Open Book in New Window')}
@@ -418,6 +421,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
+      <p className={sectionLabelClass}>{_('Advanced')}</p>
       <MenuItem label={_('Advanced Settings')}>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {appService?.canCustomizeRootDir && (
@@ -442,6 +446,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         </ul>
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
+      <p className={sectionLabelClass}>{_('Account & App')}</p>
       {user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Citadel Premium')} onClick={handleUpgrade} />
       )}

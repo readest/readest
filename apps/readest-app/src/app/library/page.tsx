@@ -1059,17 +1059,25 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             </div>
           </div>
         ) : (
-          <div className='hero drop-zone h-screen items-center justify-center'>
+          <div className='hero drop-zone h-screen items-center justify-center px-4'>
             <DropIndicator />
-            <div className='hero-content text-neutral-content text-center'>
-              <div className='max-w-md'>
-                <h1 className='mb-5 text-5xl font-bold'>{_('Your Library')}</h1>
-                <p className='mb-5'>
+            <div className='hero-content text-center'>
+              <div className='max-w-xl rounded-3xl border border-[var(--citadel-line-gold)] bg-[color-mix(in_srgb,var(--citadel-bg-dark)_70%,theme(colors.base-100)_30%)] px-8 py-10 shadow-[var(--citadel-shadow-panel)]'>
+                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[var(--citadel-gold)]'>
+                  {_('Citadel Library')}
+                </p>
+                <h1 className='text-base-100 mt-3 text-3xl font-semibold sm:text-4xl'>
+                  {_('A calm place for your books')}
+                </h1>
+                <p className='mx-auto mt-3 max-w-md text-sm text-[var(--citadel-text-muted)] sm:text-base'>
                   {_(
-                    'Welcome to your library. You can import your books here and read them anytime.',
+                    'Start your collection and keep your next read close. Import a few titles to make this space yours.',
                   )}
                 </p>
-                <button className='btn btn-primary rounded-xl' onClick={handleImportBooksFromFiles}>
+                <button
+                  className='btn btn-primary mt-6 rounded-xl border-[var(--citadel-line-gold)] bg-transparent text-[var(--citadel-gold)] hover:bg-[color-mix(in_srgb,var(--citadel-gold)_16%,transparent)]'
+                  onClick={handleImportBooksFromFiles}
+                >
                   {_('Import Books')}
                 </button>
               </div>

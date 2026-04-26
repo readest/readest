@@ -103,12 +103,17 @@ const BookItem: React.FC<BookItemProps> = ({
           <h4
             className={clsx(
               'overflow-hidden text-ellipsis font-semibold',
-              mode === 'grid' && 'block whitespace-nowrap text-[0.6em] text-xs',
+              mode === 'grid' && 'text-base-content block whitespace-nowrap text-sm',
               mode === 'list' && 'line-clamp-2 text-base',
             )}
           >
             {book.title}
           </h4>
+          {mode === 'grid' && (
+            <p className='mt-0.5 line-clamp-1 text-[11px] text-[var(--citadel-text-muted)]'>
+              {formatAuthors(book.author, book.primaryLanguage) || ''}
+            </p>
+          )}
           {mode === 'list' && (
             <p className='line-clamp-1 text-sm text-[var(--citadel-text-muted)]'>
               {formatAuthors(book.author, book.primaryLanguage) || ''}
@@ -116,7 +121,7 @@ const BookItem: React.FC<BookItemProps> = ({
           )}
         </div>
         {mode === 'list' && (
-          <h4 className='line-clamp-1 text-sm text-[var(--citadel-text-muted)]'>
+          <h4 className='text-base-content/55 line-clamp-1 text-xs'>
             {formatDescription(book.metadata?.description)}
           </h4>
         )}
