@@ -200,6 +200,75 @@ describe('Paginator multi-view architecture (browser)', () => {
     });
   });
 
+  describe('Accessibility: non-primary views are hidden from AT', () => {
+    const getViewWrappers = (el: Renderer) => {
+      const container = el.shadowRoot?.getElementById('container');
+      return container ? (Array.from(container.children) as HTMLElement[]) : [];
+    };
+    const wrapperContainsIframeForIndex = (wrapper: HTMLElement, doc: Document) =>
+      wrapper.querySelector('iframe')?.contentDocument === doc;
+
+    it('should mark non-primary view wrappers inert + aria-hidden', async () => {
+      const firstLinear = book.sections!.findIndex((s) => s.linear !== 'no');
+      await setupAt(firstLinear);
+      await waitForViews(paginator, 2);
+      await waitForFillComplete(paginator);
+
+      const contents = paginator.getContents();
+      const primary = contents.find((c) => c.index === paginator.primaryIndex);
+      const nonPrimary = contents.filter((c) => c.index !== paginator.primaryIndex);
+      expect(primary).toBeDefined();
+      expect(nonPrimary.length).toBeGreaterThan(0);
+
+      const wrappers = getViewWrappers(paginator);
+      const primaryWrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, primary!.doc));
+      expect(primaryWrapper).toBeDefined();
+      expect(primaryWrapper!.hasAttribute('inert')).toBe(false);
+      expect(primaryWrapper!.getAttribute('aria-hidden')).not.toBe('true');
+
+      for (const np of nonPrimary) {
+        const wrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, np.doc));
+        expect(wrapper).toBeDefined();
+        expect(wrapper!.hasAttribute('inert')).toBe(true);
+        expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+      }
+    });
+
+    it('should move inert + aria-hidden when the primary section changes', async () => {
+      const linearSections = book
+        .sections!.map((s, i) => ({ s, i }))
+        .filter(({ s }) => s.linear !== 'no');
+      expect(linearSections.length).toBeGreaterThan(1);
+
+      const first = linearSections[0]!.i;
+      const second = linearSections[1]!.i;
+      await setupAt(first);
+      await waitForViews(paginator, 2);
+      await waitForFillComplete(paginator);
+
+      await paginator.goTo({ index: second });
+      await new Promise((r) => setTimeout(r, 300));
+
+      expect(paginator.primaryIndex).toBe(second);
+
+      const contents = paginator.getContents();
+      const primary = contents.find((c) => c.index === second);
+      const wrappers = getViewWrappers(paginator);
+      const primaryWrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, primary!.doc));
+      expect(primaryWrapper).toBeDefined();
+      expect(primaryWrapper!.hasAttribute('inert')).toBe(false);
+      expect(primaryWrapper!.getAttribute('aria-hidden')).not.toBe('true');
+
+      const nonPrimary = contents.filter((c) => c.index !== second);
+      for (const np of nonPrimary) {
+        const wrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, np.doc));
+        expect(wrapper).toBeDefined();
+        expect(wrapper!.hasAttribute('inert')).toBe(true);
+        expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+      }
+    });
+  });
+
   describe('Navigation between sections', () => {
     it('should update primaryIndex when navigating to a different section', async () => {
       const linearSections = book
