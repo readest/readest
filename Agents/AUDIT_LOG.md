@@ -141,3 +141,26 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pre: not clean — unrelated paths); PowerShell `System.Drawing` copy/resize for PNGs + `Copy-Item` for `.ico`/`.icns`; `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
 - **Validation:** Lint passed; PNG dimensions verified 32×32, 128×128, 256×256 for `@2x`.
 - **Notes / Next:** Eddy: confirm visually in OS shell after build. Optional later task: refresh `icons/ios/**`, `icons/android/**`, and Windows `Square*` tiles if those targets are shipped and should match Citadel.
+
+**[2026-04-27 00:15:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-007`
+- **Task:** Fix visible desktop window title to **Citadel** (not **Readest**).
+- **Status:** Implemented (`[~]`); human title-bar confirmation pending.
+- **Action:** `productName` in `tauri.conf.json` was already Citadel; grep found hardcoded `'Readest'` as `WebviewWindow` `title` in `src/utils/nav.ts` (non-mac reader/library windows) — changed to `'Citadel'`. Rust `src-tauri/src/lib.rs` still sets `.title("Readest")` for non-macOS desktop main window (outside CT-007 allowed edit scope), so added runtime `getCurrentWindow().setTitle('Citadel')` in `src/components/Providers.tsx` when `NEXT_PUBLIC_APP_PLATFORM === 'tauri'` and window label is `main`. Updated `src/__tests__/utils/nav.test.ts` expectation.
+- **Files Touched:** `apps/readest-app/src/utils/nav.ts`, `apps/readest-app/src/components/Providers.tsx`, `apps/readest-app/src/__tests__/utils/nav.test.ts`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass); `pnpm.cmd tauri dev` not run (per task — non–Native Tools shell).
+- **Validation:** Lint passed.
+- **Notes / Next:** Optional follow-up (separate Rust-scoped task): change `lib.rs` `.title("Readest")` to `"Citadel"` to avoid any brief default title before JS runs.
+
+**[2026-04-27 12:30:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-007B`
+- **Task:** Fix native window title properly — Rust source of truth; remove blocked JS `setTitle` workaround.
+- **Status:** Implemented (`[~]`); human title-bar confirmation pending.
+- **Cause:** CT-007 used `getCurrentWindow().setTitle('Citadel')` in `Providers.tsx`, but the app capability set does **not** include `core:window:allow-set-title`, so Tauri rejects the IPC: `window.set_title not allowed`.
+- **Action:** Set non-macOS desktop main window `.title("Citadel")` in `apps/readest-app/src-tauri/src/lib.rs` (replacing `"Readest"`). Removed the `Providers.tsx` `useEffect` that called `setTitle`, and removed the `isTauriAppPlatform` import added only for that workaround. Left `nav.ts` / `nav.test.ts` on **Citadel** for child `WebviewWindow` titles. No capability or permission changes.
+- **Files Touched:** `apps/readest-app/src-tauri/src/lib.rs`, `apps/readest-app/src/components/Providers.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass); ripgrep checks: no `setTitle('Citadel')` under `apps/readest-app/src`; `lib.rs` has `.title("Citadel")` and no `.title("Readest")`.
+- **Validation:** Lint passed; searches above satisfied.
+- **Notes / Next:** Eddy: confirm in `tauri dev` that the title bar shows **Citadel** with no console permission errors.

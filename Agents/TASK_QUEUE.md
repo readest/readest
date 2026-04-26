@@ -239,3 +239,19 @@
 - `git status --short`
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Human: taskbar / window / installer icon looks correct after a real `tauri build` or dev run in a VS Native Tools environment.
+
+---
+
+### [~] CT-007 / CT-007B — Visible desktop window title → Citadel
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Goal:** Native title bar shows **Citadel** (not **Readest**) on desktop Tauri.
+
+**Implementation notes (CT-007B):** Non-macOS desktop **main** window title is set in `apps/readest-app/src-tauri/src/lib.rs` via `WebviewWindowBuilder::… .title("Citadel")`. Reader / library **WebviewWindow** instances use `title: 'Citadel'` in `apps/readest-app/src/utils/nav.ts`. The JS `setTitle('Citadel')` workaround was removed because Tauri denies `window.set_title` without `core:window:allow-set-title` (that permission is intentionally not added).
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Grep: no `setTitle('Citadel')` in the app; `lib.rs` has `.title("Citadel")` (not `"Readest"`) for the non-mac main window.
+- Eddy: `pnpm.cmd tauri dev` (VS Native Tools if needed) — confirm title bar reads **Citadel**.

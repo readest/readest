@@ -393,7 +393,7 @@ pub fn run() {
                     .decorations(false)
                     .visible(false)
                     .shadow(true)
-                    .title("Readest");
+                    .title("Citadel");
 
                 #[cfg(target_os = "windows")]
                 {
