@@ -15,7 +15,8 @@ import {
 import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BookNote } from '@/types/book';
+import { BookNote, PageInfo } from '@/types/book';
+import { TOCItem } from '@/libs/document';
 import { Insets } from '@/types/misc';
 import RSVPOverlay from './RSVPOverlay';
 import RSVPStartDialog from './RSVPStartDialog';
@@ -121,6 +122,10 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
   const controllerRef = useRef<RSVPController | null>(null);
   const tempHighlightRef = useRef<BookNote | null>(null);
+  // renderer.primaryIndex reverts after navigation (paginator #detectPrimaryView),
+  // so track RSVP's actual section and chapter href in stable refs instead.
+  const rsvpSectionRef = useRef<number>(-1);
+  const rsvpChapterHrefRef = useRef<string | null>(null);
 
   // Helper to remove any existing RSVP highlight
   const removeRsvpHighlight = useCallback(() => {
@@ -146,6 +151,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       }
       // Remove any existing RSVP highlight when component unmounts
       removeRsvpHighlight();
+      rsvpSectionRef.current = -1;
+      rsvpChapterHrefRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -203,6 +210,8 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       // Create controller if not exists
       if (!controllerRef.current) {
         controllerRef.current = new RSVPController(view, bookKey);
+        rsvpSectionRef.current = view.renderer.primaryIndex;
+        rsvpChapterHrefRef.current = progress?.sectionHref ?? null;
       }
 
       const controller = controllerRef.current;
@@ -423,8 +432,11 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const view = getView(bookKey);
       if (!view) return;
 
-      const onRelocate = () => {
+      const onRelocate = (e: Event) => {
         view.removeEventListener('relocate', onRelocate);
+        const detail = (e as CustomEvent).detail as { section?: PageInfo; tocItem?: TOCItem };
+        rsvpSectionRef.current = detail.section?.current ?? view.renderer.primaryIndex;
+        rsvpChapterHrefRef.current = detail.tocItem?.href ?? null;
         const controller = controllerRef.current;
         if (controller) {
           const progress = getProgress(bookKey);
@@ -446,18 +458,30 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
 
     removeRsvpHighlight();
 
-    const indexBefore = view.renderer.primaryIndex;
+    if (view.renderer.atEnd) {
+      controllerRef.current?.pause();
+      return;
+    }
 
-    const onRelocate = () => {
+    const indexBefore =
+      rsvpSectionRef.current >= 0 ? rsvpSectionRef.current : view.renderer.primaryIndex;
+
+    let cleanup: ReturnType<typeof setTimeout> | null = null;
+
+    const onRelocate = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { section?: PageInfo; tocItem?: TOCItem };
+      const newIndex = detail.section?.current ?? view.renderer.primaryIndex;
+
+      if (newIndex === indexBefore) return; // revert relocate — keep waiting
+
       view.removeEventListener('relocate', onRelocate);
+      if (cleanup) clearTimeout(cleanup);
+
       const controller = controllerRef.current;
       if (!controller) return;
 
-      // Pause at the end of the book instead of advancing
-      if (view.renderer.primaryIndex === indexBefore) {
-        controller.pause();
-        return;
-      }
+      rsvpSectionRef.current = newIndex;
+      rsvpChapterHrefRef.current = detail.tocItem?.href ?? null;
 
       const progress = getProgress(bookKey);
       if (progress?.location) {
@@ -465,7 +489,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       }
       controller.loadNextPageContent();
     };
+
     view.addEventListener('relocate', onRelocate);
+    cleanup = setTimeout(() => view.removeEventListener('relocate', onRelocate), 5000);
     await view.renderer.nextSection?.();
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
@@ -473,7 +499,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const progress = getProgress(bookKey);
   const bookData = getBookData(bookKey);
   const chapters = bookData?.bookDoc?.toc || [];
-  const currentChapterHref = progress?.sectionHref || null;
+  const currentChapterHref = rsvpChapterHrefRef.current ?? progress?.sectionHref ?? null;
 
   // Use portal to render overlay at body level to avoid stacking context issues
   const portalContainer = typeof document !== 'undefined' ? document.body : null;
