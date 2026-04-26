@@ -332,3 +332,35 @@
 
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Eddy: visual confirmation of card polish in library grid/list.
+
+---
+
+### [x] CT-011 — Create Citadel UX simplification plan only
+
+**Owner:** Cursor  
+**Human verification:** No  
+**Allowed files to inspect:**
+
+- `Agents/MASTER_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/DESIGN_HANDOFF_NOTES.md`
+- `docs/CITADEL_ARCHITECTURE_AUDIT.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/reader/components/sidebar/BookMenu.tsx`
+
+**Allowed files to edit:**
+
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Write a practical docs-only plan to evolve the default library/settings-heavy experience into a calmer Citadel UX while preserving existing Readest capability.
+
+**Validation:**
+
+- `git status --short` before and after.
+- No lint required for docs-only task.

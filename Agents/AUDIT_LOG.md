@@ -197,3 +197,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions` (pass); `Get-ChildItem -Name | Where-Object { $_ -like "*TASK_QUEUE.md*Set-Content*" } | Remove-Item -Force` (executed as requested); `git status --short` (clean pre-work); `pnpm.cmd --filter @readest/readest-app lint` (exit **0**); `git status --short` (post).
 - **Validation:** `tsgo --noEmit` and `biome check .` (870 files) passed with no issues.
 - **Notes / Next:** Eddy: visually verify library grid/list card polish (hover/focus/selected states) and mark CT-010 `[x]` if approved.
+
+**[2026-04-27 00:21:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-011`
+- **Task:** Create Citadel UX simplification plan only (documentation).
+- **Status:** Completed.
+- **Action:** Authored `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` with: current UX problem summary; proposed IA (Home/Continue Reading, Library, Reader, Settings/Advanced); controls to keep visible; controls to move to secondary/advanced; phased implementation (A-D); risk boundaries (what not to touch yet); and three scoped follow-up task proposals with likely file scopes. No app UI/code, reader logic, Tauri/Rust, package, stylesheet, or asset edits.
+- **Files Touched:** `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre); `git status --short` (post).
+- **Validation:** Docs-only task; no lint required. Pre/post status captured.
+- **Notes / Next:** Use CT-012/CT-013/CT-014 from the new plan as next incremental implementation tasks with explicit allowed-file scopes.
