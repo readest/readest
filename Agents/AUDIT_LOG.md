@@ -164,3 +164,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass); ripgrep checks: no `setTitle('Citadel')` under `apps/readest-app/src`; `lib.rs` has `.title("Citadel")` and no `.title("Readest")`.
 - **Validation:** Lint passed; searches above satisfied.
 - **Notes / Next:** Eddy: confirm in `tauri dev` that the title bar shows **Citadel** with no console permission errors.
+
+**[2026-04-26 16:00:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-008`
+- **Task:** Visible Readest menu labels → Citadel (scoped UI copy only).
+- **Status:** Needs human verification (`[~]`).
+- **Action:** Updated user-visible menu strings in library `SettingsMenu` and reader `BookMenu` (`Download` / `About` / `Upgrade` / `Help improve` + Premium). Updated command palette action `labelKey` strings and About-command search keyword `readest` → `citadel` in `commandRegistry.ts`. Set `_app.tsx` PWA/meta `application-name`, `apple-mobile-web-app-title`, and `description` to use **Citadel**. Left `DOWNLOAD_READEST_URL`, `downloadReadest`, `showAboutReadest`, and `distChannel === 'readest'` unchanged.
+- **Files Touched:** `apps/readest-app/src/app/library/components/SettingsMenu.tsx`, `apps/readest-app/src/app/reader/components/sidebar/BookMenu.tsx`, `apps/readest-app/src/services/commandRegistry.ts`, `apps/readest-app/src/pages/_app.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (exit **0**).
+- **Validation:** `tsgo --noEmit` and `biome check .` (870 files) reported no issues.
+- **Notes / Next:** Eddy: visually confirm menus and command search; mark CT-008 `[x]` after approval.

@@ -443,12 +443,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {user && userProfilePlan === 'free' && (
-        <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
+        <MenuItem label={_('Upgrade to Citadel Premium')} onClick={handleUpgrade} />
       )}
-      {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
-      <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
+      {isWebAppPlatform() && <MenuItem label={_('Download Citadel')} onClick={downloadReadest} />}
+      <MenuItem label={_('About Citadel')} onClick={showAboutReadest} />
       <MenuItem
-        label={_('Help improve Readest')}
+        label={_('Help improve Citadel')}
         description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
         toggled={isTelemetryEnabled}
         onClick={toggleTelemetry}

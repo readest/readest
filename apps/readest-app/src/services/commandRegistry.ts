@@ -631,12 +631,12 @@ const actionItems = [
   },
   {
     id: 'action.about',
-    labelKey: _('About Readest'),
-    keywords: ['about', 'readest', 'version', 'info'],
+    labelKey: _('About Citadel'),
+    keywords: ['about', 'citadel', 'version', 'info'],
   },
   {
     id: 'action.telemetry',
-    labelKey: _('Help improve Readest'),
+    labelKey: _('Help improve Citadel'),
     keywords: ['telemetry', 'analytics', 'improve', 'statistics'],
   },
 ];

@@ -255,3 +255,25 @@
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Grep: no `setTitle('Citadel')` in the app; `lib.rs` has `.title("Citadel")` (not `"Readest"`) for the non-mac main window.
 - Eddy: `pnpm.cmd tauri dev` (VS Native Tools if needed) — confirm title bar reads **Citadel**.
+
+---
+
+### [~] CT-008 — Visible Readest menu labels → Citadel
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect / edit:**
+
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/reader/components/sidebar/BookMenu.tsx`
+- `apps/readest-app/src/services/commandRegistry.ts`
+- `apps/readest-app/src/pages/_app.tsx`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Replace obvious user-facing product strings **Readest** → **Citadel** in menus, command palette action labels, and `_app.tsx` PWA/meta copy only (no URLs, constant names, storage paths, or reader behavior).
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Eddy: spot-check library settings menu, reader book menu, command palette, and install/home-screen title where applicable.
