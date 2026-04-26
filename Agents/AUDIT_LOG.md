@@ -75,3 +75,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `Remove-Item` on `public/citadel` after file deletes (pass).
 - **Validation:** Placeholder PNGs removed; docs and queue reflect blocked/pending state.
 - **Notes / Next:** Unblock `CT-002` after adding real `citadel-logo.png` / `comet.png` to handoff (or agreed source) and copying them to the documented paths under `apps/readest-app/public/citadel/`.
+
+**[2026-04-26 23:15:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-002`
+- **Task:** Copy brand assets only (real sources).
+- **Status:** Completed.
+- **Action:** Copied real transparent PNGs from agreed Desktop paths into the Readest public tree: `citadel_logo_transparent.png` → `apps/readest-app/public/citadel/citadel-logo.png`, `comet_transparent.png` → `apps/readest-app/public/citadel/comet.png`. Verified on-disk paths and byte sizes via PowerShell `Get-Item`. No UI code, no Tauri config, no placeholders, no design-package import.
+- **Files Touched:** `apps/readest-app/public/citadel/citadel-logo.png`, `apps/readest-app/public/citadel/comet.png`, `Agents/TASK_QUEUE.md` (CT-002 `[x]`), `Agents/AUDIT_LOG.md`, `Agents/DESIGN_HANDOFF_NOTES.md`, `docs/CITADEL_ARCHITECTURE_AUDIT.md`.
+- **Commands Run:** `New-Item` / `Copy-Item` (Desktop sources → repo targets), `git status`, `Get-Item` on both destination PNGs (pass).
+- **Validation:** Both files exist at canonical paths; lengths non-zero (citadel-logo 259538 bytes, comet 173299 bytes).
+- **Notes / Next:** CT-003 tokens when queued.

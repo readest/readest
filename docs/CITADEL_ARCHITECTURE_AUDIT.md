@@ -268,7 +268,7 @@ Next.js serves files under **`apps/readest-app/public/`** at the site root (same
 
 **Handoff inventory:** Intended usage and display sizes are described in `Agents/handoff/asset-list.md` (paths there are written relative to an older “project” layout; the Readest fork targets the table above).
 
-**Status:** These raster files are **not present in the repo** yet; the `public/citadel/` tree is **pending** until real design-export PNGs are copied from outside the repo (or added to handoff and then copied). No placeholder assets should be committed there.
+**Status:** The rasters are **present** under `apps/readest-app/public/citadel/` (`citadel-logo.png`, `comet.png`), copied from real design-export sources. URLs `/citadel/citadel-logo.png` and `/citadel/comet.png` match the table above. No placeholder assets.
 
 ---
 

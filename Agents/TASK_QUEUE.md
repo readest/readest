@@ -74,9 +74,7 @@
 
 ---
 
-### [!] CT-002 — Copy brand assets only
-
-**Blocked reason:** Real source PNGs (`citadel-logo.png`, `comet.png`) are not in the repo handoff (`Agents/handoff/` has no binaries; add design exports there or another agreed path, then copy into `apps/readest-app/public/citadel/`).
+### [x] CT-002 — Copy brand assets only
 
 **Owner:** Cursor  
 **Human verification:** No  

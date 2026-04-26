@@ -60,7 +60,7 @@ Copy the logo/comet assets into the Readest app public/static asset location wit
 - On disk: `apps/readest-app/public/citadel/citadel-logo.png`, `apps/readest-app/public/citadel/comet.png`
 - Served URL: `/citadel/citadel-logo.png`, `/citadel/comet.png`
 
-**These files are not in the repo today.** Do not use placeholder images. When the real design exports are available, copy them into the paths above (creating `public/citadel/` as needed), then proceed to UI wiring. Until then, CT-002 remains blocked for lack of source assets in handoff.
+**These files are now present** at the paths above (real transparent PNGs copied into the repo). Do not use placeholder images. CT-002 is complete; wire them in UI only in later scoped tasks (for example CT-004 onward).
 
 ## Hard rule
 
