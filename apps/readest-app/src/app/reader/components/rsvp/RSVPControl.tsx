@@ -6,7 +6,12 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
-import { RSVPController, RsvpStartChoice, RsvpStopPosition } from '@/services/rsvp';
+import {
+  RSVPController,
+  RsvpStartChoice,
+  RsvpStopPosition,
+  buildRsvpExitConfigUpdate,
+} from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -385,13 +390,17 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       controller.stop();
     }
 
-    // Persist RSVP position to BookConfig so it syncs to the cloud
+    // Persist RSVP position to BookConfig so it syncs to the cloud. Pin
+    // `location` to the RSVP word's CFI so the next normal-mode load resumes
+    // here instead of at a section boundary that a mid-RSVP relocate left
+    // behind in the auto-saved config.
     const rsvpPosition = controller?.getStoredPosition();
     if (rsvpPosition) {
       const config = getConfig(bookKey);
       if (config) {
-        setConfig(bookKey, { rsvpPosition });
-        saveConfig(envConfig, bookKey, { ...config, rsvpPosition }, settings);
+        const update = buildRsvpExitConfigUpdate(rsvpPosition);
+        setConfig(bookKey, update);
+        saveConfig(envConfig, bookKey, { ...config, ...update }, settings);
       }
     }
 
