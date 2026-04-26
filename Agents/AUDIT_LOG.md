@@ -108,3 +108,25 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pre: clean); `pnpm.cmd --filter @readest/readest-app lint` (pass — `tsgo --noEmit` + `biome check .`, 870 files); `git status --short` (post).
 - **Validation:** Lint passed with no diagnostics; `git status --short` after edits shows only `globals.css`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
 - **Notes / Next:** CT-004 safe visible branding when scoped with explicit file lists.
+
+**[2026-04-26 22:45:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-004`
+- **Task:** Safe visible Citadel branding pass (user-facing app identity strings only).
+- **Status:** Implemented; awaiting human visual verification (`[~]`).
+- **Action:** Replaced visible “Readest” product name with “Citadel” in root metadata (`layout.tsx`), account layout description, offline splash heading, About dialog title and heading, Support links blurb, and Updater dialog copy. Did not edit `tauri.conf.json`, reader routes, `library/components/SettingsMenu.tsx`, package names, URLs, download filename templates, icons, or Rust. Inspected `tauri.conf.json` only (productName still Readest; unchanged per scope).
+- **Files Touched:** `apps/readest-app/src/app/layout.tsx`, `apps/readest-app/src/app/user/layout.tsx`, `apps/readest-app/src/app/offline/page.tsx`, `apps/readest-app/src/components/AboutWindow.tsx`, `apps/readest-app/src/components/SupportLinks.tsx`, `apps/readest-app/src/components/UpdaterWindow.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (clean before edits); `pnpm.cmd --filter @readest/readest-app lint` (pass — `tsgo --noEmit`, `biome check .`, 870 files); `git status --short` (post).
+- **Validation:** Lint passed with no diagnostics; scope limited to listed app shell/components; no `tauri.conf.json` edits.
+- **Notes / Next:** Eddy: run `pnpm.cmd tauri dev` and confirm tab title, About, Update dialog, offline page, and account SEO description; follow-up task can widen to library settings menu / reader menus if desired.
+
+**[2026-04-26 22:15:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-005`
+- **Task:** Tauri shell title / product display name — show Citadel on desktop window branding.
+- **Status:** Implemented (`[~]`); human confirmation of window title after full `tauri dev` compile.
+- **Action:** In `tauri.conf.json`, set `productName` from `Readest` to `Citadel` (primary driver for window/shell display name) and `plugins.cli.description` to `Citadel CLI`. Left unchanged: `mainBinaryName`, `identifier`, CSP URLs, asset scope `**/Readest/**/*` (existing data paths), updater endpoints/keys, deep links, file associations, icons. Searched `package.json` for `Readest` — only `dev-ios` `Readest.ipa` path and `cargo -p Readest` scripts; not edited (artifact / crate name). No edits to `package.json`.
+- **Files Touched:** `apps/readest-app/src-tauri/tauri.conf.json`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (workspace had pre-existing unrelated modifications); `pnpm.cmd --filter @readest/readest-app lint` (pass); `pnpm.cmd tauri dev` (background) — Next.js reached “Ready”, then Cargo build **failed** (exit **101**): native `aegis` C compile, `errno.h` not found under `clang-cl` (typical missing MSVC Windows SDK / Developer shell), unrelated to `productName` branding.
+- **Validation:** Lint passed; full `tauri dev` not verified in this environment.
+- **Notes / Next:** Eddy: run `pnpm.cmd tauri dev` from **x64 Native Tools Command Prompt for VS** (or otherwise ensure Windows SDK headers on `INCLUDE`) and confirm the window title shows **Citadel**. If iOS `dev-ios` script path breaks after a future `productName`-driven IPA rename, adjust script in a separate scoped task.

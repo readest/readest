@@ -162,11 +162,23 @@
 
 ## Queue: First visible branding
 
-### [ ] CT-004 — Safe visible Citadel branding pass
+### [~] CT-004 — Safe visible Citadel branding pass
 
 **Owner:** Cursor  
 **Human verification:** Yes  
-**Allowed files:** TBD after inspection. Must list exact files before editing.
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/layout.tsx`
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/user/layout.tsx`
+- `apps/readest-app/src/app/offline/page.tsx`
+- `apps/readest-app/src/components/AboutWindow.tsx`
+- `apps/readest-app/src/components/SupportLinks.tsx`
+- `apps/readest-app/src/components/UpdaterWindow.tsx`
+- `apps/readest-app/src-tauri/tauri.conf.json` (inspect only; no edits)
+
+**Allowed files to edit:** same as inspect, except `tauri.conf.json` is not edited.
 
 **Goal:** Replace low-risk visible Readest branding with Citadel.
 
@@ -180,26 +192,28 @@
 
 **Validation:**
 
+- `pnpm.cmd --filter @readest/readest-app lint` (pass)
 - `pnpm.cmd tauri dev`
 - Eddy visually confirms app still opens and labels look correct.
 
 ---
 
-### [ ] CT-005 — Topbar visual slice 1
+### [~] CT-005 — Tauri shell title / product display name
 
 **Owner:** Cursor  
 **Human verification:** Yes  
-**Allowed files:** TBD after inspection.
+**Allowed files to inspect / edit:**
 
-**Goal:** Apply one small topbar/header styling improvement inspired by the design handoff.
+- `apps/readest-app/src-tauri/tauri.conf.json`
+- `apps/readest-app/package.json`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
 
-**Rules:**
+**Goal:** Desktop window / shell shows **Citadel** via Tauri `productName` (and safe related display strings only).
 
-- No behavior changes.
-- No whole-component replacement.
-- No library/home redesign yet.
+**Do not change in this task:** `mainBinaryName`, bundle `identifier`, asset scope paths (`**/Readest/**/*`), updater URLs/keys, `package.json` scripts that reference Cargo package `Readest` or `Readest.ipa`, icons, Rust sources.
 
 **Validation:**
 
-- `pnpm.cmd tauri dev`
-- Eddy visual approval required.
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `pnpm.cmd tauri dev` — confirm window/title bar shows Citadel.

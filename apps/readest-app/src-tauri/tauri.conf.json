@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Readest",
+  "productName": "Citadel",
   "mainBinaryName": "readest",
   "identifier": "com.bilingify.readest",
   "version": "../package.json",
@@ -133,7 +133,7 @@
       "requireLiteralLeadingDot": false
     },
     "cli": {
-      "description": "Readest CLI",
+      "description": "Citadel CLI",
       "args": [
         {
           "name": "file1",
