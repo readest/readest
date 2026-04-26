@@ -1,5 +1,9 @@
 # Citadel — Cursor Task Queue
 
+## File scope (mandatory)
+
+**Every task must declare file scope before implementation:** the prompt or queue entry must include **Allowed files to inspect** and **Allowed files to edit** (exact paths or Manager-approved globs). Tasks without explicit file scope are **invalid**—do not start them; ask the Manager to add scope first.
+
 ## Status legend
 
 - `[ ]` not started
@@ -15,6 +19,35 @@
 - After every task attempt, update `Agents/AUDIT_LOG.md`.
 - Stop on UI verification tasks until Eddy confirms.
 - Maximum autonomous fixes after a failed command: 2.
+
+---
+
+## Queue: Workflow maintenance
+
+### [x] WORKFLOW-001 — Require explicit file scope in every agent task
+
+**Owner:** Cursor  
+**Human verification:** No  
+**Allowed files to inspect:**
+
+- `.cursorrules`
+- `Agents/DEVELOPMENT_RULES.md`
+- `Agents/STARTING_PROMPTS.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `Agents/MASTER_PLAN.md`
+
+**Allowed files to edit:**
+
+- `.cursorrules`
+- `Agents/DEVELOPMENT_RULES.md`
+- `Agents/STARTING_PROMPTS.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Agents never search or edit outside task-declared paths unless the task explicitly allows broad audit/repo-wide search.
+
+**Validation:** `git status --short`; pattern check on updated docs; `git diff --stat`.
 
 ---
 

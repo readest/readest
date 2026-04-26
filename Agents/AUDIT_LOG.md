@@ -86,3 +86,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `New-Item` / `Copy-Item` (Desktop sources → repo targets), `git status`, `Get-Item` on both destination PNGs (pass).
 - **Validation:** Both files exist at canonical paths; lengths non-zero (citadel-logo 259538 bytes, comet 173299 bytes).
 - **Notes / Next:** CT-003 tokens when queued.
+
+**[2026-04-26 23:58:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `WORKFLOW-001`
+- **Task:** Require explicit file scope in every agent task (workflow docs only).
+- **Status:** Completed.
+- **Action:** Strengthened `.cursorrules` with mandatory **Allowed files to inspect** / **Allowed files to edit**, stop-if-missing behavior, and narrow wording for when broad/repo-wide search is allowed (`audit broadly`, `repo-wide search allowed`). Added **File scope discipline** to `Agents/DEVELOPMENT_RULES.md`. Expanded `Agents/STARTING_PROMPTS.md` with a universal task wrapper and scoped sections in all templates. Added file-scope mandate and completed `WORKFLOW-001` entry to `Agents/TASK_QUEUE.md`.
+- **Files Touched:** `.cursorrules`, `Agents/DEVELOPMENT_RULES.md`, `Agents/STARTING_PROMPTS.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pass — clean before edits); post-edit: `git status --short` (pass — 5 modified files, all workflow paths), `Select-String -Path .cursorrules,Agents\DEVELOPMENT_RULES.md,Agents\STARTING_PROMPTS.md,Agents\TASK_QUEUE.md -Pattern "Allowed files to inspect","Allowed files to edit","repo-wide search","File scope discipline"` (pass — matches in all four files), `git diff --stat` (pass — 5 files, +210/−39).
+- **Validation:** `git status --short`; `Select-String -Path .cursorrules,Agents\DEVELOPMENT_RULES.md,Agents\STARTING_PROMPTS.md,Agents\TASK_QUEUE.md -Pattern "Allowed files to inspect","Allowed files to edit","repo-wide search","File scope discipline"`; `git diff --stat`. Confirmed no app source, package, Tauri/Rust, or public-asset files modified for this task.
+- **Notes / Next:** All new tasks should copy the universal wrapper from `Agents/STARTING_PROMPTS.md`; agents refuse underspecified scope per `.cursorrules`.

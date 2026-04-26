@@ -36,15 +36,24 @@ If multiple agents are used later:
 - no two agents edit the same files/subsystems in parallel
 - shared files require explicit owner assignment
 
+## File scope discipline
+
+- **Inspect only assigned files.** Open, search, and read **only** paths listed under the task’s **Allowed files to inspect** (and the same paths for edits under **Allowed files to edit** when implementing).
+- **Use exact paths** in tasks and in your own plan (repo-relative, e.g. `apps/readest-app/src/components/Foo.tsx`). Do not substitute “the reader” or “styles” without a path list.
+- **Do not use repo-wide search** (semantic search across the whole project, broad ripgrep from root, or exploratory file trees) **unless** the task explicitly says **`audit broadly`** or **`repo-wide search allowed`**.
+- **If a needed file is outside the allowed list**, stop and ask the Manager to extend the task scope. Do not silently widen the list.
+- **For UI tasks**, inspect **only** the component/style files named in the task plus the task docs and allowed agent files—never the whole `src` tree by default.
+
 ## Before coding every task
 
 Cursor must output or internally record:
 
 1. Task ID from `Agents/TASK_QUEUE.md`
-2. Exact files expected to change
-3. Whether human visual verification is required
-4. Rollback plan
-5. Commands/checks planned
+2. **Allowed files to inspect** and **Allowed files to edit** from the task (verbatim path lists)
+3. Exact files expected to change (must be a subset of allowed edit list)
+4. Whether human visual verification is required
+5. Rollback plan
+6. Commands/checks planned
 
 Then run:
 

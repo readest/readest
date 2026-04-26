@@ -12,15 +12,32 @@
 - **Active code agent for now:** Cursor only.
 - **Inactive unless explicitly assigned:** Aider, Codex, Claude Code, Gemini, or any second parallel agent.
 
+## Mandatory file scope in every task
+Every task prompt **must** include both of these sections, with explicit paths (no vague “the app” or “reader area”):
+
+- **Allowed files to inspect**
+- **Allowed files to edit**
+
+If either section is missing, incomplete, or ambiguous, **stop immediately** and ask the Manager for a scoped task. Do not guess scope, open random directories, or search the repo to “figure out” the task.
+
+You may use broad search, repo-wide exploration, or “find where X lives” **only** when the task explicitly allows it with one of these phrases (or a clear Manager-written equivalent):
+
+- `audit broadly`
+- `repo-wide search allowed`
+
+Otherwise: inspect and edit **only** paths listed in the task (plus the minimal standard agent docs below if the task lists them as allowed).
+
 ## Required files to read before coding
-Before making any change, read only:
+Before making any change, read only what the current task’s **Allowed files to inspect** lists, which normally includes some of:
+
 1. `Agents/DEVELOPMENT_RULES.md`
 2. `Agents/MASTER_PLAN.md`
 3. `Agents/TASK_QUEUE.md`
 4. `Agents/AUDIT_LOG.md`
-5. Any source files named in the current task
+5. `.cursorrules`
+6. Any additional paths the task names explicitly
 
-Do **not** read the whole repo unless the task explicitly says “audit” or “search broadly.”
+Do **not** read the whole repo unless the task explicitly says **`audit broadly`** or **`repo-wide search allowed`** (see “Mandatory file scope” above).
 
 ## Task queue workflow
 - Work only on the first task in `Agents/TASK_QUEUE.md` with status `[>]`, or the first `[ ]` task if no task is marked active.
