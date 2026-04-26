@@ -263,3 +263,15 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass, exit 0); `git status --short` (post).
 - **Validation:** Lint passed; scoped files only.
 - **Notes / Next:** Eddy should visually verify the setting now appears near the top under `Book opening`.
+
+**[2026-04-27 00:50:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-017`
+- **Task:** Audit existing settings / toggles / configurable features (docs-only).
+- **Status:** Completed.
+- **Action:** Performed scoped settings audit inside `apps/readest-app/src` using required search terms and wrote `docs/CITADEL_SETTINGS_AUDIT.md` with summary, full settings table, visible/internal grouping, UX opportunities, and recommended next actions. Updated queue with a completed CT-017 entry.
+- **Files Inspected:** `apps/readest-app/src/services/constants.ts`, `apps/readest-app/src/types/settings.ts`, `apps/readest-app/src/store/settingsStore.ts`, `apps/readest-app/src/helpers/settings.ts`, `apps/readest-app/src/app/library/components/SettingsMenu.tsx`, `apps/readest-app/src/app/library/components/ViewMenu.tsx`, `apps/readest-app/src/components/settings/SettingsDialog.tsx`, `apps/readest-app/src/components/settings/FontPanel.tsx`, `apps/readest-app/src/components/settings/LayoutPanel.tsx`, `apps/readest-app/src/components/settings/ColorPanel.tsx`, `apps/readest-app/src/components/settings/ControlPanel.tsx`, `apps/readest-app/src/components/settings/LangPanel.tsx`, `apps/readest-app/src/components/settings/TTSPanel.tsx`, `apps/readest-app/src/components/settings/MiscPanel.tsx`, `apps/readest-app/src/components/settings/AIPanel.tsx`, `apps/readest-app/src/app/reader/components/KOSyncSettings.tsx`, `apps/readest-app/src/app/reader/components/ReadwiseSettings.tsx`, `apps/readest-app/src/app/reader/components/HardcoverSettings.tsx`, `apps/readest-app/src/app/reader/components/sidebar/BookMenu.tsx`, `apps/readest-app/src/hooks/useOpenWithBooks.ts`, `apps/readest-app/src/app/reader/page.tsx`, `apps/readest-app/src/services/commandRegistry.ts`, `apps/readest-app/src/app/reader/components/ViewMenu.tsx`, `apps/readest-app/src/components/MenuItem.tsx`, `apps/readest-app/src/app/library/page.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Files Touched:** `docs/CITADEL_SETTINGS_AUDIT.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre), scoped `rg` searches under `apps/readest-app/src` for: `DEFAULT_SYSTEM_SETTINGS`, `saveSysSettings`, `systemSettings`, `readerSettings`, `settings.`, `setSettings`, `updateSettings`, `useSettings`, `toggle`, `Switch`, `Checkbox`, `MenuItem|Select|Radio`, `openBookInNewWindow`, `isEnabled`, `enabled`, `disabled`; `git status --short` (post).
+- **Validation:** Captured pre/post `git status --short`; no lint/run-dev executed (docs-only task).
+- **Notes / Next:** Audit identifies high settings density and cross-surface discoverability issues; use CT-018/CT-019/CT-020 style follow-ups to simplify without feature loss.

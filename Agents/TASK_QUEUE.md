@@ -526,3 +526,38 @@
 
 - `pnpm.cmd --filter @readest/readest-app lint`
 - `git status --short`
+
+---
+
+### [x] CT-017 — Audit existing settings / toggles / configurable features
+
+**Owner:** Cursor  
+**Human verification:** No  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/services/constants.ts`
+- `apps/readest-app/src/services/appService.ts`
+- `apps/readest-app/src/services/nativeAppService.ts`
+- `apps/readest-app/src/services/nodeAppService.ts`
+- `apps/readest-app/src/store/**`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/reader/components/**`
+- `apps/readest-app/src/components/**`
+- `apps/readest-app/src/hooks/**`
+- `apps/readest-app/src/types/**`
+- `apps/readest-app/src/utils/**`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `docs/CITADEL_SETTINGS_AUDIT.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Create a docs-only audit of existing settings/toggles/configurable behavior so Citadel UX work reuses current capabilities instead of rebuilding.
+
+**Validation:**
+
+- `git status --short` before and after.
+- No lint required (docs-only).
