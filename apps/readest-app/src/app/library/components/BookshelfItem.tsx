@@ -388,13 +388,15 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   };
 
   return (
-    <div className={clsx(mode === 'grid' ? 'h-full' : 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
+    <div className={clsx(mode === 'grid' ? 'h-full' : 'px-4 sm:px-6')}>
       <div
         className={clsx(
-          'visible-focus-inset-2 group',
+          'visible-focus-inset-2 group border border-transparent transition-[transform,box-shadow,border-color,background-color] duration-200',
           mode === 'grid' &&
-            'sm:hover:bg-base-300/50 flex h-full flex-col px-0 py-2 sm:rounded-md sm:px-4 sm:py-4',
-          mode === 'list' && 'border-base-300 flex flex-col border-b py-2',
+            'flex h-full flex-col px-0 py-2 sm:rounded-md sm:px-4 sm:py-4 sm:hover:border-[var(--citadel-line-gold)] sm:hover:bg-[color-mix(in_srgb,var(--citadel-bg-dark)_16%,transparent)] sm:hover:shadow-[var(--citadel-shadow-soft)]',
+          mode === 'list' &&
+            'border-base-300 flex flex-col border-b py-2 sm:hover:border-[var(--citadel-line-gold)] sm:hover:bg-[color-mix(in_srgb,var(--citadel-bg-dark)_10%,transparent)]',
+          itemSelected && 'border-[var(--citadel-line-gold)] shadow-[var(--citadel-border-glow)]',
           appService?.isMobileApp && 'no-context-menu',
           pressing && mode === 'grid' ? 'not-eink:scale-95' : 'scale-100',
         )}

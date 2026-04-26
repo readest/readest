@@ -301,3 +301,34 @@
 
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Eddy: visual check of library header in light/dark.
+
+---
+
+### [x] CT-010 — Library book card visual slice 1
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `Agents/DEVELOPMENT_RULES.md`
+- `Agents/MASTER_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/**`
+- `apps/readest-app/src/components/**` only if directly imported by the library book card component
+- `apps/readest-app/src/styles/globals.css` (read-only for existing Citadel tokens)
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Apply a small visual-only Citadel polish to visible library book tiles/cards (border, hover/focus, depth, subtle accent), preserving all existing behavior and data flow.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Eddy: visual confirmation of card polish in library grid/list.

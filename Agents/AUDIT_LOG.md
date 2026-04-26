@@ -186,3 +186,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (exit **0**).
 - **Validation:** `tsgo --noEmit` and `biome check .` (870 files) clean.
 - **Notes / Next:** `LibraryHeader.tsx` was not listed under CT-009 “Allowed files to inspect”; scope may be updated to include it explicitly. Eddy: confirm light/dark library header looks intentional; revert by stripping `citadel-library-topbar` classes and related utilities from `LibraryHeader.tsx`.
+
+**[2026-04-27 00:09:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-010`
+- **Task:** Library book card visual slice 1.
+- **Status:** Needs human verification (`[~]`).
+- **Action:** Ran requested cleanup first (`git restore` for native-tts permission noise; accidental `TASK_QUEUE.md*Set-Content*` file removal command) and confirmed clean `git status --short` before coding. Identified the visible library card/tile path as `Bookshelf` -> `BookshelfItem` -> `BookItem`. Applied visual-only Citadel polish in those components: subtle token-based borders and depth on tile wrappers, gold-accent hover/focus treatment in grid/list wrappers, and selected state glow using `--citadel-line-gold` / `--citadel-border-glow`; added premium cover-frame hover depth with `--citadel-shadow-panel`; tuned list metadata text to `--citadel-text-muted`. No reader/Tauri/package/services/store/data-flow logic changes.
+- **Files Touched:** `apps/readest-app/src/app/library/components/BookshelfItem.tsx`, `apps/readest-app/src/app/library/components/BookItem.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions` (pass); `Get-ChildItem -Name | Where-Object { $_ -like "*TASK_QUEUE.md*Set-Content*" } | Remove-Item -Force` (executed as requested); `git status --short` (clean pre-work); `pnpm.cmd --filter @readest/readest-app lint` (exit **0**); `git status --short` (post).
+- **Validation:** `tsgo --noEmit` and `biome check .` (870 files) passed with no issues.
+- **Notes / Next:** Eddy: visually verify library grid/list card polish (hover/focus/selected states) and mark CT-010 `[x]` if approved.

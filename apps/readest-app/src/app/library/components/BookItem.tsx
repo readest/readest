@@ -63,8 +63,11 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'bookitem-main relative flex aspect-[28/41] justify-center overflow-hidden rounded',
+          'bookitem-main relative flex aspect-[28/41] justify-center overflow-hidden rounded border border-transparent transition-[box-shadow,border-color] duration-200',
           coverFit === 'crop' && 'shadow-md',
+          mode === 'grid' &&
+            'sm:group-hover:border-[var(--citadel-line-gold)] sm:group-hover:shadow-[var(--citadel-shadow-panel)]',
+          bookSelected && 'border-[var(--citadel-line-gold)] shadow-[var(--citadel-border-glow)]',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
@@ -107,13 +110,13 @@ const BookItem: React.FC<BookItemProps> = ({
             {book.title}
           </h4>
           {mode === 'list' && (
-            <p className='text-neutral-content line-clamp-1 text-sm'>
+            <p className='line-clamp-1 text-sm text-[var(--citadel-text-muted)]'>
               {formatAuthors(book.author, book.primaryLanguage) || ''}
             </p>
           )}
         </div>
         {mode === 'list' && (
-          <h4 className='text-neutral-content line-clamp-1 text-sm'>
+          <h4 className='line-clamp-1 text-sm text-[var(--citadel-text-muted)]'>
             {formatDescription(book.metadata?.description)}
           </h4>
         )}
