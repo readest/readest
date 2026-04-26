@@ -208,3 +208,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pre); `git status --short` (post).
 - **Validation:** Docs-only task; no lint required. Pre/post status captured.
 - **Notes / Next:** Use CT-012/CT-013/CT-014 from the new plan as next incremental implementation tasks with explicit allowed-file scopes.
+
+**[2026-04-27 00:27:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-012`
+- **Task:** Library calm/home batch (CT-012A/B/C).
+- **Status:** Needs human verification (`[~]`).
+- **Action:** Ran the full requested cleanup sequence for unrelated native/plugin trees, confirmed clean working tree, then implemented all three UI sub-slices in allowed library files only. **CT-012A completed:** added a calm top "Continue Reading" hero in `library/page.tsx` using existing in-memory `libraryBooks` and `settings.lastOpenBooks` data only (no new fetch), with graceful fallback welcome panel if no current book. **CT-012B completed:** reduced first-glance toolbar noise in `LibraryHeader.tsx` by de-emphasizing secondary controls via spacing/opacity/hover emphasis while keeping all actions available. **CT-012C completed:** added section rhythm and hierarchy around the shelf (`Your Collection` caption and spacing) without touching grid/list behavior, filtering, sorting, select mode logic, or open/import behavior.
+- **Files Touched:** `apps/readest-app/src/app/library/page.tsx`, `apps/readest-app/src/app/library/components/LibraryHeader.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git restore apps/readest-app/src-tauri/Cargo.toml` (pass); `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions` (pass); `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions` (pass); `git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .` (pass); `git -C packages/tauri restore .` (pass); `git -C packages/tauri-plugins restore .` (pass); `git status --short` (clean pre-work); `pnpm.cmd --filter @readest/readest-app lint` (initial fail due to hooks after early return; fixed in allowed file); `pnpm.cmd --filter @readest/readest-app lint` (exit **0** after fix); `git status --short` (post).
+- **Validation:** `tsgo --noEmit` and `biome check .` passed after one corrective pass.
+- **Notes / Next:** Sub-slices skipped: none. Eddy should visually verify hero prominence, header calmness, and shelf section rhythm in light/dark themes.

@@ -110,7 +110,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             : '0px',
       }}
     >
-      <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
+      <div className='flex w-full items-center justify-between gap-4 sm:gap-8'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             <span className='text-base-content/50 absolute ps-3'>
@@ -139,7 +139,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               )}
             />
           </div>
-          <div className='text-base-content/50 absolute right-4 flex items-center space-x-2 sm:space-x-4'>
+          <div className='text-base-content/45 absolute right-4 flex items-center space-x-2 sm:space-x-3'>
             {searchQuery && (
               <button
                 type='button'
@@ -153,13 +153,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 <IoMdCloseCircle className='h-4 w-4' />
               </button>
             )}
-            <span className='bg-base-content/50 mx-2 h-4 w-[0.5px]'></span>
+            <span className='bg-base-content/35 mx-1 h-4 w-[0.5px]'></span>
             <Dropdown
               label={_('Import Books')}
               className={clsx(
                 'exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer',
               )}
-              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent transition-colors hover:text-[var(--citadel-gold)]'
+              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent text-base-content/85 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-90'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu
@@ -173,7 +173,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 onClick={onToggleSelectMode}
                 aria-label={_('Select Books')}
                 title={_('Select Books')}
-                className='h-6'
+                className='text-base-content/75 h-6 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-90'
               >
                 {isSelectMode ? (
                   <PiSelectionAllFill
@@ -208,11 +208,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </button>
           </div>
         ) : (
-          <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
+          <div className='flex h-full items-center gap-x-1 sm:gap-x-2'>
             <Dropdown
               label={_('View Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 transition-colors hover:text-[var(--citadel-gold)]'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/70 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
               toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
             >
               <ViewMenu />
@@ -220,7 +220,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <Dropdown
               label={_('Settings Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 transition-colors hover:text-[var(--citadel-gold)]'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/70 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
               toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
             >
               <SettingsMenu onPullLibrary={onPullLibrary} />

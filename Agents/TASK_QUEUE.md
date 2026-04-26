@@ -364,3 +364,38 @@
 
 - `git status --short` before and after.
 - No lint required for docs-only task.
+
+---
+
+### [x] CT-012 — Library calm/home batch
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/styles/globals.css`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Implement one UI batch (CT-012A/B/C) to reduce first-glance density on library home without changing reader/data/settings behavior.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- Human visual verification required.
