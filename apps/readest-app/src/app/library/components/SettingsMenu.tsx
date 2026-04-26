@@ -353,6 +353,15 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
+      <p className={sectionLabelClass}>{_('Book opening')}</p>
+      {appService?.hasWindow && (
+        <MenuItem
+          label={_('Open books in separate windows')}
+          toggled={settings.openBookInNewWindow}
+          onClick={toggleOpenInNewWindow}
+        />
+      )}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
       <p className={sectionLabelClass}>{_('Reading & Sync')}</p>
       <MenuItem
         label={_('Auto Upload Books to Cloud')}
@@ -383,13 +392,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <p className={sectionLabelClass}>{_('Library View')}</p>
-      {appService?.hasWindow && (
-        <MenuItem
-          label={_('Open Book in New Window')}
-          toggled={settings.openBookInNewWindow}
-          onClick={toggleOpenInNewWindow}
-        />
-      )}
       {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       {appService?.hasWindow && (
         <MenuItem label={_('Always on Top')} toggled={isAlwaysOnTop} onClick={toggleAlwaysOnTop} />

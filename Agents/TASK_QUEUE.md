@@ -437,3 +437,92 @@
 - `pnpm.cmd --filter @readest/readest-app lint`
 - `git status --short`
 - Human visual verification required.
+
+---
+
+### [~] CT-014 — Book opening flow + calmer library entry audit/fix batch
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/store/**`
+- `apps/readest-app/src/services/**`
+
+**Allowed files to edit:**
+
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+
+**Goal:** Reduce book-opening friction by auditing new-window behavior, applying safe clarity/default improvements where scoped, and polishing calmer entry copy.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+
+---
+
+### [~] CT-015 — Default book opening to same window
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `apps/readest-app/src/services/constants.ts`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+
+**Allowed files to edit:**
+
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `apps/readest-app/src/services/constants.ts`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+
+**Goal:** Keep separate-window opening as an option while making same-window reading the default base experience.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+
+---
+
+### [~] CT-016 — Make book opening setting easy to find
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect/edit:**
+
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Move the existing separate-window toggle higher in Library settings under a clear “Book opening” section label, without changing behavior.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`

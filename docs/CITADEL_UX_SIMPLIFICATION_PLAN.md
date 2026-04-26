@@ -103,6 +103,32 @@ Principle: preserve capability, reduce default noise.
 - Keep current reader behavior intact; layer companion affordances around it.
 - Defer heavy interactions (AI/lore/deep customization) behind optional panels.
 
+## 6.5) Book opening behavior
+
+### Current behavior
+
+- Library opening behavior is controlled by `settings.openBookInNewWindow`.
+- Click/open actions in `BookshelfItem.tsx` and multi-select open in `Bookshelf.tsx` open a separate reader window when this setting is true on desktop.
+- The user-facing toggle lives in `SettingsMenu.tsx` and persists through system settings storage.
+
+### Preferred Citadel behavior
+
+- Default to same-window reading for calmer flow and fewer surprise popups.
+- Keep separate-window opening available as an explicit opt-in for power users.
+- Existing local installs may keep a previously saved separate-window preference until the user toggles it.
+
+### Files involved
+
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/app/library/components/Bookshelf.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/services/constants.ts` (default system settings source)
+
+### Future risk notes
+
+- Changing defaults in persisted settings must avoid migrating or overriding existing user preference.
+- Any future change to default should be limited to new/fresh settings initialization paths only.
+
 ## 6) Risk Notes (What Not to Touch Yet)
 
 Do not change during UX simplification planning/early implementation:

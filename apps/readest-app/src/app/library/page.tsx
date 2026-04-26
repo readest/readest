@@ -931,6 +931,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[var(--citadel-gold)]'>
               {_('Continue Reading')}
             </p>
+            <p className='mt-1 text-xs text-[var(--citadel-text-muted)]'>
+              {_('Jump back into your current book, then browse your full collection below.')}
+            </p>
             {continueBook ? (
               <div className='mt-3 flex items-center gap-4'>
                 <div className='bg-base-300/20 h-20 w-14 flex-none overflow-hidden rounded-md border border-[var(--citadel-line-gold)]'>
@@ -1026,6 +1029,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             <div className='px-4 pb-2 pt-1 sm:px-6'>
               <p className='text-xs font-medium tracking-wide text-[var(--citadel-text-muted)]'>
                 {_('Your Collection')}
+              </p>
+              <p className='text-base-content/55 mt-1 text-xs'>
+                {_('Everything you imported is here when you want to explore more.')}
               </p>
             </div>
             <div

@@ -230,3 +230,36 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** cleanup restores (`git restore apps/readest-app/src-tauri/Cargo.toml`; `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions`; `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions`; `git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .`; `git -C packages/tauri restore .`; `git -C packages/tauri-plugins restore .`) then `git status --short` (clean pre-work); `pnpm.cmd --filter @readest/readest-app lint` (pass, exit 0); `git status --short` (post, only scoped files changed).
 - **Validation:** Required lint command passed; post-change status limited to scoped CT-013 files.
 - **Notes / Next:** Human visual verification needed for calmness/readability in light/dark and at narrow widths before marking `[x]`.
+
+**[2026-04-27 00:44:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-014`
+- **Task:** Book opening flow + calmer library entry audit/fix batch.
+- **Status:** Needs human verification.
+- **Action:** **CT-014A completed:** audited the popup/new-window flow and confirmed `settings.openBookInNewWindow` controls reader-window behavior in `apps/readest-app/src/app/library/components/BookshelfItem.tsx` (single-book open) and `apps/readest-app/src/app/library/components/Bookshelf.tsx` (multi-select open). Toggle is exposed in `apps/readest-app/src/app/library/components/SettingsMenu.tsx` and persisted via `saveSysSettings(..., 'openBookInNewWindow', ...)`. Default value source was identified in `apps/readest-app/src/services/constants.ts` (`DEFAULT_SYSTEM_SETTINGS.openBookInNewWindow: true`). **CT-014B skipped (documented):** default flip not applied because the located default is outside the allowed edit set and not in a store/settings file covered by the optional exception; no risky migration/persistence rewrite attempted. **CT-014C completed:** renamed setting label in `SettingsMenu.tsx` to “Open books in separate windows” for clearer behavior intent. **CT-014D completed:** refined `library/page.tsx` entry copy to better explain the flow between Continue Reading and the full collection without layout/data changes. **CT-014E completed:** added “Book opening behavior” section to `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` covering current behavior, preferred Citadel behavior, involved files, and future risk notes.
+- **Files Touched:** `apps/readest-app/src/app/library/components/SettingsMenu.tsx`, `apps/readest-app/src/app/library/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** cleanup restores (`git restore apps/readest-app/src-tauri/Cargo.toml`; `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions`; `git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions`; `git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .`; `git -C packages/tauri restore .`; `git -C packages/tauri-plugins restore .`) then `git status --short` (clean pre-work); `pnpm.cmd --filter @readest/readest-app lint` (pass, exit 0); `git status --short` (post).
+- **Validation:** Lint passed; scoped file set maintained; no reader/Tauri/package/translation edits.
+- **Notes / Next:** If a follow-up task explicitly allows editing `apps/readest-app/src/services/constants.ts`, set `DEFAULT_SYSTEM_SETTINGS.openBookInNewWindow` to `false` to shift new-user default to same-window while preserving existing users’ saved preference.
+
+**[2026-04-27 00:49:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-015`
+- **Task:** Default book opening to same window.
+- **Status:** Needs human verification.
+- **Action:** Changed `DEFAULT_SYSTEM_SETTINGS.openBookInNewWindow` from `true` to `false` in `apps/readest-app/src/services/constants.ts`, so fresh/default settings now prefer same-window opening while preserving the existing separate-window option. Confirmed `SettingsMenu.tsx` label remains “Open books in separate windows” and toggle behavior remains available. Added a short note in `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` clarifying Citadel default (same window), explicit separate-window preference availability, and that existing local installs may retain prior saved choice until toggled.
+- **Files Touched:** `apps/readest-app/src/services/constants.ts`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass, exit 0); `git status --short` (post).
+- **Validation:** Lint passed; no reader/Tauri/package/database/migration changes.
+- **Notes / Next:** Existing local user settings can preserve old `openBookInNewWindow` value; users may need to manually turn off separate windows in Settings on already-configured installs.
+
+**[2026-04-27 00:53:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-016`
+- **Task:** Make book opening setting easy to find.
+- **Status:** Needs human verification.
+- **Action:** Located the existing control bound to `settings.openBookInNewWindow` in `SettingsMenu.tsx`, moved that same control higher in the menu, and introduced a dedicated section label `Book opening` above it. Kept the label text exactly `Open books in separate windows`. No behavior, persistence, defaults, imports, or unrelated settings were changed; the setting was moved (not duplicated).
+- **Files Touched:** `apps/readest-app/src/app/library/components/SettingsMenu.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass, exit 0); `git status --short` (post).
+- **Validation:** Lint passed; scoped files only.
+- **Notes / Next:** Eddy should visually verify the setting now appears near the top under `Book opening`.
