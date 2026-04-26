@@ -258,7 +258,7 @@
 
 ---
 
-### [~] CT-008 — Visible Readest menu labels → Citadel
+### [x] CT-008 — Visible Readest menu labels → Citadel
 
 **Owner:** Cursor  
 **Human verification:** Yes  
