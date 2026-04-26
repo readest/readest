@@ -277,3 +277,27 @@
 
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Eddy: spot-check library settings menu, reader book menu, command palette, and install/home-screen title where applicable.
+
+---
+
+### [x] CT-009 — Topbar visual slice 1 (library shell)
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/SettingsMenu.tsx`
+- `apps/readest-app/src/components/**`
+- `apps/readest-app/src/styles/globals.css`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:** The component that renders the library header/topbar (`LibraryHeader`), optional tiny scoped rules in `globals.css`, plus `Agents/TASK_QUEUE.md` and `Agents/AUDIT_LOG.md`.
+
+**Goal:** One small Citadel polish on the library topbar — subtle editorial surface, warm gold accent (border / focus / hovers), CT-003 tokens only; no reader, Tauri, or dependency changes.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Eddy: visual check of library header in light/dark.

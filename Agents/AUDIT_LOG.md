@@ -175,3 +175,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (exit **0**).
 - **Validation:** `tsgo --noEmit` and `biome check .` (870 files) reported no issues.
 - **Notes / Next:** Eddy: visually confirm menus and command search; mark CT-008 `[x]` after approval.
+
+**[2026-04-26 17:45:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-009`
+- **Task:** Topbar visual slice 1 — library header Citadel polish.
+- **Status:** Needs human verification (`[~]`).
+- **Action:** Identified the visible library topbar as `LibraryHeader` from allowed `library/page.tsx` (`import LibraryHeader from './components/LibraryHeader'`). Applied CT-003 tokens: gold bottom border (`--citadel-line-gold`), frosted surface (`bg-base-100/90` + `backdrop-blur-sm` + `--citadel-shadow-soft`), dark theme wash (`color-mix` with `--citadel-bg-dark`), search field `focus-visible` ring via `--citadel-line-gold` / `--citadel-border-glow`, warm gold hover on header icon controls and select-mode actions. No `globals.css` change (not required). Did not edit reader, Tauri, packages, or `library/page.tsx` layout beyond existing `LibraryHeader` usage.
+- **Files Touched:** `apps/readest-app/src/app/library/components/LibraryHeader.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (exit **0**).
+- **Validation:** `tsgo --noEmit` and `biome check .` (870 files) clean.
+- **Notes / Next:** `LibraryHeader.tsx` was not listed under CT-009 “Allowed files to inspect”; scope may be updated to include it explicitly. Eddy: confirm light/dark library header looks intentional; revert by stripping `citadel-library-topbar` classes and related utilities from `LibraryHeader.tsx`.

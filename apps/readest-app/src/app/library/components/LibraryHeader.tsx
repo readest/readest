@@ -96,7 +96,9 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
+        'titlebar citadel-library-topbar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
+        'bg-base-100/90 border-b border-[var(--citadel-line-gold)] shadow-[var(--citadel-shadow-soft)] backdrop-blur-sm',
+        'dark:border-[var(--citadel-line-gold)] dark:bg-[color-mix(in_srgb,var(--citadel-bg-dark)_88%,transparent)] dark:backdrop-blur-sm',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
@@ -127,11 +129,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'search-input input h-9 w-full rounded-full pr-[30%] ps-10 sm:h-7',
-                'bg-base-300/45 border-0',
+                'search-input input h-9 w-full rounded-full border border-transparent pr-[30%] ps-10 sm:h-7',
+                'bg-base-300/45',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50 truncate',
+                'transition-[box-shadow,border-color] duration-200',
                 'focus:outline-none focus:ring-0',
+                'focus-visible:border-[var(--citadel-line-gold)] focus-visible:shadow-[var(--citadel-border-glow)]',
               )}
             />
           </div>
@@ -143,7 +147,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   setSearchQuery('');
                   debouncedUpdateQueryParam('');
                 }}
-                className='text-base-content/40 hover:text-base-content/60 pe-1'
+                className='text-base-content/40 pe-1 transition-colors hover:text-[var(--citadel-gold)]'
                 aria-label={_('Clear Search')}
               >
                 <IoMdCloseCircle className='h-4 w-4' />
@@ -155,7 +159,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               className={clsx(
                 'exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer',
               )}
-              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent'
+              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent transition-colors hover:text-[var(--citadel-gold)]'
               toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
             >
               <ImportMenu
@@ -172,9 +176,15 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 className='h-6'
               >
                 {isSelectMode ? (
-                  <PiSelectionAllFill role='button' className='text-base-content/60 h-6 w-6' />
+                  <PiSelectionAllFill
+                    role='button'
+                    className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
+                  />
                 ) : (
-                  <PiSelectionAll role='button' className='text-base-content/60 h-6 w-6' />
+                  <PiSelectionAll
+                    role='button'
+                    className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
+                  />
                 )}
               </button>
             )}
@@ -189,7 +199,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           >
             <button
               onClick={isSelectAll ? onDeselectAll : onSelectAll}
-              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 sm:w-[80px]'
+              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 transition-colors hover:text-[var(--citadel-gold)] sm:w-[80px]'
               aria-label={isSelectAll ? _('Deselect') : _('Select All')}
             >
               <span className='font-sans text-base font-normal sm:text-sm'>
@@ -202,7 +212,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <Dropdown
               label={_('View Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 transition-colors hover:text-[var(--citadel-gold)]'
               toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
             >
               <ViewMenu />
@@ -210,7 +220,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <Dropdown
               label={_('Settings Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 transition-colors hover:text-[var(--citadel-gold)]'
               toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
             >
               <SettingsMenu onPullLibrary={onPullLibrary} />
