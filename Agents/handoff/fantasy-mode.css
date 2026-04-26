@@ -1,0 +1,201 @@
+/*
+ * fantasy-mode.css — Citadel Fantasy Mode skin
+ * Drop on <body class="fantasy"> or scope to [data-mode="fantasy"]
+ * Requires: Inter, IM Fell English, Cinzel  (Google Fonts)
+ *
+ * JS controller binds:
+ *   --citadel-fantasy-chapter-texture-url  → url("path/to/parchment.jpg")
+ *   --citadel-audio-mid                    → 0.0 … 1.0  (audio analyser midrange)
+ */
+
+/* ─── Root tokens (fantasy overrides) ─────────────────────────────────────── */
+.fantasy {
+  /* Backgrounds */
+  --hp-bg: #0c0906;
+  --hp-surface: #111009;
+  --reader-bg: #0d0b07;
+
+  /* Text */
+  --hp-text-primary: #f0ede4;
+  --hp-text-secondary: #9a8e78;
+  --hp-text-tertiary: #5c5448;
+
+  /* Gold accent */
+  --hp-accent: #d4af7a;
+  --hp-accent-dim: rgba(212, 175, 122, 0.35);
+  --hp-accent-faint: rgba(212, 175, 122, 0.08);
+
+  /* Borders */
+  --hp-border: rgba(212, 175, 122, 0.1);
+  --hp-border-strong: rgba(212, 175, 122, 0.2);
+
+  /* Texture (set by JS controller) */
+  --citadel-fantasy-chapter-texture-url: none;
+
+  /* Audio reactive (set by JS controller, 0–1) */
+  --citadel-audio-mid: 0;
+
+  /* Typography */
+  --font-ui: 'Inter', sans-serif;
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body: 'IM Fell English', Georgia, serif;
+
+  /* Radii stay the same */
+  --radius-pill: 12px;
+  --radius-card: 4px;
+  --radius-popup: 8px;
+}
+
+/* ─── Global body ──────────────────────────────────────────────────────────── */
+.fantasy body,
+body.fantasy {
+  background: var(--hp-bg);
+  color: var(--hp-text-primary);
+  font-family: var(--font-ui);
+}
+
+/* ─── Parchment texture overlay ────────────────────────────────────────────── */
+/* Applied to full-screen containers that should feel like aged paper */
+.fantasy .chr-chapter-texture {
+  background-image: var(--citadel-fantasy-chapter-texture-url);
+  background-size: cover;
+  background-blend-mode: multiply;
+}
+
+/* ─── Noise grain overlay (pseudo) ─────────────────────────────────────────── */
+.fantasy .chr-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* ─── Vignette ──────────────────────────────────────────────────────────────── */
+.fantasy .chr-vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 80% 80% at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.48) 100%
+  );
+  z-index: 1;
+}
+
+/* ─── Candlelight top glow ──────────────────────────────────────────────────── */
+.fantasy .chr-candlelight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 50% 40% at 50% 0%,
+    rgba(180, 120, 40, 0.08) 0%,
+    transparent 70%
+  );
+  z-index: 1;
+}
+
+/* ─── Topbar ────────────────────────────────────────────────────────────────── */
+.fantasy .chr-topbar {
+  background: rgba(16, 13, 8, 0.92);
+  border-bottom: 0.5px solid var(--hp-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.fantasy .chr-topbar-logo {
+  /* Logo image already handles the brand mark; no text override needed */
+  height: 26px;
+  width: auto;
+}
+
+.fantasy .chr-topbar-nav-item {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--hp-text-tertiary);
+  transition: color 0.15s;
+}
+.fantasy .chr-topbar-nav-item:hover,
+.fantasy .chr-topbar-nav-item.active {
+  color: var(--hp-text-primary);
+}
+
+/* ─── Filter pills ──────────────────────────────────────────────────────────── */
+.fantasy .chr-pill {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  border-radius: var(--radius-pill);
+  border: 0.5px solid transparent;
+  color: var(--hp-text-tertiary);
+  background: none;
+  padding: 3px 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fantasy .chr-pill.active {
+  border-color: var(--hp-border-strong);
+  background: var(--hp-accent-faint);
+  color: var(--hp-accent);
+}
+.fantasy .chr-pill--color.active {
+  /* color dot peeking through — use inline style for --pill-color */
+  border-color: color-mix(in srgb, var(--pill-color) 40%, transparent);
+  background: color-mix(in srgb, var(--pill-color) 12%, transparent);
+  color: var(--pill-color);
+}
+
+/* ─── Section eyebrow labels ────────────────────────────────────────────────── */
+.fantasy .chr-eyebrow {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--hp-accent-dim);
+}
+
+/* ─── Ornamental divider ────────────────────────────────────────────────────── */
+.fantasy .chr-ornament {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.fantasy .chr-ornament::before,
+.fantasy .chr-ornament::after {
+  content: '';
+  flex: 1;
+  height: 0.5px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 122, 0.2));
+}
+.fantasy .chr-ornament::after {
+  background: linear-gradient(to left, transparent, rgba(212, 175, 122, 0.2));
+}
+.fantasy .chr-ornament-glyph {
+  font-size: 9px;
+  color: rgba(212, 175, 122, 0.3);
+  letter-spacing: 8px;
+  font-family: var(--font-display);
+}
+
+/* Reduced motion — fantasy-only motion accents (components in book-reader-chrome.css) */
+@media (prefers-reduced-motion: reduce) {
+  .fantasy .chr-avatar-pulse.idle,
+  .fantasy .chr-speaking-now__ripple,
+  .fantasy .chr-speaking-now__avatar-wrap::before,
+  .fantasy .chr-speaking-now__avatar-wrap::after {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

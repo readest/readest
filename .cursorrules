@@ -1,0 +1,113 @@
+# Citadel — Cursor Agent Rules
+
+## Current project reality
+- This repository is now the **Citadel Readest fork**, not the old Electron/EpubReader codebase.
+- Primary app surface: `apps/readest-app`.
+- Stack: **Tauri 2 + Next.js/React/TypeScript + Rust plugins + Readest/Foliate renderer**.
+- Treat the old Electron/EPUB.js work as archived research only. Do not port old files or assumptions directly.
+
+## Roles
+- **Manager:** Eddy. Defines priorities, checks visual/UI results, and approves risky changes.
+- **Planning assistant:** ChatGPT. Used for task planning, review prompts, and debugging direction.
+- **Active code agent for now:** Cursor only.
+- **Inactive unless explicitly assigned:** Aider, Codex, Claude Code, Gemini, or any second parallel agent.
+
+## Required files to read before coding
+Before making any change, read only:
+1. `Agents/DEVELOPMENT_RULES.md`
+2. `Agents/MASTER_PLAN.md`
+3. `Agents/TASK_QUEUE.md`
+4. `Agents/AUDIT_LOG.md`
+5. Any source files named in the current task
+
+Do **not** read the whole repo unless the task explicitly says “audit” or “search broadly.”
+
+## Task queue workflow
+- Work only on the first task in `Agents/TASK_QUEUE.md` with status `[>]`, or the first `[ ]` task if no task is marked active.
+- Do not skip ahead.
+- Do not start a second task until the current task is logged.
+- If the current task requires human visual verification, stop after implementation and ask the Manager to verify before continuing.
+- If the task passes all objective checks and does not require human verification, continue to the next task.
+
+## Audit log workflow — mandatory
+After every task attempt, append an entry to `Agents/AUDIT_LOG.md` before moving on.
+Use this format:
+
+```md
+**[YYYY-MM-DD HH:mm:ss Europe/Lisbon] - Agent: Cursor**
+- **Task ID:** `TASK-ID`
+- **Task:** Short task name.
+- **Status:** Completed | Needs human verification | Blocked | Failed after retries.
+- **Action:** What changed, in practical terms.
+- **Files Touched:** Exact file paths.
+- **Commands Run:** Exact commands and pass/fail result.
+- **Validation:** What was checked.
+- **Notes / Next:** What the next agent/Manager should know.
+```
+
+## Retry and stop rules
+- If a task fails, make at most **2 autonomous fix attempts**.
+- A 3rd attempt is allowed only for an obvious typo or environment command correction.
+- After that, stop and ask for Manager/ChatGPT guidance.
+- Do not keep patching blindly.
+- Never hide failed checks. Log them.
+
+## Single-agent safety
+- Only Cursor is active right now.
+- If a second agent is introduced later, each agent must have separate task IDs and non-overlapping file ownership.
+- Two agents must never edit the same file or subsystem in parallel.
+- Shared files such as app shell, global CSS, package files, Tauri config, stores, and reader components require explicit task ownership.
+
+## Git discipline
+- Start from a clean working tree.
+- Before editing, run `git status`.
+- After each task, run `git status` again.
+- Keep changes small and reviewable.
+- Do not commit unless the task explicitly says commits are allowed.
+- For UI tasks that require human visual approval, do not mark the task complete until the Manager verifies it.
+
+## Safe change policy
+- Modify the existing Readest app; do not rewrite architecture.
+- Preserve existing structure and naming unless the task explicitly allows changes.
+- Prefer small adapter components, tokens, and incremental styling over replacing whole screens.
+- No package upgrades unless the task explicitly allows them.
+- No dependency additions unless the task explicitly allows them.
+- No broad formatting churn.
+- No generated permission/schema noise commits.
+
+## Readest/Tauri high-risk boundaries
+Touch these only when the current task explicitly names them:
+- `apps/readest-app/src/app/reader/**`
+- `apps/readest-app/src/pages/reader/[ids].tsx`
+- `apps/readest-app/src/app/reader/components/FoliateViewer.tsx`
+- `apps/readest-app/src/store/readerStore.ts`
+- `apps/readest-app/src/services/**`
+- `apps/readest-app/src-tauri/**`
+- root `Cargo.toml`, `pnpm-lock.yaml`, package files
+
+## Design handoff rules
+- The Citadel design handoff is a **reference**, not an implementation script.
+- Do not run or paste the old `SKILL.md` implementation prompt blindly.
+- Do not directly paste old Electron HTML/CSS snippets into Readest.
+- Extract only small, relevant pieces: assets, color tokens, typography rules, motion ideas, and individual component ideas.
+- Implement design in phases: assets → tokens → safe branding → topbar polish → library/home polish → reader/companion features.
+
+## UI verification rule
+For UI work, objective checks are not enough.
+After implementing a visual task:
+- Run the app with `pnpm.cmd tauri dev` unless the task says otherwise.
+- Stop and ask the Manager to visually confirm.
+- Log the task as `Needs human verification` until approved.
+
+## Product identity
+- User-facing product name: **Citadel**.
+- Do not introduce new user-facing “Readest” labels except where unchanged upstream branding is explicitly being preserved for the current task.
+- Branding changes must be incremental and tested.
+
+## Definition of done
+A task is done only when:
+1. The requested files were changed and no unrelated files were touched.
+2. Required commands/checks were run or the reason they were skipped is logged.
+3. `Agents/AUDIT_LOG.md` was updated.
+4. `Agents/TASK_QUEUE.md` status was updated.
+5. Human verification was requested when required.

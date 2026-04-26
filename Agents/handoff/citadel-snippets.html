@@ -1,0 +1,578 @@
+<!--
+  citadel-snippets.html
+  Vanilla HTML/CSS snippets for Citadel Electron app
+  Drop fantasy-mode.css + these snippets into your renderer.
+  Add class="fantasy" to <body> to activate fantasy mode.
+  JS controller sets CSS custom properties on :root or the relevant element:
+    --citadel-fantasy-chapter-texture-url: url("assets/parchment.jpg");
+    --citadel-audio-mid: 0.0 … 1.0;   (per-frame from Web Audio analyser)
+    --char-color: #7a3a10;             (per character)
+    --entry-color: #d4af7a;            (per journal entry)
+    --entry-bg:  rgba(212,175,122,0.12);
+-->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     1. CHARACTER SIDEBAR
+     Position: absolute inside your reader container (position: relative)
+     Toggle:   add/remove class "open" on .chr-sidebar
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<aside class="chr-sidebar" id="chr-sidebar" aria-label="Characters" role="complementary">
+  <!-- Header -->
+  <div class="chr-sidebar__header">
+    <div>
+      <!-- "Dramatis Personæ" in fantasy, "Characters" in default — swap via JS -->
+      <p class="chr-sidebar__title" data-default="Characters" data-fantasy="Dramatis Personæ">
+        Characters
+      </p>
+      <p class="chr-sidebar__subtitle">3 on this page</p>
+    </div>
+    <button
+      class="chr-sidebar__close"
+      aria-label="Close character panel"
+      onclick="document.getElementById('chr-sidebar').classList.remove('open')"
+    >
+      <svg
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M18 6 6 18M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Character list -->
+  <div class="chr-sidebar__list" role="list">
+    <div
+      class="chr-sidebar__section-label"
+      data-default="On This Page"
+      data-fantasy="Upon This Page"
+    >
+      On This Page
+    </div>
+
+    <!-- Character row — repeat per character; set style="--char-color: #hexcode" -->
+    <div
+      class="chr-char-row"
+      role="listitem"
+      tabindex="0"
+      style="--char-color: #7a3a10"
+      onclick="chrOpenDetail(this)"
+      onkeydown="if (event.key === 'Enter') chrOpenDetail(this);"
+      data-char-id="1"
+    >
+      <div class="chr-avatar chr-avatar-pulse" aria-hidden="true">K</div>
+      <div class="chr-char-info">
+        <div class="chr-char-name">Kvothe</div>
+        <div class="chr-char-role">Protagonist</div>
+      </div>
+      <div class="chr-char-chevron" aria-hidden="true">
+        <svg
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 18l6-6-6-6"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div
+      class="chr-char-row"
+      role="listitem"
+      tabindex="0"
+      style="--char-color: #1a3a6a"
+      onclick="chrOpenDetail(this)"
+      onkeydown="if (event.key === 'Enter') chrOpenDetail(this);"
+      data-char-id="2"
+    >
+      <div class="chr-avatar" aria-hidden="true">C</div>
+      <div class="chr-char-info">
+        <div class="chr-char-name">Chronicler</div>
+        <div class="chr-char-role">Scribe</div>
+      </div>
+      <div class="chr-char-chevron" aria-hidden="true">
+        <svg
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 18l6-6-6-6"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div
+      class="chr-char-row"
+      role="listitem"
+      tabindex="0"
+      style="--char-color: #5c1a30"
+      onclick="chrOpenDetail(this)"
+      onkeydown="if (event.key === 'Enter') chrOpenDetail(this);"
+      data-char-id="3"
+    >
+      <div class="chr-avatar" aria-hidden="true">D</div>
+      <div class="chr-char-info">
+        <div class="chr-char-name">Denna</div>
+        <div class="chr-char-role">Love Interest</div>
+      </div>
+      <div class="chr-char-chevron" aria-hidden="true">
+        <svg
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 18l6-6-6-6"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div
+      class="chr-sidebar__section-label"
+      data-default="Others in Book"
+      data-fantasy="Others in the Tale"
+    >
+      Others in Book
+    </div>
+
+    <div
+      class="chr-char-row chr-char-row--dimmed"
+      role="listitem"
+      tabindex="0"
+      style="--char-color: #1a3d0a"
+      onclick="chrOpenDetail(this)"
+      onkeydown="if (event.key === 'Enter') chrOpenDetail(this);"
+      data-char-id="4"
+    >
+      <div class="chr-avatar" aria-hidden="true">B</div>
+      <div class="chr-char-info">
+        <div class="chr-char-name">Bast</div>
+        <div class="chr-char-role">Kvothe's Student</div>
+      </div>
+      <div class="chr-char-chevron" aria-hidden="true">
+        <svg
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 18l6-6-6-6"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <!-- /.chr-sidebar__list -->
+
+  <!-- Character detail slide-in (JS populates inner content) -->
+  <div class="chr-char-detail" id="chr-char-detail" role="region" aria-label="Character detail">
+    <div class="chr-char-detail__header">
+      <button
+        class="chr-sidebar__close"
+        style="gap: 4px; font-size: 12px; padding: 4px 0"
+        onclick="document.getElementById('chr-char-detail').classList.remove('open')"
+        aria-label="Back to list"
+      >
+        <svg
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 5l-7 7 7 7"></path>
+        </svg>
+        Back
+      </button>
+    </div>
+    <div class="chr-char-detail__body">
+      <!-- Populated by JS: portrait, name, role, house badge, description, traits, wiki link -->
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     2. SPEAKING NOW PANEL
+     Position: fixed or absolute — your audiobook controller places this.
+     Add class="fantasy" on <body> to activate dark + gold skin.
+     JS sets --char-color and --citadel-audio-mid on this element each frame.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div
+  class="chr-speaking-now"
+  id="chr-speaking-now"
+  role="status"
+  aria-live="polite"
+  aria-label="Currently speaking"
+  style="--char-color: #7a3a10"
+>
+  <!-- Avatar + ripple rings -->
+  <div class="chr-speaking-now__avatar-wrap">
+    <!-- Idle ripple rings (shown when audio analyser not wired) -->
+    <div class="chr-speaking-now__ripple" aria-hidden="true"></div>
+    <div class="chr-speaking-now__ripple" aria-hidden="true"></div>
+    <!-- Avatar -->
+    <div class="chr-avatar chr-avatar-pulse" aria-hidden="true">K</div>
+  </div>
+
+  <!-- Text -->
+  <div>
+    <p class="chr-speaking-now__label" data-default="Speaking Now" data-fantasy="Now Speaking">
+      Speaking Now
+    </p>
+    <p class="chr-speaking-now__name">Kvothe</p>
+    <p class="chr-speaking-now__role">Protagonist</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     3. JOURNAL VIEW
+     Full-screen overlay. Show/hide with display or a CSS class.
+     Each .chr-journal__entry needs inline style with --entry-color and --entry-bg.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<section
+  class="chr-journal chr-surface chr-vignette chr-candlelight"
+  id="chr-journal"
+  aria-label="My Journal"
+>
+  <!-- Texture overlay (fantasy) — applies --citadel-fantasy-chapter-texture-url -->
+  <div
+    class="chr-chapter-texture"
+    aria-hidden="true"
+    style="position: absolute; inset: 0; pointer-events: none; z-index: 0"
+  ></div>
+
+  <!-- Header -->
+  <header class="chr-journal__header">
+    <div style="display: flex; align-items: center; gap: 16px">
+      <button
+        class="chr-sidebar__close"
+        style="gap: 5px; font-size: 12px; padding: 4px 8px; border-radius: 6px"
+        aria-label="Back to reader"
+        onclick="document.getElementById('chr-journal').hidden = true"
+      >
+        <svg
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 5l-7 7 7 7"></path>
+        </svg>
+        Reader
+      </button>
+      <div
+        style="width: 0.5px; height: 14px; background: rgba(255, 255, 255, 0.1)"
+        aria-hidden="true"
+      ></div>
+      <span
+        class="chr-journal__title"
+        data-default="My Journal"
+        data-fantasy="THE TRAVELLER'S JOURNAL"
+        >My Journal</span
+      >
+    </div>
+    <span class="chr-journal__count">5 highlights</span>
+  </header>
+
+  <!-- Filter bar -->
+  <div class="chr-journal__filters" role="toolbar" aria-label="Filter highlights">
+    <button class="chr-pill active" data-filter="all">All</button>
+    <button class="chr-pill chr-pill--color" data-filter="amber" style="--pill-color: #d4af7a">
+      <span
+        style="
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #d4af7a;
+          display: inline-block;
+          flex-shrink: 0;
+        "
+        aria-hidden="true"
+      ></span>
+      Amber
+    </button>
+    <button class="chr-pill chr-pill--color" data-filter="blue" style="--pill-color: #6495ed">
+      <span
+        style="
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #6495ed;
+          display: inline-block;
+          flex-shrink: 0;
+        "
+        aria-hidden="true"
+      ></span>
+      Sapphire
+    </button>
+    <button class="chr-pill chr-pill--color" data-filter="rose" style="--pill-color: #c85a64">
+      <span
+        style="
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #c85a64;
+          display: inline-block;
+          flex-shrink: 0;
+        "
+        aria-hidden="true"
+      ></span>
+      Rose
+    </button>
+    <button class="chr-pill chr-pill--color" data-filter="sage" style="--pill-color: #5aa064">
+      <span
+        style="
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #5aa064;
+          display: inline-block;
+          flex-shrink: 0;
+        "
+        aria-hidden="true"
+      ></span>
+      Sage
+    </button>
+    <div
+      style="
+        width: 0.5px;
+        height: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 0 4px;
+        flex-shrink: 0;
+      "
+      aria-hidden="true"
+    ></div>
+    <button class="chr-pill" data-filter="book-1">The Name of the Wind</button>
+    <button class="chr-pill" data-filter="book-2">Dune</button>
+  </div>
+
+  <!-- Ornament (fantasy only — toggle visibility via JS) -->
+  <div class="chr-ornament chr-journal__ornament" aria-hidden="true" style="margin: 0 40px">
+    <span class="chr-ornament-glyph">✦ ✦ ✦</span>
+  </div>
+
+  <!-- Scrollable body -->
+  <div class="chr-journal__body" role="list">
+    <!-- Book group -->
+    <div
+      class="chr-journal__group"
+      data-book="book-1"
+      role="group"
+      aria-label="The Name of the Wind"
+    >
+      <div class="chr-journal__book-label">
+        <span>The Name of the Wind</span>
+      </div>
+
+      <!-- Entry 1 — amber -->
+      <article
+        class="chr-journal__entry"
+        role="listitem"
+        style="--entry-color: #d4af7a; --entry-bg: rgba(212, 175, 122, 0.12)"
+      >
+        <div class="chr-journal__stripe" aria-hidden="true"></div>
+        <div class="chr-journal__entry-body">
+          <div class="chr-journal__meta">
+            <span class="chr-journal__chapter">Chapter Fourteen</span>
+            <span aria-hidden="true" style="font-size: 9px; color: #4a4a48">·</span>
+            <span class="chr-journal__date">April 12, 2024</span>
+          </div>
+          <blockquote class="chr-journal__passage">
+            <p>
+              "The great forest stretched before him like a wall of darkness, each tree a sentinel
+              wrapped in shadow and silence."
+            </p>
+          </blockquote>
+          <div
+            class="chr-journal__note chr-journal__note--empty"
+            contenteditable="true"
+            data-placeholder="Add a note…"
+            aria-label="Reader note"
+          >
+            Add a note…
+          </div>
+        </div>
+      </article>
+
+      <!-- Entry 2 — blue -->
+      <article
+        class="chr-journal__entry"
+        role="listitem"
+        style="--entry-color: #6495ed; --entry-bg: rgba(100, 149, 237, 0.1)"
+      >
+        <div class="chr-journal__stripe" aria-hidden="true"></div>
+        <div class="chr-journal__entry-body">
+          <div class="chr-journal__meta">
+            <span class="chr-journal__chapter">Chapter Fourteen</span>
+            <span aria-hidden="true" style="font-size: 9px; color: #4a4a48">·</span>
+            <span class="chr-journal__date">April 12, 2024</span>
+          </div>
+          <blockquote class="chr-journal__passage">
+            <p>"Things that, once learned, cannot be unlearned."</p>
+          </blockquote>
+          <div class="chr-journal__note" contenteditable="true" aria-label="Reader note">
+            Chronicler speaking — a warning about the story itself
+          </div>
+        </div>
+      </article>
+
+      <!-- Entry 3 — rose -->
+      <article
+        class="chr-journal__entry"
+        role="listitem"
+        style="--entry-color: #c85a64; --entry-bg: rgba(200, 90, 100, 0.1)"
+      >
+        <div class="chr-journal__stripe" aria-hidden="true"></div>
+        <div class="chr-journal__entry-body">
+          <div class="chr-journal__meta">
+            <span class="chr-journal__chapter">Chapter Fourteen</span>
+            <span aria-hidden="true" style="font-size: 9px; color: #4a4a48">·</span>
+            <span class="chr-journal__date">April 14, 2024</span>
+          </div>
+          <blockquote class="chr-journal__passage">
+            <p>
+              "He thought of Denna. He always thought of Denna when danger pressed close, as if her
+              memory were a talisman against the dark."
+            </p>
+          </blockquote>
+          <div
+            class="chr-journal__note chr-journal__note--empty"
+            contenteditable="true"
+            data-placeholder="Add a note…"
+            aria-label="Reader note"
+          >
+            Add a note…
+          </div>
+        </div>
+      </article>
+    </div>
+    <!-- /.chr-journal__group -->
+
+    <!-- Book group 2 -->
+    <div class="chr-journal__group" data-book="book-2" role="group" aria-label="Dune">
+      <div class="chr-journal__book-label">
+        <span>Dune</span>
+      </div>
+
+      <!-- Entry 4 — sage -->
+      <article
+        class="chr-journal__entry"
+        role="listitem"
+        style="--entry-color: #5aa064; --entry-bg: rgba(90, 160, 100, 0.1)"
+      >
+        <div class="chr-journal__stripe" aria-hidden="true"></div>
+        <div class="chr-journal__entry-body">
+          <div class="chr-journal__meta">
+            <span class="chr-journal__chapter">Book One: Dune</span>
+            <span aria-hidden="true" style="font-size: 9px; color: #4a4a48">·</span>
+            <span class="chr-journal__date">March 28, 2024</span>
+          </div>
+          <blockquote class="chr-journal__passage">
+            <p>
+              "I must not fear. Fear is the mind-killer. Fear is the little-death that brings total
+              obliteration."
+            </p>
+          </blockquote>
+          <div class="chr-journal__note" contenteditable="true" aria-label="Reader note">
+            The Bene Gesserit litany — return to this
+          </div>
+        </div>
+      </article>
+
+      <!-- Entry 5 — amber -->
+      <article
+        class="chr-journal__entry"
+        role="listitem"
+        style="--entry-color: #d4af7a; --entry-bg: rgba(212, 175, 122, 0.12)"
+      >
+        <div class="chr-journal__stripe" aria-hidden="true"></div>
+        <div class="chr-journal__entry-body">
+          <div class="chr-journal__meta">
+            <span class="chr-journal__chapter">Book Two: Muad'Dib</span>
+            <span aria-hidden="true" style="font-size: 9px; color: #4a4a48">·</span>
+            <span class="chr-journal__date">March 30, 2024</span>
+          </div>
+          <blockquote class="chr-journal__passage">
+            <p>"The mystery of life isn't a problem to solve, but a reality to experience."</p>
+          </blockquote>
+          <div
+            class="chr-journal__note chr-journal__note--empty"
+            contenteditable="true"
+            data-placeholder="Add a note…"
+            aria-label="Reader note"
+          >
+            Add a note…
+          </div>
+        </div>
+      </article>
+    </div>
+    <!-- /.chr-journal__group -->
+  </div>
+  <!-- /.chr-journal__body -->
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JS WIRING NOTES
+     ═══════════════════════════════════════════════════════════════════════════
+
+  1. FANTASY MODE
+     document.body.classList.toggle('fantasy', isFantasy);
+     document.documentElement.style.setProperty(
+       '--citadel-fantasy-chapter-texture-url', `url("${texturePath}")`
+     );
+
+  2. AUDIO REACTIVE (per animation frame)
+     const mid = analyser.getMidValue(); // 0–1 float from your analyser
+     speakingNowEl.style.setProperty('--citadel-audio-mid', mid);
+     // Also set on any .chr-avatar-pulse elements that are "speaking":
+     document.querySelectorAll('.chr-avatar-pulse').forEach(el => {
+       el.style.setProperty('--citadel-audio-mid', mid);
+     });
+
+  3. SIDEBAR TOGGLE
+     document.getElementById('chr-sidebar').classList.toggle('open');
+
+  4. JOURNAL FILTER
+     document.querySelectorAll('.chr-pill').forEach(btn => {
+       btn.addEventListener('click', () => {
+         document.querySelectorAll('.chr-pill').forEach(b => b.classList.remove('active'));
+         btn.classList.add('active');
+         const filter = btn.dataset.filter;
+         document.querySelectorAll('.chr-journal__entry').forEach(entry => {
+           const match = filter === 'all'
+             || entry.closest('.chr-journal__group')?.dataset.book === filter
+             || entry.dataset.color === filter;
+           entry.style.display = match ? '' : 'none';
+         });
+       });
+     });
+
+  5. FANTASY TEXT SWAPS (eyebrows, labels)
+     document.querySelectorAll('[data-fantasy]').forEach(el => {
+       el.textContent = isFantasy ? el.dataset.fantasy : el.dataset.default;
+     });
+
+     ═══════════════════════════════════════════════════════════════════════════ -->
