@@ -29,6 +29,17 @@
   --safe-area-inset-right: env(safe-area-inset-right);
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
   --safe-area-inset-left: env(safe-area-inset-left);
+
+  /* Citadel design tokens (CT-003) — custom properties only; not applied to UI yet */
+  --citadel-ink-deep: #0c0e12;
+  --citadel-bg-dark: #12151c;
+  --citadel-gold: #c9a227;
+  --citadel-parchment: #f3ead4;
+  --citadel-text-muted: #8b909a;
+  --citadel-line-gold: rgba(201, 162, 39, 0.45);
+  --citadel-border-glow: 0 0 0 1px var(--citadel-line-gold), 0 0 12px rgba(201, 162, 39, 0.18);
+  --citadel-shadow-soft: 0 6px 24px rgba(0, 0, 0, 0.22);
+  --citadel-shadow-panel: 0 16px 48px rgba(0, 0, 0, 0.35), 0 0 1px rgba(201, 162, 39, 0.12);
 }
 
 /* Fixes the scrollbar gutter issue for DaisyUI */

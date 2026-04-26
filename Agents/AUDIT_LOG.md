@@ -97,3 +97,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pass — clean before edits); post-edit: `git status --short` (pass — 5 modified files, all workflow paths), `Select-String -Path .cursorrules,Agents\DEVELOPMENT_RULES.md,Agents\STARTING_PROMPTS.md,Agents\TASK_QUEUE.md -Pattern "Allowed files to inspect","Allowed files to edit","repo-wide search","File scope discipline"` (pass — matches in all four files), `git diff --stat` (pass — 5 files, +210/−39).
 - **Validation:** `git status --short`; `Select-String -Path .cursorrules,Agents\DEVELOPMENT_RULES.md,Agents\STARTING_PROMPTS.md,Agents\TASK_QUEUE.md -Pattern "Allowed files to inspect","Allowed files to edit","repo-wide search","File scope discipline"`; `git diff --stat`. Confirmed no app source, package, Tauri/Rust, or public-asset files modified for this task.
 - **Notes / Next:** All new tasks should copy the universal wrapper from `Agents/STARTING_PROMPTS.md`; agents refuse underspecified scope per `.cursorrules`.
+
+**[2026-04-27 12:05:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-003`
+- **Task:** Add Citadel design tokens only (CSS custom properties, no UI wiring).
+- **Status:** Completed.
+- **Action:** Added `--citadel-*` variables to the existing `:root` block in `apps/readest-app/src/styles/globals.css` (ink, dark background, gold, parchment, muted text, gold line, border glow shadow, soft shadow, elevated panel shadow). No changes to DaisyUI/Readest theme variables; no component or layout usage of the new tokens.
+- **Files Touched:** `apps/readest-app/src/styles/globals.css`, `Agents/TASK_QUEUE.md` (CT-003 `[x]`), `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre: clean); `pnpm.cmd --filter @readest/readest-app lint` (pass — `tsgo --noEmit` + `biome check .`, 870 files); `git status --short` (post).
+- **Validation:** Lint passed with no diagnostics; `git status --short` after edits shows only `globals.css`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Notes / Next:** CT-004 safe visible branding when scoped with explicit file lists.

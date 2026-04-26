@@ -133,7 +133,7 @@
 
 ---
 
-### [ ] CT-003 — Add Citadel design tokens only
+### [x] CT-003 — Add Citadel design tokens only
 
 **Owner:** Cursor  
 **Human verification:** No  
