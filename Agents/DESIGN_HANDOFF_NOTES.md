@@ -8,8 +8,8 @@ The handoff is useful as a **visual direction**, but it was created against the 
 
 ## Safe to use early
 
-- `project/assets/citadel-logo.png`
-- `project/assets/comet.png`
+- `project/assets/citadel-logo.png` (design package; not always present under `Agents/handoff/`)
+- `project/assets/comet.png` (same)
 - `project/colors_and_type.css`
 - preview files for colors, spacing, shadows, topbar, shelf tile, and tilt card
 - visual principles: dark editorial UI, warm gold accent, parchment/fantasy mode as optional layer
@@ -54,6 +54,13 @@ They can be mined later for design language only.
 ## First safe code task
 
 Copy the logo/comet assets into the Readest app public/static asset location without referencing them in UI yet.
+
+**Canonical Readest paths (TASK-001 / CT-002) — intended targets only:**
+
+- On disk: `apps/readest-app/public/citadel/citadel-logo.png`, `apps/readest-app/public/citadel/comet.png`
+- Served URL: `/citadel/citadel-logo.png`, `/citadel/comet.png`
+
+**These files are not in the repo today.** Do not use placeholder images. When the real design exports are available, copy them into the paths above (creating `public/citadel/` as needed), then proceed to UI wiring. Until then, CT-002 remains blocked for lack of source assets in handoff.
 
 ## Hard rule
 

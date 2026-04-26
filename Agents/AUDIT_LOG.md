@@ -53,3 +53,25 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** Documentation generation only.
 - **Validation:** Pending Manager copy/review in repo.
 - **Notes / Next:** After copying files into repo, run `git status` and review before commit.
+
+**[2026-04-26 21:30:20 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `TASK-001` (maps to `CT-002` — Copy brand assets only)
+- **Task:** Import Citadel design handoff logo/comet into Readest public asset location.
+- **Status:** Needs human verification.
+- **Action:** Reserved canonical brand paths under `apps/readest-app/public/citadel/` and wrote minimal valid placeholder PNGs at `citadel-logo.png` and `comet.png` because `Agents/handoff/` contained no binary sources. Documented exact disk and URL paths in `docs/CITADEL_ARCHITECTURE_AUDIT.md` and `Agents/DESIGN_HANDOFF_NOTES.md`. No UI, Tauri, package, or reader changes.
+- **Files Touched:** `apps/readest-app/public/citadel/citadel-logo.png`, `apps/readest-app/public/citadel/comet.png`, `docs/CITADEL_ARCHITECTURE_AUDIT.md`, `Agents/DESIGN_HANDOFF_NOTES.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status -sb` (pass), `dir Agents\handoff` (pass — confirmed no `citadel-logo.png` / `comet.png` there), PowerShell `New-Item` + `[IO.File]::WriteAllBytes` from base64 for two placeholder PNGs (pass), `git status` after edits (pass).
+- **Validation:** Confirmed both PNG paths exist on disk; handoff folder listing reviewed; no `apps/readest-app/src/**` edits.
+- **Notes / Next:** Superseded — see TASK-001 correction entry below (placeholder approach rejected; assets removed; CT-002 blocked pending real sources).
+
+**[2026-04-26 22:05:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `TASK-001` correction / `CT-002`
+- **Task:** Correct asset-copy outcome after unacceptable placeholder PNGs.
+- **Status:** Completed.
+- **Action:** Deleted `apps/readest-app/public/citadel/citadel-logo.png` and `comet.png`; removed empty `apps/readest-app/public/citadel/` directory. Set `CT-002` to `[!]` Blocked in `Agents/TASK_QUEUE.md` (missing real source PNGs in repo handoff). Updated `Agents/DESIGN_HANDOFF_NOTES.md` and `docs/CITADEL_ARCHITECTURE_AUDIT.md` so canonical paths remain documented but assets are explicitly absent/pending—no claim that files exist. No UI, app source, package, or Tauri changes.
+- **Files Touched:** `apps/readest-app/public/citadel/citadel-logo.png` (deleted), `apps/readest-app/public/citadel/comet.png` (deleted), `apps/readest-app/public/citadel/` (removed when empty), `Agents/TASK_QUEUE.md`, `Agents/DESIGN_HANDOFF_NOTES.md`, `docs/CITADEL_ARCHITECTURE_AUDIT.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `Remove-Item` on `public/citadel` after file deletes (pass).
+- **Validation:** Placeholder PNGs removed; docs and queue reflect blocked/pending state.
+- **Notes / Next:** Unblock `CT-002` after adding real `citadel-logo.png` / `comet.png` to handoff (or agreed source) and copying them to the documented paths under `apps/readest-app/public/citadel/`.

@@ -257,6 +257,21 @@ Touching these without strong tests tends to break **builds, security, storage, 
 
 ---
 
+## 12. Citadel design handoff — brand raster paths (TASK-001 / CT-002)
+
+Next.js serves files under **`apps/readest-app/public/`** at the site root (same paths in Tauri static export). The **intended** location for Citadel logo/comet rasters (separate from existing icons such as `/icon.png`) is:
+
+| Role                  | Path on disk (repo root relative)                  | URL path (once files exist) |
+| --------------------- | -------------------------------------------------- | --------------------------- |
+| Citadel logo mark     | `apps/readest-app/public/citadel/citadel-logo.png` | `/citadel/citadel-logo.png` |
+| Comet / splash accent | `apps/readest-app/public/citadel/comet.png`        | `/citadel/comet.png`        |
+
+**Handoff inventory:** Intended usage and display sizes are described in `Agents/handoff/asset-list.md` (paths there are written relative to an older “project” layout; the Readest fork targets the table above).
+
+**Status:** These raster files are **not present in the repo** yet; the `public/citadel/` tree is **pending** until real design-export PNGs are copied from outside the repo (or added to handoff and then copied). No placeholder assets should be committed there.
+
+---
+
 ## Quick reference: highest-traffic paths for Citadel work
 
 - **Rename / brand / env:** `apps/readest-app/src/app/layout.tsx`, `apps/readest-app/src/services/constants.ts`, `apps/readest-app/src-tauri/tauri.conf.json`, `package.json` / `apps/readest-app/package.json`.
