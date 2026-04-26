@@ -34,20 +34,6 @@ const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
 const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
 const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
 
-// Context window: render only a sliding window of words around the current index.
-// Why: full-chapter rendering can be thousands of spans, and iOS WebKit's layout cost
-// for getBoundingClientRect (used by auto-scroll) scales with DOM size, which throttles
-// the word-advance interval well below the configured WPM.
-const CONTEXT_WINDOW_SIZE = 500;
-const CONTEXT_WINDOW_SLIDE_THRESHOLD = 100;
-
-const computeContextWindow = (total: number, currentIndex: number) => {
-  if (total <= CONTEXT_WINDOW_SIZE) return { start: 0, end: total };
-  const half = Math.floor(CONTEXT_WINDOW_SIZE / 2);
-  const start = Math.max(0, Math.min(total - CONTEXT_WINDOW_SIZE, currentIndex - half));
-  return { start, end: start + CONTEXT_WINDOW_SIZE };
-};
-
 interface RSVPOverlayProps {
   gridInsets: Insets;
   controller: RSVPController;
@@ -107,11 +93,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
     return 0;
   });
-  const [contextWindow, setContextWindow] = useState(() =>
-    computeContextWindow(state.words.length, state.currentIndex),
-  );
   const contextWordRef = useRef<HTMLSpanElement>(null);
-  const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -241,48 +223,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Stable word list that only changes when contextWindow changes
-  const contextWords = useMemo(
-    () => state.words.slice(contextWindow.start, contextWindow.end),
-    [state.words, contextWindow],
-  );
-
-  // Slide/reset the context window as currentIndex moves or the chapter changes.
+  // Auto-scroll: keep highlighted word in view
   useEffect(() => {
-    const total = state.words.length;
-    const cur = state.currentIndex;
-    setContextWindow((prev) => {
-      if (total <= CONTEXT_WINDOW_SIZE) {
-        if (prev.start === 0 && prev.end === total) return prev;
-        return { start: 0, end: total };
-      }
-      const currentSize = prev.end - prev.start;
-      const outOfBounds = cur < prev.start || cur >= prev.end;
-      const nearStartEdge = prev.start > 0 && cur < prev.start + CONTEXT_WINDOW_SLIDE_THRESHOLD;
-      const nearEndEdge = prev.end < total && cur >= prev.end - CONTEXT_WINDOW_SLIDE_THRESHOLD;
-      const sizeMismatch = currentSize !== CONTEXT_WINDOW_SIZE || prev.end > total;
-      if (!outOfBounds && !nearStartEdge && !nearEndEdge && !sizeMismatch) return prev;
-      return computeContextWindow(total, cur);
-    });
-  }, [state.currentIndex, state.words]);
-
-  // Auto-scroll: keep highlighted word away from top/bottom edges
-  useEffect(() => {
-    const panel = contextPanelRef.current;
-    const word = contextWordRef.current;
-    if (contextCollapsed || !panel || !word) return;
-
-    const panelRect = panel.getBoundingClientRect();
-    const wordRect = word.getBoundingClientRect();
-    const margin = panelRect.height * 0.15;
-    const topLine = panelRect.top + margin;
-
-    if (wordRect.top < topLine) {
-      panel.scrollTop -= topLine - wordRect.top;
-    } else if (wordRect.bottom > panelRect.bottom - margin) {
-      panel.scrollTop += wordRect.top - topLine;
-    }
-  }, [state.currentIndex, contextCollapsed, contextWindow]);
+    if (contextCollapsed) return;
+    contextWordRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }, [state.currentIndex, contextCollapsed]);
 
   useEffect(() => {
     if (!showChapterDropdown) return;
@@ -604,14 +549,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         </button>
         {!contextCollapsed && (
           <div
-            ref={contextPanelRef}
             className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
           >
             <div className='text-left text-base leading-relaxed md:text-lg'>
-              {contextWords.map((w, i) => {
-                const wordIndex = contextWindow.start + i;
+              {state.words.map((w, i) => {
+                const wordIndex = i;
                 const isCurrent = wordIndex === state.currentIndex;
                 return (
                   <span
