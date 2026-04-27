@@ -78,35 +78,12 @@ export const getDailyTranslationPlanData = (token: string) => {
   };
 };
 
-// Refresh ahead of expiry so a request in flight does not race the boundary.
-const TOKEN_EXPIRY_LEEWAY_SECONDS = 30;
-
-const isTokenExpiringSoon = (token: string): boolean => {
-  try {
-    const { exp } = jwtDecode<{ exp?: number }>(token);
-    if (!exp) return true;
-    return exp - Math.floor(Date.now() / 1000) <= TOKEN_EXPIRY_LEEWAY_SECONDS;
-  } catch {
-    return true;
-  }
-};
-
 export const getAccessToken = async (): Promise<string | null> => {
   // In browser context there might be two instances of supabase one in the app route
   // and the other in the pages route, and they might have different sessions
   // making the access token invalid for API calls. In that case we should use localStorage.
   if (isWebAppPlatform()) {
-    const cached = localStorage.getItem('token');
-    if (cached && isTokenExpiringSoon(cached)) {
-      try {
-        await supabase.auth.refreshSession();
-      } catch {
-        // Fall through and return whatever is in localStorage; the caller
-        // will surface the server's auth error if the token is truly dead.
-      }
-      return localStorage.getItem('token') ?? cached;
-    }
-    return cached ?? null;
+    return localStorage.getItem('token') ?? null;
   }
   const { data } = await supabase.auth.getSession();
   return data?.session?.access_token ?? null;
