@@ -82,6 +82,23 @@ Use this format:
 - Keep changes small and reviewable.
 - Do not commit unless the task explicitly says commits are allowed.
 - For UI tasks that require human visual approval, do not mark the task complete until the Manager verifies it.
+- The following files are always auto-dirtied by `pnpm tauri dev` and are **never** a scope violation. Before any `git status` check, restore them with:
+git restore apps/readest-app/src-tauri/Cargo.toml
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .
+git -C packages/tauri-plugins restore .
+  Do not flag these as unexpected changes. Do not stop a task because these are dirty.
+Save the file, then commit it:
+
+powershell
+git add .cursorrules
+git commit -m "docs: add tauri dev dirt restore rule to cursorrules"
+git push --no-verify
+Did the brew install --cask microsoft-remote-desktop finish on the Mac? ☕
+
+
+You're o
 
 ## Safe change policy
 - Modify the existing Readest app; do not rewrite architecture.
