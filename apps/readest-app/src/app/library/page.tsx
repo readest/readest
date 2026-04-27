@@ -852,22 +852,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     handleLibraryNavigation(group);
   };
 
-  const visibleBooks = useMemo(
-    () => libraryBooks.filter((book) => !book.deletedAt),
-    [libraryBooks],
-  );
-  const continueBook = useMemo(() => {
-    const lastOpenBookId = settings.lastOpenBooks?.[0];
-    if (lastOpenBookId) {
-      const fromLastOpen = visibleBooks.find((book) => book.hash === lastOpenBookId);
-      if (fromLastOpen) return fromLastOpen;
-    }
-    return visibleBooks[0] ?? null;
-  }, [settings.lastOpenBooks, visibleBooks]);
-  const handleContinueReading = () => {
-    if (!continueBook) return;
-    navigateToReader(router, [continueBook.hash]);
-  };
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
     return <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
@@ -920,66 +904,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         </div>
       )}
       {showBookshelf && (
-        <section className='px-4 pb-1 pt-3 sm:px-6 sm:pt-4' aria-label={_('Continue Reading')}>
-          <div
-            className={clsx(
-              'rounded-2xl border border-[var(--citadel-line-gold)] p-4 sm:p-5',
-              'bg-[color-mix(in_srgb,var(--citadel-bg-dark)_72%,theme(colors.base-100)_28%)]',
-              'shadow-[var(--citadel-shadow-panel)]',
-            )}
-          >
-            <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[var(--citadel-gold)]'>
-              {_('Continue Reading')}
+        <section className='px-4 pb-1 pt-3 sm:px-6 sm:pt-4' aria-label={_('Library Overview')}>
+          <div className='border-base-content/10 bg-base-100/70 rounded-2xl border p-4 shadow-[var(--citadel-shadow-soft)] sm:px-5'>
+            <p className='text-xs font-semibold uppercase tracking-[0.16em] text-[var(--citadel-gold)]'>
+              {_('Citadel Library')}
             </p>
             <p className='mt-1 text-xs text-[var(--citadel-text-muted)]'>
-              {_('Jump back into your current book, then browse your full collection below.')}
+              {_(
+                'Manage your full collection here with search, grouping, sorting, and selection tools.',
+              )}
             </p>
-            {continueBook ? (
-              <div className='mt-3 flex items-center gap-4'>
-                <div className='bg-base-300/20 h-20 w-14 flex-none overflow-hidden rounded-md border border-[var(--citadel-line-gold)]'>
-                  {continueBook.coverImageUrl ? (
-                    <img
-                      src={continueBook.coverImageUrl}
-                      alt={continueBook.title}
-                      className='h-full w-full object-cover'
-                    />
-                  ) : (
-                    <div className='flex h-full items-center justify-center text-[11px] text-[var(--citadel-text-muted)]'>
-                      {_('No cover')}
-                    </div>
-                  )}
-                </div>
-                <div className='min-w-0 flex-1'>
-                  <h2 className='text-base-100 truncate text-base font-semibold sm:text-lg'>
-                    {continueBook.title}
-                  </h2>
-                  <p className='mt-1 line-clamp-1 text-sm text-[var(--citadel-text-muted)]'>
-                    {formatAuthors(continueBook.author, continueBook.primaryLanguage) ||
-                      _('Unknown author')}
-                  </p>
-                  <button
-                    className='btn btn-sm mt-3 border-[var(--citadel-line-gold)] bg-transparent text-[var(--citadel-gold)] hover:bg-[color-mix(in_srgb,var(--citadel-gold)_16%,transparent)]'
-                    onClick={handleContinueReading}
-                  >
-                    {_('Continue')}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className='mt-3 flex items-center justify-between gap-4'>
-                <div>
-                  <h2 className='text-base-100 text-base font-semibold sm:text-lg'>
-                    {_('Welcome to Citadel')}
-                  </h2>
-                  <p className='mt-1 text-sm text-[var(--citadel-text-muted)]'>
-                    {_('Pick up where you left off or start building your library.')}
-                  </p>
-                </div>
-                <button className='btn btn-sm' onClick={handleImportBooksFromFiles}>
-                  {_('Import Books')}
-                </button>
-              </div>
-            )}
           </div>
         </section>
       )}

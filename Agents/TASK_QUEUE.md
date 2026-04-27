@@ -561,3 +561,45 @@
 
 - `git status --short` before and after.
 - No lint required (docs-only).
+
+---
+
+### [x] CT-018 — Split Citadel Home and Library entry experience
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `docs/CITADEL_SETTINGS_AUDIT.md`
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/**`
+- `apps/readest-app/src/components/**`
+- `apps/readest-app/src/services/constants.ts`
+- `apps/readest-app/src/services/appService.ts`
+- `apps/readest-app/src/services/nativeAppService.ts`
+- `apps/readest-app/src/store/**`
+- `apps/readest-app/src/styles/globals.css`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/styles/globals.css`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Split entry IA so `/` is a calm Home surface and `/library` remains the full collection management destination without changing reader/data architecture.
+
+**Validation:**
+
+- `git status --short` before edits.
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Human visual verification required before marking complete.

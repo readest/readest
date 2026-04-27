@@ -275,3 +275,14 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pre), scoped `rg` searches under `apps/readest-app/src` for: `DEFAULT_SYSTEM_SETTINGS`, `saveSysSettings`, `systemSettings`, `readerSettings`, `settings.`, `setSettings`, `updateSettings`, `useSettings`, `toggle`, `Switch`, `Checkbox`, `MenuItem|Select|Radio`, `openBookInNewWindow`, `isEnabled`, `enabled`, `disabled`; `git status --short` (post).
 - **Validation:** Captured pre/post `git status --short`; no lint/run-dev executed (docs-only task).
 - **Notes / Next:** Audit identifies high settings density and cross-surface discoverability issues; use CT-018/CT-019/CT-020 style follow-ups to simplify without feature loss.
+
+**[2026-04-27 01:05:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-018`
+- **Task:** Split Citadel Home and Library entry experience.
+- **Status:** Needs human verification.
+- **Action:** Implemented Home/Library IA split without touching reader internals. `apps/readest-app/src/app/page.tsx` no longer proxies the library page; it now renders a calm Home shell that loads existing settings/library state, preserves keep-login redirect assumptions, offers Continue/Open Library/Import actions, and shows a compact recent-books preview. `apps/readest-app/src/app/library/page.tsx` remains the full management surface (search/sort/group/select/import/settings intact) with copy adjusted to emphasize its collection-management purpose. Added a subtle Home affordance in `apps/readest-app/src/app/library/components/LibraryHeader.tsx`. Updated `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` with CT-018 implementation notes and remaining follow-up items; queued CT-018 as `[~]` in `Agents/TASK_QUEUE.md`.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `apps/readest-app/src/app/library/page.tsx`, `apps/readest-app/src/app/library/components/LibraryHeader.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre and post checks); `pnpm.cmd --filter @readest/readest-app lint` (pass).
+- **Validation:** Lint passed; no Tauri/Rust/package/lock/generated files edited.
+- **Notes / Next:** Eddy should visually verify Home entry hierarchy, CTA behavior, and `/library` management parity before promoting CT-018 to complete.

@@ -182,3 +182,20 @@ Goal: reorganize menu structure for progressive disclosure while preserving exis
 ---
 
 This plan is documentation-only and intentionally avoids code/behavior changes.
+
+## 8) CT-018 implementation snapshot (Home vs Library split)
+
+Implemented in this pass:
+
+- `/` now renders a dedicated Home screen shell instead of rendering `library/page.tsx` directly.
+- Home uses existing settings/library loading paths (`loadSettings`, `loadLibraryBooks`) with the same keep-login guard assumptions.
+- Home exposes primary Continue action when a current book is available, fallback guidance otherwise, plus Open Library and Import actions.
+- Home includes a small recent-books preview using already loaded library data (no new data model contracts).
+- `/library` remains the full management destination; search/sort/group/select/import/settings flows are preserved.
+- Library header now includes a subtle Home affordance for back-navigation.
+
+Remaining follow-up after CT-018:
+
+- Visual tuning after Eddy review (spacing/contrast/copy refinements).
+- Confirm Home import CTA behavior on all target platforms in manual QA.
+- Decide whether Home should eventually show richer progress metadata or keep the lightweight preview.

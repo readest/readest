@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
@@ -18,6 +19,7 @@ import { debounce } from '@/utils/debounce';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
+import AppTitleBar from '@/components/AppTitleBar';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import ViewMenu from './ViewMenu';
@@ -93,12 +95,10 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const isMobile = appService?.isMobile || window.innerWidth <= 640;
 
   return (
-    <div
-      ref={headerRef}
+    <AppTitleBar
+      headerRef={headerRef}
       className={clsx(
-        'titlebar citadel-library-topbar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
-        'bg-base-100/90 border-b border-[var(--citadel-line-gold)] shadow-[var(--citadel-shadow-soft)] backdrop-blur-sm',
-        'dark:border-[var(--citadel-line-gold)] dark:bg-[color-mix(in_srgb,var(--citadel-bg-dark)_88%,transparent)] dark:backdrop-blur-sm',
+        'citadel-library-topbar',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
@@ -109,134 +109,144 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             ? '-2px'
             : '0px',
       }}
-    >
-      <div className='flex w-full items-center justify-between gap-4 sm:gap-8'>
-        <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
-          <div className='relative flex h-9 w-full items-center sm:h-7'>
-            <span className='text-base-content/50 absolute ps-3'>
-              <FaSearch className='h-4 w-4' />
-            </span>
-            <input
-              type='text'
-              value={searchQuery}
-              placeholder={
-                currentBooksCount > 1
-                  ? _('Search in {{count}} Book(s)...', {
-                      count: currentBooksCount,
-                    })
-                  : _('Search Books...')
-              }
-              onChange={handleSearchChange}
-              spellCheck='false'
-              className={clsx(
-                'search-input input h-9 w-full rounded-full border border-transparent pr-[30%] ps-10 sm:h-7',
-                'bg-base-300/45',
-                'font-sans text-sm font-light',
-                'placeholder:text-base-content/50 truncate',
-                'transition-[box-shadow,border-color] duration-200',
-                'focus:outline-none focus:ring-0',
-                'focus-visible:border-[var(--citadel-line-gold)] focus-visible:shadow-[var(--citadel-border-glow)]',
-              )}
-            />
-          </div>
-          <div className='text-base-content/45 border-base-content/10 bg-base-100/50 absolute right-4 flex items-center rounded-full border px-2 py-1 backdrop-blur-sm sm:space-x-1'>
-            {searchQuery && (
-              <button
-                type='button'
-                onClick={() => {
-                  setSearchQuery('');
-                  debouncedUpdateQueryParam('');
-                }}
-                className='text-base-content/40 pe-1 transition-colors hover:text-[var(--citadel-gold)]'
-                aria-label={_('Clear Search')}
-              >
-                <IoMdCloseCircle className='h-4 w-4' />
-              </button>
-            )}
-            <span className='bg-base-content/25 mx-1 h-4 w-[0.5px]'></span>
-            <Dropdown
-              label={_('Import Books')}
-              className={clsx(
-                'exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer',
-              )}
-              buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent text-base-content/70 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
-              toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
-            >
-              <ImportMenu
-                onImportBooksFromFiles={onImportBooksFromFiles}
-                onImportBooksFromDirectory={onImportBooksFromDirectory}
-                onOpenCatalogManager={onOpenCatalogManager}
-              />
-            </Dropdown>
-            {isMobile ? null : (
-              <button
-                onClick={onToggleSelectMode}
-                aria-label={_('Select Books')}
-                title={_('Select Books')}
-                className='text-base-content/65 h-6 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
-              >
-                {isSelectMode ? (
-                  <PiSelectionAllFill
-                    role='button'
-                    className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
-                  />
-                ) : (
-                  <PiSelectionAll
-                    role='button'
-                    className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
-                  />
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-        {isSelectMode ? (
-          <div
-            className={clsx(
-              'flex h-full items-center',
-              'w-max-[72px] w-min-[72px] sm:w-max-[80px] sm:w-min-[80px]',
-            )}
-          >
-            <button
-              onClick={isSelectAll ? onDeselectAll : onSelectAll}
-              className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 transition-colors hover:text-[var(--citadel-gold)] sm:w-[80px]'
-              aria-label={isSelectAll ? _('Deselect') : _('Select All')}
-            >
-              <span className='font-sans text-base font-normal sm:text-sm'>
-                {isSelectAll ? _('Deselect') : _('Select All')}
+      centerClassName='w-full'
+      centerContent={
+        <div className='flex w-full items-center justify-between gap-4 sm:gap-8'>
+          <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
+            <div className='relative flex h-9 w-full items-center sm:h-7'>
+              <span className='text-base-content/50 absolute ps-3'>
+                <FaSearch className='h-4 w-4' />
               </span>
-            </button>
-          </div>
-        ) : (
-          <div className='border-base-content/10 bg-base-100/35 flex h-full items-center gap-x-1 rounded-full border px-1 py-1 sm:gap-x-1.5'>
-            <Dropdown
-              label={_('View Menu')}
-              className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/60 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-80'
-              toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
-            >
-              <ViewMenu />
-            </Dropdown>
-            <Dropdown
-              label={_('Settings Menu')}
-              className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/60 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-80'
-              toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
-            >
-              <SettingsMenu onPullLibrary={onPullLibrary} />
-            </Dropdown>
-            {appService?.hasWindowBar && (
-              <WindowButtons
-                headerRef={headerRef}
-                showMinimize={windowButtonVisible}
-                showMaximize={windowButtonVisible}
-                showClose={windowButtonVisible}
+              <input
+                type='text'
+                value={searchQuery}
+                placeholder={
+                  currentBooksCount > 1
+                    ? _('Search in {{count}} Book(s)...', {
+                        count: currentBooksCount,
+                      })
+                    : _('Search Books...')
+                }
+                onChange={handleSearchChange}
+                spellCheck='false'
+                className={clsx(
+                  'search-input input h-9 w-full rounded-full border border-transparent pr-[30%] ps-10 sm:h-7',
+                  'bg-base-300/45',
+                  'font-sans text-sm font-light',
+                  'placeholder:text-base-content/50 truncate',
+                  'transition-[box-shadow,border-color] duration-200',
+                  'focus:outline-none focus:ring-0',
+                  'focus-visible:border-[var(--citadel-line-gold)] focus-visible:shadow-[var(--citadel-border-glow)]',
+                )}
               />
-            )}
+            </div>
+            <div className='text-base-content/45 border-base-content/10 bg-base-100/50 absolute right-4 flex items-center rounded-full border px-2 py-1 backdrop-blur-sm sm:space-x-1'>
+              {searchQuery && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setSearchQuery('');
+                    debouncedUpdateQueryParam('');
+                  }}
+                  className='text-base-content/40 pe-1 transition-colors hover:text-[var(--citadel-gold)]'
+                  aria-label={_('Clear Search')}
+                >
+                  <IoMdCloseCircle className='h-4 w-4' />
+                </button>
+              )}
+              <span className='bg-base-content/25 mx-1 h-4 w-[0.5px]'></span>
+              <Dropdown
+                label={_('Import Books')}
+                className={clsx(
+                  'exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer',
+                )}
+                buttonClassName='p-0 h-6 min-h-6 w-6 flex touch-target items-center justify-center !bg-transparent text-base-content/70 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
+                toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
+              >
+                <ImportMenu
+                  onImportBooksFromFiles={onImportBooksFromFiles}
+                  onImportBooksFromDirectory={onImportBooksFromDirectory}
+                  onOpenCatalogManager={onOpenCatalogManager}
+                />
+              </Dropdown>
+              {isMobile ? null : (
+                <button
+                  onClick={onToggleSelectMode}
+                  aria-label={_('Select Books')}
+                  title={_('Select Books')}
+                  className='text-base-content/65 h-6 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-85'
+                >
+                  {isSelectMode ? (
+                    <PiSelectionAllFill
+                      role='button'
+                      className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
+                    />
+                  ) : (
+                    <PiSelectionAll
+                      role='button'
+                      className='text-base-content/60 h-6 w-6 transition-colors hover:text-[var(--citadel-gold)]'
+                    />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+          {isSelectMode ? (
+            <div
+              className={clsx(
+                'flex h-full items-center',
+                'w-max-[72px] w-min-[72px] sm:w-max-[80px] sm:w-min-[80px]',
+              )}
+            >
+              <button
+                onClick={isSelectAll ? onDeselectAll : onSelectAll}
+                className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 transition-colors hover:text-[var(--citadel-gold)] sm:w-[80px]'
+                aria-label={isSelectAll ? _('Deselect') : _('Select All')}
+              >
+                <span className='font-sans text-base font-normal sm:text-sm'>
+                  {isSelectAll ? _('Deselect') : _('Select All')}
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className='border-base-content/10 bg-base-100/35 flex h-full items-center gap-x-1 rounded-full border px-1 py-1 sm:gap-x-1.5'>
+              <Link
+                href='/'
+                aria-label={_('Home')}
+                title={_('Home')}
+                className='btn btn-ghost text-base-content/65 h-8 min-h-8 px-2 text-xs font-medium transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-80'
+              >
+                {_('Home')}
+              </Link>
+              <Dropdown
+                label={_('View Menu')}
+                className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+                buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/60 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-80'
+                toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
+              >
+                <ViewMenu />
+              </Dropdown>
+              <Dropdown
+                label={_('Settings Menu')}
+                className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+                buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 text-base-content/60 transition-[opacity,color] hover:text-[var(--citadel-gold)] hover:opacity-100 sm:opacity-80'
+                toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
+              >
+                <SettingsMenu onPullLibrary={onPullLibrary} />
+              </Dropdown>
+              {appService?.hasWindowBar && (
+                <WindowButtons
+                  headerRef={headerRef}
+                  showMinimize={windowButtonVisible}
+                  showMaximize={windowButtonVisible}
+                  showClose={windowButtonVisible}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      }
+    />
   );
 };
 
