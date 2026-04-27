@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS katalógus szerkesztése",
   "Save Changes": "Módosítások mentése",
   "Use Book Layout": "Könyv elrendezésének használata",
-  "End of this section. Continue to the next.": "Ennek a szakasznak a vége. Folytatás a következővel."
+  "End of this section. Continue to the next.": "Ennek a szakasznak a vége. Folytatás a következővel.",
+  "Auto-download": "Automatikus letöltés",
+  "Auto-download new items": "Új elemek automatikus letöltése",
+  "Automatically download new publications when the app syncs": "Új kiadványok automatikus letöltése, amikor az alkalmazás szinkronizál",
+  "{{count}} new item(s) downloaded from OPDS_one": "{{count}} új elem letöltve az OPDS-ből",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} új elem letöltve az OPDS-ből",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "{{count}} OPDS-katalógus szinkronizálása sikertelen",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "{{count}} OPDS-katalógus szinkronizálása sikertelen",
+  "Last synced {{when}}": "Utoljára szinkronizálva {{when}}",
+  "Failed downloads": "Sikertelen letöltések",
+  "No failed downloads": "Nincsenek sikertelen letöltések",
+  "Attempts: {{count}}_one": "Próbálkozások: {{count}}",
+  "Attempts: {{count}}_other": "Próbálkozások: {{count}}",
+  "Skip": "Kihagyás",
+  "Skip all": "Összes kihagyása",
+  "Retry all": "Összes újrapróbálása",
+  "{{count}} failed_one": "{{count}} sikertelen",
+  "{{count}} failed_other": "{{count}} sikertelen"
 }

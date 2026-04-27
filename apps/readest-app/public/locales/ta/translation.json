@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS பட்டியலைத் திருத்து",
   "Save Changes": "மாற்றங்களைச் சேமி",
   "Use Book Layout": "புத்தகத்தின் அமைப்பைப் பயன்படுத்து",
-  "End of this section. Continue to the next.": "இந்தப் பிரிவின் முடிவு. அடுத்ததற்குத் தொடரவும்."
+  "End of this section. Continue to the next.": "இந்தப் பிரிவின் முடிவு. அடுத்ததற்குத் தொடரவும்.",
+  "Auto-download": "தானியங்கி பதிவிறக்கம்",
+  "Auto-download new items": "புதிய உருப்படிகளைத் தானாகப் பதிவிறக்கு",
+  "Automatically download new publications when the app syncs": "பயன்பாடு ஒத்திசைக்கப்படும்போது புதிய வெளியீடுகளைத் தானாகப் பதிவிறக்கு",
+  "{{count}} new item(s) downloaded from OPDS_one": "OPDS-இலிருந்து {{count}} புதிய உருப்படி பதிவிறக்கப்பட்டது",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDS-இலிருந்து {{count}} புதிய உருப்படிகள் பதிவிறக்கப்பட்டன",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "{{count}} OPDS பட்டியலை ஒத்திசைக்க முடியவில்லை",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "{{count}} OPDS பட்டியல்களை ஒத்திசைக்க முடியவில்லை",
+  "Last synced {{when}}": "கடைசியாக ஒத்திசைக்கப்பட்டது {{when}}",
+  "Failed downloads": "தோல்வியுற்ற பதிவிறக்கங்கள்",
+  "No failed downloads": "தோல்வியுற்ற பதிவிறக்கங்கள் இல்லை",
+  "Attempts: {{count}}_one": "முயற்சிகள்: {{count}}",
+  "Attempts: {{count}}_other": "முயற்சிகள்: {{count}}",
+  "Skip": "தவிர்",
+  "Skip all": "அனைத்தையும் தவிர்",
+  "Retry all": "அனைத்தையும் மீண்டும் முயற்சி செய்",
+  "{{count}} failed_one": "{{count}} தோல்வி",
+  "{{count}} failed_other": "{{count}} தோல்விகள்"
 }

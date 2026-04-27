@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS නාමාවලිය සංස්කරණය",
   "Save Changes": "වෙනස්කම් සුරකින්න",
   "Use Book Layout": "පොතේ සැකැස්ම භාවිත කරන්න",
-  "End of this section. Continue to the next.": "මෙම කොටසේ අවසානයයි. ඊළඟ කොටසට ඉදිරියට යන්න."
+  "End of this section. Continue to the next.": "මෙම කොටසේ අවසානයයි. ඊළඟ කොටසට ඉදිරියට යන්න.",
+  "Auto-download": "ස්වයංක්‍රීය බාගත කිරීම",
+  "Auto-download new items": "නව අයිතම ස්වයංක්‍රීයව බාගත කරන්න",
+  "Automatically download new publications when the app syncs": "යෙදුම සමමුහුර්ත වන විට නව ප්‍රකාශන ස්වයංක්‍රීයව බාගත කරන්න",
+  "{{count}} new item(s) downloaded from OPDS_one": "OPDS වෙතින් නව අයිතමයක් බාගත කරන ලදී",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDS වෙතින් නව අයිතම {{count}}ක් බාගත කරන ලදී",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "OPDS නාමාවලියක් සමමුහුර්ත කිරීමට අසමත් විය",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "OPDS නාමාවලි {{count}}ක් සමමුහුර්ත කිරීමට අසමත් විය",
+  "Last synced {{when}}": "අවසන් වරට සමමුහුර්ත කළේ {{when}}",
+  "Failed downloads": "අසාර්ථක බාගත කිරීම්",
+  "No failed downloads": "අසාර්ථක බාගත කිරීම් නැත",
+  "Attempts: {{count}}_one": "උත්සාහයන්: {{count}}",
+  "Attempts: {{count}}_other": "උත්සාහයන්: {{count}}",
+  "Skip": "මඟ හරින්න",
+  "Skip all": "සියල්ල මඟ හරින්න",
+  "Retry all": "සියල්ල නැවත උත්සාහ කරන්න",
+  "{{count}} failed_one": "{{count}} අසාර්ථකයි",
+  "{{count}} failed_other": "{{count}} අසාර්ථකයි"
 }

@@ -1179,5 +1179,18 @@
   "Edit OPDS Catalog": "Chỉnh sửa danh mục OPDS",
   "Save Changes": "Lưu thay đổi",
   "Use Book Layout": "Sử dụng bố cục sách",
-  "End of this section. Continue to the next.": "Kết thúc phần này. Tiếp tục đến phần tiếp theo."
+  "End of this section. Continue to the next.": "Kết thúc phần này. Tiếp tục đến phần tiếp theo.",
+  "Auto-download": "Tự động tải xuống",
+  "Auto-download new items": "Tự động tải xuống mục mới",
+  "Automatically download new publications when the app syncs": "Tự động tải xuống các ấn phẩm mới khi ứng dụng đồng bộ hóa",
+  "{{count}} new item(s) downloaded from OPDS_other": "Đã tải xuống {{count}} mục mới từ OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Không thể đồng bộ {{count}} danh mục OPDS",
+  "Last synced {{when}}": "Đồng bộ lần cuối {{when}}",
+  "Failed downloads": "Tải xuống thất bại",
+  "No failed downloads": "Không có tải xuống thất bại",
+  "Attempts: {{count}}_other": "Số lần thử: {{count}}",
+  "Skip": "Bỏ qua",
+  "Skip all": "Bỏ qua tất cả",
+  "Retry all": "Thử lại tất cả",
+  "{{count}} failed_other": "{{count}} thất bại"
 }

@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS ক্যাটালগ সম্পাদনা",
   "Save Changes": "পরিবর্তন সংরক্ষণ",
   "Use Book Layout": "বইয়ের লেআউট ব্যবহার করুন",
-  "End of this section. Continue to the next.": "এই বিভাগের শেষ। পরবর্তী বিভাগে চালিয়ে যান।"
+  "End of this section. Continue to the next.": "এই বিভাগের শেষ। পরবর্তী বিভাগে চালিয়ে যান।",
+  "Auto-download": "স্বয়ংক্রিয় ডাউনলোড",
+  "Auto-download new items": "নতুন আইটেম স্বয়ংক্রিয়ভাবে ডাউনলোড করুন",
+  "Automatically download new publications when the app syncs": "অ্যাপ সিঙ্ক হওয়ার সময় নতুন প্রকাশনা স্বয়ংক্রিয়ভাবে ডাউনলোড করুন",
+  "{{count}} new item(s) downloaded from OPDS_one": "OPDS থেকে {{count}}টি নতুন আইটেম ডাউনলোড হয়েছে",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDS থেকে {{count}}টি নতুন আইটেম ডাউনলোড হয়েছে",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "{{count}}টি OPDS ক্যাটালগ সিঙ্ক করতে ব্যর্থ",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "{{count}}টি OPDS ক্যাটালগ সিঙ্ক করতে ব্যর্থ",
+  "Last synced {{when}}": "শেষ সিঙ্ক হয়েছে {{when}}",
+  "Failed downloads": "ব্যর্থ ডাউনলোড",
+  "No failed downloads": "কোনো ব্যর্থ ডাউনলোড নেই",
+  "Attempts: {{count}}_one": "প্রচেষ্টা: {{count}}",
+  "Attempts: {{count}}_other": "প্রচেষ্টা: {{count}}",
+  "Skip": "এড়িয়ে যান",
+  "Skip all": "সব এড়িয়ে যান",
+  "Retry all": "সব পুনরায় চেষ্টা করুন",
+  "{{count}} failed_one": "{{count}}টি ব্যর্থ",
+  "{{count}} failed_other": "{{count}}টি ব্যর্থ"
 }

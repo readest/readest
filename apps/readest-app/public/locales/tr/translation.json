@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS Kataloğunu Düzenle",
   "Save Changes": "Değişiklikleri Kaydet",
   "Use Book Layout": "Kitap düzenini kullan",
-  "End of this section. Continue to the next.": "Bu bölümün sonu. Sonrakine devam edin."
+  "End of this section. Continue to the next.": "Bu bölümün sonu. Sonrakine devam edin.",
+  "Auto-download": "Otomatik indirme",
+  "Auto-download new items": "Yeni öğeleri otomatik indir",
+  "Automatically download new publications when the app syncs": "Uygulama eşitlendiğinde yeni yayınları otomatik olarak indir",
+  "{{count}} new item(s) downloaded from OPDS_one": "OPDSden {{count}} yeni öğe indirildi",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDSden {{count}} yeni öğe indirildi",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "{{count}} OPDS kataloğu eşitlenemedi",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "{{count}} OPDS kataloğu eşitlenemedi",
+  "Last synced {{when}}": "Son senkronizasyon {{when}}",
+  "Failed downloads": "Başarısız indirmeler",
+  "No failed downloads": "Başarısız indirme yok",
+  "Attempts: {{count}}_one": "Denemeler: {{count}}",
+  "Attempts: {{count}}_other": "Denemeler: {{count}}",
+  "Skip": "Atla",
+  "Skip all": "Tümünü atla",
+  "Retry all": "Tümünü yeniden dene",
+  "{{count}} failed_one": "{{count}} başarısız",
+  "{{count}} failed_other": "{{count}} başarısız"
 }

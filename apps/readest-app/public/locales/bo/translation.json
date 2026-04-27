@@ -1179,5 +1179,18 @@
   "Edit OPDS Catalog": "OPDS དཀར་ཆག་རྩོམ་སྒྲིག",
   "Save Changes": "བསྒྱུར་བཅོས་ཉར་ཚགས།",
   "Use Book Layout": "དཔེ་ཆའི་བཀོད་སྒྲིག་སྤྱོད་པ",
-  "End of this section. Continue to the next.": "སྡེ་ཚན་འདིའི་མཇུག་རེད། རྗེས་མའི་སྡེ་ཚན་དུ་མུ་མཐུད་རོགས།"
+  "End of this section. Continue to the next.": "སྡེ་ཚན་འདིའི་མཇུག་རེད། རྗེས་མའི་སྡེ་ཚན་དུ་མུ་མཐུད་རོགས།",
+  "Auto-download": "རང་འགུལ་ཕབ་ལེན།",
+  "Auto-download new items": "གསར་འདོན་གསར་པ་རང་འགུལ་ཕབ་ལེན།",
+  "Automatically download new publications when the app syncs": "མཉེན་ཆས་མཉམ་སྦྱོར་སྐབས་གསར་འདོན་གསར་པ་རང་འགུལ་ཕབ་ལེན་བྱེད།",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDS ནས་གསར་འདོན་གསར་པ་ {{count}} ཕབ་ལེན་བྱས།",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "OPDS དཀར་ཆག་ {{count}} མཉམ་སྦྱོར་མ་ཐུབ།",
+  "Last synced {{when}}": "མཐའ་མའི་མཐུན་སྒྲིག་ {{when}}",
+  "Failed downloads": "ཕབ་ལེན་ཕམ་ཁ།",
+  "No failed downloads": "ཕབ་ལེན་ཕམ་ཁ་མེད།",
+  "Attempts: {{count}}_other": "ཐེངས་ {{count}}",
+  "Skip": "གཡོལ།",
+  "Skip all": "ཡོད་ཚད་གཡོལ།",
+  "Retry all": "ཡོད་ཚད་ཡང་སྐྱར།",
+  "{{count}} failed_other": "{{count}} ཕམ་ཁ།"
 }

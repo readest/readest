@@ -25,8 +25,6 @@ export interface OPDSCatalog {
   password?: string;
   customHeaders?: Record<string, string>;
   autoDownload?: boolean;
-  lastCheckedAt?: number;
-  downloadedEntryIds?: string[];
 }
 
 export interface OPDSFeed {

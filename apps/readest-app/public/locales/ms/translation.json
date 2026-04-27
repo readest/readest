@@ -1179,5 +1179,18 @@
   "Edit OPDS Catalog": "Edit Katalog OPDS",
   "Save Changes": "Simpan Perubahan",
   "Use Book Layout": "Guna susun atur buku",
-  "End of this section. Continue to the next.": "Akhir bahagian ini. Teruskan ke bahagian seterusnya."
+  "End of this section. Continue to the next.": "Akhir bahagian ini. Teruskan ke bahagian seterusnya.",
+  "Auto-download": "Muat turun automatik",
+  "Auto-download new items": "Muat turun item baharu secara automatik",
+  "Automatically download new publications when the app syncs": "Muat turun penerbitan baharu secara automatik apabila apl disegerakkan",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} item baharu dimuat turun dari OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Gagal menyegerak {{count}} katalog OPDS",
+  "Last synced {{when}}": "Selaras kali terakhir {{when}}",
+  "Failed downloads": "Muat turun gagal",
+  "No failed downloads": "Tiada muat turun gagal",
+  "Attempts: {{count}}_other": "Percubaan: {{count}}",
+  "Skip": "Langkau",
+  "Skip all": "Langkau semua",
+  "Retry all": "Cuba lagi semua",
+  "{{count}} failed_other": "{{count}} gagal"
 }

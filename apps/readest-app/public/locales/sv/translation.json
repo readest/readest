@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "Redigera OPDS-katalog",
   "Save Changes": "Spara ändringar",
   "Use Book Layout": "Använd bokens layout",
-  "End of this section. Continue to the next.": "Slut på det här avsnittet. Fortsätt till nästa."
+  "End of this section. Continue to the next.": "Slut på det här avsnittet. Fortsätt till nästa.",
+  "Auto-download": "Autoladda ner",
+  "Auto-download new items": "Hämta nya objekt automatiskt",
+  "Automatically download new publications when the app syncs": "Hämta nya publikationer automatiskt när appen synkroniserar",
+  "{{count}} new item(s) downloaded from OPDS_one": "{{count}} nytt objekt nedladdat från OPDS",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} nya objekt nedladdade från OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "Det gick inte att synkronisera {{count}} OPDS-katalog",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Det gick inte att synkronisera {{count}} OPDS-kataloger",
+  "Last synced {{when}}": "Senast synkroniserad {{when}}",
+  "Failed downloads": "Misslyckade hämtningar",
+  "No failed downloads": "Inga misslyckade hämtningar",
+  "Attempts: {{count}}_one": "Försök: {{count}}",
+  "Attempts: {{count}}_other": "Försök: {{count}}",
+  "Skip": "Hoppa över",
+  "Skip all": "Hoppa över alla",
+  "Retry all": "Försök igen för alla",
+  "{{count}} failed_one": "{{count}} misslyckades",
+  "{{count}} failed_other": "{{count}} misslyckades"
 }

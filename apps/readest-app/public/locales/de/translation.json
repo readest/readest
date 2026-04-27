@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS-Katalog bearbeiten",
   "Save Changes": "Änderungen speichern",
   "Use Book Layout": "Buchlayout verwenden",
-  "End of this section. Continue to the next.": "Ende dieses Abschnitts. Weiter zum nächsten."
+  "End of this section. Continue to the next.": "Ende dieses Abschnitts. Weiter zum nächsten.",
+  "Auto-download": "Automatisch herunterladen",
+  "Auto-download new items": "Neue Einträge automatisch herunterladen",
+  "Automatically download new publications when the app syncs": "Neue Veröffentlichungen automatisch herunterladen, wenn die App synchronisiert",
+  "{{count}} new item(s) downloaded from OPDS_one": "{{count}} neuer Eintrag von OPDS heruntergeladen",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} neue Einträge von OPDS heruntergeladen",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "Synchronisation von {{count}} OPDS-Katalog fehlgeschlagen",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Synchronisation von {{count}} OPDS-Katalogen fehlgeschlagen",
+  "Last synced {{when}}": "Zuletzt synchronisiert {{when}}",
+  "Failed downloads": "Fehlgeschlagene Downloads",
+  "No failed downloads": "Keine fehlgeschlagenen Downloads",
+  "Attempts: {{count}}_one": "Versuche: {{count}}",
+  "Attempts: {{count}}_other": "Versuche: {{count}}",
+  "Skip": "Überspringen",
+  "Skip all": "Alle überspringen",
+  "Retry all": "Alle erneut versuchen",
+  "{{count}} failed_one": "{{count}} fehlgeschlagen",
+  "{{count}} failed_other": "{{count}} fehlgeschlagen"
 }

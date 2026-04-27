@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "ویرایش کاتالوگ OPDS",
   "Save Changes": "ذخیره تغییرات",
   "Use Book Layout": "استفاده از چیدمان کتاب",
-  "End of this section. Continue to the next.": "پایان این بخش. به بخش بعدی ادامه دهید."
+  "End of this section. Continue to the next.": "پایان این بخش. به بخش بعدی ادامه دهید.",
+  "Auto-download": "دانلود خودکار",
+  "Auto-download new items": "دانلود خودکار موارد جدید",
+  "Automatically download new publications when the app syncs": "دانلود خودکار انتشارات جدید هنگام همگام‌سازی برنامه",
+  "{{count}} new item(s) downloaded from OPDS_one": "{{count}} مورد جدید از OPDS دانلود شد",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} مورد جدید از OPDS دانلود شدند",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "همگام‌سازی {{count}} کاتالوگ OPDS ناموفق بود",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "همگام‌سازی {{count}} کاتالوگ OPDS ناموفق بود",
+  "Last synced {{when}}": "آخرین همگام‌سازی {{when}}",
+  "Failed downloads": "دانلودهای ناموفق",
+  "No failed downloads": "هیچ دانلود ناموفقی وجود ندارد",
+  "Attempts: {{count}}_one": "تلاش‌ها: {{count}}",
+  "Attempts: {{count}}_other": "تلاش‌ها: {{count}}",
+  "Skip": "رد کردن",
+  "Skip all": "رد کردن همه",
+  "Retry all": "تلاش مجدد همه",
+  "{{count}} failed_one": "{{count}} ناموفق",
+  "{{count}} failed_other": "{{count}} ناموفق"
 }

@@ -1179,5 +1179,18 @@
   "Edit OPDS Catalog": "OPDSカタログを編集",
   "Save Changes": "変更を保存",
   "Use Book Layout": "書籍のレイアウトを使用",
-  "End of this section. Continue to the next.": "このセクションの終わりです。次のセクションへ進みます。"
+  "End of this section. Continue to the next.": "このセクションの終わりです。次のセクションへ進みます。",
+  "Auto-download": "自動ダウンロード",
+  "Auto-download new items": "新着アイテムを自動ダウンロード",
+  "Automatically download new publications when the app syncs": "アプリの同期時に新しい出版物を自動的にダウンロードします",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDSから{{count}}件の新着アイテムをダウンロードしました",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "OPDSカタログ{{count}}件の同期に失敗しました",
+  "Last synced {{when}}": "最終同期 {{when}}",
+  "Failed downloads": "失敗したダウンロード",
+  "No failed downloads": "失敗したダウンロードはありません",
+  "Attempts: {{count}}_other": "試行回数: {{count}}",
+  "Skip": "スキップ",
+  "Skip all": "すべてスキップ",
+  "Retry all": "すべて再試行",
+  "{{count}} failed_other": "{{count}}件失敗"
 }

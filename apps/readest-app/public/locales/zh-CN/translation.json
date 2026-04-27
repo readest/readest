@@ -1179,5 +1179,18 @@
   "Edit OPDS Catalog": "编辑 OPDS 目录",
   "Save Changes": "保存更改",
   "Use Book Layout": "使用书籍排版",
-  "End of this section. Continue to the next.": "本节结束。继续到下一节。"
+  "End of this section. Continue to the next.": "本节结束。继续到下一节。",
+  "Auto-download": "自动下载",
+  "Auto-download new items": "自动下载新内容",
+  "Automatically download new publications when the app syncs": "应用同步时自动下载新出版物",
+  "{{count}} new item(s) downloaded from OPDS_other": "已从 OPDS 下载 {{count}} 个新内容",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "同步 {{count}} 个 OPDS 目录失败",
+  "Last synced {{when}}": "上次同步 {{when}}",
+  "Failed downloads": "失败的下载",
+  "No failed downloads": "没有失败的下载",
+  "Attempts: {{count}}_other": "尝试次数：{{count}}",
+  "Skip": "跳过",
+  "Skip all": "全部跳过",
+  "Retry all": "全部重试",
+  "{{count}} failed_other": "{{count}} 个失败"
 }

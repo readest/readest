@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS कैटलॉग संपादित करें",
   "Save Changes": "परिवर्तन सहेजें",
   "Use Book Layout": "पुस्तक का लेआउट उपयोग करें",
-  "End of this section. Continue to the next.": "इस अनुभाग का अंत। अगले पर जारी रखें।"
+  "End of this section. Continue to the next.": "इस अनुभाग का अंत। अगले पर जारी रखें।",
+  "Auto-download": "स्वचालित डाउनलोड",
+  "Auto-download new items": "नई आइटम स्वचालित रूप से डाउनलोड करें",
+  "Automatically download new publications when the app syncs": "ऐप सिंक होने पर नए प्रकाशन स्वचालित रूप से डाउनलोड करें",
+  "{{count}} new item(s) downloaded from OPDS_one": "OPDS से {{count}} नया आइटम डाउनलोड किया गया",
+  "{{count}} new item(s) downloaded from OPDS_other": "OPDS से {{count}} नई आइटम डाउनलोड की गईं",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "{{count}} OPDS कैटलॉग सिंक करने में विफल",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "{{count}} OPDS कैटलॉग सिंक करने में विफल",
+  "Last synced {{when}}": "अंतिम सिंक्रनाइज़ेशन {{when}}",
+  "Failed downloads": "असफल डाउनलोड",
+  "No failed downloads": "कोई असफल डाउनलोड नहीं",
+  "Attempts: {{count}}_one": "प्रयास: {{count}}",
+  "Attempts: {{count}}_other": "प्रयास: {{count}}",
+  "Skip": "छोड़ें",
+  "Skip all": "सब छोड़ें",
+  "Retry all": "सब पुनः प्रयास करें",
+  "{{count}} failed_one": "{{count}} असफल",
+  "{{count}} failed_other": "{{count}} असफल"
 }

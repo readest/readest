@@ -35,6 +35,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
@@ -161,18 +162,19 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenWithBooks();
   useTransferQueue(libraryLoaded);
 
-  const { pullLibrary, pushLibrary, pullOPDSCatalogs } = useBooksSync();
+  const { pullLibrary, pushLibrary } = useBooksSync();
+  const { checkOPDSSubscriptions } = useOPDSSubscriptions();
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
     scrollRef,
     async () => {
       await pullLibrary(false, true);
-      await pullOPDSCatalogs(true);
+      checkOPDSSubscriptions(true);
     },
     async () => {
       await pullLibrary(true, true);
-      await pullOPDSCatalogs(true);
+      checkOPDSSubscriptions(true);
     },
   );
   useScreenWakeLock(settings.screenWakeLock);

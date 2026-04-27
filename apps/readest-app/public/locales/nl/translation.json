@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "OPDS-catalogus bewerken",
   "Save Changes": "Wijzigingen opslaan",
   "Use Book Layout": "Boekindeling gebruiken",
-  "End of this section. Continue to the next.": "Einde van deze sectie. Ga verder naar de volgende."
+  "End of this section. Continue to the next.": "Einde van deze sectie. Ga verder naar de volgende.",
+  "Auto-download": "Automatisch downloaden",
+  "Auto-download new items": "Nieuwe items automatisch downloaden",
+  "Automatically download new publications when the app syncs": "Download automatisch nieuwe publicaties wanneer de app synchroniseert",
+  "{{count}} new item(s) downloaded from OPDS_one": "{{count}} nieuw item gedownload van OPDS",
+  "{{count}} new item(s) downloaded from OPDS_other": "{{count}} nieuwe items gedownload van OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "Synchronisatie van {{count}} OPDS-catalogus mislukt",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Synchronisatie van {{count}} OPDS-catalogi mislukt",
+  "Last synced {{when}}": "Laatst gesynchroniseerd {{when}}",
+  "Failed downloads": "Mislukte downloads",
+  "No failed downloads": "Geen mislukte downloads",
+  "Attempts: {{count}}_one": "Pogingen: {{count}}",
+  "Attempts: {{count}}_other": "Pogingen: {{count}}",
+  "Skip": "Overslaan",
+  "Skip all": "Alles overslaan",
+  "Retry all": "Alles opnieuw proberen",
+  "{{count}} failed_one": "{{count}} mislukt",
+  "{{count}} failed_other": "{{count}} mislukt"
 }

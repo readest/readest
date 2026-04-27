@@ -1192,5 +1192,22 @@
   "Edit OPDS Catalog": "Επεξεργασία καταλόγου OPDS",
   "Save Changes": "Αποθήκευση αλλαγών",
   "Use Book Layout": "Χρήση διάταξης βιβλίου",
-  "End of this section. Continue to the next.": "Τέλος αυτής της ενότητας. Συνεχίστε στην επόμενη."
+  "End of this section. Continue to the next.": "Τέλος αυτής της ενότητας. Συνεχίστε στην επόμενη.",
+  "Auto-download": "Αυτόματη λήψη",
+  "Auto-download new items": "Αυτόματη λήψη νέων στοιχείων",
+  "Automatically download new publications when the app syncs": "Αυτόματη λήψη νέων δημοσιεύσεων κατά τον συγχρονισμό της εφαρμογής",
+  "{{count}} new item(s) downloaded from OPDS_one": "Λήφθηκε {{count}} νέο στοιχείο από OPDS",
+  "{{count}} new item(s) downloaded from OPDS_other": "Λήφθηκαν {{count}} νέα στοιχεία από OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_one": "Αποτυχία συγχρονισμού {{count}} καταλόγου OPDS",
+  "Failed to sync {{count}} OPDS catalog(s)_other": "Αποτυχία συγχρονισμού {{count}} καταλόγων OPDS",
+  "Last synced {{when}}": "Τελευταίος συγχρονισμός {{when}}",
+  "Failed downloads": "Αποτυχημένες λήψεις",
+  "No failed downloads": "Δεν υπάρχουν αποτυχημένες λήψεις",
+  "Attempts: {{count}}_one": "Προσπάθειες: {{count}}",
+  "Attempts: {{count}}_other": "Προσπάθειες: {{count}}",
+  "Skip": "Παράλειψη",
+  "Skip all": "Παράλειψη όλων",
+  "Retry all": "Επανάληψη όλων",
+  "{{count}} failed_one": "{{count}} απέτυχε",
+  "{{count}} failed_other": "{{count}} απέτυχαν"
 }
