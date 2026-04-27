@@ -304,7 +304,9 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('click', handleClick.bind(null, bookKey, doubleClickDisabled));
-        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
+        // passive: false so handleWheel can preventDefault for mouse-wheel
+        // events and replace the native jerky scroll with a smooth animation.
+        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey), { passive: false });
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
