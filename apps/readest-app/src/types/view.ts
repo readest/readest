@@ -34,7 +34,7 @@ export interface Renderer extends HTMLElement {
   nextSection?: () => Promise<void>;
   prevSection?: () => Promise<void>;
   render?: () => Promise<void>;
-  goTo: (params: { index: number; anchor?: number | RangeAnchor }) => void;
+  goTo: (params: { index: number; anchor?: number | RangeAnchor }) => Promise<void>;
   setStyles?: (css: string) => void;
   primaryIndex: number;
   getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];

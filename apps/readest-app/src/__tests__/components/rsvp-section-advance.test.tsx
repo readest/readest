@@ -113,42 +113,25 @@ const mockView = {
     get atEnd() {
       return false;
     },
-    nextSection: vi.fn(async () => {
+    // renderer.goTo is called directly with the exact target section index,
+    // bypassing the reverted primaryIndex that nextSection() would use.
+    goTo: vi.fn(async ({ index }: { index: number }) => {
       const prevIdx = primaryIndex;
-      const nextIdx = prevIdx + 1;
 
-      // #goTo sets #primaryIndex = nextIdx before navigation relocate fires
-      primaryIndex = nextIdx;
+      // #goTo sets #primaryIndex = index before the navigation relocate fires
+      primaryIndex = index;
 
-      // Navigation relocate fires synchronously (reason = 'navigation',
-      // so #detectPrimaryView is skipped — section.current is stable here)
       const navEvent = new CustomEvent('relocate', {
         detail: {
-          section: { current: nextIdx },
-          tocItem: { href: `ch${nextIdx}.xhtml` },
+          section: { current: index },
+          tocItem: { href: `ch${index}.xhtml` },
         },
       });
       [...viewRelocateListeners].forEach((l) => l(navEvent));
 
-      // After the navigation completes, a scroll event fires and
-      // #detectPrimaryView() reverts #primaryIndex to the old section
-      primaryIndex = prevIdx;
-
-      // Simulate #fillVisibleArea loading the adjacent section (nextIdx + 1)
-      // and a scroll event making it the visible section. This fires
-      // asynchronously — the fix's listener stays active to catch it.
-      await new Promise<void>((r) => setTimeout(r, 20));
-
-      primaryIndex = nextIdx + 1;
-      const scrollEvent = new CustomEvent('relocate', {
-        detail: {
-          section: { current: nextIdx + 1 },
-          tocItem: { href: `ch${nextIdx + 1}.xhtml` },
-        },
-      });
-      [...viewRelocateListeners].forEach((l) => l(scrollEvent));
-
-      // Revert again (scroll reanchor causes another detectPrimaryView)
+      // After navigation, a scroll event fires and #detectPrimaryView()
+      // reverts #primaryIndex to the old section (same revert behaviour
+      // as before, but now we navigated to the correct section in the first place)
       primaryIndex = prevIdx;
     }),
     getContents: vi.fn(() => []),
@@ -183,7 +166,7 @@ describe('RSVPControl — section advance tracking', () => {
     cleanup();
   });
 
-  test('second advance loads section 6 when primaryIndex reverts after first advance', async () => {
+  test('advances directly to rsvpSectionRef+1, loading section 6 on second advance', async () => {
     render(
       <RSVPControl bookKey='test-book' gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
     );
@@ -198,19 +181,23 @@ describe('RSVPControl — section advance tracking', () => {
     // RSVPOverlay should now be mounted and onRequestNextPage captured
     expect(capturedOnRequestNextPage).not.toBeNull();
 
-    // First section advance: 4 → 5 (via navigation relocate, then primaryIndex reverts)
+    // First section advance: rsvpSectionRef starts at 4 → goTo(5)
     await act(async () => {
       await capturedOnRequestNextPage!();
     });
 
     expect(loadedSections[0]).toBe(5); // section 5 correctly loaded on first advance
-    expect(primaryIndex).toBe(4); // confirms primaryIndex has reverted
+    expect(primaryIndex).toBe(4); // confirms primaryIndex has reverted after navigation
+    expect(mockView.renderer.goTo).toHaveBeenNthCalledWith(1, { index: 5 });
 
-    // Second advance: without the fix, stale indexBefore=4 causes section 5 replay.
+    // Second advance: rsvpSectionRef is now 5 → goTo(6).
+    // Without the fix, nextSection() used the reverted primaryIndex=4 and
+    // navigated to section 5 again, causing a stale-section freeze.
     await act(async () => {
       await capturedOnRequestNextPage!();
     });
 
     expect(loadedSections).toEqual([5, 6]);
+    expect(mockView.renderer.goTo).toHaveBeenNthCalledWith(2, { index: 6 });
   });
 });

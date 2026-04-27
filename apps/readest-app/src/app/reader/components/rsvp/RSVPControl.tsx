@@ -492,7 +492,11 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
 
     view.addEventListener('relocate', onRelocate);
     cleanup = setTimeout(() => view.removeEventListener('relocate', onRelocate), 5000);
-    await view.renderer.nextSection?.();
+    // Navigate directly to rsvpSectionRef.current + 1 rather than calling nextSection(),
+    // which uses renderer.primaryIndex internally. primaryIndex reverts to the previous
+    // section after navigation (#detectPrimaryView), so nextSection() would re-navigate
+    // to the already-current section and the onRelocate filter would discard the event.
+    await view.renderer.goTo({ index: rsvpSectionRef.current + 1 });
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
   // Get current chapter info
