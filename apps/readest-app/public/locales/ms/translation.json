@@ -1192,5 +1192,10 @@
   "Skip": "Langkau",
   "Skip all": "Langkau semua",
   "Retry all": "Cuba lagi semua",
-  "{{count}} failed_other": "{{count}} gagal"
+  "{{count}} failed_other": "{{count}} gagal",
+  "(none)": "(tiada)",
+  "Metadata Hash": "Cincang Metadata",
+  "Meta Hash": "Cincang Meta",
+  "Computed Hash": "Cincang Dikira",
+  "Identifiers": "Pengenal"
 }

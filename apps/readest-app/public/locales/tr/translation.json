@@ -1209,5 +1209,10 @@
   "Skip all": "Tümünü atla",
   "Retry all": "Tümünü yeniden dene",
   "{{count}} failed_one": "{{count}} başarısız",
-  "{{count}} failed_other": "{{count}} başarısız"
+  "{{count}} failed_other": "{{count}} başarısız",
+  "(none)": "(yok)",
+  "Metadata Hash": "Üst Veri Hash'i",
+  "Meta Hash": "Meta Hash",
+  "Computed Hash": "Hesaplanan Hash",
+  "Identifiers": "Tanımlayıcılar"
 }

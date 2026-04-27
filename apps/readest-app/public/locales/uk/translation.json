@@ -1243,5 +1243,10 @@
   "{{count}} failed_one": "{{count}} помилка",
   "{{count}} failed_few": "{{count}} помилки",
   "{{count}} failed_many": "{{count}} помилок",
-  "{{count}} failed_other": "{{count}} помилок"
+  "{{count}} failed_other": "{{count}} помилок",
+  "(none)": "(немає)",
+  "Metadata Hash": "Хеш метаданих",
+  "Meta Hash": "Мета-хеш",
+  "Computed Hash": "Обчислений хеш",
+  "Identifiers": "Ідентифікатори"
 }

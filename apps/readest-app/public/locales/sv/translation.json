@@ -1209,5 +1209,10 @@
   "Skip all": "Hoppa över alla",
   "Retry all": "Försök igen för alla",
   "{{count}} failed_one": "{{count}} misslyckades",
-  "{{count}} failed_other": "{{count}} misslyckades"
+  "{{count}} failed_other": "{{count}} misslyckades",
+  "(none)": "(ingen)",
+  "Metadata Hash": "Metadata-hash",
+  "Meta Hash": "Meta-hash",
+  "Computed Hash": "Beräknat hash",
+  "Identifiers": "Identifierare"
 }

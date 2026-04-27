@@ -1192,5 +1192,10 @@
   "Skip": "跳过",
   "Skip all": "全部跳过",
   "Retry all": "全部重试",
-  "{{count}} failed_other": "{{count}} 个失败"
+  "{{count}} failed_other": "{{count}} 个失败",
+  "(none)": "（无）",
+  "Metadata Hash": "元数据哈希",
+  "Meta Hash": "元哈希",
+  "Computed Hash": "计算的哈希",
+  "Identifiers": "标识符"
 }

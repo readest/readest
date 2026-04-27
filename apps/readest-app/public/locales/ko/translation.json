@@ -1192,5 +1192,10 @@
   "Skip": "건너뛰기",
   "Skip all": "모두 건너뛰기",
   "Retry all": "모두 재시도",
-  "{{count}} failed_other": "{{count}}개 실패"
+  "{{count}} failed_other": "{{count}}개 실패",
+  "(none)": "(없음)",
+  "Metadata Hash": "메타데이터 해시",
+  "Meta Hash": "메타 해시",
+  "Computed Hash": "계산된 해시",
+  "Identifiers": "식별자"
 }

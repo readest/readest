@@ -1243,5 +1243,10 @@
   "{{count}} failed_one": "{{count}} ni uspela",
   "{{count}} failed_two": "{{count}} nista uspeli",
   "{{count}} failed_few": "{{count}} niso uspele",
-  "{{count}} failed_other": "{{count}} jih ni uspelo"
+  "{{count}} failed_other": "{{count}} jih ni uspelo",
+  "(none)": "(brez)",
+  "Metadata Hash": "Hash metapodatkov",
+  "Meta Hash": "Meta hash",
+  "Computed Hash": "Izračunani hash",
+  "Identifiers": "Identifikatorji"
 }

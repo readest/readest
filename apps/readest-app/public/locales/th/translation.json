@@ -1192,5 +1192,10 @@
   "Skip": "ข้าม",
   "Skip all": "ข้ามทั้งหมด",
   "Retry all": "ลองอีกครั้งทั้งหมด",
-  "{{count}} failed_other": "{{count}} ล้มเหลว"
+  "{{count}} failed_other": "{{count}} ล้มเหลว",
+  "(none)": "(ไม่มี)",
+  "Metadata Hash": "แฮชเมตาดาต้า",
+  "Meta Hash": "แฮชเมตา",
+  "Computed Hash": "แฮชที่คำนวณ",
+  "Identifiers": "ตัวระบุ"
 }

@@ -1209,5 +1209,10 @@
   "Skip all": "Összes kihagyása",
   "Retry all": "Összes újrapróbálása",
   "{{count}} failed_one": "{{count}} sikertelen",
-  "{{count}} failed_other": "{{count}} sikertelen"
+  "{{count}} failed_other": "{{count}} sikertelen",
+  "(none)": "(nincs)",
+  "Metadata Hash": "Metaadat-hash",
+  "Meta Hash": "Meta-hash",
+  "Computed Hash": "Számított hash",
+  "Identifiers": "Azonosítók"
 }

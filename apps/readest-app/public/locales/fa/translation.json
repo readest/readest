@@ -1209,5 +1209,10 @@
   "Skip all": "رد کردن همه",
   "Retry all": "تلاش مجدد همه",
   "{{count}} failed_one": "{{count}} ناموفق",
-  "{{count}} failed_other": "{{count}} ناموفق"
+  "{{count}} failed_other": "{{count}} ناموفق",
+  "(none)": "(هیچ‌کدام)",
+  "Metadata Hash": "هش متادیتا",
+  "Meta Hash": "متا هش",
+  "Computed Hash": "هش محاسبه‌شده",
+  "Identifiers": "شناسه‌ها"
 }

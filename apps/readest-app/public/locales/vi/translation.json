@@ -1192,5 +1192,10 @@
   "Skip": "Bỏ qua",
   "Skip all": "Bỏ qua tất cả",
   "Retry all": "Thử lại tất cả",
-  "{{count}} failed_other": "{{count}} thất bại"
+  "{{count}} failed_other": "{{count}} thất bại",
+  "(none)": "(không có)",
+  "Metadata Hash": "Hash Siêu Dữ Liệu",
+  "Meta Hash": "Meta Hash",
+  "Computed Hash": "Hash Đã Tính",
+  "Identifiers": "Định Danh"
 }

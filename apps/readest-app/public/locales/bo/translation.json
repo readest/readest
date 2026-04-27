@@ -1192,5 +1192,10 @@
   "Skip": "གཡོལ།",
   "Skip all": "ཡོད་ཚད་གཡོལ།",
   "Retry all": "ཡོད་ཚད་ཡང་སྐྱར།",
-  "{{count}} failed_other": "{{count}} ཕམ་ཁ།"
+  "{{count}} failed_other": "{{count}} ཕམ་ཁ།",
+  "(none)": "(མེད)",
+  "Metadata Hash": "དཔྱད་གཞིའི་ཧེཤི",
+  "Meta Hash": "དཔྱད་གཞིའི་ཧེཤི",
+  "Computed Hash": "རྩིས་པའི་ཧེཤི",
+  "Identifiers": "ངོས་འཛིན་བྱེད་མཁན"
 }

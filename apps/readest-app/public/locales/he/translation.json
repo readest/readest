@@ -1226,5 +1226,10 @@
   "Retry all": "נסה שוב את הכל",
   "{{count}} failed_one": "{{count}} נכשל",
   "{{count}} failed_two": "{{count}} נכשלו",
-  "{{count}} failed_other": "{{count}} נכשלו"
+  "{{count}} failed_other": "{{count}} נכשלו",
+  "(none)": "(אין)",
+  "Metadata Hash": "גיבוב מטא-נתונים",
+  "Meta Hash": "גיבוב מטא",
+  "Computed Hash": "גיבוב מחושב",
+  "Identifiers": "מזהים"
 }

@@ -1192,5 +1192,10 @@
   "Skip": "スキップ",
   "Skip all": "すべてスキップ",
   "Retry all": "すべて再試行",
-  "{{count}} failed_other": "{{count}}件失敗"
+  "{{count}} failed_other": "{{count}}件失敗",
+  "(none)": "（なし）",
+  "Metadata Hash": "メタデータハッシュ",
+  "Meta Hash": "メタハッシュ",
+  "Computed Hash": "計算されたハッシュ",
+  "Identifiers": "識別子"
 }

@@ -1209,5 +1209,10 @@
   "Skip all": "සියල්ල මඟ හරින්න",
   "Retry all": "සියල්ල නැවත උත්සාහ කරන්න",
   "{{count}} failed_one": "{{count}} අසාර්ථකයි",
-  "{{count}} failed_other": "{{count}} අසාර්ථකයි"
+  "{{count}} failed_other": "{{count}} අසාර්ථකයි",
+  "(none)": "(කිසිවක් නැත)",
+  "Metadata Hash": "පාරදත්ත හෑෂ්",
+  "Meta Hash": "මෙටා හෑෂ්",
+  "Computed Hash": "ගණනය කළ හෑෂ්",
+  "Identifiers": "හඳුනාගැනීම්"
 }

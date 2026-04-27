@@ -308,16 +308,28 @@ const getIdentifiersList = (
       : [identifiers.value];
 };
 
-export const getMetadataHash = (metadata: BookMetadata) => {
+export interface MetadataHashInfo {
+  title: string;
+  authors: string[];
+  identifiers: string[];
+  hashSource: string;
+  metaHash: string;
+}
+
+export const getMetadataHashInfo = (metadata: BookMetadata): MetadataHashInfo | undefined => {
   try {
     const title = getTitleForHash(metadata.title);
-    const authors = getAuthorsList(metadata.author).join(',');
-    const identifiers = getIdentifiersList(metadata.altIdentifier || metadata.identifier).join(',');
-    const hashSource = `${title}|${authors}|${identifiers}`;
+    const authors = getAuthorsList(metadata.author);
+    const identifiers = getIdentifiersList(metadata.altIdentifier || metadata.identifier);
+    const hashSource = `${title}|${authors.join(',')}|${identifiers.join(',')}`;
     const metaHash = md5(hashSource.normalize('NFC'));
-    return metaHash;
+    return { title, authors, identifiers, hashSource, metaHash };
   } catch (error) {
     console.error('Error generating metadata hash:', error);
   }
   return;
+};
+
+export const getMetadataHash = (metadata: BookMetadata) => {
+  return getMetadataHashInfo(metadata)?.metaHash;
 };

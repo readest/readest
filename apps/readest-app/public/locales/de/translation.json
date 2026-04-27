@@ -1209,5 +1209,10 @@
   "Skip all": "Alle überspringen",
   "Retry all": "Alle erneut versuchen",
   "{{count}} failed_one": "{{count}} fehlgeschlagen",
-  "{{count}} failed_other": "{{count}} fehlgeschlagen"
+  "{{count}} failed_other": "{{count}} fehlgeschlagen",
+  "(none)": "(keine)",
+  "Metadata Hash": "Metadaten-Hash",
+  "Meta Hash": "Meta-Hash",
+  "Computed Hash": "Berechneter Hash",
+  "Identifiers": "Bezeichner"
 }

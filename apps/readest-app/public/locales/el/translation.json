@@ -1209,5 +1209,10 @@
   "Skip all": "Παράλειψη όλων",
   "Retry all": "Επανάληψη όλων",
   "{{count}} failed_one": "{{count}} απέτυχε",
-  "{{count}} failed_other": "{{count}} απέτυχαν"
+  "{{count}} failed_other": "{{count}} απέτυχαν",
+  "(none)": "(κανένα)",
+  "Metadata Hash": "Hash Μεταδεδομένων",
+  "Meta Hash": "Meta Hash",
+  "Computed Hash": "Υπολογισμένο Hash",
+  "Identifiers": "Αναγνωριστικά"
 }

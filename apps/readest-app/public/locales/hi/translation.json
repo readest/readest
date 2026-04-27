@@ -1209,5 +1209,10 @@
   "Skip all": "सब छोड़ें",
   "Retry all": "सब पुनः प्रयास करें",
   "{{count}} failed_one": "{{count}} असफल",
-  "{{count}} failed_other": "{{count}} असफल"
+  "{{count}} failed_other": "{{count}} असफल",
+  "(none)": "(कोई नहीं)",
+  "Metadata Hash": "मेटाडेटा हैश",
+  "Meta Hash": "मेटा हैश",
+  "Computed Hash": "परिकलित हैश",
+  "Identifiers": "पहचानकर्ता"
 }

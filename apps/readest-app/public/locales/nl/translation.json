@@ -1209,5 +1209,10 @@
   "Skip all": "Alles overslaan",
   "Retry all": "Alles opnieuw proberen",
   "{{count}} failed_one": "{{count}} mislukt",
-  "{{count}} failed_other": "{{count}} mislukt"
+  "{{count}} failed_other": "{{count}} mislukt",
+  "(none)": "(geen)",
+  "Metadata Hash": "Metadata-hash",
+  "Meta Hash": "Meta-hash",
+  "Computed Hash": "Berekende hash",
+  "Identifiers": "Identificatoren"
 }

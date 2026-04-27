@@ -1243,5 +1243,10 @@
   "{{count}} failed_one": "{{count}} nieudane",
   "{{count}} failed_few": "{{count}} nieudane",
   "{{count}} failed_many": "{{count}} nieudanych",
-  "{{count}} failed_other": "{{count}} nieudanych"
+  "{{count}} failed_other": "{{count}} nieudanych",
+  "(none)": "(brak)",
+  "Metadata Hash": "Skrót metadanych",
+  "Meta Hash": "Meta-skrót",
+  "Computed Hash": "Obliczony skrót",
+  "Identifiers": "Identyfikatory"
 }

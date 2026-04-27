@@ -1209,5 +1209,10 @@
   "Skip all": "அனைத்தையும் தவிர்",
   "Retry all": "அனைத்தையும் மீண்டும் முயற்சி செய்",
   "{{count}} failed_one": "{{count}} தோல்வி",
-  "{{count}} failed_other": "{{count}} தோல்விகள்"
+  "{{count}} failed_other": "{{count}} தோல்விகள்",
+  "(none)": "(இல்லை)",
+  "Metadata Hash": "மெட்டாடேட்டா ஹாஷ்",
+  "Meta Hash": "மெட்டா ஹாஷ்",
+  "Computed Hash": "கணக்கிடப்பட்ட ஹாஷ்",
+  "Identifiers": "அடையாளங்காட்டிகள்"
 }

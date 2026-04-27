@@ -1226,5 +1226,10 @@
   "Retry all": "Reintentar todos",
   "{{count}} failed_one": "{{count}} fallida",
   "{{count}} failed_many": "{{count}} fallidas",
-  "{{count}} failed_other": "{{count}} fallidas"
+  "{{count}} failed_other": "{{count}} fallidas",
+  "(none)": "(ninguno)",
+  "Metadata Hash": "Hash de Metadatos",
+  "Meta Hash": "Meta Hash",
+  "Computed Hash": "Hash Calculado",
+  "Identifiers": "Identificadores"
 }

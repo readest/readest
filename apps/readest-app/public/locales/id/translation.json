@@ -1192,5 +1192,10 @@
   "Skip": "Lewati",
   "Skip all": "Lewati semua",
   "Retry all": "Coba lagi semua",
-  "{{count}} failed_other": "{{count}} gagal"
+  "{{count}} failed_other": "{{count}} gagal",
+  "(none)": "(tidak ada)",
+  "Metadata Hash": "Hash Metadata",
+  "Meta Hash": "Meta Hash",
+  "Computed Hash": "Hash Terhitung",
+  "Identifiers": "Pengenal"
 }

@@ -1192,5 +1192,10 @@
   "Skip": "跳過",
   "Skip all": "全部跳過",
   "Retry all": "全部重試",
-  "{{count}} failed_other": "{{count}} 個失敗"
+  "{{count}} failed_other": "{{count}} 個失敗",
+  "(none)": "（無）",
+  "Metadata Hash": "中繼資料雜湊",
+  "Meta Hash": "中繼雜湊",
+  "Computed Hash": "計算所得雜湊",
+  "Identifiers": "識別碼"
 }

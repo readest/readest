@@ -1226,5 +1226,10 @@
   "Retry all": "Reîncearcă toate",
   "{{count}} failed_one": "{{count}} eșuat",
   "{{count}} failed_few": "{{count}} eșuate",
-  "{{count}} failed_other": "{{count}} eșuate"
+  "{{count}} failed_other": "{{count}} eșuate",
+  "(none)": "(niciunul)",
+  "Metadata Hash": "Hash metadate",
+  "Meta Hash": "Meta hash",
+  "Computed Hash": "Hash calculat",
+  "Identifiers": "Identificatori"
 }

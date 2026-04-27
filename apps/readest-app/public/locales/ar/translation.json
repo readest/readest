@@ -1277,5 +1277,10 @@
   "{{count}} failed_two": "{{count}} فشل",
   "{{count}} failed_few": "{{count}} فشل",
   "{{count}} failed_many": "{{count}} فشل",
-  "{{count}} failed_other": "{{count}} فشل"
+  "{{count}} failed_other": "{{count}} فشل",
+  "(none)": "(لا شيء)",
+  "Metadata Hash": "تجزئة البيانات الوصفية",
+  "Meta Hash": "تجزئة البيانات الوصفية",
+  "Computed Hash": "التجزئة المحسوبة",
+  "Identifiers": "المعرفات"
 }

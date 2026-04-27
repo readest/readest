@@ -1226,5 +1226,10 @@
   "Retry all": "Tout réessayer",
   "{{count}} failed_one": "{{count}} échec",
   "{{count}} failed_many": "{{count}} échecs",
-  "{{count}} failed_other": "{{count}} échecs"
+  "{{count}} failed_other": "{{count}} échecs",
+  "(none)": "(aucun)",
+  "Metadata Hash": "Hachage des métadonnées",
+  "Meta Hash": "Hachage Meta",
+  "Computed Hash": "Hachage calculé",
+  "Identifiers": "Identifiants"
 }
