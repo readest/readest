@@ -603,3 +603,191 @@
 - `git status --short` before edits.
 - `pnpm.cmd --filter @readest/readest-app lint`
 - Human visual verification required before marking complete.
+
+---
+
+### [x] CT-019 — Home visual pass 1: richer landing page, covers, better contrast
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx`
+- `apps/readest-app/src/components/**`
+- `apps/readest-app/src/styles/globals.css`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/styles/globals.css` (tiny reusable class only if needed)
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Visually polish Home only (continue readability, cover treatment, recent preview covers, softer accent usage, wide-screen composition) while preserving CT-018 split and existing behavior.
+
+**Validation:**
+
+- `git status --short` before edits.
+- `pnpm.cmd --filter @readest/readest-app lint`
+- Human visual verification required.
+
+---
+
+### [x] CT-020 — Home polish pass: readability, bottom shelf, responsive layout
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect/edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` (if update needed)
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Home-only visual polish for improved contrast/readability, compact bottom recent shelf behavior, and graceful responsive stacking in non-fullscreen/narrow windows.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+
+---
+
+### [x] CT-021 — Home layout pass: Currently Reading showcase + bottom book shelf
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Rework Home content below the shared topbar into a centered currently-reading showcase and a more substantial bottom cover shelf while preserving search behavior and keeping Home premium/readable.
+
+**Validation:**
+
+- `git status --short`
+- `pnpm.cmd --filter @readest/readest-app lint`
+
+---
+
+### [x] CT-022 — Home stage layout pass: atmospheric reading showcase + real bottom shelf
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Rework Home below the unchanged topbar into an atmospheric reading stage with a central currently-reading showcase, clear primary continue action, and a bottom-anchored cover shelf.
+
+**Validation:**
+
+- `git status --short`
+- `pnpm.cmd --filter @readest/readest-app lint`
+
+---
+
+### [x] CT-023 — Home design-system alignment: no scrollbar, darker stage, reactive cover glow, bigger shelf
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx`
+- `apps/readest-app/src/styles/globals.css`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/styles/globals.css` (if needed)
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Align Home stage visuals to Citadel design tokens (darker palette, readable type, reactive ambient cover glow, viewport-fit composition, and larger anchored bottom shelf) without touching library/reader behavior.
+
+**Validation:**
+
+- `git status --short`
+- `pnpm.cmd --filter @readest/readest-app lint`
+
+---
+
+### [x] CT-024 — Home focused refinement: stronger glow, larger dock, responsive/clipping fixes
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx` (only if truly needed)
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Refine Home stage composition with stronger reactive ambient glow, darker topbar tone, larger bottom shelf dock, and robust non-fullscreen responsiveness/clipping behavior while preserving existing Home interactions.
+
+**Validation:**
+
+- `git status --short`
+- `pnpm.cmd --filter @readest/readest-app lint`
+
+---
+
+### [x] CT-025 — Home editorial split + cinematic dock refinement
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Move Home to the target reference while keeping topbar behavior unchanged: left editorial metadata + right featured cover hero, darker cinematic stage, stronger blurred cover-reactive glow, and a wider/larger dock-like bottom shelf (cover-first) while preserving search/no-results and Continue/Import/Library actions.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- **Eddy: visually confirm hero orientation (left text/right cover), stronger glow, and shelf scale in `tauri dev` before marking complete.**
+
+**CT-025B polish note (current pass):**
+
+- Scope-limited touch-up only in allowed files: logo aspect-safe sizing, one-step title clamp reduction, split-hero spacing rebalance, softer shelf cover treatment, and more readable `View all`.

@@ -199,3 +199,105 @@ Remaining follow-up after CT-018:
 - Visual tuning after Eddy review (spacing/contrast/copy refinements).
 - Confirm Home import CTA behavior on all target platforms in manual QA.
 - Decide whether Home should eventually show richer progress metadata or keep the lightweight preview.
+
+## 9) CT-019 implementation snapshot (Home visual pass 1)
+
+Implemented in this pass:
+
+- Improved Home hero contrast/readability while keeping the dark Citadel mood (stronger heading/body contrast, less muddy panel treatment).
+- Continue area now supports visual cover presentation using existing cover fields through shared `BookCover` behavior (`metadata.coverImageUrl` then `coverImageUrl`).
+- Added explicit fallback cover blocks for missing images in both Continue hero and Recent preview cards.
+- Recent preview now shows compact cover thumbnails plus title/author metadata, while staying lighter than full Library management cards.
+- Reduced heavy gold-outline repetition by using neutral borders with gold as accent/interaction cue.
+- Refined wide-screen composition with a two-column Continue layout (cover + reading info/actions) and cleaner spacing rhythm.
+
+Remaining ideas after CT-019:
+
+- Optional progress-aware micro-metadata in Home Continue panel (only if still calm and low-density).
+- Optional richer typography tuning once Eddy confirms baseline contrast/spacing across light/dark/system themes.
+
+## 10) CT-021 implementation snapshot (Currently Reading showcase + bottom shelf)
+
+Implemented in this pass:
+
+- Reworked Home below the shared topbar into a central, cover-first **Currently Reading** showcase (reduced dashboard-card feel).
+- Featured cover is now the primary visual anchor; title/author are presented beneath with stronger neutral contrast.
+- Added optional reading progress row + bar when `continueBook.progress` is available (normalized for both 0..1 and 0..100 style values).
+- Kept Home topbar/search/window controls unchanged.
+- Reworked Recent/Library preview into a fuller bottom horizontal cover shelf (book covers primary, title/author secondary) with horizontal scrolling on smaller widths.
+- Preserved Home search filtering and no-results behavior; when search is active, shelf shows matching subset only.
+
+Remaining ideas after CT-021:
+
+- Optional subtle backdrop/ambient treatment behind the central showcase if Eddy wants more cinematic depth.
+- Optional shelf-size tuning (cover heights/spacing) after fullscreen and narrow-window visual review.
+
+## 11) CT-022 implementation snapshot (Atmospheric stage + anchored shelf)
+
+Implemented in this pass:
+
+- Shifted Home below topbar from neutral dashboard styling to a restrained atmospheric stage using layered gradients (subtle radial glow behind hero cover, darker edge falloff).
+- Kept shared topbar unchanged; all work stayed in Home content composition.
+- Made featured book the clear hero with responsive `clamp` sizing, stronger cover shadow/rim treatment, readable title/author, and progress row/bar when progress data exists.
+- Promoted **Continue reading** to the primary nearby action under the showcase; kept import as secondary.
+- Reworked bottom section into a true anchored shelf/dock: subtle top border/background strip, cover-first horizontal row, compact metadata, responsive horizontal scroll.
+- Preserved Home search behavior and no-results messaging; shelf label now reads **Search Results** when search is active.
+
+Remaining ideas after CT-022:
+
+- Optional micro-motion/polish for shelf hover and hero transitions once visual baseline is approved.
+- Optional dynamic shelf count tuning by viewport width if Eddy wants denser fullscreen rows.
+
+## 12) CT-023 implementation snapshot (Design-system alignment pass)
+
+Implemented in this pass:
+
+- Aligned Home stage to near-black Citadel tones (`#0a0a0c` / `#131315`) with restrained atmospheric gradients and improved contrast hierarchy.
+- Removed the fullscreen scrollbar condition by switching Home to viewport-fit flex composition (no `overflow-auto` on main surface and reduced vertical padding/min-height pressure in stage layout).
+- Added a subtle cover-reactive ambient layer using the current book cover URL (blurred, low-opacity, darkened wash) with gradient fallback still present.
+- Improved typography/readability with serif-styled featured title (`Georgia/Palatino` fallback), parchment primary text (`#f0ede4`), and secondary/tertiary metadata colors (`#8a8883` / `#6b6a66`).
+- Darkened topbar appearance via page-level class overrides only (structure and controls unchanged).
+- Increased shelf cover size and dock presence for a more substantial bottom anchored shelf while preserving horizontal scrolling and search/no-results behavior.
+- Softened cover framing by removing harsher ring accents and using low-contrast borders + softer shadows.
+
+Remaining ideas after CT-023:
+
+- Optional cover-color extraction for more color-accurate reactive glow beyond full-image blur wash.
+- Optional fine-tuning of shelf card dimensions if Eddy wants denser compact mode for smaller laptop windows.
+
+## 13) CT-024 implementation snapshot (Focused Home refinement)
+
+Implemented in this pass:
+
+- Increased cover-reactive stage visibility with stronger layered ambient treatment (higher opacity + blur-tuned cover wash + extra radial aura) while keeping overall stage dark.
+- Darkened Home topbar further through Home page class overrides only (no structure/content changes).
+- Expanded bottom shelf dock footprint (wider max layout, roomier padding, larger cover tiles).
+- Improved non-fullscreen behavior by reducing hero vertical pressure (smaller clamp floor, tighter spacing) and preserving viewport-fit composition.
+- Fixed shelf clipping risk by making the shelf section non-shrinking (`flex-shrink-0`) and adding safer vertical padding inside the scroll row.
+- Preserved Home search filtering/no-results behavior and existing CTA/buttons.
+
+## 14) CT-025 implementation snapshot (Editorial split hero target pass)
+
+Implemented in this pass:
+
+- Reworked Home hero composition into target-style editorial split: **left column** carries currently-reading label, large serif title, author metadata, optional progress, and Continue/Import CTAs; **right column** is a large featured cover.
+- Kept topbar structure/behavior unchanged (search flow, Library button, window controls).
+- Darkened stage mood further with denser vignette layers and stronger atmospheric contrast.
+- Strengthened cover-reactive ambiance with heavier blur/saturation and warmer right-biased radial wash anchored around the featured cover region.
+- Expanded bottom shelf into a wider, larger dock-like strip with bigger cover-first tiles while preserving horizontal scrolling and search/no-results behavior.
+
+Verification focus:
+
+- Hero orientation must remain title/metadata-left and cover-right.
+- Continue/Import actions and search filtering behavior must stay unchanged.
+- Shelf should feel larger and dock-like without clipping in non-fullscreen windows.
+
+## 15) CT-025B implementation snapshot (Target layout polish only)
+
+Implemented in this pass:
+
+- Fixed Home topbar logo image sizing to preserve intrinsic aspect ratio and avoid browser aspect warnings (`height: auto` with fixed width styling; asset unchanged).
+- Reduced editorial hero title clamp one step to better handle long titles while preserving serif display hierarchy.
+- Rebalanced split hero presence by slightly increasing inter-column breathing room and modestly reducing featured cover clamp/weight (left/right orientation unchanged).
+- Softened bottom shelf cover treatment by reducing border/shadow harshness and removing crisp image filter styling while keeping large cover size and no clipping.
+- Increased `View all` link readability with a slightly brighter resting tone while keeping a subtle visual priority.

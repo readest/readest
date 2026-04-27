@@ -286,3 +286,124 @@ Agents/LEGACY_ELECTRON_AUDIT_LOG.md
 - **Commands Run:** `git status --short` (pre and post checks); `pnpm.cmd --filter @readest/readest-app lint` (pass).
 - **Validation:** Lint passed; no Tauri/Rust/package/lock/generated files edited.
 - **Notes / Next:** Eddy should visually verify Home entry hierarchy, CTA behavior, and `/library` management parity before promoting CT-018 to complete.
+
+**[2026-04-27 02:20:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-019`
+- **Task:** Home visual pass 1: richer landing page, covers, better contrast.
+- **Status:** Needs human verification.
+- **Action:** Implemented Home-only visual/composition polish in `apps/readest-app/src/app/page.tsx` without behavior/model rewrites. Improved hero readability/contrast, introduced two-column Continue layout for wide screens, softened heavy gold-outline usage, and added compact cover-forward Recent cards. Reused existing cover data path via shared `BookCover` component behavior (`book.metadata?.coverImageUrl || book.coverImageUrl`) and added explicit Citadel-style fallback blocks when cover image is missing. Updated planning docs with CT-019 snapshot and queued CT-019 as `[~]`.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre: clean); `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
+- **Validation:** Lint passed; no Tauri/Rust/package/generated files edited.
+- **Notes / Next:** Eddy should visually verify Home hero contrast, Continue cover/fallback behavior, Recent card covers, and wide-screen spacing/alignment before marking CT-019 complete.
+
+**[2026-04-27 02:29:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-020`
+- **Task:** Home polish pass: readability, bottom shelf behavior, responsive layout.
+- **Status:** Needs human verification.
+- **Action:** Updated `apps/readest-app/src/app/page.tsx` only for UI composition/contrast polish. Switched Home content to vertical flex composition with a bounded min-height container and `mt-auto` bottom shelf behavior so the recent section anchors toward the lower area of the Home surface. Improved dark-mode text readability for hero heading/body, continue title/author/helper text, and recent card text with stronger neutral contrast. Adjusted continue section responsiveness to stack on smaller widths and use two-column cover+metadata at medium/wide widths. Reworked Recent into a compact horizontal shelf strip (scrollable on narrow widths) while preserving existing search filtering and empty-state behavior.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
+- **Validation:** Lint passed; no reader logic, Tauri/Rust/package/generated files changed.
+- **Notes / Next:** Eddy should verify behavior in non-fullscreen narrower windows, plus dark-mode readability across hero/continue/recent shelf text.
+
+**[2026-04-27 02:42:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-021`
+- **Task:** Home layout pass: Currently Reading showcase + bottom book shelf.
+- **Status:** Needs human verification.
+- **Action:** Reworked Home content below topbar in `apps/readest-app/src/app/page.tsx` into a centered, cover-first currently-reading showcase and a larger bottom horizontal cover shelf. Kept `AppTitleBar`/topbar controls/search wiring unchanged. Removed the heavy boxed-hero composition, made featured cover the main focal point, moved metadata under the cover, and added optional progress label/bar when `continueBook.progress` exists (supports 0..1 and 0..100 inputs). Recent section now behaves as a bottom shelf with cover-dominant tiles and horizontal scrolling on narrow windows. Preserved existing Home search filter and no-results behavior.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre-check); `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
+- **Validation:** Lint passed; no Tauri/Rust/package/generated file edits.
+- **Notes / Next:** Eddy should validate fullscreen composition, central showcase feel, bottom shelf prominence, and narrow-window horizontal scrolling behavior before marking complete.
+
+**[2026-04-27 02:56:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-022`
+- **Task:** Home stage layout pass: atmospheric reading showcase + real bottom shelf.
+- **Status:** Needs human verification.
+- **Action:** Reworked `apps/readest-app/src/app/page.tsx` below topbar into an atmospheric stage layout using restrained layered gradients (radial focal glow + darker edge falloff). Kept the shared topbar untouched. Enhanced central currently-reading composition with responsive cover sizing (`clamp`), stronger hero-cover staging (shadow/ring), readable title/author, and existing progress-driven row/bar. Added a clear primary `Continue reading` action directly beneath hero metadata; kept import secondary. Converted bottom area into an anchored shelf/dock with subtle top border/background strip, cover-first horizontal tiles, and horizontal scrolling for narrow windows. Preserved existing Home search filtering/no-results behavior, with shelf label switching to `Search Results` while filtering.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre-check); `pnpm.cmd --filter @readest/readest-app lint` (pass); `git status --short` (post).
+- **Validation:** Lint passed; no Tauri/Rust/package/generated files edited.
+- **Notes / Next:** Eddy should verify atmospheric mood balance, hero action prominence, bottom shelf anchoring in fullscreen, and narrow-window shelf scrolling/readability.
+
+**[2026-04-27 03:17:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-023`
+- **Task:** Home design-system alignment: no scrollbar, darker stage, reactive cover glow, bigger shelf.
+- **Status:** Needs human verification.
+- **Action:** Updated Home-only styling/composition in `apps/readest-app/src/app/page.tsx` to align with provided Citadel tokens (`#0a0a0c`, `#131315`, `#f0ede4`, `#8a8883`, `#6b6a66`, `#d4af7a`, `#E3B230`, subtle white borders). Fixed fullscreen scrollbar condition by removing main-surface `overflow-auto` and reducing stage vertical pressure so content fits viewport in normal fullscreen. Added subtle reactive ambient background using current book cover URL (blurred low-opacity wash) with dark overlays and gradient fallback. Improved title/meta readability and applied serif display styling for the featured title. Darkened topbar via page-level `AppTitleBar` class overrides without changing structure/controls. Enlarged bottom shelf covers and reinforced dock anchoring while preserving horizontal scroll and search/no-results behavior. Softened cover presentation by dropping harsher ring accents and using softer borders/shadows.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre-check), `pnpm.cmd --filter @readest/readest-app lint` (pass), `git status --short` (post).
+- **Validation:** Lint passed; no Tauri/Rust/package/generated files edited.
+- **Notes / Next:** `Colors and Types.txt` was not found as a repo file path; token values provided in task prompt were used directly as source of truth.
+
+**[2026-04-27 03:28:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-024`
+- **Task:** Focused Home refinement pass.
+- **Status:** Needs human verification.
+- **Action:** Applied targeted Home-only refinements in `apps/readest-app/src/app/page.tsx`: strengthened reactive cover aura with additional blurred/radial layers; darkened Home topbar via page-level `AppTitleBar` class overrides (structure unchanged); enlarged and widened bottom shelf dock; tightened small-window hero sizing/spacing for better non-fullscreen composition; fixed potential shelf clipping by forcing dock section non-shrink and adding vertical safe padding in the horizontal shelf row. Preserved Home search/no-results behavior and existing Continue/Import/Library controls.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `git status --short` (pre-check), `pnpm.cmd --filter @readest/readest-app lint` (pass), `git status --short` (post).
+- **Validation:** Lint passed; no Tauri/Rust/package/generated files edited.
+- **Notes / Next:** Eddy should verify glow visibility balance and shelf sizing in both fullscreen and non-fullscreen windows.
+
+**[2026-04-27 05:05:00 Europe/Lisbon] - Agent: Claude Code**
+
+- **Task ID:** `CT-025`
+- **Task:** Two-column editorial hero home redesign — Citadel logo in topbar, left text / right cover split, cover-reactive glow on right, smaller shelf.
+- **Status:** Implemented (`[~]`); awaiting Eddy visual verification.
+- **Action:** Rewrote `apps/readest-app/src/app/page.tsx` layout below topbar: replaced centered single-column hero with a true two-column flex row (left = label / serif title / gold author / progress bar / buttons; right = large cover with per-book atmospheric glow blurred behind it). Replaced "Citadel Home" text in `AppTitleBar` with `<Image>` tag pointing to existing `/citadel/citadel-logo.png`. Repositioned atmospheric glow overlays to `72% 30%` (right side) to match cover column. Topbar search input and buttons changed to `rounded-lg` (beveled). Bottom shelf made more compact (smaller tiles, tighter labels, `View all` instead of long text). Fixed pre-existing unused-import lint error in `apps/readest-app/src/app/library/page.tsx` (`useMemo` removed from import line 6). Lint clean (`tsgo --noEmit` + `biome check .` zero diagnostics). Test suite unchanged (165 pre-existing failures, same as baseline — none introduced).
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `apps/readest-app/src/app/library/page.tsx`, `Agents/AUDIT_LOG.md`, `Agents/TASK_QUEUE.md`.
+- **Commands Run:** `pnpm lint` (pass, 0 diagnostics); `pnpm test` (165 failures — same count as baseline, none new).
+- **Validation:** Lint passed; test regression confirmed absent.
+- **Notes / Next:** Do NOT commit until Eddy visually confirms the two-column hero, logo in topbar, glow on right, and shelf sizing in the running `tauri dev` app.
+
+**[2026-04-27 05:30:00 Europe/Lisbon] - Agent: Claude Code**
+
+- **Task ID:** `CT-025B`
+- **Task:** Refinement pass on two-column hero — stronger glow, smaller cover, tighter gap, smaller shelf books, wider search bar constraint, remove tip text, fix shelf clip.
+- **Status:** Implemented (`[~]`); awaiting Eddy visual verification.
+- **Action:** Applied 7 targeted fixes to `apps/readest-app/src/app/page.tsx`: (1) Cover glow layers made aggressive — opacity 0.75, blur(100px) saturate(3.5), backgroundSize 70%, plus warm red radial overlay `rgba(140,40,20,0.35)`. (2) Cover clamped smaller: h-[clamp(240px,34vh,400px)] / w-[clamp(160px,22vh,270px)]; right column gets mr-8 lg:mr-12 offset. (3) Column gap reduced from gap-10/lg:gap-16 to flat gap-8. (4) Removed tip text block and its now-unused `isTauriAppPlatform` import. (5) Shelf book tiles reduced: w-[100px]/xl:w-[112px], h-[148px]/xl:h-[164px]. (6) Shelf section pb-4 → pb-8. (7) Search centerClassName gets max-w-[560px] mx-auto to constrain width.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm lint` (pass, 0 diagnostics); `git status --short` (post).
+- **Validation:** Lint clean; only `page.tsx` and `AUDIT_LOG.md` touched.
+- **Notes / Next:** Do NOT commit until Eddy visually confirms glow is visible, cover size feels right, and shelf is not clipped.
+
+**[2026-04-27 05:50:00 Europe/Lisbon] - Agent: Claude Code**
+
+- **Task ID:** `CT-025C`
+- **Task:** Hero centering, stronger glow, vertical balance.
+- **Status:** Implemented (`[~]`); awaiting Eddy visual verification.
+- **Action:** Three targeted fixes to `apps/readest-app/src/app/page.tsx`: (1) Glow layer — opacity 0.9, blur(80px) saturate(4.5) brightness(1.0), backgroundSize 65% at 68%/38%, scale(1.5). Red radial overlay intensified to rgba(160,50,20,0.55) inner / rgba(100,30,10,0.25) mid. (2) Hero section restructured to `relative flex min-h-0 flex-1 flex-col`; inner two-column container is now `mx-auto max-w-[1100px] flex-1 items-center justify-center gap-10 px-8 py-6 xl:px-12` — centred, bounded, breathing room. (3) Outer content wrapper simplified to `relative flex min-h-0 flex-1 flex-col` (removed the old max-w-[1520px] px/pt outer container so the section can use its own centering).
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm lint` (pass, 0 diagnostics); `git status --short`.
+- **Validation:** Lint clean; only `page.tsx` and agent docs touched.
+- **Notes / Next:** Do NOT commit until Eddy visually confirms hero is centred, glow is strong and right-side, and layout feels balanced.
+
+**[2026-04-27 14:29:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-025`
+- **Task:** Home editorial split hero target pass (scope-limited correction).
+- **Status:** Needs human verification.
+- **Action:** Updated `apps/readest-app/src/app/page.tsx` to enforce the target orientation and mood: left editorial metadata column + right large featured cover, stronger right-side blurred cover-reactive glow, darker cinematic overlays, and a wider/larger cover-first dock shelf. Preserved topbar behavior/structure and existing Home interactions (search filtering/no-results, Continue action, Import action, Library topbar button). Updated `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md` with CT-025 implementation snapshot and refreshed `Agents/TASK_QUEUE.md` CT-025 scope/validation block to match allowed files.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pending in next step), `git status --short` (pending in next step).
+- **Validation:** Pending command execution in this pass.
+- **Notes / Next:** Run required lint/status commands and visually confirm hero orientation, glow intensity, and dock shelf scale in `tauri dev` before marking CT-025 complete.
+
+**[2026-04-27 14:40:00 Europe/Lisbon] - Agent: Cursor**
+
+- **Task ID:** `CT-025B`
+- **Task:** Home target layout polish only (no redesign).
+- **Status:** Needs human verification.
+- **Action:** Applied a scoped polish pass in `apps/readest-app/src/app/page.tsx` only: fixed logo aspect-warning risk with explicit aspect-safe sizing (`height: auto` styling, asset untouched), reduced editorial title clamp max by one step, rebalanced hero spacing by slightly widening column gap and modestly reducing featured cover clamp, softened bottom shelf cover rendering (lighter border/shadow and removed crisp image filter), and increased `View all` baseline readability while keeping it subtle. Preserved search/no-results, Continue/Import actions, Library topbar button, left-title/right-cover layout, and no fullscreen scrollbar behavior.
+- **Files Touched:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`.
+- **Commands Run:** `pnpm.cmd --filter @readest/readest-app lint` (pending in next step), `git status --short` (pending in next step).
+- **Validation:** Pending command execution in this pass.
+- **Notes / Next:** Confirm visually that long-title fit improved and shelf covers look less crunchy without losing large-card presence.
