@@ -117,6 +117,49 @@ describe('RSVPController', () => {
     });
   });
 
+  describe('ORP calculation', () => {
+    test('places ORP near the start of short Latin words', () => {
+      const doc = makeDoc('Hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words;
+      // 5-letter words: ORP at index 1
+      expect(words[0]!.orpIndex).toBe(1);
+      expect(words[1]!.orpIndex).toBe(1);
+    });
+
+    test('places ORP based on letter count for Cyrillic words', () => {
+      // "Привет" = 6 letters, "мир" = 3 letters
+      const doc = makeDoc('Привет мир');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words;
+      expect(words[0]!.text).toBe('Привет');
+      // 6-letter word should have ORP at index 2 (same as Latin "Hellos")
+      expect(words[0]!.orpIndex).toBe(2);
+      expect(words[1]!.text).toBe('мир');
+      // 3-letter word: ORP at index 0
+      expect(words[1]!.orpIndex).toBe(0);
+    });
+
+    test('places ORP based on letter count for accented Latin words', () => {
+      // "naïve" = 5 letters with combining/precomposed diacritic
+      const doc = makeDoc('naïve');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words;
+      expect(words[0]!.text).toBe('naïve');
+      // Should be treated as a 5-letter word, ORP at index 1
+      expect(words[0]!.orpIndex).toBe(1);
+    });
+  });
+
   describe('duplicate word blank insertion', () => {
     test('inserts blank between two consecutive identical words', () => {
       const doc = makeDoc('the the cat');
