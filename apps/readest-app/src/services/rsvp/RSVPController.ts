@@ -738,7 +738,7 @@ export class RSVPController extends EventTarget {
       return Math.floor(word.length / 2);
     }
 
-    const cleanWord = word.replace(/[^\w]/g, '');
+    const cleanWord = word.replace(/[^\p{L}\p{N}_]/gu, '');
     const len = cleanWord.length;
 
     if (len <= 1) return 0;

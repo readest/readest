@@ -71,6 +71,12 @@ const TOCView: React.FC<{
   const pendingScrollRef = useRef(false);
   const visibleCenterRef = useRef(0);
   const initialScrollHandledRef = useRef(initialScrollTarget.index > 0);
+  // Don't honor userScrolledRef before the first post-mount progress arrives.
+  // With a pinned sidebar, TOCView mounts before FoliateViewer emits its
+  // first relocate; if any programmatic scroll (e.g. OverlayScrollbars'
+  // viewport-wrap scrollTop reset) flips userScrolledRef in that window it
+  // would otherwise suppress the auto-scroll once progress finally arrives.
+  const initialAutoScrollProcessedRef = useRef(false);
 
   // OverlayScrollbars + Virtuoso integration (same pattern as Bookshelf)
   const osRootRef = useRef<HTMLDivElement>(null);
@@ -169,9 +175,10 @@ const TOCView: React.FC<{
     if (!isSideBarVisible || sideBarBookKey !== bookKey) {
       userScrolledRef.current = false;
       pendingScrollRef.current = false;
+      initialAutoScrollProcessedRef.current = false;
       return;
     }
-    if (userScrolledRef.current) return;
+    if (userScrolledRef.current && initialAutoScrollProcessedRef.current) return;
     setExpandedItems((prev) => {
       const next = computeExpandedSet(toc, progress?.sectionHref);
       return setsHaveSameContents(prev, next) ? prev : next;
@@ -182,21 +189,28 @@ const TOCView: React.FC<{
       } else {
         pendingScrollRef.current = true;
       }
+      initialAutoScrollProcessedRef.current = true;
     }
   }, [isSideBarVisible, sideBarBookKey, bookKey, toc, progress]);
 
   useEffect(() => {
     if (!pendingScrollRef.current || !activeHref || !isSideBarVisible) return;
     const idx = flatItems.findIndex((f) => f.item.href === activeHref);
-    if (idx !== -1) {
-      // Eink displays ghost previous frames during smooth JS scroll
-      // animations; force an instant jump to avoid the artifact. A CSS-only
-      // fix is impossible because scrollTo({ behavior: 'smooth' }) overrides
-      // CSS scroll-behavior and is not a CSS transition.
-      const distance = Math.abs(idx - visibleCenterRef.current);
-      const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
-      virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
+    if (idx === -1) {
+      // The active section's parents were just queued to expand by the
+      // post-mount progress effect above — flatItems still reflects the
+      // pre-update expandedItems. Leave pendingScrollRef set so this
+      // effect retries on the next render once flatItems contains the
+      // active section. Clearing it here would strand the scroll.
+      return;
     }
+    // Eink displays ghost previous frames during smooth JS scroll
+    // animations; force an instant jump to avoid the artifact. A CSS-only
+    // fix is impossible because scrollTo({ behavior: 'smooth' }) overrides
+    // CSS scroll-behavior and is not a CSS transition.
+    const distance = Math.abs(idx - visibleCenterRef.current);
+    const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
+    virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior });
     pendingScrollRef.current = false;
   }, [flatItems, activeHref, isSideBarVisible, isEink]);
 
@@ -215,6 +229,11 @@ const TOCView: React.FC<{
             visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
           }}
           onScroll={() => {
+            // A scroll arriving while a pending auto-scroll is still
+            // queued (idx === -1, waiting on flatItems to expand) means
+            // the user is now driving — drop the queued auto-scroll so
+            // the next render doesn't yank them away.
+            pendingScrollRef.current = false;
             userScrolledRef.current = true;
             if (scrollCooldownRef.current) clearTimeout(scrollCooldownRef.current);
             scrollCooldownRef.current = setTimeout(() => {

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
+import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
@@ -31,9 +31,14 @@ import Menu from '@/components/Menu';
 interface ViewMenuProps {
   bookKey: string;
   setIsDropdownOpen?: (open: boolean) => void;
+  onShowMetaHashDialog?: () => void;
 }
 
-const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
+const ViewMenu: React.FC<ViewMenuProps> = ({
+  bookKey,
+  setIsDropdownOpen,
+  onShowMetaHashDialog,
+}) => {
   const _ = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
@@ -319,6 +324,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         Icon={user ? MdSync : MdSyncProblem}
         iconClassName={user && viewState?.syncing ? 'animate-reverse-spin' : ''}
         onClick={handleSync}
+        siblings={
+          <button
+            aria-label={_('Metadata Hash')}
+            title={_('Metadata Hash')}
+            className='hover:bg-base-300 text-base-content/70 mx-1 rounded-md px-2'
+            onClick={() => {
+              setIsDropdownOpen?.(false);
+              onShowMetaHashDialog?.();
+            }}
+          >
+            <MdInfoOutline size={16} />
+          </button>
+        }
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />

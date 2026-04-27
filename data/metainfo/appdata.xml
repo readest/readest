@@ -55,6 +55,7 @@
   <url type="bugtracker">https://github.com/readest/readest/issues</url>
   <url type="help">https://github.com/readest/readest/wiki</url>
   <url type="donation">https://github.com/sponsors/readest</url>
+  <url type="vcs-browser">https://github.com/readest/readest</url>
 
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 

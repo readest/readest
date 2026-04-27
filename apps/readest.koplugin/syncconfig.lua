@@ -22,7 +22,7 @@ local function normalizeAuthor(author)
     return author
 end
 
-function SyncConfig:generateMetadataHash(ui)
+function SyncConfig:getMetadataHashInfo(ui)
     local doc_props = ui.doc_settings:readSetting("doc_props") or {}
     local title = doc_props.title or ''
     if title == '' then
@@ -31,20 +31,21 @@ function SyncConfig:generateMetadataHash(ui)
         title = basename or ''
     end
 
-    local authors = doc_props.authors or ''
-    if authors:find("\n") then
-        authors = util.splitToArray(authors, "\n")
-        for i, author in ipairs(authors) do
-            authors[i] = normalizeAuthor(author)
+    local authors_raw = doc_props.authors or ''
+    local authors_list = {}
+    if authors_raw:find("\n") then
+        local list = util.splitToArray(authors_raw, "\n")
+        for i, author in ipairs(list) do
+            authors_list[i] = normalizeAuthor(author)
         end
-        authors = table.concat(authors, ",")
-    else
-        authors = normalizeAuthor(authors)
+    elseif authors_raw ~= '' then
+        authors_list = { normalizeAuthor(authors_raw) }
     end
 
-    local identifiers = doc_props.identifiers or ''
-    if identifiers:find("\n") then
-        local list = util.splitToArray(identifiers, "\n")
+    local identifiers_raw = doc_props.identifiers or ''
+    local identifiers_list = {}
+    if identifiers_raw:find("\n") then
+        local list = util.splitToArray(identifiers_raw, "\n")
         local normalized = {}
         local priorities = { "uuid", "calibre", "isbn" }
         local preferred = nil
@@ -59,15 +60,26 @@ function SyncConfig:generateMetadataHash(ui)
             end
         end
         if preferred then
-            identifiers = preferred
+            identifiers_list = { preferred }
         else
-            identifiers = table.concat(normalized, ",")
+            identifiers_list = normalized
         end
-    else
-        identifiers = normalizeIdentifier(identifiers)
+    elseif identifiers_raw ~= '' then
+        identifiers_list = { normalizeIdentifier(identifiers_raw) }
     end
-    local doc_meta = title .. "|" .. authors .. "|" .. identifiers
-    return sha2.md5(doc_meta)
+
+    local hash_source = title .. "|" .. table.concat(authors_list, ",") .. "|" .. table.concat(identifiers_list, ",")
+    return {
+        title = title,
+        authors = authors_list,
+        identifiers = identifiers_list,
+        hash_source = hash_source,
+        meta_hash = sha2.md5(hash_source),
+    }
+end
+
+function SyncConfig:generateMetadataHash(ui)
+    return self:getMetadataHashInfo(ui).meta_hash
 end
 
 function SyncConfig:getMetaHash(ui)

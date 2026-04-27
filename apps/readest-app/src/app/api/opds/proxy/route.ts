@@ -107,69 +107,94 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
 
     const contentType = response.headers.get('Content-Type') || 'text/xml';
     const contentLength = response.headers.get('Content-Length');
+    const contentEncoding = response.headers.get('Content-Encoding');
+    const transferEncoding = response.headers.get('Transfer-Encoding');
+    const upstreamContentDisposition = response.headers.get('Content-Disposition');
+    console.log(
+      `[OPDS Proxy] upstream OK: ${url} ` +
+        `content-type=${contentType} content-length=${contentLength ?? '(none)'} ` +
+        `content-encoding=${contentEncoding ?? '(none)'} ` +
+        `transfer-encoding=${transferEncoding ?? '(none)'} ` +
+        `content-disposition=${upstreamContentDisposition ?? '(none)'}`,
+    );
+
+    // Headers that must NOT be forwarded as-is when we proxy the body:
+    //  - content-encoding: fetch() has already decoded gzip/br/deflate, so
+    //    the body the client receives is plain. Forwarding the original
+    //    Content-Encoding makes the browser try to decode it again, which
+    //    truncates or empties the response. This was the cause of
+    //    Content-Length: 0 / 0-byte downloads from Calibre and similar.
+    //  - content-length: must match the bytes we actually emit (post-decode).
+    //    We set the right value below where we know it.
+    //  - transfer-encoding / connection / keep-alive: hop-by-hop headers,
+    //    must not cross the proxy boundary.
+    const excludedHeaders = new Set([
+      'content-encoding',
+      'content-length',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+    ]);
+
+    // Use a Headers object so name comparison is case-insensitive — this
+    // prevents the `content-type` (lowercase from Headers.entries) and
+    // `Content-Type` (title-case override) duplication that produced
+    // "application/epub+zip, application/epub+zip" responses.
+    const buildResponseHeaders = (extras: Record<string, string>) => {
+      const h = new Headers();
+      for (const [key, value] of response.headers.entries()) {
+        if (!excludedHeaders.has(key.toLowerCase())) {
+          h.set(key, value);
+        }
+      }
+      // Don't cache file downloads — a single broken response would otherwise
+      // be cached for 5 minutes and keep returning 0 bytes. Catalog feeds
+      // (XML/JSON) are still cacheable.
+      const isFileDownload =
+        stream === 'true' ||
+        (upstreamContentDisposition ?? '').toLowerCase().includes('attachment');
+      h.set('Cache-Control', isFileDownload ? 'no-store' : 'public, max-age=300');
+      h.set('Access-Control-Allow-Origin', '*');
+      h.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      h.set('Access-Control-Allow-Headers', 'Content-Type');
+      for (const [key, value] of Object.entries(extras)) {
+        h.set(key, value);
+      }
+      return h;
+    };
 
     if (method === 'HEAD') {
       console.log(`[OPDS Proxy] HEAD Success: ${url}`);
       return new NextResponse(null, {
         status: 200,
-        headers: {
-          ...Object.fromEntries(response.headers.entries()),
+        headers: buildResponseHeaders({
           'Content-Type': contentType,
-          'Content-Length': contentLength || '',
-          'Cache-Control': 'public, max-age=300',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
+          ...(contentLength ? { 'Content-Length': contentLength } : {}),
+        }),
       });
     }
 
     if (stream === 'true' && contentLength && parseInt(contentLength) > 1024 * 1024) {
-      console.log(`[OPDS Proxy] Streaming: ${url}`);
-
-      return new NextResponse(response.body, {
-        status: 200,
-        headers: {
-          ...Object.fromEntries(response.headers.entries()),
-          'Content-Type': contentType,
-          'X-Content-Length': contentLength || '',
-          'Cache-Control': 'public, max-age=300',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Expose-Headers': 'X-Content-Length',
-        },
+      console.log(`[OPDS Proxy] Streaming: ${url} (${contentLength} bytes)`);
+      const headers = buildResponseHeaders({
+        'Content-Type': contentType,
+        // Surface the upstream length to the client without setting the real
+        // Content-Length header (which must match the streamed bytes — and
+        // we let Next.js / the runtime compute that).
+        'X-Content-Length': contentLength,
+        'Access-Control-Expose-Headers': 'X-Content-Length',
       });
+      return new NextResponse(response.body, { status: 200, headers });
     } else {
       const buf = await response.arrayBuffer();
       const length = buf.byteLength;
-      console.log(`[OPDS Proxy] Success: ${url} (${length} bytes)`);
-      const excludedHeaders = new Set([
-        'content-encoding',
-        'content-length',
-        'transfer-encoding',
-        'connection',
-        'keep-alive',
-      ]);
-
-      const proxyHeaders: Record<string, string> = {};
-      for (const [key, value] of response.headers.entries()) {
-        if (!excludedHeaders.has(key.toLowerCase())) {
-          proxyHeaders[key] = value;
-        }
-      }
-
+      console.log(`[OPDS Proxy] Buffered Success: ${url} (${length} bytes)`);
       return new NextResponse(buf, {
         status: 200,
-        headers: {
-          ...proxyHeaders,
+        headers: buildResponseHeaders({
           'Content-Type': contentType,
           'Content-Length': length.toString(),
-          'Cache-Control': 'public, max-age=300',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
+        }),
       });
     }
   } catch (error) {

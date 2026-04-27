@@ -11,7 +11,7 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
-import { PlanType } from '@/types/quota';
+import type { PlanType } from '@/types/quota';
 import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -30,7 +30,7 @@ import {
   redirectToStripePortal,
   handleStripeCheckoutError,
   getSubscriptionSuccessUrl as getStripeSubscriptionSuccessUrl,
-  StripeAvailablePlan,
+  type StripeAvailablePlan,
 } from '@/libs/payment/stripe/client';
 import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
@@ -120,9 +120,13 @@ const ProfilePage = () => {
         planType,
       );
 
-      const selectedPlan = availablePlans.find(
-        (plan) => plan.productId === productId,
-      )! as StripeAvailablePlan;
+      const foundPlan = availablePlans.find((plan) => plan.productId === productId);
+
+      if (!foundPlan) {
+        throw new Error(`Plan not found for product ID: ${productId}`);
+      }
+
+      const selectedPlan = foundPlan as StripeAvailablePlan;
       const planName = selectedPlan.product?.name || selectedPlan.productName;
 
       const isEmbeddedCheckout = isTauriAppPlatform();
@@ -134,7 +138,7 @@ const ProfilePage = () => {
           sessionId,
         });
       } else {
-        await redirectToStripeCheckout(sessionId, url);
+        await redirectToStripeCheckout(url);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -177,10 +181,14 @@ const ProfilePage = () => {
     try {
       const purchases = await restoreIAPPurchases();
       if (purchases.length > 0) {
-        purchases
+        const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-        const purchase = purchases[0]!;
+        const purchase = restoredSubscriptions[0];
+
+        if (!purchase) {
+          throw new Error('No subscription found in restored purchases');
+        }
         router.push(getIAPSubscriptionSuccessUrl(purchase));
       } else {
         eventDispatcher.dispatch('toast', {

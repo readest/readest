@@ -101,13 +101,13 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             {onDelete && (
               <Dropdown
                 label={_('Delete Book Options')}
-                className='dropdown-bottom flex justify-center'
+                className='dropdown-bottom dropdown-center flex justify-center'
                 buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
                 toggleButton={<MdOutlineDelete className='fill-red-500' />}
               >
                 <div
                   className={clsx(
-                    'delete-menu dropdown-content dropdown-center no-triangle',
+                    'delete-menu dropdown-content no-triangle !relative',
                     'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >

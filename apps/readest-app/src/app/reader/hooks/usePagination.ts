@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
@@ -9,6 +9,7 @@ import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
+import { SmoothScroller, type SmoothScrollTarget } from '../utils/smoothWheelScroll';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
 export type ScrollSource = 'touch' | 'mouse';
@@ -110,6 +111,16 @@ export const usePagination = (
   const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
   const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
+  const smoothScrollerRef = useRef<SmoothScroller | null>(null);
+  const smoothScrollTargetRef = useRef<SmoothScrollTarget>({
+    get position() {
+      return viewRef.current?.renderer.containerPosition ?? 0;
+    },
+    set position(value: number) {
+      const renderer = viewRef.current?.renderer;
+      if (renderer) renderer.containerPosition = value;
+    },
+  });
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -188,22 +199,37 @@ export const usePagination = (
               viewPagination(viewRef.current, viewSettings, side);
             }
           }
-        } else if (
-          msg.data.type === 'iframe-wheel' &&
-          !viewSettings.scrolled &&
-          !isPanningView(viewRef.current, viewSettings)
-        ) {
-          // The wheel event is handled by the iframe itself in scrolled mode.
-          const { deltaY, deltaX } = msg.data;
-          if (deltaY > 0) {
-            viewPagination(viewRef.current, viewSettings, 'down');
-          } else if (deltaY < 0) {
-            viewPagination(viewRef.current, viewSettings, 'up');
-          } else if (deltaX < 0) {
-            viewPagination(viewRef.current, viewSettings, 'left');
-          } else if (deltaX > 0) {
-            viewPagination(viewRef.current, viewSettings, 'right');
+        } else if (msg.data.type === 'iframe-wheel') {
+          const { deltaY, deltaX, isMouseWheel } = msg.data;
+          if (
+            viewSettings.scrolled &&
+            isMouseWheel &&
+            !isPanningView(viewRef.current, viewSettings)
+          ) {
+            // Mouse wheels deliver one large quantised delta per notch which
+            // Chromium would scroll without interpolation, producing the
+            // jerky one-step-per-frame motion reported on Windows. The
+            // iframe handler already preventDefault'd the native scroll —
+            // here we replay the delta as a smooth animation instead.
+            if (!smoothScrollerRef.current) {
+              smoothScrollerRef.current = new SmoothScroller();
+            }
+            smoothScrollerRef.current.scrollBy(smoothScrollTargetRef.current, deltaY);
+          } else if (!viewSettings.scrolled && !isPanningView(viewRef.current, viewSettings)) {
+            // Paginated mode: wheel always flips a page (the iframe doesn't
+            // scroll because the container has overflow:hidden).
+            if (deltaY > 0) {
+              viewPagination(viewRef.current, viewSettings, 'down');
+            } else if (deltaY < 0) {
+              viewPagination(viewRef.current, viewSettings, 'up');
+            } else if (deltaX < 0) {
+              viewPagination(viewRef.current, viewSettings, 'left');
+            } else if (deltaX > 0) {
+              viewPagination(viewRef.current, viewSettings, 'right');
+            }
           }
+          // Otherwise (scrolled mode + trackpad/high-resolution input) the
+          // browser's native scroll already runs and is pixel-precise.
         } else if (msg.data.type === 'iframe-mouseup') {
           if (msg.data.button === 3) {
             viewRef.current?.history.back();
@@ -246,6 +272,12 @@ export const usePagination = (
       }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      smoothScrollerRef.current?.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;

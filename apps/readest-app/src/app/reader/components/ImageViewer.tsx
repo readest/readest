@@ -16,9 +16,8 @@ interface ImageViewerProps {
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 8;
-const ZOOM_SPEED = 0.1;
-const MOBILE_ZOOM_SPEED = 0.001;
-const ZOOM_BIAS = 1.05;
+const ZOOM_STEP = 1.2;
+const WHEEL_SENSITIVITY = 0.001;
 
 const ImageViewer: React.FC<ImageViewerProps> = ({
   src,
@@ -29,7 +28,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 }) => {
   const _ = useTranslation();
   const [scale, setScale] = useState(1);
-  const [zoomSpeed, setZoomSpeed] = useState(0.1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [showZoomLabel, setShowZoomLabel] = useState(true);
@@ -54,29 +52,23 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   };
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + ZOOM_SPEED, MAX_SCALE);
+    const newScale = Math.min(scale * ZOOM_STEP, MAX_SCALE);
     setScale(newScale);
-    setZoomSpeed(ZOOM_SPEED * ZOOM_BIAS * newScale);
     hideZoomLabelAfterDelay();
   };
 
   const handleZoomOut = () => {
-    const newScale = Math.max(scale - ZOOM_SPEED, MIN_SCALE);
+    const newScale = Math.max(scale / ZOOM_STEP, MIN_SCALE);
     if (newScale <= 1) {
       setPosition({ x: 0, y: 0 });
-      setScale(newScale);
-      setZoomSpeed(ZOOM_SPEED);
-    } else {
-      setScale(newScale);
-      setZoomSpeed(ZOOM_SPEED * ZOOM_BIAS * newScale);
     }
+    setScale(newScale);
     hideZoomLabelAfterDelay();
   };
 
   const handleResetZoom = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
-    setZoomSpeed(ZOOM_SPEED);
     hideZoomLabelAfterDelay();
   };
 
@@ -169,14 +161,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-    const newScale = Math.min(Math.max(scale + delta, MIN_SCALE), MAX_SCALE);
-    const newZoom = ZOOM_SPEED * ZOOM_BIAS * newScale;
+    const delta = e.deltaY;
+    const newScale = Math.min(
+      Math.max(scale * Math.exp(-delta * WHEEL_SENSITIVITY), MIN_SCALE),
+      MAX_SCALE,
+    );
 
     if (newScale <= 1) {
       setPosition({ x: 0, y: 0 });
       setScale(newScale);
-      setZoomSpeed(ZOOM_SPEED);
       hideZoomLabelAfterDelay();
       return;
     }
@@ -190,7 +183,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     });
 
     setScale(newScale);
-    setZoomSpeed(newZoom);
     hideZoomLabelAfterDelay();
   };
 
@@ -246,6 +238,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         touch1.clientX - touch2.clientX,
         touch1.clientY - touch2.clientY,
       );
+      hideZoomLabelAfterDelay();
     }
   };
 
@@ -281,12 +274,11 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
       requestAnimationFrame(() => {
         const newScale = Math.min(Math.max(scale * distanceChange, MIN_SCALE), MAX_SCALE);
-        const newZoom = MOBILE_ZOOM_SPEED * ZOOM_BIAS * distanceChange;
 
         if (newScale <= 1) {
           setPosition({ x: 0, y: 0 });
           setScale(newScale);
-          setZoomSpeed(ZOOM_SPEED);
+          hideZoomLabelAfterDelay();
           return;
         }
 
@@ -299,9 +291,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         });
 
         setScale(newScale);
-        setZoomSpeed(newZoom);
 
         lastTouchDistance.current = currentDistance;
+        hideZoomLabelAfterDelay();
       });
     }
   };
@@ -324,7 +316,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const handleReset = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
-    setZoomSpeed(ZOOM_SPEED);
     hideZoomLabelAfterDelay();
   };
 
