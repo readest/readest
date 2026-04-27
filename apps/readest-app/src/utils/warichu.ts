@@ -337,7 +337,6 @@ function buildNodes(
       l2.textContent = t2 || '\u200B';
     }
     chunk.appendChild(l2);
-    chunk.appendChild(l2);
 
     nodes.push(chunk);
   }
@@ -474,35 +473,38 @@ function getEnv(doc: Document): LayoutEnv | null {
 
 /**
  * Slice an HTML string by visible character positions [start, end).
- * Tags are preserved and properly opened/closed.
+ * Tags are preserved and properly opened/closed. Tags that were already open
+ * before `start` are re-emitted at the beginning of the slice so the result
+ * stays well-formed. HTML entities (e.g. `&amp;`) are treated as one visible
+ * character.
  */
-function sliceHtml(html: string, start: number, end: number): string {
+export function sliceHtml(html: string, start: number, end: number): string {
   let visibleIdx = 0;
   let i = 0;
   let result = '';
   const openTags: string[] = [];
+  let entered = false;
+
+  const enterSlice = () => {
+    if (entered) return;
+    entered = true;
+    for (const t of openTags) result += `<${t}>`;
+  };
 
   while (i < html.length && visibleIdx < end) {
     if (html[i] === '<') {
       const tagEnd = html.indexOf('>', i);
       if (tagEnd === -1) break;
       const tag = html.slice(i, tagEnd + 1);
-      // Track open/close tags for proper nesting
-      if (visibleIdx >= start) {
-        result += tag;
-      }
       const isClosing = tag.startsWith('</');
       const isSelfClosing = tag.endsWith('/>');
+      if (visibleIdx >= start) {
+        enterSlice();
+        result += tag;
+      }
       if (!isClosing && !isSelfClosing) {
         const tagName = tag.match(/^<(\w+)/)?.[1] || '';
-        if (tagName) {
-          if (visibleIdx >= start) {
-            openTags.push(tagName);
-          } else {
-            // Tag opened before our slice — we need to open it at the start
-            openTags.push(tagName);
-          }
-        }
+        if (tagName) openTags.push(tagName);
       } else if (isClosing) {
         const tagName = tag.match(/^<\/(\w+)/)?.[1] || '';
         const lastOpen = openTags.lastIndexOf(tagName);
@@ -510,11 +512,13 @@ function sliceHtml(html: string, start: number, end: number): string {
       }
       i = tagEnd + 1;
     } else {
+      const charLen = entityLengthAt(html, i);
       if (visibleIdx >= start && visibleIdx < end) {
-        result += html[i];
+        enterSlice();
+        result += html.slice(i, i + charLen);
       }
       visibleIdx++;
-      i++;
+      i += charLen;
     }
   }
 
@@ -524,6 +528,19 @@ function sliceHtml(html: string, start: number, end: number): string {
   }
 
   return result;
+}
+
+/**
+ * Length of the visible character starting at `i` — 1 for normal chars,
+ * or the entity length (e.g. 5 for `&amp;`) when an entity starts here.
+ */
+function entityLengthAt(html: string, i: number): number {
+  if (html[i] !== '&') return 1;
+  const semi = html.indexOf(';', i + 1);
+  if (semi === -1 || semi - i >= 10) return 1;
+  // Validate entity body to avoid swallowing arbitrary `&...;` text
+  const body = html.slice(i + 1, semi);
+  return /^#?[a-zA-Z0-9]+$/.test(body) ? semi - i + 1 : 1;
 }
 
 /**
@@ -540,8 +557,10 @@ function sliceHtmlRelative(lineHtml: string, lineText: string, start: number, en
 
 /**
  * Remove the first visible (non-tag) character from an HTML string.
+ * HTML entities (e.g. `&amp;`) are treated as one visible character and
+ * removed in their entirety.
  */
-function removeFirstVisibleChar(html: string): string {
+export function removeFirstVisibleChar(html: string): string {
   let i = 0;
   while (i < html.length) {
     if (html[i] === '<') {
@@ -549,8 +568,9 @@ function removeFirstVisibleChar(html: string): string {
       if (end === -1) break;
       i = end + 1;
     } else {
-      // Found first visible char — remove it
-      return html.slice(0, i) + html.slice(i + 1);
+      // Found first visible char — remove it (full entity if applicable)
+      const charLen = entityLengthAt(html, i);
+      return html.slice(0, i) + html.slice(i + charLen);
     }
   }
   return html;
@@ -558,14 +578,26 @@ function removeFirstVisibleChar(html: string): string {
 
 /**
  * Remove the last visible (non-tag) character from an HTML string.
+ * HTML entities (e.g. `&amp;`) are treated as one visible character and
+ * removed in their entirety.
  */
-function removeLastVisibleChar(html: string): string {
+export function removeLastVisibleChar(html: string): string {
   let i = html.length - 1;
   while (i >= 0) {
     if (html[i] === '>') {
       const start = html.lastIndexOf('<', i);
       if (start === -1) break;
       i = start - 1;
+    } else if (html[i] === ';') {
+      // Possible entity end — look back for `&` and validate the body.
+      const amp = html.lastIndexOf('&', i);
+      if (amp !== -1 && i - amp < 10) {
+        const body = html.slice(amp + 1, i);
+        if (/^#?[a-zA-Z0-9]+$/.test(body)) {
+          return html.slice(0, amp) + html.slice(i + 1);
+        }
+      }
+      return html.slice(0, i) + html.slice(i + 1);
     } else {
       // Found last visible char — remove it
       return html.slice(0, i) + html.slice(i + 1);
