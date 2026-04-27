@@ -181,13 +181,13 @@ const ProfilePage = () => {
     try {
       const purchases = await restoreIAPPurchases();
       if (purchases.length > 0) {
-        const restoredPurchases = purchases
+        const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
-        const purchase = restoredPurchases[0];
+        const purchase = restoredSubscriptions[0];
 
         if (!purchase) {
-          throw new Error('No purchases found in the array');
+          throw new Error('No subscription found in restored purchases');
         }
         router.push(getIAPSubscriptionSuccessUrl(purchase));
       } else {
