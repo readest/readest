@@ -12,11 +12,11 @@ vi.mock('@tauri-apps/api/window', () => ({
 
 vi.mock('@tauri-apps/api/webviewWindow', () => {
   const mockOnce = vi.fn();
-  return {
-    WebviewWindow: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-      this['once'] = mockOnce;
-    }),
-  };
+  const ctor = vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    this['once'] = mockOnce;
+  }) as unknown as { getByLabel: ReturnType<typeof vi.fn> };
+  ctor.getByLabel = vi.fn();
+  return { WebviewWindow: ctor };
 });
 
 vi.mock('@/services/environment', () => ({
@@ -41,7 +41,10 @@ import {
   redirectToLibrary,
   showReaderWindow,
   showLibraryWindow,
+  ensureMainLibraryWindow,
 } from '@/utils/nav';
+
+const WebviewWindowCtor = WebviewWindow as unknown as { getByLabel: ReturnType<typeof vi.fn> };
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function mockRouter() {
@@ -346,5 +349,35 @@ describe('showLibraryWindow', () => {
     expect(url).toContain('/library?');
     expect(url).toContain('file=file1.epub');
     expect(url).toContain('file=file2.epub');
+  });
+});
+
+describe('ensureMainLibraryWindow', () => {
+  test('shows and focuses the existing main window when present', async () => {
+    const main = {
+      show: vi.fn().mockResolvedValue(undefined),
+      unminimize: vi.fn().mockResolvedValue(undefined),
+      setFocus: vi.fn().mockResolvedValue(undefined),
+    };
+    WebviewWindowCtor.getByLabel.mockResolvedValue(main);
+
+    await ensureMainLibraryWindow(makeAppService() as never);
+
+    expect(WebviewWindowCtor.getByLabel).toHaveBeenCalledWith('main');
+    expect(main.show).toHaveBeenCalled();
+    expect(main.unminimize).toHaveBeenCalled();
+    expect(main.setFocus).toHaveBeenCalled();
+    expect(WebviewWindow).not.toHaveBeenCalled();
+  });
+
+  test('creates a new main-labelled window pointing at /library when missing', async () => {
+    WebviewWindowCtor.getByLabel.mockResolvedValue(null);
+
+    await ensureMainLibraryWindow(makeAppService() as never);
+
+    expect(WebviewWindow).toHaveBeenCalledTimes(1);
+    const [label, options] = vi.mocked(WebviewWindow).mock.calls[0]!;
+    expect(label).toBe('main');
+    expect((options as { url: string }).url).toBe('/library');
   });
 });

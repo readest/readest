@@ -53,6 +53,39 @@ export const showLibraryWindow = (appService: AppService, filenames: string[]) =
   createReaderWindow(appService, url);
 };
 
+// Bring the main library window back when a reader window asks to "go to library".
+// If main was hidden (macOS close-to-hide) we re-show it. If it was destroyed
+// (Windows/Linux default close), we recreate a window with the same 'main'
+// label so the existing emitTo('main', 'close-reader-window', ...) wiring
+// continues to work.
+export const ensureMainLibraryWindow = async (appService: AppService) => {
+  const existing = await WebviewWindow.getByLabel('main');
+  if (existing) {
+    await existing.show();
+    await existing.unminimize();
+    await existing.setFocus();
+    return;
+  }
+  const win = new WebviewWindow('main', {
+    url: '/library',
+    width: 800,
+    height: 600,
+    center: true,
+    resizable: true,
+    title: appService.isMacOSApp ? '' : 'Readest',
+    decorations: !!appService.isMacOSApp,
+    transparent: !appService.isMacOSApp,
+    shadow: appService.isMacOSApp ? undefined : true,
+    titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+    scrollBarStyle: (appService.osPlatform === 'windows'
+      ? 'fluentOverlay'
+      : 'default') as unknown as ScrollBarStyle,
+  });
+  win.once('tauri://error', (e) => {
+    console.error('error recreating main window', e);
+  });
+};
+
 export const navigateToReader = (
   router: ReturnType<typeof useRouter>,
   bookIds: string[],
