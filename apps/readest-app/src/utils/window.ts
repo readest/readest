@@ -51,6 +51,13 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   const currentWindow = getCurrentWindow();
   return await currentWindow.onCloseRequested(async (event) => {
     event.preventDefault();
+    // On macOS, the main window's close is intercepted by the Rust backend
+    // to hide the window (close-to-hide), keeping the app in the dock. Skip
+    // the in-app cleanup — the user is just minimizing the window and
+    // expects the active book to still be there when the window reopens.
+    if (currentWindow.label === 'main' && (await osType()) === 'macos') {
+      return;
+    }
     await callback();
     if (currentWindow.label.startsWith('reader')) {
       await emitTo('main', 'close-reader-window', { label: currentWindow.label });

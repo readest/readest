@@ -1,7 +1,7 @@
 import { redirect, useRouter } from 'next/navigation';
 import { getCurrentWindow, ScrollBarStyle } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { isPWA, isWebAppPlatform } from '@/services/environment';
+import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
 
@@ -126,6 +126,27 @@ export const navigateToLibrary = (
   }
 
   router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
+};
+
+// Recovery action when a reader has nothing to display — e.g. all books were
+// closed, or a book failed to load in a freshly-opened reader window.
+// In a dedicated reader window we close the window itself, ensuring the main
+// library window is visible first; routing the reader window to /library
+// instead would leave a leftover window the user has to close manually.
+// In the main window or on web, fall back to /library navigation.
+export const closeReaderWindowOrGoToLibrary = async (
+  appService: AppService | null,
+  router: ReturnType<typeof useRouter>,
+) => {
+  if (isTauriAppPlatform() && appService?.hasWindow) {
+    const currentWindow = getCurrentWindow();
+    if (currentWindow.label !== 'main') {
+      await ensureMainLibraryWindow(appService);
+      await currentWindow.close();
+      return;
+    }
+  }
+  navigateToLibrary(router, '', undefined, true);
 };
 
 export const redirectToLibrary = () => {
