@@ -317,6 +317,7 @@ export interface MetadataHashInfo {
 }
 
 export const getMetadataHashInfo = (metadata: BookMetadata): MetadataHashInfo | undefined => {
+  if (!metadata) return;
   try {
     const title = getTitleForHash(metadata.title);
     const authors = getAuthorsList(metadata.author);
