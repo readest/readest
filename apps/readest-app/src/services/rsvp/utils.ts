@@ -1,6 +1,7 @@
 /**
  * Utility functions for CJK (Chinese, Japanese, Korean) text processing
  */
+import { cutZh, isJiebaReady } from '@/utils/jieba';
 
 /**
  * Check if a character is a CJK character
@@ -72,9 +73,20 @@ export function getSegmenterLocale(text: string): string | null {
 }
 
 /**
- * Segment CJK text into words using Intl.Segmenter with punctuation attachment
+ * Segment CJK text into words using Intl.Segmenter with punctuation attachment.
+ * If `language` starts with `zh` and jieba-wasm has been initialized
+ * (see `initJieba` in @/utils/jieba), use it for higher-quality Chinese
+ * segmentation.
  */
-export function segmentCJKText(text: string): string[] {
+export function segmentCJKText(text: string, language?: string): string[] {
+  if (language?.toLowerCase().startsWith('zh') && isJiebaReady()) {
+    try {
+      return segmentWithJieba(text);
+    } catch (error) {
+      console.warn('jieba-wasm failed, falling back to Intl.Segmenter:', error);
+    }
+  }
+
   // Try to use Intl.Segmenter for semantic word segmentation
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     try {
@@ -194,9 +206,29 @@ export function getHyphenParts(word: string): string[] {
 }
 
 /**
+ * Segment Chinese text using jieba. Whitespace and standalone punctuation
+ * runs are attached to the previous token so that downstream pause logic
+ * still sees punctuation at word boundaries.
+ */
+function segmentWithJieba(text: string): string[] {
+  const tokens = cutZh(text);
+  const words: string[] = [];
+  for (const token of tokens) {
+    if (!token) continue;
+    if (token.trim() === '') continue;
+    if (isCJKPunctuation(token) && words.length > 0) {
+      words[words.length - 1] = words[words.length - 1] + token;
+      continue;
+    }
+    words.push(token);
+  }
+  return words;
+}
+
+/**
  * Split text into words, handling both CJK and non-CJK text
  */
-export function splitTextIntoWords(text: string): string[] {
+export function splitTextIntoWords(text: string, language?: string): string[] {
   const hasCJK = containsCJK(text);
 
   if (!hasCJK) {
@@ -238,7 +270,7 @@ export function splitTextIntoWords(text: string): string[] {
       if (currentSegment) {
         if (inCJKSequence) {
           // Segment the CJK text (with any trailing punctuation)
-          words.push(...segmentCJKText(currentSegment));
+          words.push(...segmentCJKText(currentSegment, language));
         } else {
           words.push(currentSegment);
         }
@@ -249,7 +281,7 @@ export function splitTextIntoWords(text: string): string[] {
       // Non-CJK, non-punctuation, non-whitespace character
       if (inCJKSequence && currentSegment) {
         // Segment the CJK text before continuing with non-CJK
-        words.push(...segmentCJKText(currentSegment));
+        words.push(...segmentCJKText(currentSegment, language));
         currentSegment = '';
       }
       currentSegment += char;
@@ -259,7 +291,7 @@ export function splitTextIntoWords(text: string): string[] {
 
   if (currentSegment) {
     if (inCJKSequence) {
-      words.push(...segmentCJKText(currentSegment));
+      words.push(...segmentCJKText(currentSegment, language));
     } else {
       words.push(currentSegment);
     }

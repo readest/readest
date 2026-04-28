@@ -242,7 +242,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const wordAfter = currentWord ? currentWord.text.substring(currentWord.orpIndex + 1) : '';
   const isCJKWord = currentWord ? containsCJK(currentWord.text) : false;
   const wordLetterSpacing = undefined;
-  const wordSideOffset = isCJKWord ? '0.5em' : '0.3em';
+  const wordSideOffset = isCJKWord ? '0.45em' : '0.3em';
 
   // Time remaining calculation
   const getTimeRemaining = useCallback((): string | null => {

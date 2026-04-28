@@ -279,6 +279,9 @@ importers:
       isomorphic-ws:
         specifier: ^5.0.0
         version: 5.0.0(ws@8.19.0)
+      jieba-wasm:
+        specifier: ^2.4.0
+        version: 2.4.0
       js-md5:
         specifier: ^0.8.3
         version: 0.8.3
@@ -6030,6 +6033,9 @@ packages:
   jest-worker@27.5.1:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
+
+  jieba-wasm@2.4.0:
+    resolution: {integrity: sha512-ZvQdS+FGifrFXZIXSgOyOgEz+1wdy1P4vSvwe37FVtku9ycSdHTZbHqF5i9tMN1JucoAmeiLBeI6/YaqcGD+KA==}
 
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
@@ -15162,6 +15168,8 @@ snapshots:
       '@types/node': 22.19.17
       merge-stream: 2.0.0
       supports-color: 8.1.1
+
+  jieba-wasm@2.4.0: {}
 
   jiti@1.21.7: {}
 

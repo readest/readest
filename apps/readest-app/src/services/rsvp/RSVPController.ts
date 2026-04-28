@@ -20,6 +20,7 @@ export class RSVPController extends EventTarget {
   private view: FoliateView;
   private bookId: string; // Book hash without session suffix, for persistent storage
   private currentCfi: string | null = null;
+  private primaryLanguage: string | undefined;
 
   private state: RsvpState = {
     active: false,
@@ -39,13 +40,21 @@ export class RSVPController extends EventTarget {
   private countdown: number | null = null;
   private cachedWords: { docIndex: number; doc: Document; words: RsvpWord[] } | null = null;
 
-  constructor(view: FoliateView, bookKey: string) {
+  constructor(view: FoliateView, bookKey: string, primaryLanguage?: string) {
     super();
     this.view = view;
     // Extract book ID (hash) from bookKey format: "{hash}-{sessionId}"
     // Use only the hash for persistent position storage across sessions
     this.bookId = bookKey.split('-')[0] || bookKey;
+    this.primaryLanguage = primaryLanguage;
     this.loadSettings();
+  }
+
+  setPrimaryLanguage(lang: string | undefined): void {
+    if (this.primaryLanguage === lang) return;
+    this.primaryLanguage = lang;
+    // Language changes invalidate the segmentation result.
+    this.cachedWords = null;
   }
 
   private loadSettings(): void {
@@ -738,7 +747,7 @@ export class RSVPController extends EventTarget {
     const walk = (node: Node): void => {
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent || '';
-        const nodeWords = splitTextIntoWords(text);
+        const nodeWords = splitTextIntoWords(text, this.primaryLanguage);
 
         let offset = 0;
         for (const word of nodeWords) {
