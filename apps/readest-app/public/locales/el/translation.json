@@ -1214,5 +1214,7 @@
   "Metadata Hash": "Hash Μεταδεδομένων",
   "Meta Hash": "Meta Hash",
   "Computed Hash": "Υπολογισμένο Hash",
-  "Identifiers": "Αναγνωριστικά"
+  "Identifiers": "Αναγνωριστικά",
+  "Read (Stream)": "Ανάγνωση (Ροή)",
+  "Failed to start stream": "Αποτυχία έναρξης ροής"
 }

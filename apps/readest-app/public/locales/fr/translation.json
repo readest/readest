@@ -1231,5 +1231,7 @@
   "Metadata Hash": "Hachage des métadonnées",
   "Meta Hash": "Hachage Meta",
   "Computed Hash": "Hachage calculé",
-  "Identifiers": "Identifiants"
+  "Identifiers": "Identifiants",
+  "Read (Stream)": "Lire (Flux)",
+  "Failed to start stream": "Échec du démarrage du flux"
 }

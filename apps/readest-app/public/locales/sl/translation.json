@@ -1248,5 +1248,7 @@
   "Metadata Hash": "Hash metapodatkov",
   "Meta Hash": "Meta hash",
   "Computed Hash": "Izračunani hash",
-  "Identifiers": "Identifikatorji"
+  "Identifiers": "Identifikatorji",
+  "Read (Stream)": "Beri (pretok)",
+  "Failed to start stream": "Pretoka ni bilo mogoče zagnati"
 }

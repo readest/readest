@@ -1214,5 +1214,7 @@
   "Metadata Hash": "Metaadat-hash",
   "Meta Hash": "Meta-hash",
   "Computed Hash": "Számított hash",
-  "Identifiers": "Azonosítók"
+  "Identifiers": "Azonosítók",
+  "Read (Stream)": "Olvasás (Stream)",
+  "Failed to start stream": "Nem sikerült elindítani a streamet"
 }

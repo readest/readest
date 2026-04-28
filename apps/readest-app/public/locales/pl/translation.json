@@ -1248,5 +1248,7 @@
   "Metadata Hash": "Skrót metadanych",
   "Meta Hash": "Meta-skrót",
   "Computed Hash": "Obliczony skrót",
-  "Identifiers": "Identyfikatory"
+  "Identifiers": "Identyfikatory",
+  "Read (Stream)": "Czytaj (Strumień)",
+  "Failed to start stream": "Nie udało się uruchomić strumienia"
 }

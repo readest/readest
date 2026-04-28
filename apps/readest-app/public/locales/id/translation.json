@@ -1197,5 +1197,7 @@
   "Metadata Hash": "Hash Metadata",
   "Meta Hash": "Meta Hash",
   "Computed Hash": "Hash Terhitung",
-  "Identifiers": "Pengenal"
+  "Identifiers": "Pengenal",
+  "Read (Stream)": "Baca (Stream)",
+  "Failed to start stream": "Gagal memulai stream"
 }

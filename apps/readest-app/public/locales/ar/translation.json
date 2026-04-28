@@ -1282,5 +1282,7 @@
   "Metadata Hash": "تجزئة البيانات الوصفية",
   "Meta Hash": "تجزئة البيانات الوصفية",
   "Computed Hash": "التجزئة المحسوبة",
-  "Identifiers": "المعرفات"
+  "Identifiers": "المعرفات",
+  "Read (Stream)": "قراءة (بث)",
+  "Failed to start stream": "فشل بدء البث"
 }

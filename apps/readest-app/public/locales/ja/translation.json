@@ -1197,5 +1197,7 @@
   "Metadata Hash": "メタデータハッシュ",
   "Meta Hash": "メタハッシュ",
   "Computed Hash": "計算されたハッシュ",
-  "Identifiers": "識別子"
+  "Identifiers": "識別子",
+  "Read (Stream)": "読む（ストリーム）",
+  "Failed to start stream": "ストリームの開始に失敗しました"
 }

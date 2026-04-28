@@ -1214,5 +1214,7 @@
   "Metadata Hash": "Metadaten-Hash",
   "Meta Hash": "Meta-Hash",
   "Computed Hash": "Berechneter Hash",
-  "Identifiers": "Bezeichner"
+  "Identifiers": "Bezeichner",
+  "Read (Stream)": "Lesen (Stream)",
+  "Failed to start stream": "Stream konnte nicht gestartet werden"
 }

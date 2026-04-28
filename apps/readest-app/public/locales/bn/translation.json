@@ -1214,5 +1214,7 @@
   "Metadata Hash": "মেটাডেটা হ্যাশ",
   "Meta Hash": "মেটা হ্যাশ",
   "Computed Hash": "গণিত হ্যাশ",
-  "Identifiers": "শনাক্তকারী"
+  "Identifiers": "শনাক্তকারী",
+  "Read (Stream)": "পড়ুন (স্ট্রিম)",
+  "Failed to start stream": "স্ট্রিম শুরু করতে ব্যর্থ"
 }

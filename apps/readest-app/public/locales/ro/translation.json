@@ -1231,5 +1231,7 @@
   "Metadata Hash": "Hash metadate",
   "Meta Hash": "Meta hash",
   "Computed Hash": "Hash calculat",
-  "Identifiers": "Identificatori"
+  "Identifiers": "Identificatori",
+  "Read (Stream)": "Citește (Flux)",
+  "Failed to start stream": "Eroare la pornirea fluxului"
 }

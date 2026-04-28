@@ -1214,5 +1214,7 @@
   "Metadata Hash": "मेटाडेटा हैश",
   "Meta Hash": "मेटा हैश",
   "Computed Hash": "परिकलित हैश",
-  "Identifiers": "पहचानकर्ता"
+  "Identifiers": "पहचानकर्ता",
+  "Read (Stream)": "पढ़ें (स्ट्रीम)",
+  "Failed to start stream": "स्ट्रीम प्रारंभ करने में विफल"
 }

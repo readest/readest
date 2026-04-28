@@ -1214,5 +1214,7 @@
   "Metadata Hash": "Metadata-hash",
   "Meta Hash": "Meta-hash",
   "Computed Hash": "Beräknat hash",
-  "Identifiers": "Identifierare"
+  "Identifiers": "Identifierare",
+  "Read (Stream)": "Läs (ström)",
+  "Failed to start stream": "Det gick inte att starta strömmen"
 }

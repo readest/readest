@@ -1214,5 +1214,7 @@
   "Metadata Hash": "هش متادیتا",
   "Meta Hash": "متا هش",
   "Computed Hash": "هش محاسبه‌شده",
-  "Identifiers": "شناسه‌ها"
+  "Identifiers": "شناسه‌ها",
+  "Read (Stream)": "خواندن (پخش)",
+  "Failed to start stream": "شروع پخش ناموفق بود"
 }

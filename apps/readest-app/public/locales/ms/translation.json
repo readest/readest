@@ -1197,5 +1197,7 @@
   "Metadata Hash": "Cincang Metadata",
   "Meta Hash": "Cincang Meta",
   "Computed Hash": "Cincang Dikira",
-  "Identifiers": "Pengenal"
+  "Identifiers": "Pengenal",
+  "Read (Stream)": "Baca (Strim)",
+  "Failed to start stream": "Gagal memulakan strim"
 }

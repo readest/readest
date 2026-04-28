@@ -1248,5 +1248,7 @@
   "Metadata Hash": "Хеш метаданих",
   "Meta Hash": "Мета-хеш",
   "Computed Hash": "Обчислений хеш",
-  "Identifiers": "Ідентифікатори"
+  "Identifiers": "Ідентифікатори",
+  "Read (Stream)": "Читати (Потік)",
+  "Failed to start stream": "Не вдалося запустити потік"
 }

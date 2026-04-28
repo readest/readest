@@ -1197,5 +1197,7 @@
   "Metadata Hash": "메타데이터 해시",
   "Meta Hash": "메타 해시",
   "Computed Hash": "계산된 해시",
-  "Identifiers": "식별자"
+  "Identifiers": "식별자",
+  "Read (Stream)": "읽기 (스트림)",
+  "Failed to start stream": "스트림을 시작할 수 없습니다"
 }

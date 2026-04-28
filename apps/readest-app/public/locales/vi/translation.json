@@ -1197,5 +1197,7 @@
   "Metadata Hash": "Hash Siêu Dữ Liệu",
   "Meta Hash": "Meta Hash",
   "Computed Hash": "Hash Đã Tính",
-  "Identifiers": "Định Danh"
+  "Identifiers": "Định Danh",
+  "Read (Stream)": "Đọc (Stream)",
+  "Failed to start stream": "Không thể bắt đầu stream"
 }

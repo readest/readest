@@ -1197,5 +1197,7 @@
   "Metadata Hash": "དཔྱད་གཞིའི་ཧེཤི",
   "Meta Hash": "དཔྱད་གཞིའི་ཧེཤི",
   "Computed Hash": "རྩིས་པའི་ཧེཤི",
-  "Identifiers": "ངོས་འཛིན་བྱེད་མཁན"
+  "Identifiers": "ངོས་འཛིན་བྱེད་མཁན",
+  "Read (Stream)": "ཀློག་པ། (རྒྱུན་སྤེལ།)",
+  "Failed to start stream": "རྒྱུན་སྤེལ་འགོ་འཛུགས་མ་ཐུབ།"
 }

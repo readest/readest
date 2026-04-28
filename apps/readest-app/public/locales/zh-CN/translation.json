@@ -1197,5 +1197,7 @@
   "Metadata Hash": "元数据哈希",
   "Meta Hash": "元哈希",
   "Computed Hash": "计算的哈希",
-  "Identifiers": "标识符"
+  "Identifiers": "标识符",
+  "Read (Stream)": "阅读（流式）",
+  "Failed to start stream": "启动流式传输失败"
 }

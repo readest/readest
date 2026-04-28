@@ -1214,5 +1214,7 @@
   "Metadata Hash": "Üst Veri Hash'i",
   "Meta Hash": "Meta Hash",
   "Computed Hash": "Hesaplanan Hash",
-  "Identifiers": "Tanımlayıcılar"
+  "Identifiers": "Tanımlayıcılar",
+  "Read (Stream)": "Oku (Akış)",
+  "Failed to start stream": "Akış başlatılamadı"
 }

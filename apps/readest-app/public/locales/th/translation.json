@@ -1197,5 +1197,7 @@
   "Metadata Hash": "แฮชเมตาดาต้า",
   "Meta Hash": "แฮชเมตา",
   "Computed Hash": "แฮชที่คำนวณ",
-  "Identifiers": "ตัวระบุ"
+  "Identifiers": "ตัวระบุ",
+  "Read (Stream)": "อ่าน (สตรีม)",
+  "Failed to start stream": "ไม่สามารถเริ่มสตรีมได้"
 }
