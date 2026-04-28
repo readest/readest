@@ -7,6 +7,9 @@ export const useLibrary = () => {
   const { envConfig } = useEnv();
   const { setLibrary, libraryLoaded: storeLibraryLoaded } = useLibraryStore();
   const { setSettings } = useSettingsStore();
+  // Skip the disk reload when another mount has already populated the store —
+  // re-reading would clobber transient in-memory entries (e.g. OPDS-PSE
+  // streamed books) that aren't persisted to disk.
   const [libraryLoaded, setLibraryLoaded] = useState(storeLibraryLoaded);
   const isInitiating = useRef(false);
 

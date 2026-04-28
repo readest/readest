@@ -20,6 +20,7 @@ import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
+import { navigateToReader } from '@/utils/nav';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
 import {
@@ -38,6 +39,7 @@ import {
 } from './utils/opdsReq';
 import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
+import { buildPseStreamFileName } from '@/services/opds/pseStream';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
@@ -501,34 +503,12 @@ export default function BrowserPage() {
       if (!appService || !libraryLoaded) return;
       try {
         const url = resolveURL(href, state.baseURL);
-        const username = usernameRef.current || '';
-        const password = passwordRef.current || '';
-        const customHeaders = customHeadersRef.current;
-        const useProxy = needsProxy(url);
-        let streamUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
-
-        if (username || password) {
-          const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
-          if (authHeader) {
-            streamUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
-          }
-        }
-
-        const streamData = {
-          template: streamUrl,
-          count,
-          title,
-          author,
-        };
-
-        const virtualFile = new File([], 'pse://' + encodeURIComponent(JSON.stringify(streamData)));
+        const psePath = buildPseStreamFileName({ url, catalogId, count, title, author });
         const { library, setLibrary } = useLibraryStore.getState();
-        const book = await appService.importBook(virtualFile, library, { transient: true });
+        const book = await appService.importBook(psePath, library, { transient: true });
         if (book) {
           setLibrary(library);
-          import('@/utils/nav').then(({ navigateToReader }) => {
-            navigateToReader(router, [book.hash]);
-          });
+          navigateToReader(router, [book.hash]);
         }
       } catch (e) {
         console.error('Stream error:', e);
@@ -538,7 +518,7 @@ export default function BrowserPage() {
         });
       }
     },
-    [state.baseURL, appService, libraryLoaded, router, _],
+    [state.baseURL, catalogId, appService, libraryLoaded, router, _],
   );
 
   const handleGenerateCachedImageUrl = useCallback(

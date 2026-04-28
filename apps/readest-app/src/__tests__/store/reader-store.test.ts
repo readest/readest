@@ -55,6 +55,11 @@ vi.mock('@/services/constants', () => ({
 vi.mock('@/libs/document', () => ({
   DocumentLoader: vi.fn(),
 }));
+vi.mock('@/services/opds/pseStream', () => ({
+  isPseStreamFileName: () => false,
+  openPseStreamBook: vi.fn(),
+  parsePseStreamFileName: vi.fn(),
+}));
 
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';

@@ -207,45 +207,6 @@ export class DocumentLoader {
   public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
     let book = null;
     let format: BookFormat = 'EPUB';
-
-    if (this.file.name.startsWith('pse://')) {
-      const str = decodeURIComponent(this.file.name.replace('pse://', ''));
-      const data = JSON.parse(str);
-      const entries = Array.from({ length: data.count }).map((_, i) => ({
-        filename: `${i.toString().padStart(4, '0')}.jpg`,
-        directory: false,
-        size: 0,
-      }));
-      const loader = {
-        entries,
-        loadText: async () => null,
-        loadBlob: async (name: string) => {
-          const i = parseInt(name.split('.')[0] || '0', 10);
-          let url = data.template.replace(/%7BpageNumber%7D|\{pageNumber\}/gi, i.toString());
-          url = url.replace(/%7BmaxWidth%7D|\{maxWidth\}/gi, '2000');
-          const res = await fetch(url);
-          if (!res.ok) throw new Error(`Failed to fetch page ${i}: ${res.statusText}`);
-          return res.blob();
-        },
-        getSize: () => 0,
-        getComment: async () => null,
-      };
-      const { makeComicBook } = await import('foliate-js/comic-book.js');
-      const rawComicBook = await makeComicBook(loader, this.file);
-
-      book = {
-        ...rawComicBook,
-        dir: 'auto',
-        metadata: {
-          ...(rawComicBook.metadata || {}),
-          title: data.title,
-          author: data.author,
-        } as BookMetadata,
-      } as BookDoc;
-
-      return { book, format: 'CBZ' };
-    }
-
     if (!this.file.size) {
       throw new Error('File is empty');
     }

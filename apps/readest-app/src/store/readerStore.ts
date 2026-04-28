@@ -13,6 +13,11 @@ import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { DocumentLoader, TOCItem } from '@/libs/document';
+import {
+  isPseStreamFileName,
+  openPseStreamBook,
+  parsePseStreamFileName,
+} from '@/services/opds/pseStream';
 import { BOOK_NAV_VERSION, computeBookNav, hydrateBookNav, updateToc } from '@/services/nav';
 import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
@@ -147,19 +152,30 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     try {
       const appService = await envConfig.getAppService();
       const { settings } = useSettingsStore.getState();
-      const { getBookByHash } = useLibraryStore.getState();
+      const { getBookByHash, library } = useLibraryStore.getState();
       const book = getBookByHash(id);
       if (!book) {
+        console.error(
+          `Book ${id} not found in library (size=${library.length}); likely the in-memory entry was dropped by a library reload.`,
+        );
         throw new Error('Book not found');
       }
+      const isPseStream = !!book.url && isPseStreamFileName(book.url);
       let bookDoc = bookData?.bookDoc;
-      let file = bookData?.file;
-      if (!bookDoc || !file || reload) {
-        const content = (await appService.loadBookContent(book)) as BookContent;
-        file = content.file;
+      let file: File | null = bookData?.file ?? null;
+      if (!bookDoc || (!isPseStream && !file) || reload) {
         console.log('Loading book', key);
-        const doc = await new DocumentLoader(file).open();
-        bookDoc = doc.book;
+        if (isPseStream) {
+          const data = parsePseStreamFileName(book.url!);
+          const doc = await openPseStreamBook(data);
+          bookDoc = doc.book;
+          file = null;
+        } else {
+          const content = (await appService.loadBookContent(book)) as BookContent;
+          file = content.file;
+          const doc = await new DocumentLoader(file).open();
+          bookDoc = doc.book;
+        }
       }
       const config = await appService.loadBookConfig(book, settings);
       // Import annotations from third-party readers on first open
@@ -201,7 +217,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         config.viewSettings?.sortedTOC ?? false,
         config.viewSettings?.convertChineseVariant ?? 'none',
       );
-      if (!bookDoc.metadata.title) {
+      if (!bookDoc.metadata.title && file) {
         bookDoc.metadata.title = getBaseFilename(file.name);
       }
       book.sourceTitle = formatTitle(bookDoc.metadata.title);
