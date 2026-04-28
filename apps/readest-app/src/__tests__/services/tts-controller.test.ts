@@ -473,6 +473,27 @@ describe('TTSController', () => {
       expect(controller.state).toBe('stopped');
     });
 
+    test('error preserves state for AbortError (DOMException-style)', () => {
+      // iOS audio.play() and AbortSignal-aware fetches reject with a DOMException
+      // whose name is 'AbortError'. Treating it as a real error desyncs the state
+      // machine: subsequent rate changes see state !== 'playing' and skip the
+      // stop+start cycle, and #speak's auto-forward gate fails.
+      controller.state = 'playing';
+      const abort = new Error('The operation was aborted.');
+      abort.name = 'AbortError';
+      controller.error(abort);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('error preserves state for our internal Aborted message', () => {
+      // EdgeTTSClient and NativeTTSClient resolve the inner promise with
+      // { code: 'error', message: 'Aborted' } on signal abort; if that bubbles
+      // through any catch path it must not flip state to 'stopped'.
+      controller.state = 'playing';
+      controller.error(new Error('Aborted'));
+      expect(controller.state).toBe('playing');
+    });
+
     test('play calls start when not playing', () => {
       controller.state = 'stopped';
       const startSpy = vi.spyOn(controller, 'start').mockResolvedValue();

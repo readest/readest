@@ -558,6 +558,16 @@ export class TTSController extends EventTarget {
   }
 
   error(e: unknown) {
+    // AbortError is expected during normal stop/restart cycles (rate change,
+    // forward/backward, voice change) — on iOS especially, the in-flight
+    // audio.play() promise rejects with AbortError after audio.src is reset,
+    // and that rejection can leak through one of the .catch chains. Letting it
+    // flip state to 'stopped' desyncs the state machine: handleSetRate's
+    // `state === 'playing'` check then falls through to a no-op, and #speak's
+    // auto-forward gate skips advancing to the next paragraph.
+    if (e instanceof Error && (e.name === 'AbortError' || e.message === 'Aborted')) {
+      return;
+    }
     console.error(e);
     this.state = 'stopped';
   }
