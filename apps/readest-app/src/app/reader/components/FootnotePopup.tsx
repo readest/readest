@@ -136,6 +136,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       const backButtonMargin = canGoBackRef.current ? 32 : 0;
       renderer.setAttribute('flow', 'scrolled');
       renderer.setAttribute('no-preload', '');
+      renderer.setAttribute('no-background', '');
       renderer.setAttribute('margin-top', `${viewSettings.vertical ? 0 : backButtonMargin}px`);
       renderer.setAttribute('margin-right', `${viewSettings.vertical ? backButtonMargin : 0}px`);
       renderer.setAttribute('margin-bottom', '0px');
