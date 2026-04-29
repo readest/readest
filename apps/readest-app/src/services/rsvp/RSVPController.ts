@@ -16,6 +16,9 @@ const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 const SPLIT_HYPHENS_KEY = 'readest_rsvp_split_hyphens';
 
+// Section-only CFI (no '!') sorts before any word CFI in that section.
+const stripCfiPath = (cfi: string): string => cfi.replace(/!.*\)$/, ')');
+
 export class RSVPController extends EventTarget {
   private view: FoliateView;
   private bookId: string; // Book hash without session suffix, for persistent storage
@@ -219,43 +222,26 @@ export class RSVPController extends EventTarget {
   }
 
   seedPosition(position: RsvpPosition, currentLocationCfi?: string | null): void {
-    const storageKey = `${POSITION_KEY_PREFIX}${this.bookId}`;
+    const key = `${POSITION_KEY_PREFIX}${this.bookId}`;
+    let final = position;
 
-    // buildRsvpExitConfigUpdate pins location = rsvpPosition.cfi at RSVP exit,
-    // so a synced pair pointing at different spine sections means stale/inconsistent
-    // state. Trust the location CFI (the user's actual reading position) and fall
-    // back to its section start — Resume then lands at word 0 of the synced chapter
-    // rather than at a wrong-chapter rsvpPosition or a leftover stale local entry.
+    // Cross-chapter mismatch means stale sync (exit pins them together);
+    // fall back to the start of the location's chapter.
     if (
       currentLocationCfi &&
       position.cfi &&
       !this.isSameSection(position.cfi, currentLocationCfi)
     ) {
-      console.warn(
-        '[RSVP] Synced rsvpPosition is in a different chapter than location; resetting resume to start of synced chapter',
-        { rsvpCfi: position.cfi, locationCfi: currentLocationCfi },
-      );
-      const fallback: RsvpPosition = {
-        cfi: RSVPController.deriveSectionStartCfi(currentLocationCfi),
-        wordText: '',
-      };
-      const serializedFallback = JSON.stringify(fallback);
-      if (localStorage.getItem(storageKey) === serializedFallback) return;
-      localStorage.setItem(storageKey, serializedFallback);
-      return;
+      console.warn('[RSVP] rsvpPosition chapter mismatch; resetting to start of synced chapter', {
+        rsvpCfi: position.cfi,
+        locationCfi: currentLocationCfi,
+      });
+      final = { cfi: stripCfiPath(currentLocationCfi), wordText: '' };
     }
 
-    const serialized = JSON.stringify(position);
-    if (localStorage.getItem(storageKey) === serialized) return;
-    localStorage.setItem(storageKey, serialized);
-  }
-
-  // Strip the in-document path from a content CFI (everything after '!') to
-  // produce a section-only CFI like `epubcfi(/6/8)`. Per foliate-js epubcfi
-  // compare semantics, this orders before any content CFI in the same section,
-  // so findWordIndexByCfi() resolves it to the first word of the chapter.
-  private static deriveSectionStartCfi(cfi: string): string {
-    return cfi.replace(/!.*\)$/, ')');
+    const serialized = JSON.stringify(final);
+    if (localStorage.getItem(key) === serialized) return;
+    localStorage.setItem(key, serialized);
   }
 
   getStoredPosition(): RsvpPosition | null {

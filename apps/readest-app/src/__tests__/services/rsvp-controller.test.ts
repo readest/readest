@@ -211,17 +211,13 @@ describe('RSVPController', () => {
     });
 
     test('falls back to start of synced chapter when rsvpPosition is in a different chapter than location', () => {
-      // buildRsvpExitConfigUpdate pins location = rsvpPosition.cfi at RSVP exit,
-      // so a cross-chapter mismatch between the synced pair means stale/inconsistent
-      // state. The location CFI is the trustworthy signal — fall back to its
-      // section start so Resume lands at word 0 of the chapter the user is in.
       const doc = makeDoc('hello world');
       const view = createMockView(0, [doc]);
       const controller = new RSVPController(view, 'test-book-abc123');
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const stalePosition = { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'stale' };
-      const currentLocation = 'epubcfi(/6/8!/4/2/1:0)'; // different spine section
+      const currentLocation = 'epubcfi(/6/8!/4/2/1:0)';
 
       controller.seedPosition(stalePosition, currentLocation);
 
@@ -245,7 +241,6 @@ describe('RSVPController', () => {
       const controller = new RSVPController(view, 'test-book-abc123');
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      // rsvpPosition (chapter 4), location (chapter 8), local stale (chapter 2) — all different.
       controller.seedPosition(
         { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'fresh' },
         'epubcfi(/6/8!/4/2/1:0)',
