@@ -1,6 +1,8 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { RSVPController } from '@/services/rsvp/RSVPController';
 import { FoliateView } from '@/types/view';
+
+const POSITION_KEY = 'readest_rsvp_pos_test';
 
 function makeTextNode(text: string): Text {
   return { nodeType: Node.TEXT_NODE, textContent: text } as unknown as Text;
@@ -157,6 +159,148 @@ describe('RSVPController', () => {
       expect(words[0]!.text).toBe('naïve');
       // Should be treated as a 5-letter word, ORP at index 1
       expect(words[0]!.orpIndex).toBe(1);
+    });
+  });
+
+  describe('seedPosition', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    test('overwrites stale local position with cloud-synced position', () => {
+      // Device B has a stale local entry from a previous session.
+      const stale = { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'stale' };
+      localStorage.setItem(POSITION_KEY, JSON.stringify(stale));
+
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      // Cloud-synced position arrives via BookConfig.rsvpPosition.
+      const fresh = { cfi: 'epubcfi(/6/8!/4/2/1:0)', wordText: 'fresh' };
+      controller.seedPosition(fresh);
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual(fresh);
+    });
+
+    test('writes provided position when localStorage is empty', () => {
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const position = { cfi: 'epubcfi(/6/8!/4/2/1:0)', wordText: 'fresh' };
+      controller.seedPosition(position);
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual(position);
+    });
+
+    test('skips redundant write when value already matches', () => {
+      const position = { cfi: 'epubcfi(/6/8!/4/2/1:0)', wordText: 'same' };
+      localStorage.setItem(POSITION_KEY, JSON.stringify(position));
+
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+      controller.seedPosition(position);
+
+      const positionWrites = setItemSpy.mock.calls.filter(([key]) => key === POSITION_KEY);
+      expect(positionWrites).toHaveLength(0);
+      setItemSpy.mockRestore();
+    });
+
+    test('falls back to start of synced chapter when rsvpPosition is in a different chapter than location', () => {
+      // buildRsvpExitConfigUpdate pins location = rsvpPosition.cfi at RSVP exit,
+      // so a cross-chapter mismatch between the synced pair means stale/inconsistent
+      // state. The location CFI is the trustworthy signal — fall back to its
+      // section start so Resume lands at word 0 of the chapter the user is in.
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const stalePosition = { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'stale' };
+      const currentLocation = 'epubcfi(/6/8!/4/2/1:0)'; // different spine section
+
+      controller.seedPosition(stalePosition, currentLocation);
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual({
+        cfi: 'epubcfi(/6/8)',
+        wordText: '',
+      });
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[RSVP]'),
+        expect.objectContaining({ rsvpCfi: stalePosition.cfi, locationCfi: currentLocation }),
+      );
+      warnSpy.mockRestore();
+    });
+
+    test('section-start fallback overwrites a stale local entry on chapter mismatch', () => {
+      const stale = { cfi: 'epubcfi(/6/2!/4/2/1:0)', wordText: 'stale' };
+      localStorage.setItem(POSITION_KEY, JSON.stringify(stale));
+
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // rsvpPosition (chapter 4), location (chapter 8), local stale (chapter 2) — all different.
+      controller.seedPosition(
+        { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'fresh' },
+        'epubcfi(/6/8!/4/2/1:0)',
+      );
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual({
+        cfi: 'epubcfi(/6/8)',
+        wordText: '',
+      });
+      warnSpy.mockRestore();
+    });
+
+    test('skips redundant write when section-start fallback already matches stored value', () => {
+      const fallback = { cfi: 'epubcfi(/6/8)', wordText: '' };
+      localStorage.setItem(POSITION_KEY, JSON.stringify(fallback));
+
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+      controller.seedPosition(
+        { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'fresh' },
+        'epubcfi(/6/8!/4/2/1:0)',
+      );
+
+      const positionWrites = setItemSpy.mock.calls.filter(([key]) => key === POSITION_KEY);
+      expect(positionWrites).toHaveLength(0);
+      setItemSpy.mockRestore();
+      warnSpy.mockRestore();
+    });
+
+    test('seeds normally when rsvpPosition and location share a spine section', () => {
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const position = { cfi: 'epubcfi(/6/8!/4/2/1:0)', wordText: 'fresh' };
+      const currentLocation = 'epubcfi(/6/8!/4/2/3:5)'; // same spine, different offset
+
+      controller.seedPosition(position, currentLocation);
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual(position);
+    });
+
+    test('seeds normally when no current location is provided', () => {
+      const doc = makeDoc('hello world');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      const position = { cfi: 'epubcfi(/6/4!/4/2/1:0)', wordText: 'fresh' };
+      controller.seedPosition(position);
+
+      expect(JSON.parse(localStorage.getItem(POSITION_KEY)!)).toEqual(position);
     });
   });
 

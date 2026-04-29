@@ -230,11 +230,13 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
         });
       }
 
-      // Seed localStorage from cloud-synced BookConfig when this device has no local position.
-      // This restores RSVP progress saved on another device after a sync.
-      const configPos = getConfig(bookKey)?.rsvpPosition;
+      // Seed localStorage from cloud-synced BookConfig so a fresh cross-device
+      // rsvpPosition can override a stale local entry. seedPosition guards against
+      // a corrupt synced pair (rsvpPosition.cfi in a different chapter than location).
+      const config = getConfig(bookKey);
+      const configPos = config?.rsvpPosition;
       if (configPos) {
-        controller.seedPosition(configPos);
+        controller.seedPosition(configPos, config?.location ?? progress?.location ?? null);
       }
 
       // Set current CFI for position tracking
