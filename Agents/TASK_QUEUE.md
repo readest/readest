@@ -14,15 +14,47 @@
 
 ## Current rules
 
-- Active agent: Cursor only.
-- Work tasks in order.
-- After every task attempt, update `Agents/AUDIT_LOG.md`.
+- Active agent: Codex by default, unless Eddy assigns Cursor or another agent for a specific task. Historical “Cursor” wording means the currently assigned code agent.
+- Work tasks in order unless Eddy gives an explicit one-off scoped task.
+- Before stopping for generated/Tauri/plugin dirt, auto-clean the known generated/plugin paths once using `Agents/DEVELOPMENT_RULES.md`, then re-check `git status --short`.
+- Do not clean or revert app/docs/agent files outside the current task unless explicitly requested.
+- After every task attempt, update `Agents/AUDIT_LOG.md` unless Eddy explicitly says the task is page-only/no-docs.
 - Stop on UI verification tasks until Eddy confirms.
 - Maximum autonomous fixes after a failed command: 2.
 
 ---
 
 ## Queue: Workflow maintenance
+
+### [x] WORKFLOW-002 — Auto-clean known generated/Tauri/plugin dirt before scoped tasks
+
+**Owner:** Codex / Cursor  
+**Human verification:** No  
+**Allowed files to inspect:**
+
+- `Agents/DEVELOPMENT_RULES.md`
+- `Agents/STARTING_PROMPTS.md`
+- `Agents/TASK_QUEUE.md`
+
+**Allowed files to edit:**
+
+- `Agents/DEVELOPMENT_RULES.md`
+- `Agents/STARTING_PROMPTS.md`
+- `Agents/TASK_QUEUE.md`
+
+**Goal:** Prevent repeated stops caused by known generated/Tauri/plugin dirt by requiring one targeted auto-clean pass before blocking.
+
+**Known auto-clean paths:**
+
+- `apps/readest-app/src-tauri/Cargo.toml`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-turso`
+- `packages/tauri-plugins`
+
+**Validation:** `git status --short`; no app source changes required.
 
 ### [x] WORKFLOW-001 — Require explicit file scope in every agent task
 
@@ -769,7 +801,7 @@
 
 ---
 
-### [x] CT-025 — Home editorial split + cinematic dock refinement
+### [~] CT-025 — Home editorial split + cinematic dock refinement
 
 **Owner:** Cursor  
 **Human verification:** Yes  
@@ -791,3 +823,207 @@
 **CT-025B polish note (current pass):**
 
 - Scope-limited touch-up only in allowed files: logo aspect-safe sizing, one-step title clamp reduction, split-hero spacing rebalance, softer shelf cover treatment, and more readable `View all`.
+
+**CT-025C containment note (current pass):**
+
+- Home hero overflow fix only: added stricter `w-full`/`max-w-full`/`min-w-0`/`overflow-hidden` containment and earlier stacked fallback on smaller windows, while preserving wide-screen left-title/right-cover layout and existing Home interactions.
+
+**Home target-reference refinement (same allowed Home files):**
+
+- `apps/readest-app/src/app/page.tsx` only: premium top bar (pill search, Library pill, window control capsule), logo safe insets, simplified ambient (no full-viewport cover blur), softer localized hero glow — behavior unchanged.
+
+### [~] CT-027 — Home top bar refinement only
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx` (read-only: confirm default border merge)
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Top-bar-only visual pass on Home: remove the bright divider under the bar, shift search toward the right (closer to Library/window controls), and use squarer radii (`rounded-lg` family) on search, Library, and window-control chrome — no hero/shelf/behavior changes.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- **Eddy:** confirm no white hairline under the bar, search sits more right-biased, shapes feel more architectural.
+
+### [~] CT-028 — Home visual refinement pass (targeted cleanup only)
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Home-only styling: remove shelf top hairline, widen shelf gaps, warm editorial typography + palette toward parchment/gold tokens, unbox window controls (no wrapper), soften featured-cover glow with masked radial falloff — layout and all behaviors unchanged.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- **Eddy:** shelf integrated, typography warmer, no rect behind hero cover, window buttons feel lighter.
+
+### [~] CT-029 — Home hero placement + background tone only
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Adjust featured-cover vertical/horizontal placement and warmer cinematic stage background only; do not change topbar, shelf structure, or behaviors.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+
+### [~] CT-030 — Home reference match (spacing, top chrome, hero, shelf)
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/page.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Tune Home toward reference: larger logo inset, lighter floating top chrome (page overrides), hero/title/cover spacing, warmer non-banded stage, shelf lower/centered with optional scroll arrows (`sm+`).
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+
+### [~] CT-031 — Home reference pass: hero clipping, label spacing, logo scale, shelf arrows
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`
+
+**Goal:** Fix hero vertical clip (label + cover), simplify shelf arrows to subtle chevrons, enlarge logo; preserve split hero and all behaviors.
+
+**Validation:** `pnpm.cmd --filter @readest/readest-app lint`, `git status --short`
+
+### [~] CT-031B — Undo heavy bar/band; fix Home proportions
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`
+
+**Goal:** Roll back CT-031’s heavy top strip and opaque shelf band; lighten shelf; fix featured-cover fit with spacing/clamps only; keep split hero and behaviors.
+
+**Validation:** `pnpm.cmd --filter @readest/readest-app lint`, `git status --short`
+
+### [~] CT-032 — Remove visible Home top/bottom bands only
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`
+
+**Goal:** Strip full-width titlebar and shelf background panels on Home (`page.tsx` overrides only); no hero/shelf layout redesign.
+
+**Validation:** `pnpm.cmd --filter @readest/readest-app lint`, `git status --short`
+
+---
+
+### [~] CT-033 — Fix over-blurred background and rounded shelf books only
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`
+
+**Goal:** Home-only regression cleanup: reduce muddy/over-blurred ambient background while keeping warmth, and make bottom shelf covers square/minimally rounded (`rounded-[3px]`). No layout/behavior changes.
+
+**Validation:** `pnpm.cmd --filter @readest/readest-app lint`, `git status --short`
+
+---
+
+### [~] CT-034 — Home reference match pass: top logo/chrome + hero/book/shelf proportions
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to edit:** `apps/readest-app/src/app/page.tsx`, `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`, `Agents/TASK_QUEUE.md`, `Agents/AUDIT_LOG.md`
+
+**Goal:** Tune Home closer to the target reference without redesigning the page: image-only top-left logo, sharper gold Library button, larger editorial title, larger physical-book featured cover, larger gold-bordered bottom shelf covers, no `YOUR LIBRARY` label, and no visible shelf divider line.
+
+**Validation:** `pnpm.cmd --filter @readest/readest-app lint`, `git status --short`
+
+**CT-034 refinement note:**
+
+- Remove any remaining visible top strip or bottom shelf strip using `page.tsx` overrides/styling only, nudge the image-only logo slightly lower, and add a subtle physical-book object feel to the featured cover without changing layout or behavior.
+
+---
+
+### [~] CT-026 — Library visual pass 1: darker Citadel collection page
+
+**Owner:** Cursor  
+**Human verification:** Yes  
+**Allowed files to inspect:**
+
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `apps/readest-app/src/components/AppTitleBar.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Allowed files to edit:**
+
+- `apps/readest-app/src/app/library/page.tsx`
+- `apps/readest-app/src/app/library/components/LibraryHeader.tsx`
+- `apps/readest-app/src/app/library/components/BookItem.tsx`
+- `apps/readest-app/src/app/library/components/BookshelfItem.tsx`
+- `docs/CITADEL_UX_SIMPLIFICATION_PLAN.md`
+- `Agents/TASK_QUEUE.md`
+- `Agents/AUDIT_LOG.md`
+
+**Goal:** Move Library visuals toward the darker Citadel design system (base/surface/contrast hierarchy) while preserving all existing library behaviors and interactions.
+
+**Validation:**
+
+- `pnpm.cmd --filter @readest/readest-app lint`
+- `git status --short`
+- **Eddy: visually verify darker base tone, quieter controls, softened book covers/cards, and empty/no-result readability without interaction regressions.**

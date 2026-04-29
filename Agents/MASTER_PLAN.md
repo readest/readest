@@ -27,10 +27,11 @@ The old Electron/EPUB.js implementation is now **legacy reference only**.
 
 ## Current operating model
 
-- Active implementation agent: **Cursor only**.
+- Active implementation agent: **Codex by default**, unless Eddy explicitly assigns Cursor or another agent for a specific task.
+- Historical “Cursor” wording in agent docs means the currently assigned code agent when Codex is doing the work.
 - ChatGPT is used for planning/review/debug prompts.
-- Aider/Codex/other agents are inactive unless explicitly assigned later.
-- Agents should work from `Agents/TASK_QUEUE.md`, not from ad-hoc one-off prompts.
+- Agents should work from `Agents/TASK_QUEUE.md` or from explicit one-off scoped prompts.
+- Known generated/Tauri/plugin dirt should be auto-cleaned once before blocking a task, using the targeted cleanup rule in `Agents/DEVELOPMENT_RULES.md`.
 
 ## Global safety principles
 
@@ -40,6 +41,7 @@ The old Electron/EPUB.js implementation is now **legacy reference only**.
 - Do not port old Electron files directly.
 - Do not touch reader core unless the task explicitly names it.
 - Do not run broad rewrites, package upgrades, or dependency additions without approval.
+- Do not clean or revert unrelated app/docs/agent files unless the task explicitly asks for it.
 
 ## Phase 0 — Baseline and workflow setup
 
@@ -49,13 +51,14 @@ The old Electron/EPUB.js implementation is now **legacy reference only**.
 - [x] Audit branch pushed to GitHub.
 - [x] Git credential helper fixed from `manager-core` to `manager`.
 - [x] Dev launcher `.bat` approach selected instead of installing Program Files build.
+- [x] Known generated/Tauri/plugin dirt auto-clean rule added to workflow docs.
 - [>] Agent workflow/rules update for Readest project.
 
 ## Phase 1 — Design handoff triage
 
 Goal: understand the Claude design handoff without implementing it blindly.
 
-- [ ] Add `Agents/DESIGN_HANDOFF_NOTES.md`.
+- [ ] Add/update `Agents/DESIGN_HANDOFF_NOTES.md`.
 - [ ] Document which handoff files are usable in Readest now.
 - [ ] Document which handoff files are old Electron-only reference.
 - [ ] Document safe implementation sequence.
@@ -65,47 +68,47 @@ Goal: understand the Claude design handoff without implementing it blindly.
 
 Goal: add Citadel assets without changing UI behavior.
 
-- [ ] Copy `citadel-logo.png` and `comet.png` into the correct Readest public/static asset location.
-- [ ] Confirm files load in dev server.
-- [ ] Do not change UI yet.
-- [ ] Log exact destination paths.
+- [x] Copy `citadel-logo.png` and `comet.png` into the correct Readest public/static asset location.
+- [x] Confirm files load in dev server.
+- [x] Do not change UI in the asset-only task.
+- [x] Log exact destination paths.
 
 ## Phase 3 — Design tokens only
 
 Goal: introduce Citadel visual constants safely.
 
-- [ ] Locate current global styles/theme entry points.
-- [ ] Add Citadel color/type tokens without applying them broadly.
-- [ ] No layout changes.
-- [ ] No reader behavior changes.
+- [x] Locate current global styles/theme entry points.
+- [x] Add Citadel color/type tokens without applying them broadly.
+- [x] No layout changes.
+- [x] No reader behavior changes.
 
 ## Phase 4 — Safe branding pass
 
 Goal: change visible identity from Readest to Citadel in low-risk surfaces.
 
-- [ ] App/window title.
-- [ ] Metadata/title strings.
-- [ ] Safe visible labels only.
+- [x] App/window title.
+- [x] Metadata/title strings.
+- [x] Safe visible labels only.
 - [ ] Leave package IDs/build IDs alone unless explicitly approved.
-- [ ] Run dev app and request visual verification.
+- [~] Run dev app and request visual verification.
 
 ## Phase 5 — Topbar/header polish
 
 Goal: adapt the Citadel topbar style to existing Readest shell.
 
-- [ ] Inspect existing header/topbar components.
-- [ ] Apply minimal styling changes.
-- [ ] Keep navigation behavior unchanged.
-- [ ] Human visual verification required.
+- [x] Inspect existing header/topbar components.
+- [~] Apply minimal styling changes.
+- [x] Keep navigation behavior unchanged.
+- [~] Human visual verification required.
 
 ## Phase 6 — Library/home visual pass
 
 Goal: adapt hero/shelf/book-card ideas using real Readest data.
 
-- [ ] Identify library/home components.
-- [ ] Apply one small visual improvement at a time.
-- [ ] Do not replace data flow.
-- [ ] Human visual verification required after each visual slice.
+- [x] Identify library/home components.
+- [~] Apply one small visual improvement at a time.
+- [x] Do not replace data flow.
+- [~] Human visual verification required after each visual slice.
 
 ## Phase 7 — Reader chrome polish
 

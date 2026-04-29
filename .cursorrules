@@ -1,34 +1,44 @@
-# Citadel — Cursor Agent Rules
+# Citadel — Agent Rules
 
 ## Current project reality
-- This repository is now the **Citadel Readest fork**, not the old Electron/EpubReader codebase.
+
+- This repository is the **Citadel Readest fork**, not the old Electron/EpubReader codebase.
 - Primary app surface: `apps/readest-app`.
 - Stack: **Tauri 2 + Next.js/React/TypeScript + Rust plugins + Readest/Foliate renderer**.
 - Treat the old Electron/EPUB.js work as archived research only. Do not port old files or assumptions directly.
 
 ## Roles
+
 - **Manager:** Eddy. Defines priorities, checks visual/UI results, and approves risky changes.
 - **Planning assistant:** ChatGPT. Used for task planning, review prompts, and debugging direction.
-- **Active code agent for now:** Cursor only.
-- **Inactive unless explicitly assigned:** Aider, Codex, Claude Code, Gemini, or any second parallel agent.
+- **Active code agent:** Codex by default, unless Eddy explicitly says Cursor or another agent is active.
+- **Inactive unless explicitly assigned:** Aider, Claude Code, Gemini, or any second parallel agent.
+
+If another agent is introduced:
+- each agent gets different task IDs
+- each agent gets different file ownership
+- no two agents edit the same files/subsystems in parallel
+- shared files require explicit owner assignment
 
 ## Mandatory file scope in every task
-Every task prompt **must** include both of these sections, with explicit paths (no vague “the app” or “reader area”):
+
+Every task prompt must include both sections, with explicit repo-relative paths:
 
 - **Allowed files to inspect**
 - **Allowed files to edit**
 
-If either section is missing, incomplete, or ambiguous, **stop immediately** and ask the Manager for a scoped task. Do not guess scope, open random directories, or search the repo to “figure out” the task.
+If either section is missing, incomplete, or ambiguous, ask Eddy for a scoped task before editing.
 
-You may use broad search, repo-wide exploration, or “find where X lives” **only** when the task explicitly allows it with one of these phrases (or a clear Manager-written equivalent):
+You may use broad search, repo-wide exploration, or “find where X lives” only when the task explicitly allows it with one of these phrases, or a clear Eddy-written equivalent:
 
 - `audit broadly`
 - `repo-wide search allowed`
 
-Otherwise: inspect and edit **only** paths listed in the task (plus the minimal standard agent docs below if the task lists them as allowed).
+Otherwise: inspect and edit only paths listed in the task.
 
 ## Required files to read before coding
-Before making any change, read only what the current task’s **Allowed files to inspect** lists, which normally includes some of:
+
+Before making a change, read only what the current task’s **Allowed files to inspect** lists, usually including some of:
 
 1. `Agents/DEVELOPMENT_RULES.md`
 2. `Agents/MASTER_PLAN.md`
@@ -37,21 +47,92 @@ Before making any change, read only what the current task’s **Allowed files to
 5. `.cursorrules`
 6. Any additional paths the task names explicitly
 
-Do **not** read the whole repo unless the task explicitly says **`audit broadly`** or **`repo-wide search allowed`** (see “Mandatory file scope” above).
+Do not read the whole repo unless the task explicitly says `audit broadly` or `repo-wide search allowed`.
+
+## Generated/Tauri/plugin dirt auto-clean rule
+
+Known generated/Tauri/plugin dirt is common after `pnpm.cmd tauri dev`.
+
+Do **not** stop immediately when `git status --short` shows dirt only in the known generated/plugin paths listed below.
+
+Before deciding a task is blocked by generated/Tauri/plugin dirt, run this targeted cleanup sequence **once** from the repo root:
+
+```powershell
+git restore apps/readest-app/src-tauri/Cargo.toml
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions
+
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge restore .
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts restore .
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .
+git -C packages/tauri-plugins restore .
+```
+
+Then run:
+
+```powershell
+git status --short
+```
+
+Known auto-clean paths:
+
+- `apps/readest-app/src-tauri/Cargo.toml`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-turso`
+- `packages/tauri-plugins`
+
+If cleanup succeeds and only allowed task files or known pre-existing app/doc dirt remain, continue the task.
+
+If the same generated/Tauri/plugin dirt remains after the targeted cleanup sequence, stop and report that cleanup failed.
+
+Do not clean or revert any other files unless Eddy explicitly asks.
+
+Never run broad destructive cleanup commands:
+
+- `git restore .`
+- `git reset --hard`
+- `git clean -fd`
+- `git submodule foreach --recursive git restore .`
+
+Only use the targeted cleanup commands above.
+
+This auto-clean rule overrides older prompt wording such as “stop if generated/Tauri/plugin dirt is present.” Stop only if the known dirt remains **after** the targeted cleanup attempt.
+
+## Git discipline
+
+- Before editing, run `git status --short`.
+- Apply the generated/Tauri/plugin auto-clean rule before treating known generated dirt as a blocker.
+- After each task, run `git status --short` again.
+- Keep changes small and reviewable.
+- Do not commit unless the task explicitly says commits are allowed.
+- For UI tasks requiring human visual approval, do not mark the task complete until Eddy verifies it.
+- No generated permission/schema noise commits.
+
+Allowed/pre-existing dirty files outside the active task scope should be left untouched, not cleaned. Examples:
+- `apps/readest-app/src/app/library/**`
+- `apps/readest-app/src/app/page.tsx`
+- `Agents/**`
+- `docs/**`
+
+If unknown dirty files remain outside the known generated/plugin paths and outside the allowed task files, stop and report them before editing.
 
 ## Task queue workflow
-- Work only on the first task in `Agents/TASK_QUEUE.md` with status `[>]`, or the first `[ ]` task if no task is marked active.
+
+- Work only on the task Eddy asked for, or the first task in `Agents/TASK_QUEUE.md` with status `[>]`, or the first `[ ]` task if no task is active.
 - Do not skip ahead.
 - Do not start a second task until the current task is logged.
-- If the current task requires human visual verification, stop after implementation and ask the Manager to verify before continuing.
-- If the task passes all objective checks and does not require human verification, continue to the next task.
+- If a task requires human visual verification, stop after implementation and ask Eddy to verify before continuing.
+- If the task passes all objective checks and does not require human verification, continue only if Eddy asked for a batch/run.
 
-## Audit log workflow — mandatory
-After every task attempt, append an entry to `Agents/AUDIT_LOG.md` before moving on.
+## Audit log workflow — mandatory unless Eddy says page-only/no-docs
+
+After every task attempt, append an entry to `Agents/AUDIT_LOG.md` unless the task explicitly says **do not edit Agents/docs**.
+
 Use this format:
 
 ```md
-**[YYYY-MM-DD HH:mm:ss Europe/Lisbon] - Agent: Cursor**
+**[YYYY-MM-DD HH:mm:ss Europe/Lisbon] - Agent: Codex**
 - **Task ID:** `TASK-ID`
 - **Task:** Short task name.
 - **Status:** Completed | Needs human verification | Blocked | Failed after retries.
@@ -62,45 +143,31 @@ Use this format:
 - **Notes / Next:** What the next agent/Manager should know.
 ```
 
+If Eddy specifically requests a one-file/page-only visual micro-pass, do not edit audit/docs/task queue unless explicitly requested.
+
+## Task queue policy
+
+Update `Agents/TASK_QUEUE.md` when the task scope includes it.
+
+Use statuses:
+
+- `[ ]` not started
+- `[>]` active
+- `[~]` implemented, waiting for human verification
+- `[x]` complete
+- `[!]` blocked
+
+For UI tasks, use `[~]` until Eddy visually approves.
+
 ## Retry and stop rules
-- If a task fails, make at most **2 autonomous fix attempts**.
+
+- If a command fails, make at most **2 autonomous fix attempts**.
 - A 3rd attempt is allowed only for an obvious typo or environment command correction.
-- After that, stop and ask for Manager/ChatGPT guidance.
-- Do not keep patching blindly.
-- Never hide failed checks. Log them.
-
-## Single-agent safety
-- Only Cursor is active right now.
-- If a second agent is introduced later, each agent must have separate task IDs and non-overlapping file ownership.
-- Two agents must never edit the same file or subsystem in parallel.
-- Shared files such as app shell, global CSS, package files, Tauri config, stores, and reader components require explicit task ownership.
-
-## Git discipline
-- Start from a clean working tree.
-- Before editing, run `git status`.
-- After each task, run `git status` again.
-- Keep changes small and reviewable.
-- Do not commit unless the task explicitly says commits are allowed.
-- For UI tasks that require human visual approval, do not mark the task complete until the Manager verifies it.
-- The following files are always auto-dirtied by `pnpm tauri dev` and are **never** a scope violation. Before any `git status` check, restore them with:
-git restore apps/readest-app/src-tauri/Cargo.toml
-git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions
-git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions
-git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .
-git -C packages/tauri-plugins restore .
-  Do not flag these as unexpected changes. Do not stop a task because these are dirty.
-Save the file, then commit it:
-
-powershell
-git add .cursorrules
-git commit -m "docs: add tauri dev dirt restore rule to cursorrules"
-git push --no-verify
-Did the brew install --cask microsoft-remote-desktop finish on the Mac? ☕
-
-
-You're o
+- After that, stop and ask for Eddy/ChatGPT guidance.
+- Never hide failed checks. Log or report them clearly.
 
 ## Safe change policy
+
 - Modify the existing Readest app; do not rewrite architecture.
 - Preserve existing structure and naming unless the task explicitly allows changes.
 - Prefer small adapter components, tokens, and incremental styling over replacing whole screens.
@@ -110,16 +177,21 @@ You're o
 - No generated permission/schema noise commits.
 
 ## Readest/Tauri high-risk boundaries
+
 Touch these only when the current task explicitly names them:
+
 - `apps/readest-app/src/app/reader/**`
 - `apps/readest-app/src/pages/reader/[ids].tsx`
 - `apps/readest-app/src/app/reader/components/FoliateViewer.tsx`
 - `apps/readest-app/src/store/readerStore.ts`
 - `apps/readest-app/src/services/**`
 - `apps/readest-app/src-tauri/**`
-- root `Cargo.toml`, `pnpm-lock.yaml`, package files
+- root `Cargo.toml`
+- `pnpm-lock.yaml`
+- package files
 
 ## Design handoff rules
+
 - The Citadel design handoff is a **reference**, not an implementation script.
 - Do not run or paste the old `SKILL.md` implementation prompt blindly.
 - Do not directly paste old Electron HTML/CSS snippets into Readest.
@@ -127,21 +199,27 @@ Touch these only when the current task explicitly names them:
 - Implement design in phases: assets → tokens → safe branding → topbar polish → library/home polish → reader/companion features.
 
 ## UI verification rule
+
 For UI work, objective checks are not enough.
+
 After implementing a visual task:
-- Run the app with `pnpm.cmd tauri dev` unless the task says otherwise.
-- Stop and ask the Manager to visually confirm.
-- Log the task as `Needs human verification` until approved.
+- Run the requested validation command.
+- Run the app with `pnpm.cmd tauri dev` only if the task asks for it or Eddy needs a visual check.
+- Stop and ask Eddy to visually confirm.
+- Report the task as needing human verification until approved.
 
 ## Product identity
+
 - User-facing product name: **Citadel**.
-- Do not introduce new user-facing “Readest” labels except where unchanged upstream branding is explicitly being preserved for the current task.
+- Do not introduce new user-facing “Readest” labels except where unchanged upstream branding is explicitly preserved for the current task.
 - Branding changes must be incremental and tested.
 
 ## Definition of done
+
 A task is done only when:
+
 1. The requested files were changed and no unrelated files were touched.
 2. Required commands/checks were run or the reason they were skipped is logged.
-3. `Agents/AUDIT_LOG.md` was updated.
-4. `Agents/TASK_QUEUE.md` status was updated.
+3. `Agents/AUDIT_LOG.md` was updated unless the task explicitly said no docs/agent edits.
+4. `Agents/TASK_QUEUE.md` status was updated when the task scope includes it.
 5. Human verification was requested when required.

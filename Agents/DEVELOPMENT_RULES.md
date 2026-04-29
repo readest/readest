@@ -15,19 +15,20 @@ This is not the old Electron/EPUB.js project. Do not port old architecture direc
 
 ## Current working style
 
-The Manager wants fewer back-and-forth one-minute prompts.
-Cursor should work through a prepared task queue for longer focused runs, while stopping only for:
+The Manager wants fewer back-and-forth one-minute prompts. The assigned code agent should work through scoped tasks for longer focused runs, while stopping only for:
 
 - build/test errors that remain after limited retries
 - unclear requirements
 - high-risk files not listed in the task
 - UI/visual verification
 - conflicting instructions
+- unknown dirty files outside the current task scope after the known generated/plugin cleanup has been attempted
 
 ## Active agent policy
 
-For now, **Cursor is the only active code agent**.
-Do not coordinate with Aider/Codex/Claude/Gemini unless the Manager explicitly adds them later.
+Current active implementation agent: **Codex**, unless the Manager explicitly assigns Cursor or another agent for a specific task.
+
+Some older workflow files or queue entries may still say “Cursor.” Treat that wording as applying to the currently assigned code agent when the Manager says Codex is doing the work.
 
 If multiple agents are used later:
 
@@ -38,30 +39,73 @@ If multiple agents are used later:
 
 ## File scope discipline
 
-- **Inspect only assigned files.** Open, search, and read **only** paths listed under the task’s **Allowed files to inspect** (and the same paths for edits under **Allowed files to edit** when implementing).
-- **Use exact paths** in tasks and in your own plan (repo-relative, e.g. `apps/readest-app/src/components/Foo.tsx`). Do not substitute “the reader” or “styles” without a path list.
-- **Do not use repo-wide search** (semantic search across the whole project, broad ripgrep from root, or exploratory file trees) **unless** the task explicitly says **`audit broadly`** or **`repo-wide search allowed`**.
-- **If a needed file is outside the allowed list**, stop and ask the Manager to extend the task scope. Do not silently widen the list.
-- **For UI tasks**, inspect **only** the component/style files named in the task plus the task docs and allowed agent files—never the whole `src` tree by default.
+- **Inspect only assigned files.** Open, search, and read only paths listed under the task’s **Allowed files to inspect**.
+- **Edit only assigned files.** All changed files must be listed under **Allowed files to edit**.
+- **Use exact repo-relative paths** in tasks and in your own plan, for example `apps/readest-app/src/app/page.tsx`.
+- **Do not use repo-wide search** unless the task explicitly says `audit broadly` or `repo-wide search allowed`.
+- If a needed file is outside the allowed list, stop and ask the Manager to extend the scope.
+- For UI tasks, inspect only the named component/style files plus the named task docs and agent files.
 
 ## Before coding every task
 
-Cursor must output or internally record:
+The assigned code agent must output or internally record:
 
-1. Task ID from `Agents/TASK_QUEUE.md`
-2. **Allowed files to inspect** and **Allowed files to edit** from the task (verbatim path lists)
-3. Exact files expected to change (must be a subset of allowed edit list)
-4. Whether human visual verification is required
-5. Rollback plan
-6. Commands/checks planned
+1. Task ID from `Agents/TASK_QUEUE.md` or the explicit one-off task ID from the Manager.
+2. Allowed files to inspect and allowed files to edit, copied from the task.
+3. Exact files expected to change, which must be a subset of the allowed edit list.
+4. Whether human visual verification is required.
+5. Rollback plan.
+6. Commands/checks planned.
 
 Then run:
 
 ```powershell
-git status
+git status --short
 ```
 
-If the tree is not clean, stop unless the dirty files are exactly part of the assigned task.
+## Known generated/Tauri/plugin dirt auto-clean
+
+The Readest/Tauri dev tooling can repeatedly dirty generated permission files, plugin submodules, and `Cargo.toml`. This known generated/plugin dirt should not block every UI task.
+
+Before stopping for a dirty tree, the assigned code agent must auto-clean the known generated/plugin paths **once**, then re-check status.
+
+Known auto-clean paths:
+
+- `apps/readest-app/src-tauri/Cargo.toml`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-turso`
+- `packages/tauri-plugins`
+
+Auto-clean command sequence from repo root:
+
+```powershell
+git restore apps/readest-app/src-tauri/Cargo.toml
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge/permissions
+git restore apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts/permissions
+
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-native-bridge restore .
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-native-tts restore .
+git -C apps/readest-app/src-tauri/plugins/tauri-plugin-turso restore .
+git -C packages/tauri-plugins restore .
+
+git status --short
+```
+
+Rules for this cleanup:
+
+- Clean only the known generated/plugin paths above.
+- Do **not** run broad destructive cleanup commands such as `git restore .`, `git reset --hard`, `git clean -fd`, or `git submodule foreach --recursive git restore .`.
+- Do **not** clean user/task work in app, docs, or agent files unless the task explicitly asks for it.
+- Pre-existing dirty files outside the task scope may remain dirty if they are known ongoing work; leave them untouched and continue if they do not conflict with the current task.
+- If unknown dirty files remain outside the current task scope and outside the known generated/plugin paths, stop and report them before editing.
+
+After cleanup, continue only when the remaining dirty files are either:
+
+- part of the assigned task’s allowed edit list, or
+- explicitly identified as pre-existing non-conflicting work to ignore.
 
 ## During coding
 
@@ -105,7 +149,7 @@ The log entry must include:
 - validation result
 - notes/next action
 
-Do this before moving to the next task.
+Do this before moving to the next task unless the Manager explicitly says the task is page-only/no-docs.
 
 ## Task queue policy
 
@@ -174,9 +218,9 @@ Use this order unless the Manager changes it:
 
 Stop immediately if:
 
-- a task asks for direct full implementation of the old handoff `SKILL.md`
+- a task asks for direct full implementation of old Electron handoff code
 - required source files are missing or ambiguous
 - a migration touches renderer, Tauri, package files, and reader core in one task
-- a visual task cannot be verified by automated checks
+- a visual task cannot be verified by automated checks and needs Eddy’s confirmation
 - tests/builds fail after retry limit
-- Git shows unexpected unrelated changes
+- Git shows unexpected unrelated changes after the known generated/plugin cleanup has already been attempted
