@@ -769,15 +769,15 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
       }
       if (directions.includes('left') && directions.includes('right')) {
         block = block
-          .replace(/}$/, ' width: calc(var(--available-width) * 1px) !important; }')
-          .replace(/}$/, ' min-width: calc(var(--available-width) * 1px) !important; }')
-          .replace(/}$/, ' max-width: calc(var(--available-width) * 1px) !important; }');
+          .replace(/}$/, ' width: calc(var(--full-width) * 1px) !important; }')
+          .replace(/}$/, ' min-width: calc(var(--full-width) * 1px) !important; }')
+          .replace(/}$/, ' max-width: calc(var(--full-width) * 1px) !important; }');
       }
       if (directions.includes('top') && directions.includes('bottom')) {
         block = block
-          .replace(/}$/, ' height: calc(var(--available-height) * 1px) !important; }')
-          .replace(/}$/, ' min-height: calc(var(--available-height) * 1px) !important; }')
-          .replace(/}$/, ' max-height: calc(var(--available-height) * 1px) !important; }');
+          .replace(/}$/, ' height: calc(var(--full-height) * 1px) !important; }')
+          .replace(/}$/, ' min-height: calc(var(--full-height) * 1px) !important; }')
+          .replace(/}$/, ' max-height: calc(var(--full-height) * 1px) !important; }');
       }
     }
     return selector + block;

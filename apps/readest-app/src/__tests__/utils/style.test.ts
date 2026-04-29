@@ -245,17 +245,17 @@ describe('transformStylesheet', () => {
     it('adds width when both left and right bleed', () => {
       const css = '.bleed { duokan-bleed: left right; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('width: calc(var(--available-width) * 1px) !important');
-      expect(result).toContain('min-width: calc(var(--available-width) * 1px) !important');
-      expect(result).toContain('max-width: calc(var(--available-width) * 1px) !important');
+      expect(result).toContain('width: calc(var(--full-width) * 1px) !important');
+      expect(result).toContain('min-width: calc(var(--full-width) * 1px) !important');
+      expect(result).toContain('max-width: calc(var(--full-width) * 1px) !important');
     });
 
     it('adds height when both top and bottom bleed', () => {
       const css = '.bleed { duokan-bleed: top bottom; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('height: calc(var(--available-height) * 1px) !important');
-      expect(result).toContain('min-height: calc(var(--available-height) * 1px) !important');
-      expect(result).toContain('max-height: calc(var(--available-height) * 1px) !important');
+      expect(result).toContain('height: calc(var(--full-height) * 1px) !important');
+      expect(result).toContain('min-height: calc(var(--full-height) * 1px) !important');
+      expect(result).toContain('max-height: calc(var(--full-height) * 1px) !important');
     });
 
     it('does not add bleed styles when vertical is true', () => {
