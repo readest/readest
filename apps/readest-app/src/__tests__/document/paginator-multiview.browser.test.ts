@@ -489,6 +489,50 @@ describe('Paginator multi-view architecture (browser)', () => {
       expect(paginator.scrolled).toBe(true);
       expect(paginator.primaryIndex).toBe(idx);
     });
+
+    // Regression for issue #3987: toggling scrolled mode off shortly after
+    // scrolling into the next section reverted the position to the previous
+    // section because the debounced scroll handler had not yet updated
+    // #primaryIndex / #anchor.
+    it('should not revert to previous section when toggling scrolled mode off mid-scroll', async () => {
+      paginator = createPaginator();
+      paginator.open(book);
+      paginator.setAttribute('flow', 'scrolled');
+
+      const linearIndices = book
+        .sections!.map((s, i) => (s.linear !== 'no' ? i : -1))
+        .filter((i) => i >= 0);
+      if (linearIndices.length < 2) return;
+
+      const startIdx = linearIndices[0]!;
+      const nextIdx = linearIndices[1]!;
+
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: startIdx });
+      await stabilized;
+      await waitForFillComplete(paginator);
+
+      const contents = paginator.getContents();
+      if (!contents.some((c) => c.index === nextIdx)) return;
+
+      const container = paginator.shadowRoot!.getElementById('container')!;
+      const viewElements = Array.from(container.children).filter((c): c is HTMLElement =>
+        Boolean((c as HTMLElement).querySelector?.('iframe')),
+      );
+      expect(viewElements.length).toBeGreaterThanOrEqual(2);
+      const firstViewHeight = viewElements[0]!.getBoundingClientRect().height;
+      expect(firstViewHeight).toBeGreaterThan(0);
+
+      // Scroll past the first section into the second, then immediately
+      // toggle scrolled mode off without giving the 250 ms debounce a chance
+      // to fire.
+      container.scrollTop = firstViewHeight + 100;
+      const stabilized2 = waitForStabilized(paginator);
+      paginator.setAttribute('flow', 'paginated');
+      await stabilized2;
+
+      expect(paginator.primaryIndex).toBe(nextIdx);
+    });
   });
 });
 
