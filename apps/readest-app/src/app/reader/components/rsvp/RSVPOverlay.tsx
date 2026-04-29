@@ -350,6 +350,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const handleTouchEnd = (event: React.TouchEvent) => {
     if (event.changedTouches.length !== 1) return;
 
+    // Touches starting on the header or footer controls (progress bar, buttons,
+    // dropdowns) own their own gestures — never let a horizontal drag here be
+    // hijacked as a speed-change swipe, or a tap as a region tap.
+    const target = event.target as HTMLElement;
+    if (target.closest('.rsvp-controls') || target.closest('.rsvp-header')) {
+      return;
+    }
+
     const touch = event.changedTouches[0]!;
     const deltaX = touch.clientX - touchStartX.current;
     const deltaY = touch.clientY - touchStartY.current;
@@ -365,11 +373,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
 
     if (Math.abs(deltaX) < TAP_THRESHOLD && Math.abs(deltaY) < TAP_THRESHOLD && duration < 300) {
-      const target = event.target as HTMLElement;
-      if (target.closest('.rsvp-controls') || target.closest('.rsvp-header')) {
-        return;
-      }
-
       const screenWidth = window.innerWidth;
       const tapX = touch.clientX;
 
@@ -455,7 +458,12 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     if (!isDraggingProgressBar.current) return;
     isDraggingProgressBar.current = false;
     setIsProgressBarDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    // pointercancel can fire after the browser has already released the
+    // capture itself (e.g. multitouch, app backgrounding), so calling
+    // releasePointerCapture unconditionally would throw NotFoundError.
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     if (wasPlayingBeforeDrag.current) setTimeout(() => controller.resume(), 50);
   };
 
@@ -748,6 +756,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             aria-valuemin={0}
             aria-valuemax={100}
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
+            // touch-action: none keeps mobile browsers from claiming the
+            // gesture for scroll/pan, which would fire pointercancel and
+            // break the drag-to-seek pointer capture mid-gesture.
+            style={{ touchAction: 'none' }}
             onPointerDown={handleProgressBarPointerDown}
             onPointerMove={handleProgressBarPointerMove}
             onPointerUp={handleProgressBarPointerUp}

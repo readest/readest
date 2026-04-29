@@ -138,3 +138,59 @@ describe('RSVPOverlay — context panel performance', () => {
     expect(current!.getAttribute('role')).toBeNull();
   });
 });
+
+describe('RSVPOverlay — progress bar drag on mobile', () => {
+  afterEach(() => cleanup());
+
+  test('horizontal drag starting on the progress bar does not trigger a speed swipe', () => {
+    const words = Array.from({ length: 100 }, (_, i) => ({
+      text: `w${i}`,
+      orpIndex: 0,
+      pauseMultiplier: 1,
+    }));
+    const state = buildState({ words, currentIndex: 10 });
+
+    const { container, controller } = renderOverlay(state);
+    const slider = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(slider).not.toBeNull();
+
+    // Simulate a horizontal touch drag long enough to clear SWIPE_THRESHOLD (50px).
+    fireEvent.touchStart(slider, { touches: [{ clientX: 50, clientY: 400 }] });
+    fireEvent.touchEnd(slider, {
+      changedTouches: [{ clientX: 200, clientY: 400 }],
+    });
+
+    expect(controller.increaseSpeed).not.toHaveBeenCalled();
+    expect(controller.decreaseSpeed).not.toHaveBeenCalled();
+  });
+
+  test('horizontal drag starting on a footer button does not trigger a speed swipe', () => {
+    const state = buildState({
+      words: [{ text: 'a', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container, controller } = renderOverlay(state);
+    // Pick any control inside `.rsvp-controls` (e.g. the play/pause button).
+    const playButton = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    expect(playButton).not.toBeNull();
+
+    fireEvent.touchStart(playButton, { touches: [{ clientX: 50, clientY: 400 }] });
+    fireEvent.touchEnd(playButton, {
+      changedTouches: [{ clientX: 200, clientY: 400 }],
+    });
+
+    expect(controller.increaseSpeed).not.toHaveBeenCalled();
+    expect(controller.decreaseSpeed).not.toHaveBeenCalled();
+  });
+
+  test('progress bar uses touch-action: none so pointer capture survives on mobile', () => {
+    const state = buildState({
+      words: [{ text: 'a', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+    const slider = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(slider).not.toBeNull();
+    expect(slider.style.touchAction).toBe('none');
+  });
+});
