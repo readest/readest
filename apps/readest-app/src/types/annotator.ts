@@ -7,4 +7,5 @@ export type AnnotationToolType =
   | 'wikipedia'
   | 'translate'
   | 'tts'
-  | 'proofread';
+  | 'proofread'
+  | 'xray';

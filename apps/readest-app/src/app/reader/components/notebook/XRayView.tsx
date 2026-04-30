@@ -1,0 +1,1908 @@
+import clsx from 'clsx';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fzf, byLengthAsc } from 'fzf';
+import { PiGraph } from 'react-icons/pi';
+import { LuChevronDown, LuCircleX, LuList, LuTriangleAlert } from 'react-icons/lu';
+
+import { useTranslation } from '@/hooks/useTranslation';
+import { useBookDataStore } from '@/store/bookDataStore';
+import { useNotebookStore } from '@/store/notebookStore';
+import { useReaderStore } from '@/store/readerStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useEnv } from '@/context/EnvContext';
+import { eventDispatcher } from '@/utils/event';
+import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
+import {
+  formatRelationshipLabel,
+  getXRayEntitySummaries,
+  getXRaySnapshot,
+  isHumanEntity,
+  rebuildXRayToPage,
+  updateXRayForProgress,
+} from '@/services/ai/xrayService';
+import { isBookIndexed } from '@/services/ai/ragService';
+import type {
+  XRayEntity,
+  XRayEntityType,
+  XRayEvidence,
+  XRayRelationship,
+  XRaySnapshot,
+} from '@/services/ai/types';
+import type { BookSearchConfig } from '@/types/book';
+import XRayGraph from './XRayGraph';
+
+interface XRayViewProps {
+  bookKey: string;
+}
+
+type XRayTab = 'entities' | 'timeline' | 'relationships';
+
+type EntityMentionSource = 'fact' | 'relationship' | 'event';
+
+const ENTITY_TYPE_WHITELIST: XRayEntityType[] = [
+  'character',
+  'location',
+  'organization',
+  'artifact',
+  'term',
+  'event',
+  'concept',
+];
+
+const isLivingEntity = (entity?: XRayEntity | null): boolean => isHumanEntity(entity);
+
+interface EntityMention {
+  evidence: XRayEvidence;
+  context: string;
+  source: EntityMentionSource;
+}
+
+interface EntityMentionStats {
+  mentions: EntityMention[];
+  lockedCount: number;
+  lastSeenPage: number;
+  onPage: boolean;
+  inChapter: boolean;
+}
+
+interface EntityView {
+  entity: XRayEntity;
+  oneLiner: string;
+  mentionCount: number;
+  lastSeenPage: number;
+  mentions: EntityMention[];
+  relevanceScore: number;
+  isLocked: boolean;
+  onPage: boolean;
+  inChapter: boolean;
+  category: 'people' | 'places' | 'organizations' | 'artifacts' | 'concepts' | 'events';
+  searchText: string;
+  isInferred: boolean;
+}
+
+interface RelationshipPair {
+  key: string;
+  leftId: string;
+  rightId: string;
+  leftName: string;
+  rightName: string;
+  relationships: XRayRelationship[];
+  evidence: XRayEvidence[];
+  lastSeenPage: number;
+}
+
+interface RelationshipGroup {
+  entityId: string;
+  entity: XRayEntity;
+  connections: Array<{
+    target: XRayEntity;
+    labels: string[];
+    evidence?: XRayEvidence;
+    lastSeenPage: number;
+    isInferred: boolean;
+  }>;
+  totalConnections: number;
+  lastSeenPage: number;
+}
+
+const uniqueStrings = (values: string[]): string[] => {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(trimmed);
+  }
+  return output;
+};
+
+const ensureSentence = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/[.!?]$/.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
+};
+
+const noticeStyles = {
+  error: {
+    container: 'bg-error/10 border-error/30',
+    tone: 'text-error',
+    message: 'text-error/80',
+  },
+  warning: {
+    container: 'bg-warning/10 border-warning/30',
+    tone: 'text-warning',
+    message: 'text-warning/80',
+  },
+} as const;
+
+const buildRelationshipPairs = (
+  relationships: XRayRelationship[],
+  entityById: Map<string, XRayEntity>,
+): RelationshipPair[] => {
+  const map = new Map<string, RelationshipPair>();
+  for (const rel of relationships) {
+    const source = entityById.get(rel.sourceId);
+    const target = entityById.get(rel.targetId);
+    if (!source || !target) continue;
+    const [left, right] = source.id < target.id ? [source, target] : [target, source];
+    const key = `${left.id}|${right.id}`;
+    const entry = map.get(key) || {
+      key,
+      leftId: left.id,
+      rightId: right.id,
+      leftName: left.canonicalName,
+      rightName: right.canonicalName,
+      relationships: [] as XRayRelationship[],
+      evidence: [] as XRayEvidence[],
+      lastSeenPage: -1,
+    };
+    entry.relationships.push(rel);
+    entry.evidence.push(...(rel.evidence || []));
+    entry.lastSeenPage = Math.max(entry.lastSeenPage, rel.lastSeenPage ?? -1);
+    map.set(key, entry);
+  }
+  return Array.from(map.values());
+};
+
+const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
+  const _ = useTranslation();
+  const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const { getBookData, getConfig } = useBookDataStore();
+  const setNotebookActiveTab = useNotebookStore((state) => state.setNotebookActiveTab);
+  const progress = useReaderStore((state) => state.getProgress(bookKey));
+  const getView = useReaderStore((state) => state.getView);
+  const bookData = getBookData(bookKey);
+  const bookHash = bookKey.split('-')[0] || '';
+  const bookTitle = bookData?.book?.title || 'Unknown';
+  const currentPage = progress?.pageinfo?.current ?? 0;
+  const aiSettings = settings?.aiSettings;
+  const providerUnsupported = aiSettings?.enabled && aiSettings.provider !== 'ai-gateway';
+
+  const [activeTab, setActiveTab] = useState<XRayTab>('entities');
+  const [snapshot, setSnapshot] = useState<XRaySnapshot | null>(null);
+  const [entitySummaries, setEntitySummaries] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isRebuilding, setIsRebuilding] = useState(false);
+  const [isXRayProcessing, setIsXRayProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    pageStart: number;
+    pageEnd: number;
+    targetPage: number;
+  } | null>(null);
+  const [isIndexed, setIsIndexed] = useState<boolean | null>(null);
+  const [entitySearch, setEntitySearch] = useState('');
+  const [entitySort, setEntitySort] = useState<'relevance' | 'alphabetical'>('relevance');
+  const [entityCategory, setEntityCategory] = useState<
+    'all' | 'people' | 'places' | 'organizations' | 'artifacts' | 'concepts' | 'events'
+  >('all');
+  const [entityScope, setEntityScope] = useState<'page' | 'chapter' | 'book'>('page');
+  const [relationshipFilter, setRelationshipFilter] = useState('all');
+  const [relationshipView, setRelationshipView] = useState<'list' | 'graph'>('list');
+  const [jumpingEvidenceKey, setJumpingEvidenceKey] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedGraphEntity, setSelectedGraphEntity] = useState<XRayEntity | null>(null);
+  const [showEntityRefine, setShowEntityRefine] = useState(false);
+  const [showRelationshipRefine, setShowRelationshipRefine] = useState(false);
+  const hasLoadedRef = useRef(false);
+  const loadInFlightRef = useRef(false);
+  const pendingLoadRef = useRef<{ silent: boolean } | null>(null);
+  const snapshotRef = useRef<XRaySnapshot | null>(null);
+  const currentPageRef = useRef(currentPage);
+
+  const lastUpdatedLabel = useMemo(() => {
+    if (!snapshot?.lastUpdated) return '';
+    return new Date(snapshot.lastUpdated).toLocaleString();
+  }, [snapshot?.lastUpdated]);
+
+  const asOfTooltip = useMemo(() => {
+    const pageLabel = `${_('As Of Page')} ${currentPage + 1}`;
+    if (!lastUpdatedLabel) return pageLabel;
+    return `${pageLabel} | ${_('Updated')} ${lastUpdatedLabel}`;
+  }, [_, currentPage, lastUpdatedLabel]);
+
+  const pendingLabel = useMemo(() => {
+    const from = snapshot?.state?.pendingFromPage;
+    const to = snapshot?.state?.pendingToPage;
+    if (typeof to !== 'number') return '';
+    const start = typeof from === 'number' ? from + 1 : to + 1;
+    return start === to + 1 ? `${start}` : `${start}-${to + 1}`;
+  }, [snapshot?.state?.pendingFromPage, snapshot?.state?.pendingToPage]);
+
+  const lastAnalyzedPage = useMemo(() => {
+    return Math.max(0, snapshot?.state?.lastAnalyzedPage ?? 0);
+  }, [snapshot?.state?.lastAnalyzedPage]);
+
+  const progressTotals = useMemo(() => {
+    const pendingTotal = snapshot?.state?.pendingToPage ?? -1;
+    const batchTarget = batchProgress?.targetPage ?? -1;
+    const persistedTarget = snapshot?.state?.processingTargetPage ?? -1;
+    const totalPages = Math.max(
+      currentPage + 1,
+      pendingTotal + 1,
+      batchTarget + 1,
+      persistedTarget + 1,
+      1,
+    );
+    const batchProcessed = batchProgress?.pageEnd ?? -1;
+    const processedPages = Math.min(Math.max(lastAnalyzedPage, batchProcessed) + 1, totalPages);
+    const percent = Math.min(100, Math.round((processedPages / totalPages) * 100));
+    return { totalPages, processedPages, percent };
+  }, [
+    currentPage,
+    lastAnalyzedPage,
+    snapshot?.state?.pendingToPage,
+    snapshot?.state?.processingTargetPage,
+    batchProgress?.targetPage,
+    batchProgress?.pageEnd,
+  ]);
+
+  const processingLabel = useMemo(() => {
+    const total = progressTotals.totalPages;
+    const endPage = batchProgress?.pageEnd ?? snapshot?.state?.pendingToPage ?? lastAnalyzedPage;
+    const startPage =
+      batchProgress?.pageStart ??
+      snapshot?.state?.pendingFromPage ??
+      Math.min(lastAnalyzedPage, endPage);
+    const clampedEnd = Math.min(endPage + 1, total);
+    const clampedStart = Math.min(startPage + 1, clampedEnd);
+    return {
+      range: _('Processing p. {{start}}-{{end}} of {{total}}', {
+        start: clampedStart,
+        end: clampedEnd,
+        total,
+      }),
+    };
+  }, [
+    _,
+    batchProgress,
+    lastAnalyzedPage,
+    progressTotals,
+    snapshot?.state?.pendingFromPage,
+    snapshot?.state?.pendingToPage,
+  ]);
+
+  const notIndexed = useMemo(
+    () => isIndexed === false || snapshot?.state?.lastError === 'not_indexed',
+    [isIndexed, snapshot?.state?.lastError],
+  );
+
+  const stateErrorMessage = useMemo(() => {
+    const error = snapshot?.state?.lastError;
+    if (!error || error === 'not_indexed') return '';
+    switch (error) {
+      case 'missing_api_key':
+        return _('AI Gateway API key required.');
+      case 'provider_not_supported':
+        return _('X-Ray extraction currently requires AI Gateway.');
+      case 'extraction_failed':
+        return _('X-Ray extraction failed.');
+      default:
+        return error;
+    }
+  }, [snapshot?.state?.lastError, _]);
+
+  const isActionDisabled = useMemo(
+    () =>
+      isUpdating ||
+      isRebuilding ||
+      providerUnsupported ||
+      notIndexed ||
+      Boolean(snapshot?.state?.processing),
+    [isUpdating, isRebuilding, providerUnsupported, notIndexed, snapshot?.state?.processing],
+  );
+
+  const activeNotice = useMemo(() => {
+    const openAiAssistant = () => setNotebookActiveTab('ai');
+
+    const message = errorMessage || stateErrorMessage;
+    if (message) {
+      return {
+        tone: 'error' as const,
+        title: _('Error'),
+        message,
+        actionLabel: null,
+        onAction: null,
+      };
+    }
+    if (providerUnsupported) {
+      return {
+        tone: 'warning' as const,
+        title: _('AI Gateway required'),
+        message: _('X-Ray extraction currently requires AI Gateway. Switch provider in Settings.'),
+        actionLabel: null,
+        onAction: null,
+      };
+    }
+    if (notIndexed) {
+      return {
+        tone: 'warning' as const,
+        title: _('Book not indexed'),
+        message: _('Book must be indexed first. Open AI Assistant to index.'),
+        actionLabel: _('AI'),
+        onAction: openAiAssistant,
+      };
+    }
+    return null;
+  }, [errorMessage, stateErrorMessage, providerUnsupported, notIndexed, setNotebookActiveTab, _]);
+
+  const activeNoticeStyle = useMemo(() => {
+    if (!activeNotice) return null;
+    return noticeStyles[activeNotice.tone];
+  }, [activeNotice]);
+
+  const tabs = useMemo(
+    () => [
+      { id: 'entities', label: _('Entities') },
+      { id: 'timeline', label: _('Timeline') },
+      { id: 'relationships', label: _('Relationships') },
+    ],
+    [_],
+  );
+
+  const checkIndexed = useCallback(async () => {
+    if (!bookHash) {
+      setIsIndexed(false);
+      return;
+    }
+    if (!aiSettings?.enabled || providerUnsupported) {
+      setIsIndexed(null);
+      return;
+    }
+    const indexed = await isBookIndexed(bookHash);
+    setIsIndexed(indexed);
+  }, [bookHash, aiSettings?.enabled, providerUnsupported]);
+
+  const loadSummaries = useCallback(
+    async (data?: XRaySnapshot | null) => {
+      if (!aiSettings?.enabled || !bookHash) return;
+      const snapshotData = data ?? snapshotRef.current;
+      if (!snapshotData) return;
+      try {
+        const run = async () => {
+          const summaries = await getXRayEntitySummaries({
+            bookHash,
+            maxPageIncluded: currentPageRef.current,
+            settings: aiSettings,
+            entities: snapshotData.entities,
+            relationships: snapshotData.relationships,
+            events: snapshotData.events,
+            claims: snapshotData.claims,
+          });
+          setEntitySummaries(summaries);
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          await new Promise<void>((resolve) => {
+            window.requestIdleCallback(
+              () => {
+                void run().finally(resolve);
+              },
+              { timeout: 1500 },
+            );
+          });
+          return;
+        }
+
+        await run();
+      } catch (err) {
+        console.warn('Failed to load X-Ray summaries:', err);
+      }
+    },
+    [aiSettings, bookHash],
+  );
+
+  const loadSnapshot = useCallback(
+    async (options?: { silent?: boolean; page?: number }) => {
+      const silent = options?.silent ?? false;
+      const targetPage = options?.page ?? currentPageRef.current;
+      if (!bookHash) {
+        hasLoadedRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+      if (loadInFlightRef.current) {
+        const pending = pendingLoadRef.current;
+        pendingLoadRef.current = { silent: pending ? pending.silent && silent : silent };
+        return;
+      }
+      loadInFlightRef.current = true;
+      const shouldShowLoading = !silent && !hasLoadedRef.current;
+      if (shouldShowLoading) setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const data = await getXRaySnapshot(bookHash, targetPage);
+        snapshotRef.current = data;
+        setSnapshot(data);
+        void loadSummaries(data);
+      } catch (err) {
+        console.error('Failed to load X-Ray snapshot:', err);
+        setErrorMessage(_('Failed to load X-Ray data'));
+      } finally {
+        hasLoadedRef.current = true;
+        if (shouldShowLoading) setIsLoading(false);
+        loadInFlightRef.current = false;
+        const pending = pendingLoadRef.current;
+        if (pending) {
+          pendingLoadRef.current = null;
+          void loadSnapshot(pending);
+        }
+      }
+    },
+    [bookHash, loadSummaries, _],
+  );
+
+  const handleUpdate = useCallback(async () => {
+    if (!aiSettings?.enabled || !bookHash) return;
+    if (snapshot?.state?.processing) return;
+
+    if (aiSettings.provider !== 'ai-gateway') {
+      setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
+      return;
+    }
+
+    const indexed = await isBookIndexed(bookHash);
+    if (!indexed) {
+      setIsIndexed(false);
+      setErrorMessage(null);
+      return;
+    }
+
+    setIsUpdating(true);
+    setErrorMessage(null);
+
+    try {
+      await updateXRayForProgress({
+        bookHash,
+        currentPage,
+        settings: aiSettings,
+        bookTitle,
+        appService,
+        force: true,
+        bookMetadata: bookData?.book?.metadata,
+      });
+      await loadSnapshot({ silent: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : _('X-Ray update failed.');
+      setErrorMessage(message);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [
+    aiSettings,
+    bookHash,
+    currentPage,
+    bookTitle,
+    appService,
+    bookData,
+    loadSnapshot,
+    _,
+    snapshot?.state?.processing,
+  ]);
+
+  const handleRebuild = useCallback(async () => {
+    if (!aiSettings?.enabled || !bookHash) return;
+    if (snapshot?.state?.processing) return;
+
+    if (aiSettings.provider !== 'ai-gateway') {
+      setErrorMessage(_('X-Ray extraction currently requires AI Gateway.'));
+      return;
+    }
+
+    const indexed = await isBookIndexed(bookHash);
+    if (!indexed) {
+      setIsIndexed(false);
+      setErrorMessage(null);
+      return;
+    }
+
+    setIsRebuilding(true);
+    setErrorMessage(null);
+
+    try {
+      await rebuildXRayToPage({
+        bookHash,
+        currentPage,
+        settings: aiSettings,
+        bookTitle,
+        appService,
+        bookMetadata: bookData?.book?.metadata,
+        keepExtractionCache: true,
+      });
+      await loadSnapshot({ silent: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : _('X-Ray rebuild failed.');
+      setErrorMessage(message);
+    } finally {
+      setIsRebuilding(false);
+    }
+  }, [
+    aiSettings,
+    bookHash,
+    currentPage,
+    bookTitle,
+    appService,
+    bookData,
+    loadSnapshot,
+    _,
+    snapshot?.state?.processing,
+  ]);
+
+  const handleEvidenceJump = useCallback(
+    async (evidence: XRayEvidence) => {
+      if (!bookKey) return;
+      if (evidence.inferred || evidence.chunkId === 'inferred') return;
+      const view = getView(bookKey);
+      if (!view) return;
+      const config = getConfig(bookKey);
+      const searchConfig = (config?.searchConfig || DEFAULT_BOOK_SEARCH_CONFIG) as BookSearchConfig;
+      const query = evidence.quote.length > 180 ? evidence.quote.slice(0, 180) : evidence.quote;
+      const evidenceKey = `${evidence.chunkId}:${evidence.page}`;
+      setJumpingEvidenceKey(evidenceKey);
+
+      try {
+        const generator = await view.search({
+          ...searchConfig,
+          scope: 'book',
+          query,
+          matchCase: false,
+          matchWholeWords: false,
+        });
+        for await (const result of generator) {
+          if (typeof result === 'string') continue;
+          if ('progress' in result && typeof result.progress === 'number') continue;
+          const match = 'subitems' in result ? result.subitems[0] : result;
+          if (match?.cfi) {
+            view.goTo(match.cfi);
+            break;
+          }
+        }
+      } finally {
+        view.clearSearch();
+        setJumpingEvidenceKey(null);
+      }
+    },
+    [bookKey, getView, getConfig],
+  );
+
+  const entities = useMemo(
+    () =>
+      (snapshot?.entities || []).filter((entity) => ENTITY_TYPE_WHITELIST.includes(entity.type)),
+    [snapshot?.entities],
+  );
+  const relationships = useMemo(() => snapshot?.relationships || [], [snapshot?.relationships]);
+  const events = useMemo<XRaySnapshot['events']>(() => snapshot?.events || [], [snapshot?.events]);
+  const relationshipEntities = useMemo(
+    () => entities.filter((entity) => isLivingEntity(entity)),
+    [entities],
+  );
+  const livingEntityIds = useMemo(
+    () => new Set(relationshipEntities.map((entity) => entity.id)),
+    [relationshipEntities],
+  );
+  const livingRelationships = useMemo(
+    () =>
+      relationships.filter(
+        (rel) => livingEntityIds.has(rel.sourceId) && livingEntityIds.has(rel.targetId),
+      ),
+    [relationships, livingEntityIds],
+  );
+  const filteredRelationships = useMemo(
+    () =>
+      relationshipFilter === 'all'
+        ? livingRelationships
+        : livingRelationships.filter(
+            (rel) => rel.sourceId === relationshipFilter || rel.targetId === relationshipFilter,
+          ),
+    [relationshipFilter, livingRelationships],
+  );
+
+  const currentSectionIndex = progress?.section?.current ?? null;
+
+  const entityById = useMemo(() => {
+    return new Map(entities.map((entity) => [entity.id, entity]));
+  }, [entities]);
+
+  const parseSectionIndex = useCallback((chunkId: string): number | null => {
+    const match = chunkId.match(/-(\d+)-\d+(?:-unit)?$/);
+    if (!match) return null;
+    const parsed = Number.parseInt(match[1]!, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, []);
+
+  const getEntitySummaryText = useCallback(
+    (entity: XRayEntity) =>
+      entitySummaries[entity.id] ||
+      entity.description ||
+      entity.facts[0]?.value ||
+      _('No details available yet'),
+    [entitySummaries, _],
+  );
+
+  const formatEventPageRange = useCallback(
+    (event: XRaySnapshot['events'][number]) => {
+      const pages = event.evidence.map((item) => item.page).filter((page) => Number.isFinite(page));
+      if (pages.length === 0) return `${_('Page')} ${event.page + 1}`;
+      const minPage = Math.min(...pages);
+      const maxPage = Math.max(...pages);
+      if (minPage === maxPage) return `${_('Page')} ${minPage + 1}`;
+      return `${_('Page')} ${minPage + 1}-${maxPage + 1}`;
+    },
+    [_],
+  );
+
+  const relatedByEntity = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ id: string; label: string; type: string; evidence?: XRayEvidence }>
+    >();
+    for (const rel of livingRelationships) {
+      const source = entityById.get(rel.sourceId);
+      const target = entityById.get(rel.targetId);
+      if (!source || !target) continue;
+      const sourceList = map.get(source.id) ?? [];
+      sourceList.push({
+        id: target.id,
+        label: target.canonicalName,
+        type: rel.type,
+        evidence: rel.evidence[0],
+      });
+      map.set(source.id, sourceList);
+
+      const targetList = map.get(target.id) ?? [];
+      targetList.push({
+        id: source.id,
+        label: source.canonicalName,
+        type: rel.type,
+        evidence: rel.evidence[0],
+      });
+      map.set(target.id, targetList);
+    }
+    return map;
+  }, [livingRelationships, entityById]);
+
+  const relationshipPairsAll = useMemo(
+    () => buildRelationshipPairs(livingRelationships, entityById),
+    [livingRelationships, entityById],
+  );
+
+  const pickPairEvidence = useCallback((pair: RelationshipPair): XRayEvidence | null => {
+    if (pair.evidence.length === 0) return null;
+    const ordered = pair.evidence.slice().sort((a, b) => b.page - a.page);
+    return (
+      ordered.find((item) => !item.inferred && item.chunkId !== 'inferred') || ordered[0] || null
+    );
+  }, []);
+
+  const relationshipGroups = useMemo<RelationshipGroup[]>(() => {
+    if (relationshipPairsAll.length === 0) return [];
+    const groups: RelationshipGroup[] = [];
+    for (const entity of relationshipEntities) {
+      const connections: RelationshipGroup['connections'] = [];
+      let lastSeen = -1;
+      for (const pair of relationshipPairsAll) {
+        const isLeft = pair.leftId === entity.id;
+        const isRight = pair.rightId === entity.id;
+        if (!isLeft && !isRight) continue;
+        const targetId = isLeft ? pair.rightId : pair.leftId;
+        const target = entityById.get(targetId);
+        if (!target) continue;
+        const labels = uniqueStrings(
+          pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
+        );
+        const evidence = pickPairEvidence(pair) ?? undefined;
+        const isInferred = pair.relationships.every((rel) => rel.inferred);
+        lastSeen = Math.max(lastSeen, pair.lastSeenPage);
+        connections.push({
+          target,
+          labels,
+          evidence,
+          lastSeenPage: pair.lastSeenPage,
+          isInferred,
+        });
+      }
+      if (connections.length === 0) continue;
+      connections.sort((a, b) => b.lastSeenPage - a.lastSeenPage);
+      groups.push({
+        entityId: entity.id,
+        entity,
+        connections,
+        totalConnections: connections.length,
+        lastSeenPage: lastSeen,
+      });
+    }
+    return groups.sort(
+      (a, b) => b.totalConnections - a.totalConnections || b.lastSeenPage - a.lastSeenPage,
+    );
+  }, [relationshipEntities, relationshipPairsAll, entityById, pickPairEvidence]);
+
+  const groupedRelationshipView = useMemo(() => {
+    if (relationshipFilter === 'all') return relationshipGroups;
+    return relationshipGroups.filter((group) => group.entityId === relationshipFilter);
+  }, [relationshipFilter, relationshipGroups]);
+
+  const relationshipSummaryCount = useMemo(() => {
+    if (relationshipFilter === 'all') return groupedRelationshipView.length;
+    return groupedRelationshipView[0]?.connections.length ?? 0;
+  }, [groupedRelationshipView, relationshipFilter]);
+
+  const buildPairSummary = useCallback((pair: RelationshipPair): string => {
+    const descriptions = uniqueStrings(
+      pair.relationships.map((rel) => rel.description || '').filter(Boolean),
+    );
+    const typeLabels = uniqueStrings(
+      pair.relationships.map((rel) => formatRelationshipLabel(rel.type)),
+    );
+    const leftToken = pair.leftName.toLowerCase();
+    const rightToken = pair.rightName.toLowerCase();
+    const namedDescriptions = descriptions.filter((text) => {
+      const lower = text.toLowerCase();
+      return lower.includes(leftToken) && lower.includes(rightToken);
+    });
+    if (namedDescriptions.length > 0) {
+      return namedDescriptions
+        .slice(0, 2)
+        .map((value) => ensureSentence(value))
+        .filter(Boolean)
+        .join(' ');
+    }
+    const lead = (() => {
+      if (typeLabels.length === 1) {
+        return ensureSentence(`${pair.leftName} is ${typeLabels[0]} ${pair.rightName}`);
+      }
+      if (typeLabels.length > 1) {
+        return ensureSentence(
+          `Relationship between ${pair.leftName} and ${pair.rightName} includes ${typeLabels.join(', ')}`,
+        );
+      }
+      return ensureSentence(`Relationship between ${pair.leftName} and ${pair.rightName} is noted`);
+    })();
+    const tail = descriptions.length > 0 ? ensureSentence(descriptions[0]!) : '';
+    return [lead, tail].filter(Boolean).join(' ');
+  }, []);
+
+  const buildEntityRelationshipSummary = useCallback(
+    (pairs: RelationshipPair[]): string => {
+      if (pairs.length === 0) return _('No relationships yet');
+      const ranked = pairs.slice().sort((a, b) => {
+        if (b.relationships.length !== a.relationships.length) {
+          return b.relationships.length - a.relationships.length;
+        }
+        return b.lastSeenPage - a.lastSeenPage;
+      });
+      const sentences = ranked
+        .slice(0, 3)
+        .map((pair) => buildPairSummary(pair))
+        .filter(Boolean);
+      return sentences.join(' ');
+    },
+    [buildPairSummary, _],
+  );
+
+  const relationshipSummaryByEntity = useMemo(() => {
+    const pairMap = new Map<string, RelationshipPair[]>();
+    for (const pair of relationshipPairsAll) {
+      const leftList = pairMap.get(pair.leftId) ?? [];
+      leftList.push(pair);
+      pairMap.set(pair.leftId, leftList);
+      const rightList = pairMap.get(pair.rightId) ?? [];
+      rightList.push(pair);
+      pairMap.set(pair.rightId, rightList);
+    }
+    const summaryMap = new Map<string, string>();
+    for (const entity of relationshipEntities) {
+      const pairs = pairMap.get(entity.id) ?? [];
+      summaryMap.set(entity.id, buildEntityRelationshipSummary(pairs));
+    }
+    return summaryMap;
+  }, [relationshipEntities, relationshipPairsAll, buildEntityRelationshipSummary]);
+
+  const getRelationshipSummaryText = useCallback(
+    (entity?: XRayEntity | null) => {
+      if (!entity) return _('No relationships yet');
+      return relationshipSummaryByEntity.get(entity.id) || _('No relationships yet');
+    },
+    [relationshipSummaryByEntity, _],
+  );
+
+  const relationshipFilterEntity = useMemo(
+    () => relationshipEntities.find((entity) => entity.id === relationshipFilter) || null,
+    [relationshipEntities, relationshipFilter],
+  );
+
+  const mentionStats = useMemo(() => {
+    const stats = new Map<string, EntityMentionStats>();
+    const seenKeys = new Map<string, Set<string>>();
+
+    const getEntry = (entityId: string): EntityMentionStats => {
+      const existing = stats.get(entityId);
+      if (existing) return existing;
+      const entry: EntityMentionStats = {
+        mentions: [],
+        lockedCount: 0,
+        lastSeenPage: -1,
+        onPage: false,
+        inChapter: false,
+      };
+      stats.set(entityId, entry);
+      seenKeys.set(entityId, new Set());
+      return entry;
+    };
+
+    const addMention = (
+      entityId: string,
+      evidence: XRayEvidence,
+      context: string,
+      source: EntityMentionSource,
+    ) => {
+      if (!entityId) return;
+      const entry = getEntry(entityId);
+      if (evidence.page > currentPage) {
+        entry.lockedCount += 1;
+        return;
+      }
+      const key = `${evidence.chunkId}:${evidence.page}:${evidence.quote}`;
+      const keys = seenKeys.get(entityId)!;
+      if (keys.has(key)) return;
+      keys.add(key);
+      entry.mentions.push({ evidence, context, source });
+      entry.lastSeenPage = Math.max(entry.lastSeenPage, evidence.page);
+      if (evidence.page === currentPage) entry.onPage = true;
+      const sectionIndex = parseSectionIndex(evidence.chunkId);
+      if (
+        sectionIndex !== null &&
+        currentSectionIndex !== null &&
+        sectionIndex === currentSectionIndex
+      )
+        entry.inChapter = true;
+    };
+
+    for (const entity of entities) {
+      for (const fact of entity.facts) {
+        for (const evidence of fact.evidence) {
+          addMention(entity.id, evidence, fact.value, 'fact');
+        }
+      }
+    }
+
+    for (const rel of relationships) {
+      const source = entityById.get(rel.sourceId);
+      const target = entityById.get(rel.targetId);
+      const sourceLabel = source?.canonicalName || rel.sourceId;
+      const targetLabel = target?.canonicalName || rel.targetId;
+      const context = `${sourceLabel} ${rel.type} ${targetLabel}`;
+      for (const evidence of rel.evidence) {
+        addMention(rel.sourceId, evidence, context, 'relationship');
+        addMention(rel.targetId, evidence, context, 'relationship');
+      }
+    }
+
+    for (const event of events) {
+      for (const evidence of event.evidence) {
+        for (const entityId of event.involvedEntityIds) {
+          addMention(entityId, evidence, `Event: ${event.summary}`, 'event');
+        }
+      }
+    }
+
+    return stats;
+  }, [
+    entities,
+    relationships,
+    events,
+    entityById,
+    currentPage,
+    currentSectionIndex,
+    parseSectionIndex,
+  ]);
+
+  const entityViews = useMemo(() => {
+    return entities.map((entity) => {
+      const stats = mentionStats.get(entity.id) ?? {
+        mentions: [],
+        lockedCount: 0,
+        lastSeenPage: entity.lastSeenPage,
+        onPage: false,
+        inChapter: false,
+      };
+      const mentionsSorted = [...stats.mentions].sort((a, b) => b.evidence.page - a.evidence.page);
+      const mentionCount = stats.mentions.length;
+      const lastSeenPage = stats.lastSeenPage >= 0 ? stats.lastSeenPage : entity.lastSeenPage;
+      const relevanceScore =
+        mentionCount * 10 + (stats.onPage ? 50 : 0) + (stats.inChapter ? 20 : 0) + lastSeenPage;
+      const oneLiner = getEntitySummaryText(entity);
+      const related = relatedByEntity.get(entity.id) ?? [];
+      const isInferred = entity.facts.some((fact) => fact.inferred);
+      const searchText = [
+        entity.canonicalName,
+        getEntitySummaryText(entity),
+        ...entity.aliases,
+        ...entity.facts.map((fact) => `${fact.key} ${fact.value}`),
+        ...related.map((rel) => `${rel.label} ${rel.type}`),
+        ...stats.mentions.map((mention) => mention.context),
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const category: EntityView['category'] = (() => {
+        switch (entity.type) {
+          case 'character':
+            return 'people';
+          case 'location':
+            return 'places';
+          case 'organization':
+            return 'organizations';
+          case 'artifact':
+            return 'artifacts';
+          case 'event':
+            return 'events';
+          case 'term':
+          case 'concept':
+          default:
+            return 'concepts';
+        }
+      })();
+
+      return {
+        entity,
+        oneLiner,
+        mentionCount,
+        lastSeenPage,
+        mentions: mentionsSorted,
+        relevanceScore,
+        isLocked: stats.lockedCount > 0,
+        onPage: stats.onPage,
+        inChapter: stats.inChapter,
+        searchText,
+        category,
+        isInferred,
+      };
+    });
+  }, [entities, mentionStats, relatedByEntity, getEntitySummaryText]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {
+      all: entityViews.length,
+      people: 0,
+      places: 0,
+      organizations: 0,
+      artifacts: 0,
+      concepts: 0,
+      events: 0,
+    };
+    for (const view of entityViews) {
+      counts[view.category] += 1;
+    }
+    return counts;
+  }, [entityViews]);
+
+  const entityCategoryOptions = useMemo(
+    () =>
+      [
+        { id: 'all', label: _('All'), count: categoryCounts.all },
+        { id: 'people', label: _('People'), count: categoryCounts.people },
+        { id: 'places', label: _('Places'), count: categoryCounts.places },
+        {
+          id: 'organizations',
+          label: _('Organizations'),
+          count: categoryCounts.organizations,
+        },
+        { id: 'artifacts', label: _('Artifacts'), count: categoryCounts.artifacts },
+        { id: 'concepts', label: _('Concepts'), count: categoryCounts.concepts },
+        { id: 'events', label: _('Events'), count: categoryCounts.events },
+      ] as const,
+    [_, categoryCounts],
+  );
+
+  const entityScopeOptions = useMemo(
+    () =>
+      [
+        { id: 'page', label: _('Page'), tooltip: _('Only entities on this page') },
+        {
+          id: 'chapter',
+          label: _('Chapter'),
+          tooltip: _('Only entities in this chapter'),
+        },
+        { id: 'book', label: _('Book'), tooltip: _('All entities in the book') },
+      ] as const,
+    [_],
+  );
+
+  const scopeAvailability = useMemo(
+    () => ({
+      page: entityViews.some((view) => view.onPage),
+      chapter: entityViews.some((view) => view.inChapter),
+    }),
+    [entityViews],
+  );
+
+  const defaultEntityScope = useMemo<'page' | 'chapter' | 'book'>(() => {
+    if (scopeAvailability.page) return 'page';
+    if (scopeAvailability.chapter) return 'chapter';
+    return 'book';
+  }, [scopeAvailability.chapter, scopeAvailability.page]);
+
+  const entityFilterCount = useMemo(
+    () =>
+      Number(entityScope !== defaultEntityScope) +
+      Number(entityCategory !== 'all') +
+      Number(entitySort !== 'relevance'),
+    [defaultEntityScope, entityCategory, entityScope, entitySort],
+  );
+
+  const relationshipFilterCount = useMemo(
+    () => Number(relationshipFilter !== 'all') + Number(relationshipView !== 'list'),
+    [relationshipFilter, relationshipView],
+  );
+
+  const entitySearchIds = useMemo(() => {
+    const query = entitySearch.trim();
+    if (!query) return null;
+    const fzf = new Fzf(entityViews, {
+      selector: (item) => item.searchText,
+      tiebreakers: [byLengthAsc],
+      casing: 'smart-case',
+      normalize: true,
+      limit: 200,
+    });
+    const results = fzf.find(query);
+    return new Set(results.map((result) => result.item.entity.id));
+  }, [entitySearch, entityViews]);
+
+  const sortEntityViews = useCallback(
+    (list: EntityView[]) => {
+      return list.slice().sort((a, b) => {
+        if (entitySort === 'alphabetical') {
+          return a.entity.canonicalName.localeCompare(b.entity.canonicalName);
+        }
+        if (b.relevanceScore !== a.relevanceScore) return b.relevanceScore - a.relevanceScore;
+        return b.lastSeenPage - a.lastSeenPage;
+      });
+    },
+    [entitySort],
+  );
+
+  const matchesCategory = useCallback(
+    (view: EntityView) => {
+      if (entityCategory === 'all') return true;
+      return view.category === entityCategory;
+    },
+    [entityCategory],
+  );
+
+  const matchesScope = useCallback(
+    (view: EntityView) => {
+      if (entityScope === 'page') return view.onPage;
+      if (entityScope === 'chapter') return view.inChapter;
+      return true;
+    },
+    [entityScope],
+  );
+
+  const applyFilters = useCallback(
+    (list: EntityView[]) => {
+      const filtered = list.filter(matchesCategory);
+      return entitySearchIds
+        ? filtered.filter((entity) => entitySearchIds.has(entity.entity.id))
+        : filtered;
+    },
+    [entitySearchIds, matchesCategory],
+  );
+
+  const currentEntities = useMemo(() => {
+    return sortEntityViews(applyFilters(entityViews.filter(matchesScope)));
+  }, [entityViews, matchesScope, applyFilters, sortEntityViews]);
+
+  const formatQuote = (quote: string, limit = 140): string => {
+    if (quote.length <= limit) return quote;
+    return `${quote.slice(0, limit).trim()}…`;
+  };
+
+  const getEntityTypeLabel = useCallback(
+    (type: XRayEntity['type']) => {
+      switch (type) {
+        case 'character':
+          return _('Character');
+        case 'location':
+          return _('Location');
+        case 'organization':
+          return _('Organization');
+        case 'artifact':
+          return _('Artifact');
+        case 'event':
+          return _('Event');
+        case 'concept':
+          return _('Concept');
+        case 'term':
+        default:
+          return _('Term');
+      }
+    },
+    [_],
+  );
+
+  const pillBase =
+    'inline-flex h-5 items-center justify-center rounded-full px-2 text-[10px] font-semibold leading-[1] tracking-wide border';
+
+  const renderPill = (content: React.ReactNode) => (
+    <span
+      className={clsx(
+        pillBase,
+        'bg-base-200/70 text-base-content/70 border-base-300/40 dark:bg-base-300/30 dark:text-base-content/70 dark:border-base-300/40',
+      )}
+    >
+      <span className='relative top-[0.5px]'>{content}</span>
+    </span>
+  );
+
+  const renderMention = (mention: EntityMention, index: number) => {
+    const evidenceKey = `${mention.evidence.chunkId}:${mention.evidence.page}:${index}`;
+    const evidenceId = `${mention.evidence.chunkId}:${mention.evidence.page}`;
+    const canJump = !mention.evidence.inferred && mention.evidence.chunkId !== 'inferred';
+    return (
+      <div key={evidenceKey} className='mt-1'>
+        <button
+          type='button'
+          className='hover:bg-base-200/40 flex w-full items-start justify-between gap-2 rounded-md px-1 py-1 text-left transition-colors'
+          onClick={() => handleEvidenceJump(mention.evidence)}
+          disabled={!canJump || jumpingEvidenceKey === evidenceId}
+        >
+          <div className='text-base-content/70 text-[11px]'>
+            {mention.context && (
+              <span className='text-base-content/80 font-medium'>{mention.context}. </span>
+            )}
+            &ldquo;{formatQuote(mention.evidence.quote)}&rdquo;
+          </div>
+          <span className='text-base-content/50 text-[11px]'>
+            {_('p.')}
+            {mention.evidence.page + 1}
+            {mention.evidence.inferred && (
+              <span className='text-base-content/40 ml-1 text-[10px]'>{_('Inferred')}</span>
+            )}
+          </span>
+        </button>
+      </div>
+    );
+  };
+
+  const renderEntityCard = (item: EntityView) => {
+    return (
+      <details key={item.entity.id} className='border-base-300/60 bg-base-100/30 rounded-md border'>
+        <summary className='cursor-pointer list-none p-3 [&::-webkit-details-marker]:hidden'>
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0 flex-1'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <div className='text-sm font-semibold'>{item.entity.canonicalName}</div>
+                <div className='text-base-content/55 text-[10px] font-medium uppercase tracking-wide'>
+                  {getEntityTypeLabel(item.entity.type)}
+                </div>
+              </div>
+              <p className='text-base-content/70 mt-1 line-clamp-2 text-xs leading-relaxed'>
+                {item.oneLiner}
+              </p>
+              <div className='mt-2 flex flex-wrap items-center gap-1.5 text-[10px]'>
+                {renderPill(`${_('Mentions')}: ${item.mentionCount}`)}
+                {renderPill(`${_('Last Seen')}: ${_('p.')}${item.lastSeenPage + 1}`)}
+                {item.isInferred && renderPill(_('Inferred'))}
+                {item.isLocked && renderPill(_('Locked until later'))}
+              </div>
+            </div>
+            <LuChevronDown className='text-base-content/45 mt-0.5 size-3.5 shrink-0' />
+          </div>
+        </summary>
+        <div className='border-base-300/50 border-t px-3 pb-3 pt-2'>
+          <div className='text-base-content/55 mb-2 text-[11px] font-medium'>
+            {_('Mentions')} ({item.mentionCount})
+          </div>
+          {item.mentions.length === 0 ? (
+            <p className='text-base-content/50 text-[11px]'>{_('No mentions yet')}</p>
+          ) : (
+            <div className='space-y-1'>{item.mentions.map(renderMention)}</div>
+          )}
+          {item.isLocked && (
+            <div className='text-base-content/50 mt-2 text-[11px]'>{_('Locked until later')}</div>
+          )}
+        </div>
+      </details>
+    );
+  };
+
+  useEffect(() => {
+    loadSnapshot();
+  }, [loadSnapshot]);
+
+  useEffect(() => {
+    checkIndexed();
+  }, [checkIndexed]);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+    if (!hasLoadedRef.current) return;
+    loadSnapshot({ silent: true, page: currentPage });
+  }, [currentPage, loadSnapshot]);
+
+  useEffect(() => {
+    hasLoadedRef.current = false;
+    pendingLoadRef.current = null;
+    loadInFlightRef.current = false;
+    snapshotRef.current = null;
+    setSnapshot(null);
+    setEntitySummaries({});
+    setIsLoading(Boolean(bookHash));
+  }, [bookHash]);
+
+  useEffect(() => {
+    if (relationshipFilter === 'all') return;
+    if (!relationshipEntities.some((entity) => entity.id === relationshipFilter)) {
+      setRelationshipFilter('all');
+    }
+  }, [relationshipEntities, relationshipFilter]);
+
+  useEffect(() => {
+    if (entityCategory === 'all') return;
+    if (categoryCounts[entityCategory] === 0) {
+      setEntityCategory('all');
+    }
+  }, [categoryCounts, entityCategory]);
+
+  useEffect(() => {
+    if (entityScope === 'page' && !scopeAvailability.page) {
+      setEntityScope('book');
+    }
+    if (entityScope === 'chapter' && !scopeAvailability.chapter) {
+      setEntityScope('book');
+    }
+  }, [entityScope, scopeAvailability]);
+
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      if (event.detail?.bookHash !== bookHash) return;
+      const nextMaxPage = event.detail?.maxPageIncluded;
+      const currentMaxPage = snapshotRef.current?.state?.lastAnalyzedPage;
+      if (
+        typeof nextMaxPage === 'number' &&
+        typeof currentMaxPage === 'number' &&
+        nextMaxPage <= currentMaxPage
+      )
+        return;
+      loadSnapshot({ silent: true });
+    };
+    eventDispatcher.on('xray-updated', handler);
+    return () => {
+      eventDispatcher.off('xray-updated', handler);
+    };
+  }, [bookHash, loadSnapshot]);
+
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      if (event.detail?.bookHash !== bookHash) return;
+      void loadSummaries(snapshotRef.current);
+    };
+    eventDispatcher.on('xray-summaries-updated', handler);
+    return () => {
+      eventDispatcher.off('xray-summaries-updated', handler);
+    };
+  }, [bookHash, loadSummaries]);
+
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      if (event.detail?.bookHash !== bookHash) return;
+      if (event.detail?.status === 'start') {
+        setIsXRayProcessing(true);
+        return;
+      }
+      if (event.detail?.status === 'end') {
+        setIsXRayProcessing(false);
+        setBatchProgress(null);
+      }
+    };
+    eventDispatcher.on('xray-processing', handler);
+    return () => {
+      eventDispatcher.off('xray-processing', handler);
+    };
+  }, [bookHash]);
+
+  useEffect(() => {
+    const handler = (event: CustomEvent) => {
+      if (event.detail?.bookHash !== bookHash) return;
+      const status = event.detail?.status;
+      if (status === 'start') {
+        setBatchProgress({
+          pageStart: event.detail?.pageStart ?? 0,
+          pageEnd: event.detail?.pageEnd ?? 0,
+          targetPage: event.detail?.targetPage ?? currentPage,
+        });
+        return;
+      }
+      if (status === 'end') {
+        setBatchProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                pageEnd: Math.max(prev.pageEnd, event.detail?.pageEnd ?? prev.pageEnd),
+              }
+            : null,
+        );
+        return;
+      }
+      if (status === 'error') {
+        setBatchProgress(null);
+      }
+    };
+    eventDispatcher.on('xray-batch', handler);
+    return () => {
+      eventDispatcher.off('xray-batch', handler);
+    };
+  }, [bookHash, currentPage]);
+
+  useEffect(() => {
+    if (snapshot?.state?.processing) {
+      setIsXRayProcessing(true);
+    }
+  }, [snapshot?.state?.processing]);
+
+  useEffect(() => {
+    if (activeTab !== 'entities') {
+      setShowEntityRefine(false);
+    }
+    if (activeTab !== 'relationships') {
+      setShowRelationshipRefine(false);
+      setSelectedGraphEntity(null);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (relationshipView !== 'graph' && selectedGraphEntity) {
+      setSelectedGraphEntity(null);
+    }
+  }, [relationshipView, selectedGraphEntity]);
+
+  useEffect(() => {
+    setShowEntityRefine(false);
+    setShowRelationshipRefine(false);
+  }, [bookHash]);
+
+  if (!aiSettings?.enabled) {
+    return (
+      <div className='flex h-full items-center justify-center p-4 text-center text-sm'>
+        {_('Enable AI in Settings')}
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className='flex h-full items-center justify-center p-4'>
+        <div className='border-primary size-5 animate-spin rounded-full border-2 border-t-transparent' />
+      </div>
+    );
+  }
+
+  const showProcessing =
+    isXRayProcessing || isUpdating || isRebuilding || Boolean(snapshot?.state?.processing);
+
+  return (
+    <div className='relative flex h-full flex-col'>
+      {showProcessing && (
+        <div className='absolute inset-0 z-20 flex items-center justify-center'>
+          <div className='bg-base-100/40 absolute inset-0 backdrop-blur-sm' />
+          <div className='border-base-300/60 bg-base-100/90 text-base-content relative z-10 flex flex-col gap-2 rounded-2xl border px-4 py-3 text-[11px] font-semibold uppercase tracking-wide shadow-sm'>
+            <div className='flex items-center gap-2'>
+              <span className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
+              <span>{_('Processing X-Ray')}</span>
+            </div>
+            <span className='text-base-content/70 text-[10px] font-medium uppercase tracking-wide'>
+              {processingLabel.range}
+            </span>
+            <div className='bg-base-200/70 h-1.5 w-48 overflow-hidden rounded-full'>
+              <div
+                className='bg-primary h-full transition-all duration-300'
+                style={{ width: `${progressTotals.percent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      <div className='space-y-2 px-3'>
+        <div className='flex items-center justify-between gap-2'>
+          <div className='dropdown dropdown-start'>
+            <button
+              type='button'
+              tabIndex={0}
+              className='btn btn-ghost btn-sm h-7 min-h-7 gap-1 px-2 normal-case'
+              onClick={(event) => event.currentTarget.focus()}
+            >
+              {_('X-Ray')}
+              <LuChevronDown className='text-base-content/60 size-3' aria-hidden='true' />
+            </button>
+            <ul className='dropdown-content bgcolor-base-200 no-triangle xray-scrollbar menu menu-sm rounded-box absolute z-[1] mt-2 w-44 p-1 shadow'>
+              <li>
+                <button
+                  type='button'
+                  onClick={handleUpdate}
+                  disabled={isActionDisabled}
+                  title={_('Incremental update to current page')}
+                >
+                  {isUpdating ? _('Loading...') : _('Update X-Ray')}
+                </button>
+              </li>
+              <li>
+                <button
+                  type='button'
+                  onClick={handleRebuild}
+                  disabled={isActionDisabled}
+                  title={_('Reprocess from scratch to current page (keeps cache)')}
+                >
+                  {isRebuilding ? _('Loading...') : _('Rebuild X-Ray')}
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div className='lg:tooltip lg:tooltip-bottom' title={asOfTooltip}>
+            <div className='text-base-content/70 flex items-center gap-1 whitespace-nowrap text-xs tabular-nums'>
+              <span>{_('As Of Page')}</span>
+              <span className='text-base-content font-medium'>{currentPage + 1}</span>
+              {pendingLabel && (
+                <span className='text-base-content/50 ml-1 text-[11px] tabular-nums'>
+                  {_('Pending')}: {_('p.')}
+                  {pendingLabel}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {activeNotice && (
+          <div
+            className={clsx('rounded-md border px-3 py-2 text-xs', activeNoticeStyle?.container)}
+          >
+            <div className={clsx('flex items-start gap-2', activeNoticeStyle?.tone)}>
+              {activeNotice.tone === 'error' ? (
+                <LuCircleX className='mt-0.5 h-4 w-4 flex-shrink-0' aria-hidden='true' />
+              ) : (
+                <LuTriangleAlert className='mt-0.5 h-4 w-4 flex-shrink-0' aria-hidden='true' />
+              )}
+              <div>
+                <p className='font-medium'>{activeNotice.title}</p>
+                <p className={clsx('mt-1', activeNoticeStyle?.message)}>{activeNotice.message}</p>
+                {activeNotice.actionLabel && activeNotice.onAction && (
+                  <button
+                    type='button'
+                    className='btn btn-ghost btn-xs mt-2 h-7 min-h-7 rounded-md px-2 normal-case'
+                    onClick={activeNotice.onAction}
+                  >
+                    {activeNotice.actionLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className='flex flex-wrap gap-2 px-3 py-2'>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={clsx(
+              'btn btn-xs rounded-full border-none',
+              activeTab === tab.id ? 'bg-base-300 text-base-content' : 'bg-base-200/70',
+            )}
+            onClick={() => setActiveTab(tab.id as XRayTab)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className='xray-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-6'>
+        {activeTab === 'entities' && (
+          <div className='space-y-3'>
+            <div className='flex items-center gap-2'>
+              <input
+                className='input input-bordered input-xs focus:border-base-300 h-8 min-w-0 flex-1 pt-0.5 shadow-none focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0'
+                value={entitySearch}
+                onChange={(event) => setEntitySearch(event.target.value)}
+                placeholder={_('Search Entities')}
+              />
+              <button
+                type='button'
+                className='btn btn-ghost btn-xs h-8 min-h-8 shrink-0 rounded-md px-2 text-[11px]'
+                onClick={() => setShowEntityRefine((prev) => !prev)}
+              >
+                {_('Refine')}
+                {entityFilterCount > 0 && (
+                  <span className='bg-base-300/80 text-base-content inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px]'>
+                    {entityFilterCount}
+                  </span>
+                )}
+                <LuChevronDown
+                  className={clsx(
+                    'text-base-content/60 size-3 transition-transform duration-200',
+                    showEntityRefine && 'rotate-180',
+                  )}
+                  aria-hidden='true'
+                />
+              </button>
+            </div>
+
+            {showEntityRefine && (
+              <div className='bg-base-200/55 border-base-300/50 space-y-2 rounded-md border p-2'>
+                <div className='bg-base-200 flex items-center gap-1 rounded-lg p-1'>
+                  {entityScopeOptions.map((item) => {
+                    const isDisabled =
+                      item.id === 'page'
+                        ? !scopeAvailability.page
+                        : item.id === 'chapter'
+                          ? !scopeAvailability.chapter
+                          : false;
+                    return (
+                      <div
+                        key={item.id}
+                        className='lg:tooltip lg:tooltip-bottom'
+                        title={item.tooltip}
+                      >
+                        <button
+                          className={clsx(
+                            'btn btn-xs rounded-md border-none px-2',
+                            entityScope === item.id && !isDisabled
+                              ? 'bg-base-100 text-base-content shadow-sm'
+                              : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                            isDisabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
+                          )}
+                          onClick={() => setEntityScope(item.id)}
+                          disabled={isDisabled}
+                        >
+                          {item.label}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className='bg-base-200 flex w-full min-w-0 max-w-full flex-wrap items-center gap-1 rounded-lg p-1'>
+                  {entityCategoryOptions
+                    .filter((item) => item.id === 'all' || item.count > 0)
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        className={clsx(
+                          'inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium leading-none',
+                          entityCategory === item.id
+                            ? 'bg-base-100 text-base-content shadow-sm'
+                            : 'text-base-content/70 hover:bg-base-100/50 bg-transparent',
+                        )}
+                        onClick={() => setEntityCategory(item.id)}
+                      >
+                        <span className='leading-none'>{item.label}</span>
+                        <span className='text-base-content/70 bg-base-100/70 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] leading-none'>
+                          <span className='relative top-[0.5px]'>{item.count}</span>
+                        </span>
+                      </button>
+                    ))}
+                </div>
+
+                <div className='bg-base-200 flex w-fit items-center gap-1 rounded-lg p-1'>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      entitySort === 'relevance'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setEntitySort('relevance')}
+                  >
+                    {_('Relevance')}
+                  </button>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      entitySort === 'alphabetical'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setEntitySort('alphabetical')}
+                  >
+                    {_('A-Z')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(entitySearch.trim() || entityFilterCount > 0) && (
+              <p className='text-base-content/50 text-[11px]'>
+                {entitySearch.trim()
+                  ? `${_('Matches')}: ${entitySearchIds ? entitySearchIds.size : 0}`
+                  : `${_('Showing')}: ${currentEntities.length}`}
+              </p>
+            )}
+
+            {entityViews.length === 0 ? (
+              <p className='text-base-content/60 text-sm'>{_('No entities yet')}</p>
+            ) : currentEntities.length === 0 ? (
+              <p className='text-base-content/60 text-sm'>{_('None found')}</p>
+            ) : (
+              <div className='space-y-3'>{currentEntities.map(renderEntityCard)}</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'timeline' && (
+          <div className='space-y-3'>
+            {events.length === 0 ? (
+              <p className='text-base-content/60 text-sm'>{_('No events yet')}</p>
+            ) : (
+              <div className='relative'>
+                <div className='bg-base-content/25 absolute bottom-0 left-2 top-0 z-0 w-px -translate-x-1/2' />
+                <div className='space-y-4'>
+                  {events
+                    .slice()
+                    .sort((a, b) => a.page - b.page)
+                    .map((event) => {
+                      const pageLabel = formatEventPageRange(event);
+                      return (
+                        <div key={event.id} className='relative flex gap-3'>
+                          <div className='relative flex w-4 flex-none items-start justify-center'>
+                            <span className='bg-base-content border-base-content ring-base-content/30 z-10 inline-flex size-2 rounded-full border ring-1' />
+                          </div>
+                          <div className='border-base-300/60 bg-base-100/50 min-w-0 flex-1 rounded-md border p-3'>
+                            <div className='text-base-content/60 text-xs'>{pageLabel}</div>
+                            <p className='text-sm'>{event.summary}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'relationships' && (
+          <div className='space-y-3'>
+            <div className='flex w-full items-center gap-2 text-xs'>
+              <div className='text-base-content/60 text-[11px] tabular-nums'>
+                {_('Connections')}: {relationshipSummaryCount}
+              </div>
+              <button
+                type='button'
+                className='btn btn-ghost btn-xs ml-auto h-7 min-h-7 rounded-md px-2 text-[11px]'
+                onClick={() => setShowRelationshipRefine((prev) => !prev)}
+              >
+                {_('Refine')}
+                {relationshipFilterCount > 0 && (
+                  <span className='bg-base-300/80 text-base-content inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px]'>
+                    {relationshipFilterCount}
+                  </span>
+                )}
+                <LuChevronDown
+                  className={clsx(
+                    'text-base-content/60 size-3 transition-transform duration-200',
+                    showRelationshipRefine && 'rotate-180',
+                  )}
+                  aria-hidden='true'
+                />
+              </button>
+            </div>
+
+            {showRelationshipRefine && (
+              <div className='bg-base-200/55 border-base-300/50 space-y-2 rounded-md border p-2'>
+                <div className='flex w-full flex-wrap items-center gap-2 text-xs'>
+                  <select
+                    className='select select-bordered select-xs h-7 w-full min-w-0 focus:outline-none focus:outline-offset-0 focus:ring-0 focus:ring-offset-0 sm:w-auto'
+                    value={relationshipFilter}
+                    onChange={(event) => setRelationshipFilter(event.target.value)}
+                  >
+                    <option value='all'>{_('All Entities')}</option>
+                    {relationshipEntities
+                      .slice()
+                      .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
+                      .map((entity) => (
+                        <option key={entity.id} value={entity.id}>
+                          {entity.canonicalName}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className='bg-base-200 flex w-fit items-center gap-1 rounded-lg p-1'>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      relationshipView === 'list'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setRelationshipView('list')}
+                    title={_('List View')}
+                  >
+                    <LuList className='size-3.5' aria-hidden='true' />
+                    {_('List')}
+                  </button>
+                  <button
+                    className={clsx(
+                      'btn btn-xs rounded-md border-none px-2',
+                      relationshipView === 'graph'
+                        ? 'bg-base-100 text-base-content shadow-sm'
+                        : 'text-base-content/60 hover:bg-base-100/50 bg-transparent',
+                    )}
+                    onClick={() => setRelationshipView('graph')}
+                    title={_('Graph View')}
+                  >
+                    <PiGraph className='size-3.5' />
+                    {_('Graph')}
+                  </button>
+                </div>
+              </div>
+            )}
+            {relationshipView === 'graph' ? (
+              <div className='space-y-3'>
+                <div className='border-base-300 h-[300px] w-full min-w-0 overflow-hidden rounded-md border'>
+                  <XRayGraph
+                    entities={relationshipEntities}
+                    relationships={filteredRelationships}
+                    onNodeClick={(entity) => setSelectedGraphEntity(entity)}
+                    selectedEntityId={selectedGraphEntity?.id}
+                  />
+                </div>
+                {selectedGraphEntity ? (
+                  <div className='border-base-300/60 rounded-md border p-3'>
+                    <div className='flex items-start justify-between gap-2'>
+                      <div>
+                        <div className='text-sm font-semibold'>
+                          {selectedGraphEntity.canonicalName}
+                        </div>
+                      </div>
+                      <button
+                        type='button'
+                        className='text-base-content/50 text-[11px] hover:underline'
+                        onClick={() => setSelectedGraphEntity(null)}
+                      >
+                        {_('Close')}
+                      </button>
+                    </div>
+                    <p className='text-base-content/80 mt-2 text-xs leading-relaxed'>
+                      {getRelationshipSummaryText(selectedGraphEntity)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className='text-base-content/50 text-center text-xs'>
+                    {_('Click a node to see details')}
+                  </p>
+                )}
+              </div>
+            ) : groupedRelationshipView.length === 0 ? (
+              <p className='text-base-content/60 text-sm'>
+                {relationshipFilter === 'all' ? _('No relationships yet') : _('None found')}
+              </p>
+            ) : (
+              <div className='space-y-3'>
+                {relationshipFilter !== 'all' && relationshipFilterEntity && (
+                  <div className='border-base-300/60 rounded-md border p-3'>
+                    <div className='text-sm font-semibold'>
+                      {relationshipFilterEntity.canonicalName}
+                    </div>
+                    <p className='text-base-content/80 mt-2 text-xs leading-relaxed'>
+                      {getRelationshipSummaryText(relationshipFilterEntity)}
+                    </p>
+                  </div>
+                )}
+                {groupedRelationshipView.map((group) => {
+                  return (
+                    <details
+                      key={group.entityId}
+                      className='border-base-300/60 bg-base-100/30 rounded-md border'
+                    >
+                      <summary className='cursor-pointer list-none p-3 [&::-webkit-details-marker]:hidden'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <div className='min-w-0 flex-1'>
+                            <div className='flex flex-wrap items-center gap-1.5 text-xs'>
+                              <span className='text-sm font-semibold'>
+                                {group.entity.canonicalName}
+                              </span>
+                              {renderPill(`${_('Connections')}: ${group.totalConnections}`)}
+                              {renderPill(`${_('Last Seen')}: ${_('p.')}${group.lastSeenPage + 1}`)}
+                            </div>
+                            <p className='text-base-content/70 mt-1 line-clamp-2 text-xs leading-relaxed'>
+                              {getRelationshipSummaryText(group.entity)}
+                            </p>
+                          </div>
+                          <LuChevronDown className='text-base-content/45 mt-0.5 size-3.5 shrink-0' />
+                        </div>
+                      </summary>
+                      <div className='border-base-300/50 space-y-2 border-t px-3 pb-3 pt-2'>
+                        {group.connections.map((connection) => {
+                          const evidence = connection.evidence;
+                          return (
+                            <div
+                              key={`${group.entityId}-${connection.target.id}-detail`}
+                              className='border-base-300/60 bg-base-100/40 rounded-md border p-2'
+                            >
+                              <div className='flex items-start gap-2'>
+                                <div className='min-w-0 flex-1'>
+                                  <div className='flex flex-wrap items-center gap-1.5 text-xs'>
+                                    <span className='text-base-content/85 font-medium'>
+                                      {connection.target.canonicalName}
+                                    </span>
+                                    {connection.labels.map((label) => (
+                                      <span
+                                        key={`${group.entityId}-${connection.target.id}-${label}`}
+                                        className='text-base-content/60 bg-base-200/70 rounded-full px-2 py-1 text-[10px]'
+                                      >
+                                        {label}
+                                      </span>
+                                    ))}
+                                    {connection.isInferred && (
+                                      <span className='text-base-content/50 text-[10px]'>
+                                        {_('Inferred')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {evidence && (
+                                    <button
+                                      type='button'
+                                      className='hover:bg-base-200/40 mt-2 block w-full rounded-md px-1 py-1 text-left disabled:opacity-60'
+                                      onClick={() => handleEvidenceJump(evidence)}
+                                      disabled={
+                                        evidence.inferred ||
+                                        evidence.chunkId === 'inferred' ||
+                                        jumpingEvidenceKey ===
+                                          `${evidence.chunkId}:${evidence.page}`
+                                      }
+                                      title={_('Jump to quote')}
+                                    >
+                                      <div className='text-base-content/70 text-[11px] leading-relaxed'>
+                                        &ldquo;{formatQuote(evidence.quote, 120)}&rdquo;
+                                      </div>
+                                      <div className='text-base-content/45 mt-1 text-[10px] font-medium uppercase tracking-wide'>
+                                        {_('Jump to quote')}
+                                      </div>
+                                    </button>
+                                  )}
+                                </div>
+                                <span className='text-base-content/50 shrink-0 text-[10px]'>
+                                  {_('p.')}
+                                  {connection.lastSeenPage + 1}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default XRayView;

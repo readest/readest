@@ -1233,5 +1233,11 @@
   "Computed Hash": "Hash calculat",
   "Identifiers": "Identificatori",
   "Read (Stream)": "Citește (Flux)",
-  "Failed to start stream": "Eroare la pornirea fluxului"
+  "Failed to start stream": "Eroare la pornirea fluxului",
+  "Update X-Ray": "Actualizează X-Ray",
+  "Rebuild X-Ray": "Reconstruiește X-Ray",
+  "Reprocess from scratch to current page (keeps cache)": "Reprocesează de la zero până la pagina curentă (păstrează memoria cache)",
+  "Incremental update to current page": "Actualizare incrementală până la pagina curentă",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Se procesează p. {{start}}-{{end}} din {{total}}",
+  "Processing X-Ray": "Se procesează X-Ray"
 }
