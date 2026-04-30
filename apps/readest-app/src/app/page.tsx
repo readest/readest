@@ -601,7 +601,6 @@ export default function HomePage() {
     >
       {/* ── Titlebar ── */}
       <AppTitleBar
-        variant='transparent'
         headerRef={titlebarRef}
         contentClassName='items-center gap-2 sm:gap-4'
         className='z-20 !h-[74px] !min-h-[74px] !border-0 !border-transparent !bg-transparent !bg-none !shadow-none !backdrop-blur-none sm:!h-[76px] dark:!border-0 dark:!border-transparent dark:!bg-transparent dark:!bg-none dark:!shadow-none dark:!backdrop-blur-none'
