@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
 import { useEnv } from '@/context/EnvContext';
-import { CatalogManager } from '@/app/opds/components/CatelogManager';
+import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { useTranslation } from '@/hooks/useTranslation';
 import Dialog from '@/components/Dialog';
 

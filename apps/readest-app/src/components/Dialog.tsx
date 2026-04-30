@@ -224,7 +224,7 @@ const Dialog: React.FC<DialogProps> = ({
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
           className={clsx(
-            'drag-handle h-10 max-h-10 min-h-10 w-full cursor-row-resize items-center justify-center',
+            'drag-handle mb-2 h-6 max-h-6 min-h-6 w-full cursor-row-resize items-center justify-center',
             'transition-padding-top flex duration-300 ease-out sm:hidden',
           )}
           onMouseDown={handleDragStart}

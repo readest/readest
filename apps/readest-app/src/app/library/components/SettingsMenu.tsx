@@ -263,6 +263,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setAlwaysInForeground(requestAlwaysInForeground);
   };
 
+  const handleSyncLibrary = () => {
+    onPullLibrary(true, true);
+    setIsDropdownOpen?.(false);
+  };
+
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'];
   const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
@@ -329,7 +334,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               Icon={user ? MdSync : MdSyncProblem}
               labelClass='ps-2 pe-1 !mx-0'
               iconClassName={user && isSyncing ? 'animate-reverse-spin' : ''}
-              onClick={onPullLibrary.bind(null, true, true)}
+              onClick={handleSyncLibrary}
             />
             <button
               onClick={handleUserProfile}

@@ -19,7 +19,7 @@ jobs:
         with:
           submodules: 'true'
       - name: setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+        uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install minimal stable with clippy and rustfmt
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -50,7 +50,7 @@ jobs:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
 
       - name: setup node
         uses: actions/setup-node@v6
@@ -105,7 +105,7 @@ jobs:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
 
       - name: setup node
         uses: actions/setup-node@v6
@@ -128,7 +128,7 @@ jobs:
           pnpm install && pnpm setup-vendors
 
       - name: setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1

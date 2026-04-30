@@ -245,18 +245,16 @@ describe('transformStylesheet', () => {
     it('adds width when both left and right bleed', () => {
       const css = '.bleed { duokan-bleed: left right; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain(
-        'width: calc(var(--_max-width) + var(--page-margin-left) + var(--page-margin-right)) !important',
-      );
+      expect(result).toContain('width: calc(var(--full-width) * 1px) !important');
+      expect(result).toContain('min-width: calc(var(--full-width) * 1px) !important');
       expect(result).toContain('max-width: calc(var(--full-width) * 1px) !important');
     });
 
     it('adds height when both top and bottom bleed', () => {
       const css = '.bleed { duokan-bleed: top bottom; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain(
-        'height: calc(100% + var(--page-margin-top) + var(--page-margin-bottom)) !important',
-      );
+      expect(result).toContain('height: calc(var(--full-height) * 1px) !important');
+      expect(result).toContain('min-height: calc(var(--full-height) * 1px) !important');
       expect(result).toContain('max-height: calc(var(--full-height) * 1px) !important');
     });
 
@@ -265,6 +263,46 @@ describe('transformStylesheet', () => {
       const result = transformStylesheet(css, VW, VH, true);
       expect(result).not.toContain('margin-left: calc(-1');
       expect(result).not.toContain('margin-right: calc(-1');
+    });
+  });
+
+  describe('hardcoded pixel width clamping', () => {
+    it('adds max-width and border-box when width exceeds viewport', () => {
+      const css = '.calibre8 { display: block; width: 1200px; padding: 2em 0 0 1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('max-width: calc(var(--available-width) * 1px)');
+      expect(result).toContain('box-sizing: border-box');
+    });
+
+    it('does not clamp when width is smaller than viewport', () => {
+      const css = '.box { width: 450px; padding: 2em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width when one already exists', () => {
+      const css = '.box { width: 1200px; max-width: 100%; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      const matches = result.match(/max-width/g);
+      expect(matches).toHaveLength(1);
+    });
+
+    it('does not affect max-width or min-width properties', () => {
+      const css = '.box { max-width: 1200px; min-width: 200px; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width for non-pixel width values', () => {
+      const css = '.box { width: 50%; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
+    });
+
+    it('does not add max-width for em width values', () => {
+      const css = '.box { width: 20em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('max-width: calc(var(--available-width)');
     });
   });
 

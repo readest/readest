@@ -84,15 +84,16 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         className={clsx(
           'absolute left-2 -translate-y-1/2',
           'flex items-center gap-1',
-          'transition-opacity duration-300',
-          isPageNavigationButtonsVisible
-            ? 'top-1/2 z-10 opacity-100'
-            : `${appService?.isAndroidApp ? 'bottom-2' : 'pointer-events-none bottom-12'} opacity-0`,
+          isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
+          !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
         )}
       >
         <button
           onClick={handleGoLeftSection}
-          className='flex h-20 w-20 items-center justify-center focus:outline-none'
+          className={clsx(
+            'flex h-20 w-20 items-center justify-center focus:outline-none',
+            !isPageNavigationButtonsVisible && appService?.isAndroidApp && 'h-4 w-4',
+          )}
           aria-hidden={false}
           aria-label={getLeftSectionLabel()}
           tabIndex={0}
@@ -132,10 +133,8 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         className={clsx(
           'absolute right-2 -translate-y-1/2',
           'flex items-center gap-1',
-          'transition-opacity duration-300',
-          isPageNavigationButtonsVisible
-            ? 'top-1/2 z-10 opacity-100'
-            : `${appService?.isAndroidApp ? 'bottom-2' : 'pointer-events-none bottom-12'} opacity-0`,
+          isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
+          !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
         )}
       >
         <button
@@ -158,7 +157,10 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         </button>
         <button
           onClick={handleGoRightSection}
-          className='flex h-20 w-20 items-center justify-center focus:outline-none'
+          className={clsx(
+            'flex h-20 w-20 items-center justify-center focus:outline-none',
+            !isPageNavigationButtonsVisible && appService?.isAndroidApp && 'h-4 w-4',
+          )}
           aria-hidden={false}
           aria-label={getRightSectionLabel()}
           tabIndex={0}

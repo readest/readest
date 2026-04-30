@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getExternalDragHandle, toParentViewportPoint } from '@/app/reader/utils/annotatorUtil';
+import {
+  getExternalDragHandle,
+  getHighlightColorLabel,
+  removeBookNoteOverlays,
+  toParentViewportPoint,
+} from '@/app/reader/utils/annotatorUtil';
 import { Point } from '@/utils/sel';
+import { BookNote, UserHighlightColor } from '@/types/book';
+import { SystemSettings } from '@/types/settings';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 
 describe('getExternalDragHandle', () => {
   const currentStart: Point = { x: 100, y: 200 };
@@ -97,5 +105,123 @@ describe('toParentViewportPoint', () => {
 
     const result = toParentViewportPoint(doc, 50, 100);
     expect(result).toEqual({ x: 300, y: 100 });
+  });
+});
+
+describe('getHighlightColorLabel', () => {
+  const makeSettings = (
+    userHighlightColors: UserHighlightColor[],
+    defaultHighlightLabels: Partial<Record<string, string>> = {},
+  ): SystemSettings =>
+    ({
+      globalReadSettings: {
+        userHighlightColors,
+        defaultHighlightLabels,
+      },
+    }) as SystemSettings;
+
+  it('returns the user-set label for a built-in color', () => {
+    const settings = makeSettings([], { yellow: 'Foreshadowing' });
+    expect(getHighlightColorLabel(settings, 'yellow')).toBe('Foreshadowing');
+  });
+
+  it('returns the user-set label for a hex color, matching case-insensitively', () => {
+    const settings = makeSettings([{ hex: '#aabbcc', label: 'Romance' }]);
+    expect(getHighlightColorLabel(settings, '#AABBCC')).toBe('Romance');
+  });
+
+  it('returns undefined when the user has not set a label', () => {
+    const settings = makeSettings([]);
+    expect(getHighlightColorLabel(settings, 'green')).toBeUndefined();
+    expect(getHighlightColorLabel(settings, '#123456')).toBeUndefined();
+  });
+
+  it('ignores labels that collapse to whitespace', () => {
+    const settings = makeSettings([{ hex: '#abcdef', label: '   ' }], { red: '  ' });
+    expect(getHighlightColorLabel(settings, '#abcdef')).toBeUndefined();
+    expect(getHighlightColorLabel(settings, 'red')).toBeUndefined();
+  });
+});
+
+describe('removeBookNoteOverlays', () => {
+  const makeView = () => {
+    const addAnnotation = vi.fn();
+    const view = { addAnnotation } as unknown as FoliateView;
+    return { view, addAnnotation };
+  };
+
+  const baseNote = (overrides: Partial<BookNote> = {}): BookNote => ({
+    id: 'id-1',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2)',
+    note: '',
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  });
+
+  it('removes only the highlight overlay for a highlight-only annotation', () => {
+    const { view, addAnnotation } = makeView();
+    const note = baseNote({ style: 'highlight', color: 'yellow' });
+
+    removeBookNoteOverlays(view, note);
+
+    expect(addAnnotation).toHaveBeenCalledTimes(1);
+    expect(addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ value: note.cfi }), true);
+    const passed = addAnnotation.mock.calls[0]![0] as BookNote & { value: string };
+    expect(passed.value.startsWith(NOTE_PREFIX)).toBe(false);
+  });
+
+  it('removes only the note overlay for a note-only annotation', () => {
+    const { view, addAnnotation } = makeView();
+    const note = baseNote({ note: 'my comment' });
+
+    removeBookNoteOverlays(view, note);
+
+    expect(addAnnotation).toHaveBeenCalledTimes(1);
+    expect(addAnnotation).toHaveBeenCalledWith(
+      expect.objectContaining({ value: `${NOTE_PREFIX}${note.cfi}` }),
+      true,
+    );
+  });
+
+  it('removes both overlays when the annotation has a highlight and a note', () => {
+    const { view, addAnnotation } = makeView();
+    const note = baseNote({ style: 'underline', color: 'red', note: 'my comment' });
+
+    removeBookNoteOverlays(view, note);
+
+    expect(addAnnotation).toHaveBeenCalledTimes(2);
+    const values = addAnnotation.mock.calls.map(
+      (call) => (call[0] as BookNote & { value: string }).value,
+    );
+    expect(values).toContain(note.cfi);
+    expect(values).toContain(`${NOTE_PREFIX}${note.cfi}`);
+    for (const call of addAnnotation.mock.calls) {
+      expect(call[1]).toBe(true);
+    }
+  });
+
+  it('does nothing for a bookmark (no highlight, no note text)', () => {
+    const { view, addAnnotation } = makeView();
+    const bookmark = baseNote({ type: 'bookmark' });
+
+    removeBookNoteOverlays(view, bookmark);
+
+    expect(addAnnotation).not.toHaveBeenCalled();
+  });
+
+  it('treats whitespace-only note text as empty and skips the note overlay', () => {
+    const { view, addAnnotation } = makeView();
+    const note = baseNote({ style: 'highlight', note: '   \n  ' });
+
+    removeBookNoteOverlays(view, note);
+
+    expect(addAnnotation).toHaveBeenCalledTimes(1);
+    expect(addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ value: note.cfi }), true);
+  });
+
+  it('is a no-op when view is null', () => {
+    expect(() => removeBookNoteOverlays(null, baseNote({ style: 'highlight' }))).not.toThrow();
   });
 });

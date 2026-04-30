@@ -130,10 +130,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
               onGoToLibrary={onGoToLibrary}
               onDropdownOpenChange={(isOpen) => setDropdownOpenBook(isOpen ? bookKey : '')}
             />
-            <PageNavigationButtons
-              bookKey={bookKey}
-              isDropdownOpen={dropdownOpenBook === bookKey}
-            />
             <FoliateViewer
               key={viewerKey}
               bookKey={bookKey}
@@ -148,7 +144,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
                   <div
                     className='bg-base-100 absolute left-0 top-0 h-full'
                     style={{
-                      width: `calc(${contentInsets.left + (showFooter ? 32 : 0)}px)`,
+                      width: `calc(${contentInsets.left + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                       height: `calc(100%)`,
                     }}
                   />
@@ -157,7 +153,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
                   <div
                     className='bg-base-100 absolute right-0 top-0 h-full'
                     style={{
-                      width: `calc(${contentInsets.right + (showHeader ? 32 : 0)}px)`,
+                      width: `calc(${contentInsets.right + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                       height: `calc(100%)`,
                     }}
                   />
@@ -218,6 +214,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
                 gridInsets={gridInsets}
               />
             )}
+            <PageNavigationButtons
+              bookKey={bookKey}
+              isDropdownOpen={dropdownOpenBook === bookKey}
+            />
             <Annotator bookKey={bookKey} />
             <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
             <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />

@@ -473,6 +473,27 @@ describe('TTSController', () => {
       expect(controller.state).toBe('stopped');
     });
 
+    test('error preserves state for AbortError (DOMException-style)', () => {
+      // iOS audio.play() and AbortSignal-aware fetches reject with a DOMException
+      // whose name is 'AbortError'. Treating it as a real error desyncs the state
+      // machine: subsequent rate changes see state !== 'playing' and skip the
+      // stop+start cycle, and #speak's auto-forward gate fails.
+      controller.state = 'playing';
+      const abort = new Error('The operation was aborted.');
+      abort.name = 'AbortError';
+      controller.error(abort);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('error preserves state for our internal Aborted message', () => {
+      // EdgeTTSClient and NativeTTSClient resolve the inner promise with
+      // { code: 'error', message: 'Aborted' } on signal abort; if that bubbles
+      // through any catch path it must not flip state to 'stopped'.
+      controller.state = 'playing';
+      controller.error(new Error('Aborted'));
+      expect(controller.state).toBe('playing');
+    });
+
     test('play calls start when not playing', () => {
       controller.state = 'stopped';
       const startSpy = vi.spyOn(controller, 'start').mockResolvedValue();
@@ -570,6 +591,39 @@ describe('TTSController', () => {
     });
   });
 
+  describe('start', () => {
+    test('uses tts.resume() not tts.start() when state is stopped (play/pause race fix)', async () => {
+      // Repro: `forward()` transitions state to 'stopped' transiently between its
+      // `await this.stop()` and the follow-up navigation. If the user taps play
+      // in that window, `start()` previously called `tts.start()` — which resets
+      // the TTS list to position 0 (section beginning) instead of resuming the
+      // current paragraph. The fix: always use `tts.resume()` (which itself
+      // falls back to `next()` on a fresh TTS), so there's no way `start()`
+      // ever rewinds to the top of a section.
+      await controller.initViewTTS(0);
+
+      const ttsStartMock = vi.fn().mockReturnValue('<speak>section-start</speak>');
+      const ttsResumeMock = vi.fn().mockReturnValue('<speak>current</speak>');
+      const tts = mockView.tts as unknown as {
+        start: typeof ttsStartMock;
+        resume: typeof ttsResumeMock;
+        next: ReturnType<typeof vi.fn>;
+        prev: ReturnType<typeof vi.fn>;
+      };
+      tts.start = ttsStartMock;
+      tts.resume = ttsResumeMock;
+      tts.next = vi.fn().mockReturnValue(undefined);
+      tts.prev = vi.fn();
+
+      // Simulate the race: state is 'stopped' (transient during forward())
+      controller.state = 'stopped';
+      await controller.start();
+
+      expect(ttsResumeMock).toHaveBeenCalled();
+      expect(ttsStartMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('forward and backward', () => {
     test('forward sets forward-paused state when not playing', async () => {
       // Set up controller with a mock tts on the view
@@ -632,6 +686,56 @@ describe('TTSController', () => {
         expect.anything(),
         true,
       );
+    });
+  });
+
+  describe('preloadNextSSML', () => {
+    test('calls tts.next() and tts.prev() synchronously without async gaps between them', async () => {
+      // This test verifies the fix for a race condition where async gaps between
+      // tts.next() calls in preloadNextSSML allowed #speak() to interleave and
+      // read corrupted #ranges state (replaced by next() for a different block).
+      const callOrder: string[] = [];
+      let asyncOpHappened = false;
+
+      mockView.tts = {
+        next: vi.fn().mockImplementation(() => {
+          if (asyncOpHappened) {
+            callOrder.push('next-after-async');
+          } else {
+            callOrder.push('next');
+          }
+          return '<speak>chunk</speak>';
+        }),
+        prev: vi.fn().mockImplementation(() => {
+          callOrder.push('prev');
+        }),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+
+      // Use preprocessCallback to detect when async processing happens
+      controller.preprocessCallback = async (ssml: string) => {
+        asyncOpHappened = true;
+        callOrder.push('preprocess');
+        return ssml;
+      };
+
+      await controller.preloadNextSSML(2);
+
+      // All next() calls should happen before any preprocess (async operation)
+      const firstPreprocessIdx = callOrder.indexOf('preprocess');
+      const nextIndices = callOrder.map((op, i) => (op === 'next' ? i : -1)).filter((i) => i >= 0);
+      const prevIndices = callOrder.map((op, i) => (op === 'prev' ? i : -1)).filter((i) => i >= 0);
+
+      // All next() calls must come before any async preprocessing
+      for (const idx of nextIndices) {
+        expect(idx).toBeLessThan(firstPreprocessIdx);
+      }
+      // All prev() calls must come before any async preprocessing
+      for (const idx of prevIndices) {
+        expect(idx).toBeLessThan(firstPreprocessIdx);
+      }
+      // No next() should happen after an async operation
+      expect(callOrder).not.toContain('next-after-async');
     });
   });
 

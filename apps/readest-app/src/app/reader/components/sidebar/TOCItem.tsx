@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useCallback } from 'react';
-import { ListChildComponentProps } from 'react-window';
 import { TOCItem } from '@/libs/document';
 import { getContentMd5 } from '@/utils/misc';
 
@@ -160,35 +159,6 @@ export const StaticListRow: React.FC<ListRowProps> = ({
         flatItem={flatItem}
         itemSize={itemSize}
         isActive={isActive}
-        onToggleExpand={onToggleExpand}
-        onItemClick={onItemClick}
-      />
-    </div>
-  );
-};
-
-export const VirtualListRow: React.FC<
-  ListChildComponentProps & {
-    data: {
-      bookKey: string;
-      flatItems: FlatTOCItem[];
-      itemSize: number;
-      activeHref: string | null;
-      onToggleExpand: (item: TOCItem) => void;
-      onItemClick: (item: TOCItem) => void;
-    };
-  }
-> = ({ index, style, data }) => {
-  const { flatItems, bookKey, activeHref, itemSize, onToggleExpand, onItemClick } = data;
-  const flatItem = flatItems[index];
-
-  return (
-    <div style={style} title={flatItem.item.label || ''}>
-      <StaticListRow
-        bookKey={bookKey}
-        flatItem={flatItem}
-        itemSize={itemSize - 1}
-        activeHref={activeHref}
         onToggleExpand={onToggleExpand}
         onItemClick={onItemClick}
       />

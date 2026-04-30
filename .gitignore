@@ -49,6 +49,7 @@ fastlane/metadata/android/en-US/changelogs
 result*
 
 .playwright-mcp/
+.gstack
 
 .claude/worktrees
 .claude/settings.local.json

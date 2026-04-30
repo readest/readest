@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
+import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
@@ -31,9 +31,14 @@ import Menu from '@/components/Menu';
 interface ViewMenuProps {
   bookKey: string;
   setIsDropdownOpen?: (open: boolean) => void;
+  onShowMetaHashDialog?: () => void;
 }
 
-const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
+const ViewMenu: React.FC<ViewMenuProps> = ({
+  bookKey,
+  setIsDropdownOpen,
+  onShowMetaHashDialog,
+}) => {
   const _ = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
@@ -58,6 +63,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings!.invertImgColorInDark,
   );
+  const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
 
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
@@ -128,6 +134,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
   }, [invertImgColorInDark]);
 
   useEffect(() => {
+    if (applyThemeToPDF === viewSettings.applyThemeToPDF) return;
+    saveViewSettings(envConfig, bookKey, 'applyThemeToPDF', applyThemeToPDF, true, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applyThemeToPDF]);
+
+  useEffect(() => {
     if (zoomMode === viewSettings.zoomMode) return;
     viewSettings.zoomMode = zoomMode;
     getView(bookKey)?.renderer.setAttribute('zoom', zoomMode);
@@ -157,7 +169,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keepCoverSpread]);
 
-  const lastSyncTime = Math.max(config?.lastSyncedAtConfig || 0, config?.lastSyncedAtNotes || 0);
+  const lastSyncTime = Math.max(
+    config?.lastSyncedAtConfig || 0,
+    config?.lastSyncedAtNotes || 0,
+    config?.lastPushedAtConfig || 0,
+    config?.lastPushedAtNotes || 0,
+  );
 
   return (
     <Menu
@@ -307,6 +324,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         Icon={user ? MdSync : MdSyncProblem}
         iconClassName={user && viewState?.syncing ? 'animate-reverse-spin' : ''}
         onClick={handleSync}
+        siblings={
+          <button
+            aria-label={_('Metadata Hash')}
+            title={_('Metadata Hash')}
+            className='hover:bg-base-300 text-base-content/70 mx-1 rounded-md px-2'
+            onClick={() => {
+              setIsDropdownOpen?.(false);
+              onShowMetaHashDialog?.();
+            }}
+          >
+            <MdInfoOutline size={16} />
+          </button>
+        }
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
@@ -323,6 +353,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
         onClick={cycleThemeMode}
       />
+      {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
+        <MenuItem
+          label={_('Apply Theme Colors to PDF')}
+          Icon={applyThemeToPDF ? MdCheck : undefined}
+          onClick={() => setApplyThemeToPDF(!applyThemeToPDF)}
+        />
+      )}
       <MenuItem
         label={_('Invert Image In Dark Mode')}
         disabled={!isDarkMode}

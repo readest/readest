@@ -1,5 +1,5 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
-import { OPDSLink } from '@/types/opds';
+import { OPDSBaseLink } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
 
@@ -68,7 +68,7 @@ export const parseMediaType = (str?: string) => {
   };
 };
 
-export const isSearchLink = (link: OPDSLink): boolean => {
+export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
   return rels.includes('search') && (link.type === MIME.OPENSEARCH || link.type === MIME.ATOM);
 };
@@ -97,13 +97,21 @@ export const validateOPDSURL = async (
   username?: string,
   password?: string,
   useProxy = false,
+  customHeaders: Record<string, string> = {},
 ): Promise<ValidationResult> => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    const res = await fetchWithAuth(url, username, password, useProxy, {
-      signal: controller.signal,
-    });
+    const res = await fetchWithAuth(
+      url,
+      username,
+      password,
+      useProxy,
+      {
+        signal: controller.signal,
+      },
+      customHeaders,
+    );
     clearTimeout(timeout);
 
     if (!res.ok) {

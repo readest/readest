@@ -12,7 +12,6 @@ import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { viewPagination } from './usePagination';
-import { getStyles } from '@/utils/style';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -56,6 +55,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
       getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
     }
+    return true;
   };
 
   const switchSideBar = () => {
@@ -210,12 +210,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const view = getView(sideBarBookKey);
     const bookData = getBookData(sideBarBookKey);
     const viewSettings = getViewSettings(sideBarBookKey)!;
-    viewSettings!.zoomLevel = zoomLevel;
-    setViewSettings(sideBarBookKey, viewSettings!);
     if (bookData?.isFixedLayout) {
       view?.renderer.setAttribute('scale-factor', zoomLevel);
-    } else {
-      view?.renderer.setStyles?.(getStyles(viewSettings!));
+      viewSettings!.zoomLevel = zoomLevel;
+      setViewSettings(sideBarBookKey, viewSettings!);
     }
   };
 
@@ -254,6 +252,15 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const resetZoom = () => {
     if (!sideBarBookKey) return;
     applyZoomLevel(100);
+  };
+
+  const toggleToolbar = () => {
+    if (!sideBarBookKey) return;
+    // Don't intercept Enter when a button is focused (let native click fire)
+    const active = document.activeElement;
+    if (active && active.tagName === 'BUTTON') return;
+    const { hoveredBookKey, setHoveredBookKey } = useReaderStore.getState();
+    setHoveredBookKey(hoveredBookKey === sideBarBookKey ? '' : sideBarBookKey);
   };
 
   const toggleTTS = () => {
@@ -337,6 +344,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
       onToggleParagraphMode: toggleParagraphMode,
+      onToggleToolbar: toggleToolbar,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onShowSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,

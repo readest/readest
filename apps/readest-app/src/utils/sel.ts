@@ -271,21 +271,33 @@ export const snapRangeToWords = (range: Range): void => {
 export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {
   const clonedRange = range.cloneRange();
   const fragment = clonedRange.cloneContents();
-  const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => {
-      const parent = node.parentElement;
-      if (rejectTags.includes(parent?.tagName.toLowerCase() || '')) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
+  const walker = document.createTreeWalker(
+    fragment,
+    NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (rejectTags.includes(parent?.tagName.toLowerCase() || '')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
     },
-  });
+  );
 
+  // pdf.js inserts <br role="presentation"> between text spans at line endings
+  // (see TextLayer#appendText in pdfjs). Without this, multi-line PDF
+  // selections collapse adjacent line-final and line-initial words into a
+  // single token (e.g. "lastfirst"). Treat <br> as a newline, matching how
+  // Selection.toString() handles line breaks in the browser.
   let text = '';
-  let node: Text | null;
-
-  while ((node = walker.nextNode() as Text | null)) {
-    text += node.nodeValue ?? '';
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += (node as Text).nodeValue ?? '';
+    } else if ((node as Element).tagName === 'BR') {
+      text += '\n';
+    }
   }
 
   return text;

@@ -2,6 +2,7 @@ import { FileSystem, BaseDir, AppPlatform, ResolvedPath, FileItem } from '@/type
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
+import { isSafariBrowser } from '@/utils/ua';
 import { RemoteFile } from '@/utils/file';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
@@ -283,6 +284,7 @@ export class WebAppService extends BaseAppService {
   fs = indexedDBFileSystem;
   override isMobile = ['android', 'ios'].includes(getOSPlatform());
   override appPlatform = 'web' as AppPlatform;
+  override supportsCanvasContext2DFilter = !isSafariBrowser();
   override hasSafeAreaInset = isPWA();
 
   override async init() {

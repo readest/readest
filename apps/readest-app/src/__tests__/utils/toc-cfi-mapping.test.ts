@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { DocumentLoader } from '@/libs/document';
+import { DocumentLoader, CFI } from '@/libs/document';
 import type { BookDoc, TOCItem } from '@/libs/document';
-import { updateToc, findTocItemBS } from '@/utils/toc';
+import { computeBookNav, hydrateBookNav, updateToc, findTocItemBS } from '@/services/nav';
+
+// Simulates an annotation deep inside a section, past the chapter heading.
+// Section CFIs look like `epubcfi(/6/2)` and TOC item CFIs point at the heading
+// (e.g. `epubcfi(/6/2!/4/2[ch01])`), so a real annotation lives after that —
+// e.g. inside a <p> sibling, reached via `CFI.joinIndir`.
+const ANNOTATION_PATH = '/4/4/1:0';
 
 // Polyfill CSS.escape for jsdom
 if (typeof globalThis['CSS'] === 'undefined') {
@@ -48,6 +54,11 @@ describe('TOC-to-CFI mapping with fragment hrefs (#3688)', () => {
     const loader = new DocumentLoader(file);
     const result = await loader.open();
     book = result.book;
+    // Mirror the production open flow in readerStore: build (or hydrate) the
+    // BookNav — which bakes section/fragment locations and TOC cfi+location —
+    // and then apply per-open settings via updateToc.
+    const nav = await computeBookNav(book);
+    hydrateBookNav(book, nav);
     await updateToc(book, false, 'none');
   }, 30000);
 
@@ -82,8 +93,8 @@ describe('TOC-to-CFI mapping with fragment hrefs (#3688)', () => {
     const firstSection = linearSections[0]!;
     const lastSection = linearSections[linearSections.length - 1]!;
 
-    const firstTocItem = findTocItemBS(toc, firstSection.cfi);
-    const lastTocItem = findTocItemBS(toc, lastSection.cfi);
+    const firstTocItem = findTocItemBS(toc, CFI.joinIndir(firstSection.cfi, ANNOTATION_PATH));
+    const lastTocItem = findTocItemBS(toc, CFI.joinIndir(lastSection.cfi, ANNOTATION_PATH));
 
     expect(firstTocItem).not.toBeNull();
     expect(lastTocItem).not.toBeNull();
@@ -99,7 +110,7 @@ describe('TOC-to-CFI mapping with fragment hrefs (#3688)', () => {
     const linearSections = sections.filter((s) => s.linear !== 'no' && s.cfi);
 
     const midSection = linearSections[1]!;
-    const midTocItem = findTocItemBS(toc, midSection.cfi);
+    const midTocItem = findTocItemBS(toc, CFI.joinIndir(midSection.cfi, ANNOTATION_PATH));
 
     expect(midTocItem).not.toBeNull();
     expect(midTocItem!.label).toBe('Chapter Two');

@@ -208,9 +208,12 @@ export class GoogleBooksProvider extends BaseMetadataProvider {
       return undefined;
     }
 
-    return description
-      .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    let sanitized = description;
+    let previous: string;
+    do {
+      previous = sanitized;
+      sanitized = sanitized.replace(/<[^>]*>/g, '');
+    } while (sanitized !== previous);
+    return sanitized.replace(/\s+/g, ' ').trim();
   }
 }

@@ -1,6 +1,7 @@
 import clsx from 'clsx';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -9,11 +10,10 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
-import { viewPagination } from '../../hooks/usePagination';
+import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
-import { RSVPControl } from '../rsvp';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -67,12 +67,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
   );
 
   const handleGoPrevPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'left', 'page');
-  }, [view, viewSettings]);
+    view?.renderer.prev();
+  }, [view]);
 
   const handleGoNextPage = useCallback(() => {
-    viewPagination(view, viewSettings, 'right', 'page');
-  }, [view, viewSettings]);
+    view?.renderer.next();
+  }, [view]);
 
   const handleGoPrevSection = useCallback(() => {
     view?.renderer.prevSection?.();
@@ -159,11 +159,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
       if (event instanceof CustomEvent) {
         if (event.detail.keyName === 'Back') {
           setHoveredBookKey('');
+          (document.activeElement as HTMLElement)?.blur();
           return true;
         }
       } else {
         if (event.key === 'Escape') {
           setHoveredBookKey('');
+          (document.activeElement as HTMLElement)?.blur();
         }
         event.stopPropagation();
       }
@@ -188,6 +190,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredBookKey]);
 
+  const footerBarRef = useRef<HTMLDivElement>(null);
+  useSpatialNavigation(footerBarRef, isVisible);
+
+  // Force the mobile footer bar on mobile tablets/foldables in portrait mode
+  // where the viewport width exceeds the `sm:` (640px) breakpoint. Phones
+  // (innerWidth < 640) are intentionally excluded so their styling and panel
+  // slide-down animation remain exactly as before — see #3742 / #3746.
+  const forceMobileLayout =
+    !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -195,6 +207,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     progressValid,
     progressFraction,
     navigationHandlers,
+    forceMobileLayout,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
   };
@@ -204,17 +217,21 @@ const FooterBar: React.FC<FooterBarProps> = ({
     (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
-    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col sm:h-[52px]',
-    'sm:bg-base-100 border-base-300/50 border-t sm:border-none',
+    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
+    !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
+    'border-base-300/50 border-t',
     'transition-[opacity,transform] duration-300',
-    window.innerWidth < 640 ? 'fixed' : 'absolute',
+    forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
-    needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center',
+    !forceMobileLayout &&
+      (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center'),
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
-      : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
+      : forceMobileLayout
+        ? 'pointer-events-none translate-y-full opacity-0'
+        : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
@@ -224,6 +241,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       {/* Hover trigger area */}
       <div
         role='none'
+        tabIndex={-1}
         className={clsx(
           'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
@@ -235,6 +253,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
       {/* Main footer container */}
       <div
+        ref={footerBarRef}
         role='contentinfo'
         aria-label={_('Footer Bar')}
         className={containerClasses}

@@ -5,13 +5,21 @@ import { useSettingsStore } from '@/store/settingsStore';
 
 export const useLibrary = () => {
   const { envConfig } = useEnv();
-  const { setLibrary } = useLibraryStore();
+  const { setLibrary, libraryLoaded: storeLibraryLoaded } = useLibraryStore();
   const { setSettings } = useSettingsStore();
-  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  // Skip the disk reload when another mount has already populated the store —
+  // re-reading would clobber transient in-memory entries (e.g. OPDS-PSE
+  // streamed books) that aren't persisted to disk.
+  const [libraryLoaded, setLibraryLoaded] = useState(storeLibraryLoaded);
   const isInitiating = useRef(false);
 
   useEffect(() => {
-    if (isInitiating.current) return;
+    if (isInitiating.current || storeLibraryLoaded) {
+      if (storeLibraryLoaded && !libraryLoaded) {
+        setLibraryLoaded(true);
+      }
+      return;
+    }
     isInitiating.current = true;
     const initLibrary = async () => {
       const appService = await envConfig.getAppService();
@@ -23,7 +31,7 @@ export const useLibrary = () => {
 
     initLibrary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [storeLibraryLoaded]);
 
   return { libraryLoaded };
 };

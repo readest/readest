@@ -23,6 +23,16 @@ export interface TOCItem {
   subitems?: TOCItem[];
 }
 
+export interface SectionFragment {
+  id: string;
+  href: string;
+  cfi: string;
+  size: number;
+  linear: string;
+  location?: Location;
+  fragments?: Array<SectionFragment>;
+}
+
 export interface SectionItem {
   id: string;
   cfi: string;
@@ -31,8 +41,9 @@ export interface SectionItem {
   href?: string;
   location?: Location;
   pageSpread?: 'left' | 'right' | 'center' | '';
-  subitems?: Array<SectionItem>;
+  fragments?: Array<SectionFragment>;
 
+  loadText?: () => Promise<string | null>;
   createDocument: () => Promise<Document>;
 }
 
@@ -156,10 +167,23 @@ export class DocumentLoader {
     const reader = new ZipReader(new BlobReader(this.file));
     const entries = await reader.getEntries();
     const map = new Map(entries.map((entry) => [entry.filename, entry]));
+    const lowercaseMap = new Map<string, Entry | null>();
+    for (const entry of entries) {
+      const lowercaseName = entry.filename.toLowerCase();
+      const existing = lowercaseMap.get(lowercaseName);
+      lowercaseMap.set(
+        lowercaseName,
+        existing && existing.filename !== entry.filename ? null : entry,
+      );
+    }
+    const getEntry = (name: string) =>
+      map.get(name) ?? lowercaseMap.get(name.toLowerCase()) ?? null;
     const load =
       (f: (entry: Entry, type?: string) => Promise<string | Blob> | null) =>
-      (name: string, ...args: [string?]) =>
-        map.has(name) ? f(map.get(name)!, ...args) : null;
+      (name: string, ...args: [string?]) => {
+        const entry = getEntry(name);
+        return entry ? f(entry, ...args) : null;
+      };
 
     const loadText = load((entry: Entry) =>
       !entry.directory ? entry.getData(new TextWriter()) : null,
@@ -167,7 +191,7 @@ export class DocumentLoader {
     const loadBlob = load((entry: Entry, type?: string) =>
       !entry.directory ? entry.getData(new BlobWriter(type!)) : null,
     );
-    const getSize = (name: string) => map.get(name)?.uncompressedSize ?? 0;
+    const getSize = (name: string) => getEntry(name)?.uncompressedSize ?? 0;
 
     return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
   }
@@ -256,7 +280,17 @@ export class DocumentLoader {
 
 export const getDirection = (doc: Document) => {
   const { defaultView } = doc;
-  const { writingMode, direction } = defaultView!.getComputedStyle(doc.body);
+  let { writingMode, direction } = defaultView!.getComputedStyle(doc.body);
+  // Some EPUBs set writing-mode on the first child of body instead of body itself
+  if (!writingMode || writingMode === 'horizontal-tb') {
+    const firstChild = doc.body.querySelector(':scope > :not([cfi-inert])');
+    if (firstChild) {
+      const childStyle = defaultView!.getComputedStyle(firstChild);
+      if (childStyle.writingMode === 'vertical-rl' || childStyle.writingMode === 'vertical-lr') {
+        writingMode = childStyle.writingMode;
+      }
+    }
+  }
   const vertical = writingMode === 'vertical-rl' || writingMode === 'vertical-lr';
   const rtl = doc.body.dir === 'rtl' || direction === 'rtl' || doc.documentElement.dir === 'rtl';
   return { vertical, rtl };

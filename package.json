@@ -13,7 +13,7 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\""
   },
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@biomejs/biome": "^2.4.9",
     "@sindresorhus/tsconfig": "^6.0.0",
@@ -32,22 +32,28 @@
     "overrides": {
       "glob": ">=11.1.0",
       "jws": ">=4.0.1",
-      "vite": ">=7.3.1",
+      "vite": ">=7.3.2 <8",
       "srvx": ">=0.11.13",
       "rollup": ">=4.59.0",
       "undici": ">=7.24.0",
       "flatted": ">=3.4.2",
       "body-parser": ">=2.2.1",
-      "dompurify": ">=3.3.2",
+      "dompurify": ">=3.4.0",
+      "i18next-http-backend": ">=3.0.5",
       "picomatch": ">=4.0.4",
       "path-to-regexp": ">=8.4.0",
+      "protobufjs": ">=7.5.5",
       "serialize-javascript": ">=7.0.5",
-      "fast-xml-parser": ">=5.5.7",
-      "lodash-es": ">=4.17.23",
+      "fast-xml-parser": ">=5.7.0",
+      "lodash": ">=4.18.0",
+      "lodash-es": ">=4.18.0",
+      "basic-ftp": ">=5.3.0",
+      "qs": ">=6.14.2",
       "@babel/runtime": ">=7.26.10",
       "@babel/helpers": ">=7.26.10",
       "mdast-util-gfm-autolink-literal": "2.0.1",
-      "@ai-sdk/provider-utils": "4.0.8"
+      "@ai-sdk/provider-utils": "4.0.8",
+      "uuid": ">=14.0.0"
     },
     "patchedDependencies": {
       "mdast-util-gfm-autolink-literal@2.0.1": "patches/mdast-util-gfm-autolink-literal@2.0.1.patch",

@@ -1,6 +1,7 @@
 import { SystemSettings } from './settings';
-import { Book, BookConfig, BookContent, ViewSettings } from './book';
+import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
+import type { BookNav } from '@/services/nav';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { CustomTextureInfo } from '@/styles/textures';
@@ -91,6 +92,7 @@ export interface AppService {
   isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
+  supportsCanvasContext2DFilter: boolean;
   distChannel: DistChannel;
   storefrontRegionCode: string | null;
   isOnlineCatalogsAccessible: boolean;
@@ -125,14 +127,7 @@ export interface AppService {
   deleteFont(font: CustomFont): Promise<void>;
   importImage(file?: string | File): Promise<CustomTextureInfo | null>;
   deleteImage(texture: CustomTextureInfo): Promise<void>;
-  importBook(
-    file: string | File,
-    books: Book[],
-    saveBook?: boolean,
-    saveCover?: boolean,
-    overwrite?: boolean,
-    transient?: boolean,
-  ): Promise<Book | null>;
+  importBook(file: string | File, books: Book[], options?: ImportBookOptions): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;
   uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void>;
@@ -157,6 +152,8 @@ export interface AppService {
   loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig>;
   fetchBookDetails(book: Book): Promise<BookMetadata>;
   saveBookConfig(book: Book, config: BookConfig, settings?: SystemSettings): Promise<void>;
+  loadBookNav(book: Book): Promise<BookNav | null>;
+  saveBookNav(book: Book, nav: BookNav): Promise<void>;
   loadBookContent(book: Book): Promise<BookContent>;
   loadLibraryBooks(): Promise<Book[]>;
   saveLibraryBooks(books: Book[]): Promise<void>;

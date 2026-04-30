@@ -12,7 +12,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent, useLongPressEvent } from '../hooks/useIframeEvents';
-import { usePagination } from '../hooks/usePagination';
+import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
@@ -37,6 +37,7 @@ import {
   transformStylesheet,
 } from '@/utils/style';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
+import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -179,6 +180,7 @@ const FoliateViewer: React.FC<{
                 'sanitizer',
                 'simplecc',
                 'proofread',
+                'warichu',
               ],
             };
             return Promise.resolve(transformContent(ctx));
@@ -199,6 +201,12 @@ const FoliateViewer: React.FC<{
       view.renderer.scrollToAnchor?.(progress.range);
     }
   }, [getView, getProgress, bookKey]);
+
+  const skipToNextSection = useCallback(() => {
+    const view = getView(bookKey);
+    const viewSettings = getViewSettings(bookKey);
+    viewPagination(view, viewSettings, 'down', 'section');
+  }, [bookKey]);
 
   const docLoadHandler = (event: Event) => {
     docLoaded.current = true;
@@ -237,11 +245,13 @@ const FoliateViewer: React.FC<{
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings);
         const themeCode = getThemeCode();
-        if (themeCode && renderer) {
-          renderer.pageColors = {
-            background: themeCode.bg,
-            foreground: themeCode.fg,
-          };
+        if (bookData.book?.format === 'PDF' && themeCode && renderer) {
+          renderer.pageColors = viewSettings.applyThemeToPDF
+            ? {
+                background: themeCode.bg,
+                foreground: themeCode.fg,
+              }
+            : undefined;
         }
       }
 
@@ -251,9 +261,11 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      handleA11yNavigation(viewRef.current, detail.doc, detail.index, {
+      handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
         skipToLastPosLabel: _('Skip to last reading position'),
+        skipToNextSectionCallback: skipToNextSection,
+        skipToNextSectionLabel: _('End of this section. Continue to the next.'),
       });
 
       // Inline scripts in tauri platforms are not executed by default
@@ -296,7 +308,9 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('click', handleClick.bind(null, bookKey, doubleClickDisabled));
-        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
+        // passive: false so handleWheel can preventDefault for mouse-wheel
+        // events and replace the native jerky scroll with a smooth animation.
+        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey), { passive: false });
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
@@ -323,6 +337,19 @@ const FoliateViewer: React.FC<{
 
   const stabilizedHandler = useCallback(() => {
     setLoading(false);
+    // Layout/relayout warichu after paginator has set column-width via columnize()
+    const contents = viewRef.current?.renderer?.getContents?.() || [];
+    for (const { doc } of contents) {
+      if (doc) {
+        const hasPending = doc.querySelectorAll('.warichu-pending').length > 0;
+        const hasExisting = doc.querySelectorAll('.warichu-head').length > 0;
+        if (hasPending) {
+          layoutWarichu(doc);
+        } else if (hasExisting) {
+          relayoutWarichu(doc);
+        }
+      }
+    }
   }, []);
 
   const docRelocateHandler = (event: Event) => {
@@ -344,7 +371,7 @@ const FoliateViewer: React.FC<{
 
   const { handlePageFlip } = usePagination(bookKey, viewRef, containerRef);
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
-  const touchHandlers = useTouchEvent(bookKey, handlePageFlip);
+  const touchHandlers = useTouchEvent(bookKey);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
@@ -623,6 +650,7 @@ const FoliateViewer: React.FC<{
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {
+      const renderer = viewRef.current.renderer;
       const viewSettings = getViewSettings(bookKey)!;
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
       const docs = viewRef.current.renderer.getContents();
@@ -635,13 +663,13 @@ const FoliateViewer: React.FC<{
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
 
-      if (bookDoc.rendition?.layout === 'pre-paginated') {
-        if (themeCode && viewRef.current?.renderer) {
-          viewRef.current.renderer.pageColors = {
-            background: themeCode.bg,
-            foreground: themeCode.fg,
-          };
-        }
+      if (bookData?.book?.format === 'PDF' && themeCode && renderer) {
+        renderer.pageColors = viewSettings.applyThemeToPDF
+          ? {
+              background: themeCode.bg,
+              foreground: themeCode.fg,
+            }
+          : undefined;
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -651,6 +679,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,
+    viewSettings?.applyThemeToPDF,
     viewSettings?.hideScrollbar,
   ]);
 
@@ -743,7 +772,7 @@ const FoliateViewer: React.FC<{
       />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
       {((!docLoaded.current && loading) || viewState?.loading) && (
-        <div className='bg-base-100/85 absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
+        <div className='absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
           <Spinner loading={true} />
         </div>
       )}

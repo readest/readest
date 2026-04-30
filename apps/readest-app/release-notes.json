@@ -1,5 +1,48 @@
 {
   "releases": {
+    "0.10.6": {
+      "date": "2026-04-13",
+      "notes": [
+        "Library: Much faster browsing for large collections",
+        "Reading: Added an option to keep the book's original paragraph layout",
+        "Reading: Fixed page navigation for Arabic books",
+        "PDF: Fixed TTS reading interruptions at line breaks in PDFs",
+        "PDF: You can now apply your chosen theme colors to PDFs",
+        "Sync: Added HTTP Basic auth support for CWA",
+        "Sync: Improved progress sync with Hardcover.app",
+        "OPDS: You can now edit your registered catalogs, with better handling of download filenames",
+        "Speed Reading: Your reading position now syncs across devices",
+        "Platform: Fixed window buttons on macOS, reduced crashes on iOS"
+      ]
+    },
+    "0.10.4": {
+      "date": "2026-04-06",
+      "notes": [
+        "Annotations: You can now name your highlight colors, and your custom names sync across devices",
+        "Annotations: Fixed highlights that stayed on the page after being deleted from the sidebar",
+        "Speed Reading: Added an option to split long words, a faster countdown",
+        "Text-to-Speech: Fixed double playback when tapping the play button in quick succession",
+        "Accessibility: Dropdown menus now open reliably when activated with the keyboard",
+        "Reading: Background textures now display correctly when you override the theme background color",
+        "Translation: Temporarily disabled the Yandex provider while its service is unavailable"
+      ]
+    },
+    "0.10.2": {
+      "date": "2026-04-05",
+      "notes": [
+        "Reading: Added single section scroll option, keyboard shortcuts help dialog, and reading ruler improvements",
+        "Reading: Fixed Adobe font deobfuscation and applied theme colors to PDFs",
+        "Reading: Fixed paginator freeze, image sizing on resize, and vertical writing mode compatibility",
+        "Annotations: Fixed annotations grouped under wrong chapter and added highlight opacity setting",
+        "Text-to-Speech: Added dedicated TTS settings tab with highlight opacity and keyboard shortcuts for navigation",
+        "Sync: Added Hardcover.app sync integration and improved KOSync progress accuracy",
+        "KOReader Plugin: Added full annotation sync option and fixed sync-related crashes",
+        "OPDS: Added custom catalog headers with web proxy consent and fixed feed display issues",
+        "Speed Reading: Added per-chapter progress bar and speed selector dropdown",
+        "Android: Added D-pad navigation for Android TV remote controller",
+        "Theme: Added atmosphere Easter egg with video overlay and ambient audio"
+      ]
+    },
     "0.10.1": {
       "date": "2026-03-22",
       "notes": [

@@ -3,7 +3,7 @@ export const isLanAddress = (url: string) => {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
       return true;
     }
 
@@ -39,13 +39,15 @@ export const isLanAddress = (url: string) => {
       if (a === 100 && b >= 64 && b <= 127) return true;
     }
 
-    // Check for IPv6 private addresses (simplified check)
-    if (hostname.includes(':')) {
+    // Check for IPv6 private addresses
+    // URL.hostname wraps IPv6 in brackets, e.g. '[::1]' — strip them
+    const ipv6 = hostname.startsWith('[') ? hostname.slice(1, -1) : hostname;
+    if (ipv6.includes(':')) {
       if (
-        hostname.startsWith('::1') ||
-        hostname.startsWith('fe80:') ||
-        hostname.startsWith('fc00:') ||
-        hostname.startsWith('fd00:')
+        ipv6 === '::1' ||
+        ipv6.startsWith('fe80:') ||
+        ipv6.startsWith('fc00:') ||
+        ipv6.startsWith('fd00:')
       ) {
         return true;
       }

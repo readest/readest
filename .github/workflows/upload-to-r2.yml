@@ -17,6 +17,8 @@ on:
 jobs:
   upload-to-r2:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 3
     strategy:
       fail-fast: false
@@ -70,6 +72,8 @@ jobs:
     if: failure() && fromJSON(github.run_attempt) < 3
     needs: [upload-to-r2]
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - env:
           GH_REPO: ${{ github.repository }}

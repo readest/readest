@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::sync::OnceLock;
 
 /// Known e-ink device manufacturers and brands (case-insensitive matching)
 const EINK_MANUFACTURERS: &[&str] = &[
@@ -45,28 +45,33 @@ const EINK_MODELS: &[&str] = &[
     "max lumi",
 ];
 
-/// Get Android system property using getprop command
 fn get_system_property(prop: &str) -> Option<String> {
-    Command::new("getprop")
-        .arg(prop)
-        .output()
-        .ok()
-        .and_then(|output| {
-            if output.status.success() {
-                let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if value.is_empty() {
-                    None
-                } else {
-                    Some(value)
-                }
-            } else {
-                None
-            }
-        })
+    use std::ffi::CString;
+    let name = CString::new(prop).ok()?;
+    let mut buf = [0u8; libc::PROP_VALUE_MAX as usize];
+    // SAFETY: __system_property_get writes at most PROP_VALUE_MAX bytes (including the
+    // trailing NUL) into the provided buffer and returns the number of bytes written
+    // excluding the NUL. `name` is a valid NUL-terminated C string for the duration
+    // of the call.
+    let len = unsafe {
+        libc::__system_property_get(name.as_ptr(), buf.as_mut_ptr() as *mut libc::c_char)
+    };
+    if len <= 0 {
+        return None;
+    }
+    let value = std::str::from_utf8(&buf[..len as usize]).ok()?;
+    (!value.is_empty()).then(|| value.to_owned())
 }
 
-/// Check if the current Android device is an e-ink device
+/// Check if the current Android device is an e-ink device.
+///
+/// The result is cached on first call so subsequent calls are free.
 pub fn is_eink_device() -> bool {
+    static IS_EINK: OnceLock<bool> = OnceLock::new();
+    *IS_EINK.get_or_init(detect_eink_device)
+}
+
+fn detect_eink_device() -> bool {
     // Get device manufacturer and model
     let manufacturer = get_system_property("ro.product.manufacturer")
         .or_else(|| get_system_property("ro.product.brand"))

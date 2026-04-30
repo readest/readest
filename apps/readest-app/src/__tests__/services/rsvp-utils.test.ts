@@ -6,6 +6,7 @@ import {
   getSegmenterLocale,
   segmentCJKText,
   splitTextIntoWords,
+  getHyphenParts,
 } from '@/services/rsvp/utils';
 
 describe('rsvp/utils', () => {
@@ -238,6 +239,52 @@ describe('rsvp/utils', () => {
     test('handles whitespace between CJK segments', () => {
       const words = splitTextIntoWords('你好 世界');
       expect(words.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getHyphenParts', () => {
+    test('splits a hyphenated word into two parts with trailing hyphen on first', () => {
+      expect(getHyphenParts('well-known')).toEqual(['well-', 'known']);
+    });
+
+    test('splits multiple letter-hyphens keeping trailing hyphen on each non-last part', () => {
+      expect(getHyphenParts('one-two-three')).toEqual(['one-', 'two-', 'three']);
+    });
+
+    test('returns word unchanged when no letter-hyphen-letter pattern', () => {
+      expect(getHyphenParts('hello')).toEqual(['hello']);
+    });
+
+    test('returns double-hyphen unchanged (em-dash style)', () => {
+      expect(getHyphenParts('--')).toEqual(['--']);
+    });
+
+    test('returns lone hyphen unchanged', () => {
+      expect(getHyphenParts('-')).toEqual(['-']);
+    });
+
+    test('returns consecutive-hyphen word unchanged', () => {
+      expect(getHyphenParts('foo--bar')).toEqual(['foo--bar']);
+    });
+
+    test('returns leading-hyphen word unchanged', () => {
+      expect(getHyphenParts('-word')).toEqual(['-word']);
+    });
+
+    test('returns trailing-hyphen word unchanged', () => {
+      expect(getHyphenParts('word-')).toEqual(['word-']);
+    });
+
+    test('splits on ellipsis between letters with trailing ellipsis on non-last parts', () => {
+      expect(getHyphenParts('a...b')).toEqual(['a...', 'b']);
+    });
+
+    test('splits mixed hyphens and ellipses preserving each delimiter', () => {
+      expect(getHyphenParts('foo-bar...baz')).toEqual(['foo-', 'bar...', 'baz']);
+    });
+
+    test('returns ellipsis-only unchanged', () => {
+      expect(getHyphenParts('...')).toEqual(['...']);
     });
   });
 });

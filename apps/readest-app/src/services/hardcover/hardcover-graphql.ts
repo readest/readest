@@ -23,12 +23,18 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
   ) {
     id
     pages
+    reading_format_id
     book {
       id
       pages
       user_books(where: { user_id: { _eq: $user_id } }) {
         id
         status_id
+        edition {
+          id
+          pages
+          reading_format_id
+        }
         user_book_reads(
           where: { finished_at: { _is_null: true } }
           order_by: { started_at: desc }
@@ -36,7 +42,47 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
         ) {
           id
           started_at
-          edition { id pages }
+          edition {
+            id
+            pages
+            reading_format_id
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+export const QUERY_GET_BOOK_USER_DATA = `
+query GetBookUserData($book_id: Int!, $user_id: Int!) {
+  editions(
+    where: { book_id: { _eq: $book_id } }
+    limit: 1
+  ) {
+    book {
+      id
+      pages
+      user_books(where: { user_id: { _eq: $user_id } }) {
+        id
+        status_id
+        edition {
+          id
+          pages
+          reading_format_id
+        }
+        user_book_reads(
+          where: { finished_at: { _is_null: true } }
+          order_by: { started_at: desc }
+          limit: 1
+        ) {
+          id
+          started_at
+          edition {
+            id
+            pages
+            reading_format_id
+          }
         }
       }
     }
@@ -48,14 +94,37 @@ export const MUTATION_INSERT_USER_BOOK = `
 mutation InsertUserBook($object: UserBookCreateInput!) {
   insert_user_book(object: $object) {
     error
-    user_book { id }
+    user_book {
+      id
+      user_book_reads(
+        where: { finished_at: { _is_null: true } }
+        order_by: { started_at: desc }
+        limit: 1
+      ) {
+        id
+        started_at
+      }
+    }
   }
 }
 `;
 
 export const MUTATION_UPDATE_USER_BOOK = `
 mutation UpdateUserBook($user_book_id: Int!, $object: UserBookUpdateInput!) {
-  update_user_book(id: $user_book_id, object: $object) { id error }
+  update_user_book(id: $user_book_id, object: $object) {
+    id
+    error
+    user_book {
+      user_book_reads(
+        where: { finished_at: { _is_null: true } }
+        order_by: { started_at: desc }
+        limit: 1
+      ) {
+        id
+        started_at
+      }
+    }
+  }
 }
 `;
 

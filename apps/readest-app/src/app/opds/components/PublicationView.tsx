@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
-import { OPDSLink, OPDSPublication, REL, SYMBOL } from '@/types/opds';
+import { OPDSPublication, REL, SYMBOL, OPDSAcquisitionLink, OPDSStreamLink } from '@/types/opds';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { formatDate, formatLanguage } from '@/utils/book';
@@ -26,6 +26,7 @@ interface PublicationViewProps {
     type?: string,
     onProgress?: (progress: { progress: number; total: number }) => void,
   ) => Promise<Book | null | undefined>;
+  onStream?: (href: string, count: number, title: string, author: string) => void;
   onGenerateCachedImageUrl: (url: string) => Promise<string>;
 }
 
@@ -34,6 +35,7 @@ export function PublicationView({
   baseURL,
   resolveURL,
   onDownload,
+  onStream,
   onGenerateCachedImageUrl,
 }: PublicationViewProps) {
   const _ = useTranslation();
@@ -54,7 +56,7 @@ export function PublicationView({
     return covers?.[0] || publication.images?.[0];
   }, [publication.images]);
 
-  const imageUrl = coverImage ? resolveURL(coverImage.href, baseURL) : null;
+  const imageUrl = coverImage?.href ? resolveURL(coverImage.href, baseURL) : null;
 
   const authors = useMemo(() => {
     const author = publication.metadata?.author;
@@ -66,13 +68,17 @@ export function PublicationView({
   }, [publication.metadata?.author]);
 
   const acquisitionLinks = useMemo(() => {
-    const links: Array<{ rel: string; links: OPDSLink[] }> = [];
+    const links: Array<{ rel: string; links: OPDSAcquisitionLink[] }> = [];
     for (const [rel, linkList] of Array.from(linksByRel.entries())) {
       if (rel?.startsWith(REL.ACQ)) {
-        links.push({ rel, links: linkList });
+        links.push({ rel, links: linkList as OPDSAcquisitionLink[] });
       }
     }
     return links;
+  }, [linksByRel]);
+
+  const streamLinks = useMemo(() => {
+    return (linksByRel.get(REL.STREAM) || []) as OPDSStreamLink[];
   }, [linksByRel]);
 
   const handleActionButton = async (href: string, type?: string) => {
@@ -157,58 +163,96 @@ export function PublicationView({
             )}
           </div>
 
-          {acquisitionLinks.length > 0 && (
-            <div className='flex flex-wrap gap-2'>
-              {acquisitionLinks.map(({ rel, links }) => (
-                <div key={rel} className='flex gap-1'>
-                  {links.length === 1 || downloadedBook ? (
-                    <button
-                      onClick={() => handleActionButton(links[0]!.href, links[0]!.type)}
-                      disabled={downloading}
-                      className={clsx(
-                        'btn btn-primary min-w-20 rounded-3xl',
-                        downloadedBook && 'btn-success',
-                      )}
-                    >
-                      {downloadedBook ? _('Open & Read') : getAcquisitionLabel(rel)}
-                    </button>
-                  ) : (
-                    <Dropdown
-                      label={_('Download')}
-                      className='dropdown-bottom dropdown-center flex justify-center'
-                      buttonClassName={clsx(
-                        'btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary',
-                        downloadedBook && 'btn-success',
-                      )}
-                      disabled={downloading}
-                      toggleButton={
-                        <div>{downloadedBook ? _('Open') : getAcquisitionLabel(rel)}</div>
-                      }
-                    >
-                      <div
+          {(acquisitionLinks.length > 0 || streamLinks.length > 0) && (
+            <div className='flex flex-wrap items-center gap-2'>
+              {acquisitionLinks.map(({ rel, links }) => {
+                const validLinks = links.filter((l) => l.href);
+                if (validLinks.length === 0) return null;
+
+                return (
+                  <div key={rel} className='flex gap-1'>
+                    {validLinks.length === 1 || downloadedBook ? (
+                      <button
+                        type='button'
+                        onClick={() =>
+                          handleActionButton(validLinks[0]!.href!, validLinks[0]!.type)
+                        }
+                        disabled={downloading}
                         className={clsx(
-                          'delete-menu dropdown-content no-triangle !relative',
-                          'border-base-300 !bg-base-200 z-20 mt-2 max-w-[80vw] shadow-2xl',
+                          'btn btn-primary min-w-20 rounded-3xl',
+                          downloadedBook && 'btn-success',
                         )}
                       >
-                        {links.map((link, idx: number) => (
-                          <MenuItem
-                            key={idx}
-                            noIcon
-                            transient
-                            label={
-                              link.title ||
-                              getFileExtFromMimeType(link.type || '').toUpperCase() ||
-                              idx.toString()
-                            }
-                            onClick={() => handleActionButton(link.href, link.type)}
-                          />
-                        ))}
-                      </div>
-                    </Dropdown>
-                  )}
-                </div>
-              ))}
+                        {downloadedBook ? _('Open & Read') : getAcquisitionLabel(rel)}
+                      </button>
+                    ) : (
+                      <Dropdown
+                        label={_('Download')}
+                        className='dropdown-bottom dropdown-center flex justify-center'
+                        buttonClassName={clsx(
+                          'btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary',
+                          downloadedBook && 'btn-success',
+                        )}
+                        disabled={downloading}
+                        toggleButton={
+                          <div>{downloadedBook ? _('Open') : getAcquisitionLabel(rel)}</div>
+                        }
+                      >
+                        <div
+                          className={clsx(
+                            'delete-menu dropdown-content no-triangle !relative',
+                            'border-base-300 !bg-base-200 z-20 mt-2 max-w-[80vw] shadow-2xl',
+                          )}
+                        >
+                          {validLinks.map((link, idx: number) => (
+                            <MenuItem
+                              key={idx}
+                              noIcon
+                              transient
+                              label={
+                                link.title ||
+                                getFileExtFromMimeType(link.type || '').toUpperCase() ||
+                                idx.toString()
+                              }
+                              onClick={() => handleActionButton(link.href!, link.type)}
+                            />
+                          ))}
+                        </div>
+                      </Dropdown>
+                    )}
+                  </div>
+                );
+              })}
+
+              {streamLinks.map((link, idx) => {
+                if (!link.href) return null;
+                const countRaw =
+                  link.properties?.['pse:count'] ?? link.properties?.numberOfItems ?? 0;
+                const count = Number(countRaw);
+
+                if (count > 0) {
+                  return (
+                    <button
+                      key={`stream-${idx}`}
+                      type='button'
+                      onClick={() =>
+                        onStream?.(
+                          link.href!,
+                          count,
+                          publication.metadata?.title || '',
+                          authors?.join(', ') || '',
+                        )
+                      }
+                      disabled={downloading || !!downloadedBook}
+                      className={clsx('btn btn-secondary min-w-20 rounded-3xl')}
+                    >
+                      {_('Read (Stream)')}
+                    </button>
+                  );
+                }
+                return null;
+              })}
+
               <div className='flex h-12 w-12 items-center justify-center'>
                 {downloading && progress && progress > 0 && (
                   <div
@@ -240,10 +284,7 @@ export function PublicationView({
             {content ? (
               <div
                 dangerouslySetInnerHTML={{
-                  __html:
-                    content.type === 'html' || content.type === 'xhtml'
-                      ? content.value
-                      : content.value,
+                  __html: typeof content === 'string' ? content : content.value,
                 }}
               />
             ) : (
@@ -272,6 +313,7 @@ export function PublicationView({
                       : Array.isArray(publication.metadata.publisher)
                         ? publication.metadata.publisher
                             .map((p) => (typeof p === 'string' ? p : p.name))
+                            .filter(Boolean)
                             .join(', ')
                         : publication.metadata.publisher.name}
                   </td>
@@ -288,9 +330,7 @@ export function PublicationView({
                   <th>{_('Language')}</th>
                   <td>
                     {Array.isArray(publication.metadata.language)
-                      ? publication.metadata.language
-                          .map((lang: string) => formatLanguage(lang))
-                          .join(', ')
+                      ? publication.metadata.language.map((lang) => formatLanguage(lang)).join(', ')
                       : formatLanguage(publication.metadata.language)}
                   </td>
                 </tr>

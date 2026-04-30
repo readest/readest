@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
+import { isLanAddress } from '@/utils/network';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
 const validEndpoints = [/\/users\/create/, /\/users\/auth/, /\/syncs\/progress/];
@@ -25,6 +26,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!validEndpoints.some((regex) => regex.test(endpoint))) {
     return res.status(400).json({ error: 'Invalid endpoint' });
+  }
+
+  try {
+    const parsed = new URL(serverUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).json({ error: 'Only http and https URLs are allowed' });
+    }
+  } catch {
+    return res.status(400).json({ error: 'Invalid serverUrl' });
+  }
+
+  if (isLanAddress(serverUrl)) {
+    return res
+      .status(400)
+      .json({ error: 'Requests to private/internal addresses are not allowed' });
   }
 
   const targetUrl = `${serverUrl.replace(/\/$/, '')}${endpoint}`;

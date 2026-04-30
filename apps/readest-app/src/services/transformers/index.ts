@@ -7,6 +7,7 @@ import { sanitizerTransformer } from './sanitizer';
 import { simpleccTransformer } from './simplecc';
 import { styleTransformer } from './style';
 import { proofreadTransformer } from './proofread';
+import { warichuTransformer } from './warichu';
 
 export const availableTransformers: Transformer[] = [
   punctuationTransformer,
@@ -17,5 +18,6 @@ export const availableTransformers: Transformer[] = [
   sanitizerTransformer,
   simpleccTransformer,
   proofreadTransformer,
+  warichuTransformer,
   // Add more transformers here
 ];

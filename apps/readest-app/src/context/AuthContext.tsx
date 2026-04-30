@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useMemo,
+  ReactNode,
+  useEffect,
+} from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
@@ -69,15 +77,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
+  // setToken / setUser from useState are stable across renders, so the empty
+  // deps array is correct. Wrapping in useCallback (and only including stable
+  // refs in the deps) is what makes the useMemo below actually memoize the
+  // context value — without this, login/logout/refresh would be recreated on
+  // every render and the memo would always invalidate.
+  const login = useCallback((newToken: string, newUser: User) => {
     console.log('Logging in');
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     console.log('Logging out');
     try {
       await supabase.auth.refreshSession();
@@ -89,19 +102,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       setUser(null);
     }
-  };
+  }, []);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       await supabase.auth.refreshSession();
     } catch {}
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider value={{ token, user, login, logout, refresh }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ token, user, login, logout, refresh }),
+    [token, user, login, logout, refresh],
   );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

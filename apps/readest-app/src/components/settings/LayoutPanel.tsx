@@ -61,6 +61,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode);
   const [overrideLayout, setOverrideLayout] = useState(viewSettings.overrideLayout);
+  const [useBookLayout, setUseBookLayout] = useState(viewSettings.useBookLayout);
   const [doubleBorder, setDoubleBorder] = useState(viewSettings.doubleBorder);
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor);
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader);
@@ -106,6 +107,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       maxInlineSize: setMaxInlineSize,
       maxBlockSize: setMaxBlockSize,
       overrideLayout: setOverrideLayout,
+      useBookLayout: setUseBookLayout,
       doubleBorder: setDoubleBorder,
       borderColor: setBorderColor,
       showHeader: setShowHeader,
@@ -314,6 +316,12 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'overrideLayout', overrideLayout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overrideLayout]);
+
+  useEffect(() => {
+    if (useBookLayout === viewSettings.useBookLayout) return;
+    saveViewSettings(envConfig, bookKey, 'useBookLayout', useBookLayout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useBookLayout]);
 
   useEffect(() => {
     if (doubleBorder === viewSettings.doubleBorder) return;
@@ -527,10 +535,20 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         <h2 className='mb-2 font-medium'>{_('Paragraph')}</h2>
         <div className='card bg-base-100 border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
+            <div className='config-item' data-setting-id='settings.layout.useBookLayout'>
+              <span className=''>{_('Use Book Layout')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={useBookLayout}
+                onChange={() => setUseBookLayout(!useBookLayout)}
+              />
+            </div>
             <NumberInput
               label={_('Paragraph Margin')}
               value={paragraphMargin}
               onChange={setParagraphMargin}
+              disabled={useBookLayout}
               min={0}
               max={4}
               step={0.1}
@@ -540,6 +558,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               label={_('Line Spacing')}
               value={lineHeight}
               onChange={setLineHeight}
+              disabled={useBookLayout}
               min={1.0}
               max={3.0}
               step={0.1}
@@ -550,6 +569,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 label={_('Word Spacing')}
                 value={wordSpacing}
                 onChange={setWordSpacing}
+                disabled={useBookLayout}
                 min={-4}
                 max={8}
                 step={0.5}
@@ -560,6 +580,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               label={_('Letter Spacing')}
               value={letterSpacing}
               onChange={setLetterSpacing}
+              disabled={useBookLayout}
               min={-2}
               max={4}
               step={0.5}
@@ -569,6 +590,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               label={_('Text Indent')}
               value={textIndent}
               onChange={setTextIndent}
+              disabled={useBookLayout}
               min={-2}
               max={4}
               step={1}
@@ -580,6 +602,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 type='checkbox'
                 className='toggle'
                 checked={fullJustification}
+                disabled={useBookLayout}
                 onChange={() => setFullJustification(!fullJustification)}
               />
             </div>
@@ -589,6 +612,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
                 type='checkbox'
                 className='toggle'
                 checked={hyphenation}
+                disabled={useBookLayout}
                 onChange={() => setHyphenation(!hyphenation)}
               />
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { SyncClient } from '@/libs/sync';
 
 const syncClient = new SyncClient();
@@ -12,7 +12,8 @@ interface SyncContextType {
 const SyncContext = createContext<SyncContextType>({ syncClient });
 
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <SyncContext.Provider value={{ syncClient }}>{children}</SyncContext.Provider>;
+  const value = useMemo(() => ({ syncClient }), []);
+  return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
 };
 
 export const useSyncContext = () => useContext(SyncContext);

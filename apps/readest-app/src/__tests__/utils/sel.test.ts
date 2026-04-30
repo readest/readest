@@ -340,6 +340,43 @@ describe('sel utilities', () => {
 
       document.body.removeChild(container);
     });
+
+    it('should insert a newline for <br> between adjacent text spans (PDF line wrap)', async () => {
+      const { getTextFromRange } = await import('@/utils/sel');
+      // Mirrors how pdf.js renders the text layer: each text run is its
+      // own <span>, and line endings are <br role="presentation">.
+      const container = document.createElement('div');
+      container.className = 'textLayer';
+      container.innerHTML =
+        '<span role="presentation">last word of line 1</span>' +
+        '<br role="presentation">' +
+        '<span role="presentation">first word of line 2</span>';
+      document.body.appendChild(container);
+
+      const range = document.createRange();
+      range.selectNodeContents(container);
+
+      const text = getTextFromRange(range);
+      // Without separating the spans the text becomes
+      // "last word of line 1first word of line 2" — words are glued.
+      expect(text).toBe('last word of line 1\nfirst word of line 2');
+
+      document.body.removeChild(container);
+    });
+
+    it('should insert a newline for explicit <br> in HTML content', async () => {
+      const { getTextFromRange } = await import('@/utils/sel');
+      const container = document.createElement('div');
+      container.innerHTML = 'first<br>second<br>third';
+      document.body.appendChild(container);
+
+      const range = document.createRange();
+      range.selectNodeContents(container);
+
+      expect(getTextFromRange(range)).toBe('first\nsecond\nthird');
+
+      document.body.removeChild(container);
+    });
   });
 
   describe('snapRangeToWords', () => {

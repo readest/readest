@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
 import { RsvpState, RSVPController } from '@/services/rsvp';
+import { containsCJK } from '@/services/rsvp/utils';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
 import {
@@ -26,6 +27,36 @@ interface FlatChapter {
   level: number;
 }
 
+interface ContextWordProps {
+  text: string;
+  wordIndex: number;
+  isCurrent: boolean;
+  currentRef?: React.Ref<HTMLSpanElement>;
+  orpColor?: string;
+}
+
+const ContextWord = React.memo(function ContextWord({
+  text,
+  wordIndex,
+  isCurrent,
+  currentRef,
+  orpColor,
+}: ContextWordProps) {
+  return (
+    <span
+      ref={currentRef}
+      data-rsvp-word-button=''
+      data-rsvp-word-index={wordIndex}
+      role={isCurrent ? undefined : 'button'}
+      tabIndex={isCurrent ? undefined : 0}
+      className={isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'}
+      style={isCurrent && orpColor ? { color: orpColor } : undefined}
+    >
+      {text}{' '}
+    </span>
+  );
+});
+
 // Display settings
 const FONT_SIZE_OPTIONS = [1.25, 1.5, 1.875, 2.25, 3, 3.75, 4.25, 5, 6, 8];
 const DEFAULT_FONT_SIZE_INDEX = 4;
@@ -33,6 +64,13 @@ const ORP_COLOR_OPTIONS = ['', '#EF4444', '#3B82F6', '#22C55E', '#F97316', '#A85
 const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
 const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
 const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
+
+// Context panel windowing — long sections (e.g. AZW3 chapters with 40k+ words)
+// would otherwise render tens of thousands of <span> elements and freeze the UI
+// for many seconds on each section load.
+const CONTEXT_CHUNK_SIZE = 50;
+const CONTEXT_WINDOW_BEFORE = 200;
+const CONTEXT_WINDOW_AFTER = 1000;
 
 interface RSVPOverlayProps {
   gridInsets: Insets;
@@ -56,7 +94,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
-  const currentWord = state.words[state.currentIndex] ?? null;
+  const currentWord = controller.currentDisplayWord;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
@@ -93,17 +131,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
     return 0;
   });
-  // Context window: only rebuild the rendered word list when the current word
-  // falls outside the window or nears its edge, keeping the DOM stable.
-  const [contextWindow, setContextWindow] = useState(() => {
-    if (!state || state.words.length === 0) return { start: 0, end: 0 };
-    return {
-      start: Math.max(0, state.currentIndex - 50),
-      end: Math.min(state.words.length, state.currentIndex + 151),
-    };
-  });
   const contextWordRef = useRef<HTMLSpanElement>(null);
-  const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -133,27 +161,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     const handleStateChange = (e: Event) => {
       const newState = (e as CustomEvent<RsvpState>).detail;
       setState(newState);
-
-      // Update context window only when current word falls outside or nears edge
-      const idx = newState.currentIndex;
-      const total = newState.words.length;
-      setContextWindow((prev) => {
-        if (total === 0) return { start: 0, end: 0 };
-        // Outside window — reset
-        if (idx < prev.start || idx >= prev.end) {
-          return {
-            start: Math.max(0, idx - 50),
-            end: Math.min(total, idx + 151),
-          };
-        }
-        // Near end of window — extend forward
-        const windowSize = prev.end - prev.start;
-        if (idx - prev.start > windowSize * 0.8) {
-          return { start: prev.start, end: Math.min(total, prev.end + 100) };
-        }
-        // No change — return same reference to avoid re-render
-        return prev;
-      });
     };
 
     const handleCountdownChange = (e: Event) => {
@@ -233,6 +240,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
   const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
   const wordAfter = currentWord ? currentWord.text.substring(currentWord.orpIndex + 1) : '';
+  const isCJKWord = currentWord ? containsCJK(currentWord.text) : false;
+  const wordLetterSpacing = undefined;
+  const wordSideOffset = isCJKWord ? '0.45em' : '0.3em';
 
   // Time remaining calculation
   const getTimeRemaining = useCallback((): string | null => {
@@ -254,28 +264,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Stable word list that only changes when contextWindow changes
-  const contextWords = useMemo(
-    () => state.words.slice(contextWindow.start, contextWindow.end),
-    [state.words, contextWindow],
-  );
-
-  // Auto-scroll: keep highlighted word away from top/bottom edges
+  // Auto-scroll: keep highlighted word in view
   useEffect(() => {
-    const panel = contextPanelRef.current;
-    const word = contextWordRef.current;
-    if (contextCollapsed || !panel || !word) return;
-
-    const panelRect = panel.getBoundingClientRect();
-    const wordRect = word.getBoundingClientRect();
-    const margin = panelRect.height * 0.15;
-    const topLine = panelRect.top + margin;
-
-    if (wordRect.top < topLine) {
-      panel.scrollTop -= topLine - wordRect.top;
-    } else if (wordRect.bottom > panelRect.bottom - margin) {
-      panel.scrollTop += wordRect.top - topLine;
-    }
+    if (contextCollapsed) return;
+    contextWordRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   }, [state.currentIndex, contextCollapsed]);
 
   useEffect(() => {
@@ -391,12 +383,53 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   };
 
-  const handleWordClick = (wordIndex: number) => {
-    const wasPlaying = state.playing;
-    if (wasPlaying) controller.pause();
-    controller.seekToIndex(wordIndex);
-    if (wasPlaying) setTimeout(() => controller.resume(), 50);
-  };
+  const handleWordClick = useCallback(
+    (wordIndex: number) => {
+      const wasPlaying = state.playing;
+      if (wasPlaying) controller.pause();
+      controller.seekToIndex(wordIndex);
+      if (wasPlaying) setTimeout(() => controller.resume(), 50);
+    },
+    [state.playing, controller],
+  );
+
+  const handleContextClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-rsvp-word-index]');
+      if (!target) return;
+      if (target.getAttribute('role') !== 'button') return;
+      const idx = parseInt(target.getAttribute('data-rsvp-word-index') || '', 10);
+      if (Number.isNaN(idx)) return;
+      handleWordClick(idx);
+    },
+    [handleWordClick],
+  );
+
+  const handleContextKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-rsvp-word-index]');
+      if (!target) return;
+      if (target.getAttribute('role') !== 'button') return;
+      const idx = parseInt(target.getAttribute('data-rsvp-word-index') || '', 10);
+      if (Number.isNaN(idx)) return;
+      event.preventDefault();
+      handleWordClick(idx);
+    },
+    [handleWordClick],
+  );
+
+  const contextWindow = useMemo(() => {
+    const len = state.words.length;
+    if (len === 0) return { start: 0, end: 0 };
+    const chunkStart = Math.floor(state.currentIndex / CONTEXT_CHUNK_SIZE) * CONTEXT_CHUNK_SIZE;
+    const start = Math.max(0, chunkStart - CONTEXT_WINDOW_BEFORE);
+    const end = Math.min(len, chunkStart + CONTEXT_CHUNK_SIZE + CONTEXT_WINDOW_AFTER);
+    return { start, end };
+  }, [state.currentIndex, state.words.length]);
+
+  const hasMoreBefore = contextWindow.start > 0;
+  const hasMoreAfter = contextWindow.end < state.words.length;
 
   const getProgressBarPercentage = (clientX: number, target: HTMLElement): number => {
     const rect = target.getBoundingClientRect();
@@ -598,38 +631,32 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         </button>
         {!contextCollapsed && (
           <div
-            ref={contextPanelRef}
             className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
           >
-            <div className='text-left text-base leading-relaxed md:text-lg'>
-              {contextWords.map((w, i) => {
+            <div
+              data-testid='rsvp-context-panel'
+              className='text-left text-base leading-relaxed md:text-lg'
+              onClick={handleContextClick}
+              onKeyDown={handleContextKeyDown}
+            >
+              {hasMoreBefore && <span className='opacity-30'>… </span>}
+              {state.words.slice(contextWindow.start, contextWindow.end).map((w, i) => {
                 const wordIndex = contextWindow.start + i;
                 const isCurrent = wordIndex === state.currentIndex;
                 return (
-                  <span
+                  <ContextWord
                     key={wordIndex}
-                    ref={isCurrent ? contextWordRef : undefined}
-                    role={isCurrent ? undefined : 'button'}
-                    tabIndex={isCurrent ? undefined : 0}
-                    className={
-                      isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'
-                    }
-                    style={isCurrent ? { color: effectiveOrpColor } : undefined}
-                    onClick={isCurrent ? undefined : () => handleWordClick(wordIndex)}
-                    onKeyDown={
-                      isCurrent
-                        ? undefined
-                        : (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') handleWordClick(wordIndex);
-                          }
-                    }
-                  >
-                    {w.text}{' '}
-                  </span>
+                    text={w.text}
+                    wordIndex={wordIndex}
+                    isCurrent={isCurrent}
+                    currentRef={isCurrent ? contextWordRef : undefined}
+                    orpColor={isCurrent ? effectiveOrpColor : undefined}
+                  />
                 );
               })}
+              {hasMoreAfter && <span className='opacity-30'>…</span>}
             </div>
           </div>
         )}
@@ -659,11 +686,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               {/* Word display */}
               <div
                 className='rsvp-word relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-2 font-mono font-medium leading-none tracking-wide sm:min-h-20 sm:px-4 sm:py-4'
-                style={{ fontSize: `${currentFontSize}rem` }}
+                style={{ fontSize: `${currentFontSize}rem`, letterSpacing: wordLetterSpacing }}
               >
                 {currentWord ? (
                   <>
-                    <span className='rsvp-word-before absolute right-[calc(50%+0.3em)] text-right opacity-60'>
+                    <span
+                      className='rsvp-word-before absolute text-right opacity-60'
+                      style={{ right: `calc(50% + ${wordSideOffset})` }}
+                    >
                       {wordBefore}
                     </span>
                     <span
@@ -672,7 +702,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                     >
                       {orpChar}
                     </span>
-                    <span className='rsvp-word-after absolute left-[calc(50%+0.3em)] text-left opacity-60'>
+                    <span
+                      className='rsvp-word-after absolute text-left opacity-60'
+                      style={{ left: `calc(50% + ${wordSideOffset})` }}
+                    >
                       {wordAfter}
                     </span>
                   </>
@@ -849,6 +882,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               >
                 <IoAdd className='h-3 w-3' />
               </button>
+            </div>
+
+            {/* Split hyphenated words */}
+            <div className='config-item gap-2'>
+              <span className='opacity-50'>{_('Split Hyphens')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={state.splitHyphens}
+                onChange={(e) => controller.setSplitHyphens(e.target.checked)}
+              />
             </div>
 
             {/* ORP color */}

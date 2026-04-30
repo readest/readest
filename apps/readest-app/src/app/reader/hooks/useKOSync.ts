@@ -10,6 +10,7 @@ import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
+import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
@@ -31,7 +32,7 @@ export const useKOSync = (bookKey: string) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getProgress, getView } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig, setConfig } = useBookDataStore();
 
   const [kosyncClient, setKOSyncClient] = useState<KOSyncClient | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('idle');
@@ -64,6 +65,7 @@ export const useKOSync = (bookKey: string) => {
       percentage = totalPages > 0 ? (page + 1) / totalPages : 0;
     } else {
       const view = getView(bookKey);
+      const config = getConfig(bookKey);
       const cfi = progress.location;
       if (!view || !cfi) return null;
       try {
@@ -75,6 +77,9 @@ export const useKOSync = (bookKey: string) => {
           const converter = new XCFI(doc, spineIndex || 0);
           const xpointerResult = converter.cfiToXPointer(cfi);
           koProgress = xpointerResult.xpointer;
+          setConfig(bookKey, { xpointer: koProgress });
+        } else if (config?.xpointer) {
+          koProgress = config.xpointer;
         }
       } catch (error) {
         console.error('Failed to convert CFI to XPointer', error);
@@ -86,7 +91,7 @@ export const useKOSync = (bookKey: string) => {
     }
 
     return { koProgress, percentage };
-  }, [bookKey, getProgress, getBookData, getView]);
+  }, [bookKey, getProgress, getBookData, getView, getConfig, setConfig]);
 
   const applyRemoteProgress = async (book: Book, bookDoc: BookDoc, remote: KoSyncProgress) => {
     const view = getView(bookKey);
@@ -252,53 +257,75 @@ export const useKOSync = (bookKey: string) => {
     [bookKey, appService, kosyncClient, settings.kosync, progress],
   );
 
+  // use a ref to track the current push/pull functions so they can change without triggering effects
+  const syncRefs = useRef({ pushProgress, pullProgress });
+  useEffect(() => {
+    syncRefs.current = { pushProgress, pullProgress };
+  }, [pushProgress, pullProgress]);
+
   useEffect(() => {
     const handlePushProgress = (event: CustomEvent) => {
+      const { pushProgress } = syncRefs.current;
       if (event.detail.bookKey !== bookKey) return;
       pushProgress();
       pushProgress.flush();
     };
     const handleFlush = (event: CustomEvent) => {
+      const { pushProgress } = syncRefs.current;
       if (event.detail.bookKey !== bookKey) return;
       pushProgress.flush();
     };
     eventDispatcher.on('push-kosync', handlePushProgress);
     eventDispatcher.on('flush-kosync', handleFlush);
     return () => {
+      const { pushProgress } = syncRefs.current;
       eventDispatcher.off('push-kosync', handlePushProgress);
       eventDispatcher.off('flush-kosync', handleFlush);
       pushProgress.flush();
     };
-  }, [bookKey, pushProgress]);
+  }, [bookKey]);
 
   useEffect(() => {
     const handlePullProgress = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
+      const { pullProgress } = syncRefs.current;
       pullProgress();
     };
     eventDispatcher.on('pull-kosync', handlePullProgress);
     return () => {
       eventDispatcher.off('pull-kosync', handlePullProgress);
     };
-  }, [bookKey, pullProgress]);
+  }, [bookKey]);
 
   // Pull: pull progress once when the book is opened
   useEffect(() => {
     if (!appService || !kosyncClient || !progress?.location) return;
     if (hasPulledOnce.current) return;
 
-    pullProgress();
-  }, [appService, kosyncClient, progress?.location, pushProgress, pullProgress]);
+    syncRefs.current.pullProgress();
+  }, [appService, kosyncClient, progress?.location]);
 
   // Push: auto-push progress when progress changes with a debounce
   useEffect(() => {
     if (syncState === 'synced' && progress) {
       const { strategy, enabled } = settings.kosync;
       if (strategy !== 'receive' && enabled) {
-        pushProgress();
+        syncRefs.current.pushProgress();
       }
     }
-  }, [progress, syncState, settings.kosync, pushProgress]);
+  }, [progress, syncState, settings.kosync]);
+
+  useWindowActiveChanged((isActive) => {
+    const { pushProgress, pullProgress } = syncRefs.current;
+
+    if (isActive) {
+      hasPulledOnce.current = false;
+      pullProgress();
+    } else {
+      pushProgress();
+      pushProgress.flush();
+    }
+  });
 
   const resolveWithLocal = () => {
     pushProgress();

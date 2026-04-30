@@ -149,6 +149,43 @@ describe('themeStore', () => {
       expect(state.systemIsDarkMode).toBe(true);
       expect(state.isDarkMode).toBe(false);
     });
+
+    test('updates themeCode when system theme changes to dark', async () => {
+      const styleModule = await import('@/utils/style');
+      const mockGetThemeCode = vi.mocked(styleModule.getThemeCode);
+      const darkThemeCode = {
+        bg: '#1a1a1a',
+        fg: '#ffffff',
+        primary: '#4d9fff',
+        palette: {
+          'base-100': '#1a1a1a',
+          'base-200': '#2a2a2a',
+          'base-300': '#3a3a3a',
+          'base-content': '#ffffff',
+          neutral: '#333333',
+          'neutral-content': '#ffffff',
+          primary: '#4d9fff',
+          secondary: '#6c757d',
+          accent: '#4d9fff',
+        },
+        isDarkMode: true,
+      };
+      mockGetThemeCode.mockReturnValueOnce(darkThemeCode);
+
+      useThemeStore.setState({ themeMode: 'auto' });
+      useThemeStore.getState().handleSystemThemeChange(true);
+
+      expect(useThemeStore.getState().themeCode).toEqual(darkThemeCode);
+    });
+
+    test('updates data-theme attribute when system theme changes', () => {
+      useThemeStore.setState({ themeMode: 'auto', themeColor: 'default' });
+      useThemeStore.getState().handleSystemThemeChange(true);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('default-dark');
+
+      useThemeStore.getState().handleSystemThemeChange(false);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('default-light');
+    });
   });
 
   describe('showSystemUI / dismissSystemUI', () => {

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { Metadata, Viewport } from 'next';
 import { ViewTransitions } from 'next-view-transitions';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
@@ -14,8 +15,12 @@ const description =
   'Perfect for deep reading, analysis, and understanding. Explore now!';
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
-export const metadata = {
-  title,
+export const metadata: Metadata = {
+  metadataBase: new URL(url),
+  title: {
+    default: title,
+    template: '%s | Readest',
+  },
   description,
   generator: 'Next.js',
   manifest: '/manifest.json',
@@ -26,15 +31,39 @@ export const metadata = {
       url: 'https://github.com/readest/readest',
     },
   ],
-  icons: [
-    { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
-    { rel: 'icon', url: '/icon.png' },
-  ],
+  icons: {
+    icon: [{ url: '/icon.png' }, { url: '/favicon.ico' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Readest',
+    statusBarStyle: 'default',
+  },
+  openGraph: {
+    type: 'website',
+    url,
+    title,
+    description,
+    images: [previewImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: [previewImage],
+  },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'twitter:domain': 'web.readest.com',
+    'twitter:url': url,
+  },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  minimumScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
@@ -46,32 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang='en'
       className={process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}
     >
-      <head>
-        <title>{title}</title>
-        <meta
-          name='viewport'
-          content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'
-        />
-        <meta name='mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
-        <meta name='apple-mobile-web-app-title' content='Readest' />
-        <link rel='apple-touch-icon' sizes='180x180' href='/apple-touch-icon.png' />
-        <link rel='icon' href='/favicon.ico' />
-        <link rel='manifest' href='/manifest.json' />
-        <meta name='description' content={description} />
-        <meta property='og:url' content={url} />
-        <meta property='og:type' content='website' />
-        <meta property='og:title' content={title} />
-        <meta property='og:description' content={description} />
-        <meta property='og:image' content={previewImage} />
-        <meta name='twitter:card' content='summary_large_image' />
-        <meta property='twitter:domain' content='web.readest.com' />
-        <meta property='twitter:url' content={url} />
-        <meta name='twitter:title' content={title} />
-        <meta name='twitter:description' content={description} />
-        <meta name='twitter:image' content={previewImage} />
-      </head>
       <body>
         <ViewTransitions>
           <EnvProvider>

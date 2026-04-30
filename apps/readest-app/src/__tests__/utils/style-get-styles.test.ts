@@ -368,6 +368,58 @@ describe('getLayoutStyles branches (via getStyles)', () => {
     // getStyles passes 1.0 as zoomLevel to getLayoutStyles
     expect(css).toContain('zoom: 1');
   });
+
+  it('omits only paragraph-related layout rules when useBookLayout is true', () => {
+    const vs = makeViewSettings({
+      useBookLayout: true,
+      lineHeight: 1.7,
+      wordSpacing: 3,
+      letterSpacing: 2,
+      textIndent: 2,
+      paragraphMargin: 1.25,
+      fullJustification: true,
+      hyphenation: true,
+      marginTopPx: 50,
+    });
+    const css = getStyles(vs, theme);
+    // paragraph-specific tokens driven by the Paragraph section must be absent
+    expect(css).not.toContain('--default-text-align:');
+    expect(css).not.toContain('line-height: 1.7');
+    expect(css).not.toContain('word-spacing: 3px');
+    expect(css).not.toContain('letter-spacing: 2px');
+    expect(css).not.toContain('text-indent: 2em');
+    expect(css).not.toContain('hyphens: auto');
+    expect(css).not.toContain('-webkit-hyphens: auto');
+    // non-paragraph layout rules must still be emitted
+    expect(css).toContain('@namespace epub');
+    expect(css).toContain('--margin-top: 50px');
+    expect(css).toContain('--margin-right:');
+    expect(css).toContain('--margin-bottom:');
+    expect(css).toContain('--margin-left:');
+    // font/color/translation sections must still be present
+    expect(css).toContain('--serif:');
+    expect(css).toContain('--theme-bg-color');
+    expect(css).toContain('.translation-source');
+  });
+
+  it('includes paragraph layout rules when useBookLayout is false', () => {
+    const vs = makeViewSettings({
+      useBookLayout: false,
+      lineHeight: 1.7,
+      wordSpacing: 3,
+      letterSpacing: 2,
+      textIndent: 2,
+      fullJustification: true,
+      hyphenation: true,
+    });
+    const css = getStyles(vs, theme);
+    expect(css).toContain('--default-text-align: justify');
+    expect(css).toContain('line-height: 1.7');
+    expect(css).toContain('word-spacing: 3px');
+    expect(css).toContain('letter-spacing: 2px');
+    expect(css).toContain('text-indent: 2em');
+    expect(css).toContain('hyphens: auto');
+  });
 });
 
 // ---------------------------------------------------------------------------

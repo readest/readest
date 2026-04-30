@@ -21,6 +21,7 @@ export interface KoSyncProgress {
 export class KOSyncClient {
   private config: KOSyncSettings;
   private isLanServer: boolean;
+  private usesHttpAuth: boolean = false;
 
   constructor(config: KOSyncSettings) {
     this.config = config;
@@ -39,48 +40,74 @@ export class KOSyncClient {
   ): Promise<Response> {
     const { method = 'GET', body, headers: additionalHeaders, useAuth = true } = options;
 
-    const headers = new Headers(additionalHeaders || {});
-    if (useAuth) {
-      headers.set('X-Auth-User', this.config.username);
-      headers.set('X-Auth-Key', this.config.userkey);
-    }
-
-    if (this.isLanServer || isTauriAppPlatform()) {
-      const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-      const directUrl = `${this.config.serverUrl}${endpoint}`;
-
-      return fetch(directUrl, {
-        method,
-        headers: {
-          accept: 'application/vnd.koreader.v1+json',
-          ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
-          ...Object.fromEntries(headers.entries()),
-        },
-        body,
-        danger: {
-          acceptInvalidCerts: true,
-          acceptInvalidHostnames: true,
-        },
-      });
-    }
-
-    const proxyUrl = `${getAPIBaseUrl()}/kosync`;
-
-    const proxyBody: KoSyncProxyPayload = {
-      serverUrl: this.config.serverUrl,
-      endpoint,
-      method,
-      headers: Object.fromEntries(headers.entries()),
-      body: body ? JSON.parse(body as string) : undefined,
+    const buildHeaders = (): Headers => {
+      const headers = new Headers(additionalHeaders || {});
+      if (useAuth) {
+        if (this.usesHttpAuth && this.config.password) {
+          const credentials = btoa(`${this.config.username}:${this.config.password}`);
+          headers.set('Authorization', `Basic ${credentials}`);
+        } else {
+          headers.set('X-Auth-User', this.config.username);
+          headers.set('X-Auth-Key', this.config.userkey);
+        }
+      }
+      return headers;
     };
 
-    return fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(proxyBody),
-    });
+    const attempt = async (): Promise<Response> => {
+      const headers = buildHeaders();
+
+      if (this.isLanServer || isTauriAppPlatform()) {
+        const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+        const directUrl = `${this.config.serverUrl}${endpoint}`;
+
+        return await fetch(directUrl, {
+          method,
+          headers: {
+            accept: 'application/vnd.koreader.v1+json',
+            ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+            ...Object.fromEntries(headers.entries()),
+          },
+          body,
+          danger: {
+            acceptInvalidCerts: true,
+            acceptInvalidHostnames: true,
+          },
+        });
+      }
+
+      const proxyUrl = `${getAPIBaseUrl()}/kosync`;
+      const proxyBody: KoSyncProxyPayload = {
+        serverUrl: this.config.serverUrl,
+        endpoint,
+        method,
+        headers: Object.fromEntries(headers.entries()),
+        body: body ? JSON.parse(body as string) : undefined,
+      };
+
+      return await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(proxyBody),
+      });
+    };
+
+    let response = await attempt();
+    // some versions of CWA return status code 400 for auth failure, so check for both.
+    if (response.status === 401 || response.status === 400) {
+      // traditional auth failed; attempt one more time with HTTP auth
+      this.usesHttpAuth = true;
+
+      response = await attempt();
+      if (!response.ok) {
+        // this one failed too, revert to traditional auth
+        this.usesHttpAuth = false;
+      }
+    }
+
+    return response;
   }
 
   /**
@@ -98,10 +125,7 @@ export class KOSyncClient {
     try {
       const authResponse = await this.request('/users/auth', {
         method: 'GET',
-        headers: {
-          'X-Auth-User': username,
-          'X-Auth-Key': userkey,
-        },
+        useAuth: true,
       });
 
       if (authResponse.ok) {

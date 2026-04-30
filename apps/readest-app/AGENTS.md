@@ -56,6 +56,15 @@ pnpm clippy:check          # Lint Rust code (src-tauri)
 
 Platform-specific code lives in `src-tauri/src/{macos,windows,android,ios}/`. Custom Tauri plugins are in `src-tauri/plugins/`.
 
+## Git Worktrees
+
+Always use `pnpm worktree:new <branch-name|pr-number>` to create worktrees. Never use `git worktree add` directly — the script handles submodule initialization (simplecc WASM, foliate-js), dependency installation, `.env` copying, vendor assets, and Tauri gen symlinks that are required for lint and tests to pass.
+
+```bash
+pnpm worktree:new feat/my-feature   # New branch from origin/main
+pnpm worktree:new 3837              # Checkout PR #3837 with push access to fork
+```
+
 ## Project Rules
 
 Rules are in `.claude/rules/`: test-first, typescript, verification.
@@ -67,10 +76,6 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 ### Safe Area Insets
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
-
-## Web Browsing & QA (gstack)
-
-For all web browsing, QA testing, and site interaction, use the `/browse` skill from gstack. **Never use `mcp__claude-in-chrome__*` tools directly.**
 
 Available gstack skills:
 

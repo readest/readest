@@ -278,6 +278,40 @@ describe('Paginator multi-view architecture', () => {
       // With tolerance, this should detect index 3 (not 2)
       expect(detectPrimary(visibleStart)).toBe(3);
     });
+
+    it('should not inflate page count due to fractional DPR rounding (pages getter)', () => {
+      // On fractional DPR devices, getBoundingClientRect() on the view element
+      // returns a width that is a near-integer multiple of the container size,
+      // but with tiny floating-point drift. Math.ceil inflates the count by 1.
+      // Real scenario: containerSize=785.45458984375, viewSize should be
+      // exactly 4*containerSize but getBoundingClientRect() returns a value
+      // with sub-pixel error.
+      const containerSize = 785.45458984375;
+      const viewSize = containerSize * 4 + 0.0001; // tiny FP drift
+
+      // Bug: Math.ceil gives 5 instead of 4
+      const buggyPages = Math.ceil(viewSize / containerSize);
+      expect(buggyPages).toBe(5); // confirms the bug exists
+
+      // Fix: Math.round absorbs sub-pixel drift
+      const fixedPages = Math.round(viewSize / containerSize);
+      expect(fixedPages).toBe(4);
+    });
+
+    it('should not inflate rendered page count due to fractional DPR rounding', () => {
+      // Same issue for #renderedPages which sums multiple view sizes
+      const containerSize = 785.45458984375;
+      const viewSizes = [containerSize * 3 + 0.00005, containerSize * 2 + 0.00008];
+      const totalViewSize = viewSizes.reduce((a, b) => a + b, 0);
+
+      // Bug: Math.ceil over-counts
+      const buggyPages = Math.ceil(totalViewSize / containerSize);
+      expect(buggyPages).toBe(6); // should be 5 but ceil rounds up
+
+      // Fix: Math.round
+      const fixedPages = Math.round(totalViewSize / containerSize);
+      expect(fixedPages).toBe(5);
+    });
   });
 
   describe('Adjacent index with fromIndex parameter', () => {

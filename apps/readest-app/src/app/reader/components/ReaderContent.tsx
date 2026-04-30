@@ -20,7 +20,11 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
-import { navigateToLibrary } from '@/utils/nav';
+import {
+  closeReaderWindowOrGoToLibrary,
+  ensureMainLibraryWindow,
+  navigateToLibrary,
+} from '@/utils/nav';
 import { clearDiscordPresence } from '@/utils/discord';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookDetailModal } from '@/components/metadata';
@@ -74,7 +78,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           setErrorLoading(true);
           eventDispatcher.dispatch('toast', {
             message: _('Unable to open book'),
-            callback: () => navigateBackToLibrary(),
+            callback: async () => {
+              const service = await envConfig.getAppService();
+              await closeReaderWindowOrGoToLibrary(service, router);
+            },
             timeout: 2000,
             type: 'error',
           });
@@ -171,13 +178,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     await saveSettings(envConfig, settings);
   }, 200);
 
-  const handleCloseBooksToLibrary = () => {
+  const handleCloseBooksToLibrary = async () => {
     handleCloseBooks();
     if (isTauriAppPlatform()) {
       const currentWindow = getCurrentWindow();
       if (currentWindow.label === 'main') {
         navigateBackToLibrary();
       } else {
+        if (appService) {
+          await ensureMainLibraryWindow(appService);
+        }
         currentWindow.close();
       }
     } else {

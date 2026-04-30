@@ -26,7 +26,11 @@ vi.mock('@/store/libraryStore', () => {
   return {
     useLibraryStore: create(() => ({
       library: [],
+      hashIndex: new Map(),
       setLibrary: vi.fn(),
+      getBookByHash: vi.fn(),
+      updateBookProgress: vi.fn(),
+      rebuildHashIndex: vi.fn(),
     })),
   };
 });
@@ -36,7 +40,7 @@ vi.mock('@/utils/misc', () => ({
 }));
 
 // These are transitive imports needed by readerStore
-vi.mock('@/utils/toc', () => ({ updateToc: vi.fn() }));
+vi.mock('@/services/nav', () => ({ updateToc: vi.fn() }));
 vi.mock('@/utils/book', () => ({
   formatTitle: vi.fn((t: string) => t),
   getMetadataHash: vi.fn(() => 'hash'),
@@ -50,6 +54,11 @@ vi.mock('@/services/constants', () => ({
 }));
 vi.mock('@/libs/document', () => ({
   DocumentLoader: vi.fn(),
+}));
+vi.mock('@/services/opds/pseStream', () => ({
+  isPseStreamFileName: () => false,
+  openPseStreamBook: vi.fn(),
+  parsePseStreamFileName: vi.fn(),
 }));
 
 import { useReaderStore } from '@/store/readerStore';

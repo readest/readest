@@ -1,5 +1,5 @@
-import { StripeAvailablePlan } from '@/libs/payment/stripe/client';
-import { AvailablePlan, PlanInterval, PlanType, QuotaFeature, UserPlan } from '@/types/quota';
+import type { StripeAvailablePlan } from '@/libs/payment/stripe/client';
+import type { AvailablePlan, PlanInterval, PlanType, QuotaFeature, UserPlan } from '@/types/quota';
 import { stubTranslation as _ } from '@/utils/misc';
 
 type FeatureType = {
@@ -42,17 +42,17 @@ const getProductFeature = (productId: string): QuotaFeature | undefined => {
   return undefined;
 };
 
-export const getPlanDetails = (
+export function getPlanDetails(
   planCode: UserPlan,
   availablePlans: (AvailablePlan & StripeAvailablePlan)[],
   interval: PlanInterval = 'month',
-): PlanDetails => {
+): PlanDetails {
   const availablePlan = availablePlans.find(
     (plan) => plan.plan === planCode && (!plan.interval || plan.interval === interval),
   );
-  const currency = availablePlans.length > 0 ? availablePlans[0]!.currency : 'USD';
+  const currency = availablePlans?.[0]?.currency ?? 'USD';
   switch (planCode) {
-    case 'purchase':
+    case 'purchase': {
       const purchasableProducts: ProductInfo[] = availablePlans
         .filter((plan) => plan.plan === planCode)
         .sort((a, b) => a.price - b.price)
@@ -97,6 +97,7 @@ export const getPlanDetails = (
         ],
         products: purchasableProducts,
       };
+    }
     case 'free':
       return {
         name: _('Free Plan'),
@@ -244,4 +245,4 @@ export const getPlanDetails = (
     default:
       return getPlanDetails('free', availablePlans);
   }
-};
+}

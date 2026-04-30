@@ -1,5 +1,6 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
+import { isLikelyMouseWheel } from './smoothWheelScroll';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -131,6 +132,13 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleWheel = (bookKey: string, event: WheelEvent) => {
+  const isMouseWheel = isLikelyMouseWheel(event);
+  // Suppress the browser's native wheel scroll only for mouse-wheel-shaped
+  // events. Trackpad / high-resolution input is already pixel-precise, so
+  // we let it through to keep the existing momentum and 2-axis behaviour.
+  if (isMouseWheel) {
+    event.preventDefault();
+  }
   window.postMessage(
     {
       type: 'iframe-wheel',
@@ -139,6 +147,7 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
       deltaX: event.deltaX,
       deltaY: event.deltaY,
       deltaZ: event.deltaZ,
+      isMouseWheel,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,

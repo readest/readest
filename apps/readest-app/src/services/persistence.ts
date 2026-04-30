@@ -64,7 +64,7 @@ export async function safeSaveJSON(
   data: unknown,
 ): Promise<void> {
   const backupFilename = `${filename}.bak`;
-  const jsonData = JSON.stringify(data, null, 2);
+  const jsonData = JSON.stringify(data);
 
   try {
     await fs.writeFile(backupFilename, base, jsonData);

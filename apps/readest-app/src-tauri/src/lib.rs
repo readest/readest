@@ -28,6 +28,8 @@ mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
+#[cfg(target_os = "windows")]
+use tauri::webview::ScrollBarStyle;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
 #[cfg(target_os = "android")]
 use tauri_plugin_native_bridge::register_select_directory_callback;
@@ -195,10 +197,9 @@ pub fn run() {
     let builder = builder.plugin(
         tauri_plugin_single_instance::Builder::new()
             .callback(move |app, argv, cwd| {
-                let _ = app
-                    .get_webview_window("main")
-                    .expect("no main window")
-                    .set_focus();
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_focus();
+                }
                 let files = get_files_from_argv(argv.clone());
                 if !files.is_empty() {
                     allow_file_in_scopes(app, files.clone());
@@ -375,7 +376,9 @@ pub fn run() {
                     true
                 });
 
-            #[cfg(desktop)]
+            #[cfg(target_os = "macos")]
+            let win_builder = win_builder.inner_size(1280.0, 800.0).resizable(true);
+            #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
 
             #[cfg(target_os = "macos")]
@@ -394,7 +397,9 @@ pub fn run() {
 
                 #[cfg(target_os = "windows")]
                 {
-                    builder = builder.transparent(false);
+                    builder = builder
+                        .transparent(false)
+                        .scroll_bar_style(ScrollBarStyle::FluentOverlay);
                 }
                 #[cfg(target_os = "linux")]
                 {
@@ -406,9 +411,28 @@ pub fn run() {
                 builder
             };
 
-            win_builder.build().unwrap();
+            #[cfg(not(target_os = "macos"))]
+            {
+                win_builder.build().unwrap();
+            }
             // let win = win_builder.build().unwrap();
             // win.open_devtools();
+
+            #[cfg(target_os = "macos")]
+            {
+                let window = win_builder.build().unwrap();
+                // On macOS, closing a window (via Cmd+W or the red traffic light) should
+                // not quit the app — only Cmd+Q should. Hide the window instead so the
+                // app keeps running in the dock, and restore it when the user reopens
+                // the app from the dock.
+                let window_for_close = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_for_close.hide();
+                    }
+                });
+            }
 
             #[cfg(target_os = "macos")]
             macos::menu::setup_macos_menu(app.handle())?;
@@ -423,18 +447,34 @@ pub fn run() {
             #[allow(unused_variables)]
             |app_handle, event| {
                 #[cfg(target_os = "macos")]
-                if let tauri::RunEvent::Opened { urls } = event {
-                    let files = urls
-                        .into_iter()
-                        .filter_map(|url| url.to_file_path().ok())
-                        .collect::<Vec<_>>();
+                match event {
+                    tauri::RunEvent::Opened { urls } => {
+                        let files = urls
+                            .into_iter()
+                            .filter_map(|url| url.to_file_path().ok())
+                            .collect::<Vec<_>>();
 
-                    let app_handler_clone = app_handle.clone();
-                    allow_file_in_scopes(app_handle, files.clone());
-                    app_handle.listen("window-ready", move |_| {
-                        println!("Window is ready, proceeding to handle files.");
-                        set_window_open_with_files(&app_handler_clone, files.clone());
-                    });
+                        let app_handler_clone = app_handle.clone();
+                        allow_file_in_scopes(app_handle, files.clone());
+                        app_handle.listen("window-ready", move |_| {
+                            println!("Window is ready, proceeding to handle files.");
+                            set_window_open_with_files(&app_handler_clone, files.clone());
+                        });
+                    }
+                    // When the user reopens the app from the dock after closing all
+                    // windows, re-show the main window instead of leaving the dock
+                    // icon inert.
+                    tauri::RunEvent::Reopen {
+                        has_visible_windows: false,
+                        ..
+                    } => {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            let _ = window.unminimize();
+                        }
+                    }
+                    _ => {}
                 }
             },
         );

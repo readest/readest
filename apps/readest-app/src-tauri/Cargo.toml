@@ -19,6 +19,7 @@ crate-type = ["staticlib", "cdylib", "lib"]
 cargo-clippy = []
 # Enable WebDriver plugin for E2E testing (use with `tauri build --debug --features webdriver`)
 webdriver = ["tauri-plugin-webdriver"]
+devtools = ["tauri/devtools"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -78,3 +79,6 @@ tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
+
+[target.'cfg(target_os = "android")'.dependencies]
+libc = "0.2"

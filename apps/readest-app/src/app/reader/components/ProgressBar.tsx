@@ -155,6 +155,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <div
       role='presentation'
+      tabIndex={-1}
       className={clsx(
         'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
@@ -178,12 +179,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       style={
         isVertical
           ? {
+              top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
               bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
                 : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
-              height: `calc(100% - ${((contentInsets.top + contentInsets.bottom) / 2) * 3}px)`,
             }
           : {
               paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,

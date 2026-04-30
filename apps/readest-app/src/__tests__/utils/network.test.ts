@@ -76,15 +76,15 @@ describe('isLanAddress', () => {
   // IPv6 private addresses
   // -----------------------------------------------------------------------
   describe('IPv6 private addresses', () => {
-    // Note: URL.hostname wraps IPv6 addresses in brackets (e.g., '[::1]'),
-    // so the current implementation's startsWith checks won't match bracket-
-    // wrapped addresses. These tests document the actual behavior.
-    it('returns false for bracket-wrapped IPv6 (URL standard hostname format)', () => {
-      // URL('http://[::1]').hostname === '[::1]' which doesn't match startsWith('::1')
-      expect(isLanAddress('http://[::1]')).toBe(false);
-      expect(isLanAddress('http://[fe80::1]')).toBe(false);
-      expect(isLanAddress('http://[fc00::1]')).toBe(false);
-      expect(isLanAddress('http://[fd00::abc]')).toBe(false);
+    it('returns true for bracket-wrapped IPv6 loopback', () => {
+      expect(isLanAddress('http://[::1]')).toBe(true);
+      expect(isLanAddress('http://[::1]:8080')).toBe(true);
+    });
+
+    it('returns true for bracket-wrapped IPv6 link-local and unique local', () => {
+      expect(isLanAddress('http://[fe80::1]')).toBe(true);
+      expect(isLanAddress('http://[fc00::1]')).toBe(true);
+      expect(isLanAddress('http://[fd00::abc]')).toBe(true);
     });
   });
 

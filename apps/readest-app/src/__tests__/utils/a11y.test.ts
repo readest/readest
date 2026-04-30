@@ -1,61 +1,39 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi, afterEach } from 'vitest';
 import type { FoliateView } from '@/types/view';
-
-vi.mock('@/utils/throttle', () => ({
-  throttle: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
-}));
-vi.mock('@/utils/debounce', () => ({
-  debounce: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
-}));
-
-const mockObserve = vi.fn();
-const mockDisconnect = vi.fn();
-vi.stubGlobal(
-  'IntersectionObserver',
-  class {
-    constructor(
-      public callback: IntersectionObserverCallback,
-      public options?: IntersectionObserverInit,
-    ) {}
-    observe = mockObserve;
-    disconnect = mockDisconnect;
-    unobserve = vi.fn();
-  },
-);
-
 import { handleA11yNavigation } from '@/utils/a11y';
 
 function createMockView() {
-  return {
-    renderer: {
-      addEventListener: vi.fn(),
-    },
-    getCFI: vi.fn().mockReturnValue('epubcfi(/6/4)'),
-    resolveNavigation: vi.fn().mockReturnValue({ index: 0 }),
-  };
+  return {} as FoliateView;
 }
 
+const LAST_POS_ID = 'readest-skip-link-last-pos';
+const NEXT_SECTION_ID = 'readest-skip-link-next-section';
+
+const cleanupSkipLinks = () => {
+  document.getElementById(LAST_POS_ID)?.remove();
+  document.getElementById(NEXT_SECTION_ID)?.remove();
+};
+
+const makeOptions = (overrides: Partial<Parameters<typeof handleA11yNavigation>[2]> = {}) => ({
+  skipToLastPosCallback: vi.fn(),
+  skipToLastPosLabel: 'last',
+  skipToNextSectionCallback: vi.fn(),
+  skipToNextSectionLabel: 'next',
+  ...overrides,
+});
+
 describe('handleA11yNavigation', () => {
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    mockObserve.mockClear();
-    mockDisconnect.mockClear();
-  });
-
   afterEach(() => {
-    consoleSpy.mockRestore();
+    cleanupSkipLinks();
     vi.restoreAllMocks();
-    // Clean up skip link from document body between tests
-    const existing = document.getElementById('readest-skip-link');
-    if (existing) existing.remove();
   });
 
   test('returns early when view is null', () => {
     expect(() => {
-      handleA11yNavigation(null, document, 0);
+      handleA11yNavigation(null, document);
     }).not.toThrow();
+    expect(document.getElementById(LAST_POS_ID)).toBeNull();
+    expect(document.getElementById(NEXT_SECTION_ID)).toBeNull();
   });
 
   test('sets tabindex="-1" on anchor elements', () => {
@@ -64,8 +42,7 @@ describe('handleA11yNavigation', () => {
     document.body.appendChild(a1);
     document.body.appendChild(a2);
 
-    const view = createMockView();
-    handleA11yNavigation(view as unknown as FoliateView, document, 0);
+    handleA11yNavigation(createMockView(), document);
 
     expect(a1.getAttribute('tabindex')).toBe('-1');
     expect(a2.getAttribute('tabindex')).toBe('-1');
@@ -74,106 +51,88 @@ describe('handleA11yNavigation', () => {
     a2.remove();
   });
 
-  test('creates skip link with correct attributes', () => {
-    const callback = vi.fn();
-    const view = createMockView();
+  test('creates last-pos skip link with correct attributes as first child', () => {
+    handleA11yNavigation(
+      createMockView(),
+      document,
+      makeOptions({ skipToLastPosLabel: 'Skip to reading position' }),
+    );
 
-    handleA11yNavigation(view as unknown as FoliateView, document, 0, {
-      skipToLastPosCallback: callback,
-      skipToLastPosLabel: 'Skip to reading position',
-    });
-
-    const skipLink = document.getElementById('readest-skip-link');
+    const skipLink = document.getElementById(LAST_POS_ID);
     expect(skipLink).not.toBeNull();
     expect(skipLink!.getAttribute('cfi-inert')).toBe('');
     expect(skipLink!.getAttribute('tabindex')).toBe('0');
     expect(skipLink!.getAttribute('aria-hidden')).toBe('false');
     expect(skipLink!.getAttribute('aria-label')).toBe('Skip to reading position');
-    // Should be first child of body
     expect(document.body.firstElementChild).toBe(skipLink);
   });
 
-  test('skip link click calls callback', () => {
-    const callback = vi.fn();
-    const view = createMockView();
+  test('creates next-section skip link with correct attributes as last child', () => {
+    handleA11yNavigation(
+      createMockView(),
+      document,
+      makeOptions({ skipToNextSectionLabel: 'Skip to next section' }),
+    );
 
-    handleA11yNavigation(view as unknown as FoliateView, document, 0, {
-      skipToLastPosCallback: callback,
-      skipToLastPosLabel: 'Skip',
-    });
-
-    const skipLink = document.getElementById('readest-skip-link');
+    const skipLink = document.getElementById(NEXT_SECTION_ID);
     expect(skipLink).not.toBeNull();
-
-    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
-    skipLink!.dispatchEvent(clickEvent);
-
-    expect(callback).toHaveBeenCalledOnce();
+    expect(skipLink!.getAttribute('cfi-inert')).toBe('');
+    expect(skipLink!.getAttribute('tabindex')).toBe('0');
+    expect(skipLink!.getAttribute('aria-hidden')).toBe('false');
+    expect(skipLink!.getAttribute('aria-label')).toBe('Skip to next section');
+    expect(document.body.lastElementChild).toBe(skipLink);
   });
 
-  test('does not duplicate skip link if already exists', () => {
-    const view = createMockView();
+  test('last-pos skip link click calls skipToLastPosCallback', () => {
+    const options = makeOptions();
+    handleA11yNavigation(createMockView(), document, options);
 
-    // First call creates the skip link
-    handleA11yNavigation(view as unknown as FoliateView, document, 0, {
-      skipToLastPosCallback: vi.fn(),
-      skipToLastPosLabel: 'First',
-    });
-
-    // Second call should not create another
-    handleA11yNavigation(view as unknown as FoliateView, document, 0, {
-      skipToLastPosCallback: vi.fn(),
-      skipToLastPosLabel: 'Second',
-    });
-
-    const skipLinks = document.querySelectorAll('#readest-skip-link');
-    expect(skipLinks.length).toBe(1);
-    // Label should still be from the first call
-    expect(skipLinks[0]!.getAttribute('aria-label')).toBe('First');
-  });
-
-  test('observes paragraph elements', () => {
-    const p1 = document.createElement('p');
-    const p2 = document.createElement('p');
-    const p3 = document.createElement('p');
-    document.body.appendChild(p1);
-    document.body.appendChild(p2);
-    document.body.appendChild(p3);
-
-    const view = createMockView();
-    handleA11yNavigation(view as unknown as FoliateView, document, 0);
-
-    expect(mockObserve).toHaveBeenCalledTimes(3);
-    expect(mockObserve).toHaveBeenCalledWith(p1);
-    expect(mockObserve).toHaveBeenCalledWith(p2);
-    expect(mockObserve).toHaveBeenCalledWith(p3);
-
-    p1.remove();
-    p2.remove();
-    p3.remove();
-  });
-
-  test('registers scroll and relocate listeners on renderer', () => {
-    const view = createMockView();
-    handleA11yNavigation(view as unknown as FoliateView, document, 0);
-
-    expect(view.renderer.addEventListener).toHaveBeenCalledTimes(2);
-
-    const calls = view.renderer.addEventListener.mock.calls;
-    expect(calls[0]![0]).toBe('scroll');
-    expect(typeof calls[0]![1]).toBe('function');
-    expect(calls[0]![2]).toEqual({ passive: true });
-
-    expect(calls[1]![0]).toBe('relocate');
-    expect(typeof calls[1]![1]).toBe('function');
-  });
-
-  test('skip link aria-label defaults to empty string when no options', () => {
-    const view = createMockView();
-    handleA11yNavigation(view as unknown as FoliateView, document, 0);
-
-    const skipLink = document.getElementById('readest-skip-link');
+    const skipLink = document.getElementById(LAST_POS_ID);
     expect(skipLink).not.toBeNull();
-    expect(skipLink!.getAttribute('aria-label')).toBe('');
+    skipLink!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(options.skipToLastPosCallback).toHaveBeenCalledOnce();
+    expect(options.skipToNextSectionCallback).not.toHaveBeenCalled();
+  });
+
+  test('next-section skip link click calls skipToNextSectionCallback', () => {
+    const options = makeOptions();
+    handleA11yNavigation(createMockView(), document, options);
+
+    const skipLink = document.getElementById(NEXT_SECTION_ID);
+    expect(skipLink).not.toBeNull();
+    skipLink!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(options.skipToNextSectionCallback).toHaveBeenCalledOnce();
+    expect(options.skipToLastPosCallback).not.toHaveBeenCalled();
+  });
+
+  test('does not duplicate skip links if already exist', () => {
+    handleA11yNavigation(
+      createMockView(),
+      document,
+      makeOptions({ skipToLastPosLabel: 'First-last', skipToNextSectionLabel: 'First-next' }),
+    );
+    handleA11yNavigation(
+      createMockView(),
+      document,
+      makeOptions({ skipToLastPosLabel: 'Second-last', skipToNextSectionLabel: 'Second-next' }),
+    );
+
+    expect(document.querySelectorAll(`#${LAST_POS_ID}`).length).toBe(1);
+    expect(document.querySelectorAll(`#${NEXT_SECTION_ID}`).length).toBe(1);
+    expect(document.getElementById(LAST_POS_ID)!.getAttribute('aria-label')).toBe('First-last');
+    expect(document.getElementById(NEXT_SECTION_ID)!.getAttribute('aria-label')).toBe('First-next');
+  });
+
+  test('skip link aria-labels default to empty string when no options', () => {
+    handleA11yNavigation(createMockView(), document);
+
+    const lastPos = document.getElementById(LAST_POS_ID);
+    const nextSection = document.getElementById(NEXT_SECTION_ID);
+    expect(lastPos).not.toBeNull();
+    expect(nextSection).not.toBeNull();
+    expect(lastPos!.getAttribute('aria-label')).toBe('');
+    expect(nextSection!.getAttribute('aria-label')).toBe('');
   });
 });

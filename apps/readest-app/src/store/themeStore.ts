@@ -134,7 +134,12 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     handleSystemThemeChange: (systemIsDarkMode) => {
       const mode = get().themeMode;
       const isDarkMode = mode === 'dark' || (mode === 'auto' && systemIsDarkMode);
+      document.documentElement.setAttribute(
+        'data-theme',
+        `${get().themeColor}-${isDarkMode ? 'dark' : 'light'}`,
+      );
       set({ systemIsDarkMode, isDarkMode });
+      set({ themeCode: getThemeCode() });
     },
     updateSafeAreaInsets: (insets) => {
       set({ safeAreaInsets: insets });

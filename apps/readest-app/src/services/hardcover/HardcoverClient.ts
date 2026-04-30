@@ -1,10 +1,13 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { isTauriAppPlatform } from '@/services/environment';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOK,
   QUERY_GET_EDITION,
+  QUERY_GET_BOOK_USER_DATA,
   MUTATION_INSERT_USER_BOOK,
   MUTATION_UPDATE_USER_BOOK,
   MUTATION_INSERT_READ,
@@ -31,7 +34,7 @@ type BookContext = {
   } | null;
 };
 
-const isTauriEnv = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+type ActiveRead = { id: number; started_at: string | null };
 
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
@@ -51,7 +54,7 @@ export class HardcoverClient {
   }
 
   private get endpoint() {
-    return isTauriEnv() ? this.directEndpoint : this.proxyEndpoint;
+    return isTauriAppPlatform() ? this.directEndpoint : this.proxyEndpoint;
   }
 
   private formatDate(date: Date): string {
@@ -60,6 +63,35 @@ export class HardcoverClient {
 
   private formatDay(date: Date): string {
     return date.toISOString().slice(0, 10);
+  }
+
+  private isReadableEdition(
+    edition?: {
+      id: number;
+      pages: number | null;
+      reading_format_id?: number | null;
+    } | null,
+  ): edition is { id: number; pages: number | null; reading_format_id?: number | null } {
+    return !!edition && edition.reading_format_id !== 2;
+  }
+
+  private getHardcoverProgressPages(
+    current: number,
+    total: number,
+    context: BookContext,
+  ): number | null {
+    const boundedCurrent = Math.min(Math.max(current, 0), total);
+    const hardcoverTotal = context.pages ?? context.bookPages ?? 0;
+    if (total <= 0 || hardcoverTotal <= 0) {
+      return null;
+    }
+
+    const scaledPages = Math.round((boundedCurrent / total) * hardcoverTotal);
+    if (boundedCurrent <= 0) {
+      return 0;
+    }
+
+    return Math.min(Math.max(scaledPages, 1), hardcoverTotal);
   }
 
   private normalizeNoteDedupCfi(cfi: string | null | undefined): string {
@@ -96,7 +128,8 @@ export class HardcoverClient {
   ): Promise<TData> {
     await this.throttleRequest();
 
-    const res = await fetch(this.endpoint, {
+    const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
+    const res = await fetchFn(this.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,11 +280,19 @@ export class HardcoverClient {
       document?: { id?: number; pages?: number; featured_edition_id?: number };
     };
 
-    const bookId = hit.id ?? hit.document?.id;
-    if (!bookId) return null;
+    const rawBookId = hit.id ?? hit.document?.id;
+    if (!rawBookId) return null;
 
-    const editionId = hit.featured_edition_id ?? hit.document?.featured_edition_id ?? bookId;
-    const pages = hit.pages ?? hit.document?.pages ?? null;
+    const bookId = Number(rawBookId);
+    const editionId = Number(
+      hit.featured_edition_id ?? hit.document?.featured_edition_id ?? bookId,
+    );
+    const pages =
+      hit.pages != null
+        ? Number(hit.pages)
+        : hit.document?.pages != null
+          ? Number(hit.document.pages)
+          : null;
 
     return {
       editionId,
@@ -273,13 +314,27 @@ export class HardcoverClient {
           editions?: Array<{
             id: number;
             pages: number | null;
+            reading_format_id?: number | null;
             book: {
               id: number;
               pages: number | null;
               user_books?: Array<{
                 id: number;
                 status_id: number;
-                user_book_reads?: Array<{ id: number; started_at: string | null }>;
+                edition?: {
+                  id: number;
+                  pages: number | null;
+                  reading_format_id?: number | null;
+                } | null;
+                user_book_reads?: Array<{
+                  id: number;
+                  started_at: string | null;
+                  edition?: {
+                    id: number;
+                    pages: number | null;
+                    reading_format_id?: number | null;
+                  } | null;
+                }>;
               }>;
             };
           }>;
@@ -292,9 +347,15 @@ export class HardcoverClient {
       const edition = data.editions?.[0];
       if (edition) {
         const userBook = edition.book.user_books?.[0];
+        const activeRead = userBook?.user_book_reads?.[0];
+        const selectedEdition =
+          (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
+          (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null) ??
+          (this.isReadableEdition(edition) ? edition : null);
+
         return {
-          editionId: edition.id,
-          pages: edition.pages,
+          editionId: selectedEdition?.id ?? edition.id,
+          pages: selectedEdition?.pages ?? edition.pages,
           bookId: edition.book.id,
           bookPages: edition.book.pages,
           userBook: userBook
@@ -308,21 +369,89 @@ export class HardcoverClient {
     }
 
     if (book.title && book.author) {
-      return this.searchBookByTitle(book.title, book.author);
+      const titleContext = await this.searchBookByTitle(book.title, book.author);
+      if (!titleContext || !this.userId) return titleContext;
+
+      const bookResult = await this.request<
+        { book_id: number; user_id: number },
+        {
+          editions?: Array<{
+            book: {
+              id: number;
+              pages: number | null;
+              user_books?: Array<{
+                id: number;
+                status_id: number;
+                edition?: {
+                  id: number;
+                  pages: number | null;
+                  reading_format_id?: number | null;
+                } | null;
+                user_book_reads?: Array<{
+                  id: number;
+                  started_at: string | null;
+                  edition?: {
+                    id: number;
+                    pages: number | null;
+                    reading_format_id?: number | null;
+                  } | null;
+                }>;
+              }>;
+            };
+          }>;
+        }
+      >(QUERY_GET_BOOK_USER_DATA, { book_id: titleContext.bookId, user_id: this.userId });
+
+      const bookData = bookResult.editions?.[0]?.book;
+      if (!bookData) return titleContext;
+
+      const userBook = bookData.user_books?.[0];
+      const activeRead = userBook?.user_book_reads?.[0];
+      const selectedEdition =
+        (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
+        (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null);
+
+      return {
+        ...titleContext,
+        editionId: selectedEdition?.id ?? titleContext.editionId,
+        pages: selectedEdition?.pages ?? titleContext.pages,
+        bookPages: bookData.pages ?? titleContext.bookPages,
+        userBook: userBook
+          ? { ...userBook, user_book_reads: userBook.user_book_reads ?? [] }
+          : null,
+      };
     }
 
     return null;
   }
 
+  private hydrateUserBookReads(
+    context: BookContext,
+    reads?: Array<{ id: number; started_at: string | null }> | null,
+  ): void {
+    if (!context.userBook) return;
+    context.userBook.user_book_reads = reads ?? [];
+  }
+
   private async updateUserBookStatus(context: BookContext, statusId: number): Promise<void> {
     if (!context.userBook || context.userBook.status_id === statusId) return;
 
-    await this.request(MUTATION_UPDATE_USER_BOOK, {
+    const data = await this.request<
+      { user_book_id: number; object: { status_id: number } },
+      {
+        update_user_book?: {
+          user_book?: {
+            user_book_reads?: ActiveRead[];
+          };
+        };
+      }
+    >(MUTATION_UPDATE_USER_BOOK, {
       user_book_id: context.userBook.id,
       object: { status_id: statusId },
     });
 
     context.userBook.status_id = statusId;
+    this.hydrateUserBookReads(context, data.update_user_book?.user_book?.user_book_reads);
   }
 
   private async ensureBookInLibrary(book: Book, isReading = true): Promise<BookContext | null> {
@@ -333,7 +462,15 @@ export class HardcoverClient {
 
     const data = await this.request<
       { object: { book_id: number; edition_id: number; status_id: number } },
-      { insert_user_book: { user_book: { id: number } } }
+      {
+        insert_user_book: {
+          error?: string | null;
+          user_book: {
+            id: number;
+            user_book_reads?: ActiveRead[];
+          } | null;
+        };
+      }
     >(MUTATION_INSERT_USER_BOOK, {
       object: {
         book_id: context.bookId,
@@ -342,12 +479,19 @@ export class HardcoverClient {
       },
     });
 
+    const newUserBook = data.insert_user_book?.user_book;
+    if (!newUserBook?.id) {
+      throw new Error(
+        `Hardcover insert_user_book failed: ${data.insert_user_book?.error ?? 'no user_book returned'}`,
+      );
+    }
+
     return {
       ...context,
       userBook: {
-        id: data.insert_user_book.user_book.id,
+        id: newUserBook.id,
         status_id: isReading ? 2 : 1,
-        user_book_reads: [],
+        user_book_reads: newUserBook.user_book_reads ?? [],
       },
     };
   }
@@ -363,15 +507,17 @@ export class HardcoverClient {
       config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
     if (total <= 0) return;
 
-    const pagesRead = Math.min(Math.max(current, 0), total);
-    const percent = total > 0 ? (pagesRead / total) * 100 : 0;
+    const localPagesRead = Math.min(Math.max(current, 0), total);
+    const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
+    const progressPages = this.getHardcoverProgressPages(current, total, context);
+    if (progressPages === null) return;
     const activeRead = context.userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
       await this.request(MUTATION_UPDATE_READ, {
         id: activeRead.id,
-        progress_pages: pagesRead,
+        progress_pages: progressPages,
         edition_id: context.editionId,
         started_at: activeRead.started_at || startedAt,
       });
@@ -379,7 +525,7 @@ export class HardcoverClient {
       await this.request(MUTATION_INSERT_READ, {
         user_book_id: context.userBook.id,
         edition_id: context.editionId,
-        progress_pages: pagesRead,
+        progress_pages: progressPages,
         started_at: startedAt,
       });
     }

@@ -45,13 +45,16 @@ const SidebarContent: React.FC<{
   }, [aiEnabled, activeTab, targetTab]);
 
   const handleTabChange = (tab: string) => {
-    setFade(true);
-    const timeout = setTimeout(() => {
-      if (activeTab === tab && isMobile) {
+    if (activeTab === tab) {
+      if (isMobile) {
         setHoveredBookKey(sideBarBookKey);
         setSideBarVisible(false);
-        return;
       }
+      return;
+    }
+
+    setFade(true);
+    const timeout = setTimeout(() => {
       setTargetTab(tab);
       setFade(false);
       setConfig(sideBarBookKey!, config);
@@ -92,7 +95,7 @@ const SidebarContent: React.FC<{
               )}
             >
               {targetTab === 'toc' && bookDoc.toc && (
-                <TOCView toc={bookDoc.toc} sections={bookDoc.sections} bookKey={sideBarBookKey} />
+                <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
               )}
               {targetTab === 'annotations' && (
                 <BooknoteView type='annotation' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />

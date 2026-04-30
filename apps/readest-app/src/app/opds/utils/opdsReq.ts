@@ -7,6 +7,11 @@ import {
 } from '@/services/environment';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
+import {
+  OPDSCustomHeaders,
+  normalizeOPDSCustomHeaders,
+  serializeOPDSCustomHeaders,
+} from './customHeaders';
 
 const OPDS_PROXY_URL = `${getAPIBaseUrl()}/opds/proxy`;
 const NODE_OPDS_PROXY_URL = `${getNodeAPIBaseUrl()}/opds/proxy`;
@@ -57,7 +62,12 @@ const getProxyBaseUrl = (url: string): string => {
 /**
  * Generate proxied URL for OPDS requests
  */
-export const getProxiedURL = (url: string, auth: string = '', stream = false): string => {
+export const getProxiedURL = (
+  url: string,
+  auth: string = '',
+  stream = false,
+  customHeaders: OPDSCustomHeaders = {},
+): string => {
   if (url.startsWith('http')) {
     const { url: cleanUrl } = extractCredentialsFromURL(url);
     const params = new URLSearchParams();
@@ -65,6 +75,10 @@ export const getProxiedURL = (url: string, auth: string = '', stream = false): s
     params.append('stream', `${stream}`);
     if (auth) {
       params.append('auth', auth);
+    }
+    const serializedHeaders = serializeOPDSCustomHeaders(customHeaders);
+    if (serializedHeaders) {
+      params.append('headers', serializedHeaders);
     }
     const baseUrl = getProxyBaseUrl(url);
     const proxyUrl = `${baseUrl}?${params.toString()}`;
@@ -191,6 +205,7 @@ export const probeAuth = async (
   username?: string,
   password?: string,
   useProxy = false,
+  customHeaders: OPDSCustomHeaders = {},
 ): Promise<string | null> => {
   const {
     url: cleanUrl,
@@ -200,16 +215,20 @@ export const probeAuth = async (
 
   const finalUsername = username || urlUsername;
   const finalPassword = password || urlPassword;
+  const normalizedCustomHeaders = normalizeOPDSCustomHeaders(customHeaders);
 
   // No credentials provided, can't generate auth header
   if (!finalUsername || !finalPassword) {
     return null;
   }
 
-  const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
+  const fetchURL = useProxy
+    ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders)
+    : cleanUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
+    ...(!useProxy ? normalizedCustomHeaders : {}),
   };
 
   // Probe with HEAD request
@@ -250,16 +269,41 @@ export const probeAuth = async (
 export const probeFilename = async (headers: Record<string, string>) => {
   const contentDisposition = headers['content-disposition'];
   if (contentDisposition) {
+    // 1. Try RFC 5987 format (filename*=utf-8''encoded_name)
     const extendedMatch = contentDisposition.match(
       /filename\*\s*=\s*(?:utf-8|UTF-8)'[^']*'([^;\s]+)/i,
     );
     if (extendedMatch?.[1]) {
-      return decodeURIComponent(extendedMatch[1]);
+      try {
+        return decodeURIComponent(extendedMatch[1]);
+      } catch (e) {
+        // If decoding fails, ignore and proceed to the next format
+        console.warn('Failed to decode filename*', e);
+      }
     }
 
-    const plainMatch = contentDisposition.match(/filename\s*=\s*["']?([^"';\s]+)["']?/i);
+    // 2. Try standard quoted format (supports spaces, apostrophes, and escaped quotes)
+    const quotedMatch = contentDisposition.match(/filename\s*=\s*(["'])((?:(?!\1)[^\\]|\\.)*)\1/i);
+    if (quotedMatch?.[2]) {
+      // Unescape characters (e.g., \" becomes ")
+      const unescaped = quotedMatch[2].replace(/\\(.)/g, '$1');
+      try {
+        // Attempt to decode in case the server incorrectly applied URL encoding
+        return decodeURIComponent(unescaped);
+      } catch {
+        // If decoding fails (e.g., literal '%' symbols), return the unescaped string as-is
+        return unescaped;
+      }
+    }
+
+    // 3. Fallback: standard format without quotes
+    const plainMatch = contentDisposition.match(/filename\s*=\s*([^;\s]+)/i);
     if (plainMatch?.[1]) {
-      return decodeURIComponent(plainMatch[1]);
+      try {
+        return decodeURIComponent(plainMatch[1]);
+      } catch {
+        return plainMatch[1];
+      }
     }
   }
 
@@ -275,6 +319,7 @@ export const fetchWithAuth = async (
   password?: string,
   useProxy = false,
   options: RequestInit = {},
+  customHeaders: OPDSCustomHeaders = {},
 ): Promise<Response> => {
   const {
     url: cleanUrl,
@@ -284,11 +329,15 @@ export const fetchWithAuth = async (
 
   const finalUsername = username || urlUsername;
   const finalPassword = password || urlPassword;
+  const normalizedCustomHeaders = normalizeOPDSCustomHeaders(customHeaders);
 
-  const fetchURL = useProxy ? getProxiedURL(cleanUrl) : cleanUrl;
+  const fetchURL = useProxy
+    ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders)
+    : cleanUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
+    ...(!useProxy ? normalizedCustomHeaders : {}),
     ...(options.headers as Record<string, string>),
   };
 
@@ -320,7 +369,9 @@ export const fetchWithAuth = async (
       }
 
       if (authHeader) {
-        const finalUrl = useProxy ? `${fetchURL}&auth=${encodeURIComponent(authHeader)}` : fetchURL;
+        const finalUrl = useProxy
+          ? getProxiedURL(cleanUrl, authHeader, false, normalizedCustomHeaders)
+          : fetchURL;
         res = await fetch(finalUrl, {
           ...options,
           method: options.method || 'GET',

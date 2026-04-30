@@ -88,7 +88,7 @@ export const useHardcoverSync = (bookKey: string) => {
       console.error('Hardcover notes sync failed:', error);
       eventDispatcher.dispatch('toast', {
         message: _('Hardcover notes sync failed: {{error}}', {
-          error: (error as Error).message,
+          error: error instanceof Error ? error.message : String(error),
         }),
         type: 'error',
       });
@@ -127,7 +127,7 @@ export const useHardcoverSync = (bookKey: string) => {
       console.error('Hardcover progress sync failed:', error);
       eventDispatcher.dispatch('toast', {
         message: _('Hardcover progress sync failed: {{error}}', {
-          error: (error as Error).message,
+          error: error instanceof Error ? error.message : String(error),
         }),
         type: 'error',
       });

@@ -1,5 +1,6 @@
 local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
+local KeyValuePage = require("ui/widget/keyvaluepage")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
@@ -149,6 +150,16 @@ function ReadestSync:addToMainMenu(menu_items)
                 separator = true,
             },
             {
+                text = _("Metadata hash info"),
+                enabled_func = function()
+                    return self.ui.document ~= nil
+                end,
+                callback = function()
+                    self:showMetaHashInfo()
+                end,
+                separator = true,
+            },
+            {
                 text_func = function()
                     if self.installed_version then
                         return T(_("Check for update (v%1)"), self.installed_version)
@@ -195,6 +206,42 @@ function ReadestSync:getBookIdentifiers()
     local book_hash = SyncConfig:getDocumentIdentifier(self.ui)
     local meta_hash = SyncConfig:getMetaHash(self.ui)
     return book_hash, meta_hash
+end
+
+function ReadestSync:showMetaHashInfo()
+    if not self.ui.document then
+        UIManager:show(InfoMessage:new{
+            text = _("No book is open"),
+            timeout = 2,
+        })
+        return
+    end
+
+    local info = SyncConfig:getMetadataHashInfo(self.ui)
+    local doc_readest_sync = self.ui.doc_settings:readSetting("readest_sync") or {}
+    local stored_meta_hash = doc_readest_sync.meta_hash_v1
+    local placeholder = _("(none)")
+
+    local kv_pairs = {
+        { _("Meta Hash"), stored_meta_hash or info.meta_hash },
+    }
+    if stored_meta_hash and stored_meta_hash ~= info.meta_hash then
+        table.insert(kv_pairs, { _("Computed Hash"), info.meta_hash })
+    end
+    table.insert(kv_pairs, { _("Title"), info.title ~= "" and info.title or placeholder })
+    table.insert(kv_pairs, {
+        _("Author"),
+        #info.authors > 0 and table.concat(info.authors, ", ") or placeholder,
+    })
+    table.insert(kv_pairs, {
+        _("Identifiers"),
+        #info.identifiers > 0 and table.concat(info.identifiers, ", ") or placeholder,
+    })
+
+    UIManager:show(KeyValuePage:new{
+        title = _("Metadata Hash"),
+        kv_pairs = kv_pairs,
+    })
 end
 
 -- ── Config sync ────────────────────────────────────────────────────

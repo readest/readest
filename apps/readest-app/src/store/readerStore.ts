@@ -13,7 +13,12 @@ import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
 import { DocumentLoader, TOCItem } from '@/libs/document';
-import { updateToc } from '@/utils/toc';
+import {
+  isPseStreamFileName,
+  openPseStreamBook,
+  parsePseStreamFileName,
+} from '@/services/opds/pseStream';
+import { BOOK_NAV_VERSION, computeBookNav, hydrateBookNav, updateToc } from '@/services/nav';
 import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
 import { SUPPORTED_LANGNAMES } from '@/services/constants';
@@ -147,19 +152,30 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     try {
       const appService = await envConfig.getAppService();
       const { settings } = useSettingsStore.getState();
-      const { library } = useLibraryStore.getState();
-      const book = library.find((b) => b.hash === id);
+      const { getBookByHash, library } = useLibraryStore.getState();
+      const book = getBookByHash(id);
       if (!book) {
+        console.error(
+          `Book ${id} not found in library (size=${library.length}); likely the in-memory entry was dropped by a library reload.`,
+        );
         throw new Error('Book not found');
       }
+      const isPseStream = !!book.url && isPseStreamFileName(book.url);
       let bookDoc = bookData?.bookDoc;
-      let file = bookData?.file;
-      if (!bookDoc || !file || reload) {
-        const content = (await appService.loadBookContent(book)) as BookContent;
-        file = content.file;
+      let file: File | null = bookData?.file ?? null;
+      if (!bookDoc || (!isPseStream && !file) || reload) {
         console.log('Loading book', key);
-        const doc = await new DocumentLoader(file).open();
-        bookDoc = doc.book;
+        if (isPseStream) {
+          const data = parsePseStreamFileName(book.url!);
+          const doc = await openPseStreamBook(data);
+          bookDoc = doc.book;
+          file = null;
+        } else {
+          const content = (await appService.loadBookContent(book)) as BookContent;
+          file = content.file;
+          const doc = await new DocumentLoader(file).open();
+          bookDoc = doc.book;
+        }
       }
       const config = await appService.loadBookConfig(book, settings);
       // Import annotations from third-party readers on first open
@@ -181,12 +197,27 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       }
       // Filter out invalid booknotes
       config.booknotes = config.booknotes?.filter((booknote) => booknote.cfi) ?? [];
+      // Load cached book navigation (TOC + section fragments) or compute and persist.
+      if (book.format === 'EPUB' && bookDoc.rendition?.layout !== 'pre-paginated') {
+        const cachedNav = await appService.loadBookNav(book);
+        if (cachedNav?.version === BOOK_NAV_VERSION && process.env.NODE_ENV === 'production') {
+          hydrateBookNav(bookDoc, cachedNav);
+        } else {
+          const freshNav = await computeBookNav(bookDoc);
+          hydrateBookNav(bookDoc, freshNav);
+          try {
+            await appService.saveBookNav(book, freshNav);
+          } catch (e) {
+            console.warn('Failed to persist book nav cache:', e);
+          }
+        }
+      }
       await updateToc(
         bookDoc,
         config.viewSettings?.sortedTOC ?? false,
         config.viewSettings?.convertChineseVariant ?? 'none',
       );
-      if (!bookDoc.metadata.title) {
+      if (!bookDoc.metadata.title && file) {
         bookDoc.metadata.title = getBaseFilename(file.name);
       }
       book.sourceTitle = formatTitle(bookDoc.metadata.title);
@@ -323,37 +354,20 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
 
       const pageInfo = bookData.isFixedLayout ? section : pageinfo;
       const progress: [number, number] = [pageInfo.current + 1, pageInfo.total];
-
-      // calculate progress percentage
       const progressPercentage = Math.round((progress[0] / progress[1]) * 100);
 
-      // update library book progress
-      const { library, setLibrary } = useLibraryStore.getState();
-      const bookIndex = library.findIndex((b) => b.hash === id);
-      if (bookIndex !== -1) {
-        const updatedLibrary = [...library];
-        const existingBook = updatedLibrary[bookIndex]!;
-
-        // determine new reading status
+      // Lightweight library update — O(1) lookup, no array copy, no refreshGroups
+      const { getBookByHash, updateBookProgress } = useLibraryStore.getState();
+      const existingBook = getBookByHash(id);
+      if (existingBook) {
         let newReadingStatus = existingBook.readingStatus;
-
-        // auto-clear 'unread' status when user starts reading (progress changes)
         if (existingBook.readingStatus === 'unread') {
           newReadingStatus = undefined;
         }
-
-        // auto mark as 'finished' when progress reaches 100%
         if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
           newReadingStatus = 'finished';
         }
-
-        updatedLibrary[bookIndex] = {
-          ...existingBook,
-          progress,
-          readingStatus: newReadingStatus,
-          updatedAt: Date.now(),
-        };
-        setLibrary(updatedLibrary);
+        updateBookProgress(id, progress, newReadingStatus);
       }
 
       const oldConfig = bookData.config;
@@ -388,7 +402,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               timeinfo,
               index: section.current,
               range,
-              page: pageInfo.current + 1, // 1-based page number
+              page: pageInfo.current + 1,
             } as BookProgress,
           },
         },

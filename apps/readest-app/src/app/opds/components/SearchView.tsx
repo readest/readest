@@ -31,11 +31,11 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    const map = new Map<string | null, Map<string | null, string>>();
+    const map = new Map<string | undefined, Map<string, string>>();
 
     for (const param of search.params || []) {
       const value = formData[param.name] || '';
-      const ns = param.ns ?? null;
+      const ns = param.ns ?? undefined;
 
       if (map.has(ns)) {
         map.get(ns)!.set(param.name, value);

@@ -104,7 +104,8 @@ export const useBooksSync = () => {
     // Process old books first so that when we update the library the order is preserved
     syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
     const bookHashesInSynced = new Set(syncedBooks.map((book) => book.hash));
-    const oldBooks = library.filter((book) => bookHashesInSynced.has(book.hash));
+    const liveLibrary = useLibraryStore.getState().library;
+    const oldBooks = liveLibrary.filter((book) => bookHashesInSynced.has(book.hash));
     const oldBooksNeedsDownload = oldBooks.filter((book) => {
       return !book.deletedAt && book.uploadedAt && !book.coverDownloadedAt;
     });
@@ -130,7 +131,7 @@ export const useBooksSync = () => {
       await appService?.downloadBookCovers(batch);
     }
 
-    const updatedLibrary = await Promise.all(library.map(processOldBook));
+    const updatedLibrary = await Promise.all(liveLibrary.map(processOldBook));
     setLibrary(updatedLibrary);
     appService?.saveLibraryBooks(updatedLibrary);
 
@@ -177,13 +178,22 @@ export const useBooksSync = () => {
   );
 
   useEffect(() => {
+    // Defer processing synced books until the library has been loaded from
+    // disk. Otherwise updateLibrary runs against an empty `library`
+    // closure, treats every synced book as new, and the resulting
+    // `setLibrary([only sync books])` can race with initLibrary's
+    // `setLibrary([disk books])` — the empty-merged save can land on disk
+    // afterwards and overwrite the loaded snapshot. The synced books stay
+    // queued in `syncedBooks` state; this effect re-fires when
+    // libraryLoaded flips to true and processes them then.
+    if (!libraryLoaded) return;
     if (isSyncing) {
       debouncedUpdateLibrary();
     } else {
       updateLibrary();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncedBooks, updateLibrary, debouncedUpdateLibrary]);
+  }, [syncedBooks, updateLibrary, debouncedUpdateLibrary, libraryLoaded]);
 
   return { pullLibrary, pushLibrary };
 };

@@ -8,6 +8,7 @@ import { saveViewSettings } from '@/helpers/settings';
 import { READING_RULER_COLORS } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
+import { useTouchInterceptor } from '../hooks/useTouchInterceptor';
 import {
   calculateReadingRulerSize,
   clampReadingRulerPosition,
@@ -304,6 +305,82 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       setRulerPosition(clamped);
     }
   }, [containerSize.width, containerSize.height, isVertical, clampPosition, setRulerPosition]);
+
+  // Touch interceptor: allows dragging the ruler from anywhere on its body.
+  // The ruler body stays pointer-events-none so text selection works through it.
+  // Returning true consumes the gesture, preventing swipe/page-flip.
+  const isTouchDraggingRef = useRef(false);
+  const touchInRulerRef = useRef(false);
+
+  useTouchInterceptor(
+    `ruler-drag-${bookKey}`,
+    (bk, detail) => {
+      if (bk !== bookKey) return false;
+
+      if (detail.phase === 'start') {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return false;
+        const vx = detail.touch.screenX - (window.screenX || 0);
+        const vy = detail.touch.screenY - (window.screenY || 0);
+        const dim = isVertical ? rect.width : rect.height;
+        const center = (currentPositionRef.current / 100) * dim;
+        const half = rulerSize / 2;
+        const rel = isVertical ? vx - rect.left : vy - rect.top;
+        touchInRulerRef.current = rel >= center - half && rel <= center + half;
+        isTouchDraggingRef.current = false;
+        return false;
+      }
+
+      if (detail.phase === 'move') {
+        if (!touchInRulerRef.current) return false;
+
+        if (!isTouchDraggingRef.current) {
+          const dx = Math.abs(detail.deltaX);
+          const dy = Math.abs(detail.deltaY);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance >= 10) {
+            const isDragGesture = isVertical ? dx >= 3 * dy : dy >= 3 * dx;
+            if (isDragGesture) {
+              isTouchDraggingRef.current = true;
+              isDragging.current = true;
+              dragPointerOffsetRef.current = 0;
+              setShouldAnimate(false);
+            } else {
+              touchInRulerRef.current = false;
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
+
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return true;
+        const vx = detail.touch.screenX - (window.screenX || 0);
+        const vy = detail.touch.screenY - (window.screenY || 0);
+        const dim = isVertical ? rect.width : rect.height;
+        const rel = isVertical ? vx - rect.left : vy - rect.top;
+        const newPos = clampPosition((rel / dim) * 100, dim);
+        setCurrentPosition(newPos);
+        currentPositionRef.current = newPos;
+        return true;
+      }
+
+      if (detail.phase === 'end') {
+        const wasConsumed = isTouchDraggingRef.current;
+        if (wasConsumed) {
+          isDragging.current = false;
+          throttledSave(currentPositionRef.current);
+        }
+        touchInRulerRef.current = false;
+        isTouchDraggingRef.current = false;
+        return wasConsumed;
+      }
+
+      return false;
+    },
+    10, // higher priority than swipe-to-flip (0)
+  );
 
   useEffect(() => {
     const handleMove = (event: CustomEvent) => {
