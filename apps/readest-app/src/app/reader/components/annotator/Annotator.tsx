@@ -13,6 +13,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
@@ -41,8 +42,7 @@ import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
-import WiktionaryPopup from './WiktionaryPopup';
-import WikipediaPopup from './WikipediaPopup';
+import DictionaryPopup from './DictionaryPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
@@ -57,10 +57,18 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
+  const { loadCustomDictionaries } = useCustomDictionaryStore();
 
   useNotesSync(bookKey);
   useReadwiseSync(bookKey);
   useHardcoverSync(bookKey);
+
+  useEffect(() => {
+    void loadCustomDictionaries(envConfig).catch((error) => {
+      console.warn('Failed to load custom dictionaries:', error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;
@@ -74,8 +82,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
-  const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
-  const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
+  const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -107,11 +114,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const deferredQuickActionRef = useRef(createDeferredActionState());
 
   const showingPopup =
-    showAnnotPopup ||
-    showWiktionaryPopup ||
-    showWikipediaPopup ||
-    showDeepLPopup ||
-    showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -209,8 +212,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     throttle(() => {
       setSelection(null);
       setShowAnnotPopup(false);
-      setShowWiktionaryPopup(false);
-      setShowWikipediaPopup(false);
+      setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -318,8 +320,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               // Show translation popup preferentially for PDF right-click
               setShowAnnotPopup(false);
               setShowDeepLPopup(true);
-              setShowWiktionaryPopup(false);
-              setShowWikipediaPopup(false);
+              setShowDictionaryPopup(false);
             }
           }
         } catch (err) {
@@ -517,9 +518,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         case 'dictionary':
           handleDictionary();
           break;
-        case 'wikipedia':
-          handleWikipedia();
-          break;
         case 'translate':
           handleTranslation();
           break;
@@ -640,8 +638,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
-    setShowWiktionaryPopup(false);
-    setShowWikipediaPopup(false);
+    setShowDictionaryPopup(false);
   };
 
   const handleCopy = (dismissPopup = true) => {
@@ -772,13 +769,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleDictionary = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
-    setShowWiktionaryPopup(true);
-  };
-
-  const handleWikipedia = () => {
-    if (!selection || !selection.text) return;
-    setShowAnnotPopup(false);
-    setShowWikipediaPopup(true);
+    setShowDictionaryPopup(true);
   };
 
   const handleTranslation = () => {
@@ -841,9 +832,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       },
       onDictionarySelection: () => {
         handleDictionary();
-      },
-      onWikipediaSelection: () => {
-        handleWikipedia();
       },
       onReadAloudSelection: () => {
         handleSpeakText();
@@ -951,8 +939,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
-      case 'wikipedia':
-        return { tooltipText: _(label), Icon, onClick: handleWikipedia };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -975,20 +961,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {showWiktionaryPopup && trianglePosition && dictPopupPosition && (
-        <WiktionaryPopup
+      {showDictionaryPopup && trianglePosition && dictPopupPosition && (
+        <DictionaryPopup
           word={selection?.text as string}
-          lang={bookData.bookDoc?.metadata.language as string}
-          position={dictPopupPosition}
-          trianglePosition={trianglePosition}
-          popupWidth={dictPopupWidth}
-          popupHeight={dictPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
-        />
-      )}
-      {showWikipediaPopup && trianglePosition && dictPopupPosition && (
-        <WikipediaPopup
-          text={selection?.text as string}
           lang={bookData.bookDoc?.metadata.language as string}
           position={dictPopupPosition}
           trianglePosition={trianglePosition}

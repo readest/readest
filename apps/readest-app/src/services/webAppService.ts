@@ -9,6 +9,7 @@ import { BaseAppService } from './appService';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
+  LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
 } from './constants';
@@ -25,6 +26,8 @@ const resolvePath = (path: string, base: BaseDir): ResolvedPath => {
       return { baseDir: 0, basePrefix, fp: `${LOCAL_FONTS_SUBDIR}/${path}`, base };
     case 'Images':
       return { baseDir: 0, basePrefix, fp: `${LOCAL_IMAGES_SUBDIR}/${path}`, base };
+    case 'Dictionaries':
+      return { baseDir: 0, basePrefix, fp: `${LOCAL_DICTIONARIES_SUBDIR}/${path}`, base };
     case 'None':
       return { baseDir: 0, basePrefix, fp: path, base };
     default:

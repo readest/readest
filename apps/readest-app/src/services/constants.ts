@@ -35,6 +35,7 @@ export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
 export const CLOUD_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
 export const LOCAL_FONTS_SUBDIR = `${DATA_SUBDIR}/Fonts`;
 export const LOCAL_IMAGES_SUBDIR = `${DATA_SUBDIR}/Images`;
+export const LOCAL_DICTIONARIES_SUBDIR = `${DATA_SUBDIR}/Dictionaries`;
 
 export const SETTINGS_FILENAME = 'settings.json';
 
@@ -108,6 +109,15 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   metadataSeriesCollapsed: false,
   metadataOthersCollapsed: false,
   metadataDescriptionCollapsed: false,
+
+  customDictionaries: [],
+  dictionarySettings: {
+    providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
+    providerEnabled: {
+      'builtin:wiktionary': true,
+      'builtin:wikipedia': true,
+    },
+  },
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,

@@ -7,11 +7,14 @@ import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import { CustomTextureInfo } from '@/styles/textures';
 import { DatabaseOpts, DatabaseService } from './database';
 import { SchemaType } from '@/services/database/migrate';
+import type { ImportedDictionary } from '@/services/dictionaries/types';
+import type { ImportDictionariesResult } from '@/services/dictionaries/dictionaryService';
+import type { SelectedFile } from '@/hooks/useFileSelector';
 
 export type AppPlatform = 'web' | 'tauri' | 'node';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 // prettier-ignore
-export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Log' | 'Cache' | 'Temp' | 'None';
+export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Dictionaries' | 'Log' | 'Cache' | 'Temp' | 'None';
 export type DeleteAction = 'cloud' | 'local' | 'both';
 export type SelectDirectoryMode = 'read' | 'write';
 export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
@@ -127,6 +130,8 @@ export interface AppService {
   deleteFont(font: CustomFont): Promise<void>;
   importImage(file?: string | File): Promise<CustomTextureInfo | null>;
   deleteImage(texture: CustomTextureInfo): Promise<void>;
+  importDictionaries(files: SelectedFile[]): Promise<ImportDictionariesResult>;
+  deleteDictionary(dict: ImportedDictionary): Promise<void>;
   importBook(file: string | File, books: Book[], options?: ImportBookOptions): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;
   deleteBook(book: Book, deleteAction: DeleteAction): Promise<void>;

@@ -11,6 +11,7 @@ import { BaseAppService } from './appService';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
+  LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
 } from './constants';
@@ -99,7 +100,14 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
   const isCustomBaseDir = Boolean(customRootDir);
   const getCustomBasePrefix = isCustomBaseDir
     ? (base: BaseDir) => {
-        const dataDirs: BaseDir[] = ['Settings', 'Data', 'Books', 'Fonts', 'Images'];
+        const dataDirs: BaseDir[] = [
+          'Settings',
+          'Data',
+          'Books',
+          'Fonts',
+          'Images',
+          'Dictionaries',
+        ];
         const leafDir = dataDirs.includes(base) ? '' : base;
         return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
       }
@@ -163,6 +171,15 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
           fp: custom
             ? `${custom}/${LOCAL_IMAGES_SUBDIR}${fp ? `/${fp}` : ''}`
             : `${LOCAL_IMAGES_SUBDIR}${fp ? `/${fp}` : ''}`,
+          base,
+        };
+      case 'Dictionaries':
+        return {
+          baseDir: 0,
+          basePrefix: async () => custom ?? getAppDataDir(),
+          fp: custom
+            ? `${custom}/${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`
+            : `${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`,
           base,
         };
       case 'None':

@@ -1,0 +1,348 @@
+/**
+ * Dictionary import / delete service.
+ *
+ * Takes a flat list of files chosen via `useFileSelector('dictionaries')`,
+ * groups them into StarDict / MDict bundles by filename stem, writes each
+ * bundle's files into `'Dictionaries'/<id>/`, and returns metadata records
+ * for the {@link customDictionaryStore}.
+ *
+ * Mirrors the structure of `src/services/fontService.ts` but handles
+ * multi-file bundles instead of single-file fonts.
+ */
+import type { FileSystem } from '@/types/system';
+import type { SelectedFile } from '@/hooks/useFileSelector';
+import { uniqueId } from '@/utils/misc';
+import { getFilename } from '@/utils/path';
+import type { ImportedDictionary } from './types';
+import { scanEntryOffsets, serializeOffsetsSidecar } from './stardictReader';
+
+/** GZIP magic bytes — used to detect DictZip-compressed `.dict` files. */
+const GZIP_MAGIC = [0x1f, 0x8b, 0x08];
+
+interface SourceFile {
+  /** Filename including extension, e.g. `oald7.idx`. */
+  name: string;
+  /** Stem (lowercase, without final extension). For `.dict.dz` use the stem of `.dict`. */
+  stem: string;
+  /** Final extension (lowercase, no dot). For `oald7.dict.dz`, this is `dz`. */
+  ext: string;
+  /** True when ext is `dz` AND the next-to-last segment is `dict`. */
+  isDictZip: boolean;
+  /** Raw input — Tauri path or browser File. */
+  source: SelectedFile;
+}
+
+interface StarDictGroup {
+  kind: 'stardict';
+  stem: string;
+  ifo: SourceFile;
+  idx: SourceFile;
+  dict: SourceFile;
+  syn?: SourceFile;
+}
+
+interface MDictGroup {
+  kind: 'mdict';
+  stem: string;
+  mdx: SourceFile;
+  mdd: SourceFile[];
+}
+
+type Bundle = StarDictGroup | MDictGroup;
+
+interface GroupResult {
+  bundles: Bundle[];
+  /** Files that didn't form a complete bundle (e.g. `.idx` without matching `.ifo`). */
+  orphans: SourceFile[];
+}
+
+/** Read the source file as a `File` (web) or via the path (Tauri filesystem). */
+async function readSource(fs: FileSystem, source: SelectedFile): Promise<File> {
+  if (source.file) return source.file;
+  if (source.path) {
+    // Open from absolute filesystem path. `'None'` keeps the path as-is.
+    return fs.openFile(source.path, 'None');
+  }
+  throw new Error('SelectedFile has neither path nor file');
+}
+
+function classify(source: SelectedFile): SourceFile {
+  const rawName = source.file?.name ?? (source.path ? getFilename(source.path) : '');
+  const name = rawName;
+  const lower = name.toLowerCase();
+  const lastDot = lower.lastIndexOf('.');
+  const ext = lastDot >= 0 ? lower.slice(lastDot + 1) : '';
+  // Detect `foo.dict.dz` — final ext is `dz`, but the bundle stem is `foo`.
+  const beforeLast = lastDot >= 0 ? lower.slice(0, lastDot) : lower;
+  const isDictZip = ext === 'dz' && beforeLast.endsWith('.dict');
+  let stem: string;
+  if (isDictZip) {
+    // `foo.dict.dz` → stem `foo`
+    stem = beforeLast.slice(0, -'.dict'.length);
+  } else if (lastDot >= 0) {
+    // `foo.idx` → stem `foo`
+    stem = beforeLast;
+  } else {
+    stem = lower;
+  }
+  return { name, stem, ext, isDictZip, source };
+}
+
+/**
+ * Group a flat list of selected files into StarDict and MDict bundles by
+ * stem. Files that don't belong to any complete bundle land in `orphans`.
+ *
+ * Rules:
+ *  - StarDict bundle = exactly one `.ifo` + one `.idx` + one `.dict` or
+ *    `.dict.dz` (sharing a stem). `.syn` is optional.
+ *  - MDict bundle = one `.mdx` + zero or more `.mdd` (sharing a stem).
+ *  - A stem with both StarDict markers AND `.mdx` is treated as two bundles.
+ */
+export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
+  const classified = files.map(classify);
+  const byStem = new Map<string, SourceFile[]>();
+  for (const f of classified) {
+    if (!byStem.has(f.stem)) byStem.set(f.stem, []);
+    byStem.get(f.stem)!.push(f);
+  }
+
+  const bundles: Bundle[] = [];
+  const orphans: SourceFile[] = [];
+  for (const [stem, group] of byStem) {
+    const ifo = group.find((f) => f.ext === 'ifo');
+    const idx = group.find((f) => f.ext === 'idx');
+    const dict = group.find((f) => f.ext === 'dict' || f.isDictZip);
+    const syn = group.find((f) => f.ext === 'syn');
+    const mdx = group.find((f) => f.ext === 'mdx');
+    const mdd = group.filter((f) => f.ext === 'mdd');
+
+    if (ifo && idx && dict) {
+      bundles.push({ kind: 'stardict', stem, ifo, idx, dict, syn });
+    } else if (mdx) {
+      bundles.push({ kind: 'mdict', stem, mdx, mdd });
+    } else {
+      orphans.push(...group);
+    }
+  }
+  return { bundles, orphans };
+}
+
+/** Parse a StarDict `.ifo` (key=value, one per line) into a record. */
+function parseIfo(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || !line.includes('=')) continue;
+    const eq = line.indexOf('=');
+    out[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+  }
+  return out;
+}
+
+/** Detect the GZIP magic at the start of a Blob. */
+async function isGzip(file: File): Promise<boolean> {
+  const head = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+  return head[0] === GZIP_MAGIC[0] && head[1] === GZIP_MAGIC[1] && head[2] === GZIP_MAGIC[2];
+}
+
+async function writeBundleFile(
+  fs: FileSystem,
+  bundleDir: string,
+  filename: string,
+  source: File,
+): Promise<void> {
+  const dst = `${bundleDir}/${filename}`;
+  await fs.writeFile(dst, 'Dictionaries', source);
+}
+
+/** Build a fresh bundle directory `'Dictionaries'/<id>/`. */
+async function createBundleDir(fs: FileSystem): Promise<string> {
+  const id = uniqueId();
+  await fs.createDir(id, 'Dictionaries', true);
+  return id;
+}
+
+async function importStarDictBundle(
+  fs: FileSystem,
+  group: StarDictGroup,
+): Promise<ImportedDictionary> {
+  const bundleDir = await createBundleDir(fs);
+  const ifoFile = await readSource(fs, group.ifo.source);
+  const idxFile = await readSource(fs, group.idx.source);
+  const dictFile = await readSource(fs, group.dict.source);
+  const synFile = group.syn ? await readSource(fs, group.syn.source) : undefined;
+
+  await writeBundleFile(fs, bundleDir, group.ifo.name, ifoFile);
+  await writeBundleFile(fs, bundleDir, group.idx.name, idxFile);
+  await writeBundleFile(fs, bundleDir, group.dict.name, dictFile);
+  if (synFile && group.syn) {
+    await writeBundleFile(fs, bundleDir, group.syn.name, synFile);
+  }
+
+  // Pre-compute offsets sidecars at import time. Subsequent provider inits
+  // skip the full `.idx` (and `.syn`) scan — the only reads are the small
+  // sidecar plus per-lookup probes. Net effect on cmudict-class bundles:
+  // ~62% init IO reduction.
+  const idxOffsetsName = `${group.idx.stem}.idx.offsets`;
+  {
+    const idxBytes = new Uint8Array(await idxFile.arrayBuffer());
+    const offsets = scanEntryOffsets(idxBytes, /* payloadBytes */ 8);
+    const sidecar = serializeOffsetsSidecar(offsets);
+    // Wrap as a File so writeFile's `string | ArrayBuffer | File` signature
+    // accepts it without an unsafe ArrayBuffer cast (Uint8Array.buffer is
+    // typed `ArrayBufferLike` in TS strict mode).
+    const sidecarFile = new File([new Uint8Array(sidecar)], idxOffsetsName);
+    await fs.writeFile(`${bundleDir}/${idxOffsetsName}`, 'Dictionaries', sidecarFile);
+  }
+  let synOffsetsName: string | undefined;
+  if (synFile && group.syn) {
+    synOffsetsName = `${group.syn.stem}.syn.offsets`;
+    const synBytes = new Uint8Array(await synFile.arrayBuffer());
+    const offsets = scanEntryOffsets(synBytes, /* payloadBytes */ 4);
+    const sidecar = serializeOffsetsSidecar(offsets);
+    const sidecarFile = new File([new Uint8Array(sidecar)], synOffsetsName);
+    await fs.writeFile(`${bundleDir}/${synOffsetsName}`, 'Dictionaries', sidecarFile);
+  }
+
+  const ifoText = await ifoFile.text();
+  const ifo = parseIfo(ifoText);
+  const name = ifo['bookname'] || group.stem;
+  const lang = ifo['lang'] || ifo['idxoffsetlang'] || undefined;
+
+  // v1 scope: only DictZip-compressed `.dict.dz` and single-type sametypesequence ∈ {m, h, x, t}.
+  // Bundles outside this surface as `unsupported` so the popup hides them
+  // and the settings UI shows a clear reason; the import itself still succeeds.
+  let unsupported = false;
+  let unsupportedReason: string | undefined;
+  if (!(await isGzip(dictFile))) {
+    unsupported = true;
+    unsupportedReason = 'Raw .dict files are not supported in v1; please use .dict.dz format.';
+  } else {
+    const seq = ifo['sametypesequence'];
+    if (!seq || seq.length !== 1) {
+      unsupported = true;
+      unsupportedReason = seq
+        ? `Multi-type sametypesequence "${seq}" is not supported in v1.`
+        : 'StarDict bundles without sametypesequence are not supported in v1.';
+    } else if (!'mhxt'.includes(seq)) {
+      unsupported = true;
+      unsupportedReason = `StarDict entry type "${seq}" is not supported in v1.`;
+    }
+  }
+
+  return {
+    id: bundleDir,
+    kind: 'stardict',
+    name,
+    bundleDir,
+    files: {
+      ifo: group.ifo.name,
+      idx: group.idx.name,
+      dict: group.dict.name,
+      syn: group.syn?.name,
+      idxOffsets: idxOffsetsName,
+      synOffsets: synOffsetsName,
+    },
+    lang,
+    addedAt: Date.now(),
+    unsupported: unsupported || undefined,
+    unsupportedReason,
+  };
+}
+
+async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<ImportedDictionary> {
+  const bundleDir = await createBundleDir(fs);
+  const mdxFile = await readSource(fs, group.mdx.source);
+  const mddFiles = await Promise.all(group.mdd.map((m) => readSource(fs, m.source)));
+
+  await writeBundleFile(fs, bundleDir, group.mdx.name, mdxFile);
+  for (let i = 0; i < group.mdd.length; i++) {
+    await writeBundleFile(fs, bundleDir, group.mdd[i]!.name, mddFiles[i]!);
+  }
+
+  // Parse the MDX header via the forked js-mdict (browser-friendly path).
+  // Loaded lazily so users without MDict imports never pull in the parser.
+  let name = group.stem;
+  let lang: string | undefined;
+  let unsupported = false;
+  let unsupportedReason: string | undefined;
+  try {
+    const { MDX } = await import('js-mdict');
+    const mdx = await MDX.create(mdxFile);
+    const header = mdx.header as Record<string, unknown>;
+    if (typeof header['Title'] === 'string' && (header['Title'] as string).trim()) {
+      name = (header['Title'] as string).trim();
+    }
+    if (typeof header['Encoding'] === 'string') {
+      lang = (header['Encoding'] as string).toLowerCase();
+    }
+    // `meta.encrypt` is a bitmap: 0x01 = record block encrypted (needs a
+    // user-supplied passcode/regcode — js-mdict doesn't implement that path),
+    // 0x02 = key info block encrypted (handled transparently via the
+    // ripemd128-based `mdxDecrypt`, no passcode needed). Only bit 0 is
+    // genuinely unsupported.
+    if ((mdx.meta.encrypt & 1) !== 0) {
+      unsupported = true;
+      unsupportedReason =
+        'This MDX is registered to a specific user (record-block encryption); passcode-protected dictionaries are not supported.';
+    }
+  } catch (err) {
+    const message = (err as Error).message ?? String(err);
+    unsupported = true;
+    if (/encrypted file|user identification/i.test(message)) {
+      unsupportedReason =
+        'This MDX is registered to a specific user (record-block encryption); passcode-protected dictionaries are not supported.';
+    } else {
+      unsupportedReason = `Failed to parse MDX header: ${message}`;
+    }
+  }
+
+  return {
+    id: bundleDir,
+    kind: 'mdict',
+    name,
+    bundleDir,
+    files: {
+      mdx: group.mdx.name,
+      mdd: group.mdd.map((m) => m.name),
+    },
+    lang,
+    addedAt: Date.now(),
+    unsupported: unsupported || undefined,
+    unsupportedReason,
+  };
+}
+
+export interface ImportDictionariesResult {
+  imported: ImportedDictionary[];
+  /** Filenames that didn't form a valid bundle. */
+  orphanFiles: string[];
+}
+
+/**
+ * Top-level import entry point. Groups the selected files into bundles and
+ * imports each one. Returns the persisted metadata for new entries plus a
+ * list of orphan filenames the caller can surface in a toast.
+ */
+export async function importDictionaries(
+  fs: FileSystem,
+  files: SelectedFile[],
+): Promise<ImportDictionariesResult> {
+  const { bundles, orphans } = groupBundlesByStem(files);
+  const imported: ImportedDictionary[] = [];
+  for (const bundle of bundles) {
+    if (bundle.kind === 'stardict') {
+      imported.push(await importStarDictBundle(fs, bundle));
+    } else {
+      imported.push(await importMdictBundle(fs, bundle));
+    }
+  }
+  return { imported, orphanFiles: orphans.map((o) => o.name) };
+}
+
+/** Remove a dictionary's bundle directory. The metadata is dropped by the caller. */
+export async function deleteDictionary(fs: FileSystem, dict: ImportedDictionary): Promise<void> {
+  if (await fs.exists(dict.bundleDir, 'Dictionaries')) {
+    await fs.removeDir(dict.bundleDir, 'Dictionaries', true);
+  }
+}

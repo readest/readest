@@ -21,9 +21,12 @@ import { getOSPlatform } from '@/utils/misc';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
+import type { ImportedDictionary } from './dictionaries/types';
+import type { SelectedFile } from '@/hooks/useFileSelector';
 
 import * as BookSvc from './bookService';
 import * as CloudSvc from './cloudService';
+import * as DictSvc from './dictionaries/dictionaryService';
 import * as FontSvc from './fontService';
 import * as ImageSvc from './imageService';
 import * as LibrarySvc from './libraryService';
@@ -217,6 +220,14 @@ export abstract class BaseAppService implements AppService {
 
   async deleteImage(texture: CustomTextureInfo): Promise<void> {
     return ImageSvc.deleteImage(this.fs, texture);
+  }
+
+  async importDictionaries(files: SelectedFile[]): Promise<DictSvc.ImportDictionariesResult> {
+    return DictSvc.importDictionaries(this.fs, files);
+  }
+
+  async deleteDictionary(dict: ImportedDictionary): Promise<void> {
+    return DictSvc.deleteDictionary(this.fs, dict);
   }
 
   async importBook(

@@ -63,7 +63,6 @@ describe('No identical keybinding lists across actions (#3675)', () => {
   // class of bug as #3675.
   const KNOWN_PAIRS: ReadonlySet<string> = new Set([
     'onSearchSelection,onShowSearchBar', // ctrl+f / cmd+f
-    'onCloseWindow,onWikipediaSelection', // ctrl+w / cmd+w
   ]);
 
   it('should not have two actions with exactly the same key list', async () => {
