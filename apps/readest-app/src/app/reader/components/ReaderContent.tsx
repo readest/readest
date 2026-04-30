@@ -361,6 +361,20 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           .citadel-reader-shell .books-grid > [id^='gridcell-'] > .page-nav-right {
             right: 52px;
           }
+
+          .citadel-reader-shell
+            .books-grid
+            > [id^='gridcell-']
+            > .sectioninfo:not(.writing-vertical-rl) {
+            display: none;
+          }
+
+          .citadel-reader-shell
+            .books-grid
+            > [id^='gridcell-']
+            > .progressinfo:not(.writing-vertical-rl) {
+            display: none;
+          }
         }
       `}</style>
     </div>

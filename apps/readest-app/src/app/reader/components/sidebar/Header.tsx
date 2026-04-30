@@ -28,7 +28,7 @@ const SidebarHeader: React.FC<{
   return (
     <div
       className={clsx(
-        'sidebar-header flex h-11 items-center justify-between pe-2 sm:h-36 sm:flex-col sm:justify-start sm:gap-3.5 sm:px-0 sm:pt-7',
+        'sidebar-header flex h-11 items-center justify-between pe-2 sm:h-44 sm:flex-col sm:justify-start sm:gap-3 sm:px-0 sm:pt-[26px]',
         isTrafficLightVisible ? 'ps-1.5 sm:ps-0' : 'ps-1.5 sm:ps-0',
       )}
       dir='ltr'
@@ -46,18 +46,23 @@ const SidebarHeader: React.FC<{
         </div>
       </div>
       <div className='pointer-events-none hidden flex-col items-center justify-center sm:flex'>
-        <div className='relative flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full border border-[#d3b576]/70 bg-[#261612] shadow-[0_0_24px_rgba(126,31,25,0.3)]'>
+        <div className='relative flex h-[56px] w-[56px] items-center justify-center overflow-hidden rounded-full border border-[#d3b576]/70 bg-[#261612] shadow-[0_0_24px_rgba(126,31,25,0.3)]'>
           <Image
             src='/citadel/citadel-logo.png'
             alt='Citadel'
             fill
-            sizes='54px'
-            className='object-contain p-[9px] opacity-100 brightness-110'
+            sizes='56px'
+            className='object-contain p-[8px] opacity-100 brightness-110'
             priority={false}
           />
         </div>
-        <div className='mt-2.5 font-serif text-[9px] font-semibold uppercase leading-none tracking-[0.24em] text-[#d9bd86]'>
-          Citadel
+        <div className='mt-3 flex h-[30px] flex-col items-center justify-start overflow-visible font-serif text-[#d9bd86]'>
+          <span className='text-[9px] font-semibold uppercase leading-[1.1] tracking-[0.24em]'>
+            Citadel
+          </span>
+          <span className='mt-1 text-[8px] font-medium uppercase leading-[1.05] tracking-[0.38em] text-[#b99a58]'>
+            Reading
+          </span>
         </div>
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:hidden sm:size-[70%]'>
