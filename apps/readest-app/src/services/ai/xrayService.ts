@@ -1770,7 +1770,7 @@ const markPendingRange = (state: XRayState, targetPage: number) => {
   };
 };
 
-export const ensureXRayState = async (bookHash: string): Promise<XRayState> => {
+const ensureXRayState = async (bookHash: string): Promise<XRayState> => {
   const existing = await aiStore.getXRayState(bookHash);
   if (existing) return existing;
   const state: XRayState = {

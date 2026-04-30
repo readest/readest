@@ -4,7 +4,7 @@ import type { MultiDirectedGraph } from 'graphology';
 import type { XRayEntity, XRayRelationship, XRayEvidence } from './types';
 import type { GraphNodeAttributes, GraphEdgeAttributes } from './graphBuilder';
 
-export interface InferenceResult {
+interface InferenceResult {
   inferredRelationships: XRayRelationship[];
   communities: Map<string, number>;
   centrality: Map<string, number>;

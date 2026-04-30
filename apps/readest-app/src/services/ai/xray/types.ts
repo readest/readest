@@ -238,32 +238,3 @@ export interface XRayUserOverride extends BoundedArtifact {
   reason?: string;
   appliedAt: number;
 }
-
-export interface XRayMergeOverride extends XRayUserOverride {
-  type: 'merge';
-  entityId: string;
-  targetEntityIds: string[];
-}
-
-export interface XRaySplitOverride extends XRayUserOverride {
-  type: 'split';
-  entityId: string;
-  newName: string;
-}
-
-export interface XRayPinOverride extends XRayUserOverride {
-  type: 'pin';
-  entityId: string;
-}
-
-export interface XRayRenameOverride extends XRayUserOverride {
-  type: 'rename';
-  entityId: string;
-  newName: string;
-  newType?: XRayEntityType;
-}
-
-export interface XRayDeleteOverride extends XRayUserOverride {
-  type: 'delete';
-  entityId: string;
-}

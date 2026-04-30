@@ -1,4 +1,4 @@
-export type BookGenre =
+type BookGenre =
   | 'fiction'
   | 'fantasy'
   | 'sci-fi'
@@ -9,7 +9,7 @@ export type BookGenre =
   | 'biography'
   | 'unknown';
 
-export interface GenreHints {
+interface GenreHints {
   genre: BookGenre;
   hints: string[];
   extractionFocus: string[];
@@ -144,7 +144,7 @@ export function detectGenre(metadata: {
   return getGenreHints(detectedGenre);
 }
 
-export function getGenreHints(genre: BookGenre): GenreHints {
+function getGenreHints(genre: BookGenre): GenreHints {
   const hintsMap: Record<BookGenre, GenreHints> = {
     fantasy: {
       genre: 'fantasy',

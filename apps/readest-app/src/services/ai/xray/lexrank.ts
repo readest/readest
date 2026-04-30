@@ -119,17 +119,13 @@ const cosineSimilarity = (a: Map<string, number>, b: Map<string, number>): numbe
   return denom === 0 ? 0 : dot / denom;
 };
 
-export interface LexRankOptions {
+interface LexRankOptions {
   threshold?: number;
   maxIter?: number;
   damping?: number;
 }
 
-export const lexrank = (
-  sentences: string[],
-  lang: string,
-  options: LexRankOptions = {},
-): number[] => {
+const lexrank = (sentences: string[], lang: string, options: LexRankOptions = {}): number[] => {
   const threshold = options.threshold ?? 0.1;
   const maxIter = options.maxIter ?? 20;
   const damping = options.damping ?? 0.85;
@@ -165,13 +161,13 @@ export const lexrank = (
   return scores;
 };
 
-export interface RankedSentence {
+interface RankedSentence {
   sentence: string;
   index: number;
   score: number;
 }
 
-export const rankSentences = (
+const rankSentences = (
   text: string,
   lang: string,
   termVariants: string[] = [],
@@ -200,7 +196,7 @@ export const rankSentences = (
   return ranked.sort((a, b) => b.score - a.score);
 };
 
-export interface TermContextOptions {
+interface TermContextOptions {
   maxSentences?: number;
   contextBefore?: number;
   contextAfter?: number;

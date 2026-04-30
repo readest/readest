@@ -1,6 +1,6 @@
 import type { XRayEntity, XRayTextUnit } from './types';
 
-export interface CoreferenceMapping {
+interface CoreferenceMapping {
   mention: string;
   resolvedEntityId: string;
   textUnitId: string;

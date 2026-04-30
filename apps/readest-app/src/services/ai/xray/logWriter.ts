@@ -3,13 +3,13 @@ import { makeSafeFilename } from '@/utils/misc';
 
 const XRAY_LOG_DIR = 'xray';
 
-export const getXRayLogPath = (bookTitle: string, bookHash: string): string => {
+const getXRayLogPath = (bookTitle: string, bookHash: string): string => {
   const safeTitle = makeSafeFilename(bookTitle || 'book');
   const hashSuffix = bookHash ? `_${bookHash.slice(0, 8)}` : '';
   return `${XRAY_LOG_DIR}/xray_${safeTitle || 'book'}${hashSuffix}.md`;
 };
 
-export const getXRayDebugLogPath = (bookTitle: string, bookHash: string): string => {
+const getXRayDebugLogPath = (bookTitle: string, bookHash: string): string => {
   const safeTitle = makeSafeFilename(bookTitle || 'book');
   const hashSuffix = bookHash ? `_${bookHash.slice(0, 8)}` : '';
   return `${XRAY_LOG_DIR}/xray_debug_${safeTitle || 'book'}${hashSuffix}.log`;

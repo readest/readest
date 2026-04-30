@@ -8,7 +8,7 @@ export interface PossessiveChain {
   chunkId: string;
 }
 
-export interface PossessiveInferenceResult {
+interface PossessiveInferenceResult {
   entities: XRayEntity[];
   relationships: XRayRelationship[];
 }

@@ -660,11 +660,3 @@ export const filterEvidence = (
   }
   return matches;
 };
-
-export const hasEvidence = (
-  evidence: XRayEvidence[],
-  textUnits: XRayTextUnit[],
-  maxPageIncluded: number,
-): boolean => {
-  return filterEvidence(evidence, textUnits, maxPageIncluded).length > 0;
-};
