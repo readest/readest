@@ -23,6 +23,7 @@ import SearchResults from './SearchResults';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
+const DESKTOP_SIDEBAR_WIDTH = '7.5rem';
 
 const SideBar = ({}) => {
   const _ = useTranslation();
@@ -183,9 +184,11 @@ const SideBar = ({}) => {
       <div
         ref={sidebarRef}
         className={clsx(
-          'sidebar-container flex min-w-60 select-none flex-col',
+          'sidebar-container flex min-w-60 select-none flex-col sm:min-w-0 sm:overflow-visible',
           'full-height transition-[padding-top] duration-300',
-          viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
+          viewSettings?.isEink
+            ? 'bg-base-100'
+            : 'bg-base-200 sm:border-e sm:border-[#6f2520]/60 sm:bg-[linear-gradient(180deg,#140d0b_0%,#0f0908_100%)]',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
           !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
@@ -193,9 +196,10 @@ const SideBar = ({}) => {
         role='navigation'
         aria-label={_('Sidebar')}
         dir={viewSettings?.rtl && languageDir === 'rtl' ? 'rtl' : 'ltr'}
+        data-search-visible={isSearchBarVisible}
         style={{
-          width: isMobile ? '100%' : `${sideBarWidth}`,
-          maxWidth: isMobile ? '100%' : `${MAX_SIDEBAR_WIDTH * 100}%`,
+          width: isMobile ? '100%' : DESKTOP_SIDEBAR_WIDTH,
+          maxWidth: isMobile ? '100%' : DESKTOP_SIDEBAR_WIDTH,
           position: isMobile ? 'fixed' : isSideBarPinned ? 'relative' : 'absolute',
           paddingTop: isFullHeightInMobile
             ? systemUIVisible
@@ -205,6 +209,72 @@ const SideBar = ({}) => {
         }}
       >
         <style jsx>{`
+          @media (min-width: 640px) {
+            .sidebar-container {
+              border-right-width: 1px;
+              box-shadow:
+                inset -1px 0 0 rgba(201, 164, 90, 0.18),
+                16px 0 38px rgba(0, 0, 0, 0.18);
+            }
+
+            .sidebar-container :global(.search-bar) {
+              position: absolute;
+              left: calc(100% + 18px);
+              top: 18px;
+              width: 320px;
+              opacity: 0;
+              transform: translateX(-10px);
+              pointer-events: none;
+              transition:
+                opacity 180ms ease,
+                transform 180ms ease;
+              z-index: 5;
+            }
+
+            .sidebar-container[data-search-visible='true'] :global(.search-bar) {
+              opacity: 1;
+              transform: translateX(0);
+              pointer-events: auto;
+            }
+
+            .sidebar-container :global(.sidebar-content) {
+              position: absolute;
+              left: calc(100% + 18px);
+              top: 72px;
+              bottom: 18px;
+              width: 320px;
+              border: 1px solid rgba(201, 164, 90, 0.3);
+              border-radius: 18px;
+              background: linear-gradient(180deg, rgba(18, 12, 10, 0.97), rgba(11, 8, 7, 0.97));
+              box-shadow:
+                0 18px 40px rgba(0, 0, 0, 0.34),
+                0 0 22px rgba(126, 31, 25, 0.18);
+              opacity: 0;
+              transform: translateX(-10px);
+              pointer-events: none;
+              transition:
+                opacity 180ms ease,
+                transform 180ms ease;
+              z-index: 4;
+            }
+
+            .sidebar-container:hover :global(.sidebar-content),
+            .sidebar-container:focus-within :global(.sidebar-content) {
+              opacity: 1;
+              transform: translateX(0);
+              pointer-events: auto;
+            }
+
+            .sidebar-container[data-search-visible='true'] :global(.sidebar-content) {
+              opacity: 0;
+              pointer-events: none;
+            }
+
+            .sidebar-container :global(.bottom-tab) {
+              flex: 1;
+              justify-content: flex-start;
+            }
+          }
           @media (max-width: 640px) {
             .sidebar-container {
               border-top-left-radius: 16px;
@@ -219,6 +289,7 @@ const SideBar = ({}) => {
           className={clsx(
             'drag-bar absolute -right-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-1',
             isMobile && 'hidden',
+            !isMobile && 'sm:hidden',
           )}
           role='slider'
           tabIndex={0}
@@ -263,7 +334,7 @@ const SideBar = ({}) => {
               onHideSearchBar={handleHideSearchBar}
             />
           </div>
-          <div className='border-base-300/50 border-b px-3'>
+          <div className='border-base-300/50 border-b px-3 sm:hidden'>
             <BookCard book={book} />
           </div>
         </div>

@@ -74,7 +74,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
   }, [progress?.location, results]);
 
   return (
-    <div className='search-results overflow-y-auto p-2 font-sans text-sm font-light'>
+    <div className='search-results overflow-y-auto rounded-[18px] border border-[#c9a45a]/30 bg-[linear-gradient(180deg,rgba(18,12,10,0.97),rgba(11,8,7,0.97))] p-2 font-sans text-sm font-light text-[#dcc8a1] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.18)] sm:absolute sm:bottom-[18px] sm:left-[calc(100%+18px)] sm:top-[72px] sm:z-[4] sm:w-[320px]'>
       <ul className='px-2'>
         {results.map((result, index) => {
           if ('subitems' in result) {

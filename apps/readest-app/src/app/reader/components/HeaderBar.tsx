@@ -161,7 +161,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       />
       <div
         className={clsx(
-          'bg-base-100 absolute left-0 right-0 top-0 z-10',
+          'absolute left-0 right-0 top-0 z-10 bg-[#140d0b]/90',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           isHeaderVisible ? 'visible' : 'hidden',
         )}
@@ -174,9 +174,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         role='banner'
         aria-label={_('Header Bar')}
         className={clsx(
-          `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
-          `shadow-xs transition-[opacity,margin-top] duration-300`,
-          trafficLightInHeader ? 'pl-20' : isSideBarVisible ? 'ps-4' : 'ps-4 sm:ps-1.5',
+          `header-bar border-[#d2b374]/48 absolute top-0 z-10 flex h-[42px] w-full items-center rounded-[18px] border bg-[linear-gradient(180deg,rgba(34,23,19,0.97),rgba(17,12,10,0.94))] pr-3 text-[#e6c98f] shadow-[0_14px_34px_rgba(0,0,0,0.34),0_0_18px_rgba(117,24,17,0.16)]`,
+          `transition-[opacity,margin-top] duration-300`,
+          trafficLightInHeader ? 'pl-20' : isSideBarVisible ? 'ps-4' : 'ps-4 sm:ps-2.5',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
           isHoveredAnim && 'hover-bar-anim',
@@ -195,9 +195,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           }
         }}
       >
-        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-4 pe-2 max-[350px]:gap-x-2'>
+        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-3 pe-2.5 max-[350px]:gap-x-2'>
           <div
-            className='flex min-w-0 items-center gap-x-4 overflow-x-auto max-[350px]:gap-x-2'
+            className='flex min-w-0 items-center gap-x-2.5 overflow-x-auto max-[350px]:gap-x-2'
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {!isSideBarVisible && (
@@ -207,10 +207,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             )}
             <button
               title={_('Go to Library')}
-              className='btn btn-ghost hidden h-8 min-h-8 w-8 p-0 sm:flex'
+              className='btn btn-ghost border-[#b18b4a]/52 bg-[#231613]/88 hidden h-7 min-h-7 w-7 rounded-md border p-0 text-[#f0d39a] hover:bg-[#31201b] sm:flex'
               onClick={onGoToLibrary}
             >
-              <VscLibrary size={iconSize18} className='fill-base-content' />
+              <VscLibrary size={iconSize18} className='fill-current' />
             </button>
             <BookmarkToggler bookKey={bookKey} />
             <TranslationToggler bookKey={bookKey} />
@@ -225,8 +225,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-center'
               menuClassName='!relative'
               buttonClassName={clsx(
-                'btn btn-ghost h-8 min-h-8 w-8 p-0',
-                viewSettings?.annotationQuickAction && 'bg-base-300/50',
+                'btn btn-ghost h-7 min-h-7 w-7 p-0',
+                'rounded-md border border-[#b18b4a]/52 bg-[#231613]/88 text-[#f0d39a] hover:bg-[#31201b]',
+                viewSettings?.annotationQuickAction && 'bg-[#4a221c]/92',
               )}
               toggleButton={
                 annotationQuickAction === 'highlight' || annotationQuickAction === null ? (
@@ -264,7 +265,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <div
             aria-hidden='true'
             className={clsx(
-              'line-clamp-1 text-center text-xs font-semibold',
+              'line-clamp-1 text-center font-serif text-[10px] font-semibold uppercase tracking-[0.2em] text-[#e3c687]',
+              'drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
               !windowButtonVisible && 'max-w-[50%]',
             )}
           >
@@ -272,13 +274,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
         </div>
 
-        <div className='header-tools-end bg-base-100 z-20 ms-auto flex h-full min-w-max items-center gap-x-4 ps-2 max-[350px]:gap-x-2'>
+        <div className='header-tools-end z-20 ms-auto flex h-full min-w-max items-center gap-x-2.5 bg-transparent ps-2.5 max-[350px]:gap-x-2'>
           {!isHeaderCompact && <SettingsToggler bookKey={bookKey} />}
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
             label={_('View Options')}
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+            buttonClassName='btn btn-ghost h-7 min-h-7 w-7 rounded-md border border-[#b18b4a]/52 bg-[#231613]/88 p-0 text-[#f0d39a] hover:bg-[#31201b]'
             toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
             onToggle={handleToggleDropdown}
           >
@@ -297,6 +299,49 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           />
         </div>
       </div>
+      <style jsx global>{`
+        .header-bar .btn {
+          box-shadow: none;
+        }
+
+        .header-bar .btn:focus-visible,
+        .header-bar button:focus-visible {
+          outline: none;
+          box-shadow:
+            0 0 0 1px rgba(201, 164, 90, 0.9),
+            0 0 0 3px rgba(120, 24, 18, 0.45);
+        }
+
+        .header-bar .header-tools-start,
+        .header-bar .header-tools-end,
+        .header-bar .header-title {
+          background: transparent;
+        }
+
+        .header-bar .window-buttons button,
+        .header-bar .sidebar-bookmark-toggler button {
+          border-radius: 0.5rem;
+          border: 1px solid rgba(177, 139, 74, 0.52);
+          background: rgba(35, 22, 19, 0.88);
+          color: #f0d39a;
+        }
+
+        .header-bar .window-buttons button:hover,
+        .header-bar .sidebar-bookmark-toggler button:hover {
+          background: rgba(49, 32, 27, 0.96);
+        }
+
+        .header-bar::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 236, 190, 0.12),
+            inset 0 0 0 1px rgba(96, 70, 34, 0.22);
+          pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 };

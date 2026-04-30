@@ -223,7 +223,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }
 
   return (
-    <div className='reader-content full-height flex'>
+    <div className='reader-content citadel-reader-shell full-height flex'>
       <SideBar />
       <BooksGrid
         bookKeys={bookKeys}
@@ -239,6 +239,130 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           onClose={() => setShowDetailsBook(null)}
         />
       )}
+      <style jsx global>{`
+        @media (min-width: 640px) {
+          .citadel-reader-shell {
+            background:
+              radial-gradient(circle at 50% 14%, rgba(138, 36, 28, 0.2), transparent 32%),
+              linear-gradient(180deg, rgba(25, 13, 11, 0.98), rgba(10, 7, 6, 1));
+          }
+
+          .citadel-reader-shell .books-grid {
+            position: relative;
+            padding: 28px 24px 22px 16px;
+            background: transparent;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] {
+            position: relative;
+            overflow: visible;
+            margin: 8px 0;
+            border-radius: 28px;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-']::before {
+            content: '';
+            position: absolute;
+            inset: 12px 18px;
+            border-radius: 30px;
+            background:
+              radial-gradient(circle at 50% 48%, rgba(131, 24, 17, 0.2), transparent 40%),
+              linear-gradient(180deg, rgba(34, 19, 16, 0.94), rgba(14, 10, 9, 0.98));
+            box-shadow:
+              0 0 0 1px rgba(226, 194, 125, 0.5),
+              0 0 0 2px rgba(112, 81, 37, 0.42),
+              0 0 0 4px rgba(210, 169, 93, 0.24),
+              inset 0 0 0 1px rgba(241, 215, 159, 0.06),
+              0 30px 70px rgba(0, 0, 0, 0.42),
+              0 0 44px rgba(131, 24, 17, 0.24);
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
+            content: '';
+            position: absolute;
+            inset: 42px 58px 62px;
+            border-radius: 18px;
+            background:
+              radial-gradient(circle at 50% 50%, rgba(255, 243, 212, 0.03), transparent 42%),
+              linear-gradient(
+                90deg,
+                rgba(0, 0, 0, 0) 46.5%,
+                rgba(132, 96, 43, 0.08) 48.6%,
+                rgba(224, 196, 127, 0.12) 49.3%,
+                rgba(0, 0, 0, 0.34) 50%,
+                rgba(224, 196, 127, 0.12) 50.7%,
+                rgba(132, 96, 43, 0.08) 51.4%,
+                rgba(0, 0, 0, 0) 53.5%
+              ),
+              linear-gradient(
+                180deg,
+                rgba(33, 24, 20, 0.88) 0%,
+                rgba(24, 18, 15, 0.9) 40%,
+                rgba(16, 11, 10, 0.94) 100%
+              );
+            box-shadow:
+              inset 0 0 0 1px rgba(223, 189, 114, 0.22),
+              inset 0 0 0 3px rgba(84, 62, 33, 0.32),
+              inset 16px 0 24px rgba(0, 0, 0, 0.08),
+              inset -16px 0 24px rgba(0, 0, 0, 0.08),
+              inset 0 28px 46px rgba(255, 255, 255, 0.03),
+              inset 0 -18px 30px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .foliate-viewer {
+            top: 50px;
+            right: 68px;
+            bottom: 92px;
+            left: 68px;
+            height: auto;
+            width: auto;
+            border-radius: 16px;
+            background:
+              linear-gradient(
+                90deg,
+                rgba(221, 190, 117, 0.07) 0%,
+                rgba(0, 0, 0, 0) 5%,
+                rgba(0, 0, 0, 0) 95%,
+                rgba(221, 190, 117, 0.07) 100%
+              ),
+              linear-gradient(180deg, rgba(33, 25, 21, 0.94), rgba(18, 13, 11, 0.97));
+            box-shadow:
+              inset 0 0 0 1px rgba(206, 171, 95, 0.14),
+              inset 0 0 0 2px rgba(84, 61, 31, 0.18),
+              inset 0 18px 24px rgba(255, 244, 220, 0.02),
+              inset 0 -20px 30px rgba(0, 0, 0, 0.26),
+              inset 0 0 34px rgba(0, 0, 0, 0.18);
+            z-index: 1;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .header-bar,
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .footer-bar {
+            left: 46px;
+            right: 46px;
+            width: auto;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .header-bar {
+            top: 28px;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .footer-bar {
+            bottom: 24px;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .page-nav-left {
+            left: 52px;
+          }
+
+          .citadel-reader-shell .books-grid > [id^='gridcell-'] > .page-nav-right {
+            right: 52px;
+          }
+        }
+      `}</style>
     </div>
   );
 };

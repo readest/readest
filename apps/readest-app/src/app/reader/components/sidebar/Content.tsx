@@ -45,6 +45,16 @@ const SidebarContent: React.FC<{
   }, [aiEnabled, activeTab, targetTab]);
 
   const handleTabChange = (tab: string) => {
+    if (tab === 'reading') {
+      setActiveTab('reading');
+      setTargetTab('reading');
+      if (isMobile) {
+        setHoveredBookKey(sideBarBookKey);
+        setSideBarVisible(false);
+      }
+      return;
+    }
+
     if (activeTab === tab) {
       if (isMobile) {
         setHoveredBookKey(sideBarBookKey);
@@ -71,11 +81,14 @@ const SidebarContent: React.FC<{
       <div
         className={clsx(
           'sidebar-content flex h-full min-h-0 flex-grow flex-col shadow-inner',
-          'font-sans text-base font-normal sm:text-sm',
+          'font-sans text-base font-normal sm:text-sm sm:text-[#d9c39a]',
+          targetTab === 'reading' && 'sm:hidden',
         )}
       >
         {targetTab === 'history' ? (
           <ChatHistoryView bookKey={sideBarBookKey} />
+        ) : targetTab === 'reading' ? (
+          <div className='h-full' />
         ) : (
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'

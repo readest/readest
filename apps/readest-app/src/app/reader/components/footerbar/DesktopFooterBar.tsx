@@ -70,7 +70,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   return (
     <div
       className={clsx(
-        'hidden h-8 w-full items-center gap-x-4 overflow-x-auto px-4',
+        'hidden h-10 w-full items-center gap-x-3 overflow-x-auto px-5 text-[#efd5a0]',
         !forceMobileLayout && 'sm:flex',
       )}
       style={{
@@ -113,7 +113,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         <span
           title={_('Reading Progress')}
           aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
-          className='mx-2 text-nowrap text-center text-sm'
+          className='mx-1 min-w-[72px] text-nowrap text-center font-serif text-xs uppercase tracking-[0.14em] text-[#f2ddb0]'
         >
           <span aria-hidden='true'>{progressInfo}</span>
         </span>
@@ -121,7 +121,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
       <input
         ref={rangeInputRef}
         type='range'
-        className='text-base-content mx-2 min-w-0 flex-1'
+        className='citadel-progress-range text-base-content mx-2 min-w-0 flex-1 accent-[#b99a58]'
         min={0}
         max={100}
         aria-label={_('Jump to Location')}
@@ -151,6 +151,74 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
           label={_('Next Section')}
         />
       )}
+      <style jsx global>{`
+        .footer-bar button {
+          border-radius: 0.5rem;
+          border: 1px solid rgba(183, 145, 76, 0.48);
+          background: rgba(35, 22, 18, 0.86);
+          color: #f0d39a;
+        }
+
+        .footer-bar button:hover {
+          background: rgba(56, 33, 28, 0.96);
+        }
+
+        .footer-bar button:focus-visible,
+        .footer-bar input:focus-visible {
+          outline: none;
+          box-shadow:
+            0 0 0 1px rgba(201, 164, 90, 0.9),
+            0 0 0 3px rgba(120, 24, 18, 0.42);
+        }
+
+        .footer-bar .citadel-progress-range {
+          height: 5px;
+          margin-top: 1px;
+        }
+
+        .footer-bar .citadel-progress-range::-webkit-slider-runnable-track {
+          height: 5px;
+          border-radius: 9999px;
+          background: linear-gradient(90deg, rgba(128, 95, 43, 0.88), rgba(92, 68, 34, 0.94));
+          box-shadow:
+            inset 0 0 0 1px rgba(217, 183, 109, 0.08),
+            0 0 0 1px rgba(35, 24, 18, 0.35);
+        }
+
+        .footer-bar .citadel-progress-range::-webkit-slider-thumb {
+          margin-top: -4px;
+          height: 13px;
+          width: 13px;
+          border-radius: 9999px;
+          border: 1px solid rgba(243, 219, 164, 0.94);
+          background: #e1c488;
+          box-shadow:
+            0 0 10px rgba(133, 31, 22, 0.18),
+            0 0 0 2px rgba(83, 56, 24, 0.18);
+          -webkit-appearance: none;
+        }
+
+        .footer-bar .citadel-progress-range::-moz-range-track {
+          height: 5px;
+          border-radius: 9999px;
+          background: linear-gradient(90deg, rgba(128, 95, 43, 0.88), rgba(92, 68, 34, 0.94));
+        }
+
+        .footer-bar .citadel-progress-range::-moz-range-thumb {
+          height: 13px;
+          width: 13px;
+          border-radius: 9999px;
+          border: 1px solid rgba(243, 219, 164, 0.94);
+          background: #e1c488;
+          box-shadow:
+            0 0 10px rgba(133, 31, 22, 0.18),
+            0 0 0 2px rgba(83, 56, 24, 0.18);
+        }
+
+        .footer-bar svg {
+          filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.3));
+        }
+      `}</style>
     </div>
   );
 };

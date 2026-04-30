@@ -82,7 +82,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
 
       <div
         className={clsx(
-          'absolute left-2 -translate-y-1/2',
+          'page-nav-left absolute left-2 -translate-y-1/2',
           'flex items-center gap-1',
           isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
           !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
@@ -91,7 +91,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         <button
           onClick={handleGoLeftSection}
           className={clsx(
-            'flex h-20 w-20 items-center justify-center focus:outline-none',
+            'flex h-20 w-20 items-center justify-center focus:outline-none focus-visible:outline-none',
             !isPageNavigationButtonsVisible && appService?.isAndroidApp && 'h-4 w-4',
           )}
           aria-hidden={false}
@@ -101,8 +101,8 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           <span
             className={clsx(
               'flex h-12 w-12 items-center justify-center rounded-full',
-              'bg-base-100/90 shadow-lg backdrop-blur-sm',
-              'eink:border eink:border-base-content not-eink:group-hover:bg-base-200',
+              'bg-[#1b100d]/88 border border-[#cba560]/50 text-[#f3dba3] shadow-[0_0_22px_rgba(132,28,19,0.24)] backdrop-blur-sm',
+              'eink:border eink:border-base-content not-eink:group-hover:bg-[#291510]',
               'transition-transform active:scale-95',
             )}
           >
@@ -111,7 +111,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         </button>
         <button
           onClick={handleGoLeftPage}
-          className='flex h-20 w-20 items-center justify-center focus:outline-none'
+          className='flex h-20 w-20 items-center justify-center focus:outline-none focus-visible:outline-none'
           aria-hidden={false}
           aria-label={getLeftPageLabel()}
           tabIndex={0}
@@ -119,8 +119,8 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           <span
             className={clsx(
               'flex h-12 w-12 items-center justify-center rounded-full',
-              'bg-base-100/90 shadow-lg backdrop-blur-sm',
-              'eink:border eink:border-base-content not-eink:group-hover:bg-base-200',
+              'bg-[#1b100d]/88 border border-[#cba560]/50 text-[#f3dba3] shadow-[0_0_22px_rgba(132,28,19,0.24)] backdrop-blur-sm',
+              'eink:border eink:border-base-content not-eink:group-hover:bg-[#291510]',
               'transition-transform active:scale-95',
             )}
           >
@@ -131,7 +131,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
 
       <div
         className={clsx(
-          'absolute right-2 -translate-y-1/2',
+          'page-nav-right absolute right-2 -translate-y-1/2',
           'flex items-center gap-1',
           isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
           !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
@@ -139,7 +139,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
       >
         <button
           onClick={handleGoRightPage}
-          className='flex h-20 w-20 items-center justify-center focus:outline-none'
+          className='flex h-20 w-20 items-center justify-center focus:outline-none focus-visible:outline-none'
           aria-hidden={false}
           aria-label={getRightPageLabel()}
           tabIndex={0}
@@ -147,8 +147,8 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           <span
             className={clsx(
               'flex h-12 w-12 items-center justify-center rounded-full',
-              'bg-base-100/90 shadow-lg backdrop-blur-sm',
-              'eink:border eink:border-base-content not-eink:group-hover:bg-base-200',
+              'bg-[#1b100d]/88 border border-[#cba560]/50 text-[#f3dba3] shadow-[0_0_22px_rgba(132,28,19,0.24)] backdrop-blur-sm',
+              'eink:border eink:border-base-content not-eink:group-hover:bg-[#291510]',
               'transition-transform active:scale-95',
             )}
           >
@@ -158,7 +158,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
         <button
           onClick={handleGoRightSection}
           className={clsx(
-            'flex h-20 w-20 items-center justify-center focus:outline-none',
+            'flex h-20 w-20 items-center justify-center focus:outline-none focus-visible:outline-none',
             !isPageNavigationButtonsVisible && appService?.isAndroidApp && 'h-4 w-4',
           )}
           aria-hidden={false}
@@ -168,8 +168,8 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           <span
             className={clsx(
               'flex h-12 w-12 items-center justify-center rounded-full',
-              'bg-base-100/90 shadow-lg backdrop-blur-sm',
-              'eink:border eink:border-base-content not-eink:group-hover:bg-base-200',
+              'bg-[#1b100d]/88 border border-[#cba560]/50 text-[#f3dba3] shadow-[0_0_22px_rgba(132,28,19,0.24)] backdrop-blur-sm',
+              'eink:border eink:border-base-content not-eink:group-hover:bg-[#291510]',
               'transition-transform active:scale-95',
             )}
           >

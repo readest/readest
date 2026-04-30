@@ -217,16 +217,17 @@ const FooterBar: React.FC<FooterBarProps> = ({
     (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
-    'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
-    !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
-    'border-base-300/50 border-t',
+    'footer-bar bottom-0 left-0 z-10 flex w-full flex-col',
+    !forceMobileLayout &&
+      'sm:h-[60px] sm:rounded-[16px] sm:border sm:border-[#d2b374]/44 sm:bg-[linear-gradient(180deg,rgba(32,22,18,0.92),rgba(15,11,10,0.94))] sm:shadow-[0_14px_32px_rgba(0,0,0,0.3),0_0_18px_rgba(117,24,17,0.12)]',
+    'border-t border-[#7e6040]/40',
     'transition-[opacity,transform] duration-300',
     forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
     !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-bottom-left',
     isHoveredAnim && 'hover-bar-anim',
     !forceMobileLayout &&
-      (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-10 sm:justify-end' : 'sm:justify-center'),
+      (needHorizontalScroll ? 'sm:!bottom-3 sm:!h-12 sm:justify-end' : 'sm:justify-center'),
     isVisible
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : forceMobileLayout
@@ -243,8 +244,8 @@ const FooterBar: React.FC<FooterBarProps> = ({
         role='none'
         tabIndex={-1}
         className={clsx(
-          'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
-          needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
+          'absolute bottom-0 left-0 z-10 flex h-[56px] w-full',
+          needHorizontalScroll && 'sm:!bottom-3 sm:!h-9',
           isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
@@ -264,8 +265,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <MobileFooterBar {...commonProps} />
         <DesktopFooterBar {...commonProps} />
       </div>
+      <style jsx global>{`
+        @media (min-width: 640px) {
+          .footer-bar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow:
+              inset 0 1px 0 rgba(255, 237, 193, 0.1),
+              inset 0 0 0 1px rgba(95, 70, 34, 0.2);
+            pointer-events: none;
+          }
+        }
+      `}</style>
       {isVisible && needHorizontalScroll && (
-        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />
+        <div className='pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full bg-[#120d0b] sm:block' />
       )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
