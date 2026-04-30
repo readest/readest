@@ -56,7 +56,7 @@ const SidebarHeader: React.FC<{
             priority={false}
           />
         </div>
-        <div className='mt-2.5 font-serif text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d3b577]'>
+        <div className='mt-2.5 font-serif text-[9px] font-semibold uppercase leading-none tracking-[0.24em] text-[#d9bd86]'>
           Citadel
         </div>
       </div>
