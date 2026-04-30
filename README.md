@@ -361,4 +361,4 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-deepwiki]: https://deepwiki.com/readest/readest
 [link-locales]: https://github.com/readest/readest/tree/main/apps/readest-app/public/locales
 [link-kosync-wiki]: https://github.com/readest/readest/wiki/Sync-with-Koreader-devices
-[link-reddit]: https://reddit.com/r/readest/
+[link-reddit]: https://reddit.com/r/readest/ need it to be full no paymant plan or cloud storge because you're freaking letting people spend their money for this shit stop get rid of iCloud shake in and fix this app to where it's no payment. No just let it be and let it stay in for 1 million iCloud storage because if you don't want trillion just let it be free no let up with the iCloud not making a pie paying more for more space you freaking idiot. If you do, you're not they're not gonna have enough for room to put more and more and more and more Books. 
