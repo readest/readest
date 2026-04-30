@@ -1,3 +1,58 @@
+## Readest Inline Insight Fork
+
+This fork is based on [Readest](https://github.com/readest/readest) and adds a context-aware, zero-input LLM lookup flow.
+
+Inline Insight is designed for quick answers while reading. You do not need to formulate a question first: select text, open the popup, read a short explanation, expand details when needed, or ask a follow-up directly from the bottom of the popup.
+
+<img src="data/screenshots/inline-insight-btn.jpg" alt="Inline Insight button" width="500" />
+
+<img src="data/screenshots/inline-insight-example-location.jpg" alt="Inline Insight brief view" width="500" />
+
+<img src="data/screenshots/inline-insight-example-location-expanded.jpg" alt="Inline Insight expanded view" width="500" />
+
+### Features
+
+- One click LLM query. (Expanded into detailed explanation)
+- Follow up question
+- Query cache
+- User defined "question directions"
+
+### Fork Changes
+
+- Adds an **Ask AI** action to the annotation toolbar after text selection.
+- Extracts nearby context automatically, including text before and after the selection in the same paragraph and adjacent content blocks.
+- Supports Ollama, OpenAI, DeepSeek, OpenRouter, Groq, Gemini OpenAI-compatible API, LM Studio REST API, and custom OpenAI-compatible endpoints.
+- Disables or minimizes provider-supported reasoning/thinking parameters by default for faster reading-time responses.
+- Adds a local response cache to avoid repeated model calls for the same selected text and context.
+- Supports follow-up questions inside the Inline Insight popup.
+- Allows a target answer language to be configured; by default, it follows the Readest UI language.
+- Allows the initial Inline Insight system prompt to be customized from the settings panel.
+- Adds configurable answer directions in the settings panel, such as character relationships, place background, classical Chinese translation, historical context, and literary function.
+- Can write real LLM call logs during local development when `INLINE_INSIGHT_DEBUG_LOGGING=true`.
+
+### Basic Usage
+
+1. Open **Settings** -> **AI**.
+2. Enable **Inline Insight**.
+3. Choose a provider, then fill in the Base URL, model name, and API key.
+4. Optional: set the target answer language. Leave it empty to follow the Readest UI language.
+5. Optional: customize the initial system prompt or add answer directions to guide the default explanation style.
+6. Open a book, select text, and click **Ask AI** in the annotation toolbar.
+7. Read the brief answer in the popup, expand details, or type a follow-up question in the compact input at the bottom.
+
+Development note:
+
+- In `next dev` / `pnpm dev-web`, opening the Inline Insight popup may print a transient `Error: aborted` message in the terminal. This appears to be a development-mode streaming/runtime artifact and does not affect the actual Inline Insight response. Caused by `reactStrictMode`.
+
+Local model examples:
+
+- **Ollama**: start Ollama, choose `Ollama`, set Base URL to `http://127.0.0.1:11434`, and enter an installed model name.
+- **LM Studio**: start LM Studio Local Server, choose `LM Studio REST`, set Base URL to `http://localhost:1234`, and enter the loaded model name.
+
+See [Inline Insight documentation](apps/readest-app/docs/inline-insight.md) for more design and implementation details.
+
+---
+
 <div align="center">
   <a href="https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme" target="_blank">
     <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />

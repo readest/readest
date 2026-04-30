@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
+import InlineInsightSettingsPanel from './InlineInsightSettingsPanel';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
@@ -550,6 +551,8 @@ const AIPanel: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <InlineInsightSettingsPanel />
     </div>
   );
 };

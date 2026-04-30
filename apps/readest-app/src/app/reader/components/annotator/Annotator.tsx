@@ -46,6 +46,7 @@ import WikipediaPopup from './WikipediaPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
+import InlineInsightPopup from './InlineInsightPopup';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -78,6 +79,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
+  const [showInlineInsightPopup, setShowInlineInsightPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -111,7 +113,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     showWiktionaryPopup ||
     showWikipediaPopup ||
     showDeepLPopup ||
-    showProofreadPopup;
+    showProofreadPopup ||
+    showInlineInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -123,7 +126,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
-  const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
+  const annotPopupWidth = Math.min(useResponsiveSize(annotationToolButtons.length * 36), maxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -213,6 +216,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowWikipediaPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
+      setShowInlineInsightPopup(false);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -814,6 +818,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
+  const handleInlineInsight = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setShowInlineInsightPopup(true);
+  };
+
   const handleStartEditAnnotation = useCallback(() => {
     setShowAnnotPopup(false);
   }, []);
@@ -968,6 +978,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
+      case 'inlineinsight':
+        return { tooltipText: _(label), Icon, onClick: handleInlineInsight };
       default:
         return { tooltipText: '', Icon, onClick: () => {} };
     }
@@ -1033,6 +1045,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={proofreadPopupWidth}
           popupHeight={proofreadPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
+        />
+      )}
+      {showInlineInsightPopup && trianglePosition && dictPopupPosition && selection && (
+        <InlineInsightPopup
+          selection={selection}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
         />
       )}

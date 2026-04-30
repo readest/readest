@@ -54,3 +54,4 @@ result*
 .claude/worktrees
 .claude/settings.local.json
 
+apps/readest-app/logs
