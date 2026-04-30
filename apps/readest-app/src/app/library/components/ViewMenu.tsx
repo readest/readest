@@ -101,7 +101,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     } else {
       params.set('groupBy', value);
     }
-    // Clear group navigation when changing groupBy mode
     params.delete('group');
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -124,10 +123,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
   return (
     <Menu
-      className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
+      className='view-menu dropdown-content no-triangle z-20 mt-2 rounded-[24px] border border-[rgba(185,133,44,0.24)] bg-[linear-gradient(180deg,rgba(15,14,14,0.98)_0%,rgba(10,10,10,0.96)_100%)] p-2 shadow-[0_24px_60px_rgba(0,0,0,0.45)]'
       onCancel={() => setIsDropdownOpen?.(false)}
     >
-      {/* View Mode */}
       {viewOptions.map((option) => (
         <MenuItem
           key={option.value}
@@ -139,8 +137,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         />
       ))}
 
-      {/* Columns */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <hr aria-hidden='true' className='my-2 border-[rgba(185,133,44,0.12)]' />
       <MenuItem label={_('Columns')} buttonClass='h-8' labelClass='text-sm sm:text-xs' disabled />
       <MenuItem
         label={_('Auto')}
@@ -162,8 +159,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={() => handleToggleAutoColumns()}
       />
 
-      {/* Book Covers */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <hr aria-hidden='true' className='my-2 border-[rgba(185,133,44,0.12)]' />
       <MenuItem
         label={_('Book Covers')}
         buttonClass='h-8'
@@ -181,8 +177,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         />
       ))}
 
-      {/* Group By - Collapsible */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <hr aria-hidden='true' className='my-2 border-[rgba(185,133,44,0.12)]' />
       <MenuItem label={_('Group by...')} detailsOpen={true} buttonClass='py-[4px]'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {groupByOptions.map((option) => (
@@ -198,8 +193,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         </ul>
       </MenuItem>
 
-      {/* Sort By - Collapsible */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <hr aria-hidden='true' className='my-2 border-[rgba(185,133,44,0.12)]' />
       <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-[4px]'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {sortByOptions.map((option) => (
@@ -212,7 +206,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
               transient
             />
           ))}
-          <hr aria-hidden='true' className='border-base-200 my-1' />
+          <hr aria-hidden='true' className='my-2 border-[rgba(185,133,44,0.12)]' />
           {sortingOptions.map((option) => (
             <MenuItem
               key={option.value.toString()}

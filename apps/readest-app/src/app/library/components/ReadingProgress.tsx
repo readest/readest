@@ -11,7 +11,7 @@ interface ReadingProgressProps {
 
 const getProgressPercentage = (book: Book) => {
   if (!book.progress || !book.progress[1]) {
-    return null;
+    return 0;
   }
   if (book.progress && book.progress[1] === 1) {
     return 100;
@@ -27,8 +27,20 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
 
     if (book.readingStatus === 'finished') {
       return (
-        <div className='flex justify-start'>
-          <StatusBadge status={book.readingStatus}>{_('Finished')}</StatusBadge>
+        <div
+          className='flex items-center justify-between gap-2.5'
+          role='status'
+          aria-label={_('Finished')}
+        >
+          <div className='h-[3px] flex-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]'>
+            <div className='h-full w-full rounded-full bg-[#a97716]' />
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='min-w-[2.5rem] text-right text-[10px] uppercase tracking-[0.12em] text-[#b8892f]'>
+              100%
+            </span>
+            <StatusBadge status={book.readingStatus}>{_('Finished')}</StatusBadge>
+          </div>
         </div>
       );
     }
@@ -36,26 +48,49 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     if (book.readingStatus === 'unread') {
       if (SHOW_UNREAD_STATUS_BADGE) {
         return (
-          <div className='flex justify-start'>
-            <StatusBadge status={book.readingStatus}>{_('Unread')}</StatusBadge>
+          <div
+            className='flex items-center justify-between gap-2.5'
+            role='status'
+            aria-label={_('Unread')}
+          >
+            <div className='h-[3px] flex-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]'>
+              <div className='h-full w-0 rounded-full bg-[#a97716]' />
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='min-w-[2.5rem] text-right text-[10px] uppercase tracking-[0.12em] text-[#b8892f]'>
+                0%
+              </span>
+              <StatusBadge status={book.readingStatus}>{_('Unread')}</StatusBadge>
+            </div>
           </div>
         );
-      } else {
-        return <div className='flex justify-start'></div>;
       }
-    }
 
-    if (progressPercentage === null || Number.isNaN(progressPercentage)) {
-      return <div className='flex justify-start'></div>;
+      return (
+        <div className='flex items-center gap-2.5' role='status' aria-label='0%'>
+          <div className='h-[3px] flex-1 rounded-full bg-[rgba(255,255,255,0.08)]'></div>
+          <span className='min-w-[2.5rem] text-right text-[10px] uppercase tracking-[0.12em] text-[#b8892f]'>
+            0%
+          </span>
+        </div>
+      );
     }
 
     return (
       <div
-        className='text-neutral-content/70 flex justify-between text-xs'
+        className='flex items-center gap-2.5'
         role='status'
         aria-label={`${progressPercentage}%`}
       >
-        <span>{progressPercentage}%</span>
+        <div className='h-[3px] flex-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.08)]'>
+          <div
+            className='h-full rounded-full bg-[#a97716] transition-[width] duration-300'
+            style={{ width: `${progressPercentage}%` }}
+          />
+        </div>
+        <span className='min-w-[2.5rem] text-right text-[10px] uppercase tracking-[0.12em] text-[#b8892f]'>
+          {progressPercentage}%
+        </span>
       </div>
     );
   },

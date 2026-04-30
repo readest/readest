@@ -11,10 +11,6 @@ interface GroupHeaderProps {
   groupName: string;
 }
 
-/**
- * Header component displayed when viewing books inside a series or author group.
- * Shows the group type, group name, and a back button to return to the main bookshelf.
- */
 const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -27,7 +23,6 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
     navigateToLibrary(router, params.toString());
   };
 
-  // Get localized label for the group type
   const getGroupTypeLabel = (): string => {
     switch (groupBy) {
       case LibraryGroupByType.Series:
@@ -40,17 +35,24 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
   };
 
   return (
-    <div className='flex items-center gap-2 px-4 py-2'>
+    <div className='flex items-center gap-3 border-b border-[rgba(185,133,44,0.12)] px-6 py-4 sm:px-8'>
       <button
         onClick={handleBack}
-        className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
+        className='inline-flex h-9 min-h-9 items-center justify-center rounded-full border border-[rgba(185,133,44,0.22)] bg-[rgba(255,255,255,0.02)] px-3 text-[#c6aa73] transition-colors hover:bg-[rgba(185,133,44,0.1)]'
         aria-label={_('Back to library')}
       >
         <MdArrowBack size={iconSize} />
       </button>
-      <div className='flex items-center gap-2 overflow-hidden'>
-        <span className='text-neutral-content text-sm'>{getGroupTypeLabel()}:</span>
-        <span className='truncate text-base font-medium'>{groupName}</span>
+      <div className='flex min-w-0 items-center gap-2 overflow-hidden'>
+        <span className='text-xs uppercase tracking-[0.16em] text-[#7c694e]'>
+          {getGroupTypeLabel()}:
+        </span>
+        <span
+          className='truncate text-base text-[#efdfc4]'
+          style={{ fontFamily: 'Georgia, Palatino, "Palatino Linotype", serif' }}
+        >
+          {groupName}
+        </span>
       </div>
     </div>
   );

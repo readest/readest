@@ -51,7 +51,7 @@ import {
   tauriQuitApp,
 } from '@/utils/window';
 
-import { LibraryGroupByType } from '@/types/settings';
+import { LibraryGroupByType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
@@ -79,6 +79,24 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+
+const LIBRARY_GROUP_LABELS: Record<LibraryGroupByType, string> = {
+  [LibraryGroupByType.None]: 'Collection',
+  [LibraryGroupByType.Group]: 'Shelves',
+  [LibraryGroupByType.Series]: 'Series',
+  [LibraryGroupByType.Author]: 'Authors',
+};
+
+const LIBRARY_SORT_LABELS: Record<LibrarySortByType, string> = {
+  [LibrarySortByType.Title]: 'Title',
+  [LibrarySortByType.Author]: 'Author',
+  [LibrarySortByType.Updated]: 'Recently Read',
+  [LibrarySortByType.Created]: 'Recently Added',
+  [LibrarySortByType.Series]: 'Series',
+  [LibrarySortByType.Size]: 'Length',
+  [LibrarySortByType.Format]: 'Format',
+  [LibrarySortByType.Published]: 'Publication Date',
+};
 
 const LibraryPageWithSearchParams = () => {
   const searchParams = useSearchParams();
@@ -852,6 +870,135 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     handleLibraryNavigation(group);
   };
 
+  const rawGroupBy = searchParams?.get('groupBy');
+  const currentGroupId = searchParams?.get('group') || '';
+  const currentViewMode = ((searchParams?.get('view') || 'grid') as LibraryViewModeType) || 'grid';
+  const currentSortBy = (searchParams?.get('sort') || settings.librarySortBy) as LibrarySortByType;
+  const currentSortOrder =
+    searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
+  const currentGroupBy = currentGroupId
+    ? ensureLibraryGroupByType(rawGroupBy, settings.libraryGroupBy)
+    : ensureLibraryGroupByType(rawGroupBy, LibraryGroupByType.None);
+  const currentQuery = searchParams?.get('q') || '';
+  const visibleBooks = useMemo(
+    () => libraryBooks.filter((book) => !book.deletedAt),
+    [libraryBooks],
+  );
+  const collectionStats = useMemo(() => {
+    const seriesCount = createBookGroups(visibleBooks, LibraryGroupByType.Series).filter(
+      (item) => 'books' in item,
+    ).length;
+    const authorCount = createBookGroups(visibleBooks, LibraryGroupByType.Author).filter(
+      (item) => 'books' in item,
+    ).length;
+    const pagesRead = visibleBooks.reduce((total, book) => total + (book.progress?.[0] || 0), 0);
+
+    return {
+      books: visibleBooks.length,
+      series: seriesCount,
+      authors: authorCount,
+      pagesRead,
+    };
+  }, [visibleBooks]);
+
+  const sidebarItems = useMemo(
+    () => [
+      {
+        key: 'collection',
+        label: _('Collection'),
+        description: _('All books'),
+        active: currentGroupBy === LibraryGroupByType.None && !currentGroupId,
+        onClick: () => {
+          const params = new URLSearchParams(searchParams?.toString());
+          params.delete('group');
+          params.delete('q');
+          params.set('groupBy', LibraryGroupByType.None);
+          params.set('view', 'grid');
+          navigateToLibrary(router, params.toString());
+        },
+      },
+      {
+        key: 'shelves',
+        label: _('Shelves'),
+        description: _('Nested groups'),
+        active: currentGroupBy === LibraryGroupByType.Group,
+        onClick: () => {
+          const params = new URLSearchParams(searchParams?.toString());
+          params.delete('group');
+          params.set('groupBy', LibraryGroupByType.Group);
+          navigateToLibrary(router, params.toString());
+        },
+      },
+      {
+        key: 'series',
+        label: _('Series'),
+        description: _('Ordered sagas'),
+        active: currentGroupBy === LibraryGroupByType.Series,
+        onClick: () => {
+          const params = new URLSearchParams(searchParams?.toString());
+          params.delete('group');
+          params.set('groupBy', LibraryGroupByType.Series);
+          navigateToLibrary(router, params.toString());
+        },
+      },
+      {
+        key: 'authors',
+        label: _('Authors'),
+        description: _('By writer'),
+        active: currentGroupBy === LibraryGroupByType.Author,
+        onClick: () => {
+          const params = new URLSearchParams(searchParams?.toString());
+          params.delete('group');
+          params.set('groupBy', LibraryGroupByType.Author);
+          navigateToLibrary(router, params.toString());
+        },
+      },
+      {
+        key: 'recent',
+        label: _('Recent'),
+        description: _('Latest arrivals'),
+        active: currentSortBy === LibrarySortByType.Created && currentSortOrder === 'desc',
+        onClick: () => {
+          const params = new URLSearchParams(searchParams?.toString());
+          params.set('sort', LibrarySortByType.Created);
+          params.set('order', 'desc');
+          navigateToLibrary(router, params.toString());
+        },
+      },
+    ],
+    [_, currentGroupBy, currentGroupId, currentSortBy, currentSortOrder, router, searchParams],
+  );
+
+  const activeCollectionLabel = currentGroupId
+    ? currentSeriesAuthorGroup?.groupName || currentGroupPath?.split('/').at(-1) || _('Collection')
+    : _(LIBRARY_GROUP_LABELS[currentGroupBy] || 'Collection');
+  const activeSortLabel = _(LIBRARY_SORT_LABELS[currentSortBy] || 'Recently Added');
+  const panelSubtitle = currentQuery
+    ? _('Search results for "{{query}}"', { query: currentQuery })
+    : _('A curated hall for every volume in your collection.');
+
+  const updatePanelParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams?.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    navigateToLibrary(router, params.toString());
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (currentGroupId || rawGroupBy || searchParams?.get('view')) return;
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set('groupBy', LibraryGroupByType.None);
+    params.set('view', 'grid');
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    window.history.replaceState(null, '', nextUrl);
+  }, [currentGroupId, rawGroupBy, searchParams]);
+
   if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
     return <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-200')} />;
   }
@@ -863,11 +1010,75 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       ref={pageRef}
       aria-label={_('Your Library')}
       className={clsx(
-        'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
-        viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
+        'library-page text-base-content full-height relative flex select-none flex-col overflow-hidden bg-[#050404]',
+        viewSettings?.isEink ? 'bg-base-100' : '',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
+      style={{
+        backgroundImage: `
+          radial-gradient(circle at 58% 24%, rgba(134, 15, 11, 0.34) 0%, rgba(76, 8, 7, 0.16) 24%, rgba(16, 7, 8, 0.02) 48%, transparent 62%),
+          radial-gradient(circle at 30% 78%, rgba(70, 9, 8, 0.12) 0%, transparent 46%),
+          linear-gradient(180deg, rgba(8, 7, 7, 0.98) 0%, rgba(5, 5, 5, 1) 100%)
+        `,
+      }}
     >
+      <style jsx global>{`
+        .library-page {
+          --library-card-height: 178px;
+          --library-grid-gap: 18px;
+          --library-grid-viewport-height: 570px;
+        }
+
+        .library-page .bookshelf .bookshelf-grid-viewport {
+          scrollbar-color: rgba(184, 137, 47, 0.42) transparent;
+        }
+
+        .library-page .bookshelf .bookshelf-items {
+          width: 100%;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          grid-auto-rows: var(--library-card-height);
+          gap: var(--library-grid-gap);
+        }
+
+        .library-page .bookshelf .bookshelf-items > div {
+          width: 100%;
+          height: var(--library-card-height);
+          min-width: 0;
+          max-width: none;
+        }
+
+        @media (min-width: 768px) {
+          .library-page .bookshelf .bookshelf-items {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (min-width: 1280px) {
+          .library-page .bookshelf .bookshelf-items {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .library-page .bookshelf .bookshelf-grid-viewport {
+            height: min(100%, var(--library-grid-viewport-height));
+            max-height: min(100%, var(--library-grid-viewport-height));
+          }
+        }
+
+        @media (min-width: 1680px) {
+          .library-page .bookshelf .bookshelf-items {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
+        }
+      `}</style>
+      <div
+        aria-hidden='true'
+        className='pointer-events-none absolute inset-0'
+        style={{
+          background:
+            'radial-gradient(circle at 60% 34%, rgba(151, 18, 15, 0.18) 0%, rgba(86, 10, 9, 0.1) 28%, transparent 66%)',
+        }}
+      />
       <div
         className='relative top-0 z-40 w-full'
         role='banner'
@@ -903,127 +1114,281 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <Spinner loading />
         </div>
       )}
-      {showBookshelf && (
-        <section className='px-4 pb-1 pt-3 sm:px-6 sm:pt-4' aria-label={_('Library Overview')}>
-          <div className='border-base-content/10 bg-base-100/70 rounded-2xl border p-4 shadow-[var(--citadel-shadow-soft)] sm:px-5'>
-            <p className='text-xs font-semibold uppercase tracking-[0.16em] text-[var(--citadel-gold)]'>
-              {_('Citadel Library')}
-            </p>
-            <p className='mt-1 text-xs text-[var(--citadel-text-muted)]'>
-              {_(
-                'Manage your full collection here with search, grouping, sorting, and selection tools.',
+      <div
+        className='relative z-10 flex min-h-0 flex-1 gap-4 px-4 pb-4 pt-4 sm:px-6 sm:pb-6'
+        style={{
+          paddingLeft: `max(${insets.left}px + 16px, 16px)`,
+          paddingRight: `max(${insets.right}px + 16px, 16px)`,
+          paddingBottom: `max(${insets.bottom}px + 16px, 16px)`,
+        }}
+      >
+        <aside className='hidden w-[224px] shrink-0 xl:flex'>
+          <div className='flex h-full w-full flex-col rounded-[30px] border border-[rgba(185,133,44,0.14)] bg-[linear-gradient(180deg,rgba(12,11,11,0.92)_0%,rgba(9,9,9,0.86)_100%)] px-6 py-7 shadow-[0_24px_52px_rgba(0,0,0,0.34)]'>
+            <div className='border-b border-[rgba(185,133,44,0.16)] pb-6'>
+              <img
+                src='/citadel/citadel-logo.png'
+                alt='Citadel'
+                className='h-auto w-[148px] object-contain'
+                draggable={false}
+              />
+              <p className='mt-4 text-[11px] uppercase tracking-[0.28em] text-[#8e7451]'>
+                {_('Library Wing')}
+              </p>
+            </div>
+
+            <nav className='mt-6 flex flex-col gap-2' aria-label={_('Library navigation')}>
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.key}
+                  type='button'
+                  onClick={item.onClick}
+                  className={clsx(
+                    'group relative overflow-hidden rounded-[18px] border px-4 py-3 text-left transition-all duration-200',
+                    item.active
+                      ? 'border-[rgba(185,133,44,0.28)] bg-[linear-gradient(90deg,rgba(68,10,9,0.44)_0%,rgba(19,13,10,0.82)_70%,rgba(12,11,10,0.82)_100%)] shadow-[0_0_0_1px_rgba(185,133,44,0.08),0_12px_24px_rgba(84,8,8,0.18)]'
+                      : 'border-transparent bg-transparent hover:border-[rgba(185,133,44,0.12)] hover:bg-[rgba(255,255,255,0.02)]',
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'absolute inset-y-3 left-0 w-[2px] rounded-full transition-opacity',
+                      item.active
+                        ? 'bg-[#7d1310] opacity-100 shadow-[0_0_10px_rgba(153,24,19,0.6)]'
+                        : 'opacity-0',
+                    )}
+                  />
+                  <span
+                    className={clsx(
+                      'block text-[13px] font-medium uppercase tracking-[0.18em]',
+                      item.active ? 'text-[#cfae73]' : 'text-[#836d4c] group-hover:text-[#b89862]',
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  <span className='mt-1 block text-[11px] text-[#746451]'>{item.description}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className='mt-auto pt-8'>
+              <div className='mb-5 h-px bg-[linear-gradient(90deg,transparent,rgba(185,133,44,0.3),transparent)]' />
+              <p className='text-[11px] uppercase tracking-[0.26em] text-[#8d7450]'>
+                {_('Collection Stats')}
+              </p>
+              <dl className='mt-5 space-y-4'>
+                <div className='flex items-end justify-between gap-4'>
+                  <dt className='text-xs uppercase tracking-[0.12em] text-[#72614d]'>
+                    {_('Books')}
+                  </dt>
+                  <dd className='text-lg text-[#d7bd8d]'>{collectionStats.books}</dd>
+                </div>
+                <div className='flex items-end justify-between gap-4'>
+                  <dt className='text-xs uppercase tracking-[0.12em] text-[#72614d]'>
+                    {_('Series')}
+                  </dt>
+                  <dd className='text-lg text-[#d7bd8d]'>{collectionStats.series}</dd>
+                </div>
+                <div className='flex items-end justify-between gap-4'>
+                  <dt className='text-xs uppercase tracking-[0.12em] text-[#72614d]'>
+                    {_('Authors')}
+                  </dt>
+                  <dd className='text-lg text-[#d7bd8d]'>{collectionStats.authors}</dd>
+                </div>
+                <div className='flex items-end justify-between gap-4'>
+                  <dt className='text-xs uppercase tracking-[0.12em] text-[#72614d]'>
+                    {_('Pages Read')}
+                  </dt>
+                  <dd className='text-lg text-[#d7bd8d]'>
+                    {collectionStats.pagesRead.toLocaleString()}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </aside>
+
+        <section className='relative flex min-h-0 flex-1'>
+          <div
+            aria-hidden='true'
+            className='pointer-events-none absolute inset-x-[9%] inset-y-[6%] rounded-[42px] blur-[58px]'
+            style={{
+              background:
+                'radial-gradient(circle at 50% 28%, rgba(151, 18, 15, 0.2) 0%, rgba(86, 10, 9, 0.12) 28%, transparent 66%)',
+            }}
+          />
+          <div className='relative flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-[34px] border border-[rgba(185,133,44,0.24)] bg-[linear-gradient(180deg,rgba(16,14,14,0.94)_0%,rgba(9,9,9,0.92)_100%)] shadow-[0_24px_70px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,223,168,0.04)]'>
+            <div className='border-b border-[rgba(185,133,44,0.14)] px-6 pb-4 pt-5 sm:px-8 sm:pb-5 sm:pt-6'>
+              <div className='flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between'>
+                <div className='min-w-0'>
+                  <p
+                    className='text-[clamp(2rem,3vw,2.8rem)] uppercase leading-none tracking-[0.16em] text-[#d4b57b]'
+                    style={{ fontFamily: 'Georgia, Palatino, "Palatino Linotype", serif' }}
+                  >
+                    {_('Citadel Library')}
+                  </p>
+                  <div className='mt-3 flex items-center gap-3'>
+                    <span className='h-px w-16 bg-[rgba(185,133,44,0.4)]' />
+                    <span className='h-1.5 w-1.5 rounded-full bg-[#9b6a1e]' />
+                    <span className='h-px w-16 bg-[rgba(185,133,44,0.4)]' />
+                  </div>
+                  <p className='mt-3 max-w-2xl text-sm text-[#a3937d]'>{panelSubtitle}</p>
+                </div>
+
+                <div className='flex flex-col items-start gap-4 xl:items-end'>
+                  <div className='flex flex-wrap items-center gap-3 text-sm'>
+                    <span className='uppercase tracking-[0.16em] text-[#7d6b54]'>
+                      {_('Sort by')}:
+                    </span>
+                    <span className='rounded-full border border-[rgba(185,133,44,0.18)] bg-[rgba(255,255,255,0.02)] px-3 py-1 text-[#d2b57d]'>
+                      {activeSortLabel}
+                    </span>
+                    <span className='text-xs uppercase tracking-[0.16em] text-[#74634f]'>
+                      {currentSortOrder === 'asc' ? _('Ascending') : _('Descending')}
+                    </span>
+                  </div>
+
+                  <div className='flex flex-wrap items-center gap-3'>
+                    <span className='rounded-full border border-[rgba(185,133,44,0.14)] bg-[rgba(255,255,255,0.02)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-[#b2915e]'>
+                      {activeCollectionLabel}
+                    </span>
+                    <div className='inline-flex rounded-full border border-[rgba(185,133,44,0.18)] bg-[rgba(0,0,0,0.24)] p-1'>
+                      {(
+                        [
+                          { label: _('Grid'), value: 'grid' },
+                          { label: _('List'), value: 'list' },
+                        ] as const
+                      ).map((option) => (
+                        <button
+                          key={option.value}
+                          type='button'
+                          onClick={() => updatePanelParams({ view: option.value })}
+                          className={clsx(
+                            'rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] transition-colors',
+                            currentViewMode === option.value
+                              ? 'bg-[rgba(185,133,44,0.16)] text-[#ddc592]'
+                              : 'text-[#846e4a] hover:text-[#c9ab77]',
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {currentGroupPath && (
+                <div className='mt-4 rounded-[18px] border border-[rgba(185,133,44,0.12)] bg-[rgba(255,255,255,0.02)] px-4 py-3'>
+                  <div className='flex flex-wrap items-center gap-y-1 text-sm text-[#927b58]'>
+                    <button
+                      onClick={() => handleNavigateToPath(undefined)}
+                      className='rounded-full px-2.5 py-1 transition-colors hover:bg-[rgba(185,133,44,0.08)] hover:text-[#dcc18a]'
+                    >
+                      {_('All')}
+                    </button>
+                    {getBreadcrumbs(currentGroupPath).map((crumb, index, array) => {
+                      const isLast = index === array.length - 1;
+                      return (
+                        <React.Fragment key={index}>
+                          <MdChevronRight size={iconSize} className='text-[#6f604d]' />
+                          {isLast ? (
+                            <span className='truncate rounded-full px-2.5 py-1 text-[#dcc18a]'>
+                              {crumb.name}
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleNavigateToPath(crumb.path)}
+                              className='truncate rounded-full px-2.5 py-1 transition-colors hover:bg-[rgba(185,133,44,0.08)] hover:text-[#dcc18a]'
+                            >
+                              {crumb.name}
+                            </button>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-            </p>
+            </div>
+
+            {currentSeriesAuthorGroup && (
+              <GroupHeader
+                groupBy={currentSeriesAuthorGroup.groupBy}
+                groupName={currentSeriesAuthorGroup.groupName}
+              />
+            )}
+
+            {showBookshelf &&
+              (visibleBooks.length > 0 ? (
+                <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-1 flex-col'>
+                  <div className='px-6 pb-2 pt-3 sm:px-8'>
+                    <p className='text-xs uppercase tracking-[0.16em] text-[#8d7450]'>
+                      {_('Your Collection')}
+                    </p>
+                    <p className='mt-1 text-sm text-[#968671]'>
+                      {_(
+                        'Everything you imported is arranged here in a calmer, more readable view.',
+                      )}
+                    </p>
+                  </div>
+                  <div
+                    ref={containerRef}
+                    className={clsx(
+                      'scroll-container drop-zone flex min-h-0 flex-1 flex-col px-1 pb-4',
+                      isDragging && 'drag-over',
+                    )}
+                  >
+                    <DropIndicator />
+                    <Bookshelf
+                      libraryBooks={libraryBooks}
+                      isSelectMode={isSelectMode}
+                      isSelectAll={isSelectAll}
+                      isSelectNone={isSelectNone}
+                      onScrollerRef={handleScrollerRef}
+                      handleImportBooks={handleImportBooksFromFiles}
+                      handleBookUpload={handleBookUpload}
+                      handleBookDownload={handleBookDownload}
+                      handleBookDelete={handleBookDelete('both')}
+                      handleSetSelectMode={handleSetSelectMode}
+                      handleShowDetailsBook={handleShowDetailsBook}
+                      handleLibraryNavigation={handleLibraryNavigation}
+                      booksTransferProgress={booksTransferProgress}
+                      handlePushLibrary={pushLibrary}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className='hero drop-zone flex min-h-0 flex-1 items-center justify-center px-6 py-10 sm:px-8'>
+                  <DropIndicator />
+                  <div className='hero-content text-center'>
+                    <div className='max-w-xl rounded-[30px] border border-[rgba(185,133,44,0.26)] bg-[linear-gradient(180deg,rgba(15,14,14,0.92)_0%,rgba(9,9,9,0.84)_100%)] px-8 py-10 shadow-[0_24px_70px_rgba(0,0,0,0.4)]'>
+                      <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#c39b56]'>
+                        {_('Citadel Library')}
+                      </p>
+                      <h1
+                        className='mt-4 text-3xl text-[#f1e8d9] sm:text-4xl'
+                        style={{ fontFamily: 'Georgia, Palatino, "Palatino Linotype", serif' }}
+                      >
+                        {_('A calm place for your books')}
+                      </h1>
+                      <p className='mx-auto mt-3 max-w-md text-sm text-[#93826c] sm:text-base'>
+                        {_(
+                          'Start your collection and keep your next read close. Import a few titles to make this space yours.',
+                        )}
+                      </p>
+                      <button
+                        className='mt-6 rounded-full border border-[rgba(185,133,44,0.4)] px-5 py-2 text-sm uppercase tracking-[0.14em] text-[#d6ba86] transition-colors hover:bg-[rgba(185,133,44,0.12)]'
+                        onClick={handleImportBooksFromFiles}
+                      >
+                        {_('Import Books')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
           </div>
         </section>
-      )}
-      {currentGroupPath && (
-        <div
-          className={`transition-all duration-300 ease-in-out ${
-            currentGroupPath ? 'opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className='flex flex-wrap items-center gap-y-1 px-4 text-base'>
-            <button
-              onClick={() => handleNavigateToPath(undefined)}
-              className='hover:bg-base-300 text-base-content/85 rounded px-2 py-1'
-            >
-              {_('All')}
-            </button>
-            {getBreadcrumbs(currentGroupPath).map((crumb, index, array) => {
-              const isLast = index === array.length - 1;
-              return (
-                <React.Fragment key={index}>
-                  <MdChevronRight size={iconSize} className='text-neutral-content' />
-                  {isLast ? (
-                    <span className='truncate rounded px-2 py-1'>{crumb.name}</span>
-                  ) : (
-                    <button
-                      onClick={() => handleNavigateToPath(crumb.path)}
-                      className='hover:bg-base-300 text-base-content/85 truncate rounded px-2 py-1'
-                    >
-                      {crumb.name}
-                    </button>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {currentSeriesAuthorGroup && (
-        <GroupHeader
-          groupBy={currentSeriesAuthorGroup.groupBy}
-          groupName={currentSeriesAuthorGroup.groupName}
-        />
-      )}
-      {showBookshelf &&
-        (libraryBooks.some((book) => !book.deletedAt) ? (
-          <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col pt-2'>
-            <div className='px-4 pb-2 pt-1 sm:px-6'>
-              <p className='text-xs font-medium tracking-wide text-[var(--citadel-text-muted)]'>
-                {_('Your Collection')}
-              </p>
-              <p className='text-base-content/55 mt-1 text-xs'>
-                {_('Everything you imported is here when you want to explore more.')}
-              </p>
-            </div>
-            <div
-              ref={containerRef}
-              className={clsx(
-                'scroll-container drop-zone flex min-h-0 flex-grow flex-col',
-                isDragging && 'drag-over',
-              )}
-              style={{
-                paddingRight: `${insets.right}px`,
-                paddingLeft: `${insets.left}px`,
-              }}
-            >
-              <DropIndicator />
-              <Bookshelf
-                libraryBooks={libraryBooks}
-                isSelectMode={isSelectMode}
-                isSelectAll={isSelectAll}
-                isSelectNone={isSelectNone}
-                onScrollerRef={handleScrollerRef}
-                handleImportBooks={handleImportBooksFromFiles}
-                handleBookUpload={handleBookUpload}
-                handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete('both')}
-                handleSetSelectMode={handleSetSelectMode}
-                handleShowDetailsBook={handleShowDetailsBook}
-                handleLibraryNavigation={handleLibraryNavigation}
-                booksTransferProgress={booksTransferProgress}
-                handlePushLibrary={pushLibrary}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className='hero drop-zone h-screen items-center justify-center px-4'>
-            <DropIndicator />
-            <div className='hero-content text-center'>
-              <div className='max-w-xl rounded-3xl border border-[var(--citadel-line-gold)] bg-[color-mix(in_srgb,var(--citadel-bg-dark)_70%,theme(colors.base-100)_30%)] px-8 py-10 shadow-[var(--citadel-shadow-panel)]'>
-                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[var(--citadel-gold)]'>
-                  {_('Citadel Library')}
-                </p>
-                <h1 className='text-base-100 mt-3 text-3xl font-semibold sm:text-4xl'>
-                  {_('A calm place for your books')}
-                </h1>
-                <p className='mx-auto mt-3 max-w-md text-sm text-[var(--citadel-text-muted)] sm:text-base'>
-                  {_(
-                    'Start your collection and keep your next read close. Import a few titles to make this space yours.',
-                  )}
-                </p>
-                <button
-                  className='btn btn-primary mt-6 rounded-xl border-[var(--citadel-line-gold)] bg-transparent text-[var(--citadel-gold)] hover:bg-[color-mix(in_srgb,var(--citadel-gold)_16%,transparent)]'
-                  onClick={handleImportBooksFromFiles}
-                >
-                  {_('Import Books')}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+      </div>
       {showDetailsBook && (
         <BookDetailModal
           isOpen={!!showDetailsBook}
