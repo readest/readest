@@ -123,7 +123,7 @@ export function CatalogManager() {
     if (isWebCatalogProxyWarningRequired && !newCatalog.proxyConsent) {
       setProxyConsentError(
         _(
-          'Please confirm that this OPDS connection will be proxied through Readest servers on the web app before continuing.',
+          'Please confirm that this OPDS connection will be proxied through Citadel servers on the web app before continuing.',
         ),
       );
       return;
@@ -510,7 +510,7 @@ export function CatalogManager() {
                       />
                       <span className='label-text text-sm leading-6'>
                         {_(
-                          'I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.',
+                          'I understand this OPDS connection will be proxied through Citadel servers on the web app. If I do not trust Citadel with these credentials or headers, I should use the native app instead.',
                         )}
                       </span>
                     </label>

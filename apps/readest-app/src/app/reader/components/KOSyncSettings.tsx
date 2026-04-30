@@ -101,7 +101,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
   }, [appService]);
 
   useEffect(() => {
-    const defaultName = osName ? `Readest (${osName})` : 'Readest';
+    const defaultName = osName ? `Citadel (${osName})` : 'Citadel';
     setDeviceName(settings.kosync.deviceName || defaultName);
   }, [settings.kosync.deviceName, osName]);
 
@@ -270,7 +270,7 @@ export const KOSyncSettingsWindow: React.FC = () => {
                 </label>
                 <input
                   type='text'
-                  placeholder={osName ? `Readest (${osName})` : 'Readest'}
+                  placeholder={osName ? `Citadel (${osName})` : 'Citadel'}
                   className='input input-bordered h-12 w-full focus:outline-none focus:ring-0'
                   value={deviceName}
                   onChange={handleDeviceNameChange}
