@@ -146,7 +146,7 @@ const OpenAnnotationLanding = () => {
   // Invalid link — missing book or note identifier.
   if (!bookHash || !noteId) {
     return (
-      <main className='bg-base-200 flex min-h-screen flex-col items-center justify-center p-4 sm:p-8'>
+      <main className='bg-base-200 flex min-h-dvh flex-col items-center justify-center p-4 sm:p-8'>
         <Card>
           <div className='flex flex-col items-center text-center'>
             <div className='bg-base-200 mb-4 flex h-16 w-16 items-center justify-center rounded-2xl'>
@@ -174,7 +174,7 @@ const OpenAnnotationLanding = () => {
   const webReaderHref = buildWebReaderUrl(bookHash, cfi);
 
   return (
-    <main className='bg-base-200 flex min-h-screen flex-col items-center justify-center p-4 sm:p-8'>
+    <main className='bg-base-200 flex min-h-dvh flex-col items-center justify-center p-4 sm:p-8'>
       <Card>
         <BrandHeader
           title={_('Open in Readest')}

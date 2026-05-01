@@ -4,5 +4,16 @@
   <dict>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>com.bilingify.readest</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>readest</string>
+        </array>
+      </dict>
+    </array>
   </dict>
 </plist>
