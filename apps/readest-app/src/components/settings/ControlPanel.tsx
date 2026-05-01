@@ -49,6 +49,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
+  const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
   const resetToDefaults = useResetViewSettings();
@@ -187,6 +188,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveSysSettings(envConfig, 'autoScreenBrightness', autoScreenBrightness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoScreenBrightness]);
+
+  useEffect(() => {
+    if (screenWakeLock === settings.screenWakeLock) return;
+    saveSysSettings(envConfig, 'screenWakeLock', screenWakeLock);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenWakeLock]);
 
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
@@ -411,49 +418,56 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         </div>
       </div>
 
-      {(appService?.isMobileApp || appService?.appPlatform === 'web') && (
-        <div className='w-full' data-setting-id='settings.control.einkMode'>
-          <h2 className='mb-2 font-medium'>{_('Device')}</h2>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200 divide-y'>
-              {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-                <div className='config-item'>
-                  <span className=''>{_('E-Ink Mode')}</span>
-                  <input
-                    type='checkbox'
-                    className='toggle'
-                    checked={isEink}
-                    onChange={() => setIsEink(!isEink)}
-                  />
-                </div>
-              )}
-              {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-                <div className='config-item' data-setting-id='settings.control.colorEinkMode'>
-                  <span className=''>{_('Color E-Ink Mode')}</span>
-                  <input
-                    type='checkbox'
-                    className='toggle'
-                    disabled={!isEink}
-                    checked={isColorEink}
-                    onChange={() => setIsColorEink(!isColorEink)}
-                  />
-                </div>
-              )}
-              {appService?.isMobileApp && (
-                <div className='config-item'>
-                  <span className=''>{_('System Screen Brightness')}</span>
-                  <input
-                    type='checkbox'
-                    className='toggle'
-                    checked={autoScreenBrightness}
-                    onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
-                  />
-                </div>
-              )}
+      <div className='w-full' data-setting-id='settings.control.device'>
+        <h2 className='mb-2 font-medium'>{_('Device')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
+              <div className='config-item' data-setting-id='settings.control.einkMode'>
+                <span className=''>{_('E-Ink Mode')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={isEink}
+                  onChange={() => setIsEink(!isEink)}
+                />
+              </div>
+            )}
+            {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
+              <div className='config-item' data-setting-id='settings.control.colorEinkMode'>
+                <span className=''>{_('Color E-Ink Mode')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  disabled={!isEink}
+                  checked={isColorEink}
+                  onChange={() => setIsColorEink(!isColorEink)}
+                />
+              </div>
+            )}
+            {appService?.isMobileApp && (
+              <div className='config-item'>
+                <span className=''>{_('System Screen Brightness')}</span>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={autoScreenBrightness}
+                  onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
+                />
+              </div>
+            )}
+            <div className='config-item' data-setting-id='settings.control.screenWakeLock'>
+              <span className=''>{_('Keep Screen Awake')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={screenWakeLock}
+                onChange={() => setScreenWakeLock(!screenWakeLock)}
+              />
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <div className='w-full' data-setting-id='settings.control.allowJavascript'>
         <h2 className='mb-2 font-medium'>{_('Security')}</h2>
