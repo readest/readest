@@ -308,12 +308,15 @@ export const useKOSync = (bookKey: string) => {
   // Push: auto-push progress when progress changes with a debounce
   useEffect(() => {
     if (syncState === 'synced' && progress) {
+      // Skip auto-pushes while previewing a deep-link target. Manual pushes
+      // via the 'push-kosync' event are still respected (explicit user intent).
+      if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       const { strategy, enabled } = settings.kosync;
       if (strategy !== 'receive' && enabled) {
         syncRefs.current.pushProgress();
       }
     }
-  }, [progress, syncState, settings.kosync]);
+  }, [progress, syncState, settings.kosync, bookKey]);
 
   useWindowActiveChanged((isActive) => {
     const { pushProgress, pullProgress } = syncRefs.current;

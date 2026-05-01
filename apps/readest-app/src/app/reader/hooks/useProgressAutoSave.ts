@@ -15,6 +15,9 @@ export const useProgressAutoSave = (bookKey: string) => {
   const saveBookConfig = useCallback(
     debounce(() => {
       setTimeout(async () => {
+        // Skip while previewing a deep-link target — the user's actual
+        // last-read position should not be overwritten by a transient view.
+        if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
         const config = getConfig(bookKey);
         if (!config) return;
         const settings = useSettingsStore.getState().settings;

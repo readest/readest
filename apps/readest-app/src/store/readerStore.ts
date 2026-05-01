@@ -41,7 +41,13 @@ interface ViewState {
   ttsEnabled: boolean;
   syncing: boolean;
   gridInsets: Insets | null;
-  /* View settings for the view: 
+  /* True while the reader is showing a position requested by an external
+     deep link (e.g. ?cfi=...) that the user hasn't yet confirmed by reading.
+     Progress writers (auto-save, cloud sync, kosync) skip while this is true
+     so the user's actual last-read position isn't overwritten by a preview.
+     Cleared on the first user-initiated relocate (page turn / scroll). */
+  previewMode: boolean;
+  /* View settings for the view:
     generally view settings have a hierarchy of global settings < book settings < view settings
     view settings for primary view are saved to book config which is persisted to config file
     omitting settings that are not changed from global settings */
@@ -87,6 +93,7 @@ interface ReaderStore {
   getGridInsets: (key: string) => Insets | null;
   setGridInsets: (key: string, insets: Insets | null) => void;
   setViewInited: (key: string, inited: boolean) => void;
+  setPreviewMode: (key: string, previewMode: boolean) => void;
   recreateViewer: (envConfig: EnvConfigType, key: string) => void;
 }
 
@@ -145,6 +152,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ttsEnabled: false,
           syncing: false,
           gridInsets: null,
+          previewMode: false,
           viewSettings: null,
         },
       },
@@ -274,6 +282,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             syncing: false,
             gridInsets: null,
+            previewMode: false,
             viewSettings: { ...globalViewSettings, ...configViewSettings },
           },
         },
@@ -297,6 +306,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             syncing: false,
             gridInsets: null,
+            previewMode: false,
             viewSettings: null,
           },
         },
@@ -472,6 +482,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           inited,
+        },
+      },
+    })),
+
+  setPreviewMode: (key: string, previewMode: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          previewMode,
         },
       },
     })),
