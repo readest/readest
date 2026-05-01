@@ -93,7 +93,8 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   }, []);
 
   const classes = clsx(
-    'footerbar-font-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    'footerbar-font-mobile not-eink:bg-base-200 eink:bg-base-100 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    'eink:border-base-content eink:border-t',
     !forceMobileLayout && 'sm:hidden',
     actionTab === 'font'
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'

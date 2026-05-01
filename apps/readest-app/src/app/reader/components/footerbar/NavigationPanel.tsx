@@ -58,7 +58,8 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   );
 
   const classes = clsx(
-    'footerbar-progress-mobile bg-base-200 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    'footerbar-progress-mobile not-eink:bg-base-200 eink:bg-base-100 absolute flex w-full flex-col items-center gap-y-8 px-4 transition-all',
+    'eink:border-base-content eink:border-t',
     !forceMobileLayout && 'sm:hidden',
     actionTab === 'progress'
       ? 'pointer-events-auto translate-y-0 pb-4 pt-8 ease-out'
