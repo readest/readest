@@ -240,6 +240,43 @@ describe('rsvp/utils', () => {
       const words = splitTextIntoWords('你好 世界');
       expect(words.length).toBeGreaterThan(0);
     });
+
+    test('splits on em-dash without surrounding spaces', () => {
+      expect(splitTextIntoWords('alpha—beta')).toEqual(['alpha—', 'beta']);
+    });
+
+    test('splits on en-dash without surrounding spaces', () => {
+      expect(splitTextIntoWords('alpha–beta')).toEqual(['alpha–', 'beta']);
+    });
+
+    test('attaches em-dash with surrounding spaces to preceding word', () => {
+      expect(splitTextIntoWords('alpha — beta')).toEqual(['alpha', '—', 'beta']);
+    });
+
+    test('splits multiple em-dashes in a single token', () => {
+      expect(splitTextIntoWords('one—two—three')).toEqual(['one—', 'two—', 'three']);
+    });
+
+    test('splits sentence with em-dash inside compound word', () => {
+      expect(splitTextIntoWords('It was the best—of all possible—worlds.')).toEqual([
+        'It',
+        'was',
+        'the',
+        'best—',
+        'of',
+        'all',
+        'possible—',
+        'worlds.',
+      ]);
+    });
+
+    test('preserves trailing em-dash attached to its word', () => {
+      expect(splitTextIntoWords('cliffhanger—')).toEqual(['cliffhanger—']);
+    });
+
+    test('preserves leading em-dash as its own token', () => {
+      expect(splitTextIntoWords('—continued')).toEqual(['—', 'continued']);
+    });
   });
 
   describe('getHyphenParts', () => {

@@ -865,7 +865,7 @@ export class RSVPController extends EventTarget {
     const baseMs = 60000 / wpm;
     let duration = baseMs * word.pauseMultiplier;
 
-    if (/[.!?,;:]$/.test(word.text)) {
+    if (/[.!?,;:–—]$/.test(word.text)) {
       duration += this.state.punctuationPauseMs;
     }
 

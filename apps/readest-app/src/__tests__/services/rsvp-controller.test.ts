@@ -299,6 +299,28 @@ describe('RSVPController', () => {
     });
   });
 
+  describe('em-dash and en-dash splitting', () => {
+    test('splits compound word joined by em-dash into separate words', () => {
+      const doc = makeDoc('best—of all possible—worlds');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words.map((w) => w.text);
+      expect(words).toEqual(['best—', 'of', 'all', 'possible—', 'worlds']);
+    });
+
+    test('splits compound word joined by en-dash into separate words', () => {
+      const doc = makeDoc('pages 10–15 covered');
+      const view = createMockView(0, [doc]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const words = controller.currentState.words.map((w) => w.text);
+      expect(words).toEqual(['pages', '10–', '15', 'covered']);
+    });
+  });
+
   describe('duplicate word blank insertion', () => {
     test('inserts blank between two consecutive identical words', () => {
       const doc = makeDoc('the the cat');
