@@ -1224,5 +1224,18 @@
   "Select all the bundle files together when importing.": "เลือกไฟล์ทั้งหมดของบันเดิลพร้อมกันเมื่อทำการนำเข้า",
   "Manage Dictionaries": "จัดการพจนานุกรม",
   "Select Dictionary Files": "เลือกไฟล์พจนานุกรม",
-  "Read on Wikipedia →": "อ่านบนวิกิพีเดีย →"
+  "Read on Wikipedia →": "อ่านบนวิกิพีเดีย →",
+  "This link can't be opened": "__STRING_NOT_TRANSLATED__",
+  "The annotation link is missing required information. The original link may have been truncated.": "__STRING_NOT_TRANSLATED__",
+  "Go to Readest": "__STRING_NOT_TRANSLATED__",
+  "Open-source ebook reader for everyone, on every device.": "__STRING_NOT_TRANSLATED__",
+  "Open in Readest": "__STRING_NOT_TRANSLATED__",
+  "If Readest didn't open automatically, choose an option below:": "__STRING_NOT_TRANSLATED__",
+  "Continue reading where you left off.": "__STRING_NOT_TRANSLATED__",
+  "Readest logo": "__STRING_NOT_TRANSLATED__",
+  "Opening Readest...": "__STRING_NOT_TRANSLATED__",
+  "Open in Readest app": "__STRING_NOT_TRANSLATED__",
+  "Continue in browser": "__STRING_NOT_TRANSLATED__",
+  "Don't have Readest?": "__STRING_NOT_TRANSLATED__",
+  "Book not in your library": "__STRING_NOT_TRANSLATED__"
 }

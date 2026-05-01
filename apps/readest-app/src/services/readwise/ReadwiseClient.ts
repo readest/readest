@@ -1,6 +1,7 @@
 import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
+import { buildAnnotationWebUrl } from '@/utils/deeplink';
 
 const READEST_TO_READWISE_COLOR: Record<HighlightColor, string> = {
   red: 'pink',
@@ -64,7 +65,11 @@ export class ReadwiseClient {
       location: note.page,
       location_type: 'page',
       highlighted_at: new Date(note.createdAt).toISOString(),
-      highlight_url: `readest://annotation/${book.hash}/${note.id}`,
+      highlight_url: buildAnnotationWebUrl({
+        bookHash: book.hash,
+        noteId: note.id,
+        cfi: note.cfi,
+      }),
       color: note.color ? (READEST_TO_READWISE_COLOR[note.color] ?? 'yellow') : 'yellow',
     }));
 

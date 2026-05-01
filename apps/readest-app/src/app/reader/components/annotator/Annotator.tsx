@@ -1028,6 +1028,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <ExportMarkdownDialog
           bookKey={bookKey}
           isOpen={showExportDialog}
+          bookHash={bookData.book.hash}
           bookTitle={bookData.book.title}
           bookAuthor={bookData.book.author || ''}
           booknotes={exportData.booknotes}

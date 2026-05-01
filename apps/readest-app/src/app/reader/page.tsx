@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
+import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { tauriHandleSetAlwaysOnTop } from '@/utils/window';
@@ -16,6 +17,7 @@ export default function Page() {
   const { settings } = useSettingsStore();
 
   useOpenWithBooks();
+  useOpenAnnotationLink();
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {

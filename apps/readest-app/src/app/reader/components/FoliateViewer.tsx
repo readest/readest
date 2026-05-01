@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
+import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookConfig, PageInfo } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
@@ -86,6 +88,7 @@ const FoliateViewer: React.FC<{
   contentInsets: Insets;
 }> = ({ bookKey, bookDoc, config, gridInsets, contentInsets: insets }) => {
   const _ = useTranslation();
+  const searchParams = useSearchParams();
   const { appService, envConfig } = useEnv();
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
@@ -581,7 +584,18 @@ const FoliateViewer: React.FC<{
       }
       applyMarginAndGap();
 
-      const lastLocation = config.location;
+      // If the URL carries ?cfi=... (e.g. opened from a deep link / annotation
+      // export link), use it as the initial location instead of the saved one.
+      // Only applies to the primary book — first id in the route's `ids` —
+      // so parallel views don't all jump to the same CFI.
+      const cfiParam = searchParams?.get('cfi');
+      const idsParam =
+        searchParams?.get('ids') ?? window.location.pathname.split('/reader/')[1] ?? '';
+      const primaryId = idsParam.split(BOOK_IDS_SEPARATOR).filter(Boolean)[0];
+      const thisId = bookKey.split('-')[0];
+      const overrideLocation = cfiParam && primaryId === thisId ? cfiParam : null;
+
+      const lastLocation = overrideLocation ?? config.location;
       if (lastLocation) {
         await view.init({ lastLocation });
       } else {
