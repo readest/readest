@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
@@ -11,7 +11,11 @@ import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
+import {
+  annotationToolButtons,
+  annotationToolQuickActions,
+} from '@/app/reader/components/annotator/AnnotationTools';
+import { AnnotationToolType } from '@/types/annotator';
 import NumberInput from './NumberInput';
 import Select from '../Select';
 
@@ -44,6 +48,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [annotationQuickAction, setAnnotationQuickAction] = useState(
     viewSettings.annotationQuickAction,
   );
+  const [annotationToolbarButtons, setAnnotationToolbarButtons] = useState(
+    viewSettings.annotationToolbarButtons,
+  );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [animated, setAnimated] = useState(viewSettings.animated);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
@@ -69,6 +76,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       fullscreenClickArea: setFullscreenClickArea,
       disableDoubleClick: setIsDisableDoubleClick,
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
+      annotationToolbarButtons: setAnnotationToolbarButtons,
       copyToNotebook: setCopyToNotebook,
     });
   };
@@ -213,6 +221,23 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
 
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'annotationToolbarButtons',
+      annotationToolbarButtons,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [annotationToolbarButtons]);
+
+  const annotationToolbarButtonSet = useMemo(
+    () => new Set(annotationToolbarButtons),
+    [annotationToolbarButtons],
+  );
+
   const getQuickActionOptions = () => {
     return [
       {
@@ -230,6 +255,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     const action = event.target.value as typeof annotationQuickAction;
     setAnnotationQuickAction(action);
     saveViewSettings(envConfig, bookKey, 'annotationQuickAction', action, false, true);
+  };
+
+  const handleToggleAnnotationToolbarButton = (button: AnnotationToolType) => {
+    if (annotationToolbarButtonSet.has(button)) {
+      if (annotationToolbarButtons.length <= 1) return;
+      setAnnotationToolbarButtons(annotationToolbarButtons.filter((item) => item !== button));
+    } else {
+      const orderedButtons = annotationToolButtons
+        .map((item) => item.type)
+        .filter((item) => item === button || annotationToolbarButtonSet.has(item));
+      setAnnotationToolbarButtons(orderedButtons);
+    }
   };
 
   return (
@@ -380,6 +417,29 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 options={getQuickActionOptions()}
                 disabled={!enableAnnotationQuickActions}
               />
+            </div>
+            <div
+              className='config-item !h-auto flex-col !items-start gap-3 py-3'
+              data-setting-id='settings.control.annotationToolbarButtons'
+            >
+              <span className=''>{_('Toolbar Buttons')}</span>
+              <div className='grid w-full grid-cols-2 gap-2 sm:grid-cols-3'>
+                {annotationToolButtons.map((button) => (
+                  <label key={button.type} className='flex items-center gap-2 text-sm'>
+                    <input
+                      type='checkbox'
+                      className='checkbox checkbox-sm'
+                      checked={annotationToolbarButtonSet.has(button.type)}
+                      disabled={
+                        annotationToolbarButtonSet.has(button.type) &&
+                        annotationToolbarButtons.length <= 1
+                      }
+                      onChange={() => handleToggleAnnotationToolbarButton(button.type)}
+                    />
+                    <span>{_(button.label)}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div className='config-item' data-setting-id='settings.control.copyToNotebook'>
               <span className=''>{_('Copy to Notebook')}</span>

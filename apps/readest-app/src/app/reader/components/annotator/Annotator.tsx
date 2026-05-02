@@ -33,6 +33,7 @@ import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
+import { DEFAULT_ANNOTATION_TOOL_TYPES } from '@/types/annotator';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -116,7 +117,21 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
-  const annotPopupWidth = Math.min(useResponsiveSize(annotationToolButtons.length * 36), maxWidth);
+  const enabledAnnotationToolTypes = viewSettings.annotationToolbarButtons?.length
+    ? viewSettings.annotationToolbarButtons
+    : DEFAULT_ANNOTATION_TOOL_TYPES;
+  const enabledAnnotationToolTypeSet = useMemo(
+    () => new Set(enabledAnnotationToolTypes),
+    [enabledAnnotationToolTypes],
+  );
+  const visibleAnnotationToolButtons = useMemo(
+    () => annotationToolButtons.filter((button) => enabledAnnotationToolTypeSet.has(button.type)),
+    [enabledAnnotationToolTypeSet],
+  );
+  const annotPopupWidth = Math.min(
+    useResponsiveSize(Math.max(visibleAnnotationToolButtons.length, 1) * 36),
+    maxWidth,
+  );
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -916,7 +931,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   const selectionAnnotated = selection?.annotated;
-  const toolButtons = annotationToolButtons.map(({ type, label, Icon }) => {
+  const toolButtons = visibleAnnotationToolButtons.map(({ type, label, Icon }) => {
     switch (type) {
       case 'copy':
         return { tooltipText: _(label), Icon, onClick: handleCopy };

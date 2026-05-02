@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import { PiCaretDown, PiCaretUp, PiChatCircle, PiPaperPlaneRight } from 'react-icons/pi';
 
 import Popup from '@/components/Popup';
@@ -75,6 +77,39 @@ const InsightItem: React.FC<{
   );
 };
 
+const hasMarkdownFeatures = (text: string) => {
+  return (
+    /(^|\n)\s{0,3}#{1,6}\s+\S/.test(text) ||
+    /(^|\n)\s{0,3}([-*+]|\d+\.)\s+\S/.test(text) ||
+    /(^|\n)\s{0,3}>\s+\S/.test(text) ||
+    /```[\s\S]*```/.test(text) ||
+    /`[^`\n]+`/.test(text) ||
+    /\*\*[^*\n]+\*\*/.test(text) ||
+    /__[^_\n]+__/.test(text) ||
+    /\[[^\]\n]+\]\([^)]+\)/.test(text) ||
+    /(^|\n)\|.+\|/.test(text)
+  );
+};
+
+const FollowUpAnswer: React.FC<{ answer: string }> = ({ answer }) => {
+  const shouldRenderMarkdown = hasMarkdownFeatures(answer);
+  const html = useMemo(() => {
+    if (!shouldRenderMarkdown) return '';
+    return DOMPurify.sanitize(marked.parse(answer) as string);
+  }, [answer, shouldRenderMarkdown]);
+
+  if (shouldRenderMarkdown) {
+    return (
+      <div
+        className='prose prose-xs text-base-content [&_*]:!text-base-content [&_a]:!text-primary [&_code]:bg-base-300 max-w-none select-text text-xs leading-relaxed [&_code]:rounded [&_code]:px-1'
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  return <p className='whitespace-pre-wrap'>{answer}</p>;
+};
+
 interface InlineInsightFollowUpPanelProps {
   question: string;
   answer: string;
@@ -96,12 +131,21 @@ const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
 }) => {
   return (
     <form
-      className='border-base-content/10 flex flex-shrink-0 flex-col gap-1.5 border-t pt-2'
+      className='border-base-content/10 bg-base-200/50 flex flex-shrink-0 flex-col gap-2 rounded-lg border p-2'
       onSubmit={onSubmit}
     >
+      <div className='flex items-center justify-between gap-2'>
+        <div className='text-base-content/70 flex items-center gap-1 text-[11px] font-medium'>
+          <PiChatCircle className='size-3.5' />
+          {translate('Follow-up')}
+        </div>
+        {loading && (
+          <span className='text-base-content/50 text-[10px]'>{translate('Thinking...')}</span>
+        )}
+      </div>
       <div className='flex items-center gap-1.5'>
         <input
-          className='input input-bordered input-sm h-8 min-h-0 flex-1 text-xs'
+          className='input input-bordered input-sm bg-base-100/60 focus:bg-base-100 h-8 min-h-0 flex-1 text-xs'
           value={question}
           placeholder={translate('Ask a follow-up...')}
           onChange={(event) => onQuestionChange(event.target.value)}
@@ -115,11 +159,11 @@ const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
         </button>
       </div>
       {(loading || answer || error) && (
-        <div className='bg-base-100 border-base-content/10 max-h-20 overflow-y-auto rounded border p-1.5 text-xs leading-relaxed'>
+        <div className='border-base-content/10 bg-base-300/55 max-h-32 overflow-y-auto rounded-md border px-2 py-1.5 text-xs leading-relaxed shadow-inner'>
           {error ? (
             <p className='text-error'>{error}</p>
           ) : answer ? (
-            <p className='whitespace-pre-wrap'>{answer}</p>
+            <FollowUpAnswer answer={answer} />
           ) : (
             <div className='flex items-center gap-2'>
               <div className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />

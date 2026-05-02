@@ -1,12 +1,10 @@
-import { Dispatch, SetStateAction } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { ViewSettings } from '@/types/book';
 
 type SetterKey = keyof ViewSettings;
-type SetterValue = SetStateAction<string> & SetStateAction<number> & SetStateAction<boolean>;
 
 type StateSetters = Partial<{
-  [Key in SetterKey]: Dispatch<SetterValue>;
+  [Key in SetterKey]: (value: ViewSettings[Key]) => void;
 }>;
 
 export const useResetViewSettings = () => {
@@ -19,7 +17,7 @@ export const useResetViewSettings = () => {
     Object.entries(setters).forEach(([settingKey, setter]) => {
       const freshValue = defaultSettings[settingKey as SetterKey];
       if (freshValue !== undefined) {
-        setter(freshValue as SetterValue);
+        setter(freshValue as never);
       }
     });
   };

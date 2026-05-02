@@ -460,6 +460,12 @@ const controlPanelItems = [
     section: 'Annotation Tools',
   },
   {
+    id: 'settings.control.annotationToolbarButtons',
+    labelKey: _('Toolbar Buttons'),
+    keywords: ['toolbar', 'buttons', 'annotation', 'tools', 'hide', 'show', 'customize'],
+    section: 'Annotation Tools',
+  },
+  {
     id: 'settings.control.copyToNotebook',
     labelKey: _('Copy to Notebook'),
     keywords: ['copy', 'notebook', 'annotation', 'excerpt'],
@@ -704,11 +710,9 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     items.push(createSettingsItem(def, 'Language'));
   }
 
-  // add ai panel items (only in dev, as of now atleast)
-  if (process.env.NODE_ENV !== 'production') {
-    for (const def of aiPanelItems) {
-      items.push(createSettingsItem(def, 'AI'));
-    }
+  // add ai panel items
+  for (const def of aiPanelItems) {
+    items.push(createSettingsItem(def, 'AI'));
   }
 
   // add custom panel items
