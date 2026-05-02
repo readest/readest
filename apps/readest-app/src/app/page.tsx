@@ -8,7 +8,7 @@ import { FaSearch } from 'react-icons/fa';
 
 import WindowButtons from '@/components/WindowButtons';
 import AppTitleBar from '@/components/AppTitleBar';
-import BookCover from '@/components/BookCover';
+import BookObject from '@/components/BookObject';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -47,7 +47,7 @@ const isSupportedDroppedBookPath = (path: string) =>
   SUPPORTED_DROP_EXTENSIONS.has(getDroppedPathExtension(path));
 
 const FEATURED_FRAME_WINDOW_STYLE = {
-  left: '17.6%',
+  left: '13%',
   right: '6.2%',
   top: '7.2%',
   bottom: '6.5%',
@@ -545,10 +545,10 @@ export default function HomePage() {
       setActiveShelfTilt({
         hash,
         tilt: {
-          rotateX: offsetY * -6,
-          rotateY: offsetX * 8,
+          rotateX: offsetY * -4,
+          rotateY: offsetX * 6,
           translateY: -6,
-          scale: 1.01,
+          scale: 1.018,
         },
       });
     };
@@ -665,6 +665,28 @@ export default function HomePage() {
         }
       />
 
+      {/* ── Page-level ambient glow ──
+          Placed here (direct child of main) so it is NOT clipped by the
+          overflow-hidden on the hero section. The hero section clips its own
+          absolute children at its top boundary, cutting the glow at the
+          header edge. At z-0 inside main's stacking context (main has
+          isolate) this sits above the page background but below z-10 hero
+          content and z-20 titlebar. ── */}
+      {continueBook && (
+        <div
+          aria-hidden='true'
+          className='pointer-events-none absolute inset-0 z-0'
+          style={{
+            background: `
+              radial-gradient(ellipse 46% 68% at 80% 46%, rgba(152, 9, 5, 0.18) 0%, rgba(92, 5, 3, 0.09) 44%, rgba(44, 2, 1, 0.03) 70%, transparent 90%),
+              radial-gradient(ellipse 36% 54% at 80% 45%, rgba(208, 15, 10, 0.34) 0%, rgba(138, 9, 6, 0.16) 40%, rgba(64, 4, 3, 0.04) 66%, transparent 88%),
+              radial-gradient(ellipse 20% 32% at 81% 43%, rgba(248, 42, 20, 0.11) 0%, rgba(182, 16, 8, 0.03) 52%, transparent 82%)
+            `,
+            filter: 'blur(36px)',
+          }}
+        />
+      )}
+
       {/* ── Main canvas ── */}
       <div
         className='relative flex min-h-0 flex-1 flex-col overflow-hidden'
@@ -688,6 +710,14 @@ export default function HomePage() {
                 `,
                 mixBlendMode: 'soft-light',
                 opacity: 0.22,
+              }}
+            />
+            <div
+              aria-hidden='true'
+              className='pointer-events-none absolute inset-0'
+              style={{
+                background:
+                  'linear-gradient(100deg, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0.04) 34%, transparent 52%, rgba(16,3,2,0.05) 80%, transparent 100%)',
               }}
             />
             {continueBook ? (
@@ -731,23 +761,14 @@ export default function HomePage() {
                 <div className='relative mr-1 flex flex-shrink-0 items-center justify-center overflow-visible sm:mr-2 lg:mr-4 xl:mr-8'>
                   <div
                     aria-hidden='true'
-                    className='pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[145%] w-[165%] -translate-x-1/2 -translate-y-1/2'
+                    className='pointer-events-none absolute bottom-0 left-1/2 z-0 -translate-x-1/2 translate-y-[14px]'
                     style={{
+                      width: '82%',
+                      height: '28px',
+                      borderRadius: '50%',
                       background:
-                        'radial-gradient(ellipse 58% 64% at 50% 50%, rgba(255, 26, 18, 0.78) 0%, rgba(220, 18, 14, 0.56) 22%, rgba(142, 8, 9, 0.34) 44%, rgba(72, 4, 5, 0.16) 62%, transparent 82%)',
-                      filter: 'blur(42px)',
-                      opacity: 1,
-                    }}
-                  />
-                  <div
-                    aria-hidden='true'
-                    className='pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[136%] w-[154%] -translate-x-1/2 -translate-y-1/2'
-                    style={{
-                      background:
-                        'radial-gradient(ellipse 54% 60% at 50% 50%, rgba(255, 58, 34, 0.34) 0%, rgba(165, 14, 12, 0.16) 34%, transparent 70%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 120, 90, 0.10) 0px, rgba(255, 120, 90, 0.06) 1px, transparent 2px, transparent 8px)',
-                      filter: 'blur(10px)',
-                      mixBlendMode: 'screen',
-                      opacity: 0.55,
+                        'radial-gradient(ellipse at center, rgba(0,0,0,0.56) 0%, rgba(0,0,0,0.28) 42%, rgba(0,0,0,0.07) 70%, transparent 90%)',
+                      filter: 'blur(14px)',
                     }}
                   />
                   <button
@@ -765,8 +786,8 @@ export default function HomePage() {
                         ...featuredTiltStyle,
                         filter:
                           featuredTilt.translateY !== 0
-                            ? 'drop-shadow(0 42px 52px rgba(0,0,0,0.78)) drop-shadow(0 14px 24px rgba(0,0,0,0.5))'
-                            : 'drop-shadow(0 34px 42px rgba(0,0,0,0.72)) drop-shadow(0 10px 18px rgba(0,0,0,0.45))',
+                            ? 'drop-shadow(0 28px 46px rgba(0,0,0,0.80)) drop-shadow(0 58px 96px rgba(0,0,0,0.34))'
+                            : 'drop-shadow(0 20px 38px rgba(0,0,0,0.72)) drop-shadow(0 50px 84px rgba(0,0,0,0.28))',
                       }}
                     >
                       <div
@@ -831,21 +852,21 @@ export default function HomePage() {
                       />
 
                       <div
-                        className='pointer-events-none absolute inset-0 z-20 opacity-[0.82] mix-blend-multiply'
+                        className='pointer-events-none absolute inset-0 z-20 opacity-[0.92] mix-blend-multiply'
                         aria-hidden='true'
                         style={{
                           background:
-                            'linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.18) 15%, rgba(255,255,255,0.05) 45%, rgba(0,0,0,0.22) 78%, rgba(0,0,0,0.4) 100%)',
+                            'linear-gradient(90deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.24) 13%, rgba(255,255,255,0.03) 44%, rgba(0,0,0,0.28) 78%, rgba(0,0,0,0.56) 100%)',
                           ...FEATURED_FRAME_MASK_STYLE,
                         }}
                       />
 
                       <div
-                        className='pointer-events-none absolute inset-0 z-30 opacity-[0.46] mix-blend-multiply'
+                        className='pointer-events-none absolute inset-0 z-30 opacity-[0.62] mix-blend-multiply'
                         aria-hidden='true'
                         style={{
                           background:
-                            'radial-gradient(circle at 50% 44%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.2) 72%, rgba(0,0,0,0.46) 100%)',
+                            'radial-gradient(circle at 50% 44%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.26) 70%, rgba(0,0,0,0.54) 100%)',
                           ...FEATURED_FRAME_MASK_STYLE,
                         }}
                       />
@@ -856,10 +877,10 @@ export default function HomePage() {
                         fill
                         priority
                         draggable={false}
-                        className='pointer-events-none absolute inset-0 z-40 h-full w-full object-contain opacity-[0.34]'
+                        className='pointer-events-none absolute inset-0 z-40 h-full w-full object-contain opacity-[0.48]'
                         style={{
                           mixBlendMode: 'screen',
-                          filter: 'grayscale(1) contrast(1.32) brightness(0.82)',
+                          filter: 'grayscale(1) contrast(1.38) brightness(0.80)',
                         }}
                       />
                       <div
@@ -956,7 +977,7 @@ export default function HomePage() {
                         };
 
                         return (
-                          <div className='relative overflow-visible' style={shelfTiltStyle}>
+                          <div className='relative overflow-visible'>
                             <div
                               className='relative overflow-hidden rounded-[12px] border bg-[linear-gradient(180deg,rgba(18,18,20,0.96)_0%,rgba(12,12,14,0.92)_100%)] group-hover:border-[rgba(208,151,54,0.95)]'
                               style={{
@@ -967,14 +988,17 @@ export default function HomePage() {
                                   activeShelfTilt.hash === book.hash
                                     ? '0 16px 34px rgba(0,0,0,0.5), 0 0 0 1px rgba(227, 178, 48, 0.16)'
                                     : '0 10px 24px rgba(0,0,0,0.42), 0 0 0 1px rgba(227, 178, 48, 0.10)',
+                                ...shelfTiltStyle,
                               }}
                             >
                               {hasCoverImage(book) ? (
-                                <BookCover
+                                <BookObject
                                   book={book}
                                   mode='grid'
                                   coverFit='crop'
-                                  imageClassName='rounded-[10px]'
+                                  variant='library'
+                                  interactive={true}
+                                  coverClassName='rounded-[10px]'
                                   className='h-full w-full'
                                 />
                               ) : (

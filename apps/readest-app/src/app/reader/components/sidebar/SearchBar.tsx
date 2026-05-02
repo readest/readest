@@ -326,10 +326,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   );
 
   return (
-    <div className='relative flex flex-col gap-3 p-2'>
-      <div className='bg-base-100 flex h-8 items-center rounded-lg'>
+    <div className='relative flex flex-col gap-3 p-4'>
+      <div className='flex h-11 items-center rounded-[18px] border border-[#c9a45a]/30 bg-[linear-gradient(180deg,rgba(24,16,13,0.98),rgba(11,8,7,0.98))] shadow-[inset_0_1px_0_rgba(255,237,193,0.06),inset_0_0_0_1px_rgba(88,64,31,0.22),0_0_20px_rgba(112,22,18,0.08)]'>
         <div className='absolute ps-3'>
-          <FaSearch size={iconSize16} className='text-base-content/50' />
+          <FaSearch size={iconSize16} className='text-[#aa8a54]/72' />
         </div>
 
         <input
@@ -339,23 +339,23 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           spellCheck={false}
           onChange={handleInputChange}
           placeholder={_('Search...')}
-          className='search-input w-full bg-transparent p-2 pr-0 ps-10 font-sans text-sm font-light focus:outline-none'
+          className='search-input w-full bg-transparent p-2 pr-0 ps-10 font-sans text-sm font-light text-[#e3cfaa] placeholder:text-[#8f7447] focus:outline-none'
         />
 
         {searchTerm && (
           <button
             onClick={handleClearInput}
-            className='absolute end-10 flex h-8 w-8 items-center justify-center bg-transparent'
+            className='absolute end-11 flex h-8 w-8 items-center justify-center bg-transparent'
             aria-label={_('Clear search')}
           >
-            <IoMdCloseCircle size={iconSize16} className='text-base-content/75' />
+            <IoMdCloseCircle size={iconSize16} className='text-[#a88651]/78' />
           </button>
         )}
 
         <div
           className={clsx(
-            'absolute end-2 flex h-8 w-8 items-center rounded-r-lg',
-            viewSettings?.isEink ? 'bg-transparent' : 'bg-base-300',
+            'absolute end-1.5 flex h-9 w-9 items-center rounded-r-[16px]',
+            viewSettings?.isEink ? 'bg-transparent' : 'bg-[#2b1c17]',
           )}
         >
           <Dropdown
@@ -366,10 +366,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             )}
             menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : '!relative')}
             buttonClassName={clsx(
-              'btn btn-ghost h-8 min-h-8 w-8 p-0 rounded-none rounded-r-lg',
-              viewSettings?.isEink ? '!bg-transparent hover:!bg-transparent' : '',
+              'btn btn-ghost h-9 min-h-9 w-9 rounded-none rounded-r-[16px] p-0',
+              viewSettings?.isEink
+                ? '!bg-transparent hover:!bg-transparent'
+                : 'border-s border-[#6a4d28]/24 text-[#c4a56d] hover:bg-[#38241e]',
             )}
-            toggleButton={<FaChevronDown size={iconSize12} className='text-base-content/50' />}
+            toggleButton={<FaChevronDown size={iconSize12} className='text-[#b19059]/78' />}
           >
             <SearchOptions
               isEink={!!viewSettings?.isEink}
@@ -397,7 +399,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
               <button
                 key={index}
                 onClick={() => handleHistoryClick(term)}
-                className='hover:bg-base-200/20 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+                className='border-[#6a4d28]/24 bg-[#1a110f]/84 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full border px-3 py-1 text-xs uppercase tracking-[0.14em] text-[#d6c19a] hover:bg-[#241612]'
               >
                 <p className='truncate'>{term}</p>
               </button>
@@ -415,6 +417,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             className={clsx(
               'text-base-content/50 hover:text-base-content/80 flex-shrink-0 items-center',
               'flex h-6 min-h-6 w-8 min-w-8 items-center justify-center p-0',
+              'text-[#8f7447] hover:text-[#d9bd86]',
             )}
             title={_('Clear search history')}
             aria-label={_('Clear search history')}

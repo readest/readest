@@ -91,6 +91,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
 
   const isMobile = appService?.isMobile || window.innerWidth <= 640;
 
+  const headerIconButtonClassName =
+    'flex h-8 w-8 items-center justify-center rounded-[5px] border border-transparent bg-transparent p-0 text-[#8c816d] transition-colors hover:border-white/[0.06] hover:bg-[rgba(20,16,12,0.18)] hover:text-[#c99535]';
+
+  const compactHeaderIconButtonClassName =
+    'flex h-6 min-h-6 w-6 touch-target items-center justify-center rounded-[4px] border border-transparent !bg-transparent p-0 text-[#8c816d] transition-colors hover:border-white/[0.06] hover:bg-[rgba(20,16,12,0.16)] hover:text-[#c99535]';
+
   return (
     <AppTitleBar
       headerRef={headerRef}
@@ -108,11 +114,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       }}
       centerClassName='w-full'
       centerContent={
-        <div className='flex w-full items-center justify-between gap-4 px-4 sm:gap-8 sm:px-6'>
-          <div className='exclude-title-bar-mousedown relative ml-auto flex w-full max-w-[360px] items-center'>
-            <div className='relative flex h-9 w-full items-center'>
-              <span className='absolute left-3 text-[#8c816d]'>
-                <FaSearch className='h-3.5 w-3.5' />
+        <div className='flex w-full items-center justify-end gap-2 px-4 sm:gap-2.5 sm:px-6'>
+          <div className='exclude-title-bar-mousedown relative flex w-full max-w-[320px] items-center'>
+            <div className='relative flex h-8 w-full items-center'>
+              <span className='absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-[#8f887b]'>
+                <FaSearch className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
               </span>
               <input
                 type='text'
@@ -125,17 +131,18 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                 onChange={handleSearchChange}
                 spellCheck='false'
                 className={clsx(
-                  'search-input input h-9 w-full rounded-full border border-[rgba(185,133,44,0.34)] bg-[rgba(8,8,9,0.78)] pe-[31%] ps-9',
-                  'font-sans text-sm font-normal text-[#ece1cf]',
-                  'truncate placeholder:text-[#7b6f61]',
-                  'shadow-[inset_0_1px_0_rgba(255,243,221,0.03)] backdrop-blur-sm',
-                  'transition-[box-shadow,border-color,background-color] duration-200',
-                  'focus:outline-none focus:ring-0',
-                  'focus-visible:border-[rgba(212,170,92,0.7)] focus-visible:bg-[rgba(10,9,9,0.88)] focus-visible:shadow-[0_0_0_1px_rgba(185,133,44,0.14)]',
+                  'search-input input h-8 w-full rounded-[6px] border border-white/[0.06] bg-[rgba(8,8,9,0.16)] py-0 pe-[76px] ps-9',
+                  'font-sans text-sm font-normal tracking-normal text-[#e8dfd0]',
+                  'truncate placeholder:text-[#766f65]',
+                  'shadow-[inset_0_1px_0_rgba(255,248,235,0.02)] backdrop-blur-[1px]',
+                  'transition-[border-color,background-color] duration-200',
+                  'focus:outline-none focus:ring-0 focus-visible:border-[rgba(155,106,30,0.62)] focus-visible:shadow-none',
+                  'sm:pe-[82px] sm:ps-10',
                 )}
               />
             </div>
-            <div className='absolute right-3 flex items-center rounded-full border border-[rgba(185,133,44,0.18)] bg-[rgba(10,10,10,0.72)] px-2 py-1 text-[#8c816d] backdrop-blur-sm sm:space-x-1'>
+
+            <div className='absolute right-2 flex items-center gap-1 text-[#8c816d]'>
               {searchQuery && (
                 <button
                   type='button'
@@ -143,17 +150,16 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                     setSearchQuery('');
                     debouncedUpdateQueryParam('');
                   }}
-                  className='pe-1 text-[#685d50] transition-colors hover:text-[#d2b27c]'
+                  className='flex h-6 w-6 items-center justify-center rounded-[4px] text-[#685d50] transition-colors hover:text-[#c99535]'
                   aria-label={_('Clear Search')}
                 >
                   <IoMdCloseCircle className='h-4 w-4' />
                 </button>
               )}
-              <span className='mx-1 h-4 w-px bg-[rgba(185,133,44,0.16)]'></span>
               <Dropdown
                 label={_('Import Books')}
                 className='exclude-title-bar-mousedown dropdown-bottom dropdown-center cursor-pointer'
-                buttonClassName='flex h-6 min-h-6 w-6 touch-target items-center justify-center !bg-transparent p-0 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
+                buttonClassName={compactHeaderIconButtonClassName}
                 toggleButton={<PiPlus role='none' className='m-0.5 h-5 w-5' />}
               >
                 <ImportMenu
@@ -167,54 +173,42 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
                   onClick={onToggleSelectMode}
                   aria-label={_('Select Books')}
                   title={_('Select Books')}
-                  className='h-6 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
+                  className='flex h-6 w-6 items-center justify-center rounded-[4px] text-[#8c816d] transition-colors hover:text-[#c99535]'
                 >
                   {isSelectMode ? (
-                    <PiSelectionAllFill
-                      role='button'
-                      className='h-6 w-6 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
-                    />
+                    <PiSelectionAllFill role='button' className='h-5 w-5' />
                   ) : (
-                    <PiSelectionAll
-                      role='button'
-                      className='h-6 w-6 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
-                    />
+                    <PiSelectionAll role='button' className='h-5 w-5' />
                   )}
                 </button>
               )}
             </div>
           </div>
+
           {isSelectMode ? (
-            <div
-              className={clsx(
-                'flex h-full items-center',
-                'w-max-[72px] w-min-[72px] sm:w-max-[80px] sm:w-min-[80px]',
-              )}
-            >
+            <div className='flex h-full shrink-0 items-center'>
               <button
                 onClick={isSelectAll ? onDeselectAll : onSelectAll}
-                className='h-8 min-h-8 w-[88px] rounded-full border border-[rgba(185,133,44,0.22)] bg-[rgba(10,10,10,0.68)] p-0 text-[#d7bc88] transition-colors hover:bg-[rgba(185,133,44,0.1)] sm:w-[96px]'
+                className='inline-flex h-8 shrink-0 items-center rounded-[5px] border border-[rgba(155,106,30,0.78)] bg-[rgba(8,8,9,0.14)] px-3.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[#b9852c] backdrop-blur-[1px] transition-colors hover:border-[#b9852c] hover:bg-[rgba(20,16,12,0.22)] hover:text-[#c99535] sm:px-4'
                 aria-label={isSelectAll ? _('Deselect') : _('Select All')}
               >
-                <span className='font-sans text-base font-normal sm:text-sm'>
-                  {isSelectAll ? _('Deselect') : _('Select All')}
-                </span>
+                {isSelectAll ? _('Deselect') : _('Select All')}
               </button>
             </div>
           ) : (
-            <div className='flex h-full items-center gap-x-1 rounded-full border border-[rgba(185,133,44,0.22)] bg-[rgba(9,9,9,0.74)] px-1.5 py-1 shadow-[0_10px_22px_rgba(0,0,0,0.18)] sm:gap-x-1.5'>
+            <div className='exclude-title-bar-mousedown flex h-full shrink-0 items-center gap-2 sm:gap-2.5'>
               <Link
                 href='/'
                 aria-label={_('Home')}
                 title={_('Home')}
-                className='inline-flex h-8 min-h-8 items-center rounded-full border border-[rgba(185,133,44,0.34)] px-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#d7bc88] transition-colors hover:bg-[rgba(185,133,44,0.1)]'
+                className='exclude-title-bar-mousedown inline-flex h-8 shrink-0 items-center rounded-[5px] border border-[rgba(155,106,30,0.78)] bg-[rgba(8,8,9,0.14)] px-3.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[#b9852c] backdrop-blur-[1px] transition-colors hover:border-[#b9852c] hover:bg-[rgba(20,16,12,0.22)] hover:text-[#c99535] sm:px-4'
               >
                 {_('Home')}
               </Link>
               <Dropdown
                 label={_('View Menu')}
                 className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-                buttonClassName='h-8 min-h-8 w-8 rounded-full p-0 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
+                buttonClassName={headerIconButtonClassName}
                 toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
               >
                 <ViewMenu />
@@ -222,7 +216,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               <Dropdown
                 label={_('Settings Menu')}
                 className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-                buttonClassName='h-8 min-h-8 w-8 rounded-full p-0 text-[#8c816d] transition-colors hover:text-[#d2b27c]'
+                buttonClassName={headerIconButtonClassName}
                 toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
               >
                 <SettingsMenu onPullLibrary={onPullLibrary} />
@@ -230,7 +224,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               {appService?.hasWindowBar && (
                 <WindowButtons
                   headerRef={headerRef}
-                  className='gap-1 text-[#b9852c] [&_button:hover]:!bg-transparent [&_button:hover]:text-[#cfaa6a] [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:text-[#b9852c] [&_button]:!shadow-none [&_svg]:stroke-[#b9852c] [&_svg]:text-[#b9852c]'
+                  className='gap-1 pr-0 text-[#b9852c] [&_button:hover]:!bg-transparent [&_button:hover]:text-[#c99535] [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:text-[#b9852c] [&_button]:!shadow-none [&_svg]:stroke-[#b9852c] [&_svg]:text-[#b9852c]'
                   showMinimize={windowButtonVisible}
                   showMaximize={windowButtonVisible}
                   showClose={windowButtonVisible}

@@ -1,15 +1,19 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
-import { Book } from '@/types/book';
+import { Book, AudiobookConfig } from '@/types/book';
+import { BookConfig } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFileSelector } from '@/hooks/useFileSelector';
 import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
 import { eventDispatcher } from '@/utils/event';
 import { isWebAppPlatform } from '@/services/environment';
+import { getFilename } from '@/utils/path';
 import Alert from '@/components/Alert';
 import Dialog from '@/components/Dialog';
 import BookDetailView from './BookDetailView';
@@ -49,11 +53,15 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
+  const { settings } = useSettingsStore();
+  const { selectFiles } = useFileSelector(appService, _);
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  const [audiobookConfig, setAudiobookConfig] = useState<AudiobookConfig | undefined>(undefined);
+  const [bookConfig, setBookConfig] = useState<BookConfig | null>(null);
 
   // Initialize metadata edit hook
   const {
@@ -103,12 +111,69 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
         setBookMeta(details);
         const size = await appService.getBookFileSize(book);
         setFileSize(size);
+
+        // Load book config to read existing audiobook attachment
+        const config = await appService.loadBookConfig(book, settings);
+        setBookConfig(config);
+        setAudiobookConfig(config.audiobook);
       } finally {
       }
     };
     fetchBookDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book]);
+
+  const saveAudiobookConfig = async (updatedAudiobook?: AudiobookConfig) => {
+    if (!appService || !bookConfig) return;
+    const updatedConfig: BookConfig = {
+      ...bookConfig,
+      audiobook: updatedAudiobook,
+      updatedAt: Date.now(),
+    };
+    try {
+      await appService.saveBookConfig(book, updatedConfig, settings);
+      setBookConfig(updatedConfig);
+      setAudiobookConfig(updatedAudiobook);
+    } catch (error) {
+      console.error('Failed to save audiobook config:', error);
+      eventDispatcher.dispatch('toast', {
+        message: _('Failed to save audiobook settings'),
+        type: 'error',
+      });
+    }
+  };
+
+  const handleAddAudiobook = async () => {
+    const result = await selectFiles({ type: 'audio', multiple: false });
+    if (result.error || result.files.length === 0) return;
+    const file = result.files[0]!;
+    const filePath = file.path ?? file.file?.name ?? '';
+    const fileName = file.path ? getFilename(file.path) : (file.file?.name ?? filePath);
+    await saveAudiobookConfig({
+      filePath,
+      fileName,
+      addedAt: Date.now(),
+      syncStatus: 'none',
+    });
+  };
+
+  const handleReplaceAudiobook = async () => {
+    const result = await selectFiles({ type: 'audio', multiple: false });
+    if (result.error || result.files.length === 0) return;
+    const file = result.files[0]!;
+    const filePath = file.path ?? file.file?.name ?? '';
+    const fileName = file.path ? getFilename(file.path) : (file.file?.name ?? filePath);
+    await saveAudiobookConfig({
+      filePath,
+      fileName,
+      addedAt: Date.now(),
+      syncStatus: 'none',
+    });
+  };
+
+  const handleRemoveAudiobook = async () => {
+    await saveAudiobookConfig(undefined);
+  };
 
   const handleClose = () => {
     setBookMeta(null);
@@ -197,10 +262,17 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
           boxClassName={clsx(
             editMode ? 'sm:min-w-[600px] sm:max-w-[600px]' : 'sm:min-w-[480px] sm:max-w-[480px]',
             'sm:h-auto sm:max-h-[90%]',
+            // Citadel dark academia panel
+            'book-detail-citadel',
+            '!bg-[radial-gradient(ellipse_at_top,rgba(22,16,13,0.99),rgba(11,8,7,0.98))]',
+            '!border !border-[rgba(185,133,44,0.18)]',
+            '!shadow-[0_24px_64px_rgba(0,0,0,0.52),0_0_2px_rgba(201,162,39,0.14)]',
+            'sm:!rounded-[22px]',
           )}
-          contentClassName='!px-6 !py-4'
+          contentClassName='!px-0 !py-0'
+          bgClassName='!bg-black/60'
         >
-          <div className='flex w-full select-text items-start justify-center'>
+          <div className='flex w-full select-text items-start justify-center px-6 py-4'>
             {editMode && bookMeta ? (
               <BookDetailEdit
                 book={book}
@@ -223,6 +295,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 book={book}
                 metadata={bookMeta}
                 fileSize={fileSize}
+                audiobookConfig={audiobookConfig}
+                onAddAudiobook={handleAddAudiobook}
+                onReplaceAudiobook={handleReplaceAudiobook}
+                onRemoveAudiobook={handleRemoveAudiobook}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={

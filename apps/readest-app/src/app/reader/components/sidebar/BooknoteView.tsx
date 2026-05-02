@@ -3,6 +3,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { findTocItemBS } from '@/services/nav';
 import { findNearestCfi } from '@/utils/cfi';
 import { TOCItem } from '@/libs/document';
@@ -14,6 +15,7 @@ const BooknoteView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ type, bookKey, toc }) => {
+  const _ = useTranslation();
   const { getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
   const { setActiveBooknoteType, setBooknoteResults } = useSidebarStore();
@@ -60,25 +62,48 @@ const BooknoteView: React.FC<{
   };
 
   return (
-    <div className='rounded pt-2'>
-      <ul role='tree' className='px-2'>
-        {sortedGroups.map((group) => (
-          <li key={group.href} className='p-2'>
-            <h3 className='content font-size-base line-clamp-1 font-normal'>{group.label}</h3>
-            <ul>
-              {group.booknotes.map((item, index) => (
-                <BooknoteItem
-                  key={`${index}-${item.cfi}`}
-                  bookKey={bookKey}
-                  item={item}
-                  isNearest={item.cfi === nearestCfi}
-                  onClick={handleBrowseBookNotes}
-                />
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
+    <div className='rounded pt-1'>
+      {sortedGroups.length === 0 ? (
+        <div className='flex min-h-[180px] flex-col items-center justify-center px-4 py-8 text-center'>
+          <div className='border-[#6a4d28]/28 bg-[#1a110f]/72 mb-3 rounded-full border px-3 py-2 font-serif text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b89557]'>
+            {type === 'annotation' ? _('Notes') : _('Bookmarks')}
+          </div>
+          <p className='text-[#d0bb92]/82 text-sm'>
+            {type === 'annotation'
+              ? _('No notes for this book yet.')
+              : _('No bookmarks saved yet.')}
+          </p>
+          <p className='mt-1 text-xs text-[#8e7348]'>
+            {type === 'annotation'
+              ? _('Highlights and marginal notes will appear here.')
+              : _('Saved places will appear here as you mark them.')}
+          </p>
+        </div>
+      ) : (
+        <ul role='tree' className='px-1.5'>
+          {sortedGroups.map((group) => (
+            <li
+              key={group.href}
+              className='border-[#5e4525]/18 mb-3 rounded-[22px] border bg-[linear-gradient(180deg,rgba(17,11,10,0.82),rgba(9,7,6,0.9))] px-2.5 py-2.5 last:mb-0'
+            >
+              <h3 className='border-[#5e4525]/22 line-clamp-1 border-b pb-1.5 font-serif text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c7ab74]'>
+                {group.label}
+              </h3>
+              <ul>
+                {group.booknotes.map((item, index) => (
+                  <BooknoteItem
+                    key={`${index}-${item.cfi}`}
+                    bookKey={bookKey}
+                    item={item}
+                    isNearest={item.cfi === nearestCfi}
+                    onClick={handleBrowseBookNotes}
+                  />
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

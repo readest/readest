@@ -832,3 +832,378 @@ body.atmosphere #atmosphere-overlay {
 .animate-shake {
   animation: shake 0.8s ease-in-out;
 }
+
+/* ── Citadel settings dialog / panel (CT-003) ── */
+
+/* Outer panel: dark Citadel surface, subtle gold outline, warm shadow */
+.settings-citadel.modal-box {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(122, 32, 24, 0.18), transparent 28%),
+    radial-gradient(circle at 82% 72%, rgba(96, 18, 14, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(22, 16, 13, 0.99), rgba(11, 8, 7, 1));
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(96, 78, 34, 0.1),
+    0 0 34px rgba(126, 31, 25, 0.12);
+}
+
+/* Header area inside settings dialog */
+.settings-citadel .dialog-header {
+  border-bottom: 1px solid rgba(201, 162, 39, 0.12);
+  background: rgba(16, 12, 9, 0.3);
+}
+
+/* Tabs row */
+.settings-citadel .dialog-tabs {
+  background: transparent;
+}
+
+/* Tab buttons — inactive */
+.settings-citadel .dialog-tabs .btn {
+  color: #8c816d;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding-bottom: 6px;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.settings-citadel .dialog-tabs .btn:hover {
+  color: #c99535;
+  background: transparent;
+}
+
+/* Tab buttons — active */
+.settings-citadel .dialog-tabs .btn-active {
+  color: #cfb07a !important;
+  border-bottom-color: rgba(201, 163, 99, 0.64) !important;
+  background: transparent !important;
+}
+
+/* Window controls (search, menu, close) in settings header */
+.settings-citadel .dialog-header .btn {
+  color: #8c816d;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.settings-citadel .dialog-header .btn:hover {
+  color: #c99535;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(20, 16, 12, 0.18);
+}
+
+/* Settings content area — ivory text */
+.settings-citadel .settings-content {
+  color: #e4cfab;
+}
+
+/* Section headings */
+.settings-citadel h2 {
+  color: #cfb07a;
+}
+
+/* Section cards — dark surface with subtle gold border */
+.settings-citadel .card {
+  background: rgba(14, 10, 8, 0.72);
+  border-color: rgba(201, 162, 39, 0.14) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 237, 193, 0.03),
+    0 4px 16px rgba(0, 0, 0, 0.24);
+}
+
+/* Dividers between config rows */
+.settings-citadel .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-top-color: rgba(201, 162, 39, 0.1);
+}
+
+/* Config item rows */
+.settings-citadel .config-item {
+  color: #efe2ca;
+}
+
+.settings-citadel .config-item:hover {
+  background: rgba(20, 16, 12, 0.18) !important;
+}
+
+/* Config item labels — warm ivory */
+.settings-citadel .config-item > span {
+  color: #efe2ca;
+}
+
+/* Secondary / muted text in config rows */
+.settings-citadel .config-item .text-xs,
+.settings-citadel .config-item .text-sm {
+  color: #9e8c7a;
+}
+
+/* ── Toggles: dark track, gold active ── */
+.settings-citadel .toggle {
+  --tglbg: #2a1e18;
+  background-color: #2a1e18;
+  border-color: rgba(140, 110, 60, 0.4);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.settings-citadel .toggle:checked,
+.settings-citadel .toggle[checked] {
+  --tglbg: #c9a163;
+  background-color: #c9a163;
+  border-color: rgba(185, 140, 48, 0.6);
+}
+
+.settings-citadel .toggle:disabled {
+  background-color: #1a1210;
+  border-color: rgba(80, 64, 38, 0.2);
+  opacity: 0.5;
+}
+
+/* ── NumberInput stepper buttons ── */
+.settings-citadel .config-item .btn-circle {
+  background: rgba(14, 10, 8, 0.6);
+  border: 1px solid rgba(155, 106, 30, 0.28);
+  color: #b9852c;
+  box-shadow: none;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.settings-citadel .config-item .btn-circle:hover:not(.btn-disabled) {
+  background: rgba(20, 16, 12, 0.32);
+  border-color: rgba(185, 133, 44, 0.48);
+  color: #c99535;
+}
+
+.settings-citadel .config-item .btn-circle.btn-disabled {
+  background: rgba(14, 10, 8, 0.3);
+  border-color: rgba(80, 64, 38, 0.14);
+  color: rgba(140, 129, 109, 0.35);
+  opacity: 0.6;
+}
+
+/* NumberInput text field */
+.settings-citadel .config-item input[type='text'],
+.settings-citadel .config-item .input {
+  color: #e8dfd0;
+  background: transparent;
+}
+
+.settings-citadel .config-item input[type='text']:disabled,
+.settings-citadel .config-item .input:disabled {
+  color: rgba(140, 129, 109, 0.5);
+}
+
+/* ── DialogMenu dropdown ── */
+.settings-citadel .dialog-menu {
+  background:
+    radial-gradient(circle at 80% 12%, rgba(117, 24, 17, 0.2), transparent 22%),
+    linear-gradient(180deg, rgba(19, 13, 11, 0.99), rgba(9, 7, 6, 0.99));
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  border-radius: 14px;
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.44),
+    0 0 0 1px rgba(96, 78, 34, 0.1),
+    0 0 26px rgba(126, 31, 25, 0.14);
+}
+
+.settings-citadel .dialog-menu button,
+.settings-citadel .dialog-menu li > a,
+.settings-citadel .dialog-menu li > button,
+.settings-citadel .dialog-menu li > summary {
+  color: #d6c6a8;
+  border-radius: 6px;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.settings-citadel .dialog-menu button:hover,
+.settings-citadel .dialog-menu li > a:hover,
+.settings-citadel .dialog-menu li > button:hover,
+.settings-citadel .dialog-menu li > summary:hover {
+  background: rgba(20, 16, 12, 0.28);
+  color: #e4cfab;
+}
+
+.settings-citadel .dialog-menu .text-base-content {
+  color: #d6c6a8;
+}
+
+.settings-citadel .dialog-menu .text-gray-400 {
+  color: #7a6d5e;
+}
+
+.settings-citadel .dialog-menu .text-neutral-content {
+  color: #9e8c7a;
+}
+
+.settings-citadel .dialog-menu kbd {
+  background: rgba(28, 20, 16, 0.5);
+  border-color: rgba(201, 162, 39, 0.14);
+  color: #9e8c7a;
+}
+
+/* ── Settings highlight animation (gold pulse) ── */
+@keyframes settings-highlight-pulse-citadel {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(201, 162, 39, 0.12);
+  }
+}
+
+.settings-citadel .settings-highlight {
+  animation: settings-highlight-pulse-citadel 0.5s ease-in-out 2;
+  border-radius: 8px;
+}
+
+/* ── Close button (circle) in dialog header ── */
+.settings-citadel .bg-base-300\/65.btn-circle {
+  background: rgba(20, 16, 12, 0.4);
+  color: #8c816d;
+  border: 1px solid rgba(201, 162, 39, 0.12);
+}
+
+.settings-citadel .bg-base-300\/65.btn-circle:hover {
+  background: rgba(30, 24, 18, 0.55);
+  color: #c99535;
+  border-color: rgba(201, 162, 39, 0.22);
+}
+
+/* ── Select dropdown within settings ── */
+.settings-citadel select,
+.settings-citadel .select {
+  background: rgba(14, 10, 8, 0.6);
+  border: 1px solid rgba(155, 106, 30, 0.28);
+  color: #e4cfab;
+  border-radius: 6px;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.settings-citadel select:hover,
+.settings-citadel .select:hover {
+  border-color: rgba(185, 133, 44, 0.42);
+  background: rgba(20, 16, 12, 0.32);
+}
+
+.settings-citadel select:focus,
+.settings-citadel .select:focus {
+  border-color: rgba(201, 163, 99, 0.6);
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(201, 163, 99, 0.3);
+}
+
+.settings-citadel select:disabled,
+.settings-citadel .select:disabled {
+  border-color: rgba(80, 64, 38, 0.14);
+  color: rgba(140, 129, 109, 0.45);
+  background: rgba(14, 10, 8, 0.3);
+  opacity: 0.6;
+}
+
+/* ── Scrollbar in settings panel ── */
+.settings-citadel ::-webkit-scrollbar-thumb {
+  background: rgba(176, 136, 72, 0.28);
+  border-radius: 4px;
+}
+
+.settings-citadel ::-webkit-scrollbar-thumb:hover {
+  background: rgba(176, 136, 72, 0.42);
+}
+
+/* Override DaisyUI text/background colors inside Citadel settings */
+.settings-citadel .text-base-content {
+  color: #d6c6a8;
+}
+
+.settings-citadel .text-base-content\/70 {
+  color: rgba(214, 198, 168, 0.7);
+}
+
+.settings-citadel .text-base-content\/75 {
+  color: rgba(214, 198, 168, 0.75);
+}
+
+.settings-citadel .bg-base-100 {
+  background: rgba(14, 10, 8, 0.6);
+}
+
+.settings-citadel .border-base-200 {
+  border-color: rgba(201, 162, 39, 0.14);
+}
+
+.settings-citadel .border-base-200\/75 {
+  border-color: rgba(201, 162, 39, 0.18);
+}
+
+/* DaisyUI bg-base-300 overrides */
+.settings-citadel .bg-base-300\/65 {
+  background: rgba(20, 16, 12, 0.4);
+}
+
+.settings-citadel .bg-base-300 {
+  background: rgba(28, 20, 16, 0.55);
+}
+
+.settings-citadel .btn-active.bg-base-300 {
+  background: rgba(30, 20, 14, 0.65) !important;
+  color: #cfb07a !important;
+  border-color: rgba(201, 163, 99, 0.35);
+}
+
+/* ── Citadel book detail dialog ── */
+.book-detail-citadel .dialog-header {
+  border-bottom: 1px solid rgba(185, 133, 44, 0.08);
+  margin-bottom: 0.25rem;
+}
+
+.book-detail-citadel .dialog-header span {
+  color: #cfb07a;
+  font-family: Georgia, 'Palatino Linotype', serif;
+  letter-spacing: 0.06em;
+}
+
+.book-detail-citadel .dialog-header .btn {
+  background: rgba(20, 16, 12, 0.4);
+  color: #8c816d;
+  border: 1px solid rgba(201, 162, 39, 0.1);
+}
+
+.book-detail-citadel .dialog-header .btn:hover {
+  background: rgba(28, 20, 14, 0.55);
+  color: #cfb07a;
+  border-color: rgba(201, 162, 39, 0.18);
+}
+
+.book-detail-citadel ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.book-detail-citadel ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.book-detail-citadel ::-webkit-scrollbar-thumb {
+  background: rgba(176, 136, 72, 0.22);
+  border-radius: 10px;
+}
+
+.book-detail-citadel ::-webkit-scrollbar-thumb:hover {
+  background: rgba(176, 136, 72, 0.36);
+}

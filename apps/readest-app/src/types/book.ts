@@ -398,6 +398,16 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export interface AudiobookConfig {
+  filePath: string;
+  fileName: string;
+  addedAt: number;
+  duration?: number;
+  currentTime?: number;
+  syncMapPath?: string;
+  syncStatus?: 'none' | 'pending' | 'ready' | 'error';
+}
+
 export interface BookConfig {
   bookHash?: string;
   metaHash?: string;
@@ -417,6 +427,8 @@ export interface BookConfig {
 
   // Per-book switch for hardcover exports in reader menu.
   hardcoverSyncEnabled?: boolean;
+
+  audiobook?: AudiobookConfig;
 
   updatedAt: number;
 }

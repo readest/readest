@@ -23,7 +23,7 @@ import SearchResults from './SearchResults';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
-const DESKTOP_SIDEBAR_WIDTH = '7.5rem';
+const DESKTOP_SIDEBAR_WIDTH = '7.75rem';
 
 const SideBar = ({}) => {
   const _ = useTranslation();
@@ -184,11 +184,11 @@ const SideBar = ({}) => {
       <div
         ref={sidebarRef}
         className={clsx(
-          'sidebar-container flex min-w-60 select-none flex-col sm:min-w-0 sm:overflow-visible',
+          'sidebar-container flex min-w-60 select-none flex-col overflow-hidden sm:min-w-0 sm:overflow-visible',
           'full-height transition-[padding-top] duration-300',
           viewSettings?.isEink
             ? 'bg-base-100'
-            : 'bg-base-200 sm:border-e sm:border-[#6f2520]/60 sm:bg-[linear-gradient(180deg,#140d0b_0%,#0f0908_100%)]',
+            : 'bg-[linear-gradient(180deg,rgba(24,16,13,0.98),rgba(13,9,8,1))] sm:bg-[linear-gradient(180deg,#1b100d_0%,#0c0807_100%)]',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
           !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
@@ -211,24 +211,102 @@ const SideBar = ({}) => {
         <style jsx>{`
           @media (min-width: 640px) {
             .sidebar-container {
-              border-right-width: 1px;
+              border-radius: 0 32px 32px 0;
+              padding: 10px 10px 18px 7px;
+              border-right-width: 0;
+              background:
+                radial-gradient(circle at 82% 18%, rgba(148, 28, 22, 0.22), transparent 24%),
+                radial-gradient(circle at 78% 56%, rgba(92, 20, 16, 0.12), transparent 30%),
+                radial-gradient(circle at 82% 88%, rgba(52, 14, 12, 0.18), transparent 32%),
+                linear-gradient(180deg, rgba(25, 15, 14, 0.99), rgba(8, 7, 7, 1));
               box-shadow:
-                inset -1px 0 0 rgba(201, 164, 90, 0.18),
-                16px 0 38px rgba(0, 0, 0, 0.18);
+                inset -18px 0 28px rgba(0, 0, 0, 0.44),
+                inset 12px 0 20px rgba(0, 0, 0, 0.32),
+                inset 0 1px 0 rgba(255, 237, 193, 0.035),
+                26px 0 54px rgba(0, 0, 0, 0.4);
+            }
+
+            .sidebar-container > * {
+              position: relative;
+              z-index: 1;
+            }
+
+            .sidebar-container::before {
+              content: '';
+              position: absolute;
+              inset: 8px 8px 12px 8px;
+              border-radius: 28px;
+              background:
+                radial-gradient(circle at 74% 26%, rgba(122, 22, 18, 0.18), transparent 18%),
+                linear-gradient(
+                  180deg,
+                  rgba(68, 18, 15, 0.24) 0%,
+                  rgba(24, 16, 15, 0.94) 14%,
+                  rgba(13, 10, 9, 0.98) 62%,
+                  rgba(6, 6, 6, 1) 100%
+                );
+              box-shadow:
+                inset -1px 0 0 rgba(206, 166, 92, 0.56),
+                inset -3px 0 0 rgba(106, 75, 31, 0.32),
+                inset -10px 0 16px rgba(148, 104, 36, 0.1),
+                inset 8px 0 16px rgba(0, 0, 0, 0.32),
+                inset 0 1px 0 rgba(255, 236, 190, 0.08),
+                inset 0 -110px 84px rgba(0, 0, 0, 0.46),
+                inset 0 60px 84px rgba(94, 20, 17, 0.12),
+                0 0 0 1px rgba(88, 60, 26, 0.24);
+              pointer-events: none;
+            }
+
+            .sidebar-container::after {
+              content: '';
+              position: absolute;
+              inset: 8px 8px 12px 8px;
+              border-radius: 28px;
+              background:
+                linear-gradient(180deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.5) 100%),
+                linear-gradient(
+                  90deg,
+                  rgba(0, 0, 0, 0.18) 0%,
+                  transparent 7%,
+                  transparent 95%,
+                  rgba(193, 154, 84, 0.08) 97%,
+                  rgba(233, 202, 128, 0.12) 100%
+                ),
+                linear-gradient(
+                  90deg,
+                  transparent 0%,
+                  transparent 95%,
+                  rgba(0, 0, 0, 0.28) 97%,
+                  rgba(0, 0, 0, 0.1) 100%
+                ),
+                radial-gradient(circle at 78% 28%, rgba(136, 24, 19, 0.12), transparent 18%),
+                radial-gradient(circle at 82% 54%, rgba(96, 18, 14, 0.1), transparent 20%);
+              pointer-events: none;
             }
 
             .sidebar-container :global(.search-bar) {
               position: absolute;
-              left: calc(100% + 18px);
-              top: 18px;
-              width: 320px;
+              left: calc(100% + 24px);
+              top: 24px;
+              width: 376px;
               opacity: 0;
-              transform: translateX(-10px);
+              transform: translateX(-12px);
               pointer-events: none;
               transition:
                 opacity 180ms ease,
                 transform 180ms ease;
-              z-index: 5;
+              z-index: 7;
+            }
+
+            .sidebar-container :global(.search-bar .input),
+            .sidebar-container :global(.search-bar input),
+            .sidebar-container :global(.search-bar textarea) {
+              border-color: rgba(201, 164, 90, 0.28);
+              background: rgba(18, 12, 10, 0.96);
+              color: #e4cfab;
+              box-shadow:
+                inset 0 1px 0 rgba(255, 237, 193, 0.05),
+                inset 0 0 0 1px rgba(88, 64, 31, 0.14);
             }
 
             .sidebar-container[data-search-visible='true'] :global(.search-bar) {
@@ -239,23 +317,41 @@ const SideBar = ({}) => {
 
             .sidebar-container :global(.sidebar-content) {
               position: absolute;
-              left: calc(100% + 18px);
-              top: 72px;
-              bottom: 18px;
-              width: 320px;
-              border: 1px solid rgba(201, 164, 90, 0.3);
-              border-radius: 18px;
-              background: linear-gradient(180deg, rgba(18, 12, 10, 0.97), rgba(11, 8, 7, 0.97));
+              left: calc(100% + 24px);
+              top: 112px;
+              bottom: 24px;
+              width: 376px;
+              border: 1px solid rgba(201, 164, 90, 0.34);
+              border-radius: 28px;
+              background:
+                radial-gradient(circle at 18% 14%, rgba(117, 24, 17, 0.24), transparent 24%),
+                radial-gradient(circle at 82% 72%, rgba(71, 16, 12, 0.16), transparent 26%),
+                linear-gradient(180deg, rgba(19, 13, 11, 0.98), rgba(9, 7, 6, 0.98));
               box-shadow:
-                0 18px 40px rgba(0, 0, 0, 0.34),
-                0 0 22px rgba(126, 31, 25, 0.18);
+                0 24px 48px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(95, 68, 31, 0.18),
+                0 0 34px rgba(126, 31, 25, 0.24);
               opacity: 0;
-              transform: translateX(-10px);
+              transform: translateX(-12px);
               pointer-events: none;
               transition:
                 opacity 180ms ease,
                 transform 180ms ease;
               z-index: 4;
+            }
+
+            .sidebar-container :global(.sidebar-content)::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              border-radius: inherit;
+              border: 1px solid rgba(228, 190, 113, 0.08);
+              box-shadow:
+                inset 0 1px 0 rgba(255, 237, 193, 0.1),
+                inset 0 0 0 1px rgba(88, 64, 31, 0.24),
+                inset 0 18px 24px rgba(255, 237, 193, 0.02),
+                inset 0 -28px 34px rgba(0, 0, 0, 0.34);
+              pointer-events: none;
             }
 
             .sidebar-container:hover :global(.sidebar-content),
@@ -273,12 +369,60 @@ const SideBar = ({}) => {
             .sidebar-container :global(.bottom-tab) {
               flex: 1;
               justify-content: flex-start;
+              position: relative;
+              padding-top: 10px;
+              padding-bottom: 8px;
+              background:
+                radial-gradient(circle at 68% 12%, rgba(128, 24, 19, 0.1), transparent 18%),
+                linear-gradient(180deg, rgba(72, 18, 15, 0.14), transparent 22%),
+                linear-gradient(180deg, rgba(12, 8, 7, 0.08), rgba(10, 8, 8, 0.34));
+            }
+
+            .sidebar-container :global(.bottom-tab)::before {
+              content: '';
+              position: absolute;
+              inset: 0 6px 6px;
+              border-radius: 18px 18px 24px 24px;
+              background:
+                linear-gradient(180deg, rgba(44, 14, 12, 0.16), transparent 14%),
+                linear-gradient(180deg, rgba(16, 11, 10, 0.98), rgba(10, 8, 8, 0.98));
+              box-shadow:
+                inset 0 1px 0 rgba(255, 237, 193, 0.028),
+                inset 0 -24px 30px rgba(0, 0, 0, 0.32);
+              pointer-events: none;
+            }
+
+            .sidebar-container :global(.bottom-tab)::after {
+              content: '';
+              display: block;
+              flex: 1;
+              min-height: 172px;
+              margin: 14px 8px 0 14px;
+              border-radius: 0 0 18px 18px;
+              background:
+                radial-gradient(circle at 26% 0%, rgba(112, 24, 18, 0.14), transparent 30%),
+                linear-gradient(
+                  180deg,
+                  rgba(74, 18, 15, 0.1),
+                  rgba(44, 14, 12, 0.04) 26%,
+                  rgba(9, 7, 7, 0) 44%
+                ),
+                linear-gradient(180deg, rgba(10, 7, 6, 0), rgba(3, 3, 3, 0.42) 100%);
+              box-shadow: inset 0 28px 40px rgba(0, 0, 0, 0.26);
+              pointer-events: none;
+            }
+
+            .sidebar-container :global(.os-scrollbar-handle) {
+              background: rgba(176, 136, 72, 0.45);
             }
           }
           @media (max-width: 640px) {
             .sidebar-container {
               border-top-left-radius: 16px;
               border-top-right-radius: 16px;
+              box-shadow:
+                inset 0 1px 0 rgba(255, 237, 193, 0.06),
+                0 -18px 40px rgba(0, 0, 0, 0.38);
             }
             .overlay {
               transition: opacity 0.3s ease-in-out;
@@ -324,9 +468,12 @@ const SideBar = ({}) => {
             onToggleSearchBar={handleToggleSearchBar}
           />
           <div
-            className={clsx('search-bar', {
-              'search-bar-visible': isSearchBarVisible,
-            })}
+            className={clsx(
+              'search-bar border-[#c9a45a]/28 rounded-[18px] border bg-[linear-gradient(180deg,rgba(20,13,11,0.98),rgba(11,8,7,0.98))] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.16)]',
+              {
+                'search-bar-visible': isSearchBarVisible,
+              },
+            )}
           >
             <SearchBar
               isVisible={isSearchBarVisible}
@@ -334,7 +481,7 @@ const SideBar = ({}) => {
               onHideSearchBar={handleHideSearchBar}
             />
           </div>
-          <div className='border-base-300/50 border-b px-3 sm:hidden'>
+          <div className='border-b border-[#6a4d28]/30 px-3 sm:hidden'>
             <BookCard book={book} />
           </div>
         </div>

@@ -21,11 +21,11 @@ const BookCard = ({ book }: { book: Book }) => {
   };
 
   return (
-    <div className='flex h-20 w-full items-center'>
+    <div className='border-[#5e4525]/18 flex h-24 w-full items-center gap-3 rounded-[18px] border bg-[linear-gradient(180deg,rgba(23,15,12,0.9),rgba(12,8,7,0.94))] px-3 py-3 text-[#dcc8a1] shadow-[inset_0_1px_0_rgba(255,237,193,0.05)]'>
       <div
         ref={bookCoverRef}
         className={clsx(
-          'me-4 aspect-[28/41] max-h-16 w-[15%] max-w-12 overflow-hidden rounded-sm shadow-md',
+          'aspect-[28/41] max-h-[72px] w-[18%] max-w-[54px] overflow-hidden rounded-[8px] shadow-md',
           isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
         )}
       >
@@ -38,17 +38,19 @@ const BookCard = ({ book }: { book: Book }) => {
         />
       </div>
       <div className='min-w-0 flex-1'>
-        <h4 className='line-clamp-2 w-[90%] text-sm font-semibold'>
+        <h4 className='line-clamp-2 w-[90%] font-serif text-sm font-semibold text-[#e6d0a1]'>
           {formatTitle(title).replace(/\u00A0/g, ' ')}
         </h4>
-        <p className='truncate text-xs opacity-75'>{formatAuthors(author)}</p>
+        <p className='truncate text-[11px] uppercase tracking-[0.12em] text-[#9f8254]'>
+          {formatAuthors(author)}
+        </p>
       </div>
       <button
-        className='btn btn-ghost hover:bg-base-300 h-6 min-h-6 w-6 rounded-full p-0 transition-colors'
+        className='btn btn-ghost border-[#6a4d28]/24 bg-[#1a110f]/74 h-8 min-h-8 w-8 rounded-full border p-0 text-[#c4a56d] transition-colors hover:bg-[#241612] hover:text-[#e6d0a1]'
         aria-label={_('More Info')}
         onClick={showBookDetails}
       >
-        <MdInfoOutline size={iconSize18} className='fill-base-content' />
+        <MdInfoOutline size={iconSize18} className='fill-current' />
       </button>
     </div>
   );

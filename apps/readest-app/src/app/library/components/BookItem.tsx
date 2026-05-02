@@ -17,7 +17,7 @@ import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
 import { formatAuthors } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
-import BookCover from '@/components/BookCover';
+import BookObject from '@/components/BookObject';
 
 interface BookItemProps {
   book: Book;
@@ -78,13 +78,15 @@ const BookItem: React.FC<BookItemProps> = ({
           bookSelected && 'border-[var(--citadel-line-gold)] shadow-[var(--citadel-border-glow)]',
         )}
       >
-        <BookCover
+        <BookObject
           mode={mode}
           book={book}
           coverFit={coverFit}
           showSpine={false}
+          variant='library'
+          interactive={mode === 'grid'}
           className='h-full w-full'
-          imageClassName='h-full w-full rounded-[10px] object-cover'
+          coverClassName='h-full w-full rounded-[10px] object-cover'
         />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>

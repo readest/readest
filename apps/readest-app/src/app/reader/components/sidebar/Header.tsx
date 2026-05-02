@@ -28,12 +28,12 @@ const SidebarHeader: React.FC<{
   return (
     <div
       className={clsx(
-        'sidebar-header flex h-11 items-center justify-between pe-2 sm:h-44 sm:flex-col sm:justify-start sm:gap-3 sm:px-0 sm:pt-[26px]',
+        'sidebar-header relative flex h-11 items-center justify-between pe-2 sm:h-[176px] sm:flex-col sm:justify-start sm:px-2.5 sm:pt-3.5',
         isTrafficLightVisible ? 'ps-1.5 sm:ps-0' : 'ps-1.5 sm:ps-0',
       )}
       dir='ltr'
     >
-      <div className='flex items-center gap-x-8 sm:w-full sm:justify-center'>
+      <div className='flex items-center gap-x-8 sm:w-full sm:justify-center sm:pb-3'>
         <button
           title={_('Close')}
           onClick={onClose}
@@ -45,25 +45,20 @@ const SidebarHeader: React.FC<{
           <SidebarToggler bookKey={bookKey} />
         </div>
       </div>
-      <div className='pointer-events-none hidden flex-col items-center justify-center sm:flex'>
-        <div className='relative flex h-[56px] w-[56px] items-center justify-center overflow-hidden rounded-full border border-[#d3b576]/70 bg-[#261612] shadow-[0_0_24px_rgba(126,31,25,0.3)]'>
-          <Image
-            src='/citadel/citadel-logo.png'
-            alt='Citadel'
-            fill
-            sizes='56px'
-            className='object-contain p-[8px] opacity-100 brightness-110'
-            priority={false}
-          />
+      <div className='pointer-events-none hidden w-full flex-col items-center justify-center sm:flex'>
+        <div className='sidebar-brand-panel pt-6.5 relative flex w-full items-center justify-center rounded-[24px] px-2.5 pb-5'>
+          <div className='sidebar-brand-mark relative flex h-[62px] w-[94px] items-center justify-center overflow-visible'>
+            <Image
+              src='/citadel/citadel-logo.png'
+              alt='Citadel'
+              fill
+              sizes='94px'
+              className='object-contain p-0 opacity-100 brightness-[0.76] contrast-[1.3] saturate-[1.62]'
+              priority={false}
+            />
+          </div>
         </div>
-        <div className='mt-3 flex h-[30px] flex-col items-center justify-start overflow-visible font-serif text-[#d9bd86]'>
-          <span className='text-[9px] font-semibold uppercase leading-[1.1] tracking-[0.24em]'>
-            Citadel
-          </span>
-          <span className='mt-1 text-[8px] font-medium uppercase leading-[1.05] tracking-[0.38em] text-[#b99a58]'>
-            Reading
-          </span>
-        </div>
+        <div className='sidebar-header-divider mt-3.5 hidden h-px w-[70%] sm:block' />
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:hidden sm:size-[70%]'>
         <button
@@ -113,11 +108,76 @@ const SidebarHeader: React.FC<{
         }
 
         @media (min-width: 640px) {
+          .sidebar-header {
+            border-bottom: none;
+            padding-bottom: 7px;
+          }
+
+          .sidebar-header::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 0;
+            height: 1px;
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(112, 82, 40, 0.18) 18%,
+              rgba(152, 117, 66, 0.26) 50%,
+              rgba(112, 82, 40, 0.18) 82%,
+              transparent 100%
+            );
+          }
+
+          .sidebar-brand-panel {
+            background:
+              radial-gradient(circle at 50% 40%, rgba(124, 20, 18, 0.26), transparent 34%),
+              radial-gradient(circle at 50% 62%, rgba(74, 16, 14, 0.12), transparent 44%),
+              linear-gradient(180deg, rgba(20, 14, 13, 0.98), rgba(11, 9, 8, 0.46));
+            box-shadow:
+              inset 0 1px 0 rgba(255, 237, 193, 0.015),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+              0 12px 20px rgba(0, 0, 0, 0.14);
+          }
+
+          .sidebar-brand-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border: 1px solid rgba(76, 52, 24, 0.08);
+            box-shadow:
+              inset 0 1px 0 rgba(255, 237, 193, 0.02),
+              inset 0 0 0 1px rgba(59, 39, 19, 0.04);
+            pointer-events: none;
+          }
+
+          .sidebar-brand-mark {
+            filter: drop-shadow(0 0 18px rgba(118, 18, 16, 0.2))
+              drop-shadow(0 4px 12px rgba(0, 0, 0, 0.34));
+          }
+
+          .sidebar-header-divider {
+            background: linear-gradient(
+              90deg,
+              transparent 0%,
+              rgba(101, 74, 35, 0.12) 22%,
+              rgba(140, 108, 60, 0.2) 50%,
+              rgba(101, 74, 35, 0.12) 78%,
+              transparent 100%
+            );
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+          }
+
           .sidebar-header .btn,
           .sidebar-header button {
-            border: 1px solid rgba(143, 107, 51, 0.45);
-            background: rgba(26, 16, 13, 0.65);
-            color: #e3c687;
+            border: 1px solid rgba(143, 107, 51, 0.26);
+            background: rgba(21, 13, 11, 0.44);
+            color: #d8b774;
+            box-shadow:
+              inset 0 1px 0 rgba(255, 237, 193, 0.03),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.24);
           }
         }
       `}</style>

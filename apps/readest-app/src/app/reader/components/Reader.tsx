@@ -167,7 +167,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   return libraryLoaded && settings.globalReadSettings ? (
     <div
       className={clsx(
-        'reader-page full-height text-base-content select-none overflow-hidden bg-[radial-gradient(circle_at_top,#351813_0%,#140d0b_44%,#080606_100%)]',
+        'reader-page full-height text-base-content select-none overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(95,32,24,0.92)_0%,rgba(46,20,16,0.84)_22%,rgba(15,10,9,0.94)_52%,rgba(6,5,5,1)_100%),radial-gradient(circle_at_12%_52%,rgba(118,27,20,0.2)_0%,transparent_28%),radial-gradient(circle_at_88%_52%,rgba(118,27,20,0.2)_0%,transparent_28%)]',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >

@@ -290,9 +290,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       className='modal-open'
       bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
       boxClassName={clsx(
-        'sm:min-w-[520px] overflow-hidden',
+        'settings-citadel sm:min-w-[520px] overflow-hidden',
         appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
       )}
+      contentClassName='text-[#e4cfab]'
       snapHeight={appService?.isMobile ? 0.7 : undefined}
       header={
         <div className='flex w-full flex-col items-center'>
@@ -331,8 +332,8 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                     tabIndex={0}
                     title={label}
                     className={clsx(
-                      'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
-                      activePanel === tab ? 'btn-active' : '',
+                      'btn btn-ghost btn-sm gap-1 px-2 max-[350px]:px-1',
+                      activePanel === tab && 'btn-active',
                     )}
                     onClick={() => handleSetActivePanel(tab)}
                   >

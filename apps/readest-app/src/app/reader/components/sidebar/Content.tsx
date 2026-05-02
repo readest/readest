@@ -81,7 +81,8 @@ const SidebarContent: React.FC<{
       <div
         className={clsx(
           'sidebar-content flex h-full min-h-0 flex-grow flex-col shadow-inner',
-          'font-sans text-base font-normal sm:text-sm sm:text-[#d9c39a]',
+          'font-sans text-base font-normal text-[#d8c39b] sm:text-sm sm:text-[#d9c39a]',
+          'bg-[linear-gradient(180deg,rgba(20,13,11,0.96),rgba(11,8,7,0.98))]',
           targetTab === 'reading' && 'sm:hidden',
         )}
       >
@@ -100,7 +101,7 @@ const SidebarContent: React.FC<{
           >
             <div
               className={clsx(
-                'scroll-container h-full transition-opacity duration-300 ease-in-out',
+                'scroll-container h-full px-3 pb-4 pt-3 transition-opacity duration-300 ease-in-out',
                 {
                   'opacity-0': fade,
                   'opacity-100': !fade,
@@ -121,13 +122,32 @@ const SidebarContent: React.FC<{
         )}
       </div>
       <div
-        className='flex-shrink-0'
+        className='border-[#6a4d28]/22 flex-shrink-0 border-t bg-[linear-gradient(180deg,rgba(16,11,10,0.94),rgba(10,7,6,0.98))]'
         style={{
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) / 2)',
         }}
       >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
+      <style jsx global>{`
+        @media (min-width: 640px) {
+          .sidebar-content {
+            overflow: hidden;
+          }
+
+          .sidebar-content::after {
+            content: '';
+            position: absolute;
+            inset: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(103, 73, 34, 0.22);
+            box-shadow:
+              inset 0 1px 0 rgba(255, 237, 193, 0.04),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+            pointer-events: none;
+          }
+        }
+      `}</style>
     </>
   );
 };

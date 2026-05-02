@@ -22,7 +22,7 @@ const SettingsToggler: React.FC<SettingsTogglerProps> = ({ bookKey }) => {
   };
   return (
     <Button
-      icon={<RiFontSize className='text-base-content' />}
+      icon={<RiFontSize />}
       onClick={handleToggleSettings}
       label={_('Font & Layout')}
     ></Button>

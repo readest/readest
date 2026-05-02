@@ -126,7 +126,7 @@ export const FILE_SELECTION_PRESETS = {
   },
   audio: {
     accept: 'audio/*',
-    extensions: ['mp3', 'wav', 'ogg', 'flac', 'm4a'],
+    extensions: ['mp3', 'm4a', 'm4b', 'wav', 'flac', 'ogg', 'aac'],
     dialogTitle: _('Select Audio'),
   },
   books: {

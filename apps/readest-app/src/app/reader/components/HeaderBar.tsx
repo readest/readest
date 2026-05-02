@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { VscLibrary } from 'react-icons/vsc';
 
 import { Insets } from '@/types/misc';
@@ -11,7 +10,6 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { getHighlightColorHex } from '../utils/annotatorUtil';
@@ -20,14 +18,10 @@ import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
-import WindowButtons from '@/components/WindowButtons';
 import QuickActionMenu from './annotator/QuickActionMenu';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
-import NotebookToggler from './NotebookToggler';
-import SettingsToggler from './SettingsToggler';
 import TranslationToggler from './TranslationToggler';
-import ViewMenu from './ViewMenu';
 
 interface HeaderBarProps {
   bookKey: string;
@@ -36,7 +30,6 @@ interface HeaderBarProps {
   isHoveredAnim: boolean;
   gridInsets: Insets;
   screenInsets: Insets;
-  onCloseBook: (bookKey: string) => void;
   onGoToLibrary: () => void;
   onDropdownOpenChange?: (isOpen: boolean) => void;
 }
@@ -48,16 +41,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   isHoveredAnim,
   gridInsets,
   screenInsets,
-  onCloseBook,
   onGoToLibrary,
   onDropdownOpenChange,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { isTrafficLightVisible } = useTrafficLight();
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
-  const { bookKeys, hoveredBookKey } = useReaderStore();
+  const { hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
@@ -137,16 +128,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   useSpatialNavigation(headerRef, isHeaderVisible);
   const trafficLightInHeader =
     appService?.hasTrafficLight && !trafficLightInFullscreen && !isSideBarVisible && isTopLeft;
-  const windowButtonVisible =
-    appService?.hasWindowBar && !isTrafficLightVisible && !trafficLightInHeader;
 
   return (
     <div
-      className={clsx(
-        'left-0 top-0 w-full',
-        isHeaderVisible && 'bg-base-100',
-        window.innerWidth < 640 ? 'fixed z-20' : 'absolute',
-      )}
+      className={clsx('left-0 top-0 w-full', window.innerWidth < 640 ? 'fixed z-20' : 'absolute')}
       style={{
         paddingTop: appService?.hasSafeAreaInset ? `${insets.top}px` : '0px',
       }}
@@ -161,7 +146,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       />
       <div
         className={clsx(
-          'bg-[#110b09]/82 absolute left-0 right-0 top-0 z-10',
+          'absolute left-0 right-0 top-0 z-10 bg-[linear-gradient(180deg,rgba(12,8,7,0.74),rgba(10,7,6,0.24))]',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           isHeaderVisible ? 'visible' : 'hidden',
         )}
@@ -174,7 +159,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         role='banner'
         aria-label={_('Header Bar')}
         className={clsx(
-          `header-bar border-[#b89658]/34 absolute top-0 z-10 flex h-[40px] w-full items-center rounded-[16px] border bg-[linear-gradient(180deg,rgba(31,22,19,0.94),rgba(18,13,11,0.95))] pr-2.5 text-[#dfc48d] shadow-[0_10px_24px_rgba(0,0,0,0.24),0_0_16px_rgba(117,24,17,0.08)]`,
+          `header-bar absolute top-0 z-10 flex h-[40px] w-full items-center pr-2 text-[#cfb07a]`,
           `transition-[opacity,margin-top] duration-300`,
           trafficLightInHeader ? 'pl-20' : isSideBarVisible ? 'ps-3.5' : 'ps-3.5 sm:ps-2.5',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
@@ -195,7 +180,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           }
         }}
       >
-        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-2 pe-2 max-[350px]:gap-x-1.5'>
+        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-1.5 pe-2 max-[350px]:gap-x-1'>
           <div
             className='flex min-w-0 items-center gap-x-2 overflow-x-auto max-[350px]:gap-x-1.5'
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -207,7 +192,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             )}
             <button
               title={_('Go to Library')}
-              className='btn btn-ghost border-[#9d7a45]/32 bg-[#211714]/58 hover:bg-[#2d201b]/78 hidden h-7 min-h-7 w-7 rounded-md border p-0 text-[#dec48c] hover:text-[#f0d7a2] sm:flex'
+              className='btn btn-ghost border-[#7d592f]/18 bg-[#130d0b]/54 hover:bg-[#231714]/74 hidden h-7 min-h-7 w-7 rounded-md border p-0 text-[#c29d63] hover:text-[#e1c48d] sm:flex'
               onClick={onGoToLibrary}
             >
               <VscLibrary size={iconSize18} className='fill-current' />
@@ -226,9 +211,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               menuClassName='!relative'
               buttonClassName={clsx(
                 'btn btn-ghost h-7 min-h-7 w-7 p-0',
-                'rounded-md border border-[#9d7a45]/32 bg-[#211714]/58 text-[#dec48c] hover:bg-[#2d201b]/78 hover:text-[#f0d7a2]',
+                'rounded-md border border-[#7d592f]/18 bg-[#130d0b]/54 text-[#c29d63] hover:bg-[#231714]/74 hover:text-[#e1c48d]',
                 viewSettings?.annotationQuickAction &&
-                  'border-[#a9604d]/44 bg-[#3c1c18]/72 text-[#efd39a]',
+                  'border-[#8e6541]/26 bg-[#281510]/72 text-[#e5c882]',
               )}
               toggleButton={
                 annotationQuickAction === 'highlight' || annotationQuickAction === null ? (
@@ -258,46 +243,20 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           role='contentinfo'
           aria-label={_('Title') + ' - ' + bookTitle}
           className={clsx(
-            'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
-            !windowButtonVisible && 'absolute inset-0',
+            'header-title z-15 bg-base-100 pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex',
             isHeaderCompact && '!hidden',
           )}
         >
           <div
             aria-hidden='true'
             className={clsx(
-              'line-clamp-1 text-center font-serif text-[9px] font-semibold uppercase tracking-[0.14em] text-[#e6cf9e]',
+              'line-clamp-1 text-center font-serif text-[8px] font-semibold uppercase tracking-[0.24em] text-[#c4a368]',
               'drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
-              !windowButtonVisible && 'max-w-[50%]',
+              'max-w-[50%]',
             )}
           >
             {bookTitle}
           </div>
-        </div>
-
-        <div className='header-tools-end z-20 ms-auto flex h-full min-w-max items-center gap-x-2 bg-transparent ps-2 max-[350px]:gap-x-1.5'>
-          {!isHeaderCompact && <SettingsToggler bookKey={bookKey} />}
-          <NotebookToggler bookKey={bookKey} />
-          <Dropdown
-            label={_('View Options')}
-            className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-7 min-h-7 w-7 rounded-md border border-[#9d7a45]/32 bg-[#211714]/58 p-0 text-[#dec48c] hover:bg-[#2d201b]/78 hover:text-[#f0d7a2]'
-            toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
-            onToggle={handleToggleDropdown}
-          >
-            <ViewMenu bookKey={bookKey} />
-          </Dropdown>
-          <WindowButtons
-            className='window-buttons flex items-center'
-            headerRef={headerRef}
-            showMinimize={bookKeys.length == 1 && windowButtonVisible}
-            showMaximize={bookKeys.length == 1 && windowButtonVisible}
-            closeButtonLabel={_('Close Book')}
-            onClose={() => {
-              setHoveredBookKey(null);
-              onCloseBook(bookKey);
-            }}
-          />
         </div>
       </div>
       <style jsx global>{`
@@ -306,9 +265,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         }
 
         .header-bar .header-tools-start > button,
-        .header-bar .header-tools-start .btn,
-        .header-bar .header-tools-end > button,
-        .header-bar .header-tools-end .btn {
+        .header-bar .header-tools-start .btn {
           transition:
             background-color 140ms ease,
             border-color 140ms ease,
@@ -325,42 +282,54 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         }
 
         .header-bar .header-tools-start,
-        .header-bar .header-tools-end,
         .header-bar .header-title {
           background: transparent;
         }
 
-        .header-bar .window-buttons button,
+        /* Left-cluster (sidebar/bookmark) — engraved opaque style */
         .header-bar .sidebar-bookmark-toggler button {
           border-radius: 0.5rem;
-          border: 1px solid rgba(157, 122, 69, 0.32);
-          background: rgba(33, 23, 20, 0.58);
-          color: #dec48c;
+          border: 1px solid rgba(120, 86, 42, 0.28);
+          background: linear-gradient(180deg, rgba(22, 14, 11, 0.9), rgba(12, 8, 6, 0.86));
+          color: #c8a06a;
           box-shadow:
             inset 0 1px 0 rgba(255, 237, 193, 0.04),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.16);
+            inset 0 -1px 0 rgba(0, 0, 0, 0.34);
         }
 
-        .header-bar .window-buttons button:hover,
         .header-bar .sidebar-bookmark-toggler button:hover {
-          border-color: rgba(188, 147, 85, 0.42);
-          background: rgba(45, 32, 27, 0.78);
-          color: #f0d7a2;
-        }
-
-        .header-bar::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          box-shadow:
-            inset 0 1px 0 rgba(255, 236, 190, 0.06),
-            inset 0 0 0 1px rgba(96, 70, 34, 0.14);
-          pointer-events: none;
+          border-color: rgba(168, 130, 68, 0.38);
+          background: linear-gradient(180deg, rgba(38, 24, 18, 0.96), rgba(22, 14, 11, 0.92));
+          color: #e0c48a;
         }
 
         .header-bar .header-title {
           letter-spacing: 0.14em;
+        }
+
+        .header-bar .header-title::before,
+        .header-bar .header-title::after {
+          content: '';
+          width: 18px;
+          height: 1px;
+          margin: 0 8px;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(225, 188, 106, 0.14) 34%,
+            rgba(225, 188, 106, 0.4) 100%
+          );
+          display: inline-block;
+          vertical-align: middle;
+        }
+
+        .header-bar .header-title::after {
+          transform: scaleX(-1);
+        }
+
+        .header-bar .btn .text-base-content,
+        .header-bar button .text-base-content {
+          color: currentColor;
         }
       `}</style>
     </div>

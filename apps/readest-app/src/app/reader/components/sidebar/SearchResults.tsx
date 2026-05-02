@@ -30,8 +30,10 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       role='button'
       ref={viewRef}
       className={clsx(
-        'my-2 cursor-pointer rounded-lg p-2 text-sm',
-        isCurrent ? 'bg-base-300 hover:bg-gray-300/70' : 'hover:bg-base-300 bg-base-100',
+        'group relative my-2 cursor-pointer rounded-[18px] px-3 py-3 text-sm transition-colors duration-150',
+        isCurrent
+          ? 'border-[#b48c49]/42 border bg-[linear-gradient(90deg,rgba(61,21,16,0.94),rgba(31,14,11,0.92)_68%,rgba(18,11,9,0.74))] text-[#f0d6a0] shadow-[inset_0_1px_0_rgba(255,237,193,0.08),0_0_18px_rgba(132,26,18,0.16)]'
+          : 'border-[#5e4525]/18 hover:border-[#8f6a37]/34 border bg-[linear-gradient(180deg,rgba(24,16,13,0.86),rgba(12,9,8,0.94))] text-[#dbc7a0] hover:bg-[#251612]',
       )}
       tabIndex={0}
       onClick={() => onSelectResult(cfi)}
@@ -43,9 +45,18 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
         }
       }}
     >
+      <span
+        aria-hidden='true'
+        className={clsx(
+          'absolute bottom-2 left-0 top-2 w-[2px] rounded-full bg-gradient-to-b from-[#b73a2f] to-[#c9a45a] transition-opacity duration-150',
+          isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-70',
+        )}
+      />
       <div className='line-clamp-3'>
         <span className=''>{excerpt.pre}</span>
-        <span className='font-bold text-red-500'>{excerpt.match}</span>
+        <span className='bg-[#5a3518]/52 rounded-[3px] px-[2px] py-[1px] font-semibold text-[#e6bf77]'>
+          {excerpt.match}
+        </span>
         <span className=''>{excerpt.post}</span>
       </div>
     </li>
@@ -74,13 +85,15 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
   }, [progress?.location, results]);
 
   return (
-    <div className='search-results overflow-y-auto rounded-[18px] border border-[#c9a45a]/30 bg-[linear-gradient(180deg,rgba(18,12,10,0.97),rgba(11,8,7,0.97))] p-2 font-sans text-sm font-light text-[#dcc8a1] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.18)] sm:absolute sm:bottom-[18px] sm:left-[calc(100%+18px)] sm:top-[72px] sm:z-[4] sm:w-[320px]'>
-      <ul className='px-2'>
+    <div className='search-results overflow-y-auto rounded-[24px] border border-[#c9a45a]/30 bg-[linear-gradient(180deg,rgba(18,12,10,0.97),rgba(11,8,7,0.97))] p-4 font-sans text-sm font-light text-[#dcc8a1] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.18)] sm:absolute sm:bottom-[20px] sm:left-[calc(100%+22px)] sm:top-[86px] sm:z-[4] sm:w-[344px]'>
+      <ul className='px-1'>
         {results.map((result, index) => {
           if ('subitems' in result) {
             return (
-              <ul key={`${index}-${result.label}`}>
-                <h3 className='line-clamp-1 font-normal'>{result.label}</h3>
+              <ul key={`${index}-${result.label}`} className='mb-3 last:mb-0'>
+                <h3 className='border-[#5e4525]/24 mb-2 border-b pb-1.5 font-serif text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c9ab73]'>
+                  {result.label}
+                </h3>
                 <ul>
                   {result.subitems.map((item, index) => (
                     <SearchResultItem

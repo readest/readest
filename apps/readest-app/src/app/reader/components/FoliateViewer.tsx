@@ -77,6 +77,407 @@ declare global {
   }
 }
 
+const CITADEL_BOOK_PAGE_STYLE_ID = 'citadel-book-page-style';
+const CITADEL_DROP_CAP_CLASS = 'citadel-drop-cap-paragraph';
+const CITADEL_CHAPTER_OPENING_CLASS = 'citadel-chapter-opening';
+const CITADEL_CHAPTER_TITLE_CLASS = 'citadel-chapter-title';
+const CITADEL_CHAPTER_ORNAMENT_CLASS = 'citadel-chapter-ornament';
+
+const CITADEL_CHAPTER_HEADING_SELECTOR = [
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  '.chapter',
+  '.chapter-title',
+  '.title',
+  '.heading',
+  '[epub\\:type~="title"]',
+].join(', ');
+
+const CITADEL_BOOK_PAGE_CSS = `
+  :root {
+    --citadel-page-text-max-width: 36.2em;
+    --citadel-page-block-width: min(
+      100%,
+      calc(var(--citadel-page-text-max-width) + var(--citadel-page-outer-pad) + var(--citadel-page-gutter-pad))
+    );
+    --citadel-page-text-color: rgba(236, 228, 212, 0.92);
+    --citadel-page-muted-gold: #a97935;
+    --citadel-page-title-gold: #d2aa62;
+    --citadel-page-dropcap-gold: #d49a37;
+    --citadel-page-border-gold: rgba(184, 144, 86, 0.62);
+    --citadel-page-border-gold-soft: rgba(122, 91, 54, 0.3);
+    --citadel-page-outer-pad: 1.55rem;
+    --citadel-page-gutter-pad: 2.3rem;
+    --citadel-page-top-pad: 1.36rem;
+  }
+
+  html[data-citadel-page-side='left'] {
+    --citadel-page-outer-pad: 1.4rem;
+    --citadel-page-gutter-pad: 2.45rem;
+    --citadel-page-top-pad: 1.34rem;
+  }
+
+  html[data-citadel-page-side='right'] {
+    --citadel-page-outer-pad: 1.5rem;
+    --citadel-page-gutter-pad: 2.5rem;
+    --citadel-page-top-pad: 2.2rem;
+  }
+
+  html[data-citadel-page-side='center'] {
+    --citadel-page-outer-pad: 1.55rem;
+    --citadel-page-gutter-pad: 2.1rem;
+    --citadel-page-top-pad: 1.5rem;
+  }
+
+  body {
+    position: relative !important;
+    padding-top: var(--citadel-page-top-pad) !important;
+    color: var(--citadel-page-text-color) !important;
+    line-height: 1.58 !important;
+    text-rendering: optimizeLegibility !important;
+    background-color: transparent !important;
+  }
+
+  body::before {
+    content: '' !important;
+    position: fixed !important;
+    inset: 14px 16px !important;
+    pointer-events: none !important;
+    border-radius: 10px !important;
+    background:
+      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 24px 1.2px no-repeat,
+      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 1.2px 24px no-repeat,
+      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px left 17px / 12px 12px no-repeat,
+      radial-gradient(circle at top 20px left 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
+      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) top 20px right 20px / 24px 1.2px no-repeat,
+      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px right 20px / 1.2px 24px no-repeat,
+      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px right 17px / 12px 12px no-repeat,
+      radial-gradient(circle at top 20px right 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
+      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) bottom 20px left 20px / 24px 1.2px no-repeat,
+      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px left 20px / 1.2px 24px no-repeat,
+      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px left 17px / 12px 12px no-repeat,
+      radial-gradient(circle at bottom 20px left 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
+      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 24px 1.2px no-repeat,
+      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 1.2px 24px no-repeat,
+      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px right 17px / 12px 12px no-repeat,
+      radial-gradient(circle at bottom 20px right 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px) !important;
+    opacity: 0.94 !important;
+  }
+
+  p,
+  blockquote,
+  ul,
+  ol,
+  pre,
+  table,
+  figure,
+  img,
+  svg {
+    width: var(--citadel-page-block-width) !important;
+    max-width: var(--citadel-page-block-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html[data-citadel-page-side='left'] p,
+  html[data-citadel-page-side='left'] blockquote,
+  html[data-citadel-page-side='left'] ul,
+  html[data-citadel-page-side='left'] ol,
+  html[data-citadel-page-side='left'] pre,
+  html[data-citadel-page-side='left'] table,
+  html[data-citadel-page-side='left'] figure,
+  html[data-citadel-page-side='left'] img,
+  html[data-citadel-page-side='left'] svg,
+  html[data-citadel-page-side='left'] h1,
+  html[data-citadel-page-side='left'] h2,
+  html[data-citadel-page-side='left'] h3,
+  html[data-citadel-page-side='left'] h4,
+  html[data-citadel-page-side='left'] .chapter,
+  html[data-citadel-page-side='left'] .chapter-title,
+  html[data-citadel-page-side='left'] .title,
+  html[data-citadel-page-side='left'] .heading,
+  html[data-citadel-page-side='left'] [epub\\:type~="title"] {
+    padding-left: var(--citadel-page-outer-pad) !important;
+    padding-right: var(--citadel-page-gutter-pad) !important;
+  }
+
+  html[data-citadel-page-side='right'] p,
+  html[data-citadel-page-side='right'] blockquote,
+  html[data-citadel-page-side='right'] ul,
+  html[data-citadel-page-side='right'] ol,
+  html[data-citadel-page-side='right'] pre,
+  html[data-citadel-page-side='right'] table,
+  html[data-citadel-page-side='right'] figure,
+  html[data-citadel-page-side='right'] img,
+  html[data-citadel-page-side='right'] svg,
+  html[data-citadel-page-side='right'] h1,
+  html[data-citadel-page-side='right'] h2,
+  html[data-citadel-page-side='right'] h3,
+  html[data-citadel-page-side='right'] h4,
+  html[data-citadel-page-side='right'] .chapter,
+  html[data-citadel-page-side='right'] .chapter-title,
+  html[data-citadel-page-side='right'] .title,
+  html[data-citadel-page-side='right'] .heading,
+  html[data-citadel-page-side='right'] [epub\\:type~="title"] {
+    padding-left: var(--citadel-page-gutter-pad) !important;
+    padding-right: var(--citadel-page-outer-pad) !important;
+  }
+
+  html[data-citadel-page-side='center'] p,
+  html[data-citadel-page-side='center'] blockquote,
+  html[data-citadel-page-side='center'] ul,
+  html[data-citadel-page-side='center'] ol,
+  html[data-citadel-page-side='center'] pre,
+  html[data-citadel-page-side='center'] table,
+  html[data-citadel-page-side='center'] figure,
+  html[data-citadel-page-side='center'] img,
+  html[data-citadel-page-side='center'] svg,
+  html[data-citadel-page-side='center'] h1,
+  html[data-citadel-page-side='center'] h2,
+  html[data-citadel-page-side='center'] h3,
+  html[data-citadel-page-side='center'] h4,
+  html[data-citadel-page-side='center'] .chapter,
+  html[data-citadel-page-side='center'] .chapter-title,
+  html[data-citadel-page-side='center'] .title,
+  html[data-citadel-page-side='center'] .heading,
+  html[data-citadel-page-side='center'] [epub\\:type~="title"] {
+    padding-left: var(--citadel-page-outer-pad) !important;
+    padding-right: var(--citadel-page-outer-pad) !important;
+  }
+
+  p {
+    margin-top: 0 !important;
+    margin-bottom: 0.86em !important;
+  }
+
+  html[data-citadel-page-side='center'] body:not(.${CITADEL_CHAPTER_OPENING_CLASS}) p:first-of-type {
+    margin-top: 0.52rem !important;
+  }
+
+  html[data-citadel-page-side='right'] body:not(.${CITADEL_CHAPTER_OPENING_CLASS}) p:first-of-type {
+    margin-top: 1.5rem !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .chapter,
+  .chapter-title,
+  .title,
+  .heading,
+  [epub\\:type~="title"] {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+    float: left !important;
+    margin: 0.04em 0.14em 0 0 !important;
+    color: var(--citadel-page-dropcap-gold) !important;
+    font-size: 4.35rem !important;
+    line-height: 0.84 !important;
+    font-weight: 550 !important;
+    text-shadow: 0 0 18px rgba(168, 86, 24, 0.25) !important;
+  }
+
+  ${'.' + CITADEL_DROP_CAP_CLASS} {
+    text-indent: 0 !important;
+    min-height: 4.1em !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
+    position: relative !important;
+    margin-top: 0.8em !important;
+    margin-bottom: 0.44em !important;
+    text-align: center !important;
+    color: var(--citadel-page-title-gold) !important;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif !important;
+    font-size: clamp(1.42rem, 2.45vw, 2rem) !important;
+    line-height: 1.08 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 0 rgba(28, 16, 9, 0.5), 0 0 14px rgba(134, 74, 23, 0.14) !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before,
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
+    content: '' !important;
+    display: block !important;
+    width: min(9.5rem, 42%) !important;
+    height: 14px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(188, 143, 76, 0.24) 16%, rgba(205, 164, 95, 0.8) 50%, rgba(188, 143, 76, 0.24) 84%, transparent 100%) center / 100% 1px no-repeat,
+      linear-gradient(45deg, transparent 44%, rgba(208, 168, 96, 0.84) 50%, transparent 56%) center / 9px 9px no-repeat,
+      linear-gradient(-45deg, transparent 44%, rgba(208, 168, 96, 0.84) 50%, transparent 56%) center / 9px 9px no-repeat,
+      radial-gradient(circle at center, rgba(214, 171, 106, 0.66) 0 1.2px, transparent 1.4px) center / 100% 100% no-repeat !important;
+    opacity: 0.92 !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before {
+    margin-bottom: 0.4em !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
+    width: min(7.2rem, 32%) !important;
+    margin-top: 0.28em !important;
+    opacity: 0.72 !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_DROP_CAP_CLASS} {
+    margin-top: 0.15em !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_ORNAMENT_CLASS} {
+    margin-bottom: 0.7rem !important;
+    opacity: 0.94 !important;
+  }
+
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_ORNAMENT_CLASS} img,
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_ORNAMENT_CLASS} svg {
+    margin-bottom: 0 !important;
+  }
+
+  @media (max-width: 900px) {
+    :root {
+      --citadel-page-text-max-width: 32em;
+      --citadel-page-outer-pad: 1.1rem;
+      --citadel-page-gutter-pad: 1.5rem;
+      --citadel-page-top-pad: 1.08rem;
+    }
+
+    body::before {
+      inset: 12px 12px !important;
+    }
+
+    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+      font-size: 3.75rem !important;
+    }
+
+    ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
+      font-size: clamp(1.2rem, 4vw, 1.58rem) !important;
+      letter-spacing: 0.14em !important;
+    }
+  }
+`;
+
+const isCitadelDropCapCandidate = (element: Element) => {
+  const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+  if (text.length < 80) return false;
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]/.test(text)) return false;
+  const letters = text.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+  if (letters.length > 0 && letters === letters.toUpperCase()) return false;
+  return true;
+};
+
+const isCitadelChapterHeadingCandidate = (element: Element) => {
+  const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+  if (text.length < 2 || text.length > 64) return false;
+  if (!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(text)) return false;
+  if (/[:;!?]$/.test(text)) return false;
+  return true;
+};
+
+const isCitadelChapterOrnamentCandidate = (element: Element) => {
+  if (!(element instanceof HTMLElement)) return false;
+  if (element.matches('figure, img, svg')) return true;
+  if (element.matches('p, div')) {
+    const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+    const hasSingleVisual = element.childElementCount === 1 && !!element.querySelector('img, svg');
+    return hasSingleVisual || text.length <= 3;
+  }
+  return false;
+};
+
+const getCitadelPageSide = (doc: Document): 'left' | 'right' | 'center' => {
+  const iframe = doc.defaultView?.frameElement as HTMLElement | null;
+  const parent = iframe?.parentElement;
+  if (!iframe || !parent) return 'center';
+
+  const iframeRect = iframe.getBoundingClientRect();
+  const parentRect = parent.getBoundingClientRect();
+  if (!iframeRect.width || !parentRect.width) return 'center';
+
+  const iframeCenter = iframeRect.left + iframeRect.width / 2;
+  const parentCenter = parentRect.left + parentRect.width / 2;
+  const delta = iframeCenter - parentCenter;
+  const threshold = Math.max(24, iframeRect.width * 0.1);
+
+  if (delta < -threshold) return 'left';
+  if (delta > threshold) return 'right';
+  return 'center';
+};
+
+const getCitadelChapterOpening = (doc: Document) => {
+  const flowNodes = Array.from(
+    doc.body?.querySelectorAll(`${CITADEL_CHAPTER_HEADING_SELECTOR}, p`) || [],
+  ).filter((element) => {
+    if (element.closest('blockquote, aside, nav, header, footer, figcaption')) return false;
+    return !!(element.textContent || '').replace(/\s+/g, ' ').trim();
+  });
+
+  const heading = flowNodes.find((element, index) => {
+    if (index > 3) return false;
+    if (!element.matches(CITADEL_CHAPTER_HEADING_SELECTOR)) return false;
+    return isCitadelChapterHeadingCandidate(element);
+  });
+
+  if (!heading) return { heading: null, paragraph: null };
+
+  const headingIndex = flowNodes.indexOf(heading);
+  const paragraph = flowNodes.slice(headingIndex + 1).find((element) => {
+    if (!element.matches('p')) return false;
+    return isCitadelDropCapCandidate(element);
+  });
+
+  if (!paragraph) return { heading: null, paragraph: null };
+  return { heading, paragraph };
+};
+
+const applyCitadelBookPageStyles = (doc: Document, isFixedLayout?: boolean) => {
+  if (isFixedLayout) return;
+
+  const existingStyle = doc.getElementById(CITADEL_BOOK_PAGE_STYLE_ID);
+  if (existingStyle) {
+    existingStyle.textContent = CITADEL_BOOK_PAGE_CSS;
+  } else {
+    const style = doc.createElement('style');
+    style.id = CITADEL_BOOK_PAGE_STYLE_ID;
+    style.textContent = CITADEL_BOOK_PAGE_CSS;
+    (doc.head || doc.documentElement).appendChild(style);
+  }
+
+  doc.querySelectorAll(`.${CITADEL_DROP_CAP_CLASS}`).forEach((element) => {
+    element.classList.remove(CITADEL_DROP_CAP_CLASS);
+  });
+  doc.querySelectorAll(`.${CITADEL_CHAPTER_TITLE_CLASS}`).forEach((element) => {
+    element.classList.remove(CITADEL_CHAPTER_TITLE_CLASS);
+  });
+  doc.querySelectorAll(`.${CITADEL_CHAPTER_ORNAMENT_CLASS}`).forEach((element) => {
+    element.classList.remove(CITADEL_CHAPTER_ORNAMENT_CLASS);
+  });
+  doc.body?.classList.remove(CITADEL_CHAPTER_OPENING_CLASS);
+  doc.documentElement.setAttribute('data-citadel-page-side', getCitadelPageSide(doc));
+
+  const { heading, paragraph } = getCitadelChapterOpening(doc);
+
+  if (heading && paragraph) {
+    doc.body?.classList.add(CITADEL_CHAPTER_OPENING_CLASS);
+    heading.classList.add(CITADEL_CHAPTER_TITLE_CLASS);
+    const ornament = heading.previousElementSibling;
+    if (ornament && isCitadelChapterOrnamentCandidate(ornament)) {
+      ornament.classList.add(CITADEL_CHAPTER_ORNAMENT_CLASS);
+    }
+    paragraph.classList.add(CITADEL_DROP_CAP_CLASS);
+  }
+};
+
 const FoliateViewer: React.FC<{
   bookKey: string;
   bookDoc: BookDoc;
@@ -255,6 +656,7 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
+      applyCitadelBookPageStyles(detail.doc, bookData.isFixedLayout);
       handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
         skipToLastPosLabel: _('Skip to last reading position'),
@@ -640,6 +1042,7 @@ const FoliateViewer: React.FC<{
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
+        applyCitadelBookPageStyles(doc, bookData?.isFixedLayout);
       });
 
       if (bookData?.book?.format === 'PDF' && themeCode && renderer) {

@@ -80,16 +80,23 @@ const TOCItemView = React.memo<{
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
       className={clsx(
-        'flex w-full cursor-pointer items-center rounded-md py-4 sm:py-2',
+        'group relative flex w-full cursor-pointer items-center rounded-[16px] px-3 py-3 text-[#d8c39b] transition-colors duration-150 sm:py-3',
         isActive
-          ? 'text-bold-in-eink sm:bg-base-300/65 sm:hover:bg-base-300/75 sm:text-base-content text-blue-500'
-          : 'sm:hover:bg-base-300/75',
+          ? 'text-bold-in-eink border-[#b48c49]/34 border bg-[linear-gradient(90deg,rgba(61,21,16,0.96),rgba(30,14,11,0.92)_62%,rgba(18,11,9,0.76))] text-[#f0d6a0] shadow-[inset_0_1px_0_rgba(255,237,193,0.08),0_0_18px_rgba(132,26,18,0.16)] sm:text-[#f0d6a0]'
+          : 'border-[#4d371e]/16 hover:bg-[#221511]/92 border bg-[linear-gradient(180deg,rgba(18,12,10,0.74),rgba(11,8,7,0.88))] hover:border-[#8f6a37]/30 hover:text-[#eed8a9]',
       )}
       style={{
         height: itemSize ? `${itemSize}px` : 'auto',
         paddingInlineStart: `${(depth + 1) * 12}px`,
       }}
     >
+      <span
+        aria-hidden='true'
+        className={clsx(
+          'absolute bottom-2 left-0 top-2 w-[2px] rounded-full bg-gradient-to-b from-[#b73a2f] to-[#c9a45a] transition-opacity duration-150',
+          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-70',
+        )}
+      />
       {item.subitems && (
         <button
           onClick={handleToggleExpand}
@@ -97,7 +104,7 @@ const TOCItemView = React.memo<{
             e.stopPropagation();
           }}
           aria-label={flatItem.isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
-          className='inline-block cursor-pointer'
+          className='inline-block cursor-pointer text-[#9f814a] transition-colors duration-150 hover:text-[#d9bd86]'
           style={{
             padding: '12px',
             margin: '-12px',
@@ -107,7 +114,7 @@ const TOCItemView = React.memo<{
         </button>
       )}
       <div
-        className='ms-2 truncate text-ellipsis'
+        className='ms-2 truncate text-ellipsis text-sm leading-[1.25]'
         style={{
           maxWidth: 'calc(100% - 24px)',
           whiteSpace: 'nowrap',
@@ -117,7 +124,13 @@ const TOCItemView = React.memo<{
         {item.label}
       </div>
       {(item.location || item.index !== undefined) && (
-        <div aria-hidden='true' className='text-base-content/50 ms-auto ps-1 text-xs sm:pe-1'>
+        <div
+          aria-hidden='true'
+          className={clsx(
+            'ms-auto ps-2 text-[11px] tabular-nums text-[#8f7447] sm:pe-1',
+            isActive && 'text-[#d8b46f]',
+          )}
+        >
           {item.location ? item.location.current + 1 : item.index + 1}
         </div>
       )}
@@ -147,13 +160,7 @@ export const StaticListRow: React.FC<ListRowProps> = ({
   const isActive = activeHref === flatItem.item.href;
 
   return (
-    <div
-      className={clsx(
-        'border-base-300 w-full border-b sm:border-none',
-        'pe-4 ps-2 pt-[1px] sm:pe-2',
-      )}
-      title={flatItem.item.label || ''}
-    >
+    <div className={clsx('w-full px-1 pt-[1px] sm:px-0')} title={flatItem.item.label || ''}>
       <TOCItemView
         bookKey={bookKey}
         flatItem={flatItem}

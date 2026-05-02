@@ -36,9 +36,9 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
     <Button
       icon={
         sideBarBookKey == bookKey && isNotebookVisible ? (
-          <LuNotebookPen size={iconSize16} className='text-base-content' />
+          <LuNotebookPen size={iconSize16} />
         ) : (
-          <LuNotebookPen size={iconSize16} className='text-base-content' />
+          <LuNotebookPen size={iconSize16} />
         )
       }
       onClick={handleToggleSidebar}

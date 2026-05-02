@@ -105,8 +105,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
     return (
       <div
         className={clsx(
-          'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
-          isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',
+          'content border-[#6a4d28]/28 bg-[#1a110f]/86 group relative my-2 rounded-[18px] border p-3 text-[#dbc7a0]',
+          isCurrent
+            ? 'border-[#b48c49]/42 bg-[#311814]/92 shadow-[inset_0_1px_0_rgba(255,237,193,0.06)]'
+            : 'hover:border-[#8f6a37]/34 hover:bg-[#241612]',
           'transition-all duration-300 ease-in-out',
         )}
       >
@@ -139,10 +141,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
       role='button'
       ref={viewRef}
       className={clsx(
-        'booknote-item border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
+        'booknote-item content border-[#6a4d28]/24 group relative my-2 cursor-pointer rounded-[18px] border bg-[linear-gradient(180deg,rgba(24,16,13,0.86),rgba(12,9,8,0.94))] p-3 text-[#dbc7a0]',
         isCurrent
-          ? 'bg-base-300/85 hover:bg-base-300 focus:bg-base-300'
-          : 'hover:bg-base-300/55 focus:bg-base-300/55 bg-base-100',
+          ? 'border-[#b48c49]/42 hover:bg-[#311814]/92 focus:bg-[#311814]/92 bg-[linear-gradient(90deg,rgba(61,21,16,0.94),rgba(31,14,11,0.92)_68%,rgba(18,11,9,0.74))] text-[#f0d6a0]'
+          : 'hover:border-[#8f6a37]/34 focus:border-[#8f6a37]/34 hover:bg-[#241612] focus:bg-[#241612]',
         'transition-all duration-300 ease-in-out',
       )}
       tabIndex={0}
@@ -155,6 +157,13 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
         }
       }}
     >
+      <span
+        aria-hidden='true'
+        className={clsx(
+          'absolute bottom-3 left-0 top-3 w-[2px] rounded-full bg-gradient-to-b from-[#b73a2f] to-[#c9a45a] transition-opacity duration-150',
+          isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-70',
+        )}
+      />
       <div
         className={clsx('min-h-4 p-0 transition-all duration-300 ease-in-out')}
         style={
@@ -174,7 +183,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
         <div className='flex items-start'>
           {item.note && (
             <div
-              className='me-2 mt-2.5 min-h-full self-stretch rounded-xl bg-gray-300'
+              className='bg-[#7d5a2d]/78 me-2 mt-2.5 min-h-full self-stretch rounded-xl'
               style={{
                 minWidth: `${separatorWidth}px`,
               }}
@@ -184,7 +193,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             <span
               className={clsx(
                 'booknote-text inline leading-normal',
-                item.note && 'content font-size-xs text-gray-500',
+                item.note && 'content font-size-xs text-[#9d8358]',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
                 item.style === 'highlight' && 'rounded-[4px] px-[2px] py-[1px]',
@@ -235,10 +244,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
           )}
         >
           <div className='flex w-full items-center gap-1 truncate'>
-            <span className='truncate text-sm text-gray-500 sm:text-xs'>
+            <span className='truncate text-sm text-[#8e7348] sm:text-xs'>
               {item.page ? _('p {{page}}' + ' · ', { page: item.page }) : ''}
             </span>
-            <span className='truncate text-sm text-gray-500 sm:text-xs'>
+            <span className='truncate text-sm text-[#8e7348] sm:text-xs'>
               {dayjs(item.createdAt).fromNow()}
             </span>
           </div>
@@ -249,7 +258,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             {isEditable && (
               <button
                 onClick={item.type === 'bookmark' ? editBookmark : editNote.bind(null, item)}
-                className='btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                className='btn btn-ghost btn-xs border-[#6a4d28]/26 rounded-md border bg-[#1a110f]/80 p-0 text-[#c7ab74] opacity-0 transition duration-300 ease-in-out hover:bg-[#241612] hover:text-[#f0d6a0] group-focus-within:opacity-100 group-hover:opacity-100'
                 aria-label={_('Edit')}
               >
                 <MdEdit size={size18} />
@@ -258,7 +267,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
 
             <button
               onClick={deleteNote.bind(null, item)}
-              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+              className='btn btn-ghost btn-xs border-[#7b342d]/34 rounded-md border bg-[#1a110f]/80 p-0 text-[#b56b5f] opacity-0 transition duration-300 ease-in-out hover:bg-[#2a1613] hover:text-[#e6a093] group-focus-within:opacity-100 group-hover:opacity-100'
               aria-label={_('Delete')}
             >
               <MdDelete size={size18} />
