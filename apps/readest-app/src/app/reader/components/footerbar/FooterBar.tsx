@@ -218,9 +218,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const containerClasses = clsx(
     'footer-bar bottom-0 left-0 z-10 flex w-full flex-col',
-    !forceMobileLayout &&
-      'sm:h-[60px] sm:rounded-[16px] sm:border sm:border-[#d2b374]/44 sm:bg-[linear-gradient(180deg,rgba(32,22,18,0.92),rgba(15,11,10,0.94))] sm:shadow-[0_14px_32px_rgba(0,0,0,0.3),0_0_18px_rgba(117,24,17,0.12)]',
-    'border-t border-[#7e6040]/40',
+    !forceMobileLayout && 'sm:h-[60px] sm:rounded-b-[10px]',
     'transition-[opacity,transform] duration-300',
     forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',
@@ -232,7 +230,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
       ? 'pointer-events-auto translate-y-0 opacity-100'
       : forceMobileLayout
         ? 'pointer-events-none translate-y-full opacity-0'
-        : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
+        : viewSettings?.showFooter !== false
+          ? 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0 sm:opacity-[0.62]'
+          : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0',
   );
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
@@ -267,14 +267,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
       </div>
       <style jsx global>{`
         @media (min-width: 640px) {
+          /* Warm overlay tint + inset depth + brass rim — seats the bar into the lower frame */
           .footer-bar::before {
             content: '';
             position: absolute;
             inset: 0;
             border-radius: inherit;
+            background: linear-gradient(180deg, rgba(30, 18, 10, 0.22) 0%, rgba(8, 5, 3, 0.1) 100%);
+            border-top: 1px solid rgba(88, 60, 24, 0.4);
             box-shadow:
-              inset 0 1px 0 rgba(255, 237, 193, 0.1),
-              inset 0 0 0 1px rgba(95, 70, 34, 0.2);
+              inset 0 5px 16px rgba(0, 0, 0, 0.32),
+              inset 0 1px 0 rgba(255, 200, 120, 0.03);
+            pointer-events: none;
+          }
+
+          .footer-bar > .hidden.sm\\:flex {
+            position: relative;
+          }
+
+          /* Carved channel groove behind the progress slider */
+          .footer-bar > .hidden.sm\\:flex::before {
+            content: '';
+            position: absolute;
+            left: 74px;
+            right: 74px;
+            top: 50%;
+            height: 18px;
+            transform: translateY(-50%);
+            border-radius: 9999px;
+            background: linear-gradient(180deg, rgba(8, 5, 3, 0.94), rgba(18, 12, 7, 0.26));
+            box-shadow:
+              inset 0 3px 7px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(0, 0, 0, 0.55),
+              0 0 0 1px rgba(55, 36, 14, 0.24),
+              0 1px 0 rgba(190, 148, 65, 0.08);
             pointer-events: none;
           }
         }
