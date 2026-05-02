@@ -55,6 +55,7 @@ interface AccountActionsProps {
   onRestorePurchase?: () => void;
   onManageSubscription?: () => void;
   onManageStorage?: () => void;
+  onManageSharedLinks?: () => void;
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
@@ -67,6 +68,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   onRestorePurchase,
   onManageSubscription,
   onManageStorage,
+  onManageSharedLinks,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -114,6 +116,14 @@ const AccountActions: React.FC<AccountActionsProps> = ({
             className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
           >
             {_('Manage Storage')}
+          </button>
+        )}
+        {onManageSharedLinks && (
+          <button
+            onClick={onManageSharedLinks}
+            className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
+          >
+            {_('Manage Shared Links')}
           </button>
         )}
         <button

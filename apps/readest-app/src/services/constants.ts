@@ -728,6 +728,14 @@ export const DOWNLOAD_READEST_URL = 'https://readest.com?utm_source=readest_web'
 export const READEST_WEB_BASE_URL = 'https://web.readest.com';
 export const READEST_NODE_BASE_URL = 'https://node.readest.com';
 
+export const SHARE_BASE_URL = `${READEST_WEB_BASE_URL}/s`;
+export const SHARE_EXPIRATION_DAYS = [1, 3, 7] as const;
+export const SHARE_DEFAULT_EXPIRATION_DAYS = 3;
+export const SHARE_MAX_PER_USER = 50;
+export const SHARE_TOKEN_LENGTH = 22;
+export const SHARE_PRESIGN_TTL_SECONDS = 300;
+export const SHARE_CFI_MAX_LENGTH = 512;
+
 const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 
 export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;

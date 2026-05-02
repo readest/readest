@@ -13,6 +13,10 @@
           {
             "/": "/o/*",
             "comment": "Matches annotation deeplinks"
+          },
+          {
+            "/": "/s/*",
+            "comment": "Matches book share links"
           }
         ]
       }

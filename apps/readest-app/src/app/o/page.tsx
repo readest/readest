@@ -1,12 +1,14 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { IoAlertCircleOutline, IoBookOutline, IoOpenOutline } from 'react-icons/io5';
 import { DOWNLOAD_READEST_URL, READEST_WEB_BASE_URL } from '@/services/constants';
 import { useTranslation } from '@/hooks/useTranslation';
 import { buildAnnotationAppUrl } from '@/utils/deeplink';
+import { BrandHeader } from '@/components/landing/BrandHeader';
+import { Card } from '@/components/landing/Card';
+import { PageFooter } from '@/components/landing/PageFooter';
 
 type Platform = 'android-chromium' | 'android-other' | 'ios' | 'desktop' | 'unknown';
 
@@ -36,39 +38,6 @@ const buildWebReaderUrl = (bookHash: string, cfi: string | null): string => {
   const query = cfi ? `?${new URLSearchParams({ cfi }).toString()}` : '';
   return `/reader/${bookHash}${query}`;
 };
-
-const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className='bg-base-100 border-base-300 mx-4 w-full max-w-md rounded-2xl border p-6 shadow-md sm:p-8'>
-    {children}
-  </div>
-);
-
-const BrandHeader: React.FC<{ title: string; subtitle: string; alt: string }> = ({
-  title,
-  subtitle,
-  alt,
-}) => (
-  <div className='flex flex-col items-center text-center'>
-    <Image src='/icon.png' alt={alt} width={64} height={64} priority className='mb-4 rounded-2xl' />
-    <h1 className='text-base-content text-2xl font-semibold'>{title}</h1>
-    <p className='text-base-content/70 mt-2 text-sm'>{subtitle}</p>
-  </div>
-);
-
-const PageFooter: React.FC<{ tagline: string }> = ({ tagline }) => (
-  <p className='text-base-content/50 mt-6 text-center text-xs'>
-    <a
-      href='https://readest.com'
-      className='hover:text-base-content/80 font-medium transition-colors'
-      target='_blank'
-      rel='noopener'
-    >
-      Readest
-    </a>
-    <span className='mx-1.5'>·</span>
-    <span>{tagline}</span>
-  </p>
-);
 
 const OpenAnnotationLanding = () => {
   const _ = useTranslation();

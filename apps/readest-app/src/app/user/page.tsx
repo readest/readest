@@ -40,6 +40,7 @@ import UsageStats from './components/UsageStats';
 import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
+import SharedLinksSection from './components/SharedLinksSection';
 import Checkout from './components/Checkout';
 
 type CheckoutState = {
@@ -58,6 +59,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   const [showStorageManager, setShowStorageManager] = useState(false);
+  const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
     sessionId: '',
@@ -105,6 +107,8 @@ const ProfilePage = () => {
     } else if (showStorageManager) {
       setShowStorageManager(false);
       refresh();
+    } else if (showSharedLinksManager) {
+      setShowSharedLinksManager(false);
     } else {
       navigateToLibrary(router);
     }
@@ -230,6 +234,10 @@ const ProfilePage = () => {
     setShowStorageManager(true);
   };
 
+  const handleManageSharedLinks = () => {
+    setShowSharedLinksManager(true);
+  };
+
   if (!mounted) {
     return null;
   }
@@ -292,12 +300,16 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {!showStorageManager && <UsageStats quotas={quotas} />}
+                  {!showStorageManager && !showSharedLinksManager && <UsageStats quotas={quotas} />}
                 </div>
 
                 {showStorageManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <StorageManager />
+                  </div>
+                ) : showSharedLinksManager ? (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <SharedLinksSection />
                   </div>
                 ) : (
                   <>
@@ -323,6 +335,7 @@ const ProfilePage = () => {
                         onRestorePurchase={handleIAPRestorePurchase}
                         onManageSubscription={handleManageSubscription}
                         onManageStorage={handleManageStorage}
+                        onManageSharedLinks={handleManageSharedLinks}
                       />
                     </div>
                   </>

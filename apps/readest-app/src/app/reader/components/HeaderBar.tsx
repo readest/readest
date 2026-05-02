@@ -26,6 +26,7 @@ import WindowButtons from '@/components/WindowButtons';
 import QuickActionMenu from './annotator/QuickActionMenu';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
+import ShareToggler from './ShareToggler';
 import NotebookToggler from './NotebookToggler';
 import SettingsToggler from './SettingsToggler';
 import TranslationToggler from './TranslationToggler';
@@ -219,6 +220,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               <VscLibrary size={iconSize18} className='fill-base-content' />
             </button>
             <BookmarkToggler bookKey={bookKey} />
+            <ShareToggler bookKey={bookKey} />
             <TranslationToggler bookKey={bookKey} />
           </div>
           {enableAnnotationQuickActions && (
