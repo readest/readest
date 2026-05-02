@@ -130,6 +130,10 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
+  inlineInsight?: {
+    answer: string;
+    context: string;
+  };
 
   createdAt: number;
   updatedAt: number;

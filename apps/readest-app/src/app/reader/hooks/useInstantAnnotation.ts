@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
+import { isRegularTextAnnotation } from '@/services/inlineInsight/annotations';
 import { Point, TextSelection, snapRangeToWords } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -295,7 +296,7 @@ export const useInstantAnnotation = ({
       const progress = getProgress(bookKey)!;
       const { booknotes: annotations = [] } = config;
       const existingIndex = annotations.findIndex(
-        (a) => a.cfi === cfi && a.type === 'annotation' && a.style && !a.deletedAt,
+        (a) => a.cfi === cfi && isRegularTextAnnotation(a),
       );
 
       if (existingIndex !== -1) {

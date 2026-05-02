@@ -34,6 +34,14 @@ import { transformContent } from '@/services/transformService';
 import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import { DEFAULT_ANNOTATION_TOOL_TYPES } from '@/types/annotator';
+import {
+  INLINE_INSIGHT_UNDERLINE_COLOR,
+  InlineInsightSnapshot,
+  isInlineInsightAnnotation,
+  isRegularTextAnnotation,
+  isUserBookNote,
+  upsertInlineInsightAnnotation,
+} from '@/services/inlineInsight/annotations';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
@@ -90,6 +98,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     booknotes: BookNote[];
     booknoteGroups: { [href: string]: BooknoteGroup };
   } | null>(null);
+  const [inlineInsightSnapshot, setInlineInsightSnapshot] = useState<InlineInsightSnapshot | null>(
+    null,
+  );
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
@@ -98,6 +109,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
   const androidTouchEndRef = useRef(false);
+  const showingInlineInsightAnnotationRef = useRef(false);
 
   const showingPopup =
     showAnnotPopup ||
@@ -367,8 +379,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
-    const { style, color } = annotation as BookNote;
-    const hexColor = getHighlightColorHex(settings, color);
+    const bookNote = annotation as BookNote;
+    const { style, color } = bookNote;
+    const isInlineInsight = isInlineInsightAnnotation(bookNote);
+    const hexColor = isInlineInsight
+      ? INLINE_INSIGHT_UNDERLINE_COLOR
+      : getHighlightColorHex(settings, color);
     const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
     const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     if (annotation.note) {
@@ -398,6 +414,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       draw(Overlayer[style as keyof typeof Overlayer], {
         writingMode,
         color: isBwEink ? einkFgColor : hexColor,
+        width: isInlineInsight ? 1 : undefined,
         padding,
       });
     }
@@ -429,6 +446,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       range,
       page: annotation.page || progress.page,
     };
+    if (!isNote && isInlineInsightAnnotation(annotation)) {
+      showingInlineInsightAnnotationRef.current = true;
+      setShowAnnotPopup(false);
+      setShowAnnotationNotes(false);
+      setEditingAnnotation(null);
+      setInlineInsightSnapshot(annotation.inlineInsight ?? null);
+      setShowInlineInsightPopup(true);
+      setSelection(selection);
+      handleUpToPopup();
+      return;
+    }
     if (isNote) {
       setShowAnnotationNotes(true);
       setHighlightOptionsVisible(false);
@@ -582,6 +610,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setProofreadPopupPosition(proofreadPopupPos);
       setTrianglePosition(triangPos);
 
+      if (showingInlineInsightAnnotationRef.current) {
+        showingInlineInsightAnnotationRef.current = false;
+        return;
+      }
+
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
         handleQuickAction();
@@ -716,11 +749,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       updatedAt: Date.now(),
     };
     const existingIndex = annotations.findIndex(
-      (annotation) =>
-        annotation.cfi === cfi &&
-        annotation.type === 'annotation' &&
-        annotation.style &&
-        !annotation.deletedAt,
+      (annotation) => annotation.cfi === cfi && isRegularTextAnnotation(annotation),
     );
     const views = getViewsById(bookKey.split('-')[0]!);
     if (existingIndex !== -1) {
@@ -815,8 +844,48 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleInlineInsight = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setInlineInsightSnapshot(null);
     setShowInlineInsightPopup(true);
   };
+
+  const handleInlineInsightAnswerReady = useCallback(
+    (responseAnswer: string, context: string) => {
+      if (!selection || !selection.text) return;
+      const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
+      if (!cfi) return;
+
+      const { booknotes: annotations = [] } = config;
+      const { annotation, previousAnnotation, updatedAnnotations } = upsertInlineInsightAnnotation(
+        annotations,
+        selection,
+        cfi,
+        {
+          answer: responseAnswer,
+          context,
+        },
+      );
+      const views = getViewsById(bookKey.split('-')[0]!);
+      if (previousAnnotation) {
+        views.forEach((view) => view?.addAnnotation(previousAnnotation, true));
+      }
+      views.forEach((view) => view?.addAnnotation(annotation));
+      const updatedConfig = updateBooknotes(bookKey, updatedAnnotations);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    },
+    [
+      bookKey,
+      config,
+      envConfig,
+      getViewsById,
+      saveConfig,
+      selection,
+      settings,
+      updateBooknotes,
+      view,
+    ],
+  );
 
   const handleStartEditAnnotation = useCallback(() => {
     setShowAnnotPopup(false);
@@ -868,7 +937,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     const config = getConfig(bookKey)!;
     const { booknotes: allNotes = [] } = config;
-    const booknotes = allNotes.filter((note) => !note.deletedAt);
+    const booknotes = allNotes.filter((note) => !note.deletedAt && isUserBookNote(note));
     if (booknotes.length === 0) {
       eventDispatcher.dispatch('toast', {
         type: 'info',
@@ -1049,6 +1118,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           trianglePosition={trianglePosition}
           popupWidth={dictPopupWidth}
           popupHeight={dictPopupHeight}
+          initialAnswer={inlineInsightSnapshot?.answer}
+          initialContext={inlineInsightSnapshot?.context}
+          onAnswerReady={handleInlineInsightAnswerReady}
           onDismiss={handleDismissPopupAndSelection}
         />
       )}

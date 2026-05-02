@@ -22,6 +22,9 @@ interface InlineInsightPopupProps {
   trianglePosition: Position;
   popupWidth: number;
   popupHeight: number;
+  initialAnswer?: string;
+  initialContext?: string;
+  onAnswerReady?: (answer: string, context: string) => void;
   onDismiss?: () => void;
 }
 
@@ -182,6 +185,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   trianglePosition,
   popupWidth,
   popupHeight,
+  initialAnswer = '',
+  initialContext = '',
+  onAnswerReady,
   onDismiss,
 }) => {
   const _ = useTranslation();
@@ -199,14 +205,15 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   );
   const targetLanguage = settings.targetLanguage.trim() || getLocale();
 
-  const [answer, setAnswer] = useState('');
+  const [answer, setAnswer] = useState(initialAnswer);
   const { briefItems, detailMap } = parseInlineInsightSections(answer);
 
   const abortRef = useRef<AbortController | null>(null);
-  const contextRef = useRef('');
+  const contextRef = useRef(initialContext);
 
   const callLLM = useCallback(async () => {
     if (!settings.enabled || !settings.model) return;
+    if (initialAnswer) return;
 
     abortRef.current = new AbortController();
     setLoading(true);
@@ -217,6 +224,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     const context = extractContext(selection, settings.maxContextChars);
     contextRef.current = context;
 
+    let responseText = '';
     try {
       for await (const chunk of streamInlineInsight(
         selection.text,
@@ -229,8 +237,12 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
           setThinking(true);
           continue;
         }
-        setAnswer((prev) => prev + chunk.text);
+        responseText += chunk.text;
+        setAnswer(responseText);
         setLoading(false);
+      }
+      if (responseText.trim()) {
+        onAnswerReady?.(responseText, context);
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
@@ -239,7 +251,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selection, settings, targetLanguage, _]);
+  }, [selection, settings, targetLanguage, _, initialAnswer, onAnswerReady]);
 
   useEffect(() => {
     callLLM();
