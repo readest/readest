@@ -1,5 +1,26 @@
 import { AudiobookSyncMapEntry, AudiobookTextUnit, AudiobookTranscriptSegment } from '@/types/book';
 
+// ── Adjacent transcript file detection ──────────────────────────────
+
+function splitDirAndBase(audioPath: string): { dir: string; base: string } {
+  const normalized = audioPath.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash) : '.';
+  const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+  const lastDot = filename.lastIndexOf('.');
+  const base = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  return { dir, base };
+}
+
+/**
+ * Returns candidate transcript file paths (srt, vtt, json, txt) adjacent to
+ * the given audio file path, using the same base name and directory.
+ */
+export function computeAdjacentTranscriptCandidates(audioPath: string): string[] {
+  const { dir, base } = splitDirAndBase(audioPath);
+  return ['.srt', '.vtt', '.json', '.txt'].map((ext) => `${dir}/${base}${ext}`);
+}
+
 // ── Text normalization ──────────────────────────────────────────────
 
 /**

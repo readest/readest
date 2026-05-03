@@ -7,6 +7,7 @@ import {
   parseAudiobookTranscript,
   normalizeTranscriptSegments,
   matchTranscriptSegmentsToTextUnits,
+  computeAdjacentTranscriptCandidates,
 } from '@/utils/audiobookTranscript';
 import { AudiobookTextUnit, AudiobookTranscriptSegment } from '@/types/book';
 
@@ -440,6 +441,40 @@ Second line`;
       ];
       const result = matchTranscriptSegmentsToTextUnits(segments, textUnits);
       expect(result).toHaveLength(0);
+    });
+  });
+
+  // ── computeAdjacentTranscriptCandidates ─────────────────────────────
+
+  describe('computeAdjacentTranscriptCandidates', () => {
+    it('returns srt, vtt, json, txt candidates alongside the audio file', () => {
+      const candidates = computeAdjacentTranscriptCandidates('/path/to/audiobook.mp3');
+      expect(candidates).toEqual([
+        '/path/to/audiobook.srt',
+        '/path/to/audiobook.vtt',
+        '/path/to/audiobook.json',
+        '/path/to/audiobook.txt',
+      ]);
+    });
+
+    it('handles Windows-style backslash paths', () => {
+      const candidates = computeAdjacentTranscriptCandidates('C:\\Users\\Eddy\\Music\\book.m4b');
+      expect(candidates).toEqual([
+        'C:/Users/Eddy/Music/book.srt',
+        'C:/Users/Eddy/Music/book.vtt',
+        'C:/Users/Eddy/Music/book.json',
+        'C:/Users/Eddy/Music/book.txt',
+      ]);
+    });
+
+    it('handles multi-dot filenames by stripping only the last extension', () => {
+      const candidates = computeAdjacentTranscriptCandidates('/path/to/book.part1.mp3');
+      expect(candidates).toEqual([
+        '/path/to/book.part1.srt',
+        '/path/to/book.part1.vtt',
+        '/path/to/book.part1.json',
+        '/path/to/book.part1.txt',
+      ]);
     });
   });
 });

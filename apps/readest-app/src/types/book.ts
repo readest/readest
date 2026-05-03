@@ -441,7 +441,9 @@ export interface AudiobookConfig {
   syncMap?: AudiobookSyncMapEntry[];
   transcriptPath?: string;
   transcriptFileName?: string;
-  transcriptStatus?: 'none' | 'ready' | 'error';
+  transcriptStatus?: 'none' | 'pending' | 'ready' | 'error';
+  transcriptError?: string;
+  transcriptGeneratedAt?: number;
 }
 
 export interface BookConfig {

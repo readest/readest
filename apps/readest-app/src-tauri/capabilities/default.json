@@ -182,6 +182,16 @@
           "name": "launch-appimage",
           "cmd": "setsid",
           "args": [{ "validator": "^.*Readest(.*)\\.AppImage$" }]
+        },
+        {
+          "name": "faster-whisper-transcribe",
+          "cmd": "faster-whisper",
+          "args": true
+        },
+        {
+          "name": "whisper-transcribe",
+          "cmd": "whisper",
+          "args": true
         }
       ]
     },

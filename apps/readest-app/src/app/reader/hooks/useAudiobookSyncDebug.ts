@@ -12,8 +12,10 @@ import { buildSyncMapFromPoints, normalizeAudiobookSyncPoints } from '@/utils/au
 import {
   matchTranscriptSegmentsToTextUnitsWithDiagnostics,
   parseAudiobookTranscript,
+  computeAdjacentTranscriptCandidates,
   type MatchDiagnostics,
 } from '@/utils/audiobookTranscript';
+import { getFilename } from '@/utils/path';
 import {
   extractTextUnitsFromWholeBook,
   extractTextUnitsFromVisibleSections,
@@ -42,6 +44,16 @@ export interface CitadelAudiobookSyncDebugApi {
   }>;
   /** Preview transcript diagnostics without persisting */
   previewTranscriptDiagnostics(transcriptText: string): Promise<MatchDiagnostics>;
+  /**
+   * Dev-only: locate or generate a transcript from the attached audiobook file,
+   * then run the transcript matcher to produce a syncMap.
+   * - Option A: reads an adjacent .srt/.vtt/.json/.txt file if present
+   * - Option B: invokes faster-whisper or whisper CLI via Tauri shell
+   */
+  generateTranscriptFromAudiobook(options?: {
+    model?: string;
+    language?: string;
+  }): Promise<{ matched: number; total: number; transcriptPath?: string; error?: string }>;
 }
 
 const DEDUP_THRESHOLD_SEC = 0.5;
@@ -509,6 +521,224 @@ export const useAudiobookSyncDebug = (props: {
         });
 
         return { matched: syncMap.length, total: segments.length };
+      },
+
+      async generateTranscriptFromAudiobook(options?: {
+        model?: string;
+        language?: string;
+      }): Promise<{ matched: number; total: number; transcriptPath?: string; error?: string }> {
+        const config = getConfig(bookKey);
+        const audiobook = config?.audiobook;
+        if (!audiobook) return { matched: 0, total: 0, error: 'No audiobook attached' };
+        if (!audiobook.filePath) return { matched: 0, total: 0, error: 'No audio file path' };
+
+        const model = options?.model ?? 'base';
+
+        // Mark as pending
+        setConfig(bookKey, {
+          audiobook: { ...audiobook, transcriptStatus: 'pending', transcriptError: undefined },
+          updatedAt: Date.now(),
+        });
+
+        // --- Option A: look for an adjacent transcript file ---
+        let transcriptText: string | null = null;
+        let transcriptPath: string | undefined;
+
+        const candidates = computeAdjacentTranscriptCandidates(audiobook.filePath);
+        for (const candidate of candidates) {
+          try {
+            const content = await appService?.readFile(
+              candidate,
+              'None' as import('@/types/system').BaseDir,
+              'text',
+            );
+            if (typeof content === 'string' && content.trim().length > 0) {
+              transcriptText = content;
+              transcriptPath = candidate;
+              console.info('[AudiobookSyncDebug] Found adjacent transcript file', { candidate });
+              break;
+            }
+          } catch {
+            // File not present — try next candidate
+          }
+        }
+
+        // --- Option B: run shell CLI if no adjacent file found ---
+        if (!transcriptText) {
+          const normalized = audiobook.filePath.replace(/\\/g, '/');
+          const lastSlash = normalized.lastIndexOf('/');
+          const audioDir = lastSlash >= 0 ? normalized.slice(0, lastSlash) : '.';
+          const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+          const lastDot = filename.lastIndexOf('.');
+          const base = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+          const outputSrtPath = `${audioDir}/${base}.srt`;
+
+          const cliCommands = [
+            {
+              name: 'faster-whisper-transcribe',
+              args: [
+                audiobook.filePath,
+                '--output_format',
+                'srt',
+                '--output_dir',
+                audioDir,
+                '--model',
+                model,
+              ],
+            },
+            {
+              name: 'whisper-transcribe',
+              args: [
+                audiobook.filePath,
+                '--output_format',
+                'srt',
+                '--output_dir',
+                audioDir,
+                '--model',
+                model,
+              ],
+            },
+          ] as const;
+
+          for (const cmd of cliCommands) {
+            try {
+              const { Command } = await import('@tauri-apps/plugin-shell');
+              const command = Command.create(cmd.name, [...cmd.args]);
+              const output = await command.execute();
+              if (output.code !== 0) {
+                console.warn(
+                  `[AudiobookSyncDebug] ${cmd.name} exited with code ${output.code}`,
+                  output.stderr,
+                );
+                continue;
+              }
+              const srtContent = await appService?.readFile(
+                outputSrtPath,
+                'None' as import('@/types/system').BaseDir,
+                'text',
+              );
+              if (typeof srtContent === 'string' && srtContent.trim().length > 0) {
+                transcriptText = srtContent;
+                transcriptPath = outputSrtPath;
+                console.info(
+                  `[AudiobookSyncDebug] Generated transcript via ${cmd.name}`,
+                  outputSrtPath,
+                );
+                break;
+              }
+            } catch (err) {
+              console.warn(`[AudiobookSyncDebug] ${cmd.name} failed`, err);
+            }
+          }
+        }
+
+        if (!transcriptText) {
+          const error =
+            'No transcript found — attach a transcript file or install faster-whisper/whisper CLI';
+          setConfig(bookKey, {
+            audiobook: { ...audiobook, transcriptStatus: 'error', transcriptError: error },
+            updatedAt: Date.now(),
+          });
+          return { matched: 0, total: 0, error };
+        }
+
+        // --- Parse ---
+        const segments: AudiobookTranscriptSegment[] = parseAudiobookTranscript(transcriptText);
+        if (segments.length === 0) {
+          const error = 'No valid transcript segments in generated transcript';
+          setConfig(bookKey, {
+            audiobook: { ...audiobook, transcriptStatus: 'error', transcriptError: error },
+            updatedAt: Date.now(),
+          });
+          return { matched: 0, total: 0, error };
+        }
+
+        // --- Extract text units ---
+        const view = getView(bookKey);
+        if (!view) {
+          const error = 'No view available for text extraction';
+          setConfig(bookKey, {
+            audiobook: { ...audiobook, transcriptStatus: 'error', transcriptError: error },
+            updatedAt: Date.now(),
+          });
+          return { matched: 0, total: segments.length, error };
+        }
+
+        let textUnits: AudiobookTextUnit[];
+        let usedFallback = false;
+        try {
+          const result = await extractTextUnitsFromWholeBook(view);
+          textUnits = result.units;
+        } catch (err) {
+          console.warn('[AudiobookSyncDebug] Whole-book extraction failed, using fallback.', err);
+          textUnits = [];
+        }
+        if (textUnits.length === 0) {
+          textUnits = extractTextUnitsFromVisibleSections(view);
+          usedFallback = true;
+        }
+
+        if (textUnits.length === 0) {
+          const error = 'No text units extracted from EPUB';
+          setConfig(bookKey, {
+            audiobook: { ...audiobook, transcriptStatus: 'error', transcriptError: error },
+            updatedAt: Date.now(),
+          });
+          return { matched: 0, total: segments.length, error };
+        }
+
+        // --- Match ---
+        const { entries: syncMap, diagnostics } = matchTranscriptSegmentsToTextUnitsWithDiagnostics(
+          segments,
+          textUnits,
+          {
+            minSegmentLength: 5,
+          },
+        );
+
+        console.info(
+          '[AudiobookSyncDebug] generateTranscriptFromAudiobook diagnostics',
+          diagnostics,
+        );
+
+        if (syncMap.length === 0) {
+          const error = 'No transcript segments matched EPUB text';
+          setConfig(bookKey, {
+            audiobook: {
+              ...audiobook,
+              transcriptPath,
+              transcriptFileName: transcriptPath ? getFilename(transcriptPath) : undefined,
+              transcriptStatus: 'error',
+              transcriptError: error,
+            },
+            updatedAt: Date.now(),
+          });
+          return { matched: 0, total: segments.length, error };
+        }
+
+        // --- Persist ---
+        const updatedAudiobook: AudiobookConfig = {
+          ...audiobook,
+          transcriptPath,
+          transcriptFileName: transcriptPath ? getFilename(transcriptPath) : undefined,
+          transcriptStatus: 'ready',
+          transcriptError: undefined,
+          transcriptGeneratedAt: Date.now(),
+          syncMap,
+          syncStatus: 'ready',
+        };
+        setConfig(bookKey, { audiobook: updatedAudiobook, updatedAt: Date.now() });
+
+        console.info('[AudiobookSyncDebug] generateTranscriptFromAudiobook complete', {
+          transcriptPath,
+          totalSegments: segments.length,
+          matchedEntries: syncMap.length,
+          usedFallback,
+          avgScore: diagnostics.averageScore,
+          lowConfidence: diagnostics.lowConfidenceCount,
+        });
+
+        return { matched: syncMap.length, total: segments.length, transcriptPath };
       },
 
       async previewTranscriptDiagnostics(transcriptText: string): Promise<MatchDiagnostics> {
