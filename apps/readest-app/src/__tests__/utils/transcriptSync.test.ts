@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   normalizeForSpotMatch,
   parseSRT,
@@ -8,8 +8,53 @@ import {
   normalizeTranscriptSegments,
   buildSyncMapFromTranscript,
   selectBestSpotMatch,
+  extractTextUnitsFromWholeBook,
+  extractTextUnitsFromVisibleSections,
 } from '@/utils/transcriptSync';
 import { AudiobookTranscriptSegment, BookSearchMatch } from '@/types/book';
+import { SectionItem } from '@/libs/document';
+
+/** Helper: create a minimal Document with given body HTML */
+function createDoc(bodyHTML: string): Document {
+  const parser = new DOMParser();
+  return parser.parseFromString(
+    `<!DOCTYPE html><html><body>${bodyHTML}</body></html>`,
+    'text/html',
+  );
+}
+
+/** Helper: create a mock SectionItem that returns a fixed Document */
+function mockSection(bodyHTML: string, linear = 'yes'): SectionItem {
+  const doc = createDoc(bodyHTML);
+  return {
+    id: `section-${Math.random().toString(36).slice(2)}`,
+    cfi: '',
+    size: 100,
+    linear,
+    createDocument: vi.fn().mockResolvedValue(doc),
+  } as unknown as SectionItem;
+}
+
+/** Helper: create a mock SectionItem that rejects createDocument */
+function failingSection(): SectionItem {
+  return {
+    id: 'fail',
+    cfi: '',
+    size: 0,
+    linear: 'yes',
+    createDocument: vi.fn().mockRejectedValue(new Error('load failed')),
+  } as unknown as SectionItem;
+}
+
+/** Helper: create a mock SectionItem without createDocument */
+function noDocSection(): SectionItem {
+  return {
+    id: 'nodoc',
+    cfi: '',
+    size: 0,
+    linear: 'yes',
+  } as unknown as SectionItem;
+}
 
 describe('utils/transcriptSync', () => {
   // ── normalizeForSpotMatch ──────────────────────────────────────────
@@ -317,6 +362,219 @@ Second line`;
       const result = selectBestSpotMatch('the quick brown fox', matches);
       expect(result).not.toBeNull();
       expect(result!.cfi).toBe('cfi-1');
+    });
+  });
+
+  // ── extractTextUnitsFromWholeBook ──────────────────────────────────
+
+  describe('extractTextUnitsFromWholeBook', () => {
+    it('extracts text units from readable blocks across sections', async () => {
+      const sections = [
+        mockSection('<p>Hello world</p><p>Second paragraph</p>'),
+        mockSection('<p>Third section text</p>'),
+      ];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.sectionsScanned).toBe(2);
+      expect(result.sectionsSkipped).toBe(0);
+      expect(result.units).toHaveLength(3);
+      expect(result.units[0]!.text).toBe('Hello world');
+      expect(result.units[1]!.text).toBe('Second paragraph');
+      expect(result.units[2]!.text).toBe('Third section text');
+      expect(result.units.every((u) => u.cfi === 'cfi-mock')).toBe(true);
+    });
+
+    it('skips non-linear sections', async () => {
+      const sections = [
+        mockSection('<p>Content</p>', 'yes'),
+        mockSection('<p>Cover</p>', 'no'),
+        mockSection('<p>More content</p>', 'yes'),
+      ];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.sectionsScanned).toBe(2);
+      expect(result.sectionsSkipped).toBe(1);
+      expect(result.units).toHaveLength(2);
+    });
+
+    it('skips sections without createDocument', async () => {
+      const sections = [noDocSection(), mockSection('<p>Valid</p>')];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.sectionsScanned).toBe(1);
+      expect(result.sectionsSkipped).toBe(1);
+    });
+
+    it('skips sections where createDocument throws', async () => {
+      const sections = [failingSection(), mockSection('<p>Valid</p>')];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.sectionsScanned).toBe(1);
+      expect(result.sectionsSkipped).toBe(1);
+    });
+
+    it('skips empty and very short text blocks', async () => {
+      const sections = [mockSection('<p></p><p>ab</p><p>Real content here</p>')];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      // "ab" is 2 chars < MIN_TEXT_LENGTH(3), empty is 0
+      expect(result.units).toHaveLength(1);
+      expect(result.units[0]!.text).toBe('Real content here');
+    });
+
+    it('skips media-only blocks', async () => {
+      // <p><img/></p> has no text nodes and only img child → media-only, skipped
+      // <p>Text with image <img/> and words</p> has text nodes + img → not media-only, kept
+      const sections = [
+        mockSection('<p><img src="x.png"/></p><p>Text with image <img src="y.png"/> and words</p>'),
+      ];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      // First p: no text content (img is void, textContent is empty) → filtered by MIN_TEXT_LENGTH
+      // Second p: has text nodes + img child → not media-only, kept
+      expect(result.units).toHaveLength(1);
+      expect(result.units[0]!.text).toContain('Text with image');
+    });
+
+    it('skips blocks where getCFI returns empty', async () => {
+      const sections = [mockSection('<p>Valid</p><p>No CFI</p>')];
+      let callCount = 0;
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockImplementation(() => {
+          callCount++;
+          return callCount === 2 ? '' : 'cfi-mock';
+        }),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.units).toHaveLength(1);
+    });
+
+    it('skips blocks where getCFI throws', async () => {
+      const sections = [mockSection('<p>Valid</p><p>Throws</p>')];
+      let callCount = 0;
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 2) throw new Error('CFI failed');
+          return 'cfi-mock';
+        }),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.units).toHaveLength(1);
+    });
+
+    it('sets sectionIndex correctly for each section', async () => {
+      const sections = [
+        mockSection('<p>Section zero</p>'),
+        noDocSection(), // index 1, skipped
+        mockSection('<p>Section two</p>'),
+      ];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.units).toHaveLength(2);
+      expect(result.units[0]!.sectionIndex).toBe(0);
+      expect(result.units[1]!.sectionIndex).toBe(2);
+    });
+
+    it('returns empty for book with no sections', async () => {
+      const view = {
+        book: { sections: [] },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.units).toHaveLength(0);
+      expect(result.sectionsScanned).toBe(0);
+    });
+
+    it('extracts headings and list items', async () => {
+      const sections = [mockSection('<h1>Chapter 1</h1><p>Some text</p><li>List item</li>')];
+      const view = {
+        book: { sections },
+        getCFI: vi.fn().mockReturnValue('cfi-mock'),
+      };
+
+      const result = await extractTextUnitsFromWholeBook(view);
+      expect(result.units).toHaveLength(3);
+      expect(result.units.map((u) => u.text)).toEqual(['Chapter 1', 'Some text', 'List item']);
+    });
+  });
+
+  // ── extractTextUnitsFromVisibleSections ─────────────────────────────
+
+  describe('extractTextUnitsFromVisibleSections', () => {
+    it('extracts from visible renderer contents', () => {
+      const doc1 = createDoc('<p>Visible paragraph</p>');
+      const doc2 = createDoc('<p>Another visible</p>');
+
+      const view = {
+        renderer: {
+          getContents: vi.fn().mockReturnValue([
+            { doc: doc1, index: 0 },
+            { doc: doc2, index: 1 },
+          ]),
+        },
+        getCFI: vi.fn().mockReturnValue('cfi-visible'),
+      };
+
+      const result = extractTextUnitsFromVisibleSections(view);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.text).toBe('Visible paragraph');
+      expect(result[1]!.text).toBe('Another visible');
+    });
+
+    it('returns empty when no contents loaded', () => {
+      const view = {
+        renderer: { getContents: vi.fn().mockReturnValue([]) },
+        getCFI: vi.fn().mockReturnValue('cfi'),
+      };
+
+      const result = extractTextUnitsFromVisibleSections(view);
+      expect(result).toHaveLength(0);
+    });
+
+    it('skips short and empty text', () => {
+      const doc = createDoc('<p></p><p>ab</p><p>Valid text here</p>');
+      const view = {
+        renderer: { getContents: vi.fn().mockReturnValue([{ doc, index: 0 }]) },
+        getCFI: vi.fn().mockReturnValue('cfi'),
+      };
+
+      const result = extractTextUnitsFromVisibleSections(view);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.text).toBe('Valid text here');
     });
   });
 });

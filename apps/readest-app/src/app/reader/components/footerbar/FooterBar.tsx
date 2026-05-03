@@ -15,6 +15,7 @@ import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
 import { useAudiobookPlayer } from '@/app/reader/hooks/useAudiobookPlayer';
+import { useAudiobookSyncDebug } from '@/app/reader/hooks/useAudiobookSyncDebug';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -202,6 +203,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
     !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
 
   const audiobookHook = useAudiobookPlayer({ bookKey });
+  useAudiobookSyncDebug({
+    bookKey,
+    currentTime: audiobookHook.currentTime,
+    isLoaded: audiobookHook.isLoaded,
+  });
   const audiobookPlayer = config?.audiobook
     ? {
         fileName: audiobookHook.audiobookConfig?.fileName ?? '',

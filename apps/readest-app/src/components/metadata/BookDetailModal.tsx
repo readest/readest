@@ -175,6 +175,50 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     await saveAudiobookConfig(undefined);
   };
 
+  const handleAddTranscript = async () => {
+    if (!audiobookConfig) return;
+    const result = await selectFiles({ type: 'transcript', multiple: false });
+    if (result.error || result.files.length === 0) return;
+    const file = result.files[0]!;
+    const transcriptPath = file.path ?? file.file?.name ?? '';
+    const transcriptFileName = file.path
+      ? getFilename(file.path)
+      : (file.file?.name ?? transcriptPath);
+    await saveAudiobookConfig({
+      ...audiobookConfig,
+      transcriptPath,
+      transcriptFileName,
+      transcriptStatus: 'none',
+    });
+  };
+
+  const handleReplaceTranscript = async () => {
+    if (!audiobookConfig) return;
+    const result = await selectFiles({ type: 'transcript', multiple: false });
+    if (result.error || result.files.length === 0) return;
+    const file = result.files[0]!;
+    const transcriptPath = file.path ?? file.file?.name ?? '';
+    const transcriptFileName = file.path
+      ? getFilename(file.path)
+      : (file.file?.name ?? transcriptPath);
+    await saveAudiobookConfig({
+      ...audiobookConfig,
+      transcriptPath,
+      transcriptFileName,
+      transcriptStatus: 'none',
+    });
+  };
+
+  const handleRemoveTranscript = async () => {
+    if (!audiobookConfig) return;
+    await saveAudiobookConfig({
+      ...audiobookConfig,
+      transcriptPath: undefined,
+      transcriptFileName: undefined,
+      transcriptStatus: undefined,
+    });
+  };
+
   const handleClose = () => {
     setBookMeta(null);
     setEditMode(false);
@@ -299,6 +343,9 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onAddAudiobook={handleAddAudiobook}
                 onReplaceAudiobook={handleReplaceAudiobook}
                 onRemoveAudiobook={handleRemoveAudiobook}
+                onAddTranscript={handleAddTranscript}
+                onReplaceTranscript={handleReplaceTranscript}
+                onRemoveTranscript={handleRemoveTranscript}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={

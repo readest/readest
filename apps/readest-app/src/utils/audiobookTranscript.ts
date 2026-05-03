@@ -227,6 +227,7 @@ export function normalizeTranscriptSegments(
 
 interface MatchResult {
   textUnit: AudiobookTextUnit;
+  unitIndex: number;
   score: number;
 }
 
@@ -252,35 +253,149 @@ function tokenOverlapScore(normA: string, normB: string): number {
   return overlap / shorter.length;
 }
 
-/** Minimum score to accept a match (0–1 scale) */
-const MATCH_THRESHOLD = 0.4;
+/** Default minimum score to accept a match (0–1 scale) */
+const DEFAULT_MATCH_THRESHOLD = 0.4;
+
+/** Score below which a match is considered "low confidence" */
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
+
+/** How much better a backward-jump score must be to override monotonic preference */
+const MONOTONIC_BONUS = 0.05;
 
 interface MatchTranscriptOptions {
   /** Minimum char length of transcript text to attempt matching; default 5 */
   minSegmentLength?: number;
+  /** Minimum score (0–1) to accept a match; default 0.4 */
+  matchThreshold?: number;
+  /** Size of sliding window of adjacent text units to combine; default 2 */
+  adjacentWindowSize?: number;
+  /** Whether to apply monotonic forward-progression preference; default true */
+  monotonicPreference?: boolean;
+}
+
+/** Diagnostics for a single match attempt */
+export interface SegmentDiagnostic {
+  segmentIndex: number;
+  secondsStart: number;
+  text: string;
+  matched: boolean;
+  score: number;
+  cfi: string;
+  unitIndex: number;
+  sectionIndex?: number;
+  lowConfidence: boolean;
+}
+
+/** Aggregate diagnostics for a full matching run */
+export interface MatchDiagnostics {
+  totalSegments: number;
+  matchedCount: number;
+  skippedCount: number;
+  lowConfidenceCount: number;
+  averageScore: number;
+  sectionDistribution: Record<number, number>;
+  topSkipped: SegmentDiagnostic[];
+  topLowConfidence: SegmentDiagnostic[];
+}
+
+/**
+ * Scores a normalized segment against a single normalized text unit.
+ * Returns the best score from containment, reverse containment, or token overlap.
+ */
+function scoreSegmentToUnit(normSeg: string, normUnit: string): number {
+  if (normUnit.length === 0) return 0;
+
+  // Pass 1: containment (unit contains segment)
+  if (normUnit.includes(normSeg)) {
+    return 1;
+  }
+
+  // Pass 2: reverse containment (segment contains unit)
+  if (normSeg.includes(normUnit)) {
+    return normUnit.length / normSeg.length;
+  }
+
+  // Pass 3: token overlap
+  return tokenOverlapScore(normSeg, normUnit);
+}
+
+/**
+ * Builds a combined normalized text from a window of adjacent text units.
+ * Joins with a space so sentences spanning paragraphs can match.
+ */
+function buildWindowNorm(
+  normUnits: { unit: AudiobookTextUnit; norm: string }[],
+  centerIndex: number,
+  windowSize: number,
+): { combinedNorm: string; centerUnit: AudiobookTextUnit } {
+  const half = Math.floor(windowSize / 2);
+  const start = Math.max(0, centerIndex - half);
+  const end = Math.min(normUnits.length - 1, centerIndex + half);
+
+  const parts: string[] = [];
+  for (let i = start; i <= end; i++) {
+    const n = normUnits[i]!.norm;
+    if (n.length > 0) parts.push(n);
+  }
+
+  return {
+    combinedNorm: parts.join(' '),
+    centerUnit: normUnits[centerIndex]!.unit,
+  };
 }
 
 /**
  * Matches transcript segments to EPUB text units using normalized text comparison.
  *
  * Strategy (per segment):
- * 1. Pass 1 — containment: does a normalized text unit contain the normalized segment text?
- * 2. Pass 2 — reverse containment: does the normalized segment text contain the text unit text?
- * 3. Pass 3 — token overlap score above threshold
+ * 1. For each text unit, score against single unit AND against a sliding window
+ *    of adjacent units (to handle sentences spanning paragraphs).
+ * 2. Apply monotonic forward-progression preference: later transcript segments
+ *    prefer same/later text unit indices unless a backward jump has a
+ *    significantly better score.
+ * 3. The best match above threshold is chosen. Unmatched segments are skipped.
  *
- * The best match above threshold is chosen. Unmatched segments are skipped.
- *
- * Returns `AudiobookSyncMapEntry[]` with `source: 'transcript-match'`.
+ * Returns `AudiobookSyncMapEntry[]` with `source: 'transcript-match'`,
+ * `matchScore`, and `sectionIndex`.
  */
 export function matchTranscriptSegmentsToTextUnits(
   segments: AudiobookTranscriptSegment[] | undefined,
   textUnits: AudiobookTextUnit[] | undefined,
   options?: MatchTranscriptOptions,
 ): AudiobookSyncMapEntry[] {
+  const result = matchTranscriptSegmentsToTextUnitsWithDiagnostics(segments, textUnits, options);
+  return result.entries;
+}
+
+/**
+ * Full matching with diagnostics. Returns both sync map entries and
+ * detailed diagnostics for inspection.
+ */
+export function matchTranscriptSegmentsToTextUnitsWithDiagnostics(
+  segments: AudiobookTranscriptSegment[] | undefined,
+  textUnits: AudiobookTextUnit[] | undefined,
+  options?: MatchTranscriptOptions,
+): { entries: AudiobookSyncMapEntry[]; diagnostics: MatchDiagnostics } {
   const normSegments = normalizeTranscriptSegments(segments);
-  if (normSegments.length === 0 || !textUnits || textUnits.length === 0) return [];
+  const emptyDiag: MatchDiagnostics = {
+    totalSegments: 0,
+    matchedCount: 0,
+    skippedCount: 0,
+    lowConfidenceCount: 0,
+    averageScore: 0,
+    sectionDistribution: {},
+    topSkipped: [],
+    topLowConfidence: [],
+  };
+
+  if (normSegments.length === 0 || !textUnits || textUnits.length === 0) {
+    return { entries: [], diagnostics: emptyDiag };
+  }
 
   const minLen = options?.minSegmentLength ?? 5;
+  const matchThreshold = options?.matchThreshold ?? DEFAULT_MATCH_THRESHOLD;
+  const windowSize = options?.adjacentWindowSize ?? 2;
+  const useMonotonic = options?.monotonicPreference ?? true;
 
   // Pre-normalize text units
   const normUnits = textUnits.map((u) => ({
@@ -288,54 +403,117 @@ export function matchTranscriptSegmentsToTextUnits(
     norm: normalizeAudiobookMatchText(u.text),
   }));
 
-  const entries: AudiobookSyncMapEntry[] = [];
+  // Pre-build window norms for each unit index
+  const windowNorms = normUnits.map((_, i) => buildWindowNorm(normUnits, i, windowSize));
 
-  for (const seg of normSegments) {
+  const entries: AudiobookSyncMapEntry[] = [];
+  const segDiags: SegmentDiagnostic[] = [];
+  let lastMatchedUnitIndex = -1;
+
+  for (let segIdx = 0; segIdx < normSegments.length; segIdx++) {
+    const seg = normSegments[segIdx]!;
     if (seg.text.trim().length < minLen) continue;
 
     const normSeg = normalizeAudiobookMatchText(seg.text);
+    if (normSeg.length === 0) continue;
 
-    // Pass 1: text unit contains segment text
     let best: MatchResult | null = null;
 
-    for (const { unit, norm } of normUnits) {
-      if (norm.length === 0) continue;
+    for (let unitIdx = 0; unitIdx < normUnits.length; unitIdx++) {
+      const { norm } = normUnits[unitIdx]!;
 
-      // Pass 1: containment
-      if (norm.includes(normSeg)) {
-        const score = normSeg.length > 0 ? 1 : 0;
-        if (!best || score > best.score) {
-          best = { textUnit: unit, score };
+      // Score against single unit
+      const singleScore = scoreSegmentToUnit(normSeg, norm);
+
+      // Score against adjacent window
+      const windowScore = scoreSegmentToUnit(normSeg, windowNorms[unitIdx]!.combinedNorm);
+
+      // Take the better of single vs window
+      const rawScore = Math.max(singleScore, windowScore);
+
+      if (rawScore < matchThreshold) continue;
+
+      // Apply monotonic preference: boost forward/same-index candidates
+      let adjustedScore = rawScore;
+      if (useMonotonic && lastMatchedUnitIndex >= 0) {
+        if (unitIdx >= lastMatchedUnitIndex) {
+          // Forward or same: small bonus
+          adjustedScore = rawScore + MONOTONIC_BONUS;
         }
-        continue; // containment is a strong signal; no need for further passes on this unit
+        // Backward: no bonus, must be significantly better to win
       }
 
-      // Pass 2: reverse containment
-      if (normSeg.includes(norm)) {
-        const score = norm.length / normSeg.length;
-        if (!best || score > best.score) {
-          best = { textUnit: unit, score };
-        }
-        continue;
-      }
-
-      // Pass 3: token overlap
-      const score = tokenOverlapScore(normSeg, norm);
-      if (score >= MATCH_THRESHOLD && (!best || score > best.score)) {
-        best = { textUnit: unit, score };
+      if (!best || adjustedScore > best.score) {
+        // Use the center unit of the window (same CFI whether single or window matched)
+        best = {
+          textUnit: windowNorms[unitIdx]!.centerUnit,
+          unitIndex: unitIdx,
+          score: adjustedScore,
+        };
       }
     }
 
-    if (best && best.score >= MATCH_THRESHOLD) {
+    const isMatched = best !== null && best.score >= matchThreshold;
+    const finalScore = isMatched ? best!.score : 0;
+    const isLowConfidence = isMatched && finalScore < LOW_CONFIDENCE_THRESHOLD;
+
+    const diag: SegmentDiagnostic = {
+      segmentIndex: segIdx,
+      secondsStart: seg.start,
+      text: seg.text.trim().slice(0, 80),
+      matched: isMatched,
+      score: Math.round(finalScore * 1000) / 1000,
+      cfi: isMatched ? best!.textUnit.cfi : '',
+      unitIndex: isMatched ? best!.unitIndex : -1,
+      sectionIndex: isMatched ? best!.textUnit.sectionIndex : undefined,
+      lowConfidence: isLowConfidence,
+    };
+    segDiags.push(diag);
+
+    if (isMatched) {
       entries.push({
         secondsStart: seg.start,
         secondsEnd: seg.end,
-        cfi: best.textUnit.cfi,
+        cfi: best!.textUnit.cfi,
         label: seg.text.trim().slice(0, 60),
         source: 'transcript-match',
+        matchScore: Math.round(best!.score * 1000) / 1000,
+        sectionIndex: best!.textUnit.sectionIndex,
       });
+      lastMatchedUnitIndex = best!.unitIndex;
     }
   }
 
-  return entries;
+  // Build aggregate diagnostics
+  const matched = segDiags.filter((d) => d.matched);
+  const skipped = segDiags.filter((d) => !d.matched);
+  const lowConf = segDiags.filter((d) => d.lowConfidence);
+
+  const avgScore =
+    matched.length > 0 ? matched.reduce((sum, d) => sum + d.score, 0) / matched.length : 0;
+
+  const sectionDist: Record<number, number> = {};
+  for (const d of matched) {
+    const sec = d.sectionIndex ?? -1;
+    sectionDist[sec] = (sectionDist[sec] ?? 0) + 1;
+  }
+
+  // Top 10 skipped (by segment index order)
+  const topSkipped = skipped.slice(0, 10);
+
+  // Top 10 low-confidence (sorted by score ascending)
+  const topLowConf = [...lowConf].sort((a, b) => a.score - b.score).slice(0, 10);
+
+  const diagnostics: MatchDiagnostics = {
+    totalSegments: segDiags.length,
+    matchedCount: matched.length,
+    skippedCount: skipped.length,
+    lowConfidenceCount: lowConf.length,
+    averageScore: Math.round(avgScore * 1000) / 1000,
+    sectionDistribution: sectionDist,
+    topSkipped,
+    topLowConfidence: topLowConf,
+  };
+
+  return { entries, diagnostics };
 }

@@ -6,7 +6,7 @@ import {
   getSyncMapEntryKey,
   findAudiobookSyncEntry,
 } from '@/utils/audiobookSync';
-import { AudiobookSyncMapEntry, AudiobookSyncPoint } from '@/types/book';
+import { AudiobookConfig, AudiobookSyncMapEntry, AudiobookSyncPoint } from '@/types/book';
 
 describe('utils/audiobookSync', () => {
   // ── normalizeAudiobookSyncPoints ──────────────────────────────────
@@ -291,6 +291,90 @@ describe('utils/audiobookSync', () => {
       ] as unknown as AudiobookSyncMapEntry[];
       const result = findAudiobookSyncEntry(syncMap, 7);
       expect(result).toBe(syncMap[1]);
+    });
+  });
+
+  // ── AudiobookConfig transcript fields ──────────────────────────────
+
+  describe('AudiobookConfig transcript fields', () => {
+    it('supports transcriptPath and transcriptFileName fields', () => {
+      const config: AudiobookConfig = {
+        filePath: '/audio/book.mp3',
+        fileName: 'book.mp3',
+        addedAt: Date.now(),
+        transcriptPath: '/transcripts/book.srt',
+        transcriptFileName: 'book.srt',
+        transcriptStatus: 'none',
+      };
+      expect(config.transcriptPath).toBe('/transcripts/book.srt');
+      expect(config.transcriptFileName).toBe('book.srt');
+      expect(config.transcriptStatus).toBe('none');
+    });
+
+    it('preserves audiobook fields when transcript is added', () => {
+      const base: AudiobookConfig = {
+        filePath: '/audio/book.mp3',
+        fileName: 'book.mp3',
+        addedAt: 1000,
+        syncStatus: 'ready',
+        syncPoints: [{ time: 5, cfi: 'cfi-1' }],
+        syncMap: [{ secondsStart: 5, secondsEnd: 10, cfi: 'cfi-1' }],
+      };
+      const withTranscript: AudiobookConfig = {
+        ...base,
+        transcriptPath: '/transcripts/book.srt',
+        transcriptFileName: 'book.srt',
+        transcriptStatus: 'none',
+      };
+      // Audiobook fields preserved
+      expect(withTranscript.filePath).toBe('/audio/book.mp3');
+      expect(withTranscript.fileName).toBe('book.mp3');
+      expect(withTranscript.syncPoints).toHaveLength(1);
+      expect(withTranscript.syncMap).toHaveLength(1);
+      // Transcript fields added
+      expect(withTranscript.transcriptPath).toBe('/transcripts/book.srt');
+    });
+
+    it('clears transcript fields on removal while preserving audiobook', () => {
+      const withTranscript: AudiobookConfig = {
+        filePath: '/audio/book.mp3',
+        fileName: 'book.mp3',
+        addedAt: 1000,
+        transcriptPath: '/transcripts/book.srt',
+        transcriptFileName: 'book.srt',
+        transcriptStatus: 'none',
+        syncMap: [{ secondsStart: 5, secondsEnd: 10, cfi: 'cfi-1' }],
+      };
+      const afterRemove: AudiobookConfig = {
+        ...withTranscript,
+        transcriptPath: undefined,
+        transcriptFileName: undefined,
+        transcriptStatus: undefined,
+      };
+      // Transcript cleared
+      expect(afterRemove.transcriptPath).toBeUndefined();
+      expect(afterRemove.transcriptFileName).toBeUndefined();
+      expect(afterRemove.transcriptStatus).toBeUndefined();
+      // Audiobook preserved
+      expect(afterRemove.filePath).toBe('/audio/book.mp3');
+      expect(afterRemove.syncMap).toHaveLength(1);
+    });
+
+    it('transcriptStatus transitions from none to ready', () => {
+      const config: AudiobookConfig = {
+        filePath: '/audio/book.mp3',
+        fileName: 'book.mp3',
+        addedAt: 1000,
+        transcriptPath: '/transcripts/book.srt',
+        transcriptFileName: 'book.srt',
+        transcriptStatus: 'none',
+      };
+      const ready: AudiobookConfig = {
+        ...config,
+        transcriptStatus: 'ready',
+        syncStatus: 'ready',
+      };
+      expect(ready.transcriptStatus).toBe('ready');
     });
   });
 });

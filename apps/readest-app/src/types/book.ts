@@ -419,6 +419,8 @@ export interface AudiobookSyncMapEntry {
   markerCfi?: string;
   label?: string;
   source?: 'manual-point' | 'manual-interpolated' | 'generated' | 'transcript-match' | string;
+  matchScore?: number;
+  sectionIndex?: number;
 }
 
 export interface AudiobookTextUnit {

@@ -144,6 +144,11 @@ export const FILE_SELECTION_PRESETS = {
     extensions: ['png', 'jpg', 'jpeg', 'gif'],
     dialogTitle: _('Select Image'),
   },
+  transcript: {
+    accept: '.json, .srt, .vtt',
+    extensions: ['json', 'srt', 'vtt'],
+    dialogTitle: _('Select Transcript'),
+  },
 };
 
 export type SelectionType = keyof typeof FILE_SELECTION_PRESETS;

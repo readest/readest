@@ -10,6 +10,8 @@ import {
   MdExpandLess,
   MdOutlineAudiotrack,
   MdAudiotrack,
+  MdOutlineDescription,
+  MdDescription,
 } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -39,6 +41,9 @@ interface BookDetailViewProps {
   onAddAudiobook?: () => void;
   onReplaceAudiobook?: () => void;
   onRemoveAudiobook?: () => void;
+  onAddTranscript?: () => void;
+  onReplaceTranscript?: () => void;
+  onRemoveTranscript?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
@@ -79,6 +84,9 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onAddAudiobook,
   onReplaceAudiobook,
   onRemoveAudiobook,
+  onAddTranscript,
+  onReplaceTranscript,
+  onRemoveTranscript,
   onEdit,
   onDelete,
   onDeleteCloudBackup,
@@ -93,6 +101,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   const [showAudiobookPanel, setShowAudiobookPanel] = useState(false);
 
   const hasAudiobook = !!audiobookConfig;
+  const hasTranscript = !!audiobookConfig?.transcriptPath;
 
   const toggleSeriesCollapse = () => {
     saveSysSettings(envConfig, 'metadataSeriesCollapsed', !settings.metadataSeriesCollapsed);
@@ -178,6 +187,24 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               <MdOutlineAudiotrack className={ACTION_ICON} />
             )}
           </button>
+
+          {/* Transcript action — only shown when audiobook is attached */}
+          {hasAudiobook && (
+            <button
+              onClick={() => onAddTranscript?.()}
+              className={clsx(
+                'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
+                'hover:bg-[rgba(185,133,44,0.08)]',
+              )}
+              title={hasTranscript ? _('Transcript Attached') : _('Add Transcript')}
+            >
+              {hasTranscript ? (
+                <MdDescription className='h-5 w-5 fill-[#d4b57b]' />
+              ) : (
+                <MdOutlineDescription className={ACTION_ICON} />
+              )}
+            </button>
+          )}
 
           {onDelete && (
             <Dropdown
@@ -284,6 +311,52 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               >
                 {_('Remove')}
               </button>
+            )}
+          </div>
+
+          {/* Transcript sub-row */}
+          <div className='mt-2.5 flex items-center gap-2.5 pl-[2.125rem]'>
+            <div className='flex h-5 w-5 shrink-0 items-center justify-center'>
+              <MdOutlineDescription className='h-3.5 w-3.5 text-[#968671]' />
+            </div>
+            {hasTranscript ? (
+              <>
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate text-[12px] text-[#a3937d]'>
+                    {audiobookConfig.transcriptFileName}
+                  </p>
+                </div>
+                <span className='text-[#5e4d38]'>|</span>
+                {onReplaceTranscript && (
+                  <button
+                    onClick={onReplaceTranscript}
+                    className='text-[11px] font-medium text-[#cfb07a] transition-colors hover:text-[#e4c88e]'
+                  >
+                    {_('Replace')}
+                  </button>
+                )}
+                {onRemoveTranscript && (
+                  <button
+                    onClick={onRemoveTranscript}
+                    className='text-[11px] font-medium text-[#c08070] transition-colors hover:text-[#e8a090]'
+                  >
+                    {_('Remove')}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span className='text-[11px] text-[#968671]'>{_('No transcript')}</span>
+                <span className='text-[#5e4d38]'>|</span>
+                {onAddTranscript && (
+                  <button
+                    onClick={onAddTranscript}
+                    className='text-[11px] font-medium text-[#cfb07a] transition-colors hover:text-[#e4c88e]'
+                  >
+                    {_('Add')}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
