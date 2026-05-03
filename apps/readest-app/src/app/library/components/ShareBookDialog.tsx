@@ -222,7 +222,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
       isOpen={isOpen}
       title={_('Share Book')}
       onClose={onClose}
-      boxClassName='sm:min-w-[480px] sm:max-w-[480px] sm:h-auto sm:max-h-[90%]'
+      boxClassName='sm:min-w-[460px] sm:max-w-[460px] sm:h-auto sm:max-h-[90%]'
       contentClassName='!px-6 !py-4'
     >
       <div className='flex flex-col gap-5 pt-2'>
@@ -278,7 +278,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
               {cfi && (
                 <label className='flex min-h-12 cursor-pointer select-none items-center justify-between gap-3 px-4 py-2'>
                   <span className='text-base-content text-sm font-medium'>
-                    {_('Share current page')}
+                    {_('Share reading progress')}
                   </span>
                   <input
                     type='checkbox'
@@ -325,7 +325,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
             {created.hasCfi && (
               <div className='text-primary inline-flex items-center gap-1.5 self-start text-xs font-medium'>
                 <IoCheckmarkCircle className='h-4 w-4' aria-hidden='true' />
-                {_('Includes your current page')}
+                {_('Includes your reading progress')}
               </div>
             )}
 

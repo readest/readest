@@ -12,11 +12,14 @@ import {
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
+import { useEnv } from '@/context/EnvContext';
 import { BrandHeader } from '@/components/landing/BrandHeader';
 import { Card } from '@/components/landing/Card';
 import { PageFooter } from '@/components/landing/PageFooter';
 import { getShare, importShare, type ShareMetadata } from '@/libs/share';
+import { ensureSharedBookLocal } from '@/libs/shareImport';
 import { formatBytes } from '@/utils/book';
+import { navigateToReader } from '@/utils/nav';
 
 const formatExpiry = (iso: string, _: TranslationFunc): string => {
   const ms = new Date(iso).getTime() - Date.now();
@@ -33,6 +36,7 @@ const ShareLanding = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { user } = useAuth();
+  const { appService } = useEnv();
 
   // Resolve the token from either the rewritten query (?token=) or the pretty
   // path (/s/{token}). The next.config.mjs rewrite handles the web build; the
@@ -50,6 +54,7 @@ const ShareLanding = () => {
   const [meta, setMeta] = useState<ShareMetadata | null>(null);
   const [loadError, setLoadError] = useState<{ status: number; message: string } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<number | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,19 +85,32 @@ const ShareLanding = () => {
   const appHref = `readest://share/${encodeURIComponent(token)}`;
 
   const handleAddToLibrary = async () => {
-    if (!token || importing) return;
+    if (!token || importing || !appService) return;
     setImporting(true);
+    setImportProgress(null);
     setImportError(null);
     try {
       const result = await importShare(token);
-      // The reader resolves `ids` via getBookByHash, so pass the book hash —
-      // not the `files.id` UUID. Same identifier used by /reader/:hash links.
-      const params = new URLSearchParams();
-      params.set('ids', result.bookHash);
-      if (result.cfi) params.set('cfi', result.cfi);
-      router.push(`/reader?${params.toString()}`);
+      // /import only mutates server state (R2 byte-copy + files row). The
+      // local library is unchanged, so the reader's getBookByHash would miss.
+      // Pull bytes + create the local Book entry before navigating; meta is
+      // already in state from the initial getShare call so no extra round-trip.
+      await ensureSharedBookLocal({
+        token,
+        importResult: result,
+        appService,
+        meta: meta ?? undefined,
+        onProgress: setImportProgress,
+      });
+      // navigateToReader routes web to /reader/{hash} (Pages Router page that
+      // actually renders) and Tauri to /reader?ids={hash}. Building the URL
+      // by hand here lands on the App Router /reader page instead, which is
+      // a stub for this flow and renders blank.
+      const queryParams = result.cfi ? `cfi=${encodeURIComponent(result.cfi)}` : undefined;
+      navigateToReader(router, [result.bookHash], queryParams);
     } catch (err) {
       setImporting(false);
+      setImportProgress(null);
       const message = err instanceof Error ? err.message : _('Could not add to your library');
       setImportError(message);
     }
@@ -227,14 +245,42 @@ const ShareLanding = () => {
                     type='button'
                     onClick={handleAddToLibrary}
                     disabled={importing}
+                    aria-busy={importing}
                     className='btn btn-primary btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
                   >
-                    <IoLibraryOutline className='h-5 w-5' aria-hidden='true' />
-                    {importing ? _('Adding…') : _('Add to my library')}
+                    {importing ? (
+                      <span className='loading loading-spinner loading-sm' aria-hidden='true' />
+                    ) : (
+                      <IoLibraryOutline className='h-5 w-5' aria-hidden='true' />
+                    )}
+                    {importing
+                      ? importProgress !== null
+                        ? _('Downloading… {{percent}}%', { percent: importProgress })
+                        : _('Adding…')
+                      : _('Add to my library')}
                   </button>
+                  {/* Live progress bar while bytes are streaming in. Stays at
+                      the indeterminate striped state until we get the first
+                      progress event from the byte transfer. */}
+                  {importing && (
+                    <progress
+                      className='progress progress-primary w-full'
+                      value={importProgress ?? undefined}
+                      max={100}
+                      aria-label={_('Import progress')}
+                    />
+                  )}
                   <a
                     href={appHref}
-                    className='btn btn-ghost btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                    aria-disabled={importing}
+                    onClick={(e) => {
+                      if (importing) e.preventDefault();
+                    }}
+                    className={
+                      importing
+                        ? 'btn btn-ghost btn-block btn-disabled flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                        : 'btn btn-ghost btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                    }
                   >
                     <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
                     {_('Open in app')}

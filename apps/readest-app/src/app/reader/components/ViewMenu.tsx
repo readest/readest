@@ -23,7 +23,7 @@ import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
-import { formatLocaleDateTime } from '@/utils/book';
+import dayjs from 'dayjs';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
@@ -327,8 +327,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           !user
             ? _('Sign in to Sync')
             : lastSyncTime
-              ? _('Synced at {{time}}', {
-                  time: formatLocaleDateTime(lastSyncTime),
+              ? _('Synced {{time}}', {
+                  time: dayjs(lastSyncTime).fromNow(),
                 })
               : _('Never synced')
         }
@@ -337,8 +337,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={handleSync}
         siblings={
           <button
-            aria-label={_('Metadata Hash')}
-            title={_('Metadata Hash')}
+            aria-label={_('Sync Info')}
+            title={_('Sync Info')}
             className='hover:bg-base-300 text-base-content/70 mx-1 rounded-md px-2'
             onClick={() => {
               setIsDropdownOpen?.(false);

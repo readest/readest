@@ -8,6 +8,7 @@ import { eventDispatcher } from '@/utils/event';
 import { useAuth } from '@/context/AuthContext';
 import { navigateToReader } from '@/utils/nav';
 import { ShareApiError, confirmDownload, importShare } from '@/libs/share';
+import { ensureSharedBookLocal } from '@/libs/shareImport';
 import { parseShareDeepLink, type ShareDeepLink } from '@/utils/share';
 import { useTranslation } from './useTranslation';
 
@@ -57,13 +58,18 @@ export function useOpenShareLink() {
         });
         return;
       }
+      if (!appService) return;
       try {
         const result = await importShare(token);
+        // The /import endpoint only creates rows + R2 bytes server-side; the
+        // local library is unchanged. Make sure the local library has both the
+        // Book entry and the bytes on disk before navigating, otherwise
+        // `getBookByHash` returns undefined and the reader throws "Book not
+        // found". See src/libs/shareImport.ts for the three branches.
+        await ensureSharedBookLocal({ token, importResult: result, appService });
         // Best-effort analytics ping; doesn't affect UX.
         confirmDownload(token);
 
-        // The reader resolves IDs via getBookByHash, so navigate with the
-        // book hash (not the `files.id` UUID).
         const queryParams = result.cfi ? `cfi=${encodeURIComponent(result.cfi)}` : undefined;
         navigateToReader(router, [result.bookHash], queryParams);
 
@@ -86,7 +92,7 @@ export function useOpenShareLink() {
         });
       }
     },
-    [_, router, user],
+    [_, router, user, appService],
   );
 
   useEffect(() => {

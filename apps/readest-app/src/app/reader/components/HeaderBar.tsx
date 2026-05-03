@@ -30,7 +30,7 @@ import NotebookToggler from './NotebookToggler';
 import SettingsToggler from './SettingsToggler';
 import TranslationToggler from './TranslationToggler';
 import ViewMenu from './ViewMenu';
-import MetaHashInfoDialog from './MetaHashInfoDialog';
+import SyncInfoDialog from './SyncInfoDialog';
 
 interface HeaderBarProps {
   bookKey: string;
@@ -64,9 +64,12 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig } = useBookDataStore();
   const viewSettings = getViewSettings(bookKey);
   const bookData = getBookData(bookKey);
+  const bookConfig = getConfig(bookKey);
+  const lastSyncedAt =
+    Math.max(bookConfig?.lastSyncedAtConfig || 0, bookConfig?.lastSyncedAtNotes || 0) || undefined;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
@@ -295,10 +298,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </Dropdown>
           {isMetaHashDialogOpen && (
             <ModalPortal showOverlay={false}>
-              <MetaHashInfoDialog
+              <SyncInfoDialog
                 isOpen={isMetaHashDialogOpen}
                 metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
                 storedMetaHash={bookData?.book?.metaHash}
+                lastSyncedAt={lastSyncedAt}
                 onClose={() => setIsMetaHashDialogOpen(false)}
               />
             </ModalPortal>
