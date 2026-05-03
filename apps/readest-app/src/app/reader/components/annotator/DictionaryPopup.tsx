@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack } from 'react-icons/md';
+import { MdArrowBack, MdSettings } from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -22,6 +22,13 @@ interface DictionaryPopupProps {
   popupWidth: number;
   popupHeight: number;
   onDismiss?: () => void;
+  /**
+   * Invoked when the user clicks the bottom-right "Manage Dictionaries"
+   * icon. The host (Annotator) decides how to navigate — typically by
+   * opening the SettingsDialog and deep-linking to the dictionaries
+   * sub-page.
+   */
+  onManage?: () => void;
 }
 
 interface TabState {
@@ -45,6 +52,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   popupWidth,
   popupHeight,
   onDismiss,
+  onManage,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -294,7 +302,11 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
       className='select-text'
       onDismiss={onDismiss}
     >
-      <div className='relative flex h-full flex-col'>
+      {/* `overflow-hidden rounded-lg` clips child surfaces (the tab strip's
+          gray bg, the bottom footer divider, etc.) to the popup's rounded
+          shape — without it the tab bar's `bg-base-300/40` and `border-b`
+          paint into the corner area and break the rounded edge. */}
+      <div className='relative flex h-full flex-col overflow-hidden rounded-lg'>
         {providers.length > 1 && (
           <div
             role='tablist'
@@ -386,14 +398,33 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           })
         )}
 
-        {sourceLabel && (
-          <footer
-            className='not-eink:opacity-60 mt-auto flex items-center px-4 py-2 text-sm'
-            title={`Source: ${sourceLabel}`}
-          >
-            {/* min-w-0 lets the truncate engage inside the flex parent —
-                without it the span sizes to its content and overflows. */}
-            <span className='min-w-0 flex-1 truncate'>Source: {sourceLabel}</span>
+        {/* Footer always renders so the manage-dictionaries icon has a
+            consistent home at the bottom-right of every tab. The source
+            label fills the left side when present; otherwise the spacer
+            pushes the icon to the right. */}
+        {(sourceLabel || onManage) && (
+          <footer className='mt-auto flex shrink-0 items-center gap-2 px-3 py-1.5'>
+            {sourceLabel ? (
+              <span
+                className='not-eink:opacity-60 min-w-0 flex-1 truncate text-sm'
+                title={`Source: ${sourceLabel}`}
+              >
+                Source: {sourceLabel}
+              </span>
+            ) : (
+              <span className='flex-1' />
+            )}
+            {onManage && (
+              <button
+                type='button'
+                onClick={onManage}
+                aria-label={_('Manage Dictionaries')}
+                title={_('Manage Dictionaries')}
+                className='btn btn-ghost btn-square btn-xs text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60 shrink-0'
+              >
+                <MdSettings size={16} />
+              </button>
+            )}
           </footer>
         )}
       </div>

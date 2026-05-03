@@ -1216,7 +1216,6 @@
   "Importing…": "Mengimpor…",
   "Import Dictionary": "Impor Kamus",
   "No dictionaries available.": "Tidak ada kamus yang tersedia.",
-  "Drag the handle on the left to reorder.": "Seret pegangan di sebelah kiri untuk mengurutkan ulang.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Paket StarDict memerlukan file .ifo, .idx, dan .dict.dz (.syn opsional).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Paket MDict menggunakan file .mdx; file .mdd pendamping bersifat opsional.",
   "Select all the bundle files together when importing.": "Pilih semua file paket sekaligus saat mengimpor.",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "Termasuk progres baca Anda",
   "Synced {{time}}": "Disinkronkan {{time}}",
   "Sync Info": "Info sinkronisasi",
-  "Last Synced": "Sinkronisasi terakhir"
+  "Last Synced": "Sinkronisasi terakhir",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Bundel DICT memerlukan berkas .index dan berkas .dict.dz.",
+  "Slob bundles need a .slob file.": "Bundel Slob memerlukan berkas .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Templat URL harus diawali http(s):// dan berisi %WORD%.",
+  "Web": "Web",
+  "Add Web Search": "Tambah Pencarian Web",
+  "Edit Web Search": "Edit Pencarian Web",
+  "e.g. Google": "mis. Google",
+  "URL Template": "Templat URL",
+  "Use %WORD% where the looked-up word should appear.": "Gunakan %WORD% di tempat kata yang dicari harus muncul.",
+  "Open the search result in your browser:": "Buka hasil pencarian di peramban Anda:",
+  "Open in {{name}}": "Buka di {{name}}"
 }

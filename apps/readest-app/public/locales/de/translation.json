@@ -1234,7 +1234,6 @@
   "Importing…": "Wird importiert …",
   "Import Dictionary": "Wörterbuch importieren",
   "No dictionaries available.": "Keine Wörterbücher verfügbar.",
-  "Drag the handle on the left to reorder.": "Ziehe am Griff links, um die Reihenfolge zu ändern.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict-Bundles benötigen .ifo-, .idx- und .dict.dz-Dateien (.syn optional).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict-Bundles verwenden .mdx-Dateien; begleitende .mdd-Dateien sind optional.",
   "Select all the bundle files together when importing.": "Wähle beim Import alle Bundle-Dateien zusammen aus.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Enthält deinen Lesefortschritt",
   "Synced {{time}}": "Synchronisiert {{time}}",
   "Sync Info": "Synchronisierungs-Info",
-  "Last Synced": "Zuletzt synchronisiert"
+  "Last Synced": "Zuletzt synchronisiert",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT-Bundles benötigen eine .index-Datei und eine .dict.dz-Datei.",
+  "Slob bundles need a .slob file.": "Slob-Bundles benötigen eine .slob-Datei.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL-Vorlage muss mit http(s):// beginnen und %WORD% enthalten.",
+  "Web": "Web",
+  "Add Web Search": "Websuche hinzufügen",
+  "Edit Web Search": "Websuche bearbeiten",
+  "e.g. Google": "z. B. Google",
+  "URL Template": "URL-Vorlage",
+  "Use %WORD% where the looked-up word should appear.": "Verwenden Sie %WORD%, wo das gesuchte Wort erscheinen soll.",
+  "Open the search result in your browser:": "Öffne das Suchergebnis in deinem Browser:",
+  "Open in {{name}}": "In {{name}} öffnen"
 }

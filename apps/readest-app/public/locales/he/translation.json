@@ -1252,7 +1252,6 @@
   "Importing…": "מייבא…",
   "Import Dictionary": "ייבא מילון",
   "No dictionaries available.": "אין מילונים זמינים.",
-  "Drag the handle on the left to reorder.": "גררו את הידית משמאל כדי לסדר מחדש.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "חבילות StarDict דורשות קבצי .ifo,‏ .idx ו-.dict.dz (.syn אופציונלי).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "חבילות MDict משתמשות בקבצי .mdx; קבצי .mdd נלווים הם אופציונליים.",
   "Select all the bundle files together when importing.": "בחרו את כל קבצי החבילה יחד בעת הייבוא.",
@@ -1340,5 +1339,18 @@
   "Includes your reading progress": "כולל את התקדמות הקריאה שלך",
   "Synced {{time}}": "סונכרן {{time}}",
   "Sync Info": "פרטי סנכרון",
-  "Last Synced": "סונכרן לאחרונה"
+  "Last Synced": "סונכרן לאחרונה",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "חבילות DICT דורשות קובץ ‎.index‎ וקובץ ‎.dict.dz‎.",
+  "Slob bundles need a .slob file.": "חבילות Slob דורשות קובץ ‎.slob‎.",
+  "URL template must start with http(s):// and contain %WORD%.": "תבנית כתובת ה-URL חייבת להתחיל ב-http(s):// ולהכיל ‎%WORD%‎.",
+  "Web": "אינטרנט",
+  "Add Web Search": "הוסף חיפוש באינטרנט",
+  "Edit Web Search": "ערוך חיפוש באינטרנט",
+  "e.g. Google": "לדוגמה: Google",
+  "URL Template": "תבנית URL",
+  "Use %WORD% where the looked-up word should appear.": "השתמש ב-%WORD% היכן שהמילה המבוקשת צריכה להופיע.",
+  "Open the search result in your browser:": "פתח את תוצאת החיפוש בדפדפן שלך:",
+  "Open in {{name}}": "פתח ב-{{name}}"
 }

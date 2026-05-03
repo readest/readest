@@ -1234,7 +1234,6 @@
   "Importing…": "आयात हो रहा है…",
   "Import Dictionary": "शब्दकोश आयात करें",
   "No dictionaries available.": "कोई शब्दकोश उपलब्ध नहीं है।",
-  "Drag the handle on the left to reorder.": "पुनः क्रमित करने के लिए बायीं ओर के हैंडल को खींचें।",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict बंडल को .ifo, .idx और .dict.dz फ़ाइलें चाहिए (.syn वैकल्पिक)।",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict बंडल .mdx फ़ाइलों का उपयोग करते हैं; साथी .mdd फ़ाइलें वैकल्पिक हैं।",
   "Select all the bundle files together when importing.": "आयात करते समय बंडल की सभी फ़ाइलें एक साथ चुनें।",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "आपकी पढ़ने की प्रगति शामिल है",
   "Synced {{time}}": "{{time}} सिंक हुआ",
   "Sync Info": "सिंक जानकारी",
-  "Last Synced": "अंतिम सिंक"
+  "Last Synced": "अंतिम सिंक",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT बंडल को एक .index फ़ाइल और एक .dict.dz फ़ाइल की आवश्यकता होती है।",
+  "Slob bundles need a .slob file.": "Slob बंडल को एक .slob फ़ाइल की आवश्यकता होती है।",
+  "URL template must start with http(s):// and contain %WORD%.": "URL टेम्पलेट http(s):// से शुरू होना चाहिए और उसमें %WORD% होना चाहिए।",
+  "Web": "वेब",
+  "Add Web Search": "वेब खोज जोड़ें",
+  "Edit Web Search": "वेब खोज संपादित करें",
+  "e.g. Google": "उदा. Google",
+  "URL Template": "URL टेम्पलेट",
+  "Use %WORD% where the looked-up word should appear.": "%WORD% का उपयोग वहां करें जहां खोजा गया शब्द दिखाई देना चाहिए।",
+  "Open the search result in your browser:": "अपने ब्राउज़र में खोज परिणाम खोलें:",
+  "Open in {{name}}": "{{name}} में खोलें"
 }

@@ -27,7 +27,11 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { eventDispatcher } from '@/utils/event';
 import { evictProvider } from '@/services/dictionaries/registry';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
-import type { ImportedDictionary } from '@/services/dictionaries/types';
+import type { ImportedDictionary, WebSearchEntry } from '@/services/dictionaries/types';
+import {
+  getBuiltinWebSearch,
+  isValidUrlTemplate,
+} from '@/services/dictionaries/webSearchTemplates';
 
 interface CustomDictionariesProps {
   onBack: () => void;
@@ -36,12 +40,22 @@ interface CustomDictionariesProps {
 interface ProviderRow {
   id: string;
   label: string;
-  kind: 'builtin' | 'stardict' | 'mdict';
+  kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'web';
   badge: string;
   imported?: ImportedDictionary;
+  /** Set on `kind: 'web'` rows. The shape distinguishes deletable custom
+   *  entries (when `builtinWeb` is false) from immutable built-ins. */
+  webSearch?: WebSearchEntry;
+  builtinWeb?: boolean;
   disabled?: boolean;
   reason?: string;
 }
+
+const builtinWebLabel = (id: string, _: (key: string) => string): string => {
+  const tpl = getBuiltinWebSearch(id);
+  if (!tpl) return id;
+  return _(tpl.nameKey);
+};
 
 const builtinLabel = (id: string, _: (key: string) => string): string => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return _('Wiktionary');
@@ -55,6 +69,7 @@ interface SortableRowProps {
   isDeleteMode: boolean;
   onToggle: (id: string, next: boolean) => void;
   onDelete: (row: ProviderRow) => void;
+  onEditWebSearch?: (entry: WebSearchEntry) => void;
   _: (key: string, options?: Record<string, number | string>) => string;
 }
 
@@ -64,6 +79,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
   isDeleteMode,
   onToggle,
   onDelete,
+  onEditWebSearch,
   _,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -83,8 +99,8 @@ const SortableRow: React.FC<SortableRowProps> = ({
       ref={setNodeRef}
       style={style}
       className={clsx(
-        'flex items-center gap-2 px-3 py-2',
-        isDragging && 'bg-base-200 z-10 shadow-md',
+        'flex items-center gap-2 px-3 py-2 transition-colors',
+        isDragging ? 'bg-base-200 z-10 shadow-md' : 'hover:bg-base-200/40',
       )}
     >
       {/* Drag handle (left). Always present so reorder works for built-ins
@@ -110,7 +126,15 @@ const SortableRow: React.FC<SortableRowProps> = ({
           >
             {row.label}
           </span>
-          <span className='badge badge-sm badge-ghost shrink-0'>{row.badge}</span>
+          {row.kind === 'web' && !row.builtinWeb && row.webSearch && onEditWebSearch && (
+            <button
+              type='button'
+              onClick={() => onEditWebSearch(row.webSearch!)}
+              className='link link-hover text-base-content/60 shrink-0 text-xs'
+            >
+              {_('Edit')}
+            </button>
+          )}
         </div>
         {row.reason && (
           <div className='text-warning mt-1 flex items-start gap-1 text-xs'>
@@ -119,6 +143,11 @@ const SortableRow: React.FC<SortableRowProps> = ({
           </div>
         )}
       </div>
+
+      {/* End-aligned type badge. Sits just before the toggle so all
+          badges form a uniform column regardless of name length, instead
+          of trailing the truncated name at a ragged x position. */}
+      <span className='badge badge-sm badge-ghost shrink-0'>{row.badge}</span>
 
       <input
         type='checkbox'
@@ -129,10 +158,11 @@ const SortableRow: React.FC<SortableRowProps> = ({
         aria-label={enabled ? _('Disable') : _('Enable')}
       />
 
-      {/* Delete X — only for imported rows, only in delete mode. Built-ins
-          never show it; imported rows reserve no width when not in delete
-          mode so their toggle aligns with the built-ins'. */}
-      {row.imported && isDeleteMode && (
+      {/* Delete X — for imported dictionaries and custom web searches, only
+          in delete mode. Built-ins (incl. built-in web searches) never show
+          it; deletable rows reserve no width when not in delete mode so the
+          toggles align across the list. */}
+      {(row.imported || (row.kind === 'web' && !row.builtinWeb)) && isDeleteMode && (
         <button
           type='button'
           onClick={() => onDelete(row)}
@@ -157,6 +187,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     removeDictionary,
     reorder,
     setEnabled,
+    addWebSearch,
+    updateWebSearch,
+    removeWebSearch,
     saveCustomDictionaries,
     loadCustomDictionaries,
   } = useCustomDictionaryStore();
@@ -170,8 +203,43 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const [importing, setImporting] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
 
+  // Add/edit web-search modal state. `editingId` is `null` for "add", a
+  // custom entry's id for "edit".
+  const [webModal, setWebModal] = useState<null | {
+    editingId: string | null;
+    name: string;
+    urlTemplate: string;
+  }>(null);
+  const openAddWebSearch = () => setWebModal({ editingId: null, name: '', urlTemplate: '' });
+  const openEditWebSearch = (entry: WebSearchEntry) =>
+    setWebModal({ editingId: entry.id, name: entry.name, urlTemplate: entry.urlTemplate });
+  const closeWebModal = () => setWebModal(null);
+  const submitWebModal = async () => {
+    if (!webModal) return;
+    const name = webModal.name.trim();
+    const url = webModal.urlTemplate.trim();
+    if (!name || !isValidUrlTemplate(url)) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('URL template must start with http(s):// and contain %WORD%.'),
+        timeout: 4000,
+      });
+      return;
+    }
+    if (webModal.editingId) {
+      updateWebSearch(webModal.editingId, { name, urlTemplate: url });
+      // Re-create the cached provider so the new template + label take effect.
+      evictProvider(webModal.editingId);
+    } else {
+      addWebSearch(name, url);
+    }
+    await saveCustomDictionaries(envConfig);
+    setWebModal(null);
+  };
+
   const buildRows = (): ProviderRow[] => {
     const dictById = new Map(dictionaries.map((d) => [d.id, d]));
+    const webById = new Map((settings.webSearches ?? []).map((w) => [w.id, w]));
     const rows: ProviderRow[] = [];
     for (const id of settings.providerOrder) {
       if (id.startsWith('builtin:')) {
@@ -180,6 +248,32 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           label: builtinLabel(id, _),
           kind: 'builtin',
           badge: _('Built-in'),
+        });
+        continue;
+      }
+      if (id.startsWith('web:builtin:')) {
+        const tpl = getBuiltinWebSearch(id);
+        if (!tpl) continue;
+        rows.push({
+          id,
+          label: builtinWebLabel(id, _),
+          kind: 'web',
+          badge: _('Web'),
+          webSearch: tpl,
+          builtinWeb: true,
+        });
+        continue;
+      }
+      if (id.startsWith('web:')) {
+        const w = webById.get(id);
+        if (!w || w.deletedAt) continue;
+        rows.push({
+          id,
+          label: w.name,
+          kind: 'web',
+          badge: _('Web'),
+          webSearch: w,
+          builtinWeb: false,
         });
         continue;
       }
@@ -198,7 +292,14 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         id,
         label: dict.name,
         kind: dict.kind,
-        badge: dict.kind === 'mdict' ? _('MDict') : _('StarDict'),
+        badge:
+          dict.kind === 'mdict'
+            ? _('MDict')
+            : dict.kind === 'dict'
+              ? _('DICT')
+              : dict.kind === 'slob'
+                ? _('Slob')
+                : _('StarDict'),
         imported: dict,
         disabled,
         reason,
@@ -208,7 +309,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   };
 
   const rows = buildRows();
-  const hasImported = rows.some((r) => r.imported);
+  const hasDeletable = rows.some((r) => r.imported || (r.kind === 'web' && !r.builtinWeb));
 
   // dnd-kit sensors. PointerSensor with a small distance gate avoids
   // hijacking simple clicks on the drag handle. TouchSensor with a delay
@@ -264,21 +365,28 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   };
 
   const handleDelete = async (row: ProviderRow) => {
-    if (!row.imported) return;
-    const dict = row.imported;
-    try {
-      await appService?.deleteDictionary(dict);
-    } catch (err) {
-      console.warn('Failed to delete dictionary files:', err);
+    if (row.imported) {
+      const dict = row.imported;
+      try {
+        await appService?.deleteDictionary(dict);
+      } catch (err) {
+        console.warn('Failed to delete dictionary files:', err);
+      }
+      removeDictionary(dict.id);
+      evictProvider(dict.id);
+    } else if (row.kind === 'web' && !row.builtinWeb && row.webSearch) {
+      removeWebSearch(row.webSearch.id);
+      evictProvider(row.id);
+    } else {
+      return;
     }
-    removeDictionary(dict.id);
-    evictProvider(dict.id);
     await saveCustomDictionaries(envConfig);
-    // Auto-leave delete mode when the last imported entry is gone — there's
+    // Auto-leave delete mode when the last deletable entry is gone — there's
     // nothing left to delete.
-    if (rows.filter((r) => r.imported).length <= 1) {
-      setIsDeleteMode(false);
-    }
+    const remaining = rows.filter(
+      (r) => r.id !== row.id && (r.imported || (r.kind === 'web' && !r.builtinWeb)),
+    );
+    if (remaining.length === 0) setIsDeleteMode(false);
   };
 
   const handleToggle = async (id: string, next: boolean) => {
@@ -313,7 +421,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             <li className='font-medium'>{_('Dictionaries')}</li>
           </ul>
         </div>
-        {hasImported && (
+        {hasDeletable && (
           <button
             onClick={() => setIsDeleteMode((v) => !v)}
             className='btn btn-ghost btn-sm text-base-content gap-2'
@@ -331,23 +439,33 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         )}
       </div>
 
-      <div className='card border-primary/50 hover:border-primary/75 group mb-4 border-2 transition-colors'>
+      {/* Primary actions. Flat outline-primary buttons so they still read
+          as the page's primary CTAs but consume far less vertical space
+          than the previous bordered cards. On narrow screens (mobile) they
+          stack; on tablet+ they sit side-by-side. */}
+      <div className='mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2'>
         <button
           type='button'
-          className='card-body flex cursor-pointer items-center justify-center p-3 text-center'
           onClick={handleImport}
           disabled={importing}
+          className='btn btn-outline btn-primary gap-2 normal-case'
         >
-          <div className='flex items-center gap-2'>
-            <MdAdd className='text-primary/85 group-hover:text-primary h-6 w-6' />
-            <div className='text-primary/85 group-hover:text-primary line-clamp-1 font-medium'>
-              {importing ? _('Importing…') : _('Import Dictionary')}
-            </div>
-          </div>
+          <MdAdd className='h-5 w-5' />
+          <span className='line-clamp-1'>
+            {importing ? _('Importing…') : _('Import Dictionary')}
+          </span>
+        </button>
+        <button
+          type='button'
+          onClick={openAddWebSearch}
+          className='btn btn-outline btn-primary gap-2 normal-case'
+        >
+          <MdAdd className='h-5 w-5' />
+          <span className='line-clamp-1'>{_('Add Web Search')}</span>
         </button>
       </div>
 
-      <div className='card border-base-200 bg-base-100 border shadow'>
+      <div className='card border-base-200 bg-base-100 overflow-hidden border'>
         <div className='divide-base-200 divide-y'>
           {rows.length === 0 && (
             <div className='text-base-content/60 px-4 py-6 text-center text-sm'>
@@ -368,6 +486,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
                   isDeleteMode={isDeleteMode}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
+                  onEditWebSearch={openEditWebSearch}
                   _={_}
                 />
               ))}
@@ -376,17 +495,76 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <div className='bg-base-200/30 my-6 rounded-lg p-4'>
-        <div className='text-base-content/70 text-sm sm:text-xs'>
-          <div className='mb-1 indent-2 font-medium'>{_('Tips')}:</div>
-          <ul className='list-outside list-disc space-y-1 ps-2'>
-            <li>{_('Drag the handle on the left to reorder.')}</li>
+      <div className='bg-base-200/40 mt-4 rounded-lg p-3'>
+        <div className='text-base-content/70 text-xs'>
+          <div className='mb-1.5 flex items-center gap-1.5 font-medium'>
+            <MdInfoOutline className='h-3.5 w-3.5' />
+            {_('Tips')}
+          </div>
+          <ul className='list-outside list-disc space-y-0.5 ps-4'>
             <li>{_('StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).')}</li>
             <li>{_('MDict bundles use .mdx files; companion .mdd files are optional.')}</li>
+            <li>{_('DICT bundles need a .index file and a .dict.dz file.')}</li>
+            <li>{_('Slob bundles need a .slob file.')}</li>
             <li>{_('Select all the bundle files together when importing.')}</li>
           </ul>
         </div>
       </div>
+
+      {/* Add / edit web-search modal. Lightweight inline `<dialog>` (daisyUI
+          modal classes); the heavier `Dialog.tsx` is overkill for a 2-field
+          form. */}
+      {webModal && (
+        <div className='modal modal-open' role='dialog'>
+          <div className='modal-box w-11/12 max-w-md'>
+            <h3 className='text-base font-semibold'>
+              {webModal.editingId ? _('Edit Web Search') : _('Add Web Search')}
+            </h3>
+            <div className='mt-4 space-y-3'>
+              <label className='form-control w-full'>
+                <span className='label-text text-sm'>{_('Name')}</span>
+                <input
+                  type='text'
+                  className='input input-bordered input-sm w-full'
+                  value={webModal.name}
+                  placeholder={_('e.g. Google')}
+                  onChange={(e) => setWebModal((m) => (m ? { ...m, name: e.target.value } : m))}
+                />
+              </label>
+              <label className='form-control w-full'>
+                <span className='label-text text-sm'>{_('URL Template')}</span>
+                <input
+                  type='url'
+                  className='input input-bordered input-sm w-full'
+                  value={webModal.urlTemplate}
+                  placeholder='https://www.google.com/search?q=%WORD%'
+                  onChange={(e) =>
+                    setWebModal((m) => (m ? { ...m, urlTemplate: e.target.value } : m))
+                  }
+                />
+                <span className='label-text-alt text-base-content/60 mt-1 text-xs'>
+                  {_('Use %WORD% where the looked-up word should appear.')}
+                </span>
+              </label>
+            </div>
+            <div className='modal-action'>
+              <button type='button' onClick={closeWebModal} className='btn btn-ghost btn-sm'>
+                {_('Cancel')}
+              </button>
+              <button type='button' onClick={submitWebModal} className='btn btn-primary btn-sm'>
+                {_('Save')}
+              </button>
+            </div>
+          </div>
+          {/* Click-outside dismiss. */}
+          <button
+            type='button'
+            aria-label={_('Close')}
+            className='modal-backdrop'
+            onClick={closeWebModal}
+          />
+        </div>
+      )}
     </div>
   );
 };

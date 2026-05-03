@@ -1216,7 +1216,6 @@
   "Importing…": "ནང་འདྲེན་བྱེད་བཞིན་པ…",
   "Import Dictionary": "ཚིག་མཛོད་ནང་འདྲེན།",
   "No dictionaries available.": "ཚིག་མཛོད་གང་ཡང་མི་འདུག།",
-  "Drag the handle on the left to reorder.": "གོ་རིམ་སྒྱུར་བར་གཡོན་ཕྱོགས་ཀྱི་འཛིན་ཕུང་འཐེན།",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict ཡོ་བྱད་ལ་ .ifo དང་ .idx, .dict.dz ཡིག་ཆ་ཁག་དགོས་པ་ཡིན། (.syn ནི་འདེམས་འཁྱོངས་ཡིན།)",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict ཡོ་བྱད་ཀྱིས་ .mdx ཡིག་ཆ་སྤྱོད། མཉམ་འགྲོགས་ .mdd ཡིག་ཆ་ནི་འདེམས་འཁྱོངས་ཡིན།",
   "Select all the bundle files together when importing.": "ནང་འདྲེན་སྐབས་ཡོ་བྱད་ཡིག་ཆ་ཡོངས་མཉམ་དུ་འདེམས་རོགས།",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "ཁྱེད་ཀྱི་ཀློག་འདོན་གྱི་ཡར་ཐོན་འདུས།",
   "Synced {{time}}": "{{time}}མཉམ་སྒྲིག་བྱས་པ",
   "Sync Info": "མཉམ་སྒྲིག་གྱི་ཆ་འཕྲིན",
-  "Last Synced": "མཐའ་མའི་མཉམ་སྒྲིག"
+  "Last Synced": "མཐའ་མའི་མཉམ་སྒྲིག",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT ཕུང་པོར་ .index ཡིག་ཆ་དང་ .dict.dz ཡིག་ཆ་གཉིས་ཀ་དགོས།",
+  "Slob bundles need a .slob file.": "Slob ཕུང་པོར་ .slob ཡིག་ཆ་ཞིག་དགོས།",
+  "URL template must start with http(s):// and contain %WORD%.": "URL ཕྱི་མོ་ http(s):// གིས་འགོ་འཛུགས་དགོས་ལ་ %WORD% ཡོད་དགོས།",
+  "Web": "དྲ་རྒྱ",
+  "Add Web Search": "དྲ་རྒྱའི་འཚོལ་བཤེར་སྣོན།",
+  "Edit Web Search": "དྲ་རྒྱའི་འཚོལ་བཤེར་རྩོམ་སྒྲིག",
+  "e.g. Google": "དཔེར་ན། Google",
+  "URL Template": "URL ཕྱི་མོ",
+  "Use %WORD% where the looked-up word should appear.": "འཚོལ་བཤེར་བྱས་པའི་ཚིག་འཆར་ས་གནས་སུ་ %WORD% བཀོལ་སྤྱོད་གནང་རོགས།",
+  "Open the search result in your browser:": "ཁྱེད་ཀྱི་བརྡ་འཚོལ་མཁོ་ཆས་ལ་འཚོལ་བཤེར་གྲུབ་འབྲས་ཁ་ཕྱེ:",
+  "Open in {{name}}": "{{name}} ནང་ཁ་ཕྱེ།"
 }

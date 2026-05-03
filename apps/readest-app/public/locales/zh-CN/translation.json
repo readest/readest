@@ -1216,7 +1216,6 @@
   "Importing…": "正在导入…",
   "Import Dictionary": "导入词典",
   "No dictionaries available.": "没有可用的词典。",
-  "Drag the handle on the left to reorder.": "拖动左侧手柄以重新排序。",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict 词典包需要 .ifo、.idx 和 .dict.dz 文件(.syn 可选)。",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict 词典包使用 .mdx 文件;配套的 .mdd 文件为可选。",
   "Select all the bundle files together when importing.": "导入时请同时选择词典包内的所有文件。",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "包含你的阅读进度",
   "Synced {{time}}": "{{time}}已同步",
   "Sync Info": "同步信息",
-  "Last Synced": "上一次同步"
+  "Last Synced": "上一次同步",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT 词典包需要一个 .index 文件和一个 .dict.dz 文件。",
+  "Slob bundles need a .slob file.": "Slob 词典包需要一个 .slob 文件。",
+  "URL template must start with http(s):// and contain %WORD%.": "URL 模板必须以 http(s):// 开头并包含 %WORD%。",
+  "Web": "网络",
+  "Add Web Search": "添加网络搜索",
+  "Edit Web Search": "编辑网络搜索",
+  "e.g. Google": "例如 Google",
+  "URL Template": "URL 模板",
+  "Use %WORD% where the looked-up word should appear.": "在查询词应出现的位置使用 %WORD%。",
+  "Open the search result in your browser:": "在浏览器中打开搜索结果：",
+  "Open in {{name}}": "在 {{name}} 中打开"
 }

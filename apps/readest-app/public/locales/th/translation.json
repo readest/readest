@@ -1216,7 +1216,6 @@
   "Importing…": "กำลังนำเข้า…",
   "Import Dictionary": "นำเข้าพจนานุกรม",
   "No dictionaries available.": "ไม่มีพจนานุกรม",
-  "Drag the handle on the left to reorder.": "ลากที่จับทางซ้ายเพื่อจัดลำดับใหม่",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "บันเดิล StarDict ต้องมีไฟล์ .ifo, .idx และ .dict.dz (.syn ไม่บังคับ)",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "บันเดิล MDict ใช้ไฟล์ .mdx ส่วนไฟล์ .mdd ที่มาด้วยเป็นทางเลือก",
   "Select all the bundle files together when importing.": "เลือกไฟล์ทั้งหมดของบันเดิลพร้อมกันเมื่อทำการนำเข้า",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "รวมถึงความคืบหน้าการอ่านของคุณ",
   "Synced {{time}}": "ซิงค์เมื่อ {{time}}",
   "Sync Info": "ข้อมูลการซิงค์",
-  "Last Synced": "ซิงค์ล่าสุด"
+  "Last Synced": "ซิงค์ล่าสุด",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "ชุด DICT ต้องการไฟล์ .index และไฟล์ .dict.dz",
+  "Slob bundles need a .slob file.": "ชุด Slob ต้องการไฟล์ .slob",
+  "URL template must start with http(s):// and contain %WORD%.": "เทมเพลต URL ต้องขึ้นต้นด้วย http(s):// และมี %WORD%",
+  "Web": "เว็บ",
+  "Add Web Search": "เพิ่มการค้นหาบนเว็บ",
+  "Edit Web Search": "แก้ไขการค้นหาบนเว็บ",
+  "e.g. Google": "เช่น Google",
+  "URL Template": "เทมเพลต URL",
+  "Use %WORD% where the looked-up word should appear.": "ใช้ %WORD% ในตำแหน่งที่คำค้นหาควรปรากฏ",
+  "Open the search result in your browser:": "เปิดผลลัพธ์การค้นหาในเบราว์เซอร์ของคุณ:",
+  "Open in {{name}}": "เปิดใน {{name}}"
 }

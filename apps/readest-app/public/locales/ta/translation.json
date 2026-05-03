@@ -1234,7 +1234,6 @@
   "Importing…": "இறக்குமதி செய்கிறது…",
   "Import Dictionary": "அகராதியை இறக்குமதி செய்",
   "No dictionaries available.": "அகராதிகள் கிடைக்கவில்லை.",
-  "Drag the handle on the left to reorder.": "மறு வரிசைப்படுத்த இடதுபுறம் உள்ள கைப்பிடியை இழுக்கவும்.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict தொகுப்புகளுக்கு .ifo, .idx, .dict.dz கோப்புகள் தேவை (.syn விருப்பம்).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict தொகுப்புகள் .mdx கோப்புகளைப் பயன்படுத்தும்; தொடர்புடைய .mdd கோப்புகள் விருப்பம்.",
   "Select all the bundle files together when importing.": "இறக்குமதி செய்யும்போது தொகுப்பின் அனைத்துக் கோப்புகளையும் ஒரே நேரத்தில் தேர்ந்தெடுக்கவும்.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "உங்கள் வாசிப்பு முன்னேற்றத்தை உள்ளடக்கியது",
   "Synced {{time}}": "{{time}} ஒத்திசைக்கப்பட்டது",
   "Sync Info": "ஒத்திசைவு தகவல்",
-  "Last Synced": "கடைசி ஒத்திசைவு"
+  "Last Synced": "கடைசி ஒத்திசைவு",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT தொகுப்புகளுக்கு ஒரு .index கோப்பு மற்றும் ஒரு .dict.dz கோப்பு தேவை.",
+  "Slob bundles need a .slob file.": "Slob தொகுப்புகளுக்கு ஒரு .slob கோப்பு தேவை.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL வார்ப்புரு http(s):// உடன் தொடங்க வேண்டும் மற்றும் %WORD% இருக்க வேண்டும்.",
+  "Web": "வலை",
+  "Add Web Search": "வலைத் தேடல் சேர்",
+  "Edit Web Search": "வலைத் தேடலைத் திருத்து",
+  "e.g. Google": "எ.கா. Google",
+  "URL Template": "URL வார்ப்புரு",
+  "Use %WORD% where the looked-up word should appear.": "தேடப்பட்ட சொல் தோன்ற வேண்டிய இடத்தில் %WORD% ஐ பயன்படுத்தவும்.",
+  "Open the search result in your browser:": "உங்கள் உலாவியில் தேடல் முடிவைத் திற:",
+  "Open in {{name}}": "{{name}} இல் திற"
 }

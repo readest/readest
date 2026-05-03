@@ -1306,7 +1306,6 @@
   "Importing…": "جاري الاستيراد…",
   "Import Dictionary": "استيراد قاموس",
   "No dictionaries available.": "لا تتوفر قواميس.",
-  "Drag the handle on the left to reorder.": "اسحب المقبض الموجود على اليسار لإعادة الترتيب.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "تحتاج حزم StarDict إلى ملفات ‎.ifo و‎.idx و‎.dict.dz (الـ‎.syn اختياري).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "حزم MDict تستخدم ملفات ‎.mdx؛ ملفات ‎.mdd المرافقة اختيارية.",
   "Select all the bundle files together when importing.": "حدد جميع ملفات الحزمة معًا عند الاستيراد.",
@@ -1409,5 +1408,18 @@
   "Includes your reading progress": "يتضمن تقدّم قراءتك",
   "Synced {{time}}": "تمت المزامنة {{time}}",
   "Sync Info": "معلومات المزامنة",
-  "Last Synced": "آخر مزامنة"
+  "Last Synced": "آخر مزامنة",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "تحتاج حزم DICT إلى ملف ‎.index‎ وملف ‎.dict.dz‎.",
+  "Slob bundles need a .slob file.": "تحتاج حزم Slob إلى ملف ‎.slob‎.",
+  "URL template must start with http(s):// and contain %WORD%.": "يجب أن يبدأ قالب URL بـ http(s):// وأن يحتوي على %WORD%.",
+  "Web": "ويب",
+  "Add Web Search": "إضافة بحث ويب",
+  "Edit Web Search": "تعديل بحث الويب",
+  "e.g. Google": "مثال: Google",
+  "URL Template": "قالب URL",
+  "Use %WORD% where the looked-up word should appear.": "استخدم %WORD% حيث يجب أن تظهر الكلمة المبحوث عنها.",
+  "Open the search result in your browser:": "افتح نتيجة البحث في متصفحك:",
+  "Open in {{name}}": "افتح في {{name}}"
 }

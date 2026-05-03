@@ -1216,7 +1216,6 @@
   "Importing…": "Đang nhập…",
   "Import Dictionary": "Nhập từ điển",
   "No dictionaries available.": "Không có từ điển.",
-  "Drag the handle on the left to reorder.": "Kéo tay cầm bên trái để sắp xếp lại.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Gói StarDict cần các tệp .ifo, .idx và .dict.dz (.syn tuỳ chọn).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Gói MDict dùng tệp .mdx; tệp .mdd đi kèm là tuỳ chọn.",
   "Select all the bundle files together when importing.": "Chọn tất cả các tệp của gói cùng lúc khi nhập.",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "Bao gồm tiến độ đọc của bạn",
   "Synced {{time}}": "Đã đồng bộ {{time}}",
   "Sync Info": "Thông tin đồng bộ",
-  "Last Synced": "Đồng bộ lần cuối"
+  "Last Synced": "Đồng bộ lần cuối",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Gói DICT cần một tệp .index và một tệp .dict.dz.",
+  "Slob bundles need a .slob file.": "Gói Slob cần một tệp .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Mẫu URL phải bắt đầu bằng http(s):// và chứa %WORD%.",
+  "Web": "Web",
+  "Add Web Search": "Thêm tìm kiếm web",
+  "Edit Web Search": "Sửa tìm kiếm web",
+  "e.g. Google": "vd. Google",
+  "URL Template": "Mẫu URL",
+  "Use %WORD% where the looked-up word should appear.": "Dùng %WORD% tại vị trí mà từ tra cứu sẽ xuất hiện.",
+  "Open the search result in your browser:": "Mở kết quả tìm kiếm trong trình duyệt của bạn:",
+  "Open in {{name}}": "Mở trong {{name}}"
 }

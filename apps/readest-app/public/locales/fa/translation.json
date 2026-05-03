@@ -1234,7 +1234,6 @@
   "Importing…": "در حال وارد کردن…",
   "Import Dictionary": "وارد کردن فرهنگ‌لغت",
   "No dictionaries available.": "هیچ فرهنگ‌لغتی در دسترس نیست.",
-  "Drag the handle on the left to reorder.": "برای تغییر ترتیب، دستگیرهٔ سمت چپ را بکشید.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "بسته‌های StarDict به فایل‌های .ifo، .idx و .dict.dz نیاز دارند (.syn اختیاری).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "بسته‌های MDict از فایل‌های .mdx استفاده می‌کنند؛ فایل‌های همراه .mdd اختیاری‌اند.",
   "Select all the bundle files together when importing.": "هنگام وارد کردن، همه فایل‌های بسته را با هم انتخاب کنید.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "شامل پیشرفت مطالعهٔ شماست",
   "Synced {{time}}": "{{time}} همگام‌سازی شد",
   "Sync Info": "اطلاعات همگام‌سازی",
-  "Last Synced": "آخرین همگام‌سازی"
+  "Last Synced": "آخرین همگام‌سازی",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "بسته‌های DICT به یک فایل ‎.index‎ و یک فایل ‎.dict.dz‎ نیاز دارند.",
+  "Slob bundles need a .slob file.": "بسته‌های Slob به یک فایل ‎.slob‎ نیاز دارند.",
+  "URL template must start with http(s):// and contain %WORD%.": "الگوی URL باید با http(s):// شروع شود و حاوی %WORD% باشد.",
+  "Web": "وب",
+  "Add Web Search": "افزودن جست‌وجوی وب",
+  "Edit Web Search": "ویرایش جست‌وجوی وب",
+  "e.g. Google": "مثلاً Google",
+  "URL Template": "الگوی URL",
+  "Use %WORD% where the looked-up word should appear.": "از %WORD% در جایی که کلمه‌ی مورد جست‌وجو باید ظاهر شود، استفاده کنید.",
+  "Open the search result in your browser:": "نتیجه‌ی جست‌وجو را در مرورگر باز کنید:",
+  "Open in {{name}}": "بازکردن در {{name}}"
 }

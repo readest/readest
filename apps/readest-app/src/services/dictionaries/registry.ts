@@ -13,12 +13,21 @@
  * runtime-only and non-serializable; storing them alongside metadata would
  * pollute the synced settings shape.
  */
-import type { DictionaryProvider, DictionarySettings, ImportedDictionary } from './types';
+import type {
+  DictionaryProvider,
+  DictionarySettings,
+  ImportedDictionary,
+  WebSearchEntry,
+} from './types';
 import { BUILTIN_PROVIDER_IDS } from './types';
 import { wiktionaryProvider } from './providers/wiktionaryProvider';
 import { wikipediaProvider } from './providers/wikipediaProvider';
 import { createStarDictProvider, type DictionaryFileOpener } from './providers/starDictProvider';
 import { createMdictProvider } from './providers/mdictProvider';
+import { createDictProvider } from './providers/dictProvider';
+import { createSlobProvider } from './providers/slobProvider';
+import { createWebSearchProvider } from './providers/webSearchProvider';
+import { getBuiltinWebSearch } from './webSearchTemplates';
 
 const instanceCache = new Map<string, DictionaryProvider>();
 
@@ -39,10 +48,23 @@ const builtinFor = (id: string): DictionaryProvider | undefined => {
   return undefined;
 };
 
+/**
+ * Resolve a `web:*` id to its template — built-in if id starts with
+ * `web:builtin:`, else look it up in `settings.webSearches`.
+ */
+const findWebTemplate = (id: string, settings: DictionarySettings): WebSearchEntry | undefined => {
+  if (id.startsWith('web:builtin:')) return getBuiltinWebSearch(id);
+  const list = settings.webSearches ?? [];
+  const tpl = list.find((t) => t.id === id);
+  if (!tpl || tpl.deletedAt) return undefined;
+  return tpl;
+};
+
 const getOrCreate = (
   id: string,
   dict: ImportedDictionary | undefined,
   fs: DictionaryFileOpener | undefined,
+  settings: DictionarySettings,
 ): DictionaryProvider | undefined => {
   const cached = instanceCache.get(id);
   if (cached) return cached;
@@ -50,6 +72,13 @@ const getOrCreate = (
   if (builtin) {
     instanceCache.set(id, builtin);
     return builtin;
+  }
+  if (id.startsWith('web:')) {
+    const tpl = findWebTemplate(id, settings);
+    if (!tpl) return undefined;
+    const provider = createWebSearchProvider({ template: tpl });
+    instanceCache.set(id, provider);
+    return provider;
   }
   if (!dict) return undefined;
   if (!fs) return undefined;
@@ -60,6 +89,16 @@ const getOrCreate = (
   }
   if (dict.kind === 'mdict') {
     const provider = createMdictProvider({ dict, fs });
+    instanceCache.set(id, provider);
+    return provider;
+  }
+  if (dict.kind === 'dict') {
+    const provider = createDictProvider({ dict, fs });
+    instanceCache.set(id, provider);
+    return provider;
+  }
+  if (dict.kind === 'slob') {
+    const provider = createSlobProvider({ dict, fs });
     instanceCache.set(id, provider);
     return provider;
   }
@@ -83,14 +122,19 @@ export const getEnabledProviders = ({
   for (const id of settings.providerOrder) {
     if (settings.providerEnabled[id] === false) continue;
     if (id.startsWith('builtin:')) {
-      const provider = getOrCreate(id, undefined, undefined);
+      const provider = getOrCreate(id, undefined, undefined, settings);
+      if (provider) out.push(provider);
+      continue;
+    }
+    if (id.startsWith('web:')) {
+      const provider = getOrCreate(id, undefined, undefined, settings);
       if (provider) out.push(provider);
       continue;
     }
     const dict = dictById.get(id);
     if (!dict) continue;
     if (dict.deletedAt || dict.unavailable || dict.unsupported) continue;
-    const provider = getOrCreate(id, dict, fs);
+    const provider = getOrCreate(id, dict, fs, settings);
     if (provider) out.push(provider);
   }
   return out;

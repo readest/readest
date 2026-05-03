@@ -1234,7 +1234,6 @@
   "Importing…": "Importerar…",
   "Import Dictionary": "Importera ordbok",
   "No dictionaries available.": "Inga ordböcker tillgängliga.",
-  "Drag the handle on the left to reorder.": "Dra i handtaget till vänster för att ändra ordning.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict-paket kräver .ifo-, .idx- och .dict.dz-filer (.syn valfri).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict-paket använder .mdx-filer; tillhörande .mdd-filer är valfria.",
   "Select all the bundle files together when importing.": "Markera alla paketfiler tillsammans när du importerar.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Inkluderar ditt läsförlopp",
   "Synced {{time}}": "Synkroniserades {{time}}",
   "Sync Info": "Synkroniseringsinformation",
-  "Last Synced": "Senast synkroniserad"
+  "Last Synced": "Senast synkroniserad",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT-paket kräver en .index-fil och en .dict.dz-fil.",
+  "Slob bundles need a .slob file.": "Slob-paket kräver en .slob-fil.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL-mallen måste börja med http(s):// och innehålla %WORD%.",
+  "Web": "Webb",
+  "Add Web Search": "Lägg till webbsökning",
+  "Edit Web Search": "Redigera webbsökning",
+  "e.g. Google": "t.ex. Google",
+  "URL Template": "URL-mall",
+  "Use %WORD% where the looked-up word should appear.": "Använd %WORD% där det uppslagna ordet ska visas.",
+  "Open the search result in your browser:": "Öppna sökresultatet i din webbläsare:",
+  "Open in {{name}}": "Öppna i {{name}}"
 }

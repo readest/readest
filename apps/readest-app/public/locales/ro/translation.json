@@ -1252,7 +1252,6 @@
   "Importing…": "Se importă…",
   "Import Dictionary": "Importă dicționar",
   "No dictionaries available.": "Niciun dicționar disponibil.",
-  "Drag the handle on the left to reorder.": "Trage de mâner din stânga pentru a reordona.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Pachetele StarDict au nevoie de fișierele .ifo, .idx și .dict.dz (.syn opțional).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Pachetele MDict folosesc fișiere .mdx; fișierele .mdd însoțitoare sunt opționale.",
   "Select all the bundle files together when importing.": "Selectează împreună toate fișierele pachetului la import.",
@@ -1340,5 +1339,18 @@
   "Includes your reading progress": "Include progresul tău de lectură",
   "Synced {{time}}": "Sincronizat {{time}}",
   "Sync Info": "Informații sincronizare",
-  "Last Synced": "Ultima sincronizare"
+  "Last Synced": "Ultima sincronizare",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Pachetele DICT necesită un fișier .index și un fișier .dict.dz.",
+  "Slob bundles need a .slob file.": "Pachetele Slob necesită un fișier .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Șablonul URL trebuie să înceapă cu http(s):// și să conțină %WORD%.",
+  "Web": "Web",
+  "Add Web Search": "Adaugă căutare web",
+  "Edit Web Search": "Editează căutarea web",
+  "e.g. Google": "ex. Google",
+  "URL Template": "Șablon URL",
+  "Use %WORD% where the looked-up word should appear.": "Folosiți %WORD% acolo unde ar trebui să apară cuvântul căutat.",
+  "Open the search result in your browser:": "Deschideți rezultatul căutării în browser:",
+  "Open in {{name}}": "Deschide în {{name}}"
 }

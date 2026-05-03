@@ -1270,7 +1270,6 @@
   "Importing…": "Uvažanje …",
   "Import Dictionary": "Uvozi slovar",
   "No dictionaries available.": "Ni razpoložljivih slovarjev.",
-  "Drag the handle on the left to reorder.": "Povleci ročaj levo za prerazporeditev.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Svežnji StarDict potrebujejo datoteke .ifo, .idx in .dict.dz (.syn neobvezno).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Svežnji MDict uporabljajo datoteke .mdx; spremljajoče .mdd so neobvezne.",
   "Select all the bundle files together when importing.": "Pri uvozu izberi vse datoteke svežnja skupaj.",
@@ -1363,5 +1362,18 @@
   "Includes your reading progress": "Vključuje vaš napredek branja",
   "Synced {{time}}": "Sinhronizirano {{time}}",
   "Sync Info": "Informacije o sinhronizaciji",
-  "Last Synced": "Zadnja sinhronizacija"
+  "Last Synced": "Zadnja sinhronizacija",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Paketi DICT potrebujejo datoteko .index in datoteko .dict.dz.",
+  "Slob bundles need a .slob file.": "Paketi Slob potrebujejo datoteko .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Predloga URL se mora začeti z http(s):// in vsebovati %WORD%.",
+  "Web": "Splet",
+  "Add Web Search": "Dodaj spletno iskanje",
+  "Edit Web Search": "Uredi spletno iskanje",
+  "e.g. Google": "npr. Google",
+  "URL Template": "Predloga URL",
+  "Use %WORD% where the looked-up word should appear.": "Uporabite %WORD% tam, kjer naj se pojavi iskana beseda.",
+  "Open the search result in your browser:": "Odprite rezultat iskanja v brskalniku:",
+  "Open in {{name}}": "Odpri v {{name}}"
 }

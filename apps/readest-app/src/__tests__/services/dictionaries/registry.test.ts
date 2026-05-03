@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getEnabledProviders, __resetRegistryForTests } from '@/services/dictionaries/registry';
-import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
-import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
+import { BUILTIN_PROVIDER_IDS, BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
+import type {
+  DictionarySettings,
+  ImportedDictionary,
+  WebSearchEntry,
+} from '@/services/dictionaries/types';
 
 const baseSettings: DictionarySettings = {
   providerOrder: [BUILTIN_PROVIDER_IDS.wiktionary, BUILTIN_PROVIDER_IDS.wikipedia],
@@ -56,6 +60,56 @@ describe('dictionary registry', () => {
     const a = getEnabledProviders({ settings: baseSettings, dictionaries: [] });
     const b = getEnabledProviders({ settings: baseSettings, dictionaries: [] });
     expect(a[0]).toBe(b[0]);
+  });
+
+  it('dispatches built-in web-search ids to a web provider', () => {
+    const settings: DictionarySettings = {
+      providerOrder: [BUILTIN_WEB_SEARCH_IDS.google, BUILTIN_WEB_SEARCH_IDS.urban],
+      providerEnabled: {
+        [BUILTIN_WEB_SEARCH_IDS.google]: true,
+        [BUILTIN_WEB_SEARCH_IDS.urban]: true,
+      },
+    };
+    const providers = getEnabledProviders({ settings, dictionaries: [] });
+    expect(providers.map((p) => p.id)).toEqual([
+      BUILTIN_WEB_SEARCH_IDS.google,
+      BUILTIN_WEB_SEARCH_IDS.urban,
+    ]);
+    expect(providers.every((p) => p.kind === 'web')).toBe(true);
+  });
+
+  it('resolves custom web-search ids from settings.webSearches', () => {
+    const customEntry: WebSearchEntry = {
+      id: 'web:custom123',
+      name: 'My Site',
+      urlTemplate: 'https://example.com/?q=%WORD%',
+    };
+    const settings: DictionarySettings = {
+      providerOrder: ['web:custom123'],
+      providerEnabled: { 'web:custom123': true },
+      webSearches: [customEntry],
+    };
+    const providers = getEnabledProviders({ settings, dictionaries: [] });
+    expect(providers).toHaveLength(1);
+    expect(providers[0]!.label).toBe('My Site');
+    expect(providers[0]!.kind).toBe('web');
+  });
+
+  it('drops custom web-search ids whose entries are missing or soft-deleted', () => {
+    const settings: DictionarySettings = {
+      providerOrder: ['web:gone', 'web:dead'],
+      providerEnabled: { 'web:gone': true, 'web:dead': true },
+      webSearches: [
+        {
+          id: 'web:dead',
+          name: 'Dead',
+          urlTemplate: 'https://example.com/?q=%WORD%',
+          deletedAt: 1,
+        },
+      ],
+    };
+    const providers = getEnabledProviders({ settings, dictionaries: [] });
+    expect(providers).toEqual([]);
   });
 
   it('skips imported dictionaries that are unavailable, deleted, or unsupported', () => {

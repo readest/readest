@@ -1270,7 +1270,6 @@
   "Importing…": "Импорт…",
   "Import Dictionary": "Импорт словаря",
   "No dictionaries available.": "Нет доступных словарей.",
-  "Drag the handle on the left to reorder.": "Перетащите ручку слева для изменения порядка.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Пакеты StarDict требуют файлов .ifo, .idx и .dict.dz (.syn — опционально).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Пакеты MDict используют файлы .mdx; сопутствующие .mdd — опционально.",
   "Select all the bundle files together when importing.": "При импорте выбирайте все файлы пакета вместе.",
@@ -1363,5 +1362,18 @@
   "Includes your reading progress": "Включает ваш прогресс чтения",
   "Synced {{time}}": "Синхронизировано {{time}}",
   "Sync Info": "Информация о синхронизации",
-  "Last Synced": "Последняя синхронизация"
+  "Last Synced": "Последняя синхронизация",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Пакетам DICT нужны файл .index и файл .dict.dz.",
+  "Slob bundles need a .slob file.": "Пакетам Slob нужен файл .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Шаблон URL должен начинаться с http(s):// и содержать %WORD%.",
+  "Web": "Веб",
+  "Add Web Search": "Добавить веб-поиск",
+  "Edit Web Search": "Изменить веб-поиск",
+  "e.g. Google": "Например, Google",
+  "URL Template": "Шаблон URL",
+  "Use %WORD% where the looked-up word should appear.": "Используйте %WORD% там, где должно появиться искомое слово.",
+  "Open the search result in your browser:": "Открыть результат поиска в браузере:",
+  "Open in {{name}}": "Открыть в {{name}}"
 }

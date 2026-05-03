@@ -1216,7 +1216,6 @@
   "Importing…": "インポート中…",
   "Import Dictionary": "辞書をインポート",
   "No dictionaries available.": "利用可能な辞書はありません。",
-  "Drag the handle on the left to reorder.": "左のハンドルをドラッグして並べ替えます。",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict バンドルには .ifo、.idx、.dict.dz ファイルが必要です（.syn は任意）。",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict バンドルは .mdx ファイルを使用します。付随する .mdd ファイルは任意です。",
   "Select all the bundle files together when importing.": "インポート時はバンドルのファイルをまとめて選択してください。",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "読書の進捗を含みます",
   "Synced {{time}}": "{{time}}に同期",
   "Sync Info": "同期情報",
-  "Last Synced": "最終同期"
+  "Last Synced": "最終同期",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT バンドルには .index ファイルと .dict.dz ファイルが必要です。",
+  "Slob bundles need a .slob file.": "Slob バンドルには .slob ファイルが必要です。",
+  "URL template must start with http(s):// and contain %WORD%.": "URL テンプレートは http(s):// で始まり、%WORD% を含む必要があります。",
+  "Web": "ウェブ",
+  "Add Web Search": "ウェブ検索を追加",
+  "Edit Web Search": "ウェブ検索を編集",
+  "e.g. Google": "例: Google",
+  "URL Template": "URL テンプレート",
+  "Use %WORD% where the looked-up word should appear.": "調べる単語が表示される場所に %WORD% を使用してください。",
+  "Open the search result in your browser:": "検索結果をブラウザで開く:",
+  "Open in {{name}}": "{{name}} で開く"
 }

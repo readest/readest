@@ -1234,7 +1234,6 @@
   "Importing…": "আমদানি হচ্ছে…",
   "Import Dictionary": "অভিধান আমদানি করুন",
   "No dictionaries available.": "কোনো অভিধান উপলব্ধ নেই।",
-  "Drag the handle on the left to reorder.": "পুনঃক্রম করতে বামদিকের হ্যান্ডেলটি টানুন।",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict বান্ডলে .ifo, .idx এবং .dict.dz ফাইল প্রয়োজন (.syn ঐচ্ছিক)।",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict বান্ডলে .mdx ফাইল ব্যবহৃত হয়; সঙ্গী .mdd ফাইল ঐচ্ছিক।",
   "Select all the bundle files together when importing.": "আমদানির সময় বান্ডলের সব ফাইল একসঙ্গে নির্বাচন করুন।",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "আপনার পড়ার অগ্রগতি অন্তর্ভুক্ত",
   "Synced {{time}}": "{{time}} সিঙ্ক হয়েছে",
   "Sync Info": "সিঙ্ক তথ্য",
-  "Last Synced": "শেষ সিঙ্ক"
+  "Last Synced": "শেষ সিঙ্ক",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT বান্ডেলের জন্য একটি .index ফাইল এবং একটি .dict.dz ফাইল প্রয়োজন।",
+  "Slob bundles need a .slob file.": "Slob বান্ডেলের জন্য একটি .slob ফাইল প্রয়োজন।",
+  "URL template must start with http(s):// and contain %WORD%.": "URL টেমপ্লেটটি অবশ্যই http(s):// দিয়ে শুরু হতে হবে এবং %WORD% থাকতে হবে।",
+  "Web": "ওয়েব",
+  "Add Web Search": "ওয়েব অনুসন্ধান যোগ করুন",
+  "Edit Web Search": "ওয়েব অনুসন্ধান সম্পাদনা করুন",
+  "e.g. Google": "যেমন Google",
+  "URL Template": "URL টেমপ্লেট",
+  "Use %WORD% where the looked-up word should appear.": "যেখানে অনুসন্ধান করা শব্দ উপস্থিত হওয়া উচিত সেখানে %WORD% ব্যবহার করুন।",
+  "Open the search result in your browser:": "আপনার ব্রাউজারে অনুসন্ধান ফলাফল খুলুন:",
+  "Open in {{name}}": "{{name}}-এ খুলুন"
 }

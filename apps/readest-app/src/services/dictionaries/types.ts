@@ -7,7 +7,7 @@
  * order; each provider writes lookup output into a per-tab container.
  */
 
-export type DictionaryProviderKind = 'builtin' | 'stardict' | 'mdict';
+export type DictionaryProviderKind = 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'web';
 
 export interface DictionaryLookupContext {
   /** Source language hint, e.g. book primary language code (`en`, `zh`). */
@@ -48,13 +48,14 @@ export interface DictionaryProvider {
  */
 export interface ImportedDictionary {
   id: string;
-  kind: 'stardict' | 'mdict';
-  /** Display name, derived from `.ifo` `bookname` or `.mdx` header `Title`. */
+  kind: 'stardict' | 'mdict' | 'dict' | 'slob';
+  /** Display name, derived from `.ifo` `bookname`, `.mdx` `Title`, slob `label`, or DICT `00databaseshort`. */
   name: string;
   /** Subdirectory under `'Dictionaries'` containing this bundle's files. */
   bundleDir: string;
   /** Filenames inside `bundleDir`. The exact set varies by `kind`. */
   files: {
+    // StarDict bundle.
     ifo?: string;
     idx?: string;
     dict?: string;
@@ -67,8 +68,14 @@ export interface ImportedDictionary {
     idxOffsets?: string;
     /** Same idea for `.syn`. */
     synOffsets?: string;
+    // MDict bundle.
     mdx?: string;
     mdd?: string[];
+    // DICT (dictd) bundle. `dict` above doubles as the body filename
+    // (`name.dict` or `name.dict.dz`); `index` is the dictd `.index` file.
+    index?: string;
+    // Slob bundle: a single self-contained `.slob` file.
+    slob?: string;
   };
   /** Source language code if known. */
   lang?: string;
@@ -92,6 +99,28 @@ export interface ImportedDictionary {
   unsupportedReason?: string;
 }
 
+/**
+ * A web-search "provider" template — a URL with a `%WORD%` placeholder
+ * (URL-encoded substitution at lookup time). Built-in templates (Google,
+ * Urban Dictionary, Merriam-Webster) are hardcoded in the registry and
+ * reference the IDs in {@link BUILTIN_WEB_SEARCH_IDS}; user-added templates
+ * live in {@link DictionarySettings.webSearches} with IDs of the form
+ * `web:<uniqueId>`.
+ *
+ * Web-search providers don't fetch upstream — the popup just renders an
+ * "Open in [name]" link that opens the resolved URL externally. Iframe
+ * embedding is blocked by every major dictionary site (X-Frame-Options).
+ */
+export interface WebSearchEntry {
+  id: string;
+  /** Display name shown in the tab strip and the settings list. */
+  name: string;
+  /** URL with `%WORD%` placeholder, e.g. `https://example.com/?q=%WORD%`. */
+  urlTemplate: string;
+  /** Soft-delete marker; only set on user-added entries. */
+  deletedAt?: number;
+}
+
 export interface DictionarySettings {
   /** Provider id order shown in the popup tab strip. Includes builtin ids. */
   providerOrder: string[];
@@ -99,6 +128,11 @@ export interface DictionarySettings {
   providerEnabled: Record<string, boolean>;
   /** Last-used tab id; `undefined` falls back to first enabled provider. */
   defaultProviderId?: string;
+  /**
+   * User-defined web search templates. Built-in templates (Google, Urban,
+   * Merriam-Webster) are hardcoded in the registry and not stored here.
+   */
+  webSearches?: WebSearchEntry[];
 }
 
 /** Stable ids for the built-in providers. */
@@ -108,3 +142,18 @@ export const BUILTIN_PROVIDER_IDS = {
 } as const;
 
 export type BuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[keyof typeof BUILTIN_PROVIDER_IDS];
+
+/**
+ * Stable ids for the built-in web-search templates. The `web:builtin:*`
+ * prefix lets the registry recognize and dispatch them without a settings
+ * lookup; user-added templates live in `settings.webSearches` with ids of
+ * the form `web:<uniqueId>`.
+ */
+export const BUILTIN_WEB_SEARCH_IDS = {
+  google: 'web:builtin:google',
+  urban: 'web:builtin:urban',
+  merriamWebster: 'web:builtin:merriam-webster',
+} as const;
+
+export type BuiltinWebSearchId =
+  (typeof BUILTIN_WEB_SEARCH_IDS)[keyof typeof BUILTIN_WEB_SEARCH_IDS];

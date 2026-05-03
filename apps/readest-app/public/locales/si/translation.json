@@ -1234,7 +1234,6 @@
   "Importing…": "ආයාත වෙමින්…",
   "Import Dictionary": "ශබ්දකෝෂයක් ආයාත කරන්න",
   "No dictionaries available.": "ලබා ගත හැකි ශබ්දකෝෂ නැත.",
-  "Drag the handle on the left to reorder.": "නැවත සකස් කිරීමට වම් පස ඇති පතන අදින්න.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict බණ්ඩලවලට .ifo, .idx සහ .dict.dz ගොනු අවශ්‍යය (.syn විකල්ප).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict බණ්ඩල .mdx ගොනු භාවිතා කරයි; සහායක .mdd ගොනු විකල්ප වේ.",
   "Select all the bundle files together when importing.": "ආයාත කරන විට බණ්ඩලේ සියලු ගොනු එකවර තෝරන්න.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "ඔබේ කියවීමේ ප්‍රගතිය ඇතුළත්",
   "Synced {{time}}": "{{time}} සමමුහුර්ත කළේ",
   "Sync Info": "සමමුහුර්ත තොරතුරු",
-  "Last Synced": "අවසන් සමමුහුර්තය"
+  "Last Synced": "අවසන් සමමුහුර්තය",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT පැකේජ සඳහා .index ගොනුවක් සහ .dict.dz ගොනුවක් අවශ්‍ය වේ.",
+  "Slob bundles need a .slob file.": "Slob පැකේජ සඳහා .slob ගොනුවක් අවශ්‍ය වේ.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL අච්චුව http(s):// වලින් ආරම්භ විය යුතු අතර %WORD% අඩංගු විය යුතුය.",
+  "Web": "වෙබ්",
+  "Add Web Search": "වෙබ් සෙවුම එක් කරන්න",
+  "Edit Web Search": "වෙබ් සෙවුම සංස්කරණය කරන්න",
+  "e.g. Google": "උදා. Google",
+  "URL Template": "URL අච්චුව",
+  "Use %WORD% where the looked-up word should appear.": "සොයන වචනය දිස්විය යුතු තැන %WORD% භාවිතා කරන්න.",
+  "Open the search result in your browser:": "ඔබේ බ්‍රවුසරයේ සෙවුම් ප්‍රතිඵලය විවෘත කරන්න:",
+  "Open in {{name}}": "{{name}} වල විවෘත කරන්න"
 }

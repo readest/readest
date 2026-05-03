@@ -51,7 +51,8 @@ import ExportMarkdownDialog from './ExportMarkdownDialog';
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { settings } = useSettingsStore();
+  const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
+    useSettingsStore();
   const { isDarkMode } = useThemeStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
@@ -970,6 +971,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupWidth={dictPopupWidth}
           popupHeight={dictPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
+          onManage={() => {
+            // Dismiss the popup so the user returns to the reader cleanly
+            // when they close settings; the dictionaries sub-page in the
+            // SettingsDialog is enough surface for managing providers.
+            handleDismissPopupAndSelection();
+            setSettingsDialogBookKey(bookKey);
+            setActiveSettingsItemId('settings.language.dictionaries.manage');
+            setSettingsDialogOpen(true);
+          }}
         />
       )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (

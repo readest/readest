@@ -48,7 +48,20 @@ interface MDictGroup {
   mdd: SourceFile[];
 }
 
-type Bundle = StarDictGroup | MDictGroup;
+interface DictGroup {
+  kind: 'dict';
+  stem: string;
+  index: SourceFile;
+  dict: SourceFile;
+}
+
+interface SlobGroup {
+  kind: 'slob';
+  stem: string;
+  slob: SourceFile;
+}
+
+type Bundle = StarDictGroup | MDictGroup | DictGroup | SlobGroup;
 
 interface GroupResult {
   bundles: Bundle[];
@@ -96,7 +109,11 @@ function classify(source: SelectedFile): SourceFile {
  *  - StarDict bundle = exactly one `.ifo` + one `.idx` + one `.dict` or
  *    `.dict.dz` (sharing a stem). `.syn` is optional.
  *  - MDict bundle = one `.mdx` + zero or more `.mdd` (sharing a stem).
- *  - A stem with both StarDict markers AND `.mdx` is treated as two bundles.
+ *  - DICT (dictd) bundle = one `.index` + one `.dict` or `.dict.dz`
+ *    (sharing a stem). Note: `.idx` (StarDict) and `.index` (DICT) differ
+ *    only by spelling — the StarDict branch wins when both are present.
+ *  - Slob bundle = one `.slob` file.
+ *  - A stem with multiple format markers is treated as multiple bundles.
  */
 export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
   const classified = files.map(classify);
@@ -111,15 +128,21 @@ export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
   for (const [stem, group] of byStem) {
     const ifo = group.find((f) => f.ext === 'ifo');
     const idx = group.find((f) => f.ext === 'idx');
+    const indexFile = group.find((f) => f.ext === 'index');
     const dict = group.find((f) => f.ext === 'dict' || f.isDictZip);
     const syn = group.find((f) => f.ext === 'syn');
     const mdx = group.find((f) => f.ext === 'mdx');
     const mdd = group.filter((f) => f.ext === 'mdd');
+    const slob = group.find((f) => f.ext === 'slob');
 
     if (ifo && idx && dict) {
       bundles.push({ kind: 'stardict', stem, ifo, idx, dict, syn });
+    } else if (indexFile && dict) {
+      bundles.push({ kind: 'dict', stem, index: indexFile, dict });
     } else if (mdx) {
       bundles.push({ kind: 'mdict', stem, mdx, mdd });
+    } else if (slob) {
+      bundles.push({ kind: 'slob', stem, slob });
     } else {
       orphans.push(...group);
     }
@@ -313,6 +336,114 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
   };
 }
 
+async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<ImportedDictionary> {
+  const bundleDir = await createBundleDir(fs);
+  const indexFile = await readSource(fs, group.index.source);
+  const dictFile = await readSource(fs, group.dict.source);
+  await writeBundleFile(fs, bundleDir, group.index.name, indexFile);
+  await writeBundleFile(fs, bundleDir, group.dict.name, dictFile);
+
+  // Try to read the `00databaseshort` body for a friendly bundle name. The
+  // index lists it; the body lives in the dict. We do this best-effort: any
+  // failure falls back to the stem.
+  let name = group.stem;
+  let unsupported = false;
+  let unsupportedReason: string | undefined;
+  try {
+    const indexText = await indexFile.text();
+    // Find the "00databaseshort\t<offset>\t<size>" line.
+    const m = indexText.match(/^00databaseshort\t([^\t]+)\t([^\t\r\n]+)/m);
+    if (m) {
+      const decode = (s: string): number => {
+        let n = 0;
+        const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        for (const ch of s) {
+          const v = A.indexOf(ch);
+          if (v < 0) throw new Error('bad b64');
+          n = n * 64 + v;
+        }
+        return n;
+      };
+      const off = decode(m[1]!);
+      const size = decode(m[2]!);
+      // Read the dict body. If gzipped we need the whole thing — but for
+      // the friendly-name read, that's still cheap (the freedict bundles
+      // are <300 KB compressed).
+      const buf = await dictFile.arrayBuffer();
+      const u8 = new Uint8Array(buf);
+      let body: Uint8Array;
+      if (u8[0] === 0x1f && u8[1] === 0x8b) {
+        const { gunzipSync } = await import('fflate');
+        body = gunzipSync(u8);
+      } else {
+        body = u8;
+      }
+      name = new TextDecoder('utf-8').decode(body.subarray(off, off + size)).trim() || group.stem;
+    }
+  } catch {
+    // Best-effort label; the bundle is still importable.
+  }
+  if (!(await isGzip(dictFile))) {
+    // Plain `.dict` is technically supported by the reader, but we keep
+    // v1 scope identical to StarDict for consistency.
+    unsupported = true;
+    unsupportedReason = 'Raw .dict files are not supported in v1; please use .dict.dz format.';
+  }
+
+  return {
+    id: bundleDir,
+    kind: 'dict',
+    name,
+    bundleDir,
+    files: {
+      index: group.index.name,
+      dict: group.dict.name,
+    },
+    addedAt: Date.now(),
+    unsupported: unsupported || undefined,
+    unsupportedReason,
+  };
+}
+
+async function importSlobBundle(fs: FileSystem, group: SlobGroup): Promise<ImportedDictionary> {
+  const bundleDir = await createBundleDir(fs);
+  const slobFile = await readSource(fs, group.slob.source);
+  await writeBundleFile(fs, bundleDir, group.slob.name, slobFile);
+
+  // Read header bytes to derive the friendly name + sanity-check compression.
+  let name = group.stem;
+  let unsupported = false;
+  let unsupportedReason: string | undefined;
+  try {
+    const { SlobReader } = await import('./slobReader');
+    const reader = new SlobReader();
+    await reader.load({ slob: slobFile });
+    const labelTag = reader.header.tags['label'];
+    if (labelTag) name = labelTag.replace(/\0+$/u, '') || group.stem;
+  } catch (err) {
+    const message = (err as Error).message ?? String(err);
+    unsupported = true;
+    if (/Unsupported Slob compression/i.test(message)) {
+      unsupportedReason = message;
+    } else if (/Unsupported Slob encoding/i.test(message)) {
+      unsupportedReason = message;
+    } else {
+      unsupportedReason = `Failed to parse Slob header: ${message}`;
+    }
+  }
+
+  return {
+    id: bundleDir,
+    kind: 'slob',
+    name,
+    bundleDir,
+    files: { slob: group.slob.name },
+    addedAt: Date.now(),
+    unsupported: unsupported || undefined,
+    unsupportedReason,
+  };
+}
+
 export interface ImportDictionariesResult {
   imported: ImportedDictionary[];
   /** Filenames that didn't form a valid bundle. */
@@ -333,8 +464,12 @@ export async function importDictionaries(
   for (const bundle of bundles) {
     if (bundle.kind === 'stardict') {
       imported.push(await importStarDictBundle(fs, bundle));
-    } else {
+    } else if (bundle.kind === 'mdict') {
       imported.push(await importMdictBundle(fs, bundle));
+    } else if (bundle.kind === 'dict') {
+      imported.push(await importDictBundle(fs, bundle));
+    } else {
+      imported.push(await importSlobBundle(fs, bundle));
     }
   }
   return { imported, orphanFiles: orphans.map((o) => o.name) };

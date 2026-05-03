@@ -1234,7 +1234,6 @@
   "Importing…": "Εισαγωγή…",
   "Import Dictionary": "Εισαγωγή λεξικού",
   "No dictionaries available.": "Δεν υπάρχουν διαθέσιμα λεξικά.",
-  "Drag the handle on the left to reorder.": "Σύρετε τη λαβή αριστερά για επαναταξινόμηση.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Τα πακέτα StarDict χρειάζονται αρχεία .ifo, .idx και .dict.dz (το .syn είναι προαιρετικό).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Τα πακέτα MDict χρησιμοποιούν αρχεία .mdx· τα συνοδευτικά .mdd είναι προαιρετικά.",
   "Select all the bundle files together when importing.": "Επιλέξτε όλα τα αρχεία του πακέτου μαζί κατά την εισαγωγή.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Περιλαμβάνει την πρόοδο ανάγνωσής σας",
   "Synced {{time}}": "Συγχρονίστηκε {{time}}",
   "Sync Info": "Πληροφορίες συγχρονισμού",
-  "Last Synced": "Τελευταίος συγχρονισμός"
+  "Last Synced": "Τελευταίος συγχρονισμός",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Τα πακέτα DICT χρειάζονται ένα αρχείο .index και ένα αρχείο .dict.dz.",
+  "Slob bundles need a .slob file.": "Τα πακέτα Slob χρειάζονται ένα αρχείο .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Το πρότυπο URL πρέπει να ξεκινά με http(s):// και να περιέχει %WORD%.",
+  "Web": "Διαδίκτυο",
+  "Add Web Search": "Προσθήκη αναζήτησης ιστού",
+  "Edit Web Search": "Επεξεργασία αναζήτησης ιστού",
+  "e.g. Google": "π.χ. Google",
+  "URL Template": "Πρότυπο URL",
+  "Use %WORD% where the looked-up word should appear.": "Χρησιμοποιήστε %WORD% όπου πρέπει να εμφανίζεται η λέξη αναζήτησης.",
+  "Open the search result in your browser:": "Ανοίξτε το αποτέλεσμα αναζήτησης στο πρόγραμμα περιήγησής σας:",
+  "Open in {{name}}": "Άνοιγμα σε {{name}}"
 }

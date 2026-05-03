@@ -1234,7 +1234,6 @@
   "Importing…": "Importálás…",
   "Import Dictionary": "Szótár importálása",
   "No dictionaries available.": "Nincsenek elérhető szótárak.",
-  "Drag the handle on the left to reorder.": "A bal oldali fogantyúval rendezheted át.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "A StarDict csomagokhoz .ifo, .idx és .dict.dz fájlok szükségesek (.syn opcionális).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Az MDict csomagok .mdx fájlokat használnak; a kísérő .mdd fájlok opcionálisak.",
   "Select all the bundle files together when importing.": "Importáláskor jelöld ki egyszerre a csomag összes fájlját.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Tartalmazza az olvasási folyamatot",
   "Synced {{time}}": "Szinkronizálva {{time}}",
   "Sync Info": "Szinkronizálási információk",
-  "Last Synced": "Utolsó szinkronizálás"
+  "Last Synced": "Utolsó szinkronizálás",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "A DICT csomagokhoz egy .index fájl és egy .dict.dz fájl szükséges.",
+  "Slob bundles need a .slob file.": "A Slob csomagokhoz egy .slob fájl szükséges.",
+  "URL template must start with http(s):// and contain %WORD%.": "Az URL-sablonnak http(s):// kezdetűnek kell lennie, és tartalmaznia kell a %WORD% részt.",
+  "Web": "Web",
+  "Add Web Search": "Webes keresés hozzáadása",
+  "Edit Web Search": "Webes keresés szerkesztése",
+  "e.g. Google": "pl. Google",
+  "URL Template": "URL-sablon",
+  "Use %WORD% where the looked-up word should appear.": "Használja a %WORD%-t ott, ahol a keresett szónak meg kell jelennie.",
+  "Open the search result in your browser:": "Nyissa meg a találatot a böngészőben:",
+  "Open in {{name}}": "Megnyitás itt: {{name}}"
 }

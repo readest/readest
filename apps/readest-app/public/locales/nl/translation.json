@@ -1234,7 +1234,6 @@
   "Importing…": "Bezig met importeren…",
   "Import Dictionary": "Woordenboek importeren",
   "No dictionaries available.": "Geen woordenboeken beschikbaar.",
-  "Drag the handle on the left to reorder.": "Sleep de greep links om opnieuw te ordenen.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict-bundels hebben .ifo-, .idx- en .dict.dz-bestanden nodig (.syn optioneel).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict-bundels gebruiken .mdx-bestanden; bijbehorende .mdd-bestanden zijn optioneel.",
   "Select all the bundle files together when importing.": "Selecteer bij het importeren alle bundelbestanden tegelijk.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Inclusief je leesvoortgang",
   "Synced {{time}}": "Gesynchroniseerd {{time}}",
   "Sync Info": "Synchronisatie-info",
-  "Last Synced": "Laatst gesynchroniseerd"
+  "Last Synced": "Laatst gesynchroniseerd",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT-bundels hebben een .index-bestand en een .dict.dz-bestand nodig.",
+  "Slob bundles need a .slob file.": "Slob-bundels hebben een .slob-bestand nodig.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL-sjabloon moet beginnen met http(s):// en %WORD% bevatten.",
+  "Web": "Web",
+  "Add Web Search": "Webzoekopdracht toevoegen",
+  "Edit Web Search": "Webzoekopdracht bewerken",
+  "e.g. Google": "bijv. Google",
+  "URL Template": "URL-sjabloon",
+  "Use %WORD% where the looked-up word should appear.": "Gebruik %WORD% op de plek waar het opgezochte woord moet verschijnen.",
+  "Open the search result in your browser:": "Open het zoekresultaat in je browser:",
+  "Open in {{name}}": "Openen in {{name}}"
 }

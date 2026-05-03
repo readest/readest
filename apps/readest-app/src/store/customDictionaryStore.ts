@@ -1,15 +1,39 @@
 import { create } from 'zustand';
 import { EnvConfigType } from '@/services/environment';
-import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
-import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
+import type {
+  DictionarySettings,
+  ImportedDictionary,
+  WebSearchEntry,
+} from '@/services/dictionaries/types';
+import { BUILTIN_PROVIDER_IDS, BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import { useSettingsStore } from './settingsStore';
 
+/**
+ * Built-in web-search ids are seeded into `providerOrder` but disabled by
+ * default — users opt in. This preserves the principle that we don't push
+ * users onto external pages without consent, while still surfacing the
+ * options in the settings list.
+ */
+const BUILTIN_WEB_ORDER = [
+  BUILTIN_WEB_SEARCH_IDS.google,
+  BUILTIN_WEB_SEARCH_IDS.urban,
+  BUILTIN_WEB_SEARCH_IDS.merriamWebster,
+];
+
 const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
-  providerOrder: [BUILTIN_PROVIDER_IDS.wiktionary, BUILTIN_PROVIDER_IDS.wikipedia],
+  providerOrder: [
+    BUILTIN_PROVIDER_IDS.wiktionary,
+    BUILTIN_PROVIDER_IDS.wikipedia,
+    ...BUILTIN_WEB_ORDER,
+  ],
   providerEnabled: {
     [BUILTIN_PROVIDER_IDS.wiktionary]: true,
     [BUILTIN_PROVIDER_IDS.wikipedia]: true,
+    [BUILTIN_WEB_SEARCH_IDS.google]: false,
+    [BUILTIN_WEB_SEARCH_IDS.urban]: false,
+    [BUILTIN_WEB_SEARCH_IDS.merriamWebster]: false,
   },
+  webSearches: [],
 };
 
 interface DictionaryStoreState {
@@ -31,6 +55,13 @@ interface DictionaryStoreState {
   setEnabled(id: string, enabled: boolean): void;
   /** Persist the last-used tab id so the popup re-opens on it. */
   setDefaultProviderId(id: string | undefined): void;
+
+  /** Add a custom web search (id is generated). Appended + enabled by default. */
+  addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
+  /** Update an existing custom web search; no-op if id is unknown or built-in. */
+  updateWebSearch(id: string, patch: { name?: string; urlTemplate?: string }): void;
+  /** Soft-delete a custom web search and remove from order/enabled. */
+  removeWebSearch(id: string): boolean;
 
   /** Hydrate from `settings.customDictionaries` + `settings.dictionarySettings` + check on-disk availability. */
   loadCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
@@ -123,6 +154,66 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  addWebSearch: (name, urlTemplate) => {
+    const trimmedName = name.trim();
+    const trimmedUrl = urlTemplate.trim();
+    const id = `web:${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    const entry: WebSearchEntry = { id, name: trimmedName, urlTemplate: trimmedUrl };
+    set((state) => {
+      const list = state.settings.webSearches ?? [];
+      const order = state.settings.providerOrder.includes(id)
+        ? state.settings.providerOrder
+        : [...state.settings.providerOrder, id];
+      const enabled = { ...state.settings.providerEnabled, [id]: true };
+      return {
+        settings: {
+          ...state.settings,
+          webSearches: [...list, entry],
+          providerOrder: order,
+          providerEnabled: enabled,
+        },
+      };
+    });
+    return entry;
+  },
+
+  updateWebSearch: (id, patch) => {
+    if (id.startsWith('web:builtin:')) return;
+    set((state) => {
+      const list = state.settings.webSearches ?? [];
+      if (!list.some((t) => t.id === id)) return state;
+      const next = list.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              name: patch.name?.trim() ?? t.name,
+              urlTemplate: patch.urlTemplate?.trim() ?? t.urlTemplate,
+            }
+          : t,
+      );
+      return { settings: { ...state.settings, webSearches: next } };
+    });
+  },
+
+  removeWebSearch: (id) => {
+    if (id.startsWith('web:builtin:')) return false;
+    const list = get().settings.webSearches ?? [];
+    if (!list.some((t) => t.id === id)) return false;
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        webSearches: (state.settings.webSearches ?? []).map((t) =>
+          t.id === id ? { ...t, deletedAt: Date.now() } : t,
+        ),
+        providerOrder: state.settings.providerOrder.filter((p) => p !== id),
+        providerEnabled: Object.fromEntries(
+          Object.entries(state.settings.providerEnabled).filter(([k]) => k !== id),
+        ),
+      },
+    }));
+    return true;
+  },
+
   loadCustomDictionaries: async (envConfig) => {
     try {
       const { settings } = useSettingsStore.getState();
@@ -137,15 +228,25 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         }),
       );
       // Merge defaults to back-fill any missing keys (e.g. new builtin added in a release).
+      // For providerOrder, we append any newly-defaulted ids (like the
+      // built-in web searches added in this release) so existing users see
+      // them appear at the end of the list.
+      const persistedOrder = persistedSettings.providerOrder;
+      const orderSet = new Set(persistedOrder);
+      const merged: string[] = persistedOrder.length
+        ? [...persistedOrder]
+        : [...DEFAULT_DICTIONARY_SETTINGS.providerOrder];
+      for (const id of DEFAULT_DICTIONARY_SETTINGS.providerOrder) {
+        if (!orderSet.has(id)) merged.push(id);
+      }
       const settingsMerged: DictionarySettings = {
-        providerOrder: persistedSettings.providerOrder.length
-          ? persistedSettings.providerOrder
-          : DEFAULT_DICTIONARY_SETTINGS.providerOrder,
+        providerOrder: merged,
         providerEnabled: {
           ...DEFAULT_DICTIONARY_SETTINGS.providerEnabled,
           ...persistedSettings.providerEnabled,
         },
         defaultProviderId: persistedSettings.defaultProviderId,
+        webSearches: persistedSettings.webSearches ?? [],
       };
       set({ dictionaries, settings: settingsMerged });
     } catch (error) {

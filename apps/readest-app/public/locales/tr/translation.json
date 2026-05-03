@@ -1234,7 +1234,6 @@
   "Importing…": "İçe aktarılıyor…",
   "Import Dictionary": "Sözlük içe aktar",
   "No dictionaries available.": "Kullanılabilir sözlük yok.",
-  "Drag the handle on the left to reorder.": "Yeniden sıralamak için soldaki tutamacı sürükleyin.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict paketleri .ifo, .idx ve .dict.dz dosyalarını gerektirir (.syn isteğe bağlı).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict paketleri .mdx dosyalarını kullanır; eşlik eden .mdd dosyaları isteğe bağlıdır.",
   "Select all the bundle files together when importing.": "İçe aktarırken paketin tüm dosyalarını birlikte seçin.",
@@ -1317,5 +1316,18 @@
   "Includes your reading progress": "Okuma ilerlemenizi içerir",
   "Synced {{time}}": "{{time}} senkronize edildi",
   "Sync Info": "Senkronizasyon bilgisi",
-  "Last Synced": "Son senkronizasyon"
+  "Last Synced": "Son senkronizasyon",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT paketleri bir .index dosyası ve bir .dict.dz dosyası gerektirir.",
+  "Slob bundles need a .slob file.": "Slob paketleri bir .slob dosyası gerektirir.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL şablonu http(s):// ile başlamalı ve %WORD% içermelidir.",
+  "Web": "Web",
+  "Add Web Search": "Web Araması Ekle",
+  "Edit Web Search": "Web Aramasını Düzenle",
+  "e.g. Google": "örn. Google",
+  "URL Template": "URL Şablonu",
+  "Use %WORD% where the looked-up word should appear.": "Aranan kelimenin görünmesi gereken yerde %WORD% kullanın.",
+  "Open the search result in your browser:": "Arama sonucunu tarayıcınızda açın:",
+  "Open in {{name}}": "{{name}} ile aç"
 }

@@ -1216,7 +1216,6 @@
   "Importing…": "가져오는 중…",
   "Import Dictionary": "사전 가져오기",
   "No dictionaries available.": "사용 가능한 사전이 없습니다.",
-  "Drag the handle on the left to reorder.": "왼쪽 핸들을 드래그하여 순서를 변경하세요.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "StarDict 번들은 .ifo, .idx, .dict.dz 파일이 필요합니다(.syn은 선택).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "MDict 번들은 .mdx 파일을 사용하며, 동반되는 .mdd 파일은 선택입니다.",
   "Select all the bundle files together when importing.": "가져올 때 번들의 모든 파일을 함께 선택하세요.",
@@ -1294,5 +1293,18 @@
   "Includes your reading progress": "읽기 진행률 포함됨",
   "Synced {{time}}": "{{time}} 동기화됨",
   "Sync Info": "동기화 정보",
-  "Last Synced": "마지막 동기화"
+  "Last Synced": "마지막 동기화",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "DICT 번들에는 .index 파일과 .dict.dz 파일이 필요합니다.",
+  "Slob bundles need a .slob file.": "Slob 번들에는 .slob 파일이 필요합니다.",
+  "URL template must start with http(s):// and contain %WORD%.": "URL 템플릿은 http(s):// 로 시작하고 %WORD%를 포함해야 합니다.",
+  "Web": "웹",
+  "Add Web Search": "웹 검색 추가",
+  "Edit Web Search": "웹 검색 편집",
+  "e.g. Google": "예: Google",
+  "URL Template": "URL 템플릿",
+  "Use %WORD% where the looked-up word should appear.": "검색어가 표시될 위치에 %WORD%를 사용하세요.",
+  "Open the search result in your browser:": "브라우저에서 검색 결과 열기:",
+  "Open in {{name}}": "{{name}}에서 열기"
 }

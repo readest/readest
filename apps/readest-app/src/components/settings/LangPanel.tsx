@@ -25,7 +25,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const _ = useTranslation();
   const { token } = useAuth();
   const { envConfig } = useEnv();
-  const { settings, applyUILanguage } = useSettingsStore();
+  const { settings, applyUILanguage, activeSettingsItemId, setActiveSettingsItemId } =
+    useSettingsStore();
   const { getView, getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -43,6 +44,18 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
+
+  // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
+  // activeSettingsItemId to `'settings.language.dictionaries.manage'` to
+  // jump straight into the Manage Dictionaries sub-page on open. Clear the
+  // id once consumed so SettingsDialog's scroll-to-element fallback
+  // (which runs on a 100ms timeout) doesn't re-fire.
+  useEffect(() => {
+    if (activeSettingsItemId === 'settings.language.dictionaries.manage') {
+      setShowCustomDictionaries(true);
+      setActiveSettingsItemId(null);
+    }
+  }, [activeSettingsItemId, setActiveSettingsItemId]);
 
   const resetToDefaults = useResetViewSettings();
 

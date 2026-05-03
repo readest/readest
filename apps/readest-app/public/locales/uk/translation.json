@@ -1270,7 +1270,6 @@
   "Importing…": "Імпорт…",
   "Import Dictionary": "Імпорт словника",
   "No dictionaries available.": "Немає доступних словників.",
-  "Drag the handle on the left to reorder.": "Перетягуйте маркер ліворуч, щоб змінити порядок.",
   "StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).": "Пакети StarDict потребують файлів .ifo, .idx і .dict.dz (.syn — необов’язково).",
   "MDict bundles use .mdx files; companion .mdd files are optional.": "Пакети MDict використовують файли .mdx; супутні .mdd — необов’язково.",
   "Select all the bundle files together when importing.": "Під час імпорту вибирайте всі файли пакета разом.",
@@ -1363,5 +1362,18 @@
   "Includes your reading progress": "Містить ваш прогрес читання",
   "Synced {{time}}": "Синхронізовано {{time}}",
   "Sync Info": "Інформація про синхронізацію",
-  "Last Synced": "Остання синхронізація"
+  "Last Synced": "Остання синхронізація",
+  "DICT": "DICT",
+  "Slob": "Slob",
+  "DICT bundles need a .index file and a .dict.dz file.": "Пакети DICT потребують файл .index і файл .dict.dz.",
+  "Slob bundles need a .slob file.": "Пакети Slob потребують файл .slob.",
+  "URL template must start with http(s):// and contain %WORD%.": "Шаблон URL має починатися з http(s):// та містити %WORD%.",
+  "Web": "Веб",
+  "Add Web Search": "Додати веб-пошук",
+  "Edit Web Search": "Редагувати веб-пошук",
+  "e.g. Google": "напр. Google",
+  "URL Template": "Шаблон URL",
+  "Use %WORD% where the looked-up word should appear.": "Використовуйте %WORD% там, де має з'явитися шукане слово.",
+  "Open the search result in your browser:": "Відкрийте результат пошуку в браузері:",
+  "Open in {{name}}": "Відкрити в {{name}}"
 }
