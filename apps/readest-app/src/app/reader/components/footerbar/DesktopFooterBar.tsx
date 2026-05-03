@@ -4,6 +4,7 @@ import { FaHeadphones } from 'react-icons/fa6';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
+import { MdPlayArrow, MdOutlinePause, MdReplay10, MdForward10 } from 'react-icons/md';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -11,6 +12,16 @@ import { formatProgress } from '@/utils/progress';
 import { FooterBarChildProps } from './types';
 import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
+
+function formatAudioTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const mm = String(m).padStart(h > 0 ? 2 : 1, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
 
 const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   bookKey,
@@ -20,6 +31,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   navigationHandlers,
   forceMobileLayout,
   onSpeakText,
+  audiobookPlayer,
 }) => {
   const _ = useTranslation();
   const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
@@ -128,6 +140,74 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         value={progressValue}
         onChange={(e) => handleProgressChange(parseInt(e.target.value, 10))}
       />
+
+      {/* Compact audiobook controls — only when an audiobook file is attached */}
+      {audiobookPlayer && (
+        <div className='flex shrink-0 items-center gap-x-1'>
+          <span className='mx-1 h-4 w-px bg-[rgba(100,74,34,0.3)]' aria-hidden='true' />
+          {audiobookPlayer.loadError ? (
+            <span
+              className='text-nowrap text-[10px] text-[#c47a5a]'
+              title={audiobookPlayer.fileName || 'Audiobook'}
+            >
+              {_('Audio error')}
+            </span>
+          ) : (
+            <>
+              {/* TODO: when sync-map is available, page-turn handlers can seek audio to the mapped timestamp here */}
+              <button
+                onClick={audiobookPlayer.onSkipBack}
+                disabled={!audiobookPlayer.isLoaded}
+                title={_('Skip Back 10s')}
+                aria-label={_('Skip Back 10s')}
+                className='p-1.5'
+              >
+                <MdReplay10 />
+              </button>
+              <button
+                onClick={audiobookPlayer.onTogglePlay}
+                disabled={!audiobookPlayer.isLoaded}
+                title={audiobookPlayer.isPlaying ? _('Pause') : _('Play')}
+                aria-label={audiobookPlayer.isPlaying ? _('Pause') : _('Play')}
+                className='p-1.5'
+              >
+                {audiobookPlayer.isPlaying ? <MdOutlinePause /> : <MdPlayArrow />}
+              </button>
+              <button
+                onClick={audiobookPlayer.onSkipForward}
+                disabled={!audiobookPlayer.isLoaded}
+                title={_('Skip Forward 10s')}
+                aria-label={_('Skip Forward 10s')}
+                className='p-1.5'
+              >
+                <MdForward10 />
+              </button>
+              <input
+                type='range'
+                className='audiobook-inline-seek mx-1 w-[70px]'
+                min={0}
+                max={audiobookPlayer.duration > 0 ? audiobookPlayer.duration : 1}
+                step={1}
+                value={
+                  Number.isFinite(audiobookPlayer.currentTime) ? audiobookPlayer.currentTime : 0
+                }
+                disabled={!audiobookPlayer.isLoaded}
+                onChange={(e) => audiobookPlayer.onSeek(parseFloat(e.target.value))}
+                title={audiobookPlayer.fileName || 'Audiobook'}
+                aria-label={_('Audio Seek')}
+              />
+              <span
+                className='text-nowrap font-mono text-[10px] tabular-nums text-[#b89a60]'
+                title={audiobookPlayer.fileName}
+              >
+                {formatAudioTime(audiobookPlayer.currentTime)} /{' '}
+                {formatAudioTime(audiobookPlayer.duration)}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       <Button
         icon={
           <FaHeadphones className={viewState?.ttsEnabled ? 'text-[#f0d6a0]' : 'text-[#d8bc85]'} />
@@ -238,6 +318,67 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
             inset 0 1px 0 rgba(255, 220, 140, 0.16),
             0 2px 5px rgba(0, 0, 0, 0.45),
             0 0 0 2px rgba(38, 24, 10, 0.32);
+        }
+
+        /* Audiobook inline seek — same carved track, slightly narrower thumb */
+        .footer-bar .audiobook-inline-seek {
+          height: 6px;
+          border-radius: 9999px;
+          accent-color: #c49f59;
+          cursor: pointer;
+          position: relative;
+          z-index: 1;
+        }
+
+        .footer-bar .audiobook-inline-seek::-webkit-slider-runnable-track {
+          height: 5px;
+          border-radius: 9999px;
+          background: linear-gradient(180deg, rgba(6, 4, 2, 0.95) 0%, rgba(16, 10, 6, 0.82) 100%);
+          box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.62),
+            inset 0 1px 0 rgba(0, 0, 0, 0.7),
+            0 0 0 1px rgba(42, 28, 10, 0.48),
+            0 1px 0 rgba(180, 140, 58, 0.1);
+        }
+
+        .footer-bar .audiobook-inline-seek::-webkit-slider-thumb {
+          margin-top: -4px;
+          height: 12px;
+          width: 12px;
+          border-radius: 9999px;
+          border: 1px solid rgba(185, 148, 88, 0.55);
+          background: linear-gradient(180deg, #c8a04a 0%, #7e5520 100%);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 220, 140, 0.16),
+            0 2px 5px rgba(0, 0, 0, 0.45),
+            0 0 0 2px rgba(38, 24, 10, 0.32);
+          -webkit-appearance: none;
+        }
+
+        .footer-bar .audiobook-inline-seek::-moz-range-track {
+          height: 5px;
+          border-radius: 9999px;
+          background: linear-gradient(180deg, rgba(6, 4, 2, 0.95) 0%, rgba(16, 10, 6, 0.82) 100%);
+          box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.62),
+            0 0 0 1px rgba(42, 28, 10, 0.48);
+        }
+
+        .footer-bar .audiobook-inline-seek::-moz-range-thumb {
+          height: 12px;
+          width: 12px;
+          border-radius: 9999px;
+          border: 1px solid rgba(185, 148, 88, 0.55);
+          background: linear-gradient(180deg, #c8a04a 0%, #7e5520 100%);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 220, 140, 0.16),
+            0 2px 5px rgba(0, 0, 0, 0.45),
+            0 0 0 2px rgba(38, 24, 10, 0.32);
+        }
+
+        .footer-bar .audiobook-inline-seek:disabled {
+          opacity: 0.4;
+          cursor: default;
         }
 
         .footer-bar svg {

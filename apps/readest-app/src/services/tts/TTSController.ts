@@ -4,6 +4,7 @@ import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
 import { createRejectFilter } from '@/utils/node';
+import { LIVE_MARKER_KEY } from '@/utils/liveMarker';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
@@ -20,8 +21,6 @@ type TTSState =
   | 'forward-paused'
   | 'setrate-paused'
   | 'setvoice-paused';
-
-const HIGHLIGHT_KEY = 'tts-highlight';
 
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
@@ -121,8 +120,8 @@ export class TTSController extends EventTarget {
         const cfi = this.view.getCFI(index, range);
         const visibleRange = this.view.resolveCFI(cfi).anchor(doc);
         const { style, color } = this.options;
-        overlayer?.remove(HIGHLIGHT_KEY);
-        overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
+        overlayer?.remove(LIVE_MARKER_KEY);
+        overlayer?.add(LIVE_MARKER_KEY, visibleRange, Overlayer[style], { color });
       } catch (e) {
         console.error('Failed to highlight range', e);
       }
@@ -132,7 +131,7 @@ export class TTSController extends EventTarget {
   #clearHighlighter() {
     const content = this.#getPrimaryContent();
     const overlayer = content?.overlayer as Overlayer | undefined;
-    overlayer?.remove(HIGHLIGHT_KEY);
+    overlayer?.remove(LIVE_MARKER_KEY);
   }
 
   updateHighlightOptions(options: TTSHighlightOptions) {

@@ -10,11 +10,12 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
   bookKey,
   gridInsets,
   actionTab,
-  progressValid,
   progressFraction,
+  progressValid,
   navigationHandlers,
   forceMobileLayout,
   onSetActionTab,
+  audiobookPlayer,
 }) => {
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
   const sliderHeight = useResponsiveSize(28);
@@ -51,6 +52,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         gridInsets={gridInsets}
         forceMobileLayout={forceMobileLayout}
         onSetActionTab={onSetActionTab!}
+        audiobookPlayer={audiobookPlayer}
       />
     </>
   );

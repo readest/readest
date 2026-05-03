@@ -14,6 +14,7 @@ import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
 import TTSControl from '../tts/TTSControl';
+import { useAudiobookPlayer } from '@/app/reader/hooks/useAudiobookPlayer';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -200,6 +201,22 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const forceMobileLayout =
     !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
 
+  const audiobookHook = useAudiobookPlayer({ bookKey });
+  const audiobookPlayer = config?.audiobook
+    ? {
+        fileName: audiobookHook.audiobookConfig?.fileName ?? '',
+        isPlaying: audiobookHook.isPlaying,
+        isLoaded: audiobookHook.isLoaded,
+        loadError: audiobookHook.loadError,
+        currentTime: audiobookHook.currentTime,
+        duration: audiobookHook.duration,
+        onTogglePlay: audiobookHook.handleTogglePlay,
+        onSeek: audiobookHook.handleSeek,
+        onSkipBack: audiobookHook.handleSkipBack,
+        onSkipForward: audiobookHook.handleSkipForward,
+      }
+    : undefined;
+
   const commonProps: FooterBarChildProps = {
     bookKey,
     gridInsets,
@@ -210,6 +227,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
     forceMobileLayout,
     onSetActionTab: handleSetActionTab,
     onSpeakText: handleSpeakText,
+    audiobookPlayer,
   };
 
   const needHorizontalScroll =

@@ -20,6 +20,19 @@ export interface NavigationHandlers {
   onProgressChange: (value: number) => void;
 }
 
+export interface AudiobookPlayerState {
+  fileName: string;
+  isPlaying: boolean;
+  isLoaded: boolean;
+  loadError: boolean;
+  currentTime: number;
+  duration: number;
+  onTogglePlay: () => void;
+  onSeek: (time: number) => void;
+  onSkipBack: () => void;
+  onSkipForward: () => void;
+}
+
 export interface FooterBarChildProps {
   bookKey: string;
   navigationHandlers: NavigationHandlers;
@@ -30,4 +43,5 @@ export interface FooterBarChildProps {
   forceMobileLayout: boolean;
   onSetActionTab: (tab: string) => void;
   onSpeakText: () => void;
+  audiobookPlayer?: AudiobookPlayerState;
 }
