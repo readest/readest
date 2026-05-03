@@ -4,6 +4,8 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { isValidURL } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
+import { useAudiobookSync } from './useAudiobookSync';
+import { findAudiobookSyncEntry } from '@/utils/audiobookSync';
 
 interface UseAudiobookPlayerProps {
   bookKey: string;
@@ -11,8 +13,10 @@ interface UseAudiobookPlayerProps {
 
 export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
   const { getConfig } = useBookDataStore();
+  const { applyAudiobookMarker, clearAudiobookMarker } = useAudiobookSync({ bookKey });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastAppliedCfiRef = useRef<string | null>(null);
 
   const audiobookConfig = getConfig(bookKey)?.audiobook;
   const filePath = audiobookConfig?.filePath;
@@ -69,8 +73,28 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
     };
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-      saveTime(audio.currentTime);
+      const time = audio.currentTime;
+      setCurrentTime(time);
+      saveTime(time);
+
+      const config = useBookDataStore.getState().getConfig(bookKey);
+      const audiobook = config?.audiobook;
+      if (audiobook?.syncStatus === 'ready' && audiobook.syncMap) {
+        const entry = findAudiobookSyncEntry(audiobook.syncMap, time);
+        if (entry && entry.cfi !== lastAppliedCfiRef.current) {
+          try {
+            applyAudiobookMarker(entry.cfi);
+            lastAppliedCfiRef.current = entry.cfi;
+          } catch (err) {
+            console.warn('[AudiobookSync] Failed to apply marker', {
+              time: entry.time,
+              cfi: entry.cfi,
+              label: entry.label,
+              error: err,
+            });
+          }
+        }
+      }
     };
 
     const handlePlay = () => setIsPlaying(true);
@@ -126,12 +150,14 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       } else {
         saveTime.cancel();
       }
+      clearAudiobookMarker();
+      lastAppliedCfiRef.current = null;
       audio.src = '';
       audioRef.current = null;
     };
     // audioSrc encodes filePath; bookKey is stable per reader panel
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audioSrc, bookKey]);
+  }, [audioSrc, bookKey, clearAudiobookMarker]);
 
   const handleTogglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -157,9 +183,26 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
           audiobook: { ...config.audiobook, currentTime: time },
           updatedAt: Date.now(),
         });
+
+        if (config.audiobook.syncStatus === 'ready' && config.audiobook.syncMap) {
+          const entry = findAudiobookSyncEntry(config.audiobook.syncMap, time);
+          if (entry && entry.cfi !== lastAppliedCfiRef.current) {
+            try {
+              applyAudiobookMarker(entry.cfi);
+              lastAppliedCfiRef.current = entry.cfi;
+            } catch (err) {
+              console.warn('[AudiobookSync] Failed to apply marker on seek', {
+                time: entry.time,
+                cfi: entry.cfi,
+                label: entry.label,
+                error: err,
+              });
+            }
+          }
+        }
       }
     },
-    [isLoaded, bookKey],
+    [isLoaded, bookKey, applyAudiobookMarker],
   );
 
   const handleSkipBack = useCallback(() => {

@@ -398,6 +398,12 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export interface AudiobookSyncMapEntry {
+  time: number;
+  cfi: string;
+  label?: string;
+}
+
 export interface AudiobookConfig {
   filePath: string;
   fileName: string;
@@ -406,6 +412,7 @@ export interface AudiobookConfig {
   currentTime?: number;
   syncMapPath?: string;
   syncStatus?: 'none' | 'pending' | 'ready' | 'error';
+  syncMap?: AudiobookSyncMapEntry[];
 }
 
 export interface BookConfig {
