@@ -1,8 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
-import { AudiobookConfig, AudiobookSyncPoint } from '@/types/book';
+import {
+  AudiobookConfig,
+  AudiobookSyncPoint,
+  AudiobookTextUnit,
+  AudiobookTranscriptSegment,
+} from '@/types/book';
 import { buildSyncMapFromPoints, normalizeAudiobookSyncPoints } from '@/utils/audiobookSync';
+import {
+  matchTranscriptSegmentsToTextUnits,
+  normalizeAudiobookMatchText,
+  parseAudiobookTranscript,
+} from '@/utils/audiobookTranscript';
 import { useAudiobookSync } from './useAudiobookSync';
 
 /** Dev-only console API exposed on window.__citadelAudiobookSync */
@@ -11,12 +21,63 @@ export interface CitadelAudiobookSyncDebugApi {
   listPoints(): AudiobookSyncPoint[];
   clearPoints(): void;
   removePoint(index: number): void;
+  /** Generate sync map from transcript text matched against loaded EPUB sections */
+  generateSyncMapFromTranscriptText(
+    transcriptText: string,
+  ): Promise<{ matched: number; total: number }>;
+  /** Preview transcript matches without persisting (returns match details) */
+  previewTranscriptMatches(
+    transcriptText: string,
+  ): { secondsStart: number; label: string; cfi: string; score: number }[];
 }
 
 const DEDUP_THRESHOLD_SEC = 0.5;
 
 function isDev(): boolean {
   return process.env['NODE_ENV'] === 'development';
+}
+
+/**
+ * Extracts AudiobookTextUnit[] from the currently loaded EPUB sections.
+ * Collects block-level elements (p, h1-h6, li, blockquote, div with text),
+ * creates a Range for each, and resolves a CFI via view.getCFI().
+ *
+ * Only covers currently visible/nearby sections (what the renderer has loaded).
+ * This is sufficient for Stage 5A; whole-spine extraction can be added later.
+ */
+function extractTextUnitsFromView(view: {
+  renderer: { getContents(): { doc: Document; index?: number }[] };
+  getCFI(index: number, range: Range): string;
+}): AudiobookTextUnit[] {
+  const units: AudiobookTextUnit[] = [];
+  const blockSelectors = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, dd, dt';
+
+  const contents = view.renderer?.getContents?.() ?? [];
+  for (const content of contents) {
+    const doc = content.doc as Document | undefined;
+    const index = content.index ?? 0;
+    if (!doc) continue;
+
+    const blocks = doc.querySelectorAll(blockSelectors);
+    for (const block of blocks) {
+      const el = block as HTMLElement;
+      const text = el.textContent?.trim() ?? '';
+      if (text.length < 3) continue;
+
+      try {
+        const range = doc.createRange();
+        range.selectNodeContents(el);
+        const cfi = view.getCFI(index, range);
+        if (cfi) {
+          units.push({ cfi, text, sectionIndex: index });
+        }
+      } catch {
+        // Skip blocks where CFI resolution fails
+      }
+    }
+  }
+
+  return units;
 }
 
 /**
@@ -208,6 +269,148 @@ export const useAudiobookSyncDebug = (props: {
 
         setConfig(bookKey, { audiobook: withSyncMap, updatedAt: Date.now() });
         console.info('[AudiobookSyncDebug] Removed point', { index, removed });
+      },
+
+      async generateSyncMapFromTranscriptText(
+        transcriptText: string,
+      ): Promise<{ matched: number; total: number }> {
+        const config = getConfig(bookKey);
+        const audiobook = config?.audiobook;
+        if (!audiobook) {
+          console.warn('[AudiobookSyncDebug] No audiobook attached.');
+          return { matched: 0, total: 0 };
+        }
+
+        // --- Parse transcript -----------------------------------------------
+        const segments: AudiobookTranscriptSegment[] = parseAudiobookTranscript(transcriptText);
+        if (segments.length === 0) {
+          console.warn('[AudiobookSyncDebug] No valid transcript segments found.');
+          return { matched: 0, total: 0 };
+        }
+
+        // --- Extract text units from loaded EPUB sections --------------------
+        const view = getView(bookKey);
+        if (!view) {
+          console.warn(
+            '[AudiobookSyncDebug] No view available — text unit extraction not possible yet.',
+          );
+          return { matched: 0, total: segments.length };
+        }
+
+        const textUnits = extractTextUnitsFromView(view);
+        if (textUnits.length === 0) {
+          console.warn(
+            '[AudiobookSyncDebug] No text units extracted from loaded sections. Try scrolling through the book first.',
+          );
+          return { matched: 0, total: segments.length };
+        }
+
+        console.info('[AudiobookSyncDebug] Extracted text units', {
+          count: textUnits.length,
+          sections: new Set(textUnits.map((u) => u.sectionIndex)).size,
+        });
+
+        // --- Match transcript segments to text units -------------------------
+        const syncMap = matchTranscriptSegmentsToTextUnits(segments, textUnits, {
+          minSegmentLength: 5,
+        });
+
+        if (syncMap.length === 0) {
+          console.warn(
+            '[AudiobookSyncDebug] No transcript segments could be matched to EPUB text.',
+          );
+          return { matched: 0, total: segments.length };
+        }
+
+        // --- Persist: merge with existing, preserve manual sync points -------
+        const updatedAudiobook: AudiobookConfig = {
+          ...audiobook,
+          syncMap,
+          syncStatus: 'ready',
+          transcriptStatus: 'ready',
+        };
+
+        try {
+          setConfig(bookKey, { audiobook: updatedAudiobook, updatedAt: Date.now() });
+        } catch (err) {
+          console.error('[AudiobookSyncDebug] Failed to save transcript sync map', err);
+          return { matched: syncMap.length, total: segments.length };
+        }
+
+        console.info('[AudiobookSyncDebug] Generated sync map from transcript', {
+          totalSegments: segments.length,
+          matchedEntries: syncMap.length,
+        });
+
+        return { matched: syncMap.length, total: segments.length };
+      },
+
+      previewTranscriptMatches(transcriptText: string) {
+        const segments = parseAudiobookTranscript(transcriptText);
+        if (segments.length === 0) return [];
+
+        const view = getView(bookKey);
+        if (!view) {
+          console.warn('[AudiobookSyncDebug] No view available for preview.');
+          return [];
+        }
+
+        const textUnits = extractTextUnitsFromView(view);
+        if (textUnits.length === 0) return [];
+
+        // Run matching and return preview with scores
+        const normUnits = textUnits.map((u) => ({
+          unit: u,
+          norm: normalizeAudiobookMatchText(u.text),
+        }));
+
+        const MATCH_THRESHOLD = 0.4;
+        const results: { secondsStart: number; label: string; cfi: string; score: number }[] = [];
+
+        for (const seg of segments) {
+          if (seg.text.trim().length < 5) continue;
+
+          const normSeg = normalizeAudiobookMatchText(seg.text);
+          let bestCfi = '';
+          let bestScore = 0;
+
+          for (const { unit, norm } of normUnits) {
+            if (norm.length === 0) continue;
+
+            let score = 0;
+            if (norm.includes(normSeg)) {
+              score = 1;
+            } else if (normSeg.includes(norm)) {
+              score = norm.length / normSeg.length;
+            } else {
+              // Token overlap
+              const tokensA = normSeg.split(' ').filter(Boolean);
+              const tokensB = norm.split(' ').filter(Boolean);
+              const [shorter, longer] =
+                tokensA.length <= tokensB.length ? [tokensA, tokensB] : [tokensB, tokensA];
+              const longerSet = new Set(longer);
+              let overlap = 0;
+              for (const token of shorter) {
+                if (longerSet.has(token)) overlap++;
+              }
+              score = shorter.length > 0 ? overlap / shorter.length : 0;
+            }
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestCfi = unit.cfi;
+            }
+          }
+
+          results.push({
+            secondsStart: seg.start,
+            label: seg.text.trim().slice(0, 60),
+            cfi: bestScore >= MATCH_THRESHOLD ? bestCfi : '',
+            score: Math.round(bestScore * 100) / 100,
+          });
+        }
+
+        return results;
       },
     };
 

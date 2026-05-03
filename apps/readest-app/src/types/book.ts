@@ -398,6 +398,12 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export interface AudiobookTranscriptSegment {
+  start: number;
+  end?: number;
+  text: string;
+}
+
 export interface AudiobookSyncPoint {
   time: number;
   cfi: string;
@@ -412,7 +418,13 @@ export interface AudiobookSyncMapEntry {
   cfi: string;
   markerCfi?: string;
   label?: string;
-  source?: 'manual-point' | 'manual-interpolated' | 'generated' | string;
+  source?: 'manual-point' | 'manual-interpolated' | 'generated' | 'transcript-match' | string;
+}
+
+export interface AudiobookTextUnit {
+  cfi: string;
+  text: string;
+  sectionIndex?: number;
 }
 
 export interface AudiobookConfig {
@@ -425,6 +437,9 @@ export interface AudiobookConfig {
   syncStatus?: 'none' | 'pending' | 'ready' | 'error';
   syncPoints?: AudiobookSyncPoint[];
   syncMap?: AudiobookSyncMapEntry[];
+  transcriptPath?: string;
+  transcriptFileName?: string;
+  transcriptStatus?: 'none' | 'ready' | 'error';
 }
 
 export interface BookConfig {
