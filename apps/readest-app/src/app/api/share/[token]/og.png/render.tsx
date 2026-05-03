@@ -4,32 +4,15 @@ import { getDownloadSignedUrl } from '@/utils/object';
 import { rejectionToHttp, resolveActiveShare } from '@/libs/share-server';
 import { SHARE_PRESIGN_TTL_SECONDS } from '@/services/constants';
 
-// Intentionally NO `export const runtime = 'edge'`.
-//
-// OpenNext on Cloudflare can't bundle edge-runtime routes inside the default
-// server function — it errors with "OpenNext requires edge runtime function
-// to be defined in a separate function." Splitting into a second function
-// bundle is more config surgery than this route deserves.
-//
-// `next/og` (Satori + WASM yoga/resvg) has supported the default Node-compat
-// runtime since Next 13.4, and on Cloudflare via OpenNext the default
-// function IS already a Worker, so cold-start cost is similar to edge.
-
-interface RouteParams {
-  params: Promise<{ token: string }>;
-}
+// JSX renderer for the OG image. Lives in a non-route `.tsx` so the route
+// file itself can be `.ts` and get filtered out of the Tauri static export
+// by `pageExtensions: ['jsx', 'tsx']` (no `ts`) — same trick used by every
+// other `share/[token]/*/route.ts` neighbor.
 
 const WIDTH = 1200;
 const HEIGHT = 630;
 
-// GET /api/share/[token]/og.png — server-rendered branded card for chat
-// unfurls. Stable URL, cached for an hour: unfurlers (iMessage, WhatsApp,
-// Twitter, Slack) cache aggressively, so a short-lived signed cover URL would
-// break previews after expiry. By proxying through this route we get a stable
-// URL even though the underlying R2 object is presigned per-fetch.
-export async function GET(_request: Request, { params }: RouteParams) {
-  const { token } = await params;
-
+export const renderShareOgImage = async (token: string): Promise<Response> => {
   const result = await resolveActiveShare(token);
   if (!result.ok) {
     const { status, body } = rejectionToHttp(result.reason);
@@ -67,7 +50,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       },
     },
   );
-}
+};
 
 const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);

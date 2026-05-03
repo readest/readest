@@ -18,6 +18,18 @@ interface PageProps {
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  // The Tauri build runs `output: 'export'`, which forbids `await searchParams`
+  // anywhere in collected page data. `process.env.NEXT_PUBLIC_APP_PLATFORM` is
+  // replaced at build time, so this early return DCEs the rest of the function
+  // out of the Tauri bundle and the route becomes fully static. The web build
+  // keeps the full dynamic implementation below.
+  if (process.env['NEXT_PUBLIC_APP_PLATFORM'] !== 'web') {
+    return {
+      title: 'Open in Readest',
+      description: 'Open-source ebook reader for everyone, on every device.',
+    };
+  }
+
   const params = (await searchParams) ?? {};
   const tokenParam = params['token'];
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;

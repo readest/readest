@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   IoAlertCircleOutline,
   IoBookOutline,
-  IoCloudDownloadOutline,
   IoLibraryOutline,
   IoOpenOutline,
 } from 'react-icons/io5';
@@ -16,7 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 import { BrandHeader } from '@/components/landing/BrandHeader';
 import { Card } from '@/components/landing/Card';
 import { PageFooter } from '@/components/landing/PageFooter';
-import { confirmDownload, getShare, importShare, type ShareMetadata } from '@/libs/share';
+import { getShare, importShare, type ShareMetadata } from '@/libs/share';
 import { formatBytes } from '@/utils/book';
 
 const formatExpiry = (iso: string, _: TranslationFunc): string => {
@@ -78,13 +77,7 @@ const ShareLanding = () => {
     };
   }, [token, _]);
 
-  const downloadHref = `/api/share/${encodeURIComponent(token)}/download`;
   const appHref = `readest://share/${encodeURIComponent(token)}`;
-
-  const handleDownloadClick = () => {
-    // Best-effort analytics ping. Doesn't block the navigation.
-    if (token) confirmDownload(token);
-  };
 
   const handleAddToLibrary = async () => {
     if (!token || importing) return;
@@ -221,6 +214,12 @@ const ShareLanding = () => {
               {meta.format.toUpperCase()} · {formatBytes(meta.size)} · {expiryLabel}
             </p>
 
+            {/* Direct file download is intentionally disabled on the landing
+                page for now (rights / abuse risk). Recipients open the share
+                inside the app — logged-in via "Add to my library", anonymous
+                via the readest:// deep link with a "Get Readest" footnote
+                fallback. The /api/share/[token]/download route still exists
+                so we can re-enable the button without a server change. */}
             <div className='mt-4 flex w-full flex-col gap-2 sm:mt-5'>
               {user ? (
                 <>
@@ -233,27 +232,13 @@ const ShareLanding = () => {
                     <IoLibraryOutline className='h-5 w-5' aria-hidden='true' />
                     {importing ? _('Adding…') : _('Add to my library')}
                   </button>
-                  {/* Secondary actions side-by-side. flex-nowrap +
-                      whitespace-nowrap override daisyUI's default
-                      `flex-wrap: wrap` on .btn so the icon and label stay
-                      on one line in narrow viewports. */}
-                  <div className='flex gap-2'>
-                    <a
-                      href={downloadHref}
-                      onClick={handleDownloadClick}
-                      className='btn btn-ghost btn-sm flex-1 flex-nowrap gap-1.5 whitespace-nowrap rounded-xl'
-                    >
-                      <IoCloudDownloadOutline className='h-4 w-4' aria-hidden='true' />
-                      {_('Download')}
-                    </a>
-                    <a
-                      href={appHref}
-                      className='btn btn-ghost btn-sm flex-1 flex-nowrap gap-1.5 whitespace-nowrap rounded-xl'
-                    >
-                      <IoOpenOutline className='h-4 w-4' aria-hidden='true' />
-                      {_('Open in app')}
-                    </a>
-                  </div>
+                  <a
+                    href={appHref}
+                    className='btn btn-ghost btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                  >
+                    <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
+                    {_('Open in app')}
+                  </a>
                   {importError && (
                     <p className='text-error mt-1 text-center text-xs sm:text-left' role='alert'>
                       {importError}
@@ -262,29 +247,13 @@ const ShareLanding = () => {
                 </>
               ) : (
                 <>
-                  {/* Anonymous flow: only 2 actions, so they sit side-by-side
-                      on one row. The 3-action logged-in flow above keeps its
-                      stacked design (primary + 2 secondary). Download stays
-                      `btn-primary` to keep the "main thing" hierarchy clear,
-                      Open in app is ghost. Labels match the logged-in flow's
-                      shorter forms to avoid wrap in the tighter row layout. */}
-                  <div className='flex w-full gap-2'>
-                    <a
-                      href={downloadHref}
-                      onClick={handleDownloadClick}
-                      className='btn btn-primary flex-1 flex-nowrap gap-1.5 whitespace-nowrap rounded-xl'
-                    >
-                      <IoCloudDownloadOutline className='h-5 w-5' aria-hidden='true' />
-                      {_('Download')}
-                    </a>
-                    <a
-                      href={appHref}
-                      className='btn btn-ghost flex-1 flex-nowrap gap-1.5 whitespace-nowrap rounded-xl'
-                    >
-                      <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
-                      {_('Open in app')}
-                    </a>
-                  </div>
+                  <a
+                    href={appHref}
+                    className='btn btn-primary btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                  >
+                    <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
+                    {_('Open in app')}
+                  </a>
                   <p className='text-base-content/60 mt-1 text-center text-xs sm:text-left'>
                     {_("Don't have Readest?")}{' '}
                     <a

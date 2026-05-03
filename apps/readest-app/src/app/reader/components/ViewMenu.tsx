@@ -7,6 +7,7 @@ import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
+import { IoShareOutline } from 'react-icons/io5';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 
@@ -45,7 +46,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getView, getViewSettings, getViewState, setViewSettings } = useReaderStore();
+  const { getView, getViewSettings, getViewState, getProgress, setViewSettings } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
@@ -103,6 +104,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const handleStartRSVP = () => {
     setIsDropdownOpen?.(false);
     eventDispatcher.dispatch('rsvp-start', { bookKey });
+  };
+
+  const handleShare = () => {
+    setIsDropdownOpen?.(false);
+    if (!bookData?.book) return;
+    const progress = getProgress(bookKey);
+    eventDispatcher.dispatch('show-share-dialog', {
+      book: bookData.book,
+      cfi: progress?.location ?? null,
+    });
   };
 
   useEffect(() => {
@@ -366,6 +377,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         Icon={invertImgColorInDark ? MdCheck : undefined}
         onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
       />
+
+      <hr aria-hidden='true' className='border-base-300 my-1' />
+
+      <MenuItem label={_('Share Book')} Icon={IoShareOutline} onClick={handleShare} />
     </Menu>
   );
 };
