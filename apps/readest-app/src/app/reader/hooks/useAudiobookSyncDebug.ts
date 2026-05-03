@@ -558,83 +558,233 @@ export const useAudiobookSyncDebug = (props: {
               console.info('[AudiobookSyncDebug] Found adjacent transcript file', { candidate });
               break;
             }
-          } catch {
-            // File not present — try next candidate
+          } catch (err) {
+            const raw = err instanceof Error ? err.message : String(err);
+            if (
+              raw.includes('not allowed') ||
+              raw.toLowerCase().includes('permission') ||
+              raw.toLowerCase().includes('scope')
+            ) {
+              console.warn(
+                '[AudiobookSyncDebug] Adjacent transcript read blocked by Tauri permission, continuing to Python fallback',
+                candidate,
+              );
+            }
+            // File not present or permission denied — try next candidate
           }
         }
 
-        // --- Option B: run shell CLI if no adjacent file found ---
+        // --- Option B: run Python transcription script if no adjacent file found ---
         if (!transcriptText) {
-          const normalized = audiobook.filePath.replace(/\\/g, '/');
-          const lastSlash = normalized.lastIndexOf('/');
-          const audioDir = lastSlash >= 0 ? normalized.slice(0, lastSlash) : '.';
-          const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
-          const lastDot = filename.lastIndexOf('.');
-          const base = lastDot > 0 ? filename.slice(0, lastDot) : filename;
-          const outputSrtPath = `${audioDir}/${base}.srt`;
+          // Write transcript to app cache — Tauri fs can read from $APPCACHE,
+          // unlike the audiobook's source directory (e.g. ~/Downloads).
+          let transcriptOutputDir: string;
+          try {
+            const { appCacheDir, join } = await import('@tauri-apps/api/path');
+            const cacheDir = await appCacheDir();
+            const audioFilename = getFilename(audiobook.filePath);
+            const safeDir = audioFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            transcriptOutputDir = await join(cacheDir, 'Citadel', 'audiobook-transcripts', safeDir);
+          } catch {
+            console.error(
+              '[AudiobookSyncDebug] Failed to resolve app cache dir for transcript output',
+            );
+            transcriptOutputDir = '';
+          }
 
-          const cliCommands = [
-            {
-              name: 'faster-whisper-transcribe',
-              args: [
-                audiobook.filePath,
-                '--output_format',
-                'srt',
-                '--output_dir',
-                audioDir,
-                '--model',
-                model,
-              ],
-            },
-            {
-              name: 'whisper-transcribe',
-              args: [
-                audiobook.filePath,
-                '--output_format',
-                'srt',
-                '--output_dir',
-                audioDir,
-                '--model',
-                model,
-              ],
-            },
+          // Build candidate paths for the transcription script. resourceDir() differs
+          // by platform and build mode (src-tauri/, target/debug/, workspace root, …)
+          // so we try several and use the first one Python can actually open.
+          let scriptCandidates: string[] = [];
+          try {
+            const { resourceDir, join } = await import('@tauri-apps/api/path');
+            const rd = await resourceDir();
+
+            const raw = [
+              // rd = target/debug/        → ../../apps/readest-app/scripts/
+              await join(
+                rd,
+                '..',
+                '..',
+                'apps',
+                'readest-app',
+                'scripts',
+                'transcribe_audiobook.py',
+              ),
+              // rd = src-tauri/          → ../scripts/ = apps/readest-app/scripts/
+              await join(rd, '..', 'scripts', 'transcribe_audiobook.py'),
+              // rd = workspace root       → apps/readest-app/scripts/
+              await join(rd, 'apps', 'readest-app', 'scripts', 'transcribe_audiobook.py'),
+            ];
+            // Deduplicate while preserving order
+            scriptCandidates = [...new Set(raw)];
+          } catch {
+            console.error(
+              '[AudiobookSyncDebug] Failed to build script candidates — path helpers unavailable',
+            );
+          }
+
+          // Python runtimes in priority order. Each is probed for faster_whisper
+          // before use so we skip interpreters that lack the package.
+          const pythonRuntimes = [
+            { name: 'py-transcribe', label: 'py -3.10', prefixArgs: ['-3.10'] },
+            { name: 'python-transcribe', label: 'python', prefixArgs: [] },
+            { name: 'py-transcribe', label: 'py', prefixArgs: [] },
           ] as const;
 
-          for (const cmd of cliCommands) {
+          let selectedRuntime: (typeof pythonRuntimes)[number] | undefined;
+          let selectedPythonExecutable: string | undefined;
+          let selectedScriptPath: string | undefined;
+
+          for (const rt of pythonRuntimes) {
             try {
               const { Command } = await import('@tauri-apps/plugin-shell');
-              const command = Command.create(cmd.name, [...cmd.args]);
-              const output = await command.execute();
-              if (output.code !== 0) {
+
+              // Step 1 — probe that this runtime has faster_whisper installed
+              const fwProbe = Command.create(rt.name, [
+                ...rt.prefixArgs,
+                '-c',
+                'import sys; print(sys.executable); import faster_whisper; print("OK")',
+              ]);
+              const fwOutput = await fwProbe.execute();
+              if (fwOutput.code === 127 || fwOutput.code === 9009) {
+                console.warn(`[AudiobookSyncDebug] ${rt.label} not found on PATH — try next`);
+                continue;
+              }
+              if (fwOutput.code !== 0) {
                 console.warn(
-                  `[AudiobookSyncDebug] ${cmd.name} exited with code ${output.code}`,
-                  output.stderr,
+                  `[AudiobookSyncDebug] ${rt.label} found but faster_whisper not available — try next`,
+                  fwOutput.stderr?.trim(),
                 );
                 continue;
               }
-              const srtContent = await appService?.readFile(
-                outputSrtPath,
-                'None' as import('@/types/system').BaseDir,
-                'text',
+              // Parse executable path from first line of stdout
+              const fwStdout = fwOutput.stdout?.trim() ?? '';
+              const fwLines = fwStdout.split('\n');
+              selectedPythonExecutable = fwLines[0]?.trim();
+              console.info(
+                `[AudiobookSyncDebug] Using ${rt.label} — ${selectedPythonExecutable ?? 'unknown path'}`,
               );
-              if (typeof srtContent === 'string' && srtContent.trim().length > 0) {
-                transcriptText = srtContent;
-                transcriptPath = outputSrtPath;
-                console.info(
-                  `[AudiobookSyncDebug] Generated transcript via ${cmd.name}`,
-                  outputSrtPath,
+
+              // Step 2 — find the transcription script with this runtime
+              for (const candidate of scriptCandidates) {
+                const scriptProbe = Command.create(rt.name, [
+                  ...rt.prefixArgs,
+                  candidate,
+                  '--help',
+                ]);
+                const scriptProbeOutput = await scriptProbe.execute();
+                if (scriptProbeOutput.code === 0) {
+                  selectedScriptPath = candidate;
+                  break;
+                }
+                // Non-zero → file not at this candidate, try next
+              }
+
+              if (!selectedScriptPath) {
+                console.error(
+                  '[AudiobookSyncDebug] Transcription script not found. Tried:',
+                  scriptCandidates,
                 );
-                break;
+                break; // don't try other runtimes — script file missing regardless
+              }
+
+              selectedRuntime = rt;
+              break;
+            } catch (err) {
+              const raw = err instanceof Error ? err.message : String(err);
+              const isPermission =
+                raw.includes('not allowed') ||
+                raw.toLowerCase().includes('permission') ||
+                raw.toLowerCase().includes('scope');
+              if (isPermission) {
+                console.error(`[AudiobookSyncDebug] ${rt.label} blocked by Tauri permission`, raw);
+              } else {
+                console.warn(`[AudiobookSyncDebug] ${rt.label} command failed`, err);
+              }
+            }
+          }
+
+          if (selectedRuntime && selectedScriptPath && transcriptOutputDir) {
+            try {
+              const { Command } = await import('@tauri-apps/plugin-shell');
+              const command = Command.create(selectedRuntime.name, [
+                ...selectedRuntime.prefixArgs,
+                selectedScriptPath,
+                '--audio',
+                audiobook.filePath,
+                '--output-dir',
+                transcriptOutputDir,
+                '--model',
+                model,
+                '--format',
+                'srt',
+              ]);
+              const output = await command.execute();
+
+              if (output.code !== 0) {
+                const stderr = output.stderr?.trim();
+                if (stderr?.includes('Missing faster-whisper')) {
+                  console.error(
+                    '[AudiobookSyncDebug] faster-whisper package not installed.',
+                    stderr,
+                  );
+                } else {
+                  console.error(
+                    `[AudiobookSyncDebug] Transcription script failed (exit ${output.code}):`,
+                    stderr || '(no stderr)',
+                  );
+                }
+              } else {
+                // Last line of stdout is the output transcript path
+                const stdout = output.stdout?.trim();
+                if (!stdout) {
+                  console.warn('[AudiobookSyncDebug] No output from transcription script');
+                } else {
+                  const stdoutLines = stdout.split('\n');
+                  const transcriptOutputPath = stdoutLines[stdoutLines.length - 1]!.trim();
+
+                  const srtContent = await appService?.readFile(
+                    transcriptOutputPath,
+                    'None' as import('@/types/system').BaseDir,
+                    'text',
+                  );
+                  if (typeof srtContent === 'string' && srtContent.trim().length > 0) {
+                    transcriptText = srtContent;
+                    transcriptPath = transcriptOutputPath;
+                    console.info(
+                      `[AudiobookSyncDebug] Generated transcript via ${selectedRuntime.label}`,
+                      transcriptOutputPath,
+                    );
+                  } else {
+                    console.warn(
+                      '[AudiobookSyncDebug] Transcript output file empty or unreadable:',
+                      transcriptOutputPath,
+                    );
+                  }
+                }
               }
             } catch (err) {
-              console.warn(`[AudiobookSyncDebug] ${cmd.name} failed`, err);
+              const raw = err instanceof Error ? err.message : String(err);
+              const isPermission =
+                raw.includes('not allowed') ||
+                raw.toLowerCase().includes('permission') ||
+                raw.toLowerCase().includes('scope');
+              if (isPermission) {
+                console.error(
+                  `[AudiobookSyncDebug] ${selectedRuntime.label} blocked by Tauri permission`,
+                  raw,
+                );
+              } else {
+                console.warn(`[AudiobookSyncDebug] ${selectedRuntime.label} command failed`, err);
+              }
             }
           }
         }
 
         if (!transcriptText) {
           const error =
-            'No transcript found — attach a transcript file or install faster-whisper/whisper CLI';
+            'No transcript found — attach a transcript file or ensure Python with faster-whisper is available';
           setConfig(bookKey, {
             audiobook: { ...audiobook, transcriptStatus: 'error', transcriptError: error },
             updatedAt: Date.now(),
