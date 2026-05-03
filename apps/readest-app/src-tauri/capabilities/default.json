@@ -182,15 +182,20 @@
           "name": "launch-appimage",
           "cmd": "setsid",
           "args": [{ "validator": "^.*Readest(.*)\\.AppImage$" }]
-        },
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
         {
-          "name": "faster-whisper-transcribe",
-          "cmd": "faster-whisper",
+          "name": "python-transcribe",
+          "cmd": "python",
           "args": true
         },
         {
-          "name": "whisper-transcribe",
-          "cmd": "whisper",
+          "name": "py-transcribe",
+          "cmd": "py",
           "args": true
         }
       ]
