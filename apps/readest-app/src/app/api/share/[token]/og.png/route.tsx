@@ -4,10 +4,16 @@ import { getDownloadSignedUrl } from '@/utils/object';
 import { rejectionToHttp, resolveActiveShare } from '@/libs/share-server';
 import { SHARE_PRESIGN_TTL_SECONDS } from '@/services/constants';
 
-// Edge runtime is required for `next/og` (uses Satori + WASM under the hood
-// and doesn't run on Node-style serverless). Keeps cold start fast on
-// CloudFlare Workers via OpenNext.
-export const runtime = 'edge';
+// Intentionally NO `export const runtime = 'edge'`.
+//
+// OpenNext on Cloudflare can't bundle edge-runtime routes inside the default
+// server function — it errors with "OpenNext requires edge runtime function
+// to be defined in a separate function." Splitting into a second function
+// bundle is more config surgery than this route deserves.
+//
+// `next/og` (Satori + WASM yoga/resvg) has supported the default Node-compat
+// runtime since Next 13.4, and on Cloudflare via OpenNext the default
+// function IS already a Worker, so cold-start cost is similar to edge.
 
 interface RouteParams {
   params: Promise<{ token: string }>;
