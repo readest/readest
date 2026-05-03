@@ -381,4 +381,10 @@ function ReadestSync:onCloseWidget()
     end
 end
 
+function ReadestSync:deletePluginSettings()
+    G_reader_settings:delSetting("readest_sync")
+    self.settings = self.default_settings
+    return true
+end
+
 return ReadestSync
