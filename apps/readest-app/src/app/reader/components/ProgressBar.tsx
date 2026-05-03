@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
+import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import type { ProgressBarMode } from '@/types/book.ts';
 import StatusInfo from './StatusInfo.tsx';
@@ -163,7 +164,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         isScrolled && !isVertical && 'bg-base-100',
         isMobile ? 'pointer-events-auto' : 'pointer-events-none',
       )}
-      onClick={() => cycleProgressInfoModes()}
+      onClick={() => {
+        if (eventDispatcher.dispatchSync('iframe-single-click')) return;
+        cycleProgressInfoModes();
+      }}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {
