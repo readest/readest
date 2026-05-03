@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Book, AudiobookConfig } from '@/types/book';
 import { BookConfig } from '@/types/book';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -134,6 +135,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
       await appService.saveBookConfig(book, updatedConfig, settings);
       setBookConfig(updatedConfig);
       setAudiobookConfig(updatedAudiobook);
+      // Keep the reader's in-memory store in sync so that subsequent auto-saves
+      // (useProgressSync etc.) do not overwrite the audiobook fields we just persisted.
+      const { booksData, setConfig } = useBookDataStore.getState();
+      if (booksData[book.hash]) {
+        setConfig(book.hash, { audiobook: updatedAudiobook, updatedAt: Date.now() });
+      }
     } catch (error) {
       console.error('Failed to save audiobook config:', error);
       eventDispatcher.dispatch('toast', {

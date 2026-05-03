@@ -408,5 +408,38 @@ Second line`;
         expect(result[0]!.label).toBeTruthy();
       }
     });
+
+    // ── False-positive rejection ────────────────────────────────────────
+
+    it('does not match purely stop-word segments against book text', () => {
+      // "it was" consists entirely of stop words — should never score via token overlap
+      const segments: AudiobookTranscriptSegment[] = [
+        { start: 0, end: 5, text: 'it was' },
+        { start: 5, end: 10, text: 'the best' },
+        { start: 10, end: 15, text: 'in the beginning there was light' },
+      ];
+      const result = matchTranscriptSegmentsToTextUnits(segments, textUnits);
+      expect(result).toHaveLength(0);
+    });
+
+    it('does not match unrelated content from a different book', () => {
+      // Lorem ipsum has many content words but none appear in the Dickens textUnits
+      const segments: AudiobookTranscriptSegment[] = [
+        { start: 0, end: 8, text: 'lorem ipsum dolor sit amet consectetur adipiscing elit' },
+        { start: 8, end: 16, text: 'sed do eiusmod tempor incididunt labore dolore magna aliqua' },
+      ];
+      const result = matchTranscriptSegmentsToTextUnits(segments, textUnits);
+      expect(result).toHaveLength(0);
+    });
+
+    it('does not match random filler with fewer than minimum meaningful tokens', () => {
+      // Even though "time" is close to "times" (different token), still no match
+      const segments: AudiobookTranscriptSegment[] = [
+        { start: 0, end: 5, text: 'it was a very good time' },
+        { start: 5, end: 10, text: 'well this is quite nice' },
+      ];
+      const result = matchTranscriptSegmentsToTextUnits(segments, textUnits);
+      expect(result).toHaveLength(0);
+    });
   });
 });

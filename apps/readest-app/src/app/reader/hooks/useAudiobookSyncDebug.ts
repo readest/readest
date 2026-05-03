@@ -394,6 +394,14 @@ export const useAudiobookSyncDebug = (props: {
           return { matched: 0, total: 0, error: 'No audiobook attached' };
         }
         if (!audiobook.transcriptPath) {
+          // Log what we actually have so the developer can diagnose persistence issues.
+          console.warn('[AudiobookSyncDebug] transcriptPath missing from audiobook config.', {
+            audiobookConfigKeys: Object.keys(audiobook),
+            transcriptFileName: audiobook.transcriptFileName ?? '(none)',
+            transcriptStatus: audiobook.transcriptStatus ?? '(none)',
+            syncStatus: audiobook.syncStatus ?? '(none)',
+            hasSyncMap: (audiobook.syncMap?.length ?? 0) > 0,
+          });
           return { matched: 0, total: 0, error: 'No transcript file attached' };
         }
 
@@ -410,8 +418,20 @@ export const useAudiobookSyncDebug = (props: {
           }
           transcriptText = content;
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Failed to read transcript file';
-          console.warn('[AudiobookSyncDebug] Failed to read transcript file', err);
+          const raw = err instanceof Error ? err.message : String(err);
+          // Surface Tauri scope/permission errors explicitly so they are not
+          // confused with a missing transcript path.
+          const isPermission =
+            raw.toLowerCase().includes('permission') ||
+            raw.toLowerCase().includes('scope') ||
+            raw.toLowerCase().includes('not allowed');
+          const msg = isPermission
+            ? `File access denied by Tauri scope — ${raw}`
+            : `Failed to read transcript file: ${raw}`;
+          console.warn('[AudiobookSyncDebug] Failed to read transcript file', {
+            path: audiobook.transcriptPath,
+            err,
+          });
           return { matched: 0, total: 0, error: msg };
         }
 

@@ -10,17 +10,17 @@ export function normalizeAudiobookMatchText(text: string): string {
   return (
     text
       // Normalize curly/smart quotes and apostrophes to ASCII
-      .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
-      .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+      .replace(/[‘’‚‛]/g, "'")
+      .replace(/[“”„‟]/g, '"')
       // Normalize em-dash and en-dash to space (word boundary)
-      .replace(/[\u2013\u2014\u2015]/g, ' ')
+      .replace(/[–—―]/g, ' ')
       // Normalize horizontal ellipsis to space
-      .replace(/\u2026/g, ' ')
+      .replace(/…/g, ' ')
       // Remove zero-width and invisible characters
-      .replace(/[\u200B\u200C\uFEFF\u00AD]/g, '')
-      .replace(/\u200D/g, '')
+      .replace(/[​‌﻿­]/g, '')
+      .replace(/‍/g, '')
       // Remove directional marks
-      .replace(/[\u200E\u200F\u202A-\u202E]/g, '')
+      .replace(/[‎‏‪-‮]/g, '')
       // Lowercase
       .toLowerCase()
       // Remove remaining punctuation (unicode categories P and S)
@@ -225,39 +225,138 @@ export function normalizeTranscriptSegments(
 
 // ── Matching: transcript segments → EPUB text units ──────────────────
 
+// Common English function words excluded from meaningful-token scoring.
+// Keeping this list focused on words that provide no signal about topic.
+const STOP_WORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'and',
+  'or',
+  'but',
+  'in',
+  'on',
+  'at',
+  'to',
+  'for',
+  'of',
+  'with',
+  'by',
+  'from',
+  'is',
+  'was',
+  'are',
+  'were',
+  'be',
+  'been',
+  'being',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'shall',
+  'can',
+  'this',
+  'that',
+  'these',
+  'those',
+  'it',
+  'its',
+  'as',
+  'if',
+  'then',
+  'than',
+  'when',
+  'where',
+  'how',
+  'what',
+  'who',
+  'which',
+  'not',
+  'no',
+  'so',
+  'up',
+  'out',
+  'my',
+  'your',
+  'his',
+  'her',
+  'our',
+  'their',
+  'we',
+  'they',
+  'he',
+  'she',
+  'i',
+  'you',
+  'me',
+  'him',
+  'us',
+  'them',
+  'all',
+  'any',
+  'each',
+  'every',
+  'some',
+  'about',
+  'into',
+  'over',
+  'after',
+  'before',
+  'there',
+  'here',
+  'just',
+  'also',
+  'only',
+  'very',
+  'much',
+  'more',
+  'most',
+  'other',
+  'own',
+  'same',
+  'such',
+  'now',
+  'even',
+  'back',
+  'am',
+  'well',
+  'quite',
+]);
+
+/** Minimum normalized character length for containment to apply. */
+const MIN_CONTAINMENT_CHARS = 10;
+
+/**
+ * Minimum number of meaningful (non-stop-word) token occurrences that the
+ * transcript segment must contain before token-overlap scoring is attempted.
+ * Prevents short stop-word-heavy phrases from scoring against any book passage.
+ */
+const MIN_MEANINGFUL_TOKENS = 4;
+
 interface MatchResult {
   textUnit: AudiobookTextUnit;
   unitIndex: number;
   score: number;
+  matchType: MatchPass;
 }
 
-/**
- * Computes a token-overlap score between two normalized strings.
- * Returns a value between 0 and 1 representing the fraction of
- * shorter-text tokens found in the longer-text tokens.
- */
-function tokenOverlapScore(normA: string, normB: string): number {
-  const tokensA = normA.split(' ').filter(Boolean);
-  const tokensB = normB.split(' ').filter(Boolean);
-  if (tokensA.length === 0 || tokensB.length === 0) return 0;
-
-  const [shorter, longer] =
-    tokensA.length <= tokensB.length ? [tokensA, tokensB] : [tokensB, tokensA];
-
-  const longerSet = new Set(longer);
-  let overlap = 0;
-  for (const token of shorter) {
-    if (longerSet.has(token)) overlap++;
-  }
-
-  return overlap / shorter.length;
-}
+/** Which scoring pass produced the best score. */
+type MatchPass = 'containment' | 'reverse-containment' | 'token-overlap';
 
 /** Default minimum score to accept a match (0–1 scale) */
-const DEFAULT_MATCH_THRESHOLD = 0.4;
+const DEFAULT_MATCH_THRESHOLD = 0.55;
 
 /** Score below which a match is considered "low confidence" */
-const LOW_CONFIDENCE_THRESHOLD = 0.6;
+const LOW_CONFIDENCE_THRESHOLD = 0.7;
 
 /** How much better a backward-jump score must be to override monotonic preference */
 const MONOTONIC_BONUS = 0.05;
@@ -265,7 +364,7 @@ const MONOTONIC_BONUS = 0.05;
 interface MatchTranscriptOptions {
   /** Minimum char length of transcript text to attempt matching; default 5 */
   minSegmentLength?: number;
-  /** Minimum score (0–1) to accept a match; default 0.4 */
+  /** Minimum score (0–1) to accept a match; default 0.55 */
   matchThreshold?: number;
   /** Size of sliding window of adjacent text units to combine; default 2 */
   adjacentWindowSize?: number;
@@ -284,6 +383,10 @@ export interface SegmentDiagnostic {
   unitIndex: number;
   sectionIndex?: number;
   lowConfidence: boolean;
+  /** Which scoring pass produced the winning score. */
+  matchType?: MatchPass;
+  /** First 60 chars of the matched text unit (for debugging). */
+  unitTextPreview?: string;
 }
 
 /** Aggregate diagnostics for a full matching run */
@@ -299,24 +402,70 @@ export interface MatchDiagnostics {
 }
 
 /**
- * Scores a normalized segment against a single normalized text unit.
- * Returns the best score from containment, reverse containment, or token overlap.
+ * Returns the meaningful (non-stop-word) tokens from a normalized string.
+ * Token count is used to guard against stop-word-heavy false positives.
  */
-function scoreSegmentToUnit(normSeg: string, normUnit: string): number {
-  if (normUnit.length === 0) return 0;
+function getMeaningfulTokens(norm: string): string[] {
+  return norm.split(' ').filter((t) => t.length > 0 && !STOP_WORDS.has(t));
+}
 
-  // Pass 1: containment (unit contains segment)
-  if (normUnit.includes(normSeg)) {
-    return 1;
+/**
+ * Computes a token-overlap score between two normalized strings using only
+ * meaningful (non-stop-word) tokens.
+ *
+ * Requirements before scoring:
+ * - The segment must have ≥ MIN_MEANINGFUL_TOKENS occurrences (may include
+ *   duplicates) to ensure it carries enough topical signal.
+ * - The unit must have at least one meaningful token.
+ *
+ * Score = (unique meaningful tokens shared) / (unique meaningful segment tokens).
+ */
+function tokenOverlapScore(normSeg: string, normUnit: string): number {
+  const segTokens = getMeaningfulTokens(normSeg);
+  const unitTokens = getMeaningfulTokens(normUnit);
+
+  // Require minimum meaningful token count in the segment (total, counts dupes)
+  if (segTokens.length < MIN_MEANINGFUL_TOKENS) return 0;
+  if (unitTokens.length === 0) return 0;
+
+  const segSet = new Set(segTokens);
+  const unitSet = new Set(unitTokens);
+
+  let overlap = 0;
+  for (const token of segSet) {
+    if (unitSet.has(token)) overlap++;
   }
 
-  // Pass 2: reverse containment (segment contains unit)
-  if (normSeg.includes(normUnit)) {
-    return normUnit.length / normSeg.length;
+  // Fraction of the segment's unique meaningful tokens found in the unit
+  return overlap / segSet.size;
+}
+
+/**
+ * Scores a normalized segment against a single normalized text unit.
+ * Returns the best score and the pass that produced it.
+ *
+ * Pass 1 – containment: unit contains segment (requires ≥ MIN_CONTAINMENT_CHARS).
+ * Pass 2 – reverse containment: segment contains unit (requires ≥ MIN_CONTAINMENT_CHARS).
+ * Pass 3 – token overlap: meaningful-token overlap ratio.
+ */
+function scoreSegmentToUnit(
+  normSeg: string,
+  normUnit: string,
+): { score: number; matchType: MatchPass } {
+  if (normUnit.length === 0) return { score: 0, matchType: 'token-overlap' };
+
+  // Pass 1: containment — segment must be long enough to be non-trivial
+  if (normSeg.length >= MIN_CONTAINMENT_CHARS && normUnit.includes(normSeg)) {
+    return { score: 1, matchType: 'containment' };
   }
 
-  // Pass 3: token overlap
-  return tokenOverlapScore(normSeg, normUnit);
+  // Pass 2: reverse containment — unit must be long enough to be non-trivial
+  if (normUnit.length >= MIN_CONTAINMENT_CHARS && normSeg.includes(normUnit)) {
+    return { score: normUnit.length / normSeg.length, matchType: 'reverse-containment' };
+  }
+
+  // Pass 3: token overlap with stop-word filtering
+  return { score: tokenOverlapScore(normSeg, normUnit), matchType: 'token-overlap' };
 }
 
 /**
@@ -423,13 +572,14 @@ export function matchTranscriptSegmentsToTextUnitsWithDiagnostics(
       const { norm } = normUnits[unitIdx]!;
 
       // Score against single unit
-      const singleScore = scoreSegmentToUnit(normSeg, norm);
-
+      const single = scoreSegmentToUnit(normSeg, norm);
       // Score against adjacent window
-      const windowScore = scoreSegmentToUnit(normSeg, windowNorms[unitIdx]!.combinedNorm);
+      const window = scoreSegmentToUnit(normSeg, windowNorms[unitIdx]!.combinedNorm);
 
       // Take the better of single vs window
-      const rawScore = Math.max(singleScore, windowScore);
+      const rawScore = single.score >= window.score ? single.score : window.score;
+      const rawMatchType: MatchPass =
+        single.score >= window.score ? single.matchType : window.matchType;
 
       if (rawScore < matchThreshold) continue;
 
@@ -437,18 +587,16 @@ export function matchTranscriptSegmentsToTextUnitsWithDiagnostics(
       let adjustedScore = rawScore;
       if (useMonotonic && lastMatchedUnitIndex >= 0) {
         if (unitIdx >= lastMatchedUnitIndex) {
-          // Forward or same: small bonus
           adjustedScore = rawScore + MONOTONIC_BONUS;
         }
-        // Backward: no bonus, must be significantly better to win
       }
 
       if (!best || adjustedScore > best.score) {
-        // Use the center unit of the window (same CFI whether single or window matched)
         best = {
           textUnit: windowNorms[unitIdx]!.centerUnit,
           unitIndex: unitIdx,
           score: adjustedScore,
+          matchType: rawMatchType,
         };
       }
     }
@@ -467,6 +615,8 @@ export function matchTranscriptSegmentsToTextUnitsWithDiagnostics(
       unitIndex: isMatched ? best!.unitIndex : -1,
       sectionIndex: isMatched ? best!.textUnit.sectionIndex : undefined,
       lowConfidence: isLowConfidence,
+      matchType: isMatched ? best!.matchType : undefined,
+      unitTextPreview: isMatched ? best!.textUnit.text.slice(0, 60) : undefined,
     };
     segDiags.push(diag);
 
