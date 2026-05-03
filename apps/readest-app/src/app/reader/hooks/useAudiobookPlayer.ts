@@ -5,10 +5,30 @@ import { isValidURL } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
 import { useAudiobookSync } from './useAudiobookSync';
-import { findAudiobookSyncEntry } from '@/utils/audiobookSync';
+import {
+  buildSyncMapFromPoints,
+  findAudiobookSyncEntryAtTime,
+  getSyncMapEntryKey,
+} from '@/utils/audiobookSync';
+import { AudiobookConfig, AudiobookSyncMapEntry } from '@/types/book';
 
 interface UseAudiobookPlayerProps {
   bookKey: string;
+}
+
+/**
+ * Derives the runtime sync map from audiobook config.
+ * Prefers an explicit `syncMap` if present and non-empty;
+ * otherwise builds one from `syncPoints`.
+ */
+function resolveSyncMap(audiobook: AudiobookConfig): AudiobookSyncMapEntry[] {
+  if (audiobook.syncMap && audiobook.syncMap.length > 0) {
+    return audiobook.syncMap;
+  }
+  if (audiobook.syncPoints && audiobook.syncPoints.length > 0) {
+    return buildSyncMapFromPoints(audiobook.syncPoints, { duration: audiobook.duration });
+  }
+  return [];
 }
 
 export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
@@ -16,7 +36,7 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
   const { applyAudiobookMarker, clearAudiobookMarker } = useAudiobookSync({ bookKey });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastAppliedCfiRef = useRef<string | null>(null);
+  const lastAppliedEntryKeyRef = useRef<string | null>(null);
 
   const audiobookConfig = getConfig(bookKey)?.audiobook;
   const filePath = audiobookConfig?.filePath;
@@ -79,19 +99,23 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
 
       const config = useBookDataStore.getState().getConfig(bookKey);
       const audiobook = config?.audiobook;
-      if (audiobook?.syncStatus === 'ready' && audiobook.syncMap) {
-        const entry = findAudiobookSyncEntry(audiobook.syncMap, time);
-        if (entry && entry.cfi !== lastAppliedCfiRef.current) {
-          try {
-            applyAudiobookMarker(entry.cfi);
-            lastAppliedCfiRef.current = entry.cfi;
-          } catch (err) {
-            console.warn('[AudiobookSync] Failed to apply marker', {
-              time: entry.time,
-              cfi: entry.cfi,
-              label: entry.label,
-              error: err,
-            });
+      if (audiobook?.syncStatus === 'ready') {
+        const syncMap = resolveSyncMap(audiobook);
+        const entry = findAudiobookSyncEntryAtTime(syncMap, time);
+        if (entry) {
+          const entryKey = getSyncMapEntryKey(entry);
+          if (entryKey !== lastAppliedEntryKeyRef.current) {
+            try {
+              applyAudiobookMarker(entry.markerCfi || entry.cfi);
+              lastAppliedEntryKeyRef.current = entryKey;
+            } catch (err) {
+              console.warn('[AudiobookSync] Failed to apply marker', {
+                secondsStart: entry.secondsStart,
+                cfi: entry.cfi,
+                label: entry.label,
+                error: err,
+              });
+            }
           }
         }
       }
@@ -151,7 +175,7 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
         saveTime.cancel();
       }
       clearAudiobookMarker();
-      lastAppliedCfiRef.current = null;
+      lastAppliedEntryKeyRef.current = null;
       audio.src = '';
       audioRef.current = null;
     };
@@ -184,19 +208,23 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
           updatedAt: Date.now(),
         });
 
-        if (config.audiobook.syncStatus === 'ready' && config.audiobook.syncMap) {
-          const entry = findAudiobookSyncEntry(config.audiobook.syncMap, time);
-          if (entry && entry.cfi !== lastAppliedCfiRef.current) {
-            try {
-              applyAudiobookMarker(entry.cfi);
-              lastAppliedCfiRef.current = entry.cfi;
-            } catch (err) {
-              console.warn('[AudiobookSync] Failed to apply marker on seek', {
-                time: entry.time,
-                cfi: entry.cfi,
-                label: entry.label,
-                error: err,
-              });
+        if (config.audiobook.syncStatus === 'ready') {
+          const syncMap = resolveSyncMap(config.audiobook);
+          const entry = findAudiobookSyncEntryAtTime(syncMap, time);
+          if (entry) {
+            const entryKey = getSyncMapEntryKey(entry);
+            if (entryKey !== lastAppliedEntryKeyRef.current) {
+              try {
+                applyAudiobookMarker(entry.markerCfi || entry.cfi);
+                lastAppliedEntryKeyRef.current = entryKey;
+              } catch (err) {
+                console.warn('[AudiobookSync] Failed to apply marker on seek', {
+                  secondsStart: entry.secondsStart,
+                  cfi: entry.cfi,
+                  label: entry.label,
+                  error: err,
+                });
+              }
             }
           }
         }

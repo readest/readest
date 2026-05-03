@@ -398,10 +398,21 @@ export interface BookSearchResult {
   progress?: number;
 }
 
-export interface AudiobookSyncMapEntry {
+export interface AudiobookSyncPoint {
   time: number;
   cfi: string;
   label?: string;
+  createdAt?: number;
+}
+
+export interface AudiobookSyncMapEntry {
+  trackIndex?: number;
+  secondsStart: number;
+  secondsEnd?: number;
+  cfi: string;
+  markerCfi?: string;
+  label?: string;
+  source?: 'manual-point' | 'manual-interpolated' | 'generated' | string;
 }
 
 export interface AudiobookConfig {
@@ -412,6 +423,7 @@ export interface AudiobookConfig {
   currentTime?: number;
   syncMapPath?: string;
   syncStatus?: 'none' | 'pending' | 'ready' | 'error';
+  syncPoints?: AudiobookSyncPoint[];
   syncMap?: AudiobookSyncMapEntry[];
 }
 

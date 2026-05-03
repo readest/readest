@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
-import { AudiobookConfig, AudiobookSyncMapEntry } from '@/types/book';
+import { AudiobookConfig, AudiobookSyncPoint } from '@/types/book';
+import { buildSyncMapFromPoints, normalizeAudiobookSyncPoints } from '@/utils/audiobookSync';
 import { useAudiobookSync } from './useAudiobookSync';
 
 /** Dev-only console API exposed on window.__citadelAudiobookSync */
 export interface CitadelAudiobookSyncDebugApi {
   capturePoint(label?: string): void;
-  listPoints(): AudiobookSyncMapEntry[];
+  listPoints(): AudiobookSyncPoint[];
   clearPoints(): void;
   removePoint(index: number): void;
 }
@@ -16,6 +17,18 @@ const DEDUP_THRESHOLD_SEC = 0.5;
 
 function isDev(): boolean {
   return process.env['NODE_ENV'] === 'development';
+}
+
+/**
+ * Rebuilds the syncMap from syncPoints and returns an updated AudiobookConfig.
+ */
+function rebuildConfigWithSyncMap(audiobook: AudiobookConfig): AudiobookConfig {
+  const syncMap = buildSyncMapFromPoints(audiobook.syncPoints, { duration: audiobook.duration });
+  return {
+    ...audiobook,
+    syncMap,
+    syncStatus: syncMap.length > 0 ? 'ready' : 'none',
+  };
 }
 
 /**
@@ -99,42 +112,40 @@ export const useAudiobookSyncDebug = (props: {
           return;
         }
 
-        // --- Build entry ---------------------------------------------------
-        const entry: AudiobookSyncMapEntry = {
+        // --- Build sync point ----------------------------------------------
+        const point: AudiobookSyncPoint = {
           time,
           cfi,
           label: label ?? (textPreview || `t=${time.toFixed(1)}`),
+          createdAt: Date.now(),
         };
 
-        // --- Merge into syncMap (sorted, de-duped) -------------------------
-        const existingMap: AudiobookSyncMapEntry[] = audiobook.syncMap
-          ? [...audiobook.syncMap]
+        // --- Merge into syncPoints (sorted, de-duped by time proximity) -----
+        const existingPoints: AudiobookSyncPoint[] = audiobook.syncPoints
+          ? [...audiobook.syncPoints]
           : [];
 
-        // Replace any entry within the dedup threshold
-        const dedupIdx = existingMap.findIndex(
-          (e) => Math.abs(e.time - entry.time) < DEDUP_THRESHOLD_SEC,
+        const dedupIdx = existingPoints.findIndex(
+          (p) => Math.abs(p.time - point.time) < DEDUP_THRESHOLD_SEC,
         );
         if (dedupIdx !== -1) {
-          existingMap[dedupIdx] = entry;
+          existingPoints[dedupIdx] = point;
         } else {
-          existingMap.push(entry);
+          existingPoints.push(point);
         }
 
-        // Sort ascending by time
-        existingMap.sort((a, b) => a.time - b.time);
-
-        // --- Persist -------------------------------------------------------
+        // --- Rebuild syncMap from all points --------------------------------
         const updatedAudiobook: AudiobookConfig = {
           ...audiobook,
-          syncMap: existingMap,
-          syncStatus: 'ready',
+          syncPoints: existingPoints,
         };
+        const withSyncMap = rebuildConfigWithSyncMap(updatedAudiobook);
 
+        // --- Persist -------------------------------------------------------
         try {
-          setConfig(bookKey, { audiobook: updatedAudiobook, updatedAt: Date.now() });
+          setConfig(bookKey, { audiobook: withSyncMap, updatedAt: Date.now() });
         } catch (err) {
-          console.error('[AudiobookSyncDebug] Failed to save syncMap', err);
+          console.error('[AudiobookSyncDebug] Failed to save syncPoints/syncMap', err);
           return;
         }
 
@@ -146,16 +157,17 @@ export const useAudiobookSyncDebug = (props: {
         }
 
         console.info('[AudiobookSyncDebug] Captured sync point', {
-          time: entry.time,
-          cfi: entry.cfi,
-          label: entry.label,
-          mapSize: existingMap.length,
+          time: point.time,
+          cfi: point.cfi,
+          label: point.label,
+          pointsCount: existingPoints.length,
+          mapEntries: withSyncMap.syncMap?.length ?? 0,
         });
       },
 
       listPoints() {
         const config = getConfig(bookKey);
-        return config?.audiobook?.syncMap ?? [];
+        return normalizeAudiobookSyncPoints(config?.audiobook?.syncPoints);
       },
 
       clearPoints() {
@@ -166,10 +178,10 @@ export const useAudiobookSyncDebug = (props: {
           return;
         }
         setConfig(bookKey, {
-          audiobook: { ...audiobook, syncMap: [], syncStatus: 'none' },
+          audiobook: { ...audiobook, syncPoints: [], syncMap: [], syncStatus: 'none' },
           updatedAt: Date.now(),
         });
-        console.info('[AudiobookSyncDebug] Cleared all sync points.');
+        console.info('[AudiobookSyncDebug] Cleared all sync points and sync map.');
       },
 
       removePoint(index: number) {
@@ -179,20 +191,22 @@ export const useAudiobookSyncDebug = (props: {
           console.warn('[AudiobookSyncDebug] No audiobook attached.');
           return;
         }
-        const map = audiobook.syncMap ?? [];
-        if (index < 0 || index >= map.length) {
-          console.warn(`[AudiobookSyncDebug] Index ${index} out of range (0..${map.length - 1}).`);
+        const points = normalizeAudiobookSyncPoints(audiobook.syncPoints);
+        if (index < 0 || index >= points.length) {
+          console.warn(
+            `[AudiobookSyncDebug] Index ${index} out of range (0..${points.length - 1}).`,
+          );
           return;
         }
-        const removed = map.splice(index, 1)[0];
-        setConfig(bookKey, {
-          audiobook: {
-            ...audiobook,
-            syncMap: map,
-            syncStatus: map.length > 0 ? 'ready' : 'none',
-          },
-          updatedAt: Date.now(),
-        });
+        const removed = points.splice(index, 1)[0];
+
+        const updatedAudiobook: AudiobookConfig = {
+          ...audiobook,
+          syncPoints: points,
+        };
+        const withSyncMap = rebuildConfigWithSyncMap(updatedAudiobook);
+
+        setConfig(bookKey, { audiobook: withSyncMap, updatedAt: Date.now() });
         console.info('[AudiobookSyncDebug] Removed point', { index, removed });
       },
     };
