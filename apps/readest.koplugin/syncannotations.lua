@@ -214,11 +214,19 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
             book = book_hash,
             meta_hash = meta_hash,
         },
-        function(success, response)
+        function(success, response, status)
             if not success then
+                -- Treat HTTP 401/403 as auth failure regardless of body shape
+                -- so a future server tweak to the error string doesn't
+                -- silently turn relogin into "Failed to pull annotations"
+                -- noise (codex round 1 finding 15).
+                local is_auth_fail = status == 401 or status == 403
+                    or (response and response.error == "Not authenticated")
                 if interactive then
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to pull annotations"),
+                        text = is_auth_fail
+                            and _("Authentication failed, please login again")
+                            or _("Failed to pull annotations"),
                         timeout = 2,
                     })
                 end

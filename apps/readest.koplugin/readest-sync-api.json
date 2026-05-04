@@ -14,6 +14,37 @@
       "required_params": ["books", "notes", "configs"],
       "payload": ["books", "notes", "configs"],
       "expected_status": [200, 201, 301, 400, 401, 403]
+    },
+    "pullBooks": {
+      "path": "/sync?type=books",
+      "method": "GET",
+      "required_params": ["since"],
+      "expected_status": [200, 400, 301, 401, 403]
+    },
+    "getDownloadUrl": {
+      "path": "/storage/download",
+      "method": "GET",
+      "required_params": ["fileKey"],
+      "expected_status": [200, 400, 301, 401, 403, 404]
+    },
+    "listFiles": {
+      "path": "/storage/list",
+      "method": "GET",
+      "required_params": ["bookHash"],
+      "expected_status": [200, 400, 301, 401, 403]
+    },
+    "deleteFile": {
+      "path": "/storage/delete",
+      "method": "DELETE",
+      "required_params": ["fileKey"],
+      "expected_status": [200, 400, 301, 401, 403, 404]
+    },
+    "getUploadUrl": {
+      "path": "/storage/upload",
+      "method": "POST",
+      "required_params": ["fileName", "fileSize", "bookHash"],
+      "payload": ["fileName", "fileSize", "bookHash"],
+      "expected_status": [200, 400, 301, 401, 403]
     }
   }
 }

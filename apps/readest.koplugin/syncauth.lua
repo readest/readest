@@ -33,6 +33,44 @@ function SyncAuth:tryRefreshToken(settings, path)
     end
 end
 
+-- Block-style wrapper around tryRefreshToken: runs the refresh (if needed)
+-- and invokes `callback(ok, err)` after the new token is committed to
+-- settings, OR immediately with ok=true if the token is still fresh.
+--
+-- Codex round 1 finding 14: ensureClient() in main.lua kicks off a refresh
+-- and immediately builds a Spore client with whatever token was already in
+-- settings — racy. New library API calls (pullBooks, getDownloadUrl) MUST go
+-- through this wrapper so the request body never carries a stale Bearer
+-- header.
+function SyncAuth:withFreshToken(settings, path, callback)
+    -- Token still has > 50% TTL remaining: nothing to do.
+    if not settings.refresh_token or not settings.expires_at
+        or settings.expires_at >= os.time() + (settings.expires_in or 0) / 2 then
+        if callback then callback(true) end
+        return
+    end
+
+    local client = self:getSupabaseAuthClient(settings, path)
+    if not client then
+        if callback then callback(false, "no auth client") end
+        return
+    end
+
+    client:refresh_token(settings.refresh_token, function(success, response)
+        if success then
+            settings.access_token  = response.access_token
+            settings.refresh_token = response.refresh_token
+            settings.expires_at    = response.expires_at
+            settings.expires_in    = response.expires_in
+            G_reader_settings:saveSetting("readest_sync", settings)
+            if callback then callback(true) end
+        else
+            logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
+            if callback then callback(false, response and response.msg or "refresh failed") end
+        end
+    end)
+end
+
 function SyncAuth:getSupabaseAuthClient(settings, path)
     if not settings.supabase_url or not settings.supabase_anon_key then
         return nil

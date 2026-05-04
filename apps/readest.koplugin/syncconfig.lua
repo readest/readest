@@ -233,9 +233,15 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             book = book_hash,
             meta_hash = meta_hash,
         },
-        function(success, response)
+        function(success, response, status)
             if not success then
-                if response and response.error == "Not authenticated" then
+                -- Auth failure: server returns HTTP 403 with body
+                -- {error="Not authenticated"} per apps/readest-app/src/pages/api/sync.ts:31.
+                -- Check the status code primarily so future endpoints with
+                -- different body shapes still trigger relogin (codex finding).
+                local is_auth_fail = status == 401 or status == 403
+                    or (response and response.error == "Not authenticated")
+                if is_auth_fail then
                     if interactive then
                         UIManager:show(InfoMessage:new{
                             text = _("Authentication failed, please login again"),
