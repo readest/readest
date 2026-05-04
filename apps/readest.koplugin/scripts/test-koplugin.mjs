@@ -19,7 +19,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const KOPLUGIN_DIR = path.resolve(__dirname, '..', '..', 'readest.koplugin');
+// Script lives at apps/readest.koplugin/scripts/; one parent up is the
+// koplugin root.
+const KOPLUGIN_DIR = path.resolve(__dirname, '..');
 
 if (!fs.existsSync(KOPLUGIN_DIR)) {
   console.error(`koplugin directory not found at ${KOPLUGIN_DIR}`);
@@ -34,21 +36,33 @@ if (!fs.existsSync(path.join(KOPLUGIN_DIR, 'spec'))) {
 const which = (cmd, env = process.env) =>
   spawnSync(process.platform === 'win32' ? 'where' : 'which', [cmd], { env });
 
+// In CI a missing toolchain is a hard failure (exit 1); locally it's a
+// soft skip (exit 0) so devs without busted installed don't get blocked.
+// GitHub Actions sets CI=true; respect any other CI's convention too.
+const HARD_FAIL = !!process.env.CI;
+const onMissing = (tool, install_hint) => {
+  const msg =
+    `test:lua: ${tool} not found. ` +
+    `Install via ${install_hint}.` +
+    (HARD_FAIL ? '' : ' Skipping (set CI=1 to make this an error).');
+  if (HARD_FAIL) {
+    console.error(msg);
+    process.exit(1);
+  } else {
+    console.warn(msg);
+    process.exit(0);
+  }
+};
+
 if (which('luajit').status !== 0) {
-  console.warn(
-    'test:lua: luajit not found, skipping koplugin tests. ' +
-      'Install LuaJIT (e.g. `brew install luajit` on macOS, `apt-get install luajit` on Linux). ' +
-      'CI runs this check unconditionally.',
+  onMissing(
+    'luajit',
+    '`brew install luajit` on macOS, `apt-get install luajit` on Linux',
   );
-  process.exit(0);
 }
 
 if (which('luarocks').status !== 0) {
-  console.warn(
-    'test:lua: luarocks not found, skipping koplugin tests. Install via ' +
-      '`brew install luarocks` (or `apt-get install luarocks`).',
-  );
-  process.exit(0);
+  onMissing('luarocks', '`brew install luarocks` (or `apt-get install luarocks`)');
 }
 
 // `luarocks --lua-version=5.1 path` emits export lines for PATH, LUA_PATH,
@@ -59,6 +73,10 @@ if (which('luarocks').status !== 0) {
 // busted's own `require('busted.runner')` both succeed.
 const lrPath = spawnSync('luarocks', ['--lua-version=5.1', 'path'], { encoding: 'utf8' });
 if (lrPath.status !== 0) {
+  if (HARD_FAIL) {
+    console.error('test:lua: `luarocks --lua-version=5.1 path` failed.');
+    process.exit(1);
+  }
   console.warn('test:lua: `luarocks --lua-version=5.1 path` failed.');
   process.exit(0);
 }
@@ -78,12 +96,11 @@ for (const line of lrPath.stdout.split('\n')) {
 }
 
 if (which('busted', env).status !== 0) {
-  console.warn(
-    'test:lua: busted not found on PATH (even after sourcing luarocks env). Install via ' +
-      '`luarocks --lua-version=5.1 install busted` (and `lsqlite3complete` for SQLite tests). ' +
-      'CI runs this check unconditionally.',
+  onMissing(
+    'busted',
+    '`luarocks --lua-version=5.1 install busted` ' +
+      '(and `lsqlite3complete` for SQLite tests)',
   );
-  process.exit(0);
 }
 
 const luajitPath = which('luajit', env).stdout.toString().trim();

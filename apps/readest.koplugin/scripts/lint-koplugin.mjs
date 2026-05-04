@@ -17,7 +17,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const KOPLUGIN_DIR = path.resolve(__dirname, '..', '..', 'readest.koplugin');
+// Script lives at apps/readest.koplugin/scripts/; one parent up is the
+// koplugin root.
+const KOPLUGIN_DIR = path.resolve(__dirname, '..');
 
 if (!fs.existsSync(KOPLUGIN_DIR)) {
   console.error(`koplugin directory not found at ${KOPLUGIN_DIR}`);
