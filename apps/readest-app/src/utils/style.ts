@@ -196,6 +196,10 @@ const getColorStyles = (
     table:has(> colgroup) {
       table-layout: fixed;
     }
+    td, th {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
     /* code */
     body.theme-dark code {
       ${isDarkMode ? `color: ${fg}cc;` : ''}
@@ -206,8 +210,8 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     blockquote, table * {
-      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
