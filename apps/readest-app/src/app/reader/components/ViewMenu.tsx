@@ -6,6 +6,7 @@ import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
+import { MdOutlineInfo } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
@@ -92,6 +93,13 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
       setIsDropdownOpen?.(false);
     } else {
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
+    }
+  };
+
+  const handleBookDetails = () => {
+    setIsDropdownOpen?.(false);
+    if (bookData.book) {
+      eventDispatcher.dispatchSync('show-book-details', bookData.book);
     }
   };
 
@@ -303,6 +311,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ bookKey, setIsDropdownOpen }) => {
         onClick={handleStartRSVP}
         disabled={bookData.isFixedLayout}
       />
+
+      <hr aria-hidden='true' className='border-base-300 my-1' />
+
+      <MenuItem label={_('Book Details')} Icon={MdOutlineInfo} onClick={handleBookDetails} />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

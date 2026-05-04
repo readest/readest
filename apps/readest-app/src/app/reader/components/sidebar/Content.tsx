@@ -13,6 +13,7 @@ import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
 import ChatHistoryView from './ChatHistoryView';
+import BookCard from './BookCard';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
@@ -20,7 +21,7 @@ const SidebarContent: React.FC<{
 }> = ({ bookDoc, sideBarBookKey }) => {
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
-  const { getConfig, setConfig } = useBookDataStore();
+  const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { settings } = useSettingsStore();
   const config = getConfig(sideBarBookKey);
   const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
@@ -83,13 +84,23 @@ const SidebarContent: React.FC<{
           'sidebar-content flex h-full min-h-0 flex-grow flex-col shadow-inner',
           'font-sans text-base font-normal text-[#d8c39b] sm:text-sm sm:text-[#d9c39a]',
           'bg-[linear-gradient(180deg,rgba(20,13,11,0.96),rgba(11,8,7,0.98))]',
-          targetTab === 'reading' && 'sm:hidden',
         )}
       >
         {targetTab === 'history' ? (
           <ChatHistoryView bookKey={sideBarBookKey} />
         ) : targetTab === 'reading' ? (
-          <div className='h-full' />
+          (() => {
+            const book = getBookData(sideBarBookKey)?.book;
+            return (
+              <div className='h-full overflow-y-auto px-3 py-3'>
+                {book ? (
+                  <BookCard book={book} />
+                ) : (
+                  <p className='text-[13px] text-[#968671]'>No book data available.</p>
+                )}
+              </div>
+            );
+          })()
         ) : (
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'
