@@ -18,23 +18,34 @@ interface ScrollSettings {
   scrollingOverlap: number;
 }
 
+export type MarkerResult =
+  | { status: 'applied' }
+  | { status: 'wrong-section'; cfiSectionIndex: number }
+  | { status: 'error' };
+
 /**
  * Resolves a CFI to a DOM Range, stamps the live reading marker overlay onto
  * it, and scrolls the view to keep it visible.  Both TTS and audiobook sync
  * call this so exactly one marker is ever shown at a time.
+ *
+ * Returns a status so callers can handle section mismatches:
+ * - 'applied' — marker was placed in the current visible section
+ * - 'wrong-section' — the CFI belongs to a different section; caller should
+ *   navigate there first
+ * - 'error' — the CFI could not be resolved
  */
 export function applyLiveMarker(
   view: FoliateView,
   cfi: string,
   options: LiveMarkerOptions,
   scrollSettings: ScrollSettings,
-): void {
+): MarkerResult {
   const contents = view.renderer.getContents();
   const primaryIndex = view.renderer.primaryIndex;
   const content = (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
     | { doc: Document; index?: number; overlayer?: unknown }
     | undefined;
-  if (!content) return;
+  if (!content) return { status: 'error' };
 
   const { doc, index: viewSectionIndex, overlayer } = content;
 
@@ -43,10 +54,12 @@ export function applyLiveMarker(
   try {
     ({ anchor, index: cfiSectionIndex } = view.resolveCFI(cfi));
   } catch {
-    return;
+    return { status: 'error' };
   }
 
-  if (viewSectionIndex !== cfiSectionIndex) return;
+  if (viewSectionIndex !== cfiSectionIndex) {
+    return { status: 'wrong-section', cfiSectionIndex };
+  }
 
   const range = anchor(doc);
   const { style, color } = options;
@@ -70,6 +83,8 @@ export function applyLiveMarker(
       view.renderer.scrollToAnchor?.(range);
     }
   }
+
+  return { status: 'applied' };
 }
 
 /** Removes the live reading marker from the primary view content. */

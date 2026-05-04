@@ -32,6 +32,13 @@ interface BookDetailModalProps {
   handleBookDeleteCloudBackup?: (book: Book) => void;
   handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
+  /** Generate sync map from attached transcript or via Python transcription */
+  onGenerateSync?: (bookHash: string) => Promise<{
+    matched: number;
+    total: number;
+    transcriptPath?: string;
+    error?: string;
+  }>;
 }
 
 interface DeleteConfig {
@@ -50,6 +57,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookDeleteCloudBackup,
   handleBookDeleteLocalCopy,
   handleBookMetadataUpdate,
+  onGenerateSync,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -63,6 +71,36 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [fileSize, setFileSize] = useState<number | null>(null);
   const [audiobookConfig, setAudiobookConfig] = useState<AudiobookConfig | undefined>(undefined);
   const [bookConfig, setBookConfig] = useState<BookConfig | null>(null);
+
+  // Sync generation state
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationMatched, setGenerationMatched] = useState<number | null>(null);
+
+  const handleGenerateSync = async () => {
+    if (!onGenerateSync || generating) return;
+    setGenerating(true);
+    setGenerationError(null);
+    try {
+      const result = await onGenerateSync(book.hash);
+      if (result.error) {
+        setGenerationError(result.error);
+      } else {
+        setGenerationMatched(result.matched);
+        // Re-read config from in-memory store to update local state
+        const { booksData } = useBookDataStore.getState();
+        if (booksData[book.hash]?.config) {
+          const updatedConfig = booksData[book.hash]!.config!;
+          setBookConfig(updatedConfig);
+          setAudiobookConfig(updatedConfig.audiobook);
+        }
+      }
+    } catch (err) {
+      setGenerationError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // Initialize metadata edit hook
   const {
@@ -362,6 +400,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
                 onExport={handleBookExport}
+                onGenerateSync={onGenerateSync ? handleGenerateSync : undefined}
+                generating={generating}
+                generationError={generationError}
+                generationMatched={generationMatched}
               />
             )}
           </div>

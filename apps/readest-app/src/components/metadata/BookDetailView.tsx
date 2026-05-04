@@ -51,6 +51,11 @@ interface BookDetailViewProps {
   onDownload?: () => void;
   onUpload?: () => void;
   onExport?: () => void;
+  /** Generate sync map from attached transcript or Python transcription */
+  onGenerateSync?: () => void;
+  generating?: boolean;
+  generationError?: string | null;
+  generationMatched?: number | null;
 }
 
 /* ── Shared Citadel style tokens ── */
@@ -94,6 +99,10 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDownload,
   onUpload,
   onExport,
+  onGenerateSync,
+  generating,
+  generationError,
+  generationMatched,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -359,6 +368,60 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               </>
             )}
           </div>
+
+          {/* Sync generation row */}
+          {onGenerateSync && (
+            <div className='mt-2.5 flex items-center gap-2.5 pl-[2.125rem]'>
+              <div className='flex h-5 w-5 shrink-0 items-center justify-center'>
+                <svg
+                  className='h-3.5 w-3.5 text-[#968671]'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                >
+                  <path d='M21 12a9 9 0 1 1-6.219-8.56' />
+                  <path d='M21 3v5h-5' />
+                </svg>
+              </div>
+              <div className='min-w-0 flex-1'>
+                {generating ? (
+                  <span className='text-[12px] text-[#cfb07a]'>{_('Generating sync…')}</span>
+                ) : generationError ? (
+                  <span className='text-[11px] text-[#c08070]' title={generationError}>
+                    {generationError.length > 60
+                      ? `${generationError.slice(0, 60)}…`
+                      : generationError}
+                  </span>
+                ) : generationMatched != null ? (
+                  <span className='text-[12px] text-[#a3937d]'>
+                    {_('Sync ready')} · {generationMatched} {_('matched')}
+                  </span>
+                ) : audiobookConfig?.syncStatus === 'ready' ? (
+                  <span className='text-[12px] text-[#a3937d]'>
+                    {_('Sync ready')}
+                    {audiobookConfig.syncMap?.length
+                      ? ` · ${audiobookConfig.syncMap.length} ${_('entries')}`
+                      : ''}
+                  </span>
+                ) : (
+                  <span className='text-[11px] text-[#968671]'>{_('No sync map')}</span>
+                )}
+              </div>
+              <button
+                onClick={onGenerateSync}
+                disabled={generating}
+                className={clsx(
+                  'rounded-lg px-3 py-1 text-[11px] font-medium transition-all',
+                  generating
+                    ? 'cursor-not-allowed bg-[rgba(185,133,44,0.06)] text-[#5e4d38]'
+                    : 'bg-[rgba(185,133,44,0.10)] text-[#cfb07a] hover:bg-[rgba(185,133,44,0.18)] hover:text-[#e4c88e]',
+                )}
+              >
+                {generating ? _('Generating…') : _('Generate Sync')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -484,10 +547,48 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               <p className='truncate text-[12px] font-medium text-[#d6c6a8]'>
                 {audiobookConfig.fileName}
               </p>
+              {/* Sync status text */}
+              {generating ? (
+                <p className='text-[11px] text-[#cfb07a]'>{_('Generating sync…')}</p>
+              ) : generationError ? (
+                <p className='text-[11px] text-[#c08070]' title={generationError}>
+                  {generationError.length > 50
+                    ? `${generationError.slice(0, 50)}…`
+                    : generationError}
+                </p>
+              ) : generationMatched != null ? (
+                <p className='text-[11px] text-[#a3937d]'>
+                  {_('Sync ready')} · {generationMatched} {_('matched')}
+                </p>
+              ) : audiobookConfig?.syncStatus === 'ready' ? (
+                <p className='text-[11px] text-[#a3937d]'>
+                  {_('Sync ready')}
+                  {audiobookConfig.syncMap?.length
+                    ? ` · ${audiobookConfig.syncMap.length} ${_('entries')}`
+                    : ''}
+                </p>
+              ) : onGenerateSync ? (
+                <p className='text-[11px] text-[#968671]'>{_('No sync map')}</p>
+              ) : (
+                <p className='text-[11px] text-[#968671]'>{_('Audiobook attached')}</p>
+              )}
             </div>
-            <div className='flex shrink-0 items-center gap-2'>
-              <span className='text-[11px] text-[#968671]'>{_('Audiobook attached')}</span>
-            </div>
+            {onGenerateSync && (
+              <div className='flex shrink-0 items-center gap-2'>
+                <button
+                  onClick={onGenerateSync}
+                  disabled={generating}
+                  className={clsx(
+                    'rounded-lg px-3 py-1 text-[11px] font-medium transition-all',
+                    generating
+                      ? 'cursor-not-allowed bg-[rgba(185,133,44,0.06)] text-[#5e4d38]'
+                      : 'bg-[rgba(185,133,44,0.10)] text-[#cfb07a] hover:bg-[rgba(185,133,44,0.18)] hover:text-[#e4c88e]',
+                  )}
+                >
+                  {generating ? _('Generating…') : _('Generate Sync')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
