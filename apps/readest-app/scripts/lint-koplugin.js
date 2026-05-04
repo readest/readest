@@ -24,11 +24,24 @@ if (!fs.existsSync(KOPLUGIN_DIR)) {
   process.exit(1);
 }
 
-const luaFiles = fs
-  .readdirSync(KOPLUGIN_DIR)
-  .filter((f) => f.endsWith('.lua'))
-  .map((f) => path.join(KOPLUGIN_DIR, f))
-  .sort();
+// Recurse into subdirectories so files under `library/` and `spec/` get
+// syntax-checked too. Skip dotfiles/dirs (e.g. `.busted`) and `node_modules`
+// in case anyone vendors a JS dep here later.
+function collectLuaFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectLuaFiles(full));
+    } else if (entry.isFile() && entry.name.endsWith('.lua')) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+const luaFiles = collectLuaFiles(KOPLUGIN_DIR).sort();
 
 if (luaFiles.length === 0) {
   console.log('No .lua files to check.');

@@ -1,0 +1,9 @@
+return {
+    default = {
+        ROOT = { "spec" },
+        pattern = "_spec",
+        helper = "spec/spec_helper",
+        verbose = true,
+        ["recursive-tests"] = true,
+    },
+}
