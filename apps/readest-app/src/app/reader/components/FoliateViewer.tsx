@@ -84,6 +84,7 @@ const CITADEL_DROP_CAP_CLASS = 'citadel-drop-cap-paragraph';
 const CITADEL_CHAPTER_OPENING_CLASS = 'citadel-chapter-opening';
 const CITADEL_CHAPTER_TITLE_CLASS = 'citadel-chapter-title';
 const CITADEL_CHAPTER_ORNAMENT_CLASS = 'citadel-chapter-ornament';
+const CITADEL_CHAPTER_SIGIL_CLASS = 'citadel-chapter-sigil';
 
 const CITADEL_CHAPTER_HEADING_SELECTOR = [
   'h1',
@@ -346,6 +347,15 @@ const CITADEL_BOOK_PAGE_CSS = `
     margin-bottom: 0 !important;
   }
 
+  .${CITADEL_CHAPTER_SIGIL_CLASS} {
+    display: block !important;
+    max-height: 30px !important;
+    width: auto !important;
+    margin: 0 auto 0.6rem auto !important;
+    opacity: 0.86 !important;
+    filter: brightness(0.68) sepia(0.85) saturate(1.6) hue-rotate(-4deg) drop-shadow(0 1px 3px rgba(0,0,0,0.28)) !important;
+  }
+
   @media (max-width: 900px) {
     :root {
       --citadel-page-text-max-width: 32em;
@@ -365,6 +375,12 @@ const CITADEL_BOOK_PAGE_CSS = `
     ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
       font-size: clamp(1.2rem, 4vw, 1.58rem) !important;
       letter-spacing: 0.14em !important;
+    }
+
+    .${CITADEL_CHAPTER_SIGIL_CLASS} {
+      max-height: 24px !important;
+      margin-bottom: 0.5rem !important;
+      opacity: 0.82 !important;
     }
   }
 `;
@@ -441,8 +457,6 @@ const getCitadelChapterOpening = (doc: Document) => {
   if (!paragraph) return { heading: null, paragraph: null };
   return { heading, paragraph };
 };
-
-const CITADEL_CHAPTER_SIGIL_CLASS = 'citadel-chapter-sigil';
 
 const buildBookThemeCSS = (theme: BookThemeConfig): string => {
   if (!theme || theme.id === 'default') return '';
@@ -523,8 +537,7 @@ const applyCitadelBookPageStyles = (
         sigilImg.src = house.sigilPath;
         sigilImg.alt = `${house.name} sigil`;
         sigilImg.className = CITADEL_CHAPTER_SIGIL_CLASS;
-        sigilImg.style.cssText =
-          'display:block;margin:0 auto 0.5rem auto;max-height:56px;width:auto;opacity:0.88;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4)) brightness(0.9) sepia(0.12);';
+        sigilImg.style.cssText = '';
         heading.parentNode?.insertBefore(sigilImg, heading);
       }
     }
