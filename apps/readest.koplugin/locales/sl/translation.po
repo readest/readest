@@ -1,0 +1,231 @@
+# Slovenian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Slovenian\n"
+"Language: sl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Vaše naprave KOReader in Readest ostajajo sinhronizirane."
+
+msgid "Set auto progress sync"
+msgstr "Nastavi samodejno sinhronizacijo napredka"
+
+msgid "on"
+msgstr "vklop"
+
+msgid "off"
+msgstr "izklop"
+
+msgid "Toggle auto readest sync"
+msgstr "Preklopi samodejno sinhronizacijo Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Pošlji napredek Readest iz te naprave"
+
+msgid "Pull readest progress from other devices"
+msgstr "Pridobi napredek Readest iz drugih naprav"
+
+msgid "Push readest annotations from this device"
+msgstr "Pošlji opombe Readest iz te naprave"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Pridobi opombe Readest iz drugih naprav"
+
+msgid "Log in Readest Account"
+msgstr "Prijava v račun Readest"
+
+msgid "Log out as %1"
+msgstr "Odjava kot %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Samodejno sinhroniziraj napredek in opombe"
+
+msgid "Push reading progress now"
+msgstr "Pošlji napredek branja zdaj"
+
+msgid "Pull reading progress now"
+msgstr "Pridobi napredek branja zdaj"
+
+msgid "Push annotations now"
+msgstr "Pošlji opombe zdaj"
+
+msgid "Pull annotations now"
+msgstr "Pridobi opombe zdaj"
+
+msgid "Full sync all annotations"
+msgstr "Polna sinhronizacija vseh opomb"
+
+msgid "Sync info"
+msgstr "Podatki o sinhronizaciji"
+
+msgid "Check for update (v%1)"
+msgstr "Preveri posodobitve (v%1)"
+
+msgid "Check for update"
+msgstr "Preveri posodobitve"
+
+msgid "Please login first"
+msgstr "Najprej se prijavite"
+
+msgid "Please configure Readest settings first"
+msgstr "Najprej nastavite Readest"
+
+msgid "No book is open"
+msgstr "Nobena knjiga ni odprta"
+
+msgid "(none)"
+msgstr "(brez)"
+
+msgid "Never synced"
+msgstr "Nikoli sinhronizirano"
+
+msgid "Book Fingerprint"
+msgstr "Prstni odtis knjige"
+
+msgid "Title"
+msgstr "Naslov"
+
+msgid "Author"
+msgstr "Avtor"
+
+msgid "Identifiers"
+msgstr "Identifikatorji"
+
+msgid "Last Synced"
+msgstr "Zadnja sinhronizacija"
+
+msgid "Sync Info"
+msgstr "Podatki o sinhronizaciji"
+
+msgid "Checking for update…"
+msgstr "Preverjanje posodobitev…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Preverjanje posodobitev ni uspelo. Poskusite znova pozneje."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Na voljo je nova različica: v%1 (trenutna: v%2).\n\nŽelite posodobiti zdaj?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Na voljo je nova različica: v%1.\n\nŽelite posodobiti zdaj?"
+
+msgid "Update"
+msgstr "Posodobi"
+
+msgid "You are up to date (v%1)."
+msgstr "Imate najnovejšo različico (v%1)."
+
+msgid "Downloading update…"
+msgstr "Prenašanje posodobitve…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Prenos posodobitve ni uspel. Poskusite znova pozneje."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Vtičnik Readest je posodobljen na v%1.\n\nZa uveljavitev posodobitve znova zaženite KOReader."
+
+msgid "Restart now"
+msgstr "Znova zaženi"
+
+msgid "Later"
+msgstr "Pozneje"
+
+msgid "Failed to install update: %1"
+msgstr "Namestitev posodobitve ni uspela: %1"
+
+msgid "unknown error"
+msgstr "neznana napaka"
+
+msgid "No annotations to push"
+msgstr "Ni opomb za pošiljanje"
+
+msgid "Pushing annotations..."
+msgstr "Pošiljanje opomb…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Uspešno poslanih %1 opomb"
+
+msgid "Failed to push annotations"
+msgstr "Pošiljanje opomb ni uspelo"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Sinhronizacija opomb ni podprta za dokumente PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Polna sinhronizacija: pridobivanje vseh opomb…"
+
+msgid "Pulling annotations..."
+msgstr "Pridobivanje opomb…"
+
+msgid "Failed to pull annotations"
+msgstr "Pridobivanje opomb ni uspelo"
+
+msgid "No new annotations found"
+msgstr "Novih opomb ni"
+
+msgid "%1 annotations pulled"
+msgstr "Pridobljenih %1 opomb"
+
+msgid "Cancel"
+msgstr "Prekliči"
+
+msgid "Login"
+msgstr "Prijava"
+
+msgid "Please enter both email and password"
+msgstr "Vnesite e-pošto in geslo"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Najprej nastavite URL Supabase in ključ API"
+
+msgid "Logging in..."
+msgstr "Prijavljanje…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Uspešno prijavljeni v Readest"
+
+msgid "Login failed: %1"
+msgstr "Prijava ni uspela: %1"
+
+msgid "Logged out from Readest"
+msgstr "Odjavljeni iz Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Trenutne knjige ni mogoče prepoznati"
+
+msgid "Progress has been synchronized."
+msgstr "Napredek je sinhroniziran."
+
+msgid "Pushing reading progress..."
+msgstr "Pošiljanje napredka branja…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Napredek branja uspešno poslan"
+
+msgid "Failed to push reading progress"
+msgstr "Pošiljanje napredka branja ni uspelo"
+
+msgid "Pulling reading progress..."
+msgstr "Pridobivanje napredka branja…"
+
+msgid "Authentication failed, please login again"
+msgstr "Preverjanje pristnosti ni uspelo, prijavite se znova"
+
+msgid "Failed to pull reading progress"
+msgstr "Pridobivanje napredka branja ni uspelo"
+
+msgid "Reading progress synchronized"
+msgstr "Napredek branja sinhroniziran"
+
+msgid "No saved reading progress found for this book"
+msgstr "Za to knjigo ni shranjenega napredka branja"

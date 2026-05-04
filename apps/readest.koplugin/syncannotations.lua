@@ -5,7 +5,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("gettext")
+local _ = require("i18n")
 
 local SyncAnnotations = {}
 
@@ -179,6 +179,11 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
             if success then
                 settings.last_notes_sync_at = os.time() * 1000
                 G_reader_settings:saveSetting("readest_sync", settings)
+                if ui.doc_settings then
+                    local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
+                    doc_readest_sync.last_synced_at_notes = os.time()
+                    ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
+                end
             end
         end
     )
@@ -339,6 +344,11 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
 
             settings.last_notes_sync_at = os.time() * 1000
             G_reader_settings:saveSetting("readest_sync", settings)
+            if ui.doc_settings then
+                local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
+                doc_readest_sync.last_synced_at_notes = os.time()
+                ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
+            end
 
             if interactive then
                 UIManager:show(InfoMessage:new{

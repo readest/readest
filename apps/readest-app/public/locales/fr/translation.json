@@ -1223,8 +1223,6 @@
   "{{count}} failed_many": "{{count}} échecs",
   "{{count}} failed_other": "{{count}} échecs",
   "(none)": "(aucun)",
-  "Meta Hash": "Hachage Meta",
-  "Computed Hash": "Hachage calculé",
   "Identifiers": "Identifiants",
   "Read (Stream)": "Lire (Flux)",
   "Failed to start stream": "Échec du démarrage du flux",
@@ -1352,5 +1350,6 @@
   "URL Template": "Modèle d'URL",
   "Use %WORD% where the looked-up word should appear.": "Utilisez %WORD% à l'endroit où le mot recherché doit apparaître.",
   "Open the search result in your browser:": "Ouvrir le résultat de la recherche dans votre navigateur :",
-  "Open in {{name}}": "Ouvrir dans {{name}}"
+  "Open in {{name}}": "Ouvrir dans {{name}}",
+  "Book Fingerprint": "Empreinte du livre"
 }

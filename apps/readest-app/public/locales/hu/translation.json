@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} sikertelen",
   "{{count}} failed_other": "{{count}} sikertelen",
   "(none)": "(nincs)",
-  "Meta Hash": "Meta-hash",
-  "Computed Hash": "Számított hash",
   "Identifiers": "Azonosítók",
   "Read (Stream)": "Olvasás (Stream)",
   "Failed to start stream": "Nem sikerült elindítani a streamet",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL-sablon",
   "Use %WORD% where the looked-up word should appear.": "Használja a %WORD%-t ott, ahol a keresett szónak meg kell jelennie.",
   "Open the search result in your browser:": "Nyissa meg a találatot a böngészőben:",
-  "Open in {{name}}": "Megnyitás itt: {{name}}"
+  "Open in {{name}}": "Megnyitás itt: {{name}}",
+  "Book Fingerprint": "Könyv ujjlenyomata"
 }

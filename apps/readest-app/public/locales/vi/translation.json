@@ -1189,8 +1189,6 @@
   "Retry all": "Thử lại tất cả",
   "{{count}} failed_other": "{{count}} thất bại",
   "(none)": "(không có)",
-  "Meta Hash": "Meta Hash",
-  "Computed Hash": "Hash Đã Tính",
   "Identifiers": "Định Danh",
   "Read (Stream)": "Đọc (Stream)",
   "Failed to start stream": "Không thể bắt đầu stream",
@@ -1306,5 +1304,6 @@
   "URL Template": "Mẫu URL",
   "Use %WORD% where the looked-up word should appear.": "Dùng %WORD% tại vị trí mà từ tra cứu sẽ xuất hiện.",
   "Open the search result in your browser:": "Mở kết quả tìm kiếm trong trình duyệt của bạn:",
-  "Open in {{name}}": "Mở trong {{name}}"
+  "Open in {{name}}": "Mở trong {{name}}",
+  "Book Fingerprint": "Dấu vân tay sách"
 }

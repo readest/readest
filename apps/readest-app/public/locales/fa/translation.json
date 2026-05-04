@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} ناموفق",
   "{{count}} failed_other": "{{count}} ناموفق",
   "(none)": "(هیچ‌کدام)",
-  "Meta Hash": "متا هش",
-  "Computed Hash": "هش محاسبه‌شده",
   "Identifiers": "شناسه‌ها",
   "Read (Stream)": "خواندن (پخش)",
   "Failed to start stream": "شروع پخش ناموفق بود",
@@ -1329,5 +1327,6 @@
   "URL Template": "الگوی URL",
   "Use %WORD% where the looked-up word should appear.": "از %WORD% در جایی که کلمه‌ی مورد جست‌وجو باید ظاهر شود، استفاده کنید.",
   "Open the search result in your browser:": "نتیجه‌ی جست‌وجو را در مرورگر باز کنید:",
-  "Open in {{name}}": "بازکردن در {{name}}"
+  "Open in {{name}}": "بازکردن در {{name}}",
+  "Book Fingerprint": "اثر انگشت کتاب"
 }

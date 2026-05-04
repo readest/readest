@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} misslyckades",
   "{{count}} failed_other": "{{count}} misslyckades",
   "(none)": "(ingen)",
-  "Meta Hash": "Meta-hash",
-  "Computed Hash": "Beräknat hash",
   "Identifiers": "Identifierare",
   "Read (Stream)": "Läs (ström)",
   "Failed to start stream": "Det gick inte att starta strömmen",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL-mall",
   "Use %WORD% where the looked-up word should appear.": "Använd %WORD% där det uppslagna ordet ska visas.",
   "Open the search result in your browser:": "Öppna sökresultatet i din webbläsare:",
-  "Open in {{name}}": "Öppna i {{name}}"
+  "Open in {{name}}": "Öppna i {{name}}",
+  "Book Fingerprint": "Bokens fingeravtryck"
 }

@@ -1223,8 +1223,6 @@
   "{{count}} failed_two": "{{count}} נכשלו",
   "{{count}} failed_other": "{{count}} נכשלו",
   "(none)": "(אין)",
-  "Meta Hash": "גיבוב מטא",
-  "Computed Hash": "גיבוב מחושב",
   "Identifiers": "מזהים",
   "Read (Stream)": "קרא (זרם)",
   "Failed to start stream": "הפעלת הזרם נכשלה",
@@ -1352,5 +1350,6 @@
   "URL Template": "תבנית URL",
   "Use %WORD% where the looked-up word should appear.": "השתמש ב-%WORD% היכן שהמילה המבוקשת צריכה להופיע.",
   "Open the search result in your browser:": "פתח את תוצאת החיפוש בדפדפן שלך:",
-  "Open in {{name}}": "פתח ב-{{name}}"
+  "Open in {{name}}": "פתח ב-{{name}}",
+  "Book Fingerprint": "טביעת אצבע של הספר"
 }

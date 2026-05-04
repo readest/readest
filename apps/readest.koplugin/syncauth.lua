@@ -5,7 +5,8 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
-local _ = require("gettext")
+local T = require("ffi/util").template
+local _ = require("i18n")
 
 local SyncAuth = {}
 
@@ -146,7 +147,7 @@ function SyncAuth:doLogin(settings, path, email, password, menu)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = _("Login failed: ") .. (response.msg or "Unknown error"),
+            text = T(_("Login failed: %1"), response.msg or _("unknown error")),
             timeout = 3,
         })
     end
@@ -173,7 +174,7 @@ function SyncAuth:logout(settings, path, menu)
     end
 
     UIManager:show(InfoMessage:new{
-        text = _("Logged out from Readest Sync"),
+        text = _("Logged out from Readest"),
         timeout = 2,
     })
 end

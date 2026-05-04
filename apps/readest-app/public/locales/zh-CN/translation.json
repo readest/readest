@@ -1189,8 +1189,6 @@
   "Retry all": "全部重试",
   "{{count}} failed_other": "{{count}} 个失败",
   "(none)": "（无）",
-  "Meta Hash": "元哈希",
-  "Computed Hash": "计算的哈希",
   "Identifiers": "标识符",
   "Read (Stream)": "阅读（流式）",
   "Failed to start stream": "启动流式传输失败",
@@ -1306,5 +1304,6 @@
   "URL Template": "URL 模板",
   "Use %WORD% where the looked-up word should appear.": "在查询词应出现的位置使用 %WORD%。",
   "Open the search result in your browser:": "在浏览器中打开搜索结果：",
-  "Open in {{name}}": "在 {{name}} 中打开"
+  "Open in {{name}}": "在 {{name}} 中打开",
+  "Book Fingerprint": "书籍指纹"
 }

@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} தோல்வி",
   "{{count}} failed_other": "{{count}} தோல்விகள்",
   "(none)": "(இல்லை)",
-  "Meta Hash": "மெட்டா ஹாஷ்",
-  "Computed Hash": "கணக்கிடப்பட்ட ஹாஷ்",
   "Identifiers": "அடையாளங்காட்டிகள்",
   "Read (Stream)": "படிக்க (ஸ்ட்ரீம்)",
   "Failed to start stream": "ஸ்ட்ரீமைத் தொடங்க முடியவில்லை",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL வார்ப்புரு",
   "Use %WORD% where the looked-up word should appear.": "தேடப்பட்ட சொல் தோன்ற வேண்டிய இடத்தில் %WORD% ஐ பயன்படுத்தவும்.",
   "Open the search result in your browser:": "உங்கள் உலாவியில் தேடல் முடிவைத் திற:",
-  "Open in {{name}}": "{{name}} இல் திற"
+  "Open in {{name}}": "{{name}} இல் திற",
+  "Book Fingerprint": "புத்தக கைரேகை"
 }

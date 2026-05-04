@@ -1240,8 +1240,6 @@
   "{{count}} failed_many": "{{count}} ошибок",
   "{{count}} failed_other": "{{count}} ошибок",
   "(none)": "(нет)",
-  "Meta Hash": "Мета-хеш",
-  "Computed Hash": "Вычисленный хеш",
   "Identifiers": "Идентификаторы",
   "Read (Stream)": "Читать (Поток)",
   "Failed to start stream": "Не удалось запустить поток",
@@ -1375,5 +1373,6 @@
   "URL Template": "Шаблон URL",
   "Use %WORD% where the looked-up word should appear.": "Используйте %WORD% там, где должно появиться искомое слово.",
   "Open the search result in your browser:": "Открыть результат поиска в браузере:",
-  "Open in {{name}}": "Открыть в {{name}}"
+  "Open in {{name}}": "Открыть в {{name}}",
+  "Book Fingerprint": "Отпечаток книги"
 }

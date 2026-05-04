@@ -1189,8 +1189,6 @@
   "Retry all": "Coba lagi semua",
   "{{count}} failed_other": "{{count}} gagal",
   "(none)": "(tidak ada)",
-  "Meta Hash": "Meta Hash",
-  "Computed Hash": "Hash Terhitung",
   "Identifiers": "Pengenal",
   "Read (Stream)": "Baca (Stream)",
   "Failed to start stream": "Gagal memulai stream",
@@ -1306,5 +1304,6 @@
   "URL Template": "Templat URL",
   "Use %WORD% where the looked-up word should appear.": "Gunakan %WORD% di tempat kata yang dicari harus muncul.",
   "Open the search result in your browser:": "Buka hasil pencarian di peramban Anda:",
-  "Open in {{name}}": "Buka di {{name}}"
+  "Open in {{name}}": "Buka di {{name}}",
+  "Book Fingerprint": "Sidik jari buku"
 }

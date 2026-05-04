@@ -1,0 +1,231 @@
+# Dutch translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Dutch\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Houdt je KOReader- en Readest-apparaten gesynchroniseerd."
+
+msgid "Set auto progress sync"
+msgstr "Automatische voortgangssynchronisatie instellen"
+
+msgid "on"
+msgstr "aan"
+
+msgid "off"
+msgstr "uit"
+
+msgid "Toggle auto readest sync"
+msgstr "Automatische Readest-synchronisatie aan/uit"
+
+msgid "Push readest progress from this device"
+msgstr "Readest-voortgang van dit apparaat verzenden"
+
+msgid "Pull readest progress from other devices"
+msgstr "Readest-voortgang van andere apparaten ophalen"
+
+msgid "Push readest annotations from this device"
+msgstr "Readest-aantekeningen van dit apparaat verzenden"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Readest-aantekeningen van andere apparaten ophalen"
+
+msgid "Log in Readest Account"
+msgstr "Aanmelden bij Readest-account"
+
+msgid "Log out as %1"
+msgstr "Afmelden als %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Voortgang en aantekeningen automatisch synchroniseren"
+
+msgid "Push reading progress now"
+msgstr "Leesvoortgang nu verzenden"
+
+msgid "Pull reading progress now"
+msgstr "Leesvoortgang nu ophalen"
+
+msgid "Push annotations now"
+msgstr "Aantekeningen nu verzenden"
+
+msgid "Pull annotations now"
+msgstr "Aantekeningen nu ophalen"
+
+msgid "Full sync all annotations"
+msgstr "Alle aantekeningen volledig synchroniseren"
+
+msgid "Sync info"
+msgstr "Synchronisatie-info"
+
+msgid "Check for update (v%1)"
+msgstr "Controleer op update (v%1)"
+
+msgid "Check for update"
+msgstr "Controleer op update"
+
+msgid "Please login first"
+msgstr "Meld eerst aan"
+
+msgid "Please configure Readest settings first"
+msgstr "Configureer eerst de Readest-instellingen"
+
+msgid "No book is open"
+msgstr "Geen boek geopend"
+
+msgid "(none)"
+msgstr "(geen)"
+
+msgid "Never synced"
+msgstr "Nooit gesynchroniseerd"
+
+msgid "Book Fingerprint"
+msgstr "Vingerafdruk van boek"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Author"
+msgstr "Auteur"
+
+msgid "Identifiers"
+msgstr "Identificatoren"
+
+msgid "Last Synced"
+msgstr "Laatst gesynchroniseerd"
+
+msgid "Sync Info"
+msgstr "Synchronisatie-info"
+
+msgid "Checking for update…"
+msgstr "Controleren op update…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Controleren op update mislukt. Probeer het later opnieuw."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Er is een nieuwe versie beschikbaar: v%1 (huidig: v%2).\n\nWil je nu bijwerken?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Er is een nieuwe versie beschikbaar: v%1.\n\nWil je nu bijwerken?"
+
+msgid "Update"
+msgstr "Bijwerken"
+
+msgid "You are up to date (v%1)."
+msgstr "Je bent up-to-date (v%1)."
+
+msgid "Downloading update…"
+msgstr "Update wordt gedownload…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Update downloaden mislukt. Probeer het later opnieuw."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest-plug-in bijgewerkt naar v%1.\n\nStart KOReader opnieuw op om de update toe te passen."
+
+msgid "Restart now"
+msgstr "Nu opnieuw opstarten"
+
+msgid "Later"
+msgstr "Later"
+
+msgid "Failed to install update: %1"
+msgstr "Update installeren mislukt: %1"
+
+msgid "unknown error"
+msgstr "onbekende fout"
+
+msgid "No annotations to push"
+msgstr "Geen aantekeningen om te verzenden"
+
+msgid "Pushing annotations..."
+msgstr "Aantekeningen worden verzonden…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 aantekeningen succesvol verzonden"
+
+msgid "Failed to push annotations"
+msgstr "Aantekeningen verzenden mislukt"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Aantekeningssynchronisatie wordt niet ondersteund voor PDF-documenten"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Volledige synchronisatie: alle aantekeningen worden opgehaald…"
+
+msgid "Pulling annotations..."
+msgstr "Aantekeningen worden opgehaald…"
+
+msgid "Failed to pull annotations"
+msgstr "Aantekeningen ophalen mislukt"
+
+msgid "No new annotations found"
+msgstr "Geen nieuwe aantekeningen gevonden"
+
+msgid "%1 annotations pulled"
+msgstr "%1 aantekeningen opgehaald"
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "Login"
+msgstr "Aanmelden"
+
+msgid "Please enter both email and password"
+msgstr "Voer e-mail en wachtwoord in"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Configureer eerst Supabase-URL en API-sleutel"
+
+msgid "Logging in..."
+msgstr "Aanmelden…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Aangemeld bij Readest"
+
+msgid "Login failed: %1"
+msgstr "Aanmelden mislukt: %1"
+
+msgid "Logged out from Readest"
+msgstr "Afgemeld bij Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Huidig boek kan niet worden geïdentificeerd"
+
+msgid "Progress has been synchronized."
+msgstr "Voortgang is gesynchroniseerd."
+
+msgid "Pushing reading progress..."
+msgstr "Leesvoortgang wordt verzonden…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Leesvoortgang succesvol verzonden"
+
+msgid "Failed to push reading progress"
+msgstr "Leesvoortgang verzenden mislukt"
+
+msgid "Pulling reading progress..."
+msgstr "Leesvoortgang wordt opgehaald…"
+
+msgid "Authentication failed, please login again"
+msgstr "Authenticatie mislukt, meld opnieuw aan"
+
+msgid "Failed to pull reading progress"
+msgstr "Leesvoortgang ophalen mislukt"
+
+msgid "Reading progress synchronized"
+msgstr "Leesvoortgang gesynchroniseerd"
+
+msgid "No saved reading progress found for this book"
+msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"

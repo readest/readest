@@ -1,0 +1,231 @@
+# Greek translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Greek\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Διατηρεί τις συσκευές KOReader και Readest συγχρονισμένες."
+
+msgid "Set auto progress sync"
+msgstr "Ορισμός αυτόματου συγχρονισμού προόδου"
+
+msgid "on"
+msgstr "ναι"
+
+msgid "off"
+msgstr "όχι"
+
+msgid "Toggle auto readest sync"
+msgstr "Εναλλαγή αυτόματου συγχρονισμού Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Αποστολή προόδου Readest από αυτή τη συσκευή"
+
+msgid "Pull readest progress from other devices"
+msgstr "Λήψη προόδου Readest από άλλες συσκευές"
+
+msgid "Push readest annotations from this device"
+msgstr "Αποστολή σχολίων Readest από αυτή τη συσκευή"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Λήψη σχολίων Readest από άλλες συσκευές"
+
+msgid "Log in Readest Account"
+msgstr "Σύνδεση στον λογαριασμό Readest"
+
+msgid "Log out as %1"
+msgstr "Αποσύνδεση ως %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Αυτόματος συγχρονισμός προόδου και σχολίων"
+
+msgid "Push reading progress now"
+msgstr "Αποστολή προόδου ανάγνωσης τώρα"
+
+msgid "Pull reading progress now"
+msgstr "Λήψη προόδου ανάγνωσης τώρα"
+
+msgid "Push annotations now"
+msgstr "Αποστολή σχολίων τώρα"
+
+msgid "Pull annotations now"
+msgstr "Λήψη σχολίων τώρα"
+
+msgid "Full sync all annotations"
+msgstr "Πλήρης συγχρονισμός όλων των σχολίων"
+
+msgid "Sync info"
+msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Check for update (v%1)"
+msgstr "Έλεγχος για ενημέρωση (v%1)"
+
+msgid "Check for update"
+msgstr "Έλεγχος για ενημέρωση"
+
+msgid "Please login first"
+msgstr "Συνδεθείτε πρώτα"
+
+msgid "Please configure Readest settings first"
+msgstr "Διαμορφώστε πρώτα τις ρυθμίσεις Readest"
+
+msgid "No book is open"
+msgstr "Δεν υπάρχει ανοιχτό βιβλίο"
+
+msgid "(none)"
+msgstr "(κανένα)"
+
+msgid "Never synced"
+msgstr "Δεν έχει συγχρονιστεί"
+
+msgid "Book Fingerprint"
+msgstr "Δακτυλικό αποτύπωμα βιβλίου"
+
+msgid "Title"
+msgstr "Τίτλος"
+
+msgid "Author"
+msgstr "Συγγραφέας"
+
+msgid "Identifiers"
+msgstr "Αναγνωριστικά"
+
+msgid "Last Synced"
+msgstr "Τελευταίος συγχρονισμός"
+
+msgid "Sync Info"
+msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Checking for update…"
+msgstr "Έλεγχος για ενημέρωση…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Ο έλεγχος ενημέρωσης απέτυχε. Δοκιμάστε ξανά αργότερα."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Διαθέσιμη νέα έκδοση: v%1 (τρέχουσα: v%2).\n\nΕνημέρωση τώρα;"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Διαθέσιμη νέα έκδοση: v%1.\n\nΕνημέρωση τώρα;"
+
+msgid "Update"
+msgstr "Ενημέρωση"
+
+msgid "You are up to date (v%1)."
+msgstr "Είστε ενημερωμένοι (v%1)."
+
+msgid "Downloading update…"
+msgstr "Λήψη ενημέρωσης…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Η λήψη της ενημέρωσης απέτυχε. Δοκιμάστε ξανά αργότερα."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Το πρόσθετο Readest ενημερώθηκε στην v%1.\n\nΕπανεκκινήστε το KOReader για να εφαρμοστεί η ενημέρωση."
+
+msgid "Restart now"
+msgstr "Επανεκκίνηση τώρα"
+
+msgid "Later"
+msgstr "Αργότερα"
+
+msgid "Failed to install update: %1"
+msgstr "Η εγκατάσταση της ενημέρωσης απέτυχε: %1"
+
+msgid "unknown error"
+msgstr "άγνωστο σφάλμα"
+
+msgid "No annotations to push"
+msgstr "Δεν υπάρχουν σχόλια προς αποστολή"
+
+msgid "Pushing annotations..."
+msgstr "Αποστολή σχολίων…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Αποστάλθηκαν %1 σχόλια"
+
+msgid "Failed to push annotations"
+msgstr "Η αποστολή των σχολίων απέτυχε"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Ο συγχρονισμός σχολίων δεν υποστηρίζεται για έγγραφα PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Πλήρης συγχρονισμός: λήψη όλων των σχολίων…"
+
+msgid "Pulling annotations..."
+msgstr "Λήψη σχολίων…"
+
+msgid "Failed to pull annotations"
+msgstr "Η λήψη των σχολίων απέτυχε"
+
+msgid "No new annotations found"
+msgstr "Δεν βρέθηκαν νέα σχόλια"
+
+msgid "%1 annotations pulled"
+msgstr "Ελήφθησαν %1 σχόλια"
+
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+msgid "Login"
+msgstr "Σύνδεση"
+
+msgid "Please enter both email and password"
+msgstr "Εισαγάγετε email και κωδικό πρόσβασης"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Διαμορφώστε πρώτα το URL Supabase και το κλειδί API"
+
+msgid "Logging in..."
+msgstr "Σύνδεση…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Συνδεθήκατε στο Readest"
+
+msgid "Login failed: %1"
+msgstr "Η σύνδεση απέτυχε: %1"
+
+msgid "Logged out from Readest"
+msgstr "Αποσυνδεθήκατε από το Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Αδυναμία αναγνώρισης του τρέχοντος βιβλίου"
+
+msgid "Progress has been synchronized."
+msgstr "Η πρόοδος συγχρονίστηκε."
+
+msgid "Pushing reading progress..."
+msgstr "Αποστολή προόδου ανάγνωσης…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Η πρόοδος ανάγνωσης αποστάλθηκε"
+
+msgid "Failed to push reading progress"
+msgstr "Η αποστολή της προόδου ανάγνωσης απέτυχε"
+
+msgid "Pulling reading progress..."
+msgstr "Λήψη προόδου ανάγνωσης…"
+
+msgid "Authentication failed, please login again"
+msgstr "Αποτυχία ταυτοποίησης, συνδεθείτε ξανά"
+
+msgid "Failed to pull reading progress"
+msgstr "Η λήψη της προόδου ανάγνωσης απέτυχε"
+
+msgid "Reading progress synchronized"
+msgstr "Η πρόοδος ανάγνωσης συγχρονίστηκε"
+
+msgid "No saved reading progress found for this book"
+msgstr "Δεν βρέθηκε αποθηκευμένη πρόοδος ανάγνωσης για αυτό το βιβλίο"

@@ -1240,8 +1240,6 @@
   "{{count}} failed_few": "{{count}} niso uspele",
   "{{count}} failed_other": "{{count}} jih ni uspelo",
   "(none)": "(brez)",
-  "Meta Hash": "Meta hash",
-  "Computed Hash": "Izračunani hash",
   "Identifiers": "Identifikatorji",
   "Read (Stream)": "Beri (pretok)",
   "Failed to start stream": "Pretoka ni bilo mogoče zagnati",
@@ -1375,5 +1373,6 @@
   "URL Template": "Predloga URL",
   "Use %WORD% where the looked-up word should appear.": "Uporabite %WORD% tam, kjer naj se pojavi iskana beseda.",
   "Open the search result in your browser:": "Odprite rezultat iskanja v brskalniku:",
-  "Open in {{name}}": "Odpri v {{name}}"
+  "Open in {{name}}": "Odpri v {{name}}",
+  "Book Fingerprint": "Prstni odtis knjige"
 }

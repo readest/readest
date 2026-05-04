@@ -1,0 +1,231 @@
+# Vietnamese translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Vietnamese\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Giữ các thiết bị KOReader và Readest của bạn đồng bộ."
+
+msgid "Set auto progress sync"
+msgstr "Đặt đồng bộ tiến trình tự động"
+
+msgid "on"
+msgstr "bật"
+
+msgid "off"
+msgstr "tắt"
+
+msgid "Toggle auto readest sync"
+msgstr "Chuyển đổi đồng bộ tự động Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Đẩy tiến trình Readest từ thiết bị này"
+
+msgid "Pull readest progress from other devices"
+msgstr "Lấy tiến trình Readest từ thiết bị khác"
+
+msgid "Push readest annotations from this device"
+msgstr "Đẩy ghi chú Readest từ thiết bị này"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Lấy ghi chú Readest từ thiết bị khác"
+
+msgid "Log in Readest Account"
+msgstr "Đăng nhập tài khoản Readest"
+
+msgid "Log out as %1"
+msgstr "Đăng xuất khỏi %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Tự động đồng bộ tiến trình và ghi chú"
+
+msgid "Push reading progress now"
+msgstr "Đẩy tiến trình đọc ngay"
+
+msgid "Pull reading progress now"
+msgstr "Lấy tiến trình đọc ngay"
+
+msgid "Push annotations now"
+msgstr "Đẩy ghi chú ngay"
+
+msgid "Pull annotations now"
+msgstr "Lấy ghi chú ngay"
+
+msgid "Full sync all annotations"
+msgstr "Đồng bộ đầy đủ tất cả ghi chú"
+
+msgid "Sync info"
+msgstr "Thông tin đồng bộ"
+
+msgid "Check for update (v%1)"
+msgstr "Kiểm tra cập nhật (v%1)"
+
+msgid "Check for update"
+msgstr "Kiểm tra cập nhật"
+
+msgid "Please login first"
+msgstr "Vui lòng đăng nhập trước"
+
+msgid "Please configure Readest settings first"
+msgstr "Vui lòng cấu hình cài đặt Readest trước"
+
+msgid "No book is open"
+msgstr "Không có sách nào đang mở"
+
+msgid "(none)"
+msgstr "(không có)"
+
+msgid "Never synced"
+msgstr "Chưa đồng bộ"
+
+msgid "Book Fingerprint"
+msgstr "Dấu vân tay sách"
+
+msgid "Title"
+msgstr "Tiêu đề"
+
+msgid "Author"
+msgstr "Tác giả"
+
+msgid "Identifiers"
+msgstr "Định Danh"
+
+msgid "Last Synced"
+msgstr "Lần đồng bộ cuối"
+
+msgid "Sync Info"
+msgstr "Thông tin đồng bộ"
+
+msgid "Checking for update…"
+msgstr "Đang kiểm tra cập nhật…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Không thể kiểm tra cập nhật. Vui lòng thử lại sau."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Phiên bản mới đã có: v%1 (hiện tại: v%2).\n\nCập nhật ngay?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Phiên bản mới đã có: v%1.\n\nCập nhật ngay?"
+
+msgid "Update"
+msgstr "Cập nhật"
+
+msgid "You are up to date (v%1)."
+msgstr "Bạn đang dùng phiên bản mới nhất (v%1)."
+
+msgid "Downloading update…"
+msgstr "Đang tải bản cập nhật…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Không thể tải bản cập nhật. Vui lòng thử lại sau."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Plugin Readest đã cập nhật lên v%1.\n\nVui lòng khởi động lại KOReader để áp dụng bản cập nhật."
+
+msgid "Restart now"
+msgstr "Khởi động lại ngay"
+
+msgid "Later"
+msgstr "Để sau"
+
+msgid "Failed to install update: %1"
+msgstr "Không thể cài đặt bản cập nhật: %1"
+
+msgid "unknown error"
+msgstr "lỗi không xác định"
+
+msgid "No annotations to push"
+msgstr "Không có ghi chú để đẩy"
+
+msgid "Pushing annotations..."
+msgstr "Đang đẩy ghi chú…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Đã đẩy %1 ghi chú"
+
+msgid "Failed to push annotations"
+msgstr "Không thể đẩy ghi chú"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Đồng bộ ghi chú không hỗ trợ tài liệu PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Đồng bộ đầy đủ: đang lấy tất cả ghi chú…"
+
+msgid "Pulling annotations..."
+msgstr "Đang lấy ghi chú…"
+
+msgid "Failed to pull annotations"
+msgstr "Không thể lấy ghi chú"
+
+msgid "No new annotations found"
+msgstr "Không tìm thấy ghi chú mới"
+
+msgid "%1 annotations pulled"
+msgstr "Đã lấy %1 ghi chú"
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "Login"
+msgstr "Đăng nhập"
+
+msgid "Please enter both email and password"
+msgstr "Vui lòng nhập email và mật khẩu"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Vui lòng cấu hình URL Supabase và khóa API trước"
+
+msgid "Logging in..."
+msgstr "Đang đăng nhập…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Đã đăng nhập Readest"
+
+msgid "Login failed: %1"
+msgstr "Đăng nhập thất bại: %1"
+
+msgid "Logged out from Readest"
+msgstr "Đã đăng xuất khỏi Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Không thể nhận dạng sách hiện tại"
+
+msgid "Progress has been synchronized."
+msgstr "Tiến trình đã được đồng bộ."
+
+msgid "Pushing reading progress..."
+msgstr "Đang đẩy tiến trình đọc…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Đã đẩy tiến trình đọc"
+
+msgid "Failed to push reading progress"
+msgstr "Không thể đẩy tiến trình đọc"
+
+msgid "Pulling reading progress..."
+msgstr "Đang lấy tiến trình đọc…"
+
+msgid "Authentication failed, please login again"
+msgstr "Xác thực thất bại, vui lòng đăng nhập lại"
+
+msgid "Failed to pull reading progress"
+msgstr "Không thể lấy tiến trình đọc"
+
+msgid "Reading progress synchronized"
+msgstr "Tiến trình đọc đã đồng bộ"
+
+msgid "No saved reading progress found for this book"
+msgstr "Không tìm thấy tiến trình đọc đã lưu cho sách này"

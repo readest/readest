@@ -72,6 +72,9 @@ jobs:
         run: |
           pnpm install && pnpm setup-vendors
 
+      - name: install LuaJIT (for koplugin lint)
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
       - name: run format check
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)

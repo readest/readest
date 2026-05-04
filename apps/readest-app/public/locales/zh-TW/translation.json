@@ -1189,8 +1189,6 @@
   "Retry all": "全部重試",
   "{{count}} failed_other": "{{count}} 個失敗",
   "(none)": "（無）",
-  "Meta Hash": "中繼雜湊",
-  "Computed Hash": "計算所得雜湊",
   "Identifiers": "識別碼",
   "Read (Stream)": "閱讀（串流）",
   "Failed to start stream": "無法啟動串流",
@@ -1306,5 +1304,6 @@
   "URL Template": "URL 範本",
   "Use %WORD% where the looked-up word should appear.": "在查詢字詞應出現的位置使用 %WORD%。",
   "Open the search result in your browser:": "在瀏覽器中開啟搜尋結果：",
-  "Open in {{name}}": "在 {{name}} 中開啟"
+  "Open in {{name}}": "在 {{name}} 中開啟",
+  "Book Fingerprint": "書籍指紋"
 }

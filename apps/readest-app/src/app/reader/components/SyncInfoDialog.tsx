@@ -32,7 +32,6 @@ const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
   const _ = useTranslation();
   const info = metadata ? getMetadataHashInfo(metadata) : undefined;
   const displayHash = storedMetaHash || info?.metaHash || '';
-  const hashesMatch = !info || !storedMetaHash || storedMetaHash === info.metaHash;
   const placeholder = _('(none)');
   const lastSyncedLabel = lastSyncedAt ? formatLocaleDateTime(lastSyncedAt) : _('Never synced');
 
@@ -46,8 +45,7 @@ const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
     >
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-3 p-2 sm:p-4'>
-          <Row label={_('Meta Hash')} value={displayHash || placeholder} />
-          {!hashesMatch && info && <Row label={_('Computed Hash')} value={info.metaHash} />}
+          <Row label={_('Book Fingerprint')} value={displayHash || placeholder} />
           <Row label={_('Title')} value={info?.title || placeholder} />
           <Row
             label={_('Author')}

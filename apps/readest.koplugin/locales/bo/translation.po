@@ -1,0 +1,231 @@
+# Tibetan translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Tibetan\n"
+"Language: bo\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "ཁྱེད་ཀྱི་ KOReader དང་ Readest སྒྲིག་ཆས་མཉམ་འགྱུར་འཇོག"
+
+msgid "Set auto progress sync"
+msgstr "རང་འགུལ་འཕེལ་རིམ་མཉམ་འགྱུར་སྒྲིག"
+
+msgid "on"
+msgstr "བཀོལ།"
+
+msgid "off"
+msgstr "བཀག"
+
+msgid "Toggle auto readest sync"
+msgstr "Readest རང་འགུལ་མཉམ་འགྱུར་སྒྱུར་བ།"
+
+msgid "Push readest progress from this device"
+msgstr "སྒྲིག་ཆས་འདི་ནས་ Readest འཕེལ་རིམ་སྐུར་བ།"
+
+msgid "Pull readest progress from other devices"
+msgstr "སྒྲིག་ཆས་གཞན་ནས་ Readest འཕེལ་རིམ་ལེན་པ།"
+
+msgid "Push readest annotations from this device"
+msgstr "སྒྲིག་ཆས་འདི་ནས་ Readest མཆན་འགྲེལ་སྐུར་བ།"
+
+msgid "Pull readest annotations from other devices"
+msgstr "སྒྲིག་ཆས་གཞན་ནས་ Readest མཆན་འགྲེལ་ལེན་པ།"
+
+msgid "Log in Readest Account"
+msgstr "Readest རྩིས་ཐོར་འཛུལ་ཞུགས།"
+
+msgid "Log out as %1"
+msgstr "%1 ནས་ཕྱིར་ཐོན།"
+
+msgid "Auto sync progress and annotations"
+msgstr "འཕེལ་རིམ་དང་མཆན་འགྲེལ་རང་འགུལ་མཉམ་འགྱུར།"
+
+msgid "Push reading progress now"
+msgstr "ད་ལྟ་ཀློག་པའི་འཕེལ་རིམ་སྐུར་བ།"
+
+msgid "Pull reading progress now"
+msgstr "ད་ལྟ་ཀློག་པའི་འཕེལ་རིམ་ལེན་པ།"
+
+msgid "Push annotations now"
+msgstr "ད་ལྟ་མཆན་འགྲེལ་སྐུར་བ།"
+
+msgid "Pull annotations now"
+msgstr "ད་ལྟ་མཆན་འགྲེལ་ལེན་པ།"
+
+msgid "Full sync all annotations"
+msgstr "མཆན་འགྲེལ་ཡོངས་རྫོགས་ཆ་ཚང་མཉམ་འགྱུར།"
+
+msgid "Sync info"
+msgstr "མཉམ་འགྱུར་གསལ་བཤད།"
+
+msgid "Check for update (v%1)"
+msgstr "གསར་སྤེལ་ཞིབ་བཤེར (v%1)"
+
+msgid "Check for update"
+msgstr "གསར་སྤེལ་ཞིབ་བཤེར"
+
+msgid "Please login first"
+msgstr "དང་པོ་འཛུལ་ཞུགས་གནང་རོགས།"
+
+msgid "Please configure Readest settings first"
+msgstr "དང་པོ་ Readest སྒྲིག་འགོད་གནང་རོགས།"
+
+msgid "No book is open"
+msgstr "དཔེ་ཆ་ཁ་ཕྱེ་མེད།"
+
+msgid "(none)"
+msgstr "(མེད)"
+
+msgid "Never synced"
+msgstr "མཉམ་འགྱུར་མ་བྱས།"
+
+msgid "Book Fingerprint"
+msgstr "དཔེ་ཆའི་མཛུབ་རྗེས།"
+
+msgid "Title"
+msgstr "དཔེ་དེབ་ཀྱི་མིང་།"
+
+msgid "Author"
+msgstr "རྩོམ་པ་པོ།"
+
+msgid "Identifiers"
+msgstr "ངོས་འཛིན་བྱེད་མཁན"
+
+msgid "Last Synced"
+msgstr "མཐའ་མའི་མཉམ་འགྱུར།"
+
+msgid "Sync Info"
+msgstr "མཉམ་འགྱུར་གསལ་བཤད།"
+
+msgid "Checking for update…"
+msgstr "གསར་སྤེལ་ཞིབ་བཤེར་བཞིན་པ…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "གསར་སྤེལ་ཞིབ་བཤེར་མ་ཐུབ། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "པར་གཞི་གསར་པ་ཞིག་ཡོད: v%1 (མིག་སྔའི: v%2)།\n\nད་ལྟ་གསར་སྤེལ་གནང་གི་ཡིན་ནམ?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "པར་གཞི་གསར་པ་ཞིག་ཡོད: v%1།\n\nད་ལྟ་གསར་སྤེལ་གནང་གི་ཡིན་ནམ?"
+
+msgid "Update"
+msgstr "གསར་སྤེལ།"
+
+msgid "You are up to date (v%1)."
+msgstr "ཁྱེད་རང་གི་པར་གཞི་ནི་གསར་ཤོས་ཡིན (v%1)།"
+
+msgid "Downloading update…"
+msgstr "གསར་སྤེལ་ཕབ་ལེན་བཞིན་པ…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "གསར་སྤེལ་ཕབ་ལེན་མ་ཐུབ། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest plugin v%1 ལ་གསར་སྤེལ་བྱས་སོང་།\n\nགསར་སྤེལ་སྤྱོད་པར་ KOReader ཡང་བསྐྱར་འགོ་འཛུགས་གནང་རོགས།"
+
+msgid "Restart now"
+msgstr "ད་ལྟ་ཡང་བསྐྱར་འགོ་འཛུགས།"
+
+msgid "Later"
+msgstr "རྗེས་སུ།"
+
+msgid "Failed to install update: %1"
+msgstr "གསར་སྤེལ་སྒྲིག་འཛུགས་མ་ཐུབ: %1"
+
+msgid "unknown error"
+msgstr "ཤེས་མི་ཐུབ་པའི་ནོར་འཁྲུལ།"
+
+msgid "No annotations to push"
+msgstr "སྐུར་རྒྱུའི་མཆན་འགྲེལ་མེད།"
+
+msgid "Pushing annotations..."
+msgstr "མཆན་འགྲེལ་སྐུར་བཞིན་པ…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "མཆན་འགྲེལ་ %1 ལེགས་པར་སྐུར་སོང་།"
+
+msgid "Failed to push annotations"
+msgstr "མཆན་འགྲེལ་སྐུར་མ་ཐུབ།"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF ཡིག་ཆར་མཆན་འགྲེལ་མཉམ་འགྱུར་རྒྱབ་སྐྱོར་མེད།"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "ཆ་ཚང་མཉམ་འགྱུར: མཆན་འགྲེལ་ཡོངས་རྫོགས་ལེན་བཞིན་པ…"
+
+msgid "Pulling annotations..."
+msgstr "མཆན་འགྲེལ་ལེན་བཞིན་པ…"
+
+msgid "Failed to pull annotations"
+msgstr "མཆན་འགྲེལ་ལེན་མ་ཐུབ།"
+
+msgid "No new annotations found"
+msgstr "མཆན་འགྲེལ་གསར་པ་མ་རྙེད།"
+
+msgid "%1 annotations pulled"
+msgstr "མཆན་འགྲེལ་ %1 ལེན་སོང་།"
+
+msgid "Cancel"
+msgstr "འདོར་བ།"
+
+msgid "Login"
+msgstr "འཛུལ་ཞུགས།"
+
+msgid "Please enter both email and password"
+msgstr "ཡིག་འཕྲིན་དང་གསང་ཨང་གཉིས་ཀ་འབྲི་རོགས།"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "དང་པོ་ Supabase URL དང་ API ལྡེ་མིག་སྒྲིག་འགོད་གནང་རོགས།"
+
+msgid "Logging in..."
+msgstr "འཛུལ་ཞུགས་བཞིན་པ…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest ལ་ལེགས་པར་འཛུལ་ཞུགས་སོང་།"
+
+msgid "Login failed: %1"
+msgstr "འཛུལ་ཞུགས་མ་ཐུབ: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest ནས་ཕྱིར་ཐོན་སོང་།"
+
+msgid "Cannot identify the current book"
+msgstr "མིག་སྔའི་དཔེ་ཆ་ངོས་འཛིན་མི་ཐུབ།"
+
+msgid "Progress has been synchronized."
+msgstr "འཕེལ་རིམ་མཉམ་འགྱུར་སོང་།"
+
+msgid "Pushing reading progress..."
+msgstr "ཀློག་པའི་འཕེལ་རིམ་སྐུར་བཞིན་པ…"
+
+msgid "Reading progress pushed successfully"
+msgstr "ཀློག་པའི་འཕེལ་རིམ་ལེགས་པར་སྐུར་སོང་།"
+
+msgid "Failed to push reading progress"
+msgstr "ཀློག་པའི་འཕེལ་རིམ་སྐུར་མ་ཐུབ།"
+
+msgid "Pulling reading progress..."
+msgstr "ཀློག་པའི་འཕེལ་རིམ་ལེན་བཞིན་པ…"
+
+msgid "Authentication failed, please login again"
+msgstr "ཡིད་ཆེས་ཞིབ་བཤེར་མ་ཐུབ། ཡང་བསྐྱར་འཛུལ་ཞུགས་གནང་རོགས།"
+
+msgid "Failed to pull reading progress"
+msgstr "ཀློག་པའི་འཕེལ་རིམ་ལེན་མ་ཐུབ།"
+
+msgid "Reading progress synchronized"
+msgstr "ཀློག་པའི་འཕེལ་རིམ་མཉམ་འགྱུར་སོང་།"
+
+msgid "No saved reading progress found for this book"
+msgstr "དཔེ་ཆ་འདིའི་ཀློག་པའི་འཕེལ་རིམ་ཉར་ཚགས་མ་རྙེད།"

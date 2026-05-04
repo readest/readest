@@ -1223,8 +1223,6 @@
   "{{count}} failed_few": "{{count}} eșuate",
   "{{count}} failed_other": "{{count}} eșuate",
   "(none)": "(niciunul)",
-  "Meta Hash": "Meta hash",
-  "Computed Hash": "Hash calculat",
   "Identifiers": "Identificatori",
   "Read (Stream)": "Citește (Flux)",
   "Failed to start stream": "Eroare la pornirea fluxului",
@@ -1352,5 +1350,6 @@
   "URL Template": "Șablon URL",
   "Use %WORD% where the looked-up word should appear.": "Folosiți %WORD% acolo unde ar trebui să apară cuvântul căutat.",
   "Open the search result in your browser:": "Deschideți rezultatul căutării în browser:",
-  "Open in {{name}}": "Deschide în {{name}}"
+  "Open in {{name}}": "Deschide în {{name}}",
+  "Book Fingerprint": "Amprenta cărții"
 }

@@ -1,0 +1,231 @@
+# Indonesian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Indonesian\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Menjaga perangkat KOReader dan Readest Anda tetap sinkron."
+
+msgid "Set auto progress sync"
+msgstr "Atur sinkronisasi progres otomatis"
+
+msgid "on"
+msgstr "aktif"
+
+msgid "off"
+msgstr "nonaktif"
+
+msgid "Toggle auto readest sync"
+msgstr "Alihkan sinkronisasi otomatis Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Kirim progres Readest dari perangkat ini"
+
+msgid "Pull readest progress from other devices"
+msgstr "Ambil progres Readest dari perangkat lain"
+
+msgid "Push readest annotations from this device"
+msgstr "Kirim anotasi Readest dari perangkat ini"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Ambil anotasi Readest dari perangkat lain"
+
+msgid "Log in Readest Account"
+msgstr "Masuk ke akun Readest"
+
+msgid "Log out as %1"
+msgstr "Keluar sebagai %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Sinkronkan progres dan anotasi otomatis"
+
+msgid "Push reading progress now"
+msgstr "Kirim progres baca sekarang"
+
+msgid "Pull reading progress now"
+msgstr "Ambil progres baca sekarang"
+
+msgid "Push annotations now"
+msgstr "Kirim anotasi sekarang"
+
+msgid "Pull annotations now"
+msgstr "Ambil anotasi sekarang"
+
+msgid "Full sync all annotations"
+msgstr "Sinkronisasi penuh semua anotasi"
+
+msgid "Sync info"
+msgstr "Info sinkronisasi"
+
+msgid "Check for update (v%1)"
+msgstr "Periksa pembaruan (v%1)"
+
+msgid "Check for update"
+msgstr "Periksa pembaruan"
+
+msgid "Please login first"
+msgstr "Silakan masuk terlebih dahulu"
+
+msgid "Please configure Readest settings first"
+msgstr "Konfigurasikan pengaturan Readest terlebih dahulu"
+
+msgid "No book is open"
+msgstr "Tidak ada buku terbuka"
+
+msgid "(none)"
+msgstr "(tidak ada)"
+
+msgid "Never synced"
+msgstr "Belum pernah disinkronkan"
+
+msgid "Book Fingerprint"
+msgstr "Sidik jari buku"
+
+msgid "Title"
+msgstr "Judul"
+
+msgid "Author"
+msgstr "Penulis"
+
+msgid "Identifiers"
+msgstr "Pengenal"
+
+msgid "Last Synced"
+msgstr "Sinkronisasi terakhir"
+
+msgid "Sync Info"
+msgstr "Info sinkronisasi"
+
+msgid "Checking for update…"
+msgstr "Memeriksa pembaruan…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Gagal memeriksa pembaruan. Coba lagi nanti."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Versi baru tersedia: v%1 (saat ini: v%2).\n\nPerbarui sekarang?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Versi baru tersedia: v%1.\n\nPerbarui sekarang?"
+
+msgid "Update"
+msgstr "Perbarui"
+
+msgid "You are up to date (v%1)."
+msgstr "Anda menggunakan versi terbaru (v%1)."
+
+msgid "Downloading update…"
+msgstr "Mengunduh pembaruan…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Gagal mengunduh pembaruan. Coba lagi nanti."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Plugin Readest diperbarui ke v%1.\n\nMulai ulang KOReader untuk menerapkan pembaruan."
+
+msgid "Restart now"
+msgstr "Mulai ulang sekarang"
+
+msgid "Later"
+msgstr "Nanti"
+
+msgid "Failed to install update: %1"
+msgstr "Gagal memasang pembaruan: %1"
+
+msgid "unknown error"
+msgstr "kesalahan tidak diketahui"
+
+msgid "No annotations to push"
+msgstr "Tidak ada anotasi untuk dikirim"
+
+msgid "Pushing annotations..."
+msgstr "Mengirim anotasi…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 anotasi berhasil dikirim"
+
+msgid "Failed to push annotations"
+msgstr "Gagal mengirim anotasi"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Sinkronisasi anotasi tidak didukung untuk dokumen PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Sinkronisasi penuh: mengambil semua anotasi…"
+
+msgid "Pulling annotations..."
+msgstr "Mengambil anotasi…"
+
+msgid "Failed to pull annotations"
+msgstr "Gagal mengambil anotasi"
+
+msgid "No new annotations found"
+msgstr "Tidak ditemukan anotasi baru"
+
+msgid "%1 annotations pulled"
+msgstr "%1 anotasi diambil"
+
+msgid "Cancel"
+msgstr "Batal"
+
+msgid "Login"
+msgstr "Masuk"
+
+msgid "Please enter both email and password"
+msgstr "Masukkan email dan kata sandi"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Konfigurasikan URL Supabase dan kunci API terlebih dahulu"
+
+msgid "Logging in..."
+msgstr "Sedang masuk…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Berhasil masuk ke Readest"
+
+msgid "Login failed: %1"
+msgstr "Gagal masuk: %1"
+
+msgid "Logged out from Readest"
+msgstr "Keluar dari Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Tidak dapat mengidentifikasi buku saat ini"
+
+msgid "Progress has been synchronized."
+msgstr "Progres telah disinkronkan."
+
+msgid "Pushing reading progress..."
+msgstr "Mengirim progres baca…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Progres baca berhasil dikirim"
+
+msgid "Failed to push reading progress"
+msgstr "Gagal mengirim progres baca"
+
+msgid "Pulling reading progress..."
+msgstr "Mengambil progres baca…"
+
+msgid "Authentication failed, please login again"
+msgstr "Autentikasi gagal, silakan masuk lagi"
+
+msgid "Failed to pull reading progress"
+msgstr "Gagal mengambil progres baca"
+
+msgid "Reading progress synchronized"
+msgstr "Progres baca disinkronkan"
+
+msgid "No saved reading progress found for this book"
+msgstr "Tidak ada progres baca tersimpan untuk buku ini"

@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} mislukt",
   "{{count}} failed_other": "{{count}} mislukt",
   "(none)": "(geen)",
-  "Meta Hash": "Meta-hash",
-  "Computed Hash": "Berekende hash",
   "Identifiers": "Identificatoren",
   "Read (Stream)": "Lezen (Stream)",
   "Failed to start stream": "Kan stream niet starten",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL-sjabloon",
   "Use %WORD% where the looked-up word should appear.": "Gebruik %WORD% op de plek waar het opgezochte woord moet verschijnen.",
   "Open the search result in your browser:": "Open het zoekresultaat in je browser:",
-  "Open in {{name}}": "Openen in {{name}}"
+  "Open in {{name}}": "Openen in {{name}}",
+  "Book Fingerprint": "Vingerafdruk van boek"
 }

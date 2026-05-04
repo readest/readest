@@ -1,0 +1,231 @@
+# Ukrainian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Ukrainian\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Підтримує синхронізацію пристроїв KOReader і Readest."
+
+msgid "Set auto progress sync"
+msgstr "Налаштувати автосинхронізацію прогресу"
+
+msgid "on"
+msgstr "увімк."
+
+msgid "off"
+msgstr "вимк."
+
+msgid "Toggle auto readest sync"
+msgstr "Перемкнути автосинхронізацію Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Надіслати прогрес Readest з цього пристрою"
+
+msgid "Pull readest progress from other devices"
+msgstr "Отримати прогрес Readest з інших пристроїв"
+
+msgid "Push readest annotations from this device"
+msgstr "Надіслати нотатки Readest з цього пристрою"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Отримати нотатки Readest з інших пристроїв"
+
+msgid "Log in Readest Account"
+msgstr "Увійти до облікового запису Readest"
+
+msgid "Log out as %1"
+msgstr "Вийти з %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Автоматично синхронізувати прогрес і нотатки"
+
+msgid "Push reading progress now"
+msgstr "Надіслати прогрес читання зараз"
+
+msgid "Pull reading progress now"
+msgstr "Отримати прогрес читання зараз"
+
+msgid "Push annotations now"
+msgstr "Надіслати нотатки зараз"
+
+msgid "Pull annotations now"
+msgstr "Отримати нотатки зараз"
+
+msgid "Full sync all annotations"
+msgstr "Повна синхронізація всіх нотаток"
+
+msgid "Sync info"
+msgstr "Відомості про синхронізацію"
+
+msgid "Check for update (v%1)"
+msgstr "Перевірити оновлення (v%1)"
+
+msgid "Check for update"
+msgstr "Перевірити оновлення"
+
+msgid "Please login first"
+msgstr "Спочатку увійдіть"
+
+msgid "Please configure Readest settings first"
+msgstr "Спочатку налаштуйте параметри Readest"
+
+msgid "No book is open"
+msgstr "Жодну книгу не відкрито"
+
+msgid "(none)"
+msgstr "(немає)"
+
+msgid "Never synced"
+msgstr "Ще не синхронізовано"
+
+msgid "Book Fingerprint"
+msgstr "Відбиток книги"
+
+msgid "Title"
+msgstr "Назва"
+
+msgid "Author"
+msgstr "Автор"
+
+msgid "Identifiers"
+msgstr "Ідентифікатори"
+
+msgid "Last Synced"
+msgstr "Остання синхронізація"
+
+msgid "Sync Info"
+msgstr "Відомості про синхронізацію"
+
+msgid "Checking for update…"
+msgstr "Перевірка оновлень…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Не вдалося перевірити оновлення. Спробуйте пізніше."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Доступна нова версія: v%1 (поточна: v%2).\n\nОновити зараз?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Доступна нова версія: v%1.\n\nОновити зараз?"
+
+msgid "Update"
+msgstr "Оновити"
+
+msgid "You are up to date (v%1)."
+msgstr "У вас актуальна версія (v%1)."
+
+msgid "Downloading update…"
+msgstr "Завантаження оновлення…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Не вдалося завантажити оновлення. Спробуйте пізніше."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Плагін Readest оновлено до v%1.\n\nПерезапустіть KOReader, щоб застосувати оновлення."
+
+msgid "Restart now"
+msgstr "Перезапустити зараз"
+
+msgid "Later"
+msgstr "Пізніше"
+
+msgid "Failed to install update: %1"
+msgstr "Не вдалося встановити оновлення: %1"
+
+msgid "unknown error"
+msgstr "невідома помилка"
+
+msgid "No annotations to push"
+msgstr "Немає нотаток для надсилання"
+
+msgid "Pushing annotations..."
+msgstr "Надсилання нотаток…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Надіслано нотаток: %1"
+
+msgid "Failed to push annotations"
+msgstr "Не вдалося надіслати нотатки"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Синхронізація нотаток не підтримується для PDF-документів"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Повна синхронізація: отримання всіх нотаток…"
+
+msgid "Pulling annotations..."
+msgstr "Отримання нотаток…"
+
+msgid "Failed to pull annotations"
+msgstr "Не вдалося отримати нотатки"
+
+msgid "No new annotations found"
+msgstr "Нових нотаток не знайдено"
+
+msgid "%1 annotations pulled"
+msgstr "Отримано нотаток: %1"
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Login"
+msgstr "Увійти"
+
+msgid "Please enter both email and password"
+msgstr "Введіть електронну пошту та пароль"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Спочатку налаштуйте URL Supabase і ключ API"
+
+msgid "Logging in..."
+msgstr "Вхід…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Ви увійшли до Readest"
+
+msgid "Login failed: %1"
+msgstr "Не вдалося увійти: %1"
+
+msgid "Logged out from Readest"
+msgstr "Вихід із Readest виконано"
+
+msgid "Cannot identify the current book"
+msgstr "Не вдалося визначити поточну книгу"
+
+msgid "Progress has been synchronized."
+msgstr "Прогрес синхронізовано."
+
+msgid "Pushing reading progress..."
+msgstr "Надсилання прогресу читання…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Прогрес читання надіслано"
+
+msgid "Failed to push reading progress"
+msgstr "Не вдалося надіслати прогрес читання"
+
+msgid "Pulling reading progress..."
+msgstr "Отримання прогресу читання…"
+
+msgid "Authentication failed, please login again"
+msgstr "Помилка автентифікації, увійдіть знову"
+
+msgid "Failed to pull reading progress"
+msgstr "Не вдалося отримати прогрес читання"
+
+msgid "Reading progress synchronized"
+msgstr "Прогрес читання синхронізовано"
+
+msgid "No saved reading progress found for this book"
+msgstr "Збережений прогрес читання для цієї книги не знайдено"

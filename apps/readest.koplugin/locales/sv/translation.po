@@ -1,0 +1,231 @@
+# Swedish translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Swedish\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Håller dina KOReader- och Readest-enheter synkroniserade."
+
+msgid "Set auto progress sync"
+msgstr "Ställ in automatisk synkronisering av läsförloppet"
+
+msgid "on"
+msgstr "på"
+
+msgid "off"
+msgstr "av"
+
+msgid "Toggle auto readest sync"
+msgstr "Växla automatisk Readest-synkronisering"
+
+msgid "Push readest progress from this device"
+msgstr "Skicka Readest-läsförlopp från den här enheten"
+
+msgid "Pull readest progress from other devices"
+msgstr "Hämta Readest-läsförlopp från andra enheter"
+
+msgid "Push readest annotations from this device"
+msgstr "Skicka Readest-anteckningar från den här enheten"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Hämta Readest-anteckningar från andra enheter"
+
+msgid "Log in Readest Account"
+msgstr "Logga in på Readest-konto"
+
+msgid "Log out as %1"
+msgstr "Logga ut från %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Synkronisera läsförlopp och anteckningar automatiskt"
+
+msgid "Push reading progress now"
+msgstr "Skicka läsförloppet nu"
+
+msgid "Pull reading progress now"
+msgstr "Hämta läsförloppet nu"
+
+msgid "Push annotations now"
+msgstr "Skicka anteckningar nu"
+
+msgid "Pull annotations now"
+msgstr "Hämta anteckningar nu"
+
+msgid "Full sync all annotations"
+msgstr "Synkronisera alla anteckningar fullständigt"
+
+msgid "Sync info"
+msgstr "Synkroniseringsinfo"
+
+msgid "Check for update (v%1)"
+msgstr "Sök efter uppdatering (v%1)"
+
+msgid "Check for update"
+msgstr "Sök efter uppdatering"
+
+msgid "Please login first"
+msgstr "Logga in först"
+
+msgid "Please configure Readest settings first"
+msgstr "Konfigurera Readest-inställningarna först"
+
+msgid "No book is open"
+msgstr "Ingen bok är öppen"
+
+msgid "(none)"
+msgstr "(ingen)"
+
+msgid "Never synced"
+msgstr "Aldrig synkroniserad"
+
+msgid "Book Fingerprint"
+msgstr "Bokens fingeravtryck"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Author"
+msgstr "Författare"
+
+msgid "Identifiers"
+msgstr "Identifierare"
+
+msgid "Last Synced"
+msgstr "Senast synkroniserad"
+
+msgid "Sync Info"
+msgstr "Synkroniseringsinfo"
+
+msgid "Checking for update…"
+msgstr "Söker efter uppdatering…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Det gick inte att söka efter uppdatering. Försök igen senare."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "En ny version är tillgänglig: v%1 (nuvarande: v%2).\n\nVill du uppdatera nu?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "En ny version är tillgänglig: v%1.\n\nVill du uppdatera nu?"
+
+msgid "Update"
+msgstr "Uppdatera"
+
+msgid "You are up to date (v%1)."
+msgstr "Du är uppdaterad (v%1)."
+
+msgid "Downloading update…"
+msgstr "Hämtar uppdatering…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Det gick inte att hämta uppdateringen. Försök igen senare."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest-tillägget uppdaterat till v%1.\n\nStarta om KOReader för att tillämpa uppdateringen."
+
+msgid "Restart now"
+msgstr "Starta om nu"
+
+msgid "Later"
+msgstr "Senare"
+
+msgid "Failed to install update: %1"
+msgstr "Det gick inte att installera uppdateringen: %1"
+
+msgid "unknown error"
+msgstr "okänt fel"
+
+msgid "No annotations to push"
+msgstr "Inga anteckningar att skicka"
+
+msgid "Pushing annotations..."
+msgstr "Skickar anteckningar…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 anteckningar skickade"
+
+msgid "Failed to push annotations"
+msgstr "Det gick inte att skicka anteckningarna"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Anteckningssynkronisering stöds inte för PDF-dokument"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Fullständig synkronisering: hämtar alla anteckningar…"
+
+msgid "Pulling annotations..."
+msgstr "Hämtar anteckningar…"
+
+msgid "Failed to pull annotations"
+msgstr "Det gick inte att hämta anteckningarna"
+
+msgid "No new annotations found"
+msgstr "Inga nya anteckningar hittades"
+
+msgid "%1 annotations pulled"
+msgstr "%1 anteckningar hämtade"
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Login"
+msgstr "Logga in"
+
+msgid "Please enter both email and password"
+msgstr "Ange både e-post och lösenord"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Konfigurera Supabase-URL och API-nyckel först"
+
+msgid "Logging in..."
+msgstr "Loggar in…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Inloggad på Readest"
+
+msgid "Login failed: %1"
+msgstr "Inloggning misslyckades: %1"
+
+msgid "Logged out from Readest"
+msgstr "Utloggad från Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Det går inte att identifiera den aktuella boken"
+
+msgid "Progress has been synchronized."
+msgstr "Läsförloppet har synkroniserats."
+
+msgid "Pushing reading progress..."
+msgstr "Skickar läsförloppet…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Läsförloppet skickades"
+
+msgid "Failed to push reading progress"
+msgstr "Det gick inte att skicka läsförloppet"
+
+msgid "Pulling reading progress..."
+msgstr "Hämtar läsförloppet…"
+
+msgid "Authentication failed, please login again"
+msgstr "Autentisering misslyckades, logga in igen"
+
+msgid "Failed to pull reading progress"
+msgstr "Det gick inte att hämta läsförloppet"
+
+msgid "Reading progress synchronized"
+msgstr "Läsförloppet synkroniserat"
+
+msgid "No saved reading progress found for this book"
+msgstr "Inget sparat läsförlopp hittades för boken"

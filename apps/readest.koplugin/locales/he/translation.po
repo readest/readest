@@ -1,0 +1,231 @@
+# Hebrew translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Hebrew\n"
+"Language: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "שומר על סנכרון בין מכשירי KOReader ו-Readest שלך."
+
+msgid "Set auto progress sync"
+msgstr "הגדר סנכרון התקדמות אוטומטי"
+
+msgid "on"
+msgstr "פועל"
+
+msgid "off"
+msgstr "כבוי"
+
+msgid "Toggle auto readest sync"
+msgstr "החלף סנכרון Readest אוטומטי"
+
+msgid "Push readest progress from this device"
+msgstr "שלח התקדמות Readest ממכשיר זה"
+
+msgid "Pull readest progress from other devices"
+msgstr "משוך התקדמות Readest ממכשירים אחרים"
+
+msgid "Push readest annotations from this device"
+msgstr "שלח הערות Readest ממכשיר זה"
+
+msgid "Pull readest annotations from other devices"
+msgstr "משוך הערות Readest ממכשירים אחרים"
+
+msgid "Log in Readest Account"
+msgstr "התחבר לחשבון Readest"
+
+msgid "Log out as %1"
+msgstr "התנתק מ-%1"
+
+msgid "Auto sync progress and annotations"
+msgstr "סנכרן התקדמות והערות אוטומטית"
+
+msgid "Push reading progress now"
+msgstr "שלח התקדמות קריאה כעת"
+
+msgid "Pull reading progress now"
+msgstr "משוך התקדמות קריאה כעת"
+
+msgid "Push annotations now"
+msgstr "שלח הערות כעת"
+
+msgid "Pull annotations now"
+msgstr "משוך הערות כעת"
+
+msgid "Full sync all annotations"
+msgstr "סנכרון מלא של כל ההערות"
+
+msgid "Sync info"
+msgstr "מידע סנכרון"
+
+msgid "Check for update (v%1)"
+msgstr "בדוק עדכון (v%1)"
+
+msgid "Check for update"
+msgstr "בדוק עדכון"
+
+msgid "Please login first"
+msgstr "התחבר תחילה"
+
+msgid "Please configure Readest settings first"
+msgstr "הגדר תחילה את הגדרות Readest"
+
+msgid "No book is open"
+msgstr "לא פתוח ספר"
+
+msgid "(none)"
+msgstr "(אין)"
+
+msgid "Never synced"
+msgstr "מעולם לא סונכרן"
+
+msgid "Book Fingerprint"
+msgstr "טביעת אצבע של הספר"
+
+msgid "Title"
+msgstr "כותרת"
+
+msgid "Author"
+msgstr "מחבר"
+
+msgid "Identifiers"
+msgstr "מזהים"
+
+msgid "Last Synced"
+msgstr "סנכרון אחרון"
+
+msgid "Sync Info"
+msgstr "מידע סנכרון"
+
+msgid "Checking for update…"
+msgstr "בודק עדכון…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "בדיקת העדכון נכשלה. נסה שוב מאוחר יותר."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "גרסה חדשה זמינה: v%1 (נוכחית: v%2).\n\nלעדכן כעת?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "גרסה חדשה זמינה: v%1.\n\nלעדכן כעת?"
+
+msgid "Update"
+msgstr "עדכן"
+
+msgid "You are up to date (v%1)."
+msgstr "אתה מעודכן (v%1)."
+
+msgid "Downloading update…"
+msgstr "מוריד עדכון…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "הורדת העדכון נכשלה. נסה שוב מאוחר יותר."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "תוסף Readest עודכן ל-v%1.\n\nהפעל מחדש את KOReader כדי להחיל את העדכון."
+
+msgid "Restart now"
+msgstr "הפעל מחדש כעת"
+
+msgid "Later"
+msgstr "מאוחר יותר"
+
+msgid "Failed to install update: %1"
+msgstr "התקנת העדכון נכשלה: %1"
+
+msgid "unknown error"
+msgstr "שגיאה לא ידועה"
+
+msgid "No annotations to push"
+msgstr "אין הערות לשליחה"
+
+msgid "Pushing annotations..."
+msgstr "שולח הערות…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 הערות נשלחו בהצלחה"
+
+msgid "Failed to push annotations"
+msgstr "שליחת ההערות נכשלה"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "סנכרון הערות אינו נתמך עבור מסמכי PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "סנכרון מלא: מושך את כל ההערות…"
+
+msgid "Pulling annotations..."
+msgstr "מושך הערות…"
+
+msgid "Failed to pull annotations"
+msgstr "משיכת ההערות נכשלה"
+
+msgid "No new annotations found"
+msgstr "לא נמצאו הערות חדשות"
+
+msgid "%1 annotations pulled"
+msgstr "נמשכו %1 הערות"
+
+msgid "Cancel"
+msgstr "ביטול"
+
+msgid "Login"
+msgstr "התחבר"
+
+msgid "Please enter both email and password"
+msgstr "הזן דוא\"ל וסיסמה"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "הגדר תחילה את כתובת Supabase ומפתח API"
+
+msgid "Logging in..."
+msgstr "מתחבר…"
+
+msgid "Successfully logged in to Readest"
+msgstr "התחברת ל-Readest בהצלחה"
+
+msgid "Login failed: %1"
+msgstr "ההתחברות נכשלה: %1"
+
+msgid "Logged out from Readest"
+msgstr "התנתקת מ-Readest"
+
+msgid "Cannot identify the current book"
+msgstr "לא ניתן לזהות את הספר הנוכחי"
+
+msgid "Progress has been synchronized."
+msgstr "ההתקדמות סונכרנה."
+
+msgid "Pushing reading progress..."
+msgstr "שולח התקדמות קריאה…"
+
+msgid "Reading progress pushed successfully"
+msgstr "התקדמות הקריאה נשלחה בהצלחה"
+
+msgid "Failed to push reading progress"
+msgstr "שליחת התקדמות הקריאה נכשלה"
+
+msgid "Pulling reading progress..."
+msgstr "מושך התקדמות קריאה…"
+
+msgid "Authentication failed, please login again"
+msgstr "האימות נכשל, התחבר שוב"
+
+msgid "Failed to pull reading progress"
+msgstr "משיכת התקדמות הקריאה נכשלה"
+
+msgid "Reading progress synchronized"
+msgstr "התקדמות הקריאה סונכרנה"
+
+msgid "No saved reading progress found for this book"
+msgstr "לא נמצאה התקדמות קריאה שמורה לספר זה"

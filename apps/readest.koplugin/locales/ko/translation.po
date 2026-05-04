@@ -1,0 +1,231 @@
+# Korean translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Korean\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "KOReader와 Readest 기기를 동기화 상태로 유지합니다."
+
+msgid "Set auto progress sync"
+msgstr "진행 상황 자동 동기화 설정"
+
+msgid "on"
+msgstr "켬"
+
+msgid "off"
+msgstr "끔"
+
+msgid "Toggle auto readest sync"
+msgstr "Readest 자동 동기화 전환"
+
+msgid "Push readest progress from this device"
+msgstr "이 기기에서 Readest 진행 상황 보내기"
+
+msgid "Pull readest progress from other devices"
+msgstr "다른 기기에서 Readest 진행 상황 가져오기"
+
+msgid "Push readest annotations from this device"
+msgstr "이 기기에서 Readest 주석 보내기"
+
+msgid "Pull readest annotations from other devices"
+msgstr "다른 기기에서 Readest 주석 가져오기"
+
+msgid "Log in Readest Account"
+msgstr "Readest 계정에 로그인"
+
+msgid "Log out as %1"
+msgstr "%1 로그아웃"
+
+msgid "Auto sync progress and annotations"
+msgstr "진행 상황과 주석을 자동으로 동기화"
+
+msgid "Push reading progress now"
+msgstr "지금 읽기 진행 상황 보내기"
+
+msgid "Pull reading progress now"
+msgstr "지금 읽기 진행 상황 가져오기"
+
+msgid "Push annotations now"
+msgstr "지금 주석 보내기"
+
+msgid "Pull annotations now"
+msgstr "지금 주석 가져오기"
+
+msgid "Full sync all annotations"
+msgstr "모든 주석 전체 동기화"
+
+msgid "Sync info"
+msgstr "동기화 정보"
+
+msgid "Check for update (v%1)"
+msgstr "업데이트 확인 (v%1)"
+
+msgid "Check for update"
+msgstr "업데이트 확인"
+
+msgid "Please login first"
+msgstr "먼저 로그인하세요"
+
+msgid "Please configure Readest settings first"
+msgstr "먼저 Readest 설정을 구성하세요"
+
+msgid "No book is open"
+msgstr "열린 책이 없습니다"
+
+msgid "(none)"
+msgstr "(없음)"
+
+msgid "Never synced"
+msgstr "동기화한 적 없음"
+
+msgid "Book Fingerprint"
+msgstr "책 지문"
+
+msgid "Title"
+msgstr "제목"
+
+msgid "Author"
+msgstr "저자"
+
+msgid "Identifiers"
+msgstr "식별자"
+
+msgid "Last Synced"
+msgstr "마지막 동기화"
+
+msgid "Sync Info"
+msgstr "동기화 정보"
+
+msgid "Checking for update…"
+msgstr "업데이트 확인 중…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "업데이트 확인에 실패했습니다. 잠시 후 다시 시도하세요."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "새 버전이 있습니다: v%1 (현재: v%2).\n\n지금 업데이트하시겠습니까?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "새 버전이 있습니다: v%1.\n\n지금 업데이트하시겠습니까?"
+
+msgid "Update"
+msgstr "업데이트"
+
+msgid "You are up to date (v%1)."
+msgstr "최신 버전입니다 (v%1)."
+
+msgid "Downloading update…"
+msgstr "업데이트 다운로드 중…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "업데이트 다운로드에 실패했습니다. 잠시 후 다시 시도하세요."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest 플러그인이 v%1(으)로 업데이트되었습니다.\n\n업데이트를 적용하려면 KOReader를 다시 시작하세요."
+
+msgid "Restart now"
+msgstr "지금 다시 시작"
+
+msgid "Later"
+msgstr "나중에"
+
+msgid "Failed to install update: %1"
+msgstr "업데이트 설치에 실패했습니다: %1"
+
+msgid "unknown error"
+msgstr "알 수 없는 오류"
+
+msgid "No annotations to push"
+msgstr "보낼 주석이 없습니다"
+
+msgid "Pushing annotations..."
+msgstr "주석을 보내는 중…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1개 주석을 보냈습니다"
+
+msgid "Failed to push annotations"
+msgstr "주석 보내기에 실패했습니다"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF 문서는 주석 동기화를 지원하지 않습니다"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "전체 동기화: 모든 주석을 가져오는 중…"
+
+msgid "Pulling annotations..."
+msgstr "주석을 가져오는 중…"
+
+msgid "Failed to pull annotations"
+msgstr "주석 가져오기에 실패했습니다"
+
+msgid "No new annotations found"
+msgstr "새 주석을 찾을 수 없습니다"
+
+msgid "%1 annotations pulled"
+msgstr "%1개 주석을 가져왔습니다"
+
+msgid "Cancel"
+msgstr "취소"
+
+msgid "Login"
+msgstr "로그인"
+
+msgid "Please enter both email and password"
+msgstr "이메일과 비밀번호를 모두 입력하세요"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "먼저 Supabase URL과 API 키를 설정하세요"
+
+msgid "Logging in..."
+msgstr "로그인 중…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest에 로그인되었습니다"
+
+msgid "Login failed: %1"
+msgstr "로그인 실패: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest에서 로그아웃되었습니다"
+
+msgid "Cannot identify the current book"
+msgstr "현재 책을 식별할 수 없습니다"
+
+msgid "Progress has been synchronized."
+msgstr "진행 상황이 동기화되었습니다."
+
+msgid "Pushing reading progress..."
+msgstr "읽기 진행 상황을 보내는 중…"
+
+msgid "Reading progress pushed successfully"
+msgstr "읽기 진행 상황을 보냈습니다"
+
+msgid "Failed to push reading progress"
+msgstr "읽기 진행 상황 보내기에 실패했습니다"
+
+msgid "Pulling reading progress..."
+msgstr "읽기 진행 상황을 가져오는 중…"
+
+msgid "Authentication failed, please login again"
+msgstr "인증에 실패했습니다. 다시 로그인하세요"
+
+msgid "Failed to pull reading progress"
+msgstr "읽기 진행 상황 가져오기에 실패했습니다"
+
+msgid "Reading progress synchronized"
+msgstr "읽기 진행 상황이 동기화되었습니다"
+
+msgid "No saved reading progress found for this book"
+msgstr "이 책의 저장된 읽기 진행 상황을 찾을 수 없습니다"

@@ -6,7 +6,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("gettext")
+local _ = require("i18n")
 
 local SyncAuth = require("syncauth")
 local SyncConfig = require("syncconfig")
@@ -15,7 +15,7 @@ local SelfUpdate = require("selfupdate")
 
 local ReadestSync = WidgetContainer:new{
     name = "readest",
-    title = _("Readest Sync"),
+    title = _("Readest"),
     settings = nil,
 }
 
@@ -74,12 +74,12 @@ end
 function ReadestSync:addToMainMenu(menu_items)
     menu_items.readest_sync = {
         sorting_hint = "tools",
-        text = _("Readest Sync"),
+        text = _("Readest"),
         sub_item_table = {
             {
                 text_func = function()
                     return SyncAuth:needsLogin(self.settings) and _("Log in Readest Account")
-                        or _("Log out as ") .. (self.settings.user_name or "")
+                        or T(_("Log out as %1"), self.settings.user_name or "")
                 end,
                 callback_func = function()
                     if SyncAuth:needsLogin(self.settings) then
@@ -103,7 +103,7 @@ function ReadestSync:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Push book config now"),
+                text = _("Push reading progress now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.ui.document ~= nil
                 end,
@@ -112,7 +112,7 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Pull book config now"),
+                text = _("Pull reading progress now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.ui.document ~= nil
                 end,
@@ -150,12 +150,12 @@ function ReadestSync:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Metadata hash info"),
+                text = _("Sync info"),
                 enabled_func = function()
                     return self.ui.document ~= nil
                 end,
                 callback = function()
-                    self:showMetaHashInfo()
+                    self:showSyncInfo()
                 end,
                 separator = true,
             },
@@ -208,7 +208,7 @@ function ReadestSync:getBookIdentifiers()
     return book_hash, meta_hash
 end
 
-function ReadestSync:showMetaHashInfo()
+function ReadestSync:showSyncInfo()
     if not self.ui.document then
         UIManager:show(InfoMessage:new{
             text = _("No book is open"),
@@ -222,12 +222,17 @@ function ReadestSync:showMetaHashInfo()
     local stored_meta_hash = doc_readest_sync.meta_hash_v1
     local placeholder = _("(none)")
 
+    local last_synced_at = math.max(
+        doc_readest_sync.last_synced_at_config or 0,
+        doc_readest_sync.last_synced_at_notes or 0
+    )
+    local last_synced_label = last_synced_at > 0
+        and os.date("%Y-%m-%d %H:%M", last_synced_at)
+        or _("Never synced")
+
     local kv_pairs = {
-        { _("Meta Hash"), stored_meta_hash or info.meta_hash },
+        { _("Book Fingerprint"), stored_meta_hash or info.meta_hash },
     }
-    if stored_meta_hash and stored_meta_hash ~= info.meta_hash then
-        table.insert(kv_pairs, { _("Computed Hash"), info.meta_hash })
-    end
     table.insert(kv_pairs, { _("Title"), info.title ~= "" and info.title or placeholder })
     table.insert(kv_pairs, {
         _("Author"),
@@ -237,9 +242,10 @@ function ReadestSync:showMetaHashInfo()
         _("Identifiers"),
         #info.identifiers > 0 and table.concat(info.identifiers, ", ") or placeholder,
     })
+    table.insert(kv_pairs, { _("Last Synced"), last_synced_label })
 
     UIManager:show(KeyValuePage:new{
-        title = _("Metadata Hash"),
+        title = _("Sync Info"),
         kv_pairs = kv_pairs,
     })
 end

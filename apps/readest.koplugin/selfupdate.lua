@@ -4,7 +4,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local T = require("ffi/util").template
-local _ = require("gettext")
+local _ = require("i18n")
 
 local SelfUpdate = {}
 

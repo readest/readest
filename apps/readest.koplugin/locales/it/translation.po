@@ -1,0 +1,231 @@
+# Italian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Mantiene sincronizzati i tuoi dispositivi KOReader e Readest."
+
+msgid "Set auto progress sync"
+msgstr "Imposta sincronizzazione automatica del progresso"
+
+msgid "on"
+msgstr "attivo"
+
+msgid "off"
+msgstr "disattivo"
+
+msgid "Toggle auto readest sync"
+msgstr "Attiva/disattiva sincronizzazione automatica Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Invia progresso Readest da questo dispositivo"
+
+msgid "Pull readest progress from other devices"
+msgstr "Ricevi progresso Readest dagli altri dispositivi"
+
+msgid "Push readest annotations from this device"
+msgstr "Invia annotazioni Readest da questo dispositivo"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Ricevi annotazioni Readest dagli altri dispositivi"
+
+msgid "Log in Readest Account"
+msgstr "Accedi all'account Readest"
+
+msgid "Log out as %1"
+msgstr "Esci come %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Sincronizza automaticamente progresso e annotazioni"
+
+msgid "Push reading progress now"
+msgstr "Invia ora il progresso di lettura"
+
+msgid "Pull reading progress now"
+msgstr "Ricevi ora il progresso di lettura"
+
+msgid "Push annotations now"
+msgstr "Invia ora le annotazioni"
+
+msgid "Pull annotations now"
+msgstr "Ricevi ora le annotazioni"
+
+msgid "Full sync all annotations"
+msgstr "Sincronizzazione completa di tutte le annotazioni"
+
+msgid "Sync info"
+msgstr "Info sincronizzazione"
+
+msgid "Check for update (v%1)"
+msgstr "Controlla aggiornamenti (v%1)"
+
+msgid "Check for update"
+msgstr "Controlla aggiornamenti"
+
+msgid "Please login first"
+msgstr "Effettua prima l'accesso"
+
+msgid "Please configure Readest settings first"
+msgstr "Configura prima le impostazioni Readest"
+
+msgid "No book is open"
+msgstr "Nessun libro aperto"
+
+msgid "(none)"
+msgstr "(nessuno)"
+
+msgid "Never synced"
+msgstr "Mai sincronizzato"
+
+msgid "Book Fingerprint"
+msgstr "Impronta del libro"
+
+msgid "Title"
+msgstr "Titolo"
+
+msgid "Author"
+msgstr "Autore"
+
+msgid "Identifiers"
+msgstr "Identificatori"
+
+msgid "Last Synced"
+msgstr "Ultima sincronizzazione"
+
+msgid "Sync Info"
+msgstr "Info sincronizzazione"
+
+msgid "Checking for update…"
+msgstr "Controllo aggiornamenti…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Controllo aggiornamenti non riuscito. Riprova più tardi."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "È disponibile una nuova versione: v%1 (attuale: v%2).\n\nVuoi aggiornare ora?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "È disponibile una nuova versione: v%1.\n\nVuoi aggiornare ora?"
+
+msgid "Update"
+msgstr "Aggiorna"
+
+msgid "You are up to date (v%1)."
+msgstr "Sei aggiornato (v%1)."
+
+msgid "Downloading update…"
+msgstr "Download aggiornamento in corso…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Download aggiornamento non riuscito. Riprova più tardi."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Plugin Readest aggiornato a v%1.\n\nRiavvia KOReader per applicare l'aggiornamento."
+
+msgid "Restart now"
+msgstr "Riavvia ora"
+
+msgid "Later"
+msgstr "Più tardi"
+
+msgid "Failed to install update: %1"
+msgstr "Installazione aggiornamento non riuscita: %1"
+
+msgid "unknown error"
+msgstr "errore sconosciuto"
+
+msgid "No annotations to push"
+msgstr "Nessuna annotazione da inviare"
+
+msgid "Pushing annotations..."
+msgstr "Invio annotazioni in corso…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 annotazioni inviate con successo"
+
+msgid "Failed to push annotations"
+msgstr "Invio annotazioni non riuscito"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "La sincronizzazione delle annotazioni non è supportata per i documenti PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Sincronizzazione completa: recupero di tutte le annotazioni…"
+
+msgid "Pulling annotations..."
+msgstr "Recupero annotazioni in corso…"
+
+msgid "Failed to pull annotations"
+msgstr "Recupero annotazioni non riuscito"
+
+msgid "No new annotations found"
+msgstr "Nessuna nuova annotazione trovata"
+
+msgid "%1 annotations pulled"
+msgstr "%1 annotazioni ricevute"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Login"
+msgstr "Accedi"
+
+msgid "Please enter both email and password"
+msgstr "Inserisci email e password"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Configura prima l'URL Supabase e la chiave API"
+
+msgid "Logging in..."
+msgstr "Accesso in corso…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Accesso a Readest riuscito"
+
+msgid "Login failed: %1"
+msgstr "Accesso non riuscito: %1"
+
+msgid "Logged out from Readest"
+msgstr "Disconnesso da Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Impossibile identificare il libro attuale"
+
+msgid "Progress has been synchronized."
+msgstr "Il progresso è stato sincronizzato."
+
+msgid "Pushing reading progress..."
+msgstr "Invio progresso di lettura…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Progresso di lettura inviato con successo"
+
+msgid "Failed to push reading progress"
+msgstr "Invio progresso di lettura non riuscito"
+
+msgid "Pulling reading progress..."
+msgstr "Recupero progresso di lettura…"
+
+msgid "Authentication failed, please login again"
+msgstr "Autenticazione non riuscita, accedi di nuovo"
+
+msgid "Failed to pull reading progress"
+msgstr "Recupero progresso di lettura non riuscito"
+
+msgid "Reading progress synchronized"
+msgstr "Progresso di lettura sincronizzato"
+
+msgid "No saved reading progress found for this book"
+msgstr "Nessun progresso di lettura salvato per questo libro"

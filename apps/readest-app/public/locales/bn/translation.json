@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}}টি ব্যর্থ",
   "{{count}} failed_other": "{{count}}টি ব্যর্থ",
   "(none)": "(কোনোটি না)",
-  "Meta Hash": "মেটা হ্যাশ",
-  "Computed Hash": "গণিত হ্যাশ",
   "Identifiers": "শনাক্তকারী",
   "Read (Stream)": "পড়ুন (স্ট্রিম)",
   "Failed to start stream": "স্ট্রিম শুরু করতে ব্যর্থ",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL টেমপ্লেট",
   "Use %WORD% where the looked-up word should appear.": "যেখানে অনুসন্ধান করা শব্দ উপস্থিত হওয়া উচিত সেখানে %WORD% ব্যবহার করুন।",
   "Open the search result in your browser:": "আপনার ব্রাউজারে অনুসন্ধান ফলাফল খুলুন:",
-  "Open in {{name}}": "{{name}}-এ খুলুন"
+  "Open in {{name}}": "{{name}}-এ খুলুন",
+  "Book Fingerprint": "বইয়ের ফিঙ্গারপ্রিন্ট"
 }

@@ -1,0 +1,231 @@
+# Hindi translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Hindi\n"
+"Language: hi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "आपके KOReader और Readest डिवाइसों को सिंक रखता है।"
+
+msgid "Set auto progress sync"
+msgstr "स्वचालित प्रगति सिंक सेट करें"
+
+msgid "on"
+msgstr "चालू"
+
+msgid "off"
+msgstr "बंद"
+
+msgid "Toggle auto readest sync"
+msgstr "स्वचालित Readest सिंक बदलें"
+
+msgid "Push readest progress from this device"
+msgstr "इस डिवाइस से Readest प्रगति भेजें"
+
+msgid "Pull readest progress from other devices"
+msgstr "अन्य डिवाइसों से Readest प्रगति प्राप्त करें"
+
+msgid "Push readest annotations from this device"
+msgstr "इस डिवाइस से Readest एनोटेशन भेजें"
+
+msgid "Pull readest annotations from other devices"
+msgstr "अन्य डिवाइसों से Readest एनोटेशन प्राप्त करें"
+
+msgid "Log in Readest Account"
+msgstr "Readest खाते में लॉग इन करें"
+
+msgid "Log out as %1"
+msgstr "%1 से लॉग आउट करें"
+
+msgid "Auto sync progress and annotations"
+msgstr "प्रगति और एनोटेशन स्वचालित रूप से सिंक करें"
+
+msgid "Push reading progress now"
+msgstr "अभी पठन प्रगति भेजें"
+
+msgid "Pull reading progress now"
+msgstr "अभी पठन प्रगति प्राप्त करें"
+
+msgid "Push annotations now"
+msgstr "अभी एनोटेशन भेजें"
+
+msgid "Pull annotations now"
+msgstr "अभी एनोटेशन प्राप्त करें"
+
+msgid "Full sync all annotations"
+msgstr "सभी एनोटेशन का पूर्ण सिंक"
+
+msgid "Sync info"
+msgstr "सिंक जानकारी"
+
+msgid "Check for update (v%1)"
+msgstr "अपडेट जांचें (v%1)"
+
+msgid "Check for update"
+msgstr "अपडेट जांचें"
+
+msgid "Please login first"
+msgstr "कृपया पहले लॉग इन करें"
+
+msgid "Please configure Readest settings first"
+msgstr "कृपया पहले Readest सेटिंग्स कॉन्फ़िगर करें"
+
+msgid "No book is open"
+msgstr "कोई पुस्तक खुली नहीं है"
+
+msgid "(none)"
+msgstr "(कोई नहीं)"
+
+msgid "Never synced"
+msgstr "कभी सिंक नहीं हुआ"
+
+msgid "Book Fingerprint"
+msgstr "पुस्तक फिंगरप्रिंट"
+
+msgid "Title"
+msgstr "शीर्षक"
+
+msgid "Author"
+msgstr "लेखक"
+
+msgid "Identifiers"
+msgstr "पहचानकर्ता"
+
+msgid "Last Synced"
+msgstr "अंतिम सिंक"
+
+msgid "Sync Info"
+msgstr "सिंक जानकारी"
+
+msgid "Checking for update…"
+msgstr "अपडेट जांच रहा है…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "अपडेट जांचने में विफल। कृपया बाद में पुनः प्रयास करें।"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "नया संस्करण उपलब्ध है: v%1 (वर्तमान: v%2)।\n\nअभी अपडेट करें?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "नया संस्करण उपलब्ध है: v%1।\n\nअभी अपडेट करें?"
+
+msgid "Update"
+msgstr "अपडेट"
+
+msgid "You are up to date (v%1)."
+msgstr "आप अद्यतित हैं (v%1)।"
+
+msgid "Downloading update…"
+msgstr "अपडेट डाउनलोड हो रहा है…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "अपडेट डाउनलोड करने में विफल। कृपया बाद में पुनः प्रयास करें।"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest प्लगइन v%1 पर अपडेट किया गया।\n\nअपडेट लागू करने के लिए KOReader पुनः प्रारंभ करें।"
+
+msgid "Restart now"
+msgstr "अभी पुनः प्रारंभ करें"
+
+msgid "Later"
+msgstr "बाद में"
+
+msgid "Failed to install update: %1"
+msgstr "अपडेट इंस्टॉल करने में विफल: %1"
+
+msgid "unknown error"
+msgstr "अज्ञात त्रुटि"
+
+msgid "No annotations to push"
+msgstr "भेजने के लिए कोई एनोटेशन नहीं"
+
+msgid "Pushing annotations..."
+msgstr "एनोटेशन भेज रहा है…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 एनोटेशन सफलतापूर्वक भेजे गए"
+
+msgid "Failed to push annotations"
+msgstr "एनोटेशन भेजने में विफल"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF दस्तावेज़ों के लिए एनोटेशन सिंक समर्थित नहीं है"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "पूर्ण सिंक: सभी एनोटेशन प्राप्त कर रहा है…"
+
+msgid "Pulling annotations..."
+msgstr "एनोटेशन प्राप्त कर रहा है…"
+
+msgid "Failed to pull annotations"
+msgstr "एनोटेशन प्राप्त करने में विफल"
+
+msgid "No new annotations found"
+msgstr "कोई नया एनोटेशन नहीं मिला"
+
+msgid "%1 annotations pulled"
+msgstr "%1 एनोटेशन प्राप्त हुए"
+
+msgid "Cancel"
+msgstr "रद्द करें"
+
+msgid "Login"
+msgstr "लॉग इन"
+
+msgid "Please enter both email and password"
+msgstr "कृपया ईमेल और पासवर्ड दोनों दर्ज करें"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "कृपया पहले Supabase URL और API कुंजी कॉन्फ़िगर करें"
+
+msgid "Logging in..."
+msgstr "लॉग इन कर रहा है…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest में सफलतापूर्वक लॉग इन हुए"
+
+msgid "Login failed: %1"
+msgstr "लॉग इन विफल: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest से लॉग आउट हो गए"
+
+msgid "Cannot identify the current book"
+msgstr "वर्तमान पुस्तक पहचानने में असमर्थ"
+
+msgid "Progress has been synchronized."
+msgstr "प्रगति सिंक हो गई है।"
+
+msgid "Pushing reading progress..."
+msgstr "पठन प्रगति भेज रहा है…"
+
+msgid "Reading progress pushed successfully"
+msgstr "पठन प्रगति सफलतापूर्वक भेजी गई"
+
+msgid "Failed to push reading progress"
+msgstr "पठन प्रगति भेजने में विफल"
+
+msgid "Pulling reading progress..."
+msgstr "पठन प्रगति प्राप्त कर रहा है…"
+
+msgid "Authentication failed, please login again"
+msgstr "प्रमाणीकरण विफल, कृपया पुनः लॉग इन करें"
+
+msgid "Failed to pull reading progress"
+msgstr "पठन प्रगति प्राप्त करने में विफल"
+
+msgid "Reading progress synchronized"
+msgstr "पठन प्रगति सिंक हो गई"
+
+msgid "No saved reading progress found for this book"
+msgstr "इस पुस्तक के लिए सहेजी गई पठन प्रगति नहीं मिली"

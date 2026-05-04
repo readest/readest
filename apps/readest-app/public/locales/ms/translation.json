@@ -1189,8 +1189,6 @@
   "Retry all": "Cuba lagi semua",
   "{{count}} failed_other": "{{count}} gagal",
   "(none)": "(tiada)",
-  "Meta Hash": "Cincang Meta",
-  "Computed Hash": "Cincang Dikira",
   "Identifiers": "Pengenal",
   "Read (Stream)": "Baca (Strim)",
   "Failed to start stream": "Gagal memulakan strim",
@@ -1306,5 +1304,6 @@
   "URL Template": "Templat URL",
   "Use %WORD% where the looked-up word should appear.": "Gunakan %WORD% di mana perkataan yang dicari harus muncul.",
   "Open the search result in your browser:": "Buka hasil carian dalam pelayar anda:",
-  "Open in {{name}}": "Buka dalam {{name}}"
+  "Open in {{name}}": "Buka dalam {{name}}",
+  "Book Fingerprint": "Cap jari buku"
 }

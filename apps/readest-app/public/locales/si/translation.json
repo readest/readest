@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} අසාර්ථකයි",
   "{{count}} failed_other": "{{count}} අසාර්ථකයි",
   "(none)": "(කිසිවක් නැත)",
-  "Meta Hash": "මෙටා හෑෂ්",
-  "Computed Hash": "ගණනය කළ හෑෂ්",
   "Identifiers": "හඳුනාගැනීම්",
   "Read (Stream)": "කියවන්න (ස්ට්‍රීම්)",
   "Failed to start stream": "ස්ට්‍රීම් ආරම්භ කිරීම අසාර්ථකයි",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL අච්චුව",
   "Use %WORD% where the looked-up word should appear.": "සොයන වචනය දිස්විය යුතු තැන %WORD% භාවිතා කරන්න.",
   "Open the search result in your browser:": "ඔබේ බ්‍රවුසරයේ සෙවුම් ප්‍රතිඵලය විවෘත කරන්න:",
-  "Open in {{name}}": "{{name}} වල විවෘත කරන්න"
+  "Open in {{name}}": "{{name}} වල විවෘත කරන්න",
+  "Book Fingerprint": "පොතේ ඇඟිලි සලකුණ"
 }

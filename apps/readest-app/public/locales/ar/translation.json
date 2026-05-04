@@ -1274,8 +1274,6 @@
   "{{count}} failed_many": "{{count}} فشل",
   "{{count}} failed_other": "{{count}} فشل",
   "(none)": "(لا شيء)",
-  "Meta Hash": "تجزئة البيانات الوصفية",
-  "Computed Hash": "التجزئة المحسوبة",
   "Identifiers": "المعرفات",
   "Read (Stream)": "قراءة (بث)",
   "Failed to start stream": "فشل بدء البث",
@@ -1421,5 +1419,6 @@
   "URL Template": "قالب URL",
   "Use %WORD% where the looked-up word should appear.": "استخدم %WORD% حيث يجب أن تظهر الكلمة المبحوث عنها.",
   "Open the search result in your browser:": "افتح نتيجة البحث في متصفحك:",
-  "Open in {{name}}": "افتح في {{name}}"
+  "Open in {{name}}": "افتح في {{name}}",
+  "Book Fingerprint": "بصمة الكتاب"
 }

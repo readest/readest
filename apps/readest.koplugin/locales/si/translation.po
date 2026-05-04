@@ -1,0 +1,231 @@
+# Sinhala translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Sinhala\n"
+"Language: si\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "ඔබේ KOReader සහ Readest උපාංග සමමුහූර්තව තබා ගනී."
+
+msgid "Set auto progress sync"
+msgstr "ස්වයංක්‍රීය ප්‍රගති සමමුහූර්තකරණය සකසන්න"
+
+msgid "on"
+msgstr "ක්‍රියාත්මක"
+
+msgid "off"
+msgstr "අක්‍රිය"
+
+msgid "Toggle auto readest sync"
+msgstr "ස්වයංක්‍රීය Readest සමමුහූර්තකරණය මාරු කරන්න"
+
+msgid "Push readest progress from this device"
+msgstr "මෙම උපාංගයෙන් Readest ප්‍රගතිය යවන්න"
+
+msgid "Pull readest progress from other devices"
+msgstr "වෙනත් උපාංගවලින් Readest ප්‍රගතිය ලබාගන්න"
+
+msgid "Push readest annotations from this device"
+msgstr "මෙම උපාංගයෙන් Readest සටහන් යවන්න"
+
+msgid "Pull readest annotations from other devices"
+msgstr "වෙනත් උපාංගවලින් Readest සටහන් ලබාගන්න"
+
+msgid "Log in Readest Account"
+msgstr "Readest ගිණුමට පිවිසෙන්න"
+
+msgid "Log out as %1"
+msgstr "%1 ලෙස ඉවත් වන්න"
+
+msgid "Auto sync progress and annotations"
+msgstr "ප්‍රගතිය සහ සටහන් ස්වයංක්‍රීයව සමමුහූර්ත කරන්න"
+
+msgid "Push reading progress now"
+msgstr "කියවීමේ ප්‍රගතිය දැන් යවන්න"
+
+msgid "Pull reading progress now"
+msgstr "කියවීමේ ප්‍රගතිය දැන් ලබාගන්න"
+
+msgid "Push annotations now"
+msgstr "සටහන් දැන් යවන්න"
+
+msgid "Pull annotations now"
+msgstr "සටහන් දැන් ලබාගන්න"
+
+msgid "Full sync all annotations"
+msgstr "සියලු සටහන් සම්පූර්ණ සමමුහූර්තකරණය"
+
+msgid "Sync info"
+msgstr "සමමුහූර්ත තොරතුරු"
+
+msgid "Check for update (v%1)"
+msgstr "යාවත්කාලීන කිරීම පරීක්ෂා කරන්න (v%1)"
+
+msgid "Check for update"
+msgstr "යාවත්කාලීන කිරීම පරීක්ෂා කරන්න"
+
+msgid "Please login first"
+msgstr "කරුණාකර මුලින්ම පිවිසෙන්න"
+
+msgid "Please configure Readest settings first"
+msgstr "කරුණාකර මුලින්ම Readest සැකසුම් වින්‍යාස කරන්න"
+
+msgid "No book is open"
+msgstr "පොතක් විවෘතව නැත"
+
+msgid "(none)"
+msgstr "(කිසිවක් නැත)"
+
+msgid "Never synced"
+msgstr "කිසිදා සමමුහූර්ත වී නැත"
+
+msgid "Book Fingerprint"
+msgstr "පොතේ ඇඟිලි සලකුණ"
+
+msgid "Title"
+msgstr "නම"
+
+msgid "Author"
+msgstr "කතෘ"
+
+msgid "Identifiers"
+msgstr "හඳුනාගැනීම්"
+
+msgid "Last Synced"
+msgstr "අවසන් සමමුහූර්තකරණය"
+
+msgid "Sync Info"
+msgstr "සමමුහූර්ත තොරතුරු"
+
+msgid "Checking for update…"
+msgstr "යාවත්කාලීන පරීක්ෂා කරමින්…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "යාවත්කාලීන පරීක්ෂා කිරීම අසාර්ථකයි. කරුණාකර පසුව නැවත උත්සාහ කරන්න."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "නව අනුවාදයක් තිබේ: v%1 (වර්තමාන: v%2).\n\nදැන් යාවත්කාලීන කරන්නද?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "නව අනුවාදයක් තිබේ: v%1.\n\nදැන් යාවත්කාලීන කරන්නද?"
+
+msgid "Update"
+msgstr "යාවත්කාලීන"
+
+msgid "You are up to date (v%1)."
+msgstr "ඔබ යාවත්කාලීනයි (v%1)."
+
+msgid "Downloading update…"
+msgstr "යාවත්කාලීනය බාගත වෙමින්…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "යාවත්කාලීනය බාගත කිරීම අසාර්ථකයි. කරුණාකර පසුව නැවත උත්සාහ කරන්න."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest ප්ලගිනය v%1 දක්වා යාවත්කාලීන විය.\n\nයාවත්කාලීනය යෙදීමට KOReader නැවත ආරම්භ කරන්න."
+
+msgid "Restart now"
+msgstr "දැන් නැවත ආරම්භ කරන්න"
+
+msgid "Later"
+msgstr "පසුව"
+
+msgid "Failed to install update: %1"
+msgstr "යාවත්කාලීනය ස්ථාපනය කිරීම අසාර්ථකයි: %1"
+
+msgid "unknown error"
+msgstr "නොදන්නා දෝෂයකි"
+
+msgid "No annotations to push"
+msgstr "යැවීමට සටහන් නැත"
+
+msgid "Pushing annotations..."
+msgstr "සටහන් යවමින්…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 සටහන් සාර්ථකව යවන ලදී"
+
+msgid "Failed to push annotations"
+msgstr "සටහන් යැවීම අසාර්ථකයි"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF ලේඛන සඳහා සටහන් සමමුහූර්තකරණය සහාය නොදක්වයි"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "සම්පූර්ණ සමමුහූර්තකරණය: සියලු සටහන් ලබාගනිමින්…"
+
+msgid "Pulling annotations..."
+msgstr "සටහන් ලබාගනිමින්…"
+
+msgid "Failed to pull annotations"
+msgstr "සටහන් ලබාගැනීම අසාර්ථකයි"
+
+msgid "No new annotations found"
+msgstr "නව සටහන් හමු නොවුණි"
+
+msgid "%1 annotations pulled"
+msgstr "%1 සටහන් ලබා ගන්නා ලදී"
+
+msgid "Cancel"
+msgstr "අවලංගු කරන්න"
+
+msgid "Login"
+msgstr "පිවිසෙන්න"
+
+msgid "Please enter both email and password"
+msgstr "කරුණාකර ඊමේල් සහ මුරපදය දෙකම ඇතුළත් කරන්න"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "කරුණාකර මුලින්ම Supabase URL සහ API යතුර වින්‍යාස කරන්න"
+
+msgid "Logging in..."
+msgstr "පිවිසෙමින්…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest වෙත සාර්ථකව පිවිසුණි"
+
+msgid "Login failed: %1"
+msgstr "පිවිසීම අසාර්ථකයි: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest වෙතින් ඉවත් විය"
+
+msgid "Cannot identify the current book"
+msgstr "වර්තමාන පොත හඳුනාගත නොහැක"
+
+msgid "Progress has been synchronized."
+msgstr "ප්‍රගතිය සමමුහූර්ත විය."
+
+msgid "Pushing reading progress..."
+msgstr "කියවීමේ ප්‍රගතිය යවමින්…"
+
+msgid "Reading progress pushed successfully"
+msgstr "කියවීමේ ප්‍රගතිය සාර්ථකව යවන ලදී"
+
+msgid "Failed to push reading progress"
+msgstr "කියවීමේ ප්‍රගතිය යැවීම අසාර්ථකයි"
+
+msgid "Pulling reading progress..."
+msgstr "කියවීමේ ප්‍රගතිය ලබාගනිමින්…"
+
+msgid "Authentication failed, please login again"
+msgstr "සත්‍යාපනය අසාර්ථකයි, කරුණාකර නැවත පිවිසෙන්න"
+
+msgid "Failed to pull reading progress"
+msgstr "කියවීමේ ප්‍රගතිය ලබාගැනීම අසාර්ථකයි"
+
+msgid "Reading progress synchronized"
+msgstr "කියවීමේ ප්‍රගතිය සමමුහූර්ත විය"
+
+msgid "No saved reading progress found for this book"
+msgstr "මෙම පොත සඳහා සුරකින ලද කියවීමේ ප්‍රගතියක් හමු නොවුණි"

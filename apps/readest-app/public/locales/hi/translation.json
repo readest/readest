@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} असफल",
   "{{count}} failed_other": "{{count}} असफल",
   "(none)": "(कोई नहीं)",
-  "Meta Hash": "मेटा हैश",
-  "Computed Hash": "परिकलित हैश",
   "Identifiers": "पहचानकर्ता",
   "Read (Stream)": "पढ़ें (स्ट्रीम)",
   "Failed to start stream": "स्ट्रीम प्रारंभ करने में विफल",
@@ -1329,5 +1327,6 @@
   "URL Template": "URL टेम्पलेट",
   "Use %WORD% where the looked-up word should appear.": "%WORD% का उपयोग वहां करें जहां खोजा गया शब्द दिखाई देना चाहिए।",
   "Open the search result in your browser:": "अपने ब्राउज़र में खोज परिणाम खोलें:",
-  "Open in {{name}}": "{{name}} में खोलें"
+  "Open in {{name}}": "{{name}} में खोलें",
+  "Book Fingerprint": "पुस्तक फिंगरप्रिंट"
 }

@@ -1240,8 +1240,6 @@
   "{{count}} failed_many": "{{count}} nieudanych",
   "{{count}} failed_other": "{{count}} nieudanych",
   "(none)": "(brak)",
-  "Meta Hash": "Meta-skrót",
-  "Computed Hash": "Obliczony skrót",
   "Identifiers": "Identyfikatory",
   "Read (Stream)": "Czytaj (Strumień)",
   "Failed to start stream": "Nie udało się uruchomić strumienia",
@@ -1375,5 +1373,6 @@
   "URL Template": "Szablon URL",
   "Use %WORD% where the looked-up word should appear.": "Użyj %WORD% w miejscu, w którym ma się pojawić wyszukiwane słowo.",
   "Open the search result in your browser:": "Otwórz wynik wyszukiwania w przeglądarce:",
-  "Open in {{name}}": "Otwórz w {{name}}"
+  "Open in {{name}}": "Otwórz w {{name}}",
+  "Book Fingerprint": "Odcisk książki"
 }

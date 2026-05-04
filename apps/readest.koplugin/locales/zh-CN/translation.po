@@ -1,0 +1,231 @@
+# Chinese (Simplified) translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Chinese (Simplified)\n"
+"Language: zh-CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "让你的 KOReader 与 Readest 设备保持同步。"
+
+msgid "Set auto progress sync"
+msgstr "设置自动同步阅读进度"
+
+msgid "on"
+msgstr "开"
+
+msgid "off"
+msgstr "关"
+
+msgid "Toggle auto readest sync"
+msgstr "切换 Readest 自动同步"
+
+msgid "Push readest progress from this device"
+msgstr "从此设备推送 Readest 阅读进度"
+
+msgid "Pull readest progress from other devices"
+msgstr "从其他设备拉取 Readest 阅读进度"
+
+msgid "Push readest annotations from this device"
+msgstr "从此设备推送 Readest 标注"
+
+msgid "Pull readest annotations from other devices"
+msgstr "从其他设备拉取 Readest 标注"
+
+msgid "Log in Readest Account"
+msgstr "登录 Readest 账户"
+
+msgid "Log out as %1"
+msgstr "退出登录（%1）"
+
+msgid "Auto sync progress and annotations"
+msgstr "自动同步阅读进度和标注"
+
+msgid "Push reading progress now"
+msgstr "立即推送阅读进度"
+
+msgid "Pull reading progress now"
+msgstr "立即拉取阅读进度"
+
+msgid "Push annotations now"
+msgstr "立即推送标注"
+
+msgid "Pull annotations now"
+msgstr "立即拉取标注"
+
+msgid "Full sync all annotations"
+msgstr "完整同步所有标注"
+
+msgid "Sync info"
+msgstr "同步信息"
+
+msgid "Check for update (v%1)"
+msgstr "检查更新（v%1）"
+
+msgid "Check for update"
+msgstr "检查更新"
+
+msgid "Please login first"
+msgstr "请先登录"
+
+msgid "Please configure Readest settings first"
+msgstr "请先配置 Readest 设置"
+
+msgid "No book is open"
+msgstr "没有打开的书籍"
+
+msgid "(none)"
+msgstr "（无）"
+
+msgid "Never synced"
+msgstr "尚未同步"
+
+msgid "Book Fingerprint"
+msgstr "书籍指纹"
+
+msgid "Title"
+msgstr "标题"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Identifiers"
+msgstr "标识符"
+
+msgid "Last Synced"
+msgstr "上次同步"
+
+msgid "Sync Info"
+msgstr "同步信息"
+
+msgid "Checking for update…"
+msgstr "正在检查更新…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "检查更新失败，请稍后再试。"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "有新版本可用：v%1（当前：v%2）。\n\n是否立即更新？"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "有新版本可用：v%1。\n\n是否立即更新？"
+
+msgid "Update"
+msgstr "更新"
+
+msgid "You are up to date (v%1)."
+msgstr "当前已是最新版本（v%1）。"
+
+msgid "Downloading update…"
+msgstr "正在下载更新…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "下载更新失败，请稍后再试。"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest 插件已更新到 v%1。\n\n请重启 KOReader 以应用更新。"
+
+msgid "Restart now"
+msgstr "立即重启"
+
+msgid "Later"
+msgstr "稍后"
+
+msgid "Failed to install update: %1"
+msgstr "安装更新失败：%1"
+
+msgid "unknown error"
+msgstr "未知错误"
+
+msgid "No annotations to push"
+msgstr "没有可推送的标注"
+
+msgid "Pushing annotations..."
+msgstr "正在推送标注..."
+
+msgid "%1 annotations pushed successfully"
+msgstr "已成功推送 %1 条标注"
+
+msgid "Failed to push annotations"
+msgstr "推送标注失败"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "暂不支持同步 PDF 文档的标注"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "完整同步：正在拉取所有标注..."
+
+msgid "Pulling annotations..."
+msgstr "正在拉取标注..."
+
+msgid "Failed to pull annotations"
+msgstr "拉取标注失败"
+
+msgid "No new annotations found"
+msgstr "未发现新标注"
+
+msgid "%1 annotations pulled"
+msgstr "已拉取 %1 条标注"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Login"
+msgstr "登录"
+
+msgid "Please enter both email and password"
+msgstr "请输入邮箱和密码"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "请先配置 Supabase URL 和 API key"
+
+msgid "Logging in..."
+msgstr "正在登录..."
+
+msgid "Successfully logged in to Readest"
+msgstr "已成功登录 Readest"
+
+msgid "Login failed: %1"
+msgstr "登录失败：%1"
+
+msgid "Logged out from Readest"
+msgstr "已退出 Readest"
+
+msgid "Cannot identify the current book"
+msgstr "无法识别当前书籍"
+
+msgid "Progress has been synchronized."
+msgstr "阅读进度已同步。"
+
+msgid "Pushing reading progress..."
+msgstr "正在推送阅读进度..."
+
+msgid "Reading progress pushed successfully"
+msgstr "阅读进度推送成功"
+
+msgid "Failed to push reading progress"
+msgstr "推送阅读进度失败"
+
+msgid "Pulling reading progress..."
+msgstr "正在拉取阅读进度..."
+
+msgid "Authentication failed, please login again"
+msgstr "认证失败，请重新登录"
+
+msgid "Failed to pull reading progress"
+msgstr "拉取阅读进度失败"
+
+msgid "Reading progress synchronized"
+msgstr "阅读进度已同步"
+
+msgid "No saved reading progress found for this book"
+msgstr "未找到此书籍的已保存阅读进度"

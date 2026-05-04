@@ -1189,8 +1189,6 @@
   "Retry all": "すべて再試行",
   "{{count}} failed_other": "{{count}}件失敗",
   "(none)": "（なし）",
-  "Meta Hash": "メタハッシュ",
-  "Computed Hash": "計算されたハッシュ",
   "Identifiers": "識別子",
   "Read (Stream)": "読む（ストリーム）",
   "Failed to start stream": "ストリームの開始に失敗しました",
@@ -1306,5 +1304,6 @@
   "URL Template": "URL テンプレート",
   "Use %WORD% where the looked-up word should appear.": "調べる単語が表示される場所に %WORD% を使用してください。",
   "Open the search result in your browser:": "検索結果をブラウザで開く:",
-  "Open in {{name}}": "{{name}} で開く"
+  "Open in {{name}}": "{{name}} で開く",
+  "Book Fingerprint": "書籍の指紋"
 }

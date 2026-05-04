@@ -1223,8 +1223,6 @@
   "{{count}} failed_many": "{{count}} non riusciti",
   "{{count}} failed_other": "{{count}} non riusciti",
   "(none)": "(nessuno)",
-  "Meta Hash": "Meta Hash",
-  "Computed Hash": "Hash Calcolato",
   "Identifiers": "Identificatori",
   "Read (Stream)": "Leggi (Stream)",
   "Failed to start stream": "Avvio dello stream non riuscito",
@@ -1352,5 +1350,6 @@
   "URL Template": "Modello URL",
   "Use %WORD% where the looked-up word should appear.": "Usa %WORD% dove dovrebbe apparire la parola cercata.",
   "Open the search result in your browser:": "Apri il risultato della ricerca nel tuo browser:",
-  "Open in {{name}}": "Apri in {{name}}"
+  "Open in {{name}}": "Apri in {{name}}",
+  "Book Fingerprint": "Impronta del libro"
 }

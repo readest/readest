@@ -1189,8 +1189,6 @@
   "Retry all": "모두 재시도",
   "{{count}} failed_other": "{{count}}개 실패",
   "(none)": "(없음)",
-  "Meta Hash": "메타 해시",
-  "Computed Hash": "계산된 해시",
   "Identifiers": "식별자",
   "Read (Stream)": "읽기 (스트림)",
   "Failed to start stream": "스트림을 시작할 수 없습니다",
@@ -1306,5 +1304,6 @@
   "URL Template": "URL 템플릿",
   "Use %WORD% where the looked-up word should appear.": "검색어가 표시될 위치에 %WORD%를 사용하세요.",
   "Open the search result in your browser:": "브라우저에서 검색 결과 열기:",
-  "Open in {{name}}": "{{name}}에서 열기"
+  "Open in {{name}}": "{{name}}에서 열기",
+  "Book Fingerprint": "책 지문"
 }

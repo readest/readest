@@ -1206,8 +1206,6 @@
   "{{count}} failed_one": "{{count}} απέτυχε",
   "{{count}} failed_other": "{{count}} απέτυχαν",
   "(none)": "(κανένα)",
-  "Meta Hash": "Meta Hash",
-  "Computed Hash": "Υπολογισμένο Hash",
   "Identifiers": "Αναγνωριστικά",
   "Read (Stream)": "Ανάγνωση (Ροή)",
   "Failed to start stream": "Αποτυχία έναρξης ροής",
@@ -1329,5 +1327,6 @@
   "URL Template": "Πρότυπο URL",
   "Use %WORD% where the looked-up word should appear.": "Χρησιμοποιήστε %WORD% όπου πρέπει να εμφανίζεται η λέξη αναζήτησης.",
   "Open the search result in your browser:": "Ανοίξτε το αποτέλεσμα αναζήτησης στο πρόγραμμα περιήγησής σας:",
-  "Open in {{name}}": "Άνοιγμα σε {{name}}"
+  "Open in {{name}}": "Άνοιγμα σε {{name}}",
+  "Book Fingerprint": "Δακτυλικό αποτύπωμα βιβλίου"
 }

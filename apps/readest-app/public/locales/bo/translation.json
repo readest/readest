@@ -1189,8 +1189,6 @@
   "Retry all": "ཡོད་ཚད་ཡང་སྐྱར།",
   "{{count}} failed_other": "{{count}} ཕམ་ཁ།",
   "(none)": "(མེད)",
-  "Meta Hash": "དཔྱད་གཞིའི་ཧེཤི",
-  "Computed Hash": "རྩིས་པའི་ཧེཤི",
   "Identifiers": "ངོས་འཛིན་བྱེད་མཁན",
   "Read (Stream)": "ཀློག་པ། (རྒྱུན་སྤེལ།)",
   "Failed to start stream": "རྒྱུན་སྤེལ་འགོ་འཛུགས་མ་ཐུབ།",
@@ -1306,5 +1304,6 @@
   "URL Template": "URL ཕྱི་མོ",
   "Use %WORD% where the looked-up word should appear.": "འཚོལ་བཤེར་བྱས་པའི་ཚིག་འཆར་ས་གནས་སུ་ %WORD% བཀོལ་སྤྱོད་གནང་རོགས།",
   "Open the search result in your browser:": "ཁྱེད་ཀྱི་བརྡ་འཚོལ་མཁོ་ཆས་ལ་འཚོལ་བཤེར་གྲུབ་འབྲས་ཁ་ཕྱེ:",
-  "Open in {{name}}": "{{name}} ནང་ཁ་ཕྱེ།"
+  "Open in {{name}}": "{{name}} ནང་ཁ་ཕྱེ།",
+  "Book Fingerprint": "དཔེ་ཆའི་མཛུབ་རྗེས།"
 }

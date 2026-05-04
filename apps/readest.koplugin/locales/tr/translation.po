@@ -1,0 +1,231 @@
+# Turkish translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Turkish\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "KOReader ve Readest cihazlarınızı senkronize tutar."
+
+msgid "Set auto progress sync"
+msgstr "Otomatik ilerleme senkronizasyonunu ayarla"
+
+msgid "on"
+msgstr "açık"
+
+msgid "off"
+msgstr "kapalı"
+
+msgid "Toggle auto readest sync"
+msgstr "Otomatik Readest senkronizasyonunu değiştir"
+
+msgid "Push readest progress from this device"
+msgstr "Bu cihazdan Readest ilerlemesini gönder"
+
+msgid "Pull readest progress from other devices"
+msgstr "Diğer cihazlardan Readest ilerlemesini al"
+
+msgid "Push readest annotations from this device"
+msgstr "Bu cihazdan Readest açıklamalarını gönder"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Diğer cihazlardan Readest açıklamalarını al"
+
+msgid "Log in Readest Account"
+msgstr "Readest hesabına giriş yap"
+
+msgid "Log out as %1"
+msgstr "%1 olarak çıkış yap"
+
+msgid "Auto sync progress and annotations"
+msgstr "İlerlemeyi ve açıklamaları otomatik senkronize et"
+
+msgid "Push reading progress now"
+msgstr "Okuma ilerlemesini şimdi gönder"
+
+msgid "Pull reading progress now"
+msgstr "Okuma ilerlemesini şimdi al"
+
+msgid "Push annotations now"
+msgstr "Açıklamaları şimdi gönder"
+
+msgid "Pull annotations now"
+msgstr "Açıklamaları şimdi al"
+
+msgid "Full sync all annotations"
+msgstr "Tüm açıklamaları tam senkronize et"
+
+msgid "Sync info"
+msgstr "Senkronizasyon bilgisi"
+
+msgid "Check for update (v%1)"
+msgstr "Güncelleme kontrol et (v%1)"
+
+msgid "Check for update"
+msgstr "Güncelleme kontrol et"
+
+msgid "Please login first"
+msgstr "Önce giriş yapın"
+
+msgid "Please configure Readest settings first"
+msgstr "Önce Readest ayarlarını yapılandırın"
+
+msgid "No book is open"
+msgstr "Açık kitap yok"
+
+msgid "(none)"
+msgstr "(yok)"
+
+msgid "Never synced"
+msgstr "Hiç senkronize edilmedi"
+
+msgid "Book Fingerprint"
+msgstr "Kitap parmak izi"
+
+msgid "Title"
+msgstr "Başlık"
+
+msgid "Author"
+msgstr "Yazar"
+
+msgid "Identifiers"
+msgstr "Tanımlayıcılar"
+
+msgid "Last Synced"
+msgstr "Son senkronizasyon"
+
+msgid "Sync Info"
+msgstr "Senkronizasyon bilgisi"
+
+msgid "Checking for update…"
+msgstr "Güncelleme kontrol ediliyor…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Güncelleme kontrolü başarısız. Lütfen daha sonra tekrar deneyin."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Yeni bir sürüm mevcut: v%1 (geçerli: v%2).\n\nŞimdi güncellemek ister misiniz?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Yeni bir sürüm mevcut: v%1.\n\nŞimdi güncellemek ister misiniz?"
+
+msgid "Update"
+msgstr "Güncelle"
+
+msgid "You are up to date (v%1)."
+msgstr "Güncelsiniz (v%1)."
+
+msgid "Downloading update…"
+msgstr "Güncelleme indiriliyor…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Güncelleme indirilemedi. Lütfen daha sonra tekrar deneyin."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest eklentisi v%1 sürümüne güncellendi.\n\nGüncellemeyi uygulamak için KOReader'ı yeniden başlatın."
+
+msgid "Restart now"
+msgstr "Şimdi yeniden başlat"
+
+msgid "Later"
+msgstr "Daha sonra"
+
+msgid "Failed to install update: %1"
+msgstr "Güncelleme yüklenemedi: %1"
+
+msgid "unknown error"
+msgstr "bilinmeyen hata"
+
+msgid "No annotations to push"
+msgstr "Gönderilecek açıklama yok"
+
+msgid "Pushing annotations..."
+msgstr "Açıklamalar gönderiliyor…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 açıklama başarıyla gönderildi"
+
+msgid "Failed to push annotations"
+msgstr "Açıklamalar gönderilemedi"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF belgeleri için açıklama senkronizasyonu desteklenmiyor"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Tam senkronizasyon: tüm açıklamalar alınıyor…"
+
+msgid "Pulling annotations..."
+msgstr "Açıklamalar alınıyor…"
+
+msgid "Failed to pull annotations"
+msgstr "Açıklamalar alınamadı"
+
+msgid "No new annotations found"
+msgstr "Yeni açıklama bulunamadı"
+
+msgid "%1 annotations pulled"
+msgstr "%1 açıklama alındı"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Login"
+msgstr "Giriş"
+
+msgid "Please enter both email and password"
+msgstr "E-posta ve parolayı girin"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Önce Supabase URL ve API anahtarını yapılandırın"
+
+msgid "Logging in..."
+msgstr "Giriş yapılıyor…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest'e başarıyla giriş yapıldı"
+
+msgid "Login failed: %1"
+msgstr "Giriş başarısız: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest'ten çıkış yapıldı"
+
+msgid "Cannot identify the current book"
+msgstr "Geçerli kitap tanımlanamıyor"
+
+msgid "Progress has been synchronized."
+msgstr "İlerleme senkronize edildi."
+
+msgid "Pushing reading progress..."
+msgstr "Okuma ilerlemesi gönderiliyor…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Okuma ilerlemesi başarıyla gönderildi"
+
+msgid "Failed to push reading progress"
+msgstr "Okuma ilerlemesi gönderilemedi"
+
+msgid "Pulling reading progress..."
+msgstr "Okuma ilerlemesi alınıyor…"
+
+msgid "Authentication failed, please login again"
+msgstr "Kimlik doğrulama başarısız, tekrar giriş yapın"
+
+msgid "Failed to pull reading progress"
+msgstr "Okuma ilerlemesi alınamadı"
+
+msgid "Reading progress synchronized"
+msgstr "Okuma ilerlemesi senkronize edildi"
+
+msgid "No saved reading progress found for this book"
+msgstr "Bu kitap için kayıtlı okuma ilerlemesi bulunamadı"

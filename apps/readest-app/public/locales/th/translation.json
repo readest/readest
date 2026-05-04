@@ -1189,8 +1189,6 @@
   "Retry all": "ลองอีกครั้งทั้งหมด",
   "{{count}} failed_other": "{{count}} ล้มเหลว",
   "(none)": "(ไม่มี)",
-  "Meta Hash": "แฮชเมตา",
-  "Computed Hash": "แฮชที่คำนวณ",
   "Identifiers": "ตัวระบุ",
   "Read (Stream)": "อ่าน (สตรีม)",
   "Failed to start stream": "ไม่สามารถเริ่มสตรีมได้",
@@ -1306,5 +1304,6 @@
   "URL Template": "เทมเพลต URL",
   "Use %WORD% where the looked-up word should appear.": "ใช้ %WORD% ในตำแหน่งที่คำค้นหาควรปรากฏ",
   "Open the search result in your browser:": "เปิดผลลัพธ์การค้นหาในเบราว์เซอร์ของคุณ:",
-  "Open in {{name}}": "เปิดใน {{name}}"
+  "Open in {{name}}": "เปิดใน {{name}}",
+  "Book Fingerprint": "ลายนิ้วมือหนังสือ"
 }

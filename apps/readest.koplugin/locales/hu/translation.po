@@ -1,0 +1,231 @@
+# Hungarian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Hungarian\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Szinkronban tartja a KOReader és Readest eszközeidet."
+
+msgid "Set auto progress sync"
+msgstr "Automatikus haladás-szinkronizálás beállítása"
+
+msgid "on"
+msgstr "be"
+
+msgid "off"
+msgstr "ki"
+
+msgid "Toggle auto readest sync"
+msgstr "Automatikus Readest-szinkronizálás váltása"
+
+msgid "Push readest progress from this device"
+msgstr "Readest haladás küldése erről az eszközről"
+
+msgid "Pull readest progress from other devices"
+msgstr "Readest haladás lekérése más eszközökről"
+
+msgid "Push readest annotations from this device"
+msgstr "Readest jegyzetek küldése erről az eszközről"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Readest jegyzetek lekérése más eszközökről"
+
+msgid "Log in Readest Account"
+msgstr "Bejelentkezés Readest-fiókba"
+
+msgid "Log out as %1"
+msgstr "Kijelentkezés mint %1"
+
+msgid "Auto sync progress and annotations"
+msgstr "Haladás és jegyzetek automatikus szinkronizálása"
+
+msgid "Push reading progress now"
+msgstr "Olvasási haladás küldése most"
+
+msgid "Pull reading progress now"
+msgstr "Olvasási haladás lekérése most"
+
+msgid "Push annotations now"
+msgstr "Jegyzetek küldése most"
+
+msgid "Pull annotations now"
+msgstr "Jegyzetek lekérése most"
+
+msgid "Full sync all annotations"
+msgstr "Az összes jegyzet teljes szinkronizálása"
+
+msgid "Sync info"
+msgstr "Szinkronizálási adatok"
+
+msgid "Check for update (v%1)"
+msgstr "Frissítés keresése (v%1)"
+
+msgid "Check for update"
+msgstr "Frissítés keresése"
+
+msgid "Please login first"
+msgstr "Először jelentkezz be"
+
+msgid "Please configure Readest settings first"
+msgstr "Először állítsd be a Readest paramétereit"
+
+msgid "No book is open"
+msgstr "Nincs megnyitott könyv"
+
+msgid "(none)"
+msgstr "(nincs)"
+
+msgid "Never synced"
+msgstr "Még nincs szinkronizálva"
+
+msgid "Book Fingerprint"
+msgstr "Könyv ujjlenyomata"
+
+msgid "Title"
+msgstr "Cím"
+
+msgid "Author"
+msgstr "Szerző"
+
+msgid "Identifiers"
+msgstr "Azonosítók"
+
+msgid "Last Synced"
+msgstr "Utolsó szinkronizálás"
+
+msgid "Sync Info"
+msgstr "Szinkronizálási adatok"
+
+msgid "Checking for update…"
+msgstr "Frissítés keresése…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "A frissítés keresése sikertelen. Próbáld újra később."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Új verzió érhető el: v%1 (jelenlegi: v%2).\n\nFrissítesz most?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Új verzió érhető el: v%1.\n\nFrissítesz most?"
+
+msgid "Update"
+msgstr "Frissítés"
+
+msgid "You are up to date (v%1)."
+msgstr "Naprakész vagy (v%1)."
+
+msgid "Downloading update…"
+msgstr "Frissítés letöltése…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "A frissítés letöltése sikertelen. Próbáld újra később."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "A Readest bővítmény v%1 verzióra frissült.\n\nIndítsd újra a KOReadert a frissítés alkalmazásához."
+
+msgid "Restart now"
+msgstr "Újraindítás most"
+
+msgid "Later"
+msgstr "Később"
+
+msgid "Failed to install update: %1"
+msgstr "A frissítés telepítése sikertelen: %1"
+
+msgid "unknown error"
+msgstr "ismeretlen hiba"
+
+msgid "No annotations to push"
+msgstr "Nincs küldendő jegyzet"
+
+msgid "Pushing annotations..."
+msgstr "Jegyzetek küldése…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 jegyzet sikeresen elküldve"
+
+msgid "Failed to push annotations"
+msgstr "A jegyzetek küldése sikertelen"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "A jegyzetek szinkronizálása nem támogatott PDF-dokumentumoknál"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Teljes szinkronizálás: az összes jegyzet lekérése…"
+
+msgid "Pulling annotations..."
+msgstr "Jegyzetek lekérése…"
+
+msgid "Failed to pull annotations"
+msgstr "A jegyzetek lekérése sikertelen"
+
+msgid "No new annotations found"
+msgstr "Nem található új jegyzet"
+
+msgid "%1 annotations pulled"
+msgstr "%1 jegyzet lekérve"
+
+msgid "Cancel"
+msgstr "Mégse"
+
+msgid "Login"
+msgstr "Bejelentkezés"
+
+msgid "Please enter both email and password"
+msgstr "Add meg az e-mail-címet és a jelszót"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Először állítsd be a Supabase URL-t és az API-kulcsot"
+
+msgid "Logging in..."
+msgstr "Bejelentkezés…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Sikeres bejelentkezés a Readestbe"
+
+msgid "Login failed: %1"
+msgstr "Sikertelen bejelentkezés: %1"
+
+msgid "Logged out from Readest"
+msgstr "Kijelentkezve a Readestből"
+
+msgid "Cannot identify the current book"
+msgstr "Az aktuális könyv nem azonosítható"
+
+msgid "Progress has been synchronized."
+msgstr "A haladás szinkronizálva."
+
+msgid "Pushing reading progress..."
+msgstr "Olvasási haladás küldése…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Olvasási haladás sikeresen elküldve"
+
+msgid "Failed to push reading progress"
+msgstr "Az olvasási haladás küldése sikertelen"
+
+msgid "Pulling reading progress..."
+msgstr "Olvasási haladás lekérése…"
+
+msgid "Authentication failed, please login again"
+msgstr "Hitelesítés sikertelen, jelentkezz be újra"
+
+msgid "Failed to pull reading progress"
+msgstr "Az olvasási haladás lekérése sikertelen"
+
+msgid "Reading progress synchronized"
+msgstr "Olvasási haladás szinkronizálva"
+
+msgid "No saved reading progress found for this book"
+msgstr "Nem található mentett olvasási haladás ehhez a könyvhöz"
