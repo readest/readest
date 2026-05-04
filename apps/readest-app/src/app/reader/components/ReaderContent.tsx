@@ -27,6 +27,7 @@ import { BookDetailModal } from '@/components/metadata';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
+import { useAudiobookSyncGeneration } from '../hooks/useAudiobookSyncGeneration';
 import Spinner from '@/components/Spinner';
 import SideBar from './sidebar/SideBar';
 import Notebook from './notebook/Notebook';
@@ -46,6 +47,49 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
+  const { generateTranscriptFromAudiobook, generateSyncMapFromAttachedTranscript } =
+    useAudiobookSyncGeneration({
+      getView,
+      appService,
+      getConfig,
+      setConfig: (key, partial) => useBookDataStore.getState().setConfig(key, partial),
+    });
+
+  const handleGenerateSync = async (bookHash: string) => {
+    // Reader views are keyed as `${hash}-${uniqueId}`, but the modal only has
+    // `book.hash`. Resolve the full key so getView() finds the Foliate instance.
+    const viewKey = bookKeys.find((k) => k.split('-')[0] === bookHash) ?? bookHash;
+
+    if (viewKey !== bookHash) {
+      console.info('[ReaderContent] Resolved view key for sync generation', { bookHash, viewKey });
+    } else {
+      console.warn('[ReaderContent] No matching view key found for hash, generation may fail', {
+        bookHash,
+        availableKeys: bookKeys,
+      });
+    }
+
+    const config = getConfig(bookHash);
+    const audiobook = config?.audiobook;
+    if (!audiobook) return { matched: 0, total: 0, error: 'No audiobook attached' };
+
+    const result = audiobook.transcriptPath
+      ? await generateSyncMapFromAttachedTranscript(viewKey)
+      : await generateTranscriptFromAudiobook(viewKey);
+
+    // Persist to disk so sync map survives restart
+    if (!result.error && appService) {
+      const updatedConfig = getConfig(bookHash);
+      if (updatedConfig) {
+        const bookData = getBookData(bookHash);
+        if (bookData?.book) {
+          appService.saveBookConfig(bookData.book, updatedConfig, settings).catch(() => {});
+        }
+      }
+    }
+
+    return result;
+  };
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -239,6 +283,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           isOpen={!!showDetailsBook}
           book={showDetailsBook}
           onClose={() => setShowDetailsBook(null)}
+          onGenerateSync={handleGenerateSync}
         />
       )}
       <style jsx global>{`
