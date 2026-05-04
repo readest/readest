@@ -94,3 +94,140 @@ Available gstack skills:
 - `/document-release` — Post-ship documentation update
 
 If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.
+
+---
+
+## Citadel Multi-Agent Workflow
+
+### Agent Operating Modes
+
+Every Citadel agent must follow three sequential modes: **Plan**, **Build**, **Verify**.
+
+#### Plan Mode
+
+Before coding, every agent must produce:
+
+| Deliverable        | Description                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Task Understanding | What problem is being solved and why.                                                                                 |
+| Expected Files     | List of files that will be created or modified.                                                                       |
+| Collision Check    | Cross-reference against [AGENT_OWNERSHIP.md](../docs/AGENT_OWNERSHIP.md) — does this task touch another agent's area? |
+| Validation Plan    | Which tests/lint/manual checks will confirm success.                                                                  |
+| Stop Conditions    | What would cause the agent to stop and report instead of proceeding.                                                  |
+
+**Stop and report** (do not edit) if:
+
+- Task requires touching another active agent's ownership area without coordination
+- Expected file is not where the prompt says it is
+- Feature cannot be tested from the current branch
+- Unrelated lint/test failure blocks validation and cannot be trivially explained
+- Conflict resolution is uncertain
+
+#### Build Mode
+
+- Implement only after the plan is written and reviewed.
+- Keep changes focused — do not broaden scope.
+- Do not perform broad formatting across unrelated files.
+- Do not rename public APIs or shared types unless the task explicitly requires it.
+- Do not delete another agent's work to make conflicts disappear.
+
+#### Verify Mode
+
+Before reporting complete, agents must run all required validation.
+Reports must distinguish:
+
+| Status                             | Meaning                                                               |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| Verified in running app            | Observed behavior in the actual Tauri/Next.js application.            |
+| Expected but not manually verified | Automated checks pass, but visual/runtime behavior was not observed.  |
+| Blocked / unable to verify         | Cannot test due to environment, permissions, or missing dependencies. |
+
+Do not claim runtime or UI behavior works unless observed in the running app.
+
+---
+
+### Definition of Done
+
+An agent may only report **complete** if **all** of the following are true:
+
+1. The code compiles (`tsgo --noEmit` passes with zero errors).
+2. Lint passes without filtered output (`biome check .` passes with zero errors and zero warnings).
+3. Relevant tests pass (`vitest run` without grep, tail, findstr, or any output filters — see [No Filtered Validation](#no-filtered-validation)).
+4. The feature was manually verified in the running app when UI/runtime behavior is involved.
+5. The report includes **every** item below. No omissions allowed:
+   - exact files changed
+   - root cause (for fixes) or motivation (for features)
+   - implementation summary
+   - validation commands and results (raw, unfiltered)
+   - manual verification result (use only the exact phrases listed below)
+   - known limitations
+   - `git status --short`
+
+**Verification phrases.** Do not use phrases like "should work," "appears to work," "looks correct," or "builds without errors" as verification. Use only:
+
+- `Verified in running app`
+- `Not verified`
+- `Blocked by ...`
+
+If none of the three required phrases apply to a manual-verification line, do not report complete — stop and resolve the ambiguity first.
+
+---
+
+### No Filtered Validation
+
+Agents must not hide lint or test errors with `grep`, `findstr`, `tail`, `Select-String`, or similar filters when reporting validation. Filtered validation hides real problems and produces incorrect completion reports.
+
+**Bad (will cause incorrect reports):**
+
+```bash
+pnpm lint | grep -v error
+pnpm lint | tail -5
+pnpm.cmd --filter @readest/readest-app lint 2>&1 | Select-String -NotMatch error
+pnpm test 2>&1 | Select-String -Pattern "pass"
+```
+
+**Good (report raw output):**
+
+```bash
+pnpm.cmd --filter @readest/readest-app lint
+pnpm.cmd --filter @readest/readest-app exec vitest run <test-file>
+```
+
+Report the full, unfiltered outcome. Pre-existing failures must be acknowledged, explained, and never hidden.
+
+**Reason:** Filtered validation caused bad reports (e.g., "pre-existing liveMarker error") while hiding real TypeScript/lint problems. Agents must report raw validation results, not filtered summaries.
+
+---
+
+### Branch Safety Rules
+
+- Work only on the current branch.
+- Before editing, inspect `git status --short`.
+- Do not modify files outside task scope unless absolutely necessary.
+- If a needed change touches another agent's ownership area, stop and report.
+- Do not perform broad formatting across unrelated files.
+- At the end of every task, provide `git status --short` and the list of changed files.
+
+---
+
+### Merge Safety Rules
+
+- Rebase or merge from dev/integration only when instructed.
+- Resolve conflicts conservatively — prefer `git checkout --theirs` or `--ours` only when certain.
+- Never delete another agent's work to make conflicts disappear.
+- If conflict resolution is uncertain, stop and report the conflict with file paths.
+
+---
+
+### Verification Script
+
+A reusable validation script is available:
+
+```powershell
+.\scripts\validate-citadel.ps1 -Area sync     # Audiobook sync tests + lint
+.\scripts\validate-citadel.ps1 -Area visual   # Lint + visual checklist
+.\scripts\validate-citadel.ps1 -Area reader   # Lint + reader checklist
+.\scripts\validate-citadel.ps1 -Area full     # All automated + checklists
+```
+
+See [docs/VALIDATION_CHECKLISTS.md](../docs/VALIDATION_CHECKLISTS.md) for detailed checklists per area.
