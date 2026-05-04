@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader ve Readest cihazlarınızı senkronize tutar."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Başlık"
+
+msgid "Author"
+msgstr "Yazar"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Otomatik ilerleme senkronizasyonunu ayarla"
 
@@ -41,11 +158,26 @@ msgstr "Bu cihazdan Readest açıklamalarını gönder"
 msgid "Pull readest annotations from other devices"
 msgstr "Diğer cihazlardan Readest açıklamalarını al"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Readest hesabına giriş yap"
 
 msgid "Log out as %1"
 msgstr "%1 olarak çıkış yap"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "İlerlemeyi ve açıklamaları otomatik senkronize et"
@@ -92,12 +224,6 @@ msgstr "Hiç senkronize edilmedi"
 msgid "Book Fingerprint"
 msgstr "Kitap parmak izi"
 
-msgid "Title"
-msgstr "Başlık"
-
-msgid "Author"
-msgstr "Yazar"
-
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
 
@@ -106,6 +232,15 @@ msgstr "Son senkronizasyon"
 
 msgid "Sync Info"
 msgstr "Senkronizasyon bilgisi"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Güncelleme kontrol ediliyor…"
@@ -167,6 +302,9 @@ msgstr "Tam senkronizasyon: tüm açıklamalar alınıyor…"
 msgid "Pulling annotations..."
 msgstr "Açıklamalar alınıyor…"
 
+msgid "Authentication failed, please login again"
+msgstr "Kimlik doğrulama başarısız, tekrar giriş yapın"
+
 msgid "Failed to pull annotations"
 msgstr "Açıklamalar alınamadı"
 
@@ -175,9 +313,6 @@ msgstr "Yeni açıklama bulunamadı"
 
 msgid "%1 annotations pulled"
 msgstr "%1 açıklama alındı"
-
-msgid "Cancel"
-msgstr "İptal"
 
 msgid "Login"
 msgstr "Giriş"
@@ -217,9 +352,6 @@ msgstr "Okuma ilerlemesi gönderilemedi"
 
 msgid "Pulling reading progress..."
 msgstr "Okuma ilerlemesi alınıyor…"
-
-msgid "Authentication failed, please login again"
-msgstr "Kimlik doğrulama başarısız, tekrar giriş yapın"
 
 msgid "Failed to pull reading progress"
 msgstr "Okuma ilerlemesi alınamadı"

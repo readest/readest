@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Giữ các thiết bị KOReader và Readest của bạn đồng bộ."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Tiêu đề"
+
+msgid "Author"
+msgstr "Tác giả"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Đặt đồng bộ tiến trình tự động"
 
@@ -41,11 +158,26 @@ msgstr "Đẩy ghi chú Readest từ thiết bị này"
 msgid "Pull readest annotations from other devices"
 msgstr "Lấy ghi chú Readest từ thiết bị khác"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Đăng nhập tài khoản Readest"
 
 msgid "Log out as %1"
 msgstr "Đăng xuất khỏi %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "Tự động đồng bộ tiến trình và ghi chú"
@@ -92,12 +224,6 @@ msgstr "Chưa đồng bộ"
 msgid "Book Fingerprint"
 msgstr "Dấu vân tay sách"
 
-msgid "Title"
-msgstr "Tiêu đề"
-
-msgid "Author"
-msgstr "Tác giả"
-
 msgid "Identifiers"
 msgstr "Định Danh"
 
@@ -106,6 +232,15 @@ msgstr "Lần đồng bộ cuối"
 
 msgid "Sync Info"
 msgstr "Thông tin đồng bộ"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Đang kiểm tra cập nhật…"
@@ -167,6 +302,9 @@ msgstr "Đồng bộ đầy đủ: đang lấy tất cả ghi chú…"
 msgid "Pulling annotations..."
 msgstr "Đang lấy ghi chú…"
 
+msgid "Authentication failed, please login again"
+msgstr "Xác thực thất bại, vui lòng đăng nhập lại"
+
 msgid "Failed to pull annotations"
 msgstr "Không thể lấy ghi chú"
 
@@ -175,9 +313,6 @@ msgstr "Không tìm thấy ghi chú mới"
 
 msgid "%1 annotations pulled"
 msgstr "Đã lấy %1 ghi chú"
-
-msgid "Cancel"
-msgstr "Hủy"
 
 msgid "Login"
 msgstr "Đăng nhập"
@@ -217,9 +352,6 @@ msgstr "Không thể đẩy tiến trình đọc"
 
 msgid "Pulling reading progress..."
 msgstr "Đang lấy tiến trình đọc…"
-
-msgid "Authentication failed, please login again"
-msgstr "Xác thực thất bại, vui lòng đăng nhập lại"
 
 msgid "Failed to pull reading progress"
 msgstr "Không thể lấy tiến trình đọc"

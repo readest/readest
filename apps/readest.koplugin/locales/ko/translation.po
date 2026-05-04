@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader와 Readest 기기를 동기화 상태로 유지합니다."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "제목"
+
+msgid "Author"
+msgstr "저자"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "취소"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "진행 상황 자동 동기화 설정"
 
@@ -41,11 +158,26 @@ msgstr "이 기기에서 Readest 주석 보내기"
 msgid "Pull readest annotations from other devices"
 msgstr "다른 기기에서 Readest 주석 가져오기"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Readest 계정에 로그인"
 
 msgid "Log out as %1"
 msgstr "%1 로그아웃"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "진행 상황과 주석을 자동으로 동기화"
@@ -92,12 +224,6 @@ msgstr "동기화한 적 없음"
 msgid "Book Fingerprint"
 msgstr "책 지문"
 
-msgid "Title"
-msgstr "제목"
-
-msgid "Author"
-msgstr "저자"
-
 msgid "Identifiers"
 msgstr "식별자"
 
@@ -106,6 +232,15 @@ msgstr "마지막 동기화"
 
 msgid "Sync Info"
 msgstr "동기화 정보"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "업데이트 확인 중…"
@@ -167,6 +302,9 @@ msgstr "전체 동기화: 모든 주석을 가져오는 중…"
 msgid "Pulling annotations..."
 msgstr "주석을 가져오는 중…"
 
+msgid "Authentication failed, please login again"
+msgstr "인증에 실패했습니다. 다시 로그인하세요"
+
 msgid "Failed to pull annotations"
 msgstr "주석 가져오기에 실패했습니다"
 
@@ -175,9 +313,6 @@ msgstr "새 주석을 찾을 수 없습니다"
 
 msgid "%1 annotations pulled"
 msgstr "%1개 주석을 가져왔습니다"
-
-msgid "Cancel"
-msgstr "취소"
 
 msgid "Login"
 msgstr "로그인"
@@ -217,9 +352,6 @@ msgstr "읽기 진행 상황 보내기에 실패했습니다"
 
 msgid "Pulling reading progress..."
 msgstr "읽기 진행 상황을 가져오는 중…"
-
-msgid "Authentication failed, please login again"
-msgstr "인증에 실패했습니다. 다시 로그인하세요"
 
 msgid "Failed to pull reading progress"
 msgstr "읽기 진행 상황 가져오기에 실패했습니다"

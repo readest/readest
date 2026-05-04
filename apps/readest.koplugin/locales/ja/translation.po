@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader と Readest のデバイス間で同期を保ちます。"
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "タイトル"
+
+msgid "Author"
+msgstr "著者"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "進捗の自動同期を設定"
 
@@ -41,11 +158,26 @@ msgstr "このデバイスから Readest の注釈を送信"
 msgid "Pull readest annotations from other devices"
 msgstr "他のデバイスから Readest の注釈を取得"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Readest アカウントにログイン"
 
 msgid "Log out as %1"
 msgstr "%1 をログアウト"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "進捗と注釈を自動同期"
@@ -92,12 +224,6 @@ msgstr "未同期"
 msgid "Book Fingerprint"
 msgstr "書籍の指紋"
 
-msgid "Title"
-msgstr "タイトル"
-
-msgid "Author"
-msgstr "著者"
-
 msgid "Identifiers"
 msgstr "識別子"
 
@@ -106,6 +232,15 @@ msgstr "前回同期"
 
 msgid "Sync Info"
 msgstr "同期情報"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "更新を確認しています…"
@@ -167,6 +302,9 @@ msgstr "フル同期: すべての注釈を取得しています…"
 msgid "Pulling annotations..."
 msgstr "注釈を取得しています…"
 
+msgid "Authentication failed, please login again"
+msgstr "認証に失敗しました。再度ログインしてください"
+
 msgid "Failed to pull annotations"
 msgstr "注釈の取得に失敗しました"
 
@@ -175,9 +313,6 @@ msgstr "新しい注釈は見つかりませんでした"
 
 msgid "%1 annotations pulled"
 msgstr "%1 件の注釈を取得しました"
-
-msgid "Cancel"
-msgstr "キャンセル"
 
 msgid "Login"
 msgstr "ログイン"
@@ -217,9 +352,6 @@ msgstr "読書の進捗の送信に失敗しました"
 
 msgid "Pulling reading progress..."
 msgstr "読書の進捗を取得しています…"
-
-msgid "Authentication failed, please login again"
-msgstr "認証に失敗しました。再度ログインしてください"
 
 msgid "Failed to pull reading progress"
 msgstr "読書の進捗の取得に失敗しました"

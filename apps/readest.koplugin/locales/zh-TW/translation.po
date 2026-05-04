@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "讓你的 KOReader 與 Readest 裝置保持同步。"
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "書名"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "設定自動同步閱讀進度"
 
@@ -41,11 +158,26 @@ msgstr "從此裝置推送 Readest 註釋"
 msgid "Pull readest annotations from other devices"
 msgstr "從其他裝置拉取 Readest 註釋"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "登入 Readest 帳戶"
 
 msgid "Log out as %1"
 msgstr "登出（%1）"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "自動同步閱讀進度和註釋"
@@ -92,12 +224,6 @@ msgstr "尚未同步"
 msgid "Book Fingerprint"
 msgstr "書籍指紋"
 
-msgid "Title"
-msgstr "書名"
-
-msgid "Author"
-msgstr "作者"
-
 msgid "Identifiers"
 msgstr "識別碼"
 
@@ -106,6 +232,15 @@ msgstr "上次同步"
 
 msgid "Sync Info"
 msgstr "同步資訊"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "正在檢查更新…"
@@ -167,6 +302,9 @@ msgstr "完整同步：正在拉取所有註釋…"
 msgid "Pulling annotations..."
 msgstr "正在拉取註釋…"
 
+msgid "Authentication failed, please login again"
+msgstr "驗證失敗，請重新登入"
+
 msgid "Failed to pull annotations"
 msgstr "拉取註釋失敗"
 
@@ -175,9 +313,6 @@ msgstr "未發現新註釋"
 
 msgid "%1 annotations pulled"
 msgstr "已拉取 %1 條註釋"
-
-msgid "Cancel"
-msgstr "取消"
 
 msgid "Login"
 msgstr "登入"
@@ -217,9 +352,6 @@ msgstr "推送閱讀進度失敗"
 
 msgid "Pulling reading progress..."
 msgstr "正在拉取閱讀進度…"
-
-msgid "Authentication failed, please login again"
-msgstr "驗證失敗，請重新登入"
 
 msgid "Failed to pull reading progress"
 msgstr "拉取閱讀進度失敗"

@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "שומר על סנכרון בין מכשירי KOReader ו-Readest שלך."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "כותרת"
+
+msgid "Author"
+msgstr "מחבר"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "ביטול"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "הגדר סנכרון התקדמות אוטומטי"
 
@@ -41,11 +158,26 @@ msgstr "שלח הערות Readest ממכשיר זה"
 msgid "Pull readest annotations from other devices"
 msgstr "משוך הערות Readest ממכשירים אחרים"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "התחבר לחשבון Readest"
 
 msgid "Log out as %1"
 msgstr "התנתק מ-%1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "סנכרן התקדמות והערות אוטומטית"
@@ -92,12 +224,6 @@ msgstr "מעולם לא סונכרן"
 msgid "Book Fingerprint"
 msgstr "טביעת אצבע של הספר"
 
-msgid "Title"
-msgstr "כותרת"
-
-msgid "Author"
-msgstr "מחבר"
-
 msgid "Identifiers"
 msgstr "מזהים"
 
@@ -106,6 +232,15 @@ msgstr "סנכרון אחרון"
 
 msgid "Sync Info"
 msgstr "מידע סנכרון"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "בודק עדכון…"
@@ -167,6 +302,9 @@ msgstr "סנכרון מלא: מושך את כל ההערות…"
 msgid "Pulling annotations..."
 msgstr "מושך הערות…"
 
+msgid "Authentication failed, please login again"
+msgstr "האימות נכשל, התחבר שוב"
+
 msgid "Failed to pull annotations"
 msgstr "משיכת ההערות נכשלה"
 
@@ -175,9 +313,6 @@ msgstr "לא נמצאו הערות חדשות"
 
 msgid "%1 annotations pulled"
 msgstr "נמשכו %1 הערות"
-
-msgid "Cancel"
-msgstr "ביטול"
 
 msgid "Login"
 msgstr "התחבר"
@@ -217,9 +352,6 @@ msgstr "שליחת התקדמות הקריאה נכשלה"
 
 msgid "Pulling reading progress..."
 msgstr "מושך התקדמות קריאה…"
-
-msgid "Authentication failed, please login again"
-msgstr "האימות נכשל, התחבר שוב"
 
 msgid "Failed to pull reading progress"
 msgstr "משיכת התקדמות הקריאה נכשלה"

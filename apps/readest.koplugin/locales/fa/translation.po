@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "دستگاه‌های KOReader و Readest شما را همگام نگه می‌دارد."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "عنوان"
+
+msgid "Author"
+msgstr "نویسنده"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "لغو"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "تنظیم همگام‌سازی خودکار پیشرفت"
 
@@ -41,11 +158,26 @@ msgstr "ارسال یادداشت‌های Readest از این دستگاه"
 msgid "Pull readest annotations from other devices"
 msgstr "دریافت یادداشت‌های Readest از دستگاه‌های دیگر"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "ورود به حساب Readest"
 
 msgid "Log out as %1"
 msgstr "خروج از حساب %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "همگام‌سازی خودکار پیشرفت و یادداشت‌ها"
@@ -92,12 +224,6 @@ msgstr "هرگز همگام‌سازی نشده"
 msgid "Book Fingerprint"
 msgstr "اثر انگشت کتاب"
 
-msgid "Title"
-msgstr "عنوان"
-
-msgid "Author"
-msgstr "نویسنده"
-
 msgid "Identifiers"
 msgstr "شناسه‌ها"
 
@@ -106,6 +232,15 @@ msgstr "آخرین همگام‌سازی"
 
 msgid "Sync Info"
 msgstr "اطلاعات همگام‌سازی"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "در حال بررسی به‌روزرسانی…"
@@ -167,6 +302,9 @@ msgstr "همگام‌سازی کامل: در حال دریافت تمام یاد
 msgid "Pulling annotations..."
 msgstr "در حال دریافت یادداشت‌ها…"
 
+msgid "Authentication failed, please login again"
+msgstr "احراز هویت ناموفق بود، دوباره وارد شوید"
+
 msgid "Failed to pull annotations"
 msgstr "دریافت یادداشت‌ها ناموفق بود"
 
@@ -175,9 +313,6 @@ msgstr "یادداشت جدیدی یافت نشد"
 
 msgid "%1 annotations pulled"
 msgstr "%1 یادداشت دریافت شد"
-
-msgid "Cancel"
-msgstr "لغو"
 
 msgid "Login"
 msgstr "ورود"
@@ -217,9 +352,6 @@ msgstr "ارسال پیشرفت مطالعه ناموفق بود"
 
 msgid "Pulling reading progress..."
 msgstr "در حال دریافت پیشرفت مطالعه…"
-
-msgid "Authentication failed, please login again"
-msgstr "احراز هویت ناموفق بود، دوباره وارد شوید"
 
 msgid "Failed to pull reading progress"
 msgstr "دریافت پیشرفت مطالعه ناموفق بود"

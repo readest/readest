@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Hält deine KOReader- und Readest-Geräte synchron."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Automatischen Fortschritts-Sync einstellen"
 
@@ -41,11 +158,26 @@ msgstr "Readest-Anmerkungen von diesem Gerät senden"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest-Anmerkungen von anderen Geräten abrufen"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Beim Readest-Konto anmelden"
 
 msgid "Log out as %1"
 msgstr "Abmelden als %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "Fortschritt und Anmerkungen automatisch synchronisieren"
@@ -92,12 +224,6 @@ msgstr "Noch nie synchronisiert"
 msgid "Book Fingerprint"
 msgstr "Buch-Fingerabdruck"
 
-msgid "Title"
-msgstr "Titel"
-
-msgid "Author"
-msgstr "Autor"
-
 msgid "Identifiers"
 msgstr "Bezeichner"
 
@@ -106,6 +232,15 @@ msgstr "Zuletzt synchronisiert"
 
 msgid "Sync Info"
 msgstr "Sync-Info"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Suche nach Aktualisierungen …"
@@ -167,6 +302,9 @@ msgstr "Vollständige Synchronisierung: alle Anmerkungen werden abgerufen …"
 msgid "Pulling annotations..."
 msgstr "Anmerkungen werden abgerufen …"
 
+msgid "Authentication failed, please login again"
+msgstr "Authentifizierung fehlgeschlagen, bitte erneut anmelden"
+
 msgid "Failed to pull annotations"
 msgstr "Abrufen der Anmerkungen fehlgeschlagen"
 
@@ -175,9 +313,6 @@ msgstr "Keine neuen Anmerkungen gefunden"
 
 msgid "%1 annotations pulled"
 msgstr "%1 Anmerkungen abgerufen"
-
-msgid "Cancel"
-msgstr "Abbrechen"
 
 msgid "Login"
 msgstr "Anmelden"
@@ -217,9 +352,6 @@ msgstr "Senden des Lesefortschritts fehlgeschlagen"
 
 msgid "Pulling reading progress..."
 msgstr "Lesefortschritt wird abgerufen …"
-
-msgid "Authentication failed, please login again"
-msgstr "Authentifizierung fehlgeschlagen, bitte erneut anmelden"
 
 msgid "Failed to pull reading progress"
 msgstr "Abrufen des Lesefortschritts fehlgeschlagen"

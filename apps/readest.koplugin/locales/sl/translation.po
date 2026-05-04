@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Vaše naprave KOReader in Readest ostajajo sinhronizirane."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Naslov"
+
+msgid "Author"
+msgstr "Avtor"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Prekliči"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Nastavi samodejno sinhronizacijo napredka"
 
@@ -41,11 +158,26 @@ msgstr "Pošlji opombe Readest iz te naprave"
 msgid "Pull readest annotations from other devices"
 msgstr "Pridobi opombe Readest iz drugih naprav"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Prijava v račun Readest"
 
 msgid "Log out as %1"
 msgstr "Odjava kot %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "Samodejno sinhroniziraj napredek in opombe"
@@ -92,12 +224,6 @@ msgstr "Nikoli sinhronizirano"
 msgid "Book Fingerprint"
 msgstr "Prstni odtis knjige"
 
-msgid "Title"
-msgstr "Naslov"
-
-msgid "Author"
-msgstr "Avtor"
-
 msgid "Identifiers"
 msgstr "Identifikatorji"
 
@@ -106,6 +232,15 @@ msgstr "Zadnja sinhronizacija"
 
 msgid "Sync Info"
 msgstr "Podatki o sinhronizaciji"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Preverjanje posodobitev…"
@@ -167,6 +302,9 @@ msgstr "Polna sinhronizacija: pridobivanje vseh opomb…"
 msgid "Pulling annotations..."
 msgstr "Pridobivanje opomb…"
 
+msgid "Authentication failed, please login again"
+msgstr "Preverjanje pristnosti ni uspelo, prijavite se znova"
+
 msgid "Failed to pull annotations"
 msgstr "Pridobivanje opomb ni uspelo"
 
@@ -175,9 +313,6 @@ msgstr "Novih opomb ni"
 
 msgid "%1 annotations pulled"
 msgstr "Pridobljenih %1 opomb"
-
-msgid "Cancel"
-msgstr "Prekliči"
 
 msgid "Login"
 msgstr "Prijava"
@@ -217,9 +352,6 @@ msgstr "Pošiljanje napredka branja ni uspelo"
 
 msgid "Pulling reading progress..."
 msgstr "Pridobivanje napredka branja…"
-
-msgid "Authentication failed, please login again"
-msgstr "Preverjanje pristnosti ni uspelo, prijavite se znova"
 
 msgid "Failed to pull reading progress"
 msgstr "Pridobivanje napredka branja ni uspelo"

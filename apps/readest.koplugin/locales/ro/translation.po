@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Menține dispozitivele tale KOReader și Readest sincronizate."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Titlu"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Anulează"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Setează sincronizarea automată a progresului"
 
@@ -41,11 +158,26 @@ msgstr "Trimite adnotările Readest de pe acest dispozitiv"
 msgid "Pull readest annotations from other devices"
 msgstr "Obține adnotările Readest de pe alte dispozitive"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Autentificare în contul Readest"
 
 msgid "Log out as %1"
 msgstr "Deconectare de la %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "Sincronizează automat progresul și adnotările"
@@ -92,12 +224,6 @@ msgstr "Nicio sincronizare"
 msgid "Book Fingerprint"
 msgstr "Amprenta cărții"
 
-msgid "Title"
-msgstr "Titlu"
-
-msgid "Author"
-msgstr "Autor"
-
 msgid "Identifiers"
 msgstr "Identificatori"
 
@@ -106,6 +232,15 @@ msgstr "Ultima sincronizare"
 
 msgid "Sync Info"
 msgstr "Informații de sincronizare"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Se verifică actualizările…"
@@ -167,6 +302,9 @@ msgstr "Sincronizare completă: se obțin toate adnotările…"
 msgid "Pulling annotations..."
 msgstr "Se obțin adnotările…"
 
+msgid "Authentication failed, please login again"
+msgstr "Autentificare eșuată, conectează-te din nou"
+
 msgid "Failed to pull annotations"
 msgstr "Obținerea adnotărilor a eșuat"
 
@@ -175,9 +313,6 @@ msgstr "Nu s-au găsit adnotări noi"
 
 msgid "%1 annotations pulled"
 msgstr "%1 adnotări obținute"
-
-msgid "Cancel"
-msgstr "Anulează"
 
 msgid "Login"
 msgstr "Autentificare"
@@ -217,9 +352,6 @@ msgstr "Trimiterea progresului de citire a eșuat"
 
 msgid "Pulling reading progress..."
 msgstr "Se obține progresul de citire…"
-
-msgid "Authentication failed, please login again"
-msgstr "Autentificare eșuată, conectează-te din nou"
 
 msgid "Failed to pull reading progress"
 msgstr "Obținerea progresului de citire a eșuat"

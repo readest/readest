@@ -17,6 +17,123 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Houdt je KOReader- en Readest-apparaten gesynchroniseerd."
 
+msgid "Library view"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Grid"
+msgstr ""
+
+msgid "List"
+msgstr ""
+
+msgid "Cover"
+msgstr ""
+
+msgid "Crop"
+msgstr ""
+
+msgid "Fit"
+msgstr ""
+
+msgid "Group by"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Authors"
+msgstr ""
+
+msgid "Series"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Last Updated"
+msgstr ""
+
+msgid "Date Read"
+msgstr ""
+
+msgid "Date Added"
+msgstr ""
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Author"
+msgstr "Auteur"
+
+msgid "Descending"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Rescan library"
+msgstr ""
+
+msgid "Download folder…"
+msgstr ""
+
+msgid "Pick a folder for downloaded books"
+msgstr ""
+
+msgid "Sign in to Readest to open the Library"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "Clear"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search library"
+msgstr ""
+
+msgid "Search title or author"
+msgstr ""
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr ""
+
+msgid "File moved or deleted. Rescan library?"
+msgstr ""
+
+msgid "Download this book from Readest?"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Cloud copy unavailable."
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
 msgid "Set auto progress sync"
 msgstr "Automatische voortgangssynchronisatie instellen"
 
@@ -41,11 +158,26 @@ msgstr "Readest-aantekeningen van dit apparaat verzenden"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest-aantekeningen van andere apparaten ophalen"
 
+msgid "Open Readest Library"
+msgstr ""
+
+msgid "Push Readest book library"
+msgstr ""
+
+msgid "Pull Readest book library"
+msgstr ""
+
 msgid "Log in Readest Account"
 msgstr "Aanmelden bij Readest-account"
 
 msgid "Log out as %1"
 msgstr "Afmelden als %1"
+
+msgid "Push books now"
+msgstr ""
+
+msgid "Pull books now"
+msgstr ""
 
 msgid "Auto sync progress and annotations"
 msgstr "Voortgang en aantekeningen automatisch synchroniseren"
@@ -92,12 +224,6 @@ msgstr "Nooit gesynchroniseerd"
 msgid "Book Fingerprint"
 msgstr "Vingerafdruk van boek"
 
-msgid "Title"
-msgstr "Titel"
-
-msgid "Author"
-msgstr "Auteur"
-
 msgid "Identifiers"
 msgstr "Identificatoren"
 
@@ -106,6 +232,15 @@ msgstr "Laatst gesynchroniseerd"
 
 msgid "Sync Info"
 msgstr "Synchronisatie-info"
+
+msgid "Library not initialized"
+msgstr ""
+
+msgid "Books synced"
+msgstr ""
+
+msgid "Books sync failed"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Controleren op update…"
@@ -167,6 +302,9 @@ msgstr "Volledige synchronisatie: alle aantekeningen worden opgehaald…"
 msgid "Pulling annotations..."
 msgstr "Aantekeningen worden opgehaald…"
 
+msgid "Authentication failed, please login again"
+msgstr "Authenticatie mislukt, meld opnieuw aan"
+
 msgid "Failed to pull annotations"
 msgstr "Aantekeningen ophalen mislukt"
 
@@ -175,9 +313,6 @@ msgstr "Geen nieuwe aantekeningen gevonden"
 
 msgid "%1 annotations pulled"
 msgstr "%1 aantekeningen opgehaald"
-
-msgid "Cancel"
-msgstr "Annuleren"
 
 msgid "Login"
 msgstr "Aanmelden"
@@ -217,9 +352,6 @@ msgstr "Leesvoortgang verzenden mislukt"
 
 msgid "Pulling reading progress..."
 msgstr "Leesvoortgang wordt opgehaald…"
-
-msgid "Authentication failed, please login again"
-msgstr "Authenticatie mislukt, meld opnieuw aan"
 
 msgid "Failed to pull reading progress"
 msgstr "Leesvoortgang ophalen mislukt"
