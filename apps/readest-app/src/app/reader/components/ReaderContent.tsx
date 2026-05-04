@@ -269,6 +269,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   return (
     <div className='reader-content citadel-reader-shell full-height relative flex'>
+      {/* Subtle texture overlay for the reader shell */}
+      <div
+        className='citadel-reader-texture pointer-events-none absolute inset-0 z-0'
+        aria-hidden='true'
+      />
       <SideBar />
       <BooksGrid bookKeys={bookKeys} onGoToLibrary={handleCloseBooksToLibrary} />
       <ReaderTopBar
@@ -287,6 +292,14 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         />
       )}
       <style jsx global>{`
+        .citadel-reader-texture {
+          opacity: 0.038;
+          mix-blend-mode: soft-light;
+          background-image: url('/citadel/textures/citadel_texture_overlay_02_linen_weave_white_alpha.png');
+          background-repeat: repeat;
+          background-size: 220px 220px;
+        }
+
         @media (min-width: 640px) {
           .citadel-reader-shell {
             background:

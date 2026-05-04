@@ -19,6 +19,7 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 import { navigateToReader } from '@/utils/nav';
 import { formatAuthors } from '@/utils/book';
 import { type SelectedFile } from '@/hooks/useFileSelector';
+import { resolveBookThemeFromBook } from '@/styles/book-themes';
 
 const HOME_PREVIEW_LIMIT = 6;
 const SHELF_BOOK_WIDTH = 'clamp(112px, 8.8vw, 160px)';
@@ -277,6 +278,11 @@ export default function HomePage() {
     }
     return visibleBooks[0] ?? null;
   }, [settings.lastOpenBooks, visibleBooks]);
+
+  const continueBookTheme = useMemo(() => {
+    if (!continueBook) return null;
+    return resolveBookThemeFromBook(continueBook);
+  }, [continueBook]);
 
   const sortedShelfBooks = useMemo(() => {
     return [...visibleBooks].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -794,7 +800,21 @@ export default function HomePage() {
                         className='absolute z-0 overflow-hidden bg-[#030303]'
                         style={{ ...FEATURED_FRAME_WINDOW_STYLE, borderRadius: '3px' }}
                       >
-                        {continueCoverUrl ? (
+                        {continueBookTheme?.menuBookImage ? (
+                          <img
+                            src={continueBookTheme.menuBookImage}
+                            alt={continueBook.title}
+                            className='h-full w-full object-cover'
+                            style={{
+                              objectPosition: 'center',
+                              filter: 'brightness(0.96) contrast(1.06) saturate(0.94)',
+                              transform: 'translateZ(0)',
+                              backfaceVisibility: 'hidden',
+                              WebkitBackfaceVisibility: 'hidden',
+                            }}
+                            draggable={false}
+                          />
+                        ) : continueCoverUrl ? (
                           <img
                             src={continueCoverUrl}
                             alt={continueBook.title}

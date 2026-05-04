@@ -21,6 +21,8 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
+import { resolveBookThemeFromBook, type BookThemeConfig } from '@/styles/book-themes';
+import { getHouseForCharacter, extractCharacterFromChapterTitle } from '@/data/got-houses';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -440,19 +442,56 @@ const getCitadelChapterOpening = (doc: Document) => {
   return { heading, paragraph };
 };
 
-const applyCitadelBookPageStyles = (doc: Document, isFixedLayout?: boolean) => {
+const CITADEL_CHAPTER_SIGIL_CLASS = 'citadel-chapter-sigil';
+
+const buildBookThemeCSS = (theme: BookThemeConfig): string => {
+  if (!theme || theme.id === 'default') return '';
+
+  const textureCSS =
+    theme.textureId && theme.textureId !== 'none'
+      ? `
+    body::after {
+      content: '' !important;
+      position: fixed !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+      opacity: ${theme.textureOpacity ?? 0.06} !important;
+      mix-blend-mode: ${theme.textureBlendMode ?? 'multiply'} !important;
+      background-repeat: repeat !important;
+      background-size: 300px 300px !important;
+    }`
+      : '';
+
+  return `
+    :root {
+      --citadel-ornament-style: '${theme.ornamentStyle}';
+    }
+    ${textureCSS}
+  `;
+};
+
+const applyCitadelBookPageStyles = (
+  doc: Document,
+  isFixedLayout?: boolean,
+  theme?: BookThemeConfig,
+) => {
   if (isFixedLayout) return;
+
+  const themeCSS = theme ? buildBookThemeCSS(theme) : '';
+  const fullCSS = CITADEL_BOOK_PAGE_CSS + themeCSS;
 
   const existingStyle = doc.getElementById(CITADEL_BOOK_PAGE_STYLE_ID);
   if (existingStyle) {
-    existingStyle.textContent = CITADEL_BOOK_PAGE_CSS;
+    existingStyle.textContent = fullCSS;
   } else {
     const style = doc.createElement('style');
     style.id = CITADEL_BOOK_PAGE_STYLE_ID;
-    style.textContent = CITADEL_BOOK_PAGE_CSS;
+    style.textContent = fullCSS;
     (doc.head || doc.documentElement).appendChild(style);
   }
 
+  // Clean up previously applied classes
   doc.querySelectorAll(`.${CITADEL_DROP_CAP_CLASS}`).forEach((element) => {
     element.classList.remove(CITADEL_DROP_CAP_CLASS);
   });
@@ -462,6 +501,9 @@ const applyCitadelBookPageStyles = (doc: Document, isFixedLayout?: boolean) => {
   doc.querySelectorAll(`.${CITADEL_CHAPTER_ORNAMENT_CLASS}`).forEach((element) => {
     element.classList.remove(CITADEL_CHAPTER_ORNAMENT_CLASS);
   });
+  doc.querySelectorAll(`.${CITADEL_CHAPTER_SIGIL_CLASS}`).forEach((element) => {
+    element.remove();
+  });
   doc.body?.classList.remove(CITADEL_CHAPTER_OPENING_CLASS);
   doc.documentElement.setAttribute('data-citadel-page-side', getCitadelPageSide(doc));
 
@@ -470,6 +512,23 @@ const applyCitadelBookPageStyles = (doc: Document, isFixedLayout?: boolean) => {
   if (heading && paragraph) {
     doc.body?.classList.add(CITADEL_CHAPTER_OPENING_CLASS);
     heading.classList.add(CITADEL_CHAPTER_TITLE_CLASS);
+
+    // Sigil insertion for books with sigil support (e.g. GOT)
+    if (theme?.useSigils) {
+      const headingText = (heading.textContent || '').trim();
+      const character = extractCharacterFromChapterTitle(headingText);
+      const house = character ? getHouseForCharacter(character) : null;
+      if (house) {
+        const sigilImg = doc.createElement('img');
+        sigilImg.src = house.sigilPath;
+        sigilImg.alt = `${house.name} sigil`;
+        sigilImg.className = CITADEL_CHAPTER_SIGIL_CLASS;
+        sigilImg.style.cssText =
+          'display:block;margin:0 auto 0.5rem auto;max-height:56px;width:auto;opacity:0.88;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4)) brightness(0.9) sepia(0.12);';
+        heading.parentNode?.insertBefore(sigilImg, heading);
+      }
+    }
+
     const ornament = heading.previousElementSibling;
     if (ornament && isCitadelChapterOrnamentCandidate(ornament)) {
       ornament.classList.add(CITADEL_CHAPTER_ORNAMENT_CLASS);
@@ -499,6 +558,12 @@ const FoliateViewer: React.FC<{
   const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
+
+  const bookTheme = React.useMemo(() => {
+    const book = bookData?.book;
+    if (!book) return undefined;
+    return resolveBookThemeFromBook(book);
+  }, [bookData?.book]);
 
   const viewRef = useRef<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -656,7 +721,7 @@ const FoliateViewer: React.FC<{
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       keepTextAlignment(detail.doc);
-      applyCitadelBookPageStyles(detail.doc, bookData.isFixedLayout);
+      applyCitadelBookPageStyles(detail.doc, bookData.isFixedLayout, bookTheme);
       handleA11yNavigation(viewRef.current, detail.doc, {
         skipToLastPosCallback: skipToReadingPosition,
         skipToLastPosLabel: _('Skip to last reading position'),
@@ -1042,7 +1107,7 @@ const FoliateViewer: React.FC<{
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
-        applyCitadelBookPageStyles(doc, bookData?.isFixedLayout);
+        applyCitadelBookPageStyles(doc, bookData?.isFixedLayout, bookTheme);
       });
 
       if (bookData?.book?.format === 'PDF' && themeCode && renderer) {
@@ -1058,6 +1123,7 @@ const FoliateViewer: React.FC<{
   }, [
     themeCode,
     isDarkMode,
+    bookTheme,
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,

@@ -31,6 +31,36 @@ export const PREDEFINED_TEXTURES: BackgroundTexture[] = [
   { id: 'leaves', name: 'Leaves', url: '/images/leaves-pattern.jpg', loaded: true },
   { id: 'moon', name: 'Moon Sky', url: '/images/moon-sky.jpg', loaded: true },
   { id: 'night-sky', name: 'Night Sky', url: '/images/night-sky.jpg', loaded: true },
+  {
+    id: 'fine-grain',
+    name: 'Fine Grain',
+    url: '/citadel/textures/citadel_texture_overlay_01_fine_grain_white_alpha.png',
+    loaded: true,
+  },
+  {
+    id: 'linen-weave',
+    name: 'Linen Weave',
+    url: '/citadel/textures/citadel_texture_overlay_02_linen_weave_white_alpha.png',
+    loaded: true,
+  },
+  {
+    id: 'dark-dust',
+    name: 'Dark Dust',
+    url: '/citadel/textures/citadel_texture_overlay_03_dark_dust_scratches_black_alpha.png',
+    loaded: true,
+  },
+  {
+    id: 'soft-cloud',
+    name: 'Soft Cloud',
+    url: '/citadel/textures/citadel_texture_overlay_04_soft_cloud_white_alpha.png',
+    loaded: true,
+  },
+  {
+    id: 'combined',
+    name: 'Combined',
+    url: '/citadel/textures/citadel_texture_overlay_05_combined_neutral_alpha.png',
+    loaded: true,
+  },
 ];
 
 export function getTextureName(path: string): string {
