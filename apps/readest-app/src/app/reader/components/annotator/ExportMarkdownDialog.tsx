@@ -8,7 +8,7 @@ import { BookNote, BooknoteGroup, NoteExportConfig } from '@/types/book';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
-import { buildAnnotationWebUrl } from '@/utils/deeplink';
+import { buildAnnotationAppUrl, buildAnnotationWebUrl } from '@/utils/deeplink';
 import Dialog from '@/components/Dialog';
 
 interface ExportMarkdownDialogProps {
@@ -67,7 +67,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 {% if annotation.note %}
 **${_('Note:')}** {{ annotation.note }}
 {% endif %}
-*{% if annotation.link %}[${_('Page:')} {{ annotation.page }}]({{ annotation.link }}){% else %}${_('Page:')} {{ annotation.page }}{% endif %} · ${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
+*{% if annotation.appLink %}[${_('Page:')} {{ annotation.page }}]({{ annotation.appLink }}){% else %}${_('Page:')} {{ annotation.page }}{% endif %} · ${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
 {% endfor %}
 
 ---
@@ -130,6 +130,8 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             cfi: note.cfi,
             bookHash,
             link: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
+            webLink: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
+            appLink: buildAnnotationAppUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
             text: note.text || '',
             note: note.note || '',
             style: note.style,
@@ -239,7 +241,8 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   // Convert markdown to HTML for preview
   const htmlPreview = useMemo(() => {
     if (!markdownPreview) return '';
-    return marked.parse(markdownPreview);
+    const html = marked.parse(markdownPreview) as string;
+    return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
   }, [markdownPreview]);
 
   const handleToggle = (field: keyof NoteExportConfig) => {
@@ -506,6 +509,14 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                         <li className='ml-8'>
                           <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
                           {_('Annotation time')}
+                        </li>
+                        <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.appLink</code> -{' '}
+                          {_('App deeplink (readest://)')}
+                        </li>
+                        <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.webLink</code> -{' '}
+                          {_('Universal web link (https://)')}
                         </li>
                       </ul>
                     </div>
