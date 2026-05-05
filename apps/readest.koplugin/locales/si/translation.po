@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "ඔබේ KOReader සහ Readest උපාංග සමමුහූර්තව තබා ගනී."
 
 msgid "Library view"
-msgstr ""
+msgstr "පුස්තකාල දසුන"
 
 msgid "View"
-msgstr ""
+msgstr "දසුන"
 
 msgid "Grid"
-msgstr ""
+msgstr "ජාලකය"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "ලැයිස්තුව"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "කණ්ඩායම් කරන්න"
 
 msgid "Authors"
-msgstr ""
+msgstr "කතුවරුන්"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "පොත්"
 
 msgid "Groups"
-msgstr ""
+msgstr "කණ්ඩායම්"
+
+msgid "Series"
+msgstr "මාලාව"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "අනුපිළිවෙළට සකසන්න"
 
 msgid "Date Read"
-msgstr ""
+msgstr "කියවූ දිනය"
 
 msgid "Date Added"
-msgstr ""
+msgstr "එක් කළ දිනය"
 
 msgid "Title"
 msgstr "නම"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "කතෘ"
 
 msgid "Descending"
-msgstr ""
+msgstr "බැස යන"
 
 msgid "Ascending"
-msgstr ""
+msgstr "ආරෝහණ"
 
 msgid "Actions"
-msgstr ""
+msgstr "ක්‍රියා"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "පුස්තකාලය නැවත පරිලෝකනය කරන්න"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "බාගත කිරීමේ ෆෝල්ඩරය…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "බාගත කළ පොත් සඳහා ෆෝල්ඩරයක් තෝරන්න"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "පුස්තකාලය විවෘත කිරීමට Readest හි පුරන්න"
 
 msgid "Library"
-msgstr ""
+msgstr "පුස්තකාලය"
+
+msgid "Readest Library"
+msgstr "Readest පුස්තකාලය"
 
 msgid "Cancel"
 msgstr "අවලංගු කරන්න"
 
 msgid "Clear"
-msgstr ""
+msgstr "හිස් කරන්න"
 
 msgid "Search"
-msgstr ""
+msgstr "සොයන්න"
 
 msgid "Search library"
-msgstr ""
+msgstr "පුස්තකාලයේ සොයන්න"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "මාතෘකාව හෝ කතුවරයා සොයන්න"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "සම්පූර්ණ පුස්තකාල පෙන්වීමට Cover Browser ප්ලගිනය අවශ්‍යයි. සරල ලැයිස්තුවට ආපසු යයි."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "ගොනුව ගෙන ගොස් හෝ මකා ඇත. පුස්තකාලය නැවත පරිලෝකනය කරන්නද?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "මෙම පොත Readest වෙතින් බාගත කරන්නද?"
 
 msgid "Download"
-msgstr ""
+msgstr "බාගන්න"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "බාගත කිරීම සක්‍රීය කිරීමට පළමුව ගොනු කළමනාකරුවේ මුල් ෆෝල්ඩරය සකසන්න."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "බාගත කරමින්…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "වළාකුළු පිටපත නොමැත."
 
 msgid "Download failed."
-msgstr ""
+msgstr "බාගත කිරීම අසාර්ථකයි."
+
+msgid "No cover available on Readest."
+msgstr "Readest හි කවරයක් නොමැත."
+
+msgid "Cover download failed."
+msgstr "කවරය බාගත කිරීම අසාර්ථකයි."
+
+msgid "Could not delete the file."
+msgstr "ගොනුව මැකිය නොහැක."
+
+msgid "Removing from cloud…"
+msgstr "වළාකුළුවෙන් ඉවත් කරමින්…"
+
+msgid "Cloud removal failed."
+msgstr "වළාකුළුවෙන් ඉවත් කිරීම අසාර්ථකයි."
+
+msgid "Remove from Cloud & Device"
+msgstr "වළාකුළු සහ උපාංගයෙන් ඉවත් කරන්න"
+
+msgid "Remove this book from cloud and device?"
+msgstr "මෙම පොත වළාකුළු සහ උපාංගයෙන් ඉවත් කරන්නද?"
+
+msgid "Remove"
+msgstr "ඉවත් කරන්න"
+
+msgid "Remove from Cloud Only"
+msgstr "වළාකුළුවෙන් පමණක් ඉවත් කරන්න"
+
+msgid "Remove this book from the cloud only?"
+msgstr "මෙම පොත වළාකුළුවෙන් පමණක් ඉවත් කරන්නද?"
+
+msgid "Remove from Device Only"
+msgstr "උපාංගයෙන් පමණක් ඉවත් කරන්න"
+
+msgid "Remove the local copy of this book?"
+msgstr "මෙම පොතේ දේශීය පිටපත ඉවත් කරන්නද?"
+
+msgid "Upload to Cloud"
+msgstr "වළාකුළට උඩුගත කරන්න"
+
+msgid "Uploading…"
+msgstr "උඩුගත කරමින්…"
+
+msgid "Storage quota exceeded."
+msgstr "ගබඩා කෝටාව ඉක්මවා ඇත."
+
+msgid "Upload failed."
+msgstr "උඩුගත කිරීම අසාර්ථකයි."
+
+msgid "Download Book"
+msgstr "පොත බාගන්න"
+
+msgid "Download Cover"
+msgstr "කවරය බාගන්න"
+
+msgid "Download All"
+msgstr "සියල්ල බාගන්න"
+
+msgid "Open Readest Library"
+msgstr "Readest පුස්තකාලය විවෘත කරන්න"
+
+msgid "Push Readest book library"
+msgstr "Readest පොත් පුස්තකාලය යවන්න"
+
+msgid "Pull Readest book library"
+msgstr "Readest පොත් පුස්තකාලය ලබාගන්න"
 
 msgid "Set auto progress sync"
 msgstr "ස්වයංක්‍රීය ප්‍රගති සමමුහූර්තකරණය සකසන්න"
@@ -158,14 +215,29 @@ msgstr "මෙම උපාංගයෙන් Readest සටහන් යවන�
 msgid "Pull readest annotations from other devices"
 msgstr "වෙනත් උපාංගවලින් Readest සටහන් ලබාගන්න"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest වෙත එකතු කරන්න"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "පළමුව Readest හි පුරන්න."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "ගොනුව හමු නොවීය."
+
+msgid "Unsupported book format."
+msgstr "සහාය නොදක්වන පොත් ආකෘතිය."
+
+msgid "Hashing book…"
+msgstr "පොතේ හෑෂ් ගණනය කරමින්…"
+
+msgid "Could not read file."
+msgstr "ගොනුව කියවීමට නොහැකි විය."
+
+msgid "Already in your Readest library:"
+msgstr "දැනටමත් ඔබගේ Readest පුස්තකාලයේ ඇත:"
+
+msgid "Added to Readest:"
+msgstr "Readest වෙත එකතු කරන ලදී:"
 
 msgid "Log in Readest Account"
 msgstr "Readest ගිණුමට පිවිසෙන්න"
@@ -173,14 +245,17 @@ msgstr "Readest ගිණුමට පිවිසෙන්න"
 msgid "Log out as %1"
 msgstr "%1 ලෙස ඉවත් වන්න"
 
+msgid "Auto sync"
+msgstr "ස්වයංක්‍රීය සමමුහූර්ත"
+
+msgid "Readest library"
+msgstr "Readest පුස්තකාලය"
+
 msgid "Push books now"
-msgstr ""
+msgstr "දැන් පොත් යවන්න"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "ප්‍රගතිය සහ සටහන් ස්වයංක්‍රීයව සමමුහූර්ත කරන්න"
+msgstr "දැන් පොත් ලබාගන්න"
 
 msgid "Push reading progress now"
 msgstr "කියවීමේ ප්‍රගතිය දැන් යවන්න"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "සමමුහූර්ත තොරතුරු"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "පුස්තකාලය ආරම්භ කර නොමැත"
 
 msgid "Books synced"
-msgstr ""
+msgstr "පොත් සමමුහූර්ත විය"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "පොත් සමමුහූර්ත අසාර්ථක"
 
 msgid "Checking for update…"
 msgstr "යාවත්කාලීන පරීක්ෂා කරමින්…"

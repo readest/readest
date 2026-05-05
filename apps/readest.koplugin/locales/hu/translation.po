@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Szinkronban tartja a KOReader és Readest eszközeidet."
 
 msgid "Library view"
-msgstr ""
+msgstr "Könyvtár nézet"
 
 msgid "View"
-msgstr ""
+msgstr "Nézet"
 
 msgid "Grid"
-msgstr ""
+msgstr "Rács"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Lista"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Csoportosítás"
 
 msgid "Authors"
-msgstr ""
+msgstr "Szerzők"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Könyvek"
 
 msgid "Groups"
-msgstr ""
+msgstr "Csoportok"
+
+msgid "Series"
+msgstr "Sorozatok"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Rendezés"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Olvasás dátuma"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Hozzáadás dátuma"
 
 msgid "Title"
 msgstr "Cím"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Szerző"
 
 msgid "Descending"
-msgstr ""
+msgstr "Csökkenő"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Növekvő"
 
 msgid "Actions"
-msgstr ""
+msgstr "Műveletek"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Könyvtár újraolvasása"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Letöltési mappa…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Válassz mappát a letöltött könyveknek"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Jelentkezz be a Readestbe a könyvtár megnyitásához"
 
 msgid "Library"
-msgstr ""
+msgstr "Könyvtár"
+
+msgid "Readest Library"
+msgstr "Readest könyvtár"
 
 msgid "Cancel"
 msgstr "Mégse"
 
 msgid "Clear"
-msgstr ""
+msgstr "Törlés"
 
 msgid "Search"
-msgstr ""
+msgstr "Keresés"
 
 msgid "Search library"
-msgstr ""
+msgstr "Keresés a könyvtárban"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Cím vagy szerző keresése"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "A Cover Browser bővítmény szükséges a teljes könyvtár megjelenítéséhez. Visszatérés egyszerű listához."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "A fájl áthelyezve vagy törölve. Újraolvasod a könyvtárat?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Letöltöd ezt a könyvet a Readestből?"
 
 msgid "Download"
-msgstr ""
+msgstr "Letöltés"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Először állítsd be a Kezdőkönyvtárat a Fájlkezelőben a letöltések engedélyezéséhez."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Letöltés…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "A felhőmásolat nem érhető el."
 
 msgid "Download failed."
-msgstr ""
+msgstr "A letöltés sikertelen."
+
+msgid "No cover available on Readest."
+msgstr "Nincs elérhető borító a Readesten."
+
+msgid "Cover download failed."
+msgstr "A borító letöltése sikertelen."
+
+msgid "Could not delete the file."
+msgstr "A fájl nem törölhető."
+
+msgid "Removing from cloud…"
+msgstr "Eltávolítás a felhőből…"
+
+msgid "Cloud removal failed."
+msgstr "A felhőből való eltávolítás sikertelen."
+
+msgid "Remove from Cloud & Device"
+msgstr "Eltávolítás felhőből és eszközről"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Eltávolítod ezt a könyvet a felhőből és az eszközről?"
+
+msgid "Remove"
+msgstr "Eltávolítás"
+
+msgid "Remove from Cloud Only"
+msgstr "Csak a felhőből távolítsd el"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Csak a felhőből távolítod el ezt a könyvet?"
+
+msgid "Remove from Device Only"
+msgstr "Csak az eszközről távolítsd el"
+
+msgid "Remove the local copy of this book?"
+msgstr "Eltávolítod ennek a könyvnek a helyi másolatát?"
+
+msgid "Upload to Cloud"
+msgstr "Feltöltés a felhőbe"
+
+msgid "Uploading…"
+msgstr "Feltöltés…"
+
+msgid "Storage quota exceeded."
+msgstr "Tárolási kvóta túllépve."
+
+msgid "Upload failed."
+msgstr "A feltöltés sikertelen."
+
+msgid "Download Book"
+msgstr "Könyv letöltése"
+
+msgid "Download Cover"
+msgstr "Borító letöltése"
+
+msgid "Download All"
+msgstr "Összes letöltése"
+
+msgid "Open Readest Library"
+msgstr "Readest könyvtár megnyitása"
+
+msgid "Push Readest book library"
+msgstr "Readest könyvtár feltöltése"
+
+msgid "Pull Readest book library"
+msgstr "Readest könyvtár letöltése"
 
 msgid "Set auto progress sync"
 msgstr "Automatikus haladás-szinkronizálás beállítása"
@@ -158,14 +215,29 @@ msgstr "Readest jegyzetek küldése erről az eszközről"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest jegyzetek lekérése más eszközökről"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Hozzáadás a Readesthez"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Először jelentkezz be a Readestbe."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "A fájl nem található."
+
+msgid "Unsupported book format."
+msgstr "Nem támogatott könyvformátum."
+
+msgid "Hashing book…"
+msgstr "Könyv hashelése…"
+
+msgid "Could not read file."
+msgstr "A fájl nem olvasható."
+
+msgid "Already in your Readest library:"
+msgstr "Már a Readest könyvtáradban van:"
+
+msgid "Added to Readest:"
+msgstr "Hozzáadva a Readesthez:"
 
 msgid "Log in Readest Account"
 msgstr "Bejelentkezés Readest-fiókba"
@@ -173,14 +245,17 @@ msgstr "Bejelentkezés Readest-fiókba"
 msgid "Log out as %1"
 msgstr "Kijelentkezés mint %1"
 
+msgid "Auto sync"
+msgstr "Automatikus szinkron"
+
+msgid "Readest library"
+msgstr "Readest könyvtár"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Könyvek küldése most"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Haladás és jegyzetek automatikus szinkronizálása"
+msgstr "Könyvek letöltése most"
 
 msgid "Push reading progress now"
 msgstr "Olvasási haladás küldése most"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Szinkronizálási adatok"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "A könyvtár nincs inicializálva"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Könyvek szinkronizálva"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "A könyvek szinkronizálása sikertelen"
 
 msgid "Checking for update…"
 msgstr "Frissítés keresése…"

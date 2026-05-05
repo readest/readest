@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader と Readest のデバイス間で同期を保ちます。"
 
 msgid "Library view"
-msgstr ""
+msgstr "ライブラリ表示"
 
 msgid "View"
-msgstr ""
+msgstr "表示"
 
 msgid "Grid"
-msgstr ""
+msgstr "グリッド"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "リスト"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "グループ化"
 
 msgid "Authors"
-msgstr ""
+msgstr "著者"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "書籍"
 
 msgid "Groups"
-msgstr ""
+msgstr "グループ"
+
+msgid "Series"
+msgstr "シリーズ"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "並べ替え"
 
 msgid "Date Read"
-msgstr ""
+msgstr "読了日"
 
 msgid "Date Added"
-msgstr ""
+msgstr "追加日"
 
 msgid "Title"
 msgstr "タイトル"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "著者"
 
 msgid "Descending"
-msgstr ""
+msgstr "降順"
 
 msgid "Ascending"
-msgstr ""
+msgstr "昇順"
 
 msgid "Actions"
-msgstr ""
+msgstr "操作"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "ライブラリを再スキャン"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "ダウンロードフォルダ…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "ダウンロードした書籍を保存するフォルダを選択"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "ライブラリを開くにはReadestにサインインしてください"
 
 msgid "Library"
-msgstr ""
+msgstr "ライブラリ"
+
+msgid "Readest Library"
+msgstr "Readest ライブラリ"
 
 msgid "Cancel"
 msgstr "キャンセル"
 
 msgid "Clear"
-msgstr ""
+msgstr "クリア"
 
 msgid "Search"
-msgstr ""
+msgstr "検索"
 
 msgid "Search library"
-msgstr ""
+msgstr "ライブラリを検索"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "タイトルまたは著者を検索"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "完全なライブラリ表示には Cover Browser プラグインが必要です。シンプルなリスト表示に戻ります。"
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "ファイルが移動または削除されました。ライブラリを再スキャンしますか？"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "この書籍を Readest からダウンロードしますか？"
 
 msgid "Download"
-msgstr ""
+msgstr "ダウンロード"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "ダウンロードを有効にするには、まずファイルマネージャーでホームフォルダを設定してください。"
 
 msgid "Downloading…"
-msgstr ""
+msgstr "ダウンロード中…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "クラウドのコピーは利用できません。"
 
 msgid "Download failed."
-msgstr ""
+msgstr "ダウンロードに失敗しました。"
+
+msgid "No cover available on Readest."
+msgstr "Readestに利用可能な表紙がありません。"
+
+msgid "Cover download failed."
+msgstr "表紙のダウンロードに失敗しました。"
+
+msgid "Could not delete the file."
+msgstr "ファイルを削除できませんでした。"
+
+msgid "Removing from cloud…"
+msgstr "クラウドから削除中…"
+
+msgid "Cloud removal failed."
+msgstr "クラウドからの削除に失敗しました。"
+
+msgid "Remove from Cloud & Device"
+msgstr "クラウドと端末から削除"
+
+msgid "Remove this book from cloud and device?"
+msgstr "この書籍をクラウドと端末から削除しますか？"
+
+msgid "Remove"
+msgstr "削除"
+
+msgid "Remove from Cloud Only"
+msgstr "クラウドからのみ削除"
+
+msgid "Remove this book from the cloud only?"
+msgstr "この書籍をクラウドからのみ削除しますか？"
+
+msgid "Remove from Device Only"
+msgstr "端末からのみ削除"
+
+msgid "Remove the local copy of this book?"
+msgstr "この書籍のローカルコピーを削除しますか？"
+
+msgid "Upload to Cloud"
+msgstr "クラウドにアップロード"
+
+msgid "Uploading…"
+msgstr "アップロード中…"
+
+msgid "Storage quota exceeded."
+msgstr "ストレージの上限を超えました。"
+
+msgid "Upload failed."
+msgstr "アップロードに失敗しました。"
+
+msgid "Download Book"
+msgstr "書籍をダウンロード"
+
+msgid "Download Cover"
+msgstr "表紙をダウンロード"
+
+msgid "Download All"
+msgstr "すべてダウンロード"
+
+msgid "Open Readest Library"
+msgstr "Readest ライブラリを開く"
+
+msgid "Push Readest book library"
+msgstr "Readest 書籍ライブラリを送信"
+
+msgid "Pull Readest book library"
+msgstr "Readest 書籍ライブラリを取得"
 
 msgid "Set auto progress sync"
 msgstr "進捗の自動同期を設定"
@@ -158,14 +215,29 @@ msgstr "このデバイスから Readest の注釈を送信"
 msgid "Pull readest annotations from other devices"
 msgstr "他のデバイスから Readest の注釈を取得"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest に追加"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "先に Readest にサインインしてください。"
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "ファイルが見つかりません。"
+
+msgid "Unsupported book format."
+msgstr "サポートされていない書籍形式です。"
+
+msgid "Hashing book…"
+msgstr "書籍のハッシュを計算中…"
+
+msgid "Could not read file."
+msgstr "ファイルを読み取れませんでした。"
+
+msgid "Already in your Readest library:"
+msgstr "すでに Readest ライブラリにあります:"
+
+msgid "Added to Readest:"
+msgstr "Readest に追加しました:"
 
 msgid "Log in Readest Account"
 msgstr "Readest アカウントにログイン"
@@ -173,14 +245,17 @@ msgstr "Readest アカウントにログイン"
 msgid "Log out as %1"
 msgstr "%1 をログアウト"
 
+msgid "Auto sync"
+msgstr "自動同期"
+
+msgid "Readest library"
+msgstr "Readest ライブラリ"
+
 msgid "Push books now"
-msgstr ""
+msgstr "今すぐ書籍を送信"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "進捗と注釈を自動同期"
+msgstr "今すぐ書籍を取得"
 
 msgid "Push reading progress now"
 msgstr "読書の進捗をすぐに送信"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "同期情報"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "ライブラリが初期化されていません"
 
 msgid "Books synced"
-msgstr ""
+msgstr "書籍を同期しました"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "書籍の同期に失敗しました"
 
 msgid "Checking for update…"
 msgstr "更新を確認しています…"

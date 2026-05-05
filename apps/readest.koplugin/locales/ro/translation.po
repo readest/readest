@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Menține dispozitivele tale KOReader și Readest sincronizate."
 
 msgid "Library view"
-msgstr ""
+msgstr "Vizualizare bibliotecă"
 
 msgid "View"
-msgstr ""
+msgstr "Vizualizare"
 
 msgid "Grid"
-msgstr ""
+msgstr "Grilă"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Listă"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Grupare după"
 
 msgid "Authors"
-msgstr ""
+msgstr "Autori"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Cărți"
 
 msgid "Groups"
-msgstr ""
+msgstr "Grupuri"
+
+msgid "Series"
+msgstr "Serii"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Sortare după"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Data citirii"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Data adăugării"
 
 msgid "Title"
 msgstr "Titlu"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Autor"
 
 msgid "Descending"
-msgstr ""
+msgstr "Descrescător"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Crescător"
 
 msgid "Actions"
-msgstr ""
+msgstr "Acțiuni"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Rescanează biblioteca"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Folder descărcare…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Alege un folder pentru cărțile descărcate"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Conectează-te la Readest pentru a deschide biblioteca"
 
 msgid "Library"
-msgstr ""
+msgstr "Bibliotecă"
+
+msgid "Readest Library"
+msgstr "Biblioteca Readest"
 
 msgid "Cancel"
 msgstr "Anulează"
 
 msgid "Clear"
-msgstr ""
+msgstr "Șterge"
 
 msgid "Search"
-msgstr ""
+msgstr "Caută"
 
 msgid "Search library"
-msgstr ""
+msgstr "Caută în bibliotecă"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Caută titlu sau autor"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Pluginul Cover Browser este necesar pentru randarea completă a bibliotecii. Se revine la lista simplă."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Fișier mutat sau șters. Rescanezi biblioteca?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Descarci această carte din Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Descarcă"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Setează mai întâi folderul Acasă în Manager de fișiere pentru a permite descărcările."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Se descarcă…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Copia din cloud nu este disponibilă."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Descărcare eșuată."
+
+msgid "No cover available on Readest."
+msgstr "Nicio copertă disponibilă pe Readest."
+
+msgid "Cover download failed."
+msgstr "Descărcarea copertei a eșuat."
+
+msgid "Could not delete the file."
+msgstr "Nu s-a putut șterge fișierul."
+
+msgid "Removing from cloud…"
+msgstr "Se elimină din cloud…"
+
+msgid "Cloud removal failed."
+msgstr "Eliminarea din cloud a eșuat."
+
+msgid "Remove from Cloud & Device"
+msgstr "Elimină din cloud și de pe dispozitiv"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Elimini această carte din cloud și de pe dispozitiv?"
+
+msgid "Remove"
+msgstr "Elimină"
+
+msgid "Remove from Cloud Only"
+msgstr "Elimină numai din cloud"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Elimini această carte numai din cloud?"
+
+msgid "Remove from Device Only"
+msgstr "Elimină numai de pe dispozitiv"
+
+msgid "Remove the local copy of this book?"
+msgstr "Elimini copia locală a acestei cărți?"
+
+msgid "Upload to Cloud"
+msgstr "Încarcă în cloud"
+
+msgid "Uploading…"
+msgstr "Se încarcă…"
+
+msgid "Storage quota exceeded."
+msgstr "Cota de stocare a fost depășită."
+
+msgid "Upload failed."
+msgstr "Încărcarea a eșuat."
+
+msgid "Download Book"
+msgstr "Descarcă cartea"
+
+msgid "Download Cover"
+msgstr "Descarcă coperta"
+
+msgid "Download All"
+msgstr "Descarcă tot"
+
+msgid "Open Readest Library"
+msgstr "Deschide biblioteca Readest"
+
+msgid "Push Readest book library"
+msgstr "Trimite biblioteca Readest"
+
+msgid "Pull Readest book library"
+msgstr "Preia biblioteca Readest"
 
 msgid "Set auto progress sync"
 msgstr "Setează sincronizarea automată a progresului"
@@ -158,14 +215,29 @@ msgstr "Trimite adnotările Readest de pe acest dispozitiv"
 msgid "Pull readest annotations from other devices"
 msgstr "Obține adnotările Readest de pe alte dispozitive"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Adaugă la Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Conectează-te mai întâi la Readest."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Fișier negăsit."
+
+msgid "Unsupported book format."
+msgstr "Format de carte neacceptat."
+
+msgid "Hashing book…"
+msgstr "Se calculează hash-ul cărții…"
+
+msgid "Could not read file."
+msgstr "Nu s-a putut citi fișierul."
+
+msgid "Already in your Readest library:"
+msgstr "Deja în biblioteca ta Readest:"
+
+msgid "Added to Readest:"
+msgstr "Adăugat la Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Autentificare în contul Readest"
@@ -173,14 +245,17 @@ msgstr "Autentificare în contul Readest"
 msgid "Log out as %1"
 msgstr "Deconectare de la %1"
 
+msgid "Auto sync"
+msgstr "Sincronizare automată"
+
+msgid "Readest library"
+msgstr "Biblioteca Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Trimite cărțile acum"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Sincronizează automat progresul și adnotările"
+msgstr "Preia cărțile acum"
 
 msgid "Push reading progress now"
 msgstr "Trimite progresul de citire acum"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Informații de sincronizare"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Biblioteca nu este inițializată"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Cărți sincronizate"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Sincronizarea cărților a eșuat"
 
 msgid "Checking for update…"
 msgstr "Se verifică actualizările…"

@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader ve Readest cihazlarınızı senkronize tutar."
 
 msgid "Library view"
-msgstr ""
+msgstr "Kütüphane görünümü"
 
 msgid "View"
-msgstr ""
+msgstr "Görünüm"
 
 msgid "Grid"
-msgstr ""
+msgstr "Izgara"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Liste"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Şuna göre grupla"
 
 msgid "Authors"
-msgstr ""
+msgstr "Yazarlar"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Kitaplar"
 
 msgid "Groups"
-msgstr ""
+msgstr "Gruplar"
+
+msgid "Series"
+msgstr "Seriler"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Şuna göre sırala"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Okuma tarihi"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Eklenme tarihi"
 
 msgid "Title"
 msgstr "Başlık"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Yazar"
 
 msgid "Descending"
-msgstr ""
+msgstr "Azalan"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Artan"
 
 msgid "Actions"
-msgstr ""
+msgstr "İşlemler"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Kütüphaneyi yeniden tara"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "İndirme klasörü…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "İndirilen kitaplar için bir klasör seçin"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Kütüphaneyi açmak için Readest'e giriş yapın"
 
 msgid "Library"
-msgstr ""
+msgstr "Kütüphane"
+
+msgid "Readest Library"
+msgstr "Readest Kütüphanesi"
 
 msgid "Cancel"
 msgstr "İptal"
 
 msgid "Clear"
-msgstr ""
+msgstr "Temizle"
 
 msgid "Search"
-msgstr ""
+msgstr "Ara"
 
 msgid "Search library"
-msgstr ""
+msgstr "Kütüphanede ara"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Başlık veya yazar ara"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Tam kütüphane görünümü için Cover Browser eklentisi gerekli. Düz listeye geri dönülüyor."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Dosya taşındı veya silindi. Kütüphane yeniden taransın mı?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Bu kitabı Readest'ten indirelim mi?"
 
 msgid "Download"
-msgstr ""
+msgstr "İndir"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "İndirmeleri etkinleştirmek için önce Dosya Yöneticisi'nde Ana klasörü ayarlayın."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "İndiriliyor…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Bulut kopyası kullanılamıyor."
 
 msgid "Download failed."
-msgstr ""
+msgstr "İndirme başarısız."
+
+msgid "No cover available on Readest."
+msgstr "Readest'te kapak bulunamadı."
+
+msgid "Cover download failed."
+msgstr "Kapak indirilemedi."
+
+msgid "Could not delete the file."
+msgstr "Dosya silinemedi."
+
+msgid "Removing from cloud…"
+msgstr "Buluttan kaldırılıyor…"
+
+msgid "Cloud removal failed."
+msgstr "Buluttan kaldırma başarısız."
+
+msgid "Remove from Cloud & Device"
+msgstr "Buluttan ve cihazdan kaldır"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Bu kitap buluttan ve cihazdan kaldırılsın mı?"
+
+msgid "Remove"
+msgstr "Kaldır"
+
+msgid "Remove from Cloud Only"
+msgstr "Yalnızca buluttan kaldır"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Bu kitap yalnızca buluttan kaldırılsın mı?"
+
+msgid "Remove from Device Only"
+msgstr "Yalnızca cihazdan kaldır"
+
+msgid "Remove the local copy of this book?"
+msgstr "Bu kitabın yerel kopyası kaldırılsın mı?"
+
+msgid "Upload to Cloud"
+msgstr "Buluta yükle"
+
+msgid "Uploading…"
+msgstr "Yükleniyor…"
+
+msgid "Storage quota exceeded."
+msgstr "Depolama kotası aşıldı."
+
+msgid "Upload failed."
+msgstr "Yükleme başarısız."
+
+msgid "Download Book"
+msgstr "Kitabı indir"
+
+msgid "Download Cover"
+msgstr "Kapağı indir"
+
+msgid "Download All"
+msgstr "Tümünü indir"
+
+msgid "Open Readest Library"
+msgstr "Readest Kütüphanesini aç"
+
+msgid "Push Readest book library"
+msgstr "Readest kitap kütüphanesini gönder"
+
+msgid "Pull Readest book library"
+msgstr "Readest kitap kütüphanesini al"
 
 msgid "Set auto progress sync"
 msgstr "Otomatik ilerleme senkronizasyonunu ayarla"
@@ -158,14 +215,29 @@ msgstr "Bu cihazdan Readest açıklamalarını gönder"
 msgid "Pull readest annotations from other devices"
 msgstr "Diğer cihazlardan Readest açıklamalarını al"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest'e ekle"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Önce Readest'e giriş yapın."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Dosya bulunamadı."
+
+msgid "Unsupported book format."
+msgstr "Desteklenmeyen kitap biçimi."
+
+msgid "Hashing book…"
+msgstr "Kitap hash'leniyor…"
+
+msgid "Could not read file."
+msgstr "Dosya okunamadı."
+
+msgid "Already in your Readest library:"
+msgstr "Zaten Readest kütüphanenizde:"
+
+msgid "Added to Readest:"
+msgstr "Readest'e eklendi:"
 
 msgid "Log in Readest Account"
 msgstr "Readest hesabına giriş yap"
@@ -173,14 +245,17 @@ msgstr "Readest hesabına giriş yap"
 msgid "Log out as %1"
 msgstr "%1 olarak çıkış yap"
 
+msgid "Auto sync"
+msgstr "Otomatik senkronizasyon"
+
+msgid "Readest library"
+msgstr "Readest kütüphanesi"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Kitapları şimdi gönder"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "İlerlemeyi ve açıklamaları otomatik senkronize et"
+msgstr "Kitapları şimdi al"
 
 msgid "Push reading progress now"
 msgstr "Okuma ilerlemesini şimdi gönder"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Senkronizasyon bilgisi"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Kütüphane başlatılmadı"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Kitaplar senkronize edildi"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Kitap senkronizasyonu başarısız"
 
 msgid "Checking for update…"
 msgstr "Güncelleme kontrol ediliyor…"

@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader와 Readest 기기를 동기화 상태로 유지합니다."
 
 msgid "Library view"
-msgstr ""
+msgstr "라이브러리 보기"
 
 msgid "View"
-msgstr ""
+msgstr "보기"
 
 msgid "Grid"
-msgstr ""
+msgstr "바둑판"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "목록"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "그룹화 기준"
 
 msgid "Authors"
-msgstr ""
+msgstr "저자"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "책"
 
 msgid "Groups"
-msgstr ""
+msgstr "그룹"
+
+msgid "Series"
+msgstr "시리즈"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "정렬 기준"
 
 msgid "Date Read"
-msgstr ""
+msgstr "읽은 날짜"
 
 msgid "Date Added"
-msgstr ""
+msgstr "추가된 날짜"
 
 msgid "Title"
 msgstr "제목"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "저자"
 
 msgid "Descending"
-msgstr ""
+msgstr "내림차순"
 
 msgid "Ascending"
-msgstr ""
+msgstr "오름차순"
 
 msgid "Actions"
-msgstr ""
+msgstr "작업"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "라이브러리 다시 검색"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "다운로드 폴더…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "다운로드한 책을 저장할 폴더 선택"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "라이브러리를 열려면 Readest에 로그인하세요"
 
 msgid "Library"
-msgstr ""
+msgstr "라이브러리"
+
+msgid "Readest Library"
+msgstr "Readest 라이브러리"
 
 msgid "Cancel"
 msgstr "취소"
 
 msgid "Clear"
-msgstr ""
+msgstr "지우기"
 
 msgid "Search"
-msgstr ""
+msgstr "검색"
 
 msgid "Search library"
-msgstr ""
+msgstr "라이브러리 검색"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "제목 또는 저자 검색"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "전체 라이브러리 렌더링에는 Cover Browser 플러그인이 필요합니다. 간단한 목록으로 대체됩니다."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "파일이 이동되었거나 삭제되었습니다. 라이브러리를 다시 검색하시겠습니까?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "이 책을 Readest에서 다운로드하시겠습니까?"
 
 msgid "Download"
-msgstr ""
+msgstr "다운로드"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "다운로드를 사용하려면 먼저 파일 관리자에서 홈 폴더를 설정하세요."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "다운로드 중…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "클라우드 사본을 사용할 수 없습니다."
 
 msgid "Download failed."
-msgstr ""
+msgstr "다운로드 실패."
+
+msgid "No cover available on Readest."
+msgstr "Readest에 사용 가능한 표지가 없습니다."
+
+msgid "Cover download failed."
+msgstr "표지 다운로드에 실패했습니다."
+
+msgid "Could not delete the file."
+msgstr "파일을 삭제할 수 없습니다."
+
+msgid "Removing from cloud…"
+msgstr "클라우드에서 제거 중…"
+
+msgid "Cloud removal failed."
+msgstr "클라우드에서 제거하지 못했습니다."
+
+msgid "Remove from Cloud & Device"
+msgstr "클라우드와 기기에서 제거"
+
+msgid "Remove this book from cloud and device?"
+msgstr "이 책을 클라우드와 기기에서 제거하시겠습니까?"
+
+msgid "Remove"
+msgstr "제거"
+
+msgid "Remove from Cloud Only"
+msgstr "클라우드에서만 제거"
+
+msgid "Remove this book from the cloud only?"
+msgstr "이 책을 클라우드에서만 제거하시겠습니까?"
+
+msgid "Remove from Device Only"
+msgstr "기기에서만 제거"
+
+msgid "Remove the local copy of this book?"
+msgstr "이 책의 로컬 사본을 제거하시겠습니까?"
+
+msgid "Upload to Cloud"
+msgstr "클라우드에 업로드"
+
+msgid "Uploading…"
+msgstr "업로드 중…"
+
+msgid "Storage quota exceeded."
+msgstr "저장 용량을 초과했습니다."
+
+msgid "Upload failed."
+msgstr "업로드 실패."
+
+msgid "Download Book"
+msgstr "책 다운로드"
+
+msgid "Download Cover"
+msgstr "표지 다운로드"
+
+msgid "Download All"
+msgstr "모두 다운로드"
+
+msgid "Open Readest Library"
+msgstr "Readest 라이브러리 열기"
+
+msgid "Push Readest book library"
+msgstr "Readest 책 라이브러리 푸시"
+
+msgid "Pull Readest book library"
+msgstr "Readest 책 라이브러리 풀"
 
 msgid "Set auto progress sync"
 msgstr "진행 상황 자동 동기화 설정"
@@ -158,14 +215,29 @@ msgstr "이 기기에서 Readest 주석 보내기"
 msgid "Pull readest annotations from other devices"
 msgstr "다른 기기에서 Readest 주석 가져오기"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest에 추가"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "먼저 Readest에 로그인하세요."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "파일을 찾을 수 없습니다."
+
+msgid "Unsupported book format."
+msgstr "지원되지 않는 책 형식입니다."
+
+msgid "Hashing book…"
+msgstr "책 해시 계산 중…"
+
+msgid "Could not read file."
+msgstr "파일을 읽을 수 없습니다."
+
+msgid "Already in your Readest library:"
+msgstr "이미 Readest 라이브러리에 있습니다:"
+
+msgid "Added to Readest:"
+msgstr "Readest에 추가됨:"
 
 msgid "Log in Readest Account"
 msgstr "Readest 계정에 로그인"
@@ -173,14 +245,17 @@ msgstr "Readest 계정에 로그인"
 msgid "Log out as %1"
 msgstr "%1 로그아웃"
 
+msgid "Auto sync"
+msgstr "자동 동기화"
+
+msgid "Readest library"
+msgstr "Readest 라이브러리"
+
 msgid "Push books now"
-msgstr ""
+msgstr "지금 책 푸시"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "진행 상황과 주석을 자동으로 동기화"
+msgstr "지금 책 풀"
 
 msgid "Push reading progress now"
 msgstr "지금 읽기 진행 상황 보내기"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "동기화 정보"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "라이브러리가 초기화되지 않았습니다"
 
 msgid "Books synced"
-msgstr ""
+msgstr "책 동기화됨"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "책 동기화 실패"
 
 msgid "Checking for update…"
 msgstr "업데이트 확인 중…"

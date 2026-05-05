@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "உங்கள் KOReader மற்றும் Readest சாதனங்களை ஒத்திசைவில் வைத்திருக்கிறது."
 
 msgid "Library view"
-msgstr ""
+msgstr "நூலக காட்சி"
 
 msgid "View"
-msgstr ""
+msgstr "காட்சி"
 
 msgid "Grid"
-msgstr ""
+msgstr "கட்டம்"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "பட்டியல்"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "குழுவாக்கு"
 
 msgid "Authors"
-msgstr ""
+msgstr "ஆசிரியர்கள்"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "புத்தகங்கள்"
 
 msgid "Groups"
-msgstr ""
+msgstr "குழுக்கள்"
+
+msgid "Series"
+msgstr "தொடர்கள்"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "வரிசைப்படுத்து"
 
 msgid "Date Read"
-msgstr ""
+msgstr "படித்த தேதி"
 
 msgid "Date Added"
-msgstr ""
+msgstr "சேர்த்த தேதி"
 
 msgid "Title"
 msgstr "தலைப்பு"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "ஆசிரியர்"
 
 msgid "Descending"
-msgstr ""
+msgstr "இறங்குநிலை"
 
 msgid "Ascending"
-msgstr ""
+msgstr "ஏறுநிலை"
 
 msgid "Actions"
-msgstr ""
+msgstr "செயல்கள்"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "நூலகத்தை மீண்டும் ஸ்கேன் செய்"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "பதிவிறக்க கோப்புறை…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "பதிவிறக்கிய புத்தகங்களுக்கு கோப்புறை தேர்ந்தெடுக்கவும்"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "நூலகத்தைத் திறக்க Readest-இல் உள்நுழையவும்"
 
 msgid "Library"
-msgstr ""
+msgstr "நூலகம்"
+
+msgid "Readest Library"
+msgstr "Readest நூலகம்"
 
 msgid "Cancel"
 msgstr "ரத்து செய்யவும்"
 
 msgid "Clear"
-msgstr ""
+msgstr "அழி"
 
 msgid "Search"
-msgstr ""
+msgstr "தேடு"
 
 msgid "Search library"
-msgstr ""
+msgstr "நூலகத்தில் தேடு"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "தலைப்பு அல்லது ஆசிரியரைத் தேடு"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "முழு நூலக காட்சிக்கு Cover Browser செருகுநிரல் தேவை. எளிய பட்டியலுக்கு திரும்புகிறது."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "கோப்பு நகர்த்தப்பட்டது அல்லது நீக்கப்பட்டது. நூலகத்தை மீண்டும் ஸ்கேன் செய்யவா?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "இந்த புத்தகத்தை Readest-இலிருந்து பதிவிறக்கவா?"
 
 msgid "Download"
-msgstr ""
+msgstr "பதிவிறக்கு"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "பதிவிறக்கங்களை இயக்க கோப்பு மேலாளரில் முதலில் வீட்டு கோப்புறையை அமைக்கவும்."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "பதிவிறக்கப்படுகிறது…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "கிளவுட் நகல் கிடைக்கவில்லை."
 
 msgid "Download failed."
-msgstr ""
+msgstr "பதிவிறக்கம் தோல்வியடைந்தது."
+
+msgid "No cover available on Readest."
+msgstr "Readest-இல் அட்டை கிடைக்கவில்லை."
+
+msgid "Cover download failed."
+msgstr "அட்டை பதிவிறக்கம் தோல்வியடைந்தது."
+
+msgid "Could not delete the file."
+msgstr "கோப்பை நீக்க முடியவில்லை."
+
+msgid "Removing from cloud…"
+msgstr "கிளவுட்டிலிருந்து நீக்கப்படுகிறது…"
+
+msgid "Cloud removal failed."
+msgstr "கிளவுட்டிலிருந்து நீக்கம் தோல்வியடைந்தது."
+
+msgid "Remove from Cloud & Device"
+msgstr "கிளவுட் & சாதனத்திலிருந்து நீக்கு"
+
+msgid "Remove this book from cloud and device?"
+msgstr "இந்த புத்தகத்தை கிளவுட் & சாதனத்திலிருந்து நீக்கவா?"
+
+msgid "Remove"
+msgstr "நீக்கு"
+
+msgid "Remove from Cloud Only"
+msgstr "கிளவுட்டிலிருந்து மட்டும் நீக்கு"
+
+msgid "Remove this book from the cloud only?"
+msgstr "இந்த புத்தகத்தை கிளவுட்டிலிருந்து மட்டும் நீக்கவா?"
+
+msgid "Remove from Device Only"
+msgstr "சாதனத்திலிருந்து மட்டும் நீக்கு"
+
+msgid "Remove the local copy of this book?"
+msgstr "இந்த புத்தகத்தின் உள்ளூர் நகலை நீக்கவா?"
+
+msgid "Upload to Cloud"
+msgstr "கிளவுட்டில் பதிவேற்று"
+
+msgid "Uploading…"
+msgstr "பதிவேற்றப்படுகிறது…"
+
+msgid "Storage quota exceeded."
+msgstr "சேமிப்பக ஒதுக்கீடு மீறப்பட்டது."
+
+msgid "Upload failed."
+msgstr "பதிவேற்றம் தோல்வியடைந்தது."
+
+msgid "Download Book"
+msgstr "புத்தகம் பதிவிறக்கு"
+
+msgid "Download Cover"
+msgstr "அட்டை பதிவிறக்கு"
+
+msgid "Download All"
+msgstr "அனைத்தையும் பதிவிறக்கு"
+
+msgid "Open Readest Library"
+msgstr "Readest நூலகத்தைத் திற"
+
+msgid "Push Readest book library"
+msgstr "Readest புத்தக நூலகத்தை அனுப்பு"
+
+msgid "Pull Readest book library"
+msgstr "Readest புத்தக நூலகத்தை இழு"
 
 msgid "Set auto progress sync"
 msgstr "தானியங்கி முன்னேற்ற ஒத்திசைவை அமைக்கவும்"
@@ -158,14 +215,29 @@ msgstr "இந்தச் சாதனத்திலிருந்து Read
 msgid "Pull readest annotations from other devices"
 msgstr "மற்ற சாதனங்களிலிருந்து Readest குறிப்புகளைப் பெறு"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest-இல் சேர்"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "முதலில் Readest-இல் உள்நுழையவும்."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "கோப்பு கிடைக்கவில்லை."
+
+msgid "Unsupported book format."
+msgstr "ஆதரிக்கப்படாத புத்தக வடிவம்."
+
+msgid "Hashing book…"
+msgstr "புத்தகத்தின் ஹாஷ் கணக்கிடப்படுகிறது…"
+
+msgid "Could not read file."
+msgstr "கோப்பை வாசிக்க முடியவில்லை."
+
+msgid "Already in your Readest library:"
+msgstr "உங்கள் Readest நூலகத்தில் ஏற்கனவே உள்ளது:"
+
+msgid "Added to Readest:"
+msgstr "Readest-இல் சேர்க்கப்பட்டது:"
 
 msgid "Log in Readest Account"
 msgstr "Readest கணக்கில் உள்நுழைக"
@@ -173,14 +245,17 @@ msgstr "Readest கணக்கில் உள்நுழைக"
 msgid "Log out as %1"
 msgstr "%1 ஆக வெளியேறு"
 
+msgid "Auto sync"
+msgstr "தானியங்கி ஒத்திசைவு"
+
+msgid "Readest library"
+msgstr "Readest நூலகம்"
+
 msgid "Push books now"
-msgstr ""
+msgstr "இப்போது புத்தகங்களை அனுப்பு"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "முன்னேற்றம் மற்றும் குறிப்புகளை தானாக ஒத்திசை"
+msgstr "இப்போது புத்தகங்களைப் பெறு"
 
 msgid "Push reading progress now"
 msgstr "வாசிப்பு முன்னேற்றத்தை இப்போது அனுப்பு"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "ஒத்திசைவு தகவல்"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "நூலகம் துவக்கப்படவில்லை"
 
 msgid "Books synced"
-msgstr ""
+msgstr "புத்தகங்கள் ஒத்திசைக்கப்பட்டன"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "புத்தகங்கள் ஒத்திசைவு தோல்வி"
 
 msgid "Checking for update…"
 msgstr "புதுப்பிப்பைச் சரிபார்க்கிறது…"

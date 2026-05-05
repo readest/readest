@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Memastikan peranti KOReader dan Readest anda kekal segerak."
 
 msgid "Library view"
-msgstr ""
+msgstr "Paparan Pustaka"
 
 msgid "View"
-msgstr ""
+msgstr "Paparan"
 
 msgid "Grid"
-msgstr ""
+msgstr "Grid"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Senarai"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Kumpulkan mengikut"
 
 msgid "Authors"
-msgstr ""
+msgstr "Pengarang"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Buku"
 
 msgid "Groups"
-msgstr ""
+msgstr "Kumpulan"
+
+msgid "Series"
+msgstr "Siri"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Susun mengikut"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Tarikh Baca"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Tarikh Ditambah"
 
 msgid "Title"
 msgstr "Tajuk"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Pengarang"
 
 msgid "Descending"
-msgstr ""
+msgstr "Menurun"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Menaik"
 
 msgid "Actions"
-msgstr ""
+msgstr "Tindakan"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Imbas semula pustaka"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Folder muat turun…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Pilih folder untuk buku yang dimuat turun"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Log masuk ke Readest untuk membuka Pustaka"
 
 msgid "Library"
-msgstr ""
+msgstr "Pustaka"
+
+msgid "Readest Library"
+msgstr "Pustaka Readest"
 
 msgid "Cancel"
 msgstr "Batal"
 
 msgid "Clear"
-msgstr ""
+msgstr "Kosongkan"
 
 msgid "Search"
-msgstr ""
+msgstr "Cari"
 
 msgid "Search library"
-msgstr ""
+msgstr "Cari dalam Pustaka"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Cari tajuk atau pengarang"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Plugin Cover Browser diperlukan untuk paparan Pustaka penuh. Kembali kepada senarai biasa."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Fail dipindah atau dipadam. Imbas semula Pustaka?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Muat turun buku ini dari Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Muat turun"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Tetapkan folder Utama dalam Pengurus Fail dahulu untuk membolehkan muat turun."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Memuat turun…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Salinan awan tidak tersedia."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Muat turun gagal."
+
+msgid "No cover available on Readest."
+msgstr "Tiada kulit tersedia di Readest."
+
+msgid "Cover download failed."
+msgstr "Muat turun kulit gagal."
+
+msgid "Could not delete the file."
+msgstr "Tidak dapat memadam fail."
+
+msgid "Removing from cloud…"
+msgstr "Mengeluarkan daripada awan…"
+
+msgid "Cloud removal failed."
+msgstr "Pengeluaran awan gagal."
+
+msgid "Remove from Cloud & Device"
+msgstr "Buang daripada Awan & Peranti"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Buang buku ini daripada awan dan peranti?"
+
+msgid "Remove"
+msgstr "Buang"
+
+msgid "Remove from Cloud Only"
+msgstr "Buang dari Awan Sahaja"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Buang buku ini hanya dari awan?"
+
+msgid "Remove from Device Only"
+msgstr "Buang dari Peranti Sahaja"
+
+msgid "Remove the local copy of this book?"
+msgstr "Buang salinan setempat buku ini?"
+
+msgid "Upload to Cloud"
+msgstr "Muat naik ke Awan"
+
+msgid "Uploading…"
+msgstr "Memuat naik…"
+
+msgid "Storage quota exceeded."
+msgstr "Kuota storan dilampaui."
+
+msgid "Upload failed."
+msgstr "Muat naik gagal."
+
+msgid "Download Book"
+msgstr "Muat turun Buku"
+
+msgid "Download Cover"
+msgstr "Muat turun Kulit"
+
+msgid "Download All"
+msgstr "Muat turun Semua"
+
+msgid "Open Readest Library"
+msgstr "Buka Pustaka Readest"
+
+msgid "Push Readest book library"
+msgstr "Hantar pustaka buku Readest"
+
+msgid "Pull Readest book library"
+msgstr "Tarik pustaka buku Readest"
 
 msgid "Set auto progress sync"
 msgstr "Tetapkan penyegerakan kemajuan automatik"
@@ -158,14 +215,29 @@ msgstr "Hantar anotasi Readest dari peranti ini"
 msgid "Pull readest annotations from other devices"
 msgstr "Tarik anotasi Readest dari peranti lain"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Tambah ke Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Log masuk ke Readest dahulu."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Fail tidak ditemui."
+
+msgid "Unsupported book format."
+msgstr "Format buku tidak disokong."
+
+msgid "Hashing book…"
+msgstr "Mengira cap-jari buku…"
+
+msgid "Could not read file."
+msgstr "Tidak dapat membaca fail."
+
+msgid "Already in your Readest library:"
+msgstr "Sudah ada dalam Pustaka Readest anda:"
+
+msgid "Added to Readest:"
+msgstr "Ditambah ke Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Log masuk ke akaun Readest"
@@ -173,14 +245,17 @@ msgstr "Log masuk ke akaun Readest"
 msgid "Log out as %1"
 msgstr "Log keluar sebagai %1"
 
+msgid "Auto sync"
+msgstr "Penyegerakan automatik"
+
+msgid "Readest library"
+msgstr "Pustaka Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Hantar buku sekarang"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Segerakkan kemajuan dan anotasi secara automatik"
+msgstr "Tarik buku sekarang"
 
 msgid "Push reading progress now"
 msgstr "Hantar kemajuan bacaan sekarang"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Maklumat penyegerakan"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Pustaka belum dimulakan"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Buku diselaraskan"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Penyegerakan buku gagal"
 
 msgid "Checking for update…"
 msgstr "Menyemak kemas kini…"

@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Mantiene sincronizados tus dispositivos KOReader y Readest."
 
 msgid "Library view"
-msgstr ""
+msgstr "Vista de biblioteca"
 
 msgid "View"
-msgstr ""
+msgstr "Vista"
 
 msgid "Grid"
-msgstr ""
+msgstr "Cuadrícula"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Lista"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Agrupar por"
 
 msgid "Authors"
-msgstr ""
+msgstr "Autores"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Libros"
 
 msgid "Groups"
-msgstr ""
+msgstr "Grupos"
+
+msgid "Series"
+msgstr "Series"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Ordenar por"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Fecha de lectura"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Fecha de adición"
 
 msgid "Title"
 msgstr "Título"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Autor"
 
 msgid "Descending"
-msgstr ""
+msgstr "Descendente"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Ascendente"
 
 msgid "Actions"
-msgstr ""
+msgstr "Acciones"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Reescanear biblioteca"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Carpeta de descargas…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Elige una carpeta para los libros descargados"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Inicia sesión en Readest para abrir la biblioteca"
 
 msgid "Library"
-msgstr ""
+msgstr "Biblioteca"
+
+msgid "Readest Library"
+msgstr "Biblioteca de Readest"
 
 msgid "Cancel"
 msgstr "Cancelar"
 
 msgid "Clear"
-msgstr ""
+msgstr "Borrar"
 
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 msgid "Search library"
-msgstr ""
+msgstr "Buscar en la biblioteca"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Buscar título o autor"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Se requiere el complemento Cover Browser para la representación completa de la biblioteca. Volviendo a lista simple."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Archivo movido o eliminado. ¿Reescanear la biblioteca?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "¿Descargar este libro de Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Descargar"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Configura primero la carpeta de inicio en el gestor de archivos para habilitar las descargas."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Descargando…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Copia en la nube no disponible."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Descarga fallida."
+
+msgid "No cover available on Readest."
+msgstr "No hay portada disponible en Readest."
+
+msgid "Cover download failed."
+msgstr "Falló la descarga de la portada."
+
+msgid "Could not delete the file."
+msgstr "No se pudo eliminar el archivo."
+
+msgid "Removing from cloud…"
+msgstr "Eliminando de la nube…"
+
+msgid "Cloud removal failed."
+msgstr "Eliminación en la nube fallida."
+
+msgid "Remove from Cloud & Device"
+msgstr "Eliminar de la nube y del dispositivo"
+
+msgid "Remove this book from cloud and device?"
+msgstr "¿Eliminar este libro de la nube y del dispositivo?"
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Remove from Cloud Only"
+msgstr "Eliminar solo de la nube"
+
+msgid "Remove this book from the cloud only?"
+msgstr "¿Eliminar este libro solo de la nube?"
+
+msgid "Remove from Device Only"
+msgstr "Eliminar solo del dispositivo"
+
+msgid "Remove the local copy of this book?"
+msgstr "¿Eliminar la copia local de este libro?"
+
+msgid "Upload to Cloud"
+msgstr "Subir a la nube"
+
+msgid "Uploading…"
+msgstr "Subiendo…"
+
+msgid "Storage quota exceeded."
+msgstr "Cuota de almacenamiento superada."
+
+msgid "Upload failed."
+msgstr "Subida fallida."
+
+msgid "Download Book"
+msgstr "Descargar libro"
+
+msgid "Download Cover"
+msgstr "Descargar portada"
+
+msgid "Download All"
+msgstr "Descargar todo"
+
+msgid "Open Readest Library"
+msgstr "Abrir biblioteca de Readest"
+
+msgid "Push Readest book library"
+msgstr "Enviar biblioteca de Readest"
+
+msgid "Pull Readest book library"
+msgstr "Obtener biblioteca de Readest"
 
 msgid "Set auto progress sync"
 msgstr "Configurar sincronización automática del progreso"
@@ -158,14 +215,29 @@ msgstr "Enviar anotaciones de Readest desde este dispositivo"
 msgid "Pull readest annotations from other devices"
 msgstr "Obtener anotaciones de Readest de otros dispositivos"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Añadir a Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Inicia sesión en Readest primero."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Archivo no encontrado."
+
+msgid "Unsupported book format."
+msgstr "Formato de libro no compatible."
+
+msgid "Hashing book…"
+msgstr "Calculando hash del libro…"
+
+msgid "Could not read file."
+msgstr "No se pudo leer el archivo."
+
+msgid "Already in your Readest library:"
+msgstr "Ya está en tu biblioteca de Readest:"
+
+msgid "Added to Readest:"
+msgstr "Añadido a Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Iniciar sesión en la cuenta Readest"
@@ -173,14 +245,17 @@ msgstr "Iniciar sesión en la cuenta Readest"
 msgid "Log out as %1"
 msgstr "Cerrar sesión de %1"
 
+msgid "Auto sync"
+msgstr "Sincronización automática"
+
+msgid "Readest library"
+msgstr "Biblioteca de Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Enviar libros ahora"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Sincronizar automáticamente progreso y anotaciones"
+msgstr "Obtener libros ahora"
 
 msgid "Push reading progress now"
 msgstr "Enviar progreso de lectura ahora"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Información de sincronización"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Biblioteca no inicializada"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Libros sincronizados"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Sincronización de libros fallida"
 
 msgid "Checking for update…"
 msgstr "Buscando actualización…"

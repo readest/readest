@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Synchronizuje urządzenia KOReader i Readest."
 
 msgid "Library view"
-msgstr ""
+msgstr "Widok biblioteki"
 
 msgid "View"
-msgstr ""
+msgstr "Widok"
 
 msgid "Grid"
-msgstr ""
+msgstr "Siatka"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Lista"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Grupuj według"
 
 msgid "Authors"
-msgstr ""
+msgstr "Autorzy"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Książki"
 
 msgid "Groups"
-msgstr ""
+msgstr "Grupy"
+
+msgid "Series"
+msgstr "Serie"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Sortuj według"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Data przeczytania"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Data dodania"
 
 msgid "Title"
 msgstr "Tytuł"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Autor"
 
 msgid "Descending"
-msgstr ""
+msgstr "Malejąco"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Rosnąco"
 
 msgid "Actions"
-msgstr ""
+msgstr "Akcje"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Skanuj bibliotekę ponownie"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Folder pobierania…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Wybierz folder na pobrane książki"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Zaloguj się do Readest, aby otworzyć bibliotekę"
 
 msgid "Library"
-msgstr ""
+msgstr "Biblioteka"
+
+msgid "Readest Library"
+msgstr "Biblioteka Readest"
 
 msgid "Cancel"
 msgstr "Anuluj"
 
 msgid "Clear"
-msgstr ""
+msgstr "Wyczyść"
 
 msgid "Search"
-msgstr ""
+msgstr "Szukaj"
 
 msgid "Search library"
-msgstr ""
+msgstr "Szukaj w bibliotece"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Szukaj tytułu lub autora"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Wtyczka Cover Browser wymagana do pełnego renderowania biblioteki. Powrót do zwykłej listy."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Plik przeniesiono lub usunięto. Przeskanować bibliotekę ponownie?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Pobrać tę książkę z Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Pobierz"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Najpierw ustaw folder domowy w menedżerze plików, aby włączyć pobieranie."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Pobieranie…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Kopia w chmurze niedostępna."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Pobieranie nie powiodło się."
+
+msgid "No cover available on Readest."
+msgstr "Brak okładki w Readest."
+
+msgid "Cover download failed."
+msgstr "Nie udało się pobrać okładki."
+
+msgid "Could not delete the file."
+msgstr "Nie można usunąć pliku."
+
+msgid "Removing from cloud…"
+msgstr "Usuwanie z chmury…"
+
+msgid "Cloud removal failed."
+msgstr "Usuwanie z chmury nie powiodło się."
+
+msgid "Remove from Cloud & Device"
+msgstr "Usuń z chmury i urządzenia"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Usunąć tę książkę z chmury i urządzenia?"
+
+msgid "Remove"
+msgstr "Usuń"
+
+msgid "Remove from Cloud Only"
+msgstr "Usuń tylko z chmury"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Usunąć tę książkę tylko z chmury?"
+
+msgid "Remove from Device Only"
+msgstr "Usuń tylko z urządzenia"
+
+msgid "Remove the local copy of this book?"
+msgstr "Usunąć lokalną kopię tej książki?"
+
+msgid "Upload to Cloud"
+msgstr "Wyślij do chmury"
+
+msgid "Uploading…"
+msgstr "Przesyłanie…"
+
+msgid "Storage quota exceeded."
+msgstr "Przekroczono limit miejsca."
+
+msgid "Upload failed."
+msgstr "Przesyłanie nie powiodło się."
+
+msgid "Download Book"
+msgstr "Pobierz książkę"
+
+msgid "Download Cover"
+msgstr "Pobierz okładkę"
+
+msgid "Download All"
+msgstr "Pobierz wszystkie"
+
+msgid "Open Readest Library"
+msgstr "Otwórz bibliotekę Readest"
+
+msgid "Push Readest book library"
+msgstr "Wyślij bibliotekę Readest"
+
+msgid "Pull Readest book library"
+msgstr "Pobierz bibliotekę Readest"
 
 msgid "Set auto progress sync"
 msgstr "Ustaw automatyczną synchronizację postępu"
@@ -158,14 +215,29 @@ msgstr "Wyślij notatki Readest z tego urządzenia"
 msgid "Pull readest annotations from other devices"
 msgstr "Pobierz notatki Readest z innych urządzeń"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Dodaj do Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Najpierw zaloguj się do Readest."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Nie znaleziono pliku."
+
+msgid "Unsupported book format."
+msgstr "Nieobsługiwany format książki."
+
+msgid "Hashing book…"
+msgstr "Obliczanie skrótu książki…"
+
+msgid "Could not read file."
+msgstr "Nie można odczytać pliku."
+
+msgid "Already in your Readest library:"
+msgstr "Już w twojej bibliotece Readest:"
+
+msgid "Added to Readest:"
+msgstr "Dodano do Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Zaloguj się do konta Readest"
@@ -173,14 +245,17 @@ msgstr "Zaloguj się do konta Readest"
 msgid "Log out as %1"
 msgstr "Wyloguj jako %1"
 
+msgid "Auto sync"
+msgstr "Auto synchronizacja"
+
+msgid "Readest library"
+msgstr "Biblioteka Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Wyślij książki teraz"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Automatycznie synchronizuj postęp i notatki"
+msgstr "Pobierz książki teraz"
 
 msgid "Push reading progress now"
 msgstr "Wyślij teraz postęp czytania"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Informacje o synchronizacji"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Biblioteka nie została zainicjowana"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Zsynchronizowano książki"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Synchronizacja książek nie powiodła się"
 
 msgid "Checking for update…"
 msgstr "Sprawdzanie aktualizacji…"

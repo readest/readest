@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "आपके KOReader और Readest डिवाइसों को सिंक रखता है।"
 
 msgid "Library view"
-msgstr ""
+msgstr "लाइब्रेरी दृश्य"
 
 msgid "View"
-msgstr ""
+msgstr "दृश्य"
 
 msgid "Grid"
-msgstr ""
+msgstr "ग्रिड"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "सूची"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "समूहन"
 
 msgid "Authors"
-msgstr ""
+msgstr "लेखक"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "पुस्तकें"
 
 msgid "Groups"
-msgstr ""
+msgstr "समूह"
+
+msgid "Series"
+msgstr "श्रृंखला"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "क्रमबद्ध करें"
 
 msgid "Date Read"
-msgstr ""
+msgstr "पढ़ने की तिथि"
 
 msgid "Date Added"
-msgstr ""
+msgstr "जोड़ने की तिथि"
 
 msgid "Title"
 msgstr "शीर्षक"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "लेखक"
 
 msgid "Descending"
-msgstr ""
+msgstr "अवरोही"
 
 msgid "Ascending"
-msgstr ""
+msgstr "आरोही"
 
 msgid "Actions"
-msgstr ""
+msgstr "क्रियाएँ"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "लाइब्रेरी पुनः स्कैन करें"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "डाउनलोड फ़ोल्डर…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "डाउनलोड की गई पुस्तकों के लिए फ़ोल्डर चुनें"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "लाइब्रेरी खोलने के लिए Readest में साइन इन करें"
 
 msgid "Library"
-msgstr ""
+msgstr "लाइब्रेरी"
+
+msgid "Readest Library"
+msgstr "Readest लाइब्रेरी"
 
 msgid "Cancel"
 msgstr "रद्द करें"
 
 msgid "Clear"
-msgstr ""
+msgstr "साफ़ करें"
 
 msgid "Search"
-msgstr ""
+msgstr "खोजें"
 
 msgid "Search library"
-msgstr ""
+msgstr "लाइब्रेरी में खोजें"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "शीर्षक या लेखक खोजें"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "पूर्ण लाइब्रेरी रेंडरिंग के लिए Cover Browser प्लगइन आवश्यक है। सादे सूची पर वापस जा रहे हैं।"
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "फ़ाइल स्थानांतरित या हटा दी गई। लाइब्रेरी पुनः स्कैन करें?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "इस पुस्तक को Readest से डाउनलोड करें?"
 
 msgid "Download"
-msgstr ""
+msgstr "डाउनलोड"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "डाउनलोड सक्षम करने के लिए पहले फ़ाइल प्रबंधक में होम फ़ोल्डर सेट करें।"
 
 msgid "Downloading…"
-msgstr ""
+msgstr "डाउनलोड हो रहा है…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "क्लाउड प्रति उपलब्ध नहीं है।"
 
 msgid "Download failed."
-msgstr ""
+msgstr "डाउनलोड विफल।"
+
+msgid "No cover available on Readest."
+msgstr "Readest पर कवर उपलब्ध नहीं है।"
+
+msgid "Cover download failed."
+msgstr "कवर डाउनलोड विफल।"
+
+msgid "Could not delete the file."
+msgstr "फ़ाइल हटाई नहीं जा सकी।"
+
+msgid "Removing from cloud…"
+msgstr "क्लाउड से हटाया जा रहा है…"
+
+msgid "Cloud removal failed."
+msgstr "क्लाउड से हटाना विफल।"
+
+msgid "Remove from Cloud & Device"
+msgstr "क्लाउड और डिवाइस से हटाएँ"
+
+msgid "Remove this book from cloud and device?"
+msgstr "क्या इस पुस्तक को क्लाउड और डिवाइस से हटाएँ?"
+
+msgid "Remove"
+msgstr "हटाएँ"
+
+msgid "Remove from Cloud Only"
+msgstr "केवल क्लाउड से हटाएँ"
+
+msgid "Remove this book from the cloud only?"
+msgstr "क्या इस पुस्तक को केवल क्लाउड से हटाएँ?"
+
+msgid "Remove from Device Only"
+msgstr "केवल डिवाइस से हटाएँ"
+
+msgid "Remove the local copy of this book?"
+msgstr "क्या इस पुस्तक की स्थानीय प्रति हटाएँ?"
+
+msgid "Upload to Cloud"
+msgstr "क्लाउड पर अपलोड करें"
+
+msgid "Uploading…"
+msgstr "अपलोड हो रहा है…"
+
+msgid "Storage quota exceeded."
+msgstr "भंडारण कोटा समाप्त।"
+
+msgid "Upload failed."
+msgstr "अपलोड विफल।"
+
+msgid "Download Book"
+msgstr "पुस्तक डाउनलोड"
+
+msgid "Download Cover"
+msgstr "कवर डाउनलोड"
+
+msgid "Download All"
+msgstr "सभी डाउनलोड करें"
+
+msgid "Open Readest Library"
+msgstr "Readest लाइब्रेरी खोलें"
+
+msgid "Push Readest book library"
+msgstr "Readest पुस्तक लाइब्रेरी पुश करें"
+
+msgid "Pull Readest book library"
+msgstr "Readest पुस्तक लाइब्रेरी पुल करें"
 
 msgid "Set auto progress sync"
 msgstr "स्वचालित प्रगति सिंक सेट करें"
@@ -158,14 +215,29 @@ msgstr "इस डिवाइस से Readest एनोटेशन भेज
 msgid "Pull readest annotations from other devices"
 msgstr "अन्य डिवाइसों से Readest एनोटेशन प्राप्त करें"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readest में जोड़ें"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "पहले Readest में साइन इन करें।"
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "फ़ाइल नहीं मिली।"
+
+msgid "Unsupported book format."
+msgstr "असमर्थित पुस्तक प्रारूप।"
+
+msgid "Hashing book…"
+msgstr "पुस्तक का हैश निकाला जा रहा है…"
+
+msgid "Could not read file."
+msgstr "फ़ाइल पढ़ी नहीं जा सकी।"
+
+msgid "Already in your Readest library:"
+msgstr "पहले से ही आपकी Readest लाइब्रेरी में:"
+
+msgid "Added to Readest:"
+msgstr "Readest में जोड़ा गया:"
 
 msgid "Log in Readest Account"
 msgstr "Readest खाते में लॉग इन करें"
@@ -173,14 +245,17 @@ msgstr "Readest खाते में लॉग इन करें"
 msgid "Log out as %1"
 msgstr "%1 से लॉग आउट करें"
 
+msgid "Auto sync"
+msgstr "स्वतः सिंक"
+
+msgid "Readest library"
+msgstr "Readest लाइब्रेरी"
+
 msgid "Push books now"
-msgstr ""
+msgstr "अभी पुस्तकें पुश करें"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "प्रगति और एनोटेशन स्वचालित रूप से सिंक करें"
+msgstr "अभी पुस्तकें पुल करें"
 
 msgid "Push reading progress now"
 msgstr "अभी पठन प्रगति भेजें"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "सिंक जानकारी"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "लाइब्रेरी आरंभीकृत नहीं"
 
 msgid "Books synced"
-msgstr ""
+msgstr "पुस्तकें सिंक हुईं"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "पुस्तकें सिंक विफल"
 
 msgid "Checking for update…"
 msgstr "अपडेट जांच रहा है…"

@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Houdt je KOReader- en Readest-apparaten gesynchroniseerd."
 
 msgid "Library view"
-msgstr ""
+msgstr "Bibliotheekweergave"
 
 msgid "View"
-msgstr ""
+msgstr "Weergave"
 
 msgid "Grid"
-msgstr ""
+msgstr "Raster"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Lijst"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Groeperen op"
 
 msgid "Authors"
-msgstr ""
+msgstr "Auteurs"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Boeken"
 
 msgid "Groups"
-msgstr ""
+msgstr "Groepen"
+
+msgid "Series"
+msgstr "Reeksen"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Sorteren op"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Leesdatum"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Toegevoegd op"
 
 msgid "Title"
 msgstr "Titel"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Auteur"
 
 msgid "Descending"
-msgstr ""
+msgstr "Aflopend"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Oplopend"
 
 msgid "Actions"
-msgstr ""
+msgstr "Acties"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Bibliotheek opnieuw scannen"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Downloadmap …"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Kies een map voor gedownloade boeken"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Meld je aan bij Readest om de bibliotheek te openen"
 
 msgid "Library"
-msgstr ""
+msgstr "Bibliotheek"
+
+msgid "Readest Library"
+msgstr "Readest-bibliotheek"
 
 msgid "Cancel"
 msgstr "Annuleren"
 
 msgid "Clear"
-msgstr ""
+msgstr "Wissen"
 
 msgid "Search"
-msgstr ""
+msgstr "Zoeken"
 
 msgid "Search library"
-msgstr ""
+msgstr "Doorzoek bibliotheek"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Zoek op titel of auteur"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Cover Browser-plug-in vereist voor volledige bibliotheekweergave. Terug naar gewone lijst."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Bestand verplaatst of verwijderd. Bibliotheek opnieuw scannen?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Dit boek van Readest downloaden?"
 
 msgid "Download"
-msgstr ""
+msgstr "Downloaden"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Stel eerst de Home-map in de bestandsbeheerder in om downloads in te schakelen."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Bezig met downloaden …"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Cloud-kopie niet beschikbaar."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Downloaden mislukt."
+
+msgid "No cover available on Readest."
+msgstr "Geen omslag beschikbaar op Readest."
+
+msgid "Cover download failed."
+msgstr "Omslag downloaden mislukt."
+
+msgid "Could not delete the file."
+msgstr "Kon het bestand niet verwijderen."
+
+msgid "Removing from cloud…"
+msgstr "Verwijderen uit cloud …"
+
+msgid "Cloud removal failed."
+msgstr "Verwijderen uit cloud mislukt."
+
+msgid "Remove from Cloud & Device"
+msgstr "Uit cloud en apparaat verwijderen"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Dit boek uit cloud en apparaat verwijderen?"
+
+msgid "Remove"
+msgstr "Verwijderen"
+
+msgid "Remove from Cloud Only"
+msgstr "Alleen uit cloud verwijderen"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Dit boek alleen uit de cloud verwijderen?"
+
+msgid "Remove from Device Only"
+msgstr "Alleen van apparaat verwijderen"
+
+msgid "Remove the local copy of this book?"
+msgstr "De lokale kopie van dit boek verwijderen?"
+
+msgid "Upload to Cloud"
+msgstr "Uploaden naar cloud"
+
+msgid "Uploading…"
+msgstr "Bezig met uploaden …"
+
+msgid "Storage quota exceeded."
+msgstr "Opslagquotum overschreden."
+
+msgid "Upload failed."
+msgstr "Uploaden mislukt."
+
+msgid "Download Book"
+msgstr "Boek downloaden"
+
+msgid "Download Cover"
+msgstr "Omslag downloaden"
+
+msgid "Download All"
+msgstr "Alles downloaden"
+
+msgid "Open Readest Library"
+msgstr "Readest-bibliotheek openen"
+
+msgid "Push Readest book library"
+msgstr "Readest-bibliotheek pushen"
+
+msgid "Pull Readest book library"
+msgstr "Readest-bibliotheek pullen"
 
 msgid "Set auto progress sync"
 msgstr "Automatische voortgangssynchronisatie instellen"
@@ -158,14 +215,29 @@ msgstr "Readest-aantekeningen van dit apparaat verzenden"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest-aantekeningen van andere apparaten ophalen"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Toevoegen aan Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Meld je eerst aan bij Readest."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Bestand niet gevonden."
+
+msgid "Unsupported book format."
+msgstr "Boekformaat niet ondersteund."
+
+msgid "Hashing book…"
+msgstr "Boek wordt gehasht …"
+
+msgid "Could not read file."
+msgstr "Kon het bestand niet lezen."
+
+msgid "Already in your Readest library:"
+msgstr "Al in je Readest-bibliotheek:"
+
+msgid "Added to Readest:"
+msgstr "Toegevoegd aan Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Aanmelden bij Readest-account"
@@ -173,14 +245,17 @@ msgstr "Aanmelden bij Readest-account"
 msgid "Log out as %1"
 msgstr "Afmelden als %1"
 
+msgid "Auto sync"
+msgstr "Automatische synchronisatie"
+
+msgid "Readest library"
+msgstr "Readest-bibliotheek"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Boeken nu pushen"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Voortgang en aantekeningen automatisch synchroniseren"
+msgstr "Boeken nu pullen"
 
 msgid "Push reading progress now"
 msgstr "Leesvoortgang nu verzenden"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Synchronisatie-info"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Bibliotheek niet geïnitialiseerd"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Boeken gesynchroniseerd"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Synchronisatie van boeken mislukt"
 
 msgid "Checking for update…"
 msgstr "Controleren op update…"

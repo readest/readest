@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Vaše naprave KOReader in Readest ostajajo sinhronizirane."
 
 msgid "Library view"
-msgstr ""
+msgstr "Pogled knjižnice"
 
 msgid "View"
-msgstr ""
+msgstr "Pogled"
 
 msgid "Grid"
-msgstr ""
+msgstr "Mreža"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Seznam"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Združi po"
 
 msgid "Authors"
-msgstr ""
+msgstr "Avtorji"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Knjige"
 
 msgid "Groups"
-msgstr ""
+msgstr "Skupine"
+
+msgid "Series"
+msgstr "Serije"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Razvrsti po"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Datum branja"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Datum dodajanja"
 
 msgid "Title"
 msgstr "Naslov"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Avtor"
 
 msgid "Descending"
-msgstr ""
+msgstr "Padajoče"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Naraščajoče"
 
 msgid "Actions"
-msgstr ""
+msgstr "Dejanja"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Znova preglej knjižnico"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Mapa za prenose…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Izberite mapo za prenesene knjige"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Prijavite se v Readest, da odprete knjižnico"
 
 msgid "Library"
-msgstr ""
+msgstr "Knjižnica"
+
+msgid "Readest Library"
+msgstr "Knjižnica Readest"
 
 msgid "Cancel"
 msgstr "Prekliči"
 
 msgid "Clear"
-msgstr ""
+msgstr "Počisti"
 
 msgid "Search"
-msgstr ""
+msgstr "Iskanje"
 
 msgid "Search library"
-msgstr ""
+msgstr "Iskanje po knjižnici"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Iskanje naslova ali avtorja"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Vtičnik Cover Browser je potreben za polno upodabljanje knjižnice. Vrnitev na navaden seznam."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Datoteka premaknjena ali izbrisana. Znova pregledati knjižnico?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Prenesi to knjigo iz Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Prenesi"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Najprej v upravitelju datotek nastavite domačo mapo, da omogočite prenose."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Prenašanje…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Kopija v oblaku ni na voljo."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Prenos ni uspel."
+
+msgid "No cover available on Readest."
+msgstr "Naslovnica ni na voljo v Readest."
+
+msgid "Cover download failed."
+msgstr "Prenos naslovnice ni uspel."
+
+msgid "Could not delete the file."
+msgstr "Datoteke ni bilo mogoče izbrisati."
+
+msgid "Removing from cloud…"
+msgstr "Odstranjevanje iz oblaka…"
+
+msgid "Cloud removal failed."
+msgstr "Odstranitev iz oblaka ni uspela."
+
+msgid "Remove from Cloud & Device"
+msgstr "Odstrani iz oblaka in naprave"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Odstrani to knjigo iz oblaka in naprave?"
+
+msgid "Remove"
+msgstr "Odstrani"
+
+msgid "Remove from Cloud Only"
+msgstr "Odstrani samo iz oblaka"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Odstranim to knjigo samo iz oblaka?"
+
+msgid "Remove from Device Only"
+msgstr "Odstrani samo iz naprave"
+
+msgid "Remove the local copy of this book?"
+msgstr "Odstranim lokalno kopijo te knjige?"
+
+msgid "Upload to Cloud"
+msgstr "Naloži v oblak"
+
+msgid "Uploading…"
+msgstr "Nalaganje…"
+
+msgid "Storage quota exceeded."
+msgstr "Presežena kvota za shranjevanje."
+
+msgid "Upload failed."
+msgstr "Nalaganje ni uspelo."
+
+msgid "Download Book"
+msgstr "Prenesi knjigo"
+
+msgid "Download Cover"
+msgstr "Prenesi naslovnico"
+
+msgid "Download All"
+msgstr "Prenesi vse"
+
+msgid "Open Readest Library"
+msgstr "Odpri knjižnico Readest"
+
+msgid "Push Readest book library"
+msgstr "Pošlji knjižnico Readest"
+
+msgid "Pull Readest book library"
+msgstr "Pridobi knjižnico Readest"
 
 msgid "Set auto progress sync"
 msgstr "Nastavi samodejno sinhronizacijo napredka"
@@ -158,14 +215,29 @@ msgstr "Pošlji opombe Readest iz te naprave"
 msgid "Pull readest annotations from other devices"
 msgstr "Pridobi opombe Readest iz drugih naprav"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Dodaj v Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Najprej se prijavite v Readest."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Datoteka ni najdena."
+
+msgid "Unsupported book format."
+msgstr "Nepodprta oblika knjige."
+
+msgid "Hashing book…"
+msgstr "Izračunavanje zgoščene vrednosti knjige…"
+
+msgid "Could not read file."
+msgstr "Datoteke ni bilo mogoče prebrati."
+
+msgid "Already in your Readest library:"
+msgstr "Že v vaši knjižnici Readest:"
+
+msgid "Added to Readest:"
+msgstr "Dodano v Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Prijava v račun Readest"
@@ -173,14 +245,17 @@ msgstr "Prijava v račun Readest"
 msgid "Log out as %1"
 msgstr "Odjava kot %1"
 
+msgid "Auto sync"
+msgstr "Samodejna sinhronizacija"
+
+msgid "Readest library"
+msgstr "Knjižnica Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Pošlji knjige zdaj"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Samodejno sinhroniziraj napredek in opombe"
+msgstr "Pridobi knjige zdaj"
 
 msgid "Push reading progress now"
 msgstr "Pošlji napredek branja zdaj"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Podatki o sinhronizaciji"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Knjižnica ni inicializirana"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Knjige sinhronizirane"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Sinhronizacija knjig ni uspela"
 
 msgid "Checking for update…"
 msgstr "Preverjanje posodobitev…"

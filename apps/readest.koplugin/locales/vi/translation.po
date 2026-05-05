@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Giữ các thiết bị KOReader và Readest của bạn đồng bộ."
 
 msgid "Library view"
-msgstr ""
+msgstr "Xem thư viện"
 
 msgid "View"
-msgstr ""
+msgstr "Xem"
 
 msgid "Grid"
-msgstr ""
+msgstr "Lưới"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Danh sách"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Nhóm theo"
 
 msgid "Authors"
-msgstr ""
+msgstr "Tác giả"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Sách"
 
 msgid "Groups"
-msgstr ""
+msgstr "Nhóm"
+
+msgid "Series"
+msgstr "Bộ sách"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Sắp xếp theo"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Ngày đọc"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Ngày thêm"
 
 msgid "Title"
 msgstr "Tiêu đề"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Tác giả"
 
 msgid "Descending"
-msgstr ""
+msgstr "Giảm dần"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Tăng dần"
 
 msgid "Actions"
-msgstr ""
+msgstr "Tác vụ"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Quét lại thư viện"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Thư mục tải xuống…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Chọn thư mục cho sách đã tải xuống"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Đăng nhập Readest để mở thư viện"
 
 msgid "Library"
-msgstr ""
+msgstr "Thư viện"
+
+msgid "Readest Library"
+msgstr "Thư viện Readest"
 
 msgid "Cancel"
 msgstr "Hủy"
 
 msgid "Clear"
-msgstr ""
+msgstr "Xóa"
 
 msgid "Search"
-msgstr ""
+msgstr "Tìm kiếm"
 
 msgid "Search library"
-msgstr ""
+msgstr "Tìm trong thư viện"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Tìm theo tiêu đề hoặc tác giả"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Cần plugin Cover Browser để hiển thị thư viện đầy đủ. Quay về danh sách đơn giản."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Tệp đã bị di chuyển hoặc xóa. Quét lại thư viện?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Tải sách này từ Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Tải xuống"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Đặt thư mục Home trong Trình quản lý tệp trước để bật tải xuống."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Đang tải xuống…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Bản sao trên đám mây không khả dụng."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Tải xuống thất bại."
+
+msgid "No cover available on Readest."
+msgstr "Không có bìa trên Readest."
+
+msgid "Cover download failed."
+msgstr "Tải bìa thất bại."
+
+msgid "Could not delete the file."
+msgstr "Không thể xóa tệp."
+
+msgid "Removing from cloud…"
+msgstr "Đang xóa khỏi đám mây…"
+
+msgid "Cloud removal failed."
+msgstr "Xóa khỏi đám mây thất bại."
+
+msgid "Remove from Cloud & Device"
+msgstr "Xóa khỏi đám mây và thiết bị"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Xóa sách này khỏi đám mây và thiết bị?"
+
+msgid "Remove"
+msgstr "Xóa"
+
+msgid "Remove from Cloud Only"
+msgstr "Chỉ xóa khỏi đám mây"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Chỉ xóa sách này khỏi đám mây?"
+
+msgid "Remove from Device Only"
+msgstr "Chỉ xóa khỏi thiết bị"
+
+msgid "Remove the local copy of this book?"
+msgstr "Xóa bản sao cục bộ của sách này?"
+
+msgid "Upload to Cloud"
+msgstr "Tải lên đám mây"
+
+msgid "Uploading…"
+msgstr "Đang tải lên…"
+
+msgid "Storage quota exceeded."
+msgstr "Đã vượt hạn mức lưu trữ."
+
+msgid "Upload failed."
+msgstr "Tải lên thất bại."
+
+msgid "Download Book"
+msgstr "Tải sách xuống"
+
+msgid "Download Cover"
+msgstr "Tải bìa xuống"
+
+msgid "Download All"
+msgstr "Tải tất cả"
+
+msgid "Open Readest Library"
+msgstr "Mở thư viện Readest"
+
+msgid "Push Readest book library"
+msgstr "Gửi thư viện sách Readest"
+
+msgid "Pull Readest book library"
+msgstr "Lấy thư viện sách Readest"
 
 msgid "Set auto progress sync"
 msgstr "Đặt đồng bộ tiến trình tự động"
@@ -158,14 +215,29 @@ msgstr "Đẩy ghi chú Readest từ thiết bị này"
 msgid "Pull readest annotations from other devices"
 msgstr "Lấy ghi chú Readest từ thiết bị khác"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Thêm vào Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Hãy đăng nhập Readest trước."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Không tìm thấy tệp."
+
+msgid "Unsupported book format."
+msgstr "Định dạng sách không được hỗ trợ."
+
+msgid "Hashing book…"
+msgstr "Đang băm sách…"
+
+msgid "Could not read file."
+msgstr "Không thể đọc tệp."
+
+msgid "Already in your Readest library:"
+msgstr "Đã có trong thư viện Readest của bạn:"
+
+msgid "Added to Readest:"
+msgstr "Đã thêm vào Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Đăng nhập tài khoản Readest"
@@ -173,14 +245,17 @@ msgstr "Đăng nhập tài khoản Readest"
 msgid "Log out as %1"
 msgstr "Đăng xuất khỏi %1"
 
+msgid "Auto sync"
+msgstr "Tự động đồng bộ"
+
+msgid "Readest library"
+msgstr "Thư viện Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Gửi sách ngay"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Tự động đồng bộ tiến trình và ghi chú"
+msgstr "Lấy sách ngay"
 
 msgid "Push reading progress now"
 msgstr "Đẩy tiến trình đọc ngay"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Thông tin đồng bộ"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Thư viện chưa được khởi tạo"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Đã đồng bộ sách"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Đồng bộ sách thất bại"
 
 msgid "Checking for update…"
 msgstr "Đang kiểm tra cập nhật…"

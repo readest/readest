@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "ཁྱེད་ཀྱི་ KOReader དང་ Readest སྒྲིག་ཆས་མཉམ་འགྱུར་འཇོག"
 
 msgid "Library view"
-msgstr ""
+msgstr "དཔེ་མཛོད་མཐོང་སྣང་"
 
 msgid "View"
-msgstr ""
+msgstr "མཐོང་སྣང་"
 
 msgid "Grid"
-msgstr ""
+msgstr "དྲ་མིག་"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "མིང་ཐོ་"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "སྡེ་ཚན་སྦྱོར་"
 
 msgid "Authors"
-msgstr ""
+msgstr "རྩོམ་པ་པོ་"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "དེབ་"
 
 msgid "Groups"
-msgstr ""
+msgstr "སྡེ་ཚན་"
+
+msgid "Series"
+msgstr "ཕྲེང་བ་"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "སྒྲིག་གཤོམ་"
 
 msgid "Date Read"
-msgstr ""
+msgstr "ཀློག་ཟིན་པའི་ཚེས་"
 
 msgid "Date Added"
-msgstr ""
+msgstr "སྣོན་པའི་ཚེས་"
 
 msgid "Title"
 msgstr "དཔེ་དེབ་ཀྱི་མིང་།"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "རྩོམ་པ་པོ།"
 
 msgid "Descending"
-msgstr ""
+msgstr "མར་འབབ་"
 
 msgid "Ascending"
-msgstr ""
+msgstr "ཡར་འཛེག་"
 
 msgid "Actions"
-msgstr ""
+msgstr "བྱ་བ་"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "དཔེ་མཛོད་ཡང་བསྐྱར་ཞིབ་ཤིབ་"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "ཕབ་ལེན་ཡིག་སྣོད་…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "ཕབ་ལེན་བྱས་ཟིན་པའི་དེབ་ཀྱི་ཡིག་སྣོད་འདེམས་པ་"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "དཔེ་མཛོད་འབྱེད་པར་Readestལ་ཐོ་འཇུག་གནང་རོགས་"
 
 msgid "Library"
-msgstr ""
+msgstr "དཔེ་མཛོད་"
+
+msgid "Readest Library"
+msgstr "Readest དཔེ་མཛོད་"
 
 msgid "Cancel"
 msgstr "འདོར་བ།"
 
 msgid "Clear"
-msgstr ""
+msgstr "མེད་པར་བཟོ་"
 
 msgid "Search"
-msgstr ""
+msgstr "འཚོལ་"
 
 msgid "Search library"
-msgstr ""
+msgstr "དཔེ་མཛོད་ནང་འཚོལ་"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "མིང་བྱང་ངམ་རྩོམ་པ་པོ་འཚོལ་"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "དཔེ་མཛོད་ཡོངས་སུ་འཆར་སྟོན་བྱེད་པར་Cover Browser གསལ་སྣོན་དགོས། མིང་ཐོ་གསལ་པོར་ལོག་སོང་།"
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "ཡིག་ཆ་སྤོ་འགྱུར་ངམ་སུབ་ཡོད། དཔེ་མཛོད་ཡང་བསྐྱར་ཞིབ་ཤིབ་བྱེད་དམ?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "དེབ་འདི་Readestནས་ཕབ་ལེན་བྱེད་དམ?"
 
 msgid "Download"
-msgstr ""
+msgstr "ཕབ་ལེན་"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "ཕབ་ལེན་སྤྱོད་རུང་བཟོ་བར་ཡིག་ཆ་དོ་དམ་པའི་ནང་གཙོ་བོའི་ཡིག་སྣོད་སྔོན་ལ་གཏན་འབེབས་གནང་རོགས།"
 
 msgid "Downloading…"
-msgstr ""
+msgstr "ཕབ་ལེན་བྱེད་བཞིན་པ་…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "སྤྲིན་གྲུབ་པར་མེད།"
 
 msgid "Download failed."
-msgstr ""
+msgstr "ཕབ་ལེན་མ་ཐུབ།"
+
+msgid "No cover available on Readest."
+msgstr "Readestལ་འགྲམ་ཤོག་མེད།"
+
+msgid "Cover download failed."
+msgstr "འགྲམ་ཤོག་ཕབ་ལེན་མ་ཐུབ།"
+
+msgid "Could not delete the file."
+msgstr "ཡིག་ཆ་སུབ་མ་ཐུབ།"
+
+msgid "Removing from cloud…"
+msgstr "སྤྲིན་གྲུབ་ནས་སུབ་བཞིན་པ་…"
+
+msgid "Cloud removal failed."
+msgstr "སྤྲིན་གྲུབ་ནས་སུབ་པ་མ་ཐུབ།"
+
+msgid "Remove from Cloud & Device"
+msgstr "སྤྲིན་གྲུབ་དང་སྒྲིག་ཆས་གཉིས་ནས་སུབ་པ་"
+
+msgid "Remove this book from cloud and device?"
+msgstr "དེབ་འདི་སྤྲིན་གྲུབ་དང་སྒྲིག་ཆས་ནས་སུབ་དགོས་སམ?"
+
+msgid "Remove"
+msgstr "སུབ་པ་"
+
+msgid "Remove from Cloud Only"
+msgstr "སྤྲིན་གྲུབ་ནས་ཁོ་ནར་སུབ་པ་"
+
+msgid "Remove this book from the cloud only?"
+msgstr "དེབ་འདི་སྤྲིན་གྲུབ་ནས་ཁོ་ནར་སུབ་དགོས་སམ?"
+
+msgid "Remove from Device Only"
+msgstr "སྒྲིག་ཆས་ནས་ཁོ་ནར་སུབ་པ་"
+
+msgid "Remove the local copy of this book?"
+msgstr "དེབ་འདིའི་ས་གནས་པར་གྲུབ་སུབ་དགོས་སམ?"
+
+msgid "Upload to Cloud"
+msgstr "སྤྲིན་གྲུབ་ལ་སྦར་པ་"
+
+msgid "Uploading…"
+msgstr "སྦར་འཛུགས་བྱེད་བཞིན་པ་…"
+
+msgid "Storage quota exceeded."
+msgstr "གསོག་འཇོག་ཁྱོན་བསྡོམས་ལས་བརྒལ་སོང་།"
+
+msgid "Upload failed."
+msgstr "སྦར་འཛུགས་མ་ཐུབ།"
+
+msgid "Download Book"
+msgstr "དེབ་ཕབ་ལེན་"
+
+msgid "Download Cover"
+msgstr "འགྲམ་ཤོག་ཕབ་ལེན་"
+
+msgid "Download All"
+msgstr "ཐམས་ཅད་ཕབ་ལེན་"
+
+msgid "Open Readest Library"
+msgstr "Readestདཔེ་མཛོད་འབྱེད་པ་"
+
+msgid "Push Readest book library"
+msgstr "Readestདེབ་མཛོད་སྐུར་བ་"
+
+msgid "Pull Readest book library"
+msgstr "Readestདེབ་མཛོད་ལེན་པ་"
 
 msgid "Set auto progress sync"
 msgstr "རང་འགུལ་འཕེལ་རིམ་མཉམ་འགྱུར་སྒྲིག"
@@ -158,14 +215,29 @@ msgstr "སྒྲིག་ཆས་འདི་ནས་ Readest མཆན་འ
 msgid "Pull readest annotations from other devices"
 msgstr "སྒྲིག་ཆས་གཞན་ནས་ Readest མཆན་འགྲེལ་ལེན་པ།"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Readestལ་སྣོན་པ་"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "ཐོག་མར་Readestལ་ཐོ་འཇུག་གནང་རོགས།"
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "ཡིག་ཆ་མ་རྙེད།"
+
+msgid "Unsupported book format."
+msgstr "ངོས་ལེན་མེད་པའི་དེབ་ཀྱི་རྣམ་གཞག།"
+
+msgid "Hashing book…"
+msgstr "དེབ་ཀྱི་མཛུབ་རྗེས་རྩིས་བཞིན་པ་…"
+
+msgid "Could not read file."
+msgstr "ཡིག་ཆ་ཀློག་མ་ཐུབ།"
+
+msgid "Already in your Readest library:"
+msgstr "ཁྱེད་ཀྱི་Readestདཔེ་མཛོད་ནང་ཡོད་ཟིན་:"
+
+msgid "Added to Readest:"
+msgstr "Readestལ་སྣོན་ཟིན་:"
 
 msgid "Log in Readest Account"
 msgstr "Readest རྩིས་ཐོར་འཛུལ་ཞུགས།"
@@ -173,14 +245,17 @@ msgstr "Readest རྩིས་ཐོར་འཛུལ་ཞུགས།"
 msgid "Log out as %1"
 msgstr "%1 ནས་ཕྱིར་ཐོན།"
 
+msgid "Auto sync"
+msgstr "རང་འགུལ་མཉམ་སྦྱོར་"
+
+msgid "Readest library"
+msgstr "Readest དཔེ་མཛོད་"
+
 msgid "Push books now"
-msgstr ""
+msgstr "དེབ་རྣམས་ད་ལྟ་སྐུར་"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "འཕེལ་རིམ་དང་མཆན་འགྲེལ་རང་འགུལ་མཉམ་འགྱུར།"
+msgstr "དེབ་རྣམས་ད་ལྟ་ལེན་"
 
 msgid "Push reading progress now"
 msgstr "ད་ལྟ་ཀློག་པའི་འཕེལ་རིམ་སྐུར་བ།"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "མཉམ་འགྱུར་གསལ་བཤད།"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "དཔེ་མཛོད་འགོ་འཛུགས་མ་བྱས་པ་"
 
 msgid "Books synced"
-msgstr ""
+msgstr "དེབ་མཉམ་སྦྱོར་ཟིན་"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "དེབ་མཉམ་སྦྱོར་མ་ཐུབ་"
 
 msgid "Checking for update…"
 msgstr "གསར་སྤེལ་ཞིབ་བཤེར་བཞིན་པ…"

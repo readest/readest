@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "让你的 KOReader 与 Readest 设备保持同步。"
 
 msgid "Library view"
-msgstr ""
+msgstr "书库视图"
 
 msgid "View"
-msgstr ""
+msgstr "视图"
 
 msgid "Grid"
-msgstr ""
+msgstr "网格"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "列表"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "分组方式"
 
 msgid "Authors"
-msgstr ""
+msgstr "作者"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "书籍"
 
 msgid "Groups"
-msgstr ""
+msgstr "分组"
+
+msgid "Series"
+msgstr "系列"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "排序方式"
 
 msgid "Date Read"
-msgstr ""
+msgstr "阅读日期"
 
 msgid "Date Added"
-msgstr ""
+msgstr "添加日期"
 
 msgid "Title"
 msgstr "标题"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "作者"
 
 msgid "Descending"
-msgstr ""
+msgstr "降序"
 
 msgid "Ascending"
-msgstr ""
+msgstr "升序"
 
 msgid "Actions"
-msgstr ""
+msgstr "操作"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "重新扫描书库"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "下载文件夹…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "选择下载书籍的文件夹"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "登录 Readest 以打开书库"
 
 msgid "Library"
-msgstr ""
+msgstr "书库"
+
+msgid "Readest Library"
+msgstr "Readest 书库"
 
 msgid "Cancel"
 msgstr "取消"
 
 msgid "Clear"
-msgstr ""
+msgstr "清除"
 
 msgid "Search"
-msgstr ""
+msgstr "搜索"
 
 msgid "Search library"
-msgstr ""
+msgstr "搜索书库"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "搜索书名或作者"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "完整书库渲染需要 Cover Browser 插件，将回退到简单列表。"
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "文件已移动或删除。重新扫描书库？"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "从 Readest 下载这本书？"
 
 msgid "Download"
-msgstr ""
+msgstr "下载"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "请先在文件管理器中设置主文件夹以启用下载。"
 
 msgid "Downloading…"
-msgstr ""
+msgstr "下载中…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "云端副本不可用。"
 
 msgid "Download failed."
-msgstr ""
+msgstr "下载失败。"
+
+msgid "No cover available on Readest."
+msgstr "Readest 上没有可用封面。"
+
+msgid "Cover download failed."
+msgstr "封面下载失败。"
+
+msgid "Could not delete the file."
+msgstr "无法删除文件。"
+
+msgid "Removing from cloud…"
+msgstr "正在从云端删除…"
+
+msgid "Cloud removal failed."
+msgstr "云端删除失败。"
+
+msgid "Remove from Cloud & Device"
+msgstr "从云端和设备移除"
+
+msgid "Remove this book from cloud and device?"
+msgstr "从云端和设备移除这本书？"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "Remove from Cloud Only"
+msgstr "仅从云端移除"
+
+msgid "Remove this book from the cloud only?"
+msgstr "仅从云端移除这本书？"
+
+msgid "Remove from Device Only"
+msgstr "仅从设备移除"
+
+msgid "Remove the local copy of this book?"
+msgstr "移除这本书的本地副本？"
+
+msgid "Upload to Cloud"
+msgstr "上传到云端"
+
+msgid "Uploading…"
+msgstr "上传中…"
+
+msgid "Storage quota exceeded."
+msgstr "已超出存储配额。"
+
+msgid "Upload failed."
+msgstr "上传失败。"
+
+msgid "Download Book"
+msgstr "下载书籍"
+
+msgid "Download Cover"
+msgstr "下载封面"
+
+msgid "Download All"
+msgstr "全部下载"
+
+msgid "Open Readest Library"
+msgstr "打开 Readest 书库"
+
+msgid "Push Readest book library"
+msgstr "推送 Readest 书库"
+
+msgid "Pull Readest book library"
+msgstr "拉取 Readest 书库"
 
 msgid "Set auto progress sync"
 msgstr "设置自动同步阅读进度"
@@ -158,14 +215,29 @@ msgstr "从此设备推送 Readest 标注"
 msgid "Pull readest annotations from other devices"
 msgstr "从其他设备拉取 Readest 标注"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "添加到 Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "请先登录 Readest。"
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "未找到文件。"
+
+msgid "Unsupported book format."
+msgstr "不支持的书籍格式。"
+
+msgid "Hashing book…"
+msgstr "正在计算书籍指纹…"
+
+msgid "Could not read file."
+msgstr "无法读取文件。"
+
+msgid "Already in your Readest library:"
+msgstr "已在你的 Readest 书库中："
+
+msgid "Added to Readest:"
+msgstr "已添加到 Readest："
 
 msgid "Log in Readest Account"
 msgstr "登录 Readest 账户"
@@ -173,14 +245,17 @@ msgstr "登录 Readest 账户"
 msgid "Log out as %1"
 msgstr "退出登录（%1）"
 
+msgid "Auto sync"
+msgstr "自动同步"
+
+msgid "Readest library"
+msgstr "Readest 书库"
+
 msgid "Push books now"
-msgstr ""
+msgstr "立即推送书籍"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "自动同步阅读进度和标注"
+msgstr "立即拉取书籍"
 
 msgid "Push reading progress now"
 msgstr "立即推送阅读进度"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "同步信息"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "书库未初始化"
 
 msgid "Books synced"
-msgstr ""
+msgstr "书籍已同步"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "书籍同步失败"
 
 msgid "Checking for update…"
 msgstr "正在检查更新…"

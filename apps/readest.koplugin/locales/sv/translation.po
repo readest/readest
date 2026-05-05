@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Håller dina KOReader- och Readest-enheter synkroniserade."
 
 msgid "Library view"
-msgstr ""
+msgstr "Biblioteksvy"
 
 msgid "View"
-msgstr ""
+msgstr "Vy"
 
 msgid "Grid"
-msgstr ""
+msgstr "Rutnät"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "Lista"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "Gruppera efter"
 
 msgid "Authors"
-msgstr ""
+msgstr "Författare"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "Böcker"
 
 msgid "Groups"
-msgstr ""
+msgstr "Grupper"
+
+msgid "Series"
+msgstr "Serier"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "Sortera efter"
 
 msgid "Date Read"
-msgstr ""
+msgstr "Lästdatum"
 
 msgid "Date Added"
-msgstr ""
+msgstr "Tillagd"
 
 msgid "Title"
 msgstr "Titel"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "Författare"
 
 msgid "Descending"
-msgstr ""
+msgstr "Fallande"
 
 msgid "Ascending"
-msgstr ""
+msgstr "Stigande"
 
 msgid "Actions"
-msgstr ""
+msgstr "Åtgärder"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "Skanna biblioteket igen"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "Nedladdningsmapp …"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "Välj en mapp för nedladdade böcker"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "Logga in på Readest för att öppna biblioteket"
 
 msgid "Library"
-msgstr ""
+msgstr "Bibliotek"
+
+msgid "Readest Library"
+msgstr "Readest-bibliotek"
 
 msgid "Cancel"
 msgstr "Avbryt"
 
 msgid "Clear"
-msgstr ""
+msgstr "Rensa"
 
 msgid "Search"
-msgstr ""
+msgstr "Sök"
 
 msgid "Search library"
-msgstr ""
+msgstr "Sök i biblioteket"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "Sök titel eller författare"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "Cover Browser-tillägget krävs för full biblioteksrendering. Återgår till enkel lista."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "Filen flyttad eller borttagen. Skanna biblioteket igen?"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "Ladda ned den här boken från Readest?"
 
 msgid "Download"
-msgstr ""
+msgstr "Ladda ned"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "Ange startmappen i filhanteraren först för att aktivera nedladdningar."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "Laddar ned …"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "Molnkopia är inte tillgänglig."
 
 msgid "Download failed."
-msgstr ""
+msgstr "Nedladdning misslyckades."
+
+msgid "No cover available on Readest."
+msgstr "Inget omslag tillgängligt på Readest."
+
+msgid "Cover download failed."
+msgstr "Nedladdning av omslag misslyckades."
+
+msgid "Could not delete the file."
+msgstr "Kunde inte ta bort filen."
+
+msgid "Removing from cloud…"
+msgstr "Tar bort från molnet …"
+
+msgid "Cloud removal failed."
+msgstr "Borttagning från molnet misslyckades."
+
+msgid "Remove from Cloud & Device"
+msgstr "Ta bort från moln och enhet"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Ta bort den här boken från moln och enhet?"
+
+msgid "Remove"
+msgstr "Ta bort"
+
+msgid "Remove from Cloud Only"
+msgstr "Ta bort enbart från moln"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Ta bort den här boken bara från molnet?"
+
+msgid "Remove from Device Only"
+msgstr "Ta bort enbart från enhet"
+
+msgid "Remove the local copy of this book?"
+msgstr "Ta bort den lokala kopian av den här boken?"
+
+msgid "Upload to Cloud"
+msgstr "Ladda upp till molnet"
+
+msgid "Uploading…"
+msgstr "Laddar upp …"
+
+msgid "Storage quota exceeded."
+msgstr "Lagringskvoten överskriden."
+
+msgid "Upload failed."
+msgstr "Uppladdningen misslyckades."
+
+msgid "Download Book"
+msgstr "Ladda ned bok"
+
+msgid "Download Cover"
+msgstr "Ladda ned omslag"
+
+msgid "Download All"
+msgstr "Ladda ned alla"
+
+msgid "Open Readest Library"
+msgstr "Öppna Readest-bibliotek"
+
+msgid "Push Readest book library"
+msgstr "Skicka Readest-bibliotek"
+
+msgid "Pull Readest book library"
+msgstr "Hämta Readest-bibliotek"
 
 msgid "Set auto progress sync"
 msgstr "Ställ in automatisk synkronisering av läsförloppet"
@@ -158,14 +215,29 @@ msgstr "Skicka Readest-anteckningar från den här enheten"
 msgid "Pull readest annotations from other devices"
 msgstr "Hämta Readest-anteckningar från andra enheter"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "Lägg till i Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "Logga in på Readest först."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "Filen hittades inte."
+
+msgid "Unsupported book format."
+msgstr "Bokformat stöds inte."
+
+msgid "Hashing book…"
+msgstr "Hashar bok …"
+
+msgid "Could not read file."
+msgstr "Kunde inte läsa filen."
+
+msgid "Already in your Readest library:"
+msgstr "Redan i ditt Readest-bibliotek:"
+
+msgid "Added to Readest:"
+msgstr "Tillagd i Readest:"
 
 msgid "Log in Readest Account"
 msgstr "Logga in på Readest-konto"
@@ -173,14 +245,17 @@ msgstr "Logga in på Readest-konto"
 msgid "Log out as %1"
 msgstr "Logga ut från %1"
 
+msgid "Auto sync"
+msgstr "Automatisk synkronisering"
+
+msgid "Readest library"
+msgstr "Readest-bibliotek"
+
 msgid "Push books now"
-msgstr ""
+msgstr "Skicka böcker nu"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "Synkronisera läsförlopp och anteckningar automatiskt"
+msgstr "Hämta böcker nu"
 
 msgid "Push reading progress now"
 msgstr "Skicka läsförloppet nu"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "Synkroniseringsinfo"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "Biblioteket är inte initierat"
 
 msgid "Books synced"
-msgstr ""
+msgstr "Böckerna synkroniserade"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "Synkronisering av böcker misslyckades"
 
 msgid "Checking for update…"
 msgstr "Söker efter uppdatering…"

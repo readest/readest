@@ -18,52 +18,40 @@ msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "دستگاه‌های KOReader و Readest شما را همگام نگه می‌دارد."
 
 msgid "Library view"
-msgstr ""
+msgstr "نمای کتابخانه"
 
 msgid "View"
-msgstr ""
+msgstr "نما"
 
 msgid "Grid"
-msgstr ""
+msgstr "شبکه"
 
 msgid "List"
-msgstr ""
-
-msgid "Cover"
-msgstr ""
-
-msgid "Crop"
-msgstr ""
-
-msgid "Fit"
-msgstr ""
+msgstr "فهرست"
 
 msgid "Group by"
-msgstr ""
-
-msgid "None"
-msgstr ""
+msgstr "گروه‌بندی بر اساس"
 
 msgid "Authors"
-msgstr ""
+msgstr "نویسندگان"
 
-msgid "Series"
-msgstr ""
+msgid "Books"
+msgstr "کتاب‌ها"
 
 msgid "Groups"
-msgstr ""
+msgstr "گروه‌ها"
+
+msgid "Series"
+msgstr "مجموعه‌ها"
 
 msgid "Sort by"
-msgstr ""
-
-msgid "Last Updated"
-msgstr ""
+msgstr "مرتب‌سازی بر اساس"
 
 msgid "Date Read"
-msgstr ""
+msgstr "تاریخ مطالعه"
 
 msgid "Date Added"
-msgstr ""
+msgstr "تاریخ افزودن"
 
 msgid "Title"
 msgstr "عنوان"
@@ -72,67 +60,136 @@ msgid "Author"
 msgstr "نویسنده"
 
 msgid "Descending"
-msgstr ""
+msgstr "نزولی"
 
 msgid "Ascending"
-msgstr ""
+msgstr "صعودی"
 
 msgid "Actions"
-msgstr ""
+msgstr "اقدامات"
 
 msgid "Rescan library"
-msgstr ""
+msgstr "اسکن مجدد کتابخانه"
 
 msgid "Download folder…"
-msgstr ""
+msgstr "پوشه دانلود…"
 
 msgid "Pick a folder for downloaded books"
-msgstr ""
+msgstr "پوشه‌ای برای کتاب‌های دانلودشده انتخاب کنید"
 
 msgid "Sign in to Readest to open the Library"
-msgstr ""
+msgstr "برای باز کردن کتابخانه وارد Readest شوید"
 
 msgid "Library"
-msgstr ""
+msgstr "کتابخانه"
+
+msgid "Readest Library"
+msgstr "کتابخانه Readest"
 
 msgid "Cancel"
 msgstr "لغو"
 
 msgid "Clear"
-msgstr ""
+msgstr "پاک کردن"
 
 msgid "Search"
-msgstr ""
+msgstr "جستجو"
 
 msgid "Search library"
-msgstr ""
+msgstr "جستجو در کتابخانه"
 
 msgid "Search title or author"
-msgstr ""
+msgstr "جستجوی عنوان یا نویسنده"
 
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
-msgstr ""
+msgstr "برای نمایش کامل کتابخانه افزونه Cover Browser لازم است. به فهرست ساده بازمی‌گردد."
 
 msgid "File moved or deleted. Rescan library?"
-msgstr ""
+msgstr "فایل جابه‌جا یا حذف شده است. کتابخانه دوباره اسکن شود؟"
 
 msgid "Download this book from Readest?"
-msgstr ""
+msgstr "این کتاب از Readest دانلود شود؟"
 
 msgid "Download"
-msgstr ""
+msgstr "دانلود"
 
 msgid "Set Home folder in File Manager first to enable downloads."
-msgstr ""
+msgstr "برای فعال‌سازی دانلود ابتدا پوشه خانه را در مدیر فایل تنظیم کنید."
 
 msgid "Downloading…"
-msgstr ""
+msgstr "در حال دانلود…"
 
 msgid "Cloud copy unavailable."
-msgstr ""
+msgstr "نسخه ابری در دسترس نیست."
 
 msgid "Download failed."
-msgstr ""
+msgstr "دانلود ناموفق بود."
+
+msgid "No cover available on Readest."
+msgstr "جلدی در Readest در دسترس نیست."
+
+msgid "Cover download failed."
+msgstr "دانلود جلد ناموفق بود."
+
+msgid "Could not delete the file."
+msgstr "حذف فایل ممکن نشد."
+
+msgid "Removing from cloud…"
+msgstr "در حال حذف از فضای ابری…"
+
+msgid "Cloud removal failed."
+msgstr "حذف از فضای ابری ناموفق بود."
+
+msgid "Remove from Cloud & Device"
+msgstr "حذف از فضای ابری و دستگاه"
+
+msgid "Remove this book from cloud and device?"
+msgstr "این کتاب از فضای ابری و دستگاه حذف شود؟"
+
+msgid "Remove"
+msgstr "حذف"
+
+msgid "Remove from Cloud Only"
+msgstr "فقط حذف از فضای ابری"
+
+msgid "Remove this book from the cloud only?"
+msgstr "این کتاب فقط از فضای ابری حذف شود؟"
+
+msgid "Remove from Device Only"
+msgstr "فقط حذف از دستگاه"
+
+msgid "Remove the local copy of this book?"
+msgstr "نسخه محلی این کتاب حذف شود؟"
+
+msgid "Upload to Cloud"
+msgstr "بارگذاری در فضای ابری"
+
+msgid "Uploading…"
+msgstr "در حال بارگذاری…"
+
+msgid "Storage quota exceeded."
+msgstr "سهمیه ذخیره‌سازی به پایان رسید."
+
+msgid "Upload failed."
+msgstr "بارگذاری ناموفق بود."
+
+msgid "Download Book"
+msgstr "دانلود کتاب"
+
+msgid "Download Cover"
+msgstr "دانلود جلد"
+
+msgid "Download All"
+msgstr "دانلود همه"
+
+msgid "Open Readest Library"
+msgstr "باز کردن کتابخانه Readest"
+
+msgid "Push Readest book library"
+msgstr "ارسال کتابخانه Readest"
+
+msgid "Pull Readest book library"
+msgstr "دریافت کتابخانه Readest"
 
 msgid "Set auto progress sync"
 msgstr "تنظیم همگام‌سازی خودکار پیشرفت"
@@ -158,14 +215,29 @@ msgstr "ارسال یادداشت‌های Readest از این دستگاه"
 msgid "Pull readest annotations from other devices"
 msgstr "دریافت یادداشت‌های Readest از دستگاه‌های دیگر"
 
-msgid "Open Readest Library"
-msgstr ""
+msgid "Add to Readest"
+msgstr "افزودن به Readest"
 
-msgid "Push Readest book library"
-msgstr ""
+msgid "Sign in to Readest first."
+msgstr "ابتدا وارد Readest شوید."
 
-msgid "Pull Readest book library"
-msgstr ""
+msgid "File not found."
+msgstr "فایل پیدا نشد."
+
+msgid "Unsupported book format."
+msgstr "قالب کتاب پشتیبانی نمی‌شود."
+
+msgid "Hashing book…"
+msgstr "در حال محاسبه هش کتاب…"
+
+msgid "Could not read file."
+msgstr "خواندن فایل ممکن نشد."
+
+msgid "Already in your Readest library:"
+msgstr "از قبل در کتابخانه Readest شما موجود است:"
+
+msgid "Added to Readest:"
+msgstr "به Readest افزوده شد:"
 
 msgid "Log in Readest Account"
 msgstr "ورود به حساب Readest"
@@ -173,14 +245,17 @@ msgstr "ورود به حساب Readest"
 msgid "Log out as %1"
 msgstr "خروج از حساب %1"
 
+msgid "Auto sync"
+msgstr "همگام‌سازی خودکار"
+
+msgid "Readest library"
+msgstr "کتابخانه Readest"
+
 msgid "Push books now"
-msgstr ""
+msgstr "اکنون ارسال کتاب‌ها"
 
 msgid "Pull books now"
-msgstr ""
-
-msgid "Auto sync progress and annotations"
-msgstr "همگام‌سازی خودکار پیشرفت و یادداشت‌ها"
+msgstr "اکنون دریافت کتاب‌ها"
 
 msgid "Push reading progress now"
 msgstr "ارسال پیشرفت مطالعه اکنون"
@@ -234,13 +309,13 @@ msgid "Sync Info"
 msgstr "اطلاعات همگام‌سازی"
 
 msgid "Library not initialized"
-msgstr ""
+msgstr "کتابخانه راه‌اندازی نشده است"
 
 msgid "Books synced"
-msgstr ""
+msgstr "کتاب‌ها همگام شدند"
 
 msgid "Books sync failed"
-msgstr ""
+msgstr "همگام‌سازی کتاب‌ها ناموفق بود"
 
 msgid "Checking for update…"
 msgstr "در حال بررسی به‌روزرسانی…"
