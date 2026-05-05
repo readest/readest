@@ -233,4 +233,23 @@ describe('ProofreadPopup Component', () => {
       expect(mockOnClose).not.toHaveBeenCalled();
     });
   });
+
+  describe('Manage Replacement Rules Shortcut', () => {
+    it('should not render manage button when onManage is not provided', () => {
+      renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      expect(screen.queryByLabelText('Proofread Replacement Rules')).toBeNull();
+    });
+
+    it('should render manage button and invoke onManage when provided', () => {
+      const mockOnManage = vi.fn();
+      renderWithProviders(<ProofreadPopup {...defaultProps} onManage={mockOnManage} />);
+
+      const button = screen.getByLabelText('Proofread Replacement Rules');
+      expect(button).toBeTruthy();
+
+      fireEvent.click(button);
+      expect(mockOnManage).toHaveBeenCalledTimes(1);
+    });
+  });
 });

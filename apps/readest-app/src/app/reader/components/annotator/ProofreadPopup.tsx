@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
+import { RiListSettingsLine } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -21,6 +22,7 @@ interface ProofreadPopupProps {
   popupHeight: number;
   onConfirm?: (options: CreateProofreadRuleOptions) => void;
   onDismiss: () => void;
+  onManage?: () => void;
 }
 
 const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
@@ -32,6 +34,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
   popupHeight,
   onConfirm,
   onDismiss,
+  onManage,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -124,11 +127,22 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         onDismiss={onDismiss}
       >
         <div className='flex flex-col gap-6 p-4'>
-          <div className='not-eink:text-gray-400 flex gap-1 text-xs'>
+          <div className='not-eink:text-gray-400 flex items-center gap-1 text-xs'>
             <span className='text-nowrap'>{_('Selected text:')}</span>
-            <span className='not-eink:text-yellow-300 line-clamp-1 select-text break-words font-medium'>
+            <span className='not-eink:text-yellow-300 line-clamp-1 flex-1 select-text break-words font-medium'>
               &quot;{selection?.text || ''}&quot;
             </span>
+            {onManage && (
+              <button
+                type='button'
+                onClick={onManage}
+                aria-label={_('Proofread Replacement Rules')}
+                title={_('Proofread Replacement Rules')}
+                className='not-eink:text-gray-400 not-eink:hover:bg-gray-600 not-eink:hover:text-white shrink-0 rounded p-1'
+              >
+                <RiListSettingsLine size={16} />
+              </button>
+            )}
           </div>
 
           <div className='flex items-center justify-between gap-2'>

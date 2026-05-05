@@ -46,6 +46,7 @@ import DictionaryPopup from './DictionaryPopup';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
+import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -1019,6 +1020,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupWidth={proofreadPopupWidth}
           popupHeight={proofreadPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
+          onManage={() => {
+            handleDismissPopupAndSelection();
+            setProofreadRulesVisibility(true);
+          }}
         />
       )}
       {editingAnnotation && editingAnnotation.color && selection && (
