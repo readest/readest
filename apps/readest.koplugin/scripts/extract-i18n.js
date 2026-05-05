@@ -48,6 +48,7 @@ const LANG_META = {
       'nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
   },
   pt: { label: 'Portuguese', plural: 'nplurals=2; plural=(n != 1);' },
+  'pt-BR': { label: 'Portuguese (Brazil)', plural: 'nplurals=2; plural=(n != 1);' },
   ru: {
     label: 'Russian',
     plural:

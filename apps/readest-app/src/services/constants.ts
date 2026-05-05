@@ -842,6 +842,7 @@ export const TRANSLATED_LANGS = {
   ko: '한국어',
   es: 'Español',
   pt: 'Português',
+  'pt-BR': 'Português (Brasil)',
   ru: 'Русский',
   he: 'עברית',
   ar: 'العربية',
