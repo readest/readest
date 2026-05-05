@@ -1,0 +1,438 @@
+# Uzbek translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Uzbek\n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "KOReader va Readest qurilmalaringizni sinxronlashda saqlaydi."
+
+msgid "Library view"
+msgstr "Kutubxona koʻrinishi"
+
+msgid "View"
+msgstr "Koʻrinish"
+
+msgid "Grid"
+msgstr "Katak"
+
+msgid "List"
+msgstr "Roʻyxat"
+
+msgid "Group by"
+msgstr "Guruhlash"
+
+msgid "Authors"
+msgstr "Mualliflar"
+
+msgid "Books"
+msgstr "Kitoblar"
+
+msgid "Groups"
+msgstr "Guruhlar"
+
+msgid "Series"
+msgstr "Seriya"
+
+msgid "Sort by"
+msgstr "Saralash"
+
+msgid "Date Read"
+msgstr "Oʻqilgan sana"
+
+msgid "Date Added"
+msgstr "Qoʻshilgan sana"
+
+msgid "Title"
+msgstr "Sarlavha"
+
+msgid "Author"
+msgstr "Muallif"
+
+msgid "Descending"
+msgstr "Kamayish boʻyicha"
+
+msgid "Ascending"
+msgstr "Oʻsish boʻyicha"
+
+msgid "Actions"
+msgstr "Amallar"
+
+msgid "Rescan library"
+msgstr "Kutubxonani qayta skanerlash"
+
+msgid "Download folder…"
+msgstr "Yuklab olish jildi…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "Yuklab olingan kitoblar uchun jildni tanlang"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "Kutubxonani ochish uchun Readest-ga kiring"
+
+msgid "Library"
+msgstr "Kutubxona"
+
+msgid "Readest Library"
+msgstr "Readest kutubxonasi"
+
+msgid "Cancel"
+msgstr "Bekor qilish"
+
+msgid "Clear"
+msgstr "Tozalash"
+
+msgid "Search"
+msgstr "Qidirish"
+
+msgid "Search library"
+msgstr "Kutubxonada qidirish"
+
+msgid "Search title or author"
+msgstr "Sarlavha yoki muallif boʻyicha qidirish"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "Toʻliq kutubxona koʻrinishi uchun Cover Browser plagini talab qilinadi. Oddiy roʻyxatga oʻtilmoqda."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "Fayl koʻchirilgan yoki oʻchirilgan. Kutubxonani qayta skanerlaysizmi?"
+
+msgid "Download this book from Readest?"
+msgstr "Ushbu kitobni Readest-dan yuklab olasizmi?"
+
+msgid "Download"
+msgstr "Yuklab olish"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Yuklab olishlarni yoqish uchun avval Fayl menejerida bosh sahifa jildini belgilang."
+
+msgid "Downloading…"
+msgstr "Yuklab olinmoqda…"
+
+msgid "Cloud copy unavailable."
+msgstr "Bulutdagi nusxa mavjud emas."
+
+msgid "Download failed."
+msgstr "Yuklab olib boʻlmadi."
+
+msgid "No cover available on Readest."
+msgstr "Readest-da muqova mavjud emas."
+
+msgid "Cover download failed."
+msgstr "Muqovani yuklab olib boʻlmadi."
+
+msgid "Could not delete the file."
+msgstr "Faylni oʻchirib boʻlmadi."
+
+msgid "Removing from cloud…"
+msgstr "Bulutdan olib tashlanmoqda…"
+
+msgid "Cloud removal failed."
+msgstr "Bulutdan olib tashlab boʻlmadi."
+
+msgid "Remove from Cloud & Device"
+msgstr "Bulut va qurilmadan olib tashlash"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Ushbu kitobni bulut va qurilmadan olib tashlaysizmi?"
+
+msgid "Remove"
+msgstr "Olib tashlash"
+
+msgid "Remove from Cloud Only"
+msgstr "Faqat bulutdan olib tashlash"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Ushbu kitobni faqat bulutdan olib tashlaysizmi?"
+
+msgid "Remove from Device Only"
+msgstr "Faqat qurilmadan olib tashlash"
+
+msgid "Remove the local copy of this book?"
+msgstr "Ushbu kitobning mahalliy nusxasini olib tashlaysizmi?"
+
+msgid "Upload to Cloud"
+msgstr "Bulutga yuklash"
+
+msgid "Uploading…"
+msgstr "Yuklanmoqda…"
+
+msgid "Storage quota exceeded."
+msgstr "Xotira kvotasi oshib ketdi."
+
+msgid "Upload failed."
+msgstr "Yuklab boʻlmadi."
+
+msgid "Download Book"
+msgstr "Kitobni yuklab olish"
+
+msgid "Download Cover"
+msgstr "Muqovani yuklab olish"
+
+msgid "Download All"
+msgstr "Barchasini yuklab olish"
+
+msgid "Open Readest Library"
+msgstr "Readest kutubxonasini ochish"
+
+msgid "Push Readest book library"
+msgstr "Readest kitob kutubxonasini yuborish"
+
+msgid "Pull Readest book library"
+msgstr "Readest kitob kutubxonasini olish"
+
+msgid "Set auto progress sync"
+msgstr "Avtomatik jarayon sinxronlashni belgilash"
+
+msgid "on"
+msgstr "yoqilgan"
+
+msgid "off"
+msgstr "oʻchirilgan"
+
+msgid "Toggle auto readest sync"
+msgstr "Avtomatik readest sinxronlashni ochish/yopish"
+
+msgid "Push readest progress from this device"
+msgstr "Readest jarayonini ushbu qurilmadan yuborish"
+
+msgid "Pull readest progress from other devices"
+msgstr "Readest jarayonini boshqa qurilmalardan olish"
+
+msgid "Push readest annotations from this device"
+msgstr "Readest izohlarini ushbu qurilmadan yuborish"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Readest izohlarini boshqa qurilmalardan olish"
+
+msgid "Add to Readest"
+msgstr "Readest-ga qoʻshish"
+
+msgid "Sign in to Readest first."
+msgstr "Avval Readest-ga kiring."
+
+msgid "File not found."
+msgstr "Fayl topilmadi."
+
+msgid "Unsupported book format."
+msgstr "Qoʻllab-quvvatlanmaydigan kitob formati."
+
+msgid "Hashing book…"
+msgstr "Kitob xeshlanmoqda…"
+
+msgid "Could not read file."
+msgstr "Faylni oʻqib boʻlmadi."
+
+msgid "Already in your Readest library:"
+msgstr "Allaqachon Readest kutubxonangizda:"
+
+msgid "Added to Readest:"
+msgstr "Readest-ga qoʻshildi:"
+
+msgid "Log in Readest Account"
+msgstr "Readest hisobiga kirish"
+
+msgid "Log out as %1"
+msgstr "%1 sifatida chiqish"
+
+msgid "Auto sync"
+msgstr "Avtomatik sinxronlash"
+
+msgid "Readest library"
+msgstr "Readest kutubxonasi"
+
+msgid "Push books now"
+msgstr "Kitoblarni hozir yuborish"
+
+msgid "Pull books now"
+msgstr "Kitoblarni hozir olish"
+
+msgid "Push reading progress now"
+msgstr "Oʻqish jarayonini hozir yuborish"
+
+msgid "Pull reading progress now"
+msgstr "Oʻqish jarayonini hozir olish"
+
+msgid "Push annotations now"
+msgstr "Izohlarni hozir yuborish"
+
+msgid "Pull annotations now"
+msgstr "Izohlarni hozir olish"
+
+msgid "Full sync all annotations"
+msgstr "Barcha izohlarni toʻliq sinxronlash"
+
+msgid "Sync info"
+msgstr "Sinxronlash maʼlumoti"
+
+msgid "Check for update (v%1)"
+msgstr "Yangilanishni tekshirish (v%1)"
+
+msgid "Check for update"
+msgstr "Yangilanishni tekshirish"
+
+msgid "Please login first"
+msgstr "Iltimos, avval tizimga kiring"
+
+msgid "Please configure Readest settings first"
+msgstr "Iltimos, avval Readest sozlamalarini sozlang"
+
+msgid "No book is open"
+msgstr "Hech qanday kitob ochilmagan"
+
+msgid "(none)"
+msgstr "(yoʻq)"
+
+msgid "Never synced"
+msgstr "Sinxronlanmagan"
+
+msgid "Book Fingerprint"
+msgstr "Kitob barmoq izi"
+
+msgid "Identifiers"
+msgstr "Identifikatorlar"
+
+msgid "Last Synced"
+msgstr "Oxirgi sinxronlash"
+
+msgid "Sync Info"
+msgstr "Sinxronlash maʼlumoti"
+
+msgid "Library not initialized"
+msgstr "Kutubxona ishga tushirilmagan"
+
+msgid "Books synced"
+msgstr "Kitoblar sinxronlandi"
+
+msgid "Books sync failed"
+msgstr "Kitoblarni sinxronlab boʻlmadi"
+
+msgid "Checking for update…"
+msgstr "Yangilanishlar tekshirilmoqda…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Yangilanishni tekshirib boʻlmadi. Keyinroq qayta urinib koʻring."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Yangi versiya mavjud: v%1 (joriy: v%2).\n\nHozir yangilamoqchimisiz?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Yangi versiya mavjud: v%1.\n\nHozir yangilamoqchimisiz?"
+
+msgid "Update"
+msgstr "Yangilash"
+
+msgid "You are up to date (v%1)."
+msgstr "Sizda eng songgi versiya (v%1)."
+
+msgid "Downloading update…"
+msgstr "Yangilanish yuklanmoqda…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Yangilanishni yuklab boʻlmadi. Keyinroq qayta urinib koʻring."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest plagini v%1 ga yangilandi.\n\nYangilanishni qoʻllash uchun KOReader-ni qayta ishga tushiring."
+
+msgid "Restart now"
+msgstr "Hozir qayta ishga tushirish"
+
+msgid "Later"
+msgstr "Keyinroq"
+
+msgid "Failed to install update: %1"
+msgstr "Yangilanishni oʻrnatib boʻlmadi: %1"
+
+msgid "unknown error"
+msgstr "nomaʼlum xato"
+
+msgid "No annotations to push"
+msgstr "Yuborish uchun izohlar yoʻq"
+
+msgid "Pushing annotations..."
+msgstr "Izohlar yuborilmoqda..."
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 ta izoh muvaffaqiyatli yuborildi"
+
+msgid "Failed to push annotations"
+msgstr "Izohlarni yuborib boʻlmadi"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF hujjatlar uchun izoh sinxronlash qoʻllab-quvvatlanmaydi"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Toʻliq sinxronlash: barcha izohlar olinmoqda..."
+
+msgid "Pulling annotations..."
+msgstr "Izohlar olinmoqda..."
+
+msgid "Authentication failed, please login again"
+msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi, qayta tizimga kiring"
+
+msgid "Failed to pull annotations"
+msgstr "Izohlarni olib boʻlmadi"
+
+msgid "No new annotations found"
+msgstr "Yangi izohlar topilmadi"
+
+msgid "%1 annotations pulled"
+msgstr "%1 ta izoh olindi"
+
+msgid "Login"
+msgstr "Kirish"
+
+msgid "Please enter both email and password"
+msgstr "Iltimos, email va parolni kiriting"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Iltimos, avval Supabase URL va API kalitini sozlang"
+
+msgid "Logging in..."
+msgstr "Tizimga kirilmoqda..."
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest-ga muvaffaqiyatli kirildi"
+
+msgid "Login failed: %1"
+msgstr "Kirish muvaffaqiyatsiz tugadi: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest-dan chiqildi"
+
+msgid "Cannot identify the current book"
+msgstr "Joriy kitobni aniqlab boʻlmadi"
+
+msgid "Progress has been synchronized."
+msgstr "Jarayon sinxronlandi."
+
+msgid "Pushing reading progress..."
+msgstr "Oʻqish jarayoni yuborilmoqda..."
+
+msgid "Reading progress pushed successfully"
+msgstr "Oʻqish jarayoni muvaffaqiyatli yuborildi"
+
+msgid "Failed to push reading progress"
+msgstr "Oʻqish jarayonini yuborib boʻlmadi"
+
+msgid "Pulling reading progress..."
+msgstr "Oʻqish jarayoni olinmoqda..."
+
+msgid "Failed to pull reading progress"
+msgstr "Oʻqish jarayonini olib boʻlmadi"
+
+msgid "Reading progress synchronized"
+msgstr "Oʻqish jarayoni sinxronlandi"
+
+msgid "No saved reading progress found for this book"
+msgstr "Ushbu kitob uchun saqlangan oʻqish jarayoni topilmadi"
