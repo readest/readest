@@ -92,7 +92,7 @@ local function patch_bim(opts)
     end
 
     local function build_group_info(filepath, do_cover_image)
-        local group_by, value, cache_key, shape = group_covers.parse_uri(filepath)
+        local group_by, value, shape = group_covers.parse_uri(filepath)
         local meta = cloud_covers.get_meta(filepath)
         local info = {
             has_meta      = true,
@@ -103,12 +103,12 @@ local function patch_bim(opts)
             has_cover     = false,
             _no_provider  = true,
         }
-        if do_cover_image and group_by and value and cache_key then
+        if do_cover_image and group_by and value then
             local LibraryWidget = package.loaded["library.librarywidget"]
             local store = LibraryWidget and LibraryWidget._store
             local settings = M._opts and M._opts.settings or {}
             local bb = group_covers.serve_or_compose(
-                group_by, value, cache_key, shape,
+                group_by, value, shape,
                 store, settings, _orig_get_book_info, BIM)
             if bb then
                 local w, h = bb:getWidth(), bb:getHeight()

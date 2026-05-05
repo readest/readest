@@ -13,6 +13,7 @@
 -- way the rendering pipeline expects, then delegates lifecycle hooks
 -- (install, set_visible_hashes) to the right submodule.
 
+local logger       = require("logger")
 local cloud_covers = require("library.cloud_covers")
 local group_covers = require("library.group_covers")
 local bim_patch    = require("library.bim_patch")
@@ -34,9 +35,71 @@ function M.install(opts)
     bim_patch.install(opts)
 end
 
--- Limit cloud-cover downloads to entries on the current Menu page.
+-- Limit cloud-cover downloads to hashes the current page actually needs.
+-- Two contributors:
+--   * cloud-only book entries — their own hash (cover painted directly)
+--   * group entries — the first-N children's hashes (cover painted as a
+--     2x2/1x4 mosaic in build_group_info; up to 4 child .png downloads
+--     get queued the first time the group is on screen).
+-- Without the group expansion, group cells render as FakeCover until the
+-- user drills into each group individually, since trigger_download's
+-- visibility filter would reject the children.
 function M.set_visible_hashes(menu)
-    cloud_covers.set_visible_hashes(menu, M.CLOUD_ONLY_FLAG)
+    if not menu then
+        cloud_covers.set_visible_hashes(nil)
+        return
+    end
+
+    local LibraryWidget = package.loaded["library.librarywidget"]
+    local store = LibraryWidget and LibraryWidget._store
+    local settings = (bim_patch._opts and bim_patch._opts.settings) or {}
+    local view_mode = (settings.library_view_mode == "list") and "list" or "mosaic"
+    local shape = (view_mode == "list") and "list" or "grid"
+    local n_cells = group_covers.cells_for(shape)
+    local sort_opts = {
+        sort_by  = settings.library_sort_by,
+        sort_asc = settings.library_sort_ascending == true,
+    }
+
+    local set = {}
+    local page    = menu.page or 1
+    local perpage = menu.perpage or 1
+    local items   = menu.item_table or {}
+    local first   = (page - 1) * perpage + 1
+    local last    = math.min(first + perpage - 1, #items)
+    local cloud_only_count, group_child_count = 0, 0
+    for i = first, last do
+        local entry = items[i]
+        if entry then
+            if entry[M.CLOUD_ONLY_FLAG] and type(entry.file) == "string" then
+                local hash = cloud_covers.hash_from_uri(entry.file)
+                if hash and hash ~= "" then
+                    set[hash] = true
+                    cloud_only_count = cloud_only_count + 1
+                end
+            elseif entry._readest_group and store then
+                local group = entry._readest_group
+                local group_by = group._group_by
+                if group_by then
+                    local children = store:listBooksInGroup(
+                        group_by, group.name, n_cells, sort_opts)
+                    for _j, c in ipairs(children) do
+                        if c.hash and c.hash ~= "" then
+                            set[c.hash] = true
+                            group_child_count = group_child_count + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    cloud_covers.set_visible_hashes(set)
+    logger.info("ReadestLibrary set_visible_hashes: page=" .. page
+        .. " range=" .. first .. ".." .. last
+        .. " cloud_only=" .. cloud_only_count
+        .. " group_children=" .. group_child_count
+        .. " (item_table size=" .. #items .. ")")
 end
 
 -- ---------------------------------------------------------------------------

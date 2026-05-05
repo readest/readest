@@ -179,35 +179,22 @@ function M.trigger_download(hash)
     process_queue()
 end
 
--- Set of hashes on the current Menu page; only these may trigger
--- downloads. Pass nil to disable the filter (e.g. when the Library
--- closes and the patched BIM might still be invoked from elsewhere).
-function M.set_visible_hashes(menu, cloud_only_flag)
-    if not menu then
-        logger.dbg("ReadestLibrary set_visible_hashes: cleared (menu nil)")
+-- Set of hashes whose covers may trigger downloads on the current Menu
+-- page. Pass nil to disable the filter (e.g. when the Library closes and
+-- the patched BIM might still be invoked from elsewhere). Caller is
+-- responsible for computing the set: cloud-only book entries contribute
+-- their own hash; group entries contribute their children's hashes (so
+-- the patched BIM can fetch covers for the mosaic composite).
+function M.set_visible_hashes(set)
+    if set == nil then
+        logger.dbg("ReadestLibrary set_visible_hashes: cleared")
         _visible_hashes = nil
         return
     end
-    local set = {}
-    local count = 0
-    local page    = menu.page or 1
-    local perpage = menu.perpage or 1
-    local items   = menu.item_table or {}
-    local first   = (page - 1) * perpage + 1
-    local last    = math.min(first + perpage - 1, #items)
-    for i = first, last do
-        local entry = items[i]
-        if entry and entry[cloud_only_flag] and type(entry.file) == "string" then
-            local hash = M.hash_from_uri(entry.file)
-            set[hash] = true
-            count = count + 1
-        end
-    end
     _visible_hashes = set
-    logger.info("ReadestLibrary set_visible_hashes: page=" .. page
-        .. " range=" .. first .. ".." .. last
-        .. " cloud_only_visible=" .. count
-        .. " (item_table size=" .. #items .. ")")
+    local count = 0
+    for _ in pairs(set) do count = count + 1 end
+    logger.info("ReadestLibrary set_visible_hashes: count=" .. count)
 end
 
 return M
