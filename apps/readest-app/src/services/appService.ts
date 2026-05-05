@@ -158,6 +158,15 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.exists(path, base);
   }
 
+  async isDirectory(path: string, base: BaseDir): Promise<boolean> {
+    try {
+      const info = await this.fs.stats(path, base);
+      return info.isDirectory;
+    } catch {
+      return false;
+    }
+  }
+
   async getImageURL(path: string): Promise<string> {
     return await this.fs.getImageURL(path);
   }
