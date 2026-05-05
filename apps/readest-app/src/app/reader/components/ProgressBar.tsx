@@ -146,6 +146,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressBarMode]);
 
+  // Self-heal a stuck "none" (or partial) mode left over from a prior
+  // tap-to-toggle session. Without this, dismissing the footer via tap
+  // and then disabling the toggle in settings would leave the footer
+  // permanently hidden — the user's only way back to a visible footer
+  // would be to re-enable the toggle and tap through the cycle.
+  useEffect(() => {
+    if (!viewSettings.tapToToggleFooter && progressBarMode !== 'all') {
+      setProgressBarMode('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings.tapToToggleFooter]);
+
   const isMobile = appService?.isMobile || window.innerWidth < 640;
   const showStatusInfo =
     (progressBarMode === 'all' ||
