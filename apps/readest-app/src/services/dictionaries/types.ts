@@ -57,6 +57,14 @@ export interface ImportedDictionary {
   kind: 'stardict' | 'mdict' | 'dict' | 'slob';
   /** Display name, derived from `.ifo` `bookname`, `.mdx` `Title`, slob `label`, or DICT `00databaseshort`. */
   name: string;
+  /**
+   * Stable cross-device content-hash id derived from
+   * `partialMD5(primary) + byteSize + sortedFilenames`. Used as the
+   * `replica_id` for cross-device sync (see services/sync/adapters/dictionary.ts).
+   * Optional for legacy imports written before this field existed; the
+   * sync wiring treats absent contentId as "needs rehash before sync".
+   */
+  contentId?: string;
   /** Subdirectory under `'Dictionaries'` containing this bundle's files. */
   bundleDir: string;
   /** Filenames inside `bundleDir`. The exact set varies by `kind`. */

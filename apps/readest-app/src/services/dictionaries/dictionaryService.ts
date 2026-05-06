@@ -15,6 +15,7 @@ import { uniqueId } from '@/utils/misc';
 import { getFilename } from '@/utils/path';
 import type { ImportedDictionary } from './types';
 import { scanEntryOffsets, serializeOffsetsSidecar } from './stardictReader';
+import { computeDictionaryContentId } from './contentId';
 
 /** GZIP magic bytes — used to detect DictZip-compressed `.dict` files. */
 const GZIP_MAGIC = [0x1f, 0x8b, 0x08];
@@ -277,8 +278,14 @@ async function importStarDictBundle(
     }
   }
 
+  // Stardict primary = .ifo (small text; partialMD5 is effectively full-hash).
+  const stardictFilenames = [group.ifo.name, group.idx.name, group.dict.name];
+  if (group.syn?.name) stardictFilenames.push(group.syn.name);
+  const contentId = await computeDictionaryContentId(ifoFile, stardictFilenames);
+
   return {
     id: bundleDir,
+    contentId,
     kind: 'stardict',
     name,
     bundleDir,
@@ -348,8 +355,17 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
     }
   }
 
+  // MDict primary = .mdx (the body file).
+  const mdictFilenames = [
+    group.mdx.name,
+    ...group.mdd.map((m) => m.name),
+    ...group.css.map((c) => c.name),
+  ];
+  const contentId = await computeDictionaryContentId(mdxFile, mdictFilenames);
+
   return {
     id: bundleDir,
+    contentId,
     kind: 'mdict',
     name,
     bundleDir,
@@ -419,8 +435,13 @@ async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<Impor
     unsupportedReason = 'Raw .dict files are not supported in v1; please use .dict.dz format.';
   }
 
+  // DICT primary = .dict (or .dict.dz) — the gzipped body file.
+  const dictFilenames = [group.dict.name, group.index.name];
+  const contentId = await computeDictionaryContentId(dictFile, dictFilenames);
+
   return {
     id: bundleDir,
+    contentId,
     kind: 'dict',
     name,
     bundleDir,
@@ -461,8 +482,12 @@ async function importSlobBundle(fs: FileSystem, group: SlobGroup): Promise<Impor
     }
   }
 
+  // Slob primary = .slob (single-file bundle).
+  const contentId = await computeDictionaryContentId(slobFile, [group.slob.name]);
+
   return {
     id: bundleDir,
+    contentId,
     kind: 'slob',
     name,
     bundleDir,
