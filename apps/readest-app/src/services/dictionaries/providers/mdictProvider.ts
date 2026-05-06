@@ -320,6 +320,12 @@ export const createMdictProvider = ({
     if (initError) throw initError;
     if (!initPromise) {
       initPromise = (async () => {
+        console.log('[replica] mdictProvider.initOnce:start', {
+          id: dict.id,
+          name: dict.name,
+          bundleDir: dict.bundleDir,
+          files: dict.files,
+        });
         const { MDX, MDD } = (await import('js-mdict')) as {
           MDX: { create(file: Blob): Promise<MDXInstance> };
           MDD: { create(file: Blob): Promise<MDDInstance> };
@@ -328,7 +334,13 @@ export const createMdictProvider = ({
         if (!dict.files.mdx) {
           throw new Error('MDict bundle is missing the .mdx file');
         }
-        const mdxFile = await fs.openFile(`${dict.bundleDir}/${dict.files.mdx}`, 'Dictionaries');
+        const mdxPath = `${dict.bundleDir}/${dict.files.mdx}`;
+        console.log('[replica] mdictProvider: opening MDX', { path: mdxPath });
+        const mdxFile = await fs.openFile(mdxPath, 'Dictionaries');
+        console.log('[replica] mdictProvider: MDX opened', {
+          path: mdxPath,
+          size: mdxFile.size,
+        });
         let mdxInst: MDXInstance;
         try {
           mdxInst = await MDX.create(mdxFile);
@@ -386,7 +398,18 @@ export const createMdictProvider = ({
         mdx = mdxInst;
         mdds = mddInsts;
         looseStylesheets = cssTexts;
+        console.log('[replica] mdictProvider.initOnce:done', {
+          id: dict.id,
+          mddCount: mddInsts.length,
+          cssCount: cssTexts.length,
+        });
       })().catch((err) => {
+        console.warn('[replica] mdictProvider.initOnce:failed', {
+          id: dict.id,
+          name: dict.name,
+          bundleDir: dict.bundleDir,
+          error: (err as Error).message,
+        });
         initError = err instanceof Error ? err : new Error(String(err));
         initPromise = null;
         throw initError;
@@ -400,10 +423,16 @@ export const createMdictProvider = ({
     kind: 'mdict',
     label: label ?? dict.name,
     async lookup(word, ctx) {
+      console.log('[replica] mdictProvider.lookup', { id: dict.id, word });
       try {
         await initOnce();
       } catch (err) {
         const e = err as { unsupported?: boolean; message?: string };
+        console.warn('[replica] mdictProvider.lookup: init failed', {
+          id: dict.id,
+          unsupported: e.unsupported,
+          message: e.message ?? (err as Error).message,
+        });
         if (e.unsupported) {
           return { ok: false, reason: 'unsupported', message: e.message };
         }

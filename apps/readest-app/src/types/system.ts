@@ -166,7 +166,8 @@ export interface AppService {
     kind: string,
     replicaId: string,
     filename: string,
-    dst: string,
+    lfp: string,
+    base: BaseDir,
     onProgress?: ProgressHandler,
   ): Promise<void>;
   deleteReplicaBundle(kind: string, replicaId: string, filenames: string[]): Promise<void>;

@@ -266,4 +266,31 @@ describe('ReplicaSyncManager.pull', () => {
     await manager.pull('dictionary');
     expect(cursors.get('dictionary')).toBeUndefined();
   });
+
+  test('pull with { since: null } bypasses an existing cursor', async () => {
+    const r1 = makeRow('r1', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    const client = {
+      ...makeFakeClient(),
+      pull: vi.fn().mockResolvedValueOnce([r1]).mockResolvedValueOnce([r1]),
+    };
+    const { manager } = makeManager(client);
+    await manager.pull('dictionary');
+    // After the first pull, the cursor is at r1.updated_at_ts. A normal
+    // second pull would pass that cursor; the boot pull explicitly
+    // requests since=null to do a full re-sync.
+    await manager.pull('dictionary', { since: null });
+    expect(client.pull).toHaveBeenNthCalledWith(2, 'dictionary', null);
+  });
+
+  test('full pull still advances the cursor when rows arrive', async () => {
+    const r1 = makeRow('r1', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    const r2 = makeRow('r2', hlcPack(NOW + 200, 0, DEV) as Hlc);
+    const client = {
+      ...makeFakeClient(),
+      pull: vi.fn(async () => [r1, r2]),
+    };
+    const { manager, cursors } = makeManager(client);
+    await manager.pull('dictionary', { since: null });
+    expect(cursors.get('dictionary')).toBe(r2.updated_at_ts);
+  });
 });

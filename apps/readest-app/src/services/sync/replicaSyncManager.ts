@@ -123,8 +123,13 @@ export class ReplicaSyncManager {
     }
   }
 
-  async pull(kind: string): Promise<ReplicaRow[]> {
-    const since = this.opts.cursorStore.get(kind);
+  async pull(kind: string, opts?: { since?: Hlc | null }): Promise<ReplicaRow[]> {
+    // The boot orchestrator passes `{ since: null }` to do a full pull
+    // that ignores the persisted cursor — this lets us recover when a
+    // previous boot advanced the cursor past rows that never made it
+    // into the local store (e.g., apply-without-persist bug). Periodic
+    // sync (visibility / online) keeps using the cursor.
+    const since = opts && 'since' in opts ? (opts.since ?? null) : this.opts.cursorStore.get(kind);
     const rows = await this.opts.client.pull(kind, since);
     if (rows.length === 0) return rows;
     let maxHlc: Hlc = rows[0]!.updated_at_ts;

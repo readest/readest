@@ -118,6 +118,19 @@ function toSettingsDict(dict: ImportedDictionary): ImportedDictionary {
   return rest;
 }
 
+// Replica-side mutators (applyRemoteDictionary, softDeleteByContentId,
+// markAvailableByContentId) fire from boot-time pull / download-complete
+// handlers, NOT the settings UI. The UI couples its state mutations with
+// an explicit saveCustomDictionaries(envConfig) call; the replica path
+// has no such pairing, so without this auto-persist the next
+// loadCustomDictionaries (run on Annotator / settings panel mount) reads
+// stale settings.customDictionaries and wipes the in-memory rows.
+let replicaPersistEnv: EnvConfigType | null = null;
+export const enableReplicaAutoPersist = (envConfig: EnvConfigType | null): void => {
+  console.log('[replica] enableReplicaAutoPersist', { hasEnv: !!envConfig });
+  replicaPersistEnv = envConfig;
+};
+
 export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) => ({
   dictionaries: [],
   settings: { ...DEFAULT_DICTIONARY_SETTINGS },
@@ -152,6 +165,13 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
   },
 
   applyRemoteDictionary: (dict) => {
+    console.log('[replica] applyRemoteDictionary', {
+      id: dict.id,
+      contentId: dict.contentId,
+      name: dict.name,
+      bundleDir: dict.bundleDir,
+      unavailable: dict.unavailable,
+    });
     // Same local-state mutation as addDictionary, minus the publish call.
     // The row already exists on the server (we just pulled it).
     set((state) => {
@@ -172,17 +192,31 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
       };
     });
+    console.log('[replica] applyRemoteDictionary done', {
+      total: get().dictionaries.length,
+      providerOrderLen: get().settings.providerOrder.length,
+      hasPersistEnv: !!replicaPersistEnv,
+    });
+    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
   },
 
   findByContentId: (contentId) =>
     contentId ? get().dictionaries.find((d) => d.contentId === contentId) : undefined,
 
   markAvailableByContentId: (contentId) => {
+    const before = get().dictionaries.find((d) => d.contentId === contentId);
+    console.log('[replica] markAvailableByContentId', {
+      contentId,
+      foundBefore: !!before,
+      wasUnavailable: before?.unavailable,
+      hasPersistEnv: !!replicaPersistEnv,
+    });
     set((state) => ({
       dictionaries: state.dictionaries.map((d) =>
         d.contentId === contentId ? { ...d, unavailable: undefined } : d,
       ),
     }));
+    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
   },
 
   softDeleteByContentId: (contentId) => {
@@ -200,6 +234,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         ),
       },
     }));
+    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
   },
 
   updateDictionary: (id, patch) => {
@@ -399,6 +434,11 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const { settings } = useSettingsStore.getState();
       const persisted = settings?.customDictionaries ?? [];
       const persistedSettings = settings?.dictionarySettings ?? DEFAULT_DICTIONARY_SETTINGS;
+      console.log('[replica] loadCustomDictionaries:start', {
+        persistedCount: persisted.length,
+        persistedIds: persisted.map((d) => ({ id: d.id, name: d.name, contentId: d.contentId })),
+        inMemoryCount: get().dictionaries.length,
+      });
       const appService = await envConfig.getAppService();
       const dictionaries = await Promise.all(
         persisted.map(async (dict) => {
@@ -429,6 +469,15 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         webSearches: persistedSettings.webSearches ?? [],
       };
       set({ dictionaries, settings: settingsMerged });
+      console.log('[replica] loadCustomDictionaries:done', {
+        loadedCount: dictionaries.length,
+        loaded: dictionaries.map((d) => ({
+          id: d.id,
+          name: d.name,
+          unavailable: d.unavailable,
+          deletedAt: d.deletedAt,
+        })),
+      });
     } catch (error) {
       console.error('Failed to load custom dictionaries settings:', error);
     }
@@ -438,10 +487,16 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     try {
       const { settings, setSettings, saveSettings } = useSettingsStore.getState();
       const { dictionaries, settings: dictSettings } = get();
-      settings.customDictionaries = dictionaries.map(toSettingsDict);
+      const persisted = dictionaries.map(toSettingsDict);
+      console.log('[replica] saveCustomDictionaries:start', {
+        toPersistCount: persisted.length,
+        ids: persisted.map((d) => ({ id: d.id, name: d.name })),
+      });
+      settings.customDictionaries = persisted;
       settings.dictionarySettings = dictSettings;
       setSettings(settings);
       saveSettings(envConfig, settings);
+      console.log('[replica] saveCustomDictionaries:done');
     } catch (error) {
       console.error('Failed to save custom dictionaries settings:', error);
       throw error;

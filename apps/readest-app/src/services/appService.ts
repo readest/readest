@@ -300,9 +300,16 @@ export abstract class BaseAppService implements AppService {
     kind: string,
     replicaId: string,
     filename: string,
-    dst: string,
+    lfp: string,
+    base: BaseDir,
     onProgress?: ProgressHandler,
   ) {
+    // Resolve the relative `<bundleDir>/<filename>` lfp against the
+    // replica's base dir before downloading. Mirrors how upload uses
+    // `resolveFilePath(opts.lfp, opts.base)`. Without this, the writer
+    // lands the bytes at the literal lfp (no base prefix) so subsequent
+    // openFile(lfp, base) calls fail with "File not found".
+    const dst = await this.resolveFilePath(lfp, base);
     return CloudSvc.downloadReplicaFileFromCloud(this, {
       kind,
       replicaId,

@@ -60,6 +60,15 @@ const MANIFEST_FILE_TO_TRANSFER = (
 const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<void> => {
   const local = deps.findByContentId(row.replica_id);
   const alive = isReplicaRowAlive(row);
+  console.log('[replica] applyRow', {
+    replicaId: row.replica_id,
+    alive,
+    hasLocal: !!local,
+    hasManifest: !!row.manifest_jsonb,
+    manifestFiles: row.manifest_jsonb?.files.length ?? 0,
+    deleted_at_ts: row.deleted_at_ts,
+    reincarnation: row.reincarnation,
+  });
 
   if (!alive) {
     if (local && !local.deletedAt) {
@@ -69,6 +78,7 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
   }
 
   if (local) {
+    console.log('[replica] applyRow:skip-already-local', { replicaId: row.replica_id });
     // Already present locally. Field-level merge (rename, lang, etc.)
     // and revival of soft-deleted-locally entries are deferred to a
     // follow-up slice — for v1 the most important case is "row from
@@ -78,7 +88,10 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
 
   const bundleDir = await deps.createBundleDir();
   const dict = buildLocalDictFromRow(row, bundleDir);
-  if (!dict) return;
+  if (!dict) {
+    console.log('[replica] applyRow:skip-malformed', { replicaId: row.replica_id });
+    return;
+  }
 
   deps.applyRemoteDictionary(dict);
 
@@ -86,7 +99,18 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
     const files = row.manifest_jsonb.files.map((f) =>
       MANIFEST_FILE_TO_TRANSFER(f.filename, f.byteSize, bundleDir),
     );
-    deps.queueReplicaDownload(row.replica_id, dict.name, files, bundleDir, 'Dictionaries');
+    const transferId = deps.queueReplicaDownload(
+      row.replica_id,
+      dict.name,
+      files,
+      bundleDir,
+      'Dictionaries',
+    );
+    console.log('[replica] applyRow:queued-download', {
+      replicaId: row.replica_id,
+      transferId,
+      fileCount: files.length,
+    });
   }
 };
 
@@ -96,8 +120,13 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
  * row never blocks the others.
  */
 export const pullDictionariesAndApply = async (deps: PullDictionariesDeps): Promise<void> => {
-  if (deps.isAuthenticated && !(await deps.isAuthenticated())) return;
+  console.log('[replica] pullDictionariesAndApply:start');
+  if (deps.isAuthenticated && !(await deps.isAuthenticated())) {
+    console.log('[replica] pullDictionariesAndApply:skip-not-authenticated');
+    return;
+  }
   const rows = await deps.pull();
+  console.log('[replica] pullDictionariesAndApply:rows', { count: rows.length });
   for (const row of rows) {
     try {
       await applyRow(row, deps);
@@ -105,4 +134,5 @@ export const pullDictionariesAndApply = async (deps: PullDictionariesDeps): Prom
       console.warn('replica pull row apply failed', { replicaId: row.replica_id, err });
     }
   }
+  console.log('[replica] pullDictionariesAndApply:done');
 };

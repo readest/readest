@@ -23,6 +23,10 @@ class TransferManager {
   private getLibrary: (() => Book[]) | null = null;
   private updateBook: ((book: Book) => Promise<void>) | null = null;
   private _: TranslationFunc | null = null;
+  private readyResolve: () => void = () => {};
+  private readyPromise: Promise<void> = new Promise<void>((resolve) => {
+    this.readyResolve = resolve;
+  });
 
   private constructor() {}
 
@@ -47,6 +51,7 @@ class TransferManager {
     this._ = translationFn;
     await this.loadPersistedQueue();
     this.isInitialized = true;
+    this.readyResolve();
 
     // Start processing queue
     this.processQueue();
@@ -54,6 +59,16 @@ class TransferManager {
 
   isReady(): boolean {
     return this.isInitialized && this.appService !== null;
+  }
+
+  /**
+   * Resolves once `initialize()` has completed. Lets callers that need
+   * to enqueue transfers (e.g., the boot-time replica pull) defer until
+   * the manager is wired up — the manager only inits after the library
+   * is loaded, which can lag well behind app boot.
+   */
+  waitUntilReady(): Promise<void> {
+    return this.readyPromise;
   }
 
   queueUpload(book: Book, priority: number = 10): string | null {
@@ -478,16 +493,41 @@ class TransferManager {
     }
 
     if (transfer.type === 'download') {
+      const base = transfer.replicaBase!;
+      console.log('[replica] executeReplicaTransfer:download:start', {
+        kind,
+        replicaId,
+        base,
+        fileCount: files.length,
+        files: files.map((f) => ({ logical: f.logical, lfp: f.lfp, byteSize: f.byteSize })),
+      });
       for (const file of files) {
-        await this.appService!.downloadReplicaFile(
-          kind,
-          replicaId,
-          file.logical,
-          file.lfp,
-          fileProgressHandler(file.byteSize),
-        );
-        bytesAlreadyDone += file.byteSize;
+        try {
+          await this.appService!.downloadReplicaFile(
+            kind,
+            replicaId,
+            file.logical,
+            file.lfp,
+            base,
+            fileProgressHandler(file.byteSize),
+          );
+          console.log('[replica] executeReplicaTransfer:download:file-done', {
+            replicaId,
+            logical: file.logical,
+            lfp: file.lfp,
+          });
+          bytesAlreadyDone += file.byteSize;
+        } catch (err) {
+          console.warn('[replica] executeReplicaTransfer:download:file-failed', {
+            replicaId,
+            logical: file.logical,
+            lfp: file.lfp,
+            error: (err as Error).message,
+          });
+          throw err;
+        }
       }
+      console.log('[replica] executeReplicaTransfer:download:done', { kind, replicaId });
       eventDispatcher.dispatch('replica-transfer-complete', {
         kind,
         replicaId,

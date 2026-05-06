@@ -9,7 +9,7 @@ import { initReplicaSync } from '@/services/sync/replicaSync';
 import { createSettingsCursorStore } from '@/services/sync/replicaCursorStore';
 import { startReplicaTransferIntegration } from '@/services/sync/replicaTransferIntegration';
 import { pullDictionariesAndApply } from '@/services/sync/replicaPullDictionaries';
-import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useCustomDictionaryStore, enableReplicaAutoPersist } from '@/store/customDictionaryStore';
 import { transferManager } from '@/services/transferManager';
 import { getAccessToken } from '@/utils/access';
 import { uniqueId } from '@/utils/misc';
@@ -26,7 +26,10 @@ interface EnvContextType {
 const EnvContext = createContext<EnvContextType | undefined>(undefined);
 
 const buildDictionaryPullDeps = (manager: ReplicaSyncManager, service: AppService) => ({
-  pull: () => manager.pull('dictionary'),
+  // Boot path uses since=null so we always re-fetch and apply locally,
+  // ignoring any previously-advanced cursor. Periodic sync (visibility /
+  // online) goes through manager.pull(kind) which keeps using the cursor.
+  pull: () => manager.pull('dictionary', { since: null }),
   findByContentId: (id: string) => useCustomDictionaryStore.getState().findByContentId(id),
   applyRemoteDictionary: (dict: ImportedDictionary) =>
     useCustomDictionaryStore.getState().applyRemoteDictionary(dict),
@@ -53,6 +56,10 @@ export const EnvProvider = ({ children }: { children: ReactNode }) => {
 
   React.useEffect(() => {
     bootstrapReplicaAdapters();
+    // Replica-side dict mutators (applyRemoteDictionary, etc.) need to
+    // persist into settings so the next loadCustomDictionaries doesn't
+    // wipe them — register the envConfig once.
+    enableReplicaAutoPersist(envConfig);
     envConfig.getAppService().then(async (service) => {
       setAppService(service);
       try {
@@ -67,10 +74,20 @@ export const EnvProvider = ({ children }: { children: ReactNode }) => {
           // Pull-side: fetch dictionary rows pushed from other devices
           // and apply them locally (placeholder + queued download). Best-
           // effort — failures don't block the rest of app boot.
+          //
+          // Defer the pull until TransferManager is initialized (which
+          // happens after library load via useTransferQueue). Otherwise
+          // queueReplicaDownload no-ops and the dict appears in the list
+          // without its binaries.
           const deps = buildDictionaryPullDeps(ctx.manager, service);
-          void pullDictionariesAndApply(deps).catch((err) =>
-            console.warn('replica dictionary pull failed', err),
-          );
+          console.log('[replica] EnvContext: awaiting transferManager.waitUntilReady before pull');
+          void transferManager
+            .waitUntilReady()
+            .then(() => {
+              console.log('[replica] EnvContext: transferManager ready, invoking pull');
+              return pullDictionariesAndApply(deps);
+            })
+            .catch((err) => console.warn('replica dictionary pull failed', err));
         }
       } catch (err) {
         console.warn('replica sync init failed', err);

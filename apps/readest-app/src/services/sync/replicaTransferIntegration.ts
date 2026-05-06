@@ -40,6 +40,11 @@ const handleReplicaUpload = async (detail: ReplicaTransferCompleteDetail): Promi
 };
 
 const handleReplicaDownload = (detail: ReplicaTransferCompleteDetail): void => {
+  console.log('[replica] handleReplicaDownload', {
+    replicaId: detail.replicaId,
+    kind: detail.kind,
+    fileCount: detail.files?.length ?? detail.filenames?.length ?? 0,
+  });
   // The pull orchestrator created the local dict with unavailable=true
   // as a placeholder. Now that the binaries are on disk, clear the flag
   // so the provider registry surfaces the dict for lookups.

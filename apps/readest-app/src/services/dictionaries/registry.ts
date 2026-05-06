@@ -132,10 +132,31 @@ export const getEnabledProviders = ({
       continue;
     }
     const dict = dictById.get(id);
-    if (!dict) continue;
-    if (dict.deletedAt || dict.unavailable || dict.unsupported) continue;
+    if (!dict) {
+      console.log('[replica] registry: dict missing', { id });
+      continue;
+    }
+    if (dict.deletedAt || dict.unavailable || dict.unsupported) {
+      console.log('[replica] registry: dict filtered', {
+        id,
+        name: dict.name,
+        deletedAt: dict.deletedAt,
+        unavailable: dict.unavailable,
+        unsupported: dict.unsupported,
+      });
+      continue;
+    }
     const provider = getOrCreate(id, dict, fs, settings);
-    if (provider) out.push(provider);
+    if (provider) {
+      console.log('[replica] registry: dict provider ready', {
+        id,
+        name: dict.name,
+        kind: dict.kind,
+        bundleDir: dict.bundleDir,
+        files: dict.files,
+      });
+      out.push(provider);
+    }
   }
   return out;
 };
