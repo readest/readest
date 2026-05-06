@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "辞書を編集",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict バンドルは .mdx ファイルを使用します。付属の .mdd および .css ファイルは任意です。",
   "Dictionary name": "辞書名",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "この音声はここで再生できません — 辞書が古い形式を使用しています。Opus、MP3、または WAV 音声を使用する辞書を試してください。"
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "この音声はここで再生できません — 辞書が古い形式を使用しています。Opus、MP3、または WAV 音声を使用する辞書を試してください。",
+  "Dictionary uploaded: {{title}}": "辞書をアップロードしました: {{title}}",
+  "Dictionary downloaded: {{title}}": "辞書をダウンロードしました: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "辞書のクラウドコピーを削除しました: {{title}}",
+  "Failed to upload dictionary: {{title}}": "辞書のアップロードに失敗しました: {{title}}",
+  "Failed to download dictionary: {{title}}": "辞書のダウンロードに失敗しました: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "辞書のクラウドコピーの削除に失敗しました: {{title}}"
 }

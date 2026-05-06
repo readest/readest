@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "அகராதியைத் திருத்து",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict தொகுப்புகள் .mdx கோப்புகளைப் பயன்படுத்துகின்றன; இணைந்த .mdd மற்றும் .css கோப்புகள் விருப்பமானவை.",
   "Dictionary name": "அகராதியின் பெயர்",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "இந்த ஒலியை இங்கே இயக்க இயலவில்லை — அகராதி காலாவதியான வடிவத்தைப் பயன்படுத்துகிறது. Opus, MP3 அல்லது WAV ஒலி உள்ள ஒன்றை முயற்சிக்கவும்."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "இந்த ஒலியை இங்கே இயக்க இயலவில்லை — அகராதி காலாவதியான வடிவத்தைப் பயன்படுத்துகிறது. Opus, MP3 அல்லது WAV ஒலி உள்ள ஒன்றை முயற்சிக்கவும்.",
+  "Dictionary uploaded: {{title}}": "அகராதி பதிவேற்றப்பட்டது: {{title}}",
+  "Dictionary downloaded: {{title}}": "அகராதி பதிவிறக்கப்பட்டது: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "அகராதியின் கிளவுட் நகல் நீக்கப்பட்டது: {{title}}",
+  "Failed to upload dictionary: {{title}}": "அகராதியை பதிவேற்ற முடியவில்லை: {{title}}",
+  "Failed to download dictionary: {{title}}": "அகராதியை பதிவிறக்க முடியவில்லை: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "அகராதியின் கிளவுட் நகலை நீக்க முடியவில்லை: {{title}}"
 }

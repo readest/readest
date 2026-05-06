@@ -1,11 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('@/services/sync/replicaPublish', () => ({
+  publishDictionaryDelete: vi.fn(),
+  publishDictionaryUpsert: vi.fn(),
+}));
+
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
+import { publishDictionaryUpsert } from '@/services/sync/replicaPublish';
 
 const ZERO = (s: string) => s.startsWith('web:builtin:');
+const mockPublishDictionaryUpsert = vi.mocked(publishDictionaryUpsert);
 
 describe('customDictionaryStore — web search CRUD', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Reset state to defaults so tests don't bleed.
     useCustomDictionaryStore.setState({
       dictionaries: [],
@@ -122,5 +131,28 @@ describe('customDictionaryStore — web search CRUD', () => {
 
     // Unknown id: silent no-op.
     expect(() => updateDictionary('mdict:nope', { name: 'X' })).not.toThrow();
+  });
+
+  it('updateDictionary preserves reincarnation when publishing a renamed dictionary', () => {
+    const { addDictionary, updateDictionary } = useCustomDictionaryStore.getState();
+    addDictionary({
+      id: 'mdict:abc',
+      contentId: 'content-abc',
+      kind: 'mdict',
+      name: 'Old title',
+      bundleDir: 'abc',
+      files: { mdx: 'abc.mdx' },
+      addedAt: 1,
+      reincarnation: 'epoch-1',
+    });
+
+    mockPublishDictionaryUpsert.mockClear();
+    updateDictionary('mdict:abc', { name: 'New title' });
+
+    expect(mockPublishDictionaryUpsert).toHaveBeenCalledOnce();
+    expect(mockPublishDictionaryUpsert.mock.calls[0]![0]).toMatchObject({
+      name: 'New title',
+      reincarnation: 'epoch-1',
+    });
   });
 });

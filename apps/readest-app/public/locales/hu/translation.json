@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "Szótár szerkesztése",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Az MDict csomagok .mdx fájlokat használnak; a kísérő .mdd és .css fájlok opcionálisak.",
   "Dictionary name": "Szótár neve",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Ez a hang itt nem játszható le — a szótár elavult formátumot használ. Próbálj olyat, amely Opus, MP3 vagy WAV hangot tartalmaz."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Ez a hang itt nem játszható le — a szótár elavult formátumot használ. Próbálj olyat, amely Opus, MP3 vagy WAV hangot tartalmaz.",
+  "Dictionary uploaded: {{title}}": "Szótár feltöltve: {{title}}",
+  "Dictionary downloaded: {{title}}": "Szótár letöltve: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "A szótár felhőbeli másolata törölve: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Nem sikerült feltölteni a szótárat: {{title}}",
+  "Failed to download dictionary: {{title}}": "Nem sikerült letölteni a szótárat: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Nem sikerült törölni a szótár felhőbeli másolatát: {{title}}"
 }

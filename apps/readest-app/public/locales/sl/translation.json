@@ -1380,5 +1380,11 @@
   "Edit Dictionary": "Uredi slovar",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Paketi MDict uporabljajo datoteke .mdx; spremne datoteke .mdd in .css so neobvezne.",
   "Dictionary name": "Ime slovarja",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Tega zvoka tukaj ni mogoče predvajati — slovar uporablja zastarelo obliko. Poskusite slovar z zvokom Opus, MP3 ali WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Tega zvoka tukaj ni mogoče predvajati — slovar uporablja zastarelo obliko. Poskusite slovar z zvokom Opus, MP3 ali WAV.",
+  "Dictionary uploaded: {{title}}": "Slovar naložen: {{title}}",
+  "Dictionary downloaded: {{title}}": "Slovar prenesen: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Kopija slovarja v oblaku izbrisana: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Nalaganje slovarja ni uspelo: {{title}}",
+  "Failed to download dictionary: {{title}}": "Prenos slovarja ni uspel: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Brisanje kopije slovarja v oblaku ni uspelo: {{title}}"
 }

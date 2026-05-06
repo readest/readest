@@ -41,8 +41,8 @@ CREATE POLICY replica_keys_delete ON public.replica_keys
 --                     revive a tombstoned row.
 --   reincarnation   — explicit re-import token; swaps row to alive under a
 --                     new logical identity.
---   updated_at_ts   — max(field HLCs, deleted_at_ts). Used as the pull
---                     cursor.
+--   updated_at_ts   — max(field HLCs, deleted_at_ts, row-level operation
+--                     HLCs such as manifest commits). Used as the pull cursor.
 --   schema_version  — per-kind schema bump; server enforces bounds.
 -- ─────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.replicas (

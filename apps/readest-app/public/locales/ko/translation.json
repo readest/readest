@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "사전 편집",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict 번들은 .mdx 파일을 사용합니다. 동반된 .mdd 및 .css 파일은 선택 사항입니다.",
   "Dictionary name": "사전 이름",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "여기서는 이 오디오를 재생할 수 없습니다 — 사전이 오래된 형식을 사용합니다. Opus, MP3 또는 WAV 오디오 사전을 사용해 보세요."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "여기서는 이 오디오를 재생할 수 없습니다 — 사전이 오래된 형식을 사용합니다. Opus, MP3 또는 WAV 오디오 사전을 사용해 보세요.",
+  "Dictionary uploaded: {{title}}": "사전 업로드 완료: {{title}}",
+  "Dictionary downloaded: {{title}}": "사전 다운로드 완료: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "사전의 클라우드 사본을 삭제했습니다: {{title}}",
+  "Failed to upload dictionary: {{title}}": "사전 업로드 실패: {{title}}",
+  "Failed to download dictionary: {{title}}": "사전 다운로드 실패: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "사전의 클라우드 사본 삭제 실패: {{title}}"
 }

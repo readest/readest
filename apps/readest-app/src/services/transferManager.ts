@@ -4,6 +4,7 @@ import { useTransferStore, TransferItem, ReplicaTransferFile } from '@/store/tra
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { ProgressHandler, ProgressPayload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
+import { getTransferMessages } from './transferMessages';
 
 const TRANSFER_QUEUE_KEY = 'readest_transfer_queue';
 const RETRY_DELAY_BASE_MS = 2000;
@@ -125,7 +126,7 @@ class TransferManager {
     displayTitle: string,
     files: ReplicaTransferFile[],
     base: BaseDir,
-    opts: { priority?: number; isBackground?: boolean } = {},
+    opts: { priority?: number; isBackground?: boolean; reincarnation?: string } = {},
   ): string | null {
     if (!this.isReady()) {
       console.warn('TransferManager not initialized');
@@ -140,6 +141,7 @@ class TransferManager {
       isBackground: opts.isBackground,
       files,
       base,
+      reincarnation: opts.reincarnation,
     });
     this.persistQueue();
     this.processQueue();
@@ -317,17 +319,13 @@ class TransferManager {
 
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
 
-      const successMessages = {
-        upload: _('Book uploaded: {{title}}', { title: transfer.bookTitle }),
-        download: _('Book downloaded: {{title}}', { title: transfer.bookTitle }),
-        delete: _('Deleted cloud backup of the book: {{title}}', { title: transfer.bookTitle }),
-      };
+      const messages = getTransferMessages(transfer, _);
 
       if (!transfer.isBackground) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: successMessages[transfer.type],
+          message: messages.success[transfer.type],
         });
       }
     } catch (error) {
@@ -365,13 +363,7 @@ class TransferManager {
             message: _('Insufficient storage quota'),
           });
         } else {
-          const errorMessages = {
-            upload: _('Failed to upload book: {{title}}', { title: transfer.bookTitle }),
-            download: _('Failed to download book: {{title}}', { title: transfer.bookTitle }),
-            delete: _('Failed to delete cloud backup of the book: {{title}}', {
-              title: transfer.bookTitle,
-            }),
-          };
+          const errorMessages = getTransferMessages(transfer, _).failure;
 
           eventDispatcher.dispatch('toast', {
             type: 'error',
@@ -478,6 +470,7 @@ class TransferManager {
       eventDispatcher.dispatch('replica-transfer-complete', {
         kind,
         replicaId,
+        reincarnation: transfer.replicaReincarnation,
         type: 'upload',
         files,
       });

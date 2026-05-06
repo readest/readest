@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "編輯辭典",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict 套件使用 .mdx 檔案;附帶的 .mdd 與 .css 檔案為選用。",
   "Dictionary name": "辭典名稱",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "無法在此播放此音訊 — 此辭典使用過時格式。請改用提供 Opus、MP3 或 WAV 音訊的辭典。"
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "無法在此播放此音訊 — 此辭典使用過時格式。請改用提供 Opus、MP3 或 WAV 音訊的辭典。",
+  "Dictionary uploaded: {{title}}": "詞典已上傳:{{title}}",
+  "Dictionary downloaded: {{title}}": "詞典已下載:{{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "已刪除詞典的雲端副本:{{title}}",
+  "Failed to upload dictionary: {{title}}": "詞典上傳失敗:{{title}}",
+  "Failed to download dictionary: {{title}}": "詞典下載失敗:{{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "詞典雲端副本刪除失敗:{{title}}"
 }

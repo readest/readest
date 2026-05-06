@@ -27,6 +27,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { eventDispatcher } from '@/utils/event';
 import { evictProvider } from '@/services/dictionaries/registry';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
+import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import type { ImportedDictionary, WebSearchEntry } from '@/services/dictionaries/types';
 import {
   getBuiltinWebSearch,
@@ -389,11 +390,13 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
       let added = 0;
       for (const dict of importResult.imported) {
         addDictionary(dict);
+        if (appService) void queueDictionaryBinaryUpload(dict, appService);
         added += 1;
       }
       let replaced = 0;
       for (const { oldIds, newDict } of importResult.replacements) {
         replaceDictionaries(oldIds, newDict);
+        if (appService) void queueDictionaryBinaryUpload(newDict, appService);
         // Invalidate any cached provider instances for the replaced ids so
         // their next lookup picks up the new bundle's files.
         for (const oldId of oldIds) evictProvider(oldId);

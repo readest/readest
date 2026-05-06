@@ -1380,5 +1380,11 @@
   "Edit Dictionary": "Edytuj słownik",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Pakiety MDict używają plików .mdx; towarzyszące pliki .mdd i .css są opcjonalne.",
   "Dictionary name": "Nazwa słownika",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Tego dźwięku nie można odtworzyć tutaj — słownik używa przestarzałego formatu. Spróbuj słownika z dźwiękiem Opus, MP3 lub WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Tego dźwięku nie można odtworzyć tutaj — słownik używa przestarzałego formatu. Spróbuj słownika z dźwiękiem Opus, MP3 lub WAV.",
+  "Dictionary uploaded: {{title}}": "Słownik przesłany: {{title}}",
+  "Dictionary downloaded: {{title}}": "Słownik pobrany: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Usunięto kopię słownika w chmurze: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Nie udało się przesłać słownika: {{title}}",
+  "Failed to download dictionary: {{title}}": "Nie udało się pobrać słownika: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Nie udało się usunąć kopii słownika w chmurze: {{title}}"
 }

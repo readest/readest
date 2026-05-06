@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "Redigera ordbok",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict-paket använder .mdx-filer; medföljande .mdd- och .css-filer är valfria.",
   "Dictionary name": "Ordbokens namn",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Det här ljudet kan inte spelas upp här — ordboken använder ett föråldrat format. Prova en ordbok med Opus-, MP3- eller WAV-ljud."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Det här ljudet kan inte spelas upp här — ordboken använder ett föråldrat format. Prova en ordbok med Opus-, MP3- eller WAV-ljud.",
+  "Dictionary uploaded: {{title}}": "Ordlista uppladdad: {{title}}",
+  "Dictionary downloaded: {{title}}": "Ordlista nedladdad: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Molnkopia av ordlistan borttagen: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Det gick inte att ladda upp ordlistan: {{title}}",
+  "Failed to download dictionary: {{title}}": "Det gick inte att ladda ned ordlistan: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Det gick inte att ta bort molnkopian av ordlistan: {{title}}"
 }

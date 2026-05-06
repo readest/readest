@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "Chỉnh sửa từ điển",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Gói MDict sử dụng tệp .mdx; các tệp .mdd và .css đi kèm là tùy chọn.",
   "Dictionary name": "Tên từ điển",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Không thể phát âm thanh này tại đây — từ điển dùng định dạng đã lỗi thời. Hãy thử từ điển có âm thanh Opus, MP3 hoặc WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Không thể phát âm thanh này tại đây — từ điển dùng định dạng đã lỗi thời. Hãy thử từ điển có âm thanh Opus, MP3 hoặc WAV.",
+  "Dictionary uploaded: {{title}}": "Đã tải lên từ điển: {{title}}",
+  "Dictionary downloaded: {{title}}": "Đã tải xuống từ điển: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Đã xoá bản sao đám mây của từ điển: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Không thể tải lên từ điển: {{title}}",
+  "Failed to download dictionary: {{title}}": "Không thể tải xuống từ điển: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Không thể xoá bản sao đám mây của từ điển: {{title}}"
 }

@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "অভিধান সম্পাদনা করুন",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict বান্ডেল .mdx ফাইল ব্যবহার করে; সহগামী .mdd ও .css ফাইল ঐচ্ছিক।",
   "Dictionary name": "অভিধানের নাম",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "এই অডিও এখানে চালানো যাচ্ছে না — অভিধানটি একটি পুরনো ফর্ম্যাট ব্যবহার করছে। Opus, MP3 বা WAV অডিও সহ একটি ব্যবহার করে দেখুন।"
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "এই অডিও এখানে চালানো যাচ্ছে না — অভিধানটি একটি পুরনো ফর্ম্যাট ব্যবহার করছে। Opus, MP3 বা WAV অডিও সহ একটি ব্যবহার করে দেখুন।",
+  "Dictionary uploaded: {{title}}": "অভিধান আপলোড করা হয়েছে: {{title}}",
+  "Dictionary downloaded: {{title}}": "অভিধান ডাউনলোড করা হয়েছে: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "অভিধানের ক্লাউড কপি মুছে ফেলা হয়েছে: {{title}}",
+  "Failed to upload dictionary: {{title}}": "অভিধান আপলোড করতে ব্যর্থ: {{title}}",
+  "Failed to download dictionary: {{title}}": "অভিধান ডাউনলোড করতে ব্যর্থ: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "অভিধানের ক্লাউড কপি মুছতে ব্যর্থ: {{title}}"
 }

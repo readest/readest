@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "Lug‘atni tahrirlash",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict to‘plamlari .mdx fayllaridan foydalanadi; hamroh .mdd va .css fayllari ixtiyoriy.",
   "Dictionary name": "Lug‘at nomi",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Bu audio bu yerda ijro etilmaydi — lug‘at eskirgan formatdan foydalanadi. Opus, MP3 yoki WAV audioli lug‘atni sinab ko‘ring."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Bu audio bu yerda ijro etilmaydi — lug‘at eskirgan formatdan foydalanadi. Opus, MP3 yoki WAV audioli lug‘atni sinab ko‘ring.",
+  "Dictionary uploaded: {{title}}": "Lug'at yuklandi: {{title}}",
+  "Dictionary downloaded: {{title}}": "Lug'at yuklab olindi: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Lug'atning bulutdagi nusxasi o'chirildi: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Lug'atni yuklab bo'lmadi: {{title}}",
+  "Failed to download dictionary: {{title}}": "Lug'atni yuklab olib bo'lmadi: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Lug'atning bulutdagi nusxasini o'chirib bo'lmadi: {{title}}"
 }

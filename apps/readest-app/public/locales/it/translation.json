@@ -1356,5 +1356,11 @@
   "Edit Dictionary": "Modifica dizionario",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "I pacchetti MDict usano file .mdx; i file .mdd e .css di accompagnamento sono facoltativi.",
   "Dictionary name": "Nome del dizionario",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Questo audio non può essere riprodotto qui — il dizionario usa un formato obsoleto. Prova un dizionario con audio Opus, MP3 o WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Questo audio non può essere riprodotto qui — il dizionario usa un formato obsoleto. Prova un dizionario con audio Opus, MP3 o WAV.",
+  "Dictionary uploaded: {{title}}": "Dizionario caricato: {{title}}",
+  "Dictionary downloaded: {{title}}": "Dizionario scaricato: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Copia cloud del dizionario eliminata: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Caricamento del dizionario non riuscito: {{title}}",
+  "Failed to download dictionary: {{title}}": "Download del dizionario non riuscito: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Eliminazione della copia cloud del dizionario non riuscita: {{title}}"
 }

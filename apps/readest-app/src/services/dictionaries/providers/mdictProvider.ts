@@ -297,7 +297,6 @@ function wireMdxAnchors(
         e.stopPropagation();
         onNavigate(target);
       });
-      continue;
     }
   }
 }

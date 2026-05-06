@@ -79,7 +79,7 @@ END;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────────────
--- updated_at_ts = max over field HLCs and tombstone HLC.
+-- Content updated_at_ts = max over field HLCs and tombstone HLC.
 -- ─────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.crdt_compute_updated_at(fields jsonb, deleted_at text)
 RETURNS text

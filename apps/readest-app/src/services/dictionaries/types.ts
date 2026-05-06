@@ -65,6 +65,18 @@ export interface ImportedDictionary {
    * sync wiring treats absent contentId as "needs rehash before sync".
    */
   contentId?: string;
+  /**
+   * Reincarnation token (uuid) minted when the user re-imports a file
+   * whose contentId matches a previously tombstoned replica row. Per
+   * remove-wins semantics, a tombstone never disappears at the merge
+   * level — clients interpret `reincarnation != null` as "alive again"
+   * (the original tombstone stays as history). Set only on the
+   * re-import after a delete. Also minted on explicit same-content live
+   * re-import when the local cache has no token, because another device
+   * may have tombstoned the server row while this device still sees the
+   * entry as live.
+   */
+  reincarnation?: string;
   /** Subdirectory under `'Dictionaries'` containing this bundle's files. */
   bundleDir: string;
   /** Filenames inside `bundleDir`. The exact set varies by `kind`. */

@@ -1356,5 +1356,11 @@
   "Edit Dictionary": "ערוך מילון",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "חבילות MDict משתמשות בקובצי .mdx; קובצי .mdd ו‑.css נלווים הם אופציונליים.",
   "Dictionary name": "שם המילון",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "לא ניתן להשמיע את השמע הזה כאן — המילון משתמש בפורמט מיושן. נסה מילון עם שמע Opus, MP3 או WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "לא ניתן להשמיע את השמע הזה כאן — המילון משתמש בפורמט מיושן. נסה מילון עם שמע Opus, MP3 או WAV.",
+  "Dictionary uploaded: {{title}}": "המילון הועלה: {{title}}",
+  "Dictionary downloaded: {{title}}": "המילון הורד: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "עותק הענן של המילון נמחק: {{title}}",
+  "Failed to upload dictionary: {{title}}": "העלאת המילון נכשלה: {{title}}",
+  "Failed to download dictionary: {{title}}": "הורדת המילון נכשלה: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "מחיקת עותק הענן של המילון נכשלה: {{title}}"
 }

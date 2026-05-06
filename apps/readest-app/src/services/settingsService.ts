@@ -161,6 +161,11 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
+  if (!settings.replicaDeviceId) {
+    settings.replicaDeviceId = uuidv4();
+    await saveSettings(ctx.fs, settings);
+  }
+
   return settings;
 }
 

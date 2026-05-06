@@ -702,6 +702,7 @@ describe('TransferManager', () => {
         'Webster',
         dictFiles,
         'Dictionaries',
+        { reincarnation: 'epoch-1' },
       );
       expect(id).toBeTruthy();
       const t = useTransferStore.getState().transfers[id!]!;
@@ -710,6 +711,7 @@ describe('TransferManager', () => {
       expect(t.replicaId).toBe('d1');
       expect(t.replicaFiles).toEqual(dictFiles);
       expect(t.replicaBase).toBe('Dictionaries');
+      expect(t.replicaReincarnation).toBe('epoch-1');
       expect(t.totalBytes).toBe(5000);
     });
 

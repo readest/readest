@@ -160,23 +160,33 @@ export const mergeReplica = (local: ReplicaRow, remote: ReplicaRow): ReplicaRow 
   const fields = mergeFields(local.fields_jsonb, remote.fields_jsonb);
   const deleted_at_ts = hlcMax(local.deleted_at_ts, remote.deleted_at_ts);
 
-  let reincarnation: string | null;
-  const localReinc = local.reincarnation;
-  const remoteReinc = remote.reincarnation;
-  if (localReinc === remoteReinc) {
-    reincarnation = localReinc;
-  } else {
-    const cmp = hlcCompare(local.updated_at_ts, remote.updated_at_ts);
-    reincarnation = cmp >= 0 ? localReinc : remoteReinc;
-  }
+  const reincarnationCandidates = [
+    local.reincarnation ? { token: local.reincarnation, t: local.updated_at_ts } : null,
+    remote.reincarnation ? { token: remote.reincarnation, t: remote.updated_at_ts } : null,
+  ].filter((c): c is { token: string; t: Hlc } => c !== null);
+  const winningReincarnation =
+    reincarnationCandidates.length === 0
+      ? null
+      : reincarnationCandidates.reduce((a, b) => (hlcCompare(a.t, b.t) >= 0 ? a : b));
+  const reincarnation =
+    winningReincarnation &&
+    (!deleted_at_ts || hlcCompare(winningReincarnation.t, deleted_at_ts) > 0)
+      ? winningReincarnation.token
+      : null;
 
   const manifest_jsonb =
-    hlcCompare(remote.updated_at_ts, local.updated_at_ts) > 0
-      ? remote.manifest_jsonb
-      : local.manifest_jsonb;
+    remote.manifest_jsonb === null
+      ? local.manifest_jsonb
+      : local.manifest_jsonb === null
+        ? remote.manifest_jsonb
+        : hlcCompare(remote.updated_at_ts, local.updated_at_ts) > 0
+          ? remote.manifest_jsonb
+          : local.manifest_jsonb;
 
   const schema_version = Math.max(local.schema_version, remote.schema_version);
-  const updated_at_ts = computeUpdatedAt(fields, deleted_at_ts);
+  const contentUpdatedAt = computeUpdatedAt(fields, deleted_at_ts);
+  const rowUpdatedAt = hlcMax(local.updated_at_ts, remote.updated_at_ts);
+  const updated_at_ts = hlcMax(contentUpdatedAt, rowUpdatedAt) ?? contentUpdatedAt;
 
   return {
     user_id: local.user_id,

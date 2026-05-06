@@ -107,6 +107,92 @@ describe('ReplicaSyncManager.markDirty + flush', () => {
     expect(pushed[0]!.fields_jsonb['name']!.t).toBe(hlcPack(NOW, 1, DEV));
   });
 
+  test('same replica metadata + manifest rows coalesce before push', async () => {
+    const { manager, client } = makeManager();
+    const fieldsHlc = hlcPack(NOW, 0, DEV) as Hlc;
+    const manifestHlc = hlcPack(NOW, 1, DEV) as Hlc;
+    manager.markDirty(makeRow('r1', fieldsHlc));
+    manager.markDirty({
+      ...makeRow('r1', manifestHlc),
+      fields_jsonb: {},
+      manifest_jsonb: {
+        schemaVersion: 1,
+        files: [{ filename: 'webster.mdx', byteSize: 1000, partialMd5: 'a'.repeat(32) }],
+      },
+      reincarnation: 'epoch-1',
+    });
+
+    await manager.flush();
+
+    const pushed = client.push.mock.calls[0]![0];
+    expect(pushed).toHaveLength(1);
+    expect(pushed[0]!.fields_jsonb['name']?.v).toBe('r1');
+    expect(pushed[0]!.manifest_jsonb?.files).toHaveLength(1);
+    expect(pushed[0]!.reincarnation).toBe('epoch-1');
+    expect(pushed[0]!.updated_at_ts).toBe(manifestHlc);
+  });
+
+  test('coalescing metadata after manifest preserves the manifest', async () => {
+    const { manager, client } = makeManager();
+    const manifestHlc = hlcPack(NOW, 0, DEV) as Hlc;
+    const metadataHlc = hlcPack(NOW, 1, DEV) as Hlc;
+    manager.markDirty({
+      ...makeRow('r1', manifestHlc),
+      manifest_jsonb: {
+        schemaVersion: 1,
+        files: [{ filename: 'webster.mdx', byteSize: 1000, partialMd5: 'a'.repeat(32) }],
+      },
+    });
+    manager.markDirty({
+      ...makeRow('r1', metadataHlc),
+      fields_jsonb: { name: { v: 'Renamed', t: metadataHlc, s: DEV } },
+      manifest_jsonb: null,
+    });
+
+    await manager.flush();
+
+    const pushed = client.push.mock.calls[0]![0];
+    expect(pushed[0]!.fields_jsonb['name']?.v).toBe('Renamed');
+    expect(pushed[0]!.manifest_jsonb?.files).toHaveLength(1);
+    expect(pushed[0]!.updated_at_ts).toBe(metadataHlc);
+  });
+
+  test('coalescing metadata with null reincarnation stays null when no token exists', async () => {
+    const { manager, client } = makeManager();
+    const revivedHlc = hlcPack(NOW, 0, DEV) as Hlc;
+    const metadataHlc = hlcPack(NOW, 1, DEV) as Hlc;
+    manager.markDirty(makeRow('r1', revivedHlc));
+    manager.markDirty({
+      ...makeRow('r1', metadataHlc),
+      fields_jsonb: { name: { v: 'Renamed', t: metadataHlc, s: DEV } },
+      reincarnation: null,
+    });
+
+    await manager.flush();
+
+    const pushed = client.push.mock.calls[0]![0];
+    expect(pushed[0]!.fields_jsonb['name']?.v).toBe('Renamed');
+    expect(pushed[0]!.reincarnation).toBe(null);
+  });
+
+  test('coalescing metadata after a reincarnated row preserves the token', async () => {
+    const { manager, client } = makeManager();
+    const revivedHlc = hlcPack(NOW, 0, DEV) as Hlc;
+    const metadataHlc = hlcPack(NOW, 1, DEV) as Hlc;
+    manager.markDirty({ ...makeRow('r1', revivedHlc), reincarnation: 'epoch-1' });
+    manager.markDirty({
+      ...makeRow('r1', metadataHlc),
+      fields_jsonb: { name: { v: 'Renamed', t: metadataHlc, s: DEV } },
+      reincarnation: null,
+    });
+
+    await manager.flush();
+
+    const pushed = client.push.mock.calls[0]![0];
+    expect(pushed[0]!.fields_jsonb['name']?.v).toBe('Renamed');
+    expect(pushed[0]!.reincarnation).toBe('epoch-1');
+  });
+
   test('flush() clears the dirty set on success', async () => {
     const { manager, client } = makeManager();
     manager.markDirty(makeRow('r1'));

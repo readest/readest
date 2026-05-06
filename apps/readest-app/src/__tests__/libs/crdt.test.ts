@@ -230,6 +230,46 @@ describe('removeReplica + mergeReplica (tombstones)', () => {
     expect(merged.updated_at_ts).toBe(hlc(300));
   });
 
+  test('manifest-only merge advances updated_at_ts so pull cursors see it', () => {
+    const metadata = emptyRow({
+      fields_jsonb: setField({}, 'name', 'Foo', hlc(100), DEV_A),
+      manifest_jsonb: null,
+      updated_at_ts: hlc(100),
+    });
+    const manifest = emptyRow({
+      fields_jsonb: {},
+      manifest_jsonb: {
+        schemaVersion: 1,
+        files: [{ filename: 'foo.mdx', byteSize: 1000, partialMd5: 'a'.repeat(32) }],
+      },
+      updated_at_ts: hlc(200),
+    });
+    const merged = mergeReplica(metadata, manifest);
+    expect(merged.fields_jsonb['name']?.v).toBe('Foo');
+    expect(merged.manifest_jsonb?.files).toHaveLength(1);
+    expect(merged.updated_at_ts).toBe(hlc(200));
+  });
+
+  test('metadata-only merge does not clear an existing manifest', () => {
+    const withManifest = emptyRow({
+      fields_jsonb: setField({}, 'name', 'Foo', hlc(100), DEV_A),
+      manifest_jsonb: {
+        schemaVersion: 1,
+        files: [{ filename: 'foo.mdx', byteSize: 1000, partialMd5: 'a'.repeat(32) }],
+      },
+      updated_at_ts: hlc(200),
+    });
+    const metadataOnly = emptyRow({
+      fields_jsonb: setField({}, 'name', 'Renamed', hlc(300), DEV_A),
+      manifest_jsonb: null,
+      updated_at_ts: hlc(300),
+    });
+    const merged = mergeReplica(withManifest, metadataOnly);
+    expect(merged.fields_jsonb['name']?.v).toBe('Renamed');
+    expect(merged.manifest_jsonb?.files).toHaveLength(1);
+    expect(merged.updated_at_ts).toBe(hlc(300));
+  });
+
   test('two tombstones: keep the larger HLC', () => {
     const a = emptyRow({ deleted_at_ts: hlc(100), updated_at_ts: hlc(100) });
     const b = emptyRow({ deleted_at_ts: hlc(200), updated_at_ts: hlc(200) });
@@ -263,5 +303,53 @@ describe('mergeReplica reincarnation interactions', () => {
     const a = emptyRow({ reincarnation: 'epoch-1', deleted_at_ts: null, updated_at_ts: hlc(100) });
     const b = emptyRow({ reincarnation: 'epoch-2', deleted_at_ts: null, updated_at_ts: hlc(200) });
     expect(mergeReplica(a, b).reincarnation).toBe('epoch-2');
+  });
+
+  test('metadata-only row with null reincarnation does not clear an existing token', () => {
+    const revived = emptyRow({
+      reincarnation: 'epoch-1',
+      deleted_at_ts: hlc(100),
+      updated_at_ts: hlc(200),
+    });
+    const rename = emptyRow({
+      fields_jsonb: setField({}, 'name', 'Renamed', hlc(300), DEV_A),
+      reincarnation: null,
+      deleted_at_ts: null,
+      updated_at_ts: hlc(300),
+    });
+    const merged = mergeReplica(revived, rename);
+    expect(merged.fields_jsonb['name']?.v).toBe('Renamed');
+    expect(merged.reincarnation).toBe('epoch-1');
+    expect(mergeReplica(rename, revived).reincarnation).toBe('epoch-1');
+  });
+
+  test('newer tombstone clears an existing reincarnation token', () => {
+    const revived = emptyRow({
+      reincarnation: 'epoch-1',
+      deleted_at_ts: hlc(100),
+      updated_at_ts: hlc(200),
+    });
+    const deleted = emptyRow({
+      reincarnation: null,
+      deleted_at_ts: hlc(300),
+      updated_at_ts: hlc(300),
+    });
+    const merged = mergeReplica(revived, deleted);
+    expect(merged.deleted_at_ts).toBe(hlc(300));
+    expect(merged.reincarnation).toBe(null);
+  });
+
+  test('older duplicate tombstone does not clear a later reincarnation token', () => {
+    const revived = emptyRow({
+      reincarnation: 'epoch-1',
+      deleted_at_ts: hlc(100),
+      updated_at_ts: hlc(200),
+    });
+    const duplicateDelete = emptyRow({
+      reincarnation: null,
+      deleted_at_ts: hlc(100),
+      updated_at_ts: hlc(100),
+    });
+    expect(mergeReplica(revived, duplicateDelete).reincarnation).toBe('epoch-1');
   });
 });

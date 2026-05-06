@@ -1332,5 +1332,11 @@
   "Edit Dictionary": "ශබ්දකෝෂය සංස්කරණය කරන්න",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict පැකේජ .mdx ගොනු භාවිතා කරයි; සහායක .mdd සහ .css ගොනු විකල්පීය වේ.",
   "Dictionary name": "ශබ්දකෝෂයේ නම",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "මෙම ශබ්දය මෙහි වාදනය කළ නොහැක — ශබ්දකෝෂය යල් පැන ගිය ආකෘතියක් භාවිතා කරයි. Opus, MP3 හෝ WAV ශබ්ද සහිත එකක් උත්සාහ කරන්න."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "මෙම ශබ්දය මෙහි වාදනය කළ නොහැක — ශබ්දකෝෂය යල් පැන ගිය ආකෘතියක් භාවිතා කරයි. Opus, MP3 හෝ WAV ශබ්ද සහිත එකක් උත්සාහ කරන්න.",
+  "Dictionary uploaded: {{title}}": "ශබ්දකෝෂය උඩුගත කළා: {{title}}",
+  "Dictionary downloaded: {{title}}": "ශබ්දකෝෂය බාගත කළා: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "ශබ්දකෝෂයේ ක්ලවුඩ් පිටපත මකා දැම්මා: {{title}}",
+  "Failed to upload dictionary: {{title}}": "ශබ්දකෝෂය උඩුගත කිරීමට අසමත් වුණා: {{title}}",
+  "Failed to download dictionary: {{title}}": "ශබ්දකෝෂය බාගත කිරීමට අසමත් වුණා: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "ශබ්දකෝෂයේ ක්ලවුඩ් පිටපත මකා දැමීමට අසමත් වුණා: {{title}}"
 }

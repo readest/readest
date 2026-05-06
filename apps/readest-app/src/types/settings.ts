@@ -140,6 +140,13 @@ export interface SystemSettings {
   lastSyncedAtConfigs: number;
   lastSyncedAtNotes: number;
   /**
+   * Per-device id used as the deviceId portion of every HLC this device
+   * mints. Lazy-generated on first sync init via uuidv4 (mirrors
+   * kosync.deviceId). Independent from kosync — the two services have
+   * distinct identifier semantics and rotation policies.
+   */
+  replicaDeviceId?: string;
+  /**
    * Per-kind cursor for replica sync. Stores the HLC string of the last
    * pulled row per kind. Absent kinds pull from the beginning.
    */

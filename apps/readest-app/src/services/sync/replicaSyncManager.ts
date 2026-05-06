@@ -1,4 +1,4 @@
-import { HlcGenerator, hlcCompare } from '@/libs/crdt';
+import { HlcGenerator, hlcCompare, hlcMax, mergeFields } from '@/libs/crdt';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { ReplicaSyncClient } from '@/libs/replicaSyncClient';
 
@@ -25,6 +25,50 @@ const splitKey = (k: string): DirtyKey => {
   return { kind: k.slice(0, idx), replicaId: k.slice(idx + 2) };
 };
 
+const mergeDirtyRows = (a: ReplicaRow, b: ReplicaRow): ReplicaRow => {
+  if (a.user_id !== b.user_id || a.kind !== b.kind || a.replica_id !== b.replica_id) {
+    throw new Error('mergeDirtyRows: identity mismatch');
+  }
+
+  const fields_jsonb = mergeFields(a.fields_jsonb, b.fields_jsonb);
+  const deleted_at_ts = hlcMax(a.deleted_at_ts, b.deleted_at_ts);
+
+  const reincarnationCandidates = [
+    a.reincarnation ? { token: a.reincarnation, t: a.updated_at_ts } : null,
+    b.reincarnation ? { token: b.reincarnation, t: b.updated_at_ts } : null,
+  ].filter((c): c is { token: string; t: Hlc } => c !== null);
+  const winningReincarnation =
+    reincarnationCandidates.length === 0
+      ? null
+      : reincarnationCandidates.reduce((x, y) => (hlcCompare(x.t, y.t) >= 0 ? x : y));
+  const reincarnation =
+    winningReincarnation &&
+    (!deleted_at_ts || hlcCompare(winningReincarnation.t, deleted_at_ts) > 0)
+      ? winningReincarnation.token
+      : null;
+
+  const manifest_jsonb =
+    b.manifest_jsonb === null
+      ? a.manifest_jsonb
+      : a.manifest_jsonb === null
+        ? b.manifest_jsonb
+        : hlcCompare(b.updated_at_ts, a.updated_at_ts) > 0
+          ? b.manifest_jsonb
+          : a.manifest_jsonb;
+
+  return {
+    user_id: a.user_id,
+    kind: a.kind,
+    replica_id: a.replica_id,
+    fields_jsonb,
+    manifest_jsonb,
+    deleted_at_ts,
+    reincarnation,
+    updated_at_ts: hlcMax(a.updated_at_ts, b.updated_at_ts) ?? a.updated_at_ts,
+    schema_version: Math.max(a.schema_version, b.schema_version),
+  };
+};
+
 export class ReplicaSyncManager {
   private readonly dirty = new Map<string, ReplicaRow>();
   private readonly debounceMs: number;
@@ -44,7 +88,9 @@ export class ReplicaSyncManager {
   }
 
   markDirty(row: ReplicaRow): void {
-    this.dirty.set(dirtyKeyOf(row), row);
+    const key = dirtyKeyOf(row);
+    const existing = this.dirty.get(key);
+    this.dirty.set(key, existing ? mergeDirtyRows(existing, row) : row);
     this.scheduleDebouncedFlush();
   }
 

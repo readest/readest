@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "Sunting Kamus",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Bungkusan MDict menggunakan fail .mdx; fail .mdd dan .css yang menyertainya adalah pilihan.",
   "Dictionary name": "Nama kamus",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Audio ini tidak boleh dimainkan di sini — kamus menggunakan format lapuk. Cuba kamus dengan audio Opus, MP3 atau WAV."
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Audio ini tidak boleh dimainkan di sini — kamus menggunakan format lapuk. Cuba kamus dengan audio Opus, MP3 atau WAV.",
+  "Dictionary uploaded: {{title}}": "Kamus dimuat naik: {{title}}",
+  "Dictionary downloaded: {{title}}": "Kamus dimuat turun: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "Salinan awan kamus dipadam: {{title}}",
+  "Failed to upload dictionary: {{title}}": "Gagal memuat naik kamus: {{title}}",
+  "Failed to download dictionary: {{title}}": "Gagal memuat turun kamus: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "Gagal memadam salinan awan kamus: {{title}}"
 }

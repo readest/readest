@@ -7,6 +7,7 @@ import type {
 } from '@/services/dictionaries/types';
 import { BUILTIN_PROVIDER_IDS, BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import { useSettingsStore } from './settingsStore';
+import { publishDictionaryDelete, publishDictionaryUpsert } from '@/services/sync/replicaPublish';
 
 /**
  * Built-in web-search ids are seeded into `providerOrder` but disabled by
@@ -47,6 +48,33 @@ interface DictionaryStoreState {
 
   /** Add (or revive) an imported dictionary. New entries are appended to providerOrder + enabled. */
   addDictionary(dict: ImportedDictionary): void;
+  /**
+   * Add a dictionary received via replica sync from another device. Same
+   * effect on local state as addDictionary, but does NOT call
+   * publishDictionaryUpsert — the row already exists on the server (we
+   * just pulled it). Re-publishing would create a tight feedback loop
+   * with stale HLCs. Used exclusively by the pull-side orchestrator.
+   */
+  applyRemoteDictionary(dict: ImportedDictionary): void;
+  /**
+   * Look up a local imported entry by its cross-device contentId. Used
+   * by the pull-side orchestrator to detect "row from another device"
+   * vs "row originated here" cases.
+   */
+  findByContentId(contentId: string): ImportedDictionary | undefined;
+  /**
+   * Clears the `unavailable` flag on the dict matching `contentId`. Called
+   * by the replica-transfer-complete listener after a remote-sourced dict
+   * finishes downloading from cloud storage. No-op if the dict isn't found.
+   */
+  markAvailableByContentId(contentId: string): void;
+  /**
+   * Soft-delete by contentId, skipping the publishDictionaryDelete call
+   * that removeDictionary does. Used by the pull orchestrator when a
+   * server row arrives tombstoned — the row is already deleted on the
+   * server; we just observed it and need to mirror locally.
+   */
+  softDeleteByContentId(contentId: string): void;
   /**
    * Patch an imported dictionary's mutable display fields (currently just
    * `name`). The on-disk bundle is untouched. No-op if the id is unknown
@@ -120,9 +148,62 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
       };
     });
+    void publishDictionaryUpsert(dict);
+  },
+
+  applyRemoteDictionary: (dict) => {
+    // Same local-state mutation as addDictionary, minus the publish call.
+    // The row already exists on the server (we just pulled it).
+    set((state) => {
+      const existingIdx = state.dictionaries.findIndex((d) => d.id === dict.id);
+      const dictionaries =
+        existingIdx >= 0
+          ? state.dictionaries.map((d, i) =>
+              i === existingIdx ? { ...dict, deletedAt: undefined } : d,
+            )
+          : [...state.dictionaries, dict];
+      const order = state.settings.providerOrder.includes(dict.id)
+        ? state.settings.providerOrder
+        : [...state.settings.providerOrder, dict.id];
+      const enabled = { ...state.settings.providerEnabled };
+      if (!(dict.id in enabled)) enabled[dict.id] = !dict.unsupported;
+      return {
+        dictionaries,
+        settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
+      };
+    });
+  },
+
+  findByContentId: (contentId) =>
+    contentId ? get().dictionaries.find((d) => d.contentId === contentId) : undefined,
+
+  markAvailableByContentId: (contentId) => {
+    set((state) => ({
+      dictionaries: state.dictionaries.map((d) =>
+        d.contentId === contentId ? { ...d, unavailable: undefined } : d,
+      ),
+    }));
+  },
+
+  softDeleteByContentId: (contentId) => {
+    const target = get().dictionaries.find((d) => d.contentId === contentId && !d.deletedAt);
+    if (!target) return;
+    set((state) => ({
+      dictionaries: state.dictionaries.map((d) =>
+        d.id === target.id ? { ...d, deletedAt: Date.now() } : d,
+      ),
+      settings: {
+        ...state.settings,
+        providerOrder: state.settings.providerOrder.filter((p) => p !== target.id),
+        providerEnabled: Object.fromEntries(
+          Object.entries(state.settings.providerEnabled).filter(([k]) => k !== target.id),
+        ),
+      },
+    }));
   },
 
   updateDictionary: (id, patch) => {
+    let updated: ImportedDictionary | null = null;
     set((state) => {
       const idx = state.dictionaries.findIndex((d) => d.id === id);
       if (idx < 0) return state;
@@ -132,11 +213,11 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       // Reject undefined (no patch), empty (would clear the label), and
       // unchanged (no-op).
       if (!trimmedName || trimmedName === old.name) return state;
-      const dictionaries = state.dictionaries.map((d, i) =>
-        i === idx ? { ...d, name: trimmedName } : d,
-      );
+      updated = { ...old, name: trimmedName };
+      const dictionaries = state.dictionaries.map((d, i) => (i === idx ? updated! : d));
       return { dictionaries };
     });
+    if (updated) void publishDictionaryUpsert(updated);
   },
 
   replaceDictionaries: (oldIds, newDict) => {
@@ -145,6 +226,13 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       return;
     }
     const oldIdSet = new Set(oldIds);
+    // Capture contentIds of replaced dicts so we can tombstone them on the
+    // server. Only contentId-bearing entries actually existed cross-device;
+    // legacy bundleDir-only ids never published, so nothing to tombstone.
+    const oldContentIds = get()
+      .dictionaries.filter((d) => oldIdSet.has(d.id))
+      .map((d) => d.contentId)
+      .filter((id): id is string => Boolean(id));
     set((state) => {
       // Drop all old entries (hard-remove since the disk bundles are gone)
       // and append the new one. Soft-delete isn't needed: the previously
@@ -185,6 +273,19 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder, providerEnabled },
       };
     });
+    // When reincarnating (re-import after delete), the server-side row is
+    // already tombstoned — re-publishing the tombstone is redundant. The
+    // upsert below carries a reincarnation token so clients see the row
+    // as alive again. For non-reincarnation replacements (re-import of a
+    // still-live entry, importer collapsing duplicate names), we skip
+    // tombstoning if the contentId is preserved across the swap (same
+    // content → same row → no need to delete then immediately recreate).
+    const isContentSurvivingSwap =
+      Boolean(newDict.contentId) && oldContentIds.includes(newDict.contentId!);
+    if (!isContentSurvivingSwap) {
+      for (const contentId of oldContentIds) void publishDictionaryDelete(contentId);
+    }
+    void publishDictionaryUpsert(newDict);
   },
 
   removeDictionary: (id) => {
@@ -202,6 +303,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         ),
       },
     }));
+    if (dict.contentId) void publishDictionaryDelete(dict.contentId);
     return true;
   },
 

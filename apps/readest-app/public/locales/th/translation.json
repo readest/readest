@@ -1308,5 +1308,11 @@
   "Edit Dictionary": "แก้ไขพจนานุกรม",
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "ชุด MDict ใช้ไฟล์ .mdx ส่วนไฟล์ .mdd และ .css ที่มาด้วยกันเป็นทางเลือก",
   "Dictionary name": "ชื่อพจนานุกรม",
-  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "ไม่สามารถเล่นเสียงนี้ที่นี่ได้ — พจนานุกรมใช้รูปแบบที่ล้าสมัย ลองใช้พจนานุกรมที่มีเสียง Opus, MP3 หรือ WAV"
+  "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "ไม่สามารถเล่นเสียงนี้ที่นี่ได้ — พจนานุกรมใช้รูปแบบที่ล้าสมัย ลองใช้พจนานุกรมที่มีเสียง Opus, MP3 หรือ WAV",
+  "Dictionary uploaded: {{title}}": "อัปโหลดพจนานุกรมแล้ว: {{title}}",
+  "Dictionary downloaded: {{title}}": "ดาวน์โหลดพจนานุกรมแล้ว: {{title}}",
+  "Deleted cloud copy of the dictionary: {{title}}": "ลบสำเนาคลาวด์ของพจนานุกรมแล้ว: {{title}}",
+  "Failed to upload dictionary: {{title}}": "อัปโหลดพจนานุกรมไม่สำเร็จ: {{title}}",
+  "Failed to download dictionary: {{title}}": "ดาวน์โหลดพจนานุกรมไม่สำเร็จ: {{title}}",
+  "Failed to delete cloud copy of the dictionary: {{title}}": "ลบสำเนาคลาวด์ของพจนานุกรมไม่สำเร็จ: {{title}}"
 }

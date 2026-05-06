@@ -18,6 +18,7 @@ export interface TransferItem {
   bookTitle: string;
   replicaKind?: string;
   replicaId?: string;
+  replicaReincarnation?: string;
   replicaFiles?: ReplicaTransferFile[];
   replicaBase?: BaseDir;
   type: TransferType;
@@ -64,6 +65,7 @@ interface TransferState {
       isBackground?: boolean;
       files?: ReplicaTransferFile[];
       base?: BaseDir;
+      reincarnation?: string;
     },
   ) => string;
   removeTransfer: (transferId: string) => void;
@@ -160,6 +162,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       bookTitle: displayTitle,
       replicaKind,
       replicaId,
+      replicaReincarnation: opts.reincarnation,
       replicaFiles: opts.files,
       replicaBase: opts.base,
       type,

@@ -16,6 +16,14 @@ import { getFilename } from '@/utils/path';
 import type { ImportedDictionary } from './types';
 import { scanEntryOffsets, serializeOffsetsSidecar } from './stardictReader';
 import { computeDictionaryContentId } from './contentId';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  findExistingDictionaryMatches,
+  findTombstonedDictionaryMatches,
+  preserveLiveDictionaryState,
+  preserveUserCustomName,
+  shouldMintReincarnationForLiveReimport,
+} from './dictionaryDedup';
 
 /** GZIP magic bytes — used to detect DictZip-compressed `.dict` files. */
 const GZIP_MAGIC = [0x1f, 0x8b, 0x08];
@@ -526,23 +534,19 @@ export async function importDictionaries(
   existingDictionaries: ImportedDictionary[] = [],
 ): Promise<ImportDictionariesResult> {
   const { bundles, orphans } = groupBundlesByStem(files);
-  // Index existing entries by name. Multiple entries can share a name when
-  // the user previously imported the same dict more than once — we replace
-  // them all with the single new bundle.
-  const existingByName = new Map<string, ImportedDictionary[]>();
-  for (const d of existingDictionaries) {
-    if (d.deletedAt) continue;
-    const list = existingByName.get(d.name);
-    if (list) list.push(d);
-    else existingByName.set(d.name, [d]);
-  }
+  // Track all existing entries; findExistingDictionaryMatches handles the
+  // contentId-vs-name tier logic. Re-importing a renamed dict still matches
+  // because contentId is stable per file content.
+  const existing: ImportedDictionary[] = [...existingDictionaries];
 
   const imported: ImportedDictionary[] = [];
   const replacements: { oldIds: string[]; newDict: ImportedDictionary }[] = [];
-  // Names already added during this single import call. A second bundle in
-  // the same selection that shares a name with an earlier one is dropped
-  // (the first wins) so we don't end up with intra-call duplicates.
-  const seenNames = new Set<string>();
+  // ContentIds (or, for legacy bundles without one, names) already added in
+  // this import call. A second bundle in the same selection that matches an
+  // earlier one is dropped (the first wins) so we don't end up with
+  // intra-call duplicates.
+  const seenContentIds = new Set<string>();
+  const seenLegacyNames = new Set<string>();
 
   for (const bundle of bundles) {
     let dict: ImportedDictionary;
@@ -556,7 +560,11 @@ export async function importDictionaries(
       dict = await importSlobBundle(fs, bundle);
     }
 
-    if (seenNames.has(dict.name)) {
+    const intraCallKey = dict.contentId ?? `__name:${dict.name}`;
+    const isIntraCallDup = dict.contentId
+      ? seenContentIds.has(dict.contentId)
+      : seenLegacyNames.has(dict.name);
+    if (isIntraCallDup) {
       try {
         await fs.removeDir(dict.bundleDir, 'Dictionaries', true);
       } catch (err) {
@@ -564,10 +572,12 @@ export async function importDictionaries(
       }
       continue;
     }
-    seenNames.add(dict.name);
+    if (dict.contentId) seenContentIds.add(dict.contentId);
+    else seenLegacyNames.add(dict.name);
+    void intraCallKey;
 
-    const olds = existingByName.get(dict.name);
-    if (olds && olds.length > 0) {
+    const olds = findExistingDictionaryMatches(dict, existing);
+    if (olds.length > 0) {
       for (const old of olds) {
         try {
           await fs.removeDir(old.bundleDir, 'Dictionaries', true);
@@ -575,10 +585,41 @@ export async function importDictionaries(
           console.warn('Failed to remove replaced bundle dir', old.bundleDir, err);
         }
       }
-      replacements.push({ oldIds: olds.map((o) => o.id), newDict: dict });
-    } else {
-      imported.push(dict);
+      // Drop matched entries from `existing` so subsequent bundles in this
+      // call don't double-replace them.
+      const oldIdSet = new Set(olds.map((o) => o.id));
+      for (let i = existing.length - 1; i >= 0; i--) {
+        if (oldIdSet.has(existing[i]!.id)) existing.splice(i, 1);
+      }
+      // Preserve durable live-entry state across re-import while keeping
+      // parsed/file-backed fields from the fresh bundle.
+      const preserved = preserveLiveDictionaryState(dict, olds);
+      const newDict = shouldMintReincarnationForLiveReimport(dict, olds)
+        ? { ...preserved, reincarnation: uuidv4() }
+        : preserved;
+      replacements.push({ oldIds: olds.map((o) => o.id), newDict });
+      continue;
     }
+
+    // No live match — but check for a tombstoned (soft-deleted) entry
+    // with the same contentId. If found, this is a reincarnation: mint
+    // a fresh token so the server-side row surfaces as alive again on
+    // every device that pulls.
+    const tombstoned = findTombstonedDictionaryMatches(dict, existing);
+    if (tombstoned.length > 0) {
+      const tombstonedIdSet = new Set(tombstoned.map((o) => o.id));
+      for (let i = existing.length - 1; i >= 0; i--) {
+        if (tombstonedIdSet.has(existing[i]!.id)) existing.splice(i, 1);
+      }
+      const reincarnatedDict = preserveUserCustomName(
+        { ...dict, reincarnation: uuidv4() },
+        tombstoned,
+      );
+      replacements.push({ oldIds: tombstoned.map((o) => o.id), newDict: reincarnatedDict });
+      continue;
+    }
+
+    imported.push(dict);
   }
 
   return {

@@ -66,10 +66,10 @@ a tombstoned row** — that is the unsafe pattern. To revive, use
 mergeReplica(local, remote):
   fields_jsonb   ← per-field LWW
   deleted_at_ts  ← max(local, remote)         (tombstones never disappear)
-  reincarnation  ← LWW by row updated_at_ts
-  manifest_jsonb ← whichever side is newer
+  reincarnation  ← newer non-null token; null only clears on newer tombstone
+  manifest_jsonb ← newer non-null manifest; null rows do not clear it
   schema_version ← max
-  updated_at_ts  ← max over fields and tombstone
+  updated_at_ts  ← max over fields, tombstone, and row-level ops
 ```
 
 CRDT properties verified by tests:
