@@ -81,7 +81,7 @@ export const uploadFile = async (
 // dictionaries bypass the CF Workers body limit (per plan-eng-review §1).
 // `cfp` is the cloud file path (key under the user's prefix); it must
 // already contain the kind + replica-id prefix from CLOUD_REPLICAS_SUBDIR.
-// Filenames are server-validated (see src/libs/replica-schemas.ts:validateFilename).
+// Filenames are server-validated (see src/libs/replicaSchemas.ts:validateFilename).
 export const uploadReplicaFile = async (
   file: File,
   fileFullPath: string,

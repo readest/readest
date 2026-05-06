@@ -1,6 +1,6 @@
 import { HlcGenerator } from '@/libs/crdt';
-import { LocalStorageHlcStore, type HlcSnapshotStore } from '@/libs/hlc-store';
-import { ReplicaSyncClient } from '@/libs/replica-sync-client';
+import { LocalStorageHlcStore, type HlcSnapshotStore } from '@/libs/hlcStore';
+import { ReplicaSyncClient } from '@/libs/replicaSyncClient';
 import { ReplicaSyncManager, type CursorStore } from './replicaSyncManager';
 
 export interface ReplicaSyncInitOpts {

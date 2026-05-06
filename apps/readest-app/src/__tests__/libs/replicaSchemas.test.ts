@@ -6,7 +6,7 @@ import {
   validateRow,
   MAX_JSON_BYTES,
   MAX_FIELD_COUNT,
-} from '@/libs/replica-schemas';
+} from '@/libs/replicaSchemas';
 import type { ReplicaRow, Hlc } from '@/types/replica';
 
 const HLC_A = '0000000000064-00000000-dev-a' as Hlc;

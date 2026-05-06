@@ -5,7 +5,7 @@ import {
   clampHlcSkew,
   validatePullParams,
   validatePushBatch,
-} from '@/libs/replica-sync-server';
+} from '@/libs/replicaSyncServer';
 import { hlcPack } from '@/libs/crdt';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 

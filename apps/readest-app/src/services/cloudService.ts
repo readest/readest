@@ -78,7 +78,7 @@ export async function uploadFileToCloud(
 
 // Upload a single replica binary to the cloud under
 // CLOUD_REPLICAS_SUBDIR/<kind>/<replicaId>/<filename>. Filename is the
-// caller-supplied logical name (server-validated; see replica-schemas.ts).
+// caller-supplied logical name (server-validated; see replicaSchemas.ts).
 export async function uploadReplicaFileToCloud(
   fs: FileSystem,
   resolveFilePath: (path: string, base: BaseDir) => Promise<string>,

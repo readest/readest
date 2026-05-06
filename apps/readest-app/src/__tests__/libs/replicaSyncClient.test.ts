@@ -7,7 +7,7 @@ vi.mock('@/services/environment', () => ({
   getAPIBaseUrl: () => 'https://example.test',
 }));
 
-import { ReplicaSyncClient } from '@/libs/replica-sync-client';
+import { ReplicaSyncClient } from '@/libs/replicaSyncClient';
 import { hlcPack } from '@/libs/crdt';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import { SyncError } from '@/libs/errors';

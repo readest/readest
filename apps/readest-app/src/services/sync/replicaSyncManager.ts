@@ -1,6 +1,6 @@
 import { HlcGenerator, hlcCompare } from '@/libs/crdt';
 import type { Hlc, ReplicaRow } from '@/types/replica';
-import type { ReplicaSyncClient } from '@/libs/replica-sync-client';
+import type { ReplicaSyncClient } from '@/libs/replicaSyncClient';
 
 export interface CursorStore {
   get(kind: string): Hlc | null;

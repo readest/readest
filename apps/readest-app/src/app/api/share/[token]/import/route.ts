@@ -6,7 +6,7 @@ import {
   getStoragePlanData,
   validateUserAndToken,
 } from '@/utils/access';
-import { rejectionToHttp, resolveActiveShare } from '@/libs/share-server';
+import { rejectionToHttp, resolveActiveShare } from '@/libs/shareServer';
 
 interface RouteParams {
   params: Promise<{ token: string }>;

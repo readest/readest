@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { runMiddleware, corsAllMethods } from '@/utils/cors';
-import { validatePullParams, validatePushBatch } from '@/libs/replica-sync-server';
+import { validatePullParams, validatePushBatch } from '@/libs/replicaSyncServer';
 import type { ReplicaRow } from '@/types/replica';
 
 const errorResponse = (status: number, code: string, message: string, offendingIndex?: number) =>

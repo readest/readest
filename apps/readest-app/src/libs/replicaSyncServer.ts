@@ -1,5 +1,5 @@
 import { hlcParse } from '@/libs/crdt';
-import { isAllowedKind, validateRow } from '@/libs/replica-schemas';
+import { isAllowedKind, validateRow } from '@/libs/replicaSchemas';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SyncErrorCode } from '@/libs/errors';
 

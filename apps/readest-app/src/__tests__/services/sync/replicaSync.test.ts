@@ -5,7 +5,7 @@ import {
   initReplicaSync,
   isReplicaSyncReady,
 } from '@/services/sync/replicaSync';
-import { InMemoryHlcStore } from '@/libs/hlc-store';
+import { InMemoryHlcStore } from '@/libs/hlcStore';
 import type { ReplicaRow, Hlc } from '@/types/replica';
 import type { CursorStore } from '@/services/sync/replicaSyncManager';
 

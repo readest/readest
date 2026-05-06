@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
-import { generateShareToken } from '@/libs/share-server';
+import { generateShareToken } from '@/libs/shareServer';
 import { objectExists } from '@/utils/object';
 import {
   SHARE_BASE_URL,

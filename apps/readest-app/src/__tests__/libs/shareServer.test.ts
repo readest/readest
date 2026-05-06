@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateShareToken, hashShareToken, isValidShareToken } from '@/libs/share-server';
+import { generateShareToken, hashShareToken, isValidShareToken } from '@/libs/shareServer';
 
-describe('share-server', () => {
+describe('shareServer', () => {
   describe('generateShareToken', () => {
     it('produces a 22-char alphanumeric raw token', async () => {
       const { raw, hash } = await generateShareToken();
