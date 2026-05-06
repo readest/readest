@@ -43,6 +43,7 @@ import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
+import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
@@ -123,7 +124,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const maxHeight = window.innerHeight - 2 * popupPadding;
   const dictPopupWidth = Math.min(480, maxWidth);
-  const dictPopupHeight = Math.min(300, maxHeight);
+  // Tall enough to fit a header + 2-3 expanded cards comfortably. The popup
+  // shows all enabled providers stacked (no tabs) so it needs more vertical
+  // room than the legacy single-tab layout.
+  const dictPopupHeight = Math.min(480, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
@@ -963,26 +967,45 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {showDictionaryPopup && trianglePosition && dictPopupPosition && (
-        <DictionaryPopup
-          word={selection?.text as string}
-          lang={bookData.bookDoc?.metadata.language as string}
-          position={dictPopupPosition}
-          trianglePosition={trianglePosition}
-          popupWidth={dictPopupWidth}
-          popupHeight={dictPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
-          onManage={() => {
-            // Dismiss the popup so the user returns to the reader cleanly
-            // when they close settings; the dictionaries sub-page in the
-            // SettingsDialog is enough surface for managing providers.
+      {showDictionaryPopup &&
+        (() => {
+          // Below `sm` (or short landscape) we present the dictionary as a
+          // bottom sheet — the anchored popup gets cramped at this size.
+          // Matches the `isMobile` heuristic used by `Dialog`.
+          const useSheet = window.innerWidth < 640 || window.innerHeight < 640;
+          const onManage = () => {
+            // Dismiss so the user returns to the reader cleanly when they
+            // close settings; the dictionaries sub-page in SettingsDialog
+            // is enough surface for managing providers.
             handleDismissPopupAndSelection();
             setSettingsDialogBookKey(bookKey);
             setActiveSettingsItemId('settings.language.dictionaries.manage');
             setSettingsDialogOpen(true);
-          }}
-        />
-      )}
+          };
+          if (useSheet) {
+            return (
+              <DictionarySheet
+                word={selection?.text as string}
+                lang={bookData.bookDoc?.metadata.language as string}
+                onDismiss={handleDismissPopupAndSelection}
+                onManage={onManage}
+              />
+            );
+          }
+          if (!trianglePosition || !dictPopupPosition) return null;
+          return (
+            <DictionaryPopup
+              word={selection?.text as string}
+              lang={bookData.bookDoc?.metadata.language as string}
+              position={dictPopupPosition}
+              trianglePosition={trianglePosition}
+              popupWidth={dictPopupWidth}
+              popupHeight={dictPopupHeight}
+              onDismiss={handleDismissPopupAndSelection}
+              onManage={onManage}
+            />
+          );
+        })()}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
           text={selection?.text as string}
