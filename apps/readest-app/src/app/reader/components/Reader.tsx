@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
+import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { eventDispatcher } from '@/utils/event';
 import { interceptWindowOpen } from '@/utils/open';
 import { mountAdditionalFonts } from '@/styles/fonts';
@@ -73,6 +74,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
   useScreenWakeLock(settings.screenWakeLock);
   useTransferQueue(libraryLoaded, 5000);
+  // Reader needs custom dictionaries for word-lookup providers. Mounted
+  // here (not in the app-router page wrapper) so the web pages-router
+  // entry at `pages/reader/[ids].tsx` also gets the pull. Module-scoped
+  // dedup means navigating between library and reader doesn't re-pull.
+  useReplicaPull({ kinds: ['dictionary'] });
 
   useEffect(() => {
     mountAdditionalFonts(document);

@@ -37,6 +37,24 @@ export interface PullDictionariesDeps {
     base: BaseDir,
   ): string | null;
   /**
+   * Returns true iff EVERY filename exists on disk under
+   * `<bundleDir>/<filename>` in the kind's base dir. Lets the
+   * orchestrator skip the download queue when the binaries from a
+   * previous session are still around — refreshing the page or pulling
+   * a row whose contentId already maps to a populated bundle is a
+   * no-op rather than a re-download.
+   */
+  filesExist(bundleDir: string, filenames: string[]): Promise<boolean>;
+  /**
+   * Hydrates the persistence-aware local store from disk before the
+   * orchestrator queries findByContentId. Without this, applyRow's
+   * subsequent applyRemoteDictionary + auto-persist round-trip
+   * overwrites settings.customDictionaries with only the rows we just
+   * applied — wiping persisted entries that hadn't yet been pulled
+   * into the zustand store by a feature mount.
+   */
+  hydrateLocalStore?(): Promise<void>;
+  /**
    * Optional auth precheck. When provided and resolves to false, the
    * orchestrator skips the entire pull (no network call, no warnings).
    * Lets the boot site avoid spamming "Not authenticated" errors when
@@ -60,15 +78,6 @@ const MANIFEST_FILE_TO_TRANSFER = (
 const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<void> => {
   const local = deps.findByContentId(row.replica_id);
   const alive = isReplicaRowAlive(row);
-  console.log('[replica] applyRow', {
-    replicaId: row.replica_id,
-    alive,
-    hasLocal: !!local,
-    hasManifest: !!row.manifest_jsonb,
-    manifestFiles: row.manifest_jsonb?.files.length ?? 0,
-    deleted_at_ts: row.deleted_at_ts,
-    reincarnation: row.reincarnation,
-  });
 
   if (!alive) {
     if (local && !local.deletedAt) {
@@ -77,41 +86,37 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
     return;
   }
 
+  // Decide bundleDir + display name. If a local entry already maps this
+  // contentId, reuse its bundleDir so we don't orphan the previously
+  // downloaded binaries; otherwise mint a fresh dir and apply the remote
+  // dict to the local store.
+  let bundleDir: string;
+  let displayName: string;
   if (local) {
-    console.log('[replica] applyRow:skip-already-local', { replicaId: row.replica_id });
-    // Already present locally. Field-level merge (rename, lang, etc.)
-    // and revival of soft-deleted-locally entries are deferred to a
-    // follow-up slice — for v1 the most important case is "row from
-    // another device, never seen here before".
-    return;
+    bundleDir = local.bundleDir;
+    displayName = local.name;
+  } else {
+    bundleDir = await deps.createBundleDir();
+    const dict = buildLocalDictFromRow(row, bundleDir);
+    if (!dict) return;
+    deps.applyRemoteDictionary(dict);
+    displayName = dict.name;
   }
 
-  const bundleDir = await deps.createBundleDir();
-  const dict = buildLocalDictFromRow(row, bundleDir);
-  if (!dict) {
-    console.log('[replica] applyRow:skip-malformed', { replicaId: row.replica_id });
-    return;
-  }
+  if (!row.manifest_jsonb || row.manifest_jsonb.files.length === 0) return;
 
-  deps.applyRemoteDictionary(dict);
+  // Skip the download queue if every manifest file is already on disk
+  // under the resolved bundle dir. Refresh-the-page is a no-op rather
+  // than a re-download; partial-download recovery still queues because
+  // some files would be missing.
+  const filenames = row.manifest_jsonb.files.map((f) => f.filename);
+  const allPresent = await deps.filesExist(bundleDir, filenames);
+  if (allPresent) return;
 
-  if (row.manifest_jsonb && row.manifest_jsonb.files.length > 0) {
-    const files = row.manifest_jsonb.files.map((f) =>
-      MANIFEST_FILE_TO_TRANSFER(f.filename, f.byteSize, bundleDir),
-    );
-    const transferId = deps.queueReplicaDownload(
-      row.replica_id,
-      dict.name,
-      files,
-      bundleDir,
-      'Dictionaries',
-    );
-    console.log('[replica] applyRow:queued-download', {
-      replicaId: row.replica_id,
-      transferId,
-      fileCount: files.length,
-    });
-  }
+  const files = row.manifest_jsonb.files.map((f) =>
+    MANIFEST_FILE_TO_TRANSFER(f.filename, f.byteSize, bundleDir),
+  );
+  deps.queueReplicaDownload(row.replica_id, displayName, files, bundleDir, 'Dictionaries');
 };
 
 /**
@@ -120,13 +125,16 @@ const applyRow = async (row: ReplicaRow, deps: PullDictionariesDeps): Promise<vo
  * row never blocks the others.
  */
 export const pullDictionariesAndApply = async (deps: PullDictionariesDeps): Promise<void> => {
-  console.log('[replica] pullDictionariesAndApply:start');
-  if (deps.isAuthenticated && !(await deps.isAuthenticated())) {
-    console.log('[replica] pullDictionariesAndApply:skip-not-authenticated');
-    return;
+  if (deps.isAuthenticated && !(await deps.isAuthenticated())) return;
+  // Hydrate the in-memory dict store from disk BEFORE the apply loop.
+  // applyRemoteDictionary auto-persists the in-memory list back to
+  // settings, so if the in-memory list isn't already populated, the
+  // first save would clobber every persisted dict that we hadn't
+  // re-read into memory.
+  if (deps.hydrateLocalStore) {
+    await deps.hydrateLocalStore();
   }
   const rows = await deps.pull();
-  console.log('[replica] pullDictionariesAndApply:rows', { count: rows.length });
   for (const row of rows) {
     try {
       await applyRow(row, deps);
@@ -134,5 +142,4 @@ export const pullDictionariesAndApply = async (deps: PullDictionariesDeps): Prom
       console.warn('replica pull row apply failed', { replicaId: row.replica_id, err });
     }
   }
-  console.log('[replica] pullDictionariesAndApply:done');
 };

@@ -5,7 +5,11 @@ vi.mock('@/services/sync/replicaPublish', () => ({
   publishDictionaryUpsert: vi.fn(),
 }));
 
-import { useCustomDictionaryStore, enableReplicaAutoPersist } from '@/store/customDictionaryStore';
+import {
+  useCustomDictionaryStore,
+  enableReplicaAutoPersist,
+  findDictionaryByContentId,
+} from '@/store/customDictionaryStore';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import { publishDictionaryUpsert } from '@/services/sync/replicaPublish';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -201,6 +205,69 @@ describe('customDictionaryStore — web search CRUD', () => {
       await Promise.resolve();
       expect(setSettings).not.toHaveBeenCalled();
       expect(saveSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findDictionaryByContentId', () => {
+    it('returns the in-memory dict when present', () => {
+      useCustomDictionaryStore.getState().applyRemoteDictionary({
+        id: 'in-mem-1',
+        contentId: 'hash-1',
+        kind: 'mdict',
+        name: 'In Memory',
+        bundleDir: 'in-mem-1',
+        files: { mdx: 'm.mdx' },
+        addedAt: 1,
+      });
+      const found = findDictionaryByContentId('hash-1');
+      expect(found?.id).toBe('in-mem-1');
+    });
+
+    it('falls back to settings.customDictionaries when in-memory store has no match', () => {
+      // Simulate fresh-boot state: in-memory store empty, but persisted
+      // settings (loaded from disk) carries the dict.
+      useSettingsStore.setState({
+        settings: {
+          customDictionaries: [
+            {
+              id: 'persisted-1',
+              contentId: 'hash-2',
+              kind: 'mdict',
+              name: 'Persisted',
+              bundleDir: 'persisted-1',
+              files: { mdx: 'p.mdx' },
+              addedAt: 1,
+            },
+          ],
+        } as never,
+      });
+      const found = findDictionaryByContentId('hash-2');
+      expect(found?.id).toBe('persisted-1');
+    });
+
+    it('returns undefined when neither store has it', () => {
+      useSettingsStore.setState({ settings: {} as never });
+      expect(findDictionaryByContentId('hash-nope')).toBeUndefined();
+    });
+
+    it('skips tombstoned persisted entries', () => {
+      useSettingsStore.setState({
+        settings: {
+          customDictionaries: [
+            {
+              id: 'tombstoned-1',
+              contentId: 'hash-3',
+              kind: 'mdict',
+              name: 'Tombstoned',
+              bundleDir: 'tombstoned-1',
+              files: { mdx: 'p.mdx' },
+              addedAt: 1,
+              deletedAt: 100,
+            },
+          ],
+        } as never,
+      });
+      expect(findDictionaryByContentId('hash-3')).toBeUndefined();
     });
   });
 

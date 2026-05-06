@@ -127,8 +127,24 @@ function toSettingsDict(dict: ImportedDictionary): ImportedDictionary {
 // stale settings.customDictionaries and wipes the in-memory rows.
 let replicaPersistEnv: EnvConfigType | null = null;
 export const enableReplicaAutoPersist = (envConfig: EnvConfigType | null): void => {
-  console.log('[replica] enableReplicaAutoPersist', { hasEnv: !!envConfig });
   replicaPersistEnv = envConfig;
+};
+
+/**
+ * Look up a dict by its cross-device contentId, falling back to the
+ * persisted `settings.customDictionaries` when the in-memory store is
+ * empty. The pull-side orchestrator runs at app boot — earlier than
+ * Annotator/CustomDictionaries mount, so loadCustomDictionaries hasn't
+ * hydrated the zustand store yet. Without the fallback every refresh
+ * looks like a brand-new device, mints a fresh bundleDir per row, and
+ * re-downloads all binaries.
+ */
+export const findDictionaryByContentId = (contentId: string): ImportedDictionary | undefined => {
+  if (!contentId) return undefined;
+  const inMemory = useCustomDictionaryStore.getState().findByContentId(contentId);
+  if (inMemory) return inMemory;
+  const persisted = useSettingsStore.getState().settings?.customDictionaries ?? [];
+  return persisted.find((d) => d.contentId === contentId && !d.deletedAt);
 };
 
 export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) => ({
@@ -165,13 +181,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
   },
 
   applyRemoteDictionary: (dict) => {
-    console.log('[replica] applyRemoteDictionary', {
-      id: dict.id,
-      contentId: dict.contentId,
-      name: dict.name,
-      bundleDir: dict.bundleDir,
-      unavailable: dict.unavailable,
-    });
     // Same local-state mutation as addDictionary, minus the publish call.
     // The row already exists on the server (we just pulled it).
     set((state) => {
@@ -192,11 +201,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
       };
     });
-    console.log('[replica] applyRemoteDictionary done', {
-      total: get().dictionaries.length,
-      providerOrderLen: get().settings.providerOrder.length,
-      hasPersistEnv: !!replicaPersistEnv,
-    });
     if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
   },
 
@@ -204,13 +208,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     contentId ? get().dictionaries.find((d) => d.contentId === contentId) : undefined,
 
   markAvailableByContentId: (contentId) => {
-    const before = get().dictionaries.find((d) => d.contentId === contentId);
-    console.log('[replica] markAvailableByContentId', {
-      contentId,
-      foundBefore: !!before,
-      wasUnavailable: before?.unavailable,
-      hasPersistEnv: !!replicaPersistEnv,
-    });
     set((state) => ({
       dictionaries: state.dictionaries.map((d) =>
         d.contentId === contentId ? { ...d, unavailable: undefined } : d,
@@ -434,11 +431,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const { settings } = useSettingsStore.getState();
       const persisted = settings?.customDictionaries ?? [];
       const persistedSettings = settings?.dictionarySettings ?? DEFAULT_DICTIONARY_SETTINGS;
-      console.log('[replica] loadCustomDictionaries:start', {
-        persistedCount: persisted.length,
-        persistedIds: persisted.map((d) => ({ id: d.id, name: d.name, contentId: d.contentId })),
-        inMemoryCount: get().dictionaries.length,
-      });
       const appService = await envConfig.getAppService();
       const dictionaries = await Promise.all(
         persisted.map(async (dict) => {
@@ -469,15 +461,6 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         webSearches: persistedSettings.webSearches ?? [],
       };
       set({ dictionaries, settings: settingsMerged });
-      console.log('[replica] loadCustomDictionaries:done', {
-        loadedCount: dictionaries.length,
-        loaded: dictionaries.map((d) => ({
-          id: d.id,
-          name: d.name,
-          unavailable: d.unavailable,
-          deletedAt: d.deletedAt,
-        })),
-      });
     } catch (error) {
       console.error('Failed to load custom dictionaries settings:', error);
     }
@@ -487,16 +470,10 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     try {
       const { settings, setSettings, saveSettings } = useSettingsStore.getState();
       const { dictionaries, settings: dictSettings } = get();
-      const persisted = dictionaries.map(toSettingsDict);
-      console.log('[replica] saveCustomDictionaries:start', {
-        toPersistCount: persisted.length,
-        ids: persisted.map((d) => ({ id: d.id, name: d.name })),
-      });
-      settings.customDictionaries = persisted;
+      settings.customDictionaries = dictionaries.map(toSettingsDict);
       settings.dictionarySettings = dictSettings;
       setSettings(settings);
       saveSettings(envConfig, settings);
-      console.log('[replica] saveCustomDictionaries:done');
     } catch (error) {
       console.error('Failed to save custom dictionaries settings:', error);
       throw error;

@@ -28,17 +28,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   isSettingsDialogOpen: false,
   fontPanelView: 'main-fonts',
   activeSettingsItemId: null,
-  setSettings: (settings) => {
-    console.log('[replica] settingsStore.setSettings', {
-      customDictionariesCount: settings.customDictionaries?.length ?? 0,
-      caller: new Error().stack?.split('\n').slice(2, 5).join(' | '),
-    });
-    set({ settings });
-  },
+  setSettings: (settings) => set({ settings }),
   saveSettings: async (envConfig: EnvConfigType, settings: SystemSettings) => {
-    console.log('[replica] settingsStore.saveSettings (disk write)', {
-      customDictionariesCount: settings.customDictionaries?.length ?? 0,
-    });
     const appService = await envConfig.getAppService();
     await appService.saveSettings(settings);
   },

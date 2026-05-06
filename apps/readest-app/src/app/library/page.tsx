@@ -79,6 +79,7 @@ import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import GroupHeader from './components/GroupHeader';
 import useShortcuts from '@/hooks/useShortcuts';
+import { useReplicaPull } from '@/hooks/useReplicaPull';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
@@ -114,6 +115,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const { isTransferQueueOpen } = useTransferStore();
+
+  // Library page pulls dictionaries (custom mdict/stardict bundles synced
+  // across devices). Deferred 10s; module-scoped dedup means a later
+  // navigation to the reader won't re-pull the same kind.
+  useReplicaPull({ kinds: ['dictionary'] });
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );

@@ -494,40 +494,17 @@ class TransferManager {
 
     if (transfer.type === 'download') {
       const base = transfer.replicaBase!;
-      console.log('[replica] executeReplicaTransfer:download:start', {
-        kind,
-        replicaId,
-        base,
-        fileCount: files.length,
-        files: files.map((f) => ({ logical: f.logical, lfp: f.lfp, byteSize: f.byteSize })),
-      });
       for (const file of files) {
-        try {
-          await this.appService!.downloadReplicaFile(
-            kind,
-            replicaId,
-            file.logical,
-            file.lfp,
-            base,
-            fileProgressHandler(file.byteSize),
-          );
-          console.log('[replica] executeReplicaTransfer:download:file-done', {
-            replicaId,
-            logical: file.logical,
-            lfp: file.lfp,
-          });
-          bytesAlreadyDone += file.byteSize;
-        } catch (err) {
-          console.warn('[replica] executeReplicaTransfer:download:file-failed', {
-            replicaId,
-            logical: file.logical,
-            lfp: file.lfp,
-            error: (err as Error).message,
-          });
-          throw err;
-        }
+        await this.appService!.downloadReplicaFile(
+          kind,
+          replicaId,
+          file.logical,
+          file.lfp,
+          base,
+          fileProgressHandler(file.byteSize),
+        );
+        bytesAlreadyDone += file.byteSize;
       }
-      console.log('[replica] executeReplicaTransfer:download:done', { kind, replicaId });
       eventDispatcher.dispatch('replica-transfer-complete', {
         kind,
         replicaId,
