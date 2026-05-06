@@ -2,7 +2,7 @@ import type { BaseDir, FileSystem } from '@/types/system';
 
 export interface BinaryCapability<T> {
   localBaseDir: BaseDir;
-  enumerateFiles(replica: T): { logical: string; localRelPath: string; byteSize: number }[];
+  enumerateFiles(replica: T): { logical: string; lfp: string; byteSize: number }[];
 }
 
 export interface LifecycleHooks<T> {

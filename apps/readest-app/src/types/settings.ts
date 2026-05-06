@@ -79,6 +79,21 @@ export interface HardcoverSettings {
   lastSyncedAt: number;
 }
 
+/**
+ * User-facing sync categories. 'progress' gates the existing book-config
+ * (reading progress) sync, 'note' gates annotations, 'book' gates book
+ * binaries + metadata, 'dictionary' gates the imported-dictionary replica
+ * sync. Adding a new replica kind extends this union.
+ */
+export type SyncCategory = 'book' | 'progress' | 'note' | 'dictionary';
+
+export const SYNC_CATEGORIES: readonly SyncCategory[] = [
+  'book',
+  'progress',
+  'note',
+  'dictionary',
+] as const;
+
 export interface SystemSettings {
   version: number;
   localBooksDir: string;
@@ -124,6 +139,19 @@ export interface SystemSettings {
   lastSyncedAtBooks: number;
   lastSyncedAtConfigs: number;
   lastSyncedAtNotes: number;
+  /**
+   * Per-kind cursor for replica sync. Stores the HLC string of the last
+   * pulled row per kind. Absent kinds pull from the beginning.
+   */
+  lastSyncedAtReplicas?: Record<string, string>;
+  /**
+   * Per-category sync toggles. Missing keys default to ON. The
+   * 'progress' category gates the existing book-config (reading
+   * progress) sync; 'note' gates annotation sync; 'book' gates book
+   * binary + metadata sync; 'dictionary' gates the imported-dictionary
+   * replica sync. Future replica kinds add new SyncCategory members.
+   */
+  syncCategories?: Partial<Record<SyncCategory, boolean>>;
 
   migrationVersion: number;
 

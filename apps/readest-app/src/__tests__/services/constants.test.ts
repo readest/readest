@@ -243,6 +243,20 @@ describe('services/constants', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.screenBrightness!).toBeLessThanOrEqual(100);
     });
 
+    it('seeds syncCategories with all four SyncCategory keys', () => {
+      const cats = DEFAULT_SYSTEM_SETTINGS.syncCategories!;
+      expect(cats).toEqual({
+        book: true,
+        progress: true,
+        note: true,
+        dictionary: true,
+      });
+    });
+
+    it('seeds lastSyncedAtReplicas as an empty record', () => {
+      expect(DEFAULT_SYSTEM_SETTINGS.lastSyncedAtReplicas).toEqual({});
+    });
+
     it('has library settings', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.libraryViewMode).toBe('grid');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.librarySortBy).toBe('string');

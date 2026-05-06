@@ -128,6 +128,13 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
   lastSyncedAtNotes: 0,
+  lastSyncedAtReplicas: {},
+  syncCategories: {
+    book: true,
+    progress: true,
+    note: true,
+    dictionary: true,
+  },
 };
 
 export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
