@@ -54,6 +54,7 @@ export interface CreateMdictProviderArgs {
 }
 
 const IMG_SRC_PROTOCOL_RX = /^(?:[a-z]+:|data:|blob:|\/)/i;
+const SOUND_HREF_RX = /^sound:\/\//i;
 
 /**
  * Resolve `<img src="path">` references in the rendered HTML by reading bytes
@@ -92,6 +93,61 @@ async function resolveImageResources(
       }
     }),
   );
+}
+
+/**
+ * Wire MDict-style `<a href="sound://...">` anchors so clicking them looks up
+ * the audio resource in the companion `.mdd` file(s) and plays it via an
+ * `Audio` element. The `sound://` prefix is an MDict convention; the path is
+ * a key into the MDD bundle (js-mdict's `MDD.locateBytes` auto-normalizes
+ * leading separators, so passing the raw path works).
+ *
+ * The first successful lookup is cached on the anchor as a blob-URL data
+ * attribute so subsequent clicks reuse it without re-reading bytes; URLs are
+ * tracked for revocation in `dispose()`.
+ *
+ * Note on codec support: many MW-style dictionaries use `.spx` (Speex), which
+ * Chromium and Safari do not natively decode — the lookup will succeed but
+ * playback may fail silently. Other formats (mp3, wav, ogg vorbis) play fine.
+ */
+function wireSoundLinks(container: HTMLElement, mdds: MDDInstance[], trackedUrls: string[]): void {
+  if (!mdds.length) return;
+  const anchors = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href^="sound:"]'));
+  for (const anchor of anchors) {
+    const raw = anchor.getAttribute('href') ?? '';
+    if (!SOUND_HREF_RX.test(raw)) continue;
+    const path = raw.replace(SOUND_HREF_RX, '').trim();
+    if (!path) continue;
+
+    anchor.addEventListener('click', async (e) => {
+      e.preventDefault();
+      // Stop bubbling so the parent card's tap-to-expand handler doesn't fire.
+      e.stopPropagation();
+
+      let url = anchor.getAttribute('data-mdd-resolved');
+      if (!url) {
+        for (const mdd of mdds) {
+          try {
+            const located = await mdd.locateBytes(path);
+            if (located.data) {
+              const blob = new Blob([new Uint8Array(located.data)]);
+              url = URL.createObjectURL(blob);
+              trackedUrls.push(url);
+              anchor.setAttribute('data-mdd-resolved', url);
+              break;
+            }
+          } catch (err) {
+            console.warn('mdd.locateBytes failed for sound', path, err);
+          }
+        }
+      }
+      if (!url) return;
+      const audio = new Audio(url);
+      audio.play().catch((err) => {
+        console.warn('Sound playback failed', path, err);
+      });
+    });
+  }
 }
 
 export const createMdictProvider = ({
@@ -204,6 +260,7 @@ export const createMdictProvider = ({
         ctx.container.appendChild(body);
 
         await resolveImageResources(body, mdds, ctx.signal, trackedUrls);
+        wireSoundLinks(body, mdds, trackedUrls);
         return { ok: true, headword: result.keyText, sourceLabel: dict.name };
       } catch (err) {
         return {

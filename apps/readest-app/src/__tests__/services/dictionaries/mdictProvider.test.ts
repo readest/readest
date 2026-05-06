@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { createMdictProvider } from '@/services/dictionaries/providers/mdictProvider';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
@@ -277,6 +277,67 @@ describe('mdictProvider', () => {
     // is ~4%.
     expect(mdxBytesRead).toBeGreaterThan(0);
     expect(mdxBytesRead).toBeLessThan(realMdx.size * 0.5);
+  });
+
+  it('intercepts sound:// anchor clicks and plays via MDD lookup', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    const origMDDCreate = jsmdict.MDD.create.bind(jsmdict.MDD);
+    const locateMock = vi.fn(async (key: string) => ({
+      keyText: key,
+      data: new Uint8Array([0xff, 0xfb, 0x90, 0x00]),
+    }));
+    const playSpy = vi
+      .spyOn(window.HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined);
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    type FakeMDD = ReturnType<typeof origMDDCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition: `<span class='hw'>${word}</span> <a href="sound://test01.mp3">play</a>`,
+        }),
+      }) as unknown as FakeMDX;
+    jsmdict.MDD.create = async () =>
+      ({
+        locateBytes: locateMock,
+      }) as unknown as FakeMDD;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+      const container = document.createElement('div');
+      await provider.lookup('hello', {
+        signal: new AbortController().signal,
+        container,
+      });
+
+      const anchor = container.querySelector('a[href^="sound://"]') as HTMLAnchorElement | null;
+      expect(anchor).not.toBeNull();
+
+      anchor!.click();
+      // Drain microtasks so the async click handler completes its lookup +
+      // URL.createObjectURL + audio.play() chain.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(locateMock).toHaveBeenCalledWith('test01.mp3');
+      expect(playSpy).toHaveBeenCalled();
+      expect(anchor!.getAttribute('data-mdd-resolved')).toMatch(/^blob:/);
+
+      // Second click reuses the cached blob URL — no extra MDD read.
+      locateMock.mockClear();
+      playSpy.mockClear();
+      anchor!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(locateMock).not.toHaveBeenCalled();
+      expect(playSpy).toHaveBeenCalled();
+    } finally {
+      jsmdict.MDX.create = origMDXCreate;
+      jsmdict.MDD.create = origMDDCreate;
+      playSpy.mockRestore();
+    }
   });
 
   it('repeated lookups of the same word produce identical, bounded reads', async () => {
