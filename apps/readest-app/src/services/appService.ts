@@ -278,6 +278,44 @@ export abstract class BaseAppService implements AppService {
     );
   }
 
+  async uploadReplicaFile(
+    kind: string,
+    replicaId: string,
+    filename: string,
+    lfp: string,
+    base: BaseDir,
+    onProgress: ProgressHandler,
+  ) {
+    return CloudSvc.uploadReplicaFileToCloud(this.fs, this.resolveFilePath.bind(this), {
+      kind,
+      replicaId,
+      filename,
+      lfp,
+      base,
+      onProgress,
+    });
+  }
+
+  async downloadReplicaFile(
+    kind: string,
+    replicaId: string,
+    filename: string,
+    dst: string,
+    onProgress?: ProgressHandler,
+  ) {
+    return CloudSvc.downloadReplicaFileFromCloud(this, {
+      kind,
+      replicaId,
+      filename,
+      dst,
+      onProgress,
+    });
+  }
+
+  async deleteReplicaBundle(kind: string, replicaId: string, filenames: string[]) {
+    return CloudSvc.deleteReplicaBundleFromCloud(kind, replicaId, filenames);
+  }
+
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
     return CloudSvc.uploadBook(this.fs, this.resolveFilePath.bind(this), book, onProgress);
   }

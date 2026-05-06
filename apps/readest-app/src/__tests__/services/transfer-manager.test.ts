@@ -32,6 +32,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
 function makeTransferItem(overrides: Partial<TransferItem> = {}): TransferItem {
   return {
     id: 't1',
+    kind: 'book',
     bookHash: 'hash1',
     bookTitle: 'Test Book',
     type: 'upload',
@@ -669,6 +670,122 @@ describe('TransferManager', () => {
       await expect(
         transferManager.initialize(appService as never, () => [], vi.fn(), translationFn),
       ).resolves.not.toThrow();
+    });
+  });
+
+  // ── queueReplicaUpload / queueReplicaDownload / queueReplicaDelete ──
+  describe('replica transfer queueing', () => {
+    const dictFiles = [
+      { logical: 'webster.mdx', lfp: 'd1/webster.mdx', byteSize: 1000 },
+      { logical: 'webster.mdd', lfp: 'd1/webster.mdd', byteSize: 4000 },
+    ];
+
+    test('queueReplicaUpload returns null when not initialized', () => {
+      const id = transferManager.queueReplicaUpload(
+        'dictionary',
+        'd1',
+        'Webster',
+        dictFiles,
+        'Dictionaries',
+      );
+      expect(id).toBeNull();
+    });
+
+    test('queueReplicaUpload creates a kind="replica" transfer with files + base', async () => {
+      const appService = makeAppService();
+      appService['uploadReplicaFile'] = vi.fn().mockResolvedValue(undefined);
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaUpload(
+        'dictionary',
+        'd1',
+        'Webster',
+        dictFiles,
+        'Dictionaries',
+      );
+      expect(id).toBeTruthy();
+      const t = useTransferStore.getState().transfers[id!]!;
+      expect(t.kind).toBe('replica');
+      expect(t.replicaKind).toBe('dictionary');
+      expect(t.replicaId).toBe('d1');
+      expect(t.replicaFiles).toEqual(dictFiles);
+      expect(t.replicaBase).toBe('Dictionaries');
+      expect(t.totalBytes).toBe(5000);
+    });
+
+    test('queueReplicaUpload returns existing id if same (kind, id) is already queued', async () => {
+      const appService = makeAppService();
+      appService['uploadReplicaFile'] = vi.fn().mockResolvedValue(undefined);
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id1 = transferManager.queueReplicaUpload(
+        'dictionary',
+        'd1',
+        'Webster',
+        dictFiles,
+        'Dictionaries',
+      );
+      const id2 = transferManager.queueReplicaUpload(
+        'dictionary',
+        'd1',
+        'Webster',
+        dictFiles,
+        'Dictionaries',
+      );
+      expect(id1).toBe(id2);
+    });
+
+    test('different replicaKinds with same id are distinct queue entries', async () => {
+      const appService = makeAppService();
+      appService['uploadReplicaFile'] = vi.fn().mockResolvedValue(undefined);
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const dictId = transferManager.queueReplicaUpload(
+        'dictionary',
+        'shared-hash',
+        'D',
+        dictFiles,
+        'Dictionaries',
+      );
+      const fontId = transferManager.queueReplicaUpload(
+        'font',
+        'shared-hash',
+        'F',
+        [{ logical: 'roboto.ttf', lfp: 'f/roboto.ttf', byteSize: 200000 }],
+        'Fonts',
+      );
+      expect(dictId).not.toBe(fontId);
+    });
+
+    test('queueReplicaDownload creates a download-typed transfer', async () => {
+      const appService = makeAppService();
+      appService['downloadReplicaFile'] = vi.fn().mockResolvedValue(undefined);
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaDownload(
+        'dictionary',
+        'd1',
+        'Webster',
+        dictFiles,
+        'Dictionaries',
+      );
+      const t = useTransferStore.getState().transfers[id!]!;
+      expect(t.type).toBe('download');
+      expect(t.replicaFiles).toEqual(dictFiles);
+    });
+
+    test('queueReplicaDelete creates a delete-typed transfer with filename list', async () => {
+      const appService = makeAppService();
+      appService['deleteReplicaBundle'] = vi.fn().mockResolvedValue(undefined);
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaDelete('dictionary', 'd1', 'Webster', [
+        'webster.mdx',
+        'webster.mdd',
+      ]);
+      const t = useTransferStore.getState().transfers[id!]!;
+      expect(t.type).toBe('delete');
+      expect(t.replicaFiles?.map((f) => f.logical)).toEqual(['webster.mdx', 'webster.mdd']);
     });
   });
 });
