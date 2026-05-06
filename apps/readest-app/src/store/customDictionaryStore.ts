@@ -47,6 +47,19 @@ interface DictionaryStoreState {
 
   /** Add (or revive) an imported dictionary. New entries are appended to providerOrder + enabled. */
   addDictionary(dict: ImportedDictionary): void;
+  /**
+   * Patch an imported dictionary's mutable display fields (currently just
+   * `name`). The on-disk bundle is untouched. No-op if the id is unknown
+   * or refers to a deleted entry.
+   */
+  updateDictionary(id: string, patch: { name?: string }): void;
+  /**
+   * Drop one or more existing dictionaries by id and insert `newDict` in
+   * the first removed entry's slot in `providerOrder`, inheriting that
+   * entry's enabled flag. Used by the importer when a re-imported dict
+   * matches an existing one (or several) by name.
+   */
+  replaceDictionaries(oldIds: string[], newDict: ImportedDictionary): void;
   /** Soft-delete an imported entry by id; remove from providerOrder + providerEnabled. */
   removeDictionary(id: string): boolean;
   /** Replace a subset of provider ids in providerOrder; ignores unknown ids. */
@@ -105,6 +118,71 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       return {
         dictionaries,
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
+      };
+    });
+  },
+
+  updateDictionary: (id, patch) => {
+    set((state) => {
+      const idx = state.dictionaries.findIndex((d) => d.id === id);
+      if (idx < 0) return state;
+      const old = state.dictionaries[idx]!;
+      if (old.deletedAt) return state;
+      const trimmedName = patch.name?.trim();
+      // Reject undefined (no patch), empty (would clear the label), and
+      // unchanged (no-op).
+      if (!trimmedName || trimmedName === old.name) return state;
+      const dictionaries = state.dictionaries.map((d, i) =>
+        i === idx ? { ...d, name: trimmedName } : d,
+      );
+      return { dictionaries };
+    });
+  },
+
+  replaceDictionaries: (oldIds, newDict) => {
+    if (oldIds.length === 0) {
+      get().addDictionary(newDict);
+      return;
+    }
+    const oldIdSet = new Set(oldIds);
+    set((state) => {
+      // Drop all old entries (hard-remove since the disk bundles are gone)
+      // and append the new one. Soft-delete isn't needed: the previously
+      // stored entries are no longer recoverable.
+      const dictionaries = state.dictionaries.filter((d) => !oldIdSet.has(d.id));
+      dictionaries.push(newDict);
+
+      // Splice the new id into providerOrder at the first old slot. Drop
+      // any further old slots.
+      const oldOrder = state.settings.providerOrder;
+      const providerOrder: string[] = [];
+      let inserted = false;
+      for (const id of oldOrder) {
+        if (oldIdSet.has(id)) {
+          if (!inserted) {
+            providerOrder.push(newDict.id);
+            inserted = true;
+          }
+        } else {
+          providerOrder.push(id);
+        }
+      }
+      if (!inserted) providerOrder.push(newDict.id);
+
+      // Inherit the first old entry's enabled flag (default to !unsupported
+      // if the old wasn't recorded).
+      const firstOldId = oldIds[0]!;
+      const inheritedEnabled =
+        state.settings.providerEnabled[firstOldId] !== undefined
+          ? state.settings.providerEnabled[firstOldId] !== false
+          : !newDict.unsupported;
+      const providerEnabled = { ...state.settings.providerEnabled };
+      for (const oldId of oldIds) delete providerEnabled[oldId];
+      providerEnabled[newDict.id] = inheritedEnabled;
+
+      return {
+        dictionaries,
+        settings: { ...state.settings, providerOrder, providerEnabled },
       };
     });
   },

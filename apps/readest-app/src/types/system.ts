@@ -131,7 +131,10 @@ export interface AppService {
   deleteFont(font: CustomFont): Promise<void>;
   importImage(file?: string | File): Promise<CustomTextureInfo | null>;
   deleteImage(texture: CustomTextureInfo): Promise<void>;
-  importDictionaries(files: SelectedFile[]): Promise<ImportDictionariesResult>;
+  importDictionaries(
+    files: SelectedFile[],
+    existingDictionaries?: ImportedDictionary[],
+  ): Promise<ImportDictionariesResult>;
   deleteDictionary(dict: ImportedDictionary): Promise<void>;
   importBook(file: string | File, books: Book[], options?: ImportBookOptions): Promise<Book | null>;
   refreshBookMetadata(book: Book): Promise<boolean>;

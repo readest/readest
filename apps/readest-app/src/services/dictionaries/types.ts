@@ -22,6 +22,12 @@ export interface DictionaryLookupContext {
    * cross-link navigation can ignore it.
    */
   onNavigate?(word: string): void;
+  /**
+   * Theme hint forwarded by the shell. Providers that inject styles into a
+   * shadow root (MDict) use this to pick blend modes / overrides that match
+   * the current app theme. Optional — defaults to light treatment.
+   */
+  isDarkMode?: boolean;
 }
 
 export type DictionaryLookupOutcome =
@@ -71,6 +77,13 @@ export interface ImportedDictionary {
     // MDict bundle.
     mdx?: string;
     mdd?: string[];
+    /**
+     * Loose `.css` files imported alongside the `.mdx`/`.mdd` (matched by
+     * stem at import time). Applied as scoped stylesheets inside the card's
+     * shadow root at lookup time, in addition to any `<link
+     * rel="stylesheet">` references resolved from the MDD bundle.
+     */
+    css?: string[];
     // DICT (dictd) bundle. `dict` above doubles as the body filename
     // (`name.dict` or `name.dict.dz`); `index` is the dictd `.index` file.
     index?: string;

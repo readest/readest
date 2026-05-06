@@ -46,6 +46,12 @@ interface MDictGroup {
   stem: string;
   mdx: SourceFile;
   mdd: SourceFile[];
+  /**
+   * Loose `.css` files sharing the bundle stem (e.g. `mydict.mdx` +
+   * `mydict.css`). Optional. Applied at lookup time as scoped stylesheets
+   * inside the card's shadow root.
+   */
+  css: SourceFile[];
 }
 
 interface DictGroup {
@@ -117,8 +123,13 @@ function classify(source: SelectedFile): SourceFile {
  */
 export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
   const classified = files.map(classify);
+  // `.css` files don't have to share a stem with the `.mdx` (e.g. an MDX
+  // entry may reference `mwa.css` while the dictionary is `MW11sound.mdx`).
+  // Pool them globally and attach to every MDict bundle in this import.
+  const cssFiles = classified.filter((f) => f.ext === 'css');
   const byStem = new Map<string, SourceFile[]>();
   for (const f of classified) {
+    if (f.ext === 'css') continue;
     if (!byStem.has(f.stem)) byStem.set(f.stem, []);
     byStem.get(f.stem)!.push(f);
   }
@@ -140,13 +151,26 @@ export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
     } else if (indexFile && dict) {
       bundles.push({ kind: 'dict', stem, index: indexFile, dict });
     } else if (mdx) {
-      bundles.push({ kind: 'mdict', stem, mdx, mdd });
+      // `css` is filled in below once we know which MDict bundles exist.
+      bundles.push({ kind: 'mdict', stem, mdx, mdd, css: [] });
     } else if (slob) {
       bundles.push({ kind: 'slob', stem, slob });
     } else {
       orphans.push(...group);
     }
   }
+
+  // Distribute all loose `.css` files across the MDict bundles in this
+  // import. With one dictionary at a time (the common case) every selected
+  // `.css` ends up applied; with multiple, each gets the full set — benign
+  // because the per-card shadow root scopes the styles anyway.
+  const mdictBundles = bundles.filter((b): b is MDictGroup => b.kind === 'mdict');
+  if (mdictBundles.length > 0) {
+    for (const b of mdictBundles) b.css = cssFiles;
+  } else {
+    orphans.push(...cssFiles);
+  }
+
   return { bundles, orphans };
 }
 
@@ -277,10 +301,14 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
   const bundleDir = await createBundleDir(fs);
   const mdxFile = await readSource(fs, group.mdx.source);
   const mddFiles = await Promise.all(group.mdd.map((m) => readSource(fs, m.source)));
+  const cssFiles = await Promise.all(group.css.map((c) => readSource(fs, c.source)));
 
   await writeBundleFile(fs, bundleDir, group.mdx.name, mdxFile);
   for (let i = 0; i < group.mdd.length; i++) {
     await writeBundleFile(fs, bundleDir, group.mdd[i]!.name, mddFiles[i]!);
+  }
+  for (let i = 0; i < group.css.length; i++) {
+    await writeBundleFile(fs, bundleDir, group.css[i]!.name, cssFiles[i]!);
   }
 
   // Parse the MDX header via the forked js-mdict (browser-friendly path).
@@ -328,6 +356,7 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
     files: {
       mdx: group.mdx.name,
       mdd: group.mdd.map((m) => m.name),
+      css: group.css.length ? group.css.map((c) => c.name) : undefined,
     },
     lang,
     addedAt: Date.now(),
@@ -446,33 +475,92 @@ async function importSlobBundle(fs: FileSystem, group: SlobGroup): Promise<Impor
 
 export interface ImportDictionariesResult {
   imported: ImportedDictionary[];
+  /**
+   * Bundles whose name matched one or more existing dictionaries in the
+   * user's library. The duplicate's old bundle dir has been removed from
+   * disk; the caller still needs to update the store — drop `oldIds`,
+   * insert `newDict` in the first old entry's `providerOrder` slot, and
+   * inherit the first old entry's enabled flag.
+   */
+  replacements: { oldIds: string[]; newDict: ImportedDictionary }[];
   /** Filenames that didn't form a valid bundle. */
   orphanFiles: string[];
 }
 
 /**
  * Top-level import entry point. Groups the selected files into bundles and
- * imports each one. Returns the persisted metadata for new entries plus a
- * list of orphan filenames the caller can surface in a toast.
+ * imports each one. When a freshly-imported bundle's name matches an
+ * existing (non-deleted) dictionary, the existing on-disk bundle dirs are
+ * removed and the new dict is reported in `replacements` so the caller can
+ * swap the store entry in place (preserving the position in
+ * `providerOrder` and the enabled flag).
  */
 export async function importDictionaries(
   fs: FileSystem,
   files: SelectedFile[],
+  existingDictionaries: ImportedDictionary[] = [],
 ): Promise<ImportDictionariesResult> {
   const { bundles, orphans } = groupBundlesByStem(files);
+  // Index existing entries by name. Multiple entries can share a name when
+  // the user previously imported the same dict more than once — we replace
+  // them all with the single new bundle.
+  const existingByName = new Map<string, ImportedDictionary[]>();
+  for (const d of existingDictionaries) {
+    if (d.deletedAt) continue;
+    const list = existingByName.get(d.name);
+    if (list) list.push(d);
+    else existingByName.set(d.name, [d]);
+  }
+
   const imported: ImportedDictionary[] = [];
+  const replacements: { oldIds: string[]; newDict: ImportedDictionary }[] = [];
+  // Names already added during this single import call. A second bundle in
+  // the same selection that shares a name with an earlier one is dropped
+  // (the first wins) so we don't end up with intra-call duplicates.
+  const seenNames = new Set<string>();
+
   for (const bundle of bundles) {
+    let dict: ImportedDictionary;
     if (bundle.kind === 'stardict') {
-      imported.push(await importStarDictBundle(fs, bundle));
+      dict = await importStarDictBundle(fs, bundle);
     } else if (bundle.kind === 'mdict') {
-      imported.push(await importMdictBundle(fs, bundle));
+      dict = await importMdictBundle(fs, bundle);
     } else if (bundle.kind === 'dict') {
-      imported.push(await importDictBundle(fs, bundle));
+      dict = await importDictBundle(fs, bundle);
     } else {
-      imported.push(await importSlobBundle(fs, bundle));
+      dict = await importSlobBundle(fs, bundle);
+    }
+
+    if (seenNames.has(dict.name)) {
+      try {
+        await fs.removeDir(dict.bundleDir, 'Dictionaries', true);
+      } catch (err) {
+        console.warn('Failed to clean up duplicate bundle dir', dict.bundleDir, err);
+      }
+      continue;
+    }
+    seenNames.add(dict.name);
+
+    const olds = existingByName.get(dict.name);
+    if (olds && olds.length > 0) {
+      for (const old of olds) {
+        try {
+          await fs.removeDir(old.bundleDir, 'Dictionaries', true);
+        } catch (err) {
+          console.warn('Failed to remove replaced bundle dir', old.bundleDir, err);
+        }
+      }
+      replacements.push({ oldIds: olds.map((o) => o.id), newDict: dict });
+    } else {
+      imported.push(dict);
     }
   }
-  return { imported, orphanFiles: orphans.map((o) => o.name) };
+
+  return {
+    imported,
+    replacements,
+    orphanFiles: orphans.map((o) => o.name),
+  };
 }
 
 /** Remove a dictionary's bundle directory. The metadata is dropped by the caller. */

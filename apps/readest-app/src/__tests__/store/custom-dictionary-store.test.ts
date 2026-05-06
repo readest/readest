@@ -94,4 +94,33 @@ describe('customDictionaryStore — web search CRUD', () => {
     const after = useCustomDictionaryStore.getState().settings;
     expect(after.providerOrder.includes(BUILTIN_WEB_SEARCH_IDS.google)).toBe(true);
   });
+
+  it('updateDictionary patches the display name (trimmed) and ignores empty / unchanged input', () => {
+    const { addDictionary, updateDictionary } = useCustomDictionaryStore.getState();
+    addDictionary({
+      id: 'mdict:abc',
+      kind: 'mdict',
+      name: 'Title (No HTML code allowed)',
+      bundleDir: 'abc',
+      files: { mdx: 'abc.mdx' },
+      addedAt: 1,
+    });
+
+    updateDictionary('mdict:abc', { name: '  Webster MW11  ' });
+    let dict = useCustomDictionaryStore.getState().dictionaries.find((d) => d.id === 'mdict:abc');
+    expect(dict?.name).toBe('Webster MW11');
+
+    // Same name (no-op).
+    updateDictionary('mdict:abc', { name: 'Webster MW11' });
+    dict = useCustomDictionaryStore.getState().dictionaries.find((d) => d.id === 'mdict:abc');
+    expect(dict?.name).toBe('Webster MW11');
+
+    // Empty / whitespace patch is rejected — keep existing name.
+    updateDictionary('mdict:abc', { name: '   ' });
+    dict = useCustomDictionaryStore.getState().dictionaries.find((d) => d.id === 'mdict:abc');
+    expect(dict?.name).toBe('Webster MW11');
+
+    // Unknown id: silent no-op.
+    expect(() => updateDictionary('mdict:nope', { name: 'X' })).not.toThrow();
+  });
 });

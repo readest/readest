@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdAdd, MdDelete, MdDragIndicator, MdInfoOutline } from 'react-icons/md';
+import { MdAdd, MdDelete, MdDragIndicator, MdEdit, MdInfoOutline } from 'react-icons/md';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import {
   DndContext,
@@ -67,9 +67,11 @@ interface SortableRowProps {
   row: ProviderRow;
   enabled: boolean;
   isDeleteMode: boolean;
+  isEditMode: boolean;
   onToggle: (id: string, next: boolean) => void;
   onDelete: (row: ProviderRow) => void;
   onEditWebSearch?: (entry: WebSearchEntry) => void;
+  onEditDict?: (dict: ImportedDictionary) => void;
   _: (key: string, options?: Record<string, number | string>) => string;
 }
 
@@ -77,9 +79,11 @@ const SortableRow: React.FC<SortableRowProps> = ({
   row,
   enabled,
   isDeleteMode,
+  isEditMode,
   onToggle,
   onDelete,
   onEditWebSearch,
+  onEditDict,
   _,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -126,15 +130,6 @@ const SortableRow: React.FC<SortableRowProps> = ({
           >
             {row.label}
           </span>
-          {row.kind === 'web' && !row.builtinWeb && row.webSearch && onEditWebSearch && (
-            <button
-              type='button'
-              onClick={() => onEditWebSearch(row.webSearch!)}
-              className='link link-hover text-base-content/60 shrink-0 text-xs'
-            >
-              {_('Edit')}
-            </button>
-          )}
         </div>
         {row.reason && (
           <div className='text-warning mt-1 flex items-start gap-1 text-xs'>
@@ -157,6 +152,27 @@ const SortableRow: React.FC<SortableRowProps> = ({
         disabled={row.disabled}
         aria-label={enabled ? _('Disable') : _('Enable')}
       />
+
+      {/* Edit pencil — parity with the trailing delete X, but for the
+          rename / re-template flow. Visible only in edit mode for rows
+          backed by user-mutable metadata (imported dicts and custom web
+          searches; built-ins are immutable). */}
+      {(row.imported || (row.kind === 'web' && !row.builtinWeb)) && isEditMode && (
+        <button
+          type='button'
+          onClick={() => {
+            if (row.imported && onEditDict) onEditDict(row.imported);
+            else if (row.kind === 'web' && row.webSearch && onEditWebSearch) {
+              onEditWebSearch(row.webSearch);
+            }
+          }}
+          className='btn btn-ghost btn-sm shrink-0 px-1'
+          aria-label={_('Edit')}
+          title={_('Edit')}
+        >
+          <MdEdit className='text-base-content/75 h-4 w-4' />
+        </button>
+      )}
 
       {/* Delete X — for imported dictionaries and custom web searches, only
           in delete mode. Built-ins (incl. built-in web searches) never show
@@ -184,7 +200,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     dictionaries,
     settings,
     addDictionary,
+    replaceDictionaries,
     removeDictionary,
+    updateDictionary,
     reorder,
     setEnabled,
     addWebSearch,
@@ -201,7 +219,22 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
 
   const { selectFiles } = useFileSelector(appService, _);
   const [importing, setImporting] = useState(false);
+  // Edit and Delete are mutually-exclusive row affordances. Toggling one on
+  // turns the other off so the trailing column never shows two icons at once.
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const toggleDeleteMode = () =>
+    setIsDeleteMode((v) => {
+      const next = !v;
+      if (next) setIsEditMode(false);
+      return next;
+    });
+  const toggleEditMode = () =>
+    setIsEditMode((v) => {
+      const next = !v;
+      if (next) setIsDeleteMode(false);
+      return next;
+    });
 
   // Add/edit web-search modal state. `editingId` is `null` for "add", a
   // custom entry's id for "edit".
@@ -235,6 +268,30 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     }
     await saveCustomDictionaries(envConfig);
     setWebModal(null);
+  };
+
+  // Edit-imported-dict modal. Only the display `name` is editable; the
+  // bundle on disk is untouched.
+  const [dictModal, setDictModal] = useState<null | { id: string; name: string }>(null);
+  const openEditDict = (dict: ImportedDictionary) => setDictModal({ id: dict.id, name: dict.name });
+  const closeDictModal = () => setDictModal(null);
+  const submitDictModal = async () => {
+    if (!dictModal) return;
+    const name = dictModal.name.trim();
+    if (!name) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Name cannot be empty.'),
+        timeout: 4000,
+      });
+      return;
+    }
+    updateDictionary(dictModal.id, { name });
+    // Provider instances cache the dict's `label` from `dict.name`; evict
+    // so the next lookup picks up the new name in tabs / source labels.
+    evictProvider(dictModal.id);
+    await saveCustomDictionaries(envConfig);
+    setDictModal(null);
   };
 
   const buildRows = (): ProviderRow[] => {
@@ -327,18 +384,33 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     try {
       const result = await selectFiles({ type: 'dictionaries', multiple: true });
       if (result.error || result.files.length === 0) return;
-      const importResult = await appService?.importDictionaries(result.files);
+      const importResult = await appService?.importDictionaries(result.files, dictionaries);
       if (!importResult) return;
       let added = 0;
       for (const dict of importResult.imported) {
         addDictionary(dict);
         added += 1;
       }
+      let replaced = 0;
+      for (const { oldIds, newDict } of importResult.replacements) {
+        replaceDictionaries(oldIds, newDict);
+        // Invalidate any cached provider instances for the replaced ids so
+        // their next lookup picks up the new bundle's files.
+        for (const oldId of oldIds) evictProvider(oldId);
+        replaced += 1;
+      }
       await saveCustomDictionaries(envConfig);
       if (added > 0) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           message: _('Imported {{count}} dictionary', { count: added }),
+          timeout: 2500,
+        });
+      }
+      if (replaced > 0) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Replaced {{count}} existing dictionary', { count: replaced }),
           timeout: 2500,
         });
       }
@@ -382,11 +454,14 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     }
     await saveCustomDictionaries(envConfig);
     // Auto-leave delete mode when the last deletable entry is gone — there's
-    // nothing left to delete.
+    // nothing left to delete (edit mode is gated on the same row set).
     const remaining = rows.filter(
       (r) => r.id !== row.id && (r.imported || (r.kind === 'web' && !r.builtinWeb)),
     );
-    if (remaining.length === 0) setIsDeleteMode(false);
+    if (remaining.length === 0) {
+      setIsDeleteMode(false);
+      setIsEditMode(false);
+    }
   };
 
   const handleToggle = async (id: string, next: boolean) => {
@@ -410,7 +485,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
 
   return (
     <div className='w-full'>
-      <div className='mb-6 flex h-8 items-center justify-between'>
+      <div className='mb-4 flex h-8 items-center justify-between'>
         <div className='breadcrumbs py-1'>
           <ul>
             <li>
@@ -422,47 +497,39 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           </ul>
         </div>
         {hasDeletable && (
-          <button
-            onClick={() => setIsDeleteMode((v) => !v)}
-            className='btn btn-ghost btn-sm text-base-content gap-2'
-            title={isDeleteMode ? _('Cancel Delete') : _('Delete Dictionary')}
-          >
-            {isDeleteMode ? (
-              <>{_('Cancel')}</>
-            ) : (
-              <>
-                <MdDelete className='h-4 w-4' />
-                {_('Delete')}
-              </>
-            )}
-          </button>
+          <div className='flex items-center gap-1'>
+            <button
+              onClick={toggleEditMode}
+              className='btn btn-ghost btn-sm text-base-content gap-2'
+              title={isEditMode ? _('Cancel Edit') : _('Edit Dictionary')}
+            >
+              {isEditMode ? (
+                <>{_('Cancel')}</>
+              ) : (
+                <>
+                  <MdEdit className='h-4 w-4' />
+                  {/* Hide label on very narrow screens so the icon-only
+                      button keeps the breadcrumb readable. */}
+                  <span className='hidden min-[400px]:inline'>{_('Edit')}</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={toggleDeleteMode}
+              className='btn btn-ghost btn-sm text-base-content gap-2'
+              title={isDeleteMode ? _('Cancel Delete') : _('Delete Dictionary')}
+            >
+              {isDeleteMode ? (
+                <>{_('Cancel')}</>
+              ) : (
+                <>
+                  <MdDelete className='h-4 w-4' />
+                  <span className='hidden min-[400px]:inline'>{_('Delete')}</span>
+                </>
+              )}
+            </button>
+          </div>
         )}
-      </div>
-
-      {/* Primary actions. Flat outline-primary buttons so they still read
-          as the page's primary CTAs but consume far less vertical space
-          than the previous bordered cards. On narrow screens (mobile) they
-          stack; on tablet+ they sit side-by-side. */}
-      <div className='mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2'>
-        <button
-          type='button'
-          onClick={handleImport}
-          disabled={importing}
-          className='btn btn-outline btn-primary gap-2 normal-case'
-        >
-          <MdAdd className='h-5 w-5' />
-          <span className='line-clamp-1'>
-            {importing ? _('Importing…') : _('Import Dictionary')}
-          </span>
-        </button>
-        <button
-          type='button'
-          onClick={openAddWebSearch}
-          className='btn btn-outline btn-primary gap-2 normal-case'
-        >
-          <MdAdd className='h-5 w-5' />
-          <span className='line-clamp-1'>{_('Add Web Search')}</span>
-        </button>
       </div>
 
       <div className='card border-base-200 bg-base-100 overflow-hidden border'>
@@ -484,15 +551,39 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
                   row={row}
                   enabled={settings.providerEnabled[row.id] !== false}
                   isDeleteMode={isDeleteMode}
+                  isEditMode={isEditMode}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
                   onEditWebSearch={openEditWebSearch}
+                  onEditDict={openEditDict}
                   _={_}
                 />
               ))}
             </SortableContext>
           </DndContext>
         </div>
+      </div>
+
+      <div className='mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2'>
+        <button
+          type='button'
+          onClick={handleImport}
+          disabled={importing}
+          className='btn btn-outline btn-primary gap-2 normal-case [--animation-btn:0s]'
+        >
+          <MdAdd className='h-5 w-5' />
+          <span className='line-clamp-1'>
+            {importing ? _('Importing…') : _('Import Dictionary')}
+          </span>
+        </button>
+        <button
+          type='button'
+          onClick={openAddWebSearch}
+          className='btn btn-outline btn-primary gap-2 normal-case [--animation-btn:0s]'
+        >
+          <MdAdd className='h-5 w-5' />
+          <span className='line-clamp-1'>{_('Add Web Search')}</span>
+        </button>
       </div>
 
       <div className='bg-base-200/40 mt-4 rounded-lg p-3'>
@@ -503,7 +594,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           </div>
           <ul className='list-outside list-disc space-y-0.5 ps-4'>
             <li>{_('StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).')}</li>
-            <li>{_('MDict bundles use .mdx files; companion .mdd files are optional.')}</li>
+            <li>
+              {_('MDict bundles use .mdx files; companion .mdd and .css files are optional.')}
+            </li>
             <li>{_('DICT bundles need a .index file and a .dict.dz file.')}</li>
             <li>{_('Slob bundles need a .slob file.')}</li>
             <li>{_('Select all the bundle files together when importing.')}</li>
@@ -562,6 +655,42 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             aria-label={_('Close')}
             className='modal-backdrop'
             onClick={closeWebModal}
+          />
+        </div>
+      )}
+
+      {/* Edit-imported-dict modal. Single field for the display name; the
+          on-disk bundle is untouched. */}
+      {dictModal && (
+        <div className='modal modal-open' role='dialog'>
+          <div className='modal-box w-11/12 max-w-md'>
+            <h3 className='text-base font-semibold'>{_('Edit Dictionary')}</h3>
+            <div className='mt-4 space-y-3'>
+              <label className='form-control w-full'>
+                <span className='label-text text-sm'>{_('Name')}</span>
+                <input
+                  type='text'
+                  className='input input-bordered input-sm w-full'
+                  value={dictModal.name}
+                  placeholder={_('Dictionary name')}
+                  onChange={(e) => setDictModal((m) => (m ? { ...m, name: e.target.value } : m))}
+                />
+              </label>
+            </div>
+            <div className='modal-action'>
+              <button type='button' onClick={closeDictModal} className='btn btn-ghost btn-sm'>
+                {_('Cancel')}
+              </button>
+              <button type='button' onClick={submitDictModal} className='btn btn-primary btn-sm'>
+                {_('Save')}
+              </button>
+            </div>
+          </div>
+          <button
+            type='button'
+            aria-label={_('Close')}
+            className='modal-backdrop'
+            onClick={closeDictModal}
           />
         </div>
       )}

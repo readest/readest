@@ -7,6 +7,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -68,6 +69,7 @@ export function useDictionaryResults({
 }: UseDictionaryResultsArgs): DictionaryResultsState {
   const { appService } = useEnv();
   const { dictionaries, settings } = useCustomDictionaryStore();
+  const isDarkMode = useThemeStore((s) => s.isDarkMode);
 
   const computedProviders = getEnabledProviders({
     settings,
@@ -212,6 +214,7 @@ export function useDictionaryResults({
               signal: controller.signal,
               container,
               onNavigate: pushWord,
+              isDarkMode,
             });
           }
         } catch (err) {
@@ -239,7 +242,7 @@ export function useDictionaryResults({
     });
 
     return () => controllers.forEach((c) => c.abort());
-  }, [currentWord, definitionProviders, lang, pushWord]);
+  }, [currentWord, definitionProviders, lang, pushWord, isDarkMode]);
 
   // Visible cards = providers that are still loading or finished with a
   // result. Empty/unsupported/error cards are removed entirely.
@@ -310,7 +313,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
 }) => {
   const _ = useTranslation();
   return (
-    <div className='flex h-8 w-full items-center justify-between px-2'>
+    <div className='-mt-3 flex h-8 w-full items-center justify-between px-2'>
       <div className='flex h-8 w-8 items-center justify-center'>
         {canGoBack ? (
           <button
@@ -391,8 +394,14 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                           tabIndex={0}
                           aria-expanded={expanded}
                           onClick={(e) => {
-                            const target = e.target as Element | null;
-                            if (target?.closest('a, button')) return;
+                            const path = e.nativeEvent.composedPath();
+                            for (const node of path) {
+                              if (node === e.currentTarget) break;
+                              if (node instanceof Element) {
+                                const tag = node.tagName;
+                                if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
+                              }
+                            }
                             toggleExpanded(p.id);
                           }}
                           onKeyDown={(e) => {

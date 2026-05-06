@@ -231,8 +231,11 @@ export abstract class BaseAppService implements AppService {
     return ImageSvc.deleteImage(this.fs, texture);
   }
 
-  async importDictionaries(files: SelectedFile[]): Promise<DictSvc.ImportDictionariesResult> {
-    return DictSvc.importDictionaries(this.fs, files);
+  async importDictionaries(
+    files: SelectedFile[],
+    existingDictionaries: ImportedDictionary[] = [],
+  ): Promise<DictSvc.ImportDictionariesResult> {
+    return DictSvc.importDictionaries(this.fs, files, existingDictionaries);
   }
 
   async deleteDictionary(dict: ImportedDictionary): Promise<void> {

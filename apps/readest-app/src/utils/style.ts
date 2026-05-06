@@ -531,6 +531,26 @@ export const getFootnoteStyles = () => `
   }
 `;
 
+/**
+ * Baseline stylesheet injected into every dictionary card's shadow root
+ * (alongside any loose `.css` files imported with the bundle and any
+ * `<link rel="stylesheet">` references resolved from the MDD).
+ *
+ * The seam exists so app-wide rules can be added in one place without
+ * touching the provider code. Currently it ships:
+ */
+export const getDictStyles = () => {
+  return `
+    a:empty {
+      background-color: transparent;
+      mix-blend-mode: multiply;
+    }
+    a img {
+      mix-blend-mode: multiply;
+    }
+  `;
+};
+
 const getTranslationStyles = (showSource: boolean) => `
   .translation-source {
   }

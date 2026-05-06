@@ -140,8 +140,8 @@ export const FILE_SELECTION_PRESETS = {
     dialogTitle: _('Select Fonts'),
   },
   dictionaries: {
-    accept: '.mdx, .mdd, .ifo, .idx, .dict, .dz, .syn, .index, .slob',
-    extensions: ['mdx', 'mdd', 'ifo', 'idx', 'dict', 'dz', 'syn', 'index', 'slob'],
+    accept: '.mdx, .mdd, .ifo, .idx, .dict, .dz, .syn, .index, .slob, .css',
+    extensions: ['mdx', 'mdd', 'ifo', 'idx', 'dict', 'dz', 'syn', 'index', 'slob', 'css'],
     dialogTitle: _('Select Dictionary Files'),
   },
   covers: {
