@@ -1,7 +1,7 @@
 # `crdt.ts` — Hybrid Logical Clock + per-field LWW
 
 Internal sync primitive for the polymorphic `replicas` table. See
-`~/.claude/plans/vivid-orbiting-thimble.md` for the full design.
+`apps/readest-app/.claude/plans/vivid-orbiting-thimble.md` for the full design.
 
 ## What this module does
 
