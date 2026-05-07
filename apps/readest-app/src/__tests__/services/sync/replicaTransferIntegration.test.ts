@@ -1,25 +1,35 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('@/services/sync/replicaPublish', () => ({
-  publishDictionaryManifest: vi.fn(),
-}));
-
-const markAvailableByContentId = vi.fn();
-vi.mock('@/store/customDictionaryStore', () => ({
-  useCustomDictionaryStore: {
-    getState: () => ({ markAvailableByContentId }),
-  },
+  publishReplicaManifest: vi.fn(),
 }));
 
 import { eventDispatcher } from '@/utils/event';
-import { publishDictionaryManifest } from '@/services/sync/replicaPublish';
+import { publishReplicaManifest } from '@/services/sync/replicaPublish';
 import {
   __resetReplicaTransferIntegrationForTests,
+  registerReplicaDownloadHandler,
   startReplicaTransferIntegration,
 } from '@/services/sync/replicaTransferIntegration';
+import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
+import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
 import type { AppService } from '@/types/system';
 
-const mockPublish = publishDictionaryManifest as ReturnType<typeof vi.fn>;
+const mockPublish = publishReplicaManifest as ReturnType<typeof vi.fn>;
+const downloadHandler = vi.fn();
+
+const fakeDictionaryAdapter: ReplicaAdapter<unknown> = {
+  kind: 'dictionary',
+  schemaVersion: 1,
+  pack: () => ({}),
+  unpack: () => ({}),
+  computeId: async () => '',
+  unpackRow: () => ({}),
+  binary: {
+    localBaseDir: 'Dictionaries',
+    enumerateFiles: () => [],
+  },
+};
 
 const makeFakeAppService = () => {
   const close = vi.fn();
@@ -34,16 +44,20 @@ const makeFakeAppService = () => {
 
 beforeEach(() => {
   __resetReplicaTransferIntegrationForTests();
+  clearReplicaAdapters();
   vi.clearAllMocks();
+  registerReplicaAdapter(fakeDictionaryAdapter);
+  registerReplicaDownloadHandler('dictionary', downloadHandler);
 });
 
 afterEach(() => {
   __resetReplicaTransferIntegrationForTests();
+  clearReplicaAdapters();
   vi.restoreAllMocks();
 });
 
 describe('replicaTransferIntegration', () => {
-  test('upload event triggers publishDictionaryManifest', async () => {
+  test('upload event triggers publishReplicaManifest', async () => {
     const appService = makeFakeAppService() as unknown as AppService;
     startReplicaTransferIntegration(appService);
     mockPublish.mockResolvedValue(undefined);
@@ -59,12 +73,29 @@ describe('replicaTransferIntegration', () => {
     });
 
     expect(mockPublish).toHaveBeenCalledOnce();
-    const [contentId, manifestFiles] = mockPublish.mock.calls[0]!;
+    // Args: (kind, contentId, manifestFiles, reincarnation?)
+    const [kind, contentId, manifestFiles] = mockPublish.mock.calls[0]!;
+    expect(kind).toBe('dictionary');
     expect(contentId).toBe('content-hash-abc');
     expect(manifestFiles).toHaveLength(2);
     expect(manifestFiles[0]!.filename).toBe('webster.mdx');
     expect(manifestFiles[0]!.byteSize).toBe(1000);
     expect(manifestFiles[0]!.partialMd5).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  test('upload openFile uses the adapter binary base dir', async () => {
+    const appService = makeFakeAppService() as unknown as AppService;
+    startReplicaTransferIntegration(appService);
+    mockPublish.mockResolvedValue(undefined);
+
+    await eventDispatcher.dispatch('replica-transfer-complete', {
+      kind: 'dictionary',
+      replicaId: 'content-hash-abc',
+      type: 'upload',
+      files: [{ logical: 'webster.mdx', lfp: 'b/webster.mdx', byteSize: 1 }],
+    });
+
+    expect(appService.openFile).toHaveBeenCalledWith('b/webster.mdx', 'Dictionaries');
   });
 
   test('upload event carries reincarnation token into manifest publish', async () => {
@@ -81,7 +112,7 @@ describe('replicaTransferIntegration', () => {
     });
 
     expect(mockPublish).toHaveBeenCalledOnce();
-    expect(mockPublish.mock.calls[0]![2]).toBe('epoch-1');
+    expect(mockPublish.mock.calls[0]![3]).toBe('epoch-1');
   });
 
   test('download event does NOT publish a manifest (publish is upload-side only)', async () => {
@@ -97,7 +128,7 @@ describe('replicaTransferIntegration', () => {
     expect(mockPublish).not.toHaveBeenCalled();
   });
 
-  test('download event marks the local dict available (clears unavailable flag)', async () => {
+  test('download event invokes the per-kind handler with the replicaId', async () => {
     const appService = makeFakeAppService() as unknown as AppService;
     startReplicaTransferIntegration(appService);
 
@@ -107,11 +138,11 @@ describe('replicaTransferIntegration', () => {
       type: 'download',
       files: [{ logical: 'x.mdx', lfp: 'b/x.mdx', byteSize: 10 }],
     });
-    expect(markAvailableByContentId).toHaveBeenCalledOnce();
-    expect(markAvailableByContentId).toHaveBeenCalledWith('content-hash-abc');
+    expect(downloadHandler).toHaveBeenCalledOnce();
+    expect(downloadHandler).toHaveBeenCalledWith('content-hash-abc');
   });
 
-  test('upload event does NOT mark available (only download finishes the placeholder lifecycle)', async () => {
+  test('upload event does NOT invoke the download handler', async () => {
     const appService = makeFakeAppService() as unknown as AppService;
     startReplicaTransferIntegration(appService);
     mockPublish.mockResolvedValue(undefined);
@@ -122,11 +153,30 @@ describe('replicaTransferIntegration', () => {
       type: 'upload',
       files: [{ logical: 'x.mdx', lfp: 'b/x.mdx', byteSize: 10 }],
     });
-    expect(markAvailableByContentId).not.toHaveBeenCalled();
+    expect(downloadHandler).not.toHaveBeenCalled();
   });
 
-  test('non-dictionary download event is ignored (no markAvailable)', async () => {
+  test('event for an unknown kind (no registered adapter) is ignored', async () => {
     const appService = makeFakeAppService() as unknown as AppService;
+    startReplicaTransferIntegration(appService);
+
+    await eventDispatcher.dispatch('replica-transfer-complete', {
+      kind: 'unregistered-kind',
+      replicaId: 'x',
+      type: 'download',
+      files: [{ logical: 'r.ttf', lfp: 'f/r.ttf', byteSize: 1 }],
+    });
+    expect(downloadHandler).not.toHaveBeenCalled();
+    expect(mockPublish).not.toHaveBeenCalled();
+  });
+
+  test('event for a kind without a registered download handler is ignored cleanly', async () => {
+    const appService = makeFakeAppService() as unknown as AppService;
+    // Register a SECOND adapter without a download handler.
+    registerReplicaAdapter({
+      ...fakeDictionaryAdapter,
+      kind: 'font',
+    });
     startReplicaTransferIntegration(appService);
 
     await eventDispatcher.dispatch('replica-transfer-complete', {
@@ -135,7 +185,7 @@ describe('replicaTransferIntegration', () => {
       type: 'download',
       files: [{ logical: 'r.ttf', lfp: 'f/r.ttf', byteSize: 1 }],
     });
-    expect(markAvailableByContentId).not.toHaveBeenCalled();
+    expect(downloadHandler).not.toHaveBeenCalled();
   });
 
   test('delete event is ignored', async () => {
@@ -149,19 +199,7 @@ describe('replicaTransferIntegration', () => {
       filenames: ['x.mdx'],
     });
     expect(mockPublish).not.toHaveBeenCalled();
-  });
-
-  test('non-dictionary kind is ignored (this slice ships dictionary only)', async () => {
-    const appService = makeFakeAppService() as unknown as AppService;
-    startReplicaTransferIntegration(appService);
-
-    await eventDispatcher.dispatch('replica-transfer-complete', {
-      kind: 'font',
-      replicaId: 'font-hash',
-      type: 'upload',
-      files: [{ logical: 'r.ttf', lfp: 'f/r.ttf', byteSize: 1 }],
-    });
-    expect(mockPublish).not.toHaveBeenCalled();
+    expect(downloadHandler).not.toHaveBeenCalled();
   });
 
   test('upload event with no files is ignored', async () => {
@@ -189,6 +227,12 @@ describe('replicaTransferIntegration', () => {
       files: [{ logical: 'x.mdx', lfp: 'b/x.mdx', byteSize: 100 }],
     });
     expect(mockPublish).toHaveBeenCalledTimes(1);
+  });
+
+  test('registering a download handler twice for the same kind throws', () => {
+    expect(() => registerReplicaDownloadHandler('dictionary', vi.fn())).toThrowError(
+      /already registered/,
+    );
   });
 
   test('publish error is caught (does not bubble up to event dispatcher)', async () => {

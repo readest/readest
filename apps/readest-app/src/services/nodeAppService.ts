@@ -236,10 +236,16 @@ export const nodeFileSystem: FileSystem = {
     return new File([buffer], fileName);
   },
 
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
-    const fullDst = await toAbsolute(this.resolvePath(dstPath, base));
+  async copyFile(
+    srcPath: string,
+    srcBase: BaseDir,
+    dstPath: string,
+    dstBase: BaseDir,
+  ): Promise<void> {
+    const fullSrc = await toAbsolute(this.resolvePath(srcPath, srcBase));
+    const fullDst = await toAbsolute(this.resolvePath(dstPath, dstBase));
     await fsp.mkdir(nodePath.dirname(fullDst), { recursive: true });
-    await fsp.copyFile(srcPath, fullDst);
+    await fsp.copyFile(fullSrc, fullDst);
   },
 
   async readFile(

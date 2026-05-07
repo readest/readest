@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  pullDictionariesAndApply,
-  type PullDictionariesDeps,
-} from '@/services/sync/replicaPullDictionaries';
+import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
+import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { hlcPack } from '@/libs/crdt';
 import type { Hlc, Manifest, ReplicaRow } from '@/types/replica';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
@@ -46,9 +44,10 @@ const baseDict = (overrides: Partial<ImportedDictionary> = {}): ImportedDictiona
 const makeDeps = () => {
   const findByContentId = vi.fn((_id: string): ImportedDictionary | undefined => undefined);
   const deps = {
+    adapter: dictionaryAdapter,
     pull: vi.fn(async () => [] as ReplicaRow[]),
     findByContentId,
-    applyRemoteDictionary: vi.fn(),
+    applyRemote: vi.fn<(record: ImportedDictionary) => void>(),
     softDeleteByContentId: vi.fn(),
     createBundleDir: vi.fn(async () => 'fresh-bundle-dir-1'),
     queueReplicaDownload: vi.fn(() => 'transfer-id-1'),
@@ -56,7 +55,7 @@ const makeDeps = () => {
     // downloads. Tests that exercise the "binaries already on disk"
     // path override this.
     filesExist: vi.fn(async () => false),
-  } satisfies PullDictionariesDeps;
+  } satisfies PullAndApplyDeps<ImportedDictionary>;
   return deps;
 };
 
@@ -68,11 +67,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('pullDictionariesAndApply', () => {
+describe('replicaPullAndApply (dictionary adapter)', () => {
   test('no-op when pull returns no rows', async () => {
     const deps = makeDeps();
-    await pullDictionariesAndApply(deps);
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    await replicaPullAndApply(deps);
+    expect(deps.applyRemote).not.toHaveBeenCalled();
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
 
@@ -80,27 +79,27 @@ describe('pullDictionariesAndApply', () => {
     const deps = {
       ...makeDeps(),
       isAuthenticated: vi.fn(async () => false),
-    } satisfies PullDictionariesDeps;
-    await pullDictionariesAndApply(deps);
+    } satisfies PullAndApplyDeps<ImportedDictionary>;
+    await replicaPullAndApply(deps);
     expect(deps.isAuthenticated).toHaveBeenCalledOnce();
     expect(deps.pull).not.toHaveBeenCalled();
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
 
-  test('hydrateLocalStore runs before pull so applyRemoteDictionary auto-persist does not wipe persisted entries', async () => {
+  test('hydrateLocalStore runs before pull so applyRemote auto-persist does not wipe persisted entries', async () => {
     const order: string[] = [];
     const deps = {
       ...makeDeps(),
       hydrateLocalStore: vi.fn(async () => {
         order.push('hydrate');
       }),
-    } satisfies PullDictionariesDeps;
+    } satisfies PullAndApplyDeps<ImportedDictionary>;
     (deps.pull as ReturnType<typeof vi.fn>).mockImplementation(async () => {
       order.push('pull');
       return [];
     });
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
     expect(order).toEqual(['hydrate', 'pull']);
   });
 
@@ -109,12 +108,12 @@ describe('pullDictionariesAndApply', () => {
     const deps = {
       ...makeDeps(),
       isAuthenticated: vi.fn(async () => true),
-    } satisfies PullDictionariesDeps;
+    } satisfies PullAndApplyDeps<ImportedDictionary>;
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
     expect(deps.pull).toHaveBeenCalledOnce();
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
   });
 
   test('alive-and-new row: creates bundle dir, applies dict, queues download', async () => {
@@ -123,11 +122,11 @@ describe('pullDictionariesAndApply', () => {
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
     expect(deps.createBundleDir).toHaveBeenCalledOnce();
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
-    const applied = (deps.applyRemoteDictionary as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
+    const applied = (deps.applyRemote as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(applied.contentId).toBe('content-hash-abc');
     expect(applied.bundleDir).toBe('fresh-bundle-dir-1');
     expect(applied.unavailable).toBe(true);
@@ -143,15 +142,61 @@ describe('pullDictionariesAndApply', () => {
     expect(downloadArgs![3]).toBe('fresh-bundle-dir-1');
   });
 
+  test('alive-and-already-local WITHOUT manifest: queues local binary upload to repair the row', async () => {
+    // Row exists on the server with manifest_jsonb=null — typically the
+    // device that originally wrote the metadata never managed to upload
+    // the binaries (e.g., TransferManager not ready, transient error).
+    // On the next pull we reconcile by re-queuing the upload from the
+    // device that owns the local copy.
+    const row = baseRow({ manifest_jsonb: null });
+    const local = baseDict();
+    const queueLocalBinaryUpload = vi.fn<(record: ImportedDictionary) => Promise<void>>(
+      async () => {},
+    );
+    const deps = {
+      ...makeDeps(),
+      queueLocalBinaryUpload,
+    } satisfies PullAndApplyDeps<ImportedDictionary>;
+    (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
+    (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(local);
+
+    await replicaPullAndApply(deps);
+
+    expect(queueLocalBinaryUpload).toHaveBeenCalledOnce();
+    expect(queueLocalBinaryUpload).toHaveBeenCalledWith(local);
+    expect(deps.applyRemote).not.toHaveBeenCalled();
+    expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
+  });
+
+  test('alive-and-new-row WITHOUT manifest: does NOT queue an upload (no local copy)', async () => {
+    // No local record → nothing to upload. The other device will
+    // commit the manifest and we'll pick it up on a later pull.
+    const row = baseRow({ manifest_jsonb: null });
+    const queueLocalBinaryUpload = vi.fn<(record: ImportedDictionary) => Promise<void>>(
+      async () => {},
+    );
+    const deps = {
+      ...makeDeps(),
+      queueLocalBinaryUpload,
+    } satisfies PullAndApplyDeps<ImportedDictionary>;
+    (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
+    (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
+
+    await replicaPullAndApply(deps);
+
+    expect(queueLocalBinaryUpload).not.toHaveBeenCalled();
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
+  });
+
   test('alive-and-new row WITHOUT manifest: applies dict but skips download (binaries pending server-side)', async () => {
     const row = baseRow({ manifest_jsonb: null });
     const deps = makeDeps();
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
 
@@ -163,10 +208,10 @@ describe('pullDictionariesAndApply', () => {
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(local);
     (deps.filesExist as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
     expect(deps.createBundleDir).not.toHaveBeenCalled();
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
     expect(deps.filesExist).toHaveBeenCalledWith('local-1', ['webster.mdx']);
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
@@ -179,10 +224,10 @@ describe('pullDictionariesAndApply', () => {
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(local);
     // Default filesExist returns false → recovery path.
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
     expect(deps.createBundleDir).not.toHaveBeenCalled();
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
     expect(deps.queueReplicaDownload).toHaveBeenCalledOnce();
     const downloadArgs = (deps.queueReplicaDownload as ReturnType<typeof vi.fn>).mock.calls[0];
     // bundleDir is the existing local entry's, NOT a fresh one.
@@ -200,9 +245,9 @@ describe('pullDictionariesAndApply', () => {
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
     (deps.filesExist as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
 
@@ -218,10 +263,10 @@ describe('pullDictionariesAndApply', () => {
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(local);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
     expect(deps.softDeleteByContentId).toHaveBeenCalledWith('content-hash-abc');
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
   });
 
   test('tombstoned row already gone locally: no-op (idempotent)', async () => {
@@ -235,10 +280,10 @@ describe('pullDictionariesAndApply', () => {
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
     expect(deps.softDeleteByContentId).not.toHaveBeenCalled();
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
   });
 
   test('reincarnated row (alive again): treated as alive — creates locally if absent', async () => {
@@ -253,10 +298,10 @@ describe('pullDictionariesAndApply', () => {
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
-    const applied = (deps.applyRemoteDictionary as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
+    const applied = (deps.applyRemote as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(applied.reincarnation).toBe('epoch-1');
     expect(deps.queueReplicaDownload).toHaveBeenCalledOnce();
   });
@@ -267,9 +312,9 @@ describe('pullDictionariesAndApply', () => {
     const deps = makeDeps();
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).not.toHaveBeenCalled();
+    expect(deps.applyRemote).not.toHaveBeenCalled();
     expect(deps.queueReplicaDownload).not.toHaveBeenCalled();
   });
 
@@ -298,9 +343,9 @@ describe('pullDictionariesAndApply', () => {
       async () => `bundle-${++bundleCounter}`,
     );
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledTimes(2);
+    expect(deps.applyRemote).toHaveBeenCalledTimes(2);
     expect(deps.queueReplicaDownload).toHaveBeenCalledTimes(2);
   });
 
@@ -312,8 +357,8 @@ describe('pullDictionariesAndApply', () => {
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([badRow, goodRow]);
     (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
 
-    await pullDictionariesAndApply(deps);
+    await replicaPullAndApply(deps);
 
-    expect(deps.applyRemoteDictionary).toHaveBeenCalledOnce();
+    expect(deps.applyRemote).toHaveBeenCalledOnce();
   });
 });

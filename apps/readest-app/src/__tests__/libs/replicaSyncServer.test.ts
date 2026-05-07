@@ -145,7 +145,7 @@ describe('validatePullParams', () => {
   });
 
   test('rejects unknown kind', () => {
-    const result = validatePullParams('font', null);
+    const result = validatePullParams('texture', null);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(422);

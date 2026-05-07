@@ -11,10 +11,12 @@ vi.mock('@/services/sync/replicaSync', () => ({
 import { getUserID } from '@/utils/access';
 import { getReplicaSync } from '@/services/sync/replicaSync';
 import {
-  publishDictionaryDelete,
-  publishDictionaryManifest,
-  publishDictionaryUpsert,
+  publishReplicaDelete,
+  publishReplicaManifest,
+  publishReplicaUpsert,
 } from '@/services/sync/replicaPublish';
+import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
+import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import { HlcGenerator, hlcPack } from '@/libs/crdt';
 import type { Hlc, ReplicaRow } from '@/types/replica';
@@ -47,26 +49,33 @@ const makeFakeCtx = () => {
   return { manager, hlc, deviceId: DEV };
 };
 
+const upsertDict = (dict: ImportedDictionary): Promise<void> =>
+  publishReplicaUpsert('dictionary', dict, dict.contentId!, dict.reincarnation);
+
 beforeEach(() => {
   vi.clearAllMocks();
+  clearReplicaAdapters();
+  registerReplicaAdapter(dictionaryAdapter);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  clearReplicaAdapters();
 });
 
-describe('publishDictionaryUpsert', () => {
+describe('publishReplicaUpsert (dictionary adapter)', () => {
   test('no-ops when replicaSync is not initialized', async () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict());
+    await upsertDict(baseDict());
   });
 
-  test('no-ops when contentId is absent (legacy bundle)', async () => {
+  test('no-ops when no adapter registered for the kind', async () => {
+    clearReplicaAdapters();
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict({ contentId: undefined }));
+    await upsertDict(baseDict());
     expect(ctx.manager.markDirty).not.toHaveBeenCalled();
   });
 
@@ -74,7 +83,7 @@ describe('publishDictionaryUpsert', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    await publishDictionaryUpsert(baseDict());
+    await upsertDict(baseDict());
     expect(ctx.manager.markDirty).not.toHaveBeenCalled();
   });
 
@@ -83,7 +92,7 @@ describe('publishDictionaryUpsert', () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
     const dict = baseDict({ name: 'Webster Concise', lang: 'en' });
-    await publishDictionaryUpsert(dict);
+    await upsertDict(dict);
 
     expect(ctx.manager.markDirty).toHaveBeenCalledOnce();
     const row = ctx.manager.markDirty.mock.calls[0]![0];
@@ -101,7 +110,7 @@ describe('publishDictionaryUpsert', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict());
+    await upsertDict(baseDict());
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     for (const env of Object.values(row.fields_jsonb)) {
       expect(env.s).toBe(DEV);
@@ -113,44 +122,44 @@ describe('publishDictionaryUpsert', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict());
+    await upsertDict(baseDict());
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     const fieldHlcs = Object.values(row.fields_jsonb).map((e) => e.t);
     const maxField = fieldHlcs.reduce((a, b) => (a > b ? a : b));
     expect(row.updated_at_ts >= maxField).toBe(true);
   });
 
-  test('reincarnation field on the dict propagates to the row (revives a tombstoned row)', async () => {
+  test('reincarnation token propagates to the row (revives a tombstoned row)', async () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict({ reincarnation: 'epoch-1' }));
+    await upsertDict(baseDict({ reincarnation: 'epoch-1' }));
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     expect(row.reincarnation).toBe('epoch-1');
   });
 
-  test('reincarnation defaults to null when absent on the dict (first import or live re-import)', async () => {
+  test('reincarnation defaults to null when absent (first import or live re-import)', async () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryUpsert(baseDict());
+    await upsertDict(baseDict());
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     expect(row.reincarnation).toBe(null);
   });
 });
 
-describe('publishDictionaryDelete', () => {
+describe('publishReplicaDelete', () => {
   test('no-ops when replicaSync is not initialized', async () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryDelete('content-hash-abc');
+    await publishReplicaDelete('dictionary', 'content-hash-abc');
   });
 
   test('no-ops when user not authenticated', async () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    await publishDictionaryDelete('content-hash-abc');
+    await publishReplicaDelete('dictionary', 'content-hash-abc');
     expect(ctx.manager.markDirty).not.toHaveBeenCalled();
   });
 
@@ -158,7 +167,7 @@ describe('publishDictionaryDelete', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryDelete('content-hash-abc');
+    await publishReplicaDelete('dictionary', 'content-hash-abc');
     expect(ctx.manager.markDirty).toHaveBeenCalledOnce();
     const row = ctx.manager.markDirty.mock.calls[0]![0];
     expect(row.replica_id).toBe('content-hash-abc');
@@ -170,23 +179,24 @@ describe('publishDictionaryDelete', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryDelete('content-hash-abc');
+    await publishReplicaDelete('dictionary', 'content-hash-abc');
     const row = ctx.manager.markDirty.mock.calls[0]![0];
     expect(row.updated_at_ts).toBe(row.deleted_at_ts);
   });
 });
-describe('publishDictionaryManifest', () => {
+
+describe('publishReplicaManifest', () => {
   test('no-ops when replicaSync is not initialized', async () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryManifest('content-hash-abc', []);
+    await publishReplicaManifest('dictionary', 'content-hash-abc', []);
   });
 
   test('no-ops when user not authenticated', async () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    await publishDictionaryManifest('content-hash-abc', []);
+    await publishReplicaManifest('dictionary', 'content-hash-abc', []);
     expect(ctx.manager.markDirty).not.toHaveBeenCalled();
   });
 
@@ -198,7 +208,7 @@ describe('publishDictionaryManifest', () => {
       { filename: 'webster.mdx', byteSize: 1_000_000, partialMd5: 'abc123' },
       { filename: 'webster.mdd', byteSize: 5_000_000, partialMd5: 'def456' },
     ];
-    await publishDictionaryManifest('content-hash-abc', files);
+    await publishReplicaManifest('dictionary', 'content-hash-abc', files);
     expect(ctx.manager.markDirty).toHaveBeenCalledOnce();
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     expect(row.replica_id).toBe('content-hash-abc');
@@ -212,7 +222,7 @@ describe('publishDictionaryManifest', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryManifest('content-hash-abc', [], 'epoch-1');
+    await publishReplicaManifest('dictionary', 'content-hash-abc', [], 'epoch-1');
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     expect(row.reincarnation).toBe('epoch-1');
   });
@@ -221,7 +231,7 @@ describe('publishDictionaryManifest', () => {
     const ctx = makeFakeCtx();
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
-    await publishDictionaryManifest('content-hash-abc', []);
+    await publishReplicaManifest('dictionary', 'content-hash-abc', []);
     const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
     expect(row.manifest_jsonb?.files).toEqual([]);
   });

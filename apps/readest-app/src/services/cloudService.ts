@@ -95,7 +95,7 @@ export async function uploadReplicaFileToCloud(
   console.log('Uploading replica file:', opts.lfp, 'to', cfp);
   const file = await fs.openFile(opts.lfp, opts.base, opts.filename);
   const localFullpath = await resolveFilePath(opts.lfp, opts.base);
-  await uploadReplicaFile(file, localFullpath, cfp, opts.onProgress);
+  await uploadReplicaFile(file, localFullpath, cfp, opts.kind, opts.replicaId, opts.onProgress);
   const f = file as ClosableFile;
   if (f && f.close) {
     await f.close();

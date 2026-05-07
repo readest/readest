@@ -11,7 +11,7 @@ export async function importImage(
     const filePath = file;
     const fileobj = await fs.openFile(filePath, 'None');
     imagePath = fileobj.name || getFilename(filePath);
-    await fs.copyFile(filePath, imagePath, 'Images');
+    await fs.copyFile(filePath, 'None', imagePath, 'Images');
   } else if (file) {
     imagePath = getFilename(file.name);
     await fs.writeFile(imagePath, 'Images', file);

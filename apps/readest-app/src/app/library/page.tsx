@@ -116,9 +116,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const { isTransferQueueOpen } = useTransferStore();
 
-  // Library page pulls dictionaries (custom mdict/stardict bundles synced
-  // across devices). Deferred 10s; module-scoped dedup means a later
-  // navigation to the reader won't re-pull the same kind.
+  // Library page pulls user replicas (dictionaries today). Deferred 10s;
+  // module-scoped dedup means a later navigation to the reader won't
+  // re-pull the same kind.
   useReplicaPull({ kinds: ['dictionary'] });
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',

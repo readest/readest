@@ -32,6 +32,18 @@ const dictionaryFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+const fontFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    family: fieldEnvelopeSchema.optional(),
+    style: fieldEnvelopeSchema.optional(),
+    weight: fieldEnvelopeSchema.optional(),
+    variable: fieldEnvelopeSchema.optional(),
+    byteSize: fieldEnvelopeSchema.optional(),
+    downloadedAt: fieldEnvelopeSchema.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
 interface KindSpec {
   minSchemaVersion: number;
   maxSchemaVersion: number;
@@ -46,6 +58,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 200,
     fields: dictionaryFieldsSchema,
+    binary: true,
+  },
+  font: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 500,
+    fields: fontFieldsSchema,
     binary: true,
   },
 };

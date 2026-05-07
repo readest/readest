@@ -19,6 +19,7 @@ const dictionaryAdapter: ReplicaAdapter<DictRecord> = {
   pack: (r) => ({ id: r.id, name: r.name, enabled: r.enabled }),
   unpack: (f) => ({ id: String(f['id']), name: String(f['name']), enabled: Boolean(f['enabled']) }),
   computeId: async (r: DictRecord) => r.id,
+  unpackRow: () => null,
 };
 
 afterEach(() => clearReplicaAdapters());

@@ -5,6 +5,7 @@ import {
   initReplicaSync,
   isReplicaSyncReady,
 } from '@/services/sync/replicaSync';
+import { __resetSettledEventsForTests } from '@/utils/event';
 import { InMemoryHlcStore } from '@/libs/hlcStore';
 import type { ReplicaRow, Hlc } from '@/types/replica';
 import type { CursorStore } from '@/services/sync/replicaSyncManager';
@@ -26,6 +27,7 @@ const makeFakeClient = () => ({
 
 afterEach(() => {
   __resetReplicaSyncForTests();
+  __resetSettledEventsForTests();
 });
 
 describe('replicaSync singleton', () => {

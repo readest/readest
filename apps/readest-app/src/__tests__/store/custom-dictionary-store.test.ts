@@ -1,23 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('@/services/sync/replicaPublish', () => ({
-  publishDictionaryDelete: vi.fn(),
-  publishDictionaryUpsert: vi.fn(),
+  publishReplicaDelete: vi.fn(),
+  publishReplicaUpsert: vi.fn(),
 }));
 
-import {
-  useCustomDictionaryStore,
-  enableReplicaAutoPersist,
-  findDictionaryByContentId,
-} from '@/store/customDictionaryStore';
+import { useCustomDictionaryStore, findDictionaryByContentId } from '@/store/customDictionaryStore';
+import { enableReplicaAutoPersist } from '@/services/sync/replicaPersist';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
-import { publishDictionaryUpsert } from '@/services/sync/replicaPublish';
+import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EnvConfigType } from '@/services/environment';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 
 const ZERO = (s: string) => s.startsWith('web:builtin:');
-const mockPublishDictionaryUpsert = vi.mocked(publishDictionaryUpsert);
+const mockPublishReplicaUpsert = vi.mocked(publishReplicaUpsert);
 
 describe('customDictionaryStore — web search CRUD', () => {
   beforeEach(() => {
@@ -284,13 +281,15 @@ describe('customDictionaryStore — web search CRUD', () => {
       reincarnation: 'epoch-1',
     });
 
-    mockPublishDictionaryUpsert.mockClear();
+    mockPublishReplicaUpsert.mockClear();
     updateDictionary('mdict:abc', { name: 'New title' });
 
-    expect(mockPublishDictionaryUpsert).toHaveBeenCalledOnce();
-    expect(mockPublishDictionaryUpsert.mock.calls[0]![0]).toMatchObject({
-      name: 'New title',
-      reincarnation: 'epoch-1',
-    });
+    expect(mockPublishReplicaUpsert).toHaveBeenCalledOnce();
+    // Args: (kind, record, contentId, reincarnation?)
+    const call = mockPublishReplicaUpsert.mock.calls[0]!;
+    expect(call[0]).toBe('dictionary');
+    expect(call[1]).toMatchObject({ name: 'New title', reincarnation: 'epoch-1' });
+    expect(call[2]).toBe('content-abc');
+    expect(call[3]).toBe('epoch-1');
   });
 });

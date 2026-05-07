@@ -39,7 +39,7 @@ describe('getTransferMessages', () => {
     expect(m.failure.delete).toBe('Failed to delete cloud backup of the book: Moby Dick');
   });
 
-  test('dictionary replica transfer uses "Dictionary" copy', () => {
+  test('dictionary replica transfer uses generic "File" copy', () => {
     const m = getTransferMessages(
       baseTransfer({
         kind: 'replica',
@@ -49,23 +49,21 @@ describe('getTransferMessages', () => {
       }),
       passthroughT,
     );
-    expect(m.success.upload).toBe('Dictionary uploaded: Longman Phrasal Verbs');
-    expect(m.success.download).toBe('Dictionary downloaded: Longman Phrasal Verbs');
-    expect(m.success.delete).toBe('Deleted cloud copy of the dictionary: Longman Phrasal Verbs');
-    expect(m.failure.upload).toBe('Failed to upload dictionary: Longman Phrasal Verbs');
-    expect(m.failure.download).toBe('Failed to download dictionary: Longman Phrasal Verbs');
-    expect(m.failure.delete).toBe(
-      'Failed to delete cloud copy of the dictionary: Longman Phrasal Verbs',
-    );
+    expect(m.success.upload).toBe('File uploaded: Longman Phrasal Verbs');
+    expect(m.success.download).toBe('File downloaded: Longman Phrasal Verbs');
+    expect(m.success.delete).toBe('Deleted cloud copy of the file: Longman Phrasal Verbs');
+    expect(m.failure.upload).toBe('Failed to upload file: Longman Phrasal Verbs');
+    expect(m.failure.download).toBe('Failed to download file: Longman Phrasal Verbs');
+    expect(m.failure.delete).toBe('Failed to delete cloud copy of the file: Longman Phrasal Verbs');
   });
 
-  test('replica transfer with unknown replicaKind falls back to book copy (defensive)', () => {
+  test('font replica transfer also uses generic "File" copy', () => {
     const m = getTransferMessages(
       baseTransfer({ kind: 'replica', replicaKind: 'font', bookTitle: 'Roboto' }),
       passthroughT,
     );
-    // Until 'font' ships explicit copy, the safe fallback is the existing
-    // book strings. Updating per-kind copy is paired with adding the kind.
-    expect(m.success.upload).toBe('Book uploaded: Roboto');
+    expect(m.success.upload).toBe('File uploaded: Roboto');
+    expect(m.success.download).toBe('File downloaded: Roboto');
+    expect(m.success.delete).toBe('Deleted cloud copy of the file: Roboto');
   });
 });

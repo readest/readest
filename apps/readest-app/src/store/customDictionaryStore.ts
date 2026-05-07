@@ -7,7 +7,17 @@ import type {
 } from '@/services/dictionaries/types';
 import { BUILTIN_PROVIDER_IDS, BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import { useSettingsStore } from './settingsStore';
-import { publishDictionaryDelete, publishDictionaryUpsert } from '@/services/sync/replicaPublish';
+import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
+import { DICTIONARY_KIND } from '@/services/sync/adapters/dictionary';
+
+const publishDictUpsert = (dict: ImportedDictionary): void => {
+  if (!dict.contentId) return;
+  void publishReplicaUpsert(DICTIONARY_KIND, dict, dict.contentId, dict.reincarnation);
+};
+
+const publishDictDelete = (contentId: string): void => {
+  void publishReplicaDelete(DICTIONARY_KIND, contentId);
+};
 
 /**
  * Built-in web-search ids are seeded into `providerOrder` but disabled by
@@ -120,15 +130,12 @@ function toSettingsDict(dict: ImportedDictionary): ImportedDictionary {
 
 // Replica-side mutators (applyRemoteDictionary, softDeleteByContentId,
 // markAvailableByContentId) fire from boot-time pull / download-complete
-// handlers, NOT the settings UI. The UI couples its state mutations with
-// an explicit saveCustomDictionaries(envConfig) call; the replica path
-// has no such pairing, so without this auto-persist the next
-// loadCustomDictionaries (run on Annotator / settings panel mount) reads
-// stale settings.customDictionaries and wipes the in-memory rows.
-let replicaPersistEnv: EnvConfigType | null = null;
-export const enableReplicaAutoPersist = (envConfig: EnvConfigType | null): void => {
-  replicaPersistEnv = envConfig;
-};
+// handlers, NOT the settings UI. The shared `replicaPersist` registry
+// holds the envConfig (registered once by EnvProvider); each mutator
+// fire-and-forget saves through it so the next loadCustomDictionaries
+// reads up-to-date settings.customDictionaries instead of wiping the
+// in-memory rows.
+import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 
 /**
  * Look up a dict by its cross-device contentId, falling back to the
@@ -177,7 +184,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
       };
     });
-    void publishDictionaryUpsert(dict);
+    publishDictUpsert(dict);
   },
 
   applyRemoteDictionary: (dict) => {
@@ -201,7 +208,8 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         settings: { ...state.settings, providerOrder: order, providerEnabled: enabled },
       };
     });
-    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
+    const env = getReplicaPersistEnv();
+    if (env) void get().saveCustomDictionaries(env);
   },
 
   findByContentId: (contentId) =>
@@ -213,7 +221,8 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         d.contentId === contentId ? { ...d, unavailable: undefined } : d,
       ),
     }));
-    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
+    const env = getReplicaPersistEnv();
+    if (env) void get().saveCustomDictionaries(env);
   },
 
   softDeleteByContentId: (contentId) => {
@@ -231,7 +240,8 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         ),
       },
     }));
-    if (replicaPersistEnv) void get().saveCustomDictionaries(replicaPersistEnv);
+    const env = getReplicaPersistEnv();
+    if (env) void get().saveCustomDictionaries(env);
   },
 
   updateDictionary: (id, patch) => {
@@ -249,7 +259,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const dictionaries = state.dictionaries.map((d, i) => (i === idx ? updated! : d));
       return { dictionaries };
     });
-    if (updated) void publishDictionaryUpsert(updated);
+    if (updated) publishDictUpsert(updated);
   },
 
   replaceDictionaries: (oldIds, newDict) => {
@@ -315,9 +325,9 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     const isContentSurvivingSwap =
       Boolean(newDict.contentId) && oldContentIds.includes(newDict.contentId!);
     if (!isContentSurvivingSwap) {
-      for (const contentId of oldContentIds) void publishDictionaryDelete(contentId);
+      for (const contentId of oldContentIds) publishDictDelete(contentId);
     }
-    void publishDictionaryUpsert(newDict);
+    publishDictUpsert(newDict);
   },
 
   removeDictionary: (id) => {
@@ -335,7 +345,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         ),
       },
     }));
-    if (dict.contentId) void publishDictionaryDelete(dict.contentId);
+    if (dict.contentId) publishDictDelete(dict.contentId);
     return true;
   },
 

@@ -28,9 +28,9 @@ const baseRow = (overrides: Partial<ReplicaRow> = {}): ReplicaRow => ({
 });
 
 describe('isAllowedKind', () => {
-  test('PR 1 allowlist contains only dictionary', () => {
+  test('current allowlist contains dictionary + font', () => {
     expect(isAllowedKind('dictionary')).toBe(true);
-    expect(isAllowedKind('font')).toBe(false);
+    expect(isAllowedKind('font')).toBe(true);
     expect(isAllowedKind('texture')).toBe(false);
     expect(isAllowedKind('opds_catalog')).toBe(false);
   });

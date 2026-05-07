@@ -121,8 +121,13 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.openFile(path, base);
   }
 
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
-    return await this.fs.copyFile(srcPath, dstPath, base);
+  async copyFile(
+    srcPath: string,
+    srcBase: BaseDir,
+    dstPath: string,
+    dstBase: BaseDir,
+  ): Promise<void> {
+    return await this.fs.copyFile(srcPath, srcBase, dstPath, dstBase);
   }
 
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {

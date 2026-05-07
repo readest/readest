@@ -1,6 +1,8 @@
 import { md5 } from '@/utils/md5';
+import { buildLocalDictFromRow } from '@/services/sync/replicaDictionaryApply';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
+import type { ReplicaRow } from '@/types/replica';
 
 export const DICTIONARY_KIND = 'dictionary';
 export const DICTIONARY_SCHEMA_VERSION = 1;
@@ -106,6 +108,10 @@ export const dictionaryAdapter: ReplicaAdapter<ImportedDictionary> = {
 
   async computeId(d: ImportedDictionary): Promise<string> {
     return d.id;
+  },
+
+  unpackRow(row: ReplicaRow, bundleDir: string): ImportedDictionary | null {
+    return buildLocalDictFromRow(row, bundleDir);
   },
 
   binary: {

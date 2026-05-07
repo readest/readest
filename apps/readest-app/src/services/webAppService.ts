@@ -88,22 +88,23 @@ const indexedDBFileSystem: FileSystem = {
       return new File([content], filename || path);
     }
   },
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
-    const { fp } = this.resolvePath(dstPath, base);
+  async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
+    const { fp: srcFp } = this.resolvePath(srcPath, srcBase);
+    const { fp: dstFp } = this.resolvePath(dstPath, dstBase);
     const db = await openIndexedDB();
 
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction('files', 'readwrite');
       const store = transaction.objectStore('files');
-      const getRequest = store.get(srcPath);
+      const getRequest = store.get(srcFp);
 
       getRequest.onsuccess = () => {
         const data = getRequest.result;
         if (data) {
-          store.put({ path: fp, content: data.content });
+          store.put({ path: dstFp, content: data.content });
           resolve();
         } else {
-          reject(new Error(`File not found: ${srcPath}`));
+          reject(new Error(`File not found: ${srcFp}`));
         }
       };
 

@@ -3,17 +3,37 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 
 const pullSpy = vi.fn<(...args: unknown[]) => Promise<void>>(async () => {});
 const getReplicaSyncSpy = vi.fn();
+const readyListeners = new Set<() => void>();
+const subscribeReplicaSyncReadySpy = vi.fn((listener: () => void) => {
+  if (getReplicaSyncSpy()) {
+    listener();
+    return () => {};
+  }
+  readyListeners.add(listener);
+  return () => {
+    readyListeners.delete(listener);
+  };
+});
+const fireReplicaSyncReady = () => {
+  for (const l of [...readyListeners]) l();
+  readyListeners.clear();
+};
 let envValue: { envConfig: unknown; appService: unknown } = {
   envConfig: { name: 'env' },
   appService: null,
 };
 
-vi.mock('@/services/sync/replicaPullDictionaries', () => ({
-  pullDictionariesAndApply: (...args: unknown[]) => pullSpy(...args),
+vi.mock('@/services/sync/replicaPullAndApply', () => ({
+  replicaPullAndApply: (...args: unknown[]) => pullSpy(...args),
+}));
+
+vi.mock('@/services/sync/adapters/dictionary', () => ({
+  dictionaryAdapter: { kind: 'dictionary' },
 }));
 
 vi.mock('@/services/sync/replicaSync', () => ({
   getReplicaSync: () => getReplicaSyncSpy(),
+  subscribeReplicaSyncReady: (listener: () => void) => subscribeReplicaSyncReadySpy(listener),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -52,6 +72,8 @@ beforeEach(() => {
   pullSpy.mockClear();
   pullSpy.mockResolvedValue(undefined);
   getReplicaSyncSpy.mockReset();
+  subscribeReplicaSyncReadySpy.mockClear();
+  readyListeners.clear();
   __resetReplicaPullForTests();
   envValue = { envConfig: { name: 'env' }, appService: fakeService };
 });
@@ -90,12 +112,43 @@ describe('useReplicaPull', () => {
     expect(pullSpy).not.toHaveBeenCalled();
   });
 
-  test('skips when replica sync context is not initialized', () => {
+  test('does not pull yet when replica sync context is uninitialized — subscribes for ready', () => {
     getReplicaSyncSpy.mockReturnValue(null);
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
 
     vi.advanceTimersByTime(500);
     expect(pullSpy).not.toHaveBeenCalled();
+    expect(subscribeReplicaSyncReadySpy).toHaveBeenCalledOnce();
+  });
+
+  test('hard-refresh race: schedules pull once initReplicaSync finishes (deferred subscriber fires)', async () => {
+    // Hard refresh: appService landed first, replica-sync singleton
+    // arrives after a microtask. The hook must catch up via the
+    // ready-signal subscription rather than silently dropping the pull.
+    getReplicaSyncSpy.mockReturnValue(null);
+    renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    expect(subscribeReplicaSyncReadySpy).toHaveBeenCalledOnce();
+    expect(pullSpy).not.toHaveBeenCalled();
+
+    // initReplicaSync now finishes; getReplicaSync starts returning the
+    // singleton, and the ready listener fires.
+    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    fireReplicaSyncReady();
+
+    await act(async () => {
+      vi.advanceTimersByTime(150);
+      await Promise.resolve();
+    });
+    expect(pullSpy).toHaveBeenCalledOnce();
+  });
+
+  test('cleanup unsubscribes from ready listener if hook unmounts before init', () => {
+    getReplicaSyncSpy.mockReturnValue(null);
+    const view = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    expect(subscribeReplicaSyncReadySpy).toHaveBeenCalledOnce();
+    expect(readyListeners.size).toBe(1);
+    view.unmount();
+    expect(readyListeners.size).toBe(0);
   });
 
   test('only pulls once per kind across multiple mounts', async () => {

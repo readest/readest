@@ -9,6 +9,8 @@ vi.mock('@/services/transferManager', () => ({
 
 import { transferManager } from '@/services/transferManager';
 import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
+import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
+import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { AppService } from '@/types/system';
 
@@ -35,10 +37,13 @@ const baseDict = (overrides: Partial<ImportedDictionary> = {}): ImportedDictiona
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearReplicaAdapters();
+  registerReplicaAdapter(dictionaryAdapter);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  clearReplicaAdapters();
 });
 
 describe('queueDictionaryBinaryUpload', () => {

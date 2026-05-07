@@ -259,16 +259,16 @@ export const nativeFileSystem: FileSystem = {
       }
     }
   },
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
+  async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
     try {
-      if (!(await this.exists(getDirPath(dstPath), base))) {
-        await this.createDir(getDirPath(dstPath), base, true);
+      if (!(await this.exists(getDirPath(dstPath), dstBase))) {
+        await this.createDir(getDirPath(dstPath), dstBase, true);
       }
     } catch (error) {
       console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
-      const prefix = await this.getPrefix(base);
+      const prefix = await this.getPrefix(dstBase);
       if (!prefix) {
         throw new Error('Invalid base directory');
       }
@@ -281,8 +281,12 @@ export const nativeFileSystem: FileSystem = {
         throw new Error('Failed to copy file');
       }
     } else {
-      const { fp, baseDir } = this.resolvePath(dstPath, base);
-      await copyFile(srcPath, fp, baseDir ? { toPathBaseDir: baseDir } : undefined);
+      const { fp: srcFp, baseDir: srcBaseDir } = this.resolvePath(srcPath, srcBase);
+      const { fp: dstFp, baseDir: dstBaseDir } = this.resolvePath(dstPath, dstBase);
+      const opts: { fromPathBaseDir?: number; toPathBaseDir?: number } = {};
+      if (srcBaseDir) opts.fromPathBaseDir = srcBaseDir;
+      if (dstBaseDir) opts.toPathBaseDir = dstBaseDir;
+      await copyFile(srcFp, dstFp, Object.keys(opts).length > 0 ? opts : undefined);
     }
   },
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {

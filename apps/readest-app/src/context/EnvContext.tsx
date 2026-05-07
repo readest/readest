@@ -8,7 +8,7 @@ import { bootstrapReplicaAdapters } from '@/services/sync/replicaBootstrap';
 import { initReplicaSync } from '@/services/sync/replicaSync';
 import { createSettingsCursorStore } from '@/services/sync/replicaCursorStore';
 import { startReplicaTransferIntegration } from '@/services/sync/replicaTransferIntegration';
-import { enableReplicaAutoPersist } from '@/store/customDictionaryStore';
+import { enableReplicaAutoPersist } from '@/services/sync/replicaPersist';
 
 interface EnvContextType {
   envConfig: EnvConfigType;

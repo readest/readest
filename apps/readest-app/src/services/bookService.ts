@@ -384,13 +384,13 @@ export async function importBook(
       if (/\.txt$/i.test(filename)) {
         await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && isContentURI(file)) {
-        await fs.copyFile(file, bookFilename, 'Books');
+        await fs.copyFile(file, 'None', bookFilename, 'Books');
       } else if (typeof file === 'string' && !isValidURL(file)) {
         try {
           // try to copy the file directly first in case of large files to avoid memory issues
           // on desktop when reading recursively from selected directory the direct copy will fail
           // due to permission issues, then fallback to read and write files
-          await fs.copyFile(file, bookFilename, 'Books');
+          await fs.copyFile(file, 'None', bookFilename, 'Books');
         } catch {
           await fs.writeFile(bookFilename, 'Books', await fileobj.arrayBuffer());
         }
@@ -649,7 +649,7 @@ export async function exportBook(
   fs: FileSystem,
   book: Book,
   resolveFilePath: (path: string, base: BaseDir) => Promise<string>,
-  copyFile: (srcPath: string, dstPath: string, base: BaseDir) => Promise<void>,
+  copyFile: (srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) => Promise<void>,
   saveFile: (
     filename: string,
     content: ArrayBuffer,
@@ -662,7 +662,7 @@ export async function exportBook(
   let filePath = await resolveFilePath(getLocalBookFilename(book), 'Books');
   const mimeType = file.type || 'application/octet-stream';
   if (getFilename(filePath) !== filename) {
-    await copyFile(filePath, filename, 'Temp');
+    await copyFile(filePath, 'None', filename, 'Temp');
     filePath = await resolveFilePath(filename, 'Temp');
   }
   return await saveFile(filename, content, { filePath, mimeType });

@@ -86,6 +86,8 @@ export const uploadReplicaFile = async (
   file: File,
   fileFullPath: string,
   cfp: string,
+  replicaKind: string,
+  replicaId: string,
   onProgress?: ProgressHandler,
 ) => {
   try {
@@ -97,6 +99,8 @@ export const uploadReplicaFile = async (
       body: JSON.stringify({
         fileName: cfp,
         fileSize: file.size,
+        replicaKind,
+        replicaId,
         temp: false,
       }),
     });
@@ -261,6 +265,8 @@ export interface FileRecord {
   file_key: string;
   file_size: number;
   book_hash: string | null;
+  replica_kind: string | null;
+  replica_id: string | null;
   created_at: string;
   updated_at: string | null;
 }
