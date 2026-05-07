@@ -421,12 +421,14 @@ export interface AudiobookSyncMapEntry {
   source?: 'manual-point' | 'manual-interpolated' | 'generated' | 'transcript-match' | string;
   matchScore?: number;
   sectionIndex?: number;
+  sectionHref?: string;
 }
 
 export interface AudiobookTextUnit {
   cfi: string;
   text: string;
   sectionIndex?: number;
+  sectionHref?: string;
 }
 
 export interface AudiobookConfig {

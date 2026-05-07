@@ -96,7 +96,7 @@ export async function extractTextUnitsFromWholeBook(view: BookViewLike): Promise
         range.selectNodeContents(el);
         const cfi = view.getCFI(i, range);
         if (cfi) {
-          units.push({ cfi, text, sectionIndex: i });
+          units.push({ cfi, text, sectionIndex: i, sectionHref: section.href });
         }
       } catch {
         // Skip blocks where CFI resolution fails
@@ -143,6 +143,7 @@ function isMediaOnlyBlock(el: HTMLElement): boolean {
 
 /** Minimal view interface for visible-section extraction */
 export interface VisibleViewLike {
+  book?: { sections: { href?: string }[] };
   renderer: { getContents(): { doc: Document; index?: number }[] };
   getCFI(index: number, range: Range): string;
 }
@@ -154,12 +155,15 @@ export interface VisibleViewLike {
  */
 export function extractTextUnitsFromVisibleSections(view: VisibleViewLike): AudiobookTextUnit[] {
   const units: AudiobookTextUnit[] = [];
+  const sections = view.book?.sections ?? [];
 
   const contents = view.renderer?.getContents?.() ?? [];
   for (const content of contents) {
     const doc = content.doc as Document | undefined;
     const index = content.index ?? 0;
     if (!doc) continue;
+
+    const sectionHref = sections[index]?.href;
 
     const blocks = doc.querySelectorAll(BLOCK_SELECTORS);
     for (const block of blocks) {
@@ -172,7 +176,7 @@ export function extractTextUnitsFromVisibleSections(view: VisibleViewLike): Audi
         range.selectNodeContents(el);
         const cfi = view.getCFI(index, range);
         if (cfi) {
-          units.push({ cfi, text, sectionIndex: index });
+          units.push({ cfi, text, sectionIndex: index, sectionHref });
         }
       } catch {
         // Skip blocks where CFI resolution fails

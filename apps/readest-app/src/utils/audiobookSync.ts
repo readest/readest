@@ -75,6 +75,49 @@ export function buildSyncMapFromPoints(
 }
 
 /**
+ * Fills time gaps between consecutive sync map entries with placeholder
+ * entries so every moment of the audiobook is covered.
+ *
+ * - Same-section gaps: inherit the earlier entry's CFI (keep highlight).
+ * - Cross-section gaps: empty CFI — triggers relocation via sectionIndex
+ *   but does NOT inject a fake highlight from the wrong section.
+ */
+export function fillSyncMapGaps(entries: AudiobookSyncMapEntry[]): AudiobookSyncMapEntry[] {
+  if (entries.length === 0) return entries;
+
+  const sorted = [...entries].sort((a, b) => a.secondsStart - b.secondsStart);
+  const filled: AudiobookSyncMapEntry[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const cur = sorted[i]!;
+    filled.push(cur);
+
+    const next = sorted[i + 1];
+    if (next && cur.secondsEnd !== undefined && cur.secondsEnd < next.secondsStart) {
+      const crossSection =
+        cur.sectionIndex !== undefined &&
+        next.sectionIndex !== undefined &&
+        cur.sectionIndex !== next.sectionIndex;
+
+      filled.push({
+        secondsStart: cur.secondsEnd,
+        secondsEnd: next.secondsStart,
+        // Cross-section: no CFI (relocation only). Same-section: keep highlight.
+        cfi: crossSection ? '' : cur.cfi,
+        markerCfi: crossSection ? undefined : cur.markerCfi,
+        sectionIndex: next.sectionIndex,
+        sectionHref: next.sectionHref,
+        label: cur.label,
+        source: 'gap-fill',
+        matchScore: 0,
+      });
+    }
+  }
+
+  return filled;
+}
+
+/**
  * Finds the active sync map entry at the given playback time.
  *
  * An entry is active when `secondsStart <= currentTime` AND

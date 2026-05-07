@@ -11,6 +11,7 @@ import {
   computeAdjacentTranscriptCandidates,
 } from '@/utils/audiobookTranscript';
 import { getFilename } from '@/utils/path';
+import { fillSyncMapGaps } from '@/utils/audiobookSync';
 import {
   extractTextUnitsFromWholeBook,
   extractTextUnitsFromVisibleSections,
@@ -106,7 +107,15 @@ export function useAudiobookSyncGeneration(deps: SyncGenerationDeps) {
 
       console.info(`[${logPrefix}] diagnostics`, diagnostics);
 
-      if (syncMap.length === 0) {
+      // Fill gaps between matched entries so every moment of audio has a sync
+      // entry. Gap entries carry the next entry's sectionIndex, which lets
+      // relocation trigger at section boundaries even when matching is sparse.
+      const filledMap = fillSyncMapGaps(syncMap);
+      if (filledMap.length > syncMap.length) {
+        console.info(`[${logPrefix}] gap-filled: ${syncMap.length} → ${filledMap.length} entries`);
+      }
+
+      if (filledMap.length === 0) {
         const error = 'No transcript segments matched EPUB text';
         setConfig(bookKey, {
           audiobook: {
@@ -129,12 +138,13 @@ export function useAudiobookSyncGeneration(deps: SyncGenerationDeps) {
         transcriptStatus: 'ready',
         transcriptError: undefined,
         transcriptGeneratedAt: Date.now(),
-        syncMap,
+        syncMap: filledMap,
         syncStatus: 'ready',
       };
       setConfig(bookKey, { audiobook: updatedAudiobook, updatedAt: Date.now() });
 
       return { matched: syncMap.length, total: segments.length, transcriptPath };
+      // ^ matched count reflects original matches (not gap-fill additions)
     },
     [getView, setConfig],
   );

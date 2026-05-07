@@ -198,7 +198,7 @@ export const useAudiobookSyncDebug = (props: {
 
         // --- Apply marker immediately so dev sees it -----------------------
         try {
-          applyAudiobookMarker(cfi);
+          applyAudiobookMarker({ cfi });
         } catch (err) {
           console.warn('[AudiobookSyncDebug] applyAudiobookMarker failed', err);
         }

@@ -2,8 +2,10 @@ import { Overlayer } from 'foliate-js/overlayer.js';
 import { FoliateView } from '@/types/view';
 import { normalizeAudiobookMatchText } from '@/utils/audiobookTranscript';
 
-/** Shared overlay slot for the live reading marker (TTS and audiobook sync share this). */
+/** Overlay slot for the subtle phrase/sentence context highlight. */
 export const LIVE_MARKER_KEY = 'tts-highlight';
+/** Overlay slot for the active-word highlight that tracks the narrator. */
+export const LIVE_MARKER_WORD_KEY = 'tts-word';
 
 type LiveMarkerStyle = 'highlight' | 'underline' | 'strikethrough' | 'squiggly' | 'outline';
 
@@ -816,6 +818,9 @@ export function applyLiveMarker(
   }
 
   // ── Progressive word-window narrowing (audiobook sync only) ──
+  // Save the phrase-level range before narrowing so we can render a subtle
+  // context layer behind the active-word highlight.
+  const phraseRange = range;
   let wordWindowInfo: { activeWord: number; totalWords: number; windowText: string } | null = null;
   if (progress !== undefined && progress >= 0) {
     const narrowed = narrowRangeToWordWindow(range, doc, progress);
@@ -843,23 +848,51 @@ export function applyLiveMarker(
   const { style, color } = options;
 
   const ol = overlayer as Overlayer;
-
-  // Ensure the overlay SVG is tuned for visibility on dark reader backgrounds.
-  // Overlayer.highlight defaults to opacity 0.3 / blend normal — far too
-  // subtle for near-black Citadel pages.  Screen blend mode brightens the
-  // underlying text area instead of darkening it.
   const svg = ol.element as unknown as HTMLElement;
-  svg.style.setProperty('--overlayer-highlight-opacity', '0.48');
+
+  // ── Layer 1: subtle phrase context (underlay) ──
+  svg.style.setProperty('--overlayer-highlight-opacity', '0.16');
+  svg.style.setProperty('--overlayer-highlight-blend-mode', 'normal');
+
+  ol.remove(LIVE_MARKER_KEY);
+  ol.add(LIVE_MARKER_KEY, phraseRange, Overlayer[style], {
+    color,
+    padding: 2,
+    radius: 4,
+  });
+  // Lock the inline style so the next layer's CSS-var change doesn't affect this one
+  const phraseG = svg.lastElementChild as HTMLElement | null;
+  if (phraseG) {
+    phraseG.style.opacity = '0.16';
+    phraseG.style.mixBlendMode = 'normal';
+  }
+
+  // ── Layer 2: active-word highlight (dominant visual) ──
+  svg.style.setProperty('--overlayer-highlight-opacity', '0.52');
   svg.style.setProperty('--overlayer-highlight-blend-mode', 'screen');
 
+  const wordRange = wordWindowInfo ? range : phraseRange;
+  ol.remove(LIVE_MARKER_WORD_KEY);
+  ol.add(LIVE_MARKER_WORD_KEY, wordRange, Overlayer[style], {
+    color,
+    padding: 3,
+    radius: 4,
+  });
+  const wordG = svg.lastElementChild as HTMLElement | null;
+  if (wordG) {
+    wordG.style.opacity = '0.52';
+    wordG.style.mixBlendMode = 'screen';
+  }
+
   const clientRects = range.getClientRects();
-  console.log('[LiveMarker] Applying overlay', {
+  console.log('[LiveMarker] Dual-layer overlay applied', {
     style,
     color,
-    rangeText: range.toString().slice(0, 60),
-    rectCount: clientRects.length,
+    phraseChars: phraseRange.toString().length,
+    wordChars: wordRange.toString().length,
     activeWord: wordWindowInfo?.activeWord,
     totalWords: wordWindowInfo?.totalWords,
+    rectCount: clientRects.length,
     firstRect:
       clientRects.length > 0
         ? {
@@ -867,13 +900,6 @@ export function applyLiveMarker(
             h: clientRects[0]!.height.toFixed(1),
           }
         : null,
-  });
-
-  ol.remove(LIVE_MARKER_KEY);
-  ol.add(LIVE_MARKER_KEY, range, Overlayer[style], {
-    color,
-    padding: 2,
-    radius: 4,
   });
 
   if (!view.renderer.scrolled) {
@@ -905,5 +931,7 @@ export function clearLiveMarker(view: FoliateView): void {
   const content = (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
     | { overlayer?: unknown }
     | undefined;
-  (content?.overlayer as Overlayer | undefined)?.remove(LIVE_MARKER_KEY);
+  const ol = content?.overlayer as Overlayer | undefined;
+  ol?.remove(LIVE_MARKER_KEY);
+  ol?.remove(LIVE_MARKER_WORD_KEY);
 }

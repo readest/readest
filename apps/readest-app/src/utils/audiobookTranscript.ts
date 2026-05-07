@@ -650,6 +650,7 @@ export function matchTranscriptSegmentsToTextUnitsWithDiagnostics(
         source: 'transcript-match',
         matchScore: Math.round(best!.score * 1000) / 1000,
         sectionIndex: best!.textUnit.sectionIndex,
+        sectionHref: best!.textUnit.sectionHref,
       });
       lastMatchedUnitIndex = best!.unitIndex;
     }
