@@ -368,7 +368,6 @@ export class WebAppService extends BaseAppService {
     // Turso WASM connector passes the whole string as a single OPFS handle
     // name without traversing directories. Flatten to a safe single segment.
     const opfsName = fullPath.replace(/[/\\]+/g, '_').replace(/^_+/, '');
-    console.log(`Opening database at ${opfsName} with schema ${schema}`);
     const { WebDatabaseService } = await import('./database/webDatabaseService');
     const db = await WebDatabaseService.open(opfsName, opts);
     const { migrate } = await import('./database/migrate');

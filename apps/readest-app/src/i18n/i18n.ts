@@ -51,7 +51,9 @@ const initI18n = async () => {
     });
 
   i18n.on('languageChanged', (lng) => {
-    console.log('Language changed to', lng);
+    if (typeof window !== 'undefined') {
+      console.log('Language changed to', lng);
+    }
   });
 };
 
