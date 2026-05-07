@@ -1362,5 +1362,7 @@
   "Deleted cloud copy of the file: {{title}}": "עותק הענן של הקובץ נמחק: {{title}}",
   "Failed to upload file: {{title}}": "העלאת הקובץ נכשלה: {{title}}",
   "Failed to download file: {{title}}": "הורדת הקובץ נכשלה: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "מחיקת עותק הענן של הקובץ נכשלה: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "מחיקת עותק הענן של הקובץ נכשלה: {{title}}",
+  "{{percentage}}% used": "נוצלו {{percentage}}%",
+  "Resets in {{duration}}": "מתאפס בעוד {{duration}}"
 }

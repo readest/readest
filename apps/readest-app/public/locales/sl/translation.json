@@ -1386,5 +1386,7 @@
   "Deleted cloud copy of the file: {{title}}": "Izbrisana kopija datoteke v oblaku: {{title}}",
   "Failed to upload file: {{title}}": "Nalaganje datoteke ni uspelo: {{title}}",
   "Failed to download file: {{title}}": "Prenos datoteke ni uspel: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Brisanje kopije datoteke v oblaku ni uspelo: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Brisanje kopije datoteke v oblaku ni uspelo: {{title}}",
+  "{{percentage}}% used": "{{percentage}} % uporabljeno",
+  "Resets in {{duration}}": "Ponastavi se čez {{duration}}"
 }

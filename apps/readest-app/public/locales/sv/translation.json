@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Raderade molnkopia av fil: {{title}}",
   "Failed to upload file: {{title}}": "Kunde inte ladda upp fil: {{title}}",
   "Failed to download file: {{title}}": "Kunde inte ladda ner fil: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Kunde inte radera molnkopia av fil: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Kunde inte radera molnkopia av fil: {{title}}",
+  "{{percentage}}% used": "{{percentage}} % använt",
+  "Resets in {{duration}}": "Återställs om {{duration}}"
 }

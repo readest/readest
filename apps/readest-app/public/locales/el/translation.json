@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Διαγράφηκε το αντίγραφο του αρχείου: {{title}}",
   "Failed to upload file: {{title}}": "Αποτυχία ανέβασμα αρχείου: {{title}}",
   "Failed to download file: {{title}}": "Αποτυχία λήψης αρχείου: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Αποτυχία διαγραφής του αντιγράφου του αρχείου: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Αποτυχία διαγραφής του αντιγράφου του αρχείου: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% σε χρήση",
+  "Resets in {{duration}}": "Επαναφορά σε {{duration}}"
 }

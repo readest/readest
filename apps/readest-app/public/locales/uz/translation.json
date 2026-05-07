@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Faylning bulutdagi nusxasi oʻchirildi: {{title}}",
   "Failed to upload file: {{title}}": "Faylni yuklab boʻlmadi: {{title}}",
   "Failed to download file: {{title}}": "Faylni yuklab boʻlmadi: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Faylning bulutdagi nusxasini oʻchirib boʻlmadi: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Faylning bulutdagi nusxasini oʻchirib boʻlmadi: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% ishlatilgan",
+  "Resets in {{duration}}": "{{duration}} dan keyin tiklanadi"
 }

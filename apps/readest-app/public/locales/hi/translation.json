@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाई गई: {{title}}",
   "Failed to upload file: {{title}}": "फ़ाइल अपलोड करने में विफल: {{title}}",
   "Failed to download file: {{title}}": "फ़ाइल डाउनलोड करने में विफल: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाने में विफल: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाने में विफल: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% उपयोग किया गया",
+  "Resets in {{duration}}": "{{duration}} में रीसेट होगा"
 }

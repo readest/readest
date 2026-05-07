@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "ගොනුවේ cloud පිටපත මකා දමන ලදී: {{title}}",
   "Failed to upload file: {{title}}": "ගොනුව උඩුගත කිරීමට අසමත්: {{title}}",
   "Failed to download file: {{title}}": "ගොනුව බාගැනීමට අසමත්: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "ගොනුවේ cloud පිටපත මකා දැමීමට අසමත්: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "ගොනුවේ cloud පිටපත මකා දැමීමට අසමත්: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% භාවිතයි",
+  "Resets in {{duration}}": "{{duration}}කින් යළි පිහිටුවයි"
 }

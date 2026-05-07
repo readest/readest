@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "ファイルのクラウドコピーを削除しました：{{title}}",
   "Failed to upload file: {{title}}": "ファイルのアップロードに失敗しました：{{title}}",
   "Failed to download file: {{title}}": "ファイルのダウンロードに失敗しました：{{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "ファイルのクラウドコピーの削除に失敗しました：{{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "ファイルのクラウドコピーの削除に失敗しました：{{title}}",
+  "{{percentage}}% used": "{{percentage}}% 使用済み",
+  "Resets in {{duration}}": "{{duration}}でリセット"
 }

@@ -364,8 +364,13 @@ export class WebAppService extends BaseAppService {
     opts?: DatabaseOpts,
   ): Promise<DatabaseService> {
     const fullPath = await this.resolveFilePath(path, base);
+    // OPFS `getFileHandle` rejects names containing path separators, and the
+    // Turso WASM connector passes the whole string as a single OPFS handle
+    // name without traversing directories. Flatten to a safe single segment.
+    const opfsName = fullPath.replace(/[/\\]+/g, '_').replace(/^_+/, '');
+    console.log(`Opening database at ${opfsName} with schema ${schema}`);
     const { WebDatabaseService } = await import('./database/webDatabaseService');
-    const db = await WebDatabaseService.open(fullPath, opts);
+    const db = await WebDatabaseService.open(opfsName, opts);
     const { migrate } = await import('./database/migrate');
     const { getMigrations } = await import('./database/migrations');
     await migrate(db, getMigrations(schema));

@@ -1362,5 +1362,7 @@
   "Deleted cloud copy of the file: {{title}}": "Cópia na nuvem do arquivo excluída: {{title}}",
   "Failed to upload file: {{title}}": "Falha ao enviar arquivo: {{title}}",
   "Failed to download file: {{title}}": "Falha ao baixar arquivo: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Falha ao excluir cópia na nuvem do arquivo: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Falha ao excluir cópia na nuvem do arquivo: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% utilizado",
+  "Resets in {{duration}}": "Redefine em {{duration}}"
 }

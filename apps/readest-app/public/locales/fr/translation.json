@@ -1362,5 +1362,7 @@
   "Deleted cloud copy of the file: {{title}}": "Suppression de la copie cloud du fichier : {{title}}",
   "Failed to upload file: {{title}}": "Échec du téléchargement du fichier : {{title}}",
   "Failed to download file: {{title}}": "Échec du téléchargement du fichier : {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Échec de la suppression de la copie cloud du fichier : {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Échec de la suppression de la copie cloud du fichier : {{title}}",
+  "{{percentage}}% used": "{{percentage}} % utilisés",
+  "Resets in {{duration}}": "Réinitialisation dans {{duration}}"
 }

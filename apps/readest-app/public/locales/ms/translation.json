@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "Salinan awan fail dipadam: {{title}}",
   "Failed to upload file: {{title}}": "Gagal memuat naik fail: {{title}}",
   "Failed to download file: {{title}}": "Gagal memuat turun fail: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Gagal memadam salinan awan fail: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Gagal memadam salinan awan fail: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% telah digunakan",
+  "Resets in {{duration}}": "Set semula dalam {{duration}}"
 }

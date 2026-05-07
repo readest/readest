@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "Đã xóa bản sao đám mây của tệp: {{title}}",
   "Failed to upload file: {{title}}": "Không thể tải lên tệp: {{title}}",
   "Failed to download file: {{title}}": "Không thể tải về tệp: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Không thể xóa bản sao đám mây của tệp: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Không thể xóa bản sao đám mây của tệp: {{title}}",
+  "{{percentage}}% used": "Đã dùng {{percentage}}%",
+  "Resets in {{duration}}": "Đặt lại sau {{duration}}"
 }

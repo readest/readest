@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Fájl felhőmásolata törölve: {{title}}",
   "Failed to upload file: {{title}}": "A fájl feltöltése sikertelen: {{title}}",
   "Failed to download file: {{title}}": "Fájl letöltése sikertelen: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Fájl felhőmásolatának törlése sikertelen: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Fájl felhőmásolatának törlése sikertelen: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% felhasználva",
+  "Resets in {{duration}}": "Visszaáll {{duration}} múlva"
 }

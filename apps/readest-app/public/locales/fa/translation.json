@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "نسخه‌ی ابری فایل «{{title}}» حذف شد.",
   "Failed to upload file: {{title}}": "آپلود فایل «{{title}}» ناموفق بود.",
   "Failed to download file: {{title}}": "دانلود فایل «{{title}}» ناموفق بود.",
-  "Failed to delete cloud copy of the file: {{title}}": "حذف نسخه‌ی ابری فایل «{{title}}» ناموفق بود."
+  "Failed to delete cloud copy of the file: {{title}}": "حذف نسخه‌ی ابری فایل «{{title}}» ناموفق بود.",
+  "{{percentage}}% used": "{{percentage}}٪ استفاده شده",
+  "Resets in {{duration}}": "بازنشانی در {{duration}}"
 }

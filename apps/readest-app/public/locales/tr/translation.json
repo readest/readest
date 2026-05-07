@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Dosyanın bulut kopyası silindi: {{title}}",
   "Failed to upload file: {{title}}": "Dosya yüklenemedi: {{title}}",
   "Failed to download file: {{title}}": "Dosya indirilemedi: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Dosyanın bulut kopyasını silme başarısız oldu: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Dosyanın bulut kopyasını silme başarısız oldu: {{title}}",
+  "{{percentage}}% used": "%{{percentage}} kullanıldı",
+  "Resets in {{duration}}": "{{duration}} sonra sıfırlanır"
 }

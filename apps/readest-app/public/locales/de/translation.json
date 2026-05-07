@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Cloud-Kopie der Datei gelöscht: {{title}}",
   "Failed to upload file: {{title}}": "Fehler beim Hochladen der Datei: {{title}}",
   "Failed to download file: {{title}}": "Fehler beim Herunterladen der Datei: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Fehler beim Löschen der Cloud-Kopie der Datei: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Fehler beim Löschen der Cloud-Kopie der Datei: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% verbraucht",
+  "Resets in {{duration}}": "Setzt sich in {{duration}} zurück"
 }

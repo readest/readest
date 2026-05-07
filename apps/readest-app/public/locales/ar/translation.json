@@ -1434,5 +1434,7 @@
   "Deleted cloud copy of the file: {{title}}": "تم حذف النسخة السحابية للملف: {{title}}",
   "Failed to upload file: {{title}}": "فشل تحميل الملف: {{title}}",
   "Failed to download file: {{title}}": "فشل تنزيل الملف: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "فشل في حذف النسخة السحابية للملف: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "فشل في حذف النسخة السحابية للملف: {{title}}",
+  "{{percentage}}% used": "تم استخدام {{percentage}}٪",
+  "Resets in {{duration}}": "يُعاد التعيين خلال {{duration}}"
 }

@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "ลบสำเนาไฟล์บนคลาวด์แล้ว: {{title}}",
   "Failed to upload file: {{title}}": "ไม่สามารถอัปโหลดไฟล์: {{title}}",
   "Failed to download file: {{title}}": "ไม่สามารถดาวน์โหลดไฟล์: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "ไม่สามารถลบสำเนาไฟล์บนคลาวด์: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "ไม่สามารถลบสำเนาไฟล์บนคลาวด์: {{title}}",
+  "{{percentage}}% used": "ใช้ไปแล้ว {{percentage}}%",
+  "Resets in {{duration}}": "รีเซ็ตใน {{duration}}"
 }

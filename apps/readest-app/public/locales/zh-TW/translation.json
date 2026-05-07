@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "已刪除檔案的雲端副本：{{title}}",
   "Failed to upload file: {{title}}": "檔案上傳失敗：{{title}}",
   "Failed to download file: {{title}}": "檔案下載失敗：{{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "未能刪除檔案的雲端副本：{{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "未能刪除檔案的雲端副本：{{title}}",
+  "{{percentage}}% used": "已使用 {{percentage}}%",
+  "Resets in {{duration}}": "{{duration}}後重設"
 }

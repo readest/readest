@@ -1386,5 +1386,7 @@
   "Deleted cloud copy of the file: {{title}}": "Видалено хмарну копію файлу: {{title}}",
   "Failed to upload file: {{title}}": "Не вдалося завантажити файл: {{title}}",
   "Failed to download file: {{title}}": "Не вдалося завантажити файл: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Не вдалося видалити копію файлу в хмарі: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Не вдалося видалити копію файлу в хмарі: {{title}}",
+  "{{percentage}}% used": "Використано {{percentage}}%",
+  "Resets in {{duration}}": "Скидання через {{duration}}"
 }

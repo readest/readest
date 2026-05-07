@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "ফাইলের ক্লাউড অনুলিপি মুছে ফেলা হয়েছে: {{title}}",
   "Failed to upload file: {{title}}": "ফাইল আপলোড ব্যর্থ: {{title}}",
   "Failed to download file: {{title}}": "ফাইল ডাউনলোড ব্যর্থ: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "ফাইলের ক্লাউড অনুলিপি মুছতে ব্যর্থ: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "ফাইলের ক্লাউড অনুলিপি মুছতে ব্যর্থ: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% ব্যবহৃত",
+  "Resets in {{duration}}": "{{duration}} এ রিসেট হবে"
 }

@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "Verwijderde cloudkopie van het bestand: {{title}}",
   "Failed to upload file: {{title}}": "Uploaden van bestand mislukt: {{title}}",
   "Failed to download file: {{title}}": "Downloaden van bestand mislukt: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Verwijderen van cloudkopie van het bestand is mislukt: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Verwijderen van cloudkopie van het bestand is mislukt: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% gebruikt",
+  "Resets in {{duration}}": "Reset over {{duration}}"
 }

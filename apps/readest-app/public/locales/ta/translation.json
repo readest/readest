@@ -1338,5 +1338,7 @@
   "Deleted cloud copy of the file: {{title}}": "கோப்பின் cloud நகல் நீக்கப்பட்டது: {{title}}",
   "Failed to upload file: {{title}}": "கோப்பை பதிவேற்ற முடியவில்லை: {{title}}",
   "Failed to download file: {{title}}": "கோப்பை பதிவிறக்க முடியவில்லை: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "கோப்பின் cloud நகலை நீக்க முடியவில்லை: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "கோப்பின் cloud நகலை நீக்க முடியவில்லை: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% பயன்படுத்தப்பட்டது",
+  "Resets in {{duration}}": "{{duration}} இல் மீட்டமைக்கப்படும்"
 }

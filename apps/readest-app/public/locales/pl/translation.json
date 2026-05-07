@@ -1386,5 +1386,7 @@
   "Deleted cloud copy of the file: {{title}}": "Usunięto kopię pliku w chmurze: {{title}}",
   "Failed to upload file: {{title}}": "Nie udało się przesłać pliku: {{title}}",
   "Failed to download file: {{title}}": "Nie udało się pobrać pliku: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Nie udało się usunąć kopii pliku w chmurze: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Nie udało się usunąć kopii pliku w chmurze: {{title}}",
+  "{{percentage}}% used": "Wykorzystano {{percentage}}%",
+  "Resets in {{duration}}": "Resetuje się za {{duration}}"
 }

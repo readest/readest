@@ -1362,5 +1362,7 @@
   "Deleted cloud copy of the file: {{title}}": "Copia en la nube del archivo eliminada: {{title}}",
   "Failed to upload file: {{title}}": "Error al subir archivo: {{title}}",
   "Failed to download file: {{title}}": "Error al descargar archivo: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Error al eliminar la copia en la nube del archivo: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Error al eliminar la copia en la nube del archivo: {{title}}",
+  "{{percentage}}% used": "{{percentage}}% usado",
+  "Resets in {{duration}}": "Se restablece en {{duration}}"
 }

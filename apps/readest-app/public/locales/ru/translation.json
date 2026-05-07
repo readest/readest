@@ -1386,5 +1386,7 @@
   "Deleted cloud copy of the file: {{title}}": "Удалена облачная копия файла: {{title}}",
   "Failed to upload file: {{title}}": "Не удалось загрузить файл: {{title}}",
   "Failed to download file: {{title}}": "Не удалось скачать файл: {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "Не удалось удалить копию файла в облаке: {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "Не удалось удалить копию файла в облаке: {{title}}",
+  "{{percentage}}% used": "Использовано {{percentage}}%",
+  "Resets in {{duration}}": "Сброс через {{duration}}"
 }

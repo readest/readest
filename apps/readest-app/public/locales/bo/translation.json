@@ -1314,5 +1314,7 @@
   "Deleted cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཟིན། {{title}}",
   "Failed to upload file: {{title}}": "ཡིག་ཆ་སྤྲད་མ་ཐུབ། {{title}}",
   "Failed to download file: {{title}}": "ཡིག་ཆ་ཕབ་ལེན་བྱས་མ་ཐུབ། {{title}}",
-  "Failed to delete cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཐུབ་མེད། {{title}}"
+  "Failed to delete cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཐུབ་མེད། {{title}}",
+  "{{percentage}}% used": "སྤྱོད་ཟིན་ {{percentage}}%",
+  "Resets in {{duration}}": "{{duration}} ནང་སླར་གསོ་བྱེད།"
 }
