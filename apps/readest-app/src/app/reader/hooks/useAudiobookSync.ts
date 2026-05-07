@@ -1,6 +1,11 @@
 import { useCallback, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
-import { applyLiveMarker, clearLiveMarker } from '@/utils/liveMarker';
+import {
+  applyLiveMarker,
+  clearLiveMarker,
+  incrementNoHref,
+  incrementNoCfi,
+} from '@/utils/liveMarker';
 
 interface UseAudiobookSyncProps {
   bookKey: string;
@@ -160,21 +165,49 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
           }
 
           // sectionIndex exists but section has no href —
-          // fall through to Phase 3 so the marker can still be applied
-          // in the current section if the CFI resolves there.
-          console.log('[AudiobookSync] Phase 1 — section has no href, falling through to Phase 3', {
-            sectionIndex,
-            sectionId: section?.id,
-            sectionLinear: section?.linear,
-            hadSectionHref: !!sectionHref,
-            inputSectionHref: sectionHref?.slice(-40),
-            totalSections: view.book.sections.length,
-          });
+          // last resort: resolve the section from the CFI
+          try {
+            const { index: cfiIdx } = view.resolveCFI(cfi);
+            const cfiSection = view.book.sections[cfiIdx];
+            if (cfiSection?.href && cfiIdx !== currentSectionIndex) {
+              const now = Date.now();
+              const prev = lastRelocationRef.current;
+              if (
+                !prev ||
+                prev.sectionIndex !== cfiIdx ||
+                now - prev.time >= RELOCATION_DEBOUNCE_MS
+              ) {
+                lastRelocationRef.current = { time: now, sectionIndex: cfiIdx };
+                view.goTo(cfiSection.href);
+                console.info(
+                  `[AudiobookSync] Phase 1 — relocated via CFI ${currentSectionIndex} → ${cfiIdx}`,
+                );
+                return true;
+              }
+            }
+          } catch {
+            /* CFI may not resolve */
+          }
+
+          // All relocation strategies failed — consume so the next entry can try
+          incrementNoHref();
+          console.log(
+            '[AudiobookSync] Phase 1 — all relocation strategies failed, consuming entry',
+            {
+              sectionIndex,
+              sectionId: section?.id,
+              hadSectionHref: !!sectionHref,
+              inputSectionHref: sectionHref?.slice(-40),
+              totalSections: view.book.sections.length,
+            },
+          );
+          return false;
         }
       }
 
       // Phase 2 — gap-fill / relocation-only entry: no CFI to highlight
       if (!cfi) {
+        incrementNoCfi();
         console.log('[AudiobookSync] Phase 2 — no CFI, waiting for real entry');
         return true;
       }
@@ -251,11 +284,14 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
             }
             return true; // relocated — don't consume entry
           }
-          console.log('[AudiobookSync] Phase 4 — target section has no href, consuming entry', {
+          // Target section has no href — skip this entry, let next timeupdate
+          // find a different one that can resolve.
+          incrementNoHref();
+          console.log('[AudiobookSync] Phase 4 — target section has no href, skipping entry', {
             cfiSectionIndex: result.cfiSectionIndex,
             sectionId: targetSection?.id,
           });
-          return false; // consume — retrying won't help
+          return true; // don't consume — next entry may work
         }
         console.log('[AudiobookSync] Phase 4 — relocation debounced');
         return true; // relocated — don't consume entry

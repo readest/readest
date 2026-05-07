@@ -31,51 +31,90 @@ export type MarkerResult =
 interface LiveMarkerDiag {
   totalCalls: number;
   applied: number;
+  retries: number;
   wrongSection: number;
+  noHref: number;
   errors: number;
   wordWindowSuccess: number;
   wordWindowSkipped: number;
   phraseOnlyFallback: number;
+  skippedUnrelocatable: number;
+  retryCapHits: number;
+  noCfiCount: number;
+  totalWindowWords: number; // accumulated window sizes for averaging
   lastCfi: string;
   lastRangeText: string;
   lastActiveWord: number;
-  lastTotalWords: number;
+  lastWindowSize: number;
   lastStrategy: string;
+  lastSkipReason: string;
 }
 
 const diag: LiveMarkerDiag = {
   totalCalls: 0,
   applied: 0,
+  retries: 0,
   wrongSection: 0,
+  noHref: 0,
   errors: 0,
   wordWindowSuccess: 0,
   wordWindowSkipped: 0,
   phraseOnlyFallback: 0,
+  skippedUnrelocatable: 0,
+  retryCapHits: 0,
+  noCfiCount: 0,
+  totalWindowWords: 0,
   lastCfi: '',
   lastRangeText: '',
   lastActiveWord: -1,
-  lastTotalWords: 0,
+  lastWindowSize: 0,
   lastStrategy: '',
+  lastSkipReason: '',
 };
 
 const DIAG_INTERVAL = 15;
 
 function printDiagSummary(): void {
   const d = diag;
+  const avgWindowWords =
+    d.wordWindowSuccess > 0 ? Math.round((d.totalWindowWords / d.wordWindowSuccess) * 10) / 10 : 0;
   console.log('[LiveMarker] ── diagnostics summary ──', {
     totalCalls: d.totalCalls,
     applied: d.applied,
+    retries: d.retries,
     wrongSection: d.wrongSection,
+    noHref: d.noHref,
     errors: d.errors,
     wordWindowSuccess: d.wordWindowSuccess,
     wordWindowSkipped: d.wordWindowSkipped,
     phraseOnlyFallback: d.phraseOnlyFallback,
+    skippedUnrelocatable: d.skippedUnrelocatable,
+    retryCapHits: d.retryCapHits,
+    noCfiCount: d.noCfiCount,
+    avgWindowWords,
     lastCfi: d.lastCfi.slice(0, 60),
     lastRangeText: d.lastRangeText.slice(0, 50),
     lastActiveWord: d.lastActiveWord,
-    lastTotalWords: d.lastTotalWords,
+    lastWindowSize: d.lastWindowSize,
     lastStrategy: d.lastStrategy,
   });
+}
+
+/** Exported increment helpers for the sync hook to update. */
+export function incrementNoHref(): void {
+  diag.noHref++;
+}
+export function incrementRetries(): void {
+  diag.retries++;
+}
+export function incrementSkippedUnrelocatable(): void {
+  diag.skippedUnrelocatable++;
+}
+export function incrementRetryCapHits(): void {
+  diag.retryCapHits++;
+}
+export function incrementNoCfi(): void {
+  diag.noCfiCount++;
 }
 
 /** Exported so the player hook can force-print the summary on pause/stop. */
@@ -480,8 +519,17 @@ function narrowRangeToWordWindow(
   range: Range,
   doc: Document,
   progress: number,
-): { range: Range; activeWord: number; totalWords: number; windowText: string } | null {
-  if (typeof Intl === 'undefined' || !Intl.Segmenter) return null;
+): {
+  range: Range;
+  activeWord: number;
+  totalWords: number;
+  windowSize: number;
+  windowText: string;
+} | null {
+  if (typeof Intl === 'undefined' || !Intl.Segmenter) {
+    diag.lastSkipReason = 'no-Intl-Segmenter';
+    return null;
+  }
 
   // Collect all text nodes within the range
   const textNodes: Text[] = [];
@@ -494,7 +542,10 @@ function narrowRangeToWordWindow(
     node = walker.nextNode() as Text | null;
   }
 
-  if (textNodes.length === 0) return null;
+  if (textNodes.length === 0) {
+    diag.lastSkipReason = 'no-text-nodes';
+    return null;
+  }
 
   // Segment each text node into words
   const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
@@ -538,7 +589,10 @@ function narrowRangeToWordWindow(
     }
   }
 
-  if (segments.length < 3) return null;
+  if (segments.length < 3) {
+    diag.lastSkipReason = `too-few-segments(${segments.length})`;
+    return null;
+  }
 
   const totalWords = segments.length;
   const activeWord = Math.min(Math.floor(progress * totalWords), totalWords - 1);
@@ -557,7 +611,8 @@ function narrowRangeToWordWindow(
     .map((s) => s.wordText)
     .join('');
 
-  return { range: newRange, activeWord, totalWords, windowText };
+  const windowSize = endWord - startWord;
+  return { range: newRange, activeWord, totalWords, windowSize, windowText };
 }
 
 /**
@@ -886,13 +941,19 @@ export function applyLiveMarker(
   // Save the phrase-level range before narrowing so we can render a subtle
   // context layer behind the active-word highlight.
   const phraseRange = range;
-  let wordWindowInfo: { activeWord: number; totalWords: number; windowText: string } | null = null;
+  let wordWindowInfo: {
+    activeWord: number;
+    totalWords: number;
+    windowSize: number;
+    windowText: string;
+  } | null = null;
   if (progress !== undefined && progress >= 0) {
     const narrowed = narrowRangeToWordWindow(range, doc, progress);
     if (narrowed) {
       wordWindowInfo = {
         activeWord: narrowed.activeWord,
         totalWords: narrowed.totalWords,
+        windowSize: narrowed.windowSize,
         windowText: narrowed.windowText,
       };
       console.log('[LiveMarker] Word-window narrowed', {
@@ -941,7 +1002,8 @@ export function applyLiveMarker(
   if (wordWindowInfo) {
     diag.wordWindowSuccess++;
     diag.lastActiveWord = wordWindowInfo.activeWord;
-    diag.lastTotalWords = wordWindowInfo.totalWords;
+    diag.lastWindowSize = wordWindowInfo.windowSize;
+    diag.totalWindowWords += wordWindowInfo.windowSize;
 
     svg.style.setProperty('--overlayer-highlight-opacity', '0.52');
     svg.style.setProperty('--overlayer-highlight-blend-mode', 'screen');
@@ -963,7 +1025,12 @@ export function applyLiveMarker(
     ol.remove(LIVE_MARKER_WORD_KEY);
     if (progress !== undefined) {
       diag.wordWindowSkipped++;
-      console.log('[LiveMarker] Word-window skipped — narrowing returned null, phrase-only');
+      console.log('[LiveMarker] Word-window skipped — narrowing returned null, phrase-only', {
+        reason: diag.lastSkipReason,
+        phraseText: phraseRange.toString().slice(0, 50),
+        labelPreview: label?.slice(0, 40),
+        progress: Math.round(progress * 1000) / 1000,
+      });
     }
     diag.phraseOnlyFallback++;
   }

@@ -7,6 +7,12 @@ import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { useAudiobookSync } from './useAudiobookSync';
 import {
+  printLiveMarkerDiag,
+  incrementRetries,
+  incrementSkippedUnrelocatable,
+  incrementRetryCapHits,
+} from '@/utils/liveMarker';
+import {
   buildSyncMapFromPoints,
   findAudiobookSyncEntryAtTime,
   getSyncMapEntryKey,
@@ -38,6 +44,13 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastAppliedEntryKeyRef = useRef<string | null>(null);
+  // Bad-entry suppression: entries that repeatedly fail relocation/application
+  // are skipped for the rest of this playback session.
+  const suppressedKeysRef = useRef<Set<string>>(new Set());
+  const retryCountsRef = useRef<Map<string, number>>(new Map());
+  const MAX_RETRIES = 3;
+  // Exported for diagnostics
+  const retryCapHitsRef = useRef(0);
 
   const audiobookConfig = getConfig(bookKey)?.audiobook;
   const filePath = audiobookConfig?.filePath;
@@ -185,7 +198,7 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       }
 
       const syncMap = resolveSyncMap(audiobook);
-      const entry = findAudiobookSyncEntryAtTime(syncMap, time);
+      let entry = findAudiobookSyncEntryAtTime(syncMap, time);
 
       if (!entry) {
         if (lastStatusLog !== 'no-entry') {
@@ -222,6 +235,35 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       const entryKey = getSyncMapEntryKey(entry);
       if (entryKey === lastAppliedEntryKeyRef.current) return;
 
+      // ── Bad-entry suppression ──
+      if (suppressedKeysRef.current.has(entryKey)) {
+        incrementSkippedUnrelocatable();
+        // Advance past this entry: try the next one
+        const nextEntry = findAudiobookSyncEntryAtTime(
+          syncMap,
+          (entry.secondsEnd ?? entry.secondsStart) + 0.01,
+          entry.trackIndex,
+        );
+        if (nextEntry && getSyncMapEntryKey(nextEntry) !== entryKey) {
+          entry = nextEntry;
+        } else {
+          return; // no next entry available yet
+        }
+      }
+
+      // ── Retry cap ──
+      const retryCount = retryCountsRef.current.get(entryKey) ?? 0;
+      if (retryCount >= MAX_RETRIES) {
+        suppressedKeysRef.current.add(entryKey);
+        retryCapHitsRef.current++;
+        incrementRetryCapHits();
+        console.log('[SyncPlayback] entry RETRY-CAPPED → suppressed', {
+          entryKey: entryKey.slice(0, 40),
+          retryCount,
+        });
+        return;
+      }
+
       // ── Pipeline diagnostic: entry found ──
       const effectiveCfi = entry.markerCfi || entry.cfi;
 
@@ -243,6 +285,8 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
         source: entry.source,
         matchScore: entry.matchScore,
         wordProgress: Math.round(wordProgress * 1000) / 1000,
+        retryCount,
+        suppressed: suppressedKeysRef.current.has(entryKey),
       });
 
       try {
@@ -259,10 +303,14 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
         });
         if (!needsRetry) {
           lastAppliedEntryKeyRef.current = entryKey;
+          retryCountsRef.current.delete(entryKey);
           console.log('[SyncPlayback] entry CONSUMED', { entryKey: entryKey.slice(0, 40) });
         } else {
+          incrementRetries();
+          retryCountsRef.current.set(entryKey, retryCount + 1);
           console.log('[SyncPlayback] entry NOT consumed (retry pending)', {
             entryKey: entryKey.slice(0, 40),
+            retryCount: retryCount + 1,
           });
         }
       } catch (err) {
@@ -283,11 +331,13 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       console.log('[SyncPlayback] pause event');
       setIsPlaying(false);
       saveTime.flush();
+      printLiveMarkerDiag();
     };
     const handleEnded = () => {
       console.log('[SyncPlayback] ended event');
       setIsPlaying(false);
       saveTime.flush();
+      printLiveMarkerDiag();
     };
     const handleError = () => {
       const err = audio.error;
@@ -339,8 +389,11 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       }
       clearAudiobookMarker();
       lastAppliedEntryKeyRef.current = null;
+      suppressedKeysRef.current.clear();
+      retryCountsRef.current.clear();
       audio.src = '';
       audioRef.current = null;
+      printLiveMarkerDiag();
       console.log('[SyncPlayback] audio element setup CLEANUP', { bookKey });
     };
     // audioSrc encodes filePath; bookKey is stable per reader panel
