@@ -229,7 +229,10 @@ export const BOOK_THEME_CONFIGS: Record<string, BookThemeConfig> = {
   got: {
     id: 'got',
     label: 'Game of Thrones',
-    ornamentStyle: 'gothic',
+    // Per design reference: arcane scrollwork reads as the right
+    // dark-fantasy editorial corner art for ASOIAF, not the heavy
+    // gothic crucifix-style. Sigils are still used for chapter heads.
+    ornamentStyle: 'arcane',
     useSigils: true,
     textureId: 'parchment',
     readerBookImage: '/citadel/book-art/Reader_Book.png',

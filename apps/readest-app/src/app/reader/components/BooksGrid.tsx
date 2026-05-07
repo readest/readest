@@ -9,8 +9,42 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { resolveBookThemeFromBook } from '@/styles/book-themes';
-import { getOrnamentAsset } from '@/styles/ornaments';
+import { getOrnamentAsset, type OrnamentStyle } from '@/styles/ornaments';
 import { getViewInsets } from '@/utils/insets';
+
+// Each ornament PNG is authored for a specific corner of the source image —
+// alpha-pixel analysis shows the asset's main shape sits in this quadrant of
+// the file. We normalize that to top-left first, then apply the user-prescribed
+// per-corner mirror (TL=base, TR=scaleX(-1), BL=scaleY(-1), BR=scale(-1,-1))
+// on top, so every corner ornament ends up pointing inward toward the page.
+type CornerQuadrant = 'tl' | 'tr' | 'bl' | 'br';
+
+const ORNAMENT_NATURAL_QUADRANT: Record<OrnamentStyle, CornerQuadrant> = {
+  gothic: 'tl',
+  celestial: 'tl',
+  scifi: 'tl',
+  arcane: 'bl',
+  elegant: 'br',
+  'art-deco': 'tl',
+};
+
+// Composed transform = (normalize natural → TL) × (user per-corner mirror).
+// Pre-computed analytically so the visual result is always inward-facing.
+const CORNER_ORIENTATION: Record<CornerQuadrant, Record<CornerQuadrant, string>> = {
+  tl: { tl: '', tr: 'scaleX(-1)', bl: 'scaleY(-1)', br: 'scale(-1, -1)' },
+  tr: { tl: 'scaleX(-1)', tr: '', bl: 'scale(-1, -1)', br: 'scaleY(-1)' },
+  bl: { tl: 'scaleY(-1)', tr: 'scale(-1, -1)', bl: '', br: 'scaleX(-1)' },
+  br: { tl: 'scale(-1, -1)', tr: 'scaleY(-1)', bl: 'scaleX(-1)', br: '' },
+};
+
+const getCornerTransform = (
+  ornamentStyle: OrnamentStyle,
+  corner: CornerQuadrant,
+): string | undefined => {
+  const natural = ORNAMENT_NATURAL_QUADRANT[ornamentStyle] ?? 'tl';
+  const t = CORNER_ORIENTATION[natural][corner];
+  return t === '' ? undefined : t;
+};
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
@@ -124,8 +158,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
         const wellInsetSide = isCompactViewport ? 20 : 38;
         const wellInsetBottom = isCompactViewport ? 62 : 72;
         const spineWidth = isCompactViewport ? 26 : 42;
-        const cornerSize = isCompactViewport ? 64 : 96;
-        const cornerInset = isCompactViewport ? 6 : 10;
+        const cornerSize = isCompactViewport ? 56 : 78;
+        // Corners sit right AT the well's edge so they read as part of
+        // the page frame, not floating inside it.
+        const cornerInset = isCompactViewport ? 0 : 2;
         const shellStyle: React.CSSProperties = {
           top: `${shellInsetTop}px`,
           right: `${shellInsetSide}px`,
@@ -192,6 +228,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               left: `${wellInsetSide + cornerInset}px`,
               width: `${cornerSize}px`,
               height: `${cornerSize}px`,
+              transform: cornerAsset
+                ? getCornerTransform(bookTheme.ornamentStyle, 'tl')
+                : undefined,
             },
           },
           {
@@ -202,7 +241,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               right: `${wellInsetSide + cornerInset}px`,
               width: `${cornerSize}px`,
               height: `${cornerSize}px`,
-              transform: cornerAsset ? 'scaleX(-1)' : undefined,
+              transform: cornerAsset
+                ? getCornerTransform(bookTheme.ornamentStyle, 'tr')
+                : undefined,
             },
           },
           {
@@ -213,7 +254,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               left: `${wellInsetSide + cornerInset}px`,
               width: `${cornerSize}px`,
               height: `${cornerSize}px`,
-              transform: cornerAsset ? 'scaleY(-1)' : undefined,
+              transform: cornerAsset
+                ? getCornerTransform(bookTheme.ornamentStyle, 'bl')
+                : undefined,
             },
           },
           {
@@ -224,7 +267,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               bottom: `${wellInsetBottom + cornerInset}px`,
               width: `${cornerSize}px`,
               height: `${cornerSize}px`,
-              transform: cornerAsset ? 'scale(-1, -1)' : undefined,
+              transform: cornerAsset
+                ? getCornerTransform(bookTheme.ornamentStyle, 'br')
+                : undefined,
             },
           },
         ];

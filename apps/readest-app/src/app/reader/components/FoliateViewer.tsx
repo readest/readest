@@ -294,36 +294,28 @@ const CITADEL_BOOK_PAGE_CSS = `
     margin-right: auto !important;
   }
 
-  @supports (initial-letter: 3) {
-    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-      initial-letter: 3 !important;
-      float: none !important;
-      margin: 0 0.12em 0 0 !important;
-      padding: 0 !important;
-      color: var(--citadel-page-dropcap-gold) !important;
-      font-weight: 550 !important;
-      text-shadow: 0 0 12px rgba(168, 86, 24, 0.2) !important;
-    }
-  }
-
-  @supports not (initial-letter: 3) {
-    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-      float: left !important;
-      margin: 0.02em 0.12em 0.04em 0 !important;
-      padding: 0 !important;
-      color: var(--citadel-page-dropcap-gold) !important;
-      font-size: 3.0rem !important;
-      line-height: 0.76 !important;
-      font-weight: 550 !important;
-      text-shadow: 0 0 12px rgba(168, 86, 24, 0.2) !important;
-    }
-  }
-
+  /* Drop cap: pure float for reliable wrapping across all webviews.
+     The CSS initial-letter property rendered inconsistently in Tauri /
+     Webview2 and would leave the first letter overlapping or unwrapped.
+     Float + sized margin + tuned line-height produces a stable 3-line
+     drop cap that works the same everywhere. */
   ${'.' + CITADEL_DROP_CAP_CLASS} {
     text-indent: 0 !important;
     min-height: 0 !important;
     overflow: visible !important;
     clear: none !important;
+  }
+
+  ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+    float: left !important;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif !important;
+    font-size: 3.4em !important;
+    line-height: 0.82 !important;
+    font-weight: 600 !important;
+    margin: 0.04em 0.16em -0.06em 0 !important;
+    padding: 0 !important;
+    color: var(--citadel-page-dropcap-gold) !important;
+    text-shadow: 0 0 12px rgba(168, 86, 24, 0.22), 0 1px 2px rgba(28, 16, 9, 0.42) !important;
   }
 
   ${'.' + CITADEL_DROP_CAP_CLASS}::first-line {
@@ -440,15 +432,39 @@ const CITADEL_BOOK_PAGE_CSS = `
   }
 
   .${CITADEL_GOT_CHAPTER_LABEL_CLASS} {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.7em !important;
     text-align: center !important;
     font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif !important;
     font-size: clamp(0.72rem, 1.2vw, 0.84rem) !important;
     letter-spacing: 0.32em !important;
     text-transform: uppercase !important;
-    color: rgba(168, 124, 64, 0.82) !important;
-    margin-bottom: 0.04em !important;
+    color: rgba(196, 158, 90, 0.86) !important;
+    margin: 0 auto 0.42em auto !important;
     font-weight: 500 !important;
-    opacity: 0.84 !important;
+    opacity: 0.94 !important;
+  }
+
+  .${CITADEL_GOT_CHAPTER_LABEL_CLASS}::before,
+  .${CITADEL_GOT_CHAPTER_LABEL_CLASS}::after {
+    content: '' !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+    width: 0.62em !important;
+    height: 0.62em !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='6.4' y='0.8' width='3.2' height='14.4' fill='%23a02a20'/><rect x='0.8' y='6.4' width='14.4' height='3.2' fill='%23a02a20'/></svg>") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    opacity: 0.9 !important;
+  }
+
+  /* Subtle ornamental rule under the chapter label so it sits like a
+     proper editorial section header rather than a stand-alone strip. */
+  .${CITADEL_GOT_HEADER_CLASS} .${CITADEL_GOT_CHAPTER_LABEL_CLASS} + .${CITADEL_CHAPTER_TITLE_CLASS} {
+    margin-top: 0.18em !important;
   }
 
   .${CITADEL_GOT_HEADER_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS} {
@@ -530,15 +546,10 @@ const CITADEL_BOOK_PAGE_CSS = `
       inset: 12px 12px !important;
     }
 
-    @supports (initial-letter: 2) {
-      ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-        initial-letter: 2 !important;
-      }
-    }
-    @supports not (initial-letter: 2) {
-      ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-        font-size: 2.5rem !important;
-      }
+    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+      font-size: 2.8em !important;
+      line-height: 0.84 !important;
+      margin: 0.04em 0.14em -0.04em 0 !important;
     }
 
     ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
