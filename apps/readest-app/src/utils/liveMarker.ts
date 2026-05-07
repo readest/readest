@@ -868,20 +868,32 @@ export function applyLiveMarker(
   }
 
   // ── Layer 2: active-word highlight (dominant visual) ──
-  svg.style.setProperty('--overlayer-highlight-opacity', '0.52');
-  svg.style.setProperty('--overlayer-highlight-blend-mode', 'screen');
+  // Only render when word-window narrowing succeeded.  If narrowing failed
+  // (e.g. too few words, progress unavailable), skip the word layer entirely
+  // so we never flash a full-paragraph highlight at full opacity.
+  let wordRangeForLog: string | undefined;
+  if (wordWindowInfo) {
+    svg.style.setProperty('--overlayer-highlight-opacity', '0.52');
+    svg.style.setProperty('--overlayer-highlight-blend-mode', 'screen');
 
-  const wordRange = wordWindowInfo ? range : phraseRange;
-  ol.remove(LIVE_MARKER_WORD_KEY);
-  ol.add(LIVE_MARKER_WORD_KEY, wordRange, Overlayer[style], {
-    color,
-    padding: 3,
-    radius: 4,
-  });
-  const wordG = svg.lastElementChild as HTMLElement | null;
-  if (wordG) {
-    wordG.style.opacity = '0.52';
-    wordG.style.mixBlendMode = 'screen';
+    ol.remove(LIVE_MARKER_WORD_KEY);
+    ol.add(LIVE_MARKER_WORD_KEY, range, Overlayer[style], {
+      color,
+      padding: 3,
+      radius: 4,
+    });
+    const wordG = svg.lastElementChild as HTMLElement | null;
+    if (wordG) {
+      wordG.style.opacity = '0.52';
+      wordG.style.mixBlendMode = 'screen';
+    }
+    wordRangeForLog = range.toString().slice(0, 60);
+  } else {
+    // No word-level narrowing possible — clean up any previous word layer
+    ol.remove(LIVE_MARKER_WORD_KEY);
+    if (progress !== undefined) {
+      console.log('[LiveMarker] Word-window skipped — narrowing returned null, phrase-only');
+    }
   }
 
   const clientRects = range.getClientRects();
@@ -889,7 +901,7 @@ export function applyLiveMarker(
     style,
     color,
     phraseChars: phraseRange.toString().length,
-    wordChars: wordRange.toString().length,
+    wordChars: wordRangeForLog?.length ?? 0,
     activeWord: wordWindowInfo?.activeWord,
     totalWords: wordWindowInfo?.totalWords,
     rectCount: clientRects.length,
