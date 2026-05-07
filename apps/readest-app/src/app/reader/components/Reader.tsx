@@ -74,12 +74,12 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
   useScreenWakeLock(settings.screenWakeLock);
   useTransferQueue(libraryLoaded, 5000);
-  // Reader needs dictionaries for word-lookup and fonts for rendering.
-  // Mounted here (not in the app-router page wrapper) so the web pages-
-  // router entry at `pages/reader/[ids].tsx` also gets the pull.
-  // Module-scoped dedup means navigating between library and reader
-  // doesn't re-pull.
-  useReplicaPull({ kinds: ['dictionary', 'font'] });
+  // Reader needs dictionaries for word-lookup, fonts for rendering, and
+  // textures for the page background. Mounted here (not in the app-
+  // router page wrapper) so the web pages-router entry at
+  // `pages/reader/[ids].tsx` also gets the pull. Module-scoped dedup
+  // means navigating between library and reader doesn't re-pull.
+  useReplicaPull({ kinds: ['dictionary', 'font', 'texture'] });
 
   useEffect(() => {
     mountAdditionalFonts(document);

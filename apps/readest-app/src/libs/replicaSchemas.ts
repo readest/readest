@@ -44,6 +44,14 @@ const fontFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+const textureFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    byteSize: fieldEnvelopeSchema.optional(),
+    downloadedAt: fieldEnvelopeSchema.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
 interface KindSpec {
   minSchemaVersion: number;
   maxSchemaVersion: number;
@@ -65,6 +73,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 500,
     fields: fontFieldsSchema,
+    binary: true,
+  },
+  texture: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 200,
+    fields: textureFieldsSchema,
     binary: true,
   },
 };

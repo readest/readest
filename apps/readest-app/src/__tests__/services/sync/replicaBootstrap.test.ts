@@ -8,6 +8,10 @@ vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: { getState: () => ({ markAvailableByContentId: vi.fn() }) },
 }));
 
+vi.mock('@/store/customTextureStore', () => ({
+  useCustomTextureStore: { getState: () => ({ markAvailableByContentId: vi.fn() }) },
+}));
+
 import {
   __resetBootstrapForTests,
   bootstrapReplicaAdapters,
@@ -35,12 +39,12 @@ describe('bootstrapReplicaAdapters', () => {
   test('is idempotent: calling twice is a no-op (does not throw)', () => {
     bootstrapReplicaAdapters();
     bootstrapReplicaAdapters();
-    expect(listReplicaAdapters()).toHaveLength(2);
+    expect(listReplicaAdapters()).toHaveLength(3);
   });
 
-  test('registers the current allowlist (dictionary, font)', () => {
+  test('registers the current allowlist (dictionary, font, texture)', () => {
     bootstrapReplicaAdapters();
     const kinds = listReplicaAdapters().map((a) => a.kind);
-    expect(kinds).toEqual(['dictionary', 'font']);
+    expect(kinds).toEqual(['dictionary', 'font', 'texture']);
   });
 });

@@ -1,7 +1,9 @@
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useCustomFontStore } from '@/store/customFontStore';
+import { useCustomTextureStore } from '@/store/customTextureStore';
 import { dictionaryAdapter, DICTIONARY_KIND } from './adapters/dictionary';
 import { fontAdapter, FONT_KIND } from './adapters/font';
+import { textureAdapter, TEXTURE_KIND } from './adapters/texture';
 import { getReplicaPersistEnv } from './replicaPersist';
 import { getReplicaAdapter, registerReplicaAdapter } from './replicaRegistry';
 import { registerReplicaDownloadHandler } from './replicaTransferIntegration';
@@ -10,6 +12,7 @@ import type { ReplicaAdapter } from './replicaRegistry';
 const KNOWN_ADAPTERS: ReplicaAdapter<unknown>[] = [
   dictionaryAdapter as unknown as ReplicaAdapter<unknown>,
   fontAdapter as unknown as ReplicaAdapter<unknown>,
+  textureAdapter as unknown as ReplicaAdapter<unknown>,
 ];
 
 let didBootstrap = false;
@@ -40,6 +43,19 @@ export const bootstrapReplicaAdapters = (): void => {
       return;
     }
     void useCustomFontStore.getState().activateFontByContentId(env, replicaId);
+  });
+  // Textures: mark available + load the file into a blob URL so the
+  // panel grid renders the swatch and `applyTexture` can mount it
+  // without re-reading disk. Mounting only happens when the user
+  // selects the texture (via applyTexture), so no automatic mount
+  // here. Falls back to flag-only when persist env hasn't landed yet.
+  registerReplicaDownloadHandler(TEXTURE_KIND, (replicaId) => {
+    const env = getReplicaPersistEnv();
+    if (!env) {
+      useCustomTextureStore.getState().markAvailableByContentId(replicaId);
+      return;
+    }
+    void useCustomTextureStore.getState().activateTextureByContentId(env, replicaId);
   });
   didBootstrap = true;
 };

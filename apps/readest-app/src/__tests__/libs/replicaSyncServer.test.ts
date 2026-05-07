@@ -145,7 +145,7 @@ describe('validatePullParams', () => {
   });
 
   test('rejects unknown kind', () => {
-    const result = validatePullParams('texture', null);
+    const result = validatePullParams('opds_catalog', null);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(422);

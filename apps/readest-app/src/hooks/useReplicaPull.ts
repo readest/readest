@@ -6,10 +6,16 @@ import {
   findFontByContentId,
   migrateLegacyFonts,
 } from '@/store/customFontStore';
+import {
+  useCustomTextureStore,
+  findTextureByContentId,
+  migrateLegacyTextures,
+} from '@/store/customTextureStore';
 import { transferManager } from '@/services/transferManager';
 import { getReplicaSync, subscribeReplicaSyncReady } from '@/services/sync/replicaSync';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { fontAdapter } from '@/services/sync/adapters/font';
+import { textureAdapter } from '@/services/sync/adapters/texture';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
 import { getAccessToken } from '@/utils/access';
@@ -19,8 +25,9 @@ import type { AppService } from '@/types/system';
 import type { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
+import type { CustomTexture } from '@/styles/textures';
 
-export type ReplicaKind = 'dictionary' | 'font';
+export type ReplicaKind = 'dictionary' | 'font' | 'texture';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -115,6 +122,42 @@ const buildFontPullDeps = (
   isAuthenticated: async () => !!(await getAccessToken()),
 });
 
+const buildTexturePullDeps = (
+  manager: ReplicaSyncManager,
+  service: AppService,
+  envConfig: EnvConfigType,
+): PullAndApplyDeps<CustomTexture> => ({
+  adapter: textureAdapter,
+  pull: () => manager.pull('texture', { since: null }),
+  findByContentId: (id: string) => findTextureByContentId(id),
+  hydrateLocalStore: async () => {
+    await useCustomTextureStore.getState().loadCustomTextures(envConfig);
+    // Rehash legacy flat-path textures so the user doesn't have to
+    // re-import them by hand to get them onto other devices.
+    await migrateLegacyTextures(envConfig);
+  },
+  applyRemote: (texture) => useCustomTextureStore.getState().applyRemoteTexture(texture),
+  softDeleteByContentId: (id) => useCustomTextureStore.getState().softDeleteByContentId(id),
+  createBundleDir: async () => {
+    const id = uniqueId();
+    await service.createDir(id, 'Images', true);
+    return id;
+  },
+  queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
+    transferManager.queueReplicaDownload('texture', contentId, displayTitle, files, base),
+  filesExist: async (bundleDir, filenames) => {
+    for (const filename of filenames) {
+      const exists = await service.exists(`${bundleDir}/${filename}`, 'Images');
+      if (!exists) return false;
+    }
+    return true;
+  },
+  queueLocalBinaryUpload: async (record) => {
+    await queueReplicaBinaryUpload('texture', record, service);
+  },
+  isAuthenticated: async () => !!(await getAccessToken()),
+});
+
 const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
@@ -128,6 +171,10 @@ const runPullForKind = async (
   }
   if (kind === 'font') {
     await replicaPullAndApply(buildFontPullDeps(ctx.manager, service, envConfig));
+    return;
+  }
+  if (kind === 'texture') {
+    await replicaPullAndApply(buildTexturePullDeps(ctx.manager, service, envConfig));
     return;
   }
   // Future: dispatch to other per-kind dep builders here.
