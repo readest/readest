@@ -1,5 +1,8 @@
 import clsx from 'clsx';
-import React from 'react';
+import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import '@/utils/time';
 
 type QuotaProps = {
   quotas: {
@@ -8,6 +11,7 @@ type QuotaProps = {
     used: number;
     total: number;
     unit: string;
+    resetAt?: number;
   }[];
   className?: string;
   labelClassName?: string;
@@ -15,10 +19,23 @@ type QuotaProps = {
 };
 
 const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelClassName }) => {
+  const _ = useTranslation();
+  const [now, setNow] = useState(() => Date.now());
+
+  const hasResetIndicator = showProgress && quotas.some((q) => q.resetAt);
+
+  useEffect(() => {
+    if (!hasResetIndicator) return;
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, [hasResetIndicator]);
+
   return (
     <div className={clsx('text-base-content w-full rounded-md text-base sm:text-sm', className)}>
       {quotas.map((quota) => {
-        const usagePercentage = (quota.used / quota.total) * 100;
+        const usageRatio = quota.total > 0 ? quota.used / quota.total : 0;
+        const usagePercentage = Math.min(100, usageRatio * 100);
+        const usagePercentageRounded = Math.round(usagePercentage);
         let bgColor = 'bg-green-500';
         if (usagePercentage > 80) {
           bgColor = 'bg-red-500';
@@ -26,34 +43,51 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
           bgColor = 'bg-yellow-500';
         }
 
-        return (
-          <div
-            key={quota.name}
-            className={clsx(
-              'relative w-full overflow-hidden rounded-md',
-              showProgress && 'bg-base-300',
-            )}
-          >
-            {showProgress && (
-              <div
-                className={`absolute left-0 top-0 h-full ${bgColor}`}
-                style={{ width: `${usagePercentage}%` }}
-              ></div>
-            )}
+        const showResetRow = showProgress && quota.resetAt;
+        const resetIn = showResetRow
+          ? dayjs.duration(Math.max(0, quota.resetAt! - now)).format('H [hr] m [min]')
+          : '';
 
+        return (
+          <div key={quota.name} className='w-full'>
             <div
               className={clsx(
-                'relative flex items-center justify-between gap-4 p-2',
-                labelClassName,
+                'relative w-full overflow-hidden rounded-md',
+                showProgress && 'bg-base-300',
               )}
             >
-              <span className='truncate' title={quota.tooltip}>
-                {quota.name}
-              </span>
-              <div className='text-right text-sm'>
-                {quota.used} / {quota.total} {quota.unit}
+              {showProgress && (
+                <div
+                  className={`absolute left-0 top-0 h-full ${bgColor}`}
+                  style={{ width: `${usagePercentage}%` }}
+                ></div>
+              )}
+
+              <div
+                className={clsx(
+                  'relative flex items-center justify-between gap-4 p-2',
+                  labelClassName,
+                )}
+              >
+                <span className='truncate' title={quota.tooltip}>
+                  {quota.name}
+                </span>
+                <div className='text-right text-sm'>
+                  {quota.used} / {quota.total} {quota.unit}
+                </div>
               </div>
             </div>
+            {showResetRow && (
+              <div
+                className={clsx(
+                  'text-base-content/70 mt-1.5 flex items-center justify-between text-xs',
+                  labelClassName,
+                )}
+              >
+                <span>{_('{{percentage}}% used', { percentage: usagePercentageRounded })}</span>
+                <span>{_('Resets in {{duration}}', { duration: resetIn })}</span>
+              </div>
+            )}
           </div>
         );
       })}
