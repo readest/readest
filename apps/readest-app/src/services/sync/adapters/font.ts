@@ -1,13 +1,16 @@
 import { computeFontContentId } from '@/services/fontService';
 import type { CustomFont } from '@/styles/fonts';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
-import type { FieldEnvelope, FieldsObject, ReplicaRow } from '@/types/replica';
+import type { FieldsObject, ReplicaRow } from '@/types/replica';
+import {
+  defaultComputeId,
+  singleFileBinaryEnumerator,
+  singleFileFilenameFromManifest,
+  unwrap,
+} from './helpers';
 
 export const FONT_KIND = 'font';
 export const FONT_SCHEMA_VERSION = 1;
-
-const unwrap = (env: FieldEnvelope | undefined): unknown =>
-  env && typeof env === 'object' && 'v' in env ? (env as FieldEnvelope).v : undefined;
 
 interface UnwrappedFontFields {
   name?: string;
@@ -36,12 +39,6 @@ const unwrapFontFields = (fields: FieldsObject): UnwrappedFontFields => {
     byteSize: typeof byteSize === 'number' ? byteSize : undefined,
     downloadedAt: typeof downloadedAt === 'number' ? downloadedAt : undefined,
   };
-};
-
-const filenameFromManifest = (row: ReplicaRow): string | null => {
-  // Font kind is single-file; the manifest carries exactly one entry.
-  const f = row.manifest_jsonb?.files[0];
-  return f?.filename ?? null;
 };
 
 export { computeFontContentId };
@@ -78,14 +75,12 @@ export const fontAdapter: ReplicaAdapter<CustomFont> = {
     };
   },
 
-  async computeId(f: CustomFont): Promise<string> {
-    return f.contentId ?? f.id;
-  },
+  computeId: defaultComputeId,
 
   unpackRow(row: ReplicaRow, bundleDir: string): CustomFont | null {
     const fields = unwrapFontFields(row.fields_jsonb);
     if (!fields.name) return null;
-    const filename = filenameFromManifest(row);
+    const filename = singleFileFilenameFromManifest(row);
     if (!filename) {
       // No manifest yet — placeholder with empty path; the manifest
       // commit on the publishing device will fill this in on the next
@@ -113,17 +108,6 @@ export const fontAdapter: ReplicaAdapter<CustomFont> = {
 
   binary: {
     localBaseDir: 'Fonts',
-    enumerateFiles: (font: CustomFont) => {
-      // Fonts are single-file. The font's `path` is the lfp, relative
-      // to the Fonts base dir.
-      const filename = font.path.split('/').pop() ?? font.path;
-      return [
-        {
-          logical: filename,
-          lfp: font.path,
-          byteSize: font.byteSize ?? 0,
-        },
-      ];
-    },
+    enumerateFiles: singleFileBinaryEnumerator,
   },
 };

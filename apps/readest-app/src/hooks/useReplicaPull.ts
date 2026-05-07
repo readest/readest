@@ -17,11 +17,16 @@ import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { fontAdapter } from '@/services/sync/adapters/font';
 import { textureAdapter } from '@/services/sync/adapters/texture';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
-import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
+import {
+  replicaPullAndApply,
+  type PullAndApplyDeps,
+  type ReplicaLocalRecord,
+} from '@/services/sync/replicaPullAndApply';
+import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
 import { getAccessToken } from '@/utils/access';
 import { uniqueId } from '@/utils/misc';
 import type { EnvConfigType } from '@/services/environment';
-import type { AppService } from '@/types/system';
+import type { AppService, BaseDir } from '@/types/system';
 import type { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
@@ -45,56 +50,85 @@ const REPLICA_PULL_DEFAULT_DELAY_MS = 10_000;
 // which is wired once in EnvContext.
 const pulledKinds = new Set<ReplicaKind>();
 
-const buildDictionaryPullDeps = (
+/**
+ * Per-kind config consumed by `buildReplicaPullDeps`. The factory fills
+ * in everything that is structurally identical across kinds (creating
+ * bundle dirs, queueing downloads, checking files exist, queueing
+ * upload of the local copy, gating on auth). Per-kind logic stays
+ * here: the adapter, base dir, find/hydrate/apply/soft-delete store
+ * accessors.
+ */
+interface ReplicaPullConfig<T extends ReplicaLocalRecord> {
+  kind: ReplicaKind;
+  baseDir: BaseDir;
+  adapter: ReplicaAdapter<T>;
+  findByContentId: (id: string) => T | undefined;
+  hydrateLocalStore?: (envConfig: EnvConfigType) => Promise<void>;
+  applyRemote: (record: T) => void;
+  softDeleteByContentId: (id: string) => void;
+}
+
+const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
   manager: ReplicaSyncManager,
   service: AppService,
   envConfig: EnvConfigType,
-): PullAndApplyDeps<ImportedDictionary> => ({
-  adapter: dictionaryAdapter,
+  config: ReplicaPullConfig<T>,
+): PullAndApplyDeps<T> => ({
+  adapter: config.adapter,
   // Boot path uses since=null so we always re-fetch and apply locally,
   // ignoring any previously-advanced cursor. Periodic sync (visibility /
   // online) goes through manager.pull(kind) which keeps using the cursor.
-  pull: () => manager.pull('dictionary', { since: null }),
-  // The page may mount before loadCustomDictionaries has hydrated the
-  // in-memory store, so the dedup helper falls back to settings.
-  findByContentId: (id: string) => findDictionaryByContentId(id),
-  // Pull-side relies on the in-memory dict store reflecting persisted
-  // state — without this, the auto-persist fired by applyRemoteDictionary
-  // would write back only the just-applied rows and clobber every
-  // persisted dict that hadn't been hydrated by an Annotator/Settings
-  // mount. Library-page refreshes were the visible victim.
-  hydrateLocalStore: () => useCustomDictionaryStore.getState().loadCustomDictionaries(envConfig),
-  applyRemote: (dict) => useCustomDictionaryStore.getState().applyRemoteDictionary(dict),
-  softDeleteByContentId: (id) => useCustomDictionaryStore.getState().softDeleteByContentId(id),
+  pull: () => manager.pull(config.kind, { since: null }),
+  findByContentId: config.findByContentId,
+  hydrateLocalStore: config.hydrateLocalStore
+    ? () => config.hydrateLocalStore!(envConfig)
+    : undefined,
+  applyRemote: config.applyRemote,
+  softDeleteByContentId: config.softDeleteByContentId,
   createBundleDir: async () => {
     const id = uniqueId();
-    await service.createDir(id, 'Dictionaries', true);
+    await service.createDir(id, config.baseDir, true);
     return id;
   },
   queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
-    transferManager.queueReplicaDownload('dictionary', contentId, displayTitle, files, base),
+    transferManager.queueReplicaDownload(config.kind, contentId, displayTitle, files, base),
   filesExist: async (bundleDir, filenames) => {
     for (const filename of filenames) {
-      const exists = await service.exists(`${bundleDir}/${filename}`, 'Dictionaries');
+      const exists = await service.exists(`${bundleDir}/${filename}`, config.baseDir);
       if (!exists) return false;
     }
     return true;
   },
   queueLocalBinaryUpload: async (record) => {
-    await queueReplicaBinaryUpload('dictionary', record, service);
+    await queueReplicaBinaryUpload(config.kind, record, service);
   },
   isAuthenticated: async () => !!(await getAccessToken()),
 });
 
-const buildFontPullDeps = (
-  manager: ReplicaSyncManager,
-  service: AppService,
-  envConfig: EnvConfigType,
-): PullAndApplyDeps<CustomFont> => ({
+const dictionaryPullConfig: ReplicaPullConfig<ImportedDictionary> = {
+  kind: 'dictionary',
+  baseDir: 'Dictionaries',
+  adapter: dictionaryAdapter,
+  // Page may mount before loadCustomDictionaries has hydrated the
+  // in-memory store, so the dedup helper falls back to settings.
+  findByContentId: findDictionaryByContentId,
+  // Pull-side relies on the in-memory dict store reflecting persisted
+  // state — without this, the auto-persist fired by applyRemoteDictionary
+  // would write back only the just-applied rows and clobber every
+  // persisted dict that hadn't been hydrated by an Annotator/Settings
+  // mount. Library-page refreshes were the visible victim.
+  hydrateLocalStore: (envConfig) =>
+    useCustomDictionaryStore.getState().loadCustomDictionaries(envConfig),
+  applyRemote: (dict) => useCustomDictionaryStore.getState().applyRemoteDictionary(dict),
+  softDeleteByContentId: (id) => useCustomDictionaryStore.getState().softDeleteByContentId(id),
+};
+
+const fontPullConfig: ReplicaPullConfig<CustomFont> = {
+  kind: 'font',
+  baseDir: 'Fonts',
   adapter: fontAdapter,
-  pull: () => manager.pull('font', { since: null }),
-  findByContentId: (id: string) => findFontByContentId(id),
-  hydrateLocalStore: async () => {
+  findByContentId: findFontByContentId,
+  hydrateLocalStore: async (envConfig) => {
     await useCustomFontStore.getState().loadCustomFonts(envConfig);
     // Rehash legacy flat-path fonts so the user doesn't have to
     // re-import them by hand to get them onto other devices.
@@ -102,35 +136,14 @@ const buildFontPullDeps = (
   },
   applyRemote: (font) => useCustomFontStore.getState().applyRemoteFont(font),
   softDeleteByContentId: (id) => useCustomFontStore.getState().softDeleteByContentId(id),
-  createBundleDir: async () => {
-    const id = uniqueId();
-    await service.createDir(id, 'Fonts', true);
-    return id;
-  },
-  queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
-    transferManager.queueReplicaDownload('font', contentId, displayTitle, files, base),
-  filesExist: async (bundleDir, filenames) => {
-    for (const filename of filenames) {
-      const exists = await service.exists(`${bundleDir}/${filename}`, 'Fonts');
-      if (!exists) return false;
-    }
-    return true;
-  },
-  queueLocalBinaryUpload: async (record) => {
-    await queueReplicaBinaryUpload('font', record, service);
-  },
-  isAuthenticated: async () => !!(await getAccessToken()),
-});
+};
 
-const buildTexturePullDeps = (
-  manager: ReplicaSyncManager,
-  service: AppService,
-  envConfig: EnvConfigType,
-): PullAndApplyDeps<CustomTexture> => ({
+const texturePullConfig: ReplicaPullConfig<CustomTexture> = {
+  kind: 'texture',
+  baseDir: 'Images',
   adapter: textureAdapter,
-  pull: () => manager.pull('texture', { since: null }),
-  findByContentId: (id: string) => findTextureByContentId(id),
-  hydrateLocalStore: async () => {
+  findByContentId: findTextureByContentId,
+  hydrateLocalStore: async (envConfig) => {
     await useCustomTextureStore.getState().loadCustomTextures(envConfig);
     // Rehash legacy flat-path textures so the user doesn't have to
     // re-import them by hand to get them onto other devices.
@@ -138,25 +151,7 @@ const buildTexturePullDeps = (
   },
   applyRemote: (texture) => useCustomTextureStore.getState().applyRemoteTexture(texture),
   softDeleteByContentId: (id) => useCustomTextureStore.getState().softDeleteByContentId(id),
-  createBundleDir: async () => {
-    const id = uniqueId();
-    await service.createDir(id, 'Images', true);
-    return id;
-  },
-  queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
-    transferManager.queueReplicaDownload('texture', contentId, displayTitle, files, base),
-  filesExist: async (bundleDir, filenames) => {
-    for (const filename of filenames) {
-      const exists = await service.exists(`${bundleDir}/${filename}`, 'Images');
-      if (!exists) return false;
-    }
-    return true;
-  },
-  queueLocalBinaryUpload: async (record) => {
-    await queueReplicaBinaryUpload('texture', record, service);
-  },
-  isAuthenticated: async () => !!(await getAccessToken()),
-});
+};
 
 const runPullForKind = async (
   kind: ReplicaKind,
@@ -165,19 +160,26 @@ const runPullForKind = async (
 ): Promise<void> => {
   const ctx = getReplicaSync();
   if (!ctx) return;
-  if (kind === 'dictionary') {
-    await replicaPullAndApply(buildDictionaryPullDeps(ctx.manager, service, envConfig));
-    return;
+  // Per-kind dispatch keeps the generic record type sound — collapsing
+  // the three configs into a Record<ReplicaKind, ReplicaPullConfig<...>>
+  // would force a contravariant cast that loses type safety.
+  switch (kind) {
+    case 'dictionary':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(ctx.manager, service, envConfig, dictionaryPullConfig),
+      );
+      return;
+    case 'font':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(ctx.manager, service, envConfig, fontPullConfig),
+      );
+      return;
+    case 'texture':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(ctx.manager, service, envConfig, texturePullConfig),
+      );
+      return;
   }
-  if (kind === 'font') {
-    await replicaPullAndApply(buildFontPullDeps(ctx.manager, service, envConfig));
-    return;
-  }
-  if (kind === 'texture') {
-    await replicaPullAndApply(buildTexturePullDeps(ctx.manager, service, envConfig));
-    return;
-  }
-  // Future: dispatch to other per-kind dep builders here.
 };
 
 /**

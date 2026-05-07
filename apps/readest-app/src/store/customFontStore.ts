@@ -12,9 +12,7 @@ import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { FONT_KIND } from '@/services/sync/adapters/font';
 import { computeFontContentId } from '@/services/fontService';
-import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
-import { partialMD5 } from '@/utils/md5';
-import { uniqueId } from '@/utils/misc';
+import { migrateLegacyReplicas } from '@/services/sync/migrateLegacy';
 
 const publishFontUpsert = (font: CustomFont): void => {
   if (!font.contentId) return;
@@ -420,81 +418,23 @@ export const findFontByContentId = (contentId: string): CustomFont | undefined =
 /**
  * One-time migration: rehash legacy flat-path fonts (imported before
  * replica sync shipped) into the per-bundle layout so they sync
- * across devices without forcing the user to re-import.
- *
- * For each live font with no `contentId`:
- *   1. Read bytes from `Fonts/<filename>`.
- *   2. Compute partialMD5 + size → contentId.
- *   3. Mint `bundleDir = uniqueId()`; copy the file to
- *      `Fonts/<bundleDir>/<filename>` and remove the flat-path one.
- *   4. Patch the in-memory record (contentId, bundleDir, byteSize,
- *      path), persist via saveCustomFonts, then publish through
- *      publishReplicaUpsert.
- *
- * Idempotent: a font that already carries `contentId` is skipped.
- * If the file is missing on disk, the migration leaves the record
- * untouched (loadCustomFonts will mark it `unavailable`). Per-font
- * failures are logged and don't block the rest.
+ * across devices without forcing the user to re-import. Idempotent;
+ * skips fonts that already carry `contentId`. Implementation lives in
+ * `migrateLegacyReplicas` — shared with custom textures.
  */
-export const migrateLegacyFonts = async (envConfig: EnvConfigType): Promise<void> => {
-  const candidates = useCustomFontStore
-    .getState()
-    .fonts.filter((f) => !f.contentId && !f.bundleDir && !f.deletedAt && !f.path.includes('/'));
-  if (candidates.length === 0) return;
-
-  const appService = await envConfig.getAppService();
-  const migrated: CustomFont[] = [];
-
-  for (const legacy of candidates) {
-    try {
-      const exists = await appService.exists(legacy.path, 'Fonts');
-      if (!exists) continue;
-
-      const file = await appService.openFile(legacy.path, 'Fonts');
-      const bytes = await file.arrayBuffer();
-      const partialMd5 = await partialMD5(file);
-      const byteSize = bytes.byteLength;
-      const filename = legacy.path;
-      const contentId = computeFontContentId(partialMd5, byteSize, filename);
-      const bundleDir = uniqueId();
-      const newPath = `${bundleDir}/${filename}`;
-
-      await appService.createDir(bundleDir, 'Fonts', true);
-      await appService.copyFile(legacy.path, 'Fonts', newPath, 'Fonts');
-      await appService.deleteFile(legacy.path, 'Fonts');
-
-      const next: CustomFont = {
-        ...legacy,
-        contentId,
-        bundleDir,
-        byteSize,
-        path: newPath,
-        // Force a re-load on next render so the blob URL points at the
-        // new on-disk path. Loaders observe `loaded=false` + missing
-        // blobUrl and refresh.
-        blobUrl: undefined,
-        loaded: false,
-        error: undefined,
-      };
-      useCustomFontStore.getState().updateFont(legacy.id, next);
-      migrated.push(next);
-    } catch (err) {
-      console.warn('migrateLegacyFonts: failed for', legacy.path, err);
-    }
-  }
-
-  if (migrated.length === 0) return;
-
-  try {
-    await useCustomFontStore.getState().saveCustomFonts(envConfig);
-  } catch (err) {
-    console.warn('migrateLegacyFonts: save failed', err);
-  }
-  for (const font of migrated) {
-    publishFontUpsert(font);
-    void queueReplicaBinaryUpload('font', font, appService);
-  }
-};
+export const migrateLegacyFonts = (envConfig: EnvConfigType): Promise<void> =>
+  migrateLegacyReplicas<CustomFont>(envConfig, {
+    kind: FONT_KIND,
+    baseDir: 'Fonts',
+    getCandidates: () =>
+      useCustomFontStore
+        .getState()
+        .fonts.filter((f) => !f.contentId && !f.bundleDir && !f.deletedAt && !f.path.includes('/')),
+    computeContentId: computeFontContentId,
+    updateRecord: (id, next) => useCustomFontStore.getState().updateFont(id, next),
+    saveStore: (env) => useCustomFontStore.getState().saveCustomFonts(env),
+    publishUpsert: publishFontUpsert,
+  });
 
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {

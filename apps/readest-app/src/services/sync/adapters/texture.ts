@@ -1,13 +1,16 @@
 import { computeTextureContentId } from '@/services/imageService';
 import type { CustomTexture } from '@/styles/textures';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
-import type { FieldEnvelope, FieldsObject, ReplicaRow } from '@/types/replica';
+import type { FieldsObject, ReplicaRow } from '@/types/replica';
+import {
+  defaultComputeId,
+  singleFileBinaryEnumerator,
+  singleFileFilenameFromManifest,
+  unwrap,
+} from './helpers';
 
 export const TEXTURE_KIND = 'texture';
 export const TEXTURE_SCHEMA_VERSION = 1;
-
-const unwrap = (env: FieldEnvelope | undefined): unknown =>
-  env && typeof env === 'object' && 'v' in env ? (env as FieldEnvelope).v : undefined;
 
 interface UnwrappedTextureFields {
   name?: string;
@@ -24,12 +27,6 @@ const unwrapTextureFields = (fields: FieldsObject): UnwrappedTextureFields => {
     byteSize: typeof byteSize === 'number' ? byteSize : undefined,
     downloadedAt: typeof downloadedAt === 'number' ? downloadedAt : undefined,
   };
-};
-
-const filenameFromManifest = (row: ReplicaRow): string | null => {
-  // Texture kind is single-file; the manifest carries exactly one entry.
-  const f = row.manifest_jsonb?.files[0];
-  return f?.filename ?? null;
 };
 
 export { computeTextureContentId };
@@ -58,14 +55,12 @@ export const textureAdapter: ReplicaAdapter<CustomTexture> = {
     };
   },
 
-  async computeId(t: CustomTexture): Promise<string> {
-    return t.contentId ?? t.id;
-  },
+  computeId: defaultComputeId,
 
   unpackRow(row: ReplicaRow, bundleDir: string): CustomTexture | null {
     const fields = unwrapTextureFields(row.fields_jsonb);
     if (!fields.name) return null;
-    const filename = filenameFromManifest(row);
+    const filename = singleFileFilenameFromManifest(row);
     if (!filename) {
       // No manifest yet — placeholder with empty path; the manifest
       // commit on the publishing device will fill this in on the next
@@ -89,17 +84,6 @@ export const textureAdapter: ReplicaAdapter<CustomTexture> = {
 
   binary: {
     localBaseDir: 'Images',
-    enumerateFiles: (texture: CustomTexture) => {
-      // Textures are single-file. The texture's `path` is the lfp,
-      // relative to the Images base dir.
-      const filename = texture.path.split('/').pop() ?? texture.path;
-      return [
-        {
-          logical: filename,
-          lfp: texture.path,
-          byteSize: texture.byteSize ?? 0,
-        },
-      ];
-    },
+    enumerateFiles: singleFileBinaryEnumerator,
   },
 };

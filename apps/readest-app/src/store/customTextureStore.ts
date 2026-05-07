@@ -12,9 +12,7 @@ import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { TEXTURE_KIND } from '@/services/sync/adapters/texture';
 import { computeTextureContentId } from '@/services/imageService';
-import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
-import { partialMD5 } from '@/utils/md5';
-import { uniqueId } from '@/utils/misc';
+import { migrateLegacyReplicas } from '@/services/sync/migrateLegacy';
 
 const publishTextureUpsert = (texture: CustomTexture): void => {
   if (!texture.contentId) return;
@@ -438,79 +436,25 @@ export const findTextureByContentId = (contentId: string): CustomTexture | undef
 /**
  * One-time migration: rehash legacy flat-path textures (imported before
  * replica sync shipped) into the per-bundle layout so they sync
- * across devices without forcing the user to re-import.
- *
- * For each live texture with no `contentId`:
- *   1. Read bytes from `Images/<filename>`.
- *   2. Compute partialMD5 + size → contentId.
- *   3. Mint `bundleDir = uniqueId()`; copy the file to
- *      `Images/<bundleDir>/<filename>` and remove the flat-path one.
- *   4. Patch the in-memory record (contentId, bundleDir, byteSize,
- *      path), persist via saveCustomTextures, then publish through
- *      publishReplicaUpsert.
- *
- * Idempotent: a texture that already carries `contentId` is skipped.
- * If the file is missing on disk, the migration leaves the record
- * untouched. Per-texture failures are logged and don't block the rest.
+ * across devices without forcing the user to re-import. Idempotent;
+ * skips textures that already carry `contentId`. Implementation lives
+ * in `migrateLegacyReplicas` — shared with custom fonts.
  */
-export const migrateLegacyTextures = async (envConfig: EnvConfigType): Promise<void> => {
-  const candidates = useCustomTextureStore
-    .getState()
-    .textures.filter((t) => !t.contentId && !t.bundleDir && !t.deletedAt && !t.path.includes('/'));
-  if (candidates.length === 0) return;
-
-  const appService = await envConfig.getAppService();
-  const migrated: CustomTexture[] = [];
-
-  for (const legacy of candidates) {
-    try {
-      const exists = await appService.exists(legacy.path, 'Images');
-      if (!exists) continue;
-
-      const file = await appService.openFile(legacy.path, 'Images');
-      const bytes = await file.arrayBuffer();
-      const partialMd5 = await partialMD5(file);
-      const byteSize = bytes.byteLength;
-      const filename = legacy.path;
-      const contentId = computeTextureContentId(partialMd5, byteSize, filename);
-      const bundleDir = uniqueId();
-      const newPath = `${bundleDir}/${filename}`;
-
-      await appService.createDir(bundleDir, 'Images', true);
-      await appService.copyFile(legacy.path, 'Images', newPath, 'Images');
-      await appService.deleteFile(legacy.path, 'Images');
-
-      const next: CustomTexture = {
-        ...legacy,
-        contentId,
-        bundleDir,
-        byteSize,
-        path: newPath,
-        // Force a re-load on next render so the blob URL points at the
-        // new on-disk path.
-        blobUrl: undefined,
-        loaded: false,
-        error: undefined,
-      };
-      useCustomTextureStore.getState().updateTexture(legacy.id, next);
-      migrated.push(next);
-    } catch (err) {
-      console.warn('migrateLegacyTextures: failed for', legacy.path, err);
-    }
-  }
-
-  if (migrated.length === 0) return;
-
-  try {
-    await useCustomTextureStore.getState().saveCustomTextures(envConfig);
-  } catch (err) {
-    console.warn('migrateLegacyTextures: save failed', err);
-  }
-  for (const texture of migrated) {
-    publishTextureUpsert(texture);
-    void queueReplicaBinaryUpload('texture', texture, appService);
-  }
-};
+export const migrateLegacyTextures = (envConfig: EnvConfigType): Promise<void> =>
+  migrateLegacyReplicas<CustomTexture>(envConfig, {
+    kind: TEXTURE_KIND,
+    baseDir: 'Images',
+    getCandidates: () =>
+      useCustomTextureStore
+        .getState()
+        .textures.filter(
+          (t) => !t.contentId && !t.bundleDir && !t.deletedAt && !t.path.includes('/'),
+        ),
+    computeContentId: computeTextureContentId,
+    updateRecord: (id, next) => useCustomTextureStore.getState().updateTexture(id, next),
+    saveStore: (env) => useCustomTextureStore.getState().saveCustomTextures(env),
+    publishUpsert: publishTextureUpsert,
+  });
 
 // Cleanup blob URLs before page unload
 if (typeof window !== 'undefined') {
