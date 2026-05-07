@@ -75,8 +75,17 @@ export interface BookMatchMetadata {
 const isAsOIAFBook = (m: BookMatchMetadata): boolean => {
   const title = m.title.toLowerCase();
   const author = (m.author ?? '').toLowerCase();
+  const subjects = (m.subjects ?? []).map((s) => s.toLowerCase());
 
   if (author.includes('george') && author.includes('martin')) return true;
+
+  if (
+    subjects.some(
+      (s) => s.includes('song of ice and fire') || s.includes('westeros') || s.includes('asoiaf'),
+    )
+  ) {
+    return true;
+  }
 
   const gotTitles = [
     'a game of thrones',
@@ -95,6 +104,19 @@ const isAsOIAFBook = (m: BookMatchMetadata): boolean => {
   return gotTitles.some((t) => title.includes(t));
 };
 
+const isDarkFantasy = (m: BookMatchMetadata): boolean => {
+  const subjects = (m.subjects ?? []).map((s) => s.toLowerCase());
+  const hasFantasy = subjects.some((s) => s.includes('fantasy'));
+  return subjects.some(
+    (s) =>
+      s.includes('dark fantasy') ||
+      s.includes('grimdark') ||
+      s.includes('grim dark') ||
+      s.includes('low fantasy') ||
+      (hasFantasy && (s.includes('medieval') || s.includes('grim'))),
+  );
+};
+
 const isFantasy = (m: BookMatchMetadata): boolean => {
   const subjects = (m.subjects ?? []).map((s) => s.toLowerCase());
   return subjects.some(
@@ -102,8 +124,14 @@ const isFantasy = (m: BookMatchMetadata): boolean => {
       s.includes('fantasy') ||
       s.includes('fiction / fantasy') ||
       s.includes('epic fantasy') ||
+      s.includes('high fantasy') ||
+      s.includes('heroic fantasy') ||
+      s.includes('urban fantasy') ||
       s.includes('sword & sorcery') ||
-      s.includes('sword and sorcery'),
+      s.includes('sword and sorcery') ||
+      s.includes('magic') ||
+      s.includes('wizards') ||
+      s.includes('dragons'),
   );
 };
 
@@ -147,10 +175,23 @@ const isHistoricalOrClassic = (m: BookMatchMetadata): boolean => {
   );
 };
 
+// Order matters — most specific matchers run first.
+// 1. got            → ASOIAF (specific series identification)
+// 2. darkFantasy    → "dark fantasy" / "grimdark" / dark-medieval fantasy subset
+// 3. scifi          → sci-fi / cyberpunk
+// 4. gothic         → horror / gothic
+// 5. fantasy        → generic fantasy / magic / sword & sorcery (catch-all fantasy)
+// 6. mystery        → mystery / thriller / noir
+// 7. elegant        → historical / classic / literary
+// Falls through to default (celestial) when nothing matches.
 export const BOOK_THEME_MATCHERS: BookThemeMatcher[] = [
   {
     id: 'got',
     matches: isAsOIAFBook,
+  },
+  {
+    id: 'darkFantasy',
+    matches: isDarkFantasy,
   },
   {
     id: 'scifi',
@@ -199,11 +240,20 @@ export const BOOK_THEME_CONFIGS: Record<string, BookThemeConfig> = {
   fantasy: {
     id: 'fantasy',
     label: 'Fantasy',
-    ornamentStyle: 'gothic',
+    ornamentStyle: 'arcane',
     useSigils: false,
     textureId: 'parchment',
     textureBlendMode: 'multiply',
     textureOpacity: 0.07,
+  },
+  darkFantasy: {
+    id: 'darkFantasy',
+    label: 'Dark Fantasy',
+    ornamentStyle: 'gothic',
+    useSigils: false,
+    textureId: 'parchment',
+    textureBlendMode: 'multiply',
+    textureOpacity: 0.08,
   },
   scifi: {
     id: 'scifi',
