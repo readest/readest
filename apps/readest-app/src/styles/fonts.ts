@@ -137,6 +137,33 @@ export interface CustomFont {
   weight?: number;
   variable?: boolean;
 
+  /**
+   * Cross-device content hash. Set on imports new enough to participate
+   * in replica sync (`partialMD5 + byteSize + filename`). Legacy fonts
+   * (created before replica sync) leave this undefined and never publish
+   * — re-import to enable cloud sync.
+   */
+  contentId?: string;
+  /**
+   * Per-font directory name relative to the `Fonts` base. New imports
+   * land at `<bundleDir>/<filename>`; legacy imports keep their flat
+   * `<filename>` path with bundleDir undefined.
+   */
+  bundleDir?: string;
+  /** File size in bytes — used by the replica manifest, optional for legacy. */
+  byteSize?: number;
+  /**
+   * On a remote-pulled placeholder, set to true until the binary download
+   * lands. The transfer-complete handler clears it via the font store's
+   * markAvailable hook.
+   */
+  unavailable?: boolean;
+  /**
+   * Reincarnation token — opaque value that revives a tombstoned remote
+   * row. Mirrors the dictionary mechanism.
+   */
+  reincarnation?: string;
+
   downloadedAt?: number;
   deletedAt?: number;
 
@@ -216,13 +243,15 @@ export function createCustomFont(
   options?: Partial<Omit<CustomFont, 'id' | 'path'>>,
 ): CustomFont {
   const name = options?.name || getFontName(path);
+  // Spread options first so replica-sync fields (contentId, bundleDir,
+  // byteSize) flow through from the import path. The earlier hand-
+  // picked field list silently dropped them, leaving font.contentId
+  // undefined → publishFontUpsert short-circuited on `!contentId` →
+  // newly imported fonts never published their replica row.
   return {
+    ...options,
     id: getFontId(name),
     name,
-    family: options?.family,
-    style: options?.style,
-    weight: options?.weight,
-    variable: options?.variable,
     path,
   };
 }

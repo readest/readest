@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useCustomDictionaryStore, findDictionaryByContentId } from '@/store/customDictionaryStore';
+import {
+  useCustomFontStore,
+  findFontByContentId,
+  migrateLegacyFonts,
+} from '@/store/customFontStore';
 import { transferManager } from '@/services/transferManager';
 import { getReplicaSync, subscribeReplicaSyncReady } from '@/services/sync/replicaSync';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
+import { fontAdapter } from '@/services/sync/adapters/font';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
 import { getAccessToken } from '@/utils/access';
@@ -12,8 +18,9 @@ import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
 import type { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
+import type { CustomFont } from '@/styles/fonts';
 
-export type ReplicaKind = 'dictionary';
+export type ReplicaKind = 'dictionary' | 'font';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -72,6 +79,42 @@ const buildDictionaryPullDeps = (
   isAuthenticated: async () => !!(await getAccessToken()),
 });
 
+const buildFontPullDeps = (
+  manager: ReplicaSyncManager,
+  service: AppService,
+  envConfig: EnvConfigType,
+): PullAndApplyDeps<CustomFont> => ({
+  adapter: fontAdapter,
+  pull: () => manager.pull('font', { since: null }),
+  findByContentId: (id: string) => findFontByContentId(id),
+  hydrateLocalStore: async () => {
+    await useCustomFontStore.getState().loadCustomFonts(envConfig);
+    // Rehash legacy flat-path fonts so the user doesn't have to
+    // re-import them by hand to get them onto other devices.
+    await migrateLegacyFonts(envConfig);
+  },
+  applyRemote: (font) => useCustomFontStore.getState().applyRemoteFont(font),
+  softDeleteByContentId: (id) => useCustomFontStore.getState().softDeleteByContentId(id),
+  createBundleDir: async () => {
+    const id = uniqueId();
+    await service.createDir(id, 'Fonts', true);
+    return id;
+  },
+  queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
+    transferManager.queueReplicaDownload('font', contentId, displayTitle, files, base),
+  filesExist: async (bundleDir, filenames) => {
+    for (const filename of filenames) {
+      const exists = await service.exists(`${bundleDir}/${filename}`, 'Fonts');
+      if (!exists) return false;
+    }
+    return true;
+  },
+  queueLocalBinaryUpload: async (record) => {
+    await queueReplicaBinaryUpload('font', record, service);
+  },
+  isAuthenticated: async () => !!(await getAccessToken()),
+});
+
 const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
@@ -81,6 +124,10 @@ const runPullForKind = async (
   if (!ctx) return;
   if (kind === 'dictionary') {
     await replicaPullAndApply(buildDictionaryPullDeps(ctx.manager, service, envConfig));
+    return;
+  }
+  if (kind === 'font') {
+    await replicaPullAndApply(buildFontPullDeps(ctx.manager, service, envConfig));
     return;
   }
   // Future: dispatch to other per-kind dep builders here.

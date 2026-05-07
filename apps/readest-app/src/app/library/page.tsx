@@ -116,10 +116,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
   const { isTransferQueueOpen } = useTransferStore();
 
-  // Library page pulls user replicas (dictionaries today). Deferred 10s;
-  // module-scoped dedup means a later navigation to the reader won't
-  // re-pull the same kind.
-  useReplicaPull({ kinds: ['dictionary'] });
+  // Library page pulls user replicas (dictionaries, custom fonts).
+  // Deferred 10s; module-scoped dedup means a later navigation to the
+  // reader won't re-pull the same kind.
+  useReplicaPull({ kinds: ['dictionary', 'font'] });
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
