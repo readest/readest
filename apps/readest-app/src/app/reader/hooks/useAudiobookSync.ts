@@ -162,15 +162,14 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
           // sectionIndex exists but section has no href —
           // fall through to Phase 3 so the marker can still be applied
           // in the current section if the CFI resolves there.
-          console.warn(
-            '[AudiobookSync] Phase 1 — section has no href, falling through to Phase 3',
-            {
-              sectionIndex,
-              sectionId: section?.id,
-              sectionLinear: section?.linear,
-              totalSections: view.book.sections.length,
-            },
-          );
+          console.log('[AudiobookSync] Phase 1 — section has no href, falling through to Phase 3', {
+            sectionIndex,
+            sectionId: section?.id,
+            sectionLinear: section?.linear,
+            hadSectionHref: !!sectionHref,
+            inputSectionHref: sectionHref?.slice(-40),
+            totalSections: view.book.sections.length,
+          });
         }
       }
 
@@ -252,7 +251,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
             }
             return true; // relocated — don't consume entry
           }
-          console.warn('[AudiobookSync] Phase 4 FAIL — target section has no href', {
+          console.log('[AudiobookSync] Phase 4 — target section has no href, consuming entry', {
             cfiSectionIndex: result.cfiSectionIndex,
             sectionId: targetSection?.id,
           });

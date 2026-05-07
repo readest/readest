@@ -26,6 +26,63 @@ export type MarkerResult =
   | { status: 'wrong-section'; cfiSectionIndex: number }
   | { status: 'error'; reason: string };
 
+// ── Dev-only diagnostic aggregator ─────────────────────────────────────
+
+interface LiveMarkerDiag {
+  totalCalls: number;
+  applied: number;
+  wrongSection: number;
+  errors: number;
+  wordWindowSuccess: number;
+  wordWindowSkipped: number;
+  phraseOnlyFallback: number;
+  lastCfi: string;
+  lastRangeText: string;
+  lastActiveWord: number;
+  lastTotalWords: number;
+  lastStrategy: string;
+}
+
+const diag: LiveMarkerDiag = {
+  totalCalls: 0,
+  applied: 0,
+  wrongSection: 0,
+  errors: 0,
+  wordWindowSuccess: 0,
+  wordWindowSkipped: 0,
+  phraseOnlyFallback: 0,
+  lastCfi: '',
+  lastRangeText: '',
+  lastActiveWord: -1,
+  lastTotalWords: 0,
+  lastStrategy: '',
+};
+
+const DIAG_INTERVAL = 15;
+
+function printDiagSummary(): void {
+  const d = diag;
+  console.log('[LiveMarker] ── diagnostics summary ──', {
+    totalCalls: d.totalCalls,
+    applied: d.applied,
+    wrongSection: d.wrongSection,
+    errors: d.errors,
+    wordWindowSuccess: d.wordWindowSuccess,
+    wordWindowSkipped: d.wordWindowSkipped,
+    phraseOnlyFallback: d.phraseOnlyFallback,
+    lastCfi: d.lastCfi.slice(0, 60),
+    lastRangeText: d.lastRangeText.slice(0, 50),
+    lastActiveWord: d.lastActiveWord,
+    lastTotalWords: d.lastTotalWords,
+    lastStrategy: d.lastStrategy,
+  });
+}
+
+/** Exported so the player hook can force-print the summary on pause/stop. */
+export function printLiveMarkerDiag(): void {
+  printDiagSummary();
+}
+
 /**
  * Scoring result for a text-node candidate during phrase matching.
  */
@@ -409,11 +466,11 @@ interface WordSegment {
 }
 
 /**
- * Narrows a DOM Range to a ~3-word moving window around the active word.
+ * Narrows a DOM Range to a tight word-following window around the active word.
  *
  * Uses `Intl.Segmenter` (word granularity) to split the range's text into
  * word-like segments, maps `progress` (0–1) to a word index, and returns a
- * new Range covering `[activeIdx - 1, activeIdx + 2)`.
+ * new Range covering `[activeIdx - 1, activeIdx + 2)` (2–3 words).
  *
  * Returns null when `Intl.Segmenter` is unavailable, fewer than 3 word-like
  * segments exist, or offset mapping fails — callers fall back to the original
@@ -686,6 +743,9 @@ export function applyLiveMarker(
   label?: string,
   progress?: number,
 ): MarkerResult {
+  diag.totalCalls++;
+  diag.lastCfi = cfi;
+
   const contents = view.renderer.getContents();
   const primaryIndex = view.renderer.primaryIndex;
   const content = (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
@@ -696,6 +756,7 @@ export function applyLiveMarker(
       contentsLen: contents.length,
       primaryIndex,
     });
+    diag.errors++;
     return { status: 'error', reason: 'no renderer content' };
   }
 
@@ -715,10 +776,12 @@ export function applyLiveMarker(
       cfi: cfi.slice(0, 60),
       error: err instanceof Error ? err.message : String(err),
     });
+    diag.errors++;
     return { status: 'error', reason: 'CFI resolution failed' };
   }
 
   if (viewSectionIndex !== cfiSectionIndex) {
+    diag.wrongSection++;
     console.log('[LiveMarker] WRONG SECTION', {
       viewSection: viewSectionIndex,
       cfiSection: cfiSectionIndex,
@@ -734,6 +797,7 @@ export function applyLiveMarker(
       cfi: cfi.slice(0, 60),
       error: err instanceof Error ? err.message : String(err),
     });
+    diag.errors++;
     return { status: 'error', reason: 'anchor(doc) failed' };
   }
 
@@ -813,6 +877,7 @@ export function applyLiveMarker(
         startContainer: range.startContainer.nodeName,
         hadLabel: !!label,
       });
+      diag.errors++;
       return { status: 'error', reason: 'CFI resolved to empty range, expansion failed' };
     }
   }
@@ -842,6 +907,7 @@ export function applyLiveMarker(
 
   if (!overlayer) {
     console.warn('[LiveMarker] FAIL — overlayer missing on content');
+    diag.errors++;
     return { status: 'error', reason: 'overlayer missing on content' };
   }
 
@@ -851,7 +917,7 @@ export function applyLiveMarker(
   const svg = ol.element as unknown as HTMLElement;
 
   // ── Layer 1: subtle phrase context (underlay) ──
-  svg.style.setProperty('--overlayer-highlight-opacity', '0.16');
+  svg.style.setProperty('--overlayer-highlight-opacity', '0.12');
   svg.style.setProperty('--overlayer-highlight-blend-mode', 'normal');
 
   ol.remove(LIVE_MARKER_KEY);
@@ -863,7 +929,7 @@ export function applyLiveMarker(
   // Lock the inline style so the next layer's CSS-var change doesn't affect this one
   const phraseG = svg.lastElementChild as HTMLElement | null;
   if (phraseG) {
-    phraseG.style.opacity = '0.16';
+    phraseG.style.opacity = '0.12';
     phraseG.style.mixBlendMode = 'normal';
   }
 
@@ -873,6 +939,10 @@ export function applyLiveMarker(
   // so we never flash a full-paragraph highlight at full opacity.
   let wordRangeForLog: string | undefined;
   if (wordWindowInfo) {
+    diag.wordWindowSuccess++;
+    diag.lastActiveWord = wordWindowInfo.activeWord;
+    diag.lastTotalWords = wordWindowInfo.totalWords;
+
     svg.style.setProperty('--overlayer-highlight-opacity', '0.52');
     svg.style.setProperty('--overlayer-highlight-blend-mode', 'screen');
 
@@ -892,8 +962,10 @@ export function applyLiveMarker(
     // No word-level narrowing possible — clean up any previous word layer
     ol.remove(LIVE_MARKER_WORD_KEY);
     if (progress !== undefined) {
+      diag.wordWindowSkipped++;
       console.log('[LiveMarker] Word-window skipped — narrowing returned null, phrase-only');
     }
+    diag.phraseOnlyFallback++;
   }
 
   const clientRects = range.getClientRects();
@@ -932,7 +1004,11 @@ export function applyLiveMarker(
     }
   }
 
+  diag.applied++;
+  diag.lastRangeText = range.toString().slice(0, 60);
+
   console.log('[LiveMarker] Overlay APPLIED successfully');
+  if (diag.totalCalls % DIAG_INTERVAL === 0) printDiagSummary();
   return { status: 'applied' };
 }
 
