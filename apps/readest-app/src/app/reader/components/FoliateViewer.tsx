@@ -22,7 +22,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
 import { resolveBookThemeFromBook, type BookThemeConfig } from '@/styles/book-themes';
-import { getHouseForCharacter, extractCharacterFromChapterTitle } from '@/data/got-houses';
+import {
+  getHouseForCharacter,
+  extractCharacterFromChapterTitle,
+  extractChapterLabel,
+} from '@/data/got-houses';
+import { getOrnamentAsset } from '@/styles/ornaments';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -85,6 +90,17 @@ const CITADEL_CHAPTER_OPENING_CLASS = 'citadel-chapter-opening';
 const CITADEL_CHAPTER_TITLE_CLASS = 'citadel-chapter-title';
 const CITADEL_CHAPTER_ORNAMENT_CLASS = 'citadel-chapter-ornament';
 const CITADEL_CHAPTER_SIGIL_CLASS = 'citadel-chapter-sigil';
+const CITADEL_ORNAMENT_DIVIDER_CLASS = 'citadel-ornament-divider';
+const CITADEL_THEMED_OPENING_CLASS = 'citadel-themed-opening';
+const CITADEL_CORNER_ORNAMENT_CLASS = 'citadel-corner-ornament';
+const CITADEL_CORNER_TL_CLASS = 'citadel-corner-tl';
+const CITADEL_CORNER_TR_CLASS = 'citadel-corner-tr';
+const CITADEL_CORNER_BL_CLASS = 'citadel-corner-bl';
+const CITADEL_CORNER_BR_CLASS = 'citadel-corner-br';
+const CITADEL_GOT_HEADER_CLASS = 'citadel-got-header';
+const CITADEL_GOT_CHAPTER_LABEL_CLASS = 'citadel-got-chapter-label';
+const CITADEL_GOT_ORNAMENT_SIDE_CLASS = 'citadel-got-ornament-side';
+const CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS = 'citadel-got-ornament-line-wrap';
 
 const CITADEL_CHAPTER_HEADING_SELECTOR = [
   'h1',
@@ -109,8 +125,8 @@ const CITADEL_BOOK_PAGE_CSS = `
     --citadel-page-muted-gold: #a97935;
     --citadel-page-title-gold: #d2aa62;
     --citadel-page-dropcap-gold: #d49a37;
-    --citadel-page-border-gold: rgba(184, 144, 86, 0.62);
-    --citadel-page-border-gold-soft: rgba(122, 91, 54, 0.3);
+    --citadel-page-border-gold: rgba(210, 160, 94, 0.82);
+    --citadel-page-border-gold-soft: rgba(148, 112, 64, 0.44);
     --citadel-page-outer-pad: 1.55rem;
     --citadel-page-gutter-pad: 2.3rem;
     --citadel-page-top-pad: 1.36rem;
@@ -145,28 +161,29 @@ const CITADEL_BOOK_PAGE_CSS = `
 
   body::before {
     content: '' !important;
-    position: fixed !important;
-    inset: 14px 16px !important;
+    position: absolute !important;
+    inset: 10px 12px !important;
     pointer-events: none !important;
     border-radius: 10px !important;
+    z-index: 999 !important;
     background:
-      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 24px 1.2px no-repeat,
-      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 1.2px 24px no-repeat,
-      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px left 17px / 12px 12px no-repeat,
-      radial-gradient(circle at top 20px left 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
-      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) top 20px right 20px / 24px 1.2px no-repeat,
-      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px right 20px / 1.2px 24px no-repeat,
-      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px right 17px / 12px 12px no-repeat,
-      radial-gradient(circle at top 20px right 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
-      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) bottom 20px left 20px / 24px 1.2px no-repeat,
-      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px left 20px / 1.2px 24px no-repeat,
-      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px left 17px / 12px 12px no-repeat,
-      radial-gradient(circle at bottom 20px left 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px),
-      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 24px 1.2px no-repeat,
-      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 1.2px 24px no-repeat,
-      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px right 17px / 12px 12px no-repeat,
-      radial-gradient(circle at bottom 20px right 20px, rgba(198, 156, 94, 0.34) 0 1.1px, transparent 1.35px) !important;
-    opacity: 0.94 !important;
+      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 44px 2px no-repeat,
+      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px left 20px / 2px 44px no-repeat,
+      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px left 17px / 20px 20px no-repeat,
+      radial-gradient(circle at top 20px left 20px, rgba(198, 156, 94, 0.34) 0 2px, transparent 2.3px),
+      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) top 20px right 20px / 44px 2px no-repeat,
+      linear-gradient(180deg, var(--citadel-page-border-gold), transparent) top 20px right 20px / 2px 44px no-repeat,
+      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) top 17px right 17px / 20px 20px no-repeat,
+      radial-gradient(circle at top 20px right 20px, rgba(198, 156, 94, 0.34) 0 2px, transparent 2.3px),
+      linear-gradient(90deg, var(--citadel-page-border-gold), transparent) bottom 20px left 20px / 44px 2px no-repeat,
+      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px left 20px / 2px 44px no-repeat,
+      linear-gradient(-45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px left 17px / 20px 20px no-repeat,
+      radial-gradient(circle at bottom 20px left 20px, rgba(198, 156, 94, 0.34) 0 2px, transparent 2.3px),
+      linear-gradient(90deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 44px 2px no-repeat,
+      linear-gradient(180deg, transparent, var(--citadel-page-border-gold)) bottom 20px right 20px / 2px 44px no-repeat,
+      linear-gradient(45deg, transparent 42%, rgba(206, 164, 96, 0.74) 50%, transparent 58%) bottom 17px right 17px / 20px 20px no-repeat,
+      radial-gradient(circle at bottom 20px right 20px, rgba(198, 156, 94, 0.34) 0 2px, transparent 2.3px) !important;
+    opacity: 0.98 !important;
   }
 
   p,
@@ -277,59 +294,80 @@ const CITADEL_BOOK_PAGE_CSS = `
     margin-right: auto !important;
   }
 
-  ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-    float: left !important;
-    margin: 0.04em 0.14em 0 0 !important;
-    color: var(--citadel-page-dropcap-gold) !important;
-    font-size: 4.35rem !important;
-    line-height: 0.84 !important;
-    font-weight: 550 !important;
-    text-shadow: 0 0 18px rgba(168, 86, 24, 0.25) !important;
+  @supports (initial-letter: 3) {
+    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+      initial-letter: 3 !important;
+      float: none !important;
+      margin: 0 0.12em 0 0 !important;
+      padding: 0 !important;
+      color: var(--citadel-page-dropcap-gold) !important;
+      font-weight: 550 !important;
+      text-shadow: 0 0 12px rgba(168, 86, 24, 0.2) !important;
+    }
+  }
+
+  @supports not (initial-letter: 3) {
+    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+      float: left !important;
+      margin: 0.02em 0.12em 0.04em 0 !important;
+      padding: 0 !important;
+      color: var(--citadel-page-dropcap-gold) !important;
+      font-size: 3.0rem !important;
+      line-height: 0.76 !important;
+      font-weight: 550 !important;
+      text-shadow: 0 0 12px rgba(168, 86, 24, 0.2) !important;
+    }
   }
 
   ${'.' + CITADEL_DROP_CAP_CLASS} {
     text-indent: 0 !important;
-    min-height: 4.1em !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    clear: none !important;
+  }
+
+  ${'.' + CITADEL_DROP_CAP_CLASS}::first-line {
+    line-height: 1.48 !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
     position: relative !important;
-    margin-top: 0.8em !important;
-    margin-bottom: 0.44em !important;
+    margin-top: 0.6em !important;
+    margin-bottom: 0.36em !important;
     text-align: center !important;
     color: var(--citadel-page-title-gold) !important;
     font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif !important;
-    font-size: clamp(1.42rem, 2.45vw, 2rem) !important;
-    line-height: 1.08 !important;
-    letter-spacing: 0.18em !important;
+    font-size: clamp(1.2rem, 2.2vw, 1.7rem) !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0.14em !important;
     text-transform: uppercase !important;
-    font-weight: 600 !important;
-    text-shadow: 0 1px 0 rgba(28, 16, 9, 0.5), 0 0 14px rgba(134, 74, 23, 0.14) !important;
+    font-weight: 550 !important;
+    text-shadow: 0 1px 0 rgba(28, 16, 9, 0.4), 0 0 10px rgba(134, 74, 23, 0.1) !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before,
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
     content: '' !important;
     display: block !important;
-    width: min(9.5rem, 42%) !important;
-    height: 14px !important;
+    width: min(8rem, 38%) !important;
+    height: 16px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     background:
-      linear-gradient(90deg, transparent 0%, rgba(188, 143, 76, 0.24) 16%, rgba(205, 164, 95, 0.8) 50%, rgba(188, 143, 76, 0.24) 84%, transparent 100%) center / 100% 1px no-repeat,
-      linear-gradient(45deg, transparent 44%, rgba(208, 168, 96, 0.84) 50%, transparent 56%) center / 9px 9px no-repeat,
-      linear-gradient(-45deg, transparent 44%, rgba(208, 168, 96, 0.84) 50%, transparent 56%) center / 9px 9px no-repeat,
-      radial-gradient(circle at center, rgba(214, 171, 106, 0.66) 0 1.2px, transparent 1.4px) center / 100% 100% no-repeat !important;
-    opacity: 0.92 !important;
+      linear-gradient(90deg, transparent 0%, rgba(198, 152, 84, 0.26) 12%, rgba(214, 170, 100, 0.82) 50%, rgba(198, 152, 84, 0.26) 88%, transparent 100%) center / 100% 1.4px no-repeat,
+      linear-gradient(45deg, transparent 40%, rgba(218, 174, 104, 0.84) 50%, transparent 60%) center / 10px 10px no-repeat,
+      linear-gradient(-45deg, transparent 40%, rgba(218, 174, 104, 0.84) 50%, transparent 60%) center / 10px 10px no-repeat,
+      radial-gradient(circle at center, rgba(224, 180, 112, 0.62) 0 1.3px, transparent 1.5px) center / 100% 100% no-repeat !important;
+    opacity: 0.9 !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before {
-    margin-bottom: 0.4em !important;
+    margin-bottom: 0.35em !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
-    width: min(7.2rem, 32%) !important;
-    margin-top: 0.28em !important;
+    width: min(6rem, 28%) !important;
+    margin-top: 0.24em !important;
     opacity: 0.72 !important;
   }
 
@@ -349,12 +387,131 @@ const CITADEL_BOOK_PAGE_CSS = `
 
   .${CITADEL_CHAPTER_SIGIL_CLASS} {
     display: block !important;
-    max-height: 30px !important;
+    max-height: 42px !important;
     width: auto !important;
-    margin: 0 auto 0.6rem auto !important;
-    opacity: 0.86 !important;
-    filter: brightness(0.68) sepia(0.85) saturate(1.6) hue-rotate(-4deg) drop-shadow(0 1px 3px rgba(0,0,0,0.28)) !important;
+    margin: 0.3em auto 0.4em auto !important;
+    opacity: 0.88 !important;
+    filter:
+      brightness(0.92)
+      sepia(0.28)
+      saturate(1.6)
+      hue-rotate(-1deg)
+      drop-shadow(0 2px 4px rgba(0,0,0,0.22)) !important;
   }
+
+  .${CITADEL_ORNAMENT_DIVIDER_CLASS} {
+    display: block !important;
+    max-height: 34px !important;
+    width: auto !important;
+    max-width: min(12rem, 48%) !important;
+    margin: 0 auto !important;
+    opacity: 0.9 !important;
+    filter: brightness(0.78) sepia(0.32) saturate(1.3) drop-shadow(0 1px 3px rgba(0,0,0,0.2)) !important;
+  }
+
+  .${CITADEL_ORNAMENT_DIVIDER_CLASS}.ornament-divider-above {
+    margin-bottom: 0.8em !important;
+  }
+
+  .${CITADEL_ORNAMENT_DIVIDER_CLASS}.ornament-divider-below {
+    margin-top: 0.52em !important;
+    max-width: min(7.5rem, 30%) !important;
+    opacity: 0.78 !important;
+  }
+
+  .${CITADEL_THEMED_OPENING_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS} {
+    margin-top: 0.3em !important;
+    margin-bottom: 0.36em !important;
+  }
+
+  .${CITADEL_THEMED_OPENING_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS}::before,
+  .${CITADEL_THEMED_OPENING_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS}::after {
+    display: none !important;
+  }
+
+  /* ── GOT / ASOIAF chapter header ── */
+  .${CITADEL_GOT_HEADER_CLASS} {
+    text-align: center !important;
+    margin: 0.4em 0 0.2em 0 !important;
+  }
+
+  .${CITADEL_GOT_CHAPTER_LABEL_CLASS} {
+    text-align: center !important;
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif !important;
+    font-size: clamp(0.78rem, 1.4vw, 0.92rem) !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    color: var(--citadel-page-muted-gold) !important;
+    margin-bottom: 0.12em !important;
+    font-weight: 450 !important;
+  }
+
+  .${CITADEL_GOT_HEADER_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS} {
+    margin-top: 0 !important;
+    margin-bottom: 0.14em !important;
+    font-size: clamp(1.4rem, 3vw, 2rem) !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  .${CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS} {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0.3em auto 0.5em auto !important;
+    max-width: min(18rem, 62%) !important;
+    gap: 2px !important;
+  }
+
+  .${CITADEL_GOT_ORNAMENT_SIDE_CLASS} {
+    flex: 1 1 0 !important;
+    min-width: 14px !important;
+    height: 1.4px !important;
+    border: 0 !important;
+    background:
+      linear-gradient(90deg, transparent 0%, var(--citadel-page-border-gold) 62%) 0 50% / 100% 1.4px no-repeat !important;
+    opacity: 0.82 !important;
+  }
+
+  .${CITADEL_GOT_ORNAMENT_SIDE_CLASS}.got-ornament-right {
+    background:
+      linear-gradient(90deg, var(--citadel-page-border-gold) 0%, transparent 100%) 0 50% / 100% 1.4px no-repeat !important;
+  }
+
+  .${CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS} .${CITADEL_CHAPTER_SIGIL_CLASS} {
+    flex-shrink: 0 !important;
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 5px !important;
+    display: block !important;
+    background-color: #c4953a !important;
+    mask-size: contain !important;
+    mask-repeat: no-repeat !important;
+    mask-position: center !important;
+    -webkit-mask-size: contain !important;
+    -webkit-mask-repeat: no-repeat !important;
+    -webkit-mask-position: center !important;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)) !important;
+  }
+
+  /* ── End GOT header ── */
+
+  .${CITADEL_CORNER_ORNAMENT_CLASS} {
+    position: absolute !important;
+    pointer-events: none !important;
+    z-index: 1000 !important;
+    width: 56px !important;
+    height: 56px !important;
+    opacity: 0.88 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    filter: brightness(0.84) sepia(0.22) saturate(1.25)
+      drop-shadow(0 2px 5px rgba(0,0,0,0.3)) !important;
+  }
+  .${CITADEL_CORNER_TL_CLASS} { top: 8px !important; left: 8px !important; }
+  .${CITADEL_CORNER_TR_CLASS} { top: 8px !important; right: 8px !important; transform: scaleX(-1) !important; }
+  .${CITADEL_CORNER_BL_CLASS} { bottom: 8px !important; left: 8px !important; transform: scaleY(-1) !important; }
+  .${CITADEL_CORNER_BR_CLASS} { bottom: 8px !important; right: 8px !important; transform: scale(-1, -1) !important; }
 
   @media (max-width: 900px) {
     :root {
@@ -368,8 +525,15 @@ const CITADEL_BOOK_PAGE_CSS = `
       inset: 12px 12px !important;
     }
 
-    ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
-      font-size: 3.75rem !important;
+    @supports (initial-letter: 2) {
+      ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+        initial-letter: 2 !important;
+      }
+    }
+    @supports not (initial-letter: 2) {
+      ${'.' + CITADEL_DROP_CAP_CLASS}::first-letter {
+        font-size: 2.5rem !important;
+      }
     }
 
     ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
@@ -378,10 +542,24 @@ const CITADEL_BOOK_PAGE_CSS = `
     }
 
     .${CITADEL_CHAPTER_SIGIL_CLASS} {
-      max-height: 24px !important;
-      margin-bottom: 0.5rem !important;
+      max-height: 30px !important;
+      margin: 0.2em auto 0.32em auto !important;
       opacity: 0.82 !important;
     }
+
+    .${CITADEL_ORNAMENT_DIVIDER_CLASS} {
+      max-height: 24px !important;
+      max-width: min(8rem, 36%) !important;
+    }
+
+    .${CITADEL_CORNER_ORNAMENT_CLASS} {
+      width: 42px !important;
+      height: 42px !important;
+    }
+    .${CITADEL_CORNER_TL_CLASS} { top: 6px !important; left: 6px !important; }
+    .${CITADEL_CORNER_TR_CLASS} { top: 6px !important; right: 6px !important; }
+    .${CITADEL_CORNER_BL_CLASS} { bottom: 6px !important; left: 6px !important; }
+    .${CITADEL_CORNER_BR_CLASS} { bottom: 6px !important; right: 6px !important; }
   }
 `;
 
@@ -481,6 +659,9 @@ const buildBookThemeCSS = (theme: BookThemeConfig): string => {
     :root {
       --citadel-ornament-style: '${theme.ornamentStyle}';
     }
+    body::before {
+      opacity: 0 !important;
+    }
     ${textureCSS}
   `;
 };
@@ -515,10 +696,22 @@ const applyCitadelBookPageStyles = (
   doc.querySelectorAll(`.${CITADEL_CHAPTER_ORNAMENT_CLASS}`).forEach((element) => {
     element.classList.remove(CITADEL_CHAPTER_ORNAMENT_CLASS);
   });
-  doc.querySelectorAll(`.${CITADEL_CHAPTER_SIGIL_CLASS}`).forEach((element) => {
-    element.remove();
+  // Clean up injected elements from previous page
+  doc.querySelectorAll(`.${CITADEL_CHAPTER_SIGIL_CLASS}`).forEach((el) => el.remove());
+  doc.querySelectorAll(`.${CITADEL_ORNAMENT_DIVIDER_CLASS}`).forEach((el) => el.remove());
+  doc.querySelectorAll(`.${CITADEL_CORNER_ORNAMENT_CLASS}`).forEach((el) => el.remove());
+  doc.querySelectorAll(`.${CITADEL_GOT_HEADER_CLASS}`).forEach((el) => {
+    // Unwrap GOT header: move heading back to parent before removing container
+    const heading = el.querySelector(`.${CITADEL_CHAPTER_TITLE_CLASS}`);
+    if (heading && el.parentNode) {
+      el.parentNode.insertBefore(heading, el);
+    }
+    el.remove();
   });
+  doc.querySelectorAll(`.${CITADEL_GOT_CHAPTER_LABEL_CLASS}`).forEach((el) => el.remove());
+  doc.querySelectorAll(`.${CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS}`).forEach((el) => el.remove());
   doc.body?.classList.remove(CITADEL_CHAPTER_OPENING_CLASS);
+  doc.body?.classList.remove(CITADEL_THEMED_OPENING_CLASS);
   doc.documentElement.setAttribute('data-citadel-page-side', getCitadelPageSide(doc));
 
   const { heading, paragraph } = getCitadelChapterOpening(doc);
@@ -527,18 +720,79 @@ const applyCitadelBookPageStyles = (
     doc.body?.classList.add(CITADEL_CHAPTER_OPENING_CLASS);
     heading.classList.add(CITADEL_CHAPTER_TITLE_CLASS);
 
-    // Sigil insertion for books with sigil support (e.g. GOT)
-    if (theme?.useSigils) {
-      const headingText = (heading.textContent || '').trim();
-      const character = extractCharacterFromChapterTitle(headingText);
-      const house = character ? getHouseForCharacter(character) : null;
-      if (house) {
-        const sigilImg = doc.createElement('img');
-        sigilImg.src = house.sigilPath;
-        sigilImg.alt = `${house.name} sigil`;
-        sigilImg.className = CITADEL_CHAPTER_SIGIL_CLASS;
-        sigilImg.style.cssText = '';
-        heading.parentNode?.insertBefore(sigilImg, heading);
+    const isThemed = theme && theme.id !== 'default';
+
+    if (isThemed) {
+      doc.body?.classList.add(CITADEL_THEMED_OPENING_CLASS);
+
+      if (theme.useSigils) {
+        // ── GOT / ASOIAF integrated chapter header ──
+        const headingText = (heading.textContent || '').trim();
+        const chapterLabel = extractChapterLabel(headingText);
+        const character = extractCharacterFromChapterTitle(headingText);
+        const house = character ? getHouseForCharacter(character) : null;
+
+        // Wrap heading + ornament line in a GOT header container
+        const gotHeader = doc.createElement('div');
+        gotHeader.className = CITADEL_GOT_HEADER_CLASS;
+
+        // Inject chapter label above heading if present in original text
+        if (chapterLabel) {
+          const labelEl = doc.createElement('div');
+          labelEl.textContent = chapterLabel;
+          labelEl.className = CITADEL_GOT_CHAPTER_LABEL_CLASS;
+          gotHeader.appendChild(labelEl);
+        }
+
+        // Move heading into the GOT header container
+        heading.parentNode?.insertBefore(gotHeader, heading);
+        gotHeader.appendChild(heading);
+
+        // Build ornament line: left line — sigil — right line
+        if (house) {
+          const lineWrap = doc.createElement('div');
+          lineWrap.className = CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS;
+
+          const leftLine = doc.createElement('div');
+          leftLine.className = CITADEL_GOT_ORNAMENT_SIDE_CLASS;
+
+          const sigilEl = doc.createElement('div');
+          sigilEl.className = CITADEL_CHAPTER_SIGIL_CLASS;
+          sigilEl.style.maskImage = `url(${house.sigilPath})`;
+          sigilEl.style.webkitMaskImage = `url(${house.sigilPath})`;
+          sigilEl.setAttribute('role', 'img');
+          sigilEl.setAttribute('aria-label', `${house.name} sigil`);
+
+          const rightLine = doc.createElement('div');
+          rightLine.className = `${CITADEL_GOT_ORNAMENT_SIDE_CLASS} got-ornament-right`;
+
+          lineWrap.appendChild(leftLine);
+          lineWrap.appendChild(sigilEl);
+          lineWrap.appendChild(rightLine);
+          gotHeader.appendChild(lineWrap);
+        }
+      } else {
+        // ── Non-GOT themed books: standard PNG ornament dividers ──
+        const dividerSrc = getOrnamentAsset(theme.ornamentStyle, 'divider');
+        if (dividerSrc) {
+          const dividerAbove = doc.createElement('img');
+          dividerAbove.src = dividerSrc;
+          dividerAbove.alt = '';
+          dividerAbove.className = `${CITADEL_ORNAMENT_DIVIDER_CLASS} ornament-divider-above`;
+          dividerAbove.setAttribute('width', '160');
+          dividerAbove.setAttribute('height', '22');
+          heading.parentNode?.insertBefore(dividerAbove, heading);
+        }
+
+        if (dividerSrc) {
+          const dividerBelow = doc.createElement('img');
+          dividerBelow.src = dividerSrc;
+          dividerBelow.alt = '';
+          dividerBelow.className = `${CITADEL_ORNAMENT_DIVIDER_CLASS} ornament-divider-below`;
+          dividerBelow.setAttribute('width', '120');
+          dividerBelow.setAttribute('height', '22');
+          heading.parentNode?.insertBefore(dividerBelow, heading.nextSibling);
+        }
       }
     }
 
@@ -547,6 +801,29 @@ const applyCitadelBookPageStyles = (
       ornament.classList.add(CITADEL_CHAPTER_ORNAMENT_CLASS);
     }
     paragraph.classList.add(CITADEL_DROP_CAP_CLASS);
+  }
+
+  // Page-corner ornaments are rendered on the React layer in BooksGrid.tsx
+  // (sibling to the page well, z-[3]). The iframe-side injection below is kept
+  // gated for parity but disabled to avoid two ornament systems competing.
+  const RENDER_IFRAME_PAGE_CORNERS = false;
+  if (RENDER_IFRAME_PAGE_CORNERS && theme && theme.id !== 'default') {
+    const cornerSrc = getOrnamentAsset(theme.ornamentStyle, 'corner');
+    if (cornerSrc) {
+      const cornerPositions = [
+        CITADEL_CORNER_TL_CLASS,
+        CITADEL_CORNER_TR_CLASS,
+        CITADEL_CORNER_BL_CLASS,
+        CITADEL_CORNER_BR_CLASS,
+      ];
+      for (const pos of cornerPositions) {
+        const corner = doc.createElement('img');
+        corner.src = cornerSrc;
+        corner.alt = '';
+        corner.className = `${CITADEL_CORNER_ORNAMENT_CLASS} ${pos}`;
+        doc.body?.appendChild(corner);
+      }
+    }
   }
 };
 
