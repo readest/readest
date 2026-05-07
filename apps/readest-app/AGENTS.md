@@ -199,6 +199,35 @@ Report the full, unfiltered outcome. Pre-existing failures must be acknowledged,
 
 ---
 
+## Audiobook Sync Auto-Debug Rule
+
+For audiobook sync/highlight tasks, agents must not report complete from lint/tests alone.
+
+Before completion, the agent must provide a runtime sync diagnostic summary covering:
+
+- marker attempts
+- applied markers
+- retries
+- wrong-section count
+- no-href count
+- phrase-only fallback count
+- word-window success count
+- average highlighted word count
+- first-play behavior
+- remaining repeated error pattern
+
+If logs show repeated `WRONG SECTION`, `section has no href`, `target section has no href`, `Word-window skipped`, or `needsRetry: true`, the task is **not complete**.
+
+The report must use one of:
+
+- `Verified in running app`
+- `Not verified`
+- `Blocked by ...`
+
+Do not hide sync failures by only changing log levels.
+
+---
+
 ### Branch Safety Rules
 
 - Work only on the current branch.
