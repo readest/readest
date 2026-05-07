@@ -137,9 +137,21 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     };
     eventDispatcher.onSync('show-book-details', handleShowBookDetails);
 
+    // Auto-generate sync when audiobook is loaded but no sync map exists
+    const handleAutoGenerateSync = (event: CustomEvent) => {
+      const { bookKey: targetKey } = event.detail as { bookKey: string };
+      handleGenerateSync(targetKey).catch((err) => {
+        console.warn('[ReaderContent] Auto-generate sync failed', err);
+      });
+    };
+    eventDispatcher.on('audiobook-sync-auto-generate', handleAutoGenerateSync);
+
     return () => {
       eventDispatcher.offSync('show-book-details', handleShowBookDetails);
+      eventDispatcher.off('audiobook-sync-auto-generate', handleAutoGenerateSync);
     };
+    // handleGenerateSync is intentionally captured once — its deps are stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -293,11 +305,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       )}
       <style jsx global>{`
         .citadel-reader-texture {
-          opacity: 0.038;
-          mix-blend-mode: soft-light;
-          background-image: url('/citadel/textures/citadel_texture_overlay_02_linen_weave_white_alpha.png');
+          opacity: 0.12;
+          mix-blend-mode: overlay;
+          background-image: url('/citadel/textures/citadel_texture_overlay_03_dark_dust_scratches_black_alpha.png');
           background-repeat: repeat;
-          background-size: 220px 220px;
+          background-size: 200px 200px;
         }
 
         @media (min-width: 640px) {

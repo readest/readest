@@ -199,7 +199,7 @@ export const BOOK_THEME_CONFIGS: Record<string, BookThemeConfig> = {
   fantasy: {
     id: 'fantasy',
     label: 'Fantasy',
-    ornamentStyle: 'arcane',
+    ornamentStyle: 'gothic',
     useSigils: false,
     textureId: 'parchment',
     textureBlendMode: 'multiply',

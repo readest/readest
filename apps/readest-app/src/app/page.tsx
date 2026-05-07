@@ -19,7 +19,6 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 import { navigateToReader } from '@/utils/nav';
 import { formatAuthors } from '@/utils/book';
 import { type SelectedFile } from '@/hooks/useFileSelector';
-import { resolveBookThemeFromBook } from '@/styles/book-themes';
 
 const HOME_PREVIEW_LIMIT = 6;
 const SHELF_BOOK_WIDTH = 'clamp(112px, 8.8vw, 160px)';
@@ -47,13 +46,6 @@ const getDroppedPathExtension = (path: string) => {
 const isSupportedDroppedBookPath = (path: string) =>
   SUPPORTED_DROP_EXTENSIONS.has(getDroppedPathExtension(path));
 
-const FEATURED_FRAME_WINDOW_STYLE = {
-  left: '13%',
-  right: '6.2%',
-  top: '7.2%',
-  bottom: '6.5%',
-} as const;
-
 type HoverTiltState = {
   rotateX: number;
   rotateY: number;
@@ -74,17 +66,6 @@ const SHELF_REST_TILT: HoverTiltState = {
   translateY: 0,
   scale: 1,
 };
-
-const FEATURED_FRAME_MASK_STYLE = {
-  WebkitMaskImage: "url('/citadel/book-frame-mask-alpha-clean.png')",
-  maskImage: "url('/citadel/book-frame-mask-alpha-clean.png')",
-  WebkitMaskRepeat: 'no-repeat',
-  maskRepeat: 'no-repeat',
-  WebkitMaskSize: 'contain',
-  maskSize: 'contain',
-  WebkitMaskPosition: 'center',
-  maskPosition: 'center',
-} as const;
 
 const DEFAULT_FRAME_TINT_COLOR = '#090807';
 const cleanFeaturedTitle = (title: string) =>
@@ -278,11 +259,6 @@ export default function HomePage() {
     }
     return visibleBooks[0] ?? null;
   }, [settings.lastOpenBooks, visibleBooks]);
-
-  const continueBookTheme = useMemo(() => {
-    if (!continueBook) return null;
-    return resolveBookThemeFromBook(continueBook);
-  }, [continueBook]);
 
   const sortedShelfBooks = useMemo(() => {
     return [...visibleBooks].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -605,6 +581,19 @@ export default function HomePage() {
         backgroundBlendMode: 'screen, screen, soft-light, overlay, overlay, normal',
       }}
     >
+      {/* Background texture overlay */}
+      <div
+        aria-hidden='true'
+        className='pointer-events-none absolute inset-0 z-[1]'
+        style={{
+          backgroundImage:
+            "url('/citadel/textures/citadel_texture_overlay_03_dark_dust_scratches_black_alpha.png')",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '280px 280px',
+          opacity: 0.09,
+          mixBlendMode: 'overlay',
+        }}
+      />
       {/* ── Titlebar ── */}
       <AppTitleBar
         headerRef={titlebarRef}
@@ -695,16 +684,16 @@ export default function HomePage() {
 
       {/* ── Main canvas ── */}
       <div
-        className='relative flex min-h-0 flex-1 flex-col overflow-hidden'
+        className='relative flex min-h-0 flex-1 flex-col overflow-visible'
         style={{
           paddingLeft: `max(${insets.left}px, 0px)`,
           paddingRight: `max(${insets.right}px, 0px)`,
           paddingBottom: `max(${insets.bottom}px, 0px)`,
         }}
       >
-        <div className='relative flex min-h-0 flex-1 flex-col overflow-hidden'>
+        <div className='relative flex min-h-0 flex-1 flex-col overflow-visible'>
           {/* ── Hero ── */}
-          <section className='relative flex flex-1 items-center justify-center overflow-hidden'>
+          <section className='relative flex flex-1 items-center justify-center overflow-visible'>
             <div
               aria-hidden='true'
               className='pointer-events-none absolute inset-0'
@@ -765,16 +754,17 @@ export default function HomePage() {
 
                 {/* ── Right column: featured physical book ── */}
                 <div className='relative mr-1 flex flex-shrink-0 items-center justify-center overflow-visible sm:mr-2 lg:mr-4 xl:mr-8'>
+                  {/* Floor shadow */}
                   <div
                     aria-hidden='true'
-                    className='pointer-events-none absolute bottom-0 left-1/2 z-0 -translate-x-1/2 translate-y-[14px]'
+                    className='pointer-events-none absolute bottom-0 left-1/2 z-0 -translate-x-1/2 translate-y-[12px]'
                     style={{
-                      width: '82%',
-                      height: '28px',
+                      width: '78%',
+                      height: '24px',
                       borderRadius: '50%',
                       background:
-                        'radial-gradient(ellipse at center, rgba(0,0,0,0.56) 0%, rgba(0,0,0,0.28) 42%, rgba(0,0,0,0.07) 70%, transparent 90%)',
-                      filter: 'blur(14px)',
+                        'radial-gradient(ellipse at center, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.04) 68%, transparent 88%)',
+                      filter: 'blur(12px)',
                     }}
                   />
                   <button
@@ -787,124 +777,99 @@ export default function HomePage() {
                     onPointerCancel={resetFeaturedTilt}
                   >
                     <div
-                      className='relative isolate aspect-[0.78] max-h-[min(70vh,620px)] w-[clamp(280px,24vw,410px)]'
+                      className='relative aspect-[0.68] max-h-[min(68vh,600px)] w-[clamp(260px,22vw,390px)]'
                       style={{
                         ...featuredTiltStyle,
                         filter:
                           featuredTilt.translateY !== 0
-                            ? 'drop-shadow(0 28px 46px rgba(0,0,0,0.80)) drop-shadow(0 58px 96px rgba(0,0,0,0.34))'
-                            : 'drop-shadow(0 20px 38px rgba(0,0,0,0.72)) drop-shadow(0 50px 84px rgba(0,0,0,0.28))',
+                            ? 'drop-shadow(0 28px 48px rgba(0,0,0,0.80)) drop-shadow(0 58px 98px rgba(0,0,0,0.34))'
+                            : 'drop-shadow(0 20px 38px rgba(0,0,0,0.68)) drop-shadow(0 50px 84px rgba(0,0,0,0.26))',
                       }}
                     >
+                      {/* Frame background — dark surface behind the cover */}
                       <div
-                        className='absolute z-0 overflow-hidden bg-[#030303]'
-                        style={{ ...FEATURED_FRAME_WINDOW_STYLE, borderRadius: '3px' }}
-                      >
-                        {continueBookTheme?.menuBookImage ? (
-                          <img
-                            src={continueBookTheme.menuBookImage}
-                            alt={continueBook.title}
-                            className='h-full w-full object-cover'
-                            style={{
-                              objectPosition: 'center',
-                              filter: 'brightness(0.96) contrast(1.06) saturate(0.94)',
-                              transform: 'translateZ(0)',
-                              backfaceVisibility: 'hidden',
-                              WebkitBackfaceVisibility: 'hidden',
-                            }}
-                            draggable={false}
-                          />
-                        ) : continueCoverUrl ? (
-                          <img
-                            src={continueCoverUrl}
-                            alt={continueBook.title}
-                            className='h-full w-full object-cover'
-                            style={{
-                              objectPosition: '52% 50%',
-                              filter: 'brightness(0.92) contrast(1.12) saturate(0.9) sepia(0.03)',
-                              transform: 'translateZ(0)',
-                              backfaceVisibility: 'hidden',
-                              WebkitBackfaceVisibility: 'hidden',
-                            }}
-                            draggable={false}
-                          />
-                        ) : (
-                          <div className='flex h-full w-full flex-col justify-between bg-[linear-gradient(180deg,#1b1b1d_0%,#0f0f11_100%)] p-6'>
-                            <span className='text-xs font-semibold uppercase tracking-[0.2em] text-[#9b6a1e]'>
-                              Citadel
-                            </span>
-                            <span className='text-left text-xl font-medium text-[#e5dccd]'>
-                              {cleanFeaturedTitle(continueBook.title)}
-                            </span>
-                            <span className='text-left text-xs text-[#8a8883]'>
-                              {formatAuthors(continueBook.author, continueBook.primaryLanguage) ||
-                                _('Unknown author')}
-                            </span>
-                          </div>
-                        )}
-                        <div
-                          className='pointer-events-none absolute inset-0'
-                          aria-hidden='true'
-                          style={{
-                            background:
-                              'linear-gradient(90deg, rgba(0,0,0,0.18) 0%, transparent 22%, transparent 76%, rgba(0,0,0,0.22) 100%)',
-                          }}
-                        />
-                      </div>
-
-                      <div
-                        className='pointer-events-none absolute inset-0 z-10'
-                        aria-hidden='true'
+                        className='absolute inset-0 rounded-[8px]'
                         style={{
-                          background: `
-                            linear-gradient(
-                              90deg,
-                              color-mix(in srgb, ${frameTintColor} 42%, black 58%) 0%,
-                              color-mix(in srgb, ${frameTintColor} 68%, black 32%) 17%,
-                              color-mix(in srgb, ${frameTintColor} 84%, black 16%) 48%,
-                              color-mix(in srgb, ${frameTintColor} 70%, black 30%) 76%,
-                              color-mix(in srgb, ${frameTintColor} 46%, black 54%) 100%
-                            )
+                          background: `linear-gradient(160deg,
+                            color-mix(in srgb, ${frameTintColor} 26%, #0d0a07 74%),
+                            color-mix(in srgb, ${frameTintColor} 14%, #060504 86%)
+                          )`,
+                          boxShadow: `
+                            inset 0 0 0 2px color-mix(in srgb, ${frameTintColor} 58%, #1a1410 42%),
+                            inset 0 0 0 5px color-mix(in srgb, ${frameTintColor} 10%, #080605 90%),
+                            0 0 0 1px color-mix(in srgb, ${frameTintColor} 12%, transparent 88%)
                           `,
-                          ...FEATURED_FRAME_MASK_STYLE,
-                          filter: 'brightness(0.78) contrast(1.2) saturate(1.05)',
                         }}
                       />
-
+                      {/* Inner gold accent ring */}
                       <div
-                        className='pointer-events-none absolute inset-0 z-20 opacity-[0.92] mix-blend-multiply'
+                        className='pointer-events-none absolute z-10 rounded-[5px]'
                         aria-hidden='true'
                         style={{
-                          background:
-                            'linear-gradient(90deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.24) 13%, rgba(255,255,255,0.03) 44%, rgba(0,0,0,0.28) 78%, rgba(0,0,0,0.56) 100%)',
-                          ...FEATURED_FRAME_MASK_STYLE,
+                          inset: '6px',
+                          border: `1px solid color-mix(in srgb, ${frameTintColor} 42%, transparent 58%)`,
+                          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${frameTintColor} 06%, transparent 94%)`,
                         }}
                       />
-
+                      {/* Book cover — inset with visible frame around it */}
                       <div
-                        className='pointer-events-none absolute inset-0 z-30 opacity-[0.62] mix-blend-multiply'
-                        aria-hidden='true'
+                        className='relative h-full w-full overflow-hidden rounded-[5px]'
                         style={{
-                          background:
-                            'radial-gradient(circle at 50% 44%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.26) 70%, rgba(0,0,0,0.54) 100%)',
-                          ...FEATURED_FRAME_MASK_STYLE,
+                          padding: '7.5%',
+                          background: 'transparent',
                         }}
-                      />
-
-                      <Image
-                        src='/citadel/book-frame-detail-overlay.png'
-                        alt=''
-                        fill
-                        priority
-                        draggable={false}
-                        className='pointer-events-none absolute inset-0 z-40 h-full w-full object-contain opacity-[0.48]'
-                        style={{
-                          mixBlendMode: 'screen',
-                          filter: 'grayscale(1) contrast(1.38) brightness(0.80)',
-                        }}
-                      />
+                      >
+                        <div
+                          className='relative h-full w-full overflow-hidden rounded-[3px]'
+                          style={{
+                            background: continueCoverUrl
+                              ? '#080504'
+                              : `linear-gradient(180deg, ${frameTintColor}18, #080504)`,
+                          }}
+                        >
+                          {continueCoverUrl ? (
+                            <img
+                              src={continueCoverUrl}
+                              alt={continueBook.title}
+                              className='h-full w-full object-cover'
+                              style={{
+                                objectPosition: '50% 50%',
+                                filter: 'brightness(0.88) contrast(1.06) saturate(0.94)',
+                                transform: 'translateZ(0)',
+                                backfaceVisibility: 'hidden',
+                                WebkitBackfaceVisibility: 'hidden',
+                              }}
+                              draggable={false}
+                            />
+                          ) : (
+                            <div className='flex h-full w-full flex-col justify-end p-4'>
+                              <span className='text-lg font-medium text-[#e5dccd]'>
+                                {cleanFeaturedTitle(continueBook.title)}
+                              </span>
+                              <span className='mt-1 text-[10px] text-[#8a8883]'>
+                                {formatAuthors(continueBook.author, continueBook.primaryLanguage) ||
+                                  _('Unknown author')}
+                              </span>
+                            </div>
+                          )}
+                          {/* Vignette — seats the cover into the frame */}
+                          <div
+                            className='pointer-events-none absolute inset-0 z-[2]'
+                            aria-hidden='true'
+                            style={{
+                              background: `
+                                radial-gradient(ellipse 76% 58% at 50% 44%, transparent 26%, rgba(0,0,0,0.13) 62%, rgba(0,0,0,0.42) 88%, rgba(0,0,0,0.58) 100%),
+                                linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.12) 100%)
+                              `,
+                              boxShadow:
+                                'inset 0 0 0 1px rgba(0,0,0,0.18), inset 0 0 24px rgba(0,0,0,0.14)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {/* Glare */}
                       <div
-                        className='pointer-events-none absolute inset-0 z-50'
+                        className='pointer-events-none absolute inset-0 z-50 rounded-[8px]'
                         aria-hidden='true'
                         style={featuredGlareStyle}
                       />

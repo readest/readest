@@ -478,6 +478,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
         .books-grid .reader-frame-well {
           border-radius: 14px;
           background:
+            /* Subtle warm light from above to give the page a lit feel */
+            radial-gradient(ellipse 70% 30% at 50% 0%, rgba(232, 188, 124, 0.07), transparent 60%),
+            /* Paper grain — tiny dot pattern for tactile depth */
+            url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><circle cx='8' cy='12' r='0.5' fill='%23d6a85c' fill-opacity='0.05'/><circle cx='36' cy='28' r='0.5' fill='%23d6a85c' fill-opacity='0.04'/><circle cx='52' cy='48' r='0.5' fill='%23d6a85c' fill-opacity='0.05'/><circle cx='20' cy='52' r='0.5' fill='%23d6a85c' fill-opacity='0.04'/><circle cx='44' cy='8' r='0.4' fill='%23d6a85c' fill-opacity='0.04'/></svg>"),
             radial-gradient(ellipse 52% 78% at 50% 46%, rgba(120, 76, 42, 0.14), transparent 52%),
             radial-gradient(ellipse 36% 86% at 2% 48%, rgba(0, 0, 0, 0.36), transparent 70%),
             radial-gradient(ellipse 36% 86% at 98% 48%, rgba(0, 0, 0, 0.36), transparent 70%),
@@ -501,13 +505,21 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             ),
             linear-gradient(
               180deg,
-              rgba(34, 22, 18, 0.16) 0%,
+              rgba(40, 26, 20, 0.22) 0%,
               rgba(0, 0, 0, 0.18) 10%,
               transparent 26%,
               transparent 72%,
-              rgba(0, 0, 0, 0.14) 90%,
-              rgba(0, 0, 0, 0.38) 100%
+              rgba(0, 0, 0, 0.16) 90%,
+              rgba(0, 0, 0, 0.42) 100%
             );
+          background-size:
+            auto,
+            64px 64px,
+            auto,
+            auto,
+            auto,
+            auto,
+            auto;
           box-shadow:
             inset 0 0 0 1px rgba(214, 168, 88, 0.42),
             inset 0 0 0 2px rgba(36, 22, 16, 0.55),
@@ -696,6 +708,52 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           border-radius: 50%;
           background: rgba(212, 168, 88, 0.96);
           box-shadow: 0 0 6px rgba(180, 132, 52, 0.55);
+        }
+
+        /* ── Footer page numbers: book-like styling with side flourishes ── */
+        .books-grid .progressinfo .progress-info-label {
+          color: rgba(220, 184, 116, 0.92);
+          font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+          font-size: 0.84rem;
+          font-style: italic;
+          font-weight: 400;
+          letter-spacing: 0.06em;
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+          padding: 0 0.2em;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.55em;
+        }
+
+        .books-grid .progressinfo .progress-info-label::before,
+        .books-grid .progressinfo .progress-info-label::after {
+          content: '';
+          display: inline-block;
+          width: 22px;
+          height: 6px;
+          background:
+            linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(214, 168, 88, 0.18) 16%,
+                rgba(220, 178, 102, 0.78) 50%,
+                rgba(214, 168, 88, 0.18) 84%,
+                transparent 100%
+              )
+              center / 100% 1.2px no-repeat,
+            radial-gradient(circle, rgba(228, 188, 116, 0.78) 0 1.2px, transparent 1.5px) center /
+              100% 100% no-repeat;
+          flex-shrink: 0;
+        }
+
+        .books-grid .progressinfo .pages-left-number,
+        .books-grid .progressinfo .time-left-label,
+        .books-grid .progressinfo .pages-left-label {
+          color: rgba(220, 184, 116, 0.78);
+          font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+          font-style: italic;
+          font-size: 0.78rem;
+          letter-spacing: 0.05em;
         }
       `}</style>
     </div>

@@ -334,15 +334,22 @@ const CITADEL_BOOK_PAGE_CSS = `
     position: relative !important;
     margin-top: 0.6em !important;
     margin-bottom: 0.36em !important;
+    padding: 0 2.4em !important;
     text-align: center !important;
     color: var(--citadel-page-title-gold) !important;
     font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif !important;
-    font-size: clamp(1.2rem, 2.2vw, 1.7rem) !important;
+    font-size: clamp(1.55rem, 3.2vw, 2.25rem) !important;
     line-height: 1.1 !important;
-    letter-spacing: 0.14em !important;
+    letter-spacing: 0.16em !important;
     text-transform: uppercase !important;
-    font-weight: 550 !important;
+    font-weight: 600 !important;
     text-shadow: 0 1px 0 rgba(28, 16, 9, 0.4), 0 0 10px rgba(134, 74, 23, 0.1) !important;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='6.4' y='0.8' width='3.2' height='14.4' fill='%238c2820'/><rect x='0.8' y='6.4' width='14.4' height='3.2' fill='%238c2820'/></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='6.4' y='0.8' width='3.2' height='14.4' fill='%238c2820'/><rect x='0.8' y='6.4' width='14.4' height='3.2' fill='%238c2820'/></svg>") !important;
+    background-size: 0.95em 0.95em, 0.95em 0.95em !important;
+    background-position: left 0.6em center, right 0.6em center !important;
+    background-repeat: no-repeat, no-repeat !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before,
@@ -449,8 +456,8 @@ const CITADEL_BOOK_PAGE_CSS = `
   .${CITADEL_GOT_HEADER_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS} {
     margin-top: 0 !important;
     margin-bottom: 0.14em !important;
-    font-size: clamp(1.4rem, 3vw, 2rem) !important;
-    letter-spacing: 0.18em !important;
+    font-size: clamp(1.85rem, 4.2vw, 2.7rem) !important;
+    letter-spacing: 0.2em !important;
   }
 
   .${CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS} {
@@ -537,8 +544,11 @@ const CITADEL_BOOK_PAGE_CSS = `
     }
 
     ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS} {
-      font-size: clamp(1.2rem, 4vw, 1.58rem) !important;
-      letter-spacing: 0.14em !important;
+      font-size: clamp(1.4rem, 5vw, 1.95rem) !important;
+      letter-spacing: 0.16em !important;
+      padding: 0 1.9em !important;
+      background-size: 0.85em 0.85em, 0.85em 0.85em !important;
+      background-position: left 0.5em center, right 0.5em center !important;
     }
 
     .${CITADEL_CHAPTER_SIGIL_CLASS} {

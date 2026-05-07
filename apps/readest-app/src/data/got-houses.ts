@@ -228,6 +228,15 @@ export function getHouseForCharacter(characterName: string): HouseInfo | null {
   return getHouseInfo(houseKey);
 }
 
+/** Try to extract a chapter label (e.g. "CHAPTER I") from a chapter title string. */
+export function extractChapterLabel(title: string): string | null {
+  const match = title.match(/^(chapter|ch\.?|part|book)\s+([IVXLCDM\d]+)/i);
+  if (match) {
+    return `${match[1]!.toUpperCase()} ${match[2]!.toUpperCase()}`;
+  }
+  return null;
+}
+
 /** Try to extract a character name from a chapter title string. */
 export function extractCharacterFromChapterTitle(title: string): string | null {
   const cleaned = title.replace(/^(chapter|ch\.?)\s*\d+[:\-–—\s]+/i, '').trim();
