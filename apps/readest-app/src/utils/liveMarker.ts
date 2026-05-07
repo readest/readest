@@ -511,7 +511,7 @@ interface WordSegment {
  * word-like segments, maps `progress` (0–1) to a word index, and returns a
  * new Range covering `[activeIdx - 1, activeIdx + 2)` (2–3 words).
  *
- * Returns null when `Intl.Segmenter` is unavailable, fewer than 3 word-like
+ * Returns null when `Intl.Segmenter` is unavailable, fewer than 2 word-like
  * segments exist, or offset mapping fails — callers fall back to the original
  * phrase-level range.
  */
@@ -531,9 +531,14 @@ function narrowRangeToWordWindow(
     return null;
   }
 
-  // Collect all text nodes within the range
+  // Collect all text nodes within the range.
+  // CRITICAL: TreeWalker rooted at a text node returns no children
+  // (text nodes have no child nodes), so when the range covers a single
+  // text node, walk from its parent element instead.
+  const ancestor = range.commonAncestorContainer;
+  const root = ancestor.nodeType === Node.TEXT_NODE ? ancestor.parentElement! : ancestor;
   const textNodes: Text[] = [];
-  const walker = doc.createTreeWalker(range.commonAncestorContainer, NodeFilter.SHOW_TEXT);
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Text | null = walker.firstChild() as Text | null;
   while (node) {
     if (range.intersectsNode(node)) {
@@ -543,7 +548,7 @@ function narrowRangeToWordWindow(
   }
 
   if (textNodes.length === 0) {
-    diag.lastSkipReason = 'no-text-nodes';
+    diag.lastSkipReason = `no-text-nodes(ancestor=${ancestor.nodeName})`;
     return null;
   }
 
@@ -553,19 +558,14 @@ function narrowRangeToWordWindow(
 
   for (const tn of textNodes) {
     const fullText = tn.textContent ?? '';
-    // Determine the portion of this text node that falls within the range
-    const nodeRange = doc.createRange();
-    nodeRange.selectNodeContents(tn);
     let startOff = 0;
     let endOff = fullText.length;
 
+    // Clamp to the range's start/end when this text node is the boundary
     if (range.startContainer === tn) startOff = range.startOffset;
-    else if (range.compareBoundaryPoints(Range.START_TO_START, nodeRange) < 0) {
-      // range starts after this node
-    }
-
     if (range.endContainer === tn) endOff = range.endOffset;
 
+    if (endOff <= startOff) continue;
     const relevantText = fullText.slice(startOff, endOff);
     if (relevantText.trim().length === 0) continue;
 
@@ -589,8 +589,8 @@ function narrowRangeToWordWindow(
     }
   }
 
-  if (segments.length < 3) {
-    diag.lastSkipReason = `too-few-segments(${segments.length})`;
+  if (segments.length < 2) {
+    diag.lastSkipReason = `too-few-segments(cnt=${segments.length},textLen=${range.toString().length})`;
     return null;
   }
 
