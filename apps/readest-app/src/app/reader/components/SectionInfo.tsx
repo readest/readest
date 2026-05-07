@@ -49,7 +49,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
       <div
         className={clsx(
           'notch-area absolute left-0 right-0 top-0 z-10',
-          isScrolled && !isVertical && 'bg-base-100',
+          isScrolled && !isVertical && 'citadel-section-bg',
         )}
         role='none'
         tabIndex={-1}
@@ -60,10 +60,12 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
       />
       <div
         className={clsx(
-          'sectioninfo absolute flex items-center overflow-hidden font-sans',
-          isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-light',
+          'sectioninfo absolute flex items-center overflow-hidden',
+          isEink
+            ? 'text-base-content text-sm font-normal'
+            : 'citadel-section-info text-xs font-normal',
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0 h-[44px]',
-          isScrolled && !isVertical && 'bg-base-100',
+          isScrolled && !isVertical && (isEink ? 'bg-base-100' : 'citadel-section-bg'),
         )}
         role='none'
         tabIndex={-1}
@@ -88,6 +90,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         <span
           aria-label={section ? _('Section Title') + `: ${section}` : ''}
           className={clsx(
+            !isEink && 'citadel-section-text',
             'text-center',
             isVertical ? '' : 'line-clamp-1',
             !isVertical &&
@@ -98,6 +101,23 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           {section || ''}
         </span>
       </div>
+      <style jsx global>{`
+        .sectioninfo.citadel-section-info {
+          color: rgba(196, 158, 90, 0.78);
+        }
+        .sectioninfo .citadel-section-text {
+          font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-size: 0.7rem;
+          color: rgba(196, 158, 90, 0.78);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+        }
+        .notch-area.citadel-section-bg,
+        .sectioninfo.citadel-section-bg {
+          background: linear-gradient(180deg, rgba(14, 10, 9, 0.96), rgba(11, 8, 7, 0.92));
+        }
+      `}</style>
     </>
   );
 };

@@ -68,12 +68,15 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
       const view = resolveView();
       const viewSettings = getViewSettings(bookKey);
       if (!view || !viewSettings) {
-        console.warn('[AudiobookSync] Phase 0 FAIL — no view or viewSettings', {
-          hasView: !!view,
-          hasViewSettings: !!viewSettings,
-          bookKey,
-        });
-        return false;
+        console.warn(
+          '[AudiobookSync] Phase 0 FAIL — no view or viewSettings — entry NOT consumed',
+          {
+            hasView: !!view,
+            hasViewSettings: !!viewSettings,
+            bookKey,
+          },
+        );
+        return true; // don't consume — retry on next timeupdate
       }
 
       const currentSectionIndex = view.renderer.primaryIndex;
@@ -156,14 +159,18 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
             return true; // relocated or pending — don't consume entry
           }
 
-          // sectionIndex exists but section has no href — log and consume
-          console.warn('[AudiobookSync] Phase 1 FAIL — section has no href', {
-            sectionIndex,
-            sectionId: section?.id,
-            sectionLinear: section?.linear,
-            totalSections: view.book.sections.length,
-          });
-          return false; // consume — retrying won't help
+          // sectionIndex exists but section has no href —
+          // fall through to Phase 3 so the marker can still be applied
+          // in the current section if the CFI resolves there.
+          console.warn(
+            '[AudiobookSync] Phase 1 — section has no href, falling through to Phase 3',
+            {
+              sectionIndex,
+              sectionId: section?.id,
+              sectionLinear: section?.linear,
+              totalSections: view.book.sections.length,
+            },
+          );
         }
       }
 

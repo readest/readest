@@ -352,27 +352,24 @@ const CITADEL_BOOK_PAGE_CSS = `
     background-repeat: no-repeat, no-repeat !important;
   }
 
-  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before,
+  /* No top strip — the title leads cleanly. A single small gold glyph below
+     keeps the editorial flourish without a disconnected bar overhead. */
+  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before {
+    content: none !important;
+    display: none !important;
+  }
+
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
     content: '' !important;
     display: block !important;
-    width: min(7rem, 32%) !important;
-    height: 8px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    width: 1.6em !important;
+    height: 1em !important;
+    margin: 0.42em auto 0 auto !important;
     background:
-      linear-gradient(90deg, transparent 0%, rgba(168, 124, 64, 0.22) 24%, rgba(190, 144, 78, 0.5) 50%, rgba(168, 124, 64, 0.22) 76%, transparent 100%) center / 100% 1px no-repeat !important;
-    opacity: 0.62 !important;
-  }
-
-  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::before {
-    margin-bottom: 0.55em !important;
-  }
-
-  ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_CHAPTER_TITLE_CLASS}::after {
-    width: min(4.5rem, 22%) !important;
-    margin-top: 0.36em !important;
-    opacity: 0.5 !important;
+      radial-gradient(circle at 50% 50%, rgba(214, 168, 88, 0.62) 0 1.6px, transparent 1.9px) 0 50% / 0.5em 1em no-repeat,
+      radial-gradient(circle at 50% 50%, rgba(214, 168, 88, 0.86) 0 2px, transparent 2.4px) 50% 50% / 0.6em 1em no-repeat,
+      radial-gradient(circle at 50% 50%, rgba(214, 168, 88, 0.62) 0 1.6px, transparent 1.9px) 100% 50% / 0.5em 1em no-repeat !important;
+    opacity: 0.78 !important;
   }
 
   ${'.' + CITADEL_CHAPTER_OPENING_CLASS} ${'.' + CITADEL_DROP_CAP_CLASS} {
@@ -445,12 +442,13 @@ const CITADEL_BOOK_PAGE_CSS = `
   .${CITADEL_GOT_CHAPTER_LABEL_CLASS} {
     text-align: center !important;
     font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif !important;
-    font-size: clamp(0.78rem, 1.4vw, 0.92rem) !important;
-    letter-spacing: 0.22em !important;
+    font-size: clamp(0.72rem, 1.2vw, 0.84rem) !important;
+    letter-spacing: 0.32em !important;
     text-transform: uppercase !important;
-    color: var(--citadel-page-muted-gold) !important;
-    margin-bottom: 0.12em !important;
-    font-weight: 450 !important;
+    color: rgba(168, 124, 64, 0.82) !important;
+    margin-bottom: 0.04em !important;
+    font-weight: 500 !important;
+    opacity: 0.84 !important;
   }
 
   .${CITADEL_GOT_HEADER_CLASS} .${CITADEL_CHAPTER_TITLE_CLASS} {
@@ -486,9 +484,9 @@ const CITADEL_BOOK_PAGE_CSS = `
 
   .${CITADEL_GOT_ORNAMENT_LINE_WRAP_CLASS} .${CITADEL_CHAPTER_SIGIL_CLASS} {
     flex-shrink: 0 !important;
-    width: 56px !important;
-    height: 56px !important;
-    margin: 0 8px !important;
+    width: 60px !important;
+    height: 60px !important;
+    margin: 0 10px !important;
     display: block !important;
     background-color: #c89a3f !important;
     mask-size: contain !important;

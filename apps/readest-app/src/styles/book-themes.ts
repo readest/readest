@@ -106,14 +106,15 @@ const isAsOIAFBook = (m: BookMatchMetadata): boolean => {
 
 const isDarkFantasy = (m: BookMatchMetadata): boolean => {
   const subjects = (m.subjects ?? []).map((s) => s.toLowerCase());
-  const hasFantasy = subjects.some((s) => s.includes('fantasy'));
+  // Must contain an explicit dark-fantasy signal — "dark fantasy",
+  // "grimdark", or "low fantasy". Generic "fantasy + medieval" is NOT
+  // dark fantasy (most high fantasy uses medieval settings).
   return subjects.some(
     (s) =>
       s.includes('dark fantasy') ||
       s.includes('grimdark') ||
       s.includes('grim dark') ||
-      s.includes('low fantasy') ||
-      (hasFantasy && (s.includes('medieval') || s.includes('grim'))),
+      s.includes('low fantasy'),
   );
 };
 
