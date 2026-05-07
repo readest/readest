@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict paketleri .mdx dosyalarını kullanır; eşlik eden .mdd ve .css dosyaları isteğe bağlıdır.",
   "Dictionary name": "Sözlük adı",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Bu ses burada oynatılamıyor — sözlük eski bir biçim kullanıyor. Opus, MP3 veya WAV sesi olan bir sözlük deneyin.",
-  "Dictionary uploaded: {{title}}": "Sözlük yüklendi: {{title}}",
-  "Dictionary downloaded: {{title}}": "Sözlük indirildi: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Sözlüğün bulut kopyası silindi: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Sözlük yüklenemedi: {{title}}",
-  "Failed to download dictionary: {{title}}": "Sözlük indirilemedi: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Sözlüğün bulut kopyası silinemedi: {{title}}"
+  "File uploaded: {{title}}": "Dosya yüklendi: {{title}}",
+  "File downloaded: {{title}}": "Dosya indirildi: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Dosyanın bulut kopyası silindi: {{title}}",
+  "Failed to upload file: {{title}}": "Dosya yüklenemedi: {{title}}",
+  "Failed to download file: {{title}}": "Dosya indirilemedi: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Dosyanın bulut kopyasını silme başarısız oldu: {{title}}"
 }

@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict-bundels gebruiken .mdx-bestanden; bijbehorende .mdd- en .css-bestanden zijn optioneel.",
   "Dictionary name": "Naam van woordenboek",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Deze audio kan hier niet worden afgespeeld — het woordenboek gebruikt een verouderd formaat. Probeer een woordenboek met Opus-, MP3- of WAV-audio.",
-  "Dictionary uploaded: {{title}}": "Woordenboek geüpload: {{title}}",
-  "Dictionary downloaded: {{title}}": "Woordenboek gedownload: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Cloudkopie van het woordenboek verwijderd: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Uploaden van woordenboek mislukt: {{title}}",
-  "Failed to download dictionary: {{title}}": "Downloaden van woordenboek mislukt: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Verwijderen van cloudkopie van het woordenboek mislukt: {{title}}"
+  "File uploaded: {{title}}": "Bestand geüpload: {{title}}",
+  "File downloaded: {{title}}": "Bestand gedownload: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Verwijderde cloudkopie van het bestand: {{title}}",
+  "Failed to upload file: {{title}}": "Uploaden van bestand mislukt: {{title}}",
+  "Failed to download file: {{title}}": "Downloaden van bestand mislukt: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Verwijderen van cloudkopie van het bestand is mislukt: {{title}}"
 }

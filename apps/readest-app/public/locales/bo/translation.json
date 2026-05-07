@@ -1309,10 +1309,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict གི་ཡིག་ཆས་ཚོགས་ཀྱིས་ .mdx ཡིག་ཆ་སྤྱོད། སྦྲེལ་མཐུན་ .mdd དང་ .css ཡིག་ཆ་ཡིན་ན་འདེམས་ཆོག",
   "Dictionary name": "ཚིག་མཛོད་མིང་།",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "སྒྲ་འདི་འདིར་སྒྲོག་མི་ཐུབ — ཚིག་མཛོད་འདིས་རྩིས་མེད་པའི་རྣམ་པ་སྤྱོད། Opus, MP3, ཡང་ན་ WAV གི་སྒྲ་ལྡན་པ་ཞིག་ལ་འདེམས་སྡུར་གྱིས།",
-  "Dictionary uploaded: {{title}}": "ཚིག་མཛོད་སྤར་འཇུག་ཟིན། {{title}}",
-  "Dictionary downloaded: {{title}}": "ཚིག་མཛོད་ཕབ་ལེན་ཟིན། {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "སྤྲིན་ཐོག་གི་ཚིག་མཛོད་འདྲ་བཤུས་སུབ་ཟིན། {{title}}",
-  "Failed to upload dictionary: {{title}}": "ཚིག་མཛོད་སྤར་འཇུག་ལ་ཐུབ་མ་སོང་། {{title}}",
-  "Failed to download dictionary: {{title}}": "ཚིག་མཛོད་ཕབ་ལེན་ལ་ཐུབ་མ་སོང་། {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "སྤྲིན་ཐོག་གི་ཚིག་མཛོད་འདྲ་བཤུས་སུབ་ཐུབ་མ་སོང་། {{title}}"
+  "File uploaded: {{title}}": "ཡིག་ཆ་སྤྲད་ཟིན། {{title}}",
+  "File downloaded: {{title}}": "ཡིག་ཆ་ཕབ་ལེན་བྱས་ཟིན། {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཟིན། {{title}}",
+  "Failed to upload file: {{title}}": "ཡིག་ཆ་སྤྲད་མ་ཐུབ། {{title}}",
+  "Failed to download file: {{title}}": "ཡིག་ཆ་ཕབ་ལེན་བྱས་མ་ཐུབ། {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཐུབ་མེད། {{title}}"
 }

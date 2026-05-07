@@ -1381,10 +1381,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Пакеты MDict используют файлы .mdx; сопутствующие файлы .mdd и .css необязательны.",
   "Dictionary name": "Название словаря",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Этот звук невозможно воспроизвести здесь — словарь использует устаревший формат. Попробуйте словарь с аудио Opus, MP3 или WAV.",
-  "Dictionary uploaded: {{title}}": "Словарь загружен: {{title}}",
-  "Dictionary downloaded: {{title}}": "Словарь скачан: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Облачная копия словаря удалена: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Не удалось загрузить словарь: {{title}}",
-  "Failed to download dictionary: {{title}}": "Не удалось скачать словарь: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Не удалось удалить облачную копию словаря: {{title}}"
+  "File uploaded: {{title}}": "Файл загружен: {{title}}",
+  "File downloaded: {{title}}": "Файл скачан: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Удалена облачная копия файла: {{title}}",
+  "Failed to upload file: {{title}}": "Не удалось загрузить файл: {{title}}",
+  "Failed to download file: {{title}}": "Не удалось скачать файл: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Не удалось удалить копию файла в облаке: {{title}}"
 }

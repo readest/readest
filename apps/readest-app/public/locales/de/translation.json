@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict-Bundles verwenden .mdx-Dateien; begleitende .mdd- und .css-Dateien sind optional.",
   "Dictionary name": "Wörterbuchname",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Diese Audio kann hier nicht abgespielt werden — das Wörterbuch verwendet ein veraltetes Format. Probieren Sie ein Wörterbuch mit Opus-, MP3- oder WAV-Audio.",
-  "Dictionary uploaded: {{title}}": "Wörterbuch hochgeladen: {{title}}",
-  "Dictionary downloaded: {{title}}": "Wörterbuch heruntergeladen: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Cloud-Kopie des Wörterbuchs gelöscht: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Fehler beim Hochladen des Wörterbuchs: {{title}}",
-  "Failed to download dictionary: {{title}}": "Fehler beim Herunterladen des Wörterbuchs: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Fehler beim Löschen der Cloud-Kopie des Wörterbuchs: {{title}}"
+  "File uploaded: {{title}}": "Datei hochgeladen: {{title}}",
+  "File downloaded: {{title}}": "Datei heruntergeladen: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Cloud-Kopie der Datei gelöscht: {{title}}",
+  "Failed to upload file: {{title}}": "Fehler beim Hochladen der Datei: {{title}}",
+  "Failed to download file: {{title}}": "Fehler beim Herunterladen der Datei: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Fehler beim Löschen der Cloud-Kopie der Datei: {{title}}"
 }

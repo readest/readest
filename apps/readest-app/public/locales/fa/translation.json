@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "بسته‌های MDict از فایل‌های .mdx استفاده می‌کنند؛ فایل‌های همراه .mdd و .css اختیاری هستند.",
   "Dictionary name": "نام فرهنگ‌نامه",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "این صدا اینجا قابل پخش نیست — فرهنگ‌نامه از قالبی قدیمی استفاده می‌کند. فرهنگ‌نامه‌ای با صدای Opus، MP3 یا WAV را امتحان کنید.",
-  "Dictionary uploaded: {{title}}": "فرهنگ لغت بارگذاری شد: {{title}}",
-  "Dictionary downloaded: {{title}}": "فرهنگ لغت دانلود شد: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "نسخهٔ ابری فرهنگ لغت حذف شد: {{title}}",
-  "Failed to upload dictionary: {{title}}": "بارگذاری فرهنگ لغت ناموفق بود: {{title}}",
-  "Failed to download dictionary: {{title}}": "دانلود فرهنگ لغت ناموفق بود: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "حذف نسخهٔ ابری فرهنگ لغت ناموفق بود: {{title}}"
+  "File uploaded: {{title}}": "فایل «{{title}}» آپلود شد.",
+  "File downloaded: {{title}}": "فایل «{{title}}» دانلود شد.",
+  "Deleted cloud copy of the file: {{title}}": "نسخه‌ی ابری فایل «{{title}}» حذف شد.",
+  "Failed to upload file: {{title}}": "آپلود فایل «{{title}}» ناموفق بود.",
+  "Failed to download file: {{title}}": "دانلود فایل «{{title}}» ناموفق بود.",
+  "Failed to delete cloud copy of the file: {{title}}": "حذف نسخه‌ی ابری فایل «{{title}}» ناموفق بود."
 }

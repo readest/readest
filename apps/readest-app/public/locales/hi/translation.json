@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict बंडल .mdx फ़ाइलों का उपयोग करते हैं; साथ की .mdd और .css फ़ाइलें वैकल्पिक हैं।",
   "Dictionary name": "शब्दकोश का नाम",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "यह ऑडियो यहाँ नहीं चलाया जा सकता — शब्दकोश पुराने प्रारूप का उपयोग करता है। Opus, MP3 या WAV ऑडियो वाला कोई आज़माएँ।",
-  "Dictionary uploaded: {{title}}": "शब्दकोश अपलोड हो गया: {{title}}",
-  "Dictionary downloaded: {{title}}": "शब्दकोश डाउनलोड हो गया: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "शब्दकोश की क्लाउड कॉपी हटाई गई: {{title}}",
-  "Failed to upload dictionary: {{title}}": "शब्दकोश अपलोड करने में विफल: {{title}}",
-  "Failed to download dictionary: {{title}}": "शब्दकोश डाउनलोड करने में विफल: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "शब्दकोश की क्लाउड कॉपी हटाने में विफल: {{title}}"
+  "File uploaded: {{title}}": "फ़ाइल अपलोड की गई: {{title}}",
+  "File downloaded: {{title}}": "फ़ाइल डाउनलोड की गई: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाई गई: {{title}}",
+  "Failed to upload file: {{title}}": "फ़ाइल अपलोड करने में विफल: {{title}}",
+  "Failed to download file: {{title}}": "फ़ाइल डाउनलोड करने में विफल: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाने में विफल: {{title}}"
 }

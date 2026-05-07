@@ -1309,10 +1309,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "MDict 包使用 .mdx 文件;附带的 .mdd 和 .css 文件可选。",
   "Dictionary name": "词典名称",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "此处无法播放该音频 — 此词典使用过时格式。请尝试使用 Opus、MP3 或 WAV 音频的词典。",
-  "Dictionary uploaded: {{title}}": "词典已上传:{{title}}",
-  "Dictionary downloaded: {{title}}": "词典已下载:{{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "已删除词典的云端副本:{{title}}",
-  "Failed to upload dictionary: {{title}}": "词典上传失败:{{title}}",
-  "Failed to download dictionary: {{title}}": "词典下载失败:{{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "词典云端副本删除失败:{{title}}"
+  "File uploaded: {{title}}": "文件已上传：{{title}}",
+  "File downloaded: {{title}}": "文件已下载：{{title}}",
+  "Deleted cloud copy of the file: {{title}}": "已删除文件云副本：{{title}}",
+  "Failed to upload file: {{title}}": "上传文件失败：{{title}}",
+  "Failed to download file: {{title}}": "下载文件失败：{{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "未能删除文件云副本：{{title}}"
 }

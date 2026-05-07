@@ -1357,10 +1357,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Pachetele MDict folosesc fișiere .mdx; fișierele .mdd și .css însoțitoare sunt opționale.",
   "Dictionary name": "Numele dicționarului",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Acest audio nu poate fi redat aici — dicționarul folosește un format învechit. Încearcă unul cu audio Opus, MP3 sau WAV.",
-  "Dictionary uploaded: {{title}}": "Dicționar încărcat: {{title}}",
-  "Dictionary downloaded: {{title}}": "Dicționar descărcat: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Copia din cloud a dicționarului a fost ștearsă: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Încărcarea dicționarului a eșuat: {{title}}",
-  "Failed to download dictionary: {{title}}": "Descărcarea dicționarului a eșuat: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Ștergerea copiei din cloud a dicționarului a eșuat: {{title}}"
+  "File uploaded: {{title}}": "Fișier încărcat: {{title}}",
+  "File downloaded: {{title}}": "Fișier descărcat: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Copia din cloud a fișierului a fost ștearsă: {{title}}",
+  "Failed to upload file: {{title}}": "Nu s-a putut încărca fișierul: {{title}}",
+  "Failed to download file: {{title}}": "Nu s-a putut descărca fișierul: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Nu s-a putut șterge copia din cloud a fișierului: {{title}}"
 }

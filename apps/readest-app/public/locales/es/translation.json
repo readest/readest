@@ -1357,10 +1357,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Los paquetes MDict usan archivos .mdx; los archivos .mdd y .css complementarios son opcionales.",
   "Dictionary name": "Nombre del diccionario",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Este audio no se puede reproducir aquí — el diccionario usa un formato obsoleto. Prueba uno con audio Opus, MP3 o WAV.",
-  "Dictionary uploaded: {{title}}": "Diccionario subido: {{title}}",
-  "Dictionary downloaded: {{title}}": "Diccionario descargado: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Copia en la nube del diccionario eliminada: {{title}}",
-  "Failed to upload dictionary: {{title}}": "No se pudo subir el diccionario: {{title}}",
-  "Failed to download dictionary: {{title}}": "No se pudo descargar el diccionario: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "No se pudo eliminar la copia en la nube del diccionario: {{title}}"
+  "File uploaded: {{title}}": "Archivo subido: {{title}}",
+  "File downloaded: {{title}}": "Archivo descargado: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Copia en la nube del archivo eliminada: {{title}}",
+  "Failed to upload file: {{title}}": "Error al subir archivo: {{title}}",
+  "Failed to download file: {{title}}": "Error al descargar archivo: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Error al eliminar la copia en la nube del archivo: {{title}}"
 }

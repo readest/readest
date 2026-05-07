@@ -1429,10 +1429,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "تستخدم حزم MDict ملفات .mdx؛ ملفات .mdd و .css المرافقة اختيارية.",
   "Dictionary name": "اسم القاموس",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "لا يمكن تشغيل هذا الصوت هنا — يستخدم القاموس تنسيقًا قديمًا. جرّب قاموسًا يستخدم صوت Opus أو MP3 أو WAV.",
-  "Dictionary uploaded: {{title}}": "تم رفع القاموس: {{title}}",
-  "Dictionary downloaded: {{title}}": "تم تنزيل القاموس: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "تم حذف النسخة السحابية للقاموس: {{title}}",
-  "Failed to upload dictionary: {{title}}": "فشل رفع القاموس: {{title}}",
-  "Failed to download dictionary: {{title}}": "فشل تنزيل القاموس: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "فشل حذف النسخة السحابية للقاموس: {{title}}"
+  "File uploaded: {{title}}": "تم تحميل الملف: {{title}}",
+  "File downloaded: {{title}}": "تم تنزيل الملف: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "تم حذف النسخة السحابية للملف: {{title}}",
+  "Failed to upload file: {{title}}": "فشل تحميل الملف: {{title}}",
+  "Failed to download file: {{title}}": "فشل تنزيل الملف: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "فشل في حذف النسخة السحابية للملف: {{title}}"
 }

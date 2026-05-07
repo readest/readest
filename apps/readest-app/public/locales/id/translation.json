@@ -1309,10 +1309,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Paket MDict menggunakan berkas .mdx; berkas .mdd dan .css pendamping bersifat opsional.",
   "Dictionary name": "Nama kamus",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Audio ini tidak dapat diputar di sini — kamus menggunakan format usang. Coba kamus dengan audio Opus, MP3, atau WAV.",
-  "Dictionary uploaded: {{title}}": "Kamus diunggah: {{title}}",
-  "Dictionary downloaded: {{title}}": "Kamus diunduh: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Salinan cloud kamus dihapus: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Gagal mengunggah kamus: {{title}}",
-  "Failed to download dictionary: {{title}}": "Gagal mengunduh kamus: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Gagal menghapus salinan cloud kamus: {{title}}"
+  "File uploaded: {{title}}": "File diunggah: {{title}}",
+  "File downloaded: {{title}}": "File diunduh: {{title}}",
+  "Deleted cloud copy of the file: {{title}}": "Salinan cloud file dihapus: {{title}}",
+  "Failed to upload file: {{title}}": "Gagal mengunggah file: {{title}}",
+  "Failed to download file: {{title}}": "Gagal mengunduh file: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Gagal menghapus salinan cloud file: {{title}}"
 }

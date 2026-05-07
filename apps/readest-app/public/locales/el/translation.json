@@ -1333,10 +1333,10 @@
   "MDict bundles use .mdx files; companion .mdd and .css files are optional.": "Τα πακέτα MDict χρησιμοποιούν αρχεία .mdx· τα συνοδευτικά αρχεία .mdd και .css είναι προαιρετικά.",
   "Dictionary name": "Όνομα λεξικού",
   "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.": "Αυτός ο ήχος δεν μπορεί να αναπαραχθεί εδώ — το λεξικό χρησιμοποιεί ξεπερασμένη μορφή. Δοκιμάστε ένα λεξικό με ήχο Opus, MP3 ή WAV.",
-  "Dictionary uploaded: {{title}}": "Το λεξικό μεταφορτώθηκε: {{title}}",
-  "Dictionary downloaded: {{title}}": "Το λεξικό κατέβηκε: {{title}}",
-  "Deleted cloud copy of the dictionary: {{title}}": "Διαγράφηκε το αντίγραφο cloud του λεξικού: {{title}}",
-  "Failed to upload dictionary: {{title}}": "Αποτυχία μεταφόρτωσης λεξικού: {{title}}",
-  "Failed to download dictionary: {{title}}": "Αποτυχία λήψης λεξικού: {{title}}",
-  "Failed to delete cloud copy of the dictionary: {{title}}": "Αποτυχία διαγραφής αντιγράφου cloud του λεξικού: {{title}}"
+  "File uploaded: {{title}}": "Το αρχείο με τίτλο {{title}} ανέβηκε",
+  "File downloaded: {{title}}": "Το αρχείο με τίτλο {{title}} κατέβηκε",
+  "Deleted cloud copy of the file: {{title}}": "Διαγράφηκε το αντίγραφο του αρχείου: {{title}}",
+  "Failed to upload file: {{title}}": "Αποτυχία ανέβασμα αρχείου: {{title}}",
+  "Failed to download file: {{title}}": "Αποτυχία λήψης αρχείου: {{title}}",
+  "Failed to delete cloud copy of the file: {{title}}": "Αποτυχία διαγραφής του αντιγράφου του αρχείου: {{title}}"
 }
