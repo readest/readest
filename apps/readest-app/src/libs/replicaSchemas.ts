@@ -52,6 +52,19 @@ const textureFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+const opdsCatalogFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    url: fieldEnvelopeSchema.optional(),
+    description: fieldEnvelopeSchema.optional(),
+    icon: fieldEnvelopeSchema.optional(),
+    customHeaders: fieldEnvelopeSchema.optional(),
+    autoDownload: fieldEnvelopeSchema.optional(),
+    disabled: fieldEnvelopeSchema.optional(),
+    addedAt: fieldEnvelopeSchema.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
 interface KindSpec {
   minSchemaVersion: number;
   maxSchemaVersion: number;
@@ -81,6 +94,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxRowsPerUser: 200,
     fields: textureFieldsSchema,
     binary: true,
+  },
+  opds_catalog: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 50,
+    fields: opdsCatalogFieldsSchema,
+    binary: false,
   },
 };
 

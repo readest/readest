@@ -145,7 +145,7 @@ describe('validatePullParams', () => {
   });
 
   test('rejects unknown kind', () => {
-    const result = validatePullParams('opds_catalog', null);
+    const result = validatePullParams('not_a_kind', null);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(422);

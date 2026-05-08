@@ -11,11 +11,13 @@ import {
   findTextureByContentId,
   migrateLegacyTextures,
 } from '@/store/customTextureStore';
+import { useCustomOPDSStore, findOPDSCatalogByContentId } from '@/store/customOPDSStore';
 import { transferManager } from '@/services/transferManager';
 import { getReplicaSync, subscribeReplicaSyncReady } from '@/services/sync/replicaSync';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { fontAdapter } from '@/services/sync/adapters/font';
 import { textureAdapter } from '@/services/sync/adapters/texture';
+import { opdsCatalogAdapter } from '@/services/sync/adapters/opdsCatalog';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import {
   replicaPullAndApply,
@@ -31,8 +33,9 @@ import type { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
 import type { CustomTexture } from '@/styles/textures';
+import type { OPDSCatalog } from '@/types/opds';
 
-export type ReplicaKind = 'dictionary' | 'font' | 'texture';
+export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -60,7 +63,8 @@ const pulledKinds = new Set<ReplicaKind>();
  */
 interface ReplicaPullConfig<T extends ReplicaLocalRecord> {
   kind: ReplicaKind;
-  baseDir: BaseDir;
+  /** Required for binary-bearing kinds; omitted for metadata-only kinds. */
+  baseDir?: BaseDir;
   adapter: ReplicaAdapter<T>;
   findByContentId: (id: string) => T | undefined;
   hydrateLocalStore?: (envConfig: EnvConfigType) => Promise<void>;
@@ -85,16 +89,22 @@ const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
     : undefined,
   applyRemote: config.applyRemote,
   softDeleteByContentId: config.softDeleteByContentId,
+  // The bundle / binary callbacks below are only reached when the
+  // adapter declares a `binary` capability — replicaPullAndApply
+  // short-circuits metadata-only kinds before invoking them. The
+  // non-null assertion on baseDir is therefore safe in the binary
+  // path; metadata-only kinds (opds_catalog) leave config.baseDir
+  // unset and never hit these.
   createBundleDir: async () => {
     const id = uniqueId();
-    await service.createDir(id, config.baseDir, true);
+    await service.createDir(id, config.baseDir!, true);
     return id;
   },
   queueReplicaDownload: (contentId, displayTitle, files, _bundleDir, base) =>
     transferManager.queueReplicaDownload(config.kind, contentId, displayTitle, files, base),
   filesExist: async (bundleDir, filenames) => {
     for (const filename of filenames) {
-      const exists = await service.exists(`${bundleDir}/${filename}`, config.baseDir);
+      const exists = await service.exists(`${bundleDir}/${filename}`, config.baseDir!);
       if (!exists) return false;
     }
     return true;
@@ -153,6 +163,16 @@ const texturePullConfig: ReplicaPullConfig<CustomTexture> = {
   softDeleteByContentId: (id) => useCustomTextureStore.getState().softDeleteByContentId(id),
 };
 
+const opdsCatalogPullConfig: ReplicaPullConfig<OPDSCatalog> = {
+  kind: 'opds_catalog',
+  // metadata-only — no baseDir
+  adapter: opdsCatalogAdapter,
+  findByContentId: findOPDSCatalogByContentId,
+  hydrateLocalStore: (envConfig) => useCustomOPDSStore.getState().loadCustomOPDSCatalogs(envConfig),
+  applyRemote: (catalog) => useCustomOPDSStore.getState().applyRemoteCatalog(catalog),
+  softDeleteByContentId: (id) => useCustomOPDSStore.getState().softDeleteByContentId(id),
+};
+
 const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
@@ -177,6 +197,11 @@ const runPullForKind = async (
     case 'texture':
       await replicaPullAndApply(
         buildReplicaPullDeps(ctx.manager, service, envConfig, texturePullConfig),
+      );
+      return;
+    case 'opds_catalog':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(ctx.manager, service, envConfig, opdsCatalogPullConfig),
       );
       return;
   }

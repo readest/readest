@@ -30,6 +30,19 @@ export interface OPDSCatalog {
   password?: string;
   customHeaders?: Record<string, string>;
   autoDownload?: boolean;
+  /**
+   * Stable cross-device identifier derived from the URL. Used as the
+   * replica_id so two devices that import the same OPDS URL converge to a
+   * single row instead of duplicating. Absent on legacy entries imported
+   * before replica sync shipped — they get backfilled at next save.
+   */
+  contentId?: string;
+  /** Wall-clock ms of first import, used for ordering. */
+  addedAt?: number;
+  /** Soft-delete timestamp; non-null entries are hidden from the UI. */
+  deletedAt?: number;
+  /** Reincarnation token (re-import after server tombstone). */
+  reincarnation?: string;
 }
 
 export interface OPDSFeed {

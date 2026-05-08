@@ -109,21 +109,28 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   // Decide bundleDir + display name. If a local entry already maps this
   // contentId, reuse its bundleDir so we don't orphan the previously
   // downloaded binaries; otherwise mint a fresh dir and apply the remote
-  // record to the local store. Legacy local records (pre-replica-sync)
-  // may carry no bundleDir — skip them; they aren't sync-eligible.
+  // record to the local store. Legacy binary-kind records (pre-replica-
+  // sync) may carry no bundleDir — skip them; they aren't sync-eligible.
+  // Metadata-only kinds (no `binary` capability, e.g. opds_catalog) have
+  // no on-disk anchor at all, so the bundleDir requirement is dropped.
+  const needsBundleDir = !!deps.adapter.binary;
   let bundleDir: string;
   let displayName: string;
   if (local) {
-    if (!local.bundleDir) return;
-    bundleDir = local.bundleDir;
+    if (needsBundleDir && !local.bundleDir) return;
+    bundleDir = local.bundleDir ?? '';
     displayName = deps.adapter.getDisplayName?.(local) ?? local.name;
   } else {
-    bundleDir = await deps.createBundleDir();
+    bundleDir = needsBundleDir ? await deps.createBundleDir() : '';
     const record = deps.adapter.unpackRow(row, bundleDir);
     if (!record) return;
     deps.applyRemote(record);
     displayName = deps.adapter.getDisplayName?.(record) ?? record.name;
   }
+
+  // Metadata-only kinds: nothing more to do. The orchestrator's manifest
+  // / binary-download path is a no-op for them.
+  if (!needsBundleDir) return;
 
   if (!row.manifest_jsonb || row.manifest_jsonb.files.length === 0) {
     // Server row has no manifest yet — typically the device that

@@ -71,6 +71,20 @@ for the full decision capture.
    The polymorphic `replicas` table is internal infrastructure, not a
    future API. Adding any cross-user-visibility feature requires a fresh
    architecture review and is not authorized by this plan.
+8. **Scalar settings sync via a bundled row; collections sync per-record.**
+   The CRDT model is per-field LWW within a row, so 1 row × N fields and
+   N rows × 1 field have identical conflict semantics for scalars.
+   Scalar settings (`theme`, `fontSize`, `highlightColor`) and flat maps
+   (`providerEnabled`, per-shortcut overrides) collapse cleanly into a
+   single `settings` kind with a server-managed field whitelist —
+   adding a new synced setting becomes a one-line whitelist addition.
+   Collections where each element needs independent identity, tombstones,
+   or remove-wins semantics (OPDS catalogs, dictionaries, fonts,
+   textures, web searches, ordered provider positions) stay per-record.
+   Folding a collection into a bundled row is unsafe under concurrent
+   edits: Device A adds X, Device B adds Y, both push the full array,
+   last writer wins. Per-record rows preserve both sides via independent
+   CRDT envelopes.
 
 ## Architecture overview
 
@@ -307,15 +321,19 @@ on every add).
 
 ## Per-kind initial allowlist (ship in this order)
 
-| kind | binary | id source | files |
+| kind | binary | id source | files / shape |
 |---|---|---|---|
 | `dictionary` | yes | `partialMD5(primaryFile) + size + filenames` | mdx + mdd[] + css[] (skip `.idx.offsets`/`.syn.offsets`) |
 | `font` | yes | `partialMD5(file) + size + filename` | single .ttf/.otf/.woff[2] |
 | `texture` | yes | `partialMD5(file) + size + filename` | single image |
-| `opds_catalog` | no | `md5(url + username)` | — (URL + name + headers + **password ENCRYPTED**) |
-| `dict_provider_pref` | no | provider id | — (one boolean field `enabled`) |
-| `dict_provider_position` | no | provider id | — (one position string + actor id) |
-| `dict_web_search` | no | existing `WebSearchEntry.id` | — |
+| `opds_catalog` | no | `md5("opds:" + url.lower())` | — (URL + name + headers + **password ENCRYPTED**) |
+| `settings` | no | `'singleton'` (one row per user) | — (whitelisted scalar fields + flat maps via namespaced field keys; covers `theme`, `fontSize`, `highlightColor`, `lineHeight`, `pref:*`, `shortcut:*`, `providerEnabled.<id>`, `syncCategories.<id>`, etc.) |
+| `dict_provider_position` | no | provider id | — (one position string + actor id; per-element rows because concurrent rename + reorder must preserve both sides) |
+| `dict_web_search` | no | existing `WebSearchEntry.id` | — (collection of independent records — needs per-record tombstones) |
+
+`settings` replaces what would otherwise be N per-kind adapters for each
+scalar setting. Adding a new synced setting = one-line whitelist + a
+server schema bump; no new adapter, no new client wiring.
 
 Future kinds require a server PR (schema + allowlist + migration if
 needed).
@@ -323,15 +341,18 @@ needed).
 ## User-selectable sync categories
 
 A new settings panel under **Account → Sync** with per-category toggles.
-Default: book/config/note/dictionary/font/texture/opds_catalog all ON;
-internal kinds (`dict_provider_pref`, `dict_provider_position`,
-`dict_web_search`) follow the parent (dictionary) toggle.
+Default: book/config/note/dictionary/font/texture/opds_catalog/settings
+all ON; internal kinds (`dict_provider_position`, `dict_web_search`)
+follow the parent (dictionary) toggle. `providerEnabled.<id>` lives
+inside the `settings` bundle and rides the `settings` toggle, not the
+`dictionary` toggle (small ergonomic gap; surfaced in the Sync panel
+copy).
 
 `SystemSettings.syncCategories: Record<string, boolean>` stores the
-preferences. The category map itself syncs through the existing
-`config`-style settings JSON sync (or, more cleanly, becomes its own kind
-`sync_pref` once the primitive is built). Per-category gates apply at the
-sync manager:
+preferences. Per tenet 8, the category map itself becomes a flat map
+inside the `settings` bundle (`syncCategories.<kind>` namespaced fields)
+once the bundle ships in PR 5 — no separate `sync_pref` kind needed.
+Per-category gates apply at the sync manager:
 
 - `pull(kind)` no-ops if `syncCategories[kind] === false`.
 - `push(rows)` filters out rows whose kind is disabled.
@@ -538,29 +559,82 @@ example. Add `'font'` to the allowlist + schema + adapter.
 
 Similar shape to fonts.
 
-### PR 4 — `opds_catalog` (with encrypted password)
+### PR 4 — `opds_catalog` (split into 4a + 4b + 4c)
 
-Adapter syncs `id`, `name`, `url`, `description`, `icon`,
-`customHeaders`, `autoDownload` as plaintext fields, and `password`
-(and optionally `username`) as **encrypted-field envelopes** using the
-crypto infra shipped in PR 1. Lazy passphrase prompt: first OPDS
-catalog import with credentials triggers the "Set sync passphrase"
-modal.
+Originally one PR; split during PR 4 build because the crypto
+introduction is a step-up in complexity that benefits from separate
+review surfaces.
 
-### PR 5 — internal dict-settings kinds
+**PR 4a — encrypted-field session wiring (no consumer kind).** Ships
+the per-account PBKDF2 salt endpoint (`/api/sync/replica-keys` + the
+`replica_keys_create` / `replica_keys_list` RPCs against the
+`replica_keys` table from migration 003), the in-memory `CryptoSession`
+manager that derives keys lazily per `saltId`, and tests. No UI, no
+consumer kind. Production-ready infrastructure for PR 4c.
 
-Migrate `dictionarySettings.providerOrder` (per-position rows with
-`(position, actorId, replicaId)` total order) /
-`dictionarySettings.providerEnabled` (per-pref rows) /
-`dictionarySettings.webSearches`. This lets concurrent rename + reorder
-both survive on dictionaries — the original goal — but only after the
-single-array model is fully retired.
+**PR 4b — `opds_catalog` plaintext fields.** Adapter syncs `id`,
+`name`, `url`, `description`, `icon`, `customHeaders`, `autoDownload`,
+`disabled`, `addedAt`. Stable cross-device id from `md5("opds:" +
+url.lower())`. Credentials (`username`, `password`) stay local-only —
+not pushed, not pull-overwritten. Public catalogs sync end-to-end
+immediately; credentialed catalogs need re-entry on each device until
+4c lands.
 
-### PR 6+ — anything else
+**PR 4c — `opds_catalog` encrypted credentials + passphrase UX.**
+Adds `username` and `password` as encrypted-field envelopes via the
+crypto session shipped in 4a. Ships `SyncPassphrasePanel` UI
+(set / change / forgot), the lazy `getOrPromptPassphrase` modal that
+fires on first encrypted-field push or pull, the Tauri keychain backend
+that replaces the `EphemeralPassphraseStore` stub, and the
+forgot-passphrase server endpoint (wipes encrypted envelopes + rotates
+salt).
 
-`pref`, `theme`, `shortcut`, `annotation_rule`, future AI keys
-(another encrypted-field kind), etc. Each is a coordinated client+server
-PR (adapter + schema + allowlist).
+### PR 5 — `settings` bundled kind (collapses original PR 5 + PR 6+)
+
+Per tenet 8, one `settings` adapter with a server-managed whitelist of
+`SystemSettings` keys, instead of N per-kind adapters for each scalar
+setting. Initial whitelist: `theme`, `fontSize`, `lineHeight`,
+`highlightColor`, `pref:*`, `shortcut:*`,
+`dictionarySettings.providerEnabled` (encoded as namespaced field keys
+like `providerEnabled.<id>`), `syncCategories.<id>`.
+
+Singleton row (`replica_id = 'singleton'`) per user. Per-field LWW
+handles concurrent edits across devices: Device A toggles dark mode,
+Device B changes font size, both push, both apply. Adding a new synced
+setting is a one-line whitelist addition + a server schema bump — no
+new adapter, no new client wiring.
+
+This collapses what was previously planned as PRs 5 + 6+ (per-kind
+adapters for `dict_provider_pref`, `pref`, `theme`, `shortcut`,
+`annotation_rule`, etc.). The genuinely-different shapes (ordered
+collections, independent-record collections) ship as PR 6 and PR 7.
+
+### PR 6 — `dict_provider_position` (ordered list with per-position rows)
+
+The provider order is the only setting that genuinely needs per-element
+rows: concurrent rename + reorder must preserve both sides, which a
+single-field array can't do. Per-position rows keyed by
+`(position, actorId, replicaId)` with deterministic tiebreak.
+Migrates `dictionarySettings.providerOrder` off the single-array
+shape.
+
+### PR 7 — `dict_web_search` (custom web-search entries)
+
+Collection of independent records — each with `id`, `name`,
+`urlTemplate`, plus tombstones. Per-record rows because users add /
+delete / rename entries independently across devices.
+
+### PR 8+ — incremental whitelist additions
+
+New scalar settings join the `settings` whitelist as needed (one-line
+PR + server schema bump). Future encrypted-field needs (AI API keys,
+etc.) get either:
+
+- A new dedicated kind (if it needs its own quota, allowlist, or
+  per-record tombstones), OR
+- A namespaced encrypted field within `settings` (if it's a small
+  scalar that fits the bundled pattern — e.g.,
+  `aiApiKey.openai`, `aiApiKey.anthropic`).
 
 ## Migration
 
@@ -1059,8 +1133,49 @@ infra in PR 1; OPDS adapter that consumes it ships in PR 4.
 - `/codex review` re-run on the revised plan would catch any drift
   introduced by CEO + eng review changes; recommended but not required.
 
+**POST-PR-3 ARCHITECTURE REFINEMENT (during PR 4 build):**
+
+Questioned why each scalar setting needed its own kind. Insight: the
+CRDT model is per-field LWW within a row, so 1 row × N fields and N
+rows × 1 field have identical conflict semantics for scalars. The
+`dict_provider_pref` adapter (one boolean field per provider) was the
+canary — it would have been a 100-LOC adapter for a single boolean.
+Generalizing: any scalar setting collapses into a single bundled
+`settings` row with a server-managed field whitelist, using namespaced
+field keys (`providerEnabled.<id>`, `syncCategories.<id>`,
+`shortcut.<action>`) for flat maps.
+
+What does NOT collapse: collections of independent records (OPDS
+catalogs, dictionaries, fonts, textures, web searches) — each element
+needs independent identity, tombstones, and per-element CRDT envelopes
+to survive concurrent add/remove on different devices. And ordered
+lists (`providerOrder`) — concurrent rename + reorder must preserve
+both sides, which a single-field array can't do.
+
+Plan changes absorbed:
+
+- **New tenet 8** captures the scalar-vs-collection rule.
+- **Per-kind allowlist updated:** added `settings` (singleton); removed
+  `dict_provider_pref` (folds into settings).
+- **Phasing rewritten:** PR 4 split into 4a (encrypted-field session
+  wiring) + 4b (opds_catalog plaintext) + 4c (opds_catalog encrypted
+  credentials + passphrase UX). PR 5 becomes the bundled `settings`
+  kind — collapses what was previously planned as PRs 5 + 6+. PR 6 =
+  `dict_provider_position` (still needs per-element rows). PR 7 =
+  `dict_web_search`. PR 8+ = incremental whitelist additions, no new
+  adapters for scalar settings.
+- **Sync categories** become a flat map inside the `settings` bundle
+  (`syncCategories.<kind>`); the standalone `sync_pref` kind hinted at
+  in the original plan is no longer needed.
+
+Net: ~70% LOC reduction on the remaining roadmap (no per-kind adapters
+for `pref`, `theme`, `shortcut`, `annotation_rule`, etc.). No change to
+PRs 1–3 (already shipped) or PR 4a (already merged as #4084).
+
 **VERDICT:** CEO + ENG CLEARED — plan is implementation-ready. Codex
 review reshaped the architecture; CEO review reshaped the scope; eng
 review locked implementation details (adapter shape, push trigger,
-file layout, error model, test coverage, manifest schema, perf SLOs).
-Next step: implement PR 1.
+file layout, error model, test coverage, manifest schema, perf SLOs);
+the post-PR-3 refinement collapsed the long-tail per-kind adapters
+into a single bundled `settings` kind. Next step: complete PR 4b/4c,
+then ship PR 5.

@@ -12,6 +12,13 @@ vi.mock('@/store/customTextureStore', () => ({
   useCustomTextureStore: { getState: () => ({ markAvailableByContentId: vi.fn() }) },
 }));
 
+vi.mock('@/store/customOPDSStore', () => ({
+  useCustomOPDSStore: {
+    getState: () => ({ applyRemoteCatalog: vi.fn(), softDeleteByContentId: vi.fn() }),
+  },
+  findOPDSCatalogByContentId: vi.fn(),
+}));
+
 import {
   __resetBootstrapForTests,
   bootstrapReplicaAdapters,
@@ -39,12 +46,12 @@ describe('bootstrapReplicaAdapters', () => {
   test('is idempotent: calling twice is a no-op (does not throw)', () => {
     bootstrapReplicaAdapters();
     bootstrapReplicaAdapters();
-    expect(listReplicaAdapters()).toHaveLength(3);
+    expect(listReplicaAdapters()).toHaveLength(4);
   });
 
-  test('registers the current allowlist (dictionary, font, texture)', () => {
+  test('registers the current allowlist (dictionary, font, texture, opds_catalog)', () => {
     bootstrapReplicaAdapters();
     const kinds = listReplicaAdapters().map((a) => a.kind);
-    expect(kinds).toEqual(['dictionary', 'font', 'texture']);
+    expect(kinds).toEqual(['dictionary', 'font', 'texture', 'opds_catalog']);
   });
 });
