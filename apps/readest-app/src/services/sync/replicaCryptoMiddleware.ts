@@ -18,6 +18,8 @@ import { isSyncError, SyncError } from '@/libs/errors';
 import { isCipherEnvelope } from '@/types/replica';
 import type { CipherEnvelope, FieldsObject } from '@/types/replica';
 import type { CryptoSession } from '@/libs/crypto/session';
+import { eventDispatcher } from '@/utils/event';
+import { stubTranslation as _ } from '@/utils/misc';
 import { cryptoSession as defaultCryptoSession } from '@/libs/crypto/session';
 
 /**
@@ -145,14 +147,30 @@ export const collectDecryptSuccess = (
  * this to the passphrase gate so a sync fresh device prompts the user
  * before silently dropping the encrypted creds.
  */
+export interface DecryptRowResult {
+  /**
+   * Field paths whose decrypt failed because the cipher envelope's
+   * `saltId` no longer exists server-side (the user / admin reset
+   * `replica_keys` out of band). The orchestrator hands these to the
+   * adapter so it can clear any persisted "already-published"
+   * fingerprint for the path — the next save then re-encrypts the
+   * (still locally-held) plaintext under the current salt and the
+   * orphaned cipher gets overwritten on the server.
+   */
+  saltNotFound: string[];
+}
+
 export const decryptRowFields = async (
   fields: FieldsObject,
   encryptedFields: readonly string[] | undefined,
   session: CryptoSession = defaultCryptoSession,
   onLocked?: () => Promise<void>,
-): Promise<void> => {
-  if (!encryptedFields || encryptedFields.length === 0) return;
+): Promise<DecryptRowResult> => {
+  if (!encryptedFields || encryptedFields.length === 0) return { saltNotFound: [] };
+  const saltNotFound: string[] = [];
   let promptAttempted = false;
+  let lastFailureCode: string | null = null;
+  let failedFieldCount = 0;
   for (const fieldName of encryptedFields) {
     const envelope = fields[fieldName];
     if (!envelope || typeof envelope !== 'object' || !('v' in envelope)) continue;
@@ -179,11 +197,47 @@ export const decryptRowFields = async (
       (envelope as { v: unknown }).v = plaintext;
     } catch (err) {
       const code = isSyncError(err) ? (err as SyncError).code : 'unknown';
+      // Loud + uniformly prefixed so it's easy to grep in production
+      // console output. AES-GCM failures (wrong passphrase) surface
+      // as DECRYPT; SHA-256 sidecar mismatches as INTEGRITY.
       console.warn(
         `[replicaCrypto] failed to decrypt field "${fieldName}" (${code}) — preserving local copy`,
         err,
       );
+      lastFailureCode = code;
+      failedFieldCount += 1;
+      if (code === 'SALT_NOT_FOUND') saltNotFound.push(fieldName);
       delete fields[fieldName];
     }
   }
+
+  // One toast per call, surfaced after the loop so the user notices
+  // even if they don't watch the console.
+  //   * DECRYPT / INTEGRITY: AES-GCM or sidecar verification failed —
+  //     almost always "wrong sync passphrase entered on this device".
+  //     Local plaintext copy is preserved.
+  //   * SALT_NOT_FOUND: the row's cipher envelope references a salt
+  //     that no longer exists in `replica_keys` server-side. This
+  //     happens when the salts were deleted out-of-band (e.g.,
+  //     manually) without also wiping the cipher envelopes — the
+  //     proper Forgot-passphrase RPC does both atomically. The orphan
+  //     The orchestrator hands the saltNotFound list back to the
+  //     adapter so it can clear any "already-published" snapshot for
+  //     those paths — the next save then re-encrypts under the
+  //     current salt and overwrites the orphan.
+  if (failedFieldCount > 0 && lastFailureCode !== null) {
+    let message: string;
+    if (lastFailureCode === 'DECRYPT' || lastFailureCode === 'INTEGRITY') {
+      message = _('Wrong sync passphrase — synced credentials could not be decrypted');
+    } else if (lastFailureCode === 'SALT_NOT_FOUND') {
+      message = _(
+        'Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…',
+      );
+    } else {
+      message = _('Failed to decrypt synced credentials');
+    }
+    eventDispatcher.dispatch('toast', { type: 'error', message });
+  }
+
+  return { saltNotFound };
 };

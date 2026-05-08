@@ -94,6 +94,28 @@ export interface PullAndApplyDeps<T extends ReplicaLocalRecord> {
    * orchestrator skips the entire pull (no network call, no warnings).
    */
   isAuthenticated?(): Promise<boolean>;
+  /**
+   * When true, encrypted-field cipher payloads are decrypted
+   * best-effort but the orchestrator NEVER triggers the passphrase
+   * gate for this kind. Cipher fields silently drop when the session
+   * is locked, leaving the local copy intact. Use for kinds where
+   * spam-prompting on every pull would be jarring (e.g., the bundled
+   * `settings` row, which pulls on every library mount). The user
+   * unlocks via an explicit Settings → Sync action; the next pull
+   * cycle then decrypts cleanly.
+   */
+  silentDecrypt?: boolean;
+  /**
+   * Called when one or more cipher fields failed to decrypt because
+   * the cipher's `saltId` no longer exists in `replica_keys` (orphan
+   * after an out-of-band server reset). Adapters that persist a
+   * "previously published" fingerprint per encrypted path should
+   * clear it so the next save re-encrypts the still-locally-held
+   * plaintext under the current salt — overwriting the orphan
+   * cipher on the server. No-op when the kind has no such fingerprint
+   * to invalidate.
+   */
+  onSaltNotFound?(paths: readonly string[]): void;
 }
 
 const MANIFEST_FILE_TO_TRANSFER = (
@@ -129,11 +151,20 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   const localLastSeen = local?.lastSeenCipher;
 
   const needsPrompt =
+    !deps.silentDecrypt &&
     !cryptoSession.isUnlocked() &&
     Object.keys(beforeDecrypt).length > 0 &&
     cipherTextsChanged(beforeDecrypt, localLastSeen);
   const onLocked = needsPrompt ? () => ensurePassphraseUnlocked() : undefined;
-  await decryptRowFields(row.fields_jsonb, encryptedFields, undefined, onLocked);
+  const decryptResult = await decryptRowFields(
+    row.fields_jsonb,
+    encryptedFields,
+    undefined,
+    onLocked,
+  );
+  if (decryptResult.saltNotFound.length > 0 && deps.onSaltNotFound) {
+    deps.onSaltNotFound(decryptResult.saltNotFound);
+  }
 
   // Build the lastSeenCipher fingerprint to attach to the unpacked
   // record. Only fields whose decrypt succeeded contribute — a failed

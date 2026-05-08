@@ -25,6 +25,7 @@ import PassphrasePrompt from '@/components/PassphrasePrompt';
 import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
 import { cryptoSession } from '@/libs/crypto/session';
 import { useAppLockStore } from '@/store/appLockStore';
+import { initSettingsSync } from '@/services/sync/replicaSettingsSync';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
@@ -99,6 +100,15 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       await upgradeToKeychainIfAvailable();
       await cryptoSession.tryRestoreFromStore();
     })();
+  }, []);
+
+  // Subscribe the bundled-settings publisher to settingsStore changes.
+  // After this fires, every setSettings call diffs the whitelist
+  // against the last-published snapshot and emits a single replica
+  // upsert for changed fields (no-op if nothing whitelisted changed).
+  // Idempotent — safe to call on remount.
+  useEffect(() => {
+    initSettingsSync();
   }, []);
 
   // Make sure appService is available in all children components

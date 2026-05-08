@@ -98,7 +98,33 @@ export class ReplicaSyncClient {
     return data.rows ?? [];
   }
 
-  async listReplicaKeys(): Promise<ReplicaKeyRow[]> {
+  /**
+   * The replica_keys list rarely changes — only on `createReplicaKey`
+   * (passphrase setup / rotation) and `forgetReplicaKeys` (forgot-
+   * passphrase wipe), both of which we own and invalidate explicitly.
+   * Without a cache here, every consumer that needs the salt list
+   * (CryptoSession.unlock, tryRestoreFromStore, deriveKeyFor on a
+   * cache-miss saltId, passphraseGate.ensurePassphraseUnlocked,
+   * SyncPassphraseSection.refreshStatus) issues its own fetch in
+   * parallel — observed as 5+ identical concurrent GETs at boot.
+   *
+   * Two-layer dedupe:
+   *   * `replicaKeysInflight` coalesces concurrent calls onto the same
+   *     in-flight promise — no duplicate network round trips even
+   *     before the first response lands.
+   *   * `replicaKeysCache` holds the resolved value indefinitely for
+   *     subsequent calls. Invalidated on every mutation we issue.
+   */
+  private replicaKeysCache: ReplicaKeyRow[] | null = null;
+  private replicaKeysInflight: Promise<ReplicaKeyRow[]> | null = null;
+
+  /** Discard the cached replica_keys list. Auth flows / sign-out should call this. */
+  invalidateReplicaKeysCache(): void {
+    this.replicaKeysCache = null;
+    this.replicaKeysInflight = null;
+  }
+
+  private async fetchReplicaKeys(): Promise<ReplicaKeyRow[]> {
     const token = await requireToken();
     let response: Response;
     try {
@@ -122,6 +148,29 @@ export class ReplicaSyncClient {
     return data.rows ?? [];
   }
 
+  async listReplicaKeys(): Promise<ReplicaKeyRow[]> {
+    if (this.replicaKeysCache !== null) {
+      // Defensive copy — callers occasionally mutate the returned array
+      // (e.g., `[...rows].sort(...)`). Returning the cache directly
+      // would let one caller's mutation poison another's view.
+      return [...this.replicaKeysCache];
+    }
+    if (this.replicaKeysInflight) {
+      const rows = await this.replicaKeysInflight;
+      return [...rows];
+    }
+    this.replicaKeysInflight = this.fetchReplicaKeys()
+      .then((rows) => {
+        this.replicaKeysCache = rows;
+        return rows;
+      })
+      .finally(() => {
+        this.replicaKeysInflight = null;
+      });
+    const rows = await this.replicaKeysInflight;
+    return [...rows];
+  }
+
   async forgetReplicaKeys(): Promise<void> {
     const token = await requireToken();
     let response: Response;
@@ -142,6 +191,9 @@ export class ReplicaSyncClient {
         { status: response.status },
       );
     }
+    // Server side: every salt + every encrypted envelope is gone.
+    // Local cache is now lying — clear it.
+    this.replicaKeysCache = [];
   }
 
   async createReplicaKey(alg: string): Promise<ReplicaKeyRow> {
@@ -171,6 +223,12 @@ export class ReplicaSyncClient {
     const data = (await response.json()) as { row: ReplicaKeyRow };
     if (!data.row) {
       throw new SyncError('SERVER', 'replica-keys create returned no row');
+    }
+    // Splice the new salt into the cache so the next listReplicaKeys
+    // call sees it without another round trip. Rotation appends — old
+    // salts stay accessible for decrypting envelopes still under them.
+    if (this.replicaKeysCache !== null) {
+      this.replicaKeysCache = [...this.replicaKeysCache, data.row];
     }
     return data.row;
   }

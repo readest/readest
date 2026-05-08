@@ -117,10 +117,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { isTransferQueueOpen } = useTransferStore();
 
   // Library page pulls user replicas (dictionaries, custom fonts,
-  // background textures, OPDS catalogs). Deferred 10s; module-scoped
-  // dedup means a later navigation to the reader won't re-pull the
-  // same kind.
-  useReplicaPull({ kinds: ['dictionary', 'font', 'texture', 'opds_catalog'] });
+  // background textures, OPDS catalogs, bundled settings). Deferred
+  // 10s; module-scoped dedup means a later navigation to the reader
+  // won't re-pull the same kind.
+  useReplicaPull({
+    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'settings'],
+  });
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );

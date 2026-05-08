@@ -18,6 +18,14 @@ import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { fontAdapter } from '@/services/sync/adapters/font';
 import { textureAdapter } from '@/services/sync/adapters/texture';
 import { opdsCatalogAdapter } from '@/services/sync/adapters/opdsCatalog';
+import { settingsAdapter, type SettingsRemoteRecord } from '@/services/sync/adapters/settings';
+import {
+  applyRemoteSettings,
+  clearStoredEncryptedHashes,
+  getStoredLastSeenCipher,
+  publishSettingsIfChanged,
+} from '@/services/sync/replicaSettingsSync';
+import { useSettingsStore } from '@/store/settingsStore';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import {
   replicaPullAndApply,
@@ -34,8 +42,9 @@ import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
 import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
+import type { SystemSettings } from '@/types/settings';
 
-export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog';
+export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog' | 'settings';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -70,6 +79,10 @@ interface ReplicaPullConfig<T extends ReplicaLocalRecord> {
   hydrateLocalStore?: (envConfig: EnvConfigType) => Promise<void>;
   applyRemote: (record: T) => void;
   softDeleteByContentId: (id: string) => void;
+  /** Forwarded to PullAndApplyDeps; see that field for semantics. */
+  silentDecrypt?: boolean;
+  /** Forwarded to PullAndApplyDeps; see that field for semantics. */
+  onSaltNotFound?: (paths: readonly string[]) => void;
 }
 
 const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
@@ -89,6 +102,8 @@ const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
     : undefined,
   applyRemote: config.applyRemote,
   softDeleteByContentId: config.softDeleteByContentId,
+  silentDecrypt: config.silentDecrypt,
+  onSaltNotFound: config.onSaltNotFound,
   // The bundle / binary callbacks below are only reached when the
   // adapter declares a `binary` capability — replicaPullAndApply
   // short-circuits metadata-only kinds before invoking them. The
@@ -173,6 +188,41 @@ const opdsCatalogPullConfig: ReplicaPullConfig<OPDSCatalog> = {
   softDeleteByContentId: (id) => useCustomOPDSStore.getState().softDeleteByContentId(id),
 };
 
+const settingsPullConfig = (envConfig: EnvConfigType): ReplicaPullConfig<SettingsRemoteRecord> => ({
+  kind: 'settings',
+  // metadata-only — no baseDir
+  adapter: settingsAdapter,
+  // Synthesize a "local" record carrying the persisted cipher
+  // fingerprint so the orchestrator's cipher-fingerprint comparison
+  // works for settings the same way it does for OPDS:
+  //   * fingerprint matches → skip prompt (already-decrypted ciphers
+  //     unchanged); no spam on refresh
+  //   * fingerprint differs (rotation / fresh device / new device A
+  //     just set credentials) → prompt fires for the user to enter
+  //     the passphrase
+  // The empty patch is fine: applyRow re-applies metadata-only kinds
+  // unconditionally for the actual data.
+  findByContentId: () => ({
+    name: 'singleton' as const,
+    patch: {} as Partial<SystemSettings>,
+    lastSeenCipher: getStoredLastSeenCipher(),
+  }),
+  applyRemote: (record) => applyRemoteSettings(envConfig, record),
+  // Settings is a singleton — never tombstoned. The server-side
+  // forget-passphrase wipe doesn't touch this row.
+  softDeleteByContentId: () => {},
+  // Auto-recovery for the orphan-cipher case: clear the persisted
+  // "already-published" hash so the next save re-encrypts under the
+  // current salt and overwrites the orphan. Then trigger an
+  // immediate re-publish so the user doesn't have to touch settings
+  // before the server heals itself.
+  onSaltNotFound: (paths) => {
+    clearStoredEncryptedHashes(paths);
+    const settings = useSettingsStore.getState().settings;
+    if (settings) void publishSettingsIfChanged(settings);
+  },
+});
+
 const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
@@ -202,6 +252,11 @@ const runPullForKind = async (
     case 'opds_catalog':
       await replicaPullAndApply(
         buildReplicaPullDeps(ctx.manager, service, envConfig, opdsCatalogPullConfig),
+      );
+      return;
+    case 'settings':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(ctx.manager, service, envConfig, settingsPullConfig(envConfig)),
       );
       return;
   }

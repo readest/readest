@@ -45,9 +45,9 @@ export interface ReadSettings {
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
-
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
+
   customHighlightColors: Record<HighlightColor, string>;
   userHighlightColors: UserHighlightColor[];
   defaultHighlightLabels: Partial<Record<HighlightColor, string>>;
@@ -96,6 +96,7 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
 
 export interface SystemSettings {
   version: number;
+  migrationVersion: number;
   localBooksDir: string;
   customRootDir?: string;
 
@@ -131,6 +132,9 @@ export interface SystemSettings {
   metadataSeriesCollapsed: boolean;
   metadataOthersCollapsed: boolean;
   metadataDescriptionCollapsed: boolean;
+  lastSyncedAtBooks: number;
+  lastSyncedAtConfigs: number;
+  lastSyncedAtNotes: number;
 
   /**
    * App-lock PIN. When `pinCodeEnabled` is true, the user must enter
@@ -147,9 +151,7 @@ export interface SystemSettings {
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
 
-  lastSyncedAtBooks: number;
-  lastSyncedAtConfigs: number;
-  lastSyncedAtNotes: number;
+  aiSettings: AISettings;
   /**
    * Per-device id used as the deviceId portion of every HLC this device
    * mints. Lazy-generated on first sync init via uuidv4 (mirrors
@@ -171,9 +173,6 @@ export interface SystemSettings {
    */
   syncCategories?: Partial<Record<SyncCategory, boolean>>;
 
-  migrationVersion: number;
-
-  aiSettings: AISettings;
   // Global read settings that apply to the reader page
   globalReadSettings: ReadSettings;
   // Global view settings that apply to all books, and can be overridden by book-specific view settings

@@ -151,3 +151,116 @@ describe('ReplicaSyncClient.pull', () => {
     expect(rows).toEqual([]);
   });
 });
+
+describe('ReplicaSyncClient.listReplicaKeys (cache + dedupe)', () => {
+  const sampleKey = {
+    saltId: 's1',
+    alg: 'pbkdf2-600k-sha256',
+    salt: 'AAAA',
+    createdAt: '2026-05-09T00:00:00Z',
+  };
+
+  test('coalesces concurrent in-flight calls into a single fetch', async () => {
+    let resolveFetch: (resp: Response) => void = () => {};
+    mockFetch.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+    const client = new ReplicaSyncClient();
+    // Kick off three concurrent calls; the first await-getAccessToken
+    // microtask hasn't resolved yet, so we need to let those microtasks
+    // drain before asserting fetch was called exactly once.
+    const all = Promise.all([
+      client.listReplicaKeys(),
+      client.listReplicaKeys(),
+      client.listReplicaKeys(),
+    ]);
+    // Drain microtasks so the queued requireToken() awaits resolve and
+    // we reach the fetch call. Two ticks is enough for the three
+    // concurrent calls' first await to settle.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    resolveFetch(new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }));
+    const [r1, r2, r3] = await all;
+    expect(r1).toEqual([sampleKey]);
+    expect(r2).toEqual([sampleKey]);
+    expect(r3).toEqual([sampleKey]);
+  });
+
+  test('subsequent calls return the cached value without a second fetch', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const client = new ReplicaSyncClient();
+    await client.listReplicaKeys();
+    await client.listReplicaKeys();
+    await client.listReplicaKeys();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns a defensive copy so caller mutations do not poison the cache', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const client = new ReplicaSyncClient();
+    const first = await client.listReplicaKeys();
+    first.push({ ...sampleKey, saltId: 'mutated' });
+    const second = await client.listReplicaKeys();
+    expect(second).toEqual([sampleKey]);
+  });
+
+  test('createReplicaKey appends the new salt to the cache (no extra fetch)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const client = new ReplicaSyncClient();
+    await client.listReplicaKeys();
+    const fresh = { ...sampleKey, saltId: 's2' };
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ row: fresh }), { status: 201 }));
+    await client.createReplicaKey('pbkdf2-600k-sha256');
+    const cached = await client.listReplicaKeys();
+    expect(cached).toEqual([sampleKey, fresh]);
+    expect(mockFetch).toHaveBeenCalledTimes(2); // initial list + create; no re-list
+  });
+
+  test('forgetReplicaKeys clears the cache (next list re-fetches)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const client = new ReplicaSyncClient();
+    await client.listReplicaKeys();
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    await client.forgetReplicaKeys();
+    const empty = await client.listReplicaKeys();
+    expect(empty).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('invalidateReplicaKeysCache forces a re-fetch on the next list', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const client = new ReplicaSyncClient();
+    await client.listReplicaKeys();
+    client.invalidateReplicaKeysCache();
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ rows: [] }), { status: 200 }));
+    const refreshed = await client.listReplicaKeys();
+    expect(refreshed).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('a failed fetch is not cached — next call retries', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('boom', { status: 500 }));
+    const client = new ReplicaSyncClient();
+    await expect(client.listReplicaKeys()).rejects.toThrow();
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ rows: [sampleKey] }), { status: 200 }),
+    );
+    const rows = await client.listReplicaKeys();
+    expect(rows).toEqual([sampleKey]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});

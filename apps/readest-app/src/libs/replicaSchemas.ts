@@ -70,6 +70,14 @@ const opdsCatalogFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+// Open-shaped: the bundled `settings` row stores arbitrary scalar
+// preferences keyed by `<setting>` or `<group>.<id>` (for flat-map
+// settings like providerEnabled.<id>, syncCategories.<id>,
+// shortcut.<action>). The whitelist of accepted field NAMES is
+// enforced client-side by the adapter; the server only enforces the
+// envelope shape and the 64-field / 64 KiB row caps.
+const settingsFieldsSchema = z.record(z.string(), fieldEnvelopeWithCipher);
+
 interface KindSpec {
   minSchemaVersion: number;
   maxSchemaVersion: number;
@@ -105,6 +113,16 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 50,
     fields: opdsCatalogFieldsSchema,
+    binary: false,
+  },
+  settings: {
+    // Singleton row per user (replica_id='singleton'). Holds scalar
+    // SystemSettings preferences plus flat-map settings encoded via
+    // namespaced field keys.
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 1,
+    fields: settingsFieldsSchema,
     binary: false,
   },
 };
