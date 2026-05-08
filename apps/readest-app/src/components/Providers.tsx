@@ -16,6 +16,7 @@ import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getLocale } from '@/utils/misc';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { getAndroidPatchedViewportContent } from '@/utils/viewport';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
@@ -100,6 +101,13 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       await upgradeToKeychainIfAvailable();
       await cryptoSession.tryRestoreFromStore();
     })();
+  }, []);
+
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!meta) return;
+    const updated = getAndroidPatchedViewportContent(navigator.userAgent, meta.content);
+    if (updated) meta.content = updated;
   }, []);
 
   // Subscribe the bundled-settings publisher to settingsStore changes.
