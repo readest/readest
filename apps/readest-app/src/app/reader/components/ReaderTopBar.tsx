@@ -18,6 +18,7 @@ interface ReaderTopBarProps {
   bookKey: string;
   bookKeys: string[];
   onCloseBook: (bookKey: string) => void;
+  onGoToLibrary?: () => void;
   onDropdownOpenChange?: (isOpen: boolean) => void;
 }
 
@@ -25,6 +26,7 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
   bookKey,
   bookKeys,
   onCloseBook,
+  onGoToLibrary,
   onDropdownOpenChange,
 }) => {
   const _ = useTranslation();
@@ -49,6 +51,16 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
       )}
       style={{ paddingTop: `${topInset}px` }}
     >
+      {onGoToLibrary && (
+        <button
+          type='button'
+          title={_('Go to Library')}
+          onClick={onGoToLibrary}
+          className='citadel-library-btn hidden items-center justify-center px-3.5 sm:flex'
+        >
+          <span className='citadel-library-btn-label'>{_('LIBRARY')}</span>
+        </button>
+      )}
       <SettingsToggler bookKey={bookKey} />
       <NotebookToggler bookKey={bookKey} />
       <Dropdown
@@ -96,6 +108,43 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
           box-shadow:
             0 0 0 1px rgba(201, 164, 90, 0.9),
             0 0 0 3px rgba(120, 24, 18, 0.45);
+        }
+
+        .reader-top-bar .citadel-library-btn {
+          height: 32px;
+          min-height: 32px;
+          padding: 0 14px;
+          border-radius: 8px;
+          border: 1px solid rgba(168, 124, 64, 0.62);
+          background: linear-gradient(180deg, rgba(26, 17, 13, 0.96), rgba(14, 10, 8, 0.98));
+          box-shadow:
+            inset 0 1px 0 rgba(255, 237, 193, 0.06),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+            0 6px 14px rgba(0, 0, 0, 0.42);
+          transition:
+            color 140ms ease,
+            background 140ms ease,
+            border-color 140ms ease,
+            transform 140ms ease;
+        }
+
+        .reader-top-bar .citadel-library-btn:hover {
+          background: linear-gradient(180deg, rgba(46, 26, 20, 0.97), rgba(22, 14, 11, 0.98));
+          border-color: rgba(214, 168, 88, 0.85);
+          transform: translateY(-1px);
+        }
+
+        .reader-top-bar .citadel-library-btn .citadel-library-btn-label {
+          font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.22em;
+          color: rgba(218, 181, 114, 0.96);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+        }
+
+        .reader-top-bar .citadel-library-btn:hover .citadel-library-btn-label {
+          color: rgba(243, 215, 140, 0.98);
         }
       `}</style>
     </div>

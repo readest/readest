@@ -9,7 +9,6 @@ import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Dropdown from '@/components/Dropdown';
 import BookMenu from './BookMenu';
-import SidebarToggler from '../SidebarToggler';
 
 const SidebarHeader: React.FC<{
   bookKey: string;
@@ -18,7 +17,7 @@ const SidebarHeader: React.FC<{
   onClose: () => void;
   onTogglePin: () => void;
   onToggleSearchBar: () => void;
-}> = ({ bookKey, isPinned, isSearchBarVisible, onClose, onTogglePin, onToggleSearchBar }) => {
+}> = ({ isPinned, isSearchBarVisible, onClose, onTogglePin, onToggleSearchBar }) => {
   const _ = useTranslation();
   const { isTrafficLightVisible } = useTrafficLight();
   const iconSize14 = useResponsiveSize(14);
@@ -33,7 +32,7 @@ const SidebarHeader: React.FC<{
       )}
       dir='ltr'
     >
-      <div className='flex items-center gap-x-8 sm:w-full sm:justify-center sm:pb-3'>
+      <div className='flex items-center gap-x-8 sm:hidden sm:w-full sm:justify-center sm:pb-3'>
         <button
           title={_('Close')}
           onClick={onClose}
@@ -41,9 +40,6 @@ const SidebarHeader: React.FC<{
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
-        <div className='hidden sm:flex'>
-          <SidebarToggler bookKey={bookKey} />
-        </div>
       </div>
       <div className='pointer-events-none hidden w-full flex-col items-center justify-center sm:flex'>
         <div className='sidebar-brand-panel pt-6.5 relative flex w-full items-center justify-center rounded-[24px] px-2.5 pb-5'>

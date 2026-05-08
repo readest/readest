@@ -19,7 +19,6 @@ import { saveViewSettings } from '@/helpers/settings';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
 import QuickActionMenu from './annotator/QuickActionMenu';
-import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import TranslationToggler from './TranslationToggler';
 
@@ -185,14 +184,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             className='flex min-w-0 items-center gap-x-2 overflow-x-auto max-[350px]:gap-x-1.5'
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {!isSideBarVisible && (
-              <div className='hidden sm:flex'>
-                <SidebarToggler bookKey={bookKey} />
-              </div>
-            )}
+            {/* Restore-sidebar entry point now lives as a left-edge handle on
+                the reader frame (see sidebar/SideBar.tsx). The old top-right
+                toggler used to land here next to the Aa cluster — that
+                placement was dropped per the design reference. */}
             <button
               title={_('Go to Library')}
-              className='btn btn-ghost border-[#7d592f]/18 bg-[#130d0b]/54 hover:bg-[#231714]/74 hidden h-7 min-h-7 w-7 rounded-md border p-0 text-[#c29d63] hover:text-[#e1c48d] sm:flex'
+              className='btn btn-ghost hidden h-7 min-h-7 w-7 rounded-md border border-[#a07a3c]/40 bg-[#1a110d]/80 p-0 text-[#dab572] hover:bg-[#2a1812]/90 hover:text-[#f1d58a] sm:flex'
               onClick={onGoToLibrary}
             >
               <VscLibrary size={iconSize18} className='fill-current' />
@@ -286,21 +284,22 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           background: transparent;
         }
 
-        /* Left-cluster (sidebar/bookmark) — engraved opaque style */
+        /* Left-cluster (sidebar/bookmark) — vibrant engraved gold style */
         .header-bar .sidebar-bookmark-toggler button {
           border-radius: 0.5rem;
-          border: 1px solid rgba(120, 86, 42, 0.28);
-          background: linear-gradient(180deg, rgba(22, 14, 11, 0.9), rgba(12, 8, 6, 0.86));
-          color: #c8a06a;
+          border: 1px solid rgba(168, 124, 64, 0.46);
+          background: linear-gradient(180deg, rgba(26, 17, 13, 0.95), rgba(14, 10, 8, 0.92));
+          color: #dab572;
           box-shadow:
-            inset 0 1px 0 rgba(255, 237, 193, 0.04),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.34);
+            inset 0 1px 0 rgba(255, 237, 193, 0.06),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+            0 4px 10px rgba(0, 0, 0, 0.35);
         }
 
         .header-bar .sidebar-bookmark-toggler button:hover {
-          border-color: rgba(168, 130, 68, 0.38);
-          background: linear-gradient(180deg, rgba(38, 24, 18, 0.96), rgba(22, 14, 11, 0.92));
-          color: #e0c48a;
+          border-color: rgba(214, 168, 88, 0.78);
+          background: linear-gradient(180deg, rgba(46, 26, 20, 0.96), rgba(22, 14, 11, 0.94));
+          color: #f1d58a;
         }
 
         .header-bar .header-title {
