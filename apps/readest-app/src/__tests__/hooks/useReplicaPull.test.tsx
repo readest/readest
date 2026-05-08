@@ -55,12 +55,48 @@ vi.mock('@/store/customDictionaryStore', () => ({
   findDictionaryByContentId: () => undefined,
 }));
 
+vi.mock('@/store/customFontStore', () => ({
+  useCustomFontStore: {
+    getState: () => ({
+      applyRemoteFont: vi.fn(),
+      softDeleteByContentId: vi.fn(),
+      loadCustomFonts: vi.fn(async () => {}),
+    }),
+  },
+  findFontByContentId: () => undefined,
+  migrateLegacyFonts: vi.fn(async () => {}),
+}));
+
+vi.mock('@/store/customTextureStore', () => ({
+  useCustomTextureStore: {
+    getState: () => ({
+      applyRemoteTexture: vi.fn(),
+      softDeleteByContentId: vi.fn(),
+      loadCustomTextures: vi.fn(async () => {}),
+    }),
+  },
+  findTextureByContentId: () => undefined,
+  migrateLegacyTextures: vi.fn(async () => {}),
+}));
+
+vi.mock('@/store/customOPDSStore', () => ({
+  useCustomOPDSStore: {
+    getState: () => ({
+      applyRemoteCatalog: vi.fn(),
+      softDeleteByContentId: vi.fn(),
+      loadCustomOPDSCatalogs: vi.fn(async () => {}),
+    }),
+  },
+  findOPDSCatalogByContentId: () => undefined,
+}));
+
 vi.mock('@/utils/access', () => ({
   getAccessToken: async () => 'token',
 }));
 
 vi.mock('@/utils/misc', () => ({
   uniqueId: () => 'fresh-bundle',
+  stubTranslation: (s: string) => s,
 }));
 
 import { useReplicaPull, __resetReplicaPullForTests } from '@/hooks/useReplicaPull';

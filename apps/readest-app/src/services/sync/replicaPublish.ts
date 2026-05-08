@@ -2,6 +2,7 @@ import { setField, removeReplica, hlcMax } from '@/libs/crdt';
 import { getUserID } from '@/utils/access';
 import { getReplicaAdapter } from './replicaRegistry';
 import { getReplicaSync } from './replicaSync';
+import { encryptPackedFields } from './replicaCryptoMiddleware';
 import type { FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
 
 /**
@@ -29,6 +30,9 @@ export const publishReplicaUpsert = async <T>(
   if (!userId) return;
 
   const packed = adapter.pack(record);
+  // Encrypts the named encryptedFields in place. Locked session →
+  // those fields are dropped from the push (sync without creds).
+  await encryptPackedFields(packed, adapter.encryptedFields);
   let fields: FieldsObject = {};
   let maxFieldHlc: Hlc | null = null;
   for (const [key, value] of Object.entries(packed)) {

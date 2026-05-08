@@ -56,13 +56,21 @@ describe('opdsCatalogAdapter', () => {
     expect(opdsCatalogAdapter.binary).toBeUndefined();
   });
 
-  test('pack omits username and password (encrypted-credential PR)', () => {
+  test('pack passes username + password through as plaintext (middleware encrypts)', () => {
     const withCreds: OPDSCatalog = { ...sample, username: 'alice', password: 'hunter2' };
     const fields = opdsCatalogAdapter.pack(withCreds);
-    expect(fields['username']).toBeUndefined();
-    expect(fields['password']).toBeUndefined();
+    // Adapter is plaintext-in-plaintext-out. The publish-side
+    // replicaCryptoMiddleware.encryptPackedFields wraps these in
+    // cipher envelopes (or drops them if the session is locked)
+    // before they reach fields_jsonb.
+    expect(fields['username']).toBe('alice');
+    expect(fields['password']).toBe('hunter2');
     expect(fields['name']).toBe('My Library');
     expect(fields['url']).toBe('https://example.com/opds');
+  });
+
+  test('declares encryptedFields = [username, password]', () => {
+    expect(opdsCatalogAdapter.encryptedFields).toEqual(['username', 'password']);
   });
 
   test('pack ∘ unpack is identity for non-credential fields', async () => {

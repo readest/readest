@@ -21,7 +21,7 @@ interface KnownSalt {
 }
 
 export interface CryptoSessionDeps {
-  client?: Pick<ReplicaSyncClient, 'listReplicaKeys' | 'createReplicaKey'>;
+  client?: Pick<ReplicaSyncClient, 'listReplicaKeys' | 'createReplicaKey' | 'forgetReplicaKeys'>;
   /** Override PBKDF2 iterations. Tests pass a low value; production omits. */
   iterations?: number;
 }
@@ -31,7 +31,10 @@ export class CryptoSession {
   private salts = new Map<string, KnownSalt>();
   private keys = new Map<string, CryptoKey>();
   private activeSaltId: string | null = null;
-  private readonly client: Pick<ReplicaSyncClient, 'listReplicaKeys' | 'createReplicaKey'>;
+  private readonly client: Pick<
+    ReplicaSyncClient,
+    'listReplicaKeys' | 'createReplicaKey' | 'forgetReplicaKeys'
+  >;
   private readonly iterations: number | undefined;
 
   constructor(deps: CryptoSessionDeps = {}) {
@@ -67,6 +70,19 @@ export class CryptoSession {
     this.passphrase = passphrase;
     this.activeSaltId = rows[0]!.saltId;
     await this.deriveKeyFor(this.activeSaltId);
+  }
+
+  /**
+   * Forget the user's passphrase entirely: server-side wipe of every
+   * encrypted-field envelope across all the user's replica rows + drop
+   * every salt. The next encrypted push from any device will mint a
+   * fresh salt + key. Local plaintext copies on each device are
+   * preserved — the user just has to re-enter the sync passphrase
+   * (or set a new one) to start re-encrypting.
+   */
+  async forget(): Promise<void> {
+    await this.client.forgetReplicaKeys();
+    this.lock();
   }
 
   /**

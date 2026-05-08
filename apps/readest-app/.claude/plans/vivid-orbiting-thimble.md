@@ -559,11 +559,12 @@ example. Add `'font'` to the allowlist + schema + adapter.
 
 Similar shape to fonts.
 
-### PR 4 — `opds_catalog` (split into 4a + 4b + 4c)
+### PR 4 — `opds_catalog` (split into 4a + 4b + 4c + 4d)
 
-Originally one PR; split during PR 4 build because the crypto
-introduction is a step-up in complexity that benefits from separate
-review surfaces.
+Originally one PR; split during build because the crypto introduction
+is a step-up in complexity that benefits from separate review surfaces,
+and the Tauri keychain backend is cross-language work (Rust + Swift +
+Kotlin) that's easier to review on its own.
 
 **PR 4a — encrypted-field session wiring (no consumer kind).** Ships
 the per-account PBKDF2 salt endpoint (`/api/sync/replica-keys` + the
@@ -580,14 +581,28 @@ not pushed, not pull-overwritten. Public catalogs sync end-to-end
 immediately; credentialed catalogs need re-entry on each device until
 4c lands.
 
-**PR 4c — `opds_catalog` encrypted credentials + passphrase UX.**
+**PR 4c — `opds_catalog` encrypted credentials + passphrase UX (TS-only).**
 Adds `username` and `password` as encrypted-field envelopes via the
-crypto session shipped in 4a. Ships `SyncPassphrasePanel` UI
-(set / change / forgot), the lazy `getOrPromptPassphrase` modal that
-fires on first encrypted-field push or pull, the Tauri keychain backend
-that replaces the `EphemeralPassphraseStore` stub, and the
+crypto session shipped in 4a. Ships the lazy `getOrPromptPassphrase`
+helper, a passphrase prompt modal that fires on first encrypted-field
+push or pull, a Sync section in Settings with "Set sync passphrase" /
+"Change passphrase" / "Forgot passphrase" actions, the
 forgot-passphrase server endpoint (wipes encrypted envelopes + rotates
-salt).
+salt), and the adapter contract change to support async pack/unpack
+for encryption. Web users get the per-session ephemeral passphrase
+storage; **native users also use ephemeral storage in this PR** and
+re-enter their passphrase each app launch — a known UX wart that PR 4d
+fixes by wiring the Tauri keychain.
+
+**PR 4d — Tauri keychain backend (Rust + iOS + Android).** Replaces
+`EphemeralPassphraseStore` on native with persistent OS-keychain
+storage via the existing `tauri-plugin-native-bridge` plugin. Desktop
+uses the `keyring` Rust crate (macOS Keychain, Windows Credential
+Manager, Linux libsecret); iOS uses the Security framework via Swift;
+Android uses the AndroidKeystore via Kotlin. No TS surface change —
+`TauriPassphraseStore` becomes the platform default; web continues to
+use `EphemeralPassphraseStore`. Eliminates the per-launch re-prompt on
+native.
 
 ### PR 5 — `settings` bundled kind (collapses original PR 5 + PR 6+)
 

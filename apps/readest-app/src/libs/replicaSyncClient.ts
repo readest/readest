@@ -122,6 +122,28 @@ export class ReplicaSyncClient {
     return data.rows ?? [];
   }
 
+  async forgetReplicaKeys(): Promise<void> {
+    const token = await requireToken();
+    let response: Response;
+    try {
+      response = await fetch(KEYS_ENDPOINT(), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (cause) {
+      throw new SyncError('SERVER', 'Network failure during replica-keys forget', { cause });
+    }
+    if (!response.ok) {
+      const body = await parseErrorBody(response);
+      const code = body.code ?? statusToDefaultCode(response.status);
+      throw new SyncError(
+        code,
+        body.error ?? `replica-keys forget failed with status ${response.status}`,
+        { status: response.status },
+      );
+    }
+  }
+
   async createReplicaKey(alg: string): Promise<ReplicaKeyRow> {
     const token = await requireToken();
     let response: Response;

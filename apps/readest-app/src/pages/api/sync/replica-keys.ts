@@ -77,6 +77,20 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ row: toResponseRow(data) }, { status: 201 });
 }
 
+export async function DELETE(req: NextRequest) {
+  const { user, token } = await validateUserAndToken(req.headers.get('authorization'));
+  if (!user || !token) {
+    return errorResponse(401, 'AUTH', 'Not authenticated');
+  }
+  const supabase = createSupabaseClient(token);
+  const { error } = await supabase.rpc('replica_keys_forget');
+  if (error) {
+    console.error('replica_keys_forget failed', { userId: user.id, error });
+    return errorResponse(500, 'SERVER', error.message);
+  }
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!req.url) {
     return res.status(400).json({ error: 'Invalid request URL' });
@@ -102,8 +116,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         body: JSON.stringify(req.body),
       });
       response = await POST(nextReq);
+    } else if (req.method === 'DELETE') {
+      const nextReq = new NextRequest(url.toString(), {
+        headers: new Headers(req.headers as Record<string, string>),
+        method: 'DELETE',
+      });
+      response = await DELETE(nextReq);
     } else {
-      res.setHeader('Allow', ['GET', 'POST']);
+      res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
       return res.status(405).json({ error: 'Method Not Allowed' });
     }
 

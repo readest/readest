@@ -33,6 +33,18 @@ export interface ReplicaAdapter<T = unknown> {
   getDisplayName?(record: T): string;
   binary?: BinaryCapability<T>;
   lifecycle?: LifecycleHooks<T>;
+  /**
+   * Field names whose values are encrypted before push and decrypted
+   * after pull. The publish/pull middleware handles the crypto round
+   * trip via the active CryptoSession; pack/unpack always see plain
+   * values. Absent or empty means the kind has no encrypted fields.
+   *
+   * Encryption is best-effort: if the session isn't unlocked, encrypted
+   * fields are dropped from the push (the row syncs without them) and
+   * decrypt failure on pull is logged + the field is omitted from the
+   * unpacked record so local plaintext copies are preserved.
+   */
+  encryptedFields?: readonly string[];
 }
 
 const registry = new Map<string, ReplicaAdapter<unknown>>();

@@ -41,6 +41,7 @@ import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
 import SharedLinksSection from './components/SharedLinksSection';
+import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import Checkout from './components/Checkout';
 
 type CheckoutState = {
@@ -325,6 +326,7 @@ const ProfilePage = () => {
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
+                      <SyncPassphraseSection />
                       <AccountActions
                         userPlan={userProfilePlan}
                         iapAvailable={iapAvailable}

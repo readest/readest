@@ -29,6 +29,7 @@ class FakeClient {
   rows: ReplicaKeyRow[] = [];
   listCalls = 0;
   createCalls = 0;
+  forgetCalls = 0;
 
   async listReplicaKeys(): Promise<ReplicaKeyRow[]> {
     this.listCalls += 1;
@@ -41,6 +42,11 @@ class FakeClient {
     if (alg !== PBKDF2_ALG) throw new SyncError('UNSUPPORTED_ALG', `bad alg: ${alg}`);
     this.rows.push(row);
     return row;
+  }
+
+  async forgetReplicaKeys(): Promise<void> {
+    this.forgetCalls += 1;
+    this.rows = [];
   }
 }
 
@@ -148,6 +154,16 @@ describe('CryptoSession', () => {
     expect(caught).not.toBeNull();
     expect(isSyncError(caught)).toBe(true);
     expect((caught as SyncError).code).toMatch(/DECRYPT|INTEGRITY/);
+  });
+
+  test('forget() clears server salts and locks the session', async () => {
+    await session.setup('pw');
+    expect(session.isUnlocked()).toBe(true);
+    expect(client.rows).toHaveLength(1);
+    await session.forget();
+    expect(session.isUnlocked()).toBe(false);
+    expect(client.forgetCalls).toBe(1);
+    expect(client.rows).toHaveLength(0);
   });
 
   test('lock() clears state; encryptField throws after lock', async () => {

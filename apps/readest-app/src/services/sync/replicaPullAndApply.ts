@@ -3,6 +3,7 @@ import type { ReplicaRow } from '@/types/replica';
 import type { ReplicaTransferFile } from '@/store/transferStore';
 import type { BaseDir } from '@/types/system';
 import type { ReplicaAdapter } from './replicaRegistry';
+import { decryptRowFields } from './replicaCryptoMiddleware';
 
 export interface ReplicaLocalRecord {
   /**
@@ -96,6 +97,11 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   row: ReplicaRow,
   deps: PullAndApplyDeps<T>,
 ): Promise<void> => {
+  // Decrypt encrypted-field cipher payloads in place so unpackRow sees
+  // plaintext. Locked session / decrypt failures simply omit the field
+  // — the store's applyRemote merge preserves the local plaintext copy.
+  await decryptRowFields(row.fields_jsonb, deps.adapter.encryptedFields);
+
   const local = deps.findByContentId(row.replica_id);
   const alive = isReplicaRowAlive(row);
 

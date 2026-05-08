@@ -18,6 +18,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
+import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
@@ -210,6 +212,27 @@ export function CatalogManager() {
     const customHeaders = hasOPDSCustomHeaders(parsedHeaders.headers)
       ? parsedHeaders.headers
       : undefined;
+
+    // If the user provided credentials, unlock (or set up) the sync
+    // passphrase BEFORE saving. The crypto middleware drops creds
+    // from the push when the session is locked, so this gate is what
+    // turns the credentials into actual cross-device sync. User
+    // cancel = save proceeds without sync (the catalog still works
+    // locally with the entered creds).
+    const hasCredentials = !!(newCatalog.username || newCatalog.password);
+    if (hasCredentials) {
+      try {
+        await ensurePassphraseUnlocked();
+      } catch (err) {
+        if (!(isSyncError(err) && err.code === 'NO_PASSPHRASE')) {
+          // Surface unexpected errors; cancel-by-user is silent.
+          setUrlError(err instanceof Error ? err.message : String(err));
+          setIsValidating(false);
+          return;
+        }
+        // User cancelled the prompt — save locally without encrypted sync.
+      }
+    }
 
     if (editingCatalogId) {
       useCustomOPDSStore.getState().updateCatalog(editingCatalogId, {

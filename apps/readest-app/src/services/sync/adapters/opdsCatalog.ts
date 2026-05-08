@@ -16,6 +16,8 @@ interface UnwrappedOpdsFields {
   autoDownload?: boolean;
   disabled?: boolean;
   addedAt?: number;
+  username?: string;
+  password?: string;
 }
 
 const unwrapOpdsFields = (fields: FieldsObject): UnwrappedOpdsFields => {
@@ -27,6 +29,13 @@ const unwrapOpdsFields = (fields: FieldsObject): UnwrappedOpdsFields => {
   const autoDownload = unwrap(fields['autoDownload']);
   const disabled = unwrap(fields['disabled']);
   const addedAt = unwrap(fields['addedAt']);
+  // Crypto middleware decrypted these in place before unpackRow ran
+  // (see replicaCryptoMiddleware.decryptRowFields). A missing entry
+  // means either the publishing device hadn't unlocked yet or the
+  // local CryptoSession couldn't decrypt — local plaintext copy is
+  // preserved by customOPDSStore.applyRemoteCatalog.
+  const username = unwrap(fields['username']);
+  const password = unwrap(fields['password']);
   return {
     name: typeof name === 'string' ? name : undefined,
     url: typeof url === 'string' ? url : undefined,
@@ -39,6 +48,8 @@ const unwrapOpdsFields = (fields: FieldsObject): UnwrappedOpdsFields => {
     autoDownload: autoDownload === true ? true : undefined,
     disabled: disabled === true ? true : undefined,
     addedAt: typeof addedAt === 'number' ? addedAt : undefined,
+    username: typeof username === 'string' ? username : undefined,
+    password: typeof password === 'string' ? password : undefined,
   };
 };
 
@@ -68,6 +79,13 @@ export const opdsCatalogAdapter: ReplicaAdapter<OPDSCatalog> = {
     if (catalog.customHeaders !== undefined) fields['customHeaders'] = catalog.customHeaders;
     if (catalog.autoDownload !== undefined) fields['autoDownload'] = catalog.autoDownload;
     if (catalog.disabled !== undefined) fields['disabled'] = catalog.disabled;
+    // Pass credentials as plaintext here — the publish-side crypto
+    // middleware (replicaCryptoMiddleware.encryptPackedFields) wraps
+    // them in cipher envelopes before they hit fields_jsonb. If the
+    // CryptoSession isn't unlocked, the middleware drops them
+    // entirely so they don't leak as plaintext.
+    if (catalog.username !== undefined) fields['username'] = catalog.username;
+    if (catalog.password !== undefined) fields['password'] = catalog.password;
     return fields;
   },
 
@@ -85,6 +103,8 @@ export const opdsCatalogAdapter: ReplicaAdapter<OPDSCatalog> = {
       autoDownload: fields['autoDownload'] === true ? true : undefined,
       disabled: fields['disabled'] === true ? true : undefined,
       addedAt: fields['addedAt'] !== undefined ? Number(fields['addedAt']) : undefined,
+      username: fields['username'] !== undefined ? String(fields['username']) : undefined,
+      password: fields['password'] !== undefined ? String(fields['password']) : undefined,
     };
   },
 
@@ -108,9 +128,15 @@ export const opdsCatalogAdapter: ReplicaAdapter<OPDSCatalog> = {
     if (fields.autoDownload !== undefined) catalog.autoDownload = fields.autoDownload;
     if (fields.disabled !== undefined) catalog.disabled = fields.disabled;
     if (fields.addedAt !== undefined) catalog.addedAt = fields.addedAt;
+    if (fields.username !== undefined) catalog.username = fields.username;
+    if (fields.password !== undefined) catalog.password = fields.password;
     if (row.reincarnation) catalog.reincarnation = row.reincarnation;
     return catalog;
   },
+
+  // Plaintext slot here; the publish/pull middleware handles the
+  // crypto round trip. Adapters never see ciphertext.
+  encryptedFields: ['username', 'password'] as const,
 
   // No `binary` capability — opds_catalog is metadata-only.
 };
