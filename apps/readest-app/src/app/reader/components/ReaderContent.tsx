@@ -292,6 +292,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
         bookKey={sideBarBookKey || bookKeys[0] || ''}
         bookKeys={bookKeys}
         onCloseBook={handleCloseBook}
+        onGoToLibrary={handleCloseBooksToLibrary}
       />
       {isSettingsDialogOpen && <SettingsDialog bookKey={settingsDialogBookKey} />}
       <Notebook />

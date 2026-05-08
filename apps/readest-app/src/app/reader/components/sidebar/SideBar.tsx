@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MdKeyboardDoubleArrowRight } from 'react-icons/md';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -173,7 +174,58 @@ const SideBar = ({}) => {
   const { book, bookDoc } = bookData;
   const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
 
-  return isSideBarVisible ? (
+  if (!isSideBarVisible) {
+    // Collapsed state: render a left-edge restore handle so the sidebar can
+    // be reopened. The HeaderBar no longer carries a top-right toggler when
+    // the sidebar is hidden, so this handle is the only desktop restore
+    // entry point — it must always render.
+    // pointer-events-auto on the button only; nothing else is overlaid.
+    return (
+      <button
+        type='button'
+        title={_('Show Sidebar')}
+        aria-label={_('Show Sidebar')}
+        data-testid='sidebar-restore-handle'
+        onClick={() => setSideBarVisible(true)}
+        className='citadel-sidebar-restore-tab absolute left-0 top-1/2 z-[46] hidden h-16 w-6 -translate-y-1/2 items-center justify-center sm:flex'
+      >
+        <MdKeyboardDoubleArrowRight size={18} />
+        <style jsx>{`
+          .citadel-sidebar-restore-tab {
+            color: rgba(212, 168, 88, 0.92);
+            background: linear-gradient(180deg, rgba(28, 18, 14, 0.98), rgba(12, 8, 7, 0.98));
+            border: 1px solid rgba(168, 124, 64, 0.55);
+            border-left: 0;
+            border-radius: 0 12px 12px 0;
+            box-shadow:
+              0 12px 28px rgba(0, 0, 0, 0.5),
+              0 0 22px rgba(126, 31, 25, 0.16),
+              inset 0 1px 0 rgba(255, 237, 193, 0.06),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.36);
+            transition:
+              color 140ms ease,
+              transform 140ms ease,
+              background 140ms ease,
+              border-color 140ms ease;
+          }
+          .citadel-sidebar-restore-tab:hover {
+            color: rgba(243, 215, 140, 0.98);
+            border-color: rgba(214, 168, 88, 0.85);
+            background: linear-gradient(180deg, rgba(46, 22, 18, 0.98), rgba(20, 12, 10, 0.98));
+            transform: translate(2px, -50%);
+          }
+          .citadel-sidebar-restore-tab:focus-visible {
+            outline: none;
+            box-shadow:
+              0 0 0 1px rgba(201, 164, 90, 0.85),
+              0 0 0 3px rgba(120, 24, 18, 0.4);
+          }
+        `}</style>
+      </button>
+    );
+  }
+
+  return (
     <>
       {!isSideBarPinned && (
         <Overlay
@@ -496,7 +548,7 @@ const SideBar = ({}) => {
         )}
       </div>
     </>
-  ) : null;
+  );
 };
 
 export default SideBar;
