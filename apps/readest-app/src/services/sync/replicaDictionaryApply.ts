@@ -99,7 +99,9 @@ export const buildLocalDictFromRow = (
   if (!fields.name || !fields.kind) return null;
 
   const dict: ImportedDictionary = {
-    id: bundleDir,
+    // dict.id is the cross-device-stable contentId (= replica_id).
+    // bundleDir stays as the device-local on-disk path.
+    id: row.replica_id,
     contentId: row.replica_id,
     kind: fields.kind,
     name: fields.name,

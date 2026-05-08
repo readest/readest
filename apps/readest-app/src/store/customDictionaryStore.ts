@@ -463,6 +463,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
           return exists ? dict : { ...dict, unavailable: true };
         }),
       );
+
       // Merge defaults to back-fill any missing keys (e.g. new builtin added in a release).
       // For providerOrder, we append any newly-defaulted ids (like the
       // built-in web searches added in this release) so existing users see

@@ -132,7 +132,9 @@ describe('buildLocalDictFromRow', () => {
     });
     const dict = buildLocalDictFromRow(row, 'local-bundle-1');
     expect(dict).not.toBe(null);
-    expect(dict!.id).toBe('local-bundle-1');
+    // dict.id is now the cross-device contentId (= replica_id), and
+    // bundleDir keeps the device-local on-disk path. (PR 6 Option B)
+    expect(dict!.id).toBe('content-hash-abc');
     expect(dict!.contentId).toBe('content-hash-abc');
     expect(dict!.kind).toBe('mdict');
     expect(dict!.name).toBe('Webster');

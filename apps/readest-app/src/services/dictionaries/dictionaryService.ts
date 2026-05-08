@@ -292,7 +292,7 @@ async function importStarDictBundle(
   const contentId = await computeDictionaryContentId(ifoFile, stardictFilenames);
 
   return {
-    id: bundleDir,
+    id: contentId,
     contentId,
     kind: 'stardict',
     name,
@@ -372,7 +372,7 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
   const contentId = await computeDictionaryContentId(mdxFile, mdictFilenames);
 
   return {
-    id: bundleDir,
+    id: contentId,
     contentId,
     kind: 'mdict',
     name,
@@ -448,7 +448,7 @@ async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<Impor
   const contentId = await computeDictionaryContentId(dictFile, dictFilenames);
 
   return {
-    id: bundleDir,
+    id: contentId,
     contentId,
     kind: 'dict',
     name,
@@ -494,7 +494,7 @@ async function importSlobBundle(fs: FileSystem, group: SlobGroup): Promise<Impor
   const contentId = await computeDictionaryContentId(slobFile, [group.slob.name]);
 
   return {
-    id: bundleDir,
+    id: contentId,
     contentId,
     kind: 'slob',
     name,
