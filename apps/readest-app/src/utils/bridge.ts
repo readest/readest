@@ -214,3 +214,48 @@ export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCode
   );
   return result;
 }
+
+// ── Sync passphrase keychain ────────────────────────────────────────────
+// Tauri-only. Wired into the TauriPassphraseStore (src/libs/crypto/
+// passphrase.ts) so the user's sync passphrase persists across app
+// launches via the OS keychain (macOS Keychain, Windows Credential
+// Manager, Linux libsecret, iOS Keychain, Android EncryptedSharedPrefs).
+
+export interface SetSyncPassphraseRequest {
+  passphrase: string;
+}
+
+export interface SyncPassphraseResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface GetSyncPassphraseResponse {
+  passphrase?: string;
+  error?: string;
+}
+
+export interface SyncKeychainAvailableResponse {
+  available: boolean;
+  error?: string;
+}
+
+export async function setSyncPassphrase(
+  request: SetSyncPassphraseRequest,
+): Promise<SyncPassphraseResponse> {
+  return invoke<SyncPassphraseResponse>('plugin:native-bridge|set_sync_passphrase', {
+    payload: request,
+  });
+}
+
+export async function getSyncPassphrase(): Promise<GetSyncPassphraseResponse> {
+  return invoke<GetSyncPassphraseResponse>('plugin:native-bridge|get_sync_passphrase');
+}
+
+export async function clearSyncPassphrase(): Promise<SyncPassphraseResponse> {
+  return invoke<SyncPassphraseResponse>('plugin:native-bridge|clear_sync_passphrase');
+}
+
+export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableResponse> {
+  return invoke<SyncKeychainAvailableResponse>('plugin:native-bridge|is_sync_keychain_available');
+}

@@ -40,12 +40,12 @@ export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog';
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
   kinds: readonly ReplicaKind[];
-  /** Delay before firing the pull. Defaults to 10s — keeps the boot
+  /** Delay before firing the pull. Defaults to 5s — keeps the boot
    *  critical path clean and lets feature mounts hydrate first. */
   delayMs?: number;
 }
 
-const REPLICA_PULL_DEFAULT_DELAY_MS = 10_000;
+const REPLICA_PULL_DEFAULT_DELAY_MS = 5_000;
 
 // Module-level dedup so navigating between pages (library → reader → …)
 // doesn't fire a fresh pull every time. Periodic resync is handled by

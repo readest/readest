@@ -4,6 +4,8 @@ import { replicaSyncClient } from '@/libs/replicaSyncClient';
 import type { ReplicaKeyRow, ReplicaSyncClient } from '@/libs/replicaSyncClient';
 import { derivePbkdf2Key } from './derive';
 import { CURRENT_ALG, decryptFromEnvelope, encryptToEnvelope } from './envelope';
+import { createPassphraseStore } from './passphrase';
+import type { PassphraseStore } from './passphrase';
 
 const PBKDF2_ALG = 'pbkdf2-600k-sha256';
 
@@ -24,6 +26,12 @@ export interface CryptoSessionDeps {
   client?: Pick<ReplicaSyncClient, 'listReplicaKeys' | 'createReplicaKey' | 'forgetReplicaKeys'>;
   /** Override PBKDF2 iterations. Tests pass a low value; production omits. */
   iterations?: number;
+  /**
+   * Where to persist the passphrase across app launches. Production
+   * defaults to the lazy module-level store (ephemeral on web,
+   * upgrades to OS keychain on Tauri). Tests pass a mock.
+   */
+  store?: PassphraseStore;
 }
 
 export class CryptoSession {
@@ -36,10 +44,22 @@ export class CryptoSession {
     'listReplicaKeys' | 'createReplicaKey' | 'forgetReplicaKeys'
   >;
   private readonly iterations: number | undefined;
+  /**
+   * Optional store override, only set when a test passes a mock.
+   * Production resolves the store via `createPassphraseStore()` on
+   * every storage touch so the keychain upgrade (probed
+   * asynchronously at boot) is picked up transparently.
+   */
+  private readonly storeOverride: PassphraseStore | undefined;
 
   constructor(deps: CryptoSessionDeps = {}) {
     this.client = deps.client ?? replicaSyncClient;
     this.iterations = deps.iterations;
+    this.storeOverride = deps.store;
+  }
+
+  private store(): PassphraseStore {
+    return this.storeOverride ?? createPassphraseStore();
   }
 
   isUnlocked(): boolean {
@@ -57,6 +77,8 @@ export class CryptoSession {
   /**
    * Derive against the user's existing newest salt. Throws NO_PASSPHRASE if
    * the account has no salt yet — callers must call setup() instead.
+   * On success, persists the passphrase to the configured store so the
+   * next launch can silently restore (Tauri keychain) or re-prompt (web).
    */
   async unlock(passphrase: string): Promise<void> {
     const rows = await this.client.listReplicaKeys();
@@ -70,25 +92,33 @@ export class CryptoSession {
     this.passphrase = passphrase;
     this.activeSaltId = rows[0]!.saltId;
     await this.deriveKeyFor(this.activeSaltId);
+    await this.persistPassphrase(passphrase);
   }
 
   /**
    * Forget the user's passphrase entirely: server-side wipe of every
    * encrypted-field envelope across all the user's replica rows + drop
-   * every salt. The next encrypted push from any device will mint a
-   * fresh salt + key. Local plaintext copies on each device are
-   * preserved — the user just has to re-enter the sync passphrase
-   * (or set a new one) to start re-encrypting.
+   * every salt + clear the local keychain entry. The next encrypted
+   * push from any device will mint a fresh salt + key. Local plaintext
+   * copies on each device are preserved — the user just has to
+   * re-enter the sync passphrase (or set a new one) to start re-
+   * encrypting.
    */
   async forget(): Promise<void> {
     await this.client.forgetReplicaKeys();
+    try {
+      await this.store().clear();
+    } catch (err) {
+      console.warn('[cryptoSession] failed to clear passphrase store', err);
+    }
     this.lock();
   }
 
   /**
    * Create a fresh salt server-side, then derive against it. Used on first
    * passphrase setup. If a salt already exists this still appends a new one,
-   * matching passphrase-rotation semantics.
+   * matching passphrase-rotation semantics. On success, persists the
+   * passphrase to the configured store.
    */
   async setup(passphrase: string): Promise<void> {
     const row = await this.client.createReplicaKey(PBKDF2_ALG);
@@ -96,6 +126,51 @@ export class CryptoSession {
     this.passphrase = passphrase;
     this.activeSaltId = row.saltId;
     await this.deriveKeyFor(row.saltId);
+    await this.persistPassphrase(passphrase);
+  }
+
+  /**
+   * Try to silently unlock the session by reading a previously-saved
+   * passphrase from the store (OS keychain on Tauri). No-op when:
+   *   * already unlocked
+   *   * no passphrase is stored locally
+   *   * the account has no salt server-side (treated as "no setup yet")
+   *   * any underlying call throws (logged + swallowed)
+   *
+   * Called from the Providers boot effect so the user doesn't see the
+   * passphrase modal on every app launch on native.
+   */
+  async tryRestoreFromStore(): Promise<boolean> {
+    if (this.isUnlocked()) return true;
+    try {
+      const saved = await this.store().get();
+      if (!saved) return false;
+      const rows = await this.client.listReplicaKeys();
+      if (rows.length === 0) {
+        // Account has no salt: stale local entry. Clean it up so the
+        // next prompt path runs setup() cleanly.
+        await this.store().clear();
+        return false;
+      }
+      this.ingestRows(rows);
+      this.passphrase = saved;
+      this.activeSaltId = rows[0]!.saltId;
+      await this.deriveKeyFor(this.activeSaltId);
+      return true;
+    } catch (err) {
+      console.warn('[cryptoSession] silent restore failed', err);
+      return false;
+    }
+  }
+
+  private async persistPassphrase(passphrase: string): Promise<void> {
+    try {
+      await this.store().set(passphrase);
+    } catch (err) {
+      // Persistence failure is non-fatal: the session is unlocked in
+      // memory for this run, but we log so a broken keychain shows up.
+      console.warn('[cryptoSession] failed to persist passphrase', err);
+    }
   }
 
   async encryptField(plaintext: string): Promise<CipherEnvelope> {

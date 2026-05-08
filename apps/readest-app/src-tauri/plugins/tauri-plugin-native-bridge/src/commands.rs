@@ -199,3 +199,32 @@ pub(crate) async fn request_manage_storage_permission<R: Runtime>(
 ) -> Result<RequestManageStoragePermissionResponse> {
     app.native_bridge().request_manage_storage_permission()
 }
+
+#[command]
+pub(crate) async fn set_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetSyncPassphraseRequest,
+) -> Result<SyncPassphraseResponse> {
+    app.native_bridge().set_sync_passphrase(payload)
+}
+
+#[command]
+pub(crate) async fn get_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetSyncPassphraseResponse> {
+    app.native_bridge().get_sync_passphrase()
+}
+
+#[command]
+pub(crate) async fn clear_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<SyncPassphraseResponse> {
+    app.native_bridge().clear_sync_passphrase()
+}
+
+#[command]
+pub(crate) async fn is_sync_keychain_available<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<SyncKeychainAvailableResponse> {
+    app.native_bridge().is_sync_keychain_available()
+}

@@ -20,6 +20,8 @@ import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 import PassphrasePromptModal from '@/components/PassphrasePromptModal';
+import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
+import { cryptoSession } from '@/libs/crypto/session';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
@@ -63,6 +65,18 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       });
     }
   }, [envConfig, appService, applyUILanguage, applyBackgroundTexture, applyEinkMode]);
+
+  // Sync-passphrase boot path: upgrade the passphrase store from
+  // ephemeral to OS keychain on Tauri (probe is async — must run after
+  // the platform check resolves), then attempt a silent unlock from
+  // the saved passphrase. Failures are silent — the gate prompts on
+  // first encrypted-field operation if we couldn't restore.
+  useEffect(() => {
+    void (async () => {
+      await upgradeToKeychainIfAvailable();
+      await cryptoSession.tryRestoreFromStore();
+    })();
+  }, []);
 
   // Make sure appService is available in all children components
   if (!appService) return;

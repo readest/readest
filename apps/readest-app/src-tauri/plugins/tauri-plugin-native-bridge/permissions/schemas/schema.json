@@ -355,6 +355,18 @@
           "markdownDescription": "Denies the check_permissions command without any pre-configured scope."
         },
         {
+          "description": "Enables the clear_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-sync-passphrase",
+          "markdownDescription": "Enables the clear_sync_passphrase command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-sync-passphrase",
+          "markdownDescription": "Denies the clear_sync_passphrase command without any pre-configured scope."
+        },
+        {
           "description": "Enables the copy_uri_to_path command without any pre-configured scope.",
           "type": "string",
           "const": "allow-copy-uri-to-path",
@@ -425,6 +437,18 @@
           "type": "string",
           "const": "deny-get-storefront-region-code",
           "markdownDescription": "Denies the get_storefront_region_code command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-sync-passphrase",
+          "markdownDescription": "Enables the get_sync_passphrase command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-sync-passphrase",
+          "markdownDescription": "Denies the get_sync_passphrase command without any pre-configured scope."
         },
         {
           "description": "Enables the get_sys_fonts_list command without any pre-configured scope.",
@@ -533,6 +557,18 @@
           "type": "string",
           "const": "deny-intercept-keys",
           "markdownDescription": "Denies the intercept_keys command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the is_sync_keychain_available command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-is-sync-keychain-available",
+          "markdownDescription": "Enables the is_sync_keychain_available command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the is_sync_keychain_available command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-is-sync-keychain-available",
+          "markdownDescription": "Denies the is_sync_keychain_available command without any pre-configured scope."
         },
         {
           "description": "Enables the lock_screen_orientation command without any pre-configured scope.",
@@ -655,6 +691,18 @@
           "markdownDescription": "Denies the set_screen_brightness command without any pre-configured scope."
         },
         {
+          "description": "Enables the set_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-sync-passphrase",
+          "markdownDescription": "Enables the set_sync_passphrase command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_sync_passphrase command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-sync-passphrase",
+          "markdownDescription": "Denies the set_sync_passphrase command without any pre-configured scope."
+        },
+        {
           "description": "Enables the set_system_ui_visibility command without any pre-configured scope.",
           "type": "string",
           "const": "allow-set-system-ui-visibility",
@@ -679,10 +727,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`"
         }
       ]
     }

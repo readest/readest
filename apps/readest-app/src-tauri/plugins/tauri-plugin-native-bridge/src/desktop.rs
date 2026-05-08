@@ -146,4 +146,85 @@ impl<R: Runtime> NativeBridge<R> {
     ) -> crate::Result<RequestManageStoragePermissionResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    // ── Sync passphrase keychain ────────────────────────────────────────
+    //
+    // Uses the `keyring` crate, which transparently maps to:
+    //   * macOS → Security framework Keychain
+    //   * Windows → Credential Manager
+    //   * Linux → Secret Service (libsecret-compatible)
+    //
+    // `service` and `user` form the keychain item identity. Service is
+    // the bundle id; user is a stable string ("default") so multiple
+    // Readest installs on the same machine could coexist with distinct
+    // user values if ever needed.
+
+    pub fn set_sync_passphrase(
+        &self,
+        payload: SetSyncPassphraseRequest,
+    ) -> crate::Result<SyncPassphraseResponse> {
+        match keyring_entry().and_then(|e| e.set_password(&payload.passphrase)) {
+            Ok(()) => Ok(SyncPassphraseResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SyncPassphraseResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn get_sync_passphrase(&self) -> crate::Result<GetSyncPassphraseResponse> {
+        match keyring_entry().and_then(|e| e.get_password()) {
+            Ok(passphrase) => Ok(GetSyncPassphraseResponse {
+                passphrase: Some(passphrase),
+                error: None,
+            }),
+            Err(keyring::Error::NoEntry) => Ok(GetSyncPassphraseResponse {
+                passphrase: None,
+                error: None,
+            }),
+            Err(err) => Ok(GetSyncPassphraseResponse {
+                passphrase: None,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn clear_sync_passphrase(&self) -> crate::Result<SyncPassphraseResponse> {
+        match keyring_entry().and_then(|e| e.delete_credential()) {
+            Ok(()) | Err(keyring::Error::NoEntry) => Ok(SyncPassphraseResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SyncPassphraseResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn is_sync_keychain_available(&self) -> crate::Result<SyncKeychainAvailableResponse> {
+        // Best-effort probe: open an entry handle. Surface the error
+        // string instead of throwing so the TS layer can fall back
+        // to the ephemeral store gracefully.
+        match keyring_entry() {
+            Ok(_) => Ok(SyncKeychainAvailableResponse {
+                available: true,
+                error: None,
+            }),
+            Err(err) => Ok(SyncKeychainAvailableResponse {
+                available: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+}
+
+const KEYRING_SERVICE: &str = "com.bilingify.readest.sync-passphrase";
+const KEYRING_USER: &str = "default";
+
+fn keyring_entry() -> std::result::Result<keyring::Entry, keyring::Error> {
+    keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
 }
