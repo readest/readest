@@ -67,6 +67,15 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  // Make Android Chrome's layout viewport shrink when the on-screen
+  // keyboard opens (matches iOS behavior). Without this, Android's
+  // default `interactive-widget=resizes-visual` keeps the layout
+  // viewport at full screen height while only the visual viewport
+  // shrinks — causing fixed `inset-0`-centered modals (passphrase
+  // prompt, group picker, etc.) to render under the keyboard. With
+  // `resizes-content`, `100vh` / flex centering naturally targets
+  // the available space above the keyboard.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

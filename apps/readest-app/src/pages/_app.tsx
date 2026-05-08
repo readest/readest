@@ -9,9 +9,16 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
+        {/*
+         * `interactive-widget=resizes-content` makes Android Chrome
+         * shrink the layout viewport when the on-screen keyboard
+         * opens (matches iOS default behavior). Without it, the
+         * layout viewport stays full-height and `fixed inset-0`-
+         * centered modals render under the keyboard.
+         */}
         <meta
           name='viewport'
-          content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'
+          content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content'
         />
         <meta name='application-name' content='Readest' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
