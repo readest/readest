@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "आयातित शब्दकोश बंडल और सेटिंग्स",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "चुनें कि आपके डिवाइसों के बीच क्या सिंक हो। किसी श्रेणी को अक्षम करने पर यह डिवाइस उस प्रकार की प्रविष्टियाँ भेजना या प्राप्त करना बंद कर देता है। सर्वर पर पहले से मौजूद कुछ भी नहीं बदलता, फिर से सक्षम करने पर वहीं से जारी होता है जहाँ आपने रोका था।",
   "Data Sync": "डेटा सिंक",
-  "Manage Fonts": "फ़ॉन्ट प्रबंधित करें"
+  "Manage Fonts": "फ़ॉन्ट प्रबंधित करें",
+  "App settings": "ऐप सेटिंग्स",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "थीम, हाइलाइट रंग, एकीकरण (KOSync, Readwise, Hardcover) और शब्दकोश क्रम",
+  "Required while Dictionaries sync is enabled": "शब्दकोश सिंक सक्षम होने पर आवश्यक",
+  "Unavailable": "अनुपलब्ध"
 }

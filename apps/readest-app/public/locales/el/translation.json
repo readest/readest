@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "Εισηγμένα πακέτα λεξικών και ρυθμίσεις",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Επιλέξτε τι συγχρονίζεται μεταξύ των συσκευών σας. Η απενεργοποίηση μιας κατηγορίας σταματά αυτή τη συσκευή από το να στέλνει ή να λαμβάνει εγγραφές αυτού του τύπου. Ό,τι υπάρχει ήδη στον διακομιστή παραμένει ως έχει, η εκ νέου ενεργοποίηση συνεχίζει από εκεί που σταματήσατε.",
   "Data Sync": "Συγχρονισμός δεδομένων",
-  "Manage Fonts": "Διαχείριση γραμματοσειρών"
+  "Manage Fonts": "Διαχείριση γραμματοσειρών",
+  "App settings": "Ρυθμίσεις εφαρμογής",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Θέμα, χρώματα επισήμανσης, ενσωματώσεις (KOSync, Readwise, Hardcover) και σειρά λεξικών",
+  "Required while Dictionaries sync is enabled": "Απαιτείται όσο είναι ενεργός ο συγχρονισμός Λεξικών",
+  "Unavailable": "Μη διαθέσιμο"
 }

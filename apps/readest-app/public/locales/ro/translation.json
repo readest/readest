@@ -1417,5 +1417,9 @@
   "Imported dictionary bundles and settings": "Pachete de dicționare importate și setări",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Alege ce se sincronizează între dispozitivele tale. Dezactivarea unei categorii oprește acest dispozitiv să trimită sau să primească intrări de acel tip. Ce există deja pe server rămâne neschimbat, iar reactivarea reia din locul în care te-ai oprit.",
   "Data Sync": "Sincronizare date",
-  "Manage Fonts": "Gestionează fonturile"
+  "Manage Fonts": "Gestionează fonturile",
+  "App settings": "Setări aplicație",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Temă, culorile evidențierilor, integrări (KOSync, Readwise, Hardcover) și ordinea dicționarelor",
+  "Required while Dictionaries sync is enabled": "Necesar cât timp sincronizarea Dicționarelor este activată",
+  "Unavailable": "Indisponibil"
 }

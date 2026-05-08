@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "ආයාතිත ශබ්දකෝෂ පැකේජ සහ සැකසීම්",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "ඔබේ උපාංග අතර කුමක් සමමුහූර්ත කළ යුතුද යන්න තෝරන්න. කාණ්ඩයක් අක්‍රිය කිරීමෙන් මෙම උපාංගයෙන් එම වර්ගයේ පේළි යැවීම හෝ ලැබීම නවතී. සේවාදායකයේ දැනටමත් ඇති දේ එලෙසම පවතී, නැවත සක්‍රිය කළ විට ඔබ නැවැත්වූ තැනින් යළි ආරම්භ වේ.",
   "Data Sync": "දත්ත සමමුහූර්තය",
-  "Manage Fonts": "අකුරු කළමනාකරණය"
+  "Manage Fonts": "අකුරු කළමනාකරණය",
+  "App settings": "යෙදුමේ සැකසුම්",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "තේමාව, උද්දීපන වර්ණ, ඒකාබද්ධතා (KOSync, Readwise, Hardcover) සහ ශබ්දකෝෂ අනුපිළිවෙල",
+  "Required while Dictionaries sync is enabled": "ශබ්දකෝෂ සමමුහූර්තය සක්‍රිය වී ඇති විට අවශ්‍යයි",
+  "Unavailable": "ලද නොහැක"
 }

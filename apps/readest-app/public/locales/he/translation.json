@@ -1417,5 +1417,9 @@
   "Imported dictionary bundles and settings": "חבילות מילונים מיובאות והגדרות",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "בחר מה מסונכרן בין המכשירים שלך. השבתת קטגוריה גורמת למכשיר זה להפסיק לשלוח או לקבל רשומות מהסוג הזה. מה שכבר נמצא בשרת נשאר כפי שהוא, והפעלה מחדש ממשיכה מהמקום שבו עצרת.",
   "Data Sync": "סנכרון נתונים",
-  "Manage Fonts": "ניהול גופנים"
+  "Manage Fonts": "ניהול גופנים",
+  "App settings": "הגדרות אפליקציה",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ערכת נושא, צבעי הדגשה, שילובים (KOSync, Readwise, Hardcover) וסדר המילונים",
+  "Required while Dictionaries sync is enabled": "נדרש כל עוד סנכרון המילונים מופעל",
+  "Unavailable": "לא זמין"
 }

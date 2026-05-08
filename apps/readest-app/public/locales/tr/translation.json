@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "İçe aktarılan sözlük paketleri ve ayarlar",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Cihazlarınız arasında neyin eşitleneceğini seçin. Bir kategoriyi devre dışı bırakmak, bu cihazın o türden kayıtları göndermesini veya almasını durdurur. Sunucuda zaten bulunan veriler olduğu gibi kalır, yeniden etkinleştirdiğinizde eşitleme bıraktığınız yerden devam eder.",
   "Data Sync": "Veri eşitleme",
-  "Manage Fonts": "Yazı tiplerini yönet"
+  "Manage Fonts": "Yazı tiplerini yönet",
+  "App settings": "Uygulama ayarları",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, vurgu renkleri, entegrasyonlar (KOSync, Readwise, Hardcover) ve sözlük sırası",
+  "Required while Dictionaries sync is enabled": "Sözlük eşitlemesi etkinken gereklidir",
+  "Unavailable": "Kullanılamıyor"
 }

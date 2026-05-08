@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "আমদানি করা অভিধান বান্ডিল এবং সেটিংস",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "আপনার ডিভাইসগুলোর মধ্যে কী সিঙ্ক হবে তা বেছে নিন। কোনো বিভাগ নিষ্ক্রিয় করলে এই ডিভাইসটি সেই ধরনের সারি পাঠানো বা গ্রহণ করা বন্ধ করে দেয়। সার্ভারে ইতিমধ্যে থাকা কিছুই পরিবর্তন হয় না, পুনরায় সক্রিয় করলে যেখানে থেমেছিলেন সেখান থেকে আবার শুরু হয়।",
   "Data Sync": "ডেটা সিঙ্ক",
-  "Manage Fonts": "ফন্ট পরিচালনা"
+  "Manage Fonts": "ফন্ট পরিচালনা",
+  "App settings": "অ্যাপ সেটিংস",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "থিম, হাইলাইট রং, ইন্টিগ্রেশন (KOSync, Readwise, Hardcover) এবং অভিধানের ক্রম",
+  "Required while Dictionaries sync is enabled": "অভিধান সিঙ্ক সক্রিয় থাকাকালীন প্রয়োজনীয়",
+  "Unavailable": "অনুপলব্ধ"
 }

@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "가져온 사전 번들과 설정",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "기기 간에 동기화할 항목을 선택하세요. 카테고리를 비활성화하면 이 기기는 해당 종류의 항목을 보내거나 받지 않습니다. 서버에 이미 있는 데이터는 그대로 유지되며, 다시 활성화하면 중단한 지점부터 이어집니다.",
   "Data Sync": "데이터 동기화",
-  "Manage Fonts": "글꼴 관리"
+  "Manage Fonts": "글꼴 관리",
+  "App settings": "앱 설정",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "테마, 하이라이트 색상, 연동 (KOSync, Readwise, Hardcover), 사전 순서",
+  "Required while Dictionaries sync is enabled": "사전 동기화가 켜져 있는 동안 필요",
+  "Unavailable": "사용 불가"
 }

@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "இறக்குமதி செய்யப்பட்ட அகராதி பொதிகள் மற்றும் அமைப்புகள்",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "உங்கள் சாதனங்களுக்கு இடையே எது ஒத்திசைக்க வேண்டும் என்பதைத் தேர்ந்தெடுக்கவும். ஒரு பிரிவை முடக்கும்போது, அந்த வகை பதிவுகளை அனுப்புவதையும் பெறுவதையும் இந்த சாதனம் நிறுத்தும். சர்வரில் ஏற்கனவே உள்ளவை அப்படியே இருக்கும், மீண்டும் இயக்கும்போது நீங்கள் நிறுத்திய இடத்திலிருந்து தொடரும்.",
   "Data Sync": "தரவு ஒத்திசைவு",
-  "Manage Fonts": "எழுத்துருக்களை நிர்வகி"
+  "Manage Fonts": "எழுத்துருக்களை நிர்வகி",
+  "App settings": "ஆப் அமைப்புகள்",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "தீம், ஹைலைட் வண்ணங்கள், ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover) மற்றும் அகராதி வரிசை",
+  "Required while Dictionaries sync is enabled": "அகராதிகள் ஒத்திசைவு இயக்கத்தில் இருக்கும்போது தேவை",
+  "Unavailable": "கிடைக்கவில்லை"
 }

@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "Bundel kamus yang diimpor dan pengaturan",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Pilih apa saja yang disinkronkan antar perangkatmu. Menonaktifkan sebuah kategori menghentikan perangkat ini mengirim atau menerima entri jenis itu. Apa pun yang sudah ada di server tetap utuh, mengaktifkannya kembali akan melanjutkan dari tempat kamu berhenti.",
   "Data Sync": "Sinkronisasi Data",
-  "Manage Fonts": "Kelola Fon"
+  "Manage Fonts": "Kelola Fon",
+  "App settings": "Pengaturan aplikasi",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, warna sorotan, integrasi (KOSync, Readwise, Hardcover), dan urutan kamus",
+  "Required while Dictionaries sync is enabled": "Diperlukan saat sinkronisasi Kamus diaktifkan",
+  "Unavailable": "Tidak tersedia"
 }

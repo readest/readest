@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "Importerade ordbokspaket och inställningar",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Välj vad som synkroniseras mellan dina enheter. Att inaktivera en kategori gör att den här enheten slutar skicka eller ta emot poster av den typen. Det som redan finns på servern lämnas orört, och när du aktiverar igen fortsätter synkroniseringen där du slutade.",
   "Data Sync": "Datasynkronisering",
-  "Manage Fonts": "Hantera teckensnitt"
+  "Manage Fonts": "Hantera teckensnitt",
+  "App settings": "Appinställningar",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, markeringsfärger, integrationer (KOSync, Readwise, Hardcover) och ordbokens ordning",
+  "Required while Dictionaries sync is enabled": "Krävs så länge synkronisering av Ordböcker är aktiverad",
+  "Unavailable": "Ej tillgänglig"
 }

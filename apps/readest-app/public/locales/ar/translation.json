@@ -1489,5 +1489,9 @@
   "Imported dictionary bundles and settings": "حزم القواميس المستوردة والإعدادات",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "اختر ما تتم مزامنته عبر أجهزتك. تعطيل أي فئة يوقف هذا الجهاز عن إرسال أو استقبال السجلات من ذلك النوع. أي شيء موجود بالفعل على الخادم يُترك كما هو، وعند إعادة التفعيل تُستأنف المزامنة من حيث توقفت.",
   "Data Sync": "مزامنة البيانات",
-  "Manage Fonts": "إدارة الخطوط"
+  "Manage Fonts": "إدارة الخطوط",
+  "App settings": "إعدادات التطبيق",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover) وترتيب القواميس",
+  "Required while Dictionaries sync is enabled": "مطلوب أثناء تفعيل مزامنة القواميس",
+  "Unavailable": "غير متاح"
 }

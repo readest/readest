@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "Gói từ điển đã nhập và cài đặt",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Chọn những gì sẽ đồng bộ giữa các thiết bị của bạn. Tắt một danh mục sẽ ngăn thiết bị này gửi hoặc nhận các mục thuộc loại đó. Bất kỳ dữ liệu nào đã có trên máy chủ vẫn được giữ nguyên, bật lại sẽ tiếp tục từ nơi bạn đã dừng.",
   "Data Sync": "Đồng bộ dữ liệu",
-  "Manage Fonts": "Quản lý phông chữ"
+  "Manage Fonts": "Quản lý phông chữ",
+  "App settings": "Cài đặt ứng dụng",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Chủ đề, màu tô sáng, tích hợp (KOSync, Readwise, Hardcover) và thứ tự từ điển",
+  "Required while Dictionaries sync is enabled": "Bắt buộc khi đồng bộ Từ điển đang bật",
+  "Unavailable": "Không khả dụng"
 }

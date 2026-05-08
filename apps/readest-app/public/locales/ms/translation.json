@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "Himpunan kamus yang diimport dan tetapan",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Pilih apa yang disegerakkan antara peranti anda. Melumpuhkan kategori menghentikan peranti ini daripada menghantar atau menerima entri jenis itu. Apa-apa yang sudah ada pada pelayan dibiarkan, mengaktifkannya semula akan menyambung dari tempat anda berhenti.",
   "Data Sync": "Penyegerakan Data",
-  "Manage Fonts": "Urus Fon"
+  "Manage Fonts": "Urus Fon",
+  "App settings": "Tetapan aplikasi",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, warna sorotan, integrasi (KOSync, Readwise, Hardcover), dan susunan kamus",
+  "Required while Dictionaries sync is enabled": "Diperlukan semasa penyegerakan Kamus didayakan",
+  "Unavailable": "Tidak tersedia"
 }

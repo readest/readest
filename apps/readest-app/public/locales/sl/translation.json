@@ -1441,5 +1441,9 @@
   "Imported dictionary bundles and settings": "Uvoženi paketi slovarjev in nastavitve",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Izberi, kaj naj se sinhronizira med tvojimi napravami. Onemogočanje kategorije ustavi to napravo, da bi pošiljala ali prejemala vnose te vrste. Kar je že na strežniku, ostane nespremenjeno, ob ponovnem omogočanju pa se sinhronizacija nadaljuje tam, kjer si končal.",
   "Data Sync": "Sinhronizacija podatkov",
-  "Manage Fonts": "Upravljanje pisav"
+  "Manage Fonts": "Upravljanje pisav",
+  "App settings": "Nastavitve aplikacije",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, barve označb, integracije (KOSync, Readwise, Hardcover) in vrstni red slovarjev",
+  "Required while Dictionaries sync is enabled": "Zahtevano, dokler je sinhronizacija Slovarjev omogočena",
+  "Unavailable": "Ni na voljo"
 }

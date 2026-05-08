@@ -1417,5 +1417,9 @@
   "Imported dictionary bundles and settings": "Paquetes de diccionarios importados y ajustes",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Elige qué se sincroniza entre tus dispositivos. Al desactivar una categoría, este dispositivo deja de enviar o recibir entradas de ese tipo. Lo que ya está en el servidor se mantiene intacto, y al reactivarla se reanuda desde donde lo dejaste.",
   "Data Sync": "Sincronización de datos",
-  "Manage Fonts": "Administrar fuentes"
+  "Manage Fonts": "Administrar fuentes",
+  "App settings": "Ajustes de la aplicación",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, colores de resaltado, integraciones (KOSync, Readwise, Hardcover) y orden de los diccionarios",
+  "Required while Dictionaries sync is enabled": "Necesario mientras la sincronización de Diccionarios esté activada",
+  "Unavailable": "No disponible"
 }

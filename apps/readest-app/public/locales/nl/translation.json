@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "Geïmporteerde woordenboekpakketten en instellingen",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Kies wat er tussen je apparaten wordt gesynchroniseerd. Een categorie uitschakelen zorgt dat dit apparaat geen items van dat type meer verstuurt of ontvangt. Alles wat al op de server staat blijft ongewijzigd, en bij opnieuw inschakelen wordt verdergegaan waar je was gestopt.",
   "Data Sync": "Gegevenssynchronisatie",
-  "Manage Fonts": "Lettertypen beheren"
+  "Manage Fonts": "Lettertypen beheren",
+  "App settings": "App-instellingen",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Thema, markeringskleuren, integraties (KOSync, Readwise, Hardcover) en woordenboekvolgorde",
+  "Required while Dictionaries sync is enabled": "Vereist zolang synchronisatie van Woordenboeken is ingeschakeld",
+  "Unavailable": "Niet beschikbaar"
 }

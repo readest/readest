@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "Importált szótárcsomagok és beállítások",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Válaszd ki, mi szinkronizálódjon az eszközeid között. Egy kategória letiltása megakadályozza, hogy ez az eszköz ilyen típusú bejegyzéseket küldjön vagy fogadjon. A szerveren már lévő adatok érintetlenek maradnak, az újbóli engedélyezés onnan folytatódik, ahol abbahagytad.",
   "Data Sync": "Adatszinkronizálás",
-  "Manage Fonts": "Betűtípusok kezelése"
+  "Manage Fonts": "Betűtípusok kezelése",
+  "App settings": "Alkalmazásbeállítások",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Téma, kiemelési színek, integrációk (KOSync, Readwise, Hardcover) és szótárak sorrendje",
+  "Required while Dictionaries sync is enabled": "Szükséges, amíg a Szótárak szinkronizálása be van kapcsolva",
+  "Unavailable": "Nem elérhető"
 }

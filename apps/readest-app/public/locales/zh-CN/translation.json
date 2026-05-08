@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "导入的词典包和设置",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "选择哪些内容在你的设备间同步。停用某个类别后，此设备将停止发送和接收该类的记录。服务器上已有的内容不受影响，重新启用后会从你停下的位置继续同步。",
   "Data Sync": "数据同步",
-  "Manage Fonts": "管理字体"
+  "Manage Fonts": "管理字体",
+  "App settings": "应用设置",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主题、高亮颜色、第三方集成（KOSync、Readwise、Hardcover）以及词典顺序",
+  "Required while Dictionaries sync is enabled": "启用词典同步时必需",
+  "Unavailable": "不可用"
 }

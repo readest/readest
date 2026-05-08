@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "インポートした辞書バンドルと設定",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "デバイス間で同期する項目を選択します。カテゴリを無効にすると、このデバイスはその種類のデータを送受信しなくなります。サーバーに既にあるデータはそのまま残り、再度有効にすると停止した位置から再開します。",
   "Data Sync": "データ同期",
-  "Manage Fonts": "フォントを管理"
+  "Manage Fonts": "フォントを管理",
+  "App settings": "アプリ設定",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "テーマ、ハイライトの色、連携 (KOSync、Readwise、Hardcover)、辞書の順序",
+  "Required while Dictionaries sync is enabled": "辞書の同期が有効な間は必須",
+  "Unavailable": "利用不可"
 }

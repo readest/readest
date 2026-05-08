@@ -1369,5 +1369,9 @@
   "Imported dictionary bundles and settings": "ชุดพจนานุกรมที่นำเข้าและการตั้งค่า",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "เลือกสิ่งที่ซิงค์ระหว่างอุปกรณ์ของคุณ การปิดหมวดหมู่จะหยุดอุปกรณ์นี้จากการส่งหรือรับรายการประเภทนั้น สิ่งที่อยู่บนเซิร์ฟเวอร์อยู่แล้วจะไม่ถูกแตะต้อง การเปิดใช้งานอีกครั้งจะดำเนินการต่อจากจุดที่คุณหยุดไว้",
   "Data Sync": "ซิงค์ข้อมูล",
-  "Manage Fonts": "จัดการแบบอักษร"
+  "Manage Fonts": "จัดการแบบอักษร",
+  "App settings": "การตั้งค่าแอป",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ธีม สีไฮไลต์ การเชื่อมต่อ (KOSync, Readwise, Hardcover) และลำดับพจนานุกรม",
+  "Required while Dictionaries sync is enabled": "จำเป็นเมื่อเปิดใช้การซิงค์พจนานุกรม",
+  "Unavailable": "ไม่พร้อมใช้งาน"
 }

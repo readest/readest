@@ -1441,5 +1441,9 @@
   "Imported dictionary bundles and settings": "Импортированные пакеты словарей и настройки",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Выберите, что синхронизируется между вашими устройствами. При отключении категории это устройство перестаёт отправлять и получать записи такого типа. То, что уже на сервере, остаётся без изменений, а при повторном включении синхронизация возобновится с того места, где вы остановились.",
   "Data Sync": "Синхронизация данных",
-  "Manage Fonts": "Управление шрифтами"
+  "Manage Fonts": "Управление шрифтами",
+  "App settings": "Настройки приложения",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Тема, цвета выделений, интеграции (KOSync, Readwise, Hardcover) и порядок словарей",
+  "Required while Dictionaries sync is enabled": "Требуется, пока включена синхронизация Словарей",
+  "Unavailable": "Недоступно"
 }

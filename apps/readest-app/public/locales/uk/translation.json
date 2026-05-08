@@ -1441,5 +1441,9 @@
   "Imported dictionary bundles and settings": "Імпортовані пакети словників і налаштування",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Виберіть, що синхронізується між вашими пристроями. Вимкнення категорії зупиняє цей пристрій від надсилання або отримання записів цього типу. Те, що вже на сервері, залишається без змін, а повторне ввімкнення відновлює синхронізацію з того місця, де ви зупинилися.",
   "Data Sync": "Синхронізація даних",
-  "Manage Fonts": "Керування шрифтами"
+  "Manage Fonts": "Керування шрифтами",
+  "App settings": "Налаштування застосунку",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Тема, кольори виділень, інтеграції (KOSync, Readwise, Hardcover) і порядок словників",
+  "Required while Dictionaries sync is enabled": "Потрібне, доки увімкнено синхронізацію Словників",
+  "Unavailable": "Недоступно"
 }

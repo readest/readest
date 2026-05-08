@@ -1393,5 +1393,9 @@
   "Imported dictionary bundles and settings": "بسته‌های فرهنگ‌لغت وارد شده و تنظیمات",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "انتخاب کنید چه چیزی بین دستگاه‌های شما همگام‌سازی شود. غیرفعال کردن یک دسته باعث می‌شود این دستگاه ارسال یا دریافت ردیف‌های آن نوع را متوقف کند. آنچه از قبل روی سرور است دست‌نخورده باقی می‌ماند، و با فعال‌سازی مجدد، از همان جایی که متوقف شده‌اید ادامه می‌یابد.",
   "Data Sync": "همگام‌سازی داده‌ها",
-  "Manage Fonts": "مدیریت قلم‌ها"
+  "Manage Fonts": "مدیریت قلم‌ها",
+  "App settings": "تنظیمات برنامه",
+  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "پوسته، رنگ‌های هایلایت، یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover) و ترتیب فرهنگ‌لغت‌ها",
+  "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
+  "Unavailable": "در دسترس نیست"
 }
