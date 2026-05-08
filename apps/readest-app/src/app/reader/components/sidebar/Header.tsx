@@ -27,7 +27,7 @@ const SidebarHeader: React.FC<{
   return (
     <div
       className={clsx(
-        'sidebar-header relative flex h-11 items-center justify-between pe-2 sm:h-[176px] sm:flex-col sm:justify-start sm:px-2.5 sm:pt-3.5',
+        'sidebar-header relative flex h-11 items-center justify-between pe-2 sm:h-[132px] sm:flex-col sm:justify-start sm:px-2.5 sm:pt-2.5',
         isTrafficLightVisible ? 'ps-1.5 sm:ps-0' : 'ps-1.5 sm:ps-0',
       )}
       dir='ltr'
@@ -42,19 +42,19 @@ const SidebarHeader: React.FC<{
         </button>
       </div>
       <div className='pointer-events-none hidden w-full flex-col items-center justify-center sm:flex'>
-        <div className='sidebar-brand-panel pt-6.5 relative flex w-full items-center justify-center rounded-[24px] px-2.5 pb-5'>
-          <div className='sidebar-brand-mark relative flex h-[62px] w-[94px] items-center justify-center overflow-visible'>
+        <div className='sidebar-brand-panel relative flex w-full items-center justify-center rounded-[18px] px-2.5 pb-2.5 pt-3'>
+          <div className='sidebar-brand-mark relative flex h-[50px] w-[82px] items-center justify-center overflow-visible'>
             <Image
               src='/citadel/citadel-logo.png'
               alt='Citadel'
               fill
-              sizes='94px'
+              sizes='82px'
               className='object-contain p-0 opacity-100 brightness-[0.76] contrast-[1.3] saturate-[1.62]'
               priority={false}
             />
           </div>
         </div>
-        <div className='sidebar-header-divider mt-3.5 hidden h-px w-[70%] sm:block' />
+        <div className='sidebar-header-divider mt-2 hidden h-px w-[74%] sm:block' />
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:hidden sm:size-[70%]'>
         <button
@@ -106,7 +106,7 @@ const SidebarHeader: React.FC<{
         @media (min-width: 640px) {
           .sidebar-header {
             border-bottom: none;
-            padding-bottom: 7px;
+            padding-bottom: 4px;
           }
 
           .sidebar-header::before {
@@ -128,13 +128,11 @@ const SidebarHeader: React.FC<{
 
           .sidebar-brand-panel {
             background:
-              radial-gradient(circle at 50% 40%, rgba(124, 20, 18, 0.26), transparent 34%),
-              radial-gradient(circle at 50% 62%, rgba(74, 16, 14, 0.12), transparent 44%),
-              linear-gradient(180deg, rgba(20, 14, 13, 0.98), rgba(11, 9, 8, 0.46));
+              radial-gradient(circle at 50% 38%, rgba(118, 90, 40, 0.06), transparent 28%),
+              linear-gradient(180deg, rgba(18, 13, 11, 0.74), rgba(11, 9, 8, 0.12));
             box-shadow:
-              inset 0 1px 0 rgba(255, 237, 193, 0.015),
-              inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-              0 12px 20px rgba(0, 0, 0, 0.14);
+              inset 0 1px 0 rgba(255, 237, 193, 0.012),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.16);
           }
 
           .sidebar-brand-panel::before {
@@ -150,7 +148,7 @@ const SidebarHeader: React.FC<{
           }
 
           .sidebar-brand-mark {
-            filter: drop-shadow(0 0 18px rgba(118, 18, 16, 0.2))
+            filter: drop-shadow(0 0 12px rgba(118, 90, 36, 0.08))
               drop-shadow(0 4px 12px rgba(0, 0, 0, 0.34));
           }
 

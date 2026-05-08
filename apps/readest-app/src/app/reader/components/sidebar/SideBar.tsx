@@ -187,7 +187,7 @@ const SideBar = ({}) => {
         aria-label={_('Show Sidebar')}
         data-testid='sidebar-restore-handle'
         onClick={() => setSideBarVisible(true)}
-        className='citadel-sidebar-restore-tab absolute left-0 top-1/2 z-[46] hidden h-16 w-6 -translate-y-1/2 items-center justify-center sm:flex'
+        className='citadel-sidebar-restore-tab absolute left-0 top-[58%] z-[46] hidden h-14 w-6 -translate-y-1/2 items-center justify-center sm:flex'
       >
         <MdKeyboardDoubleArrowRight size={18} />
         <style jsx>{`
@@ -262,20 +262,26 @@ const SideBar = ({}) => {
       >
         <style jsx>{`
           @media (min-width: 640px) {
+            /* Floating rail: inset from the screen edge on all sides so it
+               reads as a separate dark object, not a tall strip welded to
+               the window frame. Full rounded corners. We override the
+               full-height utility so margins don't overflow the viewport. */
             .sidebar-container {
-              border-radius: 0 32px 32px 0;
-              padding: 10px 10px 18px 7px;
+              height: calc(100dvh - 36px) !important;
+              max-height: calc(100dvh - 36px);
+              margin: 20px 0 20px 16px;
+              border-radius: 24px;
+              padding: 10px 10px 16px 8px;
               border-right-width: 0;
+              box-sizing: border-box;
+              /* Charcoal rail with a faint warm wash — no heavy red glows. */
               background:
-                radial-gradient(circle at 82% 18%, rgba(148, 28, 22, 0.22), transparent 24%),
-                radial-gradient(circle at 78% 56%, rgba(92, 20, 16, 0.12), transparent 30%),
-                radial-gradient(circle at 82% 88%, rgba(52, 14, 12, 0.18), transparent 32%),
-                linear-gradient(180deg, rgba(25, 15, 14, 0.99), rgba(8, 7, 7, 1));
+                radial-gradient(circle at 80% 14%, rgba(84, 54, 20, 0.06), transparent 24%),
+                linear-gradient(180deg, rgba(20, 14, 13, 0.99), rgba(8, 6, 6, 1));
               box-shadow:
-                inset -18px 0 28px rgba(0, 0, 0, 0.44),
-                inset 12px 0 20px rgba(0, 0, 0, 0.32),
-                inset 0 1px 0 rgba(255, 237, 193, 0.035),
-                26px 0 54px rgba(0, 0, 0, 0.4);
+                inset -8px 0 16px rgba(0, 0, 0, 0.28),
+                inset 0 1px 0 rgba(255, 237, 193, 0.025),
+                10px 0 24px rgba(0, 0, 0, 0.3);
             }
 
             .sidebar-container > * {
@@ -286,54 +292,35 @@ const SideBar = ({}) => {
             .sidebar-container::before {
               content: '';
               position: absolute;
-              inset: 8px 8px 12px 8px;
-              border-radius: 28px;
-              background:
-                radial-gradient(circle at 74% 26%, rgba(122, 22, 18, 0.18), transparent 18%),
-                linear-gradient(
-                  180deg,
-                  rgba(68, 18, 15, 0.24) 0%,
-                  rgba(24, 16, 15, 0.94) 14%,
-                  rgba(13, 10, 9, 0.98) 62%,
-                  rgba(6, 6, 6, 1) 100%
-                );
+              inset: 6px 6px 10px 6px;
+              border-radius: 20px;
+              /* Slightly darker plate inside the rail with a clean muted-gold
+                 rim on ALL FOUR SIDES (was right-side only when the rail was
+                 flush to the screen edge). */
+              background: linear-gradient(
+                180deg,
+                rgba(20, 14, 12, 0.99) 0%,
+                rgba(12, 9, 8, 0.99) 60%,
+                rgba(6, 5, 5, 1) 100%
+              );
               box-shadow:
-                inset -1px 0 0 rgba(206, 166, 92, 0.56),
-                inset -3px 0 0 rgba(106, 75, 31, 0.32),
-                inset -10px 0 16px rgba(148, 104, 36, 0.1),
-                inset 8px 0 16px rgba(0, 0, 0, 0.32),
-                inset 0 1px 0 rgba(255, 236, 190, 0.08),
-                inset 0 -110px 84px rgba(0, 0, 0, 0.46),
-                inset 0 60px 84px rgba(94, 20, 17, 0.12),
-                0 0 0 1px rgba(88, 60, 26, 0.24);
+                /* Muted-gold double rim — visible on all four sides now. */
+                inset 0 0 0 1px rgba(184, 144, 76, 0.62),
+                inset 0 0 0 3px rgba(8, 6, 5, 0.85),
+                inset 0 0 0 4px rgba(184, 144, 76, 0.2),
+                /* Subtle interior shading — no big red wash */ inset 0 1px 0
+                  rgba(255, 236, 190, 0.05),
+                inset 0 22px 26px rgba(0, 0, 0, 0.28),
+                inset 0 -22px 26px rgba(0, 0, 0, 0.32),
+                /* A whisper of warm tint up top so it's not pure black */ inset 0 28px 60px
+                  rgba(94, 72, 24, 0.04);
               pointer-events: none;
             }
 
             .sidebar-container::after {
-              content: '';
-              position: absolute;
-              inset: 8px 8px 12px 8px;
-              border-radius: 28px;
-              background:
-                linear-gradient(180deg, transparent 0%, transparent 56%, rgba(0, 0, 0, 0.5) 100%),
-                linear-gradient(
-                  90deg,
-                  rgba(0, 0, 0, 0.18) 0%,
-                  transparent 7%,
-                  transparent 95%,
-                  rgba(193, 154, 84, 0.08) 97%,
-                  rgba(233, 202, 128, 0.12) 100%
-                ),
-                linear-gradient(
-                  90deg,
-                  transparent 0%,
-                  transparent 95%,
-                  rgba(0, 0, 0, 0.28) 97%,
-                  rgba(0, 0, 0, 0.1) 100%
-                ),
-                radial-gradient(circle at 78% 28%, rgba(136, 24, 19, 0.12), transparent 18%),
-                radial-gradient(circle at 82% 54%, rgba(96, 18, 14, 0.1), transparent 20%);
-              pointer-events: none;
+              /* Was used for an additional red wash + shine — removed. The rail
+                 now reads as a clean charcoal plate with a single gold rim. */
+              content: none;
             }
 
             .sidebar-container :global(.search-bar) {
@@ -422,11 +409,11 @@ const SideBar = ({}) => {
               flex: 1;
               justify-content: flex-start;
               position: relative;
-              padding-top: 10px;
+              padding-top: 4px;
               padding-bottom: 8px;
               background:
-                radial-gradient(circle at 68% 12%, rgba(128, 24, 19, 0.1), transparent 18%),
-                linear-gradient(180deg, rgba(72, 18, 15, 0.14), transparent 22%),
+                radial-gradient(circle at 68% 12%, rgba(118, 92, 40, 0.06), transparent 18%),
+                linear-gradient(180deg, rgba(72, 52, 24, 0.08), transparent 22%),
                 linear-gradient(180deg, rgba(12, 8, 7, 0.08), rgba(10, 8, 8, 0.34));
             }
 
@@ -448,15 +435,15 @@ const SideBar = ({}) => {
               content: '';
               display: block;
               flex: 1;
-              min-height: 172px;
-              margin: 14px 8px 0 14px;
+              min-height: 56px;
+              margin: 8px 8px 0 14px;
               border-radius: 0 0 18px 18px;
               background:
-                radial-gradient(circle at 26% 0%, rgba(112, 24, 18, 0.14), transparent 30%),
+                radial-gradient(circle at 26% 0%, rgba(112, 92, 34, 0.08), transparent 28%),
                 linear-gradient(
                   180deg,
-                  rgba(74, 18, 15, 0.1),
-                  rgba(44, 14, 12, 0.04) 26%,
+                  rgba(62, 46, 20, 0.06),
+                  rgba(44, 14, 12, 0.03) 26%,
                   rgba(9, 7, 7, 0) 44%
                 ),
                 linear-gradient(180deg, rgba(10, 7, 6, 0), rgba(3, 3, 3, 0.42) 100%);
