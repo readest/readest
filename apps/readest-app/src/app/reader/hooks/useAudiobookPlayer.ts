@@ -5,7 +5,7 @@ import { isValidURL } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { useAudiobookSync } from './useAudiobookSync';
+import { useAudiobookSync, type MarkerStatus } from './useAudiobookSync';
 import {
   printLiveMarkerDiag,
   incrementRetries,
@@ -44,6 +44,10 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastAppliedEntryKeyRef = useRef<string | null>(null);
+  // Entries that are truly dead (consumed: true) are skipped forever.
+  // Successfully applied entries (consumed: false) can be revisited for
+  // progress updates on subsequent timeupdates within the same entry window.
+  const deadEntryKeysRef = useRef<Set<string>>(new Set());
   // Bad-entry suppression: entries that repeatedly fail relocation/application
   // are skipped for the rest of this playback session.
   const suppressedKeysRef = useRef<Set<string>>(new Set());
@@ -233,7 +237,10 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
 
       lastStatusLog = '';
       const entryKey = getSyncMapEntryKey(entry);
-      if (entryKey === lastAppliedEntryKeyRef.current) return;
+      // Skip only truly dead entries (consumed: true from previous call).
+      // Successfully applied entries (consumed: false) are re-called on each
+      // timeupdate so the word window advances with progress.
+      if (deadEntryKeysRef.current.has(entryKey)) return;
 
       // ── Bad-entry suppression ──
       if (suppressedKeysRef.current.has(entryKey)) {
@@ -290,7 +297,7 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       });
 
       try {
-        const needsRetry = applyAudiobookMarker({
+        const result: MarkerStatus = applyAudiobookMarker({
           cfi: effectiveCfi,
           sectionIndex: entry.sectionIndex,
           sectionHref: entry.sectionHref,
@@ -298,19 +305,30 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
           progress: wordProgress,
         });
         console.log('[SyncPlayback] applyAudiobookMarker result:', {
-          needsRetry,
+          needsRetry: result.needsRetry,
+          consumed: result.consumed,
           cfi: effectiveCfi?.slice(0, 60),
         });
-        if (!needsRetry) {
-          lastAppliedEntryKeyRef.current = entryKey;
+        if (result.consumed) {
+          // Truly dead entry — never revisit
+          deadEntryKeysRef.current.add(entryKey);
           retryCountsRef.current.delete(entryKey);
-          console.log('[SyncPlayback] entry CONSUMED', { entryKey: entryKey.slice(0, 40) });
-        } else {
+          console.log('[SyncPlayback] entry DEAD', { entryKey: entryKey.slice(0, 40) });
+        } else if (result.needsRetry) {
+          // Relocation pending — retry soon
           incrementRetries();
           retryCountsRef.current.set(entryKey, retryCount + 1);
-          console.log('[SyncPlayback] entry NOT consumed (retry pending)', {
+          console.log('[SyncPlayback] entry retry pending', {
             entryKey: entryKey.slice(0, 40),
             retryCount: retryCount + 1,
+          });
+        } else {
+          // Applied successfully — allow progress updates on future calls
+          lastAppliedEntryKeyRef.current = entryKey;
+          retryCountsRef.current.delete(entryKey);
+          console.log('[SyncPlayback] marker applied (progress update allowed)', {
+            entryKey: entryKey.slice(0, 40),
+            progress: Math.round(wordProgress * 1000) / 1000,
           });
         }
       } catch (err) {
@@ -389,6 +407,7 @@ export const useAudiobookPlayer = ({ bookKey }: UseAudiobookPlayerProps) => {
       }
       clearAudiobookMarker();
       lastAppliedEntryKeyRef.current = null;
+      deadEntryKeysRef.current.clear();
       suppressedKeysRef.current.clear();
       retryCountsRef.current.clear();
       audio.src = '';

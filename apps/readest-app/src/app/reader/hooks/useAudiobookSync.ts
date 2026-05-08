@@ -5,6 +5,7 @@ import {
   clearLiveMarker,
   incrementNoHref,
   incrementNoCfi,
+  incrementConsumedWithoutMarker,
 } from '@/utils/liveMarker';
 
 interface UseAudiobookSyncProps {
@@ -17,6 +18,11 @@ export interface AudiobookMarkerInput {
   sectionHref?: string;
   label?: string;
   progress?: number; // 0..1, playback position within this sync entry
+}
+
+export interface MarkerStatus {
+  needsRetry: boolean; // relocation/render pending, retry soon
+  consumed: boolean; // entry is dead (error / unrelocatable), never retry
 }
 
 const RELOCATION_DEBOUNCE_MS = 800;
@@ -68,7 +74,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
   }, [bookKey, getView, getViews]);
 
   const applyAudiobookMarker = useCallback(
-    (input: AudiobookMarkerInput): boolean => {
+    (input: AudiobookMarkerInput): MarkerStatus => {
       const { cfi, sectionIndex, sectionHref, label, progress } = input;
       const view = resolveView();
       const viewSettings = getViewSettings(bookKey);
@@ -81,7 +87,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
             bookKey,
           },
         );
-        return true; // don't consume — retry on next timeupdate
+        return { needsRetry: true, consumed: false }; // don't consume — retry on next timeupdate
       }
 
       const currentSectionIndex = view.renderer.primaryIndex;
@@ -130,7 +136,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
               msSinceLast: prev ? now - prev.time : null,
             });
           }
-          return true; // relocated or pending — don't consume entry
+          return { needsRetry: true, consumed: false }; // relocated or pending — don't consume entry
         }
 
         // Fallback: resolve href from sectionIndex
@@ -161,7 +167,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
                 });
               }
             }
-            return true; // relocated or pending — don't consume entry
+            return { needsRetry: true, consumed: false }; // relocated or pending — don't consume entry
           }
 
           // sectionIndex exists but section has no href —
@@ -182,7 +188,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
                 console.info(
                   `[AudiobookSync] Phase 1 — relocated via CFI ${currentSectionIndex} → ${cfiIdx}`,
                 );
-                return true;
+                return { needsRetry: true, consumed: false };
               }
             }
           } catch {
@@ -191,6 +197,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
 
           // All relocation strategies failed — consume so the next entry can try
           incrementNoHref();
+          incrementConsumedWithoutMarker();
           console.log(
             '[AudiobookSync] Phase 1 — all relocation strategies failed, consuming entry',
             {
@@ -201,7 +208,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
               totalSections: view.book.sections.length,
             },
           );
-          return false;
+          return { needsRetry: false, consumed: true };
         }
       }
 
@@ -209,7 +216,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
       if (!cfi) {
         incrementNoCfi();
         console.log('[AudiobookSync] Phase 2 — no CFI, waiting for real entry');
-        return true;
+        return { needsRetry: true, consumed: false };
       }
 
       // Phase 3 — same section, real entry: apply the visible marker
@@ -253,7 +260,7 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
           sectionIndex,
           currentSection: currentSectionIndex,
         });
-        return false; // consume — retrying won't help
+        return { needsRetry: false, consumed: true }; // consume — retrying won't help
       }
 
       // Phase 4 — CFI-based relocation (fallback when sectionIndex is missing)
@@ -282,24 +289,24 @@ export const useAudiobookSync = ({ bookKey }: UseAudiobookSyncProps) => {
                 href: targetSection.href?.slice(-40),
               });
             }
-            return true; // relocated — don't consume entry
+            return { needsRetry: true, consumed: false }; // relocated — don't consume entry
           }
-          // Target section has no href — skip this entry, let next timeupdate
-          // find a different one that can resolve.
+          // Target section has no href — this entry can never work
           incrementNoHref();
+          incrementConsumedWithoutMarker();
           console.log('[AudiobookSync] Phase 4 — target section has no href, skipping entry', {
             cfiSectionIndex: result.cfiSectionIndex,
             sectionId: targetSection?.id,
           });
-          return true; // don't consume — next entry may work
+          return { needsRetry: false, consumed: true };
         }
         console.log('[AudiobookSync] Phase 4 — relocation debounced');
-        return true; // relocated — don't consume entry
+        return { needsRetry: true, consumed: false }; // relocated — don't consume entry
       }
 
-      // marker applied successfully
+      // marker applied successfully — allow progress updates for same entry
       console.log('[AudiobookSync] Phase 3 — marker APPLIED successfully');
-      return false; // consume entry — no retry needed
+      return { needsRetry: false, consumed: false };
     },
     [bookKey, getViewSettings, resolveView],
   );

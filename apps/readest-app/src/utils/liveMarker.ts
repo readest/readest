@@ -41,6 +41,7 @@ interface LiveMarkerDiag {
   skippedUnrelocatable: number;
   retryCapHits: number;
   noCfiCount: number;
+  consumedWithoutMarker: number;
   totalWindowWords: number; // accumulated window sizes for averaging
   lastCfi: string;
   lastRangeText: string;
@@ -63,6 +64,7 @@ const diag: LiveMarkerDiag = {
   skippedUnrelocatable: 0,
   retryCapHits: 0,
   noCfiCount: 0,
+  consumedWithoutMarker: 0,
   totalWindowWords: 0,
   lastCfi: '',
   lastRangeText: '',
@@ -91,6 +93,7 @@ function printDiagSummary(): void {
     skippedUnrelocatable: d.skippedUnrelocatable,
     retryCapHits: d.retryCapHits,
     noCfiCount: d.noCfiCount,
+    consumedWithoutMarker: d.consumedWithoutMarker,
     avgWindowWords,
     lastCfi: d.lastCfi.slice(0, 60),
     lastRangeText: d.lastRangeText.slice(0, 50),
@@ -115,6 +118,9 @@ export function incrementRetryCapHits(): void {
 }
 export function incrementNoCfi(): void {
   diag.noCfiCount++;
+}
+export function incrementConsumedWithoutMarker(): void {
+  diag.consumedWithoutMarker++;
 }
 
 /** Exported so the player hook can force-print the summary on pause/stop. */
@@ -525,6 +531,8 @@ function narrowRangeToWordWindow(
   totalWords: number;
   windowSize: number;
   windowText: string;
+  linearActive: number;
+  cumTotal: number;
 } | null {
   if (typeof Intl === 'undefined' || !Intl.Segmenter) {
     diag.lastSkipReason = 'no-Intl-Segmenter';
@@ -595,9 +603,68 @@ function narrowRangeToWordWindow(
   }
 
   const totalWords = segments.length;
-  const activeWord = Math.min(Math.floor(progress * totalWords), totalWords - 1);
-  const startWord = Math.max(0, activeWord - 1);
-  const endWord = Math.min(totalWords, activeWord + 2);
+
+  // ── Weighted word timeline ──────────────────────────────────────────
+  // Narration is not uniform — pauses, punctuation, and word length all
+  // affect timing.  Build per-word weights so progress maps more
+  // naturally to the spoken word position.
+  //
+  // Tuned conservatively: pause weights are small relative to base so
+  // no single word dominates the timeline.  Word-length scaling is
+  // subtle — most words fall in the 0.85–1.30 range.
+  const WORD_LEN_FACTOR = 0.06;
+  const WORD_WEIGHT_MIN = 0.8;
+  const WORD_WEIGHT_MAX = 2.0;
+  const PAUSE_COMMA = 0.22;
+  const PAUSE_SENTENCE = 0.45;
+  const PAUSE_DASH = 0.28;
+
+  const weights: number[] = [];
+  for (const seg of segments) {
+    const wordLen = seg.wordText.length;
+    let w = Math.max(WORD_WEIGHT_MIN, Math.min(WORD_WEIGHT_MAX, 0.75 + wordLen * WORD_LEN_FACTOR));
+
+    // Punctuation pauses: check the last character(s) of the word text
+    const lastCh = seg.wordText.slice(-1);
+    const lastTwo = seg.wordText.slice(-2);
+    if ('.!?'.includes(lastCh)) {
+      w += PAUSE_SENTENCE;
+    } else if (',;:'.includes(lastCh)) {
+      w += PAUSE_COMMA;
+    } else if ('–—―'.includes(lastCh) || lastTwo === '--') {
+      w += PAUSE_DASH;
+    }
+    weights.push(w);
+  }
+
+  // Cumulative weights for progress lookup
+  const cumWeights: number[] = [];
+  let cumTotal = 0;
+  for (const w of weights) {
+    cumTotal += w;
+    cumWeights.push(cumTotal);
+  }
+
+  // Map linear progress to weighted word index
+  const weightedTarget = progress * cumTotal;
+  let activeWord = 0;
+  for (let i = 0; i < cumWeights.length; i++) {
+    if (cumWeights[i]! >= weightedTarget) {
+      activeWord = i;
+      break;
+    }
+  }
+  activeWord = Math.min(activeWord, totalWords - 1);
+
+  // Flat-linear equivalent for diagnostic comparison
+  const linearActive = Math.min(Math.floor(progress * totalWords), totalWords - 1);
+
+  // For short phrases (≤4 words), use a single-word window so the word
+  // layer never covers the entire visible phrase — avoids looking like
+  // a full-paragraph highlight on short text nodes.
+  const useMicroWindow = totalWords <= 4;
+  const startWord = useMicroWindow ? activeWord : Math.max(0, activeWord - 1);
+  const endWord = useMicroWindow ? activeWord + 1 : Math.min(totalWords, activeWord + 2);
 
   // Build a new Range from the first to last segment in the window
   const newRange = doc.createRange();
@@ -612,7 +679,15 @@ function narrowRangeToWordWindow(
     .join('');
 
   const windowSize = endWord - startWord;
-  return { range: newRange, activeWord, totalWords, windowSize, windowText };
+  return {
+    range: newRange,
+    activeWord,
+    totalWords,
+    windowSize,
+    windowText,
+    linearActive,
+    cumTotal,
+  };
 }
 
 /**
@@ -958,8 +1033,10 @@ export function applyLiveMarker(
       };
       console.log('[LiveMarker] Word-window narrowed', {
         activeWord: narrowed.activeWord,
+        linearActive: narrowed.linearActive,
         totalWords: narrowed.totalWords,
         progress: Math.round(progress * 1000) / 1000,
+        cumTotal: Math.round(narrowed.cumTotal * 100) / 100,
         windowText: narrowed.windowText,
       });
       range = narrowed.range;
@@ -977,27 +1054,12 @@ export function applyLiveMarker(
   const ol = overlayer as Overlayer;
   const svg = ol.element as unknown as HTMLElement;
 
-  // ── Layer 1: subtle phrase context (underlay) ──
-  svg.style.setProperty('--overlayer-highlight-opacity', '0.12');
-  svg.style.setProperty('--overlayer-highlight-blend-mode', 'normal');
-
+  // ── Clean single-layer active-word highlight ──
+  // Always remove the old phrase-context layer (no longer rendered).
+  // Only render the word-window layer when narrowing succeeded.
+  // If narrowing failed, remove everything — no broad fallback highlight.
   ol.remove(LIVE_MARKER_KEY);
-  ol.add(LIVE_MARKER_KEY, phraseRange, Overlayer[style], {
-    color,
-    padding: 2,
-    radius: 4,
-  });
-  // Lock the inline style so the next layer's CSS-var change doesn't affect this one
-  const phraseG = svg.lastElementChild as HTMLElement | null;
-  if (phraseG) {
-    phraseG.style.opacity = '0.12';
-    phraseG.style.mixBlendMode = 'normal';
-  }
 
-  // ── Layer 2: active-word highlight (dominant visual) ──
-  // Only render when word-window narrowing succeeded.  If narrowing failed
-  // (e.g. too few words, progress unavailable), skip the word layer entirely
-  // so we never flash a full-paragraph highlight at full opacity.
   let wordRangeForLog: string | undefined;
   if (wordWindowInfo) {
     diag.wordWindowSuccess++;
@@ -1021,36 +1083,30 @@ export function applyLiveMarker(
     }
     wordRangeForLog = range.toString().slice(0, 60);
   } else {
-    // No word-level narrowing possible — clean up any previous word layer
+    // No word-level narrowing possible — remove both layers, no fallback
     ol.remove(LIVE_MARKER_WORD_KEY);
     if (progress !== undefined) {
       diag.wordWindowSkipped++;
-      console.log('[LiveMarker] Word-window skipped — narrowing returned null, phrase-only', {
+      console.log('[LiveMarker] Word-window skipped — no highlight rendered', {
         reason: diag.lastSkipReason,
         phraseText: phraseRange.toString().slice(0, 50),
         labelPreview: label?.slice(0, 40),
         progress: Math.round(progress * 1000) / 1000,
+        skippedEntryCfi: cfi.slice(0, 60),
+        skippedEntrySeconds: `${phraseRange.toString().slice(0, 30)}…`,
       });
     }
-    diag.phraseOnlyFallback++;
   }
 
   const clientRects = range.getClientRects();
-  console.log('[LiveMarker] Dual-layer overlay applied', {
+  console.log('[LiveMarker] Overlay applied', {
     style,
     color,
-    phraseChars: phraseRange.toString().length,
     wordChars: wordRangeForLog?.length ?? 0,
     activeWord: wordWindowInfo?.activeWord,
     totalWords: wordWindowInfo?.totalWords,
     rectCount: clientRects.length,
-    firstRect:
-      clientRects.length > 0
-        ? {
-            w: clientRects[0]!.width.toFixed(1),
-            h: clientRects[0]!.height.toFixed(1),
-          }
-        : null,
+    wordLayerRendered: !!wordWindowInfo,
   });
 
   if (!view.renderer.scrolled) {
