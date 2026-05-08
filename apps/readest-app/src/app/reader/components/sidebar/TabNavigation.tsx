@@ -33,7 +33,7 @@ const TabNavigation: React.FC<{
       case 'annotations':
         return _('Notes');
       case 'bookmarks':
-        return _('Bookmark');
+        return _('Bookmarks');
       case 'history':
         return _('Highlights');
       default:
@@ -72,54 +72,63 @@ const TabNavigation: React.FC<{
         >
           <div
             className={clsx(
-              'pointer-events-none absolute bottom-3 left-[8px] top-3 hidden w-[2px] rounded-full bg-gradient-to-b from-[#d7b06d] via-[#9e4f2c] to-[#7f2e1f] sm:block',
+              'pointer-events-none absolute left-[8px] hidden w-[2px] sm:block',
               activeTab === tab ? 'opacity-100' : 'opacity-0',
             )}
+            style={{
+              top: '50%',
+              height: '34px',
+              transform: 'translateY(-50%)',
+              borderRadius: '999px',
+              background: 'rgba(239, 76, 45, 0.95)',
+            }}
           />
-          <div className='m-0 flex h-6 items-center p-0 sm:h-auto sm:flex-col sm:gap-2.5'>
+          <div className='m-0 flex h-6 items-center p-0 sm:h-auto sm:flex-col sm:gap-[10px]'>
             {tab === 'reading' ? (
-              <FiBookOpen className='mx-auto text-[18px] sm:text-[23px]' />
+              <FiBookOpen className='mx-auto text-[18px] sm:text-[24px]' />
             ) : tab === 'toc' ? (
-              <IoIosList className='mx-auto text-[18px] sm:text-[23px]' />
+              <IoIosList className='mx-auto text-[18px] sm:text-[24px]' />
             ) : tab === 'annotations' ? (
-              <PiNotePencil className='mx-auto text-[18px] sm:text-[23px]' />
+              <PiNotePencil className='mx-auto text-[18px] sm:text-[24px]' />
             ) : tab === 'bookmarks' ? (
-              <MdBookmarkBorder className='mx-auto text-[18px] sm:text-[23px]' />
+              <MdBookmarkBorder className='mx-auto text-[18px] sm:text-[24px]' />
             ) : (
-              <LuMessageSquare className='mx-auto text-[18px] sm:text-[23px]' />
+              <LuMessageSquare className='mx-auto text-[18px] sm:text-[24px]' />
             )}
-            <span className='hidden max-w-full text-center text-[8px] font-semibold uppercase leading-[1.14] tracking-[0.12em] sm:block'>
+            <span className='hidden max-w-full text-center text-[8.5px] font-semibold uppercase leading-[1.14] tracking-[0.13em] sm:block'>
               {getTabLabel(tab)}
             </span>
           </div>
         </div>
       ))}
       <div className='citadel-rail-spacer hidden sm:block' aria-hidden='true' />
-      <div className='hidden px-3 pb-2 pt-2 sm:block'>
+      <div className='hidden px-0 pb-0 pt-0 sm:block'>
         <button
           type='button'
           title={_('Collapse Sidebar')}
           aria-label={_('Collapse Sidebar')}
           onClick={() => setSideBarVisible(false)}
-          className='citadel-rail-collapse mx-auto flex h-10 w-10 items-center justify-center rounded-full'
+          className='citadel-rail-collapse mx-auto flex h-[42px] w-[42px] items-center justify-center rounded-full'
         >
-          <MdKeyboardDoubleArrowLeft className='text-[19px]' />
+          <MdKeyboardDoubleArrowLeft className='text-[20px]' />
         </button>
       </div>
       <style jsx global>{`
         @media (min-width: 640px) {
           .bottom-tab {
             min-height: 100%;
+            border-top: 0 !important;
+            background: transparent !important;
           }
 
           .citadel-rail-tab {
-            min-height: 70px;
-            margin: 2px 8px;
+            min-height: 72px;
+            margin: 0 8px 2px;
             justify-content: center;
             background: transparent;
             border: 1px solid transparent;
             border-radius: 12px;
-            color: rgba(218, 184, 120, 0.92);
+            color: rgba(218, 178, 96, 0.88);
             box-shadow: none;
             transition:
               background 160ms ease,
@@ -133,15 +142,11 @@ const TabNavigation: React.FC<{
             content: '';
             position: absolute;
             top: -1px;
-            left: 18%;
-            right: 18%;
+            left: 50%;
+            width: 62px;
+            transform: translateX(-50%);
             height: 1px;
-            background: linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(162, 124, 60, 0.2) 50%,
-              transparent 100%
-            );
+            background: rgba(170, 132, 66, 0.28);
             pointer-events: none;
           }
 
@@ -149,48 +154,56 @@ const TabNavigation: React.FC<{
             width: 100%;
           }
 
+          .citadel-rail-tab svg {
+            color: rgba(218, 178, 96, 0.88);
+          }
+
+          .citadel-rail-tab span {
+            color: rgba(218, 178, 96, 0.82);
+          }
+
           .citadel-rail-tab:hover {
-            background: rgba(28, 20, 17, 0.32);
-            border-color: rgba(168, 124, 64, 0.1);
-            color: rgba(234, 200, 132, 0.99);
+            background: rgba(31, 22, 19, 0.18);
+            border-color: transparent;
+            color: rgba(232, 190, 108, 0.94);
           }
 
           .citadel-rail-tab-history {
-            color: rgba(218, 184, 120, 0.92);
+            color: rgba(218, 178, 96, 0.88);
           }
 
           .citadel-rail-tab.citadel-rail-tab-active {
-            background: linear-gradient(
-              180deg,
-              rgba(52, 19, 16, 0.26) 0%,
-              rgba(28, 14, 12, 0.56) 56%,
-              rgba(17, 10, 10, 0.72) 100%
-            );
-            border-color: rgba(154, 92, 50, 0.14);
-            color: rgb(245, 218, 146);
-            box-shadow:
-              inset 0 1px 0 rgba(255, 220, 156, 0.025),
-              inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            background: linear-gradient(180deg, rgba(58, 20, 15, 0.62), rgba(26, 12, 10, 0.7));
+            border: 1px solid rgba(160, 72, 42, 0.26);
+            color: rgba(246, 207, 126, 0.96);
+            box-shadow: none;
           }
 
           .citadel-rail-tab.citadel-rail-tab-active::after {
             content: none;
           }
 
+          .citadel-rail-tab.citadel-rail-tab-active svg,
+          .citadel-rail-tab.citadel-rail-tab-active span {
+            color: rgba(246, 207, 126, 0.96);
+          }
+
           .citadel-rail-spacer {
             flex: 1;
-            min-height: 32px;
+            min-height: 0;
           }
 
           .citadel-rail-collapse {
-            border: 1px solid rgba(182, 144, 76, 0.46);
-            background: linear-gradient(180deg, rgba(24, 16, 13, 0.98), rgba(12, 9, 8, 0.99));
-            color: rgba(226, 188, 112, 0.96);
+            position: relative;
+            z-index: 2;
+            border: 1px solid rgba(207, 164, 84, 0.72);
+            background-color: rgba(35, 29, 25, 0.98);
+            background-image: linear-gradient(180deg, rgba(35, 29, 25, 0.98), rgba(16, 13, 12, 1));
+            color: rgba(246, 207, 126, 0.98);
             box-shadow:
-              inset 0 1px 0 rgba(255, 237, 193, 0.06),
-              inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-              0 2px 10px rgba(0, 0, 0, 0.22);
-            opacity: 0.98;
+              inset 0 1px 0 rgba(255, 220, 140, 0.12),
+              0 0 14px rgba(196, 130, 50, 0.12);
+            opacity: 1;
             transition:
               background 150ms ease,
               border-color 150ms ease,
@@ -199,9 +212,9 @@ const TabNavigation: React.FC<{
           }
 
           .citadel-rail-collapse:hover {
-            border-color: rgba(228, 190, 108, 0.68);
-            background: linear-gradient(180deg, rgba(34, 22, 18, 0.98), rgba(16, 12, 10, 0.98));
-            color: rgba(242, 214, 140, 0.98);
+            border-color: rgba(228, 190, 108, 0.8);
+            background-image: linear-gradient(180deg, rgba(43, 35, 30, 0.98), rgba(18, 14, 13, 1));
+            color: rgba(246, 207, 126, 0.98);
           }
 
           .citadel-rail-collapse:focus-visible {

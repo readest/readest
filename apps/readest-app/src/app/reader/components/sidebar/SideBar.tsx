@@ -24,7 +24,7 @@ import SearchResults from './SearchResults';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
-const DESKTOP_SIDEBAR_WIDTH = '7.75rem';
+const DESKTOP_SIDEBAR_WIDTH = '112px';
 
 const SideBar = ({}) => {
   const _ = useTranslation();
@@ -269,19 +269,22 @@ const SideBar = ({}) => {
             .sidebar-container {
               height: calc(100dvh - 36px) !important;
               max-height: calc(100dvh - 36px);
-              margin: 20px 0 20px 16px;
+              margin: 18px 0 18px 16px;
               border-radius: 24px;
-              padding: 10px 10px 16px 8px;
-              border-right-width: 0;
+              padding: 0;
+              border: 1px solid rgba(179, 137, 70, 0.72);
               box-sizing: border-box;
-              /* Charcoal rail with a faint warm wash — no heavy red glows. */
-              background:
-                radial-gradient(circle at 80% 14%, rgba(84, 54, 20, 0.06), transparent 24%),
-                linear-gradient(180deg, rgba(20, 14, 13, 0.99), rgba(8, 6, 6, 1));
+              background: linear-gradient(
+                180deg,
+                rgba(26, 22, 20, 0.98) 0%,
+                rgba(17, 15, 14, 0.98) 38%,
+                rgba(12, 11, 10, 1) 72%,
+                rgba(8, 7, 7, 1) 100%
+              );
               box-shadow:
-                inset -8px 0 16px rgba(0, 0, 0, 0.28),
-                inset 0 1px 0 rgba(255, 237, 193, 0.025),
-                10px 0 24px rgba(0, 0, 0, 0.3);
+                inset 0 0 0 1px rgba(230, 184, 92, 0.12),
+                inset 0 18px 34px rgba(255, 210, 120, 0.035),
+                0 12px 30px rgba(0, 0, 0, 0.45);
             }
 
             .sidebar-container > * {
@@ -290,37 +293,13 @@ const SideBar = ({}) => {
             }
 
             .sidebar-container::before {
-              content: '';
-              position: absolute;
-              inset: 6px 6px 10px 6px;
-              border-radius: 20px;
-              /* Slightly darker plate inside the rail with a clean muted-gold
-                 rim on ALL FOUR SIDES (was right-side only when the rail was
-                 flush to the screen edge). */
-              background: linear-gradient(
-                180deg,
-                rgba(20, 14, 12, 0.99) 0%,
-                rgba(12, 9, 8, 0.99) 60%,
-                rgba(6, 5, 5, 1) 100%
-              );
-              box-shadow:
-                /* Muted-gold double rim — visible on all four sides now. */
-                inset 0 0 0 1px rgba(184, 144, 76, 0.62),
-                inset 0 0 0 3px rgba(8, 6, 5, 0.85),
-                inset 0 0 0 4px rgba(184, 144, 76, 0.2),
-                /* Subtle interior shading — no big red wash */ inset 0 1px 0
-                  rgba(255, 236, 190, 0.05),
-                inset 0 22px 26px rgba(0, 0, 0, 0.28),
-                inset 0 -22px 26px rgba(0, 0, 0, 0.32),
-                /* A whisper of warm tint up top so it's not pure black */ inset 0 28px 60px
-                  rgba(94, 72, 24, 0.04);
+              content: none;
               pointer-events: none;
             }
 
             .sidebar-container::after {
-              /* Was used for an additional red wash + shine — removed. The rail
-                 now reads as a clean charcoal plate with a single gold rim. */
               content: none;
+              pointer-events: none;
             }
 
             .sidebar-container :global(.search-bar) {
@@ -407,48 +386,48 @@ const SideBar = ({}) => {
 
             .sidebar-container :global(.bottom-tab) {
               flex: 1;
+              display: flex;
+              flex-direction: column;
               justify-content: flex-start;
               position: relative;
-              padding-top: 4px;
-              padding-bottom: 8px;
-              background:
-                radial-gradient(circle at 68% 12%, rgba(118, 92, 40, 0.06), transparent 18%),
-                linear-gradient(180deg, rgba(72, 52, 24, 0.08), transparent 22%),
-                linear-gradient(180deg, rgba(12, 8, 7, 0.08), rgba(10, 8, 8, 0.34));
+              padding-top: 14px;
+              padding-bottom: 22px;
+              background: linear-gradient(
+                180deg,
+                rgba(18, 16, 15, 0) 0%,
+                rgba(14, 13, 12, 0.18) 54%,
+                rgba(8, 7, 7, 0.26) 100%
+              );
             }
 
             .sidebar-container :global(.bottom-tab)::before {
               content: '';
               position: absolute;
-              inset: 0 6px 6px;
-              border-radius: 18px 18px 24px 24px;
-              background:
-                linear-gradient(180deg, rgba(44, 14, 12, 0.16), transparent 14%),
-                linear-gradient(180deg, rgba(16, 11, 10, 0.98), rgba(10, 8, 8, 0.98));
-              box-shadow:
-                inset 0 1px 0 rgba(255, 237, 193, 0.028),
-                inset 0 -24px 30px rgba(0, 0, 0, 0.32);
+              inset: 0;
+              background: linear-gradient(
+                180deg,
+                rgba(18, 16, 15, 0) 0%,
+                rgba(14, 13, 12, 0.1) 62%,
+                rgba(8, 7, 7, 0.18) 100%
+              );
               pointer-events: none;
             }
 
             .sidebar-container :global(.bottom-tab)::after {
               content: '';
-              display: block;
-              flex: 1;
-              min-height: 56px;
-              margin: 8px 8px 0 14px;
-              border-radius: 0 0 18px 18px;
-              background:
-                radial-gradient(circle at 26% 0%, rgba(112, 92, 34, 0.08), transparent 28%),
-                linear-gradient(
-                  180deg,
-                  rgba(62, 46, 20, 0.06),
-                  rgba(44, 14, 12, 0.03) 26%,
-                  rgba(9, 7, 7, 0) 44%
-                ),
-                linear-gradient(180deg, rgba(10, 7, 6, 0), rgba(3, 3, 3, 0.42) 100%);
-              box-shadow: inset 0 28px 40px rgba(0, 0, 0, 0.26);
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              height: 120px;
+              background: linear-gradient(180deg, rgba(18, 16, 15, 0) 0%, rgba(8, 7, 7, 0.18) 100%);
               pointer-events: none;
+            }
+
+            :global(.sidebar-container .sidebar-content + div) {
+              border-top: 0 !important;
+              background: transparent !important;
+              box-shadow: none !important;
             }
 
             .sidebar-container :global(.os-scrollbar-handle) {
