@@ -32,6 +32,7 @@ import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
 import Menu from '@/components/Menu';
+import { type AppLockDialogMode, useAppLockStore } from '@/store/appLockStore';
 
 interface SettingsMenuProps {
   onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
@@ -68,6 +69,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
 
   const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
   const [refreshMetadataProgress, setRefreshMetadataProgress] = useState('');
+  const { openDialog: openAppLockDialogInStore } = useAppLockStore();
+  const isPinEnabled = !!settings.pinCodeEnabled;
+
+  const openAppLockDialog = (mode: AppLockDialogMode) => {
+    openAppLockDialogInStore(mode);
+    setIsDropdownOpen?.(false);
+  };
   const { isSyncing, setLibrary } = useLibraryStore();
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
@@ -412,6 +420,19 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             onClick={handleRefreshMetadata}
             disabled={isRefreshingMetadata}
           />
+          {!isPinEnabled && (
+            <MenuItem
+              label={_('Set PIN…')}
+              tooltip={_('Require a 4-digit PIN to open Readest')}
+              onClick={() => openAppLockDialog('set')}
+            />
+          )}
+          {isPinEnabled && (
+            <MenuItem label={_('Change PIN…')} onClick={() => openAppLockDialog('change')} />
+          )}
+          {isPinEnabled && (
+            <MenuItem label={_('Disable PIN…')} onClick={() => openAppLockDialog('disable')} />
+          )}
           {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
             <MenuItem
               label={_('Save Book Cover')}

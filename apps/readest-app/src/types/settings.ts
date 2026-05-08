@@ -132,6 +132,17 @@ export interface SystemSettings {
   metadataOthersCollapsed: boolean;
   metadataDescriptionCollapsed: boolean;
 
+  /**
+   * App-lock PIN. When `pinCodeEnabled` is true, the user must enter
+   * a 4-digit PIN before the library/reader is rendered on app launch.
+   * `pinCodeHash` is `bytesToHex(PBKDF2-SHA256(pin, hexToBytes(pinCodeSalt)))`,
+   * never the plaintext PIN. Cleared together with `pinCodeEnabled = false`
+   * when the user disables the lock.
+   */
+  pinCodeEnabled?: boolean;
+  pinCodeHash?: string;
+  pinCodeSalt?: string;
+
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;

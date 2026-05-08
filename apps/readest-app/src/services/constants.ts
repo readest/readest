@@ -111,6 +111,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   metadataOthersCollapsed: false,
   metadataDescriptionCollapsed: false,
 
+  pinCodeEnabled: false,
+
   customDictionaries: [],
   dictionarySettings: {
     providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
