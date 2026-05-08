@@ -68,10 +68,18 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];
 
+// In practice every path comes from the compile-time SETTINGS_WHITELIST so
+// these never appear, but readPath/writePath are exported helpers and the
+// guard makes prototype pollution impossible if a future caller passes an
+// untrusted path.
+const isUnsafeKey = (k: string): boolean =>
+  k === '__proto__' || k === 'constructor' || k === 'prototype';
+
 /** Read a dot-path value from a deep object. Returns undefined for absent paths. */
 export const readPath = (obj: unknown, path: string): unknown => {
   let cur: unknown = obj;
   for (const part of path.split('.')) {
+    if (isUnsafeKey(part)) return undefined;
     if (cur === null || cur === undefined || typeof cur !== 'object') return undefined;
     cur = (cur as Record<string, unknown>)[part];
   }
@@ -85,6 +93,7 @@ export const readPath = (obj: unknown, path: string): unknown => {
  */
 export const writePath = (obj: Record<string, unknown>, path: string, value: unknown): void => {
   const parts = path.split('.');
+  if (parts.some(isUnsafeKey)) return;
   let cur: Record<string, unknown> = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i]!;

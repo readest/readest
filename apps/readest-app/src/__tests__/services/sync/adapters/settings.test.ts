@@ -161,4 +161,20 @@ describe('readPath / writePath', () => {
     writePath(obj, 'foo.bar', 1);
     expect(obj).toEqual({ foo: { bar: 1 } });
   });
+
+  test('writePath rejects __proto__ / constructor / prototype segments', () => {
+    const obj: Record<string, unknown> = {};
+    writePath(obj, '__proto__.polluted', 'bad');
+    writePath(obj, 'constructor.prototype.polluted', 'bad');
+    writePath(obj, 'a.prototype.b', 'bad');
+    expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+    expect(obj).toEqual({});
+  });
+
+  test('readPath rejects __proto__ / constructor / prototype segments', () => {
+    const obj = { a: 1 };
+    expect(readPath(obj, '__proto__')).toBeUndefined();
+    expect(readPath(obj, 'constructor')).toBeUndefined();
+    expect(readPath(obj, 'a.prototype')).toBeUndefined();
+  });
 });
