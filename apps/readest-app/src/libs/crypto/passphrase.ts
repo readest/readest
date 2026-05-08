@@ -15,10 +15,20 @@ export interface PassphraseStore {
 }
 
 /**
- * Web / fallback passphrase store. Holds the value in memory only;
- * dropped on tab close. Used on web (Web Crypto subtle key in memory)
- * and as a graceful fallback on native when the OS keychain is
- * unavailable.
+ * In-memory passphrase store. Lifetime is "this page load" — every
+ * hard refresh wipes it. This is the default on web; the cipher
+ * fingerprint heuristic in replicaPullAndApply.applyRow makes sure a
+ * fresh page doesn't re-prompt on pull as long as the local copy's
+ * lastSeenCipher matches the row's incoming cipher.
+ *
+ * The only path that still re-prompts after refresh is adding a new
+ * credentialed catalog (the encrypt path needs an unlocked session).
+ * That's an infrequent action; not worth the XSS surface of
+ * persisting the passphrase to localStorage / sessionStorage.
+ *
+ * On Tauri, this store is replaced at boot by TauriPassphraseStore
+ * via upgradeToKeychainIfAvailable; the OS keychain provides
+ * cross-launch persistence on native without the XSS surface.
  */
 export class EphemeralPassphraseStore implements PassphraseStore {
   private value: string | null = null;

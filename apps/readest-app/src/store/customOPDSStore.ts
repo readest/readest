@@ -181,6 +181,12 @@ export const useCustomOPDSStore = create<OPDSStoreState>((set, get) => ({
           ...catalog,
           username: catalog.username ?? old.username,
           password: catalog.password ?? old.password,
+          // Preserve the previously-applied cipher fingerprint when
+          // the orchestrator didn't attach a fresh one (e.g., row
+          // carried no cipher fields, or every decrypt failed).
+          // Without this fallback the next pull would treat the row
+          // as "never decrypted" and prompt again unnecessarily.
+          lastSeenCipher: catalog.lastSeenCipher ?? old.lastSeenCipher,
           deletedAt: undefined,
         };
         return { catalogs: state.catalogs.map((c, i) => (i === idx ? merged : c)) };

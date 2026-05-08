@@ -3,7 +3,14 @@ import type { ReplicaRow } from '@/types/replica';
 import type { ReplicaTransferFile } from '@/store/transferStore';
 import type { BaseDir } from '@/types/system';
 import type { ReplicaAdapter } from './replicaRegistry';
-import { decryptRowFields } from './replicaCryptoMiddleware';
+import {
+  captureCipherTexts,
+  cipherTextsChanged,
+  collectDecryptSuccess,
+  decryptRowFields,
+} from './replicaCryptoMiddleware';
+import { ensurePassphraseUnlocked } from './passphraseGate';
+import { cryptoSession } from '@/libs/crypto/session';
 
 export interface ReplicaLocalRecord {
   /**
@@ -14,6 +21,12 @@ export interface ReplicaLocalRecord {
   bundleDir?: string;
   name: string;
   deletedAt?: number;
+  /**
+   * Per-field cipher fingerprint of the last successfully-decrypted
+   * pull. Used to skip the passphrase prompt when nothing's changed
+   * since last apply. See replicaCryptoMiddleware.captureCipherTexts.
+   */
+  lastSeenCipher?: Record<string, string>;
 }
 
 export interface PullAndApplyDeps<T extends ReplicaLocalRecord> {
@@ -97,12 +110,41 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   row: ReplicaRow,
   deps: PullAndApplyDeps<T>,
 ): Promise<void> => {
-  // Decrypt encrypted-field cipher payloads in place so unpackRow sees
-  // plaintext. Locked session / decrypt failures simply omit the field
-  // — the store's applyRemote merge preserves the local plaintext copy.
-  await decryptRowFields(row.fields_jsonb, deps.adapter.encryptedFields);
-
   const local = deps.findByContentId(row.replica_id);
+
+  // Decrypt encrypted-field cipher payloads in place so unpackRow sees
+  // plaintext. The prompt-decision heuristic compares the row's
+  // incoming ciphers against the local record's last-seen-cipher
+  // fingerprint:
+  //   * fingerprint matches → we already have the plaintext for this
+  //     exact ciphertext; skip the prompt + decrypt entirely
+  //   * fingerprint differs (or local has no fingerprint yet) AND
+  //     session is locked → prompt the gate so we can decrypt the new
+  //     value (covers fresh device + password rotation on Device A)
+  //   * session already unlocked → just decrypt; no prompt
+  // Cancel / failure leaves the field absent; the store's applyRemote
+  // merge preserves any local plaintext copy.
+  const encryptedFields = deps.adapter.encryptedFields;
+  const beforeDecrypt = captureCipherTexts(row.fields_jsonb, encryptedFields);
+  const localLastSeen = local?.lastSeenCipher;
+
+  const needsPrompt =
+    !cryptoSession.isUnlocked() &&
+    Object.keys(beforeDecrypt).length > 0 &&
+    cipherTextsChanged(beforeDecrypt, localLastSeen);
+  const onLocked = needsPrompt ? () => ensurePassphraseUnlocked() : undefined;
+  await decryptRowFields(row.fields_jsonb, encryptedFields, undefined, onLocked);
+
+  // Build the lastSeenCipher fingerprint to attach to the unpacked
+  // record. Only fields whose decrypt succeeded contribute — a failed
+  // decrypt leaves the previous fingerprint in place so we'll re-try
+  // (and re-prompt) on the next pull.
+  const decryptedThisRound = collectDecryptSuccess(row.fields_jsonb, beforeDecrypt);
+  const mergedLastSeen =
+    Object.keys(decryptedThisRound).length > 0 || localLastSeen
+      ? { ...(localLastSeen ?? {}), ...decryptedThisRound }
+      : undefined;
+
   const alive = isReplicaRowAlive(row);
 
   if (!alive) {
@@ -126,10 +168,25 @@ const applyRow = async <T extends ReplicaLocalRecord>(
     if (needsBundleDir && !local.bundleDir) return;
     bundleDir = local.bundleDir ?? '';
     displayName = deps.adapter.getDisplayName?.(local) ?? local.name;
+    // For metadata-only kinds, always re-apply the unpacked row so
+    // per-field updates merge into the local copy: renames pushed
+    // from another device, newly-decrypted credentials that weren't
+    // available on the previous pull (session was locked then), etc.
+    // The store's applyRemote merge preserves identity-stable local
+    // state. Binary kinds keep the skip-rebuild semantic so we don't
+    // re-download files we already have.
+    if (!needsBundleDir) {
+      const record = deps.adapter.unpackRow(row, bundleDir);
+      if (record) {
+        if (mergedLastSeen) record.lastSeenCipher = mergedLastSeen;
+        deps.applyRemote(record);
+      }
+    }
   } else {
     bundleDir = needsBundleDir ? await deps.createBundleDir() : '';
     const record = deps.adapter.unpackRow(row, bundleDir);
     if (!record) return;
+    if (mergedLastSeen) record.lastSeenCipher = mergedLastSeen;
     deps.applyRemote(record);
     displayName = deps.adapter.getDisplayName?.(record) ?? record.name;
   }

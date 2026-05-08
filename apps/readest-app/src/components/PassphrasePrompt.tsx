@@ -18,7 +18,7 @@ interface PendingPrompt {
  * modal to render and resolve with the entered passphrase (or null
  * on cancel).
  */
-export default function PassphrasePromptModal() {
+export default function PassphrasePrompt() {
   const _ = useTranslation();
   const [pending, setPending] = useState<PendingPrompt | null>(null);
   const [value, setValue] = useState('');
@@ -71,14 +71,20 @@ export default function PassphrasePromptModal() {
     close(value);
   };
 
+  // Input pill — modern style for color themes; eink-bordered swaps to
+  // 1px border + base-100 bg under [data-eink='true'].
+  const inputClass =
+    'eink-bordered w-full rounded-xl bg-base-300/60 px-4 py-3 text-sm placeholder:text-base-content/40 ' +
+    'border border-transparent transition-colors focus:border-base-content/20 focus:bg-base-300';
+
   return (
     <ModalPortal>
       <dialog className='modal modal-open'>
-        <div className='modal-box max-w-md'>
-          <h3 className='mb-2 text-lg font-bold'>
+        <div className='modal-box bg-base-200 max-w-md rounded-2xl p-6 shadow-2xl'>
+          <h3 className='mb-1.5 text-lg font-semibold tracking-tight'>
             {isSetup ? _('Set sync passphrase') : _('Enter sync passphrase')}
           </h3>
-          <p className='text-base-content/70 mb-4 text-sm'>
+          <p className='text-base-content/60 mb-5 text-sm leading-relaxed'>
             {isSetup
               ? _(
                   'A sync passphrase encrypts your sensitive fields (like OPDS catalog credentials) before they sync. We never see this passphrase. Pick something memorable — there is no recovery without it.',
@@ -87,44 +93,55 @@ export default function PassphrasePromptModal() {
                   'Enter the sync passphrase you set on another device to decrypt your synced credentials.',
                 )}
           </p>
-          <form onSubmit={handleSubmit} className='space-y-3'>
-            <div className='form-control'>
+          <form onSubmit={handleSubmit} className='space-y-2.5'>
+            <input
+              ref={inputRef}
+              type='password'
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError('');
+              }}
+              placeholder={_('Sync passphrase')}
+              className={inputClass}
+              autoComplete='new-password'
+              required
+            />
+            {isSetup && (
               <input
-                ref={inputRef}
                 type='password'
-                value={value}
+                value={confirm}
                 onChange={(e) => {
-                  setValue(e.target.value);
+                  setConfirm(e.target.value);
                   setError('');
                 }}
-                placeholder={_('Sync passphrase')}
-                className='input input-bordered w-full'
+                placeholder={_('Confirm passphrase')}
+                className={inputClass}
                 autoComplete='new-password'
                 required
               />
-            </div>
-            {isSetup && (
-              <div className='form-control'>
-                <input
-                  type='password'
-                  value={confirm}
-                  onChange={(e) => {
-                    setConfirm(e.target.value);
-                    setError('');
-                  }}
-                  placeholder={_('Confirm passphrase')}
-                  className='input input-bordered w-full'
-                  autoComplete='new-password'
-                  required
-                />
-              </div>
             )}
-            {error && <div className='text-error text-sm'>{error}</div>}
-            <div className='modal-action'>
-              <button type='button' className='btn' onClick={() => close(null)}>
+            {error && <p className='text-error pt-0.5 text-xs'>{error}</p>}
+            <div className='flex justify-end gap-2 pt-4'>
+              {/*
+               * Cancel: ghost in color themes, eink-bordered (white bg
+               * + base-content border) under eink. Submit: bg-primary
+               * in color themes, picks up the existing
+               * `[data-eink] .btn-primary` rule (inverted to
+               * base-content bg + base-100 text) under eink — so the
+               * two buttons stay visually distinct on e-paper.
+               */}
+              <button
+                type='button'
+                onClick={() => close(null)}
+                className='eink-bordered hover:bg-base-300/70 rounded-lg px-4 py-2 text-sm font-medium transition-colors'
+              >
                 {_('Cancel')}
               </button>
-              <button type='submit' className='btn btn-primary'>
+              <button
+                type='submit'
+                className='btn btn-primary text-primary-content hover:bg-primary/90 active:bg-primary/80 rounded-lg border-0 px-4 py-2 text-sm font-medium transition-colors'
+              >
                 {isSetup ? _('Set passphrase') : _('Unlock')}
               </button>
             </div>

@@ -14,7 +14,6 @@ const isAuthError = (err: unknown): boolean => isSyncError(err) && err.code === 
 export function SyncPassphraseSection() {
   const _ = useTranslation();
   const [status, setStatus] = useState<SyncPassphraseStatus>('loading');
-  const [unlocked, setUnlocked] = useState(cryptoSession.isUnlocked());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -37,34 +36,26 @@ export function SyncPassphraseSection() {
     void refreshStatus();
   }, []);
 
-  // Reflect lock/unlock state changes (the gate flips it during prompt).
-  useEffect(() => {
-    const interval = setInterval(() => setUnlocked(cryptoSession.isUnlocked()), 500);
-    return () => clearInterval(interval);
-  }, []);
-
   if (status === 'loading') return null;
 
+  // "Unlock now" lets the user proactively enter the passphrase ahead
+  // of an action that needs it (e.g., adding a credentialed catalog
+  // right after a hard refresh) so they don't get interrupted by a
+  // modal mid-flow. When the session is already unlocked it's a quick
+  // no-op that just confirms readiness. The page refresh itself is
+  // the "lock this device" action — there's no separate Lock button.
   const handleSetOrUnlock = async () => {
     setBusy(true);
     setMessage(null);
     try {
       await ensurePassphraseUnlocked();
       await refreshStatus();
-      setUnlocked(true);
       setMessage(_('Sync passphrase ready'));
     } catch (err) {
-      // User cancelled or backend error — surface the message.
       setMessage(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  };
-
-  const handleLock = () => {
-    cryptoSession.lock();
-    setUnlocked(false);
-    setMessage(_('Sync passphrase locked on this device'));
   };
 
   const handleForget = async () => {
@@ -82,7 +73,6 @@ export function SyncPassphraseSection() {
     try {
       await cryptoSession.forget();
       await refreshStatus();
-      setUnlocked(false);
       setMessage(_('Sync passphrase forgotten — all encrypted fields cleared'));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
@@ -99,21 +89,13 @@ export function SyncPassphraseSection() {
           ? _(
               'Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.',
             )
-          : unlocked
-            ? _('Set on this account. Unlocked on this device.')
-            : _('Set on this account. Locked on this device — set or unlock to sync credentials.')}
+          : _('Set on this account. Will be requested when needed to decrypt synced credentials.')}
       </p>
       {message && <p className='text-base-content/60 mb-3 text-xs'>{message}</p>}
       <div className='flex flex-wrap gap-2'>
-        {status === 'unset' || !unlocked ? (
-          <button className='btn btn-primary btn-sm' disabled={busy} onClick={handleSetOrUnlock}>
-            {status === 'unset' ? _('Set passphrase') : _('Unlock')}
-          </button>
-        ) : (
-          <button className='btn btn-sm' disabled={busy} onClick={handleLock}>
-            {_('Lock on this device')}
-          </button>
-        )}
+        <button className='btn btn-primary btn-sm' disabled={busy} onClick={handleSetOrUnlock}>
+          {status === 'unset' ? _('Set passphrase') : _('Unlock now')}
+        </button>
         {status === 'set' && (
           <button
             className='btn btn-error btn-outline btn-sm'

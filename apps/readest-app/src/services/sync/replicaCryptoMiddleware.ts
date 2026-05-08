@@ -55,6 +55,83 @@ export const encryptPackedFields = async (
 };
 
 /**
+ * Detect whether the row carries at least one cipher envelope in any of
+ * the named fields. The orchestrator uses this to decide whether to
+ * trigger a passphrase prompt before the decrypt loop runs — the
+ * common case (no encrypted credentials on the row) skips the prompt
+ * entirely.
+ */
+export const rowHasCipherFields = (
+  fields: FieldsObject,
+  encryptedFields: readonly string[] | undefined,
+): boolean => {
+  if (!encryptedFields || encryptedFields.length === 0) return false;
+  for (const fieldName of encryptedFields) {
+    const envelope = fields[fieldName];
+    if (!envelope || typeof envelope !== 'object' || !('v' in envelope)) continue;
+    if (isCipherEnvelope((envelope as { v: unknown }).v)) return true;
+  }
+  return false;
+};
+
+/**
+ * Snapshot the cipher ciphertexts (the `c` slot of each cipher envelope)
+ * for the named fields, BEFORE decryptRowFields mutates them in place.
+ * Used by the orchestrator to detect when a cipher has changed since
+ * the last pull (rotation / password update on another device).
+ */
+export const captureCipherTexts = (
+  fields: FieldsObject,
+  encryptedFields: readonly string[] | undefined,
+): Record<string, string> => {
+  const out: Record<string, string> = {};
+  if (!encryptedFields) return out;
+  for (const f of encryptedFields) {
+    const env = fields[f];
+    if (!env || typeof env !== 'object' || !('v' in env)) continue;
+    const v = (env as { v: unknown }).v;
+    if (isCipherEnvelope(v)) out[f] = (v as { c: string }).c;
+  }
+  return out;
+};
+
+/**
+ * True if any ciphertext in `current` differs from the corresponding
+ * entry in `lastSeen`. New cipher fields (not previously seen) count
+ * as changed — that's the fresh-device path and should prompt.
+ */
+export const cipherTextsChanged = (
+  current: Record<string, string>,
+  lastSeen: Record<string, string> | undefined,
+): boolean => {
+  for (const [f, c] of Object.entries(current)) {
+    if (!lastSeen || lastSeen[f] !== c) return true;
+  }
+  return false;
+};
+
+/**
+ * After decryptRowFields runs, walk the named fields and return the
+ * cipher snapshot for those whose decryption succeeded (the field's
+ * `v` slot is now a string). Used by the orchestrator to update the
+ * local record's `lastSeenCipher` so the next pull compares against
+ * the most recently-decrypted cipher rather than re-prompting.
+ */
+export const collectDecryptSuccess = (
+  fields: FieldsObject,
+  beforeDecrypt: Record<string, string>,
+): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const f of Object.keys(beforeDecrypt)) {
+    const env = fields[f];
+    if (!env || typeof env !== 'object' || !('v' in env)) continue;
+    const v = (env as { v: unknown }).v;
+    if (typeof v === 'string') out[f] = beforeDecrypt[f]!;
+  }
+  return out;
+};
+
+/**
  * Decrypt the named fields of a row's fields_jsonb in place. Each named
  * field's CRDT envelope value (the `v` slot) is replaced with the
  * decrypted plaintext so the adapter's unpackRow sees a plain value.
@@ -62,23 +139,38 @@ export const encryptPackedFields = async (
  * publishing device hadn't unlocked yet, or this is a metadata-only
  * legacy row) are left untouched. Decrypt failures delete the field
  * from fields_jsonb entirely.
+ *
+ * `onLocked` is invoked at most once per call when the session is
+ * locked AND a cipher field is encountered. The orchestrator wires
+ * this to the passphrase gate so a sync fresh device prompts the user
+ * before silently dropping the encrypted creds.
  */
 export const decryptRowFields = async (
   fields: FieldsObject,
   encryptedFields: readonly string[] | undefined,
   session: CryptoSession = defaultCryptoSession,
+  onLocked?: () => Promise<void>,
 ): Promise<void> => {
   if (!encryptedFields || encryptedFields.length === 0) return;
+  let promptAttempted = false;
   for (const fieldName of encryptedFields) {
     const envelope = fields[fieldName];
     if (!envelope || typeof envelope !== 'object' || !('v' in envelope)) continue;
     const v = (envelope as { v: unknown }).v;
     if (!isCipherEnvelope(v)) continue;
+    // Locked session + cipher field: ask the gate to unlock once per
+    // decryptRowFields call. If the unlock succeeds, fall through to
+    // decrypt; if it fails (user cancelled, gate has no prompter),
+    // drop the field and preserve the local plaintext copy.
+    if (!session.isUnlocked() && onLocked && !promptAttempted) {
+      promptAttempted = true;
+      try {
+        await onLocked();
+      } catch {
+        // Ignore — the next isUnlocked() check below decides what to do.
+      }
+    }
     if (!session.isUnlocked()) {
-      // Locked: drop the cipher field so unpackRow doesn't see opaque
-      // data. The store's applyRemote merge preserves the local
-      // plaintext copy, so the user isn't locked out of their own
-      // catalog.
       delete fields[fieldName];
       continue;
     }

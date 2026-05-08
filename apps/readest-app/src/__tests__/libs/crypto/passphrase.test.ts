@@ -123,7 +123,7 @@ describe('TauriPassphraseStore', () => {
 });
 
 describe('createPassphraseStore + upgradeToKeychainIfAvailable', () => {
-  test('returns ephemeral synchronously on web; upgrade is a no-op', async () => {
+  test('returns ephemeral on web; upgrade is a no-op (no keychain probe)', async () => {
     isTauriAppPlatformValue = false;
     const store = createPassphraseStore();
     expect(store).toBeInstanceOf(EphemeralPassphraseStore);
@@ -157,5 +157,6 @@ describe('createPassphraseStore + upgradeToKeychainIfAvailable', () => {
     const initial = createPassphraseStore();
     const upgraded = await upgradeToKeychainIfAvailable();
     expect(upgraded).toBe(initial);
+    expect(upgraded).toBeInstanceOf(EphemeralPassphraseStore);
   });
 });

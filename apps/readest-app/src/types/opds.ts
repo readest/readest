@@ -43,6 +43,16 @@ export interface OPDSCatalog {
   deletedAt?: number;
   /** Reincarnation token (re-import after server tombstone). */
   reincarnation?: string;
+  /**
+   * Per-field cipher fingerprint of the last successfully-decrypted
+   * pull. Maps `fieldName` → cipher's `c` (base64 ciphertext). The
+   * orchestrator compares the row's incoming cipher against this on
+   * each pull: same → skip the passphrase prompt (we already have
+   * the plaintext); different → prompt to re-decrypt (rotation or
+   * value change on another device). Sync-only metadata; never
+   * surfaced in the OPDS UI.
+   */
+  lastSeenCipher?: Record<string, string>;
 }
 
 export interface OPDSFeed {

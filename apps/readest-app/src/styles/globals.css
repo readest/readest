@@ -821,3 +821,26 @@ body.atmosphere #atmosphere-overlay {
 .animate-shake {
   animation: shake 0.8s ease-in-out;
 }
+
+/*
+ * Suppress the daisyUI / browser focus ring on text inputs and
+ * textareas. The element's own border (input-bordered, textarea-bordered)
+ * already conveys focus via color shift, so the additional outer ring
+ * was visually redundant and read as a "double border". Buttons keep
+ * their focus ring for accessibility — only typed-in surfaces lose it.
+ */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-visible,
+input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-within,
+textarea:focus,
+textarea:focus-visible,
+textarea:focus-within,
+.input:focus,
+.input:focus-visible,
+.input:focus-within,
+.textarea:focus,
+.textarea:focus-visible,
+.textarea:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}

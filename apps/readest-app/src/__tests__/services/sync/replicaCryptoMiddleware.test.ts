@@ -1,6 +1,12 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CryptoSession } from '@/libs/crypto/session';
-import { encryptPackedFields, decryptRowFields } from '@/services/sync/replicaCryptoMiddleware';
+import {
+  captureCipherTexts,
+  cipherTextsChanged,
+  collectDecryptSuccess,
+  decryptRowFields,
+  encryptPackedFields,
+} from '@/services/sync/replicaCryptoMiddleware';
 import { isCipherEnvelope } from '@/types/replica';
 import type { CipherEnvelope, FieldsObject, Hlc } from '@/types/replica';
 import type { ReplicaKeyRow } from '@/libs/replicaSyncClient';
@@ -107,6 +113,47 @@ describe('replicaCryptoMiddleware', () => {
       expect(fields['password']).toBeUndefined();
     });
 
+    test('locked session + onLocked callback unlocks then decrypts', async () => {
+      // Writer creates the cipher payload under one passphrase.
+      const writer = new CryptoSession({ client, iterations: ITER });
+      await writer.setup('correct');
+      const cipher = await writer.encryptField('secret');
+
+      // Reader starts locked but has the same backing FakeClient (so
+      // it can find the salt). The onLocked callback unlocks the
+      // reader with the right passphrase — the middleware should
+      // detect the now-unlocked state and decrypt.
+      const reader = new CryptoSession({ client, iterations: ITER });
+      const onLocked = vi.fn(async () => {
+        await reader.unlock('correct');
+      });
+      const fields: FieldsObject = {
+        password: wrapField(cipher),
+        username: wrapField(await writer.encryptField('alice')),
+      };
+      await decryptRowFields(fields, ['username', 'password'], reader, onLocked);
+      // Callback fired exactly once even though there are two cipher
+      // fields — once unlocked, the second field decrypts directly.
+      expect(onLocked).toHaveBeenCalledTimes(1);
+      expect((fields['username'] as { v: unknown }).v).toBe('alice');
+      expect((fields['password'] as { v: unknown }).v).toBe('secret');
+    });
+
+    test('onLocked rejection drops the cipher fields cleanly', async () => {
+      const writer = new CryptoSession({ client, iterations: ITER });
+      await writer.setup('pw');
+      const cipher = await writer.encryptField('secret');
+
+      const reader = new CryptoSession({ client, iterations: ITER });
+      const onLocked = vi.fn(async () => {
+        throw new Error('user cancelled');
+      });
+      const fields: FieldsObject = { password: wrapField(cipher) };
+      await decryptRowFields(fields, ['password'], reader, onLocked);
+      expect(onLocked).toHaveBeenCalledTimes(1);
+      expect(fields['password']).toBeUndefined();
+    });
+
     test('drops the field on wrong-passphrase decrypt failure', async () => {
       const writer = new CryptoSession({ client, iterations: ITER });
       await writer.setup('correct');
@@ -135,6 +182,64 @@ describe('replicaCryptoMiddleware', () => {
       const fields: FieldsObject = { password: wrapField(cipher) };
       await decryptRowFields(fields, undefined, session);
       expect(fields['password']).toBeDefined();
+    });
+  });
+
+  describe('captureCipherTexts / cipherTextsChanged / collectDecryptSuccess', () => {
+    test('captureCipherTexts returns each cipher field by name', async () => {
+      await session.setup('pw');
+      const userCipher = await session.encryptField('alice');
+      const passCipher = await session.encryptField('hunter2');
+      const fields: FieldsObject = {
+        username: wrapField(userCipher),
+        password: wrapField(passCipher),
+        name: wrapField('Public'),
+      };
+      const out = captureCipherTexts(fields, ['username', 'password']);
+      expect(out['username']).toBe(userCipher.c);
+      expect(out['password']).toBe(passCipher.c);
+      expect(out['name']).toBeUndefined();
+    });
+
+    test('cipherTextsChanged: undefined lastSeen counts as changed (fresh device)', () => {
+      expect(cipherTextsChanged({ password: 'abc' }, undefined)).toBe(true);
+    });
+
+    test('cipherTextsChanged: same ciphers → false (skip prompt path)', () => {
+      expect(
+        cipherTextsChanged({ username: 'a', password: 'b' }, { username: 'a', password: 'b' }),
+      ).toBe(false);
+    });
+
+    test('cipherTextsChanged: differing cipher → true (rotation path)', () => {
+      expect(cipherTextsChanged({ password: 'new' }, { password: 'old' })).toBe(true);
+    });
+
+    test('cipherTextsChanged: new field not in lastSeen → true', () => {
+      expect(cipherTextsChanged({ username: 'a', password: 'b' }, { username: 'a' })).toBe(true);
+    });
+
+    test('collectDecryptSuccess records only fields whose decrypt succeeded', async () => {
+      const writer = new CryptoSession({ client, iterations: ITER });
+      await writer.setup('pw');
+      const userCipher = await writer.encryptField('alice');
+      const passCipher = await writer.encryptField('hunter2');
+      const before = { username: userCipher.c, password: passCipher.c };
+
+      // Reader will succeed on user, "fail" on password by deleting before decrypt.
+      const reader = new CryptoSession({ client, iterations: ITER });
+      await reader.unlock('pw');
+      const fields: FieldsObject = {
+        username: wrapField(userCipher),
+        password: wrapField(passCipher),
+      };
+      await decryptRowFields(fields, ['username'], reader); // only decrypt username
+      // Pretend the password decrypt failed by removing it.
+      delete fields['password'];
+
+      const out = collectDecryptSuccess(fields, before);
+      expect(out['username']).toBe(userCipher.c);
+      expect(out['password']).toBeUndefined();
     });
   });
 });

@@ -19,7 +19,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
-import PassphrasePromptModal from '@/components/PassphrasePromptModal';
+import PassphrasePrompt from '@/components/PassphrasePrompt';
 import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
 import { cryptoSession } from '@/libs/crypto/session';
 
@@ -91,7 +91,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                 {children}
                 <CommandPalette />
                 <AtmosphereOverlay />
-                <PassphrasePromptModal />
+                <PassphrasePrompt />
               </CommandPaletteProvider>
             </DropdownProvider>
           </SyncProvider>
