@@ -38,12 +38,11 @@ export function SyncPassphraseSection() {
 
   if (status === 'loading') return null;
 
-  // "Unlock now" lets the user proactively enter the passphrase ahead
-  // of an action that needs it (e.g., adding a credentialed catalog
-  // right after a hard refresh) so they don't get interrupted by a
-  // modal mid-flow. When the session is already unlocked it's a quick
-  // no-op that just confirms readiness. The page refresh itself is
-  // the "lock this device" action — there's no separate Lock button.
+  // First-time setup: when the user has no replica_keys row yet, the
+  // gate's `kind === 'setup'` branch creates a fresh salt + key. Once
+  // a passphrase exists the unlock prompt fires automatically on the
+  // first encrypted-field push or pull, so there's no manual unlock
+  // affordance — the only button left is "Forgot passphrase".
   const handleSetOrUnlock = async () => {
     setBusy(true);
     setMessage(null);
@@ -93,10 +92,11 @@ export function SyncPassphraseSection() {
       </p>
       {message && <p className='text-base-content/60 mb-3 text-xs'>{message}</p>}
       <div className='flex flex-wrap gap-2'>
-        <button className='btn btn-primary btn-sm' disabled={busy} onClick={handleSetOrUnlock}>
-          {status === 'unset' ? _('Set passphrase') : _('Unlock now')}
-        </button>
-        {status === 'set' && (
+        {status === 'unset' ? (
+          <button className='btn btn-primary btn-sm' disabled={busy} onClick={handleSetOrUnlock}>
+            {_('Set passphrase')}
+          </button>
+        ) : (
           <button
             className='btn btn-error btn-outline btn-sm'
             disabled={busy}

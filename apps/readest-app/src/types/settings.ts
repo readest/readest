@@ -85,13 +85,25 @@ export interface HardcoverSettings {
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica
  * sync. Adding a new replica kind extends this union.
  */
-export type SyncCategory = 'book' | 'progress' | 'note' | 'dictionary';
+export type SyncCategory =
+  | 'book'
+  | 'progress'
+  | 'note'
+  | 'dictionary'
+  | 'font'
+  | 'texture'
+  | 'opds_catalog'
+  | 'settings';
 
 export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'book',
   'progress',
   'note',
   'dictionary',
+  'font',
+  'texture',
+  'opds_catalog',
+  'settings',
 ] as const;
 
 export interface SystemSettings {

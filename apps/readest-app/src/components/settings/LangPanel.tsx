@@ -286,7 +286,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
       <div className='w-full' data-setting-id='settings.language.dictionaries'>
         <h2 className='mb-2 font-medium'>{_('Dictionaries')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
+        <div className='card border-base-200 bg-base-100 overflow-hidden border shadow'>
           <div className='divide-base-200 divide-y'>
             <button
               type='button'

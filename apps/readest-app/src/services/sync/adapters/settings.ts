@@ -31,6 +31,8 @@ export const SETTINGS_REPLICA_ID = 'singleton';
  *     here — see entries below.
  */
 export const SETTINGS_WHITELIST = [
+  'globalViewSettings.userStylesheet',
+  'globalViewSettings.userUIStylesheet',
   'globalReadSettings.customThemes',
   'globalReadSettings.customHighlightColors',
   'globalReadSettings.userHighlightColors',
@@ -52,6 +54,7 @@ export const SETTINGS_WHITELIST = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'syncCategories',
 ] as const;
 
 /**

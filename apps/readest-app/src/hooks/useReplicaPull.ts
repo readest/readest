@@ -34,6 +34,7 @@ import {
 } from '@/services/sync/replicaPullAndApply';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
 import { getAccessToken } from '@/utils/access';
+import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { uniqueId } from '@/utils/misc';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService, BaseDir } from '@/types/system';
@@ -127,7 +128,14 @@ const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
   queueLocalBinaryUpload: async (record) => {
     await queueReplicaBinaryUpload(config.kind, record, service);
   },
-  isAuthenticated: async () => !!(await getAccessToken()),
+  // The pull skips when this resolves false. We piggyback the
+  // user-facing category gate here so disabling a kind in
+  // `User → Manage Sync` no-ops the pull (no HTTP, no warnings)
+  // alongside the auth precheck — same effect, half the wiring.
+  isAuthenticated: async () => {
+    if (!isSyncCategoryEnabled(config.kind)) return false;
+    return !!(await getAccessToken());
+  },
 });
 
 const dictionaryPullConfig: ReplicaPullConfig<ImportedDictionary> = {

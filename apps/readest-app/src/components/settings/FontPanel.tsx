@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdSettings } from 'react-icons/md';
+import { MdChevronRight } from 'react-icons/md';
 
 import {
   CJK_EXCLUDE_PATTENS,
@@ -21,7 +21,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getOSPlatform, isCJKEnv } from '@/utils/misc';
 import { getSysFontsList } from '@/utils/bridge';
 import { isCJKStr } from '@/utils/lang';
@@ -96,7 +95,6 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const { fonts: allCustomFonts, getFontFamilies } = useCustomFontStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const view = getView(bookKey);
-  const iconSize18 = useResponsiveSize(18);
 
   const fontFamilyOptions = [
     {
@@ -369,16 +367,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       </div>
 
       <div className='w-full'>
-        <div className='mb-2 flex items-center justify-between'>
-          <h2 className='font-medium'>{_('Font Face')}</h2>
-          <button
-            onClick={handleManageCustomFonts}
-            className='btn btn-ghost btn-xs gap-1 hover:bg-transparent'
-            title={_('Manage Custom Fonts')}
-          >
-            <MdSettings size={iconSize18} />
-          </button>
-        </div>
+        <h2 className='mb-2 font-medium'>{_('Font Face')}</h2>
         <div className='card border-base-200 border shadow'>
           <div className='divide-base-200 divide-y'>
             <FontFace
@@ -418,6 +407,22 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
               onSelect={setMonospaceFont}
               data-setting-id='settings.font.monospaceFont'
             />
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full' data-setting-id='settings.font.fonts'>
+        <h2 className='mb-2 font-medium'>{_('Custom Fonts')}</h2>
+        <div className='card border-base-200 bg-base-100 overflow-hidden border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <button
+              type='button'
+              className='config-item hover:bg-base-200/40 w-full text-left'
+              onClick={handleManageCustomFonts}
+            >
+              <span>{_('Manage Fonts')}</span>
+              <MdChevronRight className='text-base-content/60 h-5 w-5' />
+            </button>
           </div>
         </div>
       </div>

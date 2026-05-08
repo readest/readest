@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -42,6 +42,7 @@ import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
 import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
+import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import Checkout from './components/Checkout';
 
 type CheckoutState = {
@@ -61,6 +62,10 @@ const ProfilePage = () => {
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   const [showStorageManager, setShowStorageManager] = useState(false);
   const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
+  const searchParams = useSearchParams();
+  const [showSyncManager, setShowSyncManager] = useState(
+    () => searchParams?.get('section') === 'sync',
+  );
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
     sessionId: '',
@@ -110,6 +115,8 @@ const ProfilePage = () => {
       refresh();
     } else if (showSharedLinksManager) {
       setShowSharedLinksManager(false);
+    } else if (showSyncManager) {
+      setShowSyncManager(false);
     } else {
       navigateToLibrary(router);
     }
@@ -238,6 +245,9 @@ const ProfilePage = () => {
   const handleManageSharedLinks = () => {
     setShowSharedLinksManager(true);
   };
+  const handleManageSync = () => {
+    setShowSyncManager(true);
+  };
 
   if (!mounted) {
     return null;
@@ -301,7 +311,9 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {!showStorageManager && !showSharedLinksManager && <UsageStats quotas={quotas} />}
+                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
+                    <UsageStats quotas={quotas} />
+                  )}
                 </div>
 
                 {showStorageManager ? (
@@ -311,6 +323,11 @@ const ProfilePage = () => {
                 ) : showSharedLinksManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <SharedLinksSection />
+                  </div>
+                ) : showSyncManager ? (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <SyncCategoriesSection />
+                    <SyncPassphraseSection />
                   </div>
                 ) : (
                   <>
@@ -326,7 +343,6 @@ const ProfilePage = () => {
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
-                      <SyncPassphraseSection />
                       <AccountActions
                         userPlan={userProfilePlan}
                         iapAvailable={iapAvailable}
@@ -338,6 +354,7 @@ const ProfilePage = () => {
                         onManageSubscription={handleManageSubscription}
                         onManageStorage={handleManageStorage}
                         onManageSharedLinks={handleManageSharedLinks}
+                        onManageSync={handleManageSync}
                       />
                     </div>
                   </>

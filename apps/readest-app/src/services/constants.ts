@@ -136,6 +136,10 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     progress: true,
     note: true,
     dictionary: true,
+    font: true,
+    texture: true,
+    opds_catalog: true,
+    settings: true,
   },
 };
 

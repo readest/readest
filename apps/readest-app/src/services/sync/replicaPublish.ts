@@ -3,6 +3,7 @@ import { getUserID } from '@/utils/access';
 import { getReplicaAdapter } from './replicaRegistry';
 import { getReplicaSync } from './replicaSync';
 import { encryptPackedFields } from './replicaCryptoMiddleware';
+import { isSyncCategoryEnabled } from './syncCategories';
 import type { FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
 
 /**
@@ -22,6 +23,7 @@ export const publishReplicaUpsert = async <T>(
   contentId: string,
   reincarnation?: string,
 ): Promise<void> => {
+  if (!isSyncCategoryEnabled(kind)) return;
   const ctx = getReplicaSync();
   if (!ctx) return;
   const adapter = getReplicaAdapter<T>(kind);
@@ -67,6 +69,7 @@ export const publishReplicaUpsert = async <T>(
  * authenticated.
  */
 export const publishReplicaDelete = async (kind: string, contentId: string): Promise<void> => {
+  if (!isSyncCategoryEnabled(kind)) return;
   const ctx = getReplicaSync();
   if (!ctx) return;
   const adapter = getReplicaAdapter(kind);
@@ -105,6 +108,7 @@ export const publishReplicaManifest = async (
   files: { filename: string; byteSize: number; partialMd5: string }[],
   reincarnation?: string,
 ): Promise<void> => {
+  if (!isSyncCategoryEnabled(kind)) return;
   const ctx = getReplicaSync();
   if (!ctx) return;
   const adapter = getReplicaAdapter(kind);

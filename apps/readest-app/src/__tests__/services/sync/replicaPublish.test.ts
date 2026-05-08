@@ -237,6 +237,85 @@ describe('publishReplicaManifest', () => {
   });
 });
 
+describe('publishReplica* sync category gate', () => {
+  // When the user disables a category (e.g., dictionary) the publish
+  // path is a silent no-op. The local store stays mutable; the data
+  // just doesn't fan out to the server. Re-enabling resumes pushes
+  // automatically — no manual flush required.
+  const disableCategory = async (category: string): Promise<void> => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({
+      settings: { syncCategories: { [category]: false } } as never,
+    } as never);
+  };
+
+  const restoreCategories = async (): Promise<void> => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ settings: undefined } as never);
+  };
+
+  afterEach(async () => {
+    await restoreCategories();
+  });
+
+  test('publishReplicaUpsert is a no-op when its kind is disabled', async () => {
+    await disableCategory('dictionary');
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+    await upsertDict(baseDict());
+    expect(ctx.manager.markDirty).not.toHaveBeenCalled();
+  });
+
+  test('publishReplicaDelete is a no-op when its kind is disabled', async () => {
+    await disableCategory('dictionary');
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+    await publishReplicaDelete('dictionary', 'content-hash-abc');
+    expect(ctx.manager.markDirty).not.toHaveBeenCalled();
+  });
+
+  test('publishReplicaManifest is a no-op when its kind is disabled', async () => {
+    await disableCategory('dictionary');
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+    await publishReplicaManifest('dictionary', 'content-hash-abc', []);
+    expect(ctx.manager.markDirty).not.toHaveBeenCalled();
+  });
+
+  test('settings is force-enabled when dictionary is on (dependency cascade)', async () => {
+    // settings: false but dictionary: true (the dependent) → settings
+    // must still publish, otherwise dictionary cross-device sync breaks.
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({
+      settings: { syncCategories: { settings: false, dictionary: true } } as never,
+    } as never);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+    const { settingsAdapter } = await import('@/services/sync/adapters/settings');
+    registerReplicaAdapter(settingsAdapter);
+    await publishReplicaUpsert('settings', { name: 'singleton', patch: {} }, 'singleton');
+    expect(ctx.manager.markDirty).toHaveBeenCalled();
+  });
+
+  test('settings publish is gated when both settings AND its dependent (dictionary) are off', async () => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({
+      settings: { syncCategories: { settings: false, dictionary: false } } as never,
+    } as never);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+    const { settingsAdapter } = await import('@/services/sync/adapters/settings');
+    registerReplicaAdapter(settingsAdapter);
+    await publishReplicaUpsert('settings', { name: 'singleton', patch: {} }, 'singleton');
+    expect(ctx.manager.markDirty).not.toHaveBeenCalled();
+  });
+});
+
 // Suppress unused import lint when running standalone
 void hlcPack;
 void ({} as Hlc);

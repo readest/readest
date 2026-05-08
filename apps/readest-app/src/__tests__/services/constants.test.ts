@@ -243,13 +243,17 @@ describe('services/constants', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.screenBrightness!).toBeLessThanOrEqual(100);
     });
 
-    it('seeds syncCategories with all four SyncCategory keys', () => {
+    it('seeds syncCategories with every SyncCategory key, all enabled', () => {
       const cats = DEFAULT_SYSTEM_SETTINGS.syncCategories!;
       expect(cats).toEqual({
         book: true,
         progress: true,
         note: true,
         dictionary: true,
+        font: true,
+        texture: true,
+        opds_catalog: true,
+        settings: true,
       });
     });
 
