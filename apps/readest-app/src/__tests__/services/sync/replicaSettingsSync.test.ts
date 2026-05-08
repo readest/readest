@@ -277,4 +277,70 @@ describe('applyRemoteSettings', () => {
     expect(useSettingsStore.getState().settings).toBe(before);
     expect(useSettingsStore.getState().saveSettings).not.toHaveBeenCalled();
   });
+
+  test('propagates dictionarySettings into useCustomDictionaryStore mirror', async () => {
+    const { useCustomDictionaryStore } = await import('@/store/customDictionaryStore');
+    useCustomDictionaryStore.setState({
+      ...useCustomDictionaryStore.getState(),
+      settings: {
+        providerOrder: ['local-x'],
+        providerEnabled: { 'local-x': true },
+        defaultProviderId: 'local-x',
+        webSearches: [],
+      },
+    });
+    const env = makeEnvConfig();
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        dictionarySettings: {
+          providerOrder: ['remote-y'],
+          providerEnabled: { 'remote-y': true },
+          webSearches: [{ id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' }],
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const dictMirror = useCustomDictionaryStore.getState().settings;
+    expect(dictMirror.providerOrder).toEqual(['remote-y']);
+    expect(dictMirror.providerEnabled).toEqual({ 'remote-y': true });
+    expect(dictMirror.webSearches).toEqual([
+      { id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' },
+    ]);
+    expect(dictMirror.defaultProviderId).toBe('local-x');
+  });
+
+  test('deep-merges dictionarySettings without clobbering local fields', () => {
+    const env = makeEnvConfig();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        dictionarySettings: {
+          providerOrder: ['local-x'],
+          providerEnabled: { 'local-x': true },
+          defaultProviderId: 'local-x',
+          webSearches: [],
+        },
+      } as Partial<SystemSettings>),
+    });
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        dictionarySettings: {
+          providerOrder: ['remote-y'],
+          providerEnabled: { 'remote-y': true },
+          // defaultProviderId omitted — must NOT be cleared by the merge.
+          webSearches: [{ id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' }],
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const merged = useSettingsStore.getState().settings.dictionarySettings;
+    expect(merged.providerOrder).toEqual(['remote-y']);
+    expect(merged.providerEnabled).toEqual({ 'remote-y': true });
+    expect(merged.webSearches).toEqual([
+      { id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' },
+    ]);
+    // defaultProviderId is per-device — preserved by the deep-merge even
+    // when the remote patch omits it.
+    expect(merged.defaultProviderId).toBe('local-x');
+  });
 });

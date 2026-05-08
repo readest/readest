@@ -136,6 +136,16 @@ describe('SETTINGS_WHITELIST', () => {
       expect(key.length).toBeGreaterThan(0);
     }
   });
+
+  test('includes the dictionary settings paths (PR 6 — whole-field LWW)', () => {
+    expect(SETTINGS_WHITELIST).toContain('dictionarySettings.providerOrder');
+    expect(SETTINGS_WHITELIST).toContain('dictionarySettings.providerEnabled');
+    expect(SETTINGS_WHITELIST).toContain('dictionarySettings.webSearches');
+  });
+
+  test('does NOT sync dictionarySettings.defaultProviderId (per-device last-used tab)', () => {
+    expect(SETTINGS_WHITELIST).not.toContain('dictionarySettings.defaultProviderId');
+  });
 });
 
 describe('readPath / writePath', () => {

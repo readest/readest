@@ -114,6 +114,14 @@ interface DictionaryStoreState {
   /** Soft-delete a custom web search and remove from order/enabled. */
   removeWebSearch(id: string): boolean;
 
+  /**
+   * Mirror an inbound dictionarySettings patch from the bundled
+   * `settings` replica into the in-memory store so the dictionary
+   * panel and the reader popup pick up the change without a reload.
+   * Pull-side only — no publish, no save.
+   */
+  applyRemoteDictionarySettings(patch: Partial<DictionarySettings>): void;
+
   /** Hydrate from `settings.customDictionaries` + `settings.dictionarySettings` + check on-disk availability. */
   loadCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
   /** Persist current state back into settings (which then syncs to cloud). */
@@ -436,6 +444,12 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     return true;
   },
 
+  applyRemoteDictionarySettings: (patch) => {
+    set((state) => ({
+      settings: { ...state.settings, ...patch },
+    }));
+  },
+
   loadCustomDictionaries: async (envConfig) => {
     try {
       const { settings } = useSettingsStore.getState();
@@ -480,10 +494,17 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     try {
       const { settings, setSettings, saveSettings } = useSettingsStore.getState();
       const { dictionaries, settings: dictSettings } = get();
-      settings.customDictionaries = dictionaries.map(toSettingsDict);
-      settings.dictionarySettings = dictSettings;
-      setSettings(settings);
-      saveSettings(envConfig, settings);
+      // Build a NEW settings object — Zustand subscribers (notably
+      // replicaSettingsSync.initSettingsSync) compare references to
+      // detect changes, so mutating the existing object in place
+      // bypasses the bundled-settings publish path entirely.
+      const next = {
+        ...settings,
+        customDictionaries: dictionaries.map(toSettingsDict),
+        dictionarySettings: dictSettings,
+      };
+      setSettings(next);
+      saveSettings(envConfig, next);
     } catch (error) {
       console.error('Failed to save custom dictionaries settings:', error);
       throw error;

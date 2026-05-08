@@ -624,22 +624,35 @@ adapters for `dict_provider_pref`, `pref`, `theme`, `shortcut`,
 `annotation_rule`, etc.). The genuinely-different shapes (ordered
 collections, independent-record collections) ship as PR 6 and PR 7.
 
-### PR 6 — `dict_provider_position` (ordered list with per-position rows)
+### PR 6 — dictionary settings via the bundled `settings` whitelist
 
-The provider order is the only setting that genuinely needs per-element
-rows: concurrent rename + reorder must preserve both sides, which a
-single-field array can't do. Per-position rows keyed by
-`(position, actorId, replicaId)` with deterministic tiebreak.
-Migrates `dictionarySettings.providerOrder` off the single-array
-shape.
+Originally planned as two separate kinds (`dict_provider_position` for
+ordered providers, `dict_web_search` for custom web-search entries),
+but in practice the per-element CRDT machinery is over-engineered for
+data the user touches once a year from one device at a time.
 
-### PR 7 — `dict_web_search` (custom web-search entries)
+Collapsed into three new entries on the existing PR 5 whitelist:
 
-Collection of independent records — each with `id`, `name`,
-`urlTemplate`, plus tombstones. Per-record rows because users add /
-delete / rename entries independently across devices.
+- `dictionarySettings.providerOrder`
+- `dictionarySettings.providerEnabled`
+- `dictionarySettings.webSearches`
 
-### PR 8+ — incremental whitelist additions
+Same whole-field LWW semantics as `customHighlightColors` /
+`customThemes` (which are also `Record` / array shapes shipping
+through the bundled kind). `defaultProviderId` (last-used tab) is
+deliberately excluded — it's per-device state, not a preference.
+
+Concurrency cost on the rare double-edit: one side's reorder /
+toggle / web-search-add is lost, user redoes it. Acceptable given
+the edit frequency. The original per-position / per-record rows
+would have cost a new kind, a migration, and ~300 LOC of orchestration
+to handle a pathological case real users won't hit.
+
+The dictionary-side `customDictionaryStore` mirror exposes
+`applyRemoteDictionarySettings(patch)` so pulled values propagate
+into the popup + settings panel without a reload.
+
+### PR 7+ — incremental whitelist additions
 
 New scalar settings join the `settings` whitelist as needed (one-line
 PR + server schema bump). Future encrypted-field needs (AI API keys,

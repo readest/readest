@@ -26,7 +26,9 @@ export const SETTINGS_REPLICA_ID = 'singleton';
  *     across devices.
  *   * Collection settings already synced via dedicated kinds
  *     (`customFonts`, `customTextures`, `customDictionaries`,
- *     `opdsCatalogs`, `dictionarySettings`).
+ *     `opdsCatalogs`). Note: `dictionarySettings` sub-fields
+ *     (providerOrder / providerEnabled / webSearches) ARE bundled
+ *     here — see entries below.
  */
 export const SETTINGS_WHITELIST = [
   'globalReadSettings.customThemes',
@@ -34,6 +36,13 @@ export const SETTINGS_WHITELIST = [
   'globalReadSettings.userHighlightColors',
   'globalReadSettings.defaultHighlightLabels',
   'globalReadSettings.customTtsHighlightColors',
+  // Dictionary preferences. Whole-field LWW — concurrent edits on
+  // different devices may lose one side, but in practice users don't
+  // edit these on two devices at once. `defaultProviderId` is
+  // deliberately excluded: it's the last-used tab, per-device state.
+  'dictionarySettings.providerOrder',
+  'dictionarySettings.providerEnabled',
+  'dictionarySettings.webSearches',
   // External integrations. Server URL + identifiers sync as plaintext;
   // the credential fields are listed in `encryptedFields` below so the
   // publish/pull middleware wraps them in cipher envelopes.

@@ -38,6 +38,7 @@ import {
 } from '@/services/sync/adapters/settings';
 import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
 
@@ -274,6 +275,16 @@ export const applyRemoteSettings = (
   const merged: SystemSettings = mergeSettings(settings, record.patch);
   setSettings(merged);
   saveSettings(envConfig, merged);
+
+  // Mirror dictionarySettings into the customDictionaryStore so the
+  // dictionary panel + reader popup re-render with the remote values
+  // immediately. Without this, those views read from the store's own
+  // cache (only refreshed on `loadCustomDictionaries` mount).
+  if (record.patch.dictionarySettings) {
+    useCustomDictionaryStore
+      .getState()
+      .applyRemoteDictionarySettings(record.patch.dictionarySettings);
+  }
 };
 
 const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>): SystemSettings => {
@@ -296,6 +307,12 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   }
   if (patch.hardcover) {
     out.hardcover = { ...current.hardcover, ...patch.hardcover };
+  }
+  if (patch.dictionarySettings) {
+    // `defaultProviderId` (last-used tab) is per-device — not in the
+    // whitelist, so the remote patch never sends it. Spread-with-current
+    // preserves it when the remote updates the synced sub-fields.
+    out.dictionarySettings = { ...current.dictionarySettings, ...patch.dictionarySettings };
   }
   return out;
 };

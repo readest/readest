@@ -293,3 +293,93 @@ describe('customDictionaryStore — web search CRUD', () => {
     expect(call[3]).toBe('epoch-1');
   });
 });
+
+describe('customDictionaryStore — saveCustomDictionaries reference identity (PR 6)', () => {
+  it('replaces useSettingsStore.settings with a NEW reference so subscribers fire', async () => {
+    // Seed the settings store with a real reducer so setSettings actually
+    // writes the new reference back.
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['a', 'b'],
+          providerEnabled: { a: true, b: true },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+      setSettings: (s: SettingsState['settings']) => useSettingsStore.setState({ settings: s }),
+      saveSettings: vi.fn().mockResolvedValue(undefined),
+    } as unknown as SettingsState);
+
+    useCustomDictionaryStore.setState({
+      ...useCustomDictionaryStore.getState(),
+      dictionaries: [],
+      settings: {
+        providerOrder: ['b', 'a'], // reordered locally
+        providerEnabled: { a: true, b: true },
+        webSearches: [],
+      },
+    });
+
+    const before = useSettingsStore.getState().settings;
+    await useCustomDictionaryStore
+      .getState()
+      .saveCustomDictionaries({ name: 'env' } as unknown as EnvConfigType);
+    const after = useSettingsStore.getState().settings;
+
+    // The whole point: the post-save settings reference must be NEW
+    // so the replicaSettingsSync subscriber sees state.settings !==
+    // prev.settings and runs the publish diff. Mutating in place
+    // bypasses the subscriber and the reorder never syncs.
+    expect(after).not.toBe(before);
+    // …and the new reference reflects the reorder.
+    expect(after.dictionarySettings.providerOrder).toEqual(['b', 'a']);
+  });
+});
+
+describe('customDictionaryStore — applyRemoteDictionarySettings (PR 6)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['local-x'],
+        providerEnabled: { 'local-x': true },
+        defaultProviderId: 'local-x',
+        webSearches: [],
+      },
+    });
+  });
+
+  it('overlays the remote dictionarySettings patch onto the in-memory mirror', () => {
+    const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
+    applyRemoteDictionarySettings({
+      providerOrder: ['remote-y'],
+      providerEnabled: { 'remote-y': true },
+      webSearches: [{ id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' }],
+    });
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.providerOrder).toEqual(['remote-y']);
+    expect(after.providerEnabled).toEqual({ 'remote-y': true });
+    expect(after.webSearches).toEqual([
+      { id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' },
+    ]);
+  });
+
+  it('preserves defaultProviderId (per-device, not in remote patch)', () => {
+    const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
+    applyRemoteDictionarySettings({
+      providerOrder: ['remote-y'],
+      providerEnabled: { 'remote-y': true },
+    });
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.defaultProviderId).toBe('local-x');
+  });
+
+  it('does NOT call publishReplicaUpsert (this is a pull, not a local edit)', () => {
+    const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
+    applyRemoteDictionarySettings({ providerOrder: ['remote-y'] });
+    expect(mockPublishReplicaUpsert).not.toHaveBeenCalled();
+  });
+});
