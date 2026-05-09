@@ -1392,7 +1392,6 @@
   "Set PIN": "Establecer PIN",
   "Change PIN": "Cambiar PIN",
   "Disable PIN": "Desactivar PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Elige un PIN de 4 dígitos. Tendrás que introducirlo cada vez que abras Readest. No hay forma de recuperar un PIN olvidado — borrar los datos de la aplicación es la única forma de restablecerlo.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Ingresa tu PIN actual y, a continuación, elige un nuevo PIN de 4 dígitos.",
   "Enter your current PIN to disable the app lock.": "Ingresa tu PIN actual para desactivar el bloqueo de la aplicación.",
   "PIN must be {{length}} digits": "El PIN debe tener {{length}} dígitos",
@@ -1420,6 +1419,6 @@
   "App settings": "Ajustes de la aplicación",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, colores de resaltado, integraciones (KOSync, Readwise, Hardcover) y orden de los diccionarios",
   "Required while Dictionaries sync is enabled": "Necesario mientras la sincronización de Diccionarios esté activada",
-  "Unavailable": "No disponible",
-  "Resets in {{hours}} hr {{minutes}} min": "Se restablece en {{hours}} h {{minutes}} min"
+  "Resets in {{hours}} hr {{minutes}} min": "Se restablece en {{hours}} h {{minutes}} min",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Elige un PIN de 4 dígitos. Tendrás que introducirlo cada vez que abras Readest. No hay forma de recuperar un PIN olvidado. Borrar los datos de la aplicación es la única forma de restablecerlo."
 }

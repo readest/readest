@@ -273,7 +273,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         <div className='card border-base-200 bg-base-100 border shadow'>
           <div className='divide-base-200 divide-y'>
             <div className='config-item'>
-              <span className=''>{_('Interface Language')}</span>
+              <span className=''>{_('Language')}</span>
               <Select
                 value={getCurrentUILangOption().value}
                 onChange={handleSelectUILang}

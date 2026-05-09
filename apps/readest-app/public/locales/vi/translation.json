@@ -1344,7 +1344,6 @@
   "Set PIN": "Đặt mã PIN",
   "Change PIN": "Thay đổi mã PIN",
   "Disable PIN": "Tắt mã PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã này mỗi khi mở Readest. Không có cách nào khôi phục mã PIN đã quên — xóa dữ liệu ứng dụng là cách duy nhất để đặt lại.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Nhập mã PIN hiện tại của bạn, sau đó chọn mã PIN 4 chữ số mới.",
   "Enter your current PIN to disable the app lock.": "Nhập mã PIN hiện tại của bạn để tắt khóa ứng dụng.",
   "PIN must be {{length}} digits": "Mã PIN phải có {{length}} chữ số",
@@ -1372,6 +1371,6 @@
   "App settings": "Cài đặt ứng dụng",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Chủ đề, màu tô sáng, tích hợp (KOSync, Readwise, Hardcover) và thứ tự từ điển",
   "Required while Dictionaries sync is enabled": "Bắt buộc khi đồng bộ Từ điển đang bật",
-  "Unavailable": "Không khả dụng",
-  "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph"
+  "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã mỗi khi mở Readest. Không có cách nào để khôi phục mã PIN đã quên. Xóa dữ liệu ứng dụng là cách duy nhất để đặt lại mã."
 }

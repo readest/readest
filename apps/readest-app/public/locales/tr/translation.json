@@ -1368,7 +1368,6 @@
   "Set PIN": "PIN Belirle",
   "Change PIN": "PIN Değiştir",
   "Disable PIN": "PIN'i Devre Dışı Bırak",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın bir yolu yoktur — uygulama verilerini temizlemek sıfırlamanın tek yoludur.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Mevcut PIN'inizi girin, ardından yeni bir 4 haneli PIN seçin.",
   "Enter your current PIN to disable the app lock.": "Uygulama kilidini devre dışı bırakmak için mevcut PIN'inizi girin.",
   "PIN must be {{length}} digits": "PIN {{length}} haneli olmalıdır",
@@ -1396,6 +1395,6 @@
   "App settings": "Uygulama ayarları",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, vurgu renkleri, entegrasyonlar (KOSync, Readwise, Hardcover) ve sözlük sırası",
   "Required while Dictionaries sync is enabled": "Sözlük eşitlemesi etkinken gereklidir",
-  "Unavailable": "Kullanılamıyor",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın yolu yoktur. Uygulama verilerini temizlemek, sıfırlamanın tek yoludur."
 }

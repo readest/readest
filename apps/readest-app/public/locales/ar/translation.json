@@ -1464,7 +1464,6 @@
   "Set PIN": "تعيين رمز PIN",
   "Change PIN": "تغيير رمز PIN",
   "Disable PIN": "تعطيل رمز PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّن من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN منسي — مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة تعيينه.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "أدخل رمز PIN الحالي، ثم اختر رمز PIN جديد مكوّن من 4 أرقام.",
   "Enter your current PIN to disable the app lock.": "أدخل رمز PIN الحالي لتعطيل قفل التطبيق.",
   "PIN must be {{length}} digits": "يجب أن يتكون رمز PIN من {{length}} أرقام",
@@ -1492,6 +1491,6 @@
   "App settings": "إعدادات التطبيق",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover) وترتيب القواميس",
   "Required while Dictionaries sync is enabled": "مطلوب أثناء تفعيل مزامنة القواميس",
-  "Unavailable": "غير متاح",
-  "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د"
+  "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّنًا من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN المنسي. مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة ضبطه."
 }

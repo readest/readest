@@ -1344,7 +1344,6 @@
   "Set PIN": "ตั้งค่า PIN",
   "Change PIN": "เปลี่ยน PIN",
   "Disable PIN": "ปิดใช้งาน PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "เลือก PIN 4 หลัก คุณต้องใส่ทุกครั้งที่เปิด Readest ไม่มีวิธีกู้คืน PIN ที่ลืม — การล้างข้อมูลแอปเป็นวิธีเดียวในการรีเซ็ต",
   "Enter your current PIN, then choose a new 4-digit PIN.": "ใส่ PIN ปัจจุบัน จากนั้นเลือก PIN 4 หลักใหม่",
   "Enter your current PIN to disable the app lock.": "ใส่ PIN ปัจจุบันเพื่อปิดใช้งานการล็อกแอป",
   "PIN must be {{length}} digits": "PIN ต้องมี {{length}} หลัก",
@@ -1372,6 +1371,6 @@
   "App settings": "การตั้งค่าแอป",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ธีม สีไฮไลต์ การเชื่อมต่อ (KOSync, Readwise, Hardcover) และลำดับพจนานุกรม",
   "Required while Dictionaries sync is enabled": "จำเป็นเมื่อเปิดใช้การซิงค์พจนานุกรม",
-  "Unavailable": "ไม่พร้อมใช้งาน",
-  "Resets in {{hours}} hr {{minutes}} min": "รีเซ็ตใน {{hours}} ชม. {{minutes}} นาที"
+  "Resets in {{hours}} hr {{minutes}} min": "รีเซ็ตใน {{hours}} ชม. {{minutes}} นาที",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "เลือก PIN 4 หลัก คุณจะต้องป้อนทุกครั้งที่เปิด Readest ไม่มีวิธีกู้คืน PIN ที่ลืม การล้างข้อมูลแอปเป็นวิธีเดียวในการรีเซ็ต"
 }

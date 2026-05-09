@@ -1368,7 +1368,6 @@
   "Set PIN": "PIN সেট করুন",
   "Change PIN": "PIN পরিবর্তন করুন",
   "Disable PIN": "PIN নিষ্ক্রিয় করুন",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "একটি ৪-সংখ্যার PIN বেছে নিন। প্রতিবার Readest খোলার সময় আপনাকে এটি লিখতে হবে। ভুলে যাওয়া PIN পুনরুদ্ধারের কোনো উপায় নেই — অ্যাপ ডেটা মুছে ফেলাই এটিকে রিসেট করার একমাত্র উপায়।",
   "Enter your current PIN, then choose a new 4-digit PIN.": "আপনার বর্তমান PIN লিখুন, তারপর একটি নতুন ৪-সংখ্যার PIN বেছে নিন।",
   "Enter your current PIN to disable the app lock.": "অ্যাপ লক নিষ্ক্রিয় করতে আপনার বর্তমান PIN লিখুন।",
   "PIN must be {{length}} digits": "PIN অবশ্যই {{length}} সংখ্যার হতে হবে",
@@ -1396,6 +1395,6 @@
   "App settings": "অ্যাপ সেটিংস",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "থিম, হাইলাইট রং, ইন্টিগ্রেশন (KOSync, Readwise, Hardcover) এবং অভিধানের ক্রম",
   "Required while Dictionaries sync is enabled": "অভিধান সিঙ্ক সক্রিয় থাকাকালীন প্রয়োজনীয়",
-  "Unavailable": "অনুপলব্ধ",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ঘ {{minutes}} মি পরে রিসেট হবে"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ঘ {{minutes}} মি পরে রিসেট হবে",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "একটি ৪-অঙ্কের পিন বেছে নিন। প্রতিবার Readest খোলার সময় আপনাকে এটি প্রবেশ করাতে হবে। ভুলে যাওয়া পিন পুনরুদ্ধারের কোনো উপায় নেই। অ্যাপের ডেটা মুছে ফেলাই এটি রিসেট করার একমাত্র উপায়।"
 }

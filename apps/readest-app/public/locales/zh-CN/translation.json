@@ -1344,7 +1344,6 @@
   "Set PIN": "设置 PIN 码",
   "Change PIN": "更改 PIN 码",
   "Disable PIN": "停用 PIN 码",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "请选择一个 4 位 PIN 码。每次打开 Readest 时都需要输入。无法恢复忘记的 PIN 码 — 清除应用数据是重置的唯一方法。",
   "Enter your current PIN, then choose a new 4-digit PIN.": "请输入当前 PIN 码，然后选择新的 4 位 PIN 码。",
   "Enter your current PIN to disable the app lock.": "请输入当前 PIN 码以停用应用锁。",
   "PIN must be {{length}} digits": "PIN 码必须为 {{length}} 位",
@@ -1372,6 +1371,6 @@
   "App settings": "应用设置",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主题、高亮颜色、第三方集成（KOSync、Readwise、Hardcover）以及词典顺序",
   "Required while Dictionaries sync is enabled": "启用词典同步时必需",
-  "Unavailable": "不可用",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟后重置"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟后重置",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "请设置一个 4 位数字 PIN 码。每次打开 Readest 时都需要输入。忘记的 PIN 码无法找回，清除应用数据是重置它的唯一方法。"
 }

@@ -1368,7 +1368,6 @@
   "Set PIN": "PIN ஐ அமை",
   "Change PIN": "PIN ஐ மாற்று",
   "Disable PIN": "PIN ஐ முடக்கு",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "4-இலக்க PIN ஐ தேர்ந்தெடுக்கவும். Readest ஐ திறக்கும் ஒவ்வொரு முறையும் அதை உள்ளிட வேண்டும். மறந்துபோன PIN ஐ மீட்டெடுக்க வழி இல்லை — செயலியின் தரவை அழிப்பதே அதை மீட்டமைக்கும் ஒரே வழி.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "உங்கள் தற்போதைய PIN ஐ உள்ளிட்டு, பின்னர் புதிய 4-இலக்க PIN ஐ தேர்ந்தெடுக்கவும்.",
   "Enter your current PIN to disable the app lock.": "செயலி பூட்டை முடக்க உங்கள் தற்போதைய PIN ஐ உள்ளிடவும்.",
   "PIN must be {{length}} digits": "PIN {{length}} இலக்கங்களாக இருக்க வேண்டும்",
@@ -1396,6 +1395,6 @@
   "App settings": "ஆப் அமைப்புகள்",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "தீம், ஹைலைட் வண்ணங்கள், ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover) மற்றும் அகராதி வரிசை",
   "Required while Dictionaries sync is enabled": "அகராதிகள் ஒத்திசைவு இயக்கத்தில் இருக்கும்போது தேவை",
-  "Unavailable": "கிடைக்கவில்லை",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} மணி {{minutes}} நிமிடத்தில் மீட்டமைக்கப்படும்"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} மணி {{minutes}} நிமிடத்தில் மீட்டமைக்கப்படும்",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 இலக்க PIN ஒன்றைத் தேர்ந்தெடுக்கவும். Readest திறக்கும் ஒவ்வொரு முறையும் அதை உள்ளிட வேண்டும். மறந்துபோன PIN ஐ மீட்டெடுக்க வழியில்லை. அதை மீட்டமைக்க ஒரே வழி பயன்பாட்டுத் தரவை அழிப்பதே ஆகும்."
 }

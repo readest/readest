@@ -1392,7 +1392,6 @@
   "Set PIN": "Setează PIN",
   "Change PIN": "Schimbă PIN",
   "Disable PIN": "Dezactivează PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Alege un PIN de 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat — ștergerea datelor aplicației este singura modalitate de a-l reseta.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Introdu PIN-ul actual, apoi alege un nou PIN de 4 cifre.",
   "Enter your current PIN to disable the app lock.": "Introdu PIN-ul actual pentru a dezactiva blocarea aplicației.",
   "PIN must be {{length}} digits": "PIN-ul trebuie să aibă {{length}} cifre",
@@ -1420,6 +1419,6 @@
   "App settings": "Setări aplicație",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Temă, culorile evidențierilor, integrări (KOSync, Readwise, Hardcover) și ordinea dicționarelor",
   "Required while Dictionaries sync is enabled": "Necesar cât timp sincronizarea Dicționarelor este activată",
-  "Unavailable": "Indisponibil",
-  "Resets in {{hours}} hr {{minutes}} min": "Se resetează în {{hours}} h {{minutes}} min"
+  "Resets in {{hours}} hr {{minutes}} min": "Se resetează în {{hours}} h {{minutes}} min",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Alege un PIN din 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat. Ștergerea datelor aplicației este singura modalitate de a-l reseta."
 }

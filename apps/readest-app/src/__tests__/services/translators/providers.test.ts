@@ -372,27 +372,6 @@ describe('provider registry disabled handling', () => {
     expect(isTranslatorAvailable(exhausted, true)).toBe(false);
   });
 
-  it('getTranslatorDisplayLabel appends a Unavailable suffix for disabled providers', async () => {
-    const { getTranslator, getTranslatorDisplayLabel } =
-      await import('@/services/translators/providers');
-    const yandex = getTranslator('yandex')!;
-    const label = getTranslatorDisplayLabel(yandex, true, (s) => s);
-    expect(label).toBe('Yandex Translate (Unavailable)');
-  });
-
-  it('getTranslatorDisplayLabel prefers the disabled suffix over other statuses', async () => {
-    const { getTranslatorDisplayLabel } = await import('@/services/translators/providers');
-    const both = {
-      name: 'x',
-      label: 'X',
-      disabled: true,
-      authRequired: true,
-      quotaExceeded: true,
-      translate: async () => [],
-    };
-    expect(getTranslatorDisplayLabel(both, false, (s) => s)).toBe('X (Unavailable)');
-  });
-
   it('getTranslatorDisplayLabel returns the plain label for healthy providers', async () => {
     const { getTranslator, getTranslatorDisplayLabel } =
       await import('@/services/translators/providers');

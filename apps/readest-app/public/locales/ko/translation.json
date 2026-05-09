@@ -1344,7 +1344,6 @@
   "Set PIN": "PIN 설정",
   "Change PIN": "PIN 변경",
   "Disable PIN": "PIN 비활성화",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "4자리 PIN을 선택하세요. Readest를 열 때마다 입력해야 합니다. 잊은 PIN을 복구할 방법은 없습니다 — 앱 데이터를 지우는 것이 재설정하는 유일한 방법입니다.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "현재 PIN을 입력한 다음 새 4자리 PIN을 선택하세요.",
   "Enter your current PIN to disable the app lock.": "앱 잠금을 비활성화하려면 현재 PIN을 입력하세요.",
   "PIN must be {{length}} digits": "PIN은 {{length}}자리여야 합니다",
@@ -1372,6 +1371,6 @@
   "App settings": "앱 설정",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "테마, 하이라이트 색상, 연동 (KOSync, Readwise, Hardcover), 사전 순서",
   "Required while Dictionaries sync is enabled": "사전 동기화가 켜져 있는 동안 필요",
-  "Unavailable": "사용 불가",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}}시간 {{minutes}}분 후 재설정"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}}시간 {{minutes}}분 후 재설정",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4자리 PIN을 선택하세요. Readest를 열 때마다 입력해야 합니다. 잊어버린 PIN을 복구할 방법은 없습니다. 앱 데이터를 지우는 것이 PIN을 재설정하는 유일한 방법입니다."
 }

@@ -1416,7 +1416,6 @@
   "Set PIN": "Nastavi PIN",
   "Change PIN": "Spremeni PIN",
   "Disable PIN": "Onemogoči PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Izberite 4-mestni PIN. Vnesti ga boste morali vsakič, ko odprete Readest. Pozabljenega PIN-a ni mogoče obnoviti — čiščenje podatkov aplikacije je edini način za ponastavitev.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Vnesite svoj trenutni PIN in nato izberite nov 4-mestni PIN.",
   "Enter your current PIN to disable the app lock.": "Vnesite svoj trenutni PIN, da onemogočite zaklep aplikacije.",
   "PIN must be {{length}} digits": "PIN mora vsebovati {{length}} števk",
@@ -1444,6 +1443,6 @@
   "App settings": "Nastavitve aplikacije",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, barve označb, integracije (KOSync, Readwise, Hardcover) in vrstni red slovarjev",
   "Required while Dictionaries sync is enabled": "Zahtevano, dokler je sinhronizacija Slovarjev omogočena",
-  "Unavailable": "Ni na voljo",
-  "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min"
+  "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije."
 }

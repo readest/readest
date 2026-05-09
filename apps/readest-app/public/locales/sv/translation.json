@@ -1368,7 +1368,6 @@
   "Set PIN": "Ange PIN",
   "Change PIN": "Ändra PIN",
   "Disable PIN": "Inaktivera PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Välj en 4-siffrig PIN. Du måste ange den varje gång du öppnar Readest. Det går inte att återställa en glömd PIN — att rensa appdata är det enda sättet att återställa den.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Ange din nuvarande PIN och välj sedan en ny 4-siffrig PIN.",
   "Enter your current PIN to disable the app lock.": "Ange din nuvarande PIN för att inaktivera applåset.",
   "PIN must be {{length}} digits": "PIN måste vara {{length}} siffror",
@@ -1396,6 +1395,6 @@
   "App settings": "Appinställningar",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, markeringsfärger, integrationer (KOSync, Readwise, Hardcover) och ordbokens ordning",
   "Required while Dictionaries sync is enabled": "Krävs så länge synkronisering av Ordböcker är aktiverad",
-  "Unavailable": "Ej tillgänglig",
-  "Resets in {{hours}} hr {{minutes}} min": "Återställs om {{hours}} tim {{minutes}} min"
+  "Resets in {{hours}} hr {{minutes}} min": "Återställs om {{hours}} tim {{minutes}} min",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Välj en 4-siffrig PIN-kod. Du kommer att behöva ange den varje gång du öppnar Readest. Det finns inget sätt att återställa en glömd PIN-kod. Att rensa appdata är det enda sättet att återställa den."
 }

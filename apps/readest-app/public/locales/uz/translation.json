@@ -1305,7 +1305,6 @@
   "Azure Translator": "Azure Translator",
   "DeepL": "DeepL",
   "Google Translate": "Google Translate",
-  "Unavailable": "Mavjud emas",
   "Login Required": "Tizimga kirish talab qilinadi",
   "Quota Exceeded": "Kvota oshib ketdi",
   "Yandex Translate": "Yandex Translate",
@@ -1369,7 +1368,6 @@
   "Set PIN": "PIN o'rnatish",
   "Change PIN": "PIN'ni o'zgartirish",
   "Disable PIN": "PIN'ni o'chirish",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "4 xonali PIN tanlang. Readest'ni har ochganingizda uni kiritishingiz kerak bo'ladi. Unutilgan PIN'ni tiklashning iloji yo'q — ilova ma'lumotlarini tozalash uni qayta tiklashning yagona yo'lidir.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Joriy PIN'ingizni kiriting, so'ngra yangi 4 xonali PIN tanlang.",
   "Enter your current PIN to disable the app lock.": "Ilova qulfini o'chirish uchun joriy PIN'ingizni kiriting.",
   "PIN must be {{length}} digits": "PIN {{length}} xonali bo'lishi kerak",
@@ -1397,5 +1395,6 @@
   "Wrong sync passphrase — synced credentials could not be decrypted": "Sinxronlash paroli notoʻgʻri — sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi",
   "Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…": "Serverdagi sinxronlash paroli maʼlumotlari tiklandi. Hisob maʼlumotlaringiz yangi parol bilan qayta shifrlanmoqda…",
   "Failed to decrypt synced credentials": "Sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} soat {{minutes}} daqiqada tiklanadi"
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} soat {{minutes}} daqiqada tiklanadi",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 raqamli PIN tanlang. Readestni har ochganingizda uni kiritishingiz kerak bo'ladi. Unutilgan PIN-ni tiklash imkoni yo'q. Uni qayta tiklashning yagona yo'li — ilova ma'lumotlarini tozalash."
 }

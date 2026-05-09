@@ -1392,7 +1392,6 @@
   "Set PIN": "הגדר PIN",
   "Change PIN": "שנה PIN",
   "Disable PIN": "השבת PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח — ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "הזן את ה-PIN הנוכחי שלך, ולאחר מכן בחר PIN חדש בן 4 ספרות.",
   "Enter your current PIN to disable the app lock.": "הזן את ה-PIN הנוכחי שלך כדי להשבית את נעילת האפליקציה.",
   "PIN must be {{length}} digits": "ה-PIN חייב להיות בן {{length}} ספרות",
@@ -1420,6 +1419,6 @@
   "App settings": "הגדרות אפליקציה",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ערכת נושא, צבעי הדגשה, שילובים (KOSync, Readwise, Hardcover) וסדר המילונים",
   "Required while Dictionaries sync is enabled": "נדרש כל עוד סנכרון המילונים מופעל",
-  "Unavailable": "לא זמין",
-  "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳"
+  "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו."
 }

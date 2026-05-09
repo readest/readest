@@ -1368,7 +1368,6 @@
   "Set PIN": "تنظیم PIN",
   "Change PIN": "تغییر PIN",
   "Disable PIN": "غیرفعال کردن PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "یک PIN چهار رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. هیچ راهی برای بازیابی PIN فراموش‌شده وجود ندارد — پاک کردن داده‌های برنامه تنها راه بازنشانی آن است.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "PIN فعلی خود را وارد کنید و سپس یک PIN چهار رقمی جدید انتخاب کنید.",
   "Enter your current PIN to disable the app lock.": "برای غیرفعال کردن قفل برنامه، PIN فعلی خود را وارد کنید.",
   "PIN must be {{length}} digits": "PIN باید {{length}} رقم باشد",
@@ -1396,6 +1395,6 @@
   "App settings": "تنظیمات برنامه",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "پوسته، رنگ‌های هایلایت، یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover) و ترتیب فرهنگ‌لغت‌ها",
   "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
-  "Unavailable": "در دسترس نیست",
-  "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه"
+  "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "یک پین ۴ رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. راهی برای بازیابی پین فراموش‌شده وجود ندارد. پاک کردن داده‌های برنامه تنها راه بازنشانی آن است."
 }

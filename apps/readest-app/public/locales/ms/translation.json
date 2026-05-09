@@ -1344,7 +1344,6 @@
   "Set PIN": "Tetapkan PIN",
   "Change PIN": "Tukar PIN",
   "Disable PIN": "Lumpuhkan PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Pilih PIN 4 digit. Anda perlu memasukkannya setiap kali anda membuka Readest. Tiada cara untuk memulihkan PIN yang terlupa — mengosongkan data aplikasi adalah satu-satunya cara untuk menetapkannya semula.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Masukkan PIN semasa anda, kemudian pilih PIN 4 digit baharu.",
   "Enter your current PIN to disable the app lock.": "Masukkan PIN semasa anda untuk melumpuhkan kunci aplikasi.",
   "PIN must be {{length}} digits": "PIN mesti mengandungi {{length}} digit",
@@ -1372,6 +1371,6 @@
   "App settings": "Tetapan aplikasi",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, warna sorotan, integrasi (KOSync, Readwise, Hardcover), dan susunan kamus",
   "Required while Dictionaries sync is enabled": "Diperlukan semasa penyegerakan Kamus didayakan",
-  "Unavailable": "Tidak tersedia",
-  "Resets in {{hours}} hr {{minutes}} min": "Set semula dalam {{hours}} j {{minutes}} min"
+  "Resets in {{hours}} hr {{minutes}} min": "Set semula dalam {{hours}} j {{minutes}} min",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Pilih PIN 4 digit. Anda perlu memasukkannya setiap kali anda membuka Readest. Tiada cara untuk memulihkan PIN yang terlupa. Mengosongkan data aplikasi adalah satu-satunya cara untuk menetapkannya semula."
 }

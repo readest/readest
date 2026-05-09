@@ -1416,7 +1416,6 @@
   "Set PIN": "Установить PIN",
   "Change PIN": "Изменить PIN",
   "Disable PIN": "Отключить PIN",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Выберите 4-значный PIN. Его нужно будет вводить каждый раз при открытии Readest. Восстановить забытый PIN невозможно — очистка данных приложения — единственный способ сбросить его.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Введите текущий PIN, а затем выберите новый 4-значный PIN.",
   "Enter your current PIN to disable the app lock.": "Введите текущий PIN, чтобы отключить блокировку приложения.",
   "PIN must be {{length}} digits": "PIN должен состоять из {{length}} цифр",
@@ -1444,6 +1443,6 @@
   "App settings": "Настройки приложения",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Тема, цвета выделений, интеграции (KOSync, Readwise, Hardcover) и порядок словарей",
   "Required while Dictionaries sync is enabled": "Требуется, пока включена синхронизация Словарей",
-  "Unavailable": "Недоступно",
-  "Resets in {{hours}} hr {{minutes}} min": "Сброс через {{hours}} ч {{minutes}} мин"
+  "Resets in {{hours}} hr {{minutes}} min": "Сброс через {{hours}} ч {{minutes}} мин",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Выберите 4-значный PIN-код. Вам нужно будет вводить его каждый раз при открытии Readest. Восстановить забытый PIN-код невозможно. Очистка данных приложения — единственный способ его сбросить."
 }
