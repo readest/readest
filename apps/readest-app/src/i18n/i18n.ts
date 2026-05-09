@@ -1,41 +1,10 @@
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import translatableLngs from '../../i18n-langs.json';
 import { initReactI18next } from 'react-i18next';
-// Keep in sync with i18next-scanner.config.cjs
-const SUPPORTED_LNGS = [
-  'en',
-  'de',
-  'ja',
-  'es',
-  'fa',
-  'fr',
-  'it',
-  'el',
-  'ko',
-  'uk',
-  'nl',
-  'sl',
-  'sv',
-  'pl',
-  'pt',
-  'ru',
-  'tr',
-  'hi',
-  'id',
-  'vi',
-  'ms',
-  'he',
-  'ar',
-  'th',
-  'bo',
-  'bn',
-  'ta',
-  'si',
-  'zh-CN',
-  'zh-TW',
-  'ro',
-  'hu',
-];
+
+// 'en' is the source language and not listed in the translatable set.
+const SUPPORTED_LNGS = ['en', ...translatableLngs];
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -52,10 +21,10 @@ const initI18n = async () => {
       supportedLngs: SUPPORTED_LNGS,
       fallbackLng: {
         'zh-HK': ['zh-TW', 'en'],
+        'pt-BR': ['pt', 'en'],
         kk: ['ru', 'en'],
         ky: ['ru', 'en'],
         tk: ['ru', 'en'],
-        uz: ['ru', 'en'],
         ug: ['ru', 'en'],
         tt: ['ru', 'en'],
         default: ['en'],
@@ -82,7 +51,9 @@ const initI18n = async () => {
     });
 
   i18n.on('languageChanged', (lng) => {
-    console.log('Language changed to', lng);
+    if (typeof window !== 'undefined') {
+      console.log('Language changed to', lng);
+    }
   });
 };
 

@@ -10,6 +10,7 @@ import { useCustomFontStore } from '@/store/customFontStore';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { saveViewSettings } from '@/helpers/settings';
 import { CustomFont, mountCustomFont } from '@/styles/fonts';
+import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 
 interface CustomFontsProps {
   bookKey: string;
@@ -58,11 +59,15 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           style: fontInfo.style,
           weight: fontInfo.weight,
           variable: fontInfo.variable,
+          contentId: fontInfo.contentId,
+          bundleDir: fontInfo.bundleDir,
+          byteSize: fontInfo.byteSize,
         });
         console.log('Added custom font:', customFont);
         if (customFont && !customFont.error) {
           const loadedFont = await loadFont(envConfig, customFont.id);
           mountCustomFont(document, loadedFont);
+          if (appService) void queueReplicaBinaryUpload('font', customFont, appService);
         }
       }
       saveCustomFonts(envConfig);

@@ -77,6 +77,17 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
 
+### E-ink mode
+
+Every new UI widget must look right under `[data-eink='true']`. E-ink screens have no shadows, no gradients, slow refresh, and need crisp 1px borders for delineation. The conventions live in `src/styles/globals.css` — reuse the existing classes instead of inventing new ones:
+
+- **Surfaces / inputs** — add `eink-bordered`. In eink mode it swaps to `bg-base-100` + 1px `base-content` border. Use it on inputs, custom button backgrounds, ghost-styled cancel buttons, and any container that needs a visible boundary.
+- **Primary action buttons** — add `btn-primary` (alongside whatever Tailwind classes you use for color themes). The `[data-eink] .btn-primary` rule inverts to `base-content` bg + `base-100` text so the primary CTA stays distinct from secondary actions.
+- **`.modal-box`** picks up no-shadow + 1px border automatically; dialogs that use it don't need additions.
+- **Don't rely on color/shadow alone for hierarchy.** Two same-tone buttons differ only by hover on color themes, and hover doesn't exist on e-ink touchscreens. Pair a borderless ghost (cancel) with a solid CTA (submit) so eink can invert one without flattening the difference.
+
+When in doubt, toggle E-ink in Settings → Misc and check. The rules in `globals.css` cover most cases automatically, but composite components (custom buttons, layered cards) often need `eink-bordered` on the right element to stay legible.
+
 Available gstack skills:
 
 - `/plan-ceo-review` — CEO/founder-mode plan review

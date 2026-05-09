@@ -30,6 +30,29 @@ export interface OPDSCatalog {
   password?: string;
   customHeaders?: Record<string, string>;
   autoDownload?: boolean;
+  /**
+   * Stable cross-device identifier derived from the URL. Used as the
+   * replica_id so two devices that import the same OPDS URL converge to a
+   * single row instead of duplicating. Absent on legacy entries imported
+   * before replica sync shipped — they get backfilled at next save.
+   */
+  contentId?: string;
+  /** Wall-clock ms of first import, used for ordering. */
+  addedAt?: number;
+  /** Soft-delete timestamp; non-null entries are hidden from the UI. */
+  deletedAt?: number;
+  /** Reincarnation token (re-import after server tombstone). */
+  reincarnation?: string;
+  /**
+   * Per-field cipher fingerprint of the last successfully-decrypted
+   * pull. Maps `fieldName` → cipher's `c` (base64 ciphertext). The
+   * orchestrator compares the row's incoming cipher against this on
+   * each pull: same → skip the passphrase prompt (we already have
+   * the plaintext); different → prompt to re-decrypt (rotation or
+   * value change on another device). Sync-only metadata; never
+   * surfaced in the OPDS UI.
+   */
+  lastSeenCipher?: Record<string, string>;
 }
 
 export interface OPDSFeed {

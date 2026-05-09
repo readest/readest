@@ -50,6 +50,9 @@ export const useProgressSync = (bookKey: string) => {
     if (!configPulled.current) {
       pullConfig(bookKey);
     } else {
+      // Skip pushes while previewing a deep-link target — the position in
+      // memory reflects the annotation, not what the user is actually reading.
+      if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       const config = getConfig(bookKey);
       const view = getView(bookKey);
       const book = getBookData(bookKey)?.book;
@@ -151,7 +154,12 @@ export const useProgressSync = (bookKey: string) => {
       }
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
-          if (view) {
+          // While previewing a deep-link target, do NOT yank the view to the
+          // remote position — the user came here to look at a specific
+          // annotation. The local config still gets updated above; the next
+          // open will resolve to the synced position normally.
+          const isPreview = useReaderStore.getState().getViewState(bookKey)?.previewMode;
+          if (view && !isPreview) {
             view.goTo(remoteCFILocation);
             setHoveredBookKey(null);
             eventDispatcher.dispatch('hint', {

@@ -27,11 +27,12 @@ import { setMigrateDataDirDialogVisible } from '@/app/library/components/Migrate
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
 import { selectDirectory } from '@/utils/bridge';
-import { formatLocaleDateTime } from '@/utils/book';
+import dayjs from 'dayjs';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
 import Menu from '@/components/Menu';
+import { type AppLockDialogMode, useAppLockStore } from '@/store/appLockStore';
 
 interface SettingsMenuProps {
   onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
@@ -55,7 +56,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
-  const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
@@ -69,6 +69,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
 
   const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
   const [refreshMetadataProgress, setRefreshMetadataProgress] = useState('');
+  const { openDialog: openAppLockDialogInStore } = useAppLockStore();
+  const isPinEnabled = !!settings.pinCodeEnabled;
+
+  const openAppLockDialog = (mode: AppLockDialogMode) => {
+    openAppLockDialogInStore(mode);
+    setIsDropdownOpen?.(false);
+  };
   const { isSyncing, setLibrary } = useLibraryStore();
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
@@ -97,14 +104,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
+  const handleManageSync = () => {
+    router.push('/user?section=sync');
+    setIsDropdownOpen?.(false);
+  };
+
   const cycleThemeMode = () => {
     const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
     setThemeMode(nextMode);
-  };
-
-  const handleReloadPage = () => {
-    window.location.reload();
-    setIsDropdownOpen?.(false);
   };
 
   const handleFullScreen = () => {
@@ -151,12 +158,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.autoCheckUpdates;
     saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
     setIsAutoCheckUpdates(newValue);
-  };
-
-  const toggleScreenWakeLock = () => {
-    const newValue = !settings.screenWakeLock;
-    saveSysSettings(envConfig, 'screenWakeLock', newValue);
-    setIsScreenWakeLock(newValue);
   };
 
   const toggleOpenLastBooks = () => {
@@ -326,8 +327,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             <MenuItem
               label={
                 settings.lastSyncedAtBooks
-                  ? _('Synced at {{time}}', {
-                      time: formatLocaleDateTime(settings.lastSyncedAtBooks),
+                  ? _('Synced {{time}}', {
+                      time: dayjs(settings.lastSyncedAtBooks).fromNow(),
                     })
                   : _('Never synced')
               }
@@ -398,11 +399,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           onClick={toggleAlwaysShowStatusBar}
         />
       )}
-      <MenuItem
-        label={_('Keep Screen Awake')}
-        toggled={isScreenWakeLock}
-        onClick={toggleScreenWakeLock}
-      />
       {appService?.isAndroidApp && (
         <MenuItem
           label={_(_('Background Read Aloud'))}
@@ -410,7 +406,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           onClick={toggleAlwaysInForeground}
         />
       )}
-      <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
       <MenuItem
         label={themeModeLabel}
         Icon={themeMode === 'dark' ? PiMoon : themeMode === 'light' ? PiSun : TbSunMoon}
@@ -420,16 +415,30 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Advanced Settings')}>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+          <MenuItem label={_('Backup & Restore')} onClick={handleBackupRestore} />
           {appService?.canCustomizeRootDir && (
             <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
           )}
-          <MenuItem label={_('Backup & Restore')} onClick={handleBackupRestore} />
+          {user && <MenuItem label={_('Data Sync')} onClick={handleManageSync} />}
           <MenuItem
             label={_('Refresh Metadata')}
             description={refreshMetadataProgress}
             onClick={handleRefreshMetadata}
             disabled={isRefreshingMetadata}
           />
+          {!isPinEnabled && (
+            <MenuItem
+              label={_('Set PIN…')}
+              tooltip={_('Require a 4-digit PIN to open Readest')}
+              onClick={() => openAppLockDialog('set')}
+            />
+          )}
+          {isPinEnabled && (
+            <MenuItem label={_('Change PIN…')} onClick={() => openAppLockDialog('change')} />
+          )}
+          {isPinEnabled && (
+            <MenuItem label={_('Disable PIN…')} onClick={() => openAppLockDialog('disable')} />
+          )}
           {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
             <MenuItem
               label={_('Save Book Cover')}

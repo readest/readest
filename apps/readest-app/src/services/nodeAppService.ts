@@ -11,6 +11,7 @@ import { BaseAppService } from './appService';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
+  LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
 } from './constants';
@@ -99,7 +100,14 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
   const isCustomBaseDir = Boolean(customRootDir);
   const getCustomBasePrefix = isCustomBaseDir
     ? (base: BaseDir) => {
-        const dataDirs: BaseDir[] = ['Settings', 'Data', 'Books', 'Fonts', 'Images'];
+        const dataDirs: BaseDir[] = [
+          'Settings',
+          'Data',
+          'Books',
+          'Fonts',
+          'Images',
+          'Dictionaries',
+        ];
         const leafDir = dataDirs.includes(base) ? '' : base;
         return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
       }
@@ -165,6 +173,15 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
             : `${LOCAL_IMAGES_SUBDIR}${fp ? `/${fp}` : ''}`,
           base,
         };
+      case 'Dictionaries':
+        return {
+          baseDir: 0,
+          basePrefix: async () => custom ?? getAppDataDir(),
+          fp: custom
+            ? `${custom}/${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`
+            : `${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`,
+          base,
+        };
       case 'None':
         return {
           baseDir: 0,
@@ -219,10 +236,16 @@ export const nodeFileSystem: FileSystem = {
     return new File([buffer], fileName);
   },
 
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
-    const fullDst = await toAbsolute(this.resolvePath(dstPath, base));
+  async copyFile(
+    srcPath: string,
+    srcBase: BaseDir,
+    dstPath: string,
+    dstBase: BaseDir,
+  ): Promise<void> {
+    const fullSrc = await toAbsolute(this.resolvePath(srcPath, srcBase));
+    const fullDst = await toAbsolute(this.resolvePath(dstPath, dstBase));
     await fsp.mkdir(nodePath.dirname(fullDst), { recursive: true });
-    await fsp.copyFile(srcPath, fullDst);
+    await fsp.copyFile(fullSrc, fullDst);
   },
 
   async readFile(
@@ -364,7 +387,12 @@ export class NodeAppService extends BaseAppService {
   async saveFile(
     _filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
     try {
       const filepath = options?.filePath ?? '';

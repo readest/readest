@@ -1,0 +1,438 @@
+# Chinese (Traditional) translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Chinese (Traditional)\n"
+"Language: zh-TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "讓你的 KOReader 與 Readest 裝置保持同步。"
+
+msgid "Library view"
+msgstr "書庫檢視"
+
+msgid "View"
+msgstr "檢視"
+
+msgid "Grid"
+msgstr "格狀"
+
+msgid "List"
+msgstr "清單"
+
+msgid "Group by"
+msgstr "分組方式"
+
+msgid "Authors"
+msgstr "作者"
+
+msgid "Books"
+msgstr "書籍"
+
+msgid "Groups"
+msgstr "群組"
+
+msgid "Series"
+msgstr "系列"
+
+msgid "Sort by"
+msgstr "排序方式"
+
+msgid "Date Read"
+msgstr "閱讀日期"
+
+msgid "Date Added"
+msgstr "新增日期"
+
+msgid "Title"
+msgstr "書名"
+
+msgid "Author"
+msgstr "作者"
+
+msgid "Descending"
+msgstr "遞減"
+
+msgid "Ascending"
+msgstr "遞增"
+
+msgid "Actions"
+msgstr "動作"
+
+msgid "Rescan library"
+msgstr "重新掃描書庫"
+
+msgid "Download folder…"
+msgstr "下載資料夾…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "選擇下載書籍的資料夾"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "登入 Readest 以開啟書庫"
+
+msgid "Library"
+msgstr "書庫"
+
+msgid "Readest Library"
+msgstr "Readest 書庫"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Search"
+msgstr "搜尋"
+
+msgid "Search library"
+msgstr "搜尋書庫"
+
+msgid "Search title or author"
+msgstr "搜尋書名或作者"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "完整書庫渲染需要 Cover Browser 外掛程式，將回退到簡單清單。"
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "檔案已移動或刪除。重新掃描書庫？"
+
+msgid "Download this book from Readest?"
+msgstr "從 Readest 下載這本書？"
+
+msgid "Download"
+msgstr "下載"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "請先在檔案管理員中設定主資料夾以啟用下載。"
+
+msgid "Downloading…"
+msgstr "下載中…"
+
+msgid "Cloud copy unavailable."
+msgstr "雲端副本無法使用。"
+
+msgid "Download failed."
+msgstr "下載失敗。"
+
+msgid "No cover available on Readest."
+msgstr "Readest 上沒有可用的封面。"
+
+msgid "Cover download failed."
+msgstr "封面下載失敗。"
+
+msgid "Could not delete the file."
+msgstr "無法刪除檔案。"
+
+msgid "Removing from cloud…"
+msgstr "正在從雲端移除…"
+
+msgid "Cloud removal failed."
+msgstr "雲端移除失敗。"
+
+msgid "Remove from Cloud & Device"
+msgstr "從雲端和裝置移除"
+
+msgid "Remove this book from cloud and device?"
+msgstr "從雲端和裝置移除這本書？"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "Remove from Cloud Only"
+msgstr "僅從雲端移除"
+
+msgid "Remove this book from the cloud only?"
+msgstr "僅從雲端移除這本書？"
+
+msgid "Remove from Device Only"
+msgstr "僅從裝置移除"
+
+msgid "Remove the local copy of this book?"
+msgstr "移除這本書的本機副本？"
+
+msgid "Upload to Cloud"
+msgstr "上傳到雲端"
+
+msgid "Uploading…"
+msgstr "上傳中…"
+
+msgid "Storage quota exceeded."
+msgstr "已超過儲存配額。"
+
+msgid "Upload failed."
+msgstr "上傳失敗。"
+
+msgid "Download Book"
+msgstr "下載書籍"
+
+msgid "Download Cover"
+msgstr "下載封面"
+
+msgid "Download All"
+msgstr "全部下載"
+
+msgid "Open Readest Library"
+msgstr "開啟 Readest 書庫"
+
+msgid "Push Readest book library"
+msgstr "推送 Readest 書庫"
+
+msgid "Pull Readest book library"
+msgstr "拉取 Readest 書庫"
+
+msgid "Set auto progress sync"
+msgstr "設定自動同步閱讀進度"
+
+msgid "on"
+msgstr "開"
+
+msgid "off"
+msgstr "關"
+
+msgid "Toggle auto readest sync"
+msgstr "切換 Readest 自動同步"
+
+msgid "Push readest progress from this device"
+msgstr "從此裝置推送 Readest 閱讀進度"
+
+msgid "Pull readest progress from other devices"
+msgstr "從其他裝置拉取 Readest 閱讀進度"
+
+msgid "Push readest annotations from this device"
+msgstr "從此裝置推送 Readest 註釋"
+
+msgid "Pull readest annotations from other devices"
+msgstr "從其他裝置拉取 Readest 註釋"
+
+msgid "Add to Readest"
+msgstr "新增到 Readest"
+
+msgid "Sign in to Readest first."
+msgstr "請先登入 Readest。"
+
+msgid "File not found."
+msgstr "找不到檔案。"
+
+msgid "Unsupported book format."
+msgstr "不支援的書籍格式。"
+
+msgid "Hashing book…"
+msgstr "正在計算書籍指紋…"
+
+msgid "Could not read file."
+msgstr "無法讀取檔案。"
+
+msgid "Already in your Readest library:"
+msgstr "已在您的 Readest 書庫中："
+
+msgid "Added to Readest:"
+msgstr "已新增到 Readest："
+
+msgid "Log in Readest Account"
+msgstr "登入 Readest 帳戶"
+
+msgid "Log out as %1"
+msgstr "登出（%1）"
+
+msgid "Auto sync"
+msgstr "自動同步"
+
+msgid "Readest library"
+msgstr "Readest 書庫"
+
+msgid "Push books now"
+msgstr "立即推送書籍"
+
+msgid "Pull books now"
+msgstr "立即拉取書籍"
+
+msgid "Push reading progress now"
+msgstr "立即推送閱讀進度"
+
+msgid "Pull reading progress now"
+msgstr "立即拉取閱讀進度"
+
+msgid "Push annotations now"
+msgstr "立即推送註釋"
+
+msgid "Pull annotations now"
+msgstr "立即拉取註釋"
+
+msgid "Full sync all annotations"
+msgstr "完整同步所有註釋"
+
+msgid "Sync info"
+msgstr "同步資訊"
+
+msgid "Check for update (v%1)"
+msgstr "檢查更新（v%1）"
+
+msgid "Check for update"
+msgstr "檢查更新"
+
+msgid "Please login first"
+msgstr "請先登入"
+
+msgid "Please configure Readest settings first"
+msgstr "請先設定 Readest"
+
+msgid "No book is open"
+msgstr "沒有開啟的書籍"
+
+msgid "(none)"
+msgstr "（無）"
+
+msgid "Never synced"
+msgstr "尚未同步"
+
+msgid "Book Fingerprint"
+msgstr "書籍指紋"
+
+msgid "Identifiers"
+msgstr "識別碼"
+
+msgid "Last Synced"
+msgstr "上次同步"
+
+msgid "Sync Info"
+msgstr "同步資訊"
+
+msgid "Library not initialized"
+msgstr "書庫未初始化"
+
+msgid "Books synced"
+msgstr "書籍已同步"
+
+msgid "Books sync failed"
+msgstr "書籍同步失敗"
+
+msgid "Checking for update…"
+msgstr "正在檢查更新…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "檢查更新失敗，請稍後再試。"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "有新版本可用：v%1（目前：v%2）。\n\n是否立即更新？"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "有新版本可用：v%1。\n\n是否立即更新？"
+
+msgid "Update"
+msgstr "更新"
+
+msgid "You are up to date (v%1)."
+msgstr "目前已是最新版本（v%1）。"
+
+msgid "Downloading update…"
+msgstr "正在下載更新…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "下載更新失敗，請稍後再試。"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest 外掛已更新到 v%1。\n\n請重新啟動 KOReader 以套用更新。"
+
+msgid "Restart now"
+msgstr "立即重新啟動"
+
+msgid "Later"
+msgstr "稍後"
+
+msgid "Failed to install update: %1"
+msgstr "安裝更新失敗：%1"
+
+msgid "unknown error"
+msgstr "未知錯誤"
+
+msgid "No annotations to push"
+msgstr "沒有可推送的註釋"
+
+msgid "Pushing annotations..."
+msgstr "正在推送註釋…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "已成功推送 %1 條註釋"
+
+msgid "Failed to push annotations"
+msgstr "推送註釋失敗"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "暫不支援同步 PDF 文件的註釋"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "完整同步：正在拉取所有註釋…"
+
+msgid "Pulling annotations..."
+msgstr "正在拉取註釋…"
+
+msgid "Authentication failed, please login again"
+msgstr "驗證失敗，請重新登入"
+
+msgid "Failed to pull annotations"
+msgstr "拉取註釋失敗"
+
+msgid "No new annotations found"
+msgstr "未發現新註釋"
+
+msgid "%1 annotations pulled"
+msgstr "已拉取 %1 條註釋"
+
+msgid "Login"
+msgstr "登入"
+
+msgid "Please enter both email and password"
+msgstr "請輸入電子郵件和密碼"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "請先設定 Supabase URL 和 API 金鑰"
+
+msgid "Logging in..."
+msgstr "正在登入…"
+
+msgid "Successfully logged in to Readest"
+msgstr "已成功登入 Readest"
+
+msgid "Login failed: %1"
+msgstr "登入失敗：%1"
+
+msgid "Logged out from Readest"
+msgstr "已登出 Readest"
+
+msgid "Cannot identify the current book"
+msgstr "無法識別目前書籍"
+
+msgid "Progress has been synchronized."
+msgstr "閱讀進度已同步。"
+
+msgid "Pushing reading progress..."
+msgstr "正在推送閱讀進度…"
+
+msgid "Reading progress pushed successfully"
+msgstr "閱讀進度推送成功"
+
+msgid "Failed to push reading progress"
+msgstr "推送閱讀進度失敗"
+
+msgid "Pulling reading progress..."
+msgstr "正在拉取閱讀進度…"
+
+msgid "Failed to pull reading progress"
+msgstr "拉取閱讀進度失敗"
+
+msgid "Reading progress synchronized"
+msgstr "閱讀進度已同步"
+
+msgid "No saved reading progress found for this book"
+msgstr "找不到此書籍的閱讀進度"

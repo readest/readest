@@ -125,7 +125,11 @@ export class DocumentLoader {
 
   private async isZip(): Promise<boolean> {
     const arr = new Uint8Array(await this.file.slice(0, 4).arrayBuffer());
-    return arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03 && arr[3] === 0x04;
+    // Standard local file header signature is PK\x03\x04, but some non-conformant
+    // EPUB writers emit malformed bytes (e.g., PK\x03\x02) on the first entry.
+    // The archive is still readable via the central directory, so don't gate on
+    // the 4th byte. PK\x03 alone is enough to identify a local file header.
+    return arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03;
   }
 
   private async isPDF(): Promise<boolean> {

@@ -921,6 +921,88 @@ class NativeBridgePlugin: Plugin {
       }
     }
   }
+
+  // ── Sync passphrase keychain ──────────────────────────────────────────
+  // Backed by the iOS Security framework Keychain. The TS-side
+  // CryptoSession reads/writes via these commands so the user's sync
+  // passphrase persists across app launches.
+
+  private static let syncKeychainService = "com.bilingify.readest.sync-passphrase"
+  private static let syncKeychainAccount = "default"
+
+  private func syncKeychainBaseQuery() -> [String: Any] {
+    return [
+      kSecClass as String: kSecClassGenericPassword,
+      kSecAttrService as String: NativeBridgePlugin.syncKeychainService,
+      kSecAttrAccount as String: NativeBridgePlugin.syncKeychainAccount
+    ]
+  }
+
+  @objc public func set_sync_passphrase(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(SyncPassphraseSetArgs.self)
+      guard let data = args.passphrase.data(using: .utf8) else {
+        invoke.resolve(["success": false, "error": "encoding"])
+        return
+      }
+      var query = syncKeychainBaseQuery()
+      query[kSecValueData as String] = data
+      // Replace any existing entry. Delete-then-add keeps the
+      // accessibility class consistent across SDK versions.
+      SecItemDelete(query as CFDictionary)
+      let status = SecItemAdd(query as CFDictionary, nil)
+      if status == errSecSuccess {
+        invoke.resolve(["success": true])
+      } else {
+        invoke.resolve(["success": false, "error": "OSStatus \(status)"])
+      }
+    } catch {
+      invoke.resolve(["success": false, "error": "\(error)"])
+    }
+  }
+
+  @objc public func get_sync_passphrase(_ invoke: Invoke) {
+    var query = syncKeychainBaseQuery()
+    query[kSecReturnData as String] = true
+    query[kSecMatchLimit as String] = kSecMatchLimitOne
+    var item: CFTypeRef?
+    let status = SecItemCopyMatching(query as CFDictionary, &item)
+    if status == errSecSuccess, let data = item as? Data, let s = String(data: data, encoding: .utf8) {
+      invoke.resolve(["passphrase": s])
+    } else if status == errSecItemNotFound {
+      // No entry: empty response. The TS layer treats this as "prompt".
+      invoke.resolve([:])
+    } else {
+      invoke.resolve(["error": "OSStatus \(status)"])
+    }
+  }
+
+  @objc public func clear_sync_passphrase(_ invoke: Invoke) {
+    let status = SecItemDelete(syncKeychainBaseQuery() as CFDictionary)
+    if status == errSecSuccess || status == errSecItemNotFound {
+      invoke.resolve(["success": true])
+    } else {
+      invoke.resolve(["success": false, "error": "OSStatus \(status)"])
+    }
+  }
+
+  @objc public func is_sync_keychain_available(_ invoke: Invoke) {
+    // The Keychain is always available on iOS; report true and let the
+    // TS layer trust it. We probe SecItemCopyMatching anyway so a
+    // future sandbox restriction surfaces an explicit error.
+    var query = syncKeychainBaseQuery()
+    query[kSecMatchLimit as String] = kSecMatchLimitOne
+    let status = SecItemCopyMatching(query as CFDictionary, nil)
+    if status == errSecSuccess || status == errSecItemNotFound {
+      invoke.resolve(["available": true])
+    } else {
+      invoke.resolve(["available": false, "error": "OSStatus \(status)"])
+    }
+  }
+}
+
+class SyncPassphraseSetArgs: Decodable {
+  let passphrase: String
 }
 
 @_cdecl("init_plugin_native_bridge")

@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-set-sync-passphrase"
+description = "Enables the set_sync_passphrase command without any pre-configured scope."
+commands.allow = ["set_sync_passphrase"]
+
+[[permission]]
+identifier = "deny-set-sync-passphrase"
+description = "Denies the set_sync_passphrase command without any pre-configured scope."
+commands.deny = ["set_sync_passphrase"]

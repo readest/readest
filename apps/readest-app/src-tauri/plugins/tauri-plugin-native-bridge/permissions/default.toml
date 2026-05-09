@@ -31,4 +31,8 @@ permissions = [
   "allow-request-permissions",
   "allow-checkPermissions",
   "allow-requestPermissions",
+  "allow-set-sync-passphrase",
+  "allow-get-sync-passphrase",
+  "allow-clear-sync-passphrase",
+  "allow-is-sync-keychain-available",
 ]

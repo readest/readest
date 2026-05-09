@@ -6,8 +6,13 @@ import { SelectedFile } from '@/hooks/useFileSelector';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BOOK_ACCEPT_FORMATS } from '@/services/constants';
+import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 import { useSearchParams } from 'next/navigation';
+
+const hasSupportedBookExt = (name: string) => {
+  const ext = name.split('.').pop()?.toLowerCase();
+  return ext ? SUPPORTED_BOOK_EXTS.includes(ext) : false;
+};
 
 export const useDragDropImport = () => {
   const _ = useTranslation();
@@ -17,18 +22,27 @@ export const useDragDropImport = () => {
   const { appService } = useEnv();
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDroppedFiles = async (files: File[] | string[]) => {
-    if (files.length === 0) return;
-    const supportedFiles = files.filter((file) => {
-      let fileExt;
-      if (typeof file === 'string') {
-        fileExt = file.split('.').pop()?.toLowerCase();
+  const handleDroppedFiles = async (droppedItems: File[] | string[]) => {
+    if (droppedItems.length === 0 || !appService) return;
+
+    const fileItems: (File | string)[] = [];
+    const directoryPaths: string[] = [];
+    for (const item of droppedItems) {
+      if (typeof item === 'string' && (await appService.isDirectory(item, 'None'))) {
+        directoryPaths.push(item);
       } else {
-        fileExt = file.name.split('.').pop()?.toLowerCase();
+        fileItems.push(item);
       }
-      return BOOK_ACCEPT_FORMATS.includes(`.${fileExt}`);
-    });
-    if (supportedFiles.length === 0) {
+    }
+
+    const fileSelections: SelectedFile[] = fileItems
+      .filter((item) => hasSupportedBookExt(typeof item === 'string' ? item : item.name))
+      .map((item) => ({
+        file: typeof item === 'string' ? undefined : item,
+        path: typeof item === 'string' ? item : undefined,
+      }));
+
+    if (fileSelections.length === 0 && directoryPaths.length === 0) {
       eventDispatcher.dispatch('toast', {
         message: _('No supported files found. Supported formats: {{formats}}', {
           formats: BOOK_ACCEPT_FORMATS,
@@ -38,18 +52,19 @@ export const useDragDropImport = () => {
       return;
     }
 
-    if (appService?.hasHaptics) {
+    if (appService.hasHaptics) {
       impactFeedback('medium');
     }
 
-    const selectedFiles = supportedFiles.map(
-      (file) =>
-        ({
-          file: typeof file === 'string' ? undefined : file,
-          path: typeof file === 'string' ? file : undefined,
-        }) as SelectedFile,
-    );
-    eventDispatcher.dispatch('import-book-files', { files: selectedFiles, groupId: group });
+    if (fileSelections.length > 0) {
+      eventDispatcher.dispatch('import-book-files', {
+        files: fileSelections,
+        groupId: group,
+      });
+    }
+    for (const dir of directoryPaths) {
+      eventDispatcher.dispatch('import-book-directory', { path: dir });
+    }
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement> | DragEvent) => {

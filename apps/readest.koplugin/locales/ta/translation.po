@@ -1,0 +1,438 @@
+# Tamil translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Tamil\n"
+"Language: ta\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "உங்கள் KOReader மற்றும் Readest சாதனங்களை ஒத்திசைவில் வைத்திருக்கிறது."
+
+msgid "Library view"
+msgstr "நூலக காட்சி"
+
+msgid "View"
+msgstr "காட்சி"
+
+msgid "Grid"
+msgstr "கட்டம்"
+
+msgid "List"
+msgstr "பட்டியல்"
+
+msgid "Group by"
+msgstr "குழுவாக்கு"
+
+msgid "Authors"
+msgstr "ஆசிரியர்கள்"
+
+msgid "Books"
+msgstr "புத்தகங்கள்"
+
+msgid "Groups"
+msgstr "குழுக்கள்"
+
+msgid "Series"
+msgstr "தொடர்கள்"
+
+msgid "Sort by"
+msgstr "வரிசைப்படுத்து"
+
+msgid "Date Read"
+msgstr "படித்த தேதி"
+
+msgid "Date Added"
+msgstr "சேர்த்த தேதி"
+
+msgid "Title"
+msgstr "தலைப்பு"
+
+msgid "Author"
+msgstr "ஆசிரியர்"
+
+msgid "Descending"
+msgstr "இறங்குநிலை"
+
+msgid "Ascending"
+msgstr "ஏறுநிலை"
+
+msgid "Actions"
+msgstr "செயல்கள்"
+
+msgid "Rescan library"
+msgstr "நூலகத்தை மீண்டும் ஸ்கேன் செய்"
+
+msgid "Download folder…"
+msgstr "பதிவிறக்க கோப்புறை…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "பதிவிறக்கிய புத்தகங்களுக்கு கோப்புறை தேர்ந்தெடுக்கவும்"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "நூலகத்தைத் திறக்க Readest-இல் உள்நுழையவும்"
+
+msgid "Library"
+msgstr "நூலகம்"
+
+msgid "Readest Library"
+msgstr "Readest நூலகம்"
+
+msgid "Cancel"
+msgstr "ரத்து செய்யவும்"
+
+msgid "Clear"
+msgstr "அழி"
+
+msgid "Search"
+msgstr "தேடு"
+
+msgid "Search library"
+msgstr "நூலகத்தில் தேடு"
+
+msgid "Search title or author"
+msgstr "தலைப்பு அல்லது ஆசிரியரைத் தேடு"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "முழு நூலக காட்சிக்கு Cover Browser செருகுநிரல் தேவை. எளிய பட்டியலுக்கு திரும்புகிறது."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "கோப்பு நகர்த்தப்பட்டது அல்லது நீக்கப்பட்டது. நூலகத்தை மீண்டும் ஸ்கேன் செய்யவா?"
+
+msgid "Download this book from Readest?"
+msgstr "இந்த புத்தகத்தை Readest-இலிருந்து பதிவிறக்கவா?"
+
+msgid "Download"
+msgstr "பதிவிறக்கு"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "பதிவிறக்கங்களை இயக்க கோப்பு மேலாளரில் முதலில் வீட்டு கோப்புறையை அமைக்கவும்."
+
+msgid "Downloading…"
+msgstr "பதிவிறக்கப்படுகிறது…"
+
+msgid "Cloud copy unavailable."
+msgstr "கிளவுட் நகல் கிடைக்கவில்லை."
+
+msgid "Download failed."
+msgstr "பதிவிறக்கம் தோல்வியடைந்தது."
+
+msgid "No cover available on Readest."
+msgstr "Readest-இல் அட்டை கிடைக்கவில்லை."
+
+msgid "Cover download failed."
+msgstr "அட்டை பதிவிறக்கம் தோல்வியடைந்தது."
+
+msgid "Could not delete the file."
+msgstr "கோப்பை நீக்க முடியவில்லை."
+
+msgid "Removing from cloud…"
+msgstr "கிளவுட்டிலிருந்து நீக்கப்படுகிறது…"
+
+msgid "Cloud removal failed."
+msgstr "கிளவுட்டிலிருந்து நீக்கம் தோல்வியடைந்தது."
+
+msgid "Remove from Cloud & Device"
+msgstr "கிளவுட் & சாதனத்திலிருந்து நீக்கு"
+
+msgid "Remove this book from cloud and device?"
+msgstr "இந்த புத்தகத்தை கிளவுட் & சாதனத்திலிருந்து நீக்கவா?"
+
+msgid "Remove"
+msgstr "நீக்கு"
+
+msgid "Remove from Cloud Only"
+msgstr "கிளவுட்டிலிருந்து மட்டும் நீக்கு"
+
+msgid "Remove this book from the cloud only?"
+msgstr "இந்த புத்தகத்தை கிளவுட்டிலிருந்து மட்டும் நீக்கவா?"
+
+msgid "Remove from Device Only"
+msgstr "சாதனத்திலிருந்து மட்டும் நீக்கு"
+
+msgid "Remove the local copy of this book?"
+msgstr "இந்த புத்தகத்தின் உள்ளூர் நகலை நீக்கவா?"
+
+msgid "Upload to Cloud"
+msgstr "கிளவுட்டில் பதிவேற்று"
+
+msgid "Uploading…"
+msgstr "பதிவேற்றப்படுகிறது…"
+
+msgid "Storage quota exceeded."
+msgstr "சேமிப்பக ஒதுக்கீடு மீறப்பட்டது."
+
+msgid "Upload failed."
+msgstr "பதிவேற்றம் தோல்வியடைந்தது."
+
+msgid "Download Book"
+msgstr "புத்தகம் பதிவிறக்கு"
+
+msgid "Download Cover"
+msgstr "அட்டை பதிவிறக்கு"
+
+msgid "Download All"
+msgstr "அனைத்தையும் பதிவிறக்கு"
+
+msgid "Open Readest Library"
+msgstr "Readest நூலகத்தைத் திற"
+
+msgid "Push Readest book library"
+msgstr "Readest புத்தக நூலகத்தை அனுப்பு"
+
+msgid "Pull Readest book library"
+msgstr "Readest புத்தக நூலகத்தை இழு"
+
+msgid "Set auto progress sync"
+msgstr "தானியங்கி முன்னேற்ற ஒத்திசைவை அமைக்கவும்"
+
+msgid "on"
+msgstr "இயக்கு"
+
+msgid "off"
+msgstr "முடக்கு"
+
+msgid "Toggle auto readest sync"
+msgstr "தானியங்கி Readest ஒத்திசைவை மாற்றவும்"
+
+msgid "Push readest progress from this device"
+msgstr "இந்தச் சாதனத்திலிருந்து Readest முன்னேற்றத்தை அனுப்பு"
+
+msgid "Pull readest progress from other devices"
+msgstr "மற்ற சாதனங்களிலிருந்து Readest முன்னேற்றத்தைப் பெறு"
+
+msgid "Push readest annotations from this device"
+msgstr "இந்தச் சாதனத்திலிருந்து Readest குறிப்புகளை அனுப்பு"
+
+msgid "Pull readest annotations from other devices"
+msgstr "மற்ற சாதனங்களிலிருந்து Readest குறிப்புகளைப் பெறு"
+
+msgid "Add to Readest"
+msgstr "Readest-இல் சேர்"
+
+msgid "Sign in to Readest first."
+msgstr "முதலில் Readest-இல் உள்நுழையவும்."
+
+msgid "File not found."
+msgstr "கோப்பு கிடைக்கவில்லை."
+
+msgid "Unsupported book format."
+msgstr "ஆதரிக்கப்படாத புத்தக வடிவம்."
+
+msgid "Hashing book…"
+msgstr "புத்தகத்தின் ஹாஷ் கணக்கிடப்படுகிறது…"
+
+msgid "Could not read file."
+msgstr "கோப்பை வாசிக்க முடியவில்லை."
+
+msgid "Already in your Readest library:"
+msgstr "உங்கள் Readest நூலகத்தில் ஏற்கனவே உள்ளது:"
+
+msgid "Added to Readest:"
+msgstr "Readest-இல் சேர்க்கப்பட்டது:"
+
+msgid "Log in Readest Account"
+msgstr "Readest கணக்கில் உள்நுழைக"
+
+msgid "Log out as %1"
+msgstr "%1 ஆக வெளியேறு"
+
+msgid "Auto sync"
+msgstr "தானியங்கி ஒத்திசைவு"
+
+msgid "Readest library"
+msgstr "Readest நூலகம்"
+
+msgid "Push books now"
+msgstr "இப்போது புத்தகங்களை அனுப்பு"
+
+msgid "Pull books now"
+msgstr "இப்போது புத்தகங்களைப் பெறு"
+
+msgid "Push reading progress now"
+msgstr "வாசிப்பு முன்னேற்றத்தை இப்போது அனுப்பு"
+
+msgid "Pull reading progress now"
+msgstr "வாசிப்பு முன்னேற்றத்தை இப்போது பெறு"
+
+msgid "Push annotations now"
+msgstr "குறிப்புகளை இப்போது அனுப்பு"
+
+msgid "Pull annotations now"
+msgstr "குறிப்புகளை இப்போது பெறு"
+
+msgid "Full sync all annotations"
+msgstr "அனைத்து குறிப்புகளின் முழு ஒத்திசைவு"
+
+msgid "Sync info"
+msgstr "ஒத்திசைவு தகவல்"
+
+msgid "Check for update (v%1)"
+msgstr "புதுப்பிப்பைச் சரிபார் (v%1)"
+
+msgid "Check for update"
+msgstr "புதுப்பிப்பைச் சரிபார்"
+
+msgid "Please login first"
+msgstr "முதலில் உள்நுழைக"
+
+msgid "Please configure Readest settings first"
+msgstr "முதலில் Readest அமைப்புகளை உள்ளமைக்கவும்"
+
+msgid "No book is open"
+msgstr "எந்த நூலும் திறக்கப்படவில்லை"
+
+msgid "(none)"
+msgstr "(இல்லை)"
+
+msgid "Never synced"
+msgstr "இதுவரை ஒத்திசைக்கப்படவில்லை"
+
+msgid "Book Fingerprint"
+msgstr "புத்தக கைரேகை"
+
+msgid "Identifiers"
+msgstr "அடையாளங்காட்டிகள்"
+
+msgid "Last Synced"
+msgstr "கடைசி ஒத்திசைவு"
+
+msgid "Sync Info"
+msgstr "ஒத்திசைவு தகவல்"
+
+msgid "Library not initialized"
+msgstr "நூலகம் துவக்கப்படவில்லை"
+
+msgid "Books synced"
+msgstr "புத்தகங்கள் ஒத்திசைக்கப்பட்டன"
+
+msgid "Books sync failed"
+msgstr "புத்தகங்கள் ஒத்திசைவு தோல்வி"
+
+msgid "Checking for update…"
+msgstr "புதுப்பிப்பைச் சரிபார்க்கிறது…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "புதுப்பிப்பைச் சரிபார்ப்பதில் தோல்வி. பின்னர் முயற்சிக்கவும்."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "புதிய பதிப்பு கிடைக்கிறது: v%1 (தற்போதைய: v%2).\n\nஇப்போது புதுப்பிக்கவா?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "புதிய பதிப்பு கிடைக்கிறது: v%1.\n\nஇப்போது புதுப்பிக்கவா?"
+
+msgid "Update"
+msgstr "புதுப்பி"
+
+msgid "You are up to date (v%1)."
+msgstr "நீங்கள் சமீபத்திய பதிப்பில் உள்ளீர்கள் (v%1)."
+
+msgid "Downloading update…"
+msgstr "புதுப்பிப்பைப் பதிவிறக்குகிறது…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "புதுப்பிப்பைப் பதிவிறக்குவதில் தோல்வி. பின்னர் முயற்சிக்கவும்."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest செருகுநிரல் v%1 ஆக புதுப்பிக்கப்பட்டது.\n\nபுதுப்பிப்பை செயல்படுத்த KOReader ஐ மீண்டும் தொடங்கவும்."
+
+msgid "Restart now"
+msgstr "இப்போது மீண்டும் தொடங்கு"
+
+msgid "Later"
+msgstr "பின்னர்"
+
+msgid "Failed to install update: %1"
+msgstr "புதுப்பிப்பை நிறுவுவதில் தோல்வி: %1"
+
+msgid "unknown error"
+msgstr "தெரியாத பிழை"
+
+msgid "No annotations to push"
+msgstr "அனுப்ப குறிப்புகள் இல்லை"
+
+msgid "Pushing annotations..."
+msgstr "குறிப்புகள் அனுப்பப்படுகின்றன…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 குறிப்புகள் வெற்றிகரமாக அனுப்பப்பட்டன"
+
+msgid "Failed to push annotations"
+msgstr "குறிப்புகளை அனுப்புவதில் தோல்வி"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF ஆவணங்களுக்கு குறிப்பு ஒத்திசைவு ஆதரிக்கப்படவில்லை"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "முழு ஒத்திசைவு: அனைத்து குறிப்புகளும் பெறப்படுகின்றன…"
+
+msgid "Pulling annotations..."
+msgstr "குறிப்புகள் பெறப்படுகின்றன…"
+
+msgid "Authentication failed, please login again"
+msgstr "அங்கீகாரம் தோல்வி, மீண்டும் உள்நுழைக"
+
+msgid "Failed to pull annotations"
+msgstr "குறிப்புகளைப் பெறுவதில் தோல்வி"
+
+msgid "No new annotations found"
+msgstr "புதிய குறிப்புகள் காணப்படவில்லை"
+
+msgid "%1 annotations pulled"
+msgstr "%1 குறிப்புகள் பெறப்பட்டன"
+
+msgid "Login"
+msgstr "உள்நுழை"
+
+msgid "Please enter both email and password"
+msgstr "மின்னஞ்சல் மற்றும் கடவுச்சொல்லை உள்ளிடவும்"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "முதலில் Supabase URL மற்றும் API விசையை உள்ளமைக்கவும்"
+
+msgid "Logging in..."
+msgstr "உள்நுழைகிறது…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest இல் வெற்றிகரமாக உள்நுழைந்தீர்கள்"
+
+msgid "Login failed: %1"
+msgstr "உள்நுழைவில் தோல்வி: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest இலிருந்து வெளியேறினீர்கள்"
+
+msgid "Cannot identify the current book"
+msgstr "தற்போதைய நூலை அடையாளம் காண முடியவில்லை"
+
+msgid "Progress has been synchronized."
+msgstr "முன்னேற்றம் ஒத்திசைக்கப்பட்டது."
+
+msgid "Pushing reading progress..."
+msgstr "வாசிப்பு முன்னேற்றம் அனுப்பப்படுகிறது…"
+
+msgid "Reading progress pushed successfully"
+msgstr "வாசிப்பு முன்னேற்றம் வெற்றிகரமாக அனுப்பப்பட்டது"
+
+msgid "Failed to push reading progress"
+msgstr "வாசிப்பு முன்னேற்றத்தை அனுப்புவதில் தோல்வி"
+
+msgid "Pulling reading progress..."
+msgstr "வாசிப்பு முன்னேற்றம் பெறப்படுகிறது…"
+
+msgid "Failed to pull reading progress"
+msgstr "வாசிப்பு முன்னேற்றத்தைப் பெறுவதில் தோல்வி"
+
+msgid "Reading progress synchronized"
+msgstr "வாசிப்பு முன்னேற்றம் ஒத்திசைக்கப்பட்டது"
+
+msgid "No saved reading progress found for this book"
+msgstr "இந்த நூலுக்கான சேமிக்கப்பட்ட வாசிப்பு முன்னேற்றம் இல்லை"

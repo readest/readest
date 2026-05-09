@@ -219,7 +219,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
     !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
-    'border-base-300/50 border-t',
+    'not-eink:border-base-300/50 eink:border-base-content border-t',
     'transition-[opacity,transform] duration-300',
     forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',

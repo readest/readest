@@ -98,8 +98,19 @@ jobs:
           meta_file="apps/readest.koplugin/_meta.lua"
           perl -i -pe "s/^}/    version = \"${version}\",\n}/" "${meta_file}"
 
+          # Exclude dev-only artifacts from the published plugin zip:
+          #   scripts/  — i18n + build helpers
+          #   docs/     — design notes
+          #   spec/     — busted test suite
+          #   .busted   — busted runner config
+          # Mirror these in apps/readest.koplugin/scripts/build-koplugin.mjs
+          # for local builds.
           cd apps
-          zip -r ../${plugin_zip} readest.koplugin
+          zip -r ../${plugin_zip} readest.koplugin \
+            -x 'readest.koplugin/scripts/*' \
+               'readest.koplugin/docs/*' \
+               'readest.koplugin/spec/*' \
+               'readest.koplugin/.busted'
           cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"

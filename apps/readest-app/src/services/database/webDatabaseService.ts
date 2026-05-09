@@ -11,7 +11,11 @@ interface WasmStatement {
 }
 
 interface WasmDatabase {
-  prepare(sql: string): WasmStatement;
+  // Turso's `Database.prepare()` was made async in @readest/turso-database-common
+  // (commit a30b6ded4). It still resolves synchronously today, but the package
+  // notes the underlying impl may become truly async — accept either shape and
+  // always `await` at the call site so we're forward-compatible.
+  prepare(sql: string): WasmStatement | Promise<WasmStatement>;
   exec(sql: string): Promise<void>;
   close(): Promise<void>;
 }
@@ -24,13 +28,13 @@ export class WebDatabaseService implements DatabaseService {
   }
 
   static async open(path: string, opts?: DatabaseOpts): Promise<WebDatabaseService> {
-    const mod = await import('@tursodatabase/database-wasm');
+    const mod = await import('@readest/turso-database-wasm/webpack');
     const db = (await mod.connect(path, opts)) as unknown as WasmDatabase;
     return new WebDatabaseService(db);
   }
 
   async execute(sql: string, params: unknown[] = []): Promise<DatabaseExecResult> {
-    const stmt = this.db.prepare(sql);
+    const stmt = await this.db.prepare(sql);
     const result = await stmt.run(...params);
     return {
       rowsAffected: result.changes,
@@ -42,7 +46,7 @@ export class WebDatabaseService implements DatabaseService {
     sql: string,
     params: unknown[] = [],
   ): Promise<T[]> {
-    const stmt = this.db.prepare(sql);
+    const stmt = await this.db.prepare(sql);
     const rows = await stmt.all(...params);
     return rows as T[];
   }

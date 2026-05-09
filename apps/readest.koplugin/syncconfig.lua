@@ -4,7 +4,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local sha2 = require("ffi/sha2")
-local _ = require("gettext")
+local _ = require("i18n")
 
 local SyncConfig = {}
 
@@ -177,7 +177,7 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp)
 
     if interactive then
         UIManager:show(InfoMessage:new{
-            text = _("Pushing book config..."),
+            text = _("Pushing reading progress..."),
             timeout = 1,
         })
     end
@@ -194,15 +194,20 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp)
             if interactive then
                 if success then
                     UIManager:show(InfoMessage:new{
-                        text = _("Book config pushed successfully"),
+                        text = _("Reading progress pushed successfully"),
                         timeout = 2,
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to push book config"),
+                        text = _("Failed to push reading progress"),
                         timeout = 2,
                     })
                 end
+            end
+            if success and ui.doc_settings then
+                local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
+                doc_readest_sync.last_synced_at_config = os.time()
+                ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
             end
         end
     )
@@ -216,7 +221,7 @@ end
 function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive, logout_fn)
     if interactive then
         UIManager:show(InfoMessage:new{
-            text = _("Pulling book config..."),
+            text = _("Pulling reading progress..."),
             timeout = 1,
         })
     end
@@ -228,9 +233,15 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             book = book_hash,
             meta_hash = meta_hash,
         },
-        function(success, response)
+        function(success, response, status)
             if not success then
-                if response and response.error == "Not authenticated" then
+                -- Auth failure: server returns HTTP 403 with body
+                -- {error="Not authenticated"} per apps/readest-app/src/pages/api/sync.ts:31.
+                -- Check the status code primarily so future endpoints with
+                -- different body shapes still trigger relogin (codex finding).
+                local is_auth_fail = status == 401 or status == 403
+                    or (response and response.error == "Not authenticated")
+                if is_auth_fail then
                     if interactive then
                         UIManager:show(InfoMessage:new{
                             text = _("Authentication failed, please login again"),
@@ -242,11 +253,17 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
                 end
                 if interactive then
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to pull book config"),
+                        text = _("Failed to pull reading progress"),
                         timeout = 2,
                     })
                 end
                 return
+            end
+
+            if ui.doc_settings then
+                local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
+                doc_readest_sync.last_synced_at_config = os.time()
+                ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
             end
 
             local data = response.configs
@@ -256,7 +273,7 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
                     self:applyBookConfig(ui, config)
                     if interactive then
                         UIManager:show(InfoMessage:new{
-                            text = _("Book config synchronized"),
+                            text = _("Reading progress synchronized"),
                             timeout = 2,
                         })
                     end
@@ -266,7 +283,7 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
 
             if interactive then
                 UIManager:show(InfoMessage:new{
-                    text = _("No saved config found for this book"),
+                    text = _("No saved reading progress found for this book"),
                     timeout = 2,
                 })
             end

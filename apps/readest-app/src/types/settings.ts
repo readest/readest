@@ -5,6 +5,7 @@ import { HighlightColor, HighlightStyle, UserHighlightColor, ViewSettings } from
 import { OPDSCatalog } from './opds';
 import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
+import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -44,9 +45,9 @@ export interface ReadSettings {
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
-
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
+
   customHighlightColors: Record<HighlightColor, string>;
   userHighlightColors: UserHighlightColor[];
   defaultHighlightLabels: Partial<Record<HighlightColor, string>>;
@@ -78,8 +79,36 @@ export interface HardcoverSettings {
   lastSyncedAt: number;
 }
 
+/**
+ * User-facing sync categories. 'progress' gates the existing book-config
+ * (reading progress) sync, 'note' gates annotations, 'book' gates book
+ * binaries + metadata, 'dictionary' gates the imported-dictionary replica
+ * sync. Adding a new replica kind extends this union.
+ */
+export type SyncCategory =
+  | 'book'
+  | 'progress'
+  | 'note'
+  | 'dictionary'
+  | 'font'
+  | 'texture'
+  | 'opds_catalog'
+  | 'settings';
+
+export const SYNC_CATEGORIES: readonly SyncCategory[] = [
+  'book',
+  'progress',
+  'note',
+  'dictionary',
+  'font',
+  'texture',
+  'opds_catalog',
+  'settings',
+] as const;
+
 export interface SystemSettings {
   version: number;
+  migrationVersion: number;
   localBooksDir: string;
   customRootDir?: string;
 
@@ -109,22 +138,53 @@ export interface SystemSettings {
   libraryColumns: number;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
+  customDictionaries: ImportedDictionary[];
+  dictionarySettings: DictionarySettings;
   opdsCatalogs: OPDSCatalog[];
   metadataSeriesCollapsed: boolean;
   metadataOthersCollapsed: boolean;
   metadataDescriptionCollapsed: boolean;
+  lastSyncedAtBooks: number;
+  lastSyncedAtConfigs: number;
+  lastSyncedAtNotes: number;
+
+  /**
+   * App-lock PIN. When `pinCodeEnabled` is true, the user must enter
+   * a 4-digit PIN before the library/reader is rendered on app launch.
+   * `pinCodeHash` is `bytesToHex(PBKDF2-SHA256(pin, hexToBytes(pinCodeSalt)))`,
+   * never the plaintext PIN. Cleared together with `pinCodeEnabled = false`
+   * when the user disables the lock.
+   */
+  pinCodeEnabled?: boolean;
+  pinCodeHash?: string;
+  pinCodeSalt?: string;
 
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
 
-  lastSyncedAtBooks: number;
-  lastSyncedAtConfigs: number;
-  lastSyncedAtNotes: number;
-
-  migrationVersion: number;
-
   aiSettings: AISettings;
+  /**
+   * Per-device id used as the deviceId portion of every HLC this device
+   * mints. Lazy-generated on first sync init via uuidv4 (mirrors
+   * kosync.deviceId). Independent from kosync — the two services have
+   * distinct identifier semantics and rotation policies.
+   */
+  replicaDeviceId?: string;
+  /**
+   * Per-kind cursor for replica sync. Stores the HLC string of the last
+   * pulled row per kind. Absent kinds pull from the beginning.
+   */
+  lastSyncedAtReplicas?: Record<string, string>;
+  /**
+   * Per-category sync toggles. Missing keys default to ON. The
+   * 'progress' category gates the existing book-config (reading
+   * progress) sync; 'note' gates annotation sync; 'book' gates book
+   * binary + metadata sync; 'dictionary' gates the imported-dictionary
+   * replica sync. Future replica kinds add new SyncCategory members.
+   */
+  syncCategories?: Partial<Record<SyncCategory, boolean>>;
+
   // Global read settings that apply to the reader page
   globalReadSettings: ReadSettings;
   // Global view settings that apply to all books, and can be overridden by book-specific view settings

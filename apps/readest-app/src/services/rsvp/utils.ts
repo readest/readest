@@ -226,14 +226,45 @@ function segmentWithJieba(text: string): string[] {
 }
 
 /**
+ * Split a token on em-dash (—) and en-dash (–), keeping the dash attached to
+ * the preceding non-empty segment so downstream pause logic still sees it as
+ * trailing punctuation. A leading dash with no preceding word is emitted as
+ * its own token.
+ *
+ * Examples:
+ *   "best—of"        → ["best—", "of"]
+ *   "10–15"          → ["10–", "15"]
+ *   "cliffhanger—"   → ["cliffhanger—"]
+ *   "—continued"     → ["—", "continued"]
+ */
+function splitOnLongDashes(token: string): string[] {
+  if (!/[–—]/.test(token)) return [token];
+  const parts = token.split(/([–—])/);
+  const result: string[] = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (/^[–—]$/.test(part) && result.length > 0) {
+      result[result.length - 1] = result[result.length - 1] + part;
+    } else {
+      result.push(part);
+    }
+  }
+  return result;
+}
+
+/**
  * Split text into words, handling both CJK and non-CJK text
  */
 export function splitTextIntoWords(text: string, language?: string): string[] {
   const hasCJK = containsCJK(text);
 
   if (!hasCJK) {
-    // Use space-based splitting for non-CJK text
-    return text.split(/(\s+)/).filter((w) => w.trim().length > 0);
+    // Use space-based splitting for non-CJK text, then split on em/en-dashes so
+    // compound phrases like "word—word" don't flash as a single unreadable run.
+    return text
+      .split(/(\s+)/)
+      .filter((w) => w.trim().length > 0)
+      .flatMap(splitOnLongDashes);
   }
 
   // For CJK text, use semantic segmentation

@@ -8,7 +8,15 @@
         "components": [
           {
             "/": "/auth/*",
-            "comment": "Matches any URL whose path starts with /auth/"
+            "comment": "Matches OAuth callback paths"
+          },
+          {
+            "/": "/o/*",
+            "comment": "Matches annotation deeplinks"
+          },
+          {
+            "/": "/s/*",
+            "comment": "Matches book share links"
           }
         ]
       }

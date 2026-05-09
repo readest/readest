@@ -13,6 +13,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
@@ -41,27 +42,37 @@ import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
-import WiktionaryPopup from './WiktionaryPopup';
-import WikipediaPopup from './WikipediaPopup';
 import XRayPopup from './XRayPopup';
+import DictionaryPopup from './DictionaryPopup';
+import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
+import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { settings } = useSettingsStore();
+  const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
+    useSettingsStore();
   const { isDarkMode } = useThemeStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
+  const { loadCustomDictionaries } = useCustomDictionaryStore();
 
   useNotesSync(bookKey);
   useReadwiseSync(bookKey);
   useHardcoverSync(bookKey);
+
+  useEffect(() => {
+    void loadCustomDictionaries(envConfig).catch((error) => {
+      console.warn('Failed to load custom dictionaries:', error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const osPlatform = getOSPlatform();
   const config = getConfig(bookKey)!;
@@ -75,8 +86,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
-  const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
-  const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
+  const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showXRayPopup, setShowXRayPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
@@ -109,19 +119,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const deferredQuickActionRef = useRef(createDeferredActionState());
 
   const showingPopup =
-    showAnnotPopup ||
-    showWiktionaryPopup ||
-    showWikipediaPopup ||
-    showXRayPopup ||
-    showDeepLPopup ||
-    showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const maxHeight = window.innerHeight - 2 * popupPadding;
   const dictPopupWidth = Math.min(480, maxWidth);
-  const dictPopupHeight = Math.min(300, maxHeight);
+  // Tall enough to fit a header + 2-3 expanded cards comfortably. The popup
+  // shows all enabled providers stacked (no tabs) so it needs more vertical
+  // room than the legacy single-tab layout.
+  const dictPopupHeight = Math.min(480, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
@@ -212,8 +220,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     throttle(() => {
       setSelection(null);
       setShowAnnotPopup(false);
-      setShowWiktionaryPopup(false);
-      setShowWikipediaPopup(false);
+      setShowDictionaryPopup(false);
       setShowXRayPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
@@ -322,8 +329,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               // Show translation popup preferentially for PDF right-click
               setShowAnnotPopup(false);
               setShowDeepLPopup(true);
-              setShowWiktionaryPopup(false);
-              setShowWikipediaPopup(false);
+              setShowDictionaryPopup(false);
+              setShowXRayPopup(false);
             }
           }
         } catch (err) {
@@ -521,9 +528,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         case 'dictionary':
           handleDictionary();
           break;
-        case 'wikipedia':
-          handleWikipedia();
-          break;
         case 'translate':
           handleTranslation();
           break;
@@ -644,8 +648,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
-    setShowWiktionaryPopup(false);
-    setShowWikipediaPopup(false);
+    setShowDictionaryPopup(false);
+    setShowXRayPopup(false);
   };
 
   const handleCopy = (dismissPopup = true) => {
@@ -776,18 +780,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleDictionary = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
-    setShowWiktionaryPopup(true);
-  };
-
-  const handleWikipedia = () => {
-    if (!selection || !selection.text) return;
-    setShowAnnotPopup(false);
-    setShowWikipediaPopup(true);
+    setShowXRayPopup(false);
+    setShowDictionaryPopup(true);
   };
 
   const handleXRay = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setShowDictionaryPopup(false);
     setShowXRayPopup(true);
   };
 
@@ -852,9 +852,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       onDictionarySelection: () => {
         handleDictionary();
       },
-      onWikipediaSelection: () => {
-        handleWikipedia();
-      },
       onReadAloudSelection: () => {
         handleSpeakText();
       },
@@ -908,27 +905,34 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowExportDialog(true);
   };
 
-  const handleConfirmExport = async (markdownContent: string) => {
+  const handleConfirmExport = async (
+    content: string,
+    isPlainText: boolean,
+    sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' },
+  ) => {
     const { book } = bookData;
     if (!book) return;
 
     setTimeout(() => {
       // Delay to ensure it won't be overridden by system clipboard actions
-      navigator.clipboard?.writeText(markdownContent);
+      navigator.clipboard?.writeText(content);
     }, 100);
 
-    const filename = `${makeSafeFilename(book.title)}.md`;
-    const saved = await appService?.saveFile(filename, markdownContent, {
-      mimeType: 'text/markdown',
+    const ext = isPlainText ? 'txt' : 'md';
+    const mimeType = isPlainText ? 'text/plain' : 'text/markdown';
+    const filename = `${makeSafeFilename(book.title)}.${ext}`;
+    const saved = await appService?.saveFile(filename, content, {
+      mimeType,
+      share: true,
+      sharePosition,
     });
+
+    if (appService?.isMacOSApp) return;
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: saved ? _('Exported successfully') : _('Copied to clipboard'),
       timeout: 2000,
     });
-
-    setShowExportDialog(false);
-    setExportData(null);
   };
 
   const handleCancelExport = () => {
@@ -961,8 +965,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
-      case 'wikipedia':
-        return { tooltipText: _(label), Icon, onClick: handleWikipedia };
       case 'xray':
         return { tooltipText: _(label), Icon, onClick: handleXRay };
       case 'translate':
@@ -987,28 +989,45 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {showWiktionaryPopup && trianglePosition && dictPopupPosition && (
-        <WiktionaryPopup
-          word={selection?.text as string}
-          lang={bookData.bookDoc?.metadata.language as string}
-          position={dictPopupPosition}
-          trianglePosition={trianglePosition}
-          popupWidth={dictPopupWidth}
-          popupHeight={dictPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
-        />
-      )}
-      {showWikipediaPopup && trianglePosition && dictPopupPosition && (
-        <WikipediaPopup
-          text={selection?.text as string}
-          lang={bookData.bookDoc?.metadata.language as string}
-          position={dictPopupPosition}
-          trianglePosition={trianglePosition}
-          popupWidth={dictPopupWidth}
-          popupHeight={dictPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
-        />
-      )}
+      {showDictionaryPopup &&
+        (() => {
+          // Below `sm` (or short landscape) we present the dictionary as a
+          // bottom sheet — the anchored popup gets cramped at this size.
+          // Matches the `isMobile` heuristic used by `Dialog`.
+          const useSheet = window.innerWidth < 640 || window.innerHeight < 640;
+          const onManage = () => {
+            // Dismiss so the user returns to the reader cleanly when they
+            // close settings; the dictionaries sub-page in SettingsDialog
+            // is enough surface for managing providers.
+            handleDismissPopupAndSelection();
+            setSettingsDialogBookKey(bookKey);
+            setActiveSettingsItemId('settings.language.dictionaries.manage');
+            setSettingsDialogOpen(true);
+          };
+          if (useSheet) {
+            return (
+              <DictionarySheet
+                word={selection?.text as string}
+                lang={bookData.bookDoc?.metadata.language as string}
+                onDismiss={handleDismissPopupAndSelection}
+                onManage={onManage}
+              />
+            );
+          }
+          if (!trianglePosition || !dictPopupPosition) return null;
+          return (
+            <DictionaryPopup
+              word={selection?.text as string}
+              lang={bookData.bookDoc?.metadata.language as string}
+              position={dictPopupPosition}
+              trianglePosition={trianglePosition}
+              popupWidth={dictPopupWidth}
+              popupHeight={dictPopupHeight}
+              onDismiss={handleDismissPopupAndSelection}
+              onManage={onManage}
+            />
+          );
+        })()}
       {showXRayPopup && trianglePosition && dictPopupPosition && (
         <XRayPopup
           term={selection?.text as string}
@@ -1059,6 +1078,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupWidth={proofreadPopupWidth}
           popupHeight={proofreadPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
+          onManage={() => {
+            handleDismissPopupAndSelection();
+            setProofreadRulesVisibility(true);
+          }}
         />
       )}
       {editingAnnotation && editingAnnotation.color && selection && (
@@ -1078,6 +1101,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         <ExportMarkdownDialog
           bookKey={bookKey}
           isOpen={showExportDialog}
+          bookHash={bookData.book.hash}
           bookTitle={bookData.book.title}
           bookAuthor={bookData.book.author || ''}
           booknotes={exportData.booknotes}

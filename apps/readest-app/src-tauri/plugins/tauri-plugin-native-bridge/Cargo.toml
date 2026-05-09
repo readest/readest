@@ -20,3 +20,17 @@ schemars = "0.8"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 font-enumeration = "0.9.0"
+
+# OS-keychain backed secret storage for the sync passphrase. Each
+# desktop target enables exactly the native backend it can compile.
+# iOS / Android take a different path entirely: Swift's Security
+# framework + Android's EncryptedSharedPreferences, dispatched via
+# mobile.rs.
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", default-features = false, features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", default-features = false, features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", default-features = false, features = ["sync-secret-service"] }

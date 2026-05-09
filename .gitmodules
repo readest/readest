@@ -19,3 +19,6 @@
 [submodule "packages/qcms"]
 	path = packages/qcms
 	url = https://github.com/mozilla/pdf.js.qcms.git
+[submodule "packages/js-mdict"]
+	path = packages/js-mdict
+	url = https://github.com/readest/js-mdict.git

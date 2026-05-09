@@ -1,0 +1,438 @@
+# Arabic translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "يحافظ على مزامنة أجهزة KOReader و Readest الخاصة بك."
+
+msgid "Library view"
+msgstr "عرض المكتبة"
+
+msgid "View"
+msgstr "عرض"
+
+msgid "Grid"
+msgstr "شبكة"
+
+msgid "List"
+msgstr "قائمة"
+
+msgid "Group by"
+msgstr "تجميع حسب"
+
+msgid "Authors"
+msgstr "المؤلفون"
+
+msgid "Books"
+msgstr "الكتب"
+
+msgid "Groups"
+msgstr "المجموعات"
+
+msgid "Series"
+msgstr "السلاسل"
+
+msgid "Sort by"
+msgstr "ترتيب حسب"
+
+msgid "Date Read"
+msgstr "تاريخ القراءة"
+
+msgid "Date Added"
+msgstr "تاريخ الإضافة"
+
+msgid "Title"
+msgstr "العنوان"
+
+msgid "Author"
+msgstr "المؤلف"
+
+msgid "Descending"
+msgstr "تنازلي"
+
+msgid "Ascending"
+msgstr "تصاعدي"
+
+msgid "Actions"
+msgstr "إجراءات"
+
+msgid "Rescan library"
+msgstr "إعادة فحص المكتبة"
+
+msgid "Download folder…"
+msgstr "مجلد التنزيل…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "اختر مجلداً للكتب المنزّلة"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "سجّل دخولك إلى Readest لفتح المكتبة"
+
+msgid "Library"
+msgstr "المكتبة"
+
+msgid "Readest Library"
+msgstr "مكتبة Readest"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Clear"
+msgstr "مسح"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Search library"
+msgstr "البحث في المكتبة"
+
+msgid "Search title or author"
+msgstr "البحث بالعنوان أو المؤلف"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "يتطلب عرض المكتبة الكامل إضافة Cover Browser. سيتم استخدام قائمة عادية."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "تم نقل الملف أو حذفه. هل تريد إعادة فحص المكتبة؟"
+
+msgid "Download this book from Readest?"
+msgstr "تنزيل هذا الكتاب من Readest؟"
+
+msgid "Download"
+msgstr "تنزيل"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "حدد المجلد الرئيسي في مدير الملفات أولاً لتفعيل التنزيلات."
+
+msgid "Downloading…"
+msgstr "جارٍ التنزيل…"
+
+msgid "Cloud copy unavailable."
+msgstr "نسخة السحابة غير متاحة."
+
+msgid "Download failed."
+msgstr "فشل التنزيل."
+
+msgid "No cover available on Readest."
+msgstr "لا يوجد غلاف متوفر على Readest."
+
+msgid "Cover download failed."
+msgstr "فشل تنزيل الغلاف."
+
+msgid "Could not delete the file."
+msgstr "تعذّر حذف الملف."
+
+msgid "Removing from cloud…"
+msgstr "جارٍ الإزالة من السحابة…"
+
+msgid "Cloud removal failed."
+msgstr "فشلت الإزالة من السحابة."
+
+msgid "Remove from Cloud & Device"
+msgstr "إزالة من السحابة والجهاز"
+
+msgid "Remove this book from cloud and device?"
+msgstr "إزالة هذا الكتاب من السحابة والجهاز؟"
+
+msgid "Remove"
+msgstr "إزالة"
+
+msgid "Remove from Cloud Only"
+msgstr "إزالة من السحابة فقط"
+
+msgid "Remove this book from the cloud only?"
+msgstr "إزالة هذا الكتاب من السحابة فقط؟"
+
+msgid "Remove from Device Only"
+msgstr "إزالة من الجهاز فقط"
+
+msgid "Remove the local copy of this book?"
+msgstr "إزالة النسخة المحلية لهذا الكتاب؟"
+
+msgid "Upload to Cloud"
+msgstr "رفع إلى السحابة"
+
+msgid "Uploading…"
+msgstr "جارٍ الرفع…"
+
+msgid "Storage quota exceeded."
+msgstr "تم تجاوز حصة التخزين."
+
+msgid "Upload failed."
+msgstr "فشل الرفع."
+
+msgid "Download Book"
+msgstr "تنزيل الكتاب"
+
+msgid "Download Cover"
+msgstr "تنزيل الغلاف"
+
+msgid "Download All"
+msgstr "تنزيل الكل"
+
+msgid "Open Readest Library"
+msgstr "فتح مكتبة Readest"
+
+msgid "Push Readest book library"
+msgstr "إرسال مكتبة كتب Readest"
+
+msgid "Pull Readest book library"
+msgstr "جلب مكتبة كتب Readest"
+
+msgid "Set auto progress sync"
+msgstr "تعيين المزامنة التلقائية للتقدم"
+
+msgid "on"
+msgstr "تشغيل"
+
+msgid "off"
+msgstr "إيقاف"
+
+msgid "Toggle auto readest sync"
+msgstr "تبديل المزامنة التلقائية لـ Readest"
+
+msgid "Push readest progress from this device"
+msgstr "إرسال تقدم Readest من هذا الجهاز"
+
+msgid "Pull readest progress from other devices"
+msgstr "جلب تقدم Readest من الأجهزة الأخرى"
+
+msgid "Push readest annotations from this device"
+msgstr "إرسال ملاحظات Readest من هذا الجهاز"
+
+msgid "Pull readest annotations from other devices"
+msgstr "جلب ملاحظات Readest من الأجهزة الأخرى"
+
+msgid "Add to Readest"
+msgstr "إضافة إلى Readest"
+
+msgid "Sign in to Readest first."
+msgstr "سجّل الدخول إلى Readest أولاً."
+
+msgid "File not found."
+msgstr "الملف غير موجود."
+
+msgid "Unsupported book format."
+msgstr "تنسيق الكتاب غير مدعوم."
+
+msgid "Hashing book…"
+msgstr "جارٍ احتساب بصمة الكتاب…"
+
+msgid "Could not read file."
+msgstr "تعذّر قراءة الملف."
+
+msgid "Already in your Readest library:"
+msgstr "موجود بالفعل في مكتبة Readest الخاصة بك:"
+
+msgid "Added to Readest:"
+msgstr "تمت الإضافة إلى Readest:"
+
+msgid "Log in Readest Account"
+msgstr "تسجيل الدخول إلى حساب Readest"
+
+msgid "Log out as %1"
+msgstr "تسجيل الخروج من %1"
+
+msgid "Auto sync"
+msgstr "المزامنة التلقائية"
+
+msgid "Readest library"
+msgstr "مكتبة Readest"
+
+msgid "Push books now"
+msgstr "إرسال الكتب الآن"
+
+msgid "Pull books now"
+msgstr "جلب الكتب الآن"
+
+msgid "Push reading progress now"
+msgstr "إرسال تقدم القراءة الآن"
+
+msgid "Pull reading progress now"
+msgstr "جلب تقدم القراءة الآن"
+
+msgid "Push annotations now"
+msgstr "إرسال الملاحظات الآن"
+
+msgid "Pull annotations now"
+msgstr "جلب الملاحظات الآن"
+
+msgid "Full sync all annotations"
+msgstr "مزامنة كاملة لجميع الملاحظات"
+
+msgid "Sync info"
+msgstr "معلومات المزامنة"
+
+msgid "Check for update (v%1)"
+msgstr "التحقق من التحديث (v%1)"
+
+msgid "Check for update"
+msgstr "التحقق من التحديث"
+
+msgid "Please login first"
+msgstr "يرجى تسجيل الدخول أولاً"
+
+msgid "Please configure Readest settings first"
+msgstr "يرجى تكوين إعدادات Readest أولاً"
+
+msgid "No book is open"
+msgstr "لا يوجد كتاب مفتوح"
+
+msgid "(none)"
+msgstr "(لا شيء)"
+
+msgid "Never synced"
+msgstr "لم تتم المزامنة مطلقاً"
+
+msgid "Book Fingerprint"
+msgstr "بصمة الكتاب"
+
+msgid "Identifiers"
+msgstr "المعرفات"
+
+msgid "Last Synced"
+msgstr "آخر مزامنة"
+
+msgid "Sync Info"
+msgstr "معلومات المزامنة"
+
+msgid "Library not initialized"
+msgstr "المكتبة غير مهيّأة"
+
+msgid "Books synced"
+msgstr "تمت مزامنة الكتب"
+
+msgid "Books sync failed"
+msgstr "فشلت مزامنة الكتب"
+
+msgid "Checking for update…"
+msgstr "التحقق من التحديث…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "فشل التحقق من التحديث. يرجى المحاولة لاحقاً."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "يتوفر إصدار جديد: v%1 (الحالي: v%2).\n\nهل تريد التحديث الآن؟"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "يتوفر إصدار جديد: v%1.\n\nهل تريد التحديث الآن؟"
+
+msgid "Update"
+msgstr "تحديث"
+
+msgid "You are up to date (v%1)."
+msgstr "أنت تستخدم أحدث إصدار (v%1)."
+
+msgid "Downloading update…"
+msgstr "تنزيل التحديث…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "فشل تنزيل التحديث. يرجى المحاولة لاحقاً."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "تم تحديث إضافة Readest إلى v%1.\n\nيرجى إعادة تشغيل KOReader لتطبيق التحديث."
+
+msgid "Restart now"
+msgstr "إعادة التشغيل الآن"
+
+msgid "Later"
+msgstr "لاحقاً"
+
+msgid "Failed to install update: %1"
+msgstr "فشل تثبيت التحديث: %1"
+
+msgid "unknown error"
+msgstr "خطأ غير معروف"
+
+msgid "No annotations to push"
+msgstr "لا توجد ملاحظات للإرسال"
+
+msgid "Pushing annotations..."
+msgstr "جارٍ إرسال الملاحظات…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "تم إرسال %1 ملاحظات بنجاح"
+
+msgid "Failed to push annotations"
+msgstr "فشل إرسال الملاحظات"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "مزامنة الملاحظات غير مدعومة لمستندات PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "مزامنة كاملة: جلب جميع الملاحظات…"
+
+msgid "Pulling annotations..."
+msgstr "جارٍ جلب الملاحظات…"
+
+msgid "Authentication failed, please login again"
+msgstr "فشل المصادقة، يرجى تسجيل الدخول مرة أخرى"
+
+msgid "Failed to pull annotations"
+msgstr "فشل جلب الملاحظات"
+
+msgid "No new annotations found"
+msgstr "لم يتم العثور على ملاحظات جديدة"
+
+msgid "%1 annotations pulled"
+msgstr "تم جلب %1 ملاحظات"
+
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Please enter both email and password"
+msgstr "يرجى إدخال البريد الإلكتروني وكلمة المرور"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "يرجى تكوين عنوان Supabase ومفتاح API أولاً"
+
+msgid "Logging in..."
+msgstr "جارٍ تسجيل الدخول…"
+
+msgid "Successfully logged in to Readest"
+msgstr "تم تسجيل الدخول إلى Readest بنجاح"
+
+msgid "Login failed: %1"
+msgstr "فشل تسجيل الدخول: %1"
+
+msgid "Logged out from Readest"
+msgstr "تم تسجيل الخروج من Readest"
+
+msgid "Cannot identify the current book"
+msgstr "تعذر التعرف على الكتاب الحالي"
+
+msgid "Progress has been synchronized."
+msgstr "تمت مزامنة التقدم."
+
+msgid "Pushing reading progress..."
+msgstr "جارٍ إرسال تقدم القراءة…"
+
+msgid "Reading progress pushed successfully"
+msgstr "تم إرسال تقدم القراءة بنجاح"
+
+msgid "Failed to push reading progress"
+msgstr "فشل إرسال تقدم القراءة"
+
+msgid "Pulling reading progress..."
+msgstr "جارٍ جلب تقدم القراءة…"
+
+msgid "Failed to pull reading progress"
+msgstr "فشل جلب تقدم القراءة"
+
+msgid "Reading progress synchronized"
+msgstr "تمت مزامنة تقدم القراءة"
+
+msgid "No saved reading progress found for this book"
+msgstr "لم يتم العثور على تقدم قراءة محفوظ لهذا الكتاب"

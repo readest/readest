@@ -237,3 +237,39 @@ pub struct GetStorefrontRegionCodeResponse {
     pub region_code: Option<String>,
     pub error: Option<String>,
 }
+
+// ── Sync passphrase keychain ────────────────────────────────────────────
+//
+// Persist the sync passphrase across app launches via the OS keychain
+// so native users don't re-enter it every session. The replica-sync
+// CryptoSession (TS side) reads/writes via these commands; web users
+// keep using the in-memory ephemeral store.
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetSyncPassphraseRequest {
+    pub passphrase: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncPassphraseResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSyncPassphraseResponse {
+    /// Present iff a passphrase is stored. Absent (and `error: None`)
+    /// means "no entry on this device" — caller should prompt.
+    pub passphrase: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncKeychainAvailableResponse {
+    pub available: bool,
+    pub error: Option<String>,
+}

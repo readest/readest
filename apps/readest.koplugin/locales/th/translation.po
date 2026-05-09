@@ -1,0 +1,438 @@
+# Thai translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "รักษาการซิงค์ระหว่างอุปกรณ์ KOReader และ Readest ของคุณ"
+
+msgid "Library view"
+msgstr "มุมมองคลัง"
+
+msgid "View"
+msgstr "มุมมอง"
+
+msgid "Grid"
+msgstr "ตาราง"
+
+msgid "List"
+msgstr "รายการ"
+
+msgid "Group by"
+msgstr "จัดกลุ่มตาม"
+
+msgid "Authors"
+msgstr "ผู้แต่ง"
+
+msgid "Books"
+msgstr "หนังสือ"
+
+msgid "Groups"
+msgstr "กลุ่ม"
+
+msgid "Series"
+msgstr "ชุด"
+
+msgid "Sort by"
+msgstr "เรียงตาม"
+
+msgid "Date Read"
+msgstr "วันที่อ่าน"
+
+msgid "Date Added"
+msgstr "วันที่เพิ่ม"
+
+msgid "Title"
+msgstr "ชื่อเรื่อง"
+
+msgid "Author"
+msgstr "ผู้แต่ง"
+
+msgid "Descending"
+msgstr "จากมากไปน้อย"
+
+msgid "Ascending"
+msgstr "จากน้อยไปมาก"
+
+msgid "Actions"
+msgstr "การกระทำ"
+
+msgid "Rescan library"
+msgstr "สแกนคลังใหม่"
+
+msgid "Download folder…"
+msgstr "โฟลเดอร์ดาวน์โหลด…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "เลือกโฟลเดอร์สำหรับหนังสือที่ดาวน์โหลด"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "ลงชื่อเข้าใช้ Readest เพื่อเปิดคลัง"
+
+msgid "Library"
+msgstr "คลัง"
+
+msgid "Readest Library"
+msgstr "คลัง Readest"
+
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+msgid "Clear"
+msgstr "ล้าง"
+
+msgid "Search"
+msgstr "ค้นหา"
+
+msgid "Search library"
+msgstr "ค้นหาในคลัง"
+
+msgid "Search title or author"
+msgstr "ค้นหาชื่อหรือผู้แต่ง"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "ต้องใช้ปลั๊กอิน Cover Browser เพื่อแสดงคลังเต็มรูปแบบ กลับไปใช้รายการธรรมดา"
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "ไฟล์ถูกย้ายหรือลบแล้ว สแกนคลังใหม่ไหม?"
+
+msgid "Download this book from Readest?"
+msgstr "ดาวน์โหลดหนังสือเล่มนี้จาก Readest?"
+
+msgid "Download"
+msgstr "ดาวน์โหลด"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ตั้งค่าโฟลเดอร์หลักในตัวจัดการไฟล์ก่อนเพื่อเปิดใช้งานการดาวน์โหลด"
+
+msgid "Downloading…"
+msgstr "กำลังดาวน์โหลด…"
+
+msgid "Cloud copy unavailable."
+msgstr "ไม่มีสำเนาบนคลาวด์"
+
+msgid "Download failed."
+msgstr "ดาวน์โหลดไม่สำเร็จ"
+
+msgid "No cover available on Readest."
+msgstr "ไม่มีปกบน Readest"
+
+msgid "Cover download failed."
+msgstr "ดาวน์โหลดปกไม่สำเร็จ"
+
+msgid "Could not delete the file."
+msgstr "ลบไฟล์ไม่ได้"
+
+msgid "Removing from cloud…"
+msgstr "กำลังลบจากคลาวด์…"
+
+msgid "Cloud removal failed."
+msgstr "ลบบนคลาวด์ไม่สำเร็จ"
+
+msgid "Remove from Cloud & Device"
+msgstr "ลบจากคลาวด์และอุปกรณ์"
+
+msgid "Remove this book from cloud and device?"
+msgstr "ลบหนังสือเล่มนี้จากคลาวด์และอุปกรณ์?"
+
+msgid "Remove"
+msgstr "ลบ"
+
+msgid "Remove from Cloud Only"
+msgstr "ลบจากคลาวด์เท่านั้น"
+
+msgid "Remove this book from the cloud only?"
+msgstr "ลบหนังสือเล่มนี้จากคลาวด์เท่านั้น?"
+
+msgid "Remove from Device Only"
+msgstr "ลบจากอุปกรณ์เท่านั้น"
+
+msgid "Remove the local copy of this book?"
+msgstr "ลบสำเนาในเครื่องของหนังสือเล่มนี้?"
+
+msgid "Upload to Cloud"
+msgstr "อัปโหลดไปยังคลาวด์"
+
+msgid "Uploading…"
+msgstr "กำลังอัปโหลด…"
+
+msgid "Storage quota exceeded."
+msgstr "เกินโควตาที่จัดเก็บ"
+
+msgid "Upload failed."
+msgstr "อัปโหลดไม่สำเร็จ"
+
+msgid "Download Book"
+msgstr "ดาวน์โหลดหนังสือ"
+
+msgid "Download Cover"
+msgstr "ดาวน์โหลดปก"
+
+msgid "Download All"
+msgstr "ดาวน์โหลดทั้งหมด"
+
+msgid "Open Readest Library"
+msgstr "เปิดคลัง Readest"
+
+msgid "Push Readest book library"
+msgstr "ส่งคลังหนังสือ Readest"
+
+msgid "Pull Readest book library"
+msgstr "ดึงคลังหนังสือ Readest"
+
+msgid "Set auto progress sync"
+msgstr "ตั้งค่าการซิงค์ความคืบหน้าอัตโนมัติ"
+
+msgid "on"
+msgstr "เปิด"
+
+msgid "off"
+msgstr "ปิด"
+
+msgid "Toggle auto readest sync"
+msgstr "สลับการซิงค์อัตโนมัติของ Readest"
+
+msgid "Push readest progress from this device"
+msgstr "ส่งความคืบหน้า Readest จากอุปกรณ์นี้"
+
+msgid "Pull readest progress from other devices"
+msgstr "ดึงความคืบหน้า Readest จากอุปกรณ์อื่น"
+
+msgid "Push readest annotations from this device"
+msgstr "ส่งคำอธิบาย Readest จากอุปกรณ์นี้"
+
+msgid "Pull readest annotations from other devices"
+msgstr "ดึงคำอธิบาย Readest จากอุปกรณ์อื่น"
+
+msgid "Add to Readest"
+msgstr "เพิ่มลง Readest"
+
+msgid "Sign in to Readest first."
+msgstr "กรุณาลงชื่อเข้าใช้ Readest ก่อน"
+
+msgid "File not found."
+msgstr "ไม่พบไฟล์"
+
+msgid "Unsupported book format."
+msgstr "รูปแบบหนังสือไม่รองรับ"
+
+msgid "Hashing book…"
+msgstr "กำลังคำนวณแฮชหนังสือ…"
+
+msgid "Could not read file."
+msgstr "อ่านไฟล์ไม่ได้"
+
+msgid "Already in your Readest library:"
+msgstr "มีอยู่แล้วในคลัง Readest ของคุณ:"
+
+msgid "Added to Readest:"
+msgstr "เพิ่มลง Readest แล้ว:"
+
+msgid "Log in Readest Account"
+msgstr "เข้าสู่ระบบบัญชี Readest"
+
+msgid "Log out as %1"
+msgstr "ออกจากระบบในชื่อ %1"
+
+msgid "Auto sync"
+msgstr "ซิงค์อัตโนมัติ"
+
+msgid "Readest library"
+msgstr "คลัง Readest"
+
+msgid "Push books now"
+msgstr "ส่งหนังสือเดี๋ยวนี้"
+
+msgid "Pull books now"
+msgstr "ดึงหนังสือเดี๋ยวนี้"
+
+msgid "Push reading progress now"
+msgstr "ส่งความคืบหน้าการอ่านตอนนี้"
+
+msgid "Pull reading progress now"
+msgstr "ดึงความคืบหน้าการอ่านตอนนี้"
+
+msgid "Push annotations now"
+msgstr "ส่งคำอธิบายตอนนี้"
+
+msgid "Pull annotations now"
+msgstr "ดึงคำอธิบายตอนนี้"
+
+msgid "Full sync all annotations"
+msgstr "ซิงค์คำอธิบายทั้งหมดแบบเต็ม"
+
+msgid "Sync info"
+msgstr "ข้อมูลการซิงค์"
+
+msgid "Check for update (v%1)"
+msgstr "ตรวจสอบการอัปเดต (v%1)"
+
+msgid "Check for update"
+msgstr "ตรวจสอบการอัปเดต"
+
+msgid "Please login first"
+msgstr "โปรดเข้าสู่ระบบก่อน"
+
+msgid "Please configure Readest settings first"
+msgstr "โปรดกำหนดค่า Readest ก่อน"
+
+msgid "No book is open"
+msgstr "ไม่มีหนังสือที่เปิดอยู่"
+
+msgid "(none)"
+msgstr "(ไม่มี)"
+
+msgid "Never synced"
+msgstr "ไม่เคยซิงค์"
+
+msgid "Book Fingerprint"
+msgstr "ลายนิ้วมือหนังสือ"
+
+msgid "Identifiers"
+msgstr "ตัวระบุ"
+
+msgid "Last Synced"
+msgstr "ซิงค์ล่าสุด"
+
+msgid "Sync Info"
+msgstr "ข้อมูลการซิงค์"
+
+msgid "Library not initialized"
+msgstr "ยังไม่ได้เริ่มต้นคลัง"
+
+msgid "Books synced"
+msgstr "ซิงค์หนังสือแล้ว"
+
+msgid "Books sync failed"
+msgstr "ซิงค์หนังสือไม่สำเร็จ"
+
+msgid "Checking for update…"
+msgstr "กำลังตรวจสอบการอัปเดต…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "ตรวจสอบการอัปเดตไม่สำเร็จ โปรดลองอีกครั้งภายหลัง"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "มีเวอร์ชันใหม่: v%1 (ปัจจุบัน: v%2)\n\nต้องการอัปเดตตอนนี้หรือไม่?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "มีเวอร์ชันใหม่: v%1\n\nต้องการอัปเดตตอนนี้หรือไม่?"
+
+msgid "Update"
+msgstr "อัปเดต"
+
+msgid "You are up to date (v%1)."
+msgstr "คุณใช้เวอร์ชันล่าสุด (v%1)"
+
+msgid "Downloading update…"
+msgstr "กำลังดาวน์โหลดการอัปเดต…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "ดาวน์โหลดการอัปเดตไม่สำเร็จ โปรดลองอีกครั้งภายหลัง"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "ปลั๊กอิน Readest อัปเดตเป็น v%1\n\nโปรดเริ่มต้น KOReader ใหม่เพื่อใช้การอัปเดต"
+
+msgid "Restart now"
+msgstr "เริ่มใหม่ตอนนี้"
+
+msgid "Later"
+msgstr "ภายหลัง"
+
+msgid "Failed to install update: %1"
+msgstr "ติดตั้งการอัปเดตไม่สำเร็จ: %1"
+
+msgid "unknown error"
+msgstr "ข้อผิดพลาดที่ไม่ทราบ"
+
+msgid "No annotations to push"
+msgstr "ไม่มีคำอธิบายที่จะส่ง"
+
+msgid "Pushing annotations..."
+msgstr "กำลังส่งคำอธิบาย…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "ส่งคำอธิบาย %1 รายการสำเร็จ"
+
+msgid "Failed to push annotations"
+msgstr "ส่งคำอธิบายไม่สำเร็จ"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "ไม่รองรับการซิงค์คำอธิบายสำหรับเอกสาร PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "ซิงค์เต็มรูปแบบ: กำลังดึงคำอธิบายทั้งหมด…"
+
+msgid "Pulling annotations..."
+msgstr "กำลังดึงคำอธิบาย…"
+
+msgid "Authentication failed, please login again"
+msgstr "การยืนยันตัวตนล้มเหลว โปรดเข้าสู่ระบบอีกครั้ง"
+
+msgid "Failed to pull annotations"
+msgstr "ดึงคำอธิบายไม่สำเร็จ"
+
+msgid "No new annotations found"
+msgstr "ไม่พบคำอธิบายใหม่"
+
+msgid "%1 annotations pulled"
+msgstr "ดึงคำอธิบาย %1 รายการ"
+
+msgid "Login"
+msgstr "เข้าสู่ระบบ"
+
+msgid "Please enter both email and password"
+msgstr "โปรดป้อนทั้งอีเมลและรหัสผ่าน"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "โปรดกำหนดค่า URL ของ Supabase และคีย์ API ก่อน"
+
+msgid "Logging in..."
+msgstr "กำลังเข้าสู่ระบบ…"
+
+msgid "Successfully logged in to Readest"
+msgstr "เข้าสู่ระบบ Readest สำเร็จ"
+
+msgid "Login failed: %1"
+msgstr "เข้าสู่ระบบไม่สำเร็จ: %1"
+
+msgid "Logged out from Readest"
+msgstr "ออกจากระบบ Readest แล้ว"
+
+msgid "Cannot identify the current book"
+msgstr "ไม่สามารถระบุหนังสือปัจจุบันได้"
+
+msgid "Progress has been synchronized."
+msgstr "ความคืบหน้าได้รับการซิงค์แล้ว"
+
+msgid "Pushing reading progress..."
+msgstr "กำลังส่งความคืบหน้าการอ่าน…"
+
+msgid "Reading progress pushed successfully"
+msgstr "ส่งความคืบหน้าการอ่านสำเร็จ"
+
+msgid "Failed to push reading progress"
+msgstr "ส่งความคืบหน้าการอ่านไม่สำเร็จ"
+
+msgid "Pulling reading progress..."
+msgstr "กำลังดึงความคืบหน้าการอ่าน…"
+
+msgid "Failed to pull reading progress"
+msgstr "ดึงความคืบหน้าการอ่านไม่สำเร็จ"
+
+msgid "Reading progress synchronized"
+msgstr "ซิงค์ความคืบหน้าการอ่านแล้ว"
+
+msgid "No saved reading progress found for this book"
+msgstr "ไม่พบความคืบหน้าการอ่านที่บันทึกไว้สำหรับหนังสือเล่มนี้"

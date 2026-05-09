@@ -115,6 +115,22 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
     );
   });
 
+  describe('番外 (bonus) prefix variants', () => {
+    it.each([
+      '番外',
+      '番外 第1章 旗开得胜',
+      '番外 第一章 灰猫',
+      '番外 第二章 再战',
+      '番外 灰猫',
+      '番外篇 灰猫',
+      '外传',
+      '外传 一',
+    ])('should match "%s"', (heading) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
+  });
+
   describe('should not match', () => {
     it('should not match chapter heading embedded mid-line', () => {
       const regex = getFirstRegex('zh');
@@ -332,6 +348,28 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     const chapters = extractChapters('这是前文内容\n第一章 开始\n正文内容', 'zh');
     expect(chapters.length).toBeGreaterThanOrEqual(2);
     expect(chapters[0]!.content).toContain('前文');
+  });
+
+  it('should extract 番外 chapters mixed with regular chapters (issue #4016)', () => {
+    const text = [
+      '第57章 s级冰系掌控',
+      '第57章正文',
+      '第58章 觉醒天赋',
+      '第58章正文',
+      '番外 第1章 旗开得胜',
+      '番外1正文',
+      '番外 第2章 再战',
+      '番外2正文',
+      '番外 灰猫',
+      '番外3正文',
+    ].join('\n');
+    const chapters = extractChapters(text, 'zh');
+    const titles = chapters.map((c) => c.title);
+    expect(titles.some((t) => t.includes('第57章'))).toBe(true);
+    expect(titles.some((t) => t.includes('第58章'))).toBe(true);
+    expect(titles.some((t) => t.includes('番外 第1章'))).toBe(true);
+    expect(titles.some((t) => t.includes('番外 第2章'))).toBe(true);
+    expect(titles.some((t) => t.includes('番外 灰猫'))).toBe(true);
   });
 });
 

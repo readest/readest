@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Not authenticated' });
   }
 
-  const { fileName, fileSize, bookHash, temp = false } = req.body;
+  const { fileName, fileSize, bookHash, replicaKind, replicaId, temp = false } = req.body;
   if (temp) {
     try {
       const datetime = new Date();
@@ -76,7 +76,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .insert([
           {
             user_id: user.id,
-            book_hash: bookHash,
+            book_hash: bookHash ?? null,
+            replica_kind: replicaKind ?? null,
+            replica_id: replicaId ?? null,
             file_key: fileKey,
             file_size: fileSize,
           },

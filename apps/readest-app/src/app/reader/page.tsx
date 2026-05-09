@@ -3,7 +3,10 @@
 import { useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
+import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
+import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { tauriHandleSetAlwaysOnTop } from '@/utils/window';
@@ -15,7 +18,10 @@ export default function Page() {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
 
+  useAppUrlIngress();
   useOpenWithBooks();
+  useOpenAnnotationLink();
+  useOpenShareLink();
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {

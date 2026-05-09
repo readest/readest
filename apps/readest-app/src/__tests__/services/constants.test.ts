@@ -243,6 +243,24 @@ describe('services/constants', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.screenBrightness!).toBeLessThanOrEqual(100);
     });
 
+    it('seeds syncCategories with every SyncCategory key, all enabled', () => {
+      const cats = DEFAULT_SYSTEM_SETTINGS.syncCategories!;
+      expect(cats).toEqual({
+        book: true,
+        progress: true,
+        note: true,
+        dictionary: true,
+        font: true,
+        texture: true,
+        opds_catalog: true,
+        settings: true,
+      });
+    });
+
+    it('seeds lastSyncedAtReplicas as an empty record', () => {
+      expect(DEFAULT_SYSTEM_SETTINGS.lastSyncedAtReplicas).toEqual({});
+    });
+
     it('has library settings', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.libraryViewMode).toBe('grid');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.librarySortBy).toBe('string');

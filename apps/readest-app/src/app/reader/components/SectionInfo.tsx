@@ -5,6 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -39,9 +40,15 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   );
 
   const handleNotchClick = () => {
+    if (eventDispatcher.dispatchSync('iframe-single-click')) return;
     if (isScrolled) {
       getView(bookKey)?.renderer.scrollToAnchor?.(0, 'anchor', true);
     }
+  };
+
+  const handleSectionClick = () => {
+    if (eventDispatcher.dispatchSync('iframe-single-click')) return;
+    setHoveredBookKey(bookKey);
   };
 
   return (
@@ -67,7 +74,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         )}
         role='none'
         tabIndex={-1}
-        onClick={() => setHoveredBookKey(bookKey)}
+        onClick={handleSectionClick}
         style={
           isVertical
             ? {

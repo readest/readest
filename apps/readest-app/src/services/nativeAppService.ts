@@ -47,6 +47,7 @@ import { SchemaType } from '@/services/database/migrate';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
+  LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
   SETTINGS_FILENAME,
@@ -92,7 +93,7 @@ const getPathResolver = ({
   const getCustomBasePrefixSync = isCustomBaseDir
     ? (baseDir: BaseDir) => {
         return () => {
-          const dataDirs = ['Settings', 'Data', 'Books', 'Fonts', 'Images'];
+          const dataDirs = ['Settings', 'Data', 'Books', 'Fonts', 'Images', 'Dictionaries'];
           const leafDir = dataDirs.includes(baseDir) ? '' : baseDir;
           return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
         };
@@ -162,6 +163,15 @@ const getPathResolver = ({
           fp: customBasePrefixSync
             ? `${customBasePrefixSync()}/${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`
             : `${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`,
+          base,
+        };
+      case 'Dictionaries':
+        return {
+          baseDir: customBaseDir ?? BaseDirectory.AppData,
+          basePrefix: customBasePrefix || appDataDir,
+          fp: customBasePrefixSync
+            ? `${customBasePrefixSync()}/${LOCAL_DICTIONARIES_SUBDIR}${path ? `/${path}` : ''}`
+            : `${LOCAL_DICTIONARIES_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'None':
@@ -249,16 +259,16 @@ export const nativeFileSystem: FileSystem = {
       }
     }
   },
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
+  async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
     try {
-      if (!(await this.exists(getDirPath(dstPath), base))) {
-        await this.createDir(getDirPath(dstPath), base, true);
+      if (!(await this.exists(getDirPath(dstPath), dstBase))) {
+        await this.createDir(getDirPath(dstPath), dstBase, true);
       }
     } catch (error) {
       console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
-      const prefix = await this.getPrefix(base);
+      const prefix = await this.getPrefix(dstBase);
       if (!prefix) {
         throw new Error('Invalid base directory');
       }
@@ -271,8 +281,12 @@ export const nativeFileSystem: FileSystem = {
         throw new Error('Failed to copy file');
       }
     } else {
-      const { fp, baseDir } = this.resolvePath(dstPath, base);
-      await copyFile(srcPath, fp, baseDir ? { toPathBaseDir: baseDir } : undefined);
+      const { fp: srcFp, baseDir: srcBaseDir } = this.resolvePath(srcPath, srcBase);
+      const { fp: dstFp, baseDir: dstBaseDir } = this.resolvePath(dstPath, dstBase);
+      const opts: { fromPathBaseDir?: number; toPathBaseDir?: number } = {};
+      if (srcBaseDir) opts.fromPathBaseDir = srcBaseDir;
+      if (dstBaseDir) opts.toPathBaseDir = dstBaseDir;
+      await copyFile(srcFp, dstFp, Object.keys(opts).length > 0 ? opts : undefined);
     }
   },
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
@@ -547,26 +561,51 @@ export class NativeAppService extends BaseAppService {
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      if (this.isIOSApp && options?.filePath) {
-        await shareFile(options.filePath, {
-          mimeType: options?.mimeType || 'application/octet-stream',
-        });
-      } else {
-        const filePath = await saveDialog({
-          defaultPath: filename,
-          filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
-        });
-        if (!filePath) return false;
-
-        if (typeof content === 'string') {
-          await writeTextFile(filePath, content);
-        } else {
-          await writeFile(filePath, new Uint8Array(content));
+      // Linux desktop has no system share sheet; always fall through to saveDialog.
+      const wantShare = !this.isLinuxApp && (this.isIOSApp || options?.share);
+      if (wantShare) {
+        let shareablePath = options?.filePath;
+        if (!shareablePath) {
+          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          if (typeof content === 'string') {
+            await writeTextFile(shareablePath, content);
+          } else {
+            await writeFile(shareablePath, new Uint8Array(content));
+          }
         }
+        try {
+          await shareFile(shareablePath, {
+            mimeType: options?.mimeType || 'application/octet-stream',
+            // Anchor the macOS NSSharingServicePicker / iPad popover to
+            // the trigger button. Without this, the picker pops at the
+            // WebView's top-left corner.
+            ...(options?.sharePosition ? { position: options.sharePosition } : {}),
+          });
+          return true;
+        } catch (error) {
+          console.error('shareFile failed; falling back to saveDialog:', error);
+        }
+      }
+
+      const filePath = await saveDialog({
+        defaultPath: filename,
+        filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+      });
+      if (!filePath) return false;
+
+      if (typeof content === 'string') {
+        await writeTextFile(filePath, content);
+      } else {
+        await writeFile(filePath, new Uint8Array(content));
       }
       return true;
     } catch (error) {

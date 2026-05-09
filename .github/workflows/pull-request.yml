@@ -72,17 +72,12 @@ jobs:
         run: |
           pnpm install && pnpm setup-vendors
 
+      - name: install LuaJIT (for koplugin lint)
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
       - name: run format check
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
-
-      - name: install playwright browsers
-        working-directory: apps/readest-app
-        run: npx playwright install --with-deps chromium
-
-      - name: run web tests
-        working-directory: apps/readest-app
-        run: pnpm test:pr:web
 
       - name: run lint
         working-directory: apps/readest-app
@@ -93,6 +88,61 @@ jobs:
         working-directory: apps/readest-app
         run: |
           pnpm build-web && pnpm check:all
+
+  test_web_app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'true'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: cache Next.js build
+        uses: actions/cache@v5
+        with:
+          path: apps/readest-app/.next/cache
+          key: nextjs-test-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            nextjs-test-${{ github.sha }}-
+            nextjs-test-
+
+      - name: install Dependencies
+        working-directory: apps/readest-app
+        run: |
+          pnpm install && pnpm setup-vendors
+
+      - name: install LuaJIT + busted (for koplugin tests)
+        run: |
+          sudo apt-get update
+          # luajit  — pnpm test:lua
+          # luarocks/libsqlite3-dev — required to build lsqlite3complete
+          sudo apt-get install -y luajit luarocks libsqlite3-dev
+          # Install busted + the SQLite binding the LibraryStore specs use,
+          # both pinned to Lua 5.1 (LuaJIT-compatible). System-wide install
+          # so `luarocks --lua-version=5.1 path` (sourced by
+          # scripts/test-koplugin.mjs) picks them up.
+          sudo luarocks --lua-version=5.1 install busted
+          sudo luarocks --lua-version=5.1 install lsqlite3complete
+
+      - name: install playwright browsers
+        working-directory: apps/readest-app
+        run: npx playwright install --with-deps chromium
+
+      - name: run web tests
+        working-directory: apps/readest-app
+        run: pnpm test:pr:web
+
+      - name: run koplugin tests
+        working-directory: apps/readest-app
+        run: pnpm test:lua
 
   build_tauri_app:
     runs-on: ubuntu-latest

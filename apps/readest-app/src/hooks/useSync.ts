@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
+import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { transformBookConfigFromDB } from '@/utils/transform';
@@ -184,6 +185,7 @@ export function useSync(bookKey?: string) {
   const syncBooks = useCallback(
     async (books?: Book[], op: SyncOp = 'both', since?: number) => {
       if (!lastSyncedAtInited) return;
+      if (!isSyncCategoryEnabled('book')) return;
       if ((op === 'push' || op === 'both') && books?.length) {
         await pushChanges({ books });
       }
@@ -204,6 +206,7 @@ export function useSync(bookKey?: string) {
   const syncConfigs = useCallback(
     async (bookConfigs?: BookConfig[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!bookId && !lastSyncedAtInited) return;
+      if (!isSyncCategoryEnabled('progress')) return;
       if ((op === 'push' || op === 'both') && bookConfigs?.length) {
         const pushed = await pushChanges({ configs: bookConfigs });
         if (pushed && bookId && bookKey) {
@@ -228,6 +231,7 @@ export function useSync(bookKey?: string) {
   const syncNotes = useCallback(
     async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!lastSyncedAtInited) return;
+      if (!isSyncCategoryEnabled('note')) return;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {
         const pushed = await pushChanges({ notes: bookNotes });
         if (pushed && bookId && bookKey) {

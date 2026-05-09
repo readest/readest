@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
-import { TxtToEpubConverter } from '@/utils/txt';
+import { TxtToEpubConverter, extractTxtFilenameMetadata } from '@/utils/txt';
 
 type TestChapter = {
   title: string;
@@ -343,5 +343,73 @@ describe('TxtToEpubConverter', () => {
     expect(first.value).toBe('Segment A');
     await iterator.return(undefined);
     expect(cancelled).toBe(true);
+  });
+});
+
+describe('extractTxtFilenameMetadata', () => {
+  it('extracts the title from CJK 《》 brackets', () => {
+    expect(extractTxtFilenameMetadata('《三体》.txt')).toEqual({ title: '三体' });
+  });
+
+  it('extracts title and labeled author with full-width colon', () => {
+    expect(extractTxtFilenameMetadata('《书名》作者:张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+    expect(extractTxtFilenameMetadata('《书名》作者：张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('extracts title and labeled author with leading whitespace', () => {
+    expect(extractTxtFilenameMetadata('《书名》 作者：张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('extracts title and bracketed author after the title', () => {
+    expect(extractTxtFilenameMetadata('《书名》[张三].txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+    expect(extractTxtFilenameMetadata('《书名》(张三).txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+    expect(extractTxtFilenameMetadata('《书名》【张三】.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('extracts title and bare author after the title', () => {
+    expect(extractTxtFilenameMetadata('《书名》张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('strips leading/trailing punctuation from the author', () => {
+    expect(extractTxtFilenameMetadata('《书名》 - 张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('handles paths with directories', () => {
+    expect(extractTxtFilenameMetadata('/inbox/《书名》作者：张三.txt')).toEqual({
+      title: '书名',
+      author: '张三',
+    });
+  });
+
+  it('falls back to the base filename when no 《》 are present', () => {
+    expect(extractTxtFilenameMetadata('plain-name.txt')).toEqual({ title: 'plain-name' });
+  });
+
+  it('returns empty object for empty input', () => {
+    expect(extractTxtFilenameMetadata('')).toEqual({ title: '' });
   });
 });

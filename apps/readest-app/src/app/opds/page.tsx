@@ -467,7 +467,7 @@ export default function BrowserPage() {
           const probedFilename = await probeFilename(responseHeaders);
           if (probedFilename) {
             const newFilePath = await appService?.resolveFilePath(probedFilename, 'Cache');
-            await appService?.copyFile(dstFilePath, newFilePath, 'None');
+            await appService?.copyFile(dstFilePath, 'None', newFilePath, 'None');
             await appService?.deleteFile(dstFilePath, 'None');
             console.log('Renamed downloaded file to:', newFilePath);
             dstFilePath = newFilePath;

@@ -16,6 +16,9 @@ const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 const SPLIT_HYPHENS_KEY = 'readest_rsvp_split_hyphens';
 
+// Section-only CFI (no '!') sorts before any word CFI in that section.
+const stripCfiPath = (cfi: string): string => cfi.replace(/!.*\)$/, ')');
+
 export class RSVPController extends EventTarget {
   private view: FoliateView;
   private bookId: string; // Book hash without session suffix, for persistent storage
@@ -218,11 +221,27 @@ export class RSVPController extends EventTarget {
     localStorage.removeItem(`${POSITION_KEY_PREFIX}${this.bookId}`);
   }
 
-  seedPosition(position: RsvpPosition): void {
-    const storageKey = `${POSITION_KEY_PREFIX}${this.bookId}`;
-    if (!localStorage.getItem(storageKey)) {
-      localStorage.setItem(storageKey, JSON.stringify(position));
+  seedPosition(position: RsvpPosition, currentLocationCfi?: string | null): void {
+    const key = `${POSITION_KEY_PREFIX}${this.bookId}`;
+    let final = position;
+
+    // Cross-chapter mismatch means stale sync (exit pins them together);
+    // fall back to the start of the location's chapter.
+    if (
+      currentLocationCfi &&
+      position.cfi &&
+      !this.isSameSection(position.cfi, currentLocationCfi)
+    ) {
+      console.warn('[RSVP] rsvpPosition chapter mismatch; resetting to start of synced chapter', {
+        rsvpCfi: position.cfi,
+        locationCfi: currentLocationCfi,
+      });
+      final = { cfi: stripCfiPath(currentLocationCfi), wordText: '' };
     }
+
+    const serialized = JSON.stringify(final);
+    if (localStorage.getItem(key) === serialized) return;
+    localStorage.setItem(key, serialized);
   }
 
   getStoredPosition(): RsvpPosition | null {
@@ -846,7 +865,7 @@ export class RSVPController extends EventTarget {
     const baseMs = 60000 / wpm;
     let duration = baseMs * word.pauseMultiplier;
 
-    if (/[.!?,;:]$/.test(word.text)) {
+    if (/[.!?,;:–—]$/.test(word.text)) {
       duration += this.state.punctuationPauseMs;
     }
 

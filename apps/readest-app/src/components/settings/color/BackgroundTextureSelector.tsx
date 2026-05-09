@@ -47,10 +47,23 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
       <h2 className='mb-2 font-medium'>{_('Background Image')}</h2>
       <div className='mb-4 grid grid-cols-2 gap-4'>
         {allTextures.map((texture) => (
-          <button
+          // The swatch is a div (not a <button>) so the inner Delete
+          // <button> can nest legally — interactive elements can't be
+          // descendants of <button> per HTML, and React 18+ flags it
+          // as a hydration error. Keyboard a11y is preserved via
+          // role="button" + tabIndex + Enter/Space onKeyDown.
+          <div
             key={texture.id}
+            role='button'
+            tabIndex={0}
             onClick={() => onTextureSelect(texture.id)}
-            className={`bg-base-100 relative flex flex-col items-center justify-center rounded-lg border-2 p-4 shadow-md transition-all ${
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onTextureSelect(texture.id);
+              }
+            }}
+            className={`bg-base-100 relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-4 shadow-md transition-all ${
               selectedTextureId === texture.id
                 ? 'ring-2 ring-indigo-500 ring-offset-2'
                 : 'border-base-300'
@@ -86,7 +99,7 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
                 <MdClose size={16} />
               </button>
             )}
-          </button>
+          </div>
         ))}
 
         {/* Custom Image Upload */}

@@ -792,4 +792,94 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             trigger(eventName, payload)
         }
     }
+
+    // ── Sync passphrase keychain ──────────────────────────────────────
+    // Backed by EncryptedSharedPreferences, which derives an AES-GCM
+    // master key from AndroidKeystore and stores the value-of-keys map
+    // in a private SharedPreferences file. The TS-side CryptoSession
+    // reads/writes via these commands so the user's sync passphrase
+    // persists across app launches.
+
+    private val syncPrefsName = "readest_sync_passphrase_v1"
+    private val syncPrefsKey = "passphrase"
+
+    private fun openSyncPrefs(): android.content.SharedPreferences {
+        val masterKey = androidx.security.crypto.MasterKey.Builder(activity)
+            .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return androidx.security.crypto.EncryptedSharedPreferences.create(
+            activity,
+            syncPrefsName,
+            masterKey,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
+
+    @Command
+    fun set_sync_passphrase(invoke: Invoke) {
+        val args = invoke.parseArgs(SyncPassphraseSetArgs::class.java)
+        val ret = JSObject()
+        try {
+            val prefs = openSyncPrefs()
+            prefs.edit().putString(syncPrefsKey, args.passphrase).apply()
+            ret.put("success", true)
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "set_sync_passphrase failed", e)
+            ret.put("success", false)
+            ret.put("error", e.message ?: "unknown")
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun get_sync_passphrase(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            val prefs = openSyncPrefs()
+            val value = prefs.getString(syncPrefsKey, null)
+            if (value != null) ret.put("passphrase", value)
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "get_sync_passphrase failed", e)
+            ret.put("error", e.message ?: "unknown")
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun clear_sync_passphrase(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            val prefs = openSyncPrefs()
+            prefs.edit().remove(syncPrefsKey).apply()
+            ret.put("success", true)
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "clear_sync_passphrase failed", e)
+            ret.put("success", false)
+            ret.put("error", e.message ?: "unknown")
+        }
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun is_sync_keychain_available(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            // Probe by opening the prefs file. Failure surfaces as
+            // available=false with the underlying error string so the
+            // TS layer can fall back to the ephemeral store.
+            openSyncPrefs()
+            ret.put("available", true)
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "is_sync_keychain_available failed", e)
+            ret.put("available", false)
+            ret.put("error", e.message ?: "unknown")
+        }
+        invoke.resolve(ret)
+    }
+}
+
+@app.tauri.annotation.InvokeArg
+class SyncPassphraseSetArgs {
+    lateinit var passphrase: String
 }

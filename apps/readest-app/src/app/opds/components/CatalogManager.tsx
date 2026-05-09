@@ -16,9 +16,10 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useSettingsStore } from '@/store/settingsStore';
 import { isWebAppPlatform } from '@/services/environment';
-import { saveSysSettings } from '@/helpers/settings';
+import { useCustomOPDSStore } from '@/store/customOPDSStore';
+import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
@@ -89,8 +90,15 @@ export function CatalogManager() {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const { settings } = useSettingsStore();
-  const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() => settings.opdsCatalogs || []);
+  // Hydrate the store from settings on mount; all CRUD goes through it
+  // so the replica-sync push fires automatically. The local `catalogs`
+  // mirror tracks the visible (non-deleted) entries; we keep the
+  // setState wrapper so `useEffect` consumers (subscriptions) re-fire
+  // when the list changes.
+  const allCatalogs = useCustomOPDSStore((s) => s.catalogs);
+  const [catalogs, setCatalogs] = useState<OPDSCatalog[]>(() =>
+    useCustomOPDSStore.getState().getAvailableCatalogs(),
+  );
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<string | null>(null);
   const [newCatalog, setNewCatalog] = useState(EMPTY_NEW_CATALOG);
@@ -131,9 +139,23 @@ export function CatalogManager() {
     newCatalog.customHeadersInput.trim().length > 0;
   const isWebCatalogProxyWarningRequired = isWebAppPlatform() && hasSensitiveWebOPDSInput;
 
-  const saveCatalogs = (updatedCatalogs: OPDSCatalog[]) => {
-    setCatalogs(updatedCatalogs);
-    saveSysSettings(envConfig, 'opdsCatalogs', updatedCatalogs);
+  // Hydrate from settings + persist when the store mutates. Loading
+  // happens once per mount; the store handles backfilling contentId
+  // for legacy entries.
+  useEffect(() => {
+    void useCustomOPDSStore.getState().loadCustomOPDSCatalogs(envConfig);
+  }, [envConfig]);
+
+  // Surface the latest store state into the local mirror used by
+  // subscriptions / dialog rendering. Filters out tombstones.
+  useEffect(() => {
+    setCatalogs(allCatalogs.filter((c) => !c.deletedAt));
+  }, [allCatalogs]);
+
+  // Persist via the store (settings + replica push), then update local
+  // mirror. Replica sync fan-out happens inside the store mutators.
+  const persistMutation = () => {
+    void useCustomOPDSStore.getState().saveCustomOPDSCatalogs(envConfig);
   };
 
   const handleAddCatalog = async () => {
@@ -187,24 +209,54 @@ export function CatalogManager() {
       return;
     }
 
-    const catalog: OPDSCatalog = {
-      id: editingCatalogId || Date.now().toString(),
-      name: newCatalog.name,
-      url: newCatalog.url,
-      description: newCatalog.description,
-      username: newCatalog.username || undefined,
-      password: newCatalog.password || undefined,
-      customHeaders: hasOPDSCustomHeaders(parsedHeaders.headers)
-        ? parsedHeaders.headers
-        : undefined,
-      autoDownload: newCatalog.autoDownload || undefined,
-    };
+    const customHeaders = hasOPDSCustomHeaders(parsedHeaders.headers)
+      ? parsedHeaders.headers
+      : undefined;
+
+    // If the user provided credentials, unlock (or set up) the sync
+    // passphrase BEFORE saving. The crypto middleware drops creds
+    // from the push when the session is locked, so this gate is what
+    // turns the credentials into actual cross-device sync. User
+    // cancel = save proceeds without sync (the catalog still works
+    // locally with the entered creds).
+    const hasCredentials = !!(newCatalog.username || newCatalog.password);
+    if (hasCredentials) {
+      try {
+        await ensurePassphraseUnlocked();
+      } catch (err) {
+        if (!(isSyncError(err) && err.code === 'NO_PASSPHRASE')) {
+          // Surface unexpected errors; cancel-by-user is silent.
+          setUrlError(err instanceof Error ? err.message : String(err));
+          setIsValidating(false);
+          return;
+        }
+        // User cancelled the prompt — save locally without encrypted sync.
+      }
+    }
 
     if (editingCatalogId) {
-      saveCatalogs(catalogs.map((c) => (c.id === editingCatalogId ? catalog : c)));
+      useCustomOPDSStore.getState().updateCatalog(editingCatalogId, {
+        name: newCatalog.name,
+        url: newCatalog.url,
+        description: newCatalog.description || undefined,
+        username: newCatalog.username || undefined,
+        password: newCatalog.password || undefined,
+        customHeaders,
+        autoDownload: newCatalog.autoDownload || undefined,
+      });
     } else {
-      saveCatalogs([catalog, ...catalogs]);
+      useCustomOPDSStore.getState().addCatalog({
+        id: Date.now().toString(),
+        name: newCatalog.name,
+        url: newCatalog.url,
+        description: newCatalog.description || undefined,
+        username: newCatalog.username || undefined,
+        password: newCatalog.password || undefined,
+        customHeaders,
+        autoDownload: newCatalog.autoDownload || undefined,
+      });
     }
+    persistMutation();
 
     setNewCatalog(EMPTY_NEW_CATALOG);
     setUrlError('');
@@ -234,12 +286,13 @@ export function CatalogManager() {
     if (catalogs.some((c) => c.url === popularCatalog.url)) {
       return;
     }
-
-    saveCatalogs([...catalogs, { ...popularCatalog }]);
+    useCustomOPDSStore.getState().addCatalog({ ...popularCatalog });
+    persistMutation();
   };
 
   const handleRemoveCatalog = (id: string) => {
-    saveCatalogs(catalogs.filter((c) => c.id !== id));
+    useCustomOPDSStore.getState().removeCatalog(id);
+    persistMutation();
     if (appService) {
       // Don't await — leftover state files are harmless and we don't want to
       // block UI removal if the filesystem call fails.
@@ -248,8 +301,11 @@ export function CatalogManager() {
   };
 
   const handleToggleAutoDownload = (id: string) => {
-    const wasEnabled = catalogs.find((c) => c.id === id)?.autoDownload;
-    saveCatalogs(catalogs.map((c) => (c.id === id ? { ...c, autoDownload: !c.autoDownload } : c)));
+    const target = catalogs.find((c) => c.id === id);
+    if (!target) return;
+    const wasEnabled = !!target.autoDownload;
+    useCustomOPDSStore.getState().updateCatalog(id, { autoDownload: !wasEnabled });
+    persistMutation();
     // When the user just enabled auto-download, sync now instead of waiting
     // for the next app launch / pull-to-refresh.
     if (!wasEnabled) {

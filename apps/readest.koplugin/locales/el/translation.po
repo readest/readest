@@ -1,0 +1,438 @@
+# Greek translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Greek\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Διατηρεί τις συσκευές KOReader και Readest συγχρονισμένες."
+
+msgid "Library view"
+msgstr "Προβολή βιβλιοθήκης"
+
+msgid "View"
+msgstr "Προβολή"
+
+msgid "Grid"
+msgstr "Πλέγμα"
+
+msgid "List"
+msgstr "Λίστα"
+
+msgid "Group by"
+msgstr "Ομαδοποίηση κατά"
+
+msgid "Authors"
+msgstr "Συγγραφείς"
+
+msgid "Books"
+msgstr "Βιβλία"
+
+msgid "Groups"
+msgstr "Ομάδες"
+
+msgid "Series"
+msgstr "Σειρές"
+
+msgid "Sort by"
+msgstr "Ταξινόμηση κατά"
+
+msgid "Date Read"
+msgstr "Ημερομηνία ανάγνωσης"
+
+msgid "Date Added"
+msgstr "Ημερομηνία προσθήκης"
+
+msgid "Title"
+msgstr "Τίτλος"
+
+msgid "Author"
+msgstr "Συγγραφέας"
+
+msgid "Descending"
+msgstr "Φθίνουσα"
+
+msgid "Ascending"
+msgstr "Αύξουσα"
+
+msgid "Actions"
+msgstr "Ενέργειες"
+
+msgid "Rescan library"
+msgstr "Επανασάρωση βιβλιοθήκης"
+
+msgid "Download folder…"
+msgstr "Φάκελος λήψης…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "Επιλέξτε φάκελο για τα ληφθέντα βιβλία"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "Συνδεθείτε στο Readest για να ανοίξετε τη βιβλιοθήκη"
+
+msgid "Library"
+msgstr "Βιβλιοθήκη"
+
+msgid "Readest Library"
+msgstr "Βιβλιοθήκη Readest"
+
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+msgid "Clear"
+msgstr "Εκκαθάριση"
+
+msgid "Search"
+msgstr "Αναζήτηση"
+
+msgid "Search library"
+msgstr "Αναζήτηση στη βιβλιοθήκη"
+
+msgid "Search title or author"
+msgstr "Αναζήτηση τίτλου ή συγγραφέα"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "Το πρόσθετο Cover Browser απαιτείται για πλήρη απόδοση βιβλιοθήκης. Επιστροφή σε απλή λίστα."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "Το αρχείο μετακινήθηκε ή διαγράφηκε. Επανασάρωση βιβλιοθήκης;"
+
+msgid "Download this book from Readest?"
+msgstr "Λήψη αυτού του βιβλίου από το Readest;"
+
+msgid "Download"
+msgstr "Λήψη"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Πρώτα ορίστε τον αρχικό φάκελο στη διαχείριση αρχείων για να ενεργοποιήσετε τις λήψεις."
+
+msgid "Downloading…"
+msgstr "Γίνεται λήψη…"
+
+msgid "Cloud copy unavailable."
+msgstr "Το αντίγραφο στο cloud δεν είναι διαθέσιμο."
+
+msgid "Download failed."
+msgstr "Η λήψη απέτυχε."
+
+msgid "No cover available on Readest."
+msgstr "Δεν υπάρχει εξώφυλλο διαθέσιμο στο Readest."
+
+msgid "Cover download failed."
+msgstr "Αποτυχία λήψης εξωφύλλου."
+
+msgid "Could not delete the file."
+msgstr "Δεν ήταν δυνατή η διαγραφή του αρχείου."
+
+msgid "Removing from cloud…"
+msgstr "Αφαίρεση από το cloud…"
+
+msgid "Cloud removal failed."
+msgstr "Αποτυχία αφαίρεσης από το cloud."
+
+msgid "Remove from Cloud & Device"
+msgstr "Αφαίρεση από cloud και συσκευή"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Αφαίρεση αυτού του βιβλίου από cloud και συσκευή;"
+
+msgid "Remove"
+msgstr "Αφαίρεση"
+
+msgid "Remove from Cloud Only"
+msgstr "Αφαίρεση μόνο από cloud"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Αφαίρεση αυτού του βιβλίου μόνο από το cloud;"
+
+msgid "Remove from Device Only"
+msgstr "Αφαίρεση μόνο από συσκευή"
+
+msgid "Remove the local copy of this book?"
+msgstr "Αφαίρεση του τοπικού αντιγράφου αυτού του βιβλίου;"
+
+msgid "Upload to Cloud"
+msgstr "Μεταφόρτωση στο cloud"
+
+msgid "Uploading…"
+msgstr "Μεταφόρτωση…"
+
+msgid "Storage quota exceeded."
+msgstr "Υπέρβαση ορίου αποθήκευσης."
+
+msgid "Upload failed."
+msgstr "Η μεταφόρτωση απέτυχε."
+
+msgid "Download Book"
+msgstr "Λήψη βιβλίου"
+
+msgid "Download Cover"
+msgstr "Λήψη εξωφύλλου"
+
+msgid "Download All"
+msgstr "Λήψη όλων"
+
+msgid "Open Readest Library"
+msgstr "Άνοιγμα βιβλιοθήκης Readest"
+
+msgid "Push Readest book library"
+msgstr "Αποστολή βιβλιοθήκης Readest"
+
+msgid "Pull Readest book library"
+msgstr "Λήψη βιβλιοθήκης Readest"
+
+msgid "Set auto progress sync"
+msgstr "Ορισμός αυτόματου συγχρονισμού προόδου"
+
+msgid "on"
+msgstr "ναι"
+
+msgid "off"
+msgstr "όχι"
+
+msgid "Toggle auto readest sync"
+msgstr "Εναλλαγή αυτόματου συγχρονισμού Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Αποστολή προόδου Readest από αυτή τη συσκευή"
+
+msgid "Pull readest progress from other devices"
+msgstr "Λήψη προόδου Readest από άλλες συσκευές"
+
+msgid "Push readest annotations from this device"
+msgstr "Αποστολή σχολίων Readest από αυτή τη συσκευή"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Λήψη σχολίων Readest από άλλες συσκευές"
+
+msgid "Add to Readest"
+msgstr "Προσθήκη στο Readest"
+
+msgid "Sign in to Readest first."
+msgstr "Συνδεθείτε πρώτα στο Readest."
+
+msgid "File not found."
+msgstr "Το αρχείο δεν βρέθηκε."
+
+msgid "Unsupported book format."
+msgstr "Μη υποστηριζόμενη μορφή βιβλίου."
+
+msgid "Hashing book…"
+msgstr "Υπολογισμός hash βιβλίου…"
+
+msgid "Could not read file."
+msgstr "Δεν ήταν δυνατή η ανάγνωση του αρχείου."
+
+msgid "Already in your Readest library:"
+msgstr "Ήδη στη βιβλιοθήκη σας Readest:"
+
+msgid "Added to Readest:"
+msgstr "Προστέθηκε στο Readest:"
+
+msgid "Log in Readest Account"
+msgstr "Σύνδεση στον λογαριασμό Readest"
+
+msgid "Log out as %1"
+msgstr "Αποσύνδεση ως %1"
+
+msgid "Auto sync"
+msgstr "Αυτόματος συγχρονισμός"
+
+msgid "Readest library"
+msgstr "Βιβλιοθήκη Readest"
+
+msgid "Push books now"
+msgstr "Αποστολή βιβλίων τώρα"
+
+msgid "Pull books now"
+msgstr "Λήψη βιβλίων τώρα"
+
+msgid "Push reading progress now"
+msgstr "Αποστολή προόδου ανάγνωσης τώρα"
+
+msgid "Pull reading progress now"
+msgstr "Λήψη προόδου ανάγνωσης τώρα"
+
+msgid "Push annotations now"
+msgstr "Αποστολή σχολίων τώρα"
+
+msgid "Pull annotations now"
+msgstr "Λήψη σχολίων τώρα"
+
+msgid "Full sync all annotations"
+msgstr "Πλήρης συγχρονισμός όλων των σχολίων"
+
+msgid "Sync info"
+msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Check for update (v%1)"
+msgstr "Έλεγχος για ενημέρωση (v%1)"
+
+msgid "Check for update"
+msgstr "Έλεγχος για ενημέρωση"
+
+msgid "Please login first"
+msgstr "Συνδεθείτε πρώτα"
+
+msgid "Please configure Readest settings first"
+msgstr "Διαμορφώστε πρώτα τις ρυθμίσεις Readest"
+
+msgid "No book is open"
+msgstr "Δεν υπάρχει ανοιχτό βιβλίο"
+
+msgid "(none)"
+msgstr "(κανένα)"
+
+msgid "Never synced"
+msgstr "Δεν έχει συγχρονιστεί"
+
+msgid "Book Fingerprint"
+msgstr "Δακτυλικό αποτύπωμα βιβλίου"
+
+msgid "Identifiers"
+msgstr "Αναγνωριστικά"
+
+msgid "Last Synced"
+msgstr "Τελευταίος συγχρονισμός"
+
+msgid "Sync Info"
+msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Library not initialized"
+msgstr "Η βιβλιοθήκη δεν αρχικοποιήθηκε"
+
+msgid "Books synced"
+msgstr "Τα βιβλία συγχρονίστηκαν"
+
+msgid "Books sync failed"
+msgstr "Αποτυχία συγχρονισμού βιβλίων"
+
+msgid "Checking for update…"
+msgstr "Έλεγχος για ενημέρωση…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Ο έλεγχος ενημέρωσης απέτυχε. Δοκιμάστε ξανά αργότερα."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Διαθέσιμη νέα έκδοση: v%1 (τρέχουσα: v%2).\n\nΕνημέρωση τώρα;"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Διαθέσιμη νέα έκδοση: v%1.\n\nΕνημέρωση τώρα;"
+
+msgid "Update"
+msgstr "Ενημέρωση"
+
+msgid "You are up to date (v%1)."
+msgstr "Είστε ενημερωμένοι (v%1)."
+
+msgid "Downloading update…"
+msgstr "Λήψη ενημέρωσης…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Η λήψη της ενημέρωσης απέτυχε. Δοκιμάστε ξανά αργότερα."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Το πρόσθετο Readest ενημερώθηκε στην v%1.\n\nΕπανεκκινήστε το KOReader για να εφαρμοστεί η ενημέρωση."
+
+msgid "Restart now"
+msgstr "Επανεκκίνηση τώρα"
+
+msgid "Later"
+msgstr "Αργότερα"
+
+msgid "Failed to install update: %1"
+msgstr "Η εγκατάσταση της ενημέρωσης απέτυχε: %1"
+
+msgid "unknown error"
+msgstr "άγνωστο σφάλμα"
+
+msgid "No annotations to push"
+msgstr "Δεν υπάρχουν σχόλια προς αποστολή"
+
+msgid "Pushing annotations..."
+msgstr "Αποστολή σχολίων…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Αποστάλθηκαν %1 σχόλια"
+
+msgid "Failed to push annotations"
+msgstr "Η αποστολή των σχολίων απέτυχε"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Ο συγχρονισμός σχολίων δεν υποστηρίζεται για έγγραφα PDF"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Πλήρης συγχρονισμός: λήψη όλων των σχολίων…"
+
+msgid "Pulling annotations..."
+msgstr "Λήψη σχολίων…"
+
+msgid "Authentication failed, please login again"
+msgstr "Αποτυχία ταυτοποίησης, συνδεθείτε ξανά"
+
+msgid "Failed to pull annotations"
+msgstr "Η λήψη των σχολίων απέτυχε"
+
+msgid "No new annotations found"
+msgstr "Δεν βρέθηκαν νέα σχόλια"
+
+msgid "%1 annotations pulled"
+msgstr "Ελήφθησαν %1 σχόλια"
+
+msgid "Login"
+msgstr "Σύνδεση"
+
+msgid "Please enter both email and password"
+msgstr "Εισαγάγετε email και κωδικό πρόσβασης"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Διαμορφώστε πρώτα το URL Supabase και το κλειδί API"
+
+msgid "Logging in..."
+msgstr "Σύνδεση…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Συνδεθήκατε στο Readest"
+
+msgid "Login failed: %1"
+msgstr "Η σύνδεση απέτυχε: %1"
+
+msgid "Logged out from Readest"
+msgstr "Αποσυνδεθήκατε από το Readest"
+
+msgid "Cannot identify the current book"
+msgstr "Αδυναμία αναγνώρισης του τρέχοντος βιβλίου"
+
+msgid "Progress has been synchronized."
+msgstr "Η πρόοδος συγχρονίστηκε."
+
+msgid "Pushing reading progress..."
+msgstr "Αποστολή προόδου ανάγνωσης…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Η πρόοδος ανάγνωσης αποστάλθηκε"
+
+msgid "Failed to push reading progress"
+msgstr "Η αποστολή της προόδου ανάγνωσης απέτυχε"
+
+msgid "Pulling reading progress..."
+msgstr "Λήψη προόδου ανάγνωσης…"
+
+msgid "Failed to pull reading progress"
+msgstr "Η λήψη της προόδου ανάγνωσης απέτυχε"
+
+msgid "Reading progress synchronized"
+msgstr "Η πρόοδος ανάγνωσης συγχρονίστηκε"
+
+msgid "No saved reading progress found for this book"
+msgstr "Δεν βρέθηκε αποθηκευμένη πρόοδος ανάγνωσης για αυτό το βιβλίο"

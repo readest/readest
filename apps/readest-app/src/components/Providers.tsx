@@ -16,15 +16,28 @@ import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getLocale } from '@/utils/misc';
 import { getDirFromUILanguage } from '@/utils/rtl';
+import { getAndroidPatchedViewportContent } from '@/utils/viewport';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
+import AppLockScreen from '@/components/AppLockScreen';
+import AppLockDialog from '@/components/settings/AppLockDialog';
+import PassphrasePrompt from '@/components/PassphrasePrompt';
+import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
+import { cryptoSession } from '@/libs/crypto/session';
+import { useAppLockStore } from '@/store/appLockStore';
+import { initSettingsSync } from '@/services/sync/replicaSettingsSync';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   const { envConfig, appService } = useEnv();
   const { applyUILanguage } = useSettingsStore();
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
+  const {
+    isInitialized: isLockInitialized,
+    isUnlocked,
+    initialize: initializeAppLock,
+  } = useAppLockStore();
   const iconSize = useDefaultIconSize();
   useSafeAreaInsets(); // Initialize safe area insets
 
@@ -59,12 +72,63 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         if (globalViewSettings.isEink) {
           applyEinkMode(true);
         }
+        // Initialize the app-lock gate from on-disk settings. Until
+        // this runs, the gate renders nothing — guarantees the
+        // library can't flash on screen before the lock screen does.
+        initializeAppLock({
+          enabled: !!settings.pinCodeEnabled,
+          hash: settings.pinCodeHash,
+          salt: settings.pinCodeSalt,
+        });
+        // Subscribe the bundled-settings publisher to settingsStore
+        // changes, AFTER priming the publish snapshot from the just-
+        // loaded disk settings. Without this priming, the very first
+        // setSettings(disk_default) at boot (typically from library
+        // page's initLibrary) would diff every whitelisted field
+        // against `undefined`, treat them all as "new", and push the
+        // local defaults to the server with a fresh HLC — overwriting
+        // the cross-device authoritative values another device set.
+        // Idempotent — safe to call on remount.
+        initSettingsSync(settings);
       });
     }
-  }, [envConfig, appService, applyUILanguage, applyBackgroundTexture, applyEinkMode]);
+  }, [
+    envConfig,
+    appService,
+    applyUILanguage,
+    applyBackgroundTexture,
+    applyEinkMode,
+    initializeAppLock,
+  ]);
+
+  // Sync-passphrase boot path: upgrade the passphrase store from
+  // ephemeral to OS keychain on Tauri (probe is async — must run after
+  // the platform check resolves), then attempt a silent unlock from
+  // the saved passphrase. Failures are silent — the gate prompts on
+  // first encrypted-field operation if we couldn't restore.
+  useEffect(() => {
+    void (async () => {
+      await upgradeToKeychainIfAvailable();
+      await cryptoSession.tryRestoreFromStore();
+    })();
+  }, []);
+
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+    if (!meta) return;
+    const updated = getAndroidPatchedViewportContent(navigator.userAgent, meta.content);
+    if (updated) meta.content = updated;
+  }, []);
 
   // Make sure appService is available in all children components
   if (!appService) return;
+
+  // App-lock gate. While the lock store is uninitialized we render
+  // nothing — without this guard the library would flash on screen
+  // for a few hundred ms before `loadSettings` resolved and let the
+  // lock store decide whether to lock.
+  const showAppLockScreen = isLockInitialized && !isUnlocked;
+  const appShellHidden = !isLockInitialized || !isUnlocked;
 
   return (
     <CSPostHogProvider>
@@ -73,9 +137,17 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           <SyncProvider>
             <DropdownProvider>
               <CommandPaletteProvider>
-                {children}
-                <CommandPalette />
-                <AtmosphereOverlay />
+                <div
+                  aria-hidden={appShellHidden}
+                  style={appShellHidden ? { display: 'none' } : undefined}
+                >
+                  {children}
+                  <CommandPalette />
+                  <AtmosphereOverlay />
+                  <PassphrasePrompt />
+                </div>
+                <AppLockDialog />
+                {showAppLockScreen && <AppLockScreen />}
               </CommandPaletteProvider>
             </DropdownProvider>
           </SyncProvider>

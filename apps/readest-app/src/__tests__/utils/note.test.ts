@@ -518,6 +518,45 @@ describe('renderNoteTemplate', () => {
     });
   });
 
+  describe('Annotation link variants', () => {
+    const linkData: NoteTemplateData = {
+      title: 'Book',
+      author: 'Author',
+      exportDate: '2024-01-15',
+      chapters: [
+        {
+          title: 'Ch1',
+          annotations: [
+            {
+              text: 'quote',
+              webLink: 'https://web.readest.com/o/book/abc/annotation/n1',
+              appLink: 'readest://book/abc/annotation/n1',
+              link: 'https://web.readest.com/o/book/abc/annotation/n1',
+            },
+          ],
+        },
+      ],
+    };
+
+    it('should render annotation.webLink', () => {
+      const template = '{{ chapters[0].annotations[0].webLink }}';
+      const result = renderNoteTemplate(template, linkData);
+      expect(result).toBe('https://web.readest.com/o/book/abc/annotation/n1');
+    });
+
+    it('should render annotation.appLink with readest:// scheme', () => {
+      const template = '{{ chapters[0].annotations[0].appLink }}';
+      const result = renderNoteTemplate(template, linkData);
+      expect(result).toBe('readest://book/abc/annotation/n1');
+    });
+
+    it('should still render legacy annotation.link', () => {
+      const template = '{{ chapters[0].annotations[0].link }}';
+      const result = renderNoteTemplate(template, linkData);
+      expect(result).toBe('https://web.readest.com/o/book/abc/annotation/n1');
+    });
+  });
+
   describe('Whitespace handling', () => {
     it('should trim blocks correctly', () => {
       const template = `Start
