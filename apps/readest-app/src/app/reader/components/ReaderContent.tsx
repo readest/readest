@@ -94,6 +94,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
   const [errorLoading, setErrorLoading] = useState(false);
+  const [readerDebugLayers, setReaderDebugLayers] = useState(false);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
   useGamepad();
@@ -153,6 +154,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // handleGenerateSync is intentionally captured once — its deps are stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const enabled =
+      process.env['NEXT_PUBLIC_READER_DEBUG_LAYERS'] === '1' ||
+      process.env['READER_DEBUG_LAYERS'] === '1' ||
+      searchParams?.get('readerDebugLayers') === '1' ||
+      (typeof window !== 'undefined' && localStorage.getItem('READER_DEBUG_LAYERS') === '1');
+
+    setReaderDebugLayers(enabled);
+  }, [searchParams]);
 
   useEffect(() => {
     if (bookKeys && bookKeys.length > 0) {
@@ -280,7 +291,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   }
 
   return (
-    <div className='reader-content citadel-reader-shell full-height relative flex'>
+    <div
+      className={`reader-content citadel-reader-shell full-height relative flex ${readerDebugLayers ? 'reader-debug-layers' : ''}`}
+    >
       {/* Subtle texture overlay for the reader shell */}
       <div
         className='citadel-reader-texture pointer-events-none absolute inset-0 z-0'
@@ -332,24 +345,24 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             position: relative;
             overflow: visible;
             margin: 8px 0;
-            border-radius: 28px;
+            border-radius: 16px;
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::before {
             content: '';
             position: absolute;
             inset: 8px 14px;
-            border-radius: 34px;
+            border-radius: 16px;
             background:
               radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.035), transparent 18%),
               radial-gradient(circle at 50% 112%, rgba(94, 18, 14, 0.14), transparent 32%),
               linear-gradient(180deg, rgba(28, 16, 13, 0.98), rgba(9, 6, 5, 1));
             box-shadow:
-              inset 0 0 0 1px rgba(190, 146, 72, 0.38),
-              inset 0 20px 28px rgba(255, 237, 193, 0.01),
-              inset 0 -28px 42px rgba(0, 0, 0, 0.28),
-              0 24px 58px rgba(0, 0, 0, 0.46),
-              0 0 30px rgba(120, 24, 18, 0.1);
+              inset 0 0 0 1px rgba(190, 146, 72, 0.32),
+              inset 0 10px 18px rgba(255, 237, 193, 0.006),
+              inset 0 -18px 28px rgba(0, 0, 0, 0.24),
+              0 16px 36px rgba(0, 0, 0, 0.4),
+              0 0 16px rgba(120, 24, 18, 0.06);
             pointer-events: none;
             z-index: 0;
           }
@@ -357,7 +370,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 18px 22px 74px;
+            inset: 22px 30px 76px;
             border-radius: 28px;
             background:
               radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
@@ -371,10 +384,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-'] > .foliate-viewer {
-            top: 54px;
-            right: 64px;
-            bottom: 92px;
-            left: 64px;
+            top: 64px;
+            right: 78px;
+            bottom: 106px;
+            left: 78px;
             height: auto;
             width: auto;
             border-radius: 18px;
@@ -443,17 +456,17 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
               radial-gradient(circle at 100% 50%, rgba(120, 28, 18, 0.09), transparent 24%),
               linear-gradient(180deg, rgb(18, 11, 9), rgb(7, 5, 4));
             box-shadow:
-              inset 0 0 0 1px rgba(190, 146, 72, 0.48),
-              inset 0 0 38px rgba(120, 28, 18, 0.1),
-              inset 0 18px 28px rgba(255, 237, 193, 0.012),
-              inset 0 -28px 42px rgba(0, 0, 0, 0.3),
-              0 24px 58px rgba(0, 0, 0, 0.5);
+              inset 0 0 0 1px rgba(190, 146, 72, 0.4),
+              inset 0 0 20px rgba(120, 28, 18, 0.06),
+              inset 0 10px 18px rgba(255, 237, 193, 0.008),
+              inset 0 -18px 28px rgba(0, 0, 0, 0.26),
+              0 16px 36px rgba(0, 0, 0, 0.44);
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 18px 22px 74px;
+            inset: 22px 30px 76px;
             border-radius: 28px;
             background:
               radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
@@ -464,6 +477,34 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
               inset 0 -34px 52px rgba(0, 0, 0, 0.34);
             pointer-events: none;
             z-index: 0;
+          }
+
+          .citadel-reader-shell.reader-debug-layers .books-grid > [id^='gridcell-']::before {
+            background: rgba(255, 0, 0, 0.2) !important;
+            box-shadow:
+              inset 0 0 0 7px rgba(255, 0, 0, 0.98),
+              inset 0 0 0 16px rgba(255, 0, 0, 0.2),
+              0 0 28px rgba(255, 0, 0, 0.44) !important;
+            opacity: 1 !important;
+            pointer-events: none !important;
+          }
+
+          .citadel-reader-shell.reader-debug-layers .books-grid > [id^='gridcell-']::after {
+            background: rgba(0, 80, 255, 0.24) !important;
+            box-shadow:
+              inset 0 0 0 7px rgba(0, 96, 255, 0.98),
+              inset 0 0 0 16px rgba(0, 96, 255, 0.2),
+              0 0 28px rgba(0, 96, 255, 0.38) !important;
+            opacity: 1 !important;
+            pointer-events: none !important;
+          }
+
+          .citadel-reader-shell.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer {
+            outline: 4px dashed rgba(255, 255, 255, 0.82);
+            outline-offset: -10px;
           }
         }
       `}</style>
