@@ -24,7 +24,7 @@ import {
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
-import { getBaseFilename, getFilename } from '@/utils/path';
+import { getFilename, parseFilenameMetadata } from '@/utils/path';
 import { BookDoc, DocumentLoader, EXTS } from '@/libs/document';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
@@ -276,9 +276,14 @@ export async function importBook(
         throw new Error('Unsupported or corrupted book file');
       }
       normalizeMetadataIsbn(loadedBook.metadata);
+      const filenameMeta = parseFilenameMetadata(filename);
       const metadataTitle = formatTitle(loadedBook.metadata.title);
       if (!metadataTitle || !metadataTitle.trim() || metadataTitle === filename) {
-        loadedBook.metadata.title = getBaseFilename(filename);
+        loadedBook.metadata.title = filenameMeta.title ?? '';
+      }
+      const metadataAuthor = formatAuthors(loadedBook.metadata.author);
+      if ((!metadataAuthor || !metadataAuthor.trim()) && filenameMeta.author) {
+        loadedBook.metadata.author = filenameMeta.author;
       }
     } catch (error) {
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);

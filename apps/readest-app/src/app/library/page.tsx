@@ -780,16 +780,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
-    book.metadata = metadata;
-    book.title = formatTitle(metadata.title);
-    book.author = formatAuthors(metadata.author);
-    book.primaryLanguage = getPrimaryLanguage(metadata.language);
-    book.updatedAt = Date.now();
+    // Build a fresh book object so React.memo on cover/list items can detect
+    // the change. Mutating the prior reference makes prev/next props identical
+    // and suppresses re-renders after edits.
+    const updated: Book = {
+      ...book,
+      metadata,
+      title: formatTitle(metadata.title),
+      author: formatAuthors(metadata.author),
+      primaryLanguage: getPrimaryLanguage(metadata.language),
+      updatedAt: Date.now(),
+    };
     if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
-      book.coverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
+      updated.coverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
       try {
         await appService?.updateCoverImage(
-          book,
+          updated,
           metadata.coverImageBlobUrl || metadata.coverImageUrl,
           metadata.coverImageFile,
         );
@@ -807,7 +813,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
     metadata.coverImageBlobUrl = undefined;
     metadata.coverImageFile = undefined;
-    await updateBook(envConfig, book);
+    await updateBook(envConfig, updated);
   };
 
   const handleImportBooksFromFiles = async () => {
