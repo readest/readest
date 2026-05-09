@@ -40,50 +40,77 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
   const hasMinMax = bookKeys.length === 1 && !!windowButtonVisible;
   const topInset = appService?.hasSafeAreaInset ? (screenInsets?.top ?? 0) : 5;
+  const topBarHeight = topInset + 40;
 
   return (
     <div
       ref={topBarRef}
       className={clsx(
-        'reader-top-bar absolute right-0 top-0 z-30',
-        'hidden items-center gap-1.5 sm:flex',
-        hasMinMax ? 'pr-2' : 'pr-5',
+        'reader-top-bar titlebar pointer-events-none absolute left-0 right-0 top-0 z-30',
+        'hidden items-start justify-end sm:flex',
       )}
-      style={{ paddingTop: `${topInset}px` }}
+      style={{ height: `${topBarHeight}px`, paddingTop: `${topInset}px` }}
     >
-      {onGoToLibrary && (
-        <button
-          type='button'
-          title={_('Go to Library')}
-          onClick={onGoToLibrary}
-          className='citadel-library-btn hidden items-center justify-center px-3.5 sm:flex'
-        >
-          <span className='citadel-library-btn-label'>{_('LIBRARY')}</span>
-        </button>
-      )}
-      <SettingsToggler bookKey={bookKey} />
-      <NotebookToggler bookKey={bookKey} />
-      <Dropdown
-        label={_('View Options')}
-        className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-        buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-        toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
-        onToggle={onDropdownOpenChange}
-      >
-        <ViewMenu bookKey={bookKey} />
-      </Dropdown>
-      <WindowButtons
-        className='gap-1 pr-0 text-[#b9852c] [&_button:hover]:!bg-transparent [&_button:hover]:!text-[#c99535] [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!text-[#b9852c] [&_button]:!shadow-none'
-        headerRef={topBarRef}
-        showMinimize={hasMinMax}
-        showMaximize={hasMinMax}
-        closeButtonLabel={_('Close Book')}
-        onClose={() => {
-          setHoveredBookKey(null);
-          onCloseBook(bookKey);
+      <div
+        aria-hidden='true'
+        className='reader-window-drag-region pointer-events-auto absolute bottom-0 top-0 hidden sm:block'
+        style={{
+          left: 'clamp(132px, 9vw, 176px)',
+          right: hasMinMax ? '360px' : '260px',
         }}
       />
+      <div
+        className={clsx(
+          'exclude-title-bar-mousedown pointer-events-auto flex items-center gap-1.5',
+          hasMinMax ? 'pr-2' : 'pr-5',
+        )}
+      >
+        {onGoToLibrary && (
+          <button
+            type='button'
+            title={_('Go to Library')}
+            onClick={onGoToLibrary}
+            className='citadel-library-btn hidden items-center justify-center px-3.5 sm:flex'
+          >
+            <span className='citadel-library-btn-label'>{_('LIBRARY')}</span>
+          </button>
+        )}
+        <SettingsToggler bookKey={bookKey} />
+        <NotebookToggler bookKey={bookKey} />
+        <Dropdown
+          label={_('View Options')}
+          className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
+          buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+          toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
+          onToggle={onDropdownOpenChange}
+        >
+          <ViewMenu bookKey={bookKey} />
+        </Dropdown>
+        <WindowButtons
+          className='gap-1 pr-0 text-[#b9852c] [&_button:hover]:!bg-transparent [&_button:hover]:!text-[#c99535] [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!text-[#b9852c] [&_button]:!shadow-none'
+          headerRef={topBarRef}
+          showMinimize={hasMinMax}
+          showMaximize={hasMinMax}
+          closeButtonLabel={_('Close Book')}
+          onClose={() => {
+            setHoveredBookKey(null);
+            onCloseBook(bookKey);
+          }}
+        />
+      </div>
       <style jsx global>{`
+        .reader-top-bar.titlebar {
+          background: transparent;
+          border-bottom: 0;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+
+        .reader-window-drag-region {
+          cursor: default;
+        }
+
         .reader-top-bar .btn {
           box-shadow: none;
           color: #8c816d;
