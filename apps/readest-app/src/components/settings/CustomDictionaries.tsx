@@ -260,6 +260,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
       });
       return;
     }
+    const isAdd = !webModal.editingId;
     if (webModal.editingId) {
       updateWebSearch(webModal.editingId, { name, urlTemplate: url });
       // Re-create the cached provider so the new template + label take effect.
@@ -267,7 +268,10 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     } else {
       addWebSearch(name, url);
     }
-    await saveCustomDictionaries(envConfig);
+    // Adding a new web search appends to providerOrder (an explicit
+    // user reorder); editing only changes name/URL, so providerOrder
+    // is untouched and the auto-mutation gate stays closed.
+    await saveCustomDictionaries(envConfig, { publishOrderChange: isAdd });
     setWebModal(null);
   };
 
@@ -402,7 +406,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         for (const oldId of oldIds) evictProvider(oldId);
         replaced += 1;
       }
-      await saveCustomDictionaries(envConfig);
+      // Import / replace both mutate providerOrder (prepend or splice
+      // into existing slot), so this is an explicit user reorder.
+      await saveCustomDictionaries(envConfig, { publishOrderChange: added > 0 || replaced > 0 });
       if (added > 0) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
@@ -455,7 +461,8 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     } else {
       return;
     }
-    await saveCustomDictionaries(envConfig);
+    // Delete removes the id from providerOrder — explicit user reorder.
+    await saveCustomDictionaries(envConfig, { publishOrderChange: true });
     // Auto-leave delete mode when the last deletable entry is gone — there's
     // nothing left to delete (edit mode is gated on the same row set).
     const remaining = rows.filter(
@@ -469,6 +476,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
 
   const handleToggle = async (id: string, next: boolean) => {
     setEnabled(id, next);
+    // Toggling enabled state doesn't change providerOrder; the gate
+    // stays closed and providerEnabled auto-publishes through the
+    // standard diff path.
     await saveCustomDictionaries(envConfig);
   };
 
@@ -483,7 +493,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     if (!moved) return;
     order.splice(toIdx, 0, moved);
     reorder(order);
-    await saveCustomDictionaries(envConfig);
+    // Drag-drop is the canonical user-action providerOrder change;
+    // open the gate so the new order ships cross-device.
+    await saveCustomDictionaries(envConfig, { publishOrderChange: true });
   };
 
   return (

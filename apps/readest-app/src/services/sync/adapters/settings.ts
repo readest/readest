@@ -54,7 +54,6 @@ export const SETTINGS_WHITELIST = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
-  'syncCategories',
 ] as const;
 
 /**

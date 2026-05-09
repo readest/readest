@@ -9,6 +9,7 @@ import { BUILTIN_PROVIDER_IDS, BUILTIN_WEB_SEARCH_IDS } from '@/services/diction
 import { useSettingsStore } from './settingsStore';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { DICTIONARY_KIND } from '@/services/sync/adapters/dictionary';
+import { markExplicitProviderOrderPublish } from '@/services/sync/replicaSettingsSync';
 
 const publishDictUpsert = (dict: ImportedDictionary): void => {
   if (!dict.contentId) return;
@@ -124,8 +125,19 @@ interface DictionaryStoreState {
 
   /** Hydrate from `settings.customDictionaries` + `settings.dictionarySettings` + check on-disk availability. */
   loadCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
-  /** Persist current state back into settings (which then syncs to cloud). */
-  saveCustomDictionaries(envConfig: EnvConfigType): Promise<void>;
+  /**
+   * Persist current state back into settings (which then syncs to
+   * cloud). Pass `{ publishOrderChange: true }` from explicit user
+   * actions that mutated `providerOrder` (drag-drop reorder, dict
+   * import, dict delete, web-search add/remove) so the auto-mutation
+   * gate releases providerOrder for that single push. Auto-save
+   * callers (replica pull, download-complete) leave it false so
+   * automatic local order changes never publish back to the server.
+   */
+  saveCustomDictionaries(
+    envConfig: EnvConfigType,
+    opts?: { publishOrderChange?: boolean },
+  ): Promise<void>;
 }
 
 function toSettingsDict(dict: ImportedDictionary): ImportedDictionary {
@@ -182,9 +194,13 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
               i === existingIdx ? { ...dict, deletedAt: undefined } : d,
             )
           : [...state.dictionaries, dict];
+      // Fresh imports go to the TOP of providerOrder so the user sees
+      // the dict they just added without scrolling. Reviving an
+      // existing entry preserves its current slot — we only insert
+      // when the id is genuinely new to the order.
       const order = state.settings.providerOrder.includes(dict.id)
         ? state.settings.providerOrder
-        : [...state.settings.providerOrder, dict.id];
+        : [dict.id, ...state.settings.providerOrder];
       const enabled = { ...state.settings.providerEnabled };
       if (!(dict.id in enabled)) enabled[dict.id] = !dict.unsupported;
       return {
@@ -234,17 +250,36 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
   },
 
   softDeleteByContentId: (contentId) => {
-    const target = get().dictionaries.find((d) => d.contentId === contentId && !d.deletedAt);
-    if (!target) return;
+    // Scrub providerOrder/providerEnabled by contentId regardless of
+    // whether a local dict matches — Device B fresh-install pulls the
+    // contentId via the settings replica's providerOrder/providerEnabled
+    // before (or even without) the dict replica row arriving alive, so
+    // we still need to clean the provider-side entries when the dict
+    // arrives tombstoned. For sync-era dicts, dict.id === contentId,
+    // so a contentId-keyed scrub also covers the local-id case.
+    // Match the local entry by contentId regardless of its deletedAt
+    // status: stale provider-side entries can survive a partial cleanup
+    // in a prior session and would otherwise be republished with a
+    // fresh HLC and clobber the cleaned server state under per-field LWW.
+    const target = get().dictionaries.find((d) => d.contentId === contentId);
+    const alreadyDeleted = !target || !!target.deletedAt;
+    // Scrub by both contentId AND any local id — they're usually equal
+    // for sync-era dicts, but legacy entries (pre-replica-sync) may
+    // have a separate bundleDir-derived id.
+    const idsToScrub = new Set<string>([contentId]);
+    if (target) idsToScrub.add(target.id);
     set((state) => ({
-      dictionaries: state.dictionaries.map((d) =>
-        d.id === target.id ? { ...d, deletedAt: Date.now() } : d,
-      ),
+      dictionaries:
+        target && !alreadyDeleted
+          ? state.dictionaries.map((d) =>
+              d.id === target.id ? { ...d, deletedAt: Date.now() } : d,
+            )
+          : state.dictionaries,
       settings: {
         ...state.settings,
-        providerOrder: state.settings.providerOrder.filter((p) => p !== target.id),
+        providerOrder: state.settings.providerOrder.filter((p) => !idsToScrub.has(p)),
         providerEnabled: Object.fromEntries(
-          Object.entries(state.settings.providerEnabled).filter(([k]) => k !== target.id),
+          Object.entries(state.settings.providerEnabled).filter(([k]) => !idsToScrub.has(k)),
         ),
       },
     }));
@@ -464,23 +499,70 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         }),
       );
 
+      // Self-healing reconciliation: drop providerOrder / providerEnabled
+      // entries whose customDictionaries row is tombstoned. Without this,
+      // a prior partial cleanup (e.g. a remote tombstone arriving while
+      // the local was already deletedAt) can leave dangling provider
+      // entries that get republished with a fresh HLC and stomp the
+      // cleaned server state under per-field LWW. Conservative: ids
+      // with NO matching customDictionaries row are kept (might be
+      // in-flight from the dict replica pull).
+      const tombstonedIds = new Set(persisted.filter((d) => d.deletedAt).map((d) => d.id));
+      const dropTombstoned = (id: string) => !tombstonedIds.has(id);
+
       // Merge defaults to back-fill any missing keys (e.g. new builtin added in a release).
       // For providerOrder, we append any newly-defaulted ids (like the
       // built-in web searches added in this release) so existing users see
       // them appear at the end of the list.
-      const persistedOrder = persistedSettings.providerOrder;
+      const persistedOrder = persistedSettings.providerOrder.filter(dropTombstoned);
       const orderSet = new Set(persistedOrder);
       const merged: string[] = persistedOrder.length
         ? [...persistedOrder]
         : [...DEFAULT_DICTIONARY_SETTINGS.providerOrder];
       for (const id of DEFAULT_DICTIONARY_SETTINGS.providerOrder) {
-        if (!orderSet.has(id)) merged.push(id);
+        if (!orderSet.has(id)) {
+          merged.push(id);
+          orderSet.add(id);
+        }
+      }
+      const persistedEnabled = Object.fromEntries(
+        Object.entries(persistedSettings.providerEnabled).filter(([id]) => dropTombstoned(id)),
+      );
+      // Collect providerEnabled keys that have no slot in providerOrder.
+      // Settings replica pushes are per-field LWW: a Device A push that
+      // grew providerEnabled but didn't ship a matching providerOrder
+      // (or whose providerOrder push was overwritten) leaves the dict
+      // registered-but-invisible. Surface it in the list so the user
+      // can see and use it.
+      const orphans: string[] = [];
+      for (const id of Object.keys(persistedEnabled)) {
+        if (!orderSet.has(id)) {
+          orphans.push(id);
+          orderSet.add(id);
+        }
+      }
+      if (orphans.length > 0) {
+        // Insert orphans BEFORE the first builtin in providerOrder so
+        // user-imported dicts stay contiguous near the top of the list.
+        // Appending at the very end strands them after the builtins —
+        // the user's UX feedback was that imports felt "lost" below
+        // the wikipedia/wiktionary/web-search section. If providerOrder
+        // contains no builtin yet (degenerate state), fall back to
+        // appending at the end.
+        const isBuiltinOrWebBuiltin = (id: string): boolean =>
+          id.startsWith('builtin:') || id.startsWith('web:builtin:');
+        const firstBuiltinIdx = merged.findIndex(isBuiltinOrWebBuiltin);
+        if (firstBuiltinIdx < 0) {
+          merged.push(...orphans);
+        } else {
+          merged.splice(firstBuiltinIdx, 0, ...orphans);
+        }
       }
       const settingsMerged: DictionarySettings = {
         providerOrder: merged,
         providerEnabled: {
           ...DEFAULT_DICTIONARY_SETTINGS.providerEnabled,
-          ...persistedSettings.providerEnabled,
+          ...persistedEnabled,
         },
         defaultProviderId: persistedSettings.defaultProviderId,
         webSearches: persistedSettings.webSearches ?? [],
@@ -491,7 +573,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }
   },
 
-  saveCustomDictionaries: async (envConfig) => {
+  saveCustomDictionaries: async (envConfig, opts) => {
     try {
       const { settings, setSettings, saveSettings } = useSettingsStore.getState();
       const { dictionaries, settings: dictSettings } = get();
@@ -504,6 +586,14 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         customDictionaries: dictionaries.map(toSettingsDict),
         dictionarySettings: dictSettings,
       };
+      // Open the auto-mutation gate for providerOrder when this save
+      // originates from a user action that intentionally changed the
+      // order (drag-drop, dict import, dict delete, web-search add).
+      // Auto-saves from replica pull / download-complete leave it
+      // closed so automatic local order changes never publish.
+      if (opts?.publishOrderChange) {
+        markExplicitProviderOrderPublish();
+      }
       setSettings(next);
       saveSettings(envConfig, next);
     } catch (error) {

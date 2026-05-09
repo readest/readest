@@ -179,9 +179,17 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   const alive = isReplicaRowAlive(row);
 
   if (!alive) {
-    if (local && !local.deletedAt) {
-      deps.softDeleteByContentId(row.replica_id);
-    }
+    // Always invoke softDeleteByContentId on a tombstoned row, even
+    // when no local record matches. The dict store uses this hook to
+    // scrub companion state (dictionarySettings.providerOrder /
+    // providerEnabled) that may have been seeded by the settings
+    // replica without a matching local row — a fresh device often hits
+    // this path because the settings replica lands before the dict
+    // replica, and a contentId may be referenced in providerEnabled
+    // even though its dict row arrives tombstoned. Other kinds (font,
+    // texture, opds_catalog) self-no-op when no local exists, so the
+    // unconditional call is safe.
+    deps.softDeleteByContentId(row.replica_id);
     return;
   }
 

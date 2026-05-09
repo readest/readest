@@ -108,6 +108,80 @@ describe('customDictionaryStore — web search CRUD', () => {
     expect(after.providerOrder.includes(BUILTIN_WEB_SEARCH_IDS.google)).toBe(true);
   });
 
+  it('addDictionary inserts the new id at the TOP of providerOrder so the user sees it first', () => {
+    // Seed an established order — builtins + an existing import.
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['builtin:wiktionary', 'builtin:wikipedia', 'imp-old'],
+        providerEnabled: {
+          'builtin:wiktionary': true,
+          'builtin:wikipedia': true,
+          'imp-old': true,
+        },
+        webSearches: [],
+      },
+    });
+
+    const { addDictionary } = useCustomDictionaryStore.getState();
+    addDictionary({
+      id: 'imp-new',
+      contentId: 'content-imp-new',
+      kind: 'mdict',
+      name: 'New Import',
+      bundleDir: 'imp-new',
+      files: { mdx: 'imp-new.mdx' },
+      addedAt: Date.now(),
+    });
+
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.providerOrder).toEqual([
+      'imp-new',
+      'builtin:wiktionary',
+      'builtin:wikipedia',
+      'imp-old',
+    ]);
+    expect(after.providerEnabled['imp-new']).toBe(true);
+  });
+
+  it('addDictionary that revives a previously soft-deleted entry does not duplicate it in providerOrder', () => {
+    useCustomDictionaryStore.setState({
+      dictionaries: [
+        {
+          id: 'imp-existing',
+          contentId: 'content-existing',
+          kind: 'mdict',
+          name: 'Existing',
+          bundleDir: 'imp-existing',
+          files: { mdx: 'x.mdx' },
+          addedAt: 1,
+          deletedAt: 999,
+        },
+      ],
+      settings: {
+        providerOrder: ['builtin:wikipedia', 'imp-existing'],
+        providerEnabled: { 'builtin:wikipedia': true, 'imp-existing': true },
+        webSearches: [],
+      },
+    });
+
+    const { addDictionary } = useCustomDictionaryStore.getState();
+    addDictionary({
+      id: 'imp-existing',
+      contentId: 'content-existing',
+      kind: 'mdict',
+      name: 'Existing Reborn',
+      bundleDir: 'imp-existing',
+      files: { mdx: 'x.mdx' },
+      addedAt: 2,
+    });
+
+    const after = useCustomDictionaryStore.getState().settings;
+    // Already in providerOrder — keep its existing slot rather than
+    // duplicating at the top.
+    expect(after.providerOrder).toEqual(['builtin:wikipedia', 'imp-existing']);
+  });
+
   it('updateDictionary patches the display name (trimmed) and ignores empty / unchanged input', () => {
     const { addDictionary, updateDictionary } = useCustomDictionaryStore.getState();
     addDictionary({
@@ -186,6 +260,76 @@ describe('customDictionaryStore — web search CRUD', () => {
       await Promise.resolve();
       await Promise.resolve();
       expect(saveSettings).toHaveBeenCalledOnce();
+    });
+
+    it('softDeleteByContentId scrubs stale providerOrder/providerEnabled when local dict is already deletedAt', async () => {
+      // Reproduces the field-asymmetry bug from real-world data: a remote
+      // tombstone arrives, but our local dict is already soft-deleted from
+      // a prior session. Without this fix the function bails before
+      // touching providerOrder/providerEnabled, leaving stale entries
+      // that get republished with a fresh HLC and overwrite the cleaned
+      // server state.
+      setupSpyEnv();
+      useCustomDictionaryStore.setState({
+        dictionaries: [
+          {
+            id: 'imp1',
+            contentId: 'content-imp1',
+            kind: 'mdict',
+            name: 'Stale',
+            bundleDir: 'imp1',
+            files: { mdx: 'imp1.mdx' },
+            addedAt: 1,
+            deletedAt: 12345,
+          },
+        ],
+        settings: {
+          providerOrder: ['builtin:wikipedia', 'imp1'],
+          providerEnabled: { 'builtin:wikipedia': true, imp1: true },
+          webSearches: [],
+        },
+      });
+
+      useCustomDictionaryStore.getState().softDeleteByContentId('content-imp1');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const after = useCustomDictionaryStore.getState().settings;
+      expect(after.providerOrder).toEqual(['builtin:wikipedia']);
+      expect('imp1' in after.providerEnabled).toBe(false);
+    });
+
+    it('softDeleteByContentId scrubs providerOrder/providerEnabled even when no local dict exists', async () => {
+      // Real-world bug from Device B fresh-install: settings replica
+      // pulled providerOrder/providerEnabled with a contentId, but the
+      // dict replica row for that contentId arrived as tombstoned. The
+      // local dict was never created, yet the providerOrder slot must
+      // still be cleaned — otherwise the UI renders a "skipped" gap
+      // above the builtins (the slot exists but lookup in `dictionaries`
+      // misses), and the orphan-rescue would re-pin it back.
+      setupSpyEnv();
+      useCustomDictionaryStore.setState({
+        dictionaries: [],
+        settings: {
+          providerOrder: ['phantom-imp', 'builtin:wikipedia', 'builtin:wiktionary'],
+          providerEnabled: {
+            'phantom-imp': true,
+            'builtin:wikipedia': true,
+            'builtin:wiktionary': true,
+          },
+          webSearches: [],
+        },
+      });
+
+      // Pull-side soft-delete using the contentId (== replica_id == dict.id
+      // for sync-era dicts) — no matching local row.
+      useCustomDictionaryStore.getState().softDeleteByContentId('phantom-imp');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const after = useCustomDictionaryStore.getState().settings;
+      expect(after.providerOrder).toEqual(['builtin:wikipedia', 'builtin:wiktionary']);
+      expect('phantom-imp' in after.providerEnabled).toBe(false);
     });
 
     it('does not persist when env has not been registered', async () => {
@@ -381,5 +525,168 @@ describe('customDictionaryStore — applyRemoteDictionarySettings (PR 6)', () =>
     const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
     applyRemoteDictionarySettings({ providerOrder: ['remote-y'] });
     expect(mockPublishReplicaUpsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('customDictionaryStore — loadCustomDictionaries reconciliation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('prunes providerOrder + providerEnabled entries whose customDictionaries row is tombstoned', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [
+          {
+            id: 'imp1',
+            contentId: 'content-imp1',
+            kind: 'mdict',
+            name: 'Stale',
+            bundleDir: 'imp1',
+            files: { mdx: 'imp1.mdx' },
+            addedAt: 1,
+            deletedAt: 999,
+          },
+        ],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia', 'imp1'],
+          providerEnabled: { 'builtin:wikipedia': true, imp1: true },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.providerOrder.includes('imp1')).toBe(false);
+    expect('imp1' in after.providerEnabled).toBe(false);
+    // Builtins remain untouched.
+    expect(after.providerOrder.includes('builtin:wikipedia')).toBe(true);
+    expect(after.providerEnabled['builtin:wikipedia']).toBe(true);
+  });
+
+  it('keeps providerOrder + providerEnabled entries with no matching customDictionaries row (in-flight pull)', async () => {
+    // Conservative reconciliation: an id with no corresponding row at all
+    // might be in-flight via the replica pull. Don't prune it.
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia', 'pending-import'],
+          providerEnabled: { 'builtin:wikipedia': true, 'pending-import': true },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.providerOrder.includes('pending-import')).toBe(true);
+    expect(after.providerEnabled['pending-import']).toBe(true);
+  });
+
+  it('appends providerEnabled keys missing from providerOrder so the dict still appears in the list', async () => {
+    // Real-world bug: settings replica pushes can land out of order
+    // under per-field LWW (e.g. a remote device's providerEnabled push
+    // landed but its providerOrder push didn't, or arrived first with
+    // an older value). The UI list is driven by providerOrder, so
+    // dicts present in providerEnabled but absent from providerOrder
+    // would silently disappear from the picker. Append them at the
+    // end so users see them with a "feel-of-dict-lost" repair.
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wiktionary', 'builtin:wikipedia', 'imp-known'],
+          providerEnabled: {
+            'builtin:wiktionary': false,
+            'builtin:wikipedia': true,
+            'imp-known': true,
+            'imp-orphaned-1': true,
+            'imp-orphaned-2': false,
+          },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+
+    const after = useCustomDictionaryStore.getState().settings;
+    // Existing order is preserved; default-builtin backfill runs first.
+    // Orphan providerEnabled keys are inserted BEFORE the first builtin
+    // so user-imported dicts stay at the top of the list (rather than
+    // stranded after the builtins where the user might miss them).
+    // Existing imp-known is already after builtins (intentional user
+    // choice persisted in providerOrder) so it stays put.
+    expect(after.providerOrder).toEqual([
+      'imp-orphaned-1',
+      'imp-orphaned-2',
+      'builtin:wiktionary',
+      'builtin:wikipedia',
+      'imp-known',
+      'web:builtin:google',
+      'web:builtin:urban',
+      'web:builtin:merriam-webster',
+    ]);
+  });
+
+  it('does NOT append tombstoned providerEnabled keys to providerOrder', async () => {
+    // Cross-check: the existing tombstone-prune logic should remove
+    // the orphan from providerEnabled BEFORE we try to append it to
+    // providerOrder. Otherwise we'd resurrect a deleted dict.
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [
+          {
+            id: 'imp-tombstoned',
+            contentId: 'content-tombstoned',
+            kind: 'mdict',
+            name: 'Deleted',
+            bundleDir: 'imp-tombstoned',
+            files: { mdx: 'x.mdx' },
+            addedAt: 1,
+            deletedAt: 99,
+          },
+        ],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true, 'imp-tombstoned': true },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+
+    const after = useCustomDictionaryStore.getState().settings;
+    expect(after.providerOrder.includes('imp-tombstoned')).toBe(false);
+    expect('imp-tombstoned' in after.providerEnabled).toBe(false);
   });
 });

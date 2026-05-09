@@ -269,7 +269,12 @@ describe('replicaPullAndApply (dictionary adapter)', () => {
     expect(deps.applyRemote).not.toHaveBeenCalled();
   });
 
-  test('tombstoned row already gone locally: no-op (idempotent)', async () => {
+  test('tombstoned row with no local entry: still invokes softDelete so the store can scrub provider-side state', async () => {
+    // Device B fresh-install path: settings replica seeded
+    // providerOrder/providerEnabled with a contentId that the dict
+    // replica then arrived as tombstoned for. We need softDeleteByContentId
+    // to fire so the dict store can clean those provider-side entries
+    // even though there's no local record to flip a deletedAt flag on.
     const tombstone = hlcPack(NOW + 1000, 0, DEV) as Hlc;
     const row = baseRow({
       deleted_at_ts: tombstone,
@@ -282,7 +287,29 @@ describe('replicaPullAndApply (dictionary adapter)', () => {
 
     await replicaPullAndApply(deps);
 
-    expect(deps.softDeleteByContentId).not.toHaveBeenCalled();
+    expect(deps.softDeleteByContentId).toHaveBeenCalledWith('content-hash-abc');
+    expect(deps.applyRemote).not.toHaveBeenCalled();
+  });
+
+  test('tombstoned row, local already soft-deleted: still invokes softDelete (lets store scrub stale provider state)', async () => {
+    // Real-world bug: a re-pulled tombstone whose local entry is already
+    // deletedAt would skip the softDelete call entirely, so any stale
+    // providerOrder/providerEnabled entries (left behind by a prior
+    // partial cleanup) never got pruned.
+    const tombstone = hlcPack(NOW + 1000, 0, DEV) as Hlc;
+    const row = baseRow({
+      deleted_at_ts: tombstone,
+      updated_at_ts: tombstone,
+      reincarnation: null,
+    });
+    const local = baseDict({ deletedAt: NOW + 500 });
+    const deps = makeDeps();
+    (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([row]);
+    (deps.findByContentId as ReturnType<typeof vi.fn>).mockReturnValue(local);
+
+    await replicaPullAndApply(deps);
+
+    expect(deps.softDeleteByContentId).toHaveBeenCalledWith('content-hash-abc');
     expect(deps.applyRemote).not.toHaveBeenCalled();
   });
 

@@ -43,6 +43,7 @@ import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
 import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
+import type { Hlc } from '@/types/replica';
 import type { SystemSettings } from '@/types/settings';
 
 export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog' | 'settings';
@@ -56,12 +57,48 @@ export interface UseReplicaPullOpts {
 }
 
 const REPLICA_PULL_DEFAULT_DELAY_MS = 5_000;
+/** Periodic incremental-pull cadence for long-lived foreground tabs. */
+const REPLICA_PULL_PERIODIC_INTERVAL_MS = 5 * 60 * 1000;
+/**
+ * Minimum gap between visibility-triggered pulls. Rapid alt-tab cycles
+ * (or browsers that fire `visibilitychange` on every workspace switch)
+ * would otherwise pump a pull on every focus event. Online and periodic
+ * triggers bypass this — they signal genuinely new conditions.
+ */
+const REPLICA_PULL_VISIBILITY_THROTTLE_MS = 10_000;
 
 // Module-level dedup so navigating between pages (library → reader → …)
-// doesn't fire a fresh pull every time. Periodic resync is handled by
-// ReplicaSyncManager.startAutoSync (visibility / online listeners),
-// which is wired once in EnvContext.
+// doesn't fire a fresh boot pull every time. Once a kind has had its
+// boot pull initiated (or completed) it stays in this set until the
+// page unloads. Subsequent re-syncs for the same kind go through the
+// incremental auto-pull path below.
 const pulledKinds = new Set<ReplicaKind>();
+// Per-kind in-flight gate covering BOTH boot and incremental pulls.
+// Prevents concurrent pulls (e.g. visibilitychange firing while the
+// boot pull is still resolving, or two triggers landing in the same
+// tick).
+const pullInFlight = new Set<ReplicaKind>();
+// Union of every kind any mount has ever asked us to keep in sync.
+// Drives the visibility / online / periodic-tick fan-out, which fires
+// for the lifetime of the tab regardless of which page is currently
+// mounted.
+const registeredKinds = new Set<ReplicaKind>();
+// Latest service + envConfig captured by a hook mount; the auto-sync
+// triggers read this so the listeners (installed once) don't capture
+// stale references when the env hot-reloads.
+let autoSyncContext: { service: AppService; envConfig: EnvConfigType } | null = null;
+let autoSyncListenersInstalled = false;
+let periodicTimer: ReturnType<typeof setInterval> | null = null;
+let lastVisibilityPullAt = 0;
+// Shared promise for the boot-time settings pull. All other kinds'
+// boot pulls await this so applyRemoteSettings has a chance to seed
+// `lastPublishedFields` with server-authoritative values before
+// dict/font/texture/opds_catalog auto-saves fire — without that
+// ordering, those auto-saves diff against `undefined` on a fresh
+// boot and republish the local default (e.g.
+// `dictionarySettings.providerOrder`) with a fresh HLC, clobbering
+// cross-device state under per-field LWW.
+let settingsBootPullPromise: Promise<void> | null = null;
 
 /**
  * Per-kind config consumed by `buildReplicaPullDeps`. The factory fills
@@ -91,12 +128,14 @@ const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
   service: AppService,
   envConfig: EnvConfigType,
   config: ReplicaPullConfig<T>,
+  pullOpts?: { since?: Hlc | null },
 ): PullAndApplyDeps<T> => ({
   adapter: config.adapter,
-  // Boot path uses since=null so we always re-fetch and apply locally,
-  // ignoring any previously-advanced cursor. Periodic sync (visibility /
-  // online) goes through manager.pull(kind) which keeps using the cursor.
-  pull: () => manager.pull(config.kind, { since: null }),
+  // Boot path passes { since: null } so we always re-fetch and apply
+  // locally, ignoring any previously-advanced cursor. The visibility /
+  // online / periodic incremental triggers omit pullOpts so manager.pull
+  // falls back to the persisted cursor — cheap delta fetch.
+  pull: () => manager.pull(config.kind, pullOpts),
   findByContentId: config.findByContentId,
   hydrateLocalStore: config.hydrateLocalStore
     ? () => config.hydrateLocalStore!(envConfig)
@@ -235,6 +274,7 @@ const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
   envConfig: EnvConfigType,
+  pullOpts?: { since?: Hlc | null },
 ): Promise<void> => {
   const ctx = getReplicaSync();
   if (!ctx) return;
@@ -244,42 +284,157 @@ const runPullForKind = async (
   switch (kind) {
     case 'dictionary':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, dictionaryPullConfig),
+        buildReplicaPullDeps(ctx.manager, service, envConfig, dictionaryPullConfig, pullOpts),
       );
       return;
     case 'font':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, fontPullConfig),
+        buildReplicaPullDeps(ctx.manager, service, envConfig, fontPullConfig, pullOpts),
       );
       return;
     case 'texture':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, texturePullConfig),
+        buildReplicaPullDeps(ctx.manager, service, envConfig, texturePullConfig, pullOpts),
       );
       return;
     case 'opds_catalog':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, opdsCatalogPullConfig),
+        buildReplicaPullDeps(ctx.manager, service, envConfig, opdsCatalogPullConfig, pullOpts),
       );
       return;
     case 'settings':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, settingsPullConfig(envConfig)),
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          settingsPullConfig(envConfig),
+          pullOpts,
+        ),
       );
       return;
   }
 };
 
 /**
+ * Cursor-based incremental pull, gated by a per-kind in-flight set so
+ * concurrent triggers (visibility + online firing in the same tick,
+ * periodic timer racing with a focus event) collapse to one network
+ * round-trip.
+ */
+const runIncrementalPullForKind = async (
+  kind: ReplicaKind,
+  service: AppService,
+  envConfig: EnvConfigType,
+): Promise<void> => {
+  if (pullInFlight.has(kind)) return;
+  // Skip until the kind's boot pull has at least been initiated. Boot
+  // does the full re-fetch (since=null); incremental builds on whatever
+  // cursor that pull advanced.
+  if (!pulledKinds.has(kind)) return;
+  pullInFlight.add(kind);
+  try {
+    await runPullForKind(kind, service, envConfig);
+  } catch (err) {
+    console.warn(`replica ${kind} incremental pull failed`, err);
+  } finally {
+    pullInFlight.delete(kind);
+  }
+};
+
+const triggerIncrementalPullAll = (): void => {
+  if (!autoSyncContext) return;
+  const { service, envConfig } = autoSyncContext;
+  for (const kind of registeredKinds) {
+    void runIncrementalPullForKind(kind, service, envConfig);
+  }
+};
+
+const onVisibilityChange = (): void => {
+  if (typeof document === 'undefined') return;
+  if (document.visibilityState !== 'visible') return;
+  const now = Date.now();
+  if (now - lastVisibilityPullAt < REPLICA_PULL_VISIBILITY_THROTTLE_MS) return;
+  lastVisibilityPullAt = now;
+  triggerIncrementalPullAll();
+};
+
+const onOnline = (): void => {
+  triggerIncrementalPullAll();
+};
+
+const onPeriodicTick = (): void => {
+  // Don't burn battery on a backgrounded tab — the visibilitychange
+  // listener will fire a catch-up pull when the tab returns to
+  // foreground.
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+  triggerIncrementalPullAll();
+};
+
+/**
+ * Idempotent settings boot pull. First caller starts the pull; every
+ * subsequent caller (other kinds awaiting the seed, additional mounts)
+ * receives the same promise. Settings is also added to
+ * `registeredKinds` so the auto-pull triggers fan it out alongside the
+ * caller's requested kinds.
+ */
+const ensureSettingsBootPulled = (service: AppService, envConfig: EnvConfigType): Promise<void> => {
+  if (settingsBootPullPromise) return settingsBootPullPromise;
+  registeredKinds.add('settings');
+  pulledKinds.add('settings');
+  pullInFlight.add('settings');
+  settingsBootPullPromise = runPullForKind('settings', service, envConfig, { since: null })
+    .catch((err) => {
+      console.warn('replica settings pull failed', err);
+      pulledKinds.delete('settings');
+    })
+    .finally(() => {
+      pullInFlight.delete('settings');
+    });
+  return settingsBootPullPromise;
+};
+
+/**
+ * Install document/window listeners + periodic interval for incremental
+ * pulls. Idempotent — first call wires everything, subsequent calls
+ * just refresh `autoSyncContext` (so listeners always see the latest
+ * appService / envConfig). Listeners stay attached for the lifetime of
+ * the page.
+ */
+const installAutoSyncListeners = (service: AppService, envConfig: EnvConfigType): void => {
+  autoSyncContext = { service, envConfig };
+  if (autoSyncListenersInstalled) return;
+  autoSyncListenersInstalled = true;
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', onOnline);
+  }
+  periodicTimer = setInterval(onPeriodicTick, REPLICA_PULL_PERIODIC_INTERVAL_MS);
+};
+
+/**
  * Schedules a deferred replica pull for the requested kinds. Mount this
  * on a page that wants those kinds present (library, reader, etc.).
  *
- * Per-kind dedup is module-scoped: the first mount that schedules a
- * pull for `dictionary` claims that kind for the rest of the session;
- * subsequent mounts (re-navigation, hot reload, parallel pages mounting
- * simultaneously) skip. ReplicaSyncManager.startAutoSync handles the
- * "tab regained focus / network came back" resync — this hook is only
- * for the initial pull each session.
+ * Two pull lifecycles share this hook:
+ *
+ *  1. Boot pull — one-shot per session (dedup'd by `pulledKinds`),
+ *     fired `delayMs` after first mount. Uses `since=null` for a full
+ *     re-fetch that recovers from any prior cursor-advanced-but-not-
+ *     applied gaps. The `settings` kind is implicitly pulled FIRST
+ *     (regardless of whether the caller requested it) so the rest of
+ *     the kinds' auto-saves don't republish stale local providerOrder /
+ *     providerEnabled with a fresh HLC.
+ *  2. Incremental auto-pull — runs for the lifetime of the tab via
+ *     module-level visibility / online listeners + a 5-minute interval.
+ *     Uses the persisted cursor for cheap delta fetches. Concurrent
+ *     triggers collapse via `pullInFlight`.
+ *
+ * Listeners install once on the first mount that has a ready replica-
+ * sync singleton, and stay attached after subsequent unmounts so a
+ * long-lived tab keeps catching up across other devices' edits.
  */
 export const useReplicaPull = ({
   kinds,
@@ -293,26 +448,50 @@ export const useReplicaPull = ({
   useEffect(() => {
     if (!appService) return;
 
+    for (const kind of kinds) registeredKinds.add(kind);
+
     let timer: ReturnType<typeof setTimeout> | null = null;
     let unsubscribe: (() => void) | null = null;
 
     const schedule = () => {
+      installAutoSyncListeners(appService, envConfig);
       if (timer) return;
-      const pendingKinds = kinds.filter((k) => !pulledKinds.has(k));
-      if (pendingKinds.length === 0) return;
+      // Settings is implicitly pulled first regardless of whether the
+      // caller asked for it (e.g. the reader page only requests
+      // dictionary/font/texture). Without that seeding, applyRemote
+      // for a binary kind on a fresh device appends the new id to the
+      // local default `dictionarySettings.providerOrder` and the
+      // ensuing auto-save publishes that order with a fresh HLC,
+      // overwriting the cross-device order set on another device.
+      const otherPending = kinds.filter((k) => k !== 'settings' && !pulledKinds.has(k));
+      const needsSettings = !pulledKinds.has('settings');
+      if (otherPending.length === 0 && !needsSettings) return;
       timer = setTimeout(() => {
-        for (const kind of pendingKinds) {
-          if (pulledKinds.has(kind)) continue;
-          // Claim the slot up front so a concurrently-scheduled mount
-          // (e.g., library + reader mounting back-to-back) doesn't
-          // double-pull. On failure we release the slot so a
-          // subsequent navigation can retry.
-          pulledKinds.add(kind);
-          void runPullForKind(kind, appService, envConfig).catch((err) => {
-            console.warn(`replica ${kind} pull failed`, err);
-            pulledKinds.delete(kind);
-          });
-        }
+        void (async () => {
+          // Await the settings boot pull before dispatching the others.
+          // Subsequent mounts share `settingsBootPullPromise` so the
+          // pull only happens once per session.
+          await ensureSettingsBootPulled(appService, envConfig);
+          for (const kind of otherPending) {
+            if (pulledKinds.has(kind)) continue;
+            // Claim both slots up front so a concurrently-scheduled mount
+            // (e.g., library + reader mounting back-to-back) doesn't
+            // double-pull, and so a visibility/online trigger landing
+            // mid-boot doesn't fire a second pull alongside this one.
+            // On failure we release `pulledKinds` so a subsequent
+            // navigation can retry; `pullInFlight` is always cleared.
+            pulledKinds.add(kind);
+            pullInFlight.add(kind);
+            void runPullForKind(kind, appService, envConfig, { since: null })
+              .catch((err) => {
+                console.warn(`replica ${kind} pull failed`, err);
+                pulledKinds.delete(kind);
+              })
+              .finally(() => {
+                pullInFlight.delete(kind);
+              });
+          }
+        })();
       }, delayMs);
     };
 
@@ -334,7 +513,23 @@ export const useReplicaPull = ({
   }, [kindsKey, appService, envConfig, delayMs]);
 };
 
-/** Test seam — clear the per-kind dedup state between specs. */
+/** Test seam — clear all module-level state and tear down listeners. */
 export const __resetReplicaPullForTests = (): void => {
   pulledKinds.clear();
+  pullInFlight.clear();
+  registeredKinds.clear();
+  autoSyncContext = null;
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('online', onOnline);
+  }
+  if (periodicTimer) {
+    clearInterval(periodicTimer);
+    periodicTimer = null;
+  }
+  autoSyncListenersInstalled = false;
+  lastVisibilityPullAt = 0;
+  settingsBootPullPromise = null;
 };

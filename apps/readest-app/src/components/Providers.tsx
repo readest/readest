@@ -80,6 +80,16 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           hash: settings.pinCodeHash,
           salt: settings.pinCodeSalt,
         });
+        // Subscribe the bundled-settings publisher to settingsStore
+        // changes, AFTER priming the publish snapshot from the just-
+        // loaded disk settings. Without this priming, the very first
+        // setSettings(disk_default) at boot (typically from library
+        // page's initLibrary) would diff every whitelisted field
+        // against `undefined`, treat them all as "new", and push the
+        // local defaults to the server with a fresh HLC — overwriting
+        // the cross-device authoritative values another device set.
+        // Idempotent — safe to call on remount.
+        initSettingsSync(settings);
       });
     }
   }, [
@@ -108,15 +118,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     if (!meta) return;
     const updated = getAndroidPatchedViewportContent(navigator.userAgent, meta.content);
     if (updated) meta.content = updated;
-  }, []);
-
-  // Subscribe the bundled-settings publisher to settingsStore changes.
-  // After this fires, every setSettings call diffs the whitelist
-  // against the last-published snapshot and emits a single replica
-  // upsert for changed fields (no-op if nothing whitelisted changed).
-  // Idempotent — safe to call on remount.
-  useEffect(() => {
-    initSettingsSync();
   }, []);
 
   // Make sure appService is available in all children components

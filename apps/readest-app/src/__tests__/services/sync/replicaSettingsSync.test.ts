@@ -23,6 +23,7 @@ vi.mock('@/services/sync/passphraseGate', () => ({
 import {
   __resetSettingsSyncForTests,
   applyRemoteSettings,
+  initSettingsSync,
   publishSettingsIfChanged,
 } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -126,6 +127,80 @@ describe('publishSettingsIfChanged', () => {
     expect(patch.kosync?.serverUrl).toBe('https://kosync.example');
   });
 
+  test('does NOT publish dictionarySettings.providerOrder by default (auto-mutation gate)', async () => {
+    // providerOrder must only ship cross-device on explicit user
+    // actions (drag-drop reorder, dict import, dict delete, web-search
+    // add). Auto-mutations from applyRemoteDictionary, softDeleteByContentId,
+    // loadCustomDictionaries reconciliation, and ordinary saveSettings
+    // calls must NOT republish it — otherwise a fresh device's local
+    // append-on-pull or orphan-rescue order would clobber the
+    // authoritative cross-device order under per-field LWW.
+    await publishSettingsIfChanged(
+      makeSettings({
+        dictionarySettings: {
+          providerOrder: ['imp-new', 'builtin:wiktionary'],
+          providerEnabled: { 'imp-new': true, 'builtin:wiktionary': true },
+          webSearches: [],
+        },
+      } as Partial<SystemSettings>),
+    );
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    // providerOrder excluded — gate closed, no explicit opt-in.
+    expect(patch.dictionarySettings?.providerOrder).toBeUndefined();
+    // providerEnabled is NOT gated — auto-publishes per usual diff.
+    expect(patch.dictionarySettings?.providerEnabled).toBeDefined();
+  });
+
+  test('publishes dictionarySettings.providerOrder when markExplicitProviderOrderPublish was called', async () => {
+    const { markExplicitProviderOrderPublish } =
+      await import('@/services/sync/replicaSettingsSync');
+    markExplicitProviderOrderPublish();
+    await publishSettingsIfChanged(
+      makeSettings({
+        dictionarySettings: {
+          providerOrder: ['imp-new', 'builtin:wiktionary'],
+          providerEnabled: { 'imp-new': true, 'builtin:wiktionary': true },
+          webSearches: [],
+        },
+      } as Partial<SystemSettings>),
+    );
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.dictionarySettings?.providerOrder).toEqual(['imp-new', 'builtin:wiktionary']);
+  });
+
+  test('explicit-publish opt-in is consumed after one publish (no carryover)', async () => {
+    const { markExplicitProviderOrderPublish } =
+      await import('@/services/sync/replicaSettingsSync');
+    markExplicitProviderOrderPublish();
+    const settings1 = makeSettings({
+      dictionarySettings: {
+        providerOrder: ['a'],
+        providerEnabled: { a: true },
+        webSearches: [],
+      },
+    } as Partial<SystemSettings>);
+    await publishSettingsIfChanged(settings1);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    publishMock.mockReset();
+
+    // Second publish without re-marking — providerOrder change is gated.
+    const settings2 = makeSettings({
+      dictionarySettings: {
+        providerOrder: ['b', 'a'],
+        providerEnabled: { a: true, b: true },
+        webSearches: [],
+      },
+    } as Partial<SystemSettings>);
+    await publishSettingsIfChanged(settings2);
+    // providerEnabled changed — that publishes. providerOrder is gated.
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.dictionarySettings?.providerOrder).toBeUndefined();
+    expect(patch.dictionarySettings?.providerEnabled).toEqual({ a: true, b: true });
+  });
+
   test('triggers the passphrase gate when an encrypted field gets meaningful content while locked', async () => {
     isUnlocked = false;
     await publishSettingsIfChanged(
@@ -154,6 +229,64 @@ describe('publishSettingsIfChanged', () => {
     expect(patch.kosync?.password).toBeUndefined();
     expect(patch.readwise?.accessToken).toBeUndefined();
     expect(patch.hardcover?.accessToken).toBeUndefined();
+  });
+
+  test('initSettingsSync(initialSettings) primes the snapshot so the first setSettings(disk_default) does not push', async () => {
+    // Real-world bug: a fresh-install Device B's library boot calls
+    // setSettings(disk_default) which fires publishSettingsIfChanged
+    // with an empty lastPublishedFields snapshot. Every whitelisted
+    // field looks "changed from undefined" and gets pushed to the
+    // server with a fresh HLC, overwriting the cross-device
+    // authoritative values another device set. Disk-priming via
+    // initSettingsSync(initialSettings) seeds the snapshot from the
+    // just-loaded disk so the same-value first publish is a no-op.
+    const diskSettings = makeSettings({
+      dictionarySettings: {
+        providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
+        providerEnabled: { 'builtin:wiktionary': true, 'builtin:wikipedia': true },
+        webSearches: [],
+      },
+      kosync: {
+        serverUrl: 'https://sync.koreader.rocks/',
+        username: '',
+        userkey: '',
+        password: '',
+      } as SystemSettings['kosync'],
+    } as Partial<SystemSettings>);
+    initSettingsSync(diskSettings);
+
+    // The same disk_default replayed (typical library page initLibrary
+    // flow) — should produce no publish because every whitelisted
+    // field already matches the primed snapshot.
+    await publishSettingsIfChanged(diskSettings);
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  test('initSettingsSync priming does not block legitimate user changes against the seeded baseline', async () => {
+    const diskSettings = makeSettings({
+      kosync: {
+        serverUrl: '',
+        username: '',
+        userkey: '',
+        password: '',
+      } as SystemSettings['kosync'],
+    });
+    initSettingsSync(diskSettings);
+
+    // User changes kosync.serverUrl after boot — must publish.
+    await publishSettingsIfChanged(
+      makeSettings({
+        kosync: {
+          serverUrl: 'https://kosync.example',
+          username: '',
+          userkey: '',
+          password: '',
+        } as SystemSettings['kosync'],
+      }),
+    );
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.kosync?.serverUrl).toBe('https://kosync.example');
   });
 
   test('does NOT trigger the gate when only plaintext settings change', async () => {

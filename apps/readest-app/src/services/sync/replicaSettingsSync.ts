@@ -46,9 +46,44 @@ const HASH_KEY_PREFIX = 'readest_settings_pushed_hash_v1:';
 const CIPHER_KEY = 'readest_settings_last_seen_cipher_v1';
 
 /**
+ * Whitelisted paths whose auto-publish is suppressed unless an explicit
+ * caller opts in. The motivating field is
+ * `dictionarySettings.providerOrder`: it must only ship cross-device
+ * on user-driven actions (drag-drop reorder, dict import, dict delete,
+ * web-search add). Auto-mutations from `applyRemoteDictionary`,
+ * `softDeleteByContentId`, `loadCustomDictionaries` reconciliation,
+ * and ordinary saveSettings calls should NEVER republish providerOrder
+ * — otherwise a fresh device's local append-on-pull or orphan-rescue
+ * order would overwrite the authoritative cross-device order under
+ * per-field LWW.
+ *
+ * Disk-priming (see `initSettingsSync`) prevents the boot-time
+ * overwrite case; this gate is the second line of defense, ensuring
+ * subsequent auto-mutations also stay local.
+ */
+const PATHS_REQUIRING_EXPLICIT_PUBLISH: ReadonlySet<string> = new Set([
+  'dictionarySettings.providerOrder',
+]);
+const explicitPublishPending = new Set<string>();
+
+/**
+ * Mark `dictionarySettings.providerOrder` as eligible for the next
+ * `publishSettingsIfChanged` pass. Consumed (cleared) by any subsequent
+ * publish pass — the opt-in is per-action, not sticky, so call this
+ * immediately before the `setSettings` that should carry the order
+ * change to the wire.
+ */
+export const markExplicitProviderOrderPublish = (): void => {
+  explicitPublishPending.add('dictionarySettings.providerOrder');
+};
+
+/**
  * In-memory snapshot for plaintext (non-encrypted) whitelisted paths.
- * Resets on tab close — the worst case is a redundant publish on the
- * next save, which is harmless (server-side per-field LWW dedupes).
+ * Primed at app boot from the on-disk settings (see
+ * `initSettingsSync(initialSettings)`) so the very first
+ * setSettings(disk_default) call at boot doesn't diff every field
+ * against `undefined` and overwrite the cross-device authoritative
+ * server state with the local default values.
  */
 const lastPublishedFields = new Map<string, unknown>();
 
@@ -185,11 +220,30 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
       encryptedChanged.push({ path, value: current, hash: currentHash });
       hasNewEncryptedContent = true;
     } else {
+      // Auto-mutation gate: paths in PATHS_REQUIRING_EXPLICIT_PUBLISH
+      // (currently dictionarySettings.providerOrder) only ship when a
+      // user-action caller marked them via markExplicitProviderOrderPublish.
+      // Without this, automatic local mutations (replica pull adding
+      // newly-arrived dicts, orphan-rescue inserting missing ids,
+      // tombstone scrubbing removing stale entries) would diff against
+      // lastPublishedFields and republish the local view of order with
+      // a fresh HLC, overwriting the authoritative cross-device order
+      // another device set under per-field LWW.
+      if (PATHS_REQUIRING_EXPLICIT_PUBLISH.has(path) && !explicitPublishPending.has(path)) {
+        continue;
+      }
       const previous = lastPublishedFields.get(path);
       if (equalShallow(current, previous)) continue;
       plainChanged[path] = current;
       lastPublishedFields.set(path, current);
     }
+  }
+
+  // Consume the explicit-publish opt-in regardless of whether the field
+  // actually diffed — the opt-in is per-action, not sticky. A subsequent
+  // user reorder/import/delete must re-mark to publish again.
+  for (const path of PATHS_REQUIRING_EXPLICIT_PUBLISH) {
+    explicitPublishPending.delete(path);
   }
 
   if (Object.keys(plainChanged).length === 0 && encryptedChanged.length === 0) return;
@@ -329,8 +383,34 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
  * root.
  */
 let unsubscribe: (() => void) | null = null;
-export const initSettingsSync = (): void => {
+/**
+ * Install the bundled-settings publisher.
+ *
+ * Pass the just-loaded disk settings to seed `lastPublishedFields`
+ * with the values currently on disk. The seeding makes the first
+ * post-install setSettings(disk_default) call (typically library
+ * page's initLibrary) a diff-against-disk no-op rather than a "diff
+ * against undefined → push every default" — without this, a
+ * fresh-install Device B would clobber another device's authoritative
+ * settings on the server with its own local defaults under per-field
+ * LWW.
+ *
+ * Idempotent — subsequent calls are no-ops.
+ */
+export const initSettingsSync = (initialSettings?: SystemSettings): void => {
   if (unsubscribe) return;
+  if (initialSettings) {
+    for (const path of SETTINGS_WHITELIST) {
+      const v = readPath(initialSettings, path);
+      if (v === undefined) continue;
+      // Encrypted paths use the persisted-hash mechanism that already
+      // survives reloads; plaintext paths are the ones that need
+      // in-memory priming.
+      if (!ENCRYPTED_PATHS.has(path)) {
+        lastPublishedFields.set(path, v);
+      }
+    }
+  }
   unsubscribe = useSettingsStore.subscribe((state, prev) => {
     if (state.settings && state.settings !== prev?.settings) {
       void publishSettingsIfChanged(state.settings);
@@ -341,6 +421,7 @@ export const initSettingsSync = (): void => {
 /** Test seam — drop the snapshot + subscription between specs. */
 export const __resetSettingsSyncForTests = (): void => {
   lastPublishedFields.clear();
+  explicitPublishPending.clear();
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
