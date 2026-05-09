@@ -296,13 +296,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
             content: '';
             position: absolute;
             inset: 0;
+            z-index: 0;
             border-radius: inherit;
-            background: linear-gradient(180deg, rgba(30, 18, 10, 0.22) 0%, rgba(8, 5, 3, 0.1) 100%);
-            border-top: 1px solid rgba(88, 60, 24, 0.4);
+            background: linear-gradient(180deg, rgb(10, 7, 5), rgb(3, 2, 2));
+            border-top: 1px solid rgba(210, 166, 88, 0.58);
             box-shadow:
-              inset 0 5px 16px rgba(0, 0, 0, 0.32),
-              inset 0 1px 0 rgba(255, 200, 120, 0.03);
+              inset 0 1px 0 rgba(255, 220, 140, 0.1),
+              inset 0 22px 36px rgba(0, 0, 0, 0.44),
+              inset 1px 0 0 rgba(184, 132, 54, 0.14),
+              inset -1px 0 0 rgba(184, 132, 54, 0.14);
             pointer-events: none;
+          }
+
+          .footer-bar::after {
+            content: '';
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            top: 0;
+            height: 1px;
+            z-index: 0;
+            background: linear-gradient(
+              90deg,
+              rgba(178, 135, 70, 0) 0%,
+              rgba(210, 166, 88, 0.58) 16%,
+              rgba(210, 166, 88, 0.38) 50%,
+              rgba(210, 166, 88, 0.58) 84%,
+              rgba(178, 135, 70, 0) 100%
+            );
+            pointer-events: none;
+          }
+
+          .footer-bar > * {
+            position: relative;
+            z-index: 1;
           }
 
           .footer-bar > .hidden.sm\\:flex {

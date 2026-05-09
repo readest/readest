@@ -179,7 +179,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           }
         }}
       >
-        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-1.5 pe-2 max-[350px]:gap-x-1'>
+        <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler relative top-[2px] z-30 flex h-full min-w-0 items-center gap-x-1.5 pe-2 ps-2.5 max-[350px]:gap-x-1 sm:ps-3'>
           <div
             className='flex min-w-0 items-center gap-x-2 overflow-x-auto max-[350px]:gap-x-1.5'
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}

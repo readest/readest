@@ -235,6 +235,11 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
       )}
       <style jsx global>{`
         /* Engraved button — pressed into the frame rather than floating above it */
+        .footer-bar > .hidden.sm\\:flex {
+          border-top: 1px solid rgba(210, 166, 88, 0.18);
+          box-shadow: inset 0 1px 0 rgba(255, 220, 140, 0.04);
+        }
+
         .footer-bar button {
           border-radius: 0.5rem;
           border: 1px solid rgba(100, 74, 34, 0.2);

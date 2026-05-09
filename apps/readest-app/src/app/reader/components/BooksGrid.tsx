@@ -154,9 +154,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
         const frameInsetTop = isCompactViewport ? 16 : 22;
         const frameInsetSide = isCompactViewport ? 12 : 26;
         const frameInsetBottom = isCompactViewport ? 34 : 42;
-        const wellInsetTop = isCompactViewport ? 32 : 36;
-        const wellInsetSide = isCompactViewport ? 20 : 38;
-        const wellInsetBottom = isCompactViewport ? 62 : 72;
+        const wellInsetTop = isCompactViewport ? 34 : 40;
+        const wellInsetSide = isCompactViewport ? 22 : 44;
+        const wellInsetBottom = isCompactViewport ? 64 : 78;
         const spineWidth = isCompactViewport ? 26 : 42;
         const cornerSize = isCompactViewport ? 56 : 78;
         // Corners sit right AT the well's edge so they read as part of
@@ -334,10 +334,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               gridInsets={gridInsets}
               contentInsets={contentInsets}
             />
-            <div
-              className='reader-frame-well pointer-events-none absolute z-[1]'
-              style={wellStyle}
-            />
+            <div className='reader-frame-well pointer-events-none absolute z-0' style={wellStyle} />
             <div
               className='reader-frame-spine pointer-events-none absolute z-[2]'
               style={spineStyle}
@@ -799,6 +796,66 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           font-style: italic;
           font-size: 0.78rem;
           letter-spacing: 0.05em;
+        }
+
+        .books-grid .reader-frame-shell {
+          background: linear-gradient(
+            170deg,
+            rgb(22, 13, 10) 0%,
+            rgb(16, 10, 8) 24%,
+            rgb(10, 7, 6) 62%,
+            rgba(8, 5, 4, 1) 100%
+          );
+          box-shadow:
+            0 22px 52px rgba(0, 0, 0, 0.48),
+            inset 0 0 0 1px rgba(190, 146, 72, 0.7),
+            inset 0 0 0 4px rgba(0, 0, 0, 0.55),
+            inset 0 0 0 5px rgba(214, 172, 94, 0.2),
+            inset 0 0 48px rgba(120, 28, 18, 0.16),
+            inset 0 18px 36px rgba(255, 228, 190, 0.014),
+            inset 0 -42px 58px rgba(0, 0, 0, 0.5);
+        }
+
+        .books-grid .reader-frame-shell::before {
+          background: linear-gradient(180deg, rgba(255, 229, 186, 0.018), rgba(0, 0, 0, 0.1));
+          box-shadow:
+            inset 0 0 0 1px rgba(82, 49, 33, 0.84),
+            inset 0 0 0 9px rgba(9, 6, 5, 0.34),
+            inset 0 24px 42px rgba(255, 224, 185, 0.016),
+            inset 0 -46px 60px rgba(0, 0, 0, 0.42);
+          pointer-events: none;
+        }
+
+        .books-grid .reader-frame-well {
+          background:
+            radial-gradient(ellipse 68% 28% at 50% 2%, rgba(232, 188, 124, 0.065), transparent 62%),
+            radial-gradient(ellipse 58% 76% at 50% 44%, rgba(96, 64, 38, 0.12), transparent 54%),
+            radial-gradient(ellipse 34% 88% at 2% 50%, rgba(0, 0, 0, 0.34), transparent 72%),
+            radial-gradient(ellipse 34% 88% at 98% 50%, rgba(0, 0, 0, 0.34), transparent 72%),
+            linear-gradient(
+              180deg,
+              rgba(26, 25, 22, 0.995),
+              rgba(16, 16, 14, 1) 38%,
+              rgba(11, 11, 10, 1) 100%
+            );
+          box-shadow:
+            inset 0 0 0 1px rgba(190, 142, 66, 0.66),
+            inset 0 0 0 3px rgba(0, 0, 0, 0.54),
+            inset 0 0 0 5px rgba(214, 172, 94, 0.18),
+            inset 0 24px 52px rgba(255, 220, 150, 0.03),
+            inset 0 -38px 64px rgba(0, 0, 0, 0.46),
+            inset 22px 0 32px rgba(0, 0, 0, 0.14),
+            inset -22px 0 32px rgba(0, 0, 0, 0.14),
+            0 12px 28px rgba(0, 0, 0, 0.38);
+        }
+
+        .books-grid .reader-frame-footer-seat {
+          background: linear-gradient(180deg, rgb(10, 7, 5), rgb(3, 2, 2));
+          box-shadow:
+            inset 0 1px 0 rgba(255, 220, 140, 0.1),
+            inset 0 22px 36px rgba(0, 0, 0, 0.44),
+            inset 1px 0 0 rgba(184, 132, 54, 0.14),
+            inset -1px 0 0 rgba(184, 132, 54, 0.14);
         }
       `}</style>
     </div>
