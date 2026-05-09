@@ -10,7 +10,7 @@ export interface ReplicaSyncInitOpts {
   deviceId: string;
   cursorStore: CursorStore;
   hlcStore?: HlcSnapshotStore;
-  client?: Pick<ReplicaSyncClient, 'push' | 'pull'>;
+  client?: Pick<ReplicaSyncClient, 'push' | 'pull' | 'pullBatch'>;
 }
 
 export interface ReplicaSyncContext {

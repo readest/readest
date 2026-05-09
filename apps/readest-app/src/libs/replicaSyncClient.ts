@@ -99,6 +99,46 @@ export class ReplicaSyncClient {
   }
 
   /**
+   * Batched pull for the incremental auto-sync path. Collapses what
+   * used to be N parallel `GET /api/sync/replicas?kind=…&since=…`
+   * requests (one per replica kind, fired on every focus / online /
+   * periodic trigger) into a single POST round-trip. The boot path
+   * still uses `pull()` per kind to preserve the settings-first
+   * ordering invariant.
+   *
+   * The endpoint is the same `/sync/replicas` route — `{ cursors: [...] }`
+   * in the body discriminates batched-pull from `{ rows: [...] }` push.
+   */
+  async pullBatch(
+    cursors: { kind: string; since: Hlc | null }[],
+  ): Promise<{ kind: string; rows: ReplicaRow[] }[]> {
+    if (cursors.length === 0) return [];
+    const token = await requireToken();
+    let response: Response;
+    try {
+      response = await fetch(ENDPOINT(), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cursors }),
+      });
+    } catch (cause) {
+      throw new SyncError('SERVER', 'Network failure during batch pull', { cause });
+    }
+    if (!response.ok) {
+      const body = await parseErrorBody(response);
+      const code = body.code ?? statusToDefaultCode(response.status);
+      throw new SyncError(code, body.error ?? `Batch pull failed with status ${response.status}`, {
+        status: response.status,
+      });
+    }
+    const data = (await response.json()) as { results: { kind: string; rows: ReplicaRow[] }[] };
+    return data.results ?? [];
+  }
+
+  /**
    * The replica_keys list rarely changes — only on `createReplicaKey`
    * (passphrase setup / rotation) and `forgetReplicaKeys` (forgot-
    * passphrase wipe), both of which we own and invalidate explicitly.

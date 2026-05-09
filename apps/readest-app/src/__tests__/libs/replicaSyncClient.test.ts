@@ -264,3 +264,60 @@ describe('ReplicaSyncClient.listReplicaKeys (cache + dedupe)', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('ReplicaSyncClient.pullBatch', () => {
+  test('POSTs cursors to /sync/replicas and returns the per-kind results', async () => {
+    const fontRow: ReplicaRow = { ...sampleRow, kind: 'font', replica_id: 'f1' };
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          results: [
+            { kind: 'dictionary', rows: [sampleRow] },
+            { kind: 'font', rows: [fontRow] },
+            { kind: 'texture', rows: [] },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const client = new ReplicaSyncClient();
+    const result = await client.pullBatch([
+      { kind: 'dictionary', since: HLC },
+      { kind: 'font', since: null },
+      { kind: 'texture', since: null },
+    ]);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const [url, init] = mockFetch.mock.calls[0]!;
+    // Reuses the existing /sync/replicas route — body shape
+    // (`{ cursors }` vs `{ rows }`) is the discriminator.
+    expect(url).toBe('https://example.test/sync/replicas');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({
+      cursors: [
+        { kind: 'dictionary', since: HLC },
+        { kind: 'font', since: null },
+        { kind: 'texture', since: null },
+      ],
+    });
+    expect(result).toEqual([
+      { kind: 'dictionary', rows: [sampleRow] },
+      { kind: 'font', rows: [fontRow] },
+      { kind: 'texture', rows: [] },
+    ]);
+  });
+
+  test('empty cursors is a no-op (no fetch call)', async () => {
+    const client = new ReplicaSyncClient();
+    const result = await client.pullBatch([]);
+    expect(result).toEqual([]);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test('5xx → SyncError SERVER', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('{}', { status: 500 }));
+    const client = new ReplicaSyncClient();
+    await expect(client.pullBatch([{ kind: 'dictionary', since: null }])).rejects.toBeInstanceOf(
+      SyncError,
+    );
+  });
+});

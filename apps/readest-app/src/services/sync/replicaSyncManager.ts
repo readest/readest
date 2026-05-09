@@ -9,7 +9,7 @@ export interface CursorStore {
 
 export interface ReplicaSyncManagerOpts {
   hlc: HlcGenerator;
-  client: Pick<ReplicaSyncClient, 'push' | 'pull'>;
+  client: Pick<ReplicaSyncClient, 'push' | 'pull' | 'pullBatch'>;
   cursorStore: CursorStore;
   debounceMs?: number;
 }
@@ -131,14 +131,52 @@ export class ReplicaSyncManager {
     // sync (visibility / online) keeps using the cursor.
     const since = opts && 'since' in opts ? (opts.since ?? null) : this.opts.cursorStore.get(kind);
     const rows = await this.opts.client.pull(kind, since);
-    if (rows.length === 0) return rows;
+    this.observeAndAdvanceCursor(kind, rows);
+    return rows;
+  }
+
+  /**
+   * Batched pull for the incremental auto-sync path AND the boot full
+   * re-fetch. Default behaviour (no opts): each kind uses its
+   * persisted cursor — the cheap delta path used by focus / online /
+   * periodic. Boot path passes `{ since: null }` so the same single
+   * round-trip refreshes every kind from scratch, mirroring the
+   * recovery semantics of the per-kind `pull(kind, { since: null })`
+   * boot call.
+   *
+   * Returns a `Map<kind, rows>`. Kinds present in the input but missing
+   * from the response (because they had no rows past the cursor) are
+   * still mapped to an empty array, so callers can iterate over the
+   * input kinds without checking for `undefined`.
+   */
+  async pullMany(
+    kinds: string[],
+    opts?: { since?: Hlc | null },
+  ): Promise<Map<string, ReplicaRow[]>> {
+    const out = new Map<string, ReplicaRow[]>();
+    if (kinds.length === 0) return out;
+    const overrideSince = opts && 'since' in opts;
+    const cursors = kinds.map((kind) => ({
+      kind,
+      since: overrideSince ? (opts.since ?? null) : this.opts.cursorStore.get(kind),
+    }));
+    const results = await this.opts.client.pullBatch(cursors);
+    for (const kind of kinds) out.set(kind, []);
+    for (const { kind, rows } of results) {
+      this.observeAndAdvanceCursor(kind, rows);
+      out.set(kind, rows);
+    }
+    return out;
+  }
+
+  private observeAndAdvanceCursor(kind: string, rows: ReplicaRow[]): void {
+    if (rows.length === 0) return;
     let maxHlc: Hlc = rows[0]!.updated_at_ts;
     for (const row of rows) {
       if (hlcCompare(row.updated_at_ts, maxHlc) > 0) maxHlc = row.updated_at_ts;
       this.opts.hlc.observe(row.updated_at_ts);
     }
     this.opts.cursorStore.set(kind, maxHlc);
-    return rows;
   }
 
   startAutoSync(): void {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient } from '@/utils/supabase';
 import { validateUserAndToken } from '@/utils/access';
 import { runMiddleware, corsAllMethods } from '@/utils/cors';
-import { validatePullParams, validatePushBatch } from '@/libs/replicaSyncServer';
+import { validatePullBatch, validatePullParams, validatePushBatch } from '@/libs/replicaSyncServer';
 import type { ReplicaRow } from '@/types/replica';
 
 const errorResponse = (status: number, code: string, message: string, offendingIndex?: number) =>
@@ -28,6 +28,50 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return errorResponse(400, 'VALIDATION', 'Invalid JSON body');
+  }
+
+  // Body discriminator: `{ cursors: [...] }` is a batched pull (replaces
+  // N parallel `GET ?kind=K&since=…` calls with a single Worker
+  // invocation); `{ rows: [...] }` is the existing push.
+  if (typeof body === 'object' && body !== null && 'cursors' in body) {
+    const validation = validatePullBatch(body);
+    if (!validation.ok) {
+      return errorResponse(
+        validation.status,
+        validation.code,
+        validation.message,
+        validation.offendingIndex,
+      );
+    }
+    const { cursors } = validation.params;
+    if (cursors.length === 0) {
+      return NextResponse.json({ results: [] }, { status: 200 });
+    }
+    // Per-kind queries run in parallel: each is the same SELECT the
+    // single-kind GET issues, just dispatched together. Supabase calls
+    // inside a Worker aren't billed as Cloudflare requests, so this
+    // collapses N Worker invocations to 1 without changing DB load.
+    try {
+      const tasks = cursors.map(async ({ kind, since }) => {
+        let query = supabase
+          .from('replicas')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('kind', kind)
+          .order('updated_at_ts', { ascending: true })
+          .limit(1000);
+        if (since) query = query.gt('updated_at_ts', since);
+        const { data, error } = await query;
+        if (error) throw new Error(`pull replicas (kind=${kind}) failed: ${error.message}`);
+        return { kind, rows: (data ?? []) as ReplicaRow[] };
+      });
+      const results = await Promise.all(tasks);
+      return NextResponse.json({ results }, { status: 200 });
+    } catch (error) {
+      console.error('batch pull replicas failed', { cursors, error });
+      const message = error instanceof Error ? error.message : 'unknown error';
+      return errorResponse(500, 'SERVER', message);
+    }
   }
 
   const validation = validatePushBatch(body, user.id, Date.now());

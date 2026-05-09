@@ -5,6 +5,11 @@ import type { SyncErrorCode } from '@/libs/errors';
 
 export const HLC_SKEW_TOLERANCE_MS = 60_000;
 export const MAX_PUSH_BATCH = 100;
+// Cap the batched-pull cursor list. Today there are 5 kinds; this leaves
+// generous headroom for future replica kinds while keeping the request
+// body bounded so a malicious caller can't burn server time on
+// pathological queries.
+export const MAX_PULL_BATCH = 50;
 
 export interface PushReplicasBody {
   rows: ReplicaRow[];
@@ -118,4 +123,84 @@ export const validatePullParams = (kind: string | null, since: string | null): P
       since: since ? (since as Hlc) : null,
     },
   };
+};
+
+export interface PullBatchEntry {
+  kind: string;
+  since: Hlc | null;
+}
+
+export interface PullBatchBody {
+  cursors: PullBatchEntry[];
+}
+
+export type PullBatchValidation =
+  | { ok: true; params: PullBatchBody }
+  | { ok: false; status: number; code: SyncErrorCode; message: string; offendingIndex?: number };
+
+/**
+ * Validate the batched-pull body. Same per-row checks as the per-kind
+ * GET (`isAllowedKind`), but applied to every cursor entry.
+ */
+export const validatePullBatch = (body: unknown): PullBatchValidation => {
+  if (typeof body !== 'object' || body === null) {
+    return { ok: false, status: 400, code: 'VALIDATION', message: 'body must be an object' };
+  }
+  const cursors = (body as PullBatchBody).cursors;
+  if (!Array.isArray(cursors)) {
+    return { ok: false, status: 400, code: 'VALIDATION', message: 'body.cursors must be an array' };
+  }
+  if (cursors.length === 0) {
+    return { ok: true, params: { cursors: [] } };
+  }
+  if (cursors.length > MAX_PULL_BATCH) {
+    return {
+      ok: false,
+      status: 413,
+      code: 'VALIDATION',
+      message: `cursors.length ${cursors.length} exceeds MAX_PULL_BATCH=${MAX_PULL_BATCH}`,
+    };
+  }
+  const seen = new Set<string>();
+  for (let i = 0; i < cursors.length; i++) {
+    const c = cursors[i]!;
+    if (typeof c.kind !== 'string' || c.kind.length === 0) {
+      return {
+        ok: false,
+        status: 400,
+        code: 'VALIDATION',
+        message: `cursors[${i}].kind must be a non-empty string`,
+        offendingIndex: i,
+      };
+    }
+    if (!isAllowedKind(c.kind)) {
+      return {
+        ok: false,
+        status: 422,
+        code: 'UNKNOWN_KIND',
+        message: `cursors[${i}].kind=${c.kind} is not in the server allowlist`,
+        offendingIndex: i,
+      };
+    }
+    if (seen.has(c.kind)) {
+      return {
+        ok: false,
+        status: 400,
+        code: 'VALIDATION',
+        message: `cursors[${i}].kind=${c.kind} is duplicated in the batch`,
+        offendingIndex: i,
+      };
+    }
+    seen.add(c.kind);
+    if (c.since !== null && typeof c.since !== 'string') {
+      return {
+        ok: false,
+        status: 400,
+        code: 'VALIDATION',
+        message: `cursors[${i}].since must be a string or null`,
+        offendingIndex: i,
+      };
+    }
+  }
+  return { ok: true, params: { cursors } };
 };

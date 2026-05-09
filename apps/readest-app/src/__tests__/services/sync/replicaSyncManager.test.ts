@@ -23,6 +23,10 @@ const makeRow = (id: string, hlcStr: Hlc = HLC_NOW): ReplicaRow => ({
 const makeFakeClient = () => ({
   push: vi.fn(async (rows: ReplicaRow[]) => rows),
   pull: vi.fn(async (_kind: string, _since: Hlc | null) => [] as ReplicaRow[]),
+  pullBatch: vi.fn(
+    async (_cursors: { kind: string; since: Hlc | null }[]) =>
+      [] as { kind: string; rows: ReplicaRow[] }[],
+  ),
 });
 
 const makeManager = (clientOverrides: Partial<ReturnType<typeof makeFakeClient>> = {}) => {
@@ -292,5 +296,78 @@ describe('ReplicaSyncManager.pull', () => {
     const { manager, cursors } = makeManager(client);
     await manager.pull('dictionary', { since: null });
     expect(cursors.get('dictionary')).toBe(r2.updated_at_ts);
+  });
+});
+
+describe('ReplicaSyncManager.pullMany (batched incremental)', () => {
+  test("one pullBatch round-trip per call, with each kind's persisted cursor", async () => {
+    // Seed cursors so we can verify each kind\'s cursor reaches the
+    // batched request — this is the core saving over per-kind GETs.
+    const dictCursor = hlcPack(NOW + 50, 0, DEV) as Hlc;
+    const fontCursor = hlcPack(NOW + 60, 0, DEV) as Hlc;
+    const client = makeFakeClient();
+    const { manager, cursors } = makeManager(client);
+    cursors.set('dictionary', dictCursor);
+    cursors.set('font', fontCursor);
+    // texture has no cursor yet — should arrive as null (initial pull).
+
+    await manager.pullMany(['dictionary', 'font', 'texture']);
+
+    expect(client.pullBatch).toHaveBeenCalledTimes(1);
+    expect(client.pull).not.toHaveBeenCalled();
+    const cursorsArg = client.pullBatch.mock.calls[0]![0];
+    expect(cursorsArg).toEqual([
+      { kind: 'dictionary', since: dictCursor },
+      { kind: 'font', since: fontCursor },
+      { kind: 'texture', since: null },
+    ]);
+  });
+
+  test("advances each kind's cursor independently from its own rows", async () => {
+    const dictRow = makeRow('d1', hlcPack(NOW + 1000, 0, DEV) as Hlc);
+    const fontRow = makeRow('f1', hlcPack(NOW + 2000, 0, DEV) as Hlc);
+    const client = {
+      ...makeFakeClient(),
+      pullBatch: vi.fn(async () => [
+        { kind: 'dictionary', rows: [dictRow] as ReplicaRow[] },
+        { kind: 'font', rows: [fontRow] as ReplicaRow[] },
+        { kind: 'texture', rows: [] as ReplicaRow[] },
+      ]),
+    };
+    const { manager, cursors } = makeManager(client);
+    const result = await manager.pullMany(['dictionary', 'font', 'texture']);
+
+    expect(cursors.get('dictionary')).toBe(dictRow.updated_at_ts);
+    expect(cursors.get('font')).toBe(fontRow.updated_at_ts);
+    // Empty result must NOT advance the cursor (would skip future rows).
+    expect(cursors.get('texture')).toBeUndefined();
+
+    // Returned map covers every requested kind, including empty ones.
+    expect(result.get('dictionary')).toEqual([dictRow]);
+    expect(result.get('font')).toEqual([fontRow]);
+    expect(result.get('texture')).toEqual([]);
+  });
+
+  test('observes remote HLCs into the local generator (cross-device clock)', async () => {
+    const remoteHlc = hlcPack(NOW + 90_000, 3, 'dev-other') as Hlc;
+    const client = {
+      ...makeFakeClient(),
+      pullBatch: vi.fn(async () => [
+        { kind: 'dictionary', rows: [makeRow('r1', remoteHlc)] as ReplicaRow[] },
+      ]),
+    };
+    const { manager, hlc } = makeManager(client);
+    await manager.pullMany(['dictionary']);
+    const next = hlc.next();
+    // Local generator must be ahead of the observed remote stamp.
+    expect(next > remoteHlc).toBe(true);
+  });
+
+  test('empty kinds list short-circuits without hitting the wire', async () => {
+    const client = makeFakeClient();
+    const { manager } = makeManager(client);
+    const result = await manager.pullMany([]);
+    expect(result.size).toBe(0);
+    expect(client.pullBatch).not.toHaveBeenCalled();
   });
 });

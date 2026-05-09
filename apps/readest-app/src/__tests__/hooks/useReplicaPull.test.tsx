@@ -23,6 +23,8 @@ let envValue: { envConfig: unknown; appService: unknown } = {
   appService: null,
 };
 
+let authValue: { user: { id: string } | null } = { user: { id: 'test-user' } };
+
 vi.mock('@/services/sync/replicaPullAndApply', () => ({
   replicaPullAndApply: (...args: unknown[]) => pullSpy(...args),
 }));
@@ -38,6 +40,10 @@ vi.mock('@/services/sync/replicaSync', () => ({
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => envValue,
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => authValue,
 }));
 
 vi.mock('@/services/transferManager', () => ({
@@ -103,6 +109,20 @@ import { useReplicaPull, __resetReplicaPullForTests } from '@/hooks/useReplicaPu
 
 const fakeService = { createDir: vi.fn(), name: 'fake' };
 
+// Mock manager exposing both per-kind `pull` (used by the boot path) and
+// the batched `pullMany` (used by the incremental triggers). Each test
+// recreates these so individual call counts don't bleed across cases.
+const makeManagerMock = () => ({
+  pull: vi.fn<(...args: unknown[]) => Promise<unknown[]>>(async () => []),
+  pullMany: vi.fn<
+    (kinds: string[], opts?: { since?: string | null }) => Promise<Map<string, unknown[]>>
+  >(async (kinds) => {
+    const out = new Map<string, unknown[]>();
+    for (const k of kinds) out.set(k, []);
+    return out;
+  }),
+});
+
 /**
  * Settings is implicitly pulled at boot regardless of which kinds the
  * caller asked for (so other kinds' applyRemote auto-saves don't
@@ -124,6 +144,7 @@ beforeEach(() => {
   readyListeners.clear();
   __resetReplicaPullForTests();
   envValue = { envConfig: { name: 'env' }, appService: fakeService };
+  authValue = { user: { id: 'test-user' } };
 });
 
 afterEach(() => {
@@ -133,7 +154,7 @@ afterEach(() => {
 
 describe('useReplicaPull', () => {
   test('does not pull before delayMs elapses', () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 5_000 }));
 
     vi.advanceTimersByTime(4_999);
@@ -141,7 +162,7 @@ describe('useReplicaPull', () => {
   });
 
   test('fires pull after delayMs', async () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 1_000 }));
 
     await act(async () => {
@@ -154,9 +175,40 @@ describe('useReplicaPull', () => {
     expect(dictionaryPullCount()).toBe(1);
   });
 
+  test('boot batches non-settings kinds into one pullMany with since=null', async () => {
+    // Boot today: 1 settings call (single-kind, sequential) + 1 batched
+    // pullMany call for the rest. Was previously 1 + N parallel
+    // calls. The batched call must use `{ since: null }` so each kind
+    // does a full refetch — same recovery semantics as the old
+    // per-kind boot.
+    const managerMock = makeManagerMock();
+    getReplicaSyncSpy.mockReturnValue({ manager: managerMock });
+    renderHook(() => useReplicaPull({ kinds: ['dictionary', 'font', 'texture'], delayMs: 100 }));
+    await act(async () => {
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Settings still gets its own `replicaPullAndApply` call (the
+    // `dictionaryPullCount`-style counter approach is what asserts the
+    // ordering elsewhere). The pullMany path collapses dictionary +
+    // font + texture into a single round-trip with the since=null
+    // override applied uniformly.
+    expect(managerMock.pullMany).toHaveBeenCalledTimes(1);
+    const [batchedKinds, batchedOpts] = managerMock.pullMany.mock.calls[0]!;
+    expect([...batchedKinds].sort()).toEqual(['dictionary', 'font', 'texture']);
+    expect(batchedOpts).toEqual({ since: null });
+    // pullSpy is `replicaPullAndApply`; expect 1 invocation per kind
+    // (settings + the three from the batch) all running through the
+    // apply path.
+    expect(pullSpy).toHaveBeenCalledTimes(4);
+  });
+
   test('skips when appService is null', () => {
     envValue = { envConfig: { name: 'env' }, appService: null };
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
 
     vi.advanceTimersByTime(500);
@@ -183,7 +235,7 @@ describe('useReplicaPull', () => {
 
     // initReplicaSync now finishes; getReplicaSync starts returning the
     // singleton, and the ready listener fires.
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     fireReplicaSyncReady();
 
     await act(async () => {
@@ -204,7 +256,7 @@ describe('useReplicaPull', () => {
   });
 
   test('only pulls once per kind across multiple mounts', async () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     const first = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await act(async () => {
       vi.advanceTimersByTime(200);
@@ -227,8 +279,8 @@ describe('useReplicaPull', () => {
   });
 
   test('failed pull releases the dedup slot so a later navigation can retry', async () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
-    // Settings pull resolves; dictionary pull (the second call) rejects.
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
+    // Settings pull resolves; dictionary apply (the second call) rejects.
     pullSpy.mockResolvedValueOnce(undefined);
     pullSpy.mockRejectedValueOnce(new Error('flaky'));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -256,7 +308,7 @@ describe('useReplicaPull', () => {
   });
 
   test('cleanup cancels a pending pull when the component unmounts before delayMs', () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: {} });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     const view = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 5_000 }));
     vi.advanceTimersByTime(2_000);
     view.unmount();
@@ -274,63 +326,57 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
     });
   };
 
-  test('visibilitychange to visible fires an incremental pull (cursor-based, not since=null)', async () => {
+  test('window focus fires one batched incremental pull (pullMany, cursor-based)', async () => {
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
     expect(dictionaryPullCount()).toBe(1);
 
-    // Simulate tab going hidden, then visible. The "visible" transition
-    // is the trigger.
-    Object.defineProperty(document, 'visibilityState', {
-      value: 'visible',
-      configurable: true,
-    });
+    // Simulate the window regaining focus (foreground transition).
     await act(async () => {
-      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
       await Promise.resolve();
       await Promise.resolve();
     });
     expect(dictionaryPullCount()).toBe(2);
 
-    // The incremental call's pull deps should NOT pin since=null —
-    // that's the boot-only behavior. Inspect the LAST dict pull deps.
-    const dictCalls = pullSpy.mock.calls.filter((c) => {
-      const deps = c[0] as { adapter?: { kind?: string } } | undefined;
-      return deps?.adapter?.kind === 'dictionary';
-    });
-    const incrementalCall = dictCalls.at(-1)![0] as { pull: () => Promise<unknown[]> };
-    await incrementalCall.pull();
-    const managerPull = (
-      getReplicaSyncSpy.mock.results[0]!.value as { manager: { pull: ReturnType<typeof vi.fn> } }
-    ).manager.pull;
-    // Boot call uses { since: null }; incremental call passes undefined
-    // (or no opts) so manager.pull falls back to the cursor.
-    expect(managerPull).toHaveBeenCalled();
-    const lastArgs = managerPull.mock.calls.at(-1);
-    expect(lastArgs?.[1]).toBeUndefined();
+    // pullMany fires twice: once at boot for the non-settings kinds
+    // (settings boot stays a single-kind `manager.pull`), and once for
+    // the focus-triggered incremental over every registered kind.
+    const managerMock = (
+      getReplicaSyncSpy.mock.results[0]!.value as {
+        manager: ReturnType<typeof makeManagerMock>;
+      }
+    ).manager;
+    expect(managerMock.pullMany).toHaveBeenCalledTimes(2);
+    // The first call (boot) gets just the non-settings kinds with
+    // since=null override; the focus call gets all registered kinds
+    // with cursor-based defaults.
+    const bootArgs = managerMock.pullMany.mock.calls[0]!;
+    expect(bootArgs[0]).toEqual(['dictionary']);
+    expect(bootArgs[1]).toEqual({ since: null });
+    const focusArgs = managerMock.pullMany.mock.calls[1]!;
+    expect([...focusArgs[0]].sort()).toEqual(['dictionary', 'settings']);
+    expect(focusArgs[1]).toBeUndefined();
   });
 
-  test('visibilitychange is throttled to at most one fire per 30 seconds', async () => {
-    Object.defineProperty(document, 'visibilityState', {
-      value: 'visible',
-      configurable: true,
-    });
+  test('focus is throttled to collapse iOS focus-fires-twice bursts', async () => {
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
     expect(dictionaryPullCount()).toBe(1); // boot pull only
 
-    // Burst of visibility changes within the throttle window — only the
-    // first should fire an incremental pull. Rapid alt-tab cycling is
-    // the real-world trigger. Advance ~10s total (well under 30s).
+    // Burst of focus events within the throttle window — only the first
+    // fires an incremental pull. iOS Tauri's two-back-to-back focus
+    // events on a single foreground transition are the real-world
+    // trigger; rapid alt-tab cycling is the desktop equivalent.
     for (let i = 0; i < 5; i++) {
       await act(async () => {
-        document.dispatchEvent(new Event('visibilitychange'));
+        window.dispatchEvent(new Event('focus'));
         vi.advanceTimersByTime(2_000);
         await Promise.resolve();
         await Promise.resolve();
@@ -338,40 +384,107 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
     }
     expect(dictionaryPullCount()).toBe(2); // boot + 1 throttled
 
-    // Cross the 30s boundary (we already advanced 10s above; advance
-    // the remaining time and a touch more).
+    // Cross the throttle boundary; the next focus is allowed through.
     await act(async () => {
       vi.advanceTimersByTime(20_500);
-      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
       await Promise.resolve();
       await Promise.resolve();
     });
     expect(dictionaryPullCount()).toBe(3);
   });
 
-  test('online and periodic triggers are NOT subject to the visibility throttle', async () => {
-    Object.defineProperty(document, 'visibilityState', {
-      value: 'visible',
-      configurable: true,
-    });
+  test('visibilitychange to visible fires an incremental pull (browser tab-switch path)', async () => {
+    // Browser tab switching (cmd+1 / cmd+2) fires `visibilitychange`
+    // but NOT `window.focus`. Without this listener, replica sync
+    // wouldn't catch up on tab switch.
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
     expect(dictionaryPullCount()).toBe(1);
 
-    // Visibility fires once, consuming the throttle slot.
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true,
+    });
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'));
       await Promise.resolve();
       await Promise.resolve();
     });
     expect(dictionaryPullCount()).toBe(2);
+  });
 
-    // Online event within the visibility throttle window must STILL
-    // fire — it's a different signal (we may have just regained
-    // network) and shouldn't be silenced by recent focus activity.
+  test('visibilitychange to hidden does NOT fire a pull', async () => {
+    getReplicaSyncSpy.mockReturnValue({
+      manager: makeManagerMock(),
+    });
+    renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    await advancePastBootPull();
+    expect(dictionaryPullCount()).toBe(1);
+
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'hidden',
+      configurable: true,
+    });
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dictionaryPullCount()).toBe(1); // unchanged
+  });
+
+  test('focus and visibilitychange share one throttle (no double-pump)', async () => {
+    // iOS Tauri WKWebView fires both events on the same foreground
+    // transition (focus first, visibilitychange ~400ms later). One
+    // throttle gate prevents a double-pull.
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true,
+    });
+    getReplicaSyncSpy.mockReturnValue({
+      manager: makeManagerMock(),
+    });
+    renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    await advancePastBootPull();
+    expect(dictionaryPullCount()).toBe(1);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    // Boot + ONE incremental, not two.
+    expect(dictionaryPullCount()).toBe(2);
+  });
+
+  test('online and periodic triggers are NOT subject to the focus throttle', async () => {
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true,
+    });
+    getReplicaSyncSpy.mockReturnValue({
+      manager: makeManagerMock(),
+    });
+    renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    await advancePastBootPull();
+    expect(dictionaryPullCount()).toBe(1);
+
+    // Focus fires once, consuming the throttle slot.
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dictionaryPullCount()).toBe(2);
+
+    // Online event within the focus throttle window must STILL fire —
+    // it's a different signal (we may have just regained network) and
+    // shouldn't be silenced by recent foreground activity.
     await act(async () => {
       window.dispatchEvent(new Event('online'));
       await Promise.resolve();
@@ -382,7 +495,7 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
 
   test('online event fires an incremental pull', async () => {
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
@@ -402,7 +515,7 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
       configurable: true,
     });
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
@@ -425,7 +538,7 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
       configurable: true,
     });
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
@@ -451,7 +564,7 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
         }),
     );
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     // Boot pull starts. Settings is dispatched first (in flight, pending);
@@ -462,17 +575,13 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
     });
     expect(pullSpy).toHaveBeenCalledTimes(1); // settings, awaiting
 
-    Object.defineProperty(document, 'visibilityState', {
-      value: 'visible',
-      configurable: true,
-    });
     // Fire several triggers while settings boot pull is still in flight.
     // pullInFlight has 'settings' → incremental settings is gated;
     // dictionary boot hasn't started yet so its incremental is gated by
     // pulledKinds (not yet added).
     for (let i = 0; i < 5; i++) {
       await act(async () => {
-        document.dispatchEvent(new Event('visibilitychange'));
+        window.dispatchEvent(new Event('focus'));
         window.dispatchEvent(new Event('online'));
         await Promise.resolve();
       });
@@ -487,13 +596,52 @@ describe('useReplicaPull — incremental auto-pull (visibility / online / interv
     });
   });
 
+  test('focus / online / periodic triggers no-op when there is no user', async () => {
+    // Logged-out users shouldn't burn /api/sync round-trips. Gate at the
+    // dispatch layer so the module-level listeners (which run for the
+    // life of the tab) don't fire pulls after sign-out.
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true,
+    });
+    authValue = { user: { id: 'user-1' } };
+    getReplicaSyncSpy.mockReturnValue({
+      manager: makeManagerMock(),
+    });
+    const { rerender } = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
+    await advancePastBootPull();
+    expect(dictionaryPullCount()).toBe(1);
+
+    // Sign out.
+    authValue = { user: null };
+    rerender();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // None of the auto-sync triggers should fire pulls now. Advance past
+    // the focus throttle so it doesn't mask the real gate.
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+      window.dispatchEvent(new Event('online'));
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dictionaryPullCount()).toBe(1); // still just the original boot pull
+  });
+
   test('listeners stay installed across mounts so a long-lived tab keeps pulling', async () => {
     Object.defineProperty(document, 'visibilityState', {
       value: 'visible',
       configurable: true,
     });
     getReplicaSyncSpy.mockReturnValue({
-      manager: { pull: vi.fn(async () => []) },
+      manager: makeManagerMock(),
     });
     const first = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     await advancePastBootPull();
@@ -530,7 +678,7 @@ describe('useReplicaPull — settings boot pull sequencing', () => {
       }
       return Promise.resolve();
     });
-    getReplicaSyncSpy.mockReturnValue({ manager: { pull: vi.fn(async () => []) } });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
 
     // Boot delay elapses; settings pull starts and is pending.
@@ -554,7 +702,7 @@ describe('useReplicaPull — settings boot pull sequencing', () => {
   });
 
   test('settings pull is shared across mounts (single network round-trip)', async () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: { pull: vi.fn(async () => []) } });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     const a = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 100 }));
     const b = renderHook(() => useReplicaPull({ kinds: ['font'], delayMs: 100 }));
     await act(async () => {
@@ -572,7 +720,7 @@ describe('useReplicaPull — settings boot pull sequencing', () => {
   });
 
   test('caller asking for settings explicitly does not double-pull settings', async () => {
-    getReplicaSyncSpy.mockReturnValue({ manager: { pull: vi.fn(async () => []) } });
+    getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     renderHook(() => useReplicaPull({ kinds: ['settings', 'dictionary'], delayMs: 100 }));
     await act(async () => {
       vi.advanceTimersByTime(200);

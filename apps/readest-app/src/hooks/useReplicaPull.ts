@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useCustomDictionaryStore, findDictionaryByContentId } from '@/store/customDictionaryStore';
 import {
@@ -43,7 +44,7 @@ import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { CustomFont } from '@/styles/fonts';
 import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
-import type { Hlc } from '@/types/replica';
+import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SystemSettings } from '@/types/settings';
 
 export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog' | 'settings';
@@ -60,12 +61,14 @@ const REPLICA_PULL_DEFAULT_DELAY_MS = 5_000;
 /** Periodic incremental-pull cadence for long-lived foreground tabs. */
 const REPLICA_PULL_PERIODIC_INTERVAL_MS = 5 * 60 * 1000;
 /**
- * Minimum gap between visibility-triggered pulls. Rapid alt-tab cycles
- * (or browsers that fire `visibilitychange` on every workspace switch)
- * would otherwise pump a pull on every focus event. Online and periodic
- * triggers bypass this — they signal genuinely new conditions.
+ * Minimum gap between focus-triggered pulls. iOS Tauri WKWebView fires
+ * `focus` twice during a single foreground transition (~8ms apart) and
+ * `visibilitychange` an additional ~400ms later — the throttle
+ * collapses that burst to one pull. Rapid alt-tab cycles on desktop
+ * are handled by the same gate. `online` and the periodic timer
+ * bypass this — they're independent signals.
  */
-const REPLICA_PULL_VISIBILITY_THROTTLE_MS = 10_000;
+const REPLICA_PULL_FOREGROUND_THROTTLE_MS = 10_000;
 
 // Module-level dedup so navigating between pages (library → reader → …)
 // doesn't fire a fresh boot pull every time. Once a kind has had its
@@ -89,7 +92,12 @@ const registeredKinds = new Set<ReplicaKind>();
 let autoSyncContext: { service: AppService; envConfig: EnvConfigType } | null = null;
 let autoSyncListenersInstalled = false;
 let periodicTimer: ReturnType<typeof setInterval> | null = null;
-let lastVisibilityPullAt = 0;
+let lastForegroundPullAt = 0;
+// Module-level mirror of `useAuth().user`. The auto-sync listeners run
+// at module scope and have no React access; they consult this flag to
+// short-circuit when there is no signed-in user (no point hitting
+// /api/sync — it would 401 anyway). Kept in sync by the hook.
+let hasCurrentUser = false;
 // Shared promise for the boot-time settings pull. All other kinds'
 // boot pulls await this so applyRemoteSettings has a chance to seed
 // `lastPublishedFields` with server-authoritative values before
@@ -123,19 +131,32 @@ interface ReplicaPullConfig<T extends ReplicaLocalRecord> {
   onSaltNotFound?: (paths: readonly string[]) => void;
 }
 
+/**
+ * Build the deps the orchestrator hands to `replicaPullAndApply`.
+ *
+ * - Boot path: omits `pullOverride`, so `pull` calls `manager.pull(kind)`
+ *   per kind (network round-trip per kind). The boot path also keeps
+ *   the `isAuthenticated` gate, which doubles as the per-kind sync-
+ *   category gate.
+ * - Incremental path: passes a `pullOverride` returning rows the
+ *   batched `manager.pullMany` already fetched. `isAuthenticated` is
+ *   skipped because the orchestrator pre-filtered by
+ *   `isSyncCategoryEnabled` before issuing the batched request.
+ */
 const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
   manager: ReplicaSyncManager,
   service: AppService,
   envConfig: EnvConfigType,
   config: ReplicaPullConfig<T>,
   pullOpts?: { since?: Hlc | null },
+  pullOverride?: () => Promise<ReplicaRow[]>,
 ): PullAndApplyDeps<T> => ({
   adapter: config.adapter,
   // Boot path passes { since: null } so we always re-fetch and apply
-  // locally, ignoring any previously-advanced cursor. The visibility /
-  // online / periodic incremental triggers omit pullOpts so manager.pull
-  // falls back to the persisted cursor — cheap delta fetch.
-  pull: () => manager.pull(config.kind, pullOpts),
+  // locally, ignoring any previously-advanced cursor. The incremental
+  // path passes pullOverride so a single batched `manager.pullMany`
+  // result is fanned out to per-kind apply without re-hitting the wire.
+  pull: pullOverride ?? (() => manager.pull(config.kind, pullOpts)),
   findByContentId: config.findByContentId,
   hydrateLocalStore: config.hydrateLocalStore
     ? () => config.hydrateLocalStore!(envConfig)
@@ -171,10 +192,15 @@ const buildReplicaPullDeps = <T extends ReplicaLocalRecord>(
   // user-facing category gate here so disabling a kind in
   // `User → Manage Sync` no-ops the pull (no HTTP, no warnings)
   // alongside the auth precheck — same effect, half the wiring.
-  isAuthenticated: async () => {
-    if (!isSyncCategoryEnabled(config.kind)) return false;
-    return !!(await getAccessToken());
-  },
+  // Skipped on the incremental path: the orchestrator pre-filters
+  // by category before dispatching the batched request, so this
+  // would just re-check what's already been gated.
+  isAuthenticated: pullOverride
+    ? undefined
+    : async () => {
+        if (!isSyncCategoryEnabled(config.kind)) return false;
+        return !!(await getAccessToken());
+      },
 });
 
 const dictionaryPullConfig: ReplicaPullConfig<ImportedDictionary> = {
@@ -270,36 +296,69 @@ const settingsPullConfig = (envConfig: EnvConfigType): ReplicaPullConfig<Setting
   },
 });
 
+/**
+ * Per-kind dispatch for both the boot pull (one HTTP per kind) and the
+ * incremental apply (rows already fetched in a batch). Keeping the
+ * switch keeps the generic record type sound — collapsing the configs
+ * into a Record<ReplicaKind, ReplicaPullConfig<...>> would force a
+ * contravariant cast.
+ */
 const runPullForKind = async (
   kind: ReplicaKind,
   service: AppService,
   envConfig: EnvConfigType,
   pullOpts?: { since?: Hlc | null },
+  pullOverride?: () => Promise<ReplicaRow[]>,
 ): Promise<void> => {
   const ctx = getReplicaSync();
   if (!ctx) return;
-  // Per-kind dispatch keeps the generic record type sound — collapsing
-  // the three configs into a Record<ReplicaKind, ReplicaPullConfig<...>>
-  // would force a contravariant cast that loses type safety.
   switch (kind) {
     case 'dictionary':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, dictionaryPullConfig, pullOpts),
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          dictionaryPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
       );
       return;
     case 'font':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, fontPullConfig, pullOpts),
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          fontPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
       );
       return;
     case 'texture':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, texturePullConfig, pullOpts),
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          texturePullConfig,
+          pullOpts,
+          pullOverride,
+        ),
       );
       return;
     case 'opds_catalog':
       await replicaPullAndApply(
-        buildReplicaPullDeps(ctx.manager, service, envConfig, opdsCatalogPullConfig, pullOpts),
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          opdsCatalogPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
       );
       return;
     case 'settings':
@@ -310,6 +369,7 @@ const runPullForKind = async (
           envConfig,
           settingsPullConfig(envConfig),
           pullOpts,
+          pullOverride,
         ),
       );
       return;
@@ -317,56 +377,87 @@ const runPullForKind = async (
 };
 
 /**
- * Cursor-based incremental pull, gated by a per-kind in-flight set so
- * concurrent triggers (visibility + online firing in the same tick,
- * periodic timer racing with a focus event) collapse to one network
- * round-trip.
+ * Cursor-based incremental pull. One batched HTTP round-trip for every
+ * registered kind that has had its boot pull initiated and whose sync
+ * category is enabled. Concurrent triggers (focus + online firing in
+ * the same tick, periodic timer racing with a focus event) collapse
+ * via the per-kind `pullInFlight` set: if any of the kinds we'd batch
+ * is already in flight, we skip the redundant call entirely.
  */
-const runIncrementalPullForKind = async (
-  kind: ReplicaKind,
-  service: AppService,
-  envConfig: EnvConfigType,
-): Promise<void> => {
-  if (pullInFlight.has(kind)) return;
-  // Skip until the kind's boot pull has at least been initiated. Boot
-  // does the full re-fetch (since=null); incremental builds on whatever
-  // cursor that pull advanced.
-  if (!pulledKinds.has(kind)) return;
-  pullInFlight.add(kind);
-  try {
-    await runPullForKind(kind, service, envConfig);
-  } catch (err) {
-    console.warn(`replica ${kind} incremental pull failed`, err);
-  } finally {
-    pullInFlight.delete(kind);
-  }
-};
-
 const triggerIncrementalPullAll = (): void => {
+  if (!hasCurrentUser) return;
   if (!autoSyncContext) return;
+  const ctx = getReplicaSync();
+  if (!ctx) return;
   const { service, envConfig } = autoSyncContext;
+
+  const kindsToPull: ReplicaKind[] = [];
   for (const kind of registeredKinds) {
-    void runIncrementalPullForKind(kind, service, envConfig);
+    // Skip until the kind's boot pull has at least been initiated. Boot
+    // does the full re-fetch (since=null); incremental builds on whatever
+    // cursor that pull advanced.
+    if (!pulledKinds.has(kind)) continue;
+    if (pullInFlight.has(kind)) continue;
+    if (!isSyncCategoryEnabled(kind)) continue;
+    kindsToPull.push(kind);
   }
+  if (kindsToPull.length === 0) return;
+
+  for (const kind of kindsToPull) pullInFlight.add(kind);
+
+  void (async () => {
+    try {
+      // ONE network round-trip for every eligible kind. Per-kind apply
+      // runs in parallel below — adapters are independent, and one
+      // kind's apply error doesn't poison the others.
+      let rowsByKind: Map<string, ReplicaRow[]>;
+      try {
+        rowsByKind = await ctx.manager.pullMany(kindsToPull);
+      } catch (err) {
+        console.warn('replica batch pull failed', err);
+        return;
+      }
+      await Promise.allSettled(
+        kindsToPull.map(async (kind) => {
+          const rows = rowsByKind.get(kind) ?? [];
+          try {
+            await runPullForKind(kind, service, envConfig, undefined, async () => rows);
+          } catch (err) {
+            console.warn(`replica ${kind} incremental apply failed`, err);
+          }
+        }),
+      );
+    } finally {
+      for (const kind of kindsToPull) pullInFlight.delete(kind);
+    }
+  })();
 };
 
-const onVisibilityChange = (): void => {
-  if (typeof document === 'undefined') return;
-  if (document.visibilityState !== 'visible') return;
+// Two foreground signals, sharing one throttle:
+// Listening to both with one throttle catches every transition without
+// double-pulling. Some debug logs are kept on purpose: foreground-sync
+// regressions have historically been hard to reproduce.
+const onForegroundReturn = (source: 'focus' | 'visibilitychange'): void => {
+  // Visibility events fire both directions; only act on the visible side.
+  if (source === 'visibilitychange' && typeof document !== 'undefined') {
+    if (document.visibilityState !== 'visible') return;
+  }
   const now = Date.now();
-  if (now - lastVisibilityPullAt < REPLICA_PULL_VISIBILITY_THROTTLE_MS) return;
-  lastVisibilityPullAt = now;
+  if (now - lastForegroundPullAt < REPLICA_PULL_FOREGROUND_THROTTLE_MS) return;
+  lastForegroundPullAt = now;
   triggerIncrementalPullAll();
 };
+
+const onFocus = (): void => onForegroundReturn('focus');
+const onVisibilityChange = (): void => onForegroundReturn('visibilitychange');
 
 const onOnline = (): void => {
   triggerIncrementalPullAll();
 };
 
 const onPeriodicTick = (): void => {
-  // Don't burn battery on a backgrounded tab — the visibilitychange
-  // listener will fire a catch-up pull when the tab returns to
-  // foreground.
+  // Don't burn battery on a backgrounded tab — the focus listener
+  // will fire a catch-up pull when the window returns to foreground.
   if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
   triggerIncrementalPullAll();
 };
@@ -399,7 +490,7 @@ const ensureSettingsBootPulled = (service: AppService, envConfig: EnvConfigType)
  * pulls. Idempotent — first call wires everything, subsequent calls
  * just refresh `autoSyncContext` (so listeners always see the latest
  * appService / envConfig). Listeners stay attached for the lifetime of
- * the page.
+ * the page; in production this runs exactly once.
  */
 const installAutoSyncListeners = (service: AppService, envConfig: EnvConfigType): void => {
   autoSyncContext = { service, envConfig };
@@ -409,6 +500,7 @@ const installAutoSyncListeners = (service: AppService, envConfig: EnvConfigType)
     document.addEventListener('visibilitychange', onVisibilityChange);
   }
   if (typeof window !== 'undefined') {
+    window.addEventListener('focus', onFocus);
     window.addEventListener('online', onOnline);
   }
   periodicTimer = setInterval(onPeriodicTick, REPLICA_PULL_PERIODIC_INTERVAL_MS);
@@ -441,12 +533,22 @@ export const useReplicaPull = ({
   delayMs = REPLICA_PULL_DEFAULT_DELAY_MS,
 }: UseReplicaPullOpts): void => {
   const { envConfig, appService } = useEnv();
+  const { user } = useAuth();
   // Stable cache key so the effect doesn't re-run when the caller
   // passes a freshly-allocated array literal each render.
   const kindsKey = kinds.join(',');
 
+  // Mirror the React-side auth state into the module-level flag the
+  // auto-sync listeners read. Kept in its own effect so a user ref
+  // change (Supabase TOKEN_REFRESHED reissues the user object on
+  // foreground / refresh) doesn't tear down the boot-pull effect.
+  useEffect(() => {
+    hasCurrentUser = !!user;
+  }, [user]);
+
   useEffect(() => {
     if (!appService) return;
+    if (!user) return;
 
     for (const kind of kinds) registeredKinds.add(kind);
 
@@ -472,25 +574,60 @@ export const useReplicaPull = ({
           // Subsequent mounts share `settingsBootPullPromise` so the
           // pull only happens once per session.
           await ensureSettingsBootPulled(appService, envConfig);
-          for (const kind of otherPending) {
-            if (pulledKinds.has(kind)) continue;
-            // Claim both slots up front so a concurrently-scheduled mount
-            // (e.g., library + reader mounting back-to-back) doesn't
-            // double-pull, and so a visibility/online trigger landing
-            // mid-boot doesn't fire a second pull alongside this one.
-            // On failure we release `pulledKinds` so a subsequent
-            // navigation can retry; `pullInFlight` is always cleared.
+          // Boot path skips disabled kinds: enabling a category later
+          // re-fires `triggerIncrementalPullAll` from a focus event,
+          // which will fetch the missed rows. This keeps boot bandwidth
+          // proportional to what the user actually sync's.
+          const eligible = otherPending.filter(
+            (k) => !pulledKinds.has(k) && isSyncCategoryEnabled(k),
+          );
+          if (eligible.length === 0) return;
+          // Claim both slots up front so a concurrently-scheduled mount
+          // (e.g., library + reader mounting back-to-back) doesn't
+          // double-pull, and so a focus / online trigger landing
+          // mid-boot doesn't fire a second pull alongside this one.
+          // On failure we release `pulledKinds` so a subsequent
+          // navigation can retry; `pullInFlight` is always cleared.
+          for (const kind of eligible) {
             pulledKinds.add(kind);
             pullInFlight.add(kind);
-            void runPullForKind(kind, appService, envConfig, { since: null })
-              .catch((err) => {
-                console.warn(`replica ${kind} pull failed`, err);
-                pulledKinds.delete(kind);
-              })
-              .finally(() => {
-                pullInFlight.delete(kind);
-              });
           }
+          // ONE batched HTTP round-trip for all non-settings kinds at
+          // boot, with `since=null` so each kind does a full re-fetch
+          // (mirrors the old per-kind `runPullForKind(kind, …, {since: null})`
+          // semantics). Per-kind apply runs in parallel afterwards.
+          const ctx = getReplicaSync();
+          if (!ctx) {
+            for (const kind of eligible) {
+              pulledKinds.delete(kind);
+              pullInFlight.delete(kind);
+            }
+            return;
+          }
+          let rowsByKind: Map<string, ReplicaRow[]>;
+          try {
+            rowsByKind = await ctx.manager.pullMany(eligible, { since: null });
+          } catch (err) {
+            console.warn('replica boot batch pull failed', err);
+            for (const kind of eligible) {
+              pulledKinds.delete(kind);
+              pullInFlight.delete(kind);
+            }
+            return;
+          }
+          await Promise.allSettled(
+            eligible.map(async (kind) => {
+              try {
+                const rows = rowsByKind.get(kind) ?? [];
+                await runPullForKind(kind, appService, envConfig, undefined, async () => rows);
+              } catch (err) {
+                console.warn(`replica ${kind} boot apply failed`, err);
+                pulledKinds.delete(kind);
+              } finally {
+                pullInFlight.delete(kind);
+              }
+            }),
+          );
         })();
       }, delayMs);
     };
@@ -510,7 +647,7 @@ export const useReplicaPull = ({
       if (unsubscribe) unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kindsKey, appService, envConfig, delayMs]);
+  }, [kindsKey, appService, envConfig, delayMs, user]);
 };
 
 /** Test seam — clear all module-level state and tear down listeners. */
@@ -523,6 +660,7 @@ export const __resetReplicaPullForTests = (): void => {
     document.removeEventListener('visibilitychange', onVisibilityChange);
   }
   if (typeof window !== 'undefined') {
+    window.removeEventListener('focus', onFocus);
     window.removeEventListener('online', onOnline);
   }
   if (periodicTimer) {
@@ -530,6 +668,7 @@ export const __resetReplicaPullForTests = (): void => {
     periodicTimer = null;
   }
   autoSyncListenersInstalled = false;
-  lastVisibilityPullAt = 0;
+  lastForegroundPullAt = 0;
   settingsBootPullPromise = null;
+  hasCurrentUser = false;
 };

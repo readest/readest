@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import {
   HLC_SKEW_TOLERANCE_MS,
+  MAX_PULL_BATCH,
   MAX_PUSH_BATCH,
   clampHlcSkew,
+  validatePullBatch,
   validatePullParams,
   validatePushBatch,
 } from '@/libs/replicaSyncServer';
@@ -151,5 +153,84 @@ describe('validatePullParams', () => {
       expect(result.status).toBe(422);
       expect(result.code).toBe('UNKNOWN_KIND');
     }
+  });
+});
+
+describe('validatePullBatch', () => {
+  test('accepts an empty cursors array', () => {
+    const result = validatePullBatch({ cursors: [] });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.params.cursors).toEqual([]);
+  });
+
+  test('accepts mixed since values (string + null) for allowed kinds', () => {
+    const result = validatePullBatch({
+      cursors: [
+        { kind: 'dictionary', since: '0000000000064-00000000-dev-a' },
+        { kind: 'font', since: null },
+        { kind: 'settings', since: null },
+      ],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  test('rejects body that is not an object', () => {
+    const result = validatePullBatch(null);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(400);
+  });
+
+  test('rejects body where cursors is not an array', () => {
+    const result = validatePullBatch({ cursors: 'not-an-array' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(400);
+  });
+
+  test('rejects unknown kind in cursors', () => {
+    const result = validatePullBatch({ cursors: [{ kind: 'not_a_kind', since: null }] });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(422);
+      expect(result.code).toBe('UNKNOWN_KIND');
+      expect(result.offendingIndex).toBe(0);
+    }
+  });
+
+  test('rejects since that is not a string or null', () => {
+    const result = validatePullBatch({
+      cursors: [{ kind: 'dictionary', since: 1234 as unknown as null }],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(400);
+      expect(result.offendingIndex).toBe(0);
+    }
+  });
+
+  test('rejects duplicated kind in the same batch', () => {
+    // Avoids ambiguity in the response — a server merging two queries
+    // for the same kind would have to pick one, and the client has no
+    // way to express which `since` won.
+    const result = validatePullBatch({
+      cursors: [
+        { kind: 'dictionary', since: null },
+        { kind: 'dictionary', since: '0000000000064-00000000-dev-a' },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(400);
+      expect(result.offendingIndex).toBe(1);
+    }
+  });
+
+  test('rejects oversized batches with status 413', () => {
+    const cursors = Array.from({ length: MAX_PULL_BATCH + 1 }, () => ({
+      kind: 'dictionary',
+      since: null,
+    }));
+    const result = validatePullBatch({ cursors });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(413);
   });
 });
