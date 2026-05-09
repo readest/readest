@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "這將在每台裝置上永久刪除我們同步的加密憑證（例如 OPDS 目錄密碼）。本機副本會保留。您需要重新輸入同步密語或設定新的密語。是否繼續？",
   "Sync passphrase forgotten — all encrypted fields cleared": "已忘記同步密語 — 所有加密欄位已清除",
   "Sync passphrase": "同步密語",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "在敏感的同步欄位（例如 OPDS 目錄憑證）離開您的裝置之前對其進行加密。立即設定或稍後再設 — 需要時會請求輸入。",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "已在此帳戶上設定。需要解密同步憑證時將請求輸入。",
   "Set passphrase": "設定密語",
   "Forgot passphrase": "忘記密語",
   "Incorrect PIN": "PIN 碼錯誤",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主題、螢光標記顏色、第三方整合（KOSync、Readwise、Hardcover）以及詞典順序",
   "Required while Dictionaries sync is enabled": "啟用詞典同步時必須",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘後重設",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "請設定一組 4 位數的 PIN 碼。每次開啟 Readest 時都需要輸入。遺忘的 PIN 碼無法復原，清除應用程式資料是重設它的唯一方法。"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "請設定一組 4 位數的 PIN 碼。每次開啟 Readest 時都需要輸入。遺忘的 PIN 碼無法復原，清除應用程式資料是重設它的唯一方法。",
+  "Credentials": "憑證",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover 與 Readwise 的權杖、使用者名稱與密碼。停用時，憑證僅留在此裝置上，永不上傳。",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "敏感的同步欄位會在上傳前加密。立即設定密碼短語，或稍後在需要加密時再設定。",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "已儲存到此帳號。需要解密憑證時會提示您輸入。"
 }

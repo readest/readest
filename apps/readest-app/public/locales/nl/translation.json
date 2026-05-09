@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Dit verwijdert permanent de versleutelde inloggegevens die we synchroniseren (bijv. OPDS-catalogi-wachtwoorden) op elk apparaat. Lokale kopieën blijven behouden. Je moet de sync-wachtwoordzin opnieuw invoeren of een nieuwe instellen. Doorgaan?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Sync-wachtwoordzin vergeten — alle versleutelde velden gewist",
   "Sync passphrase": "Sync-wachtwoordzin",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Versleutelt gevoelige gesynchroniseerde velden (zoals OPDS-cataloguscredentials) voordat ze je apparaat verlaten. Stel er nu een in of wacht — er wordt om gevraagd wanneer nodig.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Ingesteld voor dit account. Wordt opgevraagd wanneer nodig om gesynchroniseerde inloggegevens te ontsleutelen.",
   "Set passphrase": "Wachtwoordzin instellen",
   "Forgot passphrase": "Wachtwoordzin vergeten",
   "Incorrect PIN": "Onjuiste PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Thema, markeringskleuren, integraties (KOSync, Readwise, Hardcover) en woordenboekvolgorde",
   "Required while Dictionaries sync is enabled": "Vereist zolang synchronisatie van Woordenboeken is ingeschakeld",
   "Resets in {{hours}} hr {{minutes}} min": "Reset over {{hours}} u {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Kies een viercijferige pincode. Je moet deze elke keer invoeren wanneer je Readest opent. Een vergeten pincode kan niet worden hersteld. Het wissen van de app-gegevens is de enige manier om deze opnieuw in te stellen."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Kies een viercijferige pincode. Je moet deze elke keer invoeren wanneer je Readest opent. Een vergeten pincode kan niet worden hersteld. Het wissen van de app-gegevens is de enige manier om deze opnieuw in te stellen.",
+  "Credentials": "Inloggegevens",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, gebruikersnamen en wachtwoorden voor OPDS, KOReader, Hardcover en Readwise. Wanneer uitgeschakeld blijven inloggegevens alleen op dit apparaat en worden ze nooit geüpload.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Gevoelige gesynchroniseerde velden worden vóór het uploaden versleuteld. Stel nu of later een wachtwoordzin in wanneer versleuteling nodig is.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Opgeslagen op dit account. Er wordt om gevraagd wanneer inloggegevens ontsleuteld moeten worden."
 }

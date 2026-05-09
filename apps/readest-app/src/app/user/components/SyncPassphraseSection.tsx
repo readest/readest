@@ -6,6 +6,7 @@ import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { replicaSyncClient } from '@/libs/replicaSyncClient';
 import { isSyncError } from '@/libs/errors';
+import { useSettingsStore } from '@/store/settingsStore';
 
 type SyncPassphraseStatus = 'loading' | 'unset' | 'set' | 'error';
 
@@ -13,6 +14,14 @@ const isAuthError = (err: unknown): boolean => isSyncError(err) && err.code === 
 
 export function SyncPassphraseSection() {
   const _ = useTranslation();
+  // Tied to the 'credentials' Manage Sync toggle. When credentials sync
+  // is off (the default), the passphrase machinery has no purpose — the
+  // user has explicitly opted out of sending sensitive fields, so set/
+  // forget controls just confuse. Subscribing means the panel pops in /
+  // out reactively when the toggle flips.
+  const credentialsSync = useSettingsStore(
+    (state) => state.settings?.syncCategories?.credentials === true,
+  );
   const [status, setStatus] = useState<SyncPassphraseStatus>('loading');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,9 +42,13 @@ export function SyncPassphraseSection() {
   };
 
   useEffect(() => {
+    if (!credentialsSync) return;
     void refreshStatus();
-  }, []);
+  }, [credentialsSync]);
 
+  // Credentials sync off → no passphrase UI at all (set / forget /
+  // status indicator are all hidden).
+  if (!credentialsSync) return null;
   if (status === 'loading') return null;
 
   // First-time setup: when the user has no replica_keys row yet, the
@@ -86,9 +99,9 @@ export function SyncPassphraseSection() {
       <p className='text-base-content/70 mb-3'>
         {status === 'unset'
           ? _(
-              'Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.',
+              'Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.',
             )
-          : _('Set on this account. Will be requested when needed to decrypt synced credentials.')}
+          : _('Saved to this account. You will be prompted for it when decrypting credentials.')}
       </p>
       {message && <p className='text-base-content/60 mb-3 text-xs'>{message}</p>}
       <div className='flex flex-wrap gap-2'>

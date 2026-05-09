@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Ini memadamkan secara kekal bukti kelayakan tersulit yang kami selaraskan (cth., kata laluan katalog OPDS) pada setiap peranti. Salinan tempatan dikekalkan. Anda perlu memasukkan semula frasa laluan penyegerakan atau menetapkan yang baharu. Teruskan?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Frasa laluan penyegerakan dilupakan — semua medan tersulit dikosongkan",
   "Sync passphrase": "Frasa laluan penyegerakan",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Mengenkripsi medan tersegerak sensitif (seperti bukti kelayakan katalog OPDS) sebelum ia meninggalkan peranti anda. Tetapkan satu sekarang atau tunggu — ia akan diminta apabila diperlukan.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Ditetapkan pada akaun ini. Akan diminta apabila diperlukan untuk menyahsulit bukti kelayakan yang disegerakkan.",
   "Set passphrase": "Tetapkan frasa laluan",
   "Forgot passphrase": "Lupa frasa laluan",
   "Incorrect PIN": "PIN salah",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, warna sorotan, integrasi (KOSync, Readwise, Hardcover), dan susunan kamus",
   "Required while Dictionaries sync is enabled": "Diperlukan semasa penyegerakan Kamus didayakan",
   "Resets in {{hours}} hr {{minutes}} min": "Set semula dalam {{hours}} j {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Pilih PIN 4 digit. Anda perlu memasukkannya setiap kali anda membuka Readest. Tiada cara untuk memulihkan PIN yang terlupa. Mengosongkan data aplikasi adalah satu-satunya cara untuk menetapkannya semula."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Pilih PIN 4 digit. Anda perlu memasukkannya setiap kali anda membuka Readest. Tiada cara untuk memulihkan PIN yang terlupa. Mengosongkan data aplikasi adalah satu-satunya cara untuk menetapkannya semula.",
+  "Credentials": "Kelayakan",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Token, nama pengguna dan kata laluan untuk OPDS, KOReader, Hardcover dan Readwise. Apabila dilumpuhkan, kelayakan hanya kekal pada peranti ini dan tidak pernah dimuat naik.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Medan disegerakkan yang sensitif disulitkan sebelum dimuat naik. Tetapkan frasa laluan sekarang atau kemudian apabila penyulitan diperlukan.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Disimpan dalam akaun ini. Anda akan diminta memasukkannya apabila kelayakan perlu dinyahsulit."
 }

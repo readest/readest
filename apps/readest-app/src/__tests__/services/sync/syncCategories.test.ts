@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
   SYNC_CATEGORIES,
+  isCredentialsSyncEnabled,
   isSyncCategoryEnabled,
   isSyncCategoryLocked,
 } from '@/services/sync/syncCategories';
@@ -104,6 +105,40 @@ describe('isSyncCategoryEnabled', () => {
     });
   });
 
+  describe('credentials category', () => {
+    test('defaults to OFF when settings are not loaded', () => {
+      // Unique among categories: credentials must be opt-in, so the
+      // default for an absent map / missing key is false rather than the
+      // global "missing key → on" default.
+      expect(isSyncCategoryEnabled('credentials')).toBe(false);
+      expect(isCredentialsSyncEnabled()).toBe(false);
+    });
+
+    test('defaults to OFF when syncCategories map is missing', () => {
+      setSettings({});
+      expect(isSyncCategoryEnabled('credentials')).toBe(false);
+      expect(isCredentialsSyncEnabled()).toBe(false);
+    });
+
+    test('defaults to OFF when explicitly absent from a populated map', () => {
+      setSettings({ syncCategories: { book: true, settings: true } });
+      expect(isSyncCategoryEnabled('credentials')).toBe(false);
+      expect(isCredentialsSyncEnabled()).toBe(false);
+    });
+
+    test('returns true only when explicitly opted in', () => {
+      setSettings({ syncCategories: { credentials: true } });
+      expect(isSyncCategoryEnabled('credentials')).toBe(true);
+      expect(isCredentialsSyncEnabled()).toBe(true);
+    });
+
+    test('returns false when explicitly false', () => {
+      setSettings({ syncCategories: { credentials: false } });
+      expect(isSyncCategoryEnabled('credentials')).toBe(false);
+      expect(isCredentialsSyncEnabled()).toBe(false);
+    });
+  });
+
   test('legacy SyncType ids map to categories (configs → progress, books → book, notes → note)', () => {
     setSettings({ syncCategories: { progress: false, book: false, note: false } });
     expect(isSyncCategoryEnabled('configs')).toBe(false);
@@ -114,10 +149,11 @@ describe('isSyncCategoryEnabled', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all eight user-facing categories (incl. settings)', () => {
+  test('covers all nine user-facing categories (incl. settings + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'book',
+        'credentials',
         'dictionary',
         'font',
         'note',
@@ -127,5 +163,9 @@ describe('SYNC_CATEGORIES', () => {
         'texture',
       ].sort(),
     );
+  });
+
+  test('credentials is the last item (rendered as the last toggle in Manage Sync)', () => {
+    expect(SYNC_CATEGORIES[SYNC_CATEGORIES.length - 1]).toBe('credentials');
   });
 });

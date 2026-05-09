@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Detta tar permanent bort de krypterade autentiseringsuppgifterna som vi synkroniserar (t.ex. lösenord för OPDS-kataloger) på alla enheter. Lokala kopior bevaras. Du behöver ange synkroniseringslösenfrasen igen eller välja en ny. Fortsätta?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Synkroniseringslösenfrasen glömdes — alla krypterade fält rensade",
   "Sync passphrase": "Synkroniseringslösenfras",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Krypterar känsliga synkroniserade fält (t.ex. OPDS-katalogautentiseringsuppgifter) innan de lämnar din enhet. Ange en nu eller vänta — den efterfrågas när det behövs.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Inställd för det här kontot. Efterfrågas när det behövs för att dekryptera synkroniserade autentiseringsuppgifter.",
   "Set passphrase": "Ange lösenfras",
   "Forgot passphrase": "Glömt lösenfras",
   "Incorrect PIN": "Felaktig PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, markeringsfärger, integrationer (KOSync, Readwise, Hardcover) och ordbokens ordning",
   "Required while Dictionaries sync is enabled": "Krävs så länge synkronisering av Ordböcker är aktiverad",
   "Resets in {{hours}} hr {{minutes}} min": "Återställs om {{hours}} tim {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Välj en 4-siffrig PIN-kod. Du kommer att behöva ange den varje gång du öppnar Readest. Det finns inget sätt att återställa en glömd PIN-kod. Att rensa appdata är det enda sättet att återställa den."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Välj en 4-siffrig PIN-kod. Du kommer att behöva ange den varje gång du öppnar Readest. Det finns inget sätt att återställa en glömd PIN-kod. Att rensa appdata är det enda sättet att återställa den.",
+  "Credentials": "Inloggningsuppgifter",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, användarnamn och lösenord för OPDS, KOReader, Hardcover och Readwise. När inaktiverat förblir inloggningsuppgifterna endast på denna enhet och laddas aldrig upp.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Känsliga synkroniserade fält krypteras före uppladdning. Ange en lösenfras nu eller senare när kryptering behövs.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Sparad på det här kontot. Du blir tillfrågad när inloggningsuppgifter ska dekrypteras."
 }

@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Ez véglegesen törli a szinkronizált titkosított hitelesítő adatokat (pl. OPDS-katalógusjelszavak) minden eszközön. A helyi másolatok megmaradnak. Újra meg kell adnia a szinkronizálási jelmondatot, vagy újat kell beállítania. Folytatja?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Szinkronizálási jelmondat elfelejtve — az összes titkosított mező törölve",
   "Sync passphrase": "Szinkronizálási jelmondat",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Titkosítja az érzékeny szinkronizált mezőket (például OPDS-katalógus hitelesítő adatait), mielőtt elhagyják az eszközét. Állítson be egyet most vagy várjon — szükség esetén kérni fogjuk.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Beállítva ezen a fiókon. Szükség esetén kérni fogjuk a szinkronizált hitelesítő adatok visszafejtéséhez.",
   "Set passphrase": "Jelmondat beállítása",
   "Forgot passphrase": "Elfelejtett jelmondat",
   "Incorrect PIN": "Helytelen PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Téma, kiemelési színek, integrációk (KOSync, Readwise, Hardcover) és szótárak sorrendje",
   "Required while Dictionaries sync is enabled": "Szükséges, amíg a Szótárak szinkronizálása be van kapcsolva",
   "Resets in {{hours}} hr {{minutes}} min": "Visszaállás {{hours}} ó {{minutes}} p múlva",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Válasszon egy 4 számjegyű PIN-kódot. Minden alkalommal meg kell adnia, amikor megnyitja a Readestet. Az elfelejtett PIN-kódot nem lehet visszaállítani. Az alkalmazás adatainak törlése az egyetlen módja a visszaállításának."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Válasszon egy 4 számjegyű PIN-kódot. Minden alkalommal meg kell adnia, amikor megnyitja a Readestet. Az elfelejtett PIN-kódot nem lehet visszaállítani. Az alkalmazás adatainak törlése az egyetlen módja a visszaállításának.",
+  "Credentials": "Hitelesítő adatok",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Tokenek, felhasználónevek és jelszavak az OPDS, KOReader, Hardcover és Readwise szolgáltatásokhoz. Ha le van tiltva, a hitelesítő adatok csak ezen az eszközön maradnak, és soha nem töltődnek fel.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Az érzékeny szinkronizált mezők feltöltés előtt titkosítva vannak. Állíts be egy jelmondatot most, vagy később, amikor titkosításra lesz szükség.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Mentve ehhez a fiókhoz. Akkor kérjük majd, amikor hitelesítő adatokat kell visszafejteni."
 }

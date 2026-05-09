@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "这将在每台设备上永久删除我们同步的加密凭据（例如 OPDS 目录密码）。本地副本会保留。您需要重新输入同步密语或设置新的密语。是否继续？",
   "Sync passphrase forgotten — all encrypted fields cleared": "已忘记同步密语 — 所有加密字段已清除",
   "Sync passphrase": "同步密语",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "在敏感的同步字段（例如 OPDS 目录凭据）离开您的设备之前对其进行加密。立即设置或稍后再设 — 需要时会请求输入。",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "已在此账户上设置。需要解密同步凭据时将请求输入。",
   "Set passphrase": "设置密语",
   "Forgot passphrase": "忘记密语",
   "Incorrect PIN": "PIN 码错误",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主题、高亮颜色、第三方集成（KOSync、Readwise、Hardcover）以及词典顺序",
   "Required while Dictionaries sync is enabled": "启用词典同步时必需",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟后重置",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "请设置一个 4 位数字 PIN 码。每次打开 Readest 时都需要输入。忘记的 PIN 码无法找回，清除应用数据是重置它的唯一方法。"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "请设置一个 4 位数字 PIN 码。每次打开 Readest 时都需要输入。忘记的 PIN 码无法找回，清除应用数据是重置它的唯一方法。",
+  "Credentials": "凭据",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover 和 Readwise 的令牌、用户名和密码。关闭时，凭据仅保留在此设备上，永远不会上传。",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "敏感的同步字段在上传前会被加密。立即设置密码短语，或稍后在需要加密时再设置。",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "已保存到此账户。需要解密凭据时会提示您输入。"
 }

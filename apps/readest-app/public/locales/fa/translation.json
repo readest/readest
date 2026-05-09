@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "این به طور دائم اعتبارنامه‌های رمزگذاری‌شده‌ای را که همگام‌سازی می‌کنیم (مانند رمزهای کاتالوگ OPDS) در همه دستگاه‌ها حذف می‌کند. نسخه‌های محلی حفظ می‌شوند. باید عبارت عبور همگام‌سازی را دوباره وارد کنید یا یک عبارت جدید تنظیم کنید. ادامه می‌دهید؟",
   "Sync passphrase forgotten — all encrypted fields cleared": "عبارت عبور همگام‌سازی فراموش شد — تمام فیلدهای رمزگذاری‌شده پاک شدند",
   "Sync passphrase": "عبارت عبور همگام‌سازی",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "فیلدهای حساس همگام‌سازی‌شده (مانند اعتبارنامه‌های کاتالوگ OPDS) را قبل از خروج از دستگاه شما رمزگذاری می‌کند. اکنون یکی تنظیم کنید یا منتظر بمانید — هنگام نیاز درخواست خواهد شد.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "در این حساب تنظیم شده است. هنگام نیاز برای رمزگشایی اعتبارنامه‌های همگام‌سازی‌شده درخواست خواهد شد.",
   "Set passphrase": "تنظیم عبارت عبور",
   "Forgot passphrase": "عبارت عبور را فراموش کرده‌اید",
   "Incorrect PIN": "PIN نادرست",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "پوسته، رنگ‌های هایلایت، یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover) و ترتیب فرهنگ‌لغت‌ها",
   "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
   "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "یک پین ۴ رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. راهی برای بازیابی پین فراموش‌شده وجود ندارد. پاک کردن داده‌های برنامه تنها راه بازنشانی آن است."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "یک پین ۴ رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. راهی برای بازیابی پین فراموش‌شده وجود ندارد. پاک کردن داده‌های برنامه تنها راه بازنشانی آن است.",
+  "Credentials": "اعتبارنامه‌ها",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "توکن‌ها، نام‌های کاربری و رمزهای عبور OPDS، KOReader، Hardcover و Readwise. هنگام غیرفعال بودن، اعتبارنامه‌ها فقط روی این دستگاه باقی می‌مانند و هرگز بارگذاری نمی‌شوند.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "فیلدهای حساسِ همگام‌سازی‌شده پیش از بارگذاری رمزگذاری می‌شوند. اکنون یا بعداً، هنگامی که به رمزگذاری نیاز شد، یک عبارت عبور تنظیم کنید.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "در این حساب ذخیره شد. هنگام رمزگشایی اعتبارنامه‌ها از شما خواسته می‌شود."
 }

@@ -8,6 +8,20 @@ vi.mock('@/services/sync/replicaSync', () => ({
   getReplicaSync: vi.fn(),
 }));
 
+const cryptoMocks = vi.hoisted(() => ({
+  isUnlocked: vi.fn(() => true),
+  encryptField: vi.fn(async (v: string) => ({ v, kdf: 'mock' })),
+}));
+
+vi.mock('@/libs/crypto/session', () => ({
+  cryptoSession: {
+    isUnlocked: () => cryptoMocks.isUnlocked(),
+    encryptField: (v: string) => cryptoMocks.encryptField(v),
+    decryptField: vi.fn(),
+    forget: vi.fn(),
+  },
+}));
+
 import { getUserID } from '@/utils/access';
 import { getReplicaSync } from '@/services/sync/replicaSync';
 import {
@@ -313,6 +327,109 @@ describe('publishReplica* sync category gate', () => {
     registerReplicaAdapter(settingsAdapter);
     await publishReplicaUpsert('settings', { name: 'singleton', patch: {} }, 'singleton');
     expect(ctx.manager.markDirty).not.toHaveBeenCalled();
+  });
+});
+
+describe('publishReplicaUpsert credentials gate', () => {
+  // The 'credentials' meta-toggle defaults OFF. When OFF, the publish
+  // pipeline must drop adapter.encryptedFields from the packed row so
+  // sensitive fields (OPDS username/password, kosync credentials,
+  // readwise/hardcover tokens) never leave the device. Plaintext fields
+  // (catalog name/url, etc.) still ship — the row itself isn't gated,
+  // only its encrypted slots.
+  const setCredentialsCategory = async (enabled: boolean | undefined): Promise<void> => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    const map = enabled === undefined ? {} : { credentials: enabled };
+    useSettingsStore.setState({
+      settings: { syncCategories: map } as never,
+    } as never);
+  };
+
+  const restoreSettings = async (): Promise<void> => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    useSettingsStore.setState({ settings: undefined } as never);
+  };
+
+  afterEach(async () => {
+    await restoreSettings();
+    cryptoMocks.isUnlocked.mockReset();
+    cryptoMocks.isUnlocked.mockReturnValue(true);
+    cryptoMocks.encryptField.mockReset();
+    cryptoMocks.encryptField.mockImplementation(async (v: string) => ({ v, kdf: 'mock' }));
+  });
+
+  test('drops encryptedFields from the packed row when credentials sync is OFF (default)', async () => {
+    // No syncCategories map at all → credentials defaults OFF.
+    await setCredentialsCategory(undefined);
+    const { opdsCatalogAdapter } = await import('@/services/sync/adapters/opdsCatalog');
+    registerReplicaAdapter(opdsCatalogAdapter);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+
+    await publishReplicaUpsert(
+      'opds_catalog',
+      {
+        id: 'cat-1',
+        name: 'Project Gutenberg',
+        url: 'https://example.com/opds',
+        username: 'alice',
+        password: 'hunter2',
+      },
+      'cat-content-id',
+    );
+
+    expect(ctx.manager.markDirty).toHaveBeenCalledOnce();
+    const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
+    // Plaintext metadata still ships
+    expect(row.fields_jsonb['name']?.v).toBe('Project Gutenberg');
+    expect(row.fields_jsonb['url']?.v).toBe('https://example.com/opds');
+    // Encrypted fields are dropped entirely (no plaintext leak, no cipher attempt)
+    expect(row.fields_jsonb['username']).toBeUndefined();
+    expect(row.fields_jsonb['password']).toBeUndefined();
+    // Crypto session was never invoked — credentials OFF short-circuited
+    // the field set before the middleware could even check unlock state.
+    expect(cryptoMocks.encryptField).not.toHaveBeenCalled();
+  });
+
+  test('drops encryptedFields when credentials sync is explicitly disabled', async () => {
+    await setCredentialsCategory(false);
+    const { opdsCatalogAdapter } = await import('@/services/sync/adapters/opdsCatalog');
+    registerReplicaAdapter(opdsCatalogAdapter);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+
+    await publishReplicaUpsert(
+      'opds_catalog',
+      { id: 'cat-1', name: 'PG', url: 'u', username: 'alice', password: 'pw' },
+      'cat-content-id',
+    );
+
+    const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
+    expect(row.fields_jsonb['username']).toBeUndefined();
+    expect(row.fields_jsonb['password']).toBeUndefined();
+  });
+
+  test('encrypts the fields normally when credentials sync is ON', async () => {
+    await setCredentialsCategory(true);
+    const { opdsCatalogAdapter } = await import('@/services/sync/adapters/opdsCatalog');
+    registerReplicaAdapter(opdsCatalogAdapter);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+
+    await publishReplicaUpsert(
+      'opds_catalog',
+      { id: 'cat-1', name: 'PG', url: 'u', username: 'alice', password: 'pw' },
+      'cat-content-id',
+    );
+
+    const row = ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow;
+    // Encrypted slots present (cipher envelope shape from our mock)
+    expect(row.fields_jsonb['username']?.v).toEqual({ v: 'alice', kdf: 'mock' });
+    expect(row.fields_jsonb['password']?.v).toEqual({ v: 'pw', kdf: 'mock' });
+    expect(cryptoMocks.encryptField).toHaveBeenCalledTimes(2);
   });
 });
 

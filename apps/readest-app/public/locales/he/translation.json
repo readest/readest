@@ -1371,8 +1371,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "פעולה זו מוחקת לצמיתות את פרטי ההתחברות המוצפנים שאנו מסנכרנים (למשל, סיסמאות קטלוג OPDS) בכל מכשיר. עותקים מקומיים נשמרים. תצטרך להזין מחדש את ביטוי הסיסמה לסנכרון או להגדיר אחד חדש. להמשיך?",
   "Sync passphrase forgotten — all encrypted fields cleared": "ביטוי הסיסמה לסנכרון נשכח — כל השדות המוצפנים נמחקו",
   "Sync passphrase": "ביטוי סיסמה לסנכרון",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "מצפין שדות מסונכרנים רגישים (כמו פרטי התחברות לקטלוג OPDS) לפני שהם עוזבים את המכשיר שלך. הגדר ביטוי עכשיו או המתן — נבקש אותו כשיידרש.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "הוגדר בחשבון זה. נבקש אותו כשיידרש לפענח פרטי התחברות מסונכרנים.",
   "Set passphrase": "הגדרת ביטוי סיסמה",
   "Forgot passphrase": "שכחת את ביטוי הסיסמה",
   "Incorrect PIN": "PIN שגוי",
@@ -1420,5 +1418,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ערכת נושא, צבעי הדגשה, שילובים (KOSync, Readwise, Hardcover) וסדר המילונים",
   "Required while Dictionaries sync is enabled": "נדרש כל עוד סנכרון המילונים מופעל",
   "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו.",
+  "Credentials": "אישורים",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "אסימונים, שמות משתמש וסיסמאות עבור OPDS, KOReader, Hardcover ו-Readwise. כאשר מבוטל, האישורים נשמרים רק במכשיר זה ולעולם אינם מועלים.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "שדות מסונכרנים רגישים מוצפנים לפני העלאה. הגדר ביטוי סיסמה עכשיו או מאוחר יותר, כאשר תידרש הצפנה.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "נשמר בחשבון זה. תתבקש להזינו בעת פענוח אישורים."
 }

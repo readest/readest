@@ -83,7 +83,10 @@ export interface HardcoverSettings {
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica
- * sync. Adding a new replica kind extends this union.
+ * sync. 'credentials' is a meta-toggle that gates the encrypted-credential
+ * fields (OPDS username/password, KOSync credentials, Readwise / Hardcover
+ * tokens) across whichever replica kinds carry them. Adding a new replica
+ * kind extends this union.
  */
 export type SyncCategory =
   | 'book'
@@ -93,7 +96,8 @@ export type SyncCategory =
   | 'font'
   | 'texture'
   | 'opds_catalog'
-  | 'settings';
+  | 'settings'
+  | 'credentials';
 
 export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'book',
@@ -104,6 +108,7 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'texture',
   'opds_catalog',
   'settings',
+  'credentials',
 ] as const;
 
 export interface SystemSettings {

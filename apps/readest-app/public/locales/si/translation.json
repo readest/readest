@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "මෙය සෑම උපාංගයකම අප සමමුහුර්ත කරන සංකේතාංකිත අක්තපත්‍ර (උදා., OPDS නාමාවලි මුරපද) ස්ථිරවම මකා දමයි. දේශීය පිටපත් රැකේ. ඔබට සමමුහුර්ත මුරපදය නැවත ඇතුළත් කිරීමට හෝ අලුත් එකක් සැකසීමට සිදුවේ. ඉදිරියට යන්නද?",
   "Sync passphrase forgotten — all encrypted fields cleared": "සමමුහුර්ත මුරපදය අමතක විය — සියලුම සංකේතාංකිත ක්ෂේත්‍ර හිස් කරන ලදී",
   "Sync passphrase": "සමමුහුර්ත මුරපදය",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "ඔබේ උපාංගයෙන් පිටවීමට පෙර සංවේදී සමමුහුර්ත ක්ෂේත්‍ර (OPDS නාමාවලි අක්තපත්‍ර වැනි) සංකේතාංකනය කරයි. දැන් එකක් සකසන්න හෝ රැඳී සිටින්න — අවශ්‍ය වූ විට එය ඉල්ලනු ඇත.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "මෙම ගිණුමේ සකස් කර ඇත. සමමුහුර්ත අක්තපත්‍ර විකේතනය කිරීම සඳහා අවශ්‍ය වූ විට එය ඉල්ලනු ඇත.",
   "Set passphrase": "මුරපදය සකසන්න",
   "Forgot passphrase": "මුරපදය අමතකද",
   "Incorrect PIN": "වැරදි PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "තේමාව, උද්දීපන වර්ණ, ඒකාබද්ධතා (KOSync, Readwise, Hardcover) සහ ශබ්දකෝෂ අනුපිළිවෙල",
   "Required while Dictionaries sync is enabled": "ශබ්දකෝෂ සමමුහූර්තය සක්‍රිය වී ඇති විට අවශ්‍යයි",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} පැ {{minutes}} මි කින් යළි පිහිටුවයි",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "අංක 4ක PIN එකක් තෝරන්න. ඔබ Readest විවෘත කරන සෑම විටම ඔබට එය ඇතුළත් කිරීමට අවශ්‍ය වේ. අමතක වූ PIN එකක් ලබා ගැනීමට ක්‍රමයක් නැත. එය යළි පිහිටුවීමට ඇති එකම ක්‍රමය යෙදුම් දත්ත මකා දැමීමයි."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "අංක 4ක PIN එකක් තෝරන්න. ඔබ Readest විවෘත කරන සෑම විටම ඔබට එය ඇතුළත් කිරීමට අවශ්‍ය වේ. අමතක වූ PIN එකක් ලබා ගැනීමට ක්‍රමයක් නැත. එය යළි පිහිටුවීමට ඇති එකම ක්‍රමය යෙදුම් දත්ත මකා දැමීමයි.",
+  "Credentials": "අක්තපත්‍ර",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, සහ Readwise සඳහා ටෝකන, පරිශීලක නාම සහ මුරපද. අක්‍රිය කළ විට, අක්තපත්‍ර මෙම උපාංගයේ පමණක් රැඳී පවතින අතර කිසිදා උඩුගත නොකෙරේ.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "සංවේදී සමමුහූර්ත ක්ෂේත්‍ර උඩුගත කිරීමට පෙර සංකේතනය වේ. සංකේතනය අවශ්‍ය වූ විට දැන් හෝ පසුව මුර වැකියක් සකසන්න.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "මෙම ගිණුමට සුරකින ලදී. අක්තපත්‍ර විකේතනය කිරීමේදී ඔබෙන් එය ඉල්ලනු ලැබේ."
 }

@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "यह हर डिवाइस पर हमारे सिंक किए गए एन्क्रिप्टेड क्रेडेंशियल (जैसे, OPDS कैटलॉग पासवर्ड) को स्थायी रूप से हटा देता है। स्थानीय प्रतियां सुरक्षित रहती हैं। आपको सिंक पासफ़्रेज़ फिर से दर्ज करना होगा या एक नया सेट करना होगा। जारी रखें?",
   "Sync passphrase forgotten — all encrypted fields cleared": "सिंक पासफ़्रेज़ भूल गए — सभी एन्क्रिप्टेड फ़ील्ड हटा दिए गए",
   "Sync passphrase": "सिंक पासफ़्रेज़",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "संवेदनशील सिंक किए गए फ़ील्ड (जैसे OPDS कैटलॉग क्रेडेंशियल) को आपके डिवाइस से बाहर जाने से पहले एन्क्रिप्ट करता है। अभी एक सेट करें या प्रतीक्षा करें — आवश्यकता पड़ने पर इसका अनुरोध किया जाएगा।",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "इस खाते पर सेट किया गया है। सिंक किए गए क्रेडेंशियल को डिक्रिप्ट करने के लिए आवश्यकता पड़ने पर इसका अनुरोध किया जाएगा।",
   "Set passphrase": "पासफ़्रेज़ सेट करें",
   "Forgot passphrase": "पासफ़्रेज़ भूल गए",
   "Incorrect PIN": "गलत PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "थीम, हाइलाइट रंग, एकीकरण (KOSync, Readwise, Hardcover) और शब्दकोश क्रम",
   "Required while Dictionaries sync is enabled": "शब्दकोश सिंक सक्षम होने पर आवश्यक",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} घं {{minutes}} मि में रीसेट",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "एक 4-अंकों का पिन चुनें। Readest खोलने पर आपको हर बार इसे दर्ज करना होगा। भूले हुए पिन को पुनः प्राप्त करने का कोई तरीका नहीं है। ऐप डेटा मिटाना इसे रीसेट करने का एकमात्र तरीका है।"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "एक 4-अंकों का पिन चुनें। Readest खोलने पर आपको हर बार इसे दर्ज करना होगा। भूले हुए पिन को पुनः प्राप्त करने का कोई तरीका नहीं है। ऐप डेटा मिटाना इसे रीसेट करने का एकमात्र तरीका है।",
+  "Credentials": "क्रेडेंशियल",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover और Readwise के लिए टोकन, उपयोगकर्ता नाम और पासवर्ड। अक्षम होने पर, क्रेडेंशियल केवल इसी डिवाइस पर रहते हैं और कभी अपलोड नहीं किए जाते।",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "संवेदनशील सिंक किए गए फ़ील्ड अपलोड से पहले एन्क्रिप्ट किए जाते हैं। अभी पासफ़्रेज़ सेट करें या बाद में जब एन्क्रिप्शन की आवश्यकता हो।",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "इस खाते में सहेजा गया। क्रेडेंशियल डिक्रिप्ट करते समय आपसे पूछा जाएगा।"
 }

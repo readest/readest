@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "이 작업을 수행하면 모든 기기에서 동기화하는 암호화된 자격 증명(예: OPDS 카탈로그 비밀번호)이 영구적으로 삭제됩니다. 로컬 복사본은 보존됩니다. 동기화 암호 문구를 다시 입력하거나 새로 설정해야 합니다. 계속하시겠습니까?",
   "Sync passphrase forgotten — all encrypted fields cleared": "동기화 암호 문구를 잊었습니다 — 모든 암호화된 필드가 지워졌습니다",
   "Sync passphrase": "동기화 암호 문구",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "민감한 동기화 필드(예: OPDS 카탈로그 자격 증명)를 기기에서 나가기 전에 암호화합니다. 지금 설정하거나 나중에 — 필요할 때 요청됩니다.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "이 계정에 설정되어 있습니다. 동기화된 자격 증명을 복호화해야 할 때 요청됩니다.",
   "Set passphrase": "암호 문구 설정",
   "Forgot passphrase": "암호 문구를 잊으셨나요",
   "Incorrect PIN": "잘못된 PIN",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "테마, 하이라이트 색상, 연동 (KOSync, Readwise, Hardcover), 사전 순서",
   "Required while Dictionaries sync is enabled": "사전 동기화가 켜져 있는 동안 필요",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}}시간 {{minutes}}분 후 재설정",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4자리 PIN을 선택하세요. Readest를 열 때마다 입력해야 합니다. 잊어버린 PIN을 복구할 방법은 없습니다. 앱 데이터를 지우는 것이 PIN을 재설정하는 유일한 방법입니다."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4자리 PIN을 선택하세요. Readest를 열 때마다 입력해야 합니다. 잊어버린 PIN을 복구할 방법은 없습니다. 앱 데이터를 지우는 것이 PIN을 재설정하는 유일한 방법입니다.",
+  "Credentials": "자격 증명",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise의 토큰, 사용자 이름, 비밀번호입니다. 비활성화되면 자격 증명이 이 기기에만 남아 있고 절대 업로드되지 않습니다.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "민감한 동기화 필드는 업로드 전에 암호화됩니다. 지금 또는 암호화가 필요할 때 나중에 암호 문구를 설정하세요.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "이 계정에 저장되었습니다. 자격 증명을 복호화할 때 입력하라는 메시지가 표시됩니다."
 }

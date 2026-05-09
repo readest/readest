@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Αυτό διαγράφει οριστικά τα κρυπτογραφημένα διαπιστευτήρια που συγχρονίζουμε (π.χ. κωδικούς καταλόγου OPDS) σε κάθε συσκευή. Τα τοπικά αντίγραφα διατηρούνται. Θα χρειαστεί να εισαγάγετε ξανά τη φράση πρόσβασης συγχρονισμού ή να ορίσετε μια νέα. Συνέχεια;",
   "Sync passphrase forgotten — all encrypted fields cleared": "Η φράση πρόσβασης συγχρονισμού ξεχάστηκε — όλα τα κρυπτογραφημένα πεδία διαγράφηκαν",
   "Sync passphrase": "Φράση πρόσβασης συγχρονισμού",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Κρυπτογραφεί ευαίσθητα συγχρονισμένα πεδία (όπως διαπιστευτήρια καταλόγου OPDS) πριν φύγουν από τη συσκευή σας. Ορίστε μία τώρα ή περιμένετε — θα ζητηθεί όταν χρειαστεί.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Έχει οριστεί σε αυτόν τον λογαριασμό. Θα ζητηθεί όταν χρειαστεί για την αποκρυπτογράφηση συγχρονισμένων διαπιστευτηρίων.",
   "Set passphrase": "Ορισμός φράσης πρόσβασης",
   "Forgot passphrase": "Ξεχάσατε τη φράση πρόσβασης",
   "Incorrect PIN": "Λανθασμένο PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Θέμα, χρώματα επισήμανσης, ενσωματώσεις (KOSync, Readwise, Hardcover) και σειρά λεξικών",
   "Required while Dictionaries sync is enabled": "Απαιτείται όσο είναι ενεργός ο συγχρονισμός Λεξικών",
   "Resets in {{hours}} hr {{minutes}} min": "Επαναφορά σε {{hours}} ώρ. {{minutes}} λεπ.",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Επιλέξτε ένα 4ψήφιο PIN. Θα πρέπει να το εισάγετε κάθε φορά που ανοίγετε το Readest. Δεν υπάρχει τρόπος ανάκτησης ενός ξεχασμένου PIN. Η εκκαθάριση των δεδομένων της εφαρμογής είναι ο μοναδικός τρόπος επαναφοράς του."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Επιλέξτε ένα 4ψήφιο PIN. Θα πρέπει να το εισάγετε κάθε φορά που ανοίγετε το Readest. Δεν υπάρχει τρόπος ανάκτησης ενός ξεχασμένου PIN. Η εκκαθάριση των δεδομένων της εφαρμογής είναι ο μοναδικός τρόπος επαναφοράς του.",
+  "Credentials": "Διαπιστευτήρια",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Διακριτικά, ονόματα χρήστη και κωδικοί πρόσβασης για OPDS, KOReader, Hardcover και Readwise. Όταν είναι απενεργοποιημένο, τα διαπιστευτήρια παραμένουν μόνο σε αυτή τη συσκευή και δεν αποστέλλονται ποτέ.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Τα ευαίσθητα συγχρονισμένα πεδία κρυπτογραφούνται πριν τη μεταφόρτωση. Ορίστε μια φράση πρόσβασης τώρα ή αργότερα, όταν χρειαστεί η κρυπτογράφηση.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Αποθηκεύτηκε σε αυτόν τον λογαριασμό. Θα σας ζητηθεί όταν χρειαστεί να αποκρυπτογραφηθούν διαπιστευτήρια."
 }

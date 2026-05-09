@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "これにより、各デバイスで同期している暗号化された資格情報（OPDS カタログのパスワードなど）が永続的に削除されます。ローカルのコピーは保持されます。同期パスフレーズを再入力するか、新しく設定する必要があります。続行しますか？",
   "Sync passphrase forgotten — all encrypted fields cleared": "同期パスフレーズを忘れました — 暗号化されたフィールドはすべてクリアされました",
   "Sync passphrase": "同期パスフレーズ",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "機密性の高い同期フィールド（OPDS カタログの認証情報など）を、デバイスから出る前に暗号化します。今すぐ設定するか、待つこともできます — 必要なときに要求されます。",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "このアカウントで設定済みです。同期された資格情報を復号化する必要があるときに要求されます。",
   "Set passphrase": "パスフレーズを設定",
   "Forgot passphrase": "パスフレーズを忘れました",
   "Incorrect PIN": "PINが正しくありません",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "テーマ、ハイライトの色、連携 (KOSync、Readwise、Hardcover)、辞書の順序",
   "Required while Dictionaries sync is enabled": "辞書の同期が有効な間は必須",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}}時間{{minutes}}分でリセット",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4桁のPINを設定してください。Readestを開くたびに入力する必要があります。忘れたPINを復元する方法はありません。アプリのデータを消去することがリセットする唯一の方法です。"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4桁のPINを設定してください。Readestを開くたびに入力する必要があります。忘れたPINを復元する方法はありません。アプリのデータを消去することがリセットする唯一の方法です。",
+  "Credentials": "認証情報",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise のトークン、ユーザー名、パスワード。無効にすると、認証情報はこのデバイスにのみ残り、アップロードされません。",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "機密性の高い同期フィールドはアップロード前に暗号化されます。パスフレーズは今すぐ設定するか、暗号化が必要なときに後で設定できます。",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "このアカウントに保存されました。認証情報を復号する際に入力を求められます。"
 }

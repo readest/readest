@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Bu işlem, her cihazda eşitlediğimiz şifrelenmiş kimlik bilgilerini (ör. OPDS kataloğu parolaları) kalıcı olarak siler. Yerel kopyalar korunur. Eşitleme parolasını yeniden girmeniz veya yeni bir tane belirlemeniz gerekecek. Devam edilsin mi?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Eşitleme parolası unutuldu — tüm şifrelenmiş alanlar temizlendi",
   "Sync passphrase": "Eşitleme parolası",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Hassas eşitlenen alanları (OPDS kataloğu kimlik bilgileri gibi) cihazınızdan ayrılmadan önce şifreler. Şimdi bir tane belirleyin ya da bekleyin — gerektiğinde istenecektir.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Bu hesapta ayarlandı. Eşitlenen kimlik bilgilerinin şifresini çözmek için gerektiğinde istenecektir.",
   "Set passphrase": "Parolayı belirle",
   "Forgot passphrase": "Parolayı unuttum",
   "Incorrect PIN": "Yanlış PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, vurgu renkleri, entegrasyonlar (KOSync, Readwise, Hardcover) ve sözlük sırası",
   "Required while Dictionaries sync is enabled": "Sözlük eşitlemesi etkinken gereklidir",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın yolu yoktur. Uygulama verilerini temizlemek, sıfırlamanın tek yoludur."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın yolu yoktur. Uygulama verilerini temizlemek, sıfırlamanın tek yoludur.",
+  "Credentials": "Kimlik Bilgileri",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover ve Readwise için belirteçler, kullanıcı adları ve parolalar. Devre dışı bırakıldığında kimlik bilgileri yalnızca bu cihazda kalır ve hiçbir zaman karşıya yüklenmez.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Hassas senkronize alanlar yüklemeden önce şifrelenir. Şifreleme gerektiğinde şimdi ya da daha sonra bir parola tümcesi belirleyin.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Bu hesaba kaydedildi. Kimlik bilgileri şifresi çözülürken sizden istenecektir."
 }

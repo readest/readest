@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Dies löscht dauerhaft die verschlüsselten Anmeldedaten, die wir auf jedem Gerät synchronisieren (z. B. OPDS-Katalog-Passwörter). Lokale Kopien bleiben erhalten. Sie müssen die Sync-Passphrase erneut eingeben oder eine neue festlegen. Fortfahren?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Sync-Passphrase vergessen — alle verschlüsselten Felder wurden gelöscht",
   "Sync passphrase": "Sync-Passphrase",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Verschlüsselt sensible synchronisierte Felder (z. B. OPDS-Katalog-Anmeldedaten), bevor sie Ihr Gerät verlassen. Legen Sie jetzt eine fest oder warten Sie — sie wird bei Bedarf angefordert.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Für dieses Konto festgelegt. Wird bei Bedarf angefordert, um synchronisierte Anmeldedaten zu entschlüsseln.",
   "Set passphrase": "Passphrase festlegen",
   "Forgot passphrase": "Passphrase vergessen",
   "Incorrect PIN": "Falsche PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Design, Hervorhebungsfarben, Integrationen (KOSync, Readwise, Hardcover) und Wörterbuchreihenfolge",
   "Required while Dictionaries sync is enabled": "Erforderlich, solange die Synchronisierung von Wörterbüchern aktiviert ist",
   "Resets in {{hours}} hr {{minutes}} min": "Zurückgesetzt in {{hours}} Std. {{minutes}} Min.",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Wählen Sie eine 4-stellige PIN. Sie müssen sie jedes Mal eingeben, wenn Sie Readest öffnen. Eine vergessene PIN kann nicht wiederhergestellt werden. Das Löschen der App-Daten ist die einzige Möglichkeit, sie zurückzusetzen."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Wählen Sie eine 4-stellige PIN. Sie müssen sie jedes Mal eingeben, wenn Sie Readest öffnen. Eine vergessene PIN kann nicht wiederhergestellt werden. Das Löschen der App-Daten ist die einzige Möglichkeit, sie zurückzusetzen.",
+  "Credentials": "Anmeldedaten",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, Benutzernamen und Passwörter für OPDS, KOReader, Hardcover und Readwise. Wenn deaktiviert, bleiben die Anmeldedaten nur auf diesem Gerät und werden nie hochgeladen.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Sensible synchronisierte Felder werden vor dem Hochladen verschlüsselt. Lege jetzt oder später eine Passphrase fest, wenn die Verschlüsselung benötigt wird.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "In diesem Konto gespeichert. Du wirst beim Entschlüsseln von Anmeldedaten danach gefragt."
 }

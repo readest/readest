@@ -53,6 +53,12 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
         'Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order',
       ),
     },
+    credentials: {
+      title: _('Credentials'),
+      description: _(
+        'Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.',
+      ),
+    },
   };
 };
 
@@ -64,8 +70,14 @@ export function SyncCategoriesSection() {
 
   if (!settings) return null;
 
-  const enabled = (category: SyncCategory): boolean =>
-    settings.syncCategories?.[category] !== false;
+  const enabled = (category: SyncCategory): boolean => {
+    const value = settings.syncCategories?.[category];
+    // 'credentials' is the only category that defaults OFF — sync of
+    // sensitive fields (OPDS / KOSync / Readwise / Hardcover tokens) is
+    // explicit opt-in. Every other category defaults ON when unset.
+    if (category === 'credentials') return value === true;
+    return value !== false;
+  };
 
   const handleToggle = (category: SyncCategory, next: boolean) => {
     const updated: SystemSettings = {

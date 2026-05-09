@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Bu har bir qurilmada biz sinxronlaydigan shifrlangan hisob ma’lumotlarini (masalan, OPDS katalogi parollarini) butunlay o‘chiradi. Mahalliy nusxalar saqlanadi. Sinxronlash parol iborasini qaytadan kiritishingiz yoki yangisini o‘rnatishingiz kerak bo‘ladi. Davom etilsinmi?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Sinxronlash parol iborasi unutildi — barcha shifrlangan maydonlar tozalandi",
   "Sync passphrase": "Sinxronlash parol iborasi",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Maxfiy sinxronlangan maydonlarni (masalan, OPDS katalogi hisob ma’lumotlari) qurilmangizdan chiqishidan oldin shifrlaydi. Hozir o‘rnating yoki kuting — kerak bo‘lganda so‘raladi.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Ushbu hisobda o‘rnatilgan. Sinxronlangan hisob ma’lumotlarini deshifrlash uchun kerak bo‘lganda so‘raladi.",
   "Set passphrase": "Parol iborasini o‘rnatish",
   "Forgot passphrase": "Parol iborasini unutdingizmi",
   "Incorrect PIN": "Noto'g'ri PIN",
@@ -1396,5 +1394,9 @@
   "Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…": "Serverdagi sinxronlash paroli maʼlumotlari tiklandi. Hisob maʼlumotlaringiz yangi parol bilan qayta shifrlanmoqda…",
   "Failed to decrypt synced credentials": "Sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} soat {{minutes}} daqiqada tiklanadi",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 raqamli PIN tanlang. Readestni har ochganingizda uni kiritishingiz kerak bo'ladi. Unutilgan PIN-ni tiklash imkoni yo'q. Uni qayta tiklashning yagona yo'li — ilova ma'lumotlarini tozalash."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 raqamli PIN tanlang. Readestni har ochganingizda uni kiritishingiz kerak bo'ladi. Unutilgan PIN-ni tiklash imkoni yo'q. Uni qayta tiklashning yagona yo'li — ilova ma'lumotlarini tozalash.",
+  "Credentials": "Hisob ma'lumotlari",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover va Readwise uchun tokenlar, foydalanuvchi nomlari va parollar. O'chirilganda, hisob ma'lumotlari faqat shu qurilmada qoladi va hech qachon yuklanmaydi.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Maxfiy sinxronlashtirilgan maydonlar yuklashdan oldin shifrlanadi. Hozir yoki keyinroq, shifrlash kerak bo'lganda parol iborasini o'rnating.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Ushbu hisobga saqlangan. Hisob ma'lumotlarini deshifrlashda sizdan so'raladi."
 }

@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "การกระทำนี้จะลบข้อมูลรับรองที่เข้ารหัสซึ่งเราซิงค์ไว้ (เช่น รหัสผ่านของแคตตาล็อก OPDS) บนทุกอุปกรณ์อย่างถาวร สำเนาที่อยู่ในเครื่องจะถูกเก็บไว้ คุณจะต้องป้อนวลีรหัสผ่านสำหรับซิงค์อีกครั้งหรือตั้งค่าใหม่ ดำเนินการต่อหรือไม่?",
   "Sync passphrase forgotten — all encrypted fields cleared": "ลืมวลีรหัสผ่านสำหรับซิงค์ — ฟิลด์ที่เข้ารหัสทั้งหมดถูกล้างแล้ว",
   "Sync passphrase": "วลีรหัสผ่านสำหรับซิงค์",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "เข้ารหัสฟิลด์ที่ซิงค์ซึ่งมีข้อมูลละเอียดอ่อน (เช่น ข้อมูลรับรองแคตตาล็อก OPDS) ก่อนออกจากอุปกรณ์ของคุณ ตั้งค่าเดี๋ยวนี้หรือรอไว้ก่อน — ระบบจะร้องขอเมื่อจำเป็น",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "ตั้งค่าไว้ในบัญชีนี้แล้ว จะถูกร้องขอเมื่อจำเป็นต้องถอดรหัสข้อมูลรับรองที่ซิงค์ไว้",
   "Set passphrase": "ตั้งค่าวลีรหัสผ่าน",
   "Forgot passphrase": "ลืมวลีรหัสผ่าน",
   "Incorrect PIN": "PIN ไม่ถูกต้อง",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ธีม สีไฮไลต์ การเชื่อมต่อ (KOSync, Readwise, Hardcover) และลำดับพจนานุกรม",
   "Required while Dictionaries sync is enabled": "จำเป็นเมื่อเปิดใช้การซิงค์พจนานุกรม",
   "Resets in {{hours}} hr {{minutes}} min": "รีเซ็ตใน {{hours}} ชม. {{minutes}} นาที",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "เลือก PIN 4 หลัก คุณจะต้องป้อนทุกครั้งที่เปิด Readest ไม่มีวิธีกู้คืน PIN ที่ลืม การล้างข้อมูลแอปเป็นวิธีเดียวในการรีเซ็ต"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "เลือก PIN 4 หลัก คุณจะต้องป้อนทุกครั้งที่เปิด Readest ไม่มีวิธีกู้คืน PIN ที่ลืม การล้างข้อมูลแอปเป็นวิธีเดียวในการรีเซ็ต",
+  "Credentials": "ข้อมูลรับรอง",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "โทเคน ชื่อผู้ใช้ และรหัสผ่านสำหรับ OPDS, KOReader, Hardcover และ Readwise เมื่อปิดใช้งาน ข้อมูลรับรองจะยังคงอยู่ในอุปกรณ์นี้เท่านั้นและจะไม่ถูกอัปโหลด",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "ฟิลด์ที่ซิงค์ที่มีความละเอียดอ่อนจะถูกเข้ารหัสก่อนอัปโหลด ตั้งวลีรหัสผ่านตอนนี้หรือภายหลังเมื่อจำเป็นต้องเข้ารหัส",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "บันทึกในบัญชีนี้แล้ว คุณจะได้รับแจ้งเมื่อจำเป็นต้องถอดรหัสข้อมูลรับรอง"
 }

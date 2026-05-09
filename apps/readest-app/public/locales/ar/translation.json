@@ -1443,8 +1443,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "سيؤدي هذا إلى حذف بيانات الاعتماد المشفرة التي نقوم بمزامنتها (مثل كلمات مرور كتالوج OPDS) على كل جهاز بشكل دائم. سيتم الاحتفاظ بالنسخ المحلية. ستحتاج إلى إعادة إدخال عبارة مرور المزامنة أو تعيين عبارة جديدة. هل تريد المتابعة؟",
   "Sync passphrase forgotten — all encrypted fields cleared": "تم نسيان عبارة مرور المزامنة — تم مسح جميع الحقول المشفرة",
   "Sync passphrase": "عبارة مرور المزامنة",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "يقوم بتشفير الحقول الحساسة المتزامنة (مثل بيانات اعتماد كتالوج OPDS) قبل مغادرتها لجهازك. قم بتعيين عبارة الآن أو انتظر — سيُطلب منك ذلك عند الحاجة.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "تم تعيينها في هذا الحساب. سيُطلب منك إدخالها عند الحاجة لفك تشفير بيانات الاعتماد المتزامنة.",
   "Set passphrase": "تعيين عبارة المرور",
   "Forgot passphrase": "نسيت عبارة المرور",
   "Incorrect PIN": "رمز PIN غير صحيح",
@@ -1492,5 +1490,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover) وترتيب القواميس",
   "Required while Dictionaries sync is enabled": "مطلوب أثناء تفعيل مزامنة القواميس",
   "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّنًا من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN المنسي. مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة ضبطه."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّنًا من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN المنسي. مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة ضبطه.",
+  "Credentials": "بيانات الاعتماد",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "الرموز وأسماء المستخدمين وكلمات المرور لـ OPDS و KOReader و Hardcover و Readwise. عند التعطيل، تبقى بيانات الاعتماد على هذا الجهاز فقط ولا تُرفع أبدًا.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "تُشفَّر الحقول الحساسة المتزامنة قبل الرفع. عيّن عبارة مرور الآن أو لاحقًا عند الحاجة إلى التشفير.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "محفوظة في هذا الحساب. سيُطلب منك إدخالها عند فك تشفير بيانات الاعتماد."
 }

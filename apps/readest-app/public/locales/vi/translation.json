@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Điều này sẽ xóa vĩnh viễn các thông tin đăng nhập đã mã hóa mà chúng tôi đồng bộ (ví dụ: mật khẩu danh mục OPDS) trên mọi thiết bị. Các bản sao cục bộ được giữ lại. Bạn sẽ cần nhập lại cụm mật khẩu đồng bộ hoặc đặt cụm mới. Tiếp tục?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Đã quên cụm mật khẩu đồng bộ — tất cả các trường đã mã hóa đã được xóa",
   "Sync passphrase": "Cụm mật khẩu đồng bộ",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Mã hóa các trường được đồng bộ nhạy cảm (như thông tin đăng nhập danh mục OPDS) trước khi chúng rời khỏi thiết bị của bạn. Đặt ngay bây giờ hoặc chờ — sẽ được yêu cầu khi cần.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Đã đặt trên tài khoản này. Sẽ được yêu cầu khi cần để giải mã thông tin đăng nhập đã đồng bộ.",
   "Set passphrase": "Đặt cụm mật khẩu",
   "Forgot passphrase": "Quên cụm mật khẩu",
   "Incorrect PIN": "Mã PIN không đúng",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Chủ đề, màu tô sáng, tích hợp (KOSync, Readwise, Hardcover) và thứ tự từ điển",
   "Required while Dictionaries sync is enabled": "Bắt buộc khi đồng bộ Từ điển đang bật",
   "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã mỗi khi mở Readest. Không có cách nào để khôi phục mã PIN đã quên. Xóa dữ liệu ứng dụng là cách duy nhất để đặt lại mã."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã mỗi khi mở Readest. Không có cách nào để khôi phục mã PIN đã quên. Xóa dữ liệu ứng dụng là cách duy nhất để đặt lại mã.",
+  "Credentials": "Thông tin xác thực",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Mã thông báo, tên người dùng và mật khẩu cho OPDS, KOReader, Hardcover và Readwise. Khi bị tắt, thông tin xác thực chỉ ở trên thiết bị này và không bao giờ được tải lên.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Các trường đồng bộ nhạy cảm được mã hóa trước khi tải lên. Đặt cụm mật khẩu ngay bây giờ hoặc sau khi cần mã hóa.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Đã lưu vào tài khoản này. Bạn sẽ được nhắc nhập khi cần giải mã thông tin xác thực."
 }

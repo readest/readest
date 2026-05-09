@@ -49,6 +49,19 @@ const makeSettings = (overrides: Partial<SystemSettings> = {}): SystemSettings =
 
 const makeEnvConfig = (): EnvConfigType => ({ getAppService: vi.fn() }) as unknown as EnvConfigType;
 
+/**
+ * Opt the current test into credential sync. Most tests in this file
+ * exercise the encryption path (gate prompts, hash storage, etc.) which
+ * is gated by the 'credentials' meta-toggle — and that toggle defaults
+ * OFF. Call this before driving an encrypted-credential scenario.
+ */
+const enableCredentialsSync = (): void => {
+  const current = useSettingsStore.getState().settings;
+  useSettingsStore.setState({
+    settings: { ...current, syncCategories: { credentials: true } } as never,
+  } as never);
+};
+
 beforeEach(() => {
   publishMock.mockReset();
   ensurePassphraseMock.mockReset();
@@ -202,6 +215,7 @@ describe('publishSettingsIfChanged', () => {
   });
 
   test('triggers the passphrase gate when an encrypted field gets meaningful content while locked', async () => {
+    enableCredentialsSync();
     isUnlocked = false;
     await publishSettingsIfChanged(
       makeSettings({
@@ -215,6 +229,113 @@ describe('publishSettingsIfChanged', () => {
     );
     expect(ensurePassphraseMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledTimes(1);
+  });
+
+  describe('credentials category gate', () => {
+    // The 'credentials' meta-toggle defaults OFF. When OFF, the settings
+    // publisher must skip every ENCRYPTED_PATH (kosync.username/userkey/
+    // password, readwise.accessToken, hardcover.accessToken) entirely:
+    // no patch entry, no proactive passphrase prompt, no stored hash.
+    // Non-credential plaintext settings still publish normally.
+    const setCredentials = async (enabled: boolean | undefined): Promise<void> => {
+      const { useSettingsStore } = await import('@/store/settingsStore');
+      const map = enabled === undefined ? {} : { credentials: enabled };
+      const current = useSettingsStore.getState().settings;
+      useSettingsStore.setState({
+        settings: { ...current, syncCategories: map } as never,
+      } as never);
+    };
+
+    test('does NOT trigger the passphrase gate when credentials sync is OFF and a kosync password is set', async () => {
+      await setCredentials(undefined); // default OFF
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          kosync: {
+            serverUrl: 'https://kosync.example',
+            username: 'alice',
+            userkey: 'secret-key',
+            password: 'hunter2',
+          } as SystemSettings['kosync'],
+        }),
+      );
+      expect(ensurePassphraseMock).not.toHaveBeenCalled();
+    });
+
+    test('omits all credential paths from the patch when credentials sync is OFF', async () => {
+      await setCredentials(undefined);
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          kosync: {
+            serverUrl: 'https://kosync.example',
+            username: 'alice',
+            userkey: 'secret-key',
+            password: 'hunter2',
+          } as SystemSettings['kosync'],
+          readwise: {
+            accessToken: 'rw-token',
+            enabled: true,
+            lastSyncedAt: 0,
+          } as SystemSettings['readwise'],
+          hardcover: {
+            accessToken: 'hc-token',
+            enabled: true,
+            lastSyncedAt: 0,
+          } as SystemSettings['hardcover'],
+        }),
+      );
+      // Plaintext kosync.serverUrl still publishes — only the credential
+      // sub-fields are gated.
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.kosync?.serverUrl).toBe('https://kosync.example');
+      expect(patch.kosync?.username).toBeUndefined();
+      expect(patch.kosync?.userkey).toBeUndefined();
+      expect(patch.kosync?.password).toBeUndefined();
+      expect(patch.readwise?.accessToken).toBeUndefined();
+      expect(patch.hardcover?.accessToken).toBeUndefined();
+    });
+
+    test('publishes credential paths normally when credentials sync is ON', async () => {
+      await setCredentials(true);
+      isUnlocked = true;
+      await publishSettingsIfChanged(
+        makeSettings({
+          kosync: {
+            serverUrl: '',
+            username: '',
+            userkey: '',
+            password: 'hunter2',
+          } as SystemSettings['kosync'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.kosync?.password).toBe('hunter2');
+    });
+
+    test('skipping all of the only-credential changes is a clean no-op (no empty publish)', async () => {
+      await setCredentials(undefined);
+      isUnlocked = false;
+      // Prime the snapshot so the first publish drains everything.
+      await publishSettingsIfChanged(makeSettings());
+      publishMock.mockReset();
+      ensurePassphraseMock.mockReset();
+      // Only encrypted-credential fields change; nothing plaintext does.
+      await publishSettingsIfChanged(
+        makeSettings({
+          readwise: {
+            accessToken: 'rw-token',
+            enabled: true,
+            lastSyncedAt: 0,
+          } as SystemSettings['readwise'],
+        }),
+      );
+      // No publish at all — credentials gate dropped the only diff.
+      expect(publishMock).not.toHaveBeenCalled();
+      expect(ensurePassphraseMock).not.toHaveBeenCalled();
+    });
   });
 
   test('empty encrypted credential is dropped from publish entirely (no gate, no patch)', async () => {
@@ -304,6 +425,7 @@ describe('publishSettingsIfChanged', () => {
   });
 
   test('user cancels the gate prompt → encrypted hash NOT stored, next save retries', async () => {
+    enableCredentialsSync();
     isUnlocked = false;
     ensurePassphraseMock.mockImplementationOnce(async () => {
       throw new Error('user cancelled');
@@ -340,6 +462,7 @@ describe('publishSettingsIfChanged', () => {
   });
 
   test('encrypted-field publish while unlocked records the value (no retry next save)', async () => {
+    enableCredentialsSync();
     isUnlocked = true;
     await publishSettingsIfChanged(
       makeSettings({

@@ -1323,8 +1323,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "འདིས་ཡིག་ཆ་ཁག་གསང་སྦས་སུ་མཉམ་སྦྱོར་བྱས་པ་རྣམས་ (དཔེར་ན། OPDS དཀར་ཆག་གི་གསང་ཨང་) སྒྲིག་ཆས་རེ་རེའི་ཐོག་གཏན་འཇགས་སུ་སུབ་སྲིད། ས་གནས་ཀྱི་པར་གཞི་ཉར་ཡོད། ཁྱོད་ཀྱིས་མཉམ་སྦྱོར་གསང་ཚིག་སྔར་བཞིན་འཇུག་པའམ་གསར་པ་སྒྲིག་དགོས། མུ་མཐུད་དམ།",
   "Sync passphrase forgotten — all encrypted fields cleared": "མཉམ་སྦྱོར་གསང་ཚིག་བརྗེད་སོང་ — གསང་སྦས་ཀྱི་ས་སྟོང་ཚང་མ་སུབ་ཟིན།",
   "Sync passphrase": "མཉམ་སྦྱོར་གསང་ཚིག",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "ཁྱོད་ཀྱི་སྒྲིག་ཆས་ལས་མ་འགྲོ་གོང་གལ་ཆེའི་མཉམ་སྦྱོར་ས་སྟོང་རྣམས་ (དཔེར་ན་ OPDS དཀར་ཆག་གི་ངོས་འཛིན་ཆ་འཕྲིན) གསང་སྦས་སུ་སྒྱུར། ད་ལྟ་གཅིག་སྒྲིག་པའམ་སྒུག་ཡོད། — དགོས་མཁོ་འབྱུང་སྐབས་ཞུ་འདུག",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "ཁྱེད་ཀྱི་རྩིས་ཐོ་འདིར་སྒྲིག་ཟིན། མཉམ་སྦྱོར་གྱི་ངོས་འཛིན་ཆ་འཕྲིན་གསང་སྦས་འགྲོལ་སྐབས་དགོས་ཚེ་ཞུ་འདུག",
   "Set passphrase": "གསང་ཚིག་སྒྲིག་པ།",
   "Forgot passphrase": "གསང་ཚིག་བརྗེད་སོང་།",
   "Incorrect PIN": "PIN ནོར་འདུག",
@@ -1372,5 +1370,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "བརྗོད་གཞི། གསལ་རྟགས་ཁ་དོག ཟུང་འབྲེལ་ (KOSync, Readwise, Hardcover) དང་ཚིག་མཛོད་ཀྱི་གོ་རིམ།",
   "Required while Dictionaries sync is enabled": "ཚིག་མཛོད་ཁག་མཉམ་འགྲོ་སྤྱོད་སྐབས་དགོས་མཁོ་ཡོད།",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ཆུ་ཚོད་ {{minutes}} སྐར་མ་ནང་སླར་གསོ་བྱེད།",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "ཨང་གྲངས་བཞི་ཅན་གྱི་ PIN ཞིག་འདེམས་རོགས། Readest ཕྱེ་རུས་ཐེངས་རེར་ཁྱེད་ཀྱིས་དེ་ནང་འཇུག་དགོས། བརྗེད་སོང་བའི་ PIN ཞིག་སླར་གསོ་བྱེད་ཐབས་མེད། ཉེར་སྤྱོད་ཀྱི་གཞི་གྲངས་གཙང་སེལ་བྱེད་པ་ནི་སླར་སྒྲིག་བྱེད་ཐབས་གཅིག་པོ་ཡིན།"
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "ཨང་གྲངས་བཞི་ཅན་གྱི་ PIN ཞིག་འདེམས་རོགས། Readest ཕྱེ་རུས་ཐེངས་རེར་ཁྱེད་ཀྱིས་དེ་ནང་འཇུག་དགོས། བརྗེད་སོང་བའི་ PIN ཞིག་སླར་གསོ་བྱེད་ཐབས་མེད། ཉེར་སྤྱོད་ཀྱི་གཞི་གྲངས་གཙང་སེལ་བྱེད་པ་ནི་སླར་སྒྲིག་བྱེད་ཐབས་གཅིག་པོ་ཡིན།",
+  "Credentials": "ངོས་སྦྱོར་ཆ་འཕྲིན།",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, དང་ Readwise བཅས་ཀྱི་ཐོ་ཀེན་དང་སྤྱོད་མི་མིང་དང་གསང་གྲངས། སྤོ་འཛུགས་མེད་པའི་སྐབས། ངོས་སྦྱོར་ཆ་འཕྲིན་ཡིག་ཆས་འདི་ཁོ་ནར་གནས་པ་དང་ནམ་ཡང་སྤོ་གཏོང་མི་བྱེད།",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "གཙོ་གནད་ཆགས་པའི་མཉམ་སྡེབ་ཐོ་ཁོངས་ཡིག་ཆ་སྤོ་གཏོང་མ་བྱས་སྔོན་ལ་གསང་སྦས་སུ་འགྱུར་བར་བཟོ། གསང་སྦས་དགོས་སྐབས་ད་ལྟ་འམ་ཕྱིས་སུ་གསང་ཚིག་ཕྲེང་གཅིག་སྒྲིག་འཛུགས་གནང་རོགས།",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "རྩིས་ཐོ་འདིར་ཉར་ཚགས་བྱས་ཡོད། ངོས་སྦྱོར་ཆ་འཕྲིན་ལ་གསང་སྦས་འགྲོལ་སྐབས་ཁྱེད་ལ་འདྲི་སློང་གནང་འགྱུར།"
 }

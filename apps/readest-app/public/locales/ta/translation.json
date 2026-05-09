@@ -1347,8 +1347,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "இது ஒவ்வொரு சாதனத்திலும் நாங்கள் ஒத்திசைக்கும் குறியாக்கம் செய்யப்பட்ட சான்றுகளை (எ.கா., OPDS பட்டியல் கடவுச்சொற்கள்) நிரந்தரமாக நீக்குகிறது. உள்ளூர் நகல்கள் பாதுகாக்கப்படுகின்றன. நீங்கள் ஒத்திசைவு கடவுச்சொற்றொடரை மீண்டும் உள்ளிட வேண்டும் அல்லது புதியதை அமைக்க வேண்டும். தொடரவா?",
   "Sync passphrase forgotten — all encrypted fields cleared": "ஒத்திசைவு கடவுச்சொற்றொடர் மறக்கப்பட்டது — அனைத்து குறியாக்கம் செய்யப்பட்ட புலங்களும் அழிக்கப்பட்டன",
   "Sync passphrase": "ஒத்திசைவு கடவுச்சொற்றொடர்",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "உங்கள் சாதனத்தை விட்டு வெளியேறுவதற்கு முன், முக்கியமான ஒத்திசைக்கப்பட்ட புலங்களை (OPDS பட்டியல் சான்றுகள் போன்றவை) குறியாக்கம் செய்கிறது. இப்போது ஒன்றை அமைக்கவும் அல்லது காத்திருக்கவும் — தேவைப்படும் போது கேட்கப்படும்.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "இந்த கணக்கில் அமைக்கப்பட்டுள்ளது. ஒத்திசைக்கப்பட்ட சான்றுகளை விகுதியாக்க தேவைப்படும்போது கேட்கப்படும்.",
   "Set passphrase": "கடவுச்சொற்றொடரை அமைக்கவும்",
   "Forgot passphrase": "கடவுச்சொற்றொடரை மறந்துவிட்டீர்களா",
   "Incorrect PIN": "தவறான PIN",
@@ -1396,5 +1394,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "தீம், ஹைலைட் வண்ணங்கள், ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover) மற்றும் அகராதி வரிசை",
   "Required while Dictionaries sync is enabled": "அகராதிகள் ஒத்திசைவு இயக்கத்தில் இருக்கும்போது தேவை",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} மணி {{minutes}} நிமிடத்தில் மீட்டமைக்கப்படும்",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 இலக்க PIN ஒன்றைத் தேர்ந்தெடுக்கவும். Readest திறக்கும் ஒவ்வொரு முறையும் அதை உள்ளிட வேண்டும். மறந்துபோன PIN ஐ மீட்டெடுக்க வழியில்லை. அதை மீட்டமைக்க ஒரே வழி பயன்பாட்டுத் தரவை அழிப்பதே ஆகும்."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 இலக்க PIN ஒன்றைத் தேர்ந்தெடுக்கவும். Readest திறக்கும் ஒவ்வொரு முறையும் அதை உள்ளிட வேண்டும். மறந்துபோன PIN ஐ மீட்டெடுக்க வழியில்லை. அதை மீட்டமைக்க ஒரே வழி பயன்பாட்டுத் தரவை அழிப்பதே ஆகும்.",
+  "Credentials": "அங்கீகாரத் தரவுகள்",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover மற்றும் Readwise-க்கான டோக்கன்கள், பயனர் பெயர்கள் மற்றும் கடவுச்சொற்கள். முடக்கப்பட்டிருக்கும் போது, அங்கீகாரத் தரவுகள் இந்த சாதனத்தில் மட்டுமே இருக்கும், ஒருபோதும் பதிவேற்றப்படாது.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "முக்கியமான ஒத்திசைக்கப்பட்ட புலங்கள் பதிவேற்றத்திற்கு முன் குறியாக்கம் செய்யப்படுகின்றன. குறியாக்கம் தேவைப்படும் போது இப்போது அல்லது பின்னர் கடவுச்சொற்றொடரை அமைக்கவும்.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "இந்த கணக்கில் சேமிக்கப்பட்டது. அங்கீகாரத் தரவுகளை மறைகுறியாக்கும்போது உங்களிடம் கேட்கப்படும்."
 }

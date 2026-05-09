@@ -3,7 +3,7 @@ import { getUserID } from '@/utils/access';
 import { getReplicaAdapter } from './replicaRegistry';
 import { getReplicaSync } from './replicaSync';
 import { encryptPackedFields } from './replicaCryptoMiddleware';
-import { isSyncCategoryEnabled } from './syncCategories';
+import { isCredentialsSyncEnabled, isSyncCategoryEnabled } from './syncCategories';
 import type { FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
 
 /**
@@ -32,7 +32,22 @@ export const publishReplicaUpsert = async <T>(
   if (!userId) return;
 
   const packed = adapter.pack(record);
-  // Encrypts the named encryptedFields in place. Locked session →
+  // Credentials meta-toggle (default OFF): when the user hasn't opted
+  // into syncing sensitive fields, drop adapter.encryptedFields from
+  // the packed object before the crypto middleware ever sees them. No
+  // ciphertext is produced, no passphrase prompt fires, and nothing
+  // sensitive leaves the device. Plaintext metadata in the same row
+  // (catalog name/url, kosync.serverUrl, etc.) still ships.
+  if (
+    adapter.encryptedFields &&
+    adapter.encryptedFields.length > 0 &&
+    !isCredentialsSyncEnabled()
+  ) {
+    for (const field of adapter.encryptedFields) {
+      delete packed[field];
+    }
+  }
+  // Encrypts the remaining encryptedFields in place. Locked session →
   // those fields are dropped from the push (sync without creds).
   await encryptPackedFields(packed, adapter.encryptedFields);
   let fields: FieldsObject = {};

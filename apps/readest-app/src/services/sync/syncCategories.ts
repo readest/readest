@@ -13,6 +13,11 @@
  *
  * Defaults to enabled when unset so users who never visit the panel
  * keep the cross-device behaviour they had before this shipped.
+ * Exception: `credentials` defaults to OFF — it's a meta-toggle that
+ * controls whether sensitive fields (OPDS / KOSync / Readwise / Hardcover
+ * usernames, passwords, tokens) ever leave the device. Sync of those
+ * fields is opt-in; users who never touch the panel keep their
+ * credentials local-only. See `DEFAULT_OFF_CATEGORIES`.
  *
  * Dependencies: some categories are required by others. Disabling the
  * dependency would silently break the dependent feature, so the
@@ -39,6 +44,21 @@ const CATEGORY_DEPENDENTS: Partial<Record<SyncCategory, readonly SyncCategory[]>
 };
 
 /**
+ * Categories whose default (when the user hasn't visited the panel and
+ * `syncCategories[category]` is absent) is OFF rather than the global
+ * "missing key → on" default.
+ *
+ * `credentials` is the only such category today: it gates the
+ * encrypted-credential fields (OPDS username/password, kosync.username
+ * / .userkey / .password, readwise.accessToken, hardcover.accessToken)
+ * across the OPDS-catalog and bundled-settings replicas. Sync of those
+ * fields is opt-in by deliberate policy — users who never visit the
+ * panel keep their credentials local-only and never see the
+ * sync-passphrase dialog.
+ */
+const DEFAULT_OFF_CATEGORIES: ReadonlySet<SyncCategory> = new Set(['credentials']);
+
+/**
  * Map a callsite identifier (replica kind, legacy SyncType, etc.) to
  * the corresponding category. Returns null for identifiers that aren't
  * gateable.
@@ -57,8 +77,11 @@ const toCategory = (id: string): SyncCategory | null => {
 
 const isCategoryRawEnabled = (category: SyncCategory): boolean => {
   const settings = useSettingsStore.getState().settings;
-  if (!settings) return true;
-  return settings.syncCategories?.[category] !== false;
+  const defaultOn = !DEFAULT_OFF_CATEGORIES.has(category);
+  if (!settings) return defaultOn;
+  const value = settings.syncCategories?.[category];
+  if (value === undefined) return defaultOn;
+  return value !== false;
 };
 
 /**
@@ -84,3 +107,17 @@ export const isSyncCategoryEnabled = (id: string): boolean => {
   if (isSyncCategoryLocked(category)) return true; // forced by a dependent
   return isCategoryRawEnabled(category);
 };
+
+/**
+ * Whether the user has opted into syncing sensitive credential fields
+ * (OPDS username/password, KOSync username/userkey/password, Readwise
+ * and Hardcover access tokens). Defaults to false: sync of these
+ * fields is explicit opt-in.
+ *
+ * Push pipelines drop the encrypted fields from the wire when this
+ * returns false; pull pipelines strip incoming cipher payloads before
+ * they hit any adapter unpack so the local plaintext copy is preserved
+ * and the passphrase prompt never fires. The Sync passphrase UI is
+ * hidden in this state.
+ */
+export const isCredentialsSyncEnabled = (): boolean => isCategoryRawEnabled('credentials');

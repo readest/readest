@@ -1395,8 +1395,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Це остаточно видалить зашифровані облікові дані, які ми синхронізуємо (наприклад, паролі каталогу OPDS), на кожному пристрої. Локальні копії зберігаються. Вам потрібно буде повторно ввести парольну фразу синхронізації або встановити нову. Продовжити?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Парольну фразу синхронізації забуто — усі зашифровані поля очищено",
   "Sync passphrase": "Парольна фраза синхронізації",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Шифрує конфіденційні синхронізовані поля (наприклад, облікові дані каталогу OPDS) перед тим, як вони залишать ваш пристрій. Установіть її зараз або зачекайте — її буде запитано за потреби.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Установлено для цього облікового запису. Запитуватиметься за потреби для розшифрування синхронізованих облікових даних.",
   "Set passphrase": "Установити парольну фразу",
   "Forgot passphrase": "Забули парольну фразу",
   "Incorrect PIN": "Неправильний PIN",
@@ -1444,5 +1442,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Тема, кольори виділень, інтеграції (KOSync, Readwise, Hardcover) і порядок словників",
   "Required while Dictionaries sync is enabled": "Потрібне, доки увімкнено синхронізацію Словників",
   "Resets in {{hours}} hr {{minutes}} min": "Скидання через {{hours}} год {{minutes}} хв",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Виберіть 4-значний PIN-код. Вам потрібно буде вводити його щоразу, коли ви відкриваєте Readest. Відновити забутий PIN-код неможливо. Очищення даних застосунку — єдиний спосіб його скинути."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Виберіть 4-значний PIN-код. Вам потрібно буде вводити його щоразу, коли ви відкриваєте Readest. Відновити забутий PIN-код неможливо. Очищення даних застосунку — єдиний спосіб його скинути.",
+  "Credentials": "Облікові дані",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Токени, імена користувачів і паролі для OPDS, KOReader, Hardcover та Readwise. Якщо вимкнено, облікові дані залишаються лише на цьому пристрої і ніколи не вивантажуються.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Конфіденційні синхронізовані поля шифруються перед вивантаженням. Установіть парольну фразу зараз або пізніше, коли знадобиться шифрування.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Збережено в цьому обліковому записі. Вас запитають про неї під час розшифровування облікових даних."
 }

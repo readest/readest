@@ -1395,8 +1395,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "S tem boste trajno izbrisali šifrirane poverilnice, ki jih sinhroniziramo (npr. gesla kataloga OPDS), v vseh napravah. Lokalne kopije se ohranijo. Znova boste morali vnesti sinhronizacijsko geslo ali nastaviti novo. Nadaljujem?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Sinhronizacijsko geslo pozabljeno — vsa šifrirana polja so izbrisana",
   "Sync passphrase": "Sinhronizacijsko geslo",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Šifrira občutljiva sinhronizirana polja (na primer poverilnice kataloga OPDS), preden zapustijo vašo napravo. Nastavite ga zdaj ali počakajte — zahtevan bo, ko bo potreben.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Nastavljeno za ta račun. Zahtevano bo, ko bo potrebno za dešifriranje sinhroniziranih poverilnic.",
   "Set passphrase": "Nastavi geslo",
   "Forgot passphrase": "Pozabljeno geslo",
   "Incorrect PIN": "Napačen PIN",
@@ -1444,5 +1442,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, barve označb, integracije (KOSync, Readwise, Hardcover) in vrstni red slovarjev",
   "Required while Dictionaries sync is enabled": "Zahtevano, dokler je sinhronizacija Slovarjev omogočena",
   "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije.",
+  "Credentials": "Poverilnice",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Žetoni, uporabniška imena in gesla za OPDS, KOReader, Hardcover in Readwise. Ko je onemogočeno, poverilnice ostanejo le na tej napravi in se nikoli ne naložijo.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Občutljiva sinhronizirana polja so pred nalaganjem šifrirana. Nastavite geselsko frazo zdaj ali pozneje, ko bo šifriranje potrebno.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Shranjeno v tem računu. Pozvani boste, ko bo treba dešifrirati poverilnice."
 }

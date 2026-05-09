@@ -1371,8 +1371,6 @@
   "This permanently deletes the encrypted credentials we sync (e.g., OPDS catalog passwords) on every device. Local copies are preserved. You will need to re-enter the sync passphrase or set a new one. Continue?": "Această acțiune șterge definitiv datele de autentificare criptate pe care le sincronizăm (de exemplu, parolele catalogului OPDS) pe fiecare dispozitiv. Copiile locale sunt păstrate. Va trebui să reintroduci fraza de acces pentru sincronizare sau să setezi una nouă. Continui?",
   "Sync passphrase forgotten — all encrypted fields cleared": "Fraza de acces pentru sincronizare a fost uitată — toate câmpurile criptate au fost șterse",
   "Sync passphrase": "Frază de acces pentru sincronizare",
-  "Encrypts sensitive synced fields (like OPDS catalog credentials) before they leave your device. Set one now or wait — it will be requested when needed.": "Criptează câmpurile sensibile sincronizate (cum ar fi datele de autentificare ale catalogului OPDS) înainte ca acestea să părăsească dispozitivul tău. Setează una acum sau așteaptă — va fi solicitată când va fi nevoie.",
-  "Set on this account. Will be requested when needed to decrypt synced credentials.": "Setată pe acest cont. Va fi solicitată atunci când va fi necesară pentru a decripta datele de autentificare sincronizate.",
   "Set passphrase": "Setează fraza de acces",
   "Forgot passphrase": "Am uitat fraza de acces",
   "Incorrect PIN": "PIN incorect",
@@ -1420,5 +1418,9 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Temă, culorile evidențierilor, integrări (KOSync, Readwise, Hardcover) și ordinea dicționarelor",
   "Required while Dictionaries sync is enabled": "Necesar cât timp sincronizarea Dicționarelor este activată",
   "Resets in {{hours}} hr {{minutes}} min": "Se resetează în {{hours}} h {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Alege un PIN din 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat. Ștergerea datelor aplicației este singura modalitate de a-l reseta."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Alege un PIN din 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat. Ștergerea datelor aplicației este singura modalitate de a-l reseta.",
+  "Credentials": "Acreditări",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Token-uri, nume de utilizator și parole pentru OPDS, KOReader, Hardcover și Readwise. Când sunt dezactivate, acreditările rămân doar pe acest dispozitiv și nu sunt niciodată încărcate.",
+  "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Câmpurile sincronizate sensibile sunt criptate înainte de încărcare. Setați o frază de acces acum sau mai târziu, când criptarea va fi necesară.",
+  "Saved to this account. You will be prompted for it when decrypting credentials.": "Salvată în acest cont. Vi se va cere când va trebui să se decripteze acreditările."
 }
