@@ -4,7 +4,10 @@ version = "0.1.0"
 authors = [ "You" ]
 description = "a bridge between tauri app and native OS functionality"
 edition = "2021"
-rust-version = "1.77.2"
+# `keyring-core` v1 and the per-platform store crates require Rust
+# 1.85 (apple-native) / 1.88 (windows-native, dbus-secret-service).
+# Bumping the floor here so cargo lets them compile.
+rust-version = "1.88"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
 links = "tauri-plugin-native-bridge"
 
@@ -20,17 +23,23 @@ schemars = "0.8"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 font-enumeration = "0.9.0"
+# OS-keychain backed secret storage for the sync passphrase. The
+# `keyring` crate v4 was demoted to a sample CLI app; the library
+# moved to `keyring-core` v1 plus a separate per-platform credential
+# store crate. We register the right store at plugin init time
+# (see `desktop.rs`). iOS / Android take a different path entirely:
+# Swift's Security framework + Android's EncryptedSharedPreferences,
+# dispatched via mobile.rs.
+keyring-core = "1"
 
-# OS-keychain backed secret storage for the sync passphrase. Each
-# desktop target enables exactly the native backend it can compile.
-# iOS / Android take a different path entirely: Swift's Security
-# framework + Android's EncryptedSharedPreferences, dispatched via
-# mobile.rs.
 [target.'cfg(target_os = "macos")'.dependencies]
-keyring = { version = "3", default-features = false, features = ["apple-native"] }
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-keyring = { version = "3", default-features = false, features = ["windows-native"] }
+windows-native-keyring-store = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-keyring = { version = "3", default-features = false, features = ["sync-secret-service"] }
+# `vendored` statically links libdbus + openssl so we don't depend on
+# the host distribution's versions, mirroring the previous
+# `sync-secret-service` feature on keyring v3.
+dbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust", "vendored"] }
