@@ -387,7 +387,12 @@ export class NodeAppService extends BaseAppService {
   async saveFile(
     _filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
     try {
       const filepath = options?.filePath ?? '';

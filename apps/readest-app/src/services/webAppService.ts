@@ -334,10 +334,50 @@ export class WebAppService extends BaseAppService {
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      // Web ignores `sharePosition` — `navigator.share()` anchors itself
+      // natively to the calling element on Safari / iOS.
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
+    const mimeType = options?.mimeType || 'application/octet-stream';
+    if (
+      options?.share &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.share === 'function'
+    ) {
+      let shareData: ShareData | null = null;
+      try {
+        const file = new File([content], filename, { type: mimeType });
+        const candidate: ShareData = { files: [file], title: filename };
+        if (typeof navigator.canShare !== 'function' || navigator.canShare(candidate)) {
+          shareData = candidate;
+        }
+      } catch (error) {
+        // File constructor unavailable or rejected the input; fall through to download.
+        console.warn('Failed to build share file; falling back to download:', error);
+      }
+      if (shareData) {
+        try {
+          await navigator.share(shareData);
+          return true;
+        } catch (error) {
+          // AbortError = user dismissed the sheet; respect that as an explicit
+          // "don't share" choice. Any other error (e.g., NotAllowedError on
+          // desktop Chrome where canShare lies about file support) means the
+          // share never happened — fall through to the download fallback.
+          if ((error as DOMException)?.name === 'AbortError') {
+            return true;
+          }
+          console.warn('navigator.share failed; falling back to download:', error);
+        }
+      }
+    }
     try {
-      const blob = new Blob([content], { type: options?.mimeType || 'application/octet-stream' });
+      const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

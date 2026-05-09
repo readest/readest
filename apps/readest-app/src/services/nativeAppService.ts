@@ -561,26 +561,51 @@ export class NativeAppService extends BaseAppService {
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      if (this.isIOSApp && options?.filePath) {
-        await shareFile(options.filePath, {
-          mimeType: options?.mimeType || 'application/octet-stream',
-        });
-      } else {
-        const filePath = await saveDialog({
-          defaultPath: filename,
-          filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
-        });
-        if (!filePath) return false;
-
-        if (typeof content === 'string') {
-          await writeTextFile(filePath, content);
-        } else {
-          await writeFile(filePath, new Uint8Array(content));
+      // Linux desktop has no system share sheet; always fall through to saveDialog.
+      const wantShare = !this.isLinuxApp && (this.isIOSApp || options?.share);
+      if (wantShare) {
+        let shareablePath = options?.filePath;
+        if (!shareablePath) {
+          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          if (typeof content === 'string') {
+            await writeTextFile(shareablePath, content);
+          } else {
+            await writeFile(shareablePath, new Uint8Array(content));
+          }
         }
+        try {
+          await shareFile(shareablePath, {
+            mimeType: options?.mimeType || 'application/octet-stream',
+            // Anchor the macOS NSSharingServicePicker / iPad popover to
+            // the trigger button. Without this, the picker pops at the
+            // WebView's top-left corner.
+            ...(options?.sharePosition ? { position: options.sharePosition } : {}),
+          });
+          return true;
+        } catch (error) {
+          console.error('shareFile failed; falling back to saveDialog:', error);
+        }
+      }
+
+      const filePath = await saveDialog({
+        defaultPath: filename,
+        filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+      });
+      if (!filePath) return false;
+
+      if (typeof content === 'string') {
+        await writeTextFile(filePath, content);
+      } else {
+        await writeFile(filePath, new Uint8Array(content));
       }
       return true;
     } catch (error) {

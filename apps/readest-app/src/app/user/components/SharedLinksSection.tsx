@@ -129,10 +129,21 @@ const SharedLinksSection: React.FC = () => {
     }
   };
 
-  const handleNativeShare = async (row: ShareRow) => {
+  const handleNativeShare = async (row: ShareRow, e: React.MouseEvent<HTMLButtonElement>) => {
     const url = buildUrl(row);
     if (!url) return;
     const title = row.title;
+    // Anchor the macOS / iPad share sheet to the row's share button so
+    // NSSharingServicePicker doesn't fall back to the WebView's top-left.
+    // `preferredEdge: 'bottom'` maps to NSMinYEdge — in the flipped WKWebView
+    // coord space that's the rect's top edge, so the popover appears above
+    // the button (and only auto-flips below when there's no room above).
+    const rect = e.currentTarget.getBoundingClientRect();
+    const sharePosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      preferredEdge: 'bottom' as const,
+    };
 
     // See ShareBookDialog.handleNativeShare for the rationale: only fall
     // through to copy when no native share method is available at all.
@@ -141,7 +152,7 @@ const SharedLinksSection: React.FC = () => {
       let sharekitWorked = false;
       try {
         const { shareText } = await import('@choochmeque/tauri-plugin-sharekit-api');
-        await shareText(`${title}\n${url}`);
+        await shareText(`${title}\n${url}`, { position: sharePosition });
         sharekitWorked = true;
       } catch (err) {
         console.error('shareText failed; falling back:', err);
@@ -299,7 +310,7 @@ const SharedLinksSection: React.FC = () => {
                     type='button'
                     title={_('Share via…')}
                     aria-label={_('Share via…')}
-                    onClick={() => handleNativeShare(row)}
+                    onClick={(e) => handleNativeShare(row, e)}
                     className='btn btn-ghost btn-sm'
                   >
                     <IoShareSocialOutline className='h-4 w-4' aria-hidden='true' />

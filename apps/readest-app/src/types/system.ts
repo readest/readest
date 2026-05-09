@@ -121,7 +121,16 @@ export interface AppService {
   saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      // Anchor point for the macOS / iPad share sheet. Coordinates are in
+      // CSS pixels of the WebView; the sharekit plugin maps them onto the
+      // native NSView. Without this, NSSharingServicePicker defaults to
+      // (0,0) of the WebView and pops at the top-left of the window.
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean>;
 
   getDefaultViewSettings(): ViewSettings;

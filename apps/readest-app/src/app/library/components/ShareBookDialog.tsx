@@ -154,10 +154,21 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
     }
   };
 
-  const handleNativeShare = async () => {
+  const handleNativeShare = async (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!created) return;
     const title = book.title;
     const url = created.url;
+    // Anchor the macOS / iPad share sheet to the trigger button rect so
+    // NSSharingServicePicker doesn't fall back to the WebView's top-left.
+    // `preferredEdge: 'bottom'` maps to NSMinYEdge — in the flipped WKWebView
+    // coord space that's the rect's top edge, which makes the popover appear
+    // above the button (matching the annotations export popover).
+    const rect = e.currentTarget.getBoundingClientRect();
+    const sharePosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      preferredEdge: 'bottom' as const,
+    };
 
     // Tauri (mobile + desktop windowed): try sharekit. If the import or
     // call throws, the plugin isn't usable on this platform — fall through
@@ -167,7 +178,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
       let sharekitWorked = false;
       try {
         const { shareText } = await import('@choochmeque/tauri-plugin-sharekit-api');
-        await shareText(`${title}\n${url}`);
+        await shareText(`${title}\n${url}`, { position: sharePosition });
         sharekitWorked = true;
       } catch (err) {
         console.error('shareText failed; falling back:', err);
@@ -357,7 +368,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
 
             <button
               type='button'
-              onClick={handleNativeShare}
+              onClick={(e) => handleNativeShare(e)}
               className='btn btn-block gap-2 rounded-2xl'
             >
               <IoShareSocialOutline className='h-5 w-5' aria-hidden='true' />

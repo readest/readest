@@ -77,7 +77,12 @@ export abstract class BaseAppService implements AppService {
   abstract saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean>;
   abstract ask(message: string): Promise<boolean>;
   abstract openDatabase(
