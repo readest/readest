@@ -90,15 +90,15 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
   const stopPhysicsTimeoutRef = useRef<number | null>(null);
 
   const applyPhysics = useCallback(
-    (network: Network, enabled = true) => {
+    (network: Network, enabled = true, allowStabilization = true) => {
       network.setOptions({
         physics: {
           enabled,
           solver: 'forceAtlas2Based',
           stabilization: {
-            enabled: true,
-            iterations: 90,
-            updateInterval: 10,
+            enabled: allowStabilization,
+            iterations: allowStabilization ? 90 : 1,
+            updateInterval: allowStabilization ? 10 : 100,
             fit: true,
           },
           adaptiveTimestep: true,
@@ -121,9 +121,8 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
       window.clearTimeout(stopPhysicsTimeoutRef.current);
     }
     stopPhysicsTimeoutRef.current = window.setTimeout(() => {
+      if (!networkRef.current) return;
       network.setOptions({ physics: { enabled: false } });
-      const stopSimulation = (network as unknown as { stopSimulation?: () => void }).stopSimulation;
-      stopSimulation?.();
     }, delay);
   }, []);
 
@@ -358,10 +357,7 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
     });
 
     network.on('dragStart', () => {
-      applyPhysics(network, true);
-      const startSimulation = (network as unknown as { startSimulation?: () => void })
-        .startSimulation;
-      startSimulation?.();
+      applyPhysics(network, true, false);
     });
 
     network.on('dragEnd', () => {

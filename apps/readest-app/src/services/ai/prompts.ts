@@ -192,18 +192,18 @@ export function buildXRayTimelinePrompt(params: {
 }): string {
   const { maxPageIncluded, pageStart, pageEnd, textUnits } = params;
   return [
-    'TASK: Write a plot recap for the pageRange (timeline chunk).',
+    'TASK: Write a plot recap for the text excerpt below.',
     'CONSTRAINTS:',
     '- Use only the text below. No outside knowledge.',
-    '- Return exactly one event covering the entire pageRange; do not leave gaps.',
+    '- Return exactly one event covering the entire text excerpt; do not leave gaps.',
     '- Each event must include page and evidence (quote + page + chunkId).',
     '- Summaries must be spoiler-safe and read like a real plot recap, not a list or quote.',
     '- Focus on plot progression, character shifts, and unresolved threads.',
-    '- Events must span multiple pages when pageRange includes more than one page.',
-    '- Set page to the last page in the range and include evidence from across the range.',
-    '- Include at least two evidence quotes from different pages when available.',
+    '- Set page to the last page in the excerpt and include evidence from across the excerpt.',
+    '- Include at least two evidence quotes from different portions when available.',
     '- Event summaries must be 3-5 complete sentences (max 5) with proper punctuation.',
     '- Use plain language; no quotes, no lists, no raw keys or underscores.',
+    '- Do not mention page numbers or page ranges anywhere in the summary text.',
     '- If textUnits are provided, always return one event; otherwise return empty arrays.',
     'INPUT:',
     `- maxPageIncluded: ${maxPageIncluded}`,

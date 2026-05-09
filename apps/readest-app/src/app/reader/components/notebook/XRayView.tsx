@@ -209,6 +209,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [selectedGraphEntity, setSelectedGraphEntity] = useState<XRayEntity | null>(null);
   const [showEntityRefine, setShowEntityRefine] = useState(false);
   const [showRelationshipRefine, setShowRelationshipRefine] = useState(false);
+  const [isXrayDropdownOpen, setXrayDropdownOpen] = useState(false);
   const hasLoadedRef = useRef(false);
   const loadInFlightRef = useRef(false);
   const pendingLoadRef = useRef<{ silent: boolean } | null>(null);
@@ -1095,13 +1096,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     [entityCategory],
   );
 
+  const effectiveScope = entitySearch.trim() ? 'book' : entityScope;
+
   const matchesScope = useCallback(
     (view: EntityView) => {
-      if (entityScope === 'page') return view.onPage;
-      if (entityScope === 'chapter') return view.inChapter;
+      if (effectiveScope === 'page') return view.onPage;
+      if (effectiveScope === 'chapter') return view.inChapter;
       return true;
     },
-    [entityScope],
+    [effectiveScope],
   );
 
   const applyFilters = useCallback(
@@ -1430,21 +1433,26 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       )}
       <div className='space-y-2 px-3'>
         <div className='flex items-center justify-between gap-2'>
-          <div className='dropdown dropdown-start'>
+          <div className={clsx('dropdown dropdown-start', isXrayDropdownOpen && 'dropdown-open')}>
             <button
               type='button'
-              tabIndex={0}
               className='btn btn-ghost btn-sm h-7 min-h-7 gap-1 px-2 normal-case'
-              onClick={(event) => event.currentTarget.focus()}
+              onClick={() => setXrayDropdownOpen((prev) => !prev)}
             >
               {_('X-Ray')}
               <LuChevronDown className='text-base-content/60 size-3' aria-hidden='true' />
             </button>
-            <ul className='dropdown-content bgcolor-base-200 no-triangle xray-scrollbar menu menu-sm rounded-box absolute z-[1] mt-2 w-44 p-1 shadow'>
+            <ul
+              className='dropdown-content bgcolor-base-200 no-triangle xray-scrollbar menu menu-sm rounded-box absolute z-[1] mt-2 w-44 p-1 shadow'
+              onClick={() => setXrayDropdownOpen(false)}
+            >
               <li>
                 <button
                   type='button'
-                  onClick={handleUpdate}
+                  onClick={() => {
+                    setXrayDropdownOpen(false);
+                    handleUpdate();
+                  }}
                   disabled={isActionDisabled}
                   title={_('Incremental update to current page')}
                 >
@@ -1454,7 +1462,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
               <li>
                 <button
                   type='button'
-                  onClick={handleRebuild}
+                  onClick={() => {
+                    setXrayDropdownOpen(false);
+                    handleRebuild();
+                  }}
                   disabled={isActionDisabled}
                   title={_('Reprocess from scratch to current page (keeps cache)')}
                 >
@@ -1519,7 +1530,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
           </button>
         ))}
       </div>
-      <div className='xray-scrollbar flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-6'>
+      <div className='xray-scrollbar flex-1 select-text space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-6'>
         {activeTab === 'entities' && (
           <div className='space-y-3'>
             <div className='flex items-center gap-2'>
