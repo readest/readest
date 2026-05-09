@@ -595,18 +595,16 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           border-radius: 22px;
           background: linear-gradient(
             170deg,
-            rgba(58, 31, 23, 0.98) 0%,
-            rgba(28, 17, 13, 1) 24%,
-            rgba(12, 8, 7, 1) 62%,
-            rgba(8, 5, 4, 1) 100%
+            rgba(34, 18, 14, 0.98) 0%,
+            rgba(18, 11, 9, 1) 28%,
+            rgba(9, 6, 5, 1) 100%
           );
           box-shadow:
-            0 42px 90px rgba(0, 0, 0, 0.58),
-            0 0 56px rgba(138, 30, 22, 0.22),
-            inset 0 0 0 1.6px rgba(196, 158, 84, 0.84),
-            inset 0 0 0 6px rgba(11, 8, 7, 0.94),
-            inset 0 22px 40px rgba(255, 228, 190, 0.016),
-            inset 0 -46px 64px rgba(0, 0, 0, 0.54);
+            0 34px 76px rgba(0, 0, 0, 0.54),
+            0 0 42px rgba(120, 26, 18, 0.14),
+            inset 0 0 0 1px rgba(196, 158, 84, 0.54),
+            inset 0 22px 38px rgba(255, 228, 190, 0.012),
+            inset 0 -42px 60px rgba(0, 0, 0, 0.48);
         }
 
         .books-grid .reader-frame-shell::before {
@@ -614,23 +612,23 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           position: absolute;
           inset: 10px;
           border-radius: 18px;
-          background: linear-gradient(180deg, rgba(255, 229, 186, 0.02), rgba(0, 0, 0, 0));
+          background: linear-gradient(180deg, rgba(255, 229, 186, 0.012), rgba(0, 0, 0, 0));
           box-shadow:
-            inset 0 22px 38px rgba(255, 224, 185, 0.012),
-            inset 0 -38px 54px rgba(0, 0, 0, 0.36);
+            inset 0 18px 30px rgba(255, 224, 185, 0.008),
+            inset 0 -32px 48px rgba(0, 0, 0, 0.28);
         }
 
         .books-grid .reader-frame-shell::after {
           display: none;
         }
 
-        /* ── Ornament: depth only, no extra gold rings ── */
+        /* ── Middle recess: dark spacing layer between shell and page well ── */
         .books-grid .reader-frame-ornament {
           border-radius: 18px;
-          background: none;
+          background: linear-gradient(180deg, rgba(12, 8, 7, 0.36), rgba(4, 3, 3, 0.12));
           box-shadow:
-            inset 0 24px 40px rgba(0, 0, 0, 0.15),
-            inset 0 -36px 50px rgba(0, 0, 0, 0.28);
+            inset 0 18px 32px rgba(0, 0, 0, 0.16),
+            inset 0 -30px 46px rgba(0, 0, 0, 0.24);
         }
 
         /* ── Seat: frame tray — no border, just tonal fill + depth shadow ── */
@@ -644,10 +642,10 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
 
         .books-grid .reader-frame-footer-seat {
           border-radius: 0 0 12px 12px;
-          background: linear-gradient(180deg, rgba(12, 8, 6, 0.98), rgba(7, 4, 3, 0.99));
+          background: linear-gradient(180deg, rgba(10, 7, 6, 0.94), rgba(5, 3, 3, 0.98));
           box-shadow:
-            inset 0 1px 0 rgba(52, 32, 14, 0.18),
-            inset 0 18px 28px rgba(0, 0, 0, 0.32);
+            inset 0 1px 0 rgba(150, 104, 44, 0.1),
+            inset 0 16px 26px rgba(0, 0, 0, 0.28);
         }
 
         /* ── Pages: dark two-page book surface, warm and recessed ── */
@@ -697,14 +695,13 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             auto,
             auto;
           box-shadow:
-            inset 0 0 0 1px rgba(214, 168, 88, 0.42),
-            inset 0 0 0 2px rgba(36, 22, 16, 0.55),
-            inset 0 0 0 3px rgba(214, 168, 88, 0.14),
+            inset 0 0 0 1px rgba(214, 168, 88, 0.46),
+            inset 0 0 0 3px rgba(16, 10, 8, 0.62),
             inset 0 18px 30px rgba(255, 230, 186, 0.022),
             inset 0 -34px 46px rgba(0, 0, 0, 0.22),
             inset 18px 0 28px rgba(0, 0, 0, 0.12),
             inset -18px 0 28px rgba(0, 0, 0, 0.12),
-            0 0 22px rgba(120, 28, 22, 0.08);
+            0 10px 24px rgba(0, 0, 0, 0.3);
         }
 
         .books-grid .reader-frame-well::before,
@@ -935,19 +932,16 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
         .books-grid .reader-frame-shell {
           background: linear-gradient(
             170deg,
-            rgb(22, 13, 10) 0%,
-            rgb(16, 10, 8) 24%,
-            rgb(10, 7, 6) 62%,
-            rgba(8, 5, 4, 1) 100%
+            rgb(18, 11, 9) 0%,
+            rgb(12, 8, 7) 36%,
+            rgb(7, 5, 4) 100%
           );
           box-shadow:
-            0 22px 52px rgba(0, 0, 0, 0.48),
-            inset 0 0 0 1px rgba(190, 146, 72, 0.7),
-            inset 0 0 0 4px rgba(0, 0, 0, 0.55),
-            inset 0 0 0 5px rgba(214, 172, 94, 0.2),
-            inset 0 0 48px rgba(120, 28, 18, 0.16),
-            inset 0 18px 36px rgba(255, 228, 190, 0.014),
-            inset 0 -42px 58px rgba(0, 0, 0, 0.5);
+            0 24px 56px rgba(0, 0, 0, 0.5),
+            inset 0 0 0 1px rgba(190, 146, 72, 0.48),
+            inset 0 0 42px rgba(120, 28, 18, 0.1),
+            inset 0 18px 34px rgba(255, 228, 190, 0.01),
+            inset 0 -40px 56px rgba(0, 0, 0, 0.48);
         }
 
         .books-grid .reader-frame-shell::before {
@@ -955,10 +949,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             radial-gradient(circle at 50% 0%, rgba(204, 150, 74, 0.06), transparent 22%),
             linear-gradient(180deg, rgba(255, 229, 186, 0.018), rgba(0, 0, 0, 0.12));
           box-shadow:
-            inset 0 0 0 1px rgba(90, 54, 36, 0.86),
-            inset 0 0 0 10px rgba(8, 6, 5, 0.38),
-            inset 0 26px 44px rgba(255, 224, 185, 0.018),
-            inset 0 -48px 62px rgba(0, 0, 0, 0.44);
+            inset 0 0 0 1px rgba(90, 54, 36, 0.46),
+            inset 0 24px 40px rgba(255, 224, 185, 0.012),
+            inset 0 -42px 58px rgba(0, 0, 0, 0.34);
           pointer-events: none;
         }
 
@@ -975,23 +968,20 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               rgba(10, 10, 9, 1) 100%
             );
           box-shadow:
-            inset 0 0 0 1px rgba(194, 146, 70, 0.7),
-            inset 0 0 0 3px rgba(0, 0, 0, 0.56),
-            inset 0 0 0 6px rgba(214, 172, 94, 0.18),
+            inset 0 0 0 1px rgba(194, 146, 70, 0.5),
+            inset 0 0 0 3px rgba(0, 0, 0, 0.58),
             inset 0 26px 56px rgba(255, 220, 150, 0.032),
             inset 0 -40px 66px rgba(0, 0, 0, 0.48),
             inset 24px 0 34px rgba(0, 0, 0, 0.15),
             inset -24px 0 34px rgba(0, 0, 0, 0.15),
-            0 14px 30px rgba(0, 0, 0, 0.4);
+            0 12px 28px rgba(0, 0, 0, 0.36);
         }
 
         .books-grid .reader-frame-footer-seat {
-          background: linear-gradient(180deg, rgb(10, 7, 5), rgb(3, 2, 2));
+          background: linear-gradient(180deg, rgb(8, 6, 5), rgb(3, 2, 2));
           box-shadow:
-            inset 0 1px 0 rgba(255, 220, 140, 0.1),
-            inset 0 22px 36px rgba(0, 0, 0, 0.44),
-            inset 1px 0 0 rgba(184, 132, 54, 0.14),
-            inset -1px 0 0 rgba(184, 132, 54, 0.14);
+            inset 0 1px 0 rgba(255, 220, 140, 0.07),
+            inset 0 18px 30px rgba(0, 0, 0, 0.38);
         }
       `}</style>
     </div>

@@ -341,15 +341,15 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             inset: 8px 14px;
             border-radius: 34px;
             background:
-              radial-gradient(circle at 50% 10%, rgba(214, 167, 87, 0.04), transparent 16%),
-              radial-gradient(circle at 50% 112%, rgba(94, 18, 14, 0.2), transparent 32%),
-              linear-gradient(180deg, rgba(38, 22, 18, 0.96), rgba(16, 11, 10, 0.99));
+              radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.035), transparent 18%),
+              radial-gradient(circle at 50% 112%, rgba(94, 18, 14, 0.14), transparent 32%),
+              linear-gradient(180deg, rgba(28, 16, 13, 0.98), rgba(9, 6, 5, 1));
             box-shadow:
-              inset 0 0 0 1px rgba(241, 215, 159, 0.03),
-              inset 0 22px 30px rgba(255, 237, 193, 0.012),
-              inset 0 -26px 40px rgba(0, 0, 0, 0.2),
-              0 28px 64px rgba(0, 0, 0, 0.42),
-              0 0 38px rgba(120, 24, 18, 0.14);
+              inset 0 0 0 1px rgba(190, 146, 72, 0.38),
+              inset 0 20px 28px rgba(255, 237, 193, 0.01),
+              inset 0 -28px 42px rgba(0, 0, 0, 0.28),
+              0 24px 58px rgba(0, 0, 0, 0.46),
+              0 0 30px rgba(120, 24, 18, 0.1);
             pointer-events: none;
             z-index: 0;
           }
@@ -360,14 +360,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             inset: 18px 22px 74px;
             border-radius: 28px;
             background:
-              radial-gradient(circle at 50% 0%, rgba(176, 124, 58, 0.06), transparent 20%),
-              linear-gradient(180deg, rgba(44, 27, 21, 0.48), rgba(14, 10, 9, 0.1));
+              radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
+              linear-gradient(180deg, rgba(18, 12, 10, 0.44), rgba(6, 5, 4, 0.18));
             box-shadow:
-              inset 0 0 0 1px rgba(82, 49, 33, 0.84),
-              inset 0 0 0 2px rgba(166, 118, 56, 0.16),
-              inset 0 0 0 10px rgba(7, 5, 4, 0.52),
-              inset 0 24px 38px rgba(255, 224, 176, 0.02),
-              inset 0 -38px 54px rgba(0, 0, 0, 0.4);
+              inset 0 0 0 1px rgba(112, 72, 34, 0.34),
+              inset 0 20px 34px rgba(255, 224, 176, 0.012),
+              inset 0 -34px 52px rgba(0, 0, 0, 0.34);
             pointer-events: none;
             z-index: 0;
           }
@@ -440,18 +438,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::before {
             background:
-              radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.06), transparent 20%),
-              radial-gradient(circle at 0% 50%, rgba(120, 28, 18, 0.14), transparent 24%),
-              radial-gradient(circle at 100% 50%, rgba(120, 28, 18, 0.14), transparent 24%),
-              linear-gradient(180deg, rgb(22, 13, 10), rgb(9, 6, 5));
+              radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.045), transparent 20%),
+              radial-gradient(circle at 0% 50%, rgba(120, 28, 18, 0.09), transparent 24%),
+              radial-gradient(circle at 100% 50%, rgba(120, 28, 18, 0.09), transparent 24%),
+              linear-gradient(180deg, rgb(18, 11, 9), rgb(7, 5, 4));
             box-shadow:
-              inset 0 0 0 1px rgba(190, 146, 72, 0.7),
-              inset 0 0 0 4px rgba(0, 0, 0, 0.55),
-              inset 0 0 0 5px rgba(214, 172, 94, 0.2),
-              inset 0 0 48px rgba(120, 28, 18, 0.16),
-              inset 0 20px 28px rgba(255, 237, 193, 0.014),
-              inset 0 -28px 40px rgba(0, 0, 0, 0.24),
-              0 22px 52px rgba(0, 0, 0, 0.48);
+              inset 0 0 0 1px rgba(190, 146, 72, 0.48),
+              inset 0 0 38px rgba(120, 28, 18, 0.1),
+              inset 0 18px 28px rgba(255, 237, 193, 0.012),
+              inset 0 -28px 42px rgba(0, 0, 0, 0.3),
+              0 24px 58px rgba(0, 0, 0, 0.5);
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
@@ -460,14 +456,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             inset: 18px 22px 74px;
             border-radius: 28px;
             background:
-              radial-gradient(circle at 50% 0%, rgba(176, 124, 58, 0.06), transparent 20%),
-              linear-gradient(180deg, rgba(44, 27, 21, 0.48), rgba(14, 10, 9, 0.1));
+              radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
+              linear-gradient(180deg, rgba(18, 12, 10, 0.44), rgba(6, 5, 4, 0.18));
             box-shadow:
-              inset 0 0 0 1px rgba(82, 49, 33, 0.84),
-              inset 0 0 0 2px rgba(166, 118, 56, 0.16),
-              inset 0 0 0 10px rgba(7, 5, 4, 0.52),
-              inset 0 24px 38px rgba(255, 224, 176, 0.02),
-              inset 0 -38px 54px rgba(0, 0, 0, 0.4);
+              inset 0 0 0 1px rgba(112, 72, 34, 0.34),
+              inset 0 20px 34px rgba(255, 224, 176, 0.012),
+              inset 0 -34px 52px rgba(0, 0, 0, 0.34);
             pointer-events: none;
             z-index: 0;
           }
