@@ -845,6 +845,21 @@ body.atmosphere #atmosphere-overlay {
   animation: pin-shake 0.4s ease-in-out;
 }
 
+@keyframes pin-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-pin-cursor-blink {
+  animation: pin-cursor-blink 1s step-end infinite;
+}
+
 /*
  * Suppress the daisyUI / browser focus ring on text inputs and
  * textareas. The element's own border (input-bordered, textarea-bordered)
