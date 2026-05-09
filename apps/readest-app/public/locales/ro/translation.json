@@ -1420,5 +1420,20 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Temă, culorile evidențierilor, integrări (KOSync, Readwise, Hardcover) și ordinea dicționarelor",
   "Required while Dictionaries sync is enabled": "Necesar cât timp sincronizarea Dicționarelor este activată",
   "Resets in {{hours}} hr {{minutes}} min": "Se resetează în {{hours}} h {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Alege un PIN din 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat. Ștergerea datelor aplicației este singura modalitate de a-l reseta."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Alege un PIN din 4 cifre. Va trebui să îl introduci de fiecare dată când deschizi Readest. Nu există nicio modalitate de a recupera un PIN uitat. Ștergerea datelor aplicației este singura modalitate de a-l reseta.",
+  "Synced at {{time}}": "Sincronizat la {{time}}",
+  "Look up text in Wikipedia after selection": "Căutați text în Wikipedia după selecție",
+  "Error": "Eroare",
+  "Unable to load the article. Try searching directly on {{link}}.": "Nu se poate încărca articolul. Încercați să căutați direct pe {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Nu se poate încărca cuvântul. Încercați să căutați direct pe {{link}}.",
+  "Wikipedia Lookup": "Caută pe Wikipedia",
+  "Metadata Hash": "Hash metadate",
+  "Meta Hash": "Meta hash",
+  "Computed Hash": "Hash calculat",
+  "Update X-Ray": "Actualizează X-Ray",
+  "Rebuild X-Ray": "Reconstruiește X-Ray",
+  "Reprocess from scratch to current page (keeps cache)": "Reprocesează de la zero până la pagina curentă (păstrează memoria cache)",
+  "Incremental update to current page": "Actualizare incrementală până la pagina curentă",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Se procesează p. {{start}}-{{end}} din {{total}}",
+  "Processing X-Ray": "Se procesează X-Ray"
 }

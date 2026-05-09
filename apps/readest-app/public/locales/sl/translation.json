@@ -1444,5 +1444,20 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, barve označb, integracije (KOSync, Readwise, Hardcover) in vrstni red slovarjev",
   "Required while Dictionaries sync is enabled": "Zahtevano, dokler je sinhronizacija Slovarjev omogočena",
   "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije.",
+  "Synced at {{time}}": "Sinhronizirano ob {{time}}",
+  "Look up text in Wikipedia after selection": "Poišči besedilo v Wikipediji po izbiri",
+  "Error": "Napaka",
+  "Unable to load the article. Try searching directly on {{link}}.": "Članka ni mogoče naložiti. Poskusite iskati neposredno na {{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "Besede ni mogoče naložiti. Poskusite iskati neposredno na {{link}}.",
+  "Wikipedia Lookup": "Iskanje na Wikipediji",
+  "Metadata Hash": "Hash metapodatkov",
+  "Meta Hash": "Meta hash",
+  "Computed Hash": "Izračunani hash",
+  "Update X-Ray": "Posodobi X-Ray",
+  "Rebuild X-Ray": "Znova zgradi X-Ray",
+  "Reprocess from scratch to current page (keeps cache)": "Ponovno obdela od začetka do trenutne strani (ohrani predpomnilnik)",
+  "Incremental update to current page": "Postopna posodobitev do trenutne strani",
+  "Processing p. {{start}}-{{end}} of {{total}}": "Obdelava str. {{start}}-{{end}} od {{total}}",
+  "Processing X-Ray": "Obdelava X-Ray"
 }

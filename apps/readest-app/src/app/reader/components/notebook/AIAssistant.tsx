@@ -22,9 +22,11 @@ import {
   createTauriAdapter,
   getLastSources,
   clearLastSources,
+  updateXRayForProgress,
 } from '@/services/ai';
-import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
+import type { EmbeddingProgress, AISettings, AIMessage, IndexingState } from '@/services/ai/types';
 import { useEnv } from '@/context/EnvContext';
+import { eventDispatcher } from '@/utils/event';
 
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
@@ -68,7 +70,7 @@ interface AIAssistantProps {
   bookKey: string;
 }
 
-// inner component that uses the runtime hook
+// inner component that coordinates history + runtime
 const AIAssistantChat = ({
   aiSettings,
   bookHash,
@@ -88,9 +90,59 @@ const AIAssistantChat = ({
     activeConversationId,
     messages: storedMessages,
     addMessage,
-    isLoadingHistory,
+    isLoadingMessages,
   } = useAIChatStore();
 
+  const showHistoryLoading = isLoadingMessages && !!activeConversationId;
+  const hasStoredMessages = storedMessages.length > 0;
+
+  if (showHistoryLoading) {
+    return <div className='flex-1' />;
+  }
+
+  return (
+    <AIAssistantRuntime
+      key={activeConversationId ?? 'new'}
+      aiSettings={aiSettings}
+      bookHash={bookHash}
+      bookTitle={bookTitle}
+      authorName={authorName}
+      currentPage={currentPage}
+      activeConversationId={activeConversationId}
+      storedMessages={storedMessages}
+      addMessage={addMessage}
+      onResetIndex={onResetIndex}
+      isLoadingHistory={isLoadingMessages}
+      hasStoredMessages={hasStoredMessages}
+    />
+  );
+};
+
+const AIAssistantRuntime = ({
+  aiSettings,
+  bookHash,
+  bookTitle,
+  authorName,
+  currentPage,
+  activeConversationId,
+  storedMessages,
+  addMessage,
+  onResetIndex,
+  isLoadingHistory,
+  hasStoredMessages,
+}: {
+  aiSettings: AISettings;
+  bookHash: string;
+  bookTitle: string;
+  authorName: string;
+  currentPage: number;
+  activeConversationId: string | null;
+  storedMessages: AIMessage[];
+  addMessage: (message: Omit<AIMessage, 'id' | 'createdAt'>) => Promise<void>;
+  onResetIndex: () => void;
+  isLoadingHistory: boolean;
+  hasStoredMessages: boolean;
+}) => {
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
     settings: aiSettings,
@@ -159,7 +211,7 @@ const AIAssistantChat = ({
       historyAdapter={historyAdapter}
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
-      hasActiveConversation={!!activeConversationId}
+      hasStoredMessages={hasStoredMessages}
     />
   );
 };
@@ -169,13 +221,13 @@ const AIAssistantWithRuntime = ({
   historyAdapter,
   onResetIndex,
   isLoadingHistory,
-  hasActiveConversation,
+  hasStoredMessages,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
   historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasActiveConversation: boolean;
+  hasStoredMessages: boolean;
 }) => {
   const runtime = useLocalRuntime(adapter, {
     adapters: historyAdapter ? { history: historyAdapter } : undefined,
@@ -188,7 +240,7 @@ const AIAssistantWithRuntime = ({
       <ThreadWrapper
         onResetIndex={onResetIndex}
         isLoadingHistory={isLoadingHistory}
-        hasActiveConversation={hasActiveConversation}
+        hasStoredMessages={hasStoredMessages}
       />
     </AssistantRuntimeProvider>
   );
@@ -197,11 +249,11 @@ const AIAssistantWithRuntime = ({
 const ThreadWrapper = ({
   onResetIndex,
   isLoadingHistory,
-  hasActiveConversation,
+  hasStoredMessages,
 }: {
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasActiveConversation: boolean;
+  hasStoredMessages: boolean;
 }) => {
   const [sources, setSources] = useState(getLastSources());
   const assistantRuntime = useAssistantRuntime();
@@ -227,7 +279,7 @@ const ThreadWrapper = ({
       onClear={handleClear}
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
-      hasActiveConversation={hasActiveConversation}
+      hasStoredMessages={hasStoredMessages}
     />
   );
 };
@@ -242,52 +294,152 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const progress = getProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isIndexing, setIsIndexing] = useState(false);
-  const [indexProgress, setIndexProgress] = useState<EmbeddingProgress | null>(null);
+  const [indexingState, setIndexingState] = useState<IndexingState | null>(null);
   const [indexed, setIndexed] = useState(false);
+  const hasAutoRestored = useRef(false);
 
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
   const authorName = bookData?.book?.author || '';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
+  const { loadConversations, setActiveConversation, createConversation } = useAIChatStore();
+  const isIndexing = !indexed && indexingState?.status === 'indexing';
+  const indexProgress: EmbeddingProgress | null = indexingState?.phase
+    ? {
+        current: indexingState.current ?? 0,
+        total: indexingState.total ?? 0,
+        phase: indexingState.phase,
+      }
+    : null;
 
   // check if book is indexed on mount
   useEffect(() => {
-    if (bookHash) {
-      isBookIndexed(bookHash).then((result) => {
-        setIndexed(result);
+    let cancelled = false;
+    const loadIndexState = async () => {
+      if (!bookHash) {
         setIsLoading(false);
-      });
-    } else {
+        setIndexingState(null);
+        return;
+      }
+      const [indexedResult, storedState] = await Promise.all([
+        isBookIndexed(bookHash),
+        aiStore.getIndexingState(bookHash),
+      ]);
+      if (cancelled) return;
+      setIndexed(indexedResult);
+      setIndexingState(storedState);
       setIsLoading(false);
-    }
+    };
+    void loadIndexState();
+
+    const handleIndexingUpdate = (event: CustomEvent) => {
+      const state = event.detail as IndexingState;
+      if (state.bookHash !== bookHash) return;
+      setIndexingState(state);
+      if (state.status === 'complete') setIndexed(true);
+    };
+
+    eventDispatcher.on('rag-indexing-updated', handleIndexingUpdate);
+
+    return () => {
+      cancelled = true;
+      eventDispatcher.off('rag-indexing-updated', handleIndexingUpdate);
+    };
   }, [bookHash]);
+
+  useEffect(() => {
+    hasAutoRestored.current = false;
+  }, [bookHash]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ensureConversation = async () => {
+      if (!bookHash || !aiSettings?.enabled) return;
+
+      await loadConversations(bookHash);
+      if (cancelled || hasAutoRestored.current) return;
+
+      const { conversations, activeConversationId, currentBookHash, messages } =
+        useAIChatStore.getState();
+
+      if (currentBookHash !== bookHash) return;
+
+      const hasValidActive =
+        !!activeConversationId && conversations.some((conv) => conv.id === activeConversationId);
+
+      if (hasValidActive) {
+        if (activeConversationId && messages.length === 0) {
+          await setActiveConversation(activeConversationId);
+        }
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      if (conversations.length > 0) {
+        const mostRecent = conversations[0];
+        if (!mostRecent) return;
+        await setActiveConversation(mostRecent.id);
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      await createConversation(bookHash, `Chat about ${bookTitle}`);
+      hasAutoRestored.current = true;
+    };
+
+    ensureConversation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    bookHash,
+    bookTitle,
+    aiSettings?.enabled,
+    loadConversations,
+    setActiveConversation,
+    createConversation,
+  ]);
 
   const handleIndex = useCallback(async () => {
     if (!bookData?.bookDoc || !aiSettings) return;
-    setIsIndexing(true);
+    let indexSucceeded = false;
     try {
-      await indexBook(
-        bookData.bookDoc as Parameters<typeof indexBook>[0],
-        bookHash,
-        aiSettings,
-        setIndexProgress,
-      );
-      setIndexed(true);
+      await indexBook(bookData.bookDoc as Parameters<typeof indexBook>[0], bookHash, aiSettings);
+      indexSucceeded = true;
     } catch (e) {
       aiLogger.rag.indexError(bookHash, (e as Error).message);
-    } finally {
-      setIsIndexing(false);
-      setIndexProgress(null);
     }
-  }, [bookData?.bookDoc, bookHash, aiSettings]);
+
+    if (indexSucceeded) {
+      setIndexed(true);
+    }
+
+    if (indexSucceeded) {
+      void updateXRayForProgress({
+        bookHash,
+        currentPage,
+        settings: aiSettings,
+        bookTitle,
+        appService,
+        force: true,
+        bookMetadata: bookData?.book?.metadata,
+      }).catch((error) => {
+        aiLogger.rag.indexError(bookHash, (error as Error).message);
+      });
+    }
+  }, [bookData, bookHash, aiSettings, appService, bookTitle, currentPage]);
 
   const handleResetIndex = useCallback(async () => {
     if (!appService) return;
     if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
     await aiStore.clearBook(bookHash);
+    await aiStore.clearXRayBook(bookHash);
+    await aiStore.clearIndexingState(bookHash);
     setIndexed(false);
+    setIndexingState(null);
   }, [bookHash, appService, _]);
 
   if (!aiSettings?.enabled) {
@@ -311,17 +463,27 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   if (!indexed && !isIndexing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-        <div className='bg-primary/10 rounded-full p-3'>
+        <div
+          className='bg-primary/10 rounded-full p-3'
+          style={{
+            animation: 'subtleBounce 2.5s ease-in-out infinite',
+          }}
+        >
           <BookOpenIcon className='text-primary size-6' />
+          <style>{`
+            @keyframes subtleBounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(2px); }
+            }
+          `}</style>
         </div>
         <div>
           <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
           <p className='text-muted-foreground text-xs'>
-            {_('Enable AI search and chat for this book')}
+            {_('Enable AI chat and X-Ray for this book')}
           </p>
         </div>
         <Button onClick={handleIndex} size='sm' className='h-8 text-xs'>
-          <BookOpenIcon className='mr-1.5 size-3.5' />
           {_('Start Indexing')}
         </Button>
       </div>

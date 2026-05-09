@@ -1420,5 +1420,20 @@
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ערכת נושא, צבעי הדגשה, שילובים (KOSync, Readwise, Hardcover) וסדר המילונים",
   "Required while Dictionaries sync is enabled": "נדרש כל עוד סנכרון המילונים מופעל",
   "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו."
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו.",
+  "Synced at {{time}}": "סונכרן ב-{{time}}",
+  "Look up text in Wikipedia after selection": "חפש טקסט בוויקיפדיה לאחר הבחירה",
+  "Error": "שגיאה",
+  "Unable to load the article. Try searching directly on {{link}}.": "לא ניתן לטעון את המאמר. נסה לחפש ישירות ב-{{link}}.",
+  "Unable to load the word. Try searching directly on {{link}}.": "לא ניתן לטעון את המילה. נסה לחפש ישירות ב-{{link}}.",
+  "Wikipedia Lookup": "חיפוש בוויקיפדיה",
+  "Metadata Hash": "גיבוב מטא-נתונים",
+  "Meta Hash": "גיבוב מטא",
+  "Computed Hash": "גיבוב מחושב",
+  "Update X-Ray": "עדכן X-Ray",
+  "Rebuild X-Ray": "בנה מחדש את X-Ray",
+  "Incremental update to current page": "עדכון הדרגתי עד לעמוד הנוכחי",
+  "Reprocess from scratch to current page (keeps cache)": "עיבוד מחדש מההתחלה עד לעמוד הנוכחי (שומר מטמון)",
+  "Processing p. {{start}}-{{end}} of {{total}}": "מעבד עמ' {{start}}-{{end}} מתוך {{total}}",
+  "Processing X-Ray": "מעבד X-Ray"
 }
