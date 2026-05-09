@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MdKeyboardDoubleArrowLeft } from 'react-icons/md';
 import { MdKeyboardDoubleArrowRight } from 'react-icons/md';
 
 import { useSettingsStore } from '@/store/settingsStore';
@@ -276,10 +277,10 @@ const SideBar = ({}) => {
               box-sizing: border-box;
               background: linear-gradient(
                 180deg,
-                rgba(26, 22, 20, 0.98) 0%,
-                rgba(17, 15, 14, 0.98) 38%,
-                rgba(12, 11, 10, 1) 72%,
-                rgba(8, 7, 7, 1) 100%
+                rgba(29, 25, 23, 0.98) 0%,
+                rgba(20, 18, 17, 0.98) 38%,
+                rgba(15, 14, 13, 1) 72%,
+                rgba(10, 9, 9, 1) 100%
               );
               box-shadow:
                 inset 0 0 0 1px rgba(230, 184, 92, 0.12),
@@ -336,9 +337,10 @@ const SideBar = ({}) => {
             .sidebar-container :global(.sidebar-content) {
               position: absolute;
               left: calc(100% + 24px);
-              top: 112px;
-              bottom: 24px;
+              top: 28px;
+              bottom: 28px;
               width: 376px;
+              max-height: calc(100dvh - 72px);
               border: 1px solid rgba(201, 164, 90, 0.34);
               border-radius: 28px;
               background:
@@ -391,12 +393,12 @@ const SideBar = ({}) => {
               justify-content: flex-start;
               position: relative;
               padding-top: 14px;
-              padding-bottom: 22px;
+              padding-bottom: 10px;
               background: linear-gradient(
                 180deg,
-                rgba(18, 16, 15, 0) 0%,
-                rgba(14, 13, 12, 0.18) 54%,
-                rgba(8, 7, 7, 0.26) 100%
+                rgba(21, 19, 18, 0) 0%,
+                rgba(17, 16, 15, 0.16) 54%,
+                rgba(11, 10, 10, 0.22) 100%
               );
             }
 
@@ -406,9 +408,9 @@ const SideBar = ({}) => {
               inset: 0;
               background: linear-gradient(
                 180deg,
-                rgba(18, 16, 15, 0) 0%,
-                rgba(14, 13, 12, 0.1) 62%,
-                rgba(8, 7, 7, 0.18) 100%
+                rgba(21, 19, 18, 0) 0%,
+                rgba(17, 16, 15, 0.08) 62%,
+                rgba(11, 10, 10, 0.14) 100%
               );
               pointer-events: none;
             }
@@ -420,7 +422,11 @@ const SideBar = ({}) => {
               right: 0;
               bottom: 0;
               height: 120px;
-              background: linear-gradient(180deg, rgba(18, 16, 15, 0) 0%, rgba(8, 7, 7, 0.18) 100%);
+              background: linear-gradient(
+                180deg,
+                rgba(21, 19, 18, 0) 0%,
+                rgba(11, 10, 10, 0.14) 100%
+              );
               pointer-events: none;
             }
 
@@ -432,6 +438,43 @@ const SideBar = ({}) => {
 
             .sidebar-container :global(.os-scrollbar-handle) {
               background: rgba(176, 136, 72, 0.45);
+            }
+
+            .sidebar-container .citadel-rail-collapse-anchor {
+              border: 1px solid rgba(207, 164, 84, 0.72);
+              background-color: rgba(35, 29, 25, 0.98);
+              background-image: linear-gradient(
+                180deg,
+                rgba(35, 29, 25, 0.98),
+                rgba(16, 13, 12, 1)
+              );
+              color: rgba(246, 207, 126, 0.98);
+              box-shadow:
+                inset 0 1px 0 rgba(255, 220, 140, 0.12),
+                0 0 14px rgba(196, 130, 50, 0.12);
+              opacity: 1;
+              transition:
+                background 150ms ease,
+                border-color 150ms ease,
+                color 150ms ease,
+                transform 150ms ease;
+            }
+
+            .sidebar-container .citadel-rail-collapse-anchor:hover {
+              border-color: rgba(228, 190, 108, 0.8);
+              background-image: linear-gradient(
+                180deg,
+                rgba(43, 35, 30, 0.98),
+                rgba(18, 14, 13, 1)
+              );
+              color: rgba(246, 207, 126, 0.98);
+            }
+
+            .sidebar-container .citadel-rail-collapse-anchor:focus-visible {
+              outline: none;
+              box-shadow:
+                0 0 0 1px rgba(201, 164, 90, 0.88),
+                0 0 0 3px rgba(120, 24, 18, 0.36);
             }
           }
           @media (max-width: 640px) {
@@ -512,6 +555,27 @@ const SideBar = ({}) => {
         ) : (
           <SidebarContent bookDoc={bookDoc} sideBarBookKey={sideBarBookKey!} />
         )}
+        <button
+          type='button'
+          title={_('Collapse Sidebar')}
+          aria-label={_('Collapse Sidebar')}
+          data-testid='sidebar-collapse-button'
+          onClick={() => setSideBarVisible(false)}
+          className='citadel-rail-collapse-anchor hidden items-center justify-center rounded-full sm:flex'
+          style={{
+            position: 'fixed',
+            left: 72,
+            bottom: 44,
+            transform: 'translateX(-50%)',
+            width: 42,
+            height: 42,
+            zIndex: 60,
+            opacity: 1,
+            pointerEvents: 'auto',
+          }}
+        >
+          <MdKeyboardDoubleArrowLeft className='text-[20px]' />
+        </button>
       </div>
     </>
   );

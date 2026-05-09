@@ -21,11 +21,11 @@ const BookCard = ({ book }: { book: Book }) => {
   };
 
   return (
-    <div className='border-[#5e4525]/18 flex h-24 w-full items-center gap-3 rounded-[18px] border bg-[linear-gradient(180deg,rgba(23,15,12,0.9),rgba(12,8,7,0.94))] px-3 py-3 text-[#dcc8a1] shadow-[inset_0_1px_0_rgba(255,237,193,0.05)]'>
+    <div className='border-[#5e4525]/18 flex w-full items-center gap-4 border bg-[linear-gradient(180deg,rgba(23,15,12,0.76),rgba(12,8,7,0.9))] px-4 py-4 text-[#dcc8a1] shadow-[inset_0_1px_0_rgba(255,237,193,0.05)]'>
       <div
         ref={bookCoverRef}
         className={clsx(
-          'aspect-[28/41] max-h-[72px] w-[18%] max-w-[54px] overflow-hidden rounded-[8px] shadow-md',
+          'aspect-[28/41] max-h-[82px] w-[20%] max-w-[60px] overflow-hidden rounded-[8px] shadow-md',
           isDarkMode ? 'mix-blend-screen' : 'mix-blend-multiply',
         )}
       >
@@ -38,15 +38,15 @@ const BookCard = ({ book }: { book: Book }) => {
         />
       </div>
       <div className='min-w-0 flex-1'>
-        <h4 className='line-clamp-2 w-[90%] font-serif text-sm font-semibold text-[#e6d0a1]'>
+        <h4 className='line-clamp-2 w-[92%] font-serif text-[16px] font-semibold text-[#e6d0a1]'>
           {formatTitle(title).replace(/\u00A0/g, ' ')}
         </h4>
-        <p className='truncate text-[11px] uppercase tracking-[0.12em] text-[#9f8254]'>
+        <p className='mt-1 truncate text-[11px] uppercase tracking-[0.16em] text-[#9f8254]'>
           {formatAuthors(author)}
         </p>
       </div>
       <button
-        className='btn btn-ghost border-[#6a4d28]/24 bg-[#1a110f]/74 h-8 min-h-8 w-8 rounded-full border p-0 text-[#c4a56d] transition-colors hover:bg-[#241612] hover:text-[#e6d0a1]'
+        className='btn btn-ghost bg-[#1a110f]/62 h-8 min-h-8 w-8 border border-[#6a4d28]/20 p-0 text-[#c4a56d] transition-colors hover:bg-[#241612] hover:text-[#e6d0a1]'
         aria-label={_('More Info')}
         onClick={showBookDetails}
       >

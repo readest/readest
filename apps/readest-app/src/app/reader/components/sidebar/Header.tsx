@@ -27,7 +27,7 @@ const SidebarHeader: React.FC<{
   return (
     <div
       className={clsx(
-        'sidebar-header relative flex h-11 items-center justify-between pe-2 sm:h-[128px] sm:flex-col sm:justify-start sm:px-2 sm:pt-[18px]',
+        'sidebar-header relative flex h-11 items-center justify-between pe-2 sm:h-[140px] sm:flex-col sm:items-center sm:justify-start sm:px-2 sm:pt-[14px]',
         isTrafficLightVisible ? 'ps-1.5 sm:ps-0' : 'ps-1.5 sm:ps-0',
       )}
       dir='ltr'
@@ -41,20 +41,20 @@ const SidebarHeader: React.FC<{
           <MdArrowBackIosNew size={iconSize22} />
         </button>
       </div>
-      <div className='pointer-events-none hidden w-full flex-col items-center justify-center sm:flex'>
+      <div className='pointer-events-none hidden w-full flex-1 -translate-y-[20px] flex-col items-center justify-center pt-0 sm:flex'>
         <div className='sidebar-brand-panel relative flex w-full items-center justify-center rounded-[18px] px-1.5 pb-0 pt-0'>
-          <div className='sidebar-brand-mark relative flex h-[56px] w-[90px] items-center justify-center overflow-visible'>
+          <div className='sidebar-brand-mark relative flex h-[74px] w-[122px] translate-x-[4px] items-center justify-center overflow-visible'>
             <Image
               src='/citadel/citadel-logo.png'
               alt='Citadel'
               fill
-              sizes='90px'
+              sizes='122px'
               className='object-contain p-0 opacity-100 brightness-[0.76] contrast-[1.3] saturate-[1.62]'
               priority={false}
             />
           </div>
         </div>
-        <div className='sidebar-header-divider mt-[14px] hidden h-px w-[62px] sm:block' />
+        <div className='sidebar-header-divider mt-[6px] hidden h-px w-[84px] sm:block' />
       </div>
       <div className='flex min-w-24 max-w-32 items-center justify-between sm:hidden sm:size-[70%]'>
         <button
@@ -129,7 +129,7 @@ const SidebarHeader: React.FC<{
           }
 
           .sidebar-header-divider {
-            background: rgba(148, 112, 58, 0.34);
+            background: rgba(148, 112, 58, 0.42);
             box-shadow: none;
           }
 

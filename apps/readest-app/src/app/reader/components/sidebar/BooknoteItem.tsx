@@ -105,10 +105,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
     return (
       <div
         className={clsx(
-          'content border-[#6a4d28]/28 bg-[#1a110f]/86 group relative my-2 rounded-[18px] border p-3 text-[#dbc7a0]',
+          'content group relative border-b border-[rgba(178,135,70,0.22)] px-4 py-3 text-[#e4d2ab]',
           isCurrent
-            ? 'border-[#b48c49]/42 bg-[#311814]/92 shadow-[inset_0_1px_0_rgba(255,237,193,0.06)]'
-            : 'hover:border-[#8f6a37]/34 hover:bg-[#241612]',
+            ? 'bg-[linear-gradient(90deg,rgba(65,24,18,0.68),rgba(31,15,12,0.74)_70%,rgba(18,11,9,0.38))] shadow-[inset_0_1px_0_rgba(255,237,193,0.035)]'
+            : 'hover:bg-[rgba(30,20,17,0.54)]',
           'transition-all duration-300 ease-in-out',
         )}
       >
@@ -141,10 +141,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
       role='button'
       ref={viewRef}
       className={clsx(
-        'booknote-item content border-[#6a4d28]/24 group relative my-2 cursor-pointer rounded-[18px] border bg-[linear-gradient(180deg,rgba(24,16,13,0.86),rgba(12,9,8,0.94))] p-3 text-[#dbc7a0]',
+        'booknote-item content group relative cursor-pointer border-b border-[rgba(178,135,70,0.22)] px-4 py-3 text-[#e4d2ab]',
         isCurrent
-          ? 'border-[#b48c49]/42 hover:bg-[#311814]/92 focus:bg-[#311814]/92 bg-[linear-gradient(90deg,rgba(61,21,16,0.94),rgba(31,14,11,0.92)_68%,rgba(18,11,9,0.74))] text-[#f0d6a0]'
-          : 'hover:border-[#8f6a37]/34 focus:border-[#8f6a37]/34 hover:bg-[#241612] focus:bg-[#241612]',
+          ? 'hover:bg-[#311814]/88 focus:bg-[#311814]/88 bg-[linear-gradient(90deg,rgba(61,21,16,0.7),rgba(31,14,11,0.78)_68%,rgba(18,11,9,0.4))] text-[#f0d6a0]'
+          : 'hover:bg-[rgba(30,20,17,0.54)] focus:bg-[rgba(30,20,17,0.54)]',
         'transition-all duration-300 ease-in-out',
       )}
       tabIndex={0}
@@ -189,7 +189,12 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
               }}
             ></div>
           )}
-          <div className={clsx('content font-size-sm line-clamp-3', item.note && 'mt-2')}>
+          <div
+            className={clsx(
+              'content font-size-sm line-clamp-3 font-serif text-[#e9d8b2]',
+              item.note && 'mt-2',
+            )}
+          >
             <span
               className={clsx(
                 'booknote-text inline leading-normal',
@@ -258,7 +263,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             {isEditable && (
               <button
                 onClick={item.type === 'bookmark' ? editBookmark : editNote.bind(null, item)}
-                className='btn btn-ghost btn-xs border-[#6a4d28]/26 rounded-md border bg-[#1a110f]/80 p-0 text-[#c7ab74] opacity-0 transition duration-300 ease-in-out hover:bg-[#241612] hover:text-[#f0d6a0] group-focus-within:opacity-100 group-hover:opacity-100'
+                className='btn btn-ghost btn-xs bg-[#1a110f]/62 rounded-md border border-[#6a4d28]/20 p-0 text-[#c7ab74] opacity-0 transition duration-300 ease-in-out hover:bg-[#241612] hover:text-[#f0d6a0] group-focus-within:opacity-100 group-hover:opacity-100'
                 aria-label={_('Edit')}
               >
                 <MdEdit size={size18} />
@@ -267,7 +272,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
 
             <button
               onClick={deleteNote.bind(null, item)}
-              className='btn btn-ghost btn-xs border-[#7b342d]/34 rounded-md border bg-[#1a110f]/80 p-0 text-[#b56b5f] opacity-0 transition duration-300 ease-in-out hover:bg-[#2a1613] hover:text-[#e6a093] group-focus-within:opacity-100 group-hover:opacity-100'
+              className='btn btn-ghost btn-xs border-[#7b342d]/26 bg-[#1a110f]/62 rounded-md border p-0 text-[#b56b5f] opacity-0 transition duration-300 ease-in-out hover:bg-[#2a1613] hover:text-[#e6a093] group-focus-within:opacity-100 group-hover:opacity-100'
               aria-label={_('Delete')}
             >
               <MdDelete size={size18} />

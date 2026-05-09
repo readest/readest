@@ -64,8 +64,8 @@ const BooknoteView: React.FC<{
   return (
     <div className='rounded pt-1'>
       {sortedGroups.length === 0 ? (
-        <div className='flex min-h-[180px] flex-col items-center justify-center px-4 py-8 text-center'>
-          <div className='border-[#6a4d28]/28 bg-[#1a110f]/72 mb-3 rounded-full border px-3 py-2 font-serif text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b89557]'>
+        <div className='citadel-panel-empty flex min-h-[180px] flex-col items-center justify-center px-4 py-8 text-center'>
+          <div className='bg-[#1a110f]/52 mb-3 border border-[#6a4d28]/20 px-3 py-2 font-serif text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b89557]'>
             {type === 'annotation' ? _('Notes') : _('Bookmarks')}
           </div>
           <p className='text-[#d0bb92]/82 text-sm'>
@@ -80,16 +80,16 @@ const BooknoteView: React.FC<{
           </p>
         </div>
       ) : (
-        <ul role='tree' className='px-1.5'>
+        <ul role='tree' className='px-0.5'>
           {sortedGroups.map((group) => (
             <li
               key={group.href}
-              className='border-[#5e4525]/18 mb-3 rounded-[22px] border bg-[linear-gradient(180deg,rgba(17,11,10,0.82),rgba(9,7,6,0.9))] px-2.5 py-2.5 last:mb-0'
+              className='mb-4 overflow-hidden border border-[rgba(178,135,70,0.18)] bg-[linear-gradient(180deg,rgba(20,13,10,0.9),rgba(12,8,7,0.92))] last:mb-0'
             >
-              <h3 className='border-[#5e4525]/22 line-clamp-1 border-b pb-1.5 font-serif text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c7ab74]'>
+              <h3 className='line-clamp-1 border-b border-[rgba(178,135,70,0.22)] px-4 pb-2 pt-3 font-serif text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c7ab74]'>
                 {group.label}
               </h3>
-              <ul>
+              <ul className='px-0'>
                 {group.booknotes.map((item, index) => (
                   <BooknoteItem
                     key={`${index}-${item.cfi}`}

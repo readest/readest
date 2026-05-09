@@ -120,8 +120,8 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
       {/* Conversation list */}
       <div className='flex-1 overflow-y-auto'>
         {conversations.length === 0 ? (
-          <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-            <div className='border-[#6a4d28]/28 bg-[#1a110f]/72 rounded-full border p-3'>
+          <div className='citadel-panel-empty flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
+            <div className='bg-[#1a110f]/52 border border-[#6a4d28]/20 p-3'>
               <LuMessageSquare className='size-6 text-[#8f7447]' />
             </div>
             <div>
@@ -132,13 +132,13 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
             </div>
           </div>
         ) : (
-          <ul className='divide-y divide-[#5e4525]/20 px-2 pb-16 pt-2'>
+          <ul className='px-1 pb-20 pt-1'>
             {conversations.map((conversation) => (
               <li
                 key={conversation.id}
                 className={clsx(
-                  'border-[#5e4525]/18 bg-[#17100d]/78 group mb-2 flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5',
-                  'hover:border-[#8f6a37]/32 transition-colors duration-150 hover:bg-[#241612]',
+                  'group mb-0.5 flex cursor-pointer items-start gap-2 border-b border-[rgba(178,135,70,0.22)] px-4 py-3',
+                  'bg-transparent transition-colors duration-150 hover:bg-[rgba(30,20,17,0.54)]',
                 )}
               >
                 <div
@@ -167,21 +167,21 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                           onChange={(e) => setEditTitle(e.target.value)}
                           onKeyDown={handleKeyDown}
                           className={clsx(
-                            'input input-xs input-bordered border-[#8f6a37]/28 w-full bg-[#120c0a] text-[#e0ccaa]',
+                            'input input-xs input-bordered border-[#8f6a37]/24 w-full bg-[#120c0a] text-[#e0ccaa]',
                           )}
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                         />
                         <button
                           onClick={handleSaveRename}
-                          className='btn btn-ghost btn-xs border-[#6a4d28]/24 bg-[#1a110f]/78 border text-[#c6aa73] hover:bg-[#241612] hover:text-[#f0d6a0]'
+                          className='btn btn-ghost btn-xs bg-[#1a110f]/62 border border-[#6a4d28]/20 text-[#c6aa73] hover:bg-[#241612] hover:text-[#f0d6a0]'
                           aria-label={_('Save')}
                         >
                           <LuCheck size={14} />
                         </button>
                         <button
                           onClick={handleCancelRename}
-                          className='btn btn-ghost btn-xs border-[#7b342d]/32 bg-[#1a110f]/78 border text-[#c07d73] hover:bg-[#2a1613] hover:text-[#e7a39a]'
+                          className='btn btn-ghost btn-xs border-[#7b342d]/24 bg-[#1a110f]/62 border text-[#c07d73] hover:bg-[#2a1613] hover:text-[#e7a39a]'
                           aria-label={_('Cancel')}
                         >
                           <LuX size={14} />
@@ -189,10 +189,10 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                       </div>
                     ) : (
                       <>
-                        <p className='line-clamp-1 text-sm font-medium text-[#e0ccaa]'>
+                        <p className='line-clamp-1 font-serif text-[15px] font-medium text-[#e9d8b2]'>
                           {conversation.title}
                         </p>
-                        <p className='text-xs text-[#8e7348]'>
+                        <p className='text-xs text-[#9f7f4f]'>
                           {dayjs(conversation.updatedAt).format('MMM D, YYYY h:mm A')}
                         </p>
                       </>
@@ -204,14 +204,14 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                   <div className='flex flex-shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
                     <button
                       onClick={(e) => handleStartRename(e, conversation)}
-                      className='btn btn-ghost btn-xs border-[#6a4d28]/24 border bg-[#1a110f]/80 text-[#c7ab74] hover:bg-[#241612] hover:text-[#f0d6a0]'
+                      className='btn btn-ghost btn-xs bg-[#1a110f]/62 border border-[#6a4d28]/20 text-[#c7ab74] hover:bg-[#241612] hover:text-[#f0d6a0]'
                       aria-label={_('Rename')}
                     >
                       <LuPencil size={12} />
                     </button>
                     <button
                       onClick={(e) => handleDeleteConversation(e, conversation.id)}
-                      className='btn btn-ghost btn-xs border-[#7b342d]/32 border bg-[#1a110f]/80 text-[#b56b5f] hover:bg-[#2a1613] hover:text-[#e6a093]'
+                      className='btn btn-ghost btn-xs border-[#7b342d]/24 bg-[#1a110f]/62 border text-[#b56b5f] hover:bg-[#2a1613] hover:text-[#e6a093]'
                       aria-label={_('Delete')}
                     >
                       <LuTrash2 size={12} />
@@ -229,9 +229,9 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
         <button
           onClick={handleNewConversation}
           className={clsx(
-            'border-[#ad8444]/42 flex items-center gap-2 rounded-full border bg-[linear-gradient(180deg,rgba(50,24,18,0.94),rgba(33,16,13,0.98))] px-4 py-2 text-[#f0d6a0]',
-            'hover:bg-[linear-gradient(180deg,rgba(61,31,24,0.96),rgba(39,19,15,0.98))]',
-            'shadow-[0_10px_26px_rgba(0,0,0,0.25),0_0_16px_rgba(126,31,25,0.14)]',
+            'border-[#ad8444]/28 flex items-center gap-2 border bg-[linear-gradient(180deg,rgba(50,24,18,0.86),rgba(25,14,12,0.94))] px-4 py-2 text-[#f0d6a0]',
+            'hover:bg-[linear-gradient(180deg,rgba(61,31,24,0.9),rgba(32,18,15,0.96))]',
+            'shadow-[0_10px_26px_rgba(0,0,0,0.2),0_0_10px_rgba(126,31,25,0.08)]',
             'transition-all duration-200 ease-out',
             'active:scale-[0.97]',
           )}
