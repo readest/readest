@@ -1368,7 +1368,6 @@
   "Set PIN": "PIN beállítása",
   "Change PIN": "PIN módosítása",
   "Disable PIN": "PIN letiltása",
-  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN — clearing the app data is the only way to reset it.": "Válasszon egy 4 jegyű PIN-kódot. Minden alkalommal meg kell adnia, amikor megnyitja a Readestet. Az elfelejtett PIN-kódot nem lehet helyreállítani — az alkalmazás adatainak törlése az egyetlen módja az alaphelyzetbe állításnak.",
   "Enter your current PIN, then choose a new 4-digit PIN.": "Adja meg a jelenlegi PIN-kódját, majd válasszon egy új 4 jegyű PIN-kódot.",
   "Enter your current PIN to disable the app lock.": "Az alkalmazászár letiltásához adja meg a jelenlegi PIN-kódját.",
   "PIN must be {{length}} digits": "A PIN-kódnak {{length}} jegyűnek kell lennie",
@@ -1396,6 +1395,6 @@
   "App settings": "Alkalmazásbeállítások",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Téma, kiemelési színek, integrációk (KOSync, Readwise, Hardcover) és szótárak sorrendje",
   "Required while Dictionaries sync is enabled": "Szükséges, amíg a Szótárak szinkronizálása be van kapcsolva",
-  "Unavailable": "Nem elérhető",
-  "Resets in {{hours}} hr {{minutes}} min": "Visszaállás {{hours}} ó {{minutes}} p múlva"
+  "Resets in {{hours}} hr {{minutes}} min": "Visszaállás {{hours}} ó {{minutes}} p múlva",
+  "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Válasszon egy 4 számjegyű PIN-kódot. Minden alkalommal meg kell adnia, amikor megnyitja a Readestet. Az elfelejtett PIN-kódot nem lehet visszaállítani. Az alkalmazás adatainak törlése az egyetlen módja a visszaállításának."
 }

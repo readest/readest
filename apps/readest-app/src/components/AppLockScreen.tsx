@@ -49,7 +49,7 @@ export default function AppLockScreen() {
 
   return (
     <div
-      className='bg-base-100 fixed inset-0 z-[200] flex flex-col items-center justify-center px-6'
+      className='bg-base-100 full-height inset-0 z-[200] flex flex-col items-center justify-center px-6'
       role='dialog'
       aria-modal='true'
       aria-label={_('App locked')}

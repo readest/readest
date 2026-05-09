@@ -63,11 +63,11 @@ const ReadingRulerSettings: React.FC<ReadingRulerSettingsProps> = ({
               {RULER_COLORS.map(({ value, className, hoverClassName }) => (
                 <button
                   key={value}
-                  disabled={!enabled}
+                  // disabled={!enabled}
                   className={`btn btn-circle btn-sm ${className} ${hoverClassName} ${
                     color === value ? 'ring-base-content ring-2 ring-offset-1' : ''
-                  } ${!enabled ? 'btn-disabled opacity-50' : ''}`}
-                  onClick={() => onColorChange(value)}
+                  } ${!enabled ? 'opacity-50' : ''}`}
+                  onClick={() => enabled && onColorChange(value)}
                 />
               ))}
             </div>

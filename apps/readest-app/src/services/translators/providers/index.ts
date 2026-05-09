@@ -70,7 +70,7 @@ export const getTranslatorDisplayLabel = (
   _: (key: string) => string,
 ): string => {
   if (translator.disabled) {
-    return `${translator.label} (${_('Unavailable')})`;
+    return `${translator.label}`;
   }
   if (translator.authRequired && !hasToken) {
     return `${translator.label} (${_('Login Required')})`;

@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { PIN_LENGTH } from '@/libs/crypto/applock';
 
@@ -26,12 +26,13 @@ export interface PinInputHandle {
   focus: () => void;
 }
 
-const PinDot = ({ filled }: { filled: boolean }) => (
+const PinDot = ({ filled, active }: { filled: boolean; active: boolean }) => (
   <div
     className={clsx(
-      'eink-bordered flex h-12 w-10 items-center justify-center rounded-lg border',
+      'eink-bordered relative flex h-12 w-10 items-center justify-center rounded-lg border',
       'border-base-content/20 bg-base-200/60',
       filled && 'border-base-content/40',
+      active && 'border-base-content/40',
     )}
   >
     <span
@@ -40,6 +41,12 @@ const PinDot = ({ filled }: { filled: boolean }) => (
         filled ? 'bg-base-content opacity-100' : 'opacity-0',
       )}
     />
+    {active && !filled && (
+      <span
+        aria-hidden='true'
+        className='bg-base-content animate-pin-cursor-blink absolute bottom-2 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full'
+      />
+    )}
   </div>
 );
 
@@ -57,6 +64,7 @@ const PinInput = forwardRef<PinInputHandle, PinInputProps>(function PinInput(
   ref,
 ) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [focused, setFocused] = useState(false);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
 
   useEffect(() => {
@@ -93,6 +101,8 @@ const PinInput = forwardRef<PinInputHandle, PinInputProps>(function PinInput(
         maxLength={PIN_LENGTH}
         value={value}
         onChange={handleChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         disabled={disabled}
         autoComplete={autoComplete}
         aria-label={ariaLabel}
@@ -100,7 +110,11 @@ const PinInput = forwardRef<PinInputHandle, PinInputProps>(function PinInput(
       />
       <div className={clsx('flex gap-3', shake && 'animate-pin-shake')}>
         {Array.from({ length: PIN_LENGTH }).map((_dot, i) => (
-          <PinDot key={i} filled={i < value.length} />
+          <PinDot
+            key={i}
+            filled={i < value.length}
+            active={focused && !disabled && i === value.length}
+          />
         ))}
       </div>
     </label>
