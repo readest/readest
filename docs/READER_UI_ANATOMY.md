@@ -44,7 +44,126 @@ Visible area ownership summary:
 - per-book footer/player tray: `FooterBar` and `DesktopFooterBar`
 - global top-right app controls: `ReaderTopBar`
 
-## 2. Sidebar component hierarchy
+## 2. Reader frame selector map
+
+The Citadel reader frame is a three-frame structure:
+
+1. outer frame wrapping the reader surface and player tray
+2. middle reader frame around the open-book area
+3. inner page/book well around the Foliate pages
+
+Use these selectors before changing visual CSS. If a screenshot does not match
+the intended result, identify which selector owns the visible layer before
+nudging values.
+
+| Visual layer                        | Selector                                                                                                                           | Owning file                                                                    | Notes                                                                             |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| readable Foliate surface            | `.citadel-reader-shell .books-grid > [id^='gridcell-'] > .foliate-viewer`                                                          | `apps/readest-app/src/app/reader/components/BooksGrid.tsx` via `FoliateViewer` | The actual book content surface. Do not cover text columns with opaque frame art. |
+| outer frame pseudo-layer            | `.citadel-reader-shell .books-grid > [id^='gridcell-']::before`                                                                    | `apps/readest-app/src/app/reader/components/ReaderContent.tsx`                 | Broad outer frame paint around the grid cell. Must remain decorative.             |
+| outer frame shell element           | `.books-grid .reader-frame-shell`                                                                                                  | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Physical frame shell around reader and footer seat.                               |
+| middle frame pseudo-layer           | `.citadel-reader-shell .books-grid > [id^='gridcell-']::after`                                                                     | `apps/readest-app/src/app/reader/components/ReaderContent.tsx`                 | Middle frame around the open-book area. Must remain decorative.                   |
+| inner page well                     | `.books-grid .reader-frame-well`                                                                                                   | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Recessed book/page well around Foliate pages.                                     |
+| footer/player tray seat             | `.books-grid .reader-frame-footer-seat`                                                                                            | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Decorative seat behind `FooterBar` / `DesktopFooterBar`.                          |
+| decorative book image base          | `.reader-book-image`                                                                                                               | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Uses theme-provided book art under/around the Foliate surface.                    |
+| decorative book edge/gutter overlay | `.reader-book-image-overlay`                                                                                                       | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Edge/gutter overlay only. It must never become an opaque text cover.              |
+| corner ornaments                    | `.reader-frame-corner`, `.reader-frame-corner-tl`, `.reader-frame-corner-tr`, `.reader-frame-corner-bl`, `.reader-frame-corner-br` | `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                     | Decorative corners around the inner well.                                         |
+
+Decorative book image source:
+
+- asset: `apps/readest-app/public/citadel/book-art/Reader_Book.png`
+- theme path: `/citadel/book-art/Reader_Book.png`
+- configured as `BOOK_THEME_CONFIGS.got.readerBookImage` in `book-themes.ts`
+
+Rules for the decorative book image overlay:
+
+- use the overlay only for edge/gutter treatment above Foliate
+- never make it opaque over text columns
+- always keep `pointer-events: none`
+
+## 3. Reader frame ownership
+
+The reader frame lives across a small number of files. Keep changes scoped to
+the layer owner.
+
+| File                                                                        | Owns                                                                                                                                         |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/readest-app/src/app/reader/components/ReaderContent.tsx`              | Reader shell, `.citadel-reader-shell`, `.citadel-reader-texture`, grid-cell pseudo-layers `::before` / `::after`.                            |
+| `apps/readest-app/src/app/reader/components/BooksGrid.tsx`                  | `.books-grid`, grid cells, frame shell, page well, footer/header seats, book art layers, spine, ornaments, per-book header/footer placement. |
+| `apps/readest-app/src/app/reader/components/HeaderBar.tsx`                  | Per-book in-frame top chrome. Keep its interactive layer at or above the frame.                                                              |
+| `apps/readest-app/src/app/reader/components/footerbar/FooterBar.tsx`        | Footer hover trigger and main footer container. The hover trigger and container sit at `z-10`. Do not lower them.                            |
+| `apps/readest-app/src/app/reader/components/footerbar/DesktopFooterBar.tsx` | Desktop footer/player controls inside the footer container.                                                                                  |
+
+Sacred z-index and pointer-event rules:
+
+- decorative frame, glow, texture, image, ornament, and pseudo-element layers
+  must use `pointer-events: none`
+- the footer hover trigger is `z-10`; do not set the footer/player container
+  below `z-10`
+- interactive reader controls must not sit below decorative layers
+- if the top-right sidebar toggler is removed, the left-edge
+  `[data-testid="sidebar-restore-handle"]` must remain recoverable
+
+## 4. Visual harness
+
+The visual harness exists so agents can stop guessing from CSS alone.
+
+Start the app first:
+
+```bash
+pnpm --filter @readest/readest-app dev
+```
+
+Open a real book and copy the current reader URL. Then run the normal
+screenshot harness:
+
+```bash
+READER_URL=http://localhost:3000/reader/<bookId> node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:READER_URL = 'http://localhost:3000/reader/<bookId>'; node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+The normal screenshot is written to:
+
+```text
+apps/readest-app/test-results/reader-ui/reader-normal.png
+```
+
+To make layer ownership obvious, run debug-layer mode:
+
+```bash
+READER_URL=http://localhost:3000/reader/<bookId> READER_DEBUG_LAYERS=1 node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:READER_URL = 'http://localhost:3000/reader/<bookId>'; $env:READER_DEBUG_LAYERS = '1'; node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+Debug colors are runtime-injected only:
+
+- outer frame: magenta
+- middle frame: cyan/blue
+- inner page well: green
+- footer tray: orange
+- book image layer: purple
+- book image overlay: yellow
+
+The debug screenshot is written to:
+
+```text
+apps/readest-app/test-results/reader-ui/reader-debug-layers.png
+```
+
+Do not use `/library` output as reader verification. The visual harness
+requires `READER_URL` and fails when it cannot reach a real `/reader` page with
+`.foliate-viewer`.
+
+## 5. Sidebar component hierarchy
 
 Sidebar component tree, from outermost rail to interactions:
 
@@ -81,7 +200,7 @@ Important relationship:
 - it sits inside a sibling wrapper rendered by `Content.tsx`
 - that wrapper previously carried the hard seam under the header via `border-t` and background styling
 
-## 3. Sidebar selector map
+## 6. Sidebar selector map
 
 | Visual region                                  | Component / file    | Main selector / class                                                    | What it controls                                                                                                   | Known gotchas                                                                                                                                                                       |
 | ---------------------------------------------- | ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -100,7 +219,7 @@ Important relationship:
 | Collapse button                                | `TabNavigation.tsx` | `.citadel-rail-collapse`                                                 | Bottom collapse button styling and layout                                                                          | The button can exist in the DOM but still be visually unreadable if its contrast is too low.                                                                                        |
 | Collapsed restore handle                       | `SideBar.tsx`       | `[data-testid="sidebar-restore-handle"]`, `.citadel-sidebar-restore-tab` | Left-edge restore handle when sidebar is collapsed                                                                 | This is the recoverability entry point. Do not remove without replacement.                                                                                                          |
 
-## 4. Interaction map
+## 7. Interaction map
 
 Sidebar interactions are primarily wired through `useSidebarStore`, `useSidebar`, and `SidebarContent` state transitions.
 
@@ -154,7 +273,7 @@ Other sidebar-related wiring:
   - owns local tab fade state: `activeTab`, `targetTab`, `fade`
   - syncs with persisted `config.viewSettings.sideBarTab`
 
-## 5. Layering / z-index / pointer-events map
+## 8. Layering / z-index / pointer-events map
 
 Sidebar-specific layering:
 
@@ -202,7 +321,7 @@ Sidebar gotcha:
 - a full-width seam can come from a real wrapper element between `Header` and `TabNavigation`, not from a pseudo-element
 - when debugging visibility, verify the topmost element with hit-testing instead of assuming the visible line comes from the nearest divider
 
-## 6. If you need to change X, edit Y
+## 9. If you need to change X, edit Y
 
 | If you need to change…                      | Edit this file                                                                                              | Main selector / code path                                                                                                 |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -218,7 +337,7 @@ Sidebar gotcha:
 | Remove a seam / line between header and nav | `apps/readest-app/src/app/reader/components/sidebar/Content.tsx` first, then verify `SideBar.tsx` overrides | nav wrapper sibling after `.sidebar-content`; historically also overridden by `.sidebar-container .sidebar-content + div` |
 | Add or remove nav item                      | `apps/readest-app/src/app/reader/components/sidebar/TabNavigation.tsx`                                      | tabs array and label/icon map                                                                                             |
 
-## 7. Known failure history
+## 10. Known failure history
 
 - The white seam under the logo was not the small logo divider in `Header.tsx`.
   - The real culprit was the nav-wrapper sibling rendered by `Content.tsx`, which carried `border-t` and its own background.
@@ -231,10 +350,14 @@ Sidebar gotcha:
   - Screenshot and running-app verification matter.
   - If a control is not clearly visible in the rendered app, report that honestly.
 
+- The old smoke harness defaulted to `http://localhost:3000/library`.
+  - That was useful for broad shell diagnostics, but it is not reader visual verification.
+  - Use `reader-ui-visual.mjs` with a real `READER_URL` for frame screenshots.
+
 - Sidebar fixes can be mis-targeted if you assume the nearest visible line belongs to the nearest divider.
   - Use deletion/isolation or hit-testing when a seam persists.
 
-## 8. Verification checklist
+## 11. Verification checklist
 
 Use this checklist for future sidebar passes:
 
@@ -248,6 +371,7 @@ Use this checklist for future sidebar passes:
 - no hard white seam exists between logo/header and nav
 - nav items are clickable
 - decorative layers use `pointer-events: none`
+- `node apps/readest-app/scripts/reader-ui-visual.mjs` produced a real reader screenshot when a `READER_URL` was available
 - `pnpm.cmd --filter @readest/readest-app lint` passes
 
 Optional smoke harness checks worth keeping or adding:

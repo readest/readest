@@ -8,6 +8,17 @@ real controls.
 This is **not** a full UI test suite. It is the minimum bar that must pass
 before any reader-UI visual change is reported complete.
 
+For frame/layer screenshot verification, use the stricter visual harness:
+
+```bash
+READER_URL=http://localhost:3000/reader/<bookId> node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+The smoke harness historically defaults to `/library` so it can run broad app
+shell diagnostics even when no book is open. That means a default smoke run is
+not proof that the reader frame rendered. For reader visual tasks, pass a real
+`READER_URL` or report that reader screenshot verification was not available.
+
 ## When to run it
 
 You **must** run the smoke check before reporting any of these as done:
@@ -123,3 +134,38 @@ Add new probes as the reader gains controls. Keep it small and practical —
 this script is intended to be a fast smoke check, not a regression battery.
 If a probe needs an open book to work, gate it on detecting reader content
 and `record('warn', ..., 'no book open')` instead of failing hard.
+
+## Visual screenshot harness
+
+Use `reader-ui-visual.mjs` when the task is about the reader frame, background,
+footer seat, book image layer, or Foliate page well.
+
+Normal screenshot:
+
+```bash
+READER_URL=http://localhost:3000/reader/<bookId> node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+Debug-layer screenshot:
+
+```bash
+READER_URL=http://localhost:3000/reader/<bookId> READER_DEBUG_LAYERS=1 node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+Windows PowerShell:
+
+```powershell
+$env:READER_URL = 'http://localhost:3000/reader/<bookId>'; node apps/readest-app/scripts/reader-ui-visual.mjs
+$env:READER_URL = 'http://localhost:3000/reader/<bookId>'; $env:READER_DEBUG_LAYERS = '1'; node apps/readest-app/scripts/reader-ui-visual.mjs
+```
+
+Outputs:
+
+```text
+apps/readest-app/test-results/reader-ui/reader-normal.png
+apps/readest-app/test-results/reader-ui/reader-debug-layers.png
+```
+
+The visual harness requires `READER_URL`, waits for `/reader` and
+`.foliate-viewer`, checks the key frame selectors, and fails instead of
+silently accepting `/library`.
