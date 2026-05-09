@@ -10,6 +10,46 @@ interface Metadata {
   identifier: string;
 }
 
+// Pull a title and (optionally) an author out of a TXT filename. Recognized
+// patterns center on Chinese conventions where books are named with the title
+// in 《》 and an author tacked on, e.g. 《书名》作者：张三.txt, 《书名》[张三].txt,
+// 《书名》张三.txt. Falls back to the base filename as the title when no
+// 《》 are present.
+export const extractTxtFilenameMetadata = (
+  filename: string,
+): { title: string; author?: string } => {
+  const base = getBaseFilename(filename);
+  const cjkMatch = base.match(/《([^》]+)》(.*)/);
+  if (!cjkMatch) {
+    return { title: base };
+  }
+  const title = cjkMatch[1]!.trim();
+  const rest = (cjkMatch[2] ?? '').trim();
+  const author = parseAuthorFragment(rest);
+  return author ? { title, author } : { title };
+};
+
+const parseAuthorFragment = (text: string): string => {
+  if (!text) return '';
+  // 作者：X / 作者:X / 作者 X — labeled author wins
+  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
+  if (labeled) return stripWrappingPunctuation(labeled[1]!);
+  // [X] (X) 【X】 （X）［X］ — bracketed author
+  const bracketed = text.match(/[[(（【［]\s*([^\])）】］]+?)\s*[\])）】］]/);
+  if (bracketed) return stripWrappingPunctuation(bracketed[1]!);
+  // bare token — strip any leading separator like " - " / "·" / "-"
+  return stripWrappingPunctuation(text);
+};
+
+const stripWrappingPunctuation = (text: string): string => {
+  const trimmed = text.trim();
+  try {
+    return trimmed.replace(/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/gu, '');
+  } catch {
+    return trimmed;
+  }
+};
+
 interface Chapter {
   title: string;
   content: string;
@@ -73,18 +113,19 @@ export class TxtToEpubConverter {
     const decoder = new TextDecoder(runtimeEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
-    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
+    const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
+    const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
 
     const fileHeader = txtContent.slice(0, 1024);
     const authorMatch =
       fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
       fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
-    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : '';
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || providedAuthor || '';
+    const author = matchedAuthor || filenameMeta.author || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
@@ -126,7 +167,8 @@ export class TxtToEpubConverter {
     const runtimeEncoding = this.resolveSupportedEncoding(detectedEncoding);
     // console.log(`Detected encoding: ${detectedEncoding}, runtime encoding: ${runtimeEncoding}`);
 
-    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
+    const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
+    const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
     const fileHeader = await this.readHeaderTextFromFile(
       txtFile,
@@ -137,7 +179,7 @@ export class TxtToEpubConverter {
 
     const { author, language } = this.extractAuthorAndLanguage(
       fileHeader,
-      providedAuthor,
+      filenameMeta.author ?? providedAuthor,
       providedLanguage,
     );
     // console.log(`Detected language: ${language}`);
@@ -929,11 +971,6 @@ export class TxtToEpubConverter {
     }
 
     return 'utf-8';
-  }
-
-  private extractBookTitle(filename: string): string {
-    const match = filename.match(/《([^》]+)》/);
-    return match ? match[1]! : filename.split('.')[0]!;
   }
 
   private assertStrictUtf8Sample(sample: Uint8Array): void {

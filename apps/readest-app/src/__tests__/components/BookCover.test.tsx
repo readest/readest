@@ -38,4 +38,15 @@ describe('BookCover', () => {
     expect(img).toBeTruthy();
     expect(img?.getAttribute('loading')).toBe('lazy');
   });
+
+  it('falls back to metadata.author on the fallback cover when book.author is empty', () => {
+    const book = makeBook({
+      author: '',
+      coverImageUrl: undefined,
+      metadata: { author: 'Edited Author' } as Book['metadata'],
+    });
+    const { container } = render(<BookCover book={book} coverFit='crop' />);
+    const fallback = container.querySelector('.fallback-cover');
+    expect(fallback?.textContent).toContain('Edited Author');
+  });
 });

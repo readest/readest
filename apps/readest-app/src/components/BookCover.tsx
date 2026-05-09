@@ -138,7 +138,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
                 isPreview ? 'text-[0.4em]' : mode === 'grid' ? 'text-base' : 'text-xs',
               )}
             >
-              {formatAuthors(book.author)}
+              {formatAuthors(book.author || book.metadata?.author || '')}
             </span>
           </div>
         </div>
