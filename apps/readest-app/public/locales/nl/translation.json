@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "Downloaden van bestand mislukt: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Verwijderen van cloudkopie van het bestand is mislukt: {{title}}",
   "{{percentage}}% used": "{{percentage}}% gebruikt",
-  "Resets in {{duration}}": "Reset over {{duration}}",
   "Set PIN…": "PIN instellen…",
   "Require a 4-digit PIN to open Readest": "4-cijferige PIN vereisen om Readest te openen",
   "Change PIN…": "PIN wijzigen…",
@@ -1397,5 +1396,6 @@
   "App settings": "App-instellingen",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Thema, markeringskleuren, integraties (KOSync, Readwise, Hardcover) en woordenboekvolgorde",
   "Required while Dictionaries sync is enabled": "Vereist zolang synchronisatie van Woordenboeken is ingeschakeld",
-  "Unavailable": "Niet beschikbaar"
+  "Unavailable": "Niet beschikbaar",
+  "Resets in {{hours}} hr {{minutes}} min": "Reset over {{hours}} u {{minutes}} min"
 }

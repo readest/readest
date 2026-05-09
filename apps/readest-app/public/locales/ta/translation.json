@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "கோப்பை பதிவிறக்க முடியவில்லை: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "கோப்பின் cloud நகலை நீக்க முடியவில்லை: {{title}}",
   "{{percentage}}% used": "{{percentage}}% பயன்படுத்தப்பட்டது",
-  "Resets in {{duration}}": "{{duration}} இல் மீட்டமைக்கப்படும்",
   "Set PIN…": "PIN ஐ அமை…",
   "Require a 4-digit PIN to open Readest": "Readest ஐ திறக்க 4-இலக்க PIN ஐ கேள்",
   "Change PIN…": "PIN ஐ மாற்று…",
@@ -1397,5 +1396,6 @@
   "App settings": "ஆப் அமைப்புகள்",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "தீம், ஹைலைட் வண்ணங்கள், ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover) மற்றும் அகராதி வரிசை",
   "Required while Dictionaries sync is enabled": "அகராதிகள் ஒத்திசைவு இயக்கத்தில் இருக்கும்போது தேவை",
-  "Unavailable": "கிடைக்கவில்லை"
+  "Unavailable": "கிடைக்கவில்லை",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} மணி {{minutes}} நிமிடத்தில் மீட்டமைக்கப்படும்"
 }

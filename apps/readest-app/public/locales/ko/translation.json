@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "파일 다운로드 실패: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "파일의 클라우드 사본 삭제에 실패했습니다: {{title}}",
   "{{percentage}}% used": "{{percentage}}% 사용됨",
-  "Resets in {{duration}}": "{{duration}} 후 재설정",
   "Set PIN…": "PIN 설정…",
   "Require a 4-digit PIN to open Readest": "Readest를 열 때 4자리 PIN 요구",
   "Change PIN…": "PIN 변경…",
@@ -1373,5 +1372,6 @@
   "App settings": "앱 설정",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "테마, 하이라이트 색상, 연동 (KOSync, Readwise, Hardcover), 사전 순서",
   "Required while Dictionaries sync is enabled": "사전 동기화가 켜져 있는 동안 필요",
-  "Unavailable": "사용 불가"
+  "Unavailable": "사용 불가",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}}시간 {{minutes}}분 후 재설정"
 }

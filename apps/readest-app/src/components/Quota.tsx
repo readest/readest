@@ -1,8 +1,6 @@
 import clsx from 'clsx';
-import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import '@/utils/time';
 
 type QuotaProps = {
   quotas: {
@@ -44,9 +42,11 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
         }
 
         const showResetRow = showProgress && quota.resetAt;
-        const resetIn = showResetRow
-          ? dayjs.duration(Math.max(0, quota.resetAt! - now)).format('H [hr] m [min]')
-          : '';
+        const totalMinutes = showResetRow
+          ? Math.floor(Math.max(0, quota.resetAt! - now) / 60_000)
+          : 0;
+        const resetHours = Math.floor(totalMinutes / 60);
+        const resetMinutes = totalMinutes % 60;
 
         return (
           <div key={quota.name} className='w-full'>
@@ -85,7 +85,12 @@ const Quota: React.FC<QuotaProps> = ({ quotas, showProgress, className, labelCla
                 )}
               >
                 <span>{_('{{percentage}}% used', { percentage: usagePercentageRounded })}</span>
-                <span>{_('Resets in {{duration}}', { duration: resetIn })}</span>
+                <span>
+                  {_('Resets in {{hours}} hr {{minutes}} min', {
+                    hours: resetHours,
+                    minutes: resetMinutes,
+                  })}
+                </span>
               </div>
             )}
           </div>

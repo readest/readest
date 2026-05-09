@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "دانلود فایل «{{title}}» ناموفق بود.",
   "Failed to delete cloud copy of the file: {{title}}": "حذف نسخه‌ی ابری فایل «{{title}}» ناموفق بود.",
   "{{percentage}}% used": "{{percentage}}٪ استفاده شده",
-  "Resets in {{duration}}": "بازنشانی در {{duration}}",
   "Set PIN…": "تنظیم PIN…",
   "Require a 4-digit PIN to open Readest": "برای باز کردن Readest یک PIN چهار رقمی الزامی شود",
   "Change PIN…": "تغییر PIN…",
@@ -1397,5 +1396,6 @@
   "App settings": "تنظیمات برنامه",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "پوسته، رنگ‌های هایلایت، یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover) و ترتیب فرهنگ‌لغت‌ها",
   "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
-  "Unavailable": "در دسترس نیست"
+  "Unavailable": "در دسترس نیست",
+  "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه"
 }

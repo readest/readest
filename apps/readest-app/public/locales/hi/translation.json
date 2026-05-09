@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "फ़ाइल डाउनलोड करने में विफल: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "फ़ाइल की क्लाउड प्रति हटाने में विफल: {{title}}",
   "{{percentage}}% used": "{{percentage}}% उपयोग किया गया",
-  "Resets in {{duration}}": "{{duration}} में रीसेट होगा",
   "Set PIN…": "PIN सेट करें…",
   "Require a 4-digit PIN to open Readest": "Readest खोलने के लिए 4-अंकों का PIN आवश्यक करें",
   "Change PIN…": "PIN बदलें…",
@@ -1397,5 +1396,6 @@
   "App settings": "ऐप सेटिंग्स",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "थीम, हाइलाइट रंग, एकीकरण (KOSync, Readwise, Hardcover) और शब्दकोश क्रम",
   "Required while Dictionaries sync is enabled": "शब्दकोश सिंक सक्षम होने पर आवश्यक",
-  "Unavailable": "अनुपलब्ध"
+  "Unavailable": "अनुपलब्ध",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} घं {{minutes}} मि में रीसेट"
 }

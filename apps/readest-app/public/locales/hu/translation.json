@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "Fájl letöltése sikertelen: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Fájl felhőmásolatának törlése sikertelen: {{title}}",
   "{{percentage}}% used": "{{percentage}}% felhasználva",
-  "Resets in {{duration}}": "Visszaáll {{duration}} múlva",
   "Set PIN…": "PIN beállítása…",
   "Require a 4-digit PIN to open Readest": "4 jegyű PIN megkövetelése a Readest megnyitásához",
   "Change PIN…": "PIN módosítása…",
@@ -1397,5 +1396,6 @@
   "App settings": "Alkalmazásbeállítások",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Téma, kiemelési színek, integrációk (KOSync, Readwise, Hardcover) és szótárak sorrendje",
   "Required while Dictionaries sync is enabled": "Szükséges, amíg a Szótárak szinkronizálása be van kapcsolva",
-  "Unavailable": "Nem elérhető"
+  "Unavailable": "Nem elérhető",
+  "Resets in {{hours}} hr {{minutes}} min": "Visszaállás {{hours}} ó {{minutes}} p múlva"
 }

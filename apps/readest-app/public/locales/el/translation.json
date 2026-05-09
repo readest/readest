@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "Αποτυχία λήψης αρχείου: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Αποτυχία διαγραφής του αντιγράφου του αρχείου: {{title}}",
   "{{percentage}}% used": "{{percentage}}% σε χρήση",
-  "Resets in {{duration}}": "Επαναφορά σε {{duration}}",
   "Set PIN…": "Ορισμός PIN…",
   "Require a 4-digit PIN to open Readest": "Απαιτείται 4ψήφιο PIN για το άνοιγμα του Readest",
   "Change PIN…": "Αλλαγή PIN…",
@@ -1397,5 +1396,6 @@
   "App settings": "Ρυθμίσεις εφαρμογής",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Θέμα, χρώματα επισήμανσης, ενσωματώσεις (KOSync, Readwise, Hardcover) και σειρά λεξικών",
   "Required while Dictionaries sync is enabled": "Απαιτείται όσο είναι ενεργός ο συγχρονισμός Λεξικών",
-  "Unavailable": "Μη διαθέσιμο"
+  "Unavailable": "Μη διαθέσιμο",
+  "Resets in {{hours}} hr {{minutes}} min": "Επαναφορά σε {{hours}} ώρ. {{minutes}} λεπ."
 }

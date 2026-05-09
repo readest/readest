@@ -1363,7 +1363,6 @@
   "Failed to download file: {{title}}": "Falha ao baixar arquivo: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Falha ao excluir cópia na nuvem do arquivo: {{title}}",
   "{{percentage}}% used": "{{percentage}}% utilizado",
-  "Resets in {{duration}}": "Repõe em {{duration}}",
   "Set PIN…": "Definir PIN…",
   "Require a 4-digit PIN to open Readest": "Exigir um PIN de 4 dígitos para abrir o Readest",
   "Change PIN…": "Alterar PIN…",
@@ -1421,5 +1420,6 @@
   "App settings": "Configurações do app",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, cores de destaque, integrações (KOSync, Readwise, Hardcover) e ordem dos dicionários",
   "Required while Dictionaries sync is enabled": "Necessário enquanto a sincronização de Dicionários estiver ativada",
-  "Unavailable": "Indisponível"
+  "Unavailable": "Indisponível",
+  "Resets in {{hours}} hr {{minutes}} min": "Repõe em {{hours}} h {{minutes}} min"
 }

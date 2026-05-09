@@ -1363,7 +1363,6 @@
   "Failed to download file: {{title}}": "הורדת הקובץ נכשלה: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "מחיקת עותק הענן של הקובץ נכשלה: {{title}}",
   "{{percentage}}% used": "נוצלו {{percentage}}%",
-  "Resets in {{duration}}": "מתאפס בעוד {{duration}}",
   "Set PIN…": "הגדר PIN…",
   "Require a 4-digit PIN to open Readest": "דרוש PIN בן 4 ספרות כדי לפתוח את Readest",
   "Change PIN…": "שנה PIN…",
@@ -1421,5 +1420,6 @@
   "App settings": "הגדרות אפליקציה",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ערכת נושא, צבעי הדגשה, שילובים (KOSync, Readwise, Hardcover) וסדר המילונים",
   "Required while Dictionaries sync is enabled": "נדרש כל עוד סנכרון המילונים מופעל",
-  "Unavailable": "לא זמין"
+  "Unavailable": "לא זמין",
+  "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳"
 }

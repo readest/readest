@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "Dosya indirilemedi: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Dosyanın bulut kopyasını silme başarısız oldu: {{title}}",
   "{{percentage}}% used": "%{{percentage}} kullanıldı",
-  "Resets in {{duration}}": "{{duration}} sonra sıfırlanır",
   "Set PIN…": "PIN Belirle…",
   "Require a 4-digit PIN to open Readest": "Readest'i açmak için 4 haneli PIN iste",
   "Change PIN…": "PIN Değiştir…",
@@ -1397,5 +1396,6 @@
   "App settings": "Uygulama ayarları",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, vurgu renkleri, entegrasyonlar (KOSync, Readwise, Hardcover) ve sözlük sırası",
   "Required while Dictionaries sync is enabled": "Sözlük eşitlemesi etkinken gereklidir",
-  "Unavailable": "Kullanılamıyor"
+  "Unavailable": "Kullanılamıyor",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır"
 }

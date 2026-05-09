@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "檔案下載失敗：{{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "未能刪除檔案的雲端副本：{{title}}",
   "{{percentage}}% used": "已使用 {{percentage}}%",
-  "Resets in {{duration}}": "{{duration}}後重設",
   "Set PIN…": "設定 PIN 碼…",
   "Require a 4-digit PIN to open Readest": "開啟 Readest 時需要輸入 4 位 PIN 碼",
   "Change PIN…": "變更 PIN 碼…",
@@ -1373,5 +1372,6 @@
   "App settings": "應用程式設定",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主題、螢光標記顏色、第三方整合（KOSync、Readwise、Hardcover）以及詞典順序",
   "Required while Dictionaries sync is enabled": "啟用詞典同步時必須",
-  "Unavailable": "無法使用"
+  "Unavailable": "無法使用",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘後重設"
 }

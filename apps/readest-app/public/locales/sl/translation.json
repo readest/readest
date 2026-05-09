@@ -1387,7 +1387,6 @@
   "Failed to download file: {{title}}": "Prenos datoteke ni uspel: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Brisanje kopije datoteke v oblaku ni uspelo: {{title}}",
   "{{percentage}}% used": "{{percentage}} % uporabljeno",
-  "Resets in {{duration}}": "Ponastavi se čez {{duration}}",
   "Set PIN…": "Nastavi PIN…",
   "Require a 4-digit PIN to open Readest": "Za odpiranje Readest zahtevaj 4-mestni PIN",
   "Change PIN…": "Spremeni PIN…",
@@ -1445,5 +1444,6 @@
   "App settings": "Nastavitve aplikacije",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, barve označb, integracije (KOSync, Readwise, Hardcover) in vrstni red slovarjev",
   "Required while Dictionaries sync is enabled": "Zahtevano, dokler je sinhronizacija Slovarjev omogočena",
-  "Unavailable": "Ni na voljo"
+  "Unavailable": "Ni na voljo",
+  "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min"
 }

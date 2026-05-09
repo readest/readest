@@ -1363,7 +1363,6 @@
   "Failed to download file: {{title}}": "Nu s-a putut descărca fișierul: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Nu s-a putut șterge copia din cloud a fișierului: {{title}}",
   "{{percentage}}% used": "{{percentage}}% utilizat",
-  "Resets in {{duration}}": "Se resetează în {{duration}}",
   "Set PIN…": "Setează PIN…",
   "Require a 4-digit PIN to open Readest": "Solicită un PIN de 4 cifre pentru a deschide Readest",
   "Change PIN…": "Schimbă PIN…",
@@ -1421,5 +1420,6 @@
   "App settings": "Setări aplicație",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Temă, culorile evidențierilor, integrări (KOSync, Readwise, Hardcover) și ordinea dicționarelor",
   "Required while Dictionaries sync is enabled": "Necesar cât timp sincronizarea Dicționarelor este activată",
-  "Unavailable": "Indisponibil"
+  "Unavailable": "Indisponibil",
+  "Resets in {{hours}} hr {{minutes}} min": "Se resetează în {{hours}} h {{minutes}} min"
 }

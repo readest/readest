@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "ファイルのダウンロードに失敗しました：{{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "ファイルのクラウドコピーの削除に失敗しました：{{title}}",
   "{{percentage}}% used": "{{percentage}}% 使用済み",
-  "Resets in {{duration}}": "{{duration}}でリセット",
   "Set PIN…": "PINを設定…",
   "Require a 4-digit PIN to open Readest": "Readestを開くのに4桁のPINを要求する",
   "Change PIN…": "PINを変更…",
@@ -1373,5 +1372,6 @@
   "App settings": "アプリ設定",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "テーマ、ハイライトの色、連携 (KOSync、Readwise、Hardcover)、辞書の順序",
   "Required while Dictionaries sync is enabled": "辞書の同期が有効な間は必須",
-  "Unavailable": "利用不可"
+  "Unavailable": "利用不可",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}}時間{{minutes}}分でリセット"
 }

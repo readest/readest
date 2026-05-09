@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "Không thể tải về tệp: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Không thể xóa bản sao đám mây của tệp: {{title}}",
   "{{percentage}}% used": "Đã dùng {{percentage}}%",
-  "Resets in {{duration}}": "Đặt lại sau {{duration}}",
   "Set PIN…": "Đặt mã PIN…",
   "Require a 4-digit PIN to open Readest": "Yêu cầu mã PIN 4 chữ số để mở Readest",
   "Change PIN…": "Thay đổi mã PIN…",
@@ -1373,5 +1372,6 @@
   "App settings": "Cài đặt ứng dụng",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Chủ đề, màu tô sáng, tích hợp (KOSync, Readwise, Hardcover) và thứ tự từ điển",
   "Required while Dictionaries sync is enabled": "Bắt buộc khi đồng bộ Từ điển đang bật",
-  "Unavailable": "Không khả dụng"
+  "Unavailable": "Không khả dụng",
+  "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph"
 }

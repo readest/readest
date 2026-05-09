@@ -1387,7 +1387,6 @@
   "Failed to download file: {{title}}": "Nie udało się pobrać pliku: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Nie udało się usunąć kopii pliku w chmurze: {{title}}",
   "{{percentage}}% used": "Wykorzystano {{percentage}}%",
-  "Resets in {{duration}}": "Resetuje się za {{duration}}",
   "Set PIN…": "Ustaw PIN…",
   "Require a 4-digit PIN to open Readest": "Wymagaj 4-cyfrowego PIN-u do otwarcia Readest",
   "Change PIN…": "Zmień PIN…",
@@ -1445,5 +1444,6 @@
   "App settings": "Ustawienia aplikacji",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Motyw, kolory podświetleń, integracje (KOSync, Readwise, Hardcover) oraz kolejność słowników",
   "Required while Dictionaries sync is enabled": "Wymagane, gdy włączona jest synchronizacja Słowników",
-  "Unavailable": "Niedostępne"
+  "Unavailable": "Niedostępne",
+  "Resets in {{hours}} hr {{minutes}} min": "Resetuje się za {{hours}} godz. {{minutes}} min"
 }

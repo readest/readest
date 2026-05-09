@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "Gagal mengunduh file: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Gagal menghapus salinan cloud file: {{title}}",
   "{{percentage}}% used": "{{percentage}}% terpakai",
-  "Resets in {{duration}}": "Disetel ulang dalam {{duration}}",
   "Set PIN…": "Atur PIN…",
   "Require a 4-digit PIN to open Readest": "Wajibkan PIN 4 digit untuk membuka Readest",
   "Change PIN…": "Ubah PIN…",
@@ -1373,5 +1372,6 @@
   "App settings": "Pengaturan aplikasi",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, warna sorotan, integrasi (KOSync, Readwise, Hardcover), dan urutan kamus",
   "Required while Dictionaries sync is enabled": "Diperlukan saat sinkronisasi Kamus diaktifkan",
-  "Unavailable": "Tidak tersedia"
+  "Unavailable": "Tidak tersedia",
+  "Resets in {{hours}} hr {{minutes}} min": "Direset dalam {{hours}} j {{minutes}} mnt"
 }

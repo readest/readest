@@ -1435,7 +1435,6 @@
   "Failed to download file: {{title}}": "فشل تنزيل الملف: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "فشل في حذف النسخة السحابية للملف: {{title}}",
   "{{percentage}}% used": "تم استخدام {{percentage}}٪",
-  "Resets in {{duration}}": "يُعاد التعيين خلال {{duration}}",
   "Set PIN…": "تعيين رمز PIN…",
   "Require a 4-digit PIN to open Readest": "اطلب رمز PIN مكوّن من 4 أرقام لفتح Readest",
   "Change PIN…": "تغيير رمز PIN…",
@@ -1493,5 +1492,6 @@
   "App settings": "إعدادات التطبيق",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover) وترتيب القواميس",
   "Required while Dictionaries sync is enabled": "مطلوب أثناء تفعيل مزامنة القواميس",
-  "Unavailable": "غير متاح"
+  "Unavailable": "غير متاح",
+  "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د"
 }

@@ -1340,7 +1340,6 @@
   "Failed to download file: {{title}}": "Faylni yuklab boʻlmadi: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Faylning bulutdagi nusxasini oʻchirib boʻlmadi: {{title}}",
   "{{percentage}}% used": "{{percentage}}% ishlatilgan",
-  "Resets in {{duration}}": "{{duration}} dan keyin tiklanadi",
   "Set PIN…": "PIN o'rnatish…",
   "Require a 4-digit PIN to open Readest": "Readest'ni ochish uchun 4 xonali PIN talab qilish",
   "Change PIN…": "PIN'ni o'zgartirish…",
@@ -1397,5 +1396,6 @@
   "Manage Fonts": "Shriftlarni boshqarish",
   "Wrong sync passphrase — synced credentials could not be decrypted": "Sinxronlash paroli notoʻgʻri — sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi",
   "Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…": "Serverdagi sinxronlash paroli maʼlumotlari tiklandi. Hisob maʼlumotlaringiz yangi parol bilan qayta shifrlanmoqda…",
-  "Failed to decrypt synced credentials": "Sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi"
+  "Failed to decrypt synced credentials": "Sinxronlangan hisob maʼlumotlari shifrini ochib boʻlmadi",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} soat {{minutes}} daqiqada tiklanadi"
 }

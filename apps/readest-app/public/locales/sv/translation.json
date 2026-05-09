@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "Kunde inte ladda ner fil: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "Kunde inte radera molnkopia av fil: {{title}}",
   "{{percentage}}% used": "{{percentage}} % använt",
-  "Resets in {{duration}}": "Återställs om {{duration}}",
   "Set PIN…": "Ange PIN…",
   "Require a 4-digit PIN to open Readest": "Kräv en 4-siffrig PIN för att öppna Readest",
   "Change PIN…": "Ändra PIN…",
@@ -1397,5 +1396,6 @@
   "App settings": "Appinställningar",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, markeringsfärger, integrationer (KOSync, Readwise, Hardcover) och ordbokens ordning",
   "Required while Dictionaries sync is enabled": "Krävs så länge synkronisering av Ordböcker är aktiverad",
-  "Unavailable": "Ej tillgänglig"
+  "Unavailable": "Ej tillgänglig",
+  "Resets in {{hours}} hr {{minutes}} min": "Återställs om {{hours}} tim {{minutes}} min"
 }

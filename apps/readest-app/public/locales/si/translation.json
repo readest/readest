@@ -1339,7 +1339,6 @@
   "Failed to download file: {{title}}": "ගොනුව බාගැනීමට අසමත්: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "ගොනුවේ cloud පිටපත මකා දැමීමට අසමත්: {{title}}",
   "{{percentage}}% used": "{{percentage}}% භාවිතයි",
-  "Resets in {{duration}}": "{{duration}}කින් යළි පිහිටුවයි",
   "Set PIN…": "PIN සකසන්න…",
   "Require a 4-digit PIN to open Readest": "Readest විවෘත කිරීමට ඉලක්කම් 4ක PIN එකක් ඉල්ලන්න",
   "Change PIN…": "PIN වෙනස් කරන්න…",
@@ -1397,5 +1396,6 @@
   "App settings": "යෙදුමේ සැකසුම්",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "තේමාව, උද්දීපන වර්ණ, ඒකාබද්ධතා (KOSync, Readwise, Hardcover) සහ ශබ්දකෝෂ අනුපිළිවෙල",
   "Required while Dictionaries sync is enabled": "ශබ්දකෝෂ සමමුහූර්තය සක්‍රිය වී ඇති විට අවශ්‍යයි",
-  "Unavailable": "ලද නොහැක"
+  "Unavailable": "ලද නොහැක",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} පැ {{minutes}} මි කින් යළි පිහිටුවයි"
 }

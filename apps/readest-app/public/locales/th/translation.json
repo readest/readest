@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "ไม่สามารถดาวน์โหลดไฟล์: {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "ไม่สามารถลบสำเนาไฟล์บนคลาวด์: {{title}}",
   "{{percentage}}% used": "ใช้ไปแล้ว {{percentage}}%",
-  "Resets in {{duration}}": "รีเซ็ตใน {{duration}}",
   "Set PIN…": "ตั้งค่า PIN…",
   "Require a 4-digit PIN to open Readest": "ต้องใช้ PIN 4 หลักเพื่อเปิด Readest",
   "Change PIN…": "เปลี่ยน PIN…",
@@ -1373,5 +1372,6 @@
   "App settings": "การตั้งค่าแอป",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "ธีม สีไฮไลต์ การเชื่อมต่อ (KOSync, Readwise, Hardcover) และลำดับพจนานุกรม",
   "Required while Dictionaries sync is enabled": "จำเป็นเมื่อเปิดใช้การซิงค์พจนานุกรม",
-  "Unavailable": "ไม่พร้อมใช้งาน"
+  "Unavailable": "ไม่พร้อมใช้งาน",
+  "Resets in {{hours}} hr {{minutes}} min": "รีเซ็ตใน {{hours}} ชม. {{minutes}} นาที"
 }

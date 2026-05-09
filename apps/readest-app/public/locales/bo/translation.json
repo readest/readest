@@ -1315,7 +1315,6 @@
   "Failed to download file: {{title}}": "ཡིག་ཆ་ཕབ་ལེན་བྱས་མ་ཐུབ། {{title}}",
   "Failed to delete cloud copy of the file: {{title}}": "ཡིག་ཆའི་སྤྲི་དོན་གྱི་འདྲ་བཤུས་བསུབ་ཐུབ་མེད། {{title}}",
   "{{percentage}}% used": "སྤྱོད་ཟིན་ {{percentage}}%",
-  "Resets in {{duration}}": "{{duration}} ནང་སླར་གསོ་བྱེད།",
   "Set PIN…": "PIN སྒྲིག་པ་…",
   "Require a 4-digit PIN to open Readest": "Readest ཁ་ཕྱེ་བར་ཨང་གྲངས་ ༤ ཡོད་པའི་ PIN ཞིག་དགོས",
   "Change PIN…": "PIN བརྗེ་བ་…",
@@ -1373,5 +1372,6 @@
   "App settings": "མཉེན་ཆས་སྒྲིག་འགོད།",
   "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "བརྗོད་གཞི། གསལ་རྟགས་ཁ་དོག ཟུང་འབྲེལ་ (KOSync, Readwise, Hardcover) དང་ཚིག་མཛོད་ཀྱི་གོ་རིམ།",
   "Required while Dictionaries sync is enabled": "ཚིག་མཛོད་ཁག་མཉམ་འགྲོ་སྤྱོད་སྐབས་དགོས་མཁོ་ཡོད།",
-  "Unavailable": "བཀོལ་མི་ཐུབ།"
+  "Unavailable": "བཀོལ་མི་ཐུབ།",
+  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ཆུ་ཚོད་ {{minutes}} སྐར་མ་ནང་སླར་གསོ་བྱེད།"
 }
