@@ -357,14 +357,17 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 16px 22px 74px;
+            inset: 18px 22px 74px;
             border-radius: 28px;
-            background: linear-gradient(180deg, rgba(40, 24, 19, 0.44), rgba(15, 10, 9, 0.08));
+            background:
+              radial-gradient(circle at 50% 0%, rgba(176, 124, 58, 0.06), transparent 20%),
+              linear-gradient(180deg, rgba(44, 27, 21, 0.48), rgba(14, 10, 9, 0.1));
             box-shadow:
-              inset 0 0 0 1px rgba(70, 41, 28, 0.82),
-              inset 0 0 0 7px rgba(8, 6, 5, 0.44),
-              inset 0 20px 34px rgba(255, 224, 176, 0.022),
-              inset 0 -34px 48px rgba(0, 0, 0, 0.34);
+              inset 0 0 0 1px rgba(82, 49, 33, 0.84),
+              inset 0 0 0 2px rgba(166, 118, 56, 0.16),
+              inset 0 0 0 10px rgba(7, 5, 4, 0.52),
+              inset 0 24px 38px rgba(255, 224, 176, 0.02),
+              inset 0 -38px 54px rgba(0, 0, 0, 0.4);
             pointer-events: none;
             z-index: 0;
           }
@@ -454,14 +457,17 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 16px 22px 74px;
+            inset: 18px 22px 74px;
             border-radius: 28px;
-            background: linear-gradient(180deg, rgba(40, 24, 19, 0.44), rgba(15, 10, 9, 0.08));
+            background:
+              radial-gradient(circle at 50% 0%, rgba(176, 124, 58, 0.06), transparent 20%),
+              linear-gradient(180deg, rgba(44, 27, 21, 0.48), rgba(14, 10, 9, 0.1));
             box-shadow:
-              inset 0 0 0 1px rgba(70, 41, 28, 0.82),
-              inset 0 0 0 7px rgba(8, 6, 5, 0.44),
-              inset 0 20px 34px rgba(255, 224, 176, 0.022),
-              inset 0 -34px 48px rgba(0, 0, 0, 0.34);
+              inset 0 0 0 1px rgba(82, 49, 33, 0.84),
+              inset 0 0 0 2px rgba(166, 118, 56, 0.16),
+              inset 0 0 0 10px rgba(7, 5, 4, 0.52),
+              inset 0 24px 38px rgba(255, 224, 176, 0.02),
+              inset 0 -38px 54px rgba(0, 0, 0, 0.4);
             pointer-events: none;
             z-index: 0;
           }
