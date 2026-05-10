@@ -1,19 +1,40 @@
 'use client';
 
 import clsx from 'clsx';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import PinInput from '@/components/PinInput';
+import { useEnv } from '@/context/EnvContext';
 import { PIN_LENGTH, verifyPin } from '@/libs/crypto/applock';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function AppLockScreen() {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const { pinHash, pinSalt, unlock } = useAppLockStore();
+  const autoFocusEnabled = !appService?.isMobile;
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
+  const [kbInset, setKbInset] = useState(0);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const layoutH = document.documentElement.clientHeight;
+      const offset = layoutH - vv.height - vv.offsetTop;
+      setKbInset(offset > 1 ? offset : 0);
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
   // Avoid React state for the in-flight guard — `setVerifying(true)`
   // would re-trigger the effect, the cleanup would set `cancelled=true`,
   // and the resolve handler would short-circuit before clearing the
@@ -50,6 +71,7 @@ export default function AppLockScreen() {
   return (
     <div
       className='bg-base-100 full-height inset-0 z-[200] flex flex-col items-center justify-center px-6'
+      style={{ paddingBottom: kbInset || undefined }}
       role='dialog'
       aria-modal='true'
       aria-label={_('App locked')}
@@ -66,7 +88,7 @@ export default function AppLockScreen() {
           value={pin}
           onChange={handleChange}
           ariaLabel={_('PIN code')}
-          stickyFocus
+          stickyFocus={autoFocusEnabled}
           shake={shaking}
         />
 
