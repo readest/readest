@@ -416,6 +416,55 @@ The `<SettingsSwitchRow>` primitive bakes in the default `toggle`. **Don't overr
 to `toggle-sm` inside boxed-list rows** — it looks orphaned in the row's vertical
 breathing room. Use the smaller sizes only when the row itself is shorter than 56px.
 
+#### Typography inherits from `.settings-content`
+
+The Settings dialog (and any settings-style sheet/popup) wraps its content
+in `.settings-content`, which is defined in `src/styles/globals.css` as:
+
+```css
+.dropdown-content,
+.settings-content {
+  font-size: 14px; /* desktop */
+}
+@media (max-width: 768px) {
+  .dropdown-content,
+  .settings-content {
+    font-size: 16px; /* mobile bump — high-DPI phones need bigger body text */
+  }
+}
+```
+
+**Don't hardcode `text-sm` on row labels, NavigationRow titles, or panel
+descriptions** — that locks the text to 14px on every viewport and kills
+the mobile bump. Instead:
+
+- **Primary labels** (SettingsRow label, NavigationRow title, SubPageHeader
+  description): no font-size class. Inherits 14/16 from the wrapper.
+- **Secondary text** (SettingsRow description, NavigationRow status, Tips
+  body, BoxedList description): use `text-[0.85em]` so it stays
+  proportional (≈12px desktop, ≈13.6px mobile).
+- **Form controls** (`<input>`, `<select>`): browsers don't inherit
+  font-size onto form elements, so add the `settings-content` class
+  _directly on the element_ to re-apply the 14/16 cascade. The legacy
+  NumberInput already does this — match its pattern.
+- **Section headers** (`BoxedList` uppercase title): use `text-[0.85em]
+font-semibold uppercase tracking-wider`. The em-relative size keeps it
+  proportional with the `.settings-content` cascade. **Caseless-script
+  exception:** when `isCaselessUILang()` is true, bump to `text-[1em]`.
+  The `uppercase` rule is a no-op in scripts without case (CJK, Arabic,
+  Hebrew, Devanagari/Bengali/Tamil/Sinhala, Thai, Tibetan), so the size
+  has to carry the emphasis those scripts can't pick up from casing. The
+  helper lives in `src/utils/misc.ts`; the underlying `isCaselessLang`
+  predicate lists every covered language code in `src/utils/lang.ts`.
+
+Why this matters: Tailwind's `text-xs` / `text-sm` are rem-based — they
+ignore the parent's `font-size` because rem is rooted at the document.
+The `.settings-content` cascade is in `px`, so any child that picks a
+Tailwind size literally tunes itself to the desktop default and never
+grows on mobile. iOS and Android have small physical screens but high
+DPI, so the mobile bump is what makes the text legible at typical reading
+distance.
+
 #### Uniform row height
 
 Settings rows in a boxed list MUST all be the same visual height. Use
@@ -426,14 +475,17 @@ because toggles, selects (`h-9`), and inputs (`h-9`) have different
 intrinsic sizes.
 
 ```tsx
-// ✓ Right
+// ✓ Right — no text-sm; label inherits .settings-content (14/16)
 <label className='flex min-h-14 items-center justify-between px-4'>
-  <span className='text-sm font-medium'>{_('Sync Enabled')}</span>
-  <input type='checkbox' className='toggle toggle-sm' ... />
+  <span className='font-medium'>{_('Sync Enabled')}</span>
+  <input type='checkbox' className='toggle' ... />
 </label>
 
 // ✗ Wrong — toggle row will be 48px, select rows 60px
 <label className='flex items-center justify-between px-4 py-3'>...</label>
+
+// ✗ Wrong — text-sm hardcodes 14px even on mobile (kills the bump)
+<span className='text-sm font-medium'>{_('Sync Enabled')}</span>
 ```
 
 #### Controls inside a boxed list have no chrome

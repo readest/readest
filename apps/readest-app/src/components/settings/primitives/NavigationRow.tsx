@@ -55,8 +55,10 @@ const NavigationRow: React.FC<NavigationRowProps> = ({
         </span>
       )}
       <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-        <span className='text-sm font-medium'>{title}</span>
-        {status && <span className='text-base-content/65 truncate text-xs'>{status}</span>}
+        {/* No explicit text-sm — title inherits .settings-content font-size
+            (14px desktop / 16px mobile). Status uses em-relative size. */}
+        <span className='font-medium'>{title}</span>
+        {status && <span className='text-base-content/65 truncate text-[0.85em]'>{status}</span>}
       </div>
       <MdChevronRight className='text-base-content/50 h-5 w-5 flex-shrink-0' />
     </button>

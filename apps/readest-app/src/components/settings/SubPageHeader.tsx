@@ -28,8 +28,8 @@ interface SubPageHeaderProps {
  * in/out — the only change is a chevron + current page appearing alongside (a
  * "navigation morph" rather than a layout shift).
  *
- * The description renders below the breadcrumb row at the canonical
- * `text-sm text-base-content/70 leading-relaxed` style.
+ * The description renders below the breadcrumb row, inheriting the
+ * `.settings-content` body size (14px desktop / 16px mobile).
  */
 const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   parentLabel,
@@ -57,7 +57,9 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
         </div>
         {rightSlot}
       </div>
-      {description && <p className='text-base-content/70 text-sm leading-relaxed'>{description}</p>}
+      {/* No explicit text-sm — description inherits .settings-content
+          font-size (14px desktop / 16px mobile per src/styles/globals.css). */}
+      {description && <p className='text-base-content/70 leading-relaxed'>{description}</p>}
     </div>
   );
 };

@@ -45,6 +45,7 @@ import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
 import { Navigation } from './components/Navigation';
 import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
+import { stashOPDSReturnTarget } from './utils/opdsClose';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -200,6 +201,11 @@ export default function BrowserPage() {
               type: 'error',
             });
             setTimeout(() => {
+              // router.back() (not closeOPDSBrowser) so the user can
+              // resume their browser history if the catalog was just
+              // temporarily down. stashOPDSReturnTarget ensures the
+              // deep-link still applies when back lands on /library.
+              stashOPDSReturnTarget(searchParams);
               router.back();
             }, 5000);
             throw new Error(errorMessage);
@@ -269,6 +275,7 @@ export default function BrowserPage() {
             const htmlDoc = new DOMParser().parseFromString(text, type as DOMParserSupportedType);
 
             if (!htmlDoc.head) {
+              stashOPDSReturnTarget(searchParams);
               router.back();
               throw new Error(`Failed to load OPDS feed: ${res.status} ${res.statusText}`);
             }
@@ -278,6 +285,7 @@ export default function BrowserPage() {
             );
 
             if (!link) {
+              stashOPDSReturnTarget(searchParams);
               router.back();
               throw new Error('Document has no link to OPDS feeds');
             }

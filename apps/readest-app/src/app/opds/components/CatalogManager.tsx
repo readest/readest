@@ -5,24 +5,28 @@ import dayjs from 'dayjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IoAdd,
-  IoTrash,
   IoBook,
+  IoEllipsisVertical,
   IoEyeOff,
   IoEye,
-  IoPencil,
   IoCloudDownloadOutline,
 } from 'react-icons/io5';
 import { MdChevronRight } from 'react-icons/md';
+import Dropdown from '@/components/Dropdown';
+import Menu from '@/components/Menu';
+import MenuItem from '@/components/MenuItem';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isWebAppPlatform } from '@/services/environment';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { isSyncError } from '@/libs/errors';
 import { OPDSCatalog } from '@/types/opds';
 import { isLanAddress } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
+import { SectionTitle } from '@/components/settings/primitives';
 import { deleteSubscriptionState, loadSubscriptionState } from '@/services/opds';
 import type { OPDSSubscriptionState } from '@/services/opds/types';
 import { validateOPDSURL } from '../utils/opdsUtils';
@@ -237,8 +241,13 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     // turns the credentials into actual cross-device sync. User
     // cancel = save proceeds without sync (the catalog still works
     // locally with the entered creds).
+    //
+    // Skip the prompt entirely when credentials sync is disabled — in
+    // that mode the creds stay device-local by design and never need
+    // the passphrase, so prompting would be both pointless and
+    // confusing (Settings → Sync → Credentials toggle).
     const hasCredentials = !!(newCatalog.username || newCatalog.password);
-    if (hasCredentials) {
+    if (hasCredentials && isCredentialsSyncEnabled()) {
       try {
         await ensurePassphraseUnlocked();
       } catch (err) {
@@ -364,6 +373,12 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
     params.set('id', catalog.id);
+    // When opened from inside Settings → Integrations → OPDS Catalogs,
+    // tag the URL so the browser's close handler can return us here
+    // instead of falling back to the standalone library OPDS dialog.
+    if (inSubPage) {
+      params.set('from', 'settings-integrations');
+    }
     router.push(`/opds?${params.toString()}`);
   };
 
@@ -391,9 +406,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       {/* My Catalogs */}
       <section className='mb-10 text-base'>
         <div className='mb-3 flex items-center justify-between'>
-          <h3 className='text-base-content/65 text-[11px] font-semibold uppercase tracking-wider'>
-            {_('My Catalogs')}
-          </h3>
+          <SectionTitle>{_('My Catalogs')}</SectionTitle>
           <button
             onClick={() => setShowAddDialog(true)}
             className='eink-bordered border-base-200 hover:border-base-300 hover:bg-base-200/60 focus-visible:ring-base-content/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
@@ -424,34 +437,71 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                 catalog.autoDownload && subState && (lastCheckedAt > 0 || failedCount > 0);
 
               return (
+                // Whole card is the browse trigger. Uses role='button' (not
+                // a real <button>) because it nests other interactive
+                // elements: the 3-dot menu, auto-download toggle, and
+                // failed-downloads link. Inner controls call
+                // e.stopPropagation() so their clicks don't bubble.
                 <div
                   key={catalog.id}
-                  className='card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border'
+                  role='button'
+                  tabIndex={catalog.disabled ? -1 : 0}
+                  onClick={() => !catalog.disabled && handleOpenCatalog(catalog)}
+                  onKeyDown={(e) => {
+                    if (catalog.disabled) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleOpenCatalog(catalog);
+                    }
+                  }}
+                  className={clsx(
+                    'card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border transition-colors duration-150',
+                    'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                    catalog.disabled
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'hover:bg-base-200/40 cursor-pointer',
+                  )}
                 >
-                  <div className='flex flex-1 flex-col gap-2.5 p-4'>
-                    {/* Header: icon + name + edit/delete */}
+                  <div className='flex flex-1 flex-col gap-2.5 px-4 pb-2 pt-4'>
+                    {/* Header: icon + name + chevron hint (whole card is
+                        the click target) | overflow menu (Edit / Remove). */}
                     <div className='flex items-start justify-between gap-2'>
-                      <h4 className='flex min-w-0 items-center gap-1.5 text-sm font-semibold'>
+                      <h4 className='flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold'>
                         {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
                         <span className='truncate'>{catalog.name}</span>
                       </h4>
-                      <div className='-mr-1.5 -mt-1 flex flex-shrink-0 gap-0.5'>
-                        <button
-                          onClick={() => handleEditCatalog(catalog)}
-                          className='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
-                          title={_('Edit')}
-                          aria-label={_('Edit')}
+                      {/* stopPropagation on the trigger wrapper so opening
+                          the menu doesn't also browse the catalog.
+                          The Dropdown component itself handles floating the
+                          menu via daisyui's `.dropdown .dropdown-content`
+                          position:absolute rule — don't add !relative here
+                          or the menu inlines into the card layout. */}
+                      <div
+                        className='-mr-1.5 -mt-1 flex-shrink-0'
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <Dropdown
+                          label={_('Catalog actions')}
+                          className='dropdown-bottom dropdown-end'
+                          buttonClassName='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                          toggleButton={<IoEllipsisVertical className='h-4 w-4' />}
                         >
-                          <IoPencil className='h-3.5 w-3.5' />
-                        </button>
-                        <button
-                          onClick={() => handleRemoveCatalog(catalog.id)}
-                          className='text-base-content/55 hover:bg-base-200 hover:text-error focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
-                          title={_('Remove')}
-                          aria-label={_('Remove')}
-                        >
-                          <IoTrash className='h-3.5 w-3.5' />
-                        </button>
+                          <Menu className='dropdown-content no-triangle border-base-300 z-20 mt-1 min-w-[8rem] rounded-lg border shadow-lg'>
+                            <MenuItem
+                              noIcon
+                              transient
+                              label={_('Edit')}
+                              onClick={() => handleEditCatalog(catalog)}
+                            />
+                            <MenuItem
+                              noIcon
+                              transient
+                              label={_('Remove')}
+                              onClick={() => handleRemoveCatalog(catalog.id)}
+                            />
+                          </Menu>
+                        </Dropdown>
                       </div>
                     </div>
 
@@ -469,38 +519,20 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       {catalog.url}
                     </p>
 
-                    {/* Subscription status (only when auto-download is on AND we have data) */}
-                    {showSubscriptionStatus && (
-                      <div className='text-base-content/55 -mt-1 flex flex-wrap items-center gap-x-2 text-[11px]'>
-                        {lastCheckedAt > 0 && (
-                          <span>
-                            {_('Last synced {{when}}', { when: dayjs(lastCheckedAt).fromNow() })}
-                          </span>
-                        )}
-                        {failedCount > 0 && (
-                          <>
-                            {lastCheckedAt > 0 && <span aria-hidden>·</span>}
-                            <button
-                              type='button'
-                              onClick={() => setFailedDialogCatalogId(catalog.id)}
-                              className='text-error hover:underline'
-                            >
-                              {_('{{count}} failed', { count: failedCount })}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Footer block pinned to bottom: auto-download switch
-                        sits in the metadata area above the divider; Browse
-                        is the explicit action below the divider, right-
-                        aligned. The divider separates content from action,
-                        not switch from button. */}
-                    <div className='mt-auto'>
+                    {/* Auto-download row — label and toggle live in a SAME
+                        flex line (items-center → vertically centered with
+                        each other). Subline sits beneath as a sibling.
+                        The subline always renders (with &nbsp; placeholder
+                        when no status data) so the row's total height stays
+                        constant — toggling AD on/off or sync-status data
+                        arriving via opds-sync-complete never shifts the
+                        card. Browse is the whole-card click; stopPropagation
+                        on the label so toggling doesn't also browse. */}
+                    <div className='mt-auto flex flex-col gap-0.5'>
                       <label
+                        onClick={(e) => e.stopPropagation()}
                         className={clsx(
-                          'flex items-center justify-between',
+                          'flex items-center justify-between gap-2',
                           catalog.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
                         )}
                       >
@@ -510,21 +542,44 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                         </span>
                         <input
                           type='checkbox'
-                          className='toggle toggle-xs toggle-primary'
+                          className='toggle toggle-sm toggle-primary flex-shrink-0'
                           checked={!!catalog.autoDownload}
                           disabled={!!catalog.disabled}
                           onChange={() => handleToggleAutoDownload(catalog.id)}
                         />
                       </label>
-                      <div className='border-base-200 mt-3 flex justify-end border-t pt-3'>
-                        <button
-                          onClick={() => handleOpenCatalog(catalog)}
-                          className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
-                        >
-                          {_('Browse')}
-                          <MdChevronRight className='h-4 w-4' />
-                        </button>
-                      </div>
+                      <span className='text-base-content/55 truncate text-[11px] leading-tight'>
+                        {showSubscriptionStatus ? (
+                          <>
+                            {lastCheckedAt > 0 && (
+                              <span>
+                                {_('Last synced {{when}}', {
+                                  when: dayjs(lastCheckedAt).fromNow(),
+                                })}
+                              </span>
+                            )}
+                            {failedCount > 0 && (
+                              <>
+                                {lastCheckedAt > 0 && <span aria-hidden> · </span>}
+                                <button
+                                  type='button'
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFailedDialogCatalogId(catalog.id);
+                                  }}
+                                  className='text-error hover:underline'
+                                >
+                                  {_('{{count}} failed', { count: failedCount })}
+                                </button>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          // &nbsp; reserves line-height so the row above
+                          // stays anchored at a consistent vertical position.
+                          <>&nbsp;</>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -536,9 +591,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
 
       {/* Popular Catalogs */}
       <section className={clsx('text-base', popularCatalogs.length === 0 && 'hidden')}>
-        <h3 className='text-base-content/65 mb-3 text-[11px] font-semibold uppercase tracking-wider'>
-          {_('Popular Catalogs')}
-        </h3>
+        <SectionTitle className='mb-3'>{_('Popular Catalogs')}</SectionTitle>
         <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
           {popularCatalogs
             .filter((catalog) => !catalog.disabled)
@@ -550,9 +603,15 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                   className='card eink-bordered bg-base-100 border-base-200 flex flex-col border'
                 >
                   <div className='flex flex-1 flex-col gap-2.5 p-4'>
-                    <h4 className='flex items-center gap-1.5 text-sm font-semibold'>
-                      {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
-                      <span className='truncate'>{catalog.name}</span>
+                    <h4>
+                      <button
+                        type='button'
+                        onClick={() => handleOpenCatalog(catalog)}
+                        className='flex w-full min-w-0 items-center gap-1.5 rounded-sm text-start text-sm font-semibold transition-colors duration-150 hover:underline focus-visible:underline focus-visible:outline-none'
+                      >
+                        {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+                        <span className='truncate'>{catalog.name}</span>
+                      </button>
                     </h4>
                     {catalog.description && (
                       <p className='text-base-content/70 line-clamp-2 text-xs leading-relaxed'>

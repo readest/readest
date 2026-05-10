@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
 import SubPageHeader from '../SubPageHeader';
+import { SectionTitle } from '../primitives';
 
 interface HardcoverFormProps {
   onBack: () => void;
@@ -128,12 +129,9 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
       ) : (
         <div className='space-y-5'>
           <div className='space-y-1.5'>
-            <label
-              htmlFor='hardcover-token'
-              className='text-base-content/65 block text-[11px] font-semibold uppercase tracking-wider'
-            >
+            <SectionTitle as='label' htmlFor='hardcover-token' className='block'>
               {_('API Token')}
-            </label>
+            </SectionTitle>
             <input
               id='hardcover-token'
               type='password'

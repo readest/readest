@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React from 'react';
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
+import { SectionTitle } from '@/components/settings/primitives';
 import { SyncDetails } from '../hooks/useKOSync';
 
 interface KOSyncConflictResolverProps {
@@ -45,9 +46,13 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
           )}
         >
           <div className='flex min-w-0 flex-1 flex-col gap-1'>
-            <span className='text-base-content/55 text-[11px] font-semibold uppercase tracking-wider'>
+            {/* SectionTitle gives the caseless-language size bump for free.
+                `as='span'` because this lives inside a button, not as a
+                document heading; opacity override expresses the
+                "secondary on this surface" relationship. */}
+            <SectionTitle as='span' className='!text-base-content/55'>
               {_('This device')}
-            </span>
+            </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>
               {details.local.preview}
             </span>
@@ -64,9 +69,12 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
           )}
         >
           <div className='flex min-w-0 flex-1 flex-col items-start gap-1'>
-            <span className='text-[11px] font-semibold uppercase tracking-wider opacity-75'>
+            {/* On the primary-color button background the default
+                /65 token would clash; opacity-75 inherits the button's
+                contrast color and dims it uniformly. */}
+            <SectionTitle as='span' className='!text-current opacity-75'>
               {remoteDeviceName}
-            </span>
+            </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>
               {details.remote.preview}
             </span>

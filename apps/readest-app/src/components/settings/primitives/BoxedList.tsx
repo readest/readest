@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import SectionTitle from './SectionTitle';
 
 interface BoxedListProps {
   /**
@@ -37,13 +38,11 @@ const BoxedList: React.FC<BoxedListProps> = ({
 }) => {
   return (
     <div className={clsx('w-full', className)} data-setting-id={dataSettingId}>
-      {title && (
-        <h3 className='text-base-content/65 mb-2 text-[11px] font-semibold uppercase tracking-wider'>
-          {title}
-        </h3>
-      )}
+      {title && <SectionTitle className='mb-2'>{title}</SectionTitle>}
       {description && (
-        <p className='text-base-content/70 -mt-1 mb-2 text-xs leading-relaxed'>{description}</p>
+        <p className='text-base-content/70 -mt-1 mb-2 text-[0.85em] leading-relaxed'>
+          {description}
+        </p>
       )}
       <div className={clsx('card eink-bordered border-base-200 bg-base-100 border', cardClassName)}>
         <div className='divide-base-200 divide-y'>{children}</div>

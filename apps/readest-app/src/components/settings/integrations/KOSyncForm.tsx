@@ -12,6 +12,7 @@ import { KOSyncChecksumMethod, KOSyncStrategy } from '@/types/settings';
 import { debounce } from '@/utils/debounce';
 import { getOSPlatform } from '@/utils/misc';
 import SubPageHeader from '../SubPageHeader';
+import { SectionTitle } from '../primitives';
 
 interface KOSyncFormProps {
   onBack: () => void;
@@ -257,12 +258,9 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
             }}
           >
             <div className='space-y-1.5'>
-              <label
-                htmlFor='kosync-server-url'
-                className='text-base-content/65 block text-[11px] font-semibold uppercase tracking-wider'
-              >
+              <SectionTitle as='label' htmlFor='kosync-server-url' className='block'>
                 {_('Server URL')}
-              </label>
+              </SectionTitle>
               <input
                 id='kosync-server-url'
                 type='text'
@@ -275,12 +273,9 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
             </div>
 
             <div className='space-y-1.5'>
-              <label
-                htmlFor='kosync-username'
-                className='text-base-content/65 block text-[11px] font-semibold uppercase tracking-wider'
-              >
+              <SectionTitle as='label' htmlFor='kosync-username' className='block'>
                 {_('Username')}
-              </label>
+              </SectionTitle>
               <input
                 id='kosync-username'
                 type='text'
@@ -294,12 +289,9 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
             </div>
 
             <div className='space-y-1.5'>
-              <label
-                htmlFor='kosync-password'
-                className='text-base-content/65 block text-[11px] font-semibold uppercase tracking-wider'
-              >
+              <SectionTitle as='label' htmlFor='kosync-password' className='block'>
                 {_('Password')}
-              </label>
+              </SectionTitle>
               <input
                 id='kosync-password'
                 type='password'

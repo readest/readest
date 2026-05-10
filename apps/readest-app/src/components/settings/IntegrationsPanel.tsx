@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdChevronRight } from 'react-icons/md';
 import { RiBookOpenLine, RiRssLine, RiBookReadLine, RiBook3Line } from 'react-icons/ri';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,6 +10,7 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SubPageHeader from './SubPageHeader';
+import { SectionTitle } from './primitives';
 
 type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | null;
 
@@ -27,11 +28,28 @@ type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | null;
  */
 const IntegrationsPanel: React.FC = () => {
   const _ = useTranslation();
-  const { settings } = useSettingsStore();
+  const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+
+  // Deep-link consumption: when a caller (e.g. OPDS browser close handler)
+  // sets `requestedSubPage` in the store before opening the dialog, drill
+  // straight into that sub-page on mount and clear the request so it doesn't
+  // stick to the next open. Recognised values match the SubPage union.
+  useEffect(() => {
+    if (!requestedSubPage) return;
+    if (
+      requestedSubPage === 'kosync' ||
+      requestedSubPage === 'readwise' ||
+      requestedSubPage === 'hardcover' ||
+      requestedSubPage === 'opds'
+    ) {
+      setSubPage(requestedSubPage);
+    }
+    setRequestedSubPage(null);
+  }, [requestedSubPage, setRequestedSubPage]);
 
   // Sub-page wrapper matches the list-view's `my-4 w-full` so the
   // SubPageHeader's "Integrations" label lands at the exact same Y position
@@ -89,9 +107,7 @@ const IntegrationsPanel: React.FC = () => {
       </div>
 
       <div className='w-full' data-setting-id='settings.integrations.sync'>
-        <h3 className='text-base-content/65 mb-2 text-[11px] font-semibold uppercase tracking-wider'>
-          {_('Reading Sync')}
-        </h3>
+        <SectionTitle className='mb-2'>{_('Reading Sync')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div className='divide-base-200 divide-y'>
             <IntegrationRow
@@ -117,9 +133,7 @@ const IntegrationsPanel: React.FC = () => {
       </div>
 
       <div className='w-full' data-setting-id='settings.integrations.catalogs'>
-        <h3 className='text-base-content/65 mb-2 text-[11px] font-semibold uppercase tracking-wider'>
-          {_('Content Sources')}
-        </h3>
+        <SectionTitle className='mb-2'>{_('Content Sources')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div className='divide-base-200 divide-y'>
             <IntegrationRow

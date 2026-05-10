@@ -2,7 +2,7 @@ import React from 'react';
 import { MdRadioButtonChecked, MdClose, MdAdd, MdPlayCircleOutline } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { BoxedList, SettingsRow, SettingsSelect } from '../primitives';
+import { BoxedList, SectionTitle, SettingsRow, SettingsSelect } from '../primitives';
 
 interface Texture {
   id: string;
@@ -44,9 +44,7 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
 
   return (
     <div>
-      <h3 className='text-base-content/65 mb-2 text-[11px] font-semibold uppercase tracking-wider'>
-        {_('Background Image')}
-      </h3>
+      <SectionTitle className='mb-2'>{_('Background Image')}</SectionTitle>
       <div className='mb-4 grid grid-cols-2 gap-4'>
         {allTextures.map((texture) => (
           // The swatch is a div (not a <button>) so the inner Delete

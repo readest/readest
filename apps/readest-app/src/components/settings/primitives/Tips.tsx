@@ -21,7 +21,10 @@ const Tips: React.FC<TipsProps> = ({ title, children, className }) => {
   const _ = useTranslation();
   return (
     <div className={clsx('bg-base-200/40 rounded-lg p-3', className)}>
-      <div className='text-base-content/70 text-xs'>
+      {/* `text-[0.85em]` keeps the body proportional to the inherited
+          .settings-content size (≈12px desktop, ≈13.6px mobile) instead of
+          locking to Tailwind's hardcoded 12px text-xs. */}
+      <div className='text-base-content/70 text-[0.85em]'>
         <div className='mb-1.5 flex items-center gap-1.5 font-medium'>
           <MdInfoOutline className='h-3.5 w-3.5' />
           {title ?? _('Tips')}

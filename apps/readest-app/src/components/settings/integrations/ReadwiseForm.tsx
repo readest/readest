@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { ReadwiseClient } from '@/services/readwise';
 import SubPageHeader from '../SubPageHeader';
+import { SectionTitle } from '../primitives';
 
 interface ReadwiseFormProps {
   onBack: () => void;
@@ -137,12 +138,9 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
       ) : (
         <div className='space-y-5'>
           <div className='space-y-1.5'>
-            <label
-              htmlFor='readwise-token'
-              className='text-base-content/65 block text-[11px] font-semibold uppercase tracking-wider'
-            >
+            <SectionTitle as='label' htmlFor='readwise-token' className='block'>
               {_('Access Token')}
-            </label>
+            </SectionTitle>
             <input
               id='readwise-token'
               type='password'

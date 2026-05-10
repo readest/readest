@@ -5,6 +5,7 @@ import { PiPlus } from 'react-icons/pi';
 import { Theme } from '@/styles/themes';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { SectionTitle } from '../primitives';
 
 interface ThemeColorSelectorProps {
   themes: Theme[];
@@ -29,9 +30,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
 
   return (
     <div>
-      <h3 className='text-base-content/65 mb-2 text-[11px] font-semibold uppercase tracking-wider'>
-        {_('Theme Color')}
-      </h3>
+      <SectionTitle className='mb-2'>{_('Theme Color')}</SectionTitle>
       <div className='grid grid-cols-3 gap-4'>
         {themes.map(({ name, label, colors, isCustomizale }) => (
           <button

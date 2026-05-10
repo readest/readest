@@ -21,8 +21,10 @@ const SettingsInput = React.forwardRef<HTMLInputElement, SettingsInputProps>(
         ref={ref}
         {...props}
         className={clsx(
-          'input h-9 max-w-[60%] rounded-md',
-          '!border-0 !bg-transparent !pe-0 !ps-2 text-end text-sm',
+          'input settings-content h-9 max-w-[60%] rounded-md',
+          // `settings-content` re-applies the 14px-desktop / 16px-mobile
+          // font-size — <input> doesn't inherit it from the dialog wrapper.
+          '!border-0 !bg-transparent !pe-0 !ps-2 text-end',
           'hover:!bg-base-200/60 focus:!bg-base-200/60',
           'focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0',
           className,

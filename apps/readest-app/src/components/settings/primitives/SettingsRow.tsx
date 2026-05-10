@@ -66,9 +66,13 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       )}
     >
       <div className='flex min-w-0 flex-col'>
-        <span className='text-sm font-medium'>{label}</span>
+        {/* No explicit text-sm — labels inherit from `.settings-content`
+            (14px desktop / 16px mobile per src/styles/globals.css), matching
+            the legacy `config-item` rows. Description uses an em-relative
+            size so it stays proportional on both. */}
+        <span className='font-medium'>{label}</span>
         {description && (
-          <span className='text-base-content/65 text-xs leading-snug'>{description}</span>
+          <span className='text-base-content/65 text-[0.85em] leading-snug'>{description}</span>
         )}
       </div>
       {children}

@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { IoChevronBack, IoChevronForward, IoHome } from 'react-icons/io5';
@@ -10,9 +10,9 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useSettingsStore } from '@/store/settingsStore';
-import { navigateToLibrary } from '@/utils/nav';
 import { debounce } from '@/utils/debounce';
 import WindowButtons from '@/components/WindowButtons';
+import { closeOPDSBrowser } from '../utils/opdsClose';
 
 interface NavigationProps {
   searchTerm?: string;
@@ -37,6 +37,7 @@ export function Navigation({
 }: NavigationProps) {
   const _ = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const viewSettings = settings.globalViewSettings;
@@ -56,8 +57,8 @@ export function Navigation({
   }, [hasSearch]);
 
   const handleGoLibrary = useCallback(() => {
-    navigateToLibrary(router, 'opds=true', {}, true);
-  }, [router]);
+    closeOPDSBrowser(router, searchParams);
+  }, [router, searchParams]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedUpdateQueryParam = useCallback(
