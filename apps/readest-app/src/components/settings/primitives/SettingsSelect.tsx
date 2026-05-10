@@ -34,17 +34,17 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
   ariaLabel,
 }) => {
   return (
-    <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
+    <div className='flex max-w-[60%] items-center rounded-md focus-within:bg-transparent hover:bg-transparent'>
       <select
         value={value}
         onChange={onChange}
         onKeyDown={(e) => e.stopPropagation()}
         disabled={disabled}
         aria-label={ariaLabel}
-        // `settings-content` (defined in src/styles/globals.css) re-applies
-        // the 14px-desktop / 16px-mobile font-size to the form control —
-        // browsers don't inherit font-size onto <select> by default.
         className='select settings-content h-9 min-w-0 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
+        style={{
+          textAlignLast: 'end',
+        }}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value} disabled={opt.disabled}>

@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle } from '../primitives';
+import { SectionTitle, SettingLabel } from '../primitives';
 
 interface HardcoverFormProps {
   onBack: () => void;
@@ -99,7 +99,7 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
           <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
             <div className='divide-base-200 divide-y'>
               <label className='flex min-h-14 items-center justify-between px-4'>
-                <span className='text-sm font-medium'>{_('Sync Enabled')}</span>
+                <SettingLabel>{_('Sync Enabled')}</SettingLabel>
                 <input
                   type='checkbox'
                   className='toggle'

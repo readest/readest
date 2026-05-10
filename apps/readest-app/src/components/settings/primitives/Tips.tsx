@@ -26,10 +26,26 @@ const Tips: React.FC<TipsProps> = ({ title, children, className }) => {
           locking to Tailwind's hardcoded 12px text-xs. */}
       <div className='text-base-content/70 text-[0.85em]'>
         <div className='mb-1.5 flex items-center gap-1.5 font-medium'>
-          <MdInfoOutline className='h-3.5 w-3.5' />
+          <MdInfoOutline className='h-4 w-4' />
           {title ?? _('Tips')}
         </div>
-        <ul className='list-outside list-disc space-y-0.5 ps-4'>{children}</ul>
+        <ul className='space-y-0.5'>
+          {React.Children.map(children, (child, i) => {
+            const content =
+              React.isValidElement(child) &&
+              (child as React.ReactElement<{ children?: React.ReactNode }>).type === 'li'
+                ? (child as React.ReactElement<{ children?: React.ReactNode }>).props.children
+                : child;
+            return (
+              <li key={i} className='flex items-start gap-2'>
+                <span className='flex h-[1.4em] w-4 flex-shrink-0 items-center justify-center'>
+                  <span className='bg-base-content/70 h-1.5 w-1.5 rounded-full' />
+                </span>
+                <span className='min-w-0 flex-1'>{content}</span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import {
   UserHighlightColor,
 } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
-import { BoxedList } from '../primitives';
+import { BoxedList, SettingLabel } from '../primitives';
 import NumberInput from '../NumberInput';
 import ColorInput from './ColorInput';
 
@@ -196,7 +196,7 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
   // pattern for color editing while preserving per-color labels.
   return (
     <BoxedList title={_('Highlight Colors')}>
-      <div className='grid grid-cols-3 gap-3 p-4 sm:grid-cols-5'>
+      <div className='grid grid-cols-3 gap-3 py-4 pe-4 sm:grid-cols-5'>
         {DEFAULT_HIGHLIGHT_COLORS.map((color, index, array) => {
           const position = index === 0 ? 'left' : index === array.length - 1 ? 'right' : 'center';
           const userLabel = defaultHighlightLabels[color] ?? '';
@@ -219,16 +219,16 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
         })}
       </div>
 
-      <div className='p-4'>
+      <div className='py-4 pe-4'>
         <div
           className={clsx(
             'flex items-center justify-between',
             userHighlightColors.length > 0 && 'mb-4',
           )}
         >
-          <span className='text-sm font-medium'>
+          <SettingLabel>
             {_('Custom Colors')} ({userHighlightColors.length}/{MAX_USER_HIGHLIGHT_COLORS})
-          </span>
+          </SettingLabel>
           {/* Swatch + picker icon — matches TTS Highlighting's Color row.
               Closing the picker fires onCommit, which auto-pins the color
               to the user's palette. */}

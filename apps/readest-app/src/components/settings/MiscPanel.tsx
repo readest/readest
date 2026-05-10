@@ -145,7 +145,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     settingId?: string,
   ) => (
     <div className='w-full'>
-      <BoxedList title={_(title)} data-setting-id={settingId}>
+      <BoxedList title={_(title)} data-setting-id={settingId} innerClassName='!ps-0'>
         {/* Single full-width child instead of typical settings rows — the
             textarea owns the whole card surface. Apply button overlays at
             the bottom-trailing corner; visible only when there are unsaved
@@ -181,7 +181,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           </button>
         </div>
       </BoxedList>
-      {error && <p className='text-error mt-1 text-sm'>{error}</p>}
+      {error && <p className='text-error mt-1 ps-4 text-sm'>{error}</p>}
     </div>
   );
 

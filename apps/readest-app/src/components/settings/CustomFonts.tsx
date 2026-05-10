@@ -164,8 +164,8 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           type='button'
           onClick={handleImportFont}
           className={clsx(
-            'eink-bordered group flex h-12 items-center justify-center gap-2 rounded-2xl',
-            'border-base-200 hover:border-base-300 hover:bg-base-200/60 border',
+            'bg-base-100 eink-bordered group flex h-12 items-center justify-center gap-2 rounded-2xl',
+            'border-base-200 hover:border-base-300 hover:bg-base-300/40 border',
             'text-base-content text-sm font-medium',
             'transition-colors duration-150',
             'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
@@ -192,7 +192,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
               'card h-12 border shadow-sm',
               currentFontFamily === family.name
                 ? 'border-primary/50 bg-primary/50'
-                : `border-base-200 bg-base-200 ${isDeleteMode ? '' : 'cursor-pointer'}`,
+                : `border-base-200 bg-base-100 ${isDeleteMode ? '' : 'cursor-pointer'}`,
             )}
             onClick={!isDeleteMode ? () => handleSelectFamily(family) : undefined}
             title={family.fonts.map((f) => f.name).join('\n')}

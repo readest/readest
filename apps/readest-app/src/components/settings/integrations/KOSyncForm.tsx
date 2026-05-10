@@ -1,7 +1,6 @@
 import clsx from 'clsx';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { md5 } from 'js-md5';
-import { MdArrowDropDown } from 'react-icons/md';
 import { type as osType } from '@tauri-apps/plugin-os';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,7 +11,7 @@ import { KOSyncChecksumMethod, KOSyncStrategy } from '@/types/settings';
 import { debounce } from '@/utils/debounce';
 import { getOSPlatform } from '@/utils/misc';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle } from '../primitives';
+import { SectionTitle, SettingLabel, SettingsSelect } from '../primitives';
 
 interface KOSyncFormProps {
   onBack: () => void;
@@ -162,7 +161,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   control's intrinsic size. Selects and inputs are end-aligned
                   to match modern preferences-panel convention. */}
               <label className='flex min-h-14 items-center justify-between px-4'>
-                <span className='text-sm font-medium'>{_('Sync Server Connected')}</span>
+                <SettingLabel>{_('Sync Server Connected')}</SettingLabel>
                 <input
                   type='checkbox'
                   className='toggle'
@@ -170,61 +169,39 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   onChange={handleToggleEnabled}
                 />
               </label>
-              {/* Selects/inputs inside a boxed list don't carry their own
-                  border (avoids double-chrome). The select's daisyui chevron
-                  bg-image is suppressed (`!bg-none`) and replaced by a real
-                  MdArrowDropDown icon at the cell's trailing edge — so the
-                  chevron lands at the SAME X as the toggle's right edge,
-                  unlike daisyui's chevron which floats 16px inside. */}
-              {/* No rings on controls inside the boxed list. Focus state
-                  is signaled by a subtle wrapper bg shift (hover and
-                  focus-within use the same `bg-base-200/60`) — enough
-                  feedback for keyboard a11y, no chrome that competes with
-                  the card's own border. */}
+              {/* SettingsSelect handles the chromeless treatment, the
+                  custom MdArrowDropDown icon at the trailing edge (so the
+                  chevron lands at the same X as the toggle's right edge),
+                  and the focus/hover signal — see DESIGN.md §5. */}
               <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
-                <span className='text-sm font-medium'>{_('Sync Strategy')}</span>
-                <div className='focus-within:bg-base-200/60 hover:bg-base-200/60 -me-2 flex max-w-[60%] items-center rounded-md'>
-                  <select
-                    value={settings.kosync.strategy}
-                    onChange={handleStrategyChange}
-                    className='select h-9 min-w-0 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end text-sm focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
-                  >
-                    <option value='prompt'>{_('Ask on conflict')}</option>
-                    <option value='silent'>{_('Always use latest')}</option>
-                    <option value='send'>{_('Send changes only')}</option>
-                    <option value='receive'>{_('Receive changes only')}</option>
-                  </select>
-                  <MdArrowDropDown
-                    aria-hidden='true'
-                    className='text-base-content/55 pointer-events-none me-1 h-5 w-5 flex-shrink-0'
-                  />
-                </div>
+                <SettingLabel>{_('Sync Strategy')}</SettingLabel>
+                <SettingsSelect
+                  value={settings.kosync.strategy}
+                  onChange={handleStrategyChange}
+                  ariaLabel={_('Sync Strategy')}
+                  options={[
+                    { value: 'prompt', label: _('Ask on conflict') },
+                    { value: 'silent', label: _('Always use latest') },
+                    { value: 'send', label: _('Send changes only') },
+                    { value: 'receive', label: _('Receive changes only') },
+                  ]}
+                />
               </div>
               <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
-                <span className='text-sm font-medium'>{_('Checksum Method')}</span>
-                <div className='focus-within:bg-base-200/60 hover:bg-base-200/60 -me-2 flex max-w-[60%] items-center rounded-md'>
-                  <select
-                    value={settings.kosync.checksumMethod}
-                    onChange={handleChecksumMethodChange}
-                    className='select h-9 min-w-0 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end text-sm focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
-                  >
-                    <option value='binary'>{_('File Content (recommended)')}</option>
-                    <option value='filename' disabled>
-                      {_('File Name')}
-                    </option>
-                  </select>
-                  <MdArrowDropDown
-                    aria-hidden='true'
-                    className='text-base-content/55 pointer-events-none me-1 h-5 w-5 flex-shrink-0'
-                  />
-                </div>
+                <SettingLabel>{_('Checksum Method')}</SettingLabel>
+                <SettingsSelect
+                  value={settings.kosync.checksumMethod}
+                  onChange={handleChecksumMethodChange}
+                  ariaLabel={_('Checksum Method')}
+                  options={[{ value: 'binary', label: _('File Content') }]}
+                />
               </div>
               <div className='-me-2 flex min-h-14 items-center justify-between gap-3 px-4'>
-                <span className='text-sm font-medium'>{_('Device Name')}</span>
+                <SettingLabel>{_('Device Name')}</SettingLabel>
                 <input
                   type='text'
                   placeholder={osName ? `Readest (${osName})` : 'Readest'}
-                  className='input hover:!bg-base-200/60 focus:!bg-base-200/60 h-9 max-w-[60%] rounded-md !border-0 !bg-transparent !pe-3 !ps-2 text-end text-sm focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
+                  className='input h-9 max-w-[60%] rounded-md !border-0 !bg-transparent !pe-3 !ps-2 text-end text-sm hover:!bg-transparent focus:!border-0 focus:!bg-transparent focus:!shadow-none focus:!outline-none focus:!ring-0'
                   value={deviceName}
                   onChange={handleDeviceNameChange}
                 />

@@ -10,7 +10,7 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SubPageHeader from './SubPageHeader';
-import { SectionTitle } from './primitives';
+import { SectionTitle, SettingLabel } from './primitives';
 
 type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | null;
 
@@ -99,7 +99,7 @@ const IntegrationsPanel: React.FC = () => {
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='w-full'>
+      <div className='w-full px-4'>
         <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
         <p className='text-base-content/70 text-sm leading-relaxed'>
           {_('Connect Readest to external services for sync, highlights, and catalogs.')}
@@ -164,7 +164,6 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
       className={clsx(
         'group flex w-full items-center gap-3 px-4 py-3 text-left',
         'transition-colors duration-150',
-        'hover:bg-base-200/50',
         'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
       )}
     >
@@ -179,8 +178,8 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
         <Icon className='h-5 w-5' />
       </span>
       <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-        <span className='text-sm font-medium'>{title}</span>
-        <span className='text-base-content/65 truncate text-xs'>{status}</span>
+        <SettingLabel>{title}</SettingLabel>
+        <span className='text-base-content/65 truncate text-[0.85em]'>{status}</span>
       </div>
       <MdChevronRight className='text-base-content/50 h-5 w-5 flex-shrink-0' />
     </button>

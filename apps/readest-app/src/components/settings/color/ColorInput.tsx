@@ -92,7 +92,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
             aria-label={label || 'Choose color'}
             title={label || 'Choose color'}
           >
-            <CgColorPicker className='h-4 w-4' />
+            <CgColorPicker className='h-5 w-5' />
           </button>
         )}
         {isOpen && (

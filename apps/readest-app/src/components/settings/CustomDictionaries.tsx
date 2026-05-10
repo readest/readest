@@ -560,34 +560,34 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         onBack={onBack}
         rightSlot={
           hasDeletable ? (
-            <div className='flex items-center gap-1'>
+            <div className='-me-4 flex items-center gap-1'>
               <button
                 onClick={toggleEditMode}
-                className='btn btn-ghost btn-sm text-base-content gap-2'
+                className='btn btn-ghost btn-sm text-base-content gap-2 px-3'
                 title={isEditMode ? _('Cancel Edit') : _('Edit Dictionary')}
               >
                 {isEditMode ? (
                   <>{_('Cancel')}</>
                 ) : (
                   <>
-                    <MdEdit className='h-4 w-4' />
+                    <MdEdit className='h-5 w-5 min-[800px]:h-4 min-[800px]:w-4' />
                     {/* Hide label on very narrow screens so the icon-only
                         button keeps the breadcrumb readable. */}
-                    <span className='hidden min-[400px]:inline'>{_('Edit')}</span>
+                    <span className='hidden min-[800px]:inline'>{_('Edit')}</span>
                   </>
                 )}
               </button>
               <button
                 onClick={toggleDeleteMode}
-                className='btn btn-ghost btn-sm text-base-content gap-2'
+                className='btn btn-ghost btn-sm text-base-content gap-2 px-3'
                 title={isDeleteMode ? _('Cancel Delete') : _('Delete Dictionary')}
               >
                 {isDeleteMode ? (
                   <>{_('Cancel')}</>
                 ) : (
                   <>
-                    <MdDelete className='h-4 w-4' />
-                    <span className='hidden min-[400px]:inline'>{_('Delete')}</span>
+                    <MdDelete className='h-5 w-5 min-[800px]:h-4 min-[800px]:w-4' />
+                    <span className='hidden min-[800px]:inline'>{_('Delete')}</span>
                   </>
                 )}
               </button>
@@ -646,7 +646,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             'border-base-200 bg-base-100 rounded-lg border px-4',
             'text-base-content text-sm font-medium',
             'transition-colors duration-150',
-            'hover:border-base-300 hover:bg-base-200/60',
+            'hover:border-base-300 hover:bg-base-300/40',
             'active:bg-base-200/80',
             'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
             'disabled:cursor-not-allowed disabled:opacity-60',
@@ -676,7 +676,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             'border-base-200 bg-base-100 rounded-lg border px-4',
             'text-base-content text-sm font-medium',
             'transition-colors duration-150',
-            'hover:border-base-300 hover:bg-base-200/60',
+            'hover:border-base-300 hover:bg-base-300/40',
             'active:bg-base-200/80',
             'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
           )}

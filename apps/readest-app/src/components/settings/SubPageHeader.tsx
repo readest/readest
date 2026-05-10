@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 import { MdChevronRight } from 'react-icons/md';
 
@@ -39,7 +40,7 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   rightSlot,
 }) => {
   return (
-    <div className={description ? 'mb-6' : 'mb-4'}>
+    <div className={clsx(description ? 'mb-6' : 'mb-4', 'px-4')}>
       <div className='mb-1.5 flex w-full items-center justify-between gap-2'>
         <div className='flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight'>
           <button

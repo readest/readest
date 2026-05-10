@@ -18,7 +18,13 @@ import { saveViewSettings } from '@/helpers/settings';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
+import {
+  BoxedList,
+  SettingLabel,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -445,9 +451,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     <div className='my-4 w-full space-y-6'>
       <div
         data-setting-id='settings.layout.overrideBookLayout'
-        className='flex items-center justify-between'
+        className='flex items-center justify-between px-4'
       >
-        <h2 className='font-medium'>{_('Override Book Layout')}</h2>
+        <SettingLabel>{_('Override Book Layout')}</SettingLabel>
         <input
           type='checkbox'
           className='toggle'
@@ -458,9 +464,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       {mightBeRTLBook && (
         <div
           data-setting-id='settings.layout.writingMode'
-          className='flex items-center justify-between'
+          className='flex items-center justify-between px-4'
         >
-          <h2 className='font-medium'>{_('Writing Mode')}</h2>
+          <SettingLabel>{_('Writing Mode')}</SettingLabel>
           <div className='flex gap-4'>
             <button
               title={_('Default')}

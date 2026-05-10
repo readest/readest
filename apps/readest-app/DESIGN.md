@@ -439,7 +439,13 @@ descriptions** — that locks the text to 14px on every viewport and kills
 the mobile bump. Instead:
 
 - **Primary labels** (SettingsRow label, NavigationRow title, SubPageHeader
-  description): no font-size class. Inherits 14/16 from the wrapper.
+  description, ad-hoc row labels in panels and integration forms): no
+  font-size class — inherits 14/16 from the wrapper. Use `<SettingLabel>`
+  rather than inlining a `<span>`; it adds `font-medium` for cased scripts
+  and drops the weight for caseless scripts (CJK / Arabic / Hebrew / Indic
+  / Thai / Tibetan), since those bold poorly at body size and `font-medium`
+  on Han / Hangul / Devanagari renders as uneven stroke-thickening across
+  system fonts.
 - **Secondary text** (SettingsRow description, NavigationRow status, Tips
   body, BoxedList description): use `text-[0.85em]` so it stays
   proportional (≈12px desktop, ≈13.6px mobile).

@@ -8,7 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
-import { BoxedList, SettingsRow, SettingsSwitchRow } from './primitives';
+import { BoxedList, SettingLabel, SettingsRow, SettingsSwitchRow } from './primitives';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
@@ -349,9 +349,9 @@ const AIPanel: React.FC = () => {
               control is too wide to fit alongside the label (full-width text
               inputs, long selects). Custom <div> rather than <SettingsRow>
               since SettingsRow assumes label-left/control-right. */}
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 py-3 pe-4'>
             <div className='flex w-full items-center justify-between'>
-              <span className='text-sm font-medium'>{_('Server URL')}</span>
+              <SettingLabel>{_('Server URL')}</SettingLabel>
               <button
                 className='hover:bg-base-200 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150'
                 onClick={fetchOllamaModels}
@@ -373,8 +373,8 @@ const AIPanel: React.FC = () => {
           </div>
           {ollamaModels.length > 0 ? (
             <>
-              <div className='flex flex-col gap-2 px-4 py-3'>
-                <span className='text-sm font-medium'>{_('AI Model')}</span>
+              <div className='flex flex-col gap-2 py-3 pe-4'>
+                <SettingLabel>{_('AI Model')}</SettingLabel>
                 <select
                   className='select select-bordered select-sm bg-base-100 text-base-content w-full'
                   value={ollamaModel}
@@ -388,8 +388,8 @@ const AIPanel: React.FC = () => {
                   ))}
                 </select>
               </div>
-              <div className='flex flex-col gap-2 px-4 py-3'>
-                <span className='text-sm font-medium'>{_('Embedding Model')}</span>
+              <div className='flex flex-col gap-2 py-3 pe-4'>
+                <SettingLabel>{_('Embedding Model')}</SettingLabel>
                 <select
                   className='select select-bordered select-sm bg-base-100 text-base-content w-full'
                   value={ollamaEmbeddingModel}
@@ -422,7 +422,7 @@ const AIPanel: React.FC = () => {
         >
           <div className='flex flex-col gap-2 px-4 py-3'>
             <div className='flex w-full items-center justify-between'>
-              <span className='text-sm font-medium'>{_('API Key')}</span>
+              <SettingLabel>{_('API Key')}</SettingLabel>
               <a
                 href='https://vercel.com/docs/ai/ai-gateway'
                 target='_blank'
@@ -442,7 +442,7 @@ const AIPanel: React.FC = () => {
             />
           </div>
           <div className='flex flex-col gap-2 px-4 py-3'>
-            <span className='text-sm font-medium'>{_('Model')}</span>
+            <SettingLabel>{_('Model')}</SettingLabel>
             <select
               className='select select-bordered select-sm bg-base-100 text-base-content w-full'
               value={selectedModel}
@@ -460,7 +460,7 @@ const AIPanel: React.FC = () => {
 
           {selectedModel === CUSTOM_MODEL_VALUE && (
             <div className='flex flex-col gap-2 px-4 py-3'>
-              <span className='text-sm font-medium'>{_('Custom Model ID')}</span>
+              <SettingLabel>{_('Custom Model ID')}</SettingLabel>
               <div className='flex w-full gap-2'>
                 <input
                   type='text'
@@ -502,7 +502,7 @@ const AIPanel: React.FC = () => {
       )}
 
       <BoxedList title={_('Connection')} className={disabledSection}>
-        <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
+        <div className='flex min-h-14 items-center justify-between gap-3 pe-4'>
           <button
             className='btn btn-outline btn-sm'
             onClick={handleTestConnection}

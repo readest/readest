@@ -19,6 +19,8 @@ interface BoxedListProps {
   className?: string;
   /** Inner card className (borders, bg, etc.). */
   cardClassName?: string;
+  /** Inner wrapper className (padding, etc.). */
+  innerClassName?: string;
   /** Forwarded to the outer wrapper for command-palette deep-linking. */
   'data-setting-id'?: string;
 }
@@ -34,18 +36,19 @@ const BoxedList: React.FC<BoxedListProps> = ({
   children,
   className,
   cardClassName,
+  innerClassName,
   'data-setting-id': dataSettingId,
 }) => {
   return (
     <div className={clsx('w-full', className)} data-setting-id={dataSettingId}>
       {title && <SectionTitle className='mb-2'>{title}</SectionTitle>}
       {description && (
-        <p className='text-base-content/70 -mt-1 mb-2 text-[0.85em] leading-relaxed'>
+        <p className='text-base-content/65 -mt-1 mb-2 text-[0.7em] leading-relaxed'>
           {description}
         </p>
       )}
       <div className={clsx('card eink-bordered border-base-200 bg-base-100 border', cardClassName)}>
-        <div className='divide-base-200 divide-y'>{children}</div>
+        <div className={clsx('divide-base-200 divide-y ps-4', innerClassName)}>{children}</div>
       </div>
     </div>
   );

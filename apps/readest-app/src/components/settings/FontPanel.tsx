@@ -27,7 +27,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { BoxedList, NavigationRow, SettingsRow } from './primitives';
+import { BoxedList, NavigationRow, SettingLabel, SettingsRow } from './primitives';
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 import CustomFonts from './CustomFonts';
@@ -73,8 +73,11 @@ const FontFace = ({
 }: FontFaceProps) => {
   const _ = useTranslation();
   return (
-    <div className={clsx('config-item', className)} data-setting-id={settingId}>
-      <span className='line-clamp-2 min-w-10'>{label}</span>
+    <div
+      className={clsx('flex h-14 items-center justify-between pe-4', className)}
+      data-setting-id={settingId}
+    >
+      <SettingLabel className='min-w-10'>{label}</SettingLabel>
       <FontDropdown
         family={family}
         options={options.map((option) => ({ option, label: _(option) }))}
@@ -284,15 +287,11 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   return (
     <div className='my-4 w-full space-y-6'>
-      {/* Inline toggle row — matches the Override Book Layout / Override
-          Book Color pattern (label-on-left + toggle-on-right, no card chrome).
-          A single primary toggle that sits at the top of the panel doesn't
-          need a boxed-list section title around it. */}
       <label
         data-setting-id='settings.font.overrideBookFont'
-        className='flex cursor-pointer items-center justify-between'
+        className='flex cursor-pointer items-center justify-between px-4'
       >
-        <span className='font-medium'>{_('Override Book Font')}</span>
+        <SettingLabel>{_('Override Book Font')}</SettingLabel>
         <input
           type='checkbox'
           className='toggle'

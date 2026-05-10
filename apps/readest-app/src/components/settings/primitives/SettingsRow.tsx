@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
-import { isCaselessUILang } from '@/utils/misc';
+import SettingLabel from './SettingLabel';
 
 interface SettingsRowProps {
   /** Primary label. ReactNode so callers can embed icons/badges. */
@@ -56,7 +56,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
     <Wrapper
       data-setting-id={dataSettingId}
       className={clsx(
-        'flex min-h-14 justify-between gap-3 px-4',
+        'flex min-h-14 justify-between gap-3 pe-4',
         align === 'start' ? 'items-start py-3.5' : 'items-center',
         disabled && 'cursor-not-allowed opacity-50',
         asLabel && !disabled && 'cursor-pointer',
@@ -64,9 +64,9 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       )}
     >
       <div className='flex min-w-0 flex-col'>
-        <span className={clsx(isCaselessUILang() ? '' : 'font-medium')}>{label}</span>
+        <SettingLabel>{label}</SettingLabel>
         {description && (
-          <span className='text-base-content/65 text-[0.85em] leading-snug'>{description}</span>
+          <span className='text-base-content/65 text-[0.8em] leading-snug'>{description}</span>
         )}
       </div>
       {children}
