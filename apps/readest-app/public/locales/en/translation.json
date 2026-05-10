@@ -40,6 +40,8 @@
   "Failed to sync {{count}} OPDS catalog(s)_other": "Failed to sync {{count}} OPDS catalogs",
   "Imported {{count}} dictionary_one": "Imported {{count}} dictionary",
   "Imported {{count}} dictionary_other": "Imported {{count}} dictionaries",
+  "{{count}} catalog_one": "{{count}} catalog",
+  "{{count}} catalog_other": "{{count}} catalogs",
   "Replaced {{count}} existing dictionary_one": "Replaced {{count}} existing dictionary",
   "Replaced {{count}} existing dictionary_other": "Replaced {{count}} existing dictionaries",
   "{{count}} books refreshed_one": "{{count}} book refreshed",

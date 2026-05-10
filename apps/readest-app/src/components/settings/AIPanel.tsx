@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { getAIProvider } from '@/services/ai/providers';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
+import { BoxedList, SettingsRow, SettingsSwitchRow } from './primitives';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
@@ -311,245 +312,220 @@ const AIPanel: React.FC = () => {
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('AI Assistant')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span>{_('Enable AI Assistant')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={enabled}
-                onChange={() => setEnabled(!enabled)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('AI Assistant')}>
+        <SettingsSwitchRow
+          label={_('Enable AI Assistant')}
+          checked={enabled}
+          onChange={() => setEnabled(!enabled)}
+        />
+      </BoxedList>
 
-      <div className={clsx('w-full', disabledSection)}>
-        <h2 className='mb-2 font-medium'>{_('Provider')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span>{_('Ollama (Local)')}</span>
-              <input
-                type='radio'
-                name='ai-provider'
-                className='radio'
-                checked={provider === 'ollama'}
-                onChange={() => setProvider('ollama')}
-                disabled={!enabled}
-              />
-            </div>
-            <div className='config-item'>
-              <span>{_('AI Gateway (Cloud)')}</span>
-              <input
-                type='radio'
-                name='ai-provider'
-                className='radio'
-                checked={provider === 'ai-gateway'}
-                onChange={() => setProvider('ai-gateway')}
-                disabled={!enabled}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Provider')} className={disabledSection}>
+        <SettingsRow label={_('Ollama (Local)')} asLabel>
+          <input
+            type='radio'
+            name='ai-provider'
+            className='radio'
+            checked={provider === 'ollama'}
+            onChange={() => setProvider('ollama')}
+            disabled={!enabled}
+          />
+        </SettingsRow>
+        <SettingsRow label={_('AI Gateway (Cloud)')} asLabel>
+          <input
+            type='radio'
+            name='ai-provider'
+            className='radio'
+            checked={provider === 'ai-gateway'}
+            onChange={() => setProvider('ai-gateway')}
+            disabled={!enabled}
+          />
+        </SettingsRow>
+      </BoxedList>
 
       {provider === 'ollama' && (
-        <div className={clsx('w-full', disabledSection)}>
-          <h2 className='mb-2 font-medium'>{_('Ollama Configuration')}</h2>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200 divide-y'>
-              <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <div className='flex w-full items-center justify-between'>
-                  <span>{_('Server URL')}</span>
-                  <button
-                    className='btn btn-ghost btn-xs'
-                    onClick={fetchOllamaModels}
-                    disabled={!enabled || fetchingModels}
-                    title={_('Refresh Models')}
-                  >
-                    <PiArrowsClockwise className='size-4' />
-                  </button>
-                </div>
-                <input
-                  type='text'
-                  className='input input-bordered input-sm w-full'
-                  value={ollamaUrl}
-                  onChange={(e) => setOllamaUrl(e.target.value)}
-                  placeholder='http://127.0.0.1:11434'
-                  disabled={!enabled}
-                />
-              </div>
-              {ollamaModels.length > 0 ? (
-                <>
-                  <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                    <span>{_('AI Model')}</span>
-                    <select
-                      className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                      value={ollamaModel}
-                      onChange={(e) => setOllamaModel(e.target.value)}
-                      disabled={!enabled}
-                    >
-                      {ollamaModels.map((model) => (
-                        <option key={model} value={model}>
-                          {model}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                    <span>{_('Embedding Model')}</span>
-                    <select
-                      className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                      value={ollamaEmbeddingModel}
-                      onChange={(e) => setOllamaEmbeddingModel(e.target.value)}
-                      disabled={!enabled}
-                    >
-                      {ollamaModels.map((model) => (
-                        <option key={model} value={model}>
-                          {model}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              ) : !fetchingModels ? (
-                <div className='config-item'>
-                  <span className='text-warning text-sm'>{_('No models detected')}</span>
-                </div>
-              ) : null}
+        <BoxedList title={_('Ollama Configuration')} className={disabledSection}>
+          {/* Stacked-content rows: label-on-top, input below — used when the
+              control is too wide to fit alongside the label (full-width text
+              inputs, long selects). Custom <div> rather than <SettingsRow>
+              since SettingsRow assumes label-left/control-right. */}
+          <div className='flex flex-col gap-2 px-4 py-3'>
+            <div className='flex w-full items-center justify-between'>
+              <span className='text-sm font-medium'>{_('Server URL')}</span>
+              <button
+                className='hover:bg-base-200 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150'
+                onClick={fetchOllamaModels}
+                disabled={!enabled || fetchingModels}
+                title={_('Refresh Models')}
+                aria-label={_('Refresh Models')}
+              >
+                <PiArrowsClockwise className='size-4' />
+              </button>
             </div>
+            <input
+              type='text'
+              className='input input-bordered input-sm w-full'
+              value={ollamaUrl}
+              onChange={(e) => setOllamaUrl(e.target.value)}
+              placeholder='http://127.0.0.1:11434'
+              disabled={!enabled}
+            />
           </div>
-        </div>
+          {ollamaModels.length > 0 ? (
+            <>
+              <div className='flex flex-col gap-2 px-4 py-3'>
+                <span className='text-sm font-medium'>{_('AI Model')}</span>
+                <select
+                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  value={ollamaModel}
+                  onChange={(e) => setOllamaModel(e.target.value)}
+                  disabled={!enabled}
+                >
+                  {ollamaModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className='flex flex-col gap-2 px-4 py-3'>
+                <span className='text-sm font-medium'>{_('Embedding Model')}</span>
+                <select
+                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  value={ollamaEmbeddingModel}
+                  onChange={(e) => setOllamaEmbeddingModel(e.target.value)}
+                  disabled={!enabled}
+                >
+                  {ollamaModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : !fetchingModels ? (
+            <SettingsRow
+              label={<span className='text-warning text-sm'>{_('No models detected')}</span>}
+            />
+          ) : null}
+        </BoxedList>
       )}
 
       {provider === 'ai-gateway' && (
-        <div className={clsx('w-full', disabledSection)}>
-          <h2 className='mb-2 font-medium'>{_('AI Gateway Configuration')}</h2>
-          <p className='text-base-content/70 mb-3 text-sm'>
-            {_(
-              'Choose from a selection of high-quality, economical AI models. You can also bring your own model by selecting "Custom Model" below.',
-            )}
-          </p>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200 divide-y'>
-              <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <div className='flex w-full items-center justify-between'>
-                  <span>{_('API Key')}</span>
-                  <a
-                    href='https://vercel.com/docs/ai/ai-gateway'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className={clsx('link text-xs', !enabled && 'pointer-events-none')}
-                  >
-                    {_('Get Key')}
-                  </a>
-                </div>
+        <BoxedList
+          title={_('AI Gateway Configuration')}
+          description={_(
+            'Choose from a selection of high-quality, economical AI models. You can also bring your own model by selecting "Custom Model" below.',
+          )}
+          className={disabledSection}
+        >
+          <div className='flex flex-col gap-2 px-4 py-3'>
+            <div className='flex w-full items-center justify-between'>
+              <span className='text-sm font-medium'>{_('API Key')}</span>
+              <a
+                href='https://vercel.com/docs/ai/ai-gateway'
+                target='_blank'
+                rel='noopener noreferrer'
+                className={clsx('link text-xs', !enabled && 'pointer-events-none')}
+              >
+                {_('Get Key')}
+              </a>
+            </div>
+            <input
+              type='password'
+              className='input input-bordered input-sm w-full'
+              value={gatewayKey}
+              onChange={(e) => setGatewayKey(e.target.value)}
+              placeholder='vck_...'
+              disabled={!enabled}
+            />
+          </div>
+          <div className='flex flex-col gap-2 px-4 py-3'>
+            <span className='text-sm font-medium'>{_('Model')}</span>
+            <select
+              className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+              value={selectedModel}
+              onChange={(e) => handleModelChange(e.target.value)}
+              disabled={!enabled}
+            >
+              {modelOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label} — ${opt.inputCost}/M in, ${opt.outputCost}/M out
+                </option>
+              ))}
+              <option value={CUSTOM_MODEL_VALUE}>{_('Custom Model...')}</option>
+            </select>
+          </div>
+
+          {selectedModel === CUSTOM_MODEL_VALUE && (
+            <div className='flex flex-col gap-2 px-4 py-3'>
+              <span className='text-sm font-medium'>{_('Custom Model ID')}</span>
+              <div className='flex w-full gap-2'>
                 <input
-                  type='password'
-                  className='input input-bordered input-sm w-full'
-                  value={gatewayKey}
-                  onChange={(e) => setGatewayKey(e.target.value)}
-                  placeholder='vck_...'
+                  type='text'
+                  className='input input-bordered input-sm flex-1'
+                  value={customModelInput}
+                  onChange={(e) => {
+                    setCustomModelInput(e.target.value);
+                    setCustomModelStatus('idle');
+                    setCustomModelError('');
+                  }}
+                  placeholder='provider/model-name'
                   disabled={!enabled}
                 />
-              </div>
-              <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                <span>{_('Model')}</span>
-                <select
-                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
-                  value={selectedModel}
-                  onChange={(e) => handleModelChange(e.target.value)}
-                  disabled={!enabled}
+                <button
+                  className='btn btn-outline btn-sm'
+                  onClick={validateCustomModel}
+                  disabled={!enabled || customModelStatus === 'validating'}
                 >
-                  {modelOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label} — ${opt.inputCost}/M in, ${opt.outputCost}/M out
-                    </option>
-                  ))}
-                  <option value={CUSTOM_MODEL_VALUE}>{_('Custom Model...')}</option>
-                </select>
+                  {customModelStatus === 'validating' ? (
+                    <PiSpinner className='size-4 animate-spin' />
+                  ) : (
+                    _('Validate')
+                  )}
+                </button>
               </div>
-
-              {selectedModel === CUSTOM_MODEL_VALUE && (
-                <div className='config-item !h-auto flex-col !items-start gap-2 py-3'>
-                  <span>{_('Custom Model ID')}</span>
-                  <div className='flex w-full gap-2'>
-                    <input
-                      type='text'
-                      className='input input-bordered input-sm flex-1'
-                      value={customModelInput}
-                      onChange={(e) => {
-                        setCustomModelInput(e.target.value);
-                        setCustomModelStatus('idle');
-                        setCustomModelError('');
-                      }}
-                      placeholder='provider/model-name'
-                      disabled={!enabled}
-                    />
-                    <button
-                      className='btn btn-outline btn-sm'
-                      onClick={validateCustomModel}
-                      disabled={!enabled || customModelStatus === 'validating'}
-                    >
-                      {customModelStatus === 'validating' ? (
-                        <PiSpinner className='size-4 animate-spin' />
-                      ) : (
-                        _('Validate')
-                      )}
-                    </button>
-                  </div>
-                  {customModelStatus === 'valid' && customModelPricing && (
-                    <span className='text-success flex items-center gap-1 text-sm'>
-                      <PiCheckCircle />
-                      {_('Model available')} — ${customModelPricing.input}/M in, $
-                      {customModelPricing.output}/M out
-                    </span>
-                  )}
-                  {customModelStatus === 'invalid' && (
-                    <span className='text-error text-sm'>{customModelError}</span>
-                  )}
-                </div>
+              {customModelStatus === 'valid' && customModelPricing && (
+                <span className='text-success flex items-center gap-1 text-sm'>
+                  <PiCheckCircle />
+                  {_('Model available')} — ${customModelPricing.input}/M in, $
+                  {customModelPricing.output}/M out
+                </span>
+              )}
+              {customModelStatus === 'invalid' && (
+                <span className='text-error text-sm'>{customModelError}</span>
               )}
             </div>
-          </div>
-        </div>
+          )}
+        </BoxedList>
       )}
 
-      <div className={clsx('w-full', disabledSection)}>
-        <h2 className='mb-2 font-medium'>{_('Connection')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <button
-                className='btn btn-outline btn-sm'
-                onClick={handleTestConnection}
-                disabled={!enabled || connectionStatus === 'testing'}
-              >
-                {_('Test Connection')}
-              </button>
-              <div>
-                {connectionStatus === 'success' && (
-                  <span className='text-success flex items-center gap-1 text-sm'>
-                    <PiCheckCircle className='size-4 shrink-0' />
-                    {_('Connected')}
-                  </span>
-                )}
-                {connectionStatus === 'error' && (
-                  <span className='text-error flex items-center gap-1 text-sm'>
-                    <PiWarningCircle className='size-4 shrink-0' />
-                    {errorMessage || _('Failed')}
-                  </span>
-                )}
-              </div>
-            </div>
+      <BoxedList title={_('Connection')} className={disabledSection}>
+        <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
+          <button
+            className='btn btn-outline btn-sm'
+            onClick={handleTestConnection}
+            disabled={!enabled || connectionStatus === 'testing'}
+          >
+            {_('Test Connection')}
+          </button>
+          <div>
+            {connectionStatus === 'success' && (
+              <span className='text-success flex items-center gap-1 text-sm'>
+                <PiCheckCircle className='size-4 shrink-0' />
+                {_('Connected')}
+              </span>
+            )}
+            {connectionStatus === 'error' && (
+              <span className='text-error flex items-center gap-1 text-sm'>
+                <PiWarningCircle className='size-4 shrink-0' />
+                {errorMessage || _('Failed')}
+              </span>
+            )}
           </div>
         </div>
-      </div>
+      </BoxedList>
     </div>
   );
 };

@@ -539,7 +539,8 @@ export const getFootnoteStyles = () => `
  * The seam exists so app-wide rules can be added in one place without
  * touching the provider code. Currently it ships:
  */
-export const getDictStyles = () => {
+export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
+  void fg;
   return `
     a:empty {
       background-color: transparent;
@@ -547,6 +548,14 @@ export const getDictStyles = () => {
     }
     a img {
       mix-blend-mode: multiply;
+    }
+    div[data-dict-kind="mdict"] .entry_name {
+      font-size: 1.2em;
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+    }
+    div[data-dict-kind="mdict"] .juan_drop {
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
   `;
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ReadingRulerColor } from '@/types/book';
+import { BoxedList, SettingsRow, SettingsSwitchRow } from '../primitives';
 import NumberInput from '../NumberInput';
 
 interface ReadingRulerSettingsProps {
@@ -12,6 +13,7 @@ interface ReadingRulerSettingsProps {
   onLinesChange: (lines: number) => void;
   onOpacityChange: (opacity: number) => void;
   onColorChange: (color: ReadingRulerColor) => void;
+  'data-setting-id'?: string;
 }
 
 const RULER_COLORS: { value: ReadingRulerColor; className: string; hoverClassName: string }[] = [
@@ -31,59 +33,52 @@ const ReadingRulerSettings: React.FC<ReadingRulerSettingsProps> = ({
   onLinesChange,
   onOpacityChange,
   onColorChange,
+  'data-setting-id': dataSettingId,
 }) => {
   const _ = useTranslation();
 
   return (
-    <div className='w-full'>
-      <h2 className='mb-2 font-medium'>{_('Reading Ruler')}</h2>
-      <div className='card bg-base-100 border-base-200 border shadow'>
-        <div className='divide-base-200 divide-y'>
-          <div className='config-item'>
-            <span>{_('Enable Reading Ruler')}</span>
-            <input
-              type='checkbox'
-              className='toggle'
-              checked={enabled}
-              onChange={() => onEnabledChange(!enabled)}
+    <BoxedList title={_('Reading Ruler')} data-setting-id={dataSettingId}>
+      <SettingsSwitchRow
+        label={_('Enable Reading Ruler')}
+        checked={enabled}
+        onChange={() => onEnabledChange(!enabled)}
+      />
+      {/* NumberInput renders its own legacy `config-item` row — h-14
+          matches the SettingsRow's min-h-14 so it visually rhymes with
+          the rows above and below. */}
+      <NumberInput
+        label={_('Lines to Highlight')}
+        value={lines}
+        onChange={onLinesChange}
+        disabled={!enabled}
+        min={1}
+        max={6}
+        step={1}
+      />
+      <SettingsRow label={_('Ruler Color')}>
+        <div className='flex gap-2'>
+          {RULER_COLORS.map(({ value, className, hoverClassName }) => (
+            <button
+              key={value}
+              className={`btn btn-circle btn-sm ${className} ${hoverClassName} ${
+                color === value ? 'ring-base-content ring-2 ring-offset-1' : ''
+              } ${!enabled ? 'opacity-50' : ''}`}
+              onClick={() => enabled && onColorChange(value)}
             />
-          </div>
-          <NumberInput
-            label={_('Lines to Highlight')}
-            value={lines}
-            onChange={onLinesChange}
-            disabled={!enabled}
-            min={1}
-            max={6}
-            step={1}
-          />
-          <div className='config-item'>
-            <span>{_('Ruler Color')}</span>
-            <div className='flex gap-2'>
-              {RULER_COLORS.map(({ value, className, hoverClassName }) => (
-                <button
-                  key={value}
-                  // disabled={!enabled}
-                  className={`btn btn-circle btn-sm ${className} ${hoverClassName} ${
-                    color === value ? 'ring-base-content ring-2 ring-offset-1' : ''
-                  } ${!enabled ? 'opacity-50' : ''}`}
-                  onClick={() => enabled && onColorChange(value)}
-                />
-              ))}
-            </div>
-          </div>
-          <NumberInput
-            label={_('Opacity')}
-            value={opacity}
-            onChange={onOpacityChange}
-            disabled={!enabled}
-            min={0.1}
-            max={0.9}
-            step={0.1}
-          />
+          ))}
         </div>
-      </div>
-    </div>
+      </SettingsRow>
+      <NumberInput
+        label={_('Opacity')}
+        value={opacity}
+        onChange={onOpacityChange}
+        disabled={!enabled}
+        min={0.1}
+        max={0.9}
+        step={0.1}
+      />
+    </BoxedList>
   );
 };
 

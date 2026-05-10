@@ -28,6 +28,10 @@ export interface DictionaryLookupContext {
    * the current app theme. Optional — defaults to light treatment.
    */
   isDarkMode?: boolean;
+  /** Theme background color (e.g. `#ffffff`). Forwarded into shadow-scoped CSS. */
+  bg?: string;
+  /** Theme foreground color (e.g. `#1a1a1a`). Forwarded into shadow-scoped CSS. */
+  fg?: string;
 }
 
 export type DictionaryLookupOutcome =

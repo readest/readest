@@ -192,10 +192,10 @@ export default function AppLockDialog() {
   return (
     <ModalPortal>
       <dialog className='modal modal-open'>
-        <div className='modal-box bg-base-200 max-w-md rounded-2xl p-6 shadow-2xl'>
+        <div className='modal-box bg-base-100 max-w-md rounded-2xl p-6 shadow-2xl'>
           <h3 className='mb-1.5 text-lg font-semibold tracking-tight'>{title}</h3>
-          <p className='text-base-content/60 mb-5 text-sm leading-relaxed'>{description}</p>
-          <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+          <p className='text-base-content/70 mb-6 text-sm leading-relaxed'>{description}</p>
+          <form onSubmit={handleSubmit} className='flex flex-col gap-5'>
             {(mode === 'change' || mode === 'disable') && (
               <div className='flex flex-col items-center gap-2'>
                 <span className={fieldLabelClass}>{_('Current PIN')}</span>
@@ -246,12 +246,20 @@ export default function AppLockDialog() {
             >
               {error || ' '}
             </p>
-            <div className='flex justify-end gap-2'>
+            <div className='flex justify-end gap-3'>
               <button
                 type='button'
                 onClick={closeDialog}
                 disabled={busy}
-                className='eink-bordered hover:bg-base-300/70 rounded-lg px-4 py-2 text-sm font-medium transition-colors'
+                className={clsx(
+                  'eink-bordered',
+                  'h-10 rounded-lg px-4 text-sm font-medium',
+                  'text-base-content hover:bg-base-200',
+                  'transition-colors duration-150',
+                  'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                  'disabled:hover:bg-transparent',
+                )}
               >
                 {_('Cancel')}
               </button>
@@ -259,7 +267,9 @@ export default function AppLockDialog() {
                 type='submit'
                 disabled={busy}
                 className={clsx(
-                  'btn btn-primary text-primary-content hover:bg-primary/90 active:bg-primary/80 rounded-lg border-0 px-4 py-2 text-sm font-medium transition-colors',
+                  'btn btn-primary',
+                  'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
+                  'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
                   busy && 'opacity-60',
                 )}
               >

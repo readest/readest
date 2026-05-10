@@ -494,7 +494,8 @@ export const createMdictProvider = ({
         // icons, etc.), then the dict's own loose CSS, then any
         // MDD-resident stylesheets the MDX referenced via `<link>`.
         // Cascade order matches authoring order.
-        const allStylesheets = [getDictStyles(), ...looseStylesheets, ...mddStylesheets];
+        const dictStyles = getDictStyles(ctx.bg ?? '', ctx.fg ?? '', !!ctx.isDarkMode);
+        const allStylesheets = [dictStyles, ...looseStylesheets, ...mddStylesheets];
         for (const cssText of allStylesheets) {
           if (!cssText) continue;
           const style = document.createElement('style');

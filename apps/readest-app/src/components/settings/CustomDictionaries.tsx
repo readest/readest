@@ -11,6 +11,9 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -33,6 +36,8 @@ import {
   getBuiltinWebSearch,
   isValidUrlTemplate,
 } from '@/services/dictionaries/webSearchTemplates';
+import SubPageHeader from './SubPageHeader';
+import { Tips } from './primitives';
 
 interface CustomDictionariesProps {
   onBack: () => void;
@@ -51,6 +56,32 @@ interface ProviderRow {
   disabled?: boolean;
   reason?: string;
 }
+
+// Lock drag movement to the vertical axis — the sortable list is vertical, so
+// any horizontal travel is wasted motion and lets the drag preview drift out
+// from under the row.
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  x: 0,
+});
+
+// Clamp the drag preview to the SortableContext's container rect so users
+// can't drag a row out of the dictionaries card.
+const restrictToParentElement: Modifier = ({ containerNodeRect, draggingNodeRect, transform }) => {
+  if (!draggingNodeRect || !containerNodeRect) return transform;
+  const value = { ...transform };
+  if (draggingNodeRect.top + transform.y < containerNodeRect.top) {
+    value.y = containerNodeRect.top - draggingNodeRect.top;
+  } else if (
+    draggingNodeRect.bottom + transform.y >
+    containerNodeRect.top + containerNodeRect.height
+  ) {
+    value.y = containerNodeRect.top + containerNodeRect.height - draggingNodeRect.bottom;
+  }
+  return value;
+};
+
+const dragModifiers: Modifier[] = [restrictToVerticalAxis, restrictToParentElement];
 
 const builtinWebLabel = (id: string, _: (key: string) => string): string => {
   const tpl = getBuiltinWebSearch(id);
@@ -114,7 +145,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
           drag, which keeps the toggle and delete buttons clickable. */}
       <button
         type='button'
-        className='btn btn-ghost btn-xs h-7 w-5 cursor-grab touch-none p-0 active:cursor-grabbing'
+        className='touch-target btn btn-ghost btn-xs h-7 w-5 cursor-grab touch-none p-0 active:cursor-grabbing'
         aria-label={_('Drag to reorder')}
         title={_('Drag to reorder')}
         {...attributes}
@@ -224,6 +255,10 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   // turns the other off so the trailing column never shows two icons at once.
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  // Track the row currently under the drag cursor. Used to gate auto-scroll
+  // off when the drop target is the first or last row — there's nothing
+  // beyond either end, so scrolling further is just visual noise.
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const toggleDeleteMode = () =>
     setIsDeleteMode((v) => {
       const next = !v;
@@ -482,7 +517,19 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     await saveCustomDictionaries(envConfig);
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    // Seed dragOverId with the active row — at drag start the active is over
+    // itself, but onDragOver only fires when the over target *changes*, so we
+    // need an explicit seed to evaluate "currently at edge" on the first frame.
+    setDragOverId(String(event.active.id));
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setDragOverId(event.over ? String(event.over.id) : null);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
+    setDragOverId(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const order = [...settings.providerOrder];
@@ -498,54 +545,56 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     await saveCustomDictionaries(envConfig, { publishOrderChange: true });
   };
 
+  const handleDragCancel = () => setDragOverId(null);
+
+  const isDragOverEdge =
+    dragOverId !== null &&
+    rows.length > 0 &&
+    (rows[0]?.id === dragOverId || rows[rows.length - 1]?.id === dragOverId);
+
   return (
     <div className='w-full'>
-      <div className='mb-4 flex h-8 items-center justify-between'>
-        <div className='breadcrumbs py-1'>
-          <ul>
-            <li>
-              <button className='font-semibold' onClick={onBack}>
-                {_('Language')}
+      <SubPageHeader
+        parentLabel={_('Language')}
+        currentLabel={_('Dictionaries')}
+        onBack={onBack}
+        rightSlot={
+          hasDeletable ? (
+            <div className='flex items-center gap-1'>
+              <button
+                onClick={toggleEditMode}
+                className='btn btn-ghost btn-sm text-base-content gap-2'
+                title={isEditMode ? _('Cancel Edit') : _('Edit Dictionary')}
+              >
+                {isEditMode ? (
+                  <>{_('Cancel')}</>
+                ) : (
+                  <>
+                    <MdEdit className='h-4 w-4' />
+                    {/* Hide label on very narrow screens so the icon-only
+                        button keeps the breadcrumb readable. */}
+                    <span className='hidden min-[400px]:inline'>{_('Edit')}</span>
+                  </>
+                )}
               </button>
-            </li>
-            <li className='font-medium'>{_('Dictionaries')}</li>
-          </ul>
-        </div>
-        {hasDeletable && (
-          <div className='flex items-center gap-1'>
-            <button
-              onClick={toggleEditMode}
-              className='btn btn-ghost btn-sm text-base-content gap-2'
-              title={isEditMode ? _('Cancel Edit') : _('Edit Dictionary')}
-            >
-              {isEditMode ? (
-                <>{_('Cancel')}</>
-              ) : (
-                <>
-                  <MdEdit className='h-4 w-4' />
-                  {/* Hide label on very narrow screens so the icon-only
-                      button keeps the breadcrumb readable. */}
-                  <span className='hidden min-[400px]:inline'>{_('Edit')}</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={toggleDeleteMode}
-              className='btn btn-ghost btn-sm text-base-content gap-2'
-              title={isDeleteMode ? _('Cancel Delete') : _('Delete Dictionary')}
-            >
-              {isDeleteMode ? (
-                <>{_('Cancel')}</>
-              ) : (
-                <>
-                  <MdDelete className='h-4 w-4' />
-                  <span className='hidden min-[400px]:inline'>{_('Delete')}</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                onClick={toggleDeleteMode}
+                className='btn btn-ghost btn-sm text-base-content gap-2'
+                title={isDeleteMode ? _('Cancel Delete') : _('Delete Dictionary')}
+              >
+                {isDeleteMode ? (
+                  <>{_('Cancel')}</>
+                ) : (
+                  <>
+                    <MdDelete className='h-4 w-4' />
+                    <span className='hidden min-[400px]:inline'>{_('Delete')}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
 
       <div className='card border-base-200 bg-base-100 overflow-hidden border'>
         <div className='divide-base-200 divide-y'>
@@ -557,7 +606,15 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            modifiers={dragModifiers}
+            // Auto-scroll only when the drop target is mid-list. When the
+            // cursor is currently over the first or last row, there's nowhere
+            // further to drop, so scrolling the dialog is just noise.
+            autoScroll={!isDragOverEdge}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
           >
             <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
               {rows.map((row) => (
@@ -584,9 +641,29 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           type='button'
           onClick={handleImport}
           disabled={importing}
-          className='btn btn-outline btn-primary gap-2 normal-case [--animation-btn:0s]'
+          className={clsx(
+            'eink-bordered group flex h-11 items-center justify-center gap-2.5',
+            'border-base-200 bg-base-100 rounded-lg border px-4',
+            'text-base-content text-sm font-medium',
+            'transition-colors duration-150',
+            'hover:border-base-300 hover:bg-base-200/60',
+            'active:bg-base-200/80',
+            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'disabled:cursor-not-allowed disabled:opacity-60',
+            'disabled:hover:border-base-200 disabled:hover:bg-base-100',
+          )}
         >
-          <MdAdd className='h-5 w-5' />
+          <span
+            className={clsx(
+              'flex h-5 w-5 items-center justify-center rounded-full',
+              'bg-base-200 text-base-content/60',
+              'transition-colors duration-150',
+              'group-hover:bg-base-content group-hover:text-base-100',
+              'group-disabled:bg-base-200 group-disabled:text-base-content/60',
+            )}
+          >
+            <MdAdd className='h-3.5 w-3.5' />
+          </span>
           <span className='line-clamp-1'>
             {importing ? _('Importing…') : _('Import Dictionary')}
           </span>
@@ -594,30 +671,37 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         <button
           type='button'
           onClick={openAddWebSearch}
-          className='btn btn-outline btn-primary gap-2 normal-case [--animation-btn:0s]'
+          className={clsx(
+            'eink-bordered group flex h-11 items-center justify-center gap-2.5',
+            'border-base-200 bg-base-100 rounded-lg border px-4',
+            'text-base-content text-sm font-medium',
+            'transition-colors duration-150',
+            'hover:border-base-300 hover:bg-base-200/60',
+            'active:bg-base-200/80',
+            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          )}
         >
-          <MdAdd className='h-5 w-5' />
+          <span
+            className={clsx(
+              'flex h-5 w-5 items-center justify-center rounded-full',
+              'bg-base-200 text-base-content/60',
+              'transition-colors duration-150',
+              'group-hover:bg-base-content group-hover:text-base-100',
+            )}
+          >
+            <MdAdd className='h-3.5 w-3.5' />
+          </span>
           <span className='line-clamp-1'>{_('Add Web Search')}</span>
         </button>
       </div>
 
-      <div className='bg-base-200/40 mt-4 rounded-lg p-3'>
-        <div className='text-base-content/70 text-xs'>
-          <div className='mb-1.5 flex items-center gap-1.5 font-medium'>
-            <MdInfoOutline className='h-3.5 w-3.5' />
-            {_('Tips')}
-          </div>
-          <ul className='list-outside list-disc space-y-0.5 ps-4'>
-            <li>{_('StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).')}</li>
-            <li>
-              {_('MDict bundles use .mdx files; companion .mdd and .css files are optional.')}
-            </li>
-            <li>{_('DICT bundles need a .index file and a .dict.dz file.')}</li>
-            <li>{_('Slob bundles need a .slob file.')}</li>
-            <li>{_('Select all the bundle files together when importing.')}</li>
-          </ul>
-        </div>
-      </div>
+      <Tips className='mt-4'>
+        <li>{_('StarDict bundles need .ifo, .idx, and .dict.dz files (.syn optional).')}</li>
+        <li>{_('MDict bundles use .mdx files; companion .mdd and .css files are optional.')}</li>
+        <li>{_('DICT bundles need a .index file and a .dict.dz file.')}</li>
+        <li>{_('Slob bundles need a .slob file.')}</li>
+        <li>{_('Select all the bundle files together when importing.')}</li>
+      </Tips>
 
       {/* Add / edit web-search modal. Lightweight inline `<dialog>` (daisyUI
           modal classes); the heavier `Dialog.tsx` is overkill for a 2-field

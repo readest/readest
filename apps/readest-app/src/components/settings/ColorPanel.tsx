@@ -22,6 +22,7 @@ import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
+import clsx from 'clsx';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -318,11 +319,19 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             data-setting-id='settings.color.themeMode'
           />
 
-          <div
+          {/* Inline toggle rows — match the Theme Mode pattern above
+              (label-on-left + toggle-on-right, no card chrome). These two
+              feel more like adjustments to the theme than their own
+              "section" of settings. */}
+          <label
             data-setting-id='settings.color.invertImageInDarkMode'
-            className='flex items-center justify-between'
+            className={clsx(
+              'flex items-center justify-between',
+              !isDarkMode && 'cursor-not-allowed opacity-50',
+              isDarkMode && 'cursor-pointer',
+            )}
           >
-            <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
+            <span className='font-medium'>{_('Invert Image In Dark Mode')}</span>
             <input
               type='checkbox'
               className='toggle'
@@ -330,20 +339,20 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
               disabled={!isDarkMode}
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
             />
-          </div>
+          </label>
 
-          <div
+          <label
             data-setting-id='settings.color.overrideBookColor'
-            className='flex items-center justify-between'
+            className='flex cursor-pointer items-center justify-between'
           >
-            <h2 className='font-medium'>{_('Override Book Color')}</h2>
+            <span className='font-medium'>{_('Override Book Color')}</span>
             <input
               type='checkbox'
               className='toggle'
               checked={overrideColor}
               onChange={() => setOverrideColor(!overrideColor)}
             />
-          </div>
+          </label>
 
           <ThemeColorSelector
             themes={themes.concat(customThemes)}

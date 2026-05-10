@@ -5,19 +5,26 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCommandPalette } from '@/components/command-palette';
-import { RiFontSize } from 'react-icons/ri';
+import { RiFontSize, RiShareLine } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
-import { MdArrowBackIosNew, MdArrowForwardIos, MdClose } from 'react-icons/md';
+import {
+  MdArrowBackIosNew,
+  MdArrowForwardIos,
+  MdChevronLeft,
+  MdChevronRight,
+  MdClose,
+} from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
+import IntegrationsPanel from './IntegrationsPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
 import DialogMenu from './DialogMenu';
@@ -35,6 +42,7 @@ export type SettingsPanelType =
   | 'TTS'
   | 'Language'
   | 'AI'
+  | 'Integrations'
   | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
@@ -56,8 +64,15 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [showAllTabLabels, setShowAllTabLabels] = useState(false);
-  const { setFontPanelView, setSettingsDialogOpen, activeSettingsItemId, setActiveSettingsItemId } =
-    useSettingsStore();
+  const [canScrollTabsForward, setCanScrollTabsForward] = useState(false);
+  const {
+    setFontPanelView,
+    setSettingsDialogOpen,
+    activeSettingsItemId,
+    setActiveSettingsItemId,
+    requestedPanel,
+    setRequestedPanel,
+  } = useSettingsStore();
   const { open: openCommandPalette } = useCommandPalette();
 
   const handleOpenCommandPalette = () => {
@@ -103,6 +118,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       disabled: process.env.NODE_ENV === 'production',
     },
     {
+      tab: 'Integrations',
+      icon: RiShareLine,
+      label: _('Integrations'),
+    },
+    {
       tab: 'Custom',
       icon: IoAccessibilityOutline,
       label: _('Custom'),
@@ -110,6 +130,13 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   ] as TabConfig[];
 
   const [activePanel, setActivePanel] = useState<SettingsPanelType>(() => {
+    // Deep-link: if a caller asked for a specific panel before opening the
+    // dialog, honor that and clear the request so it doesn't stick to the
+    // next open.
+    if (requestedPanel && tabConfig.some((tab) => tab.tab === requestedPanel)) {
+      setRequestedPanel(null);
+      return requestedPanel as SettingsPanelType;
+    }
     const lastPanel = localStorage.getItem('lastConfigPanel');
     if (lastPanel && tabConfig.some((tab) => tab.tab === lastPanel)) {
       return lastPanel as SettingsPanelType;
@@ -143,6 +170,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     TTS: null,
     Language: null,
     AI: null,
+    Integrations: null,
     Custom: null,
   });
 
@@ -176,6 +204,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         tts: 'TTS',
         language: 'Language',
         ai: 'AI',
+        integrations: 'Integrations',
         custom: 'Custom',
       };
       const panelKey = parts[1]?.toLowerCase();
@@ -230,21 +259,43 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowAllTabLabels(!hideLabel);
     };
 
-    checkButtonWidths();
+    // |scrollLeft| (Math.abs) handles RTL, where modern browsers use 0 → -max
+    // for scrolling toward the visual-leading end of the strip.
+    const updateScrollState = () => {
+      const overflow = container.scrollWidth - container.clientWidth;
+      const scrolled = Math.abs(container.scrollLeft);
+      setCanScrollTabsForward(overflow > 1 && scrolled < overflow - 1);
+    };
 
-    const resizeObserver = new ResizeObserver(checkButtonWidths);
+    const recompute = () => {
+      checkButtonWidths();
+      updateScrollState();
+    };
+
+    recompute();
+
+    const resizeObserver = new ResizeObserver(recompute);
     resizeObserver.observe(container);
-    const mutationObserver = new MutationObserver(checkButtonWidths);
+    const mutationObserver = new MutationObserver(recompute);
     mutationObserver.observe(container, {
       subtree: true,
       characterData: true,
     });
+    container.addEventListener('scroll', updateScrollState, { passive: true });
 
     return () => {
       resizeObserver.disconnect();
       mutationObserver.disconnect();
+      container.removeEventListener('scroll', updateScrollState);
     };
   }, [setFontPanelView]);
+
+  const handleScrollTabsForward = () => {
+    const container = tabsRef.current;
+    if (!container) return;
+    const amount = container.clientWidth * 0.7;
+    container.scrollBy({ left: isRtl ? -amount : amount, behavior: 'smooth' });
+  };
 
   const currentPanel = tabConfig.find((tab) => tab.tab === activePanel);
 
@@ -348,6 +399,18 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                   </button>
                 ))}
             </div>
+            {canScrollTabsForward && (
+              <button
+                type='button'
+                onClick={handleScrollTabsForward}
+                aria-label={_('Scroll tabs')}
+                title={_('Scroll tabs')}
+                tabIndex={-1}
+                className='btn btn-ghost btn-circle flex h-8 min-h-8 w-8 shrink-0 items-center justify-center p-0'
+              >
+                {isRtl ? <MdChevronLeft /> : <MdChevronRight />}
+              </button>
+            )}
             <div className='hidden sm:flex'>{windowControls}</div>
           </div>
         </div>
@@ -392,6 +455,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           />
         )}
         {activePanel === 'AI' && <AIPanel />}
+        {activePanel === 'Integrations' && <IntegrationsPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

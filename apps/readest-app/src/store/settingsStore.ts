@@ -12,12 +12,19 @@ interface SettingsState {
   isSettingsDialogOpen: boolean;
   fontPanelView: FontPanelView;
   activeSettingsItemId: string | null;
+  /**
+   * Deep-link target — when set before opening the Settings dialog, the dialog
+   * mounts with this panel pre-selected (instead of the lastConfigPanel from
+   * localStorage). Cleared by the dialog after consumption.
+   */
+  requestedPanel: string | null;
   setSettings: (settings: SystemSettings) => void;
-  saveSettings: (envConfig: EnvConfigType, settings: SystemSettings) => void;
+  saveSettings: (envConfig: EnvConfigType, settings: SystemSettings) => Promise<void>;
   setSettingsDialogBookKey: (bookKey: string) => void;
   setSettingsDialogOpen: (open: boolean) => void;
   setFontPanelView: (view: FontPanelView) => void;
   setActiveSettingsItemId: (id: string | null) => void;
+  setRequestedPanel: (panel: string | null) => void;
 
   applyUILanguage: (uiLanguage?: string) => void;
 }
@@ -28,6 +35,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   isSettingsDialogOpen: false,
   fontPanelView: 'main-fonts',
   activeSettingsItemId: null,
+  requestedPanel: null,
   setSettings: (settings) => set({ settings }),
   saveSettings: async (envConfig: EnvConfigType, settings: SystemSettings) => {
     const appService = await envConfig.getAppService();
@@ -37,6 +45,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setSettingsDialogOpen: (open) => set({ isSettingsDialogOpen: open }),
   setFontPanelView: (view) => set({ fontPanelView: view }),
   setActiveSettingsItemId: (id) => set({ activeSettingsItemId: id }),
+  setRequestedPanel: (panel) => set({ requestedPanel: panel }),
 
   applyUILanguage: (uiLanguage?: string) => {
     const locale = uiLanguage ? uiLanguage : navigator.language;

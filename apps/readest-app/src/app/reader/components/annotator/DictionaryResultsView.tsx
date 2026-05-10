@@ -70,6 +70,7 @@ export function useDictionaryResults({
   const { appService } = useEnv();
   const { dictionaries, settings } = useCustomDictionaryStore();
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
+  const themeCode = useThemeStore((s) => s.themeCode);
 
   const computedProviders = getEnabledProviders({
     settings,
@@ -215,6 +216,8 @@ export function useDictionaryResults({
               container,
               onNavigate: pushWord,
               isDarkMode,
+              bg: themeCode.bg,
+              fg: themeCode.fg,
             });
           }
         } catch (err) {
@@ -242,7 +245,7 @@ export function useDictionaryResults({
     });
 
     return () => controllers.forEach((c) => c.abort());
-  }, [currentWord, definitionProviders, lang, pushWord, isDarkMode]);
+  }, [currentWord, definitionProviders, lang, pushWord, isDarkMode, themeCode.bg, themeCode.fg]);
 
   // Visible cards = providers that are still loading or finished with a
   // result. Empty/unsupported/error cards are removed entirely.
@@ -299,6 +302,7 @@ export function useDictionaryResults({
 }
 
 interface DictionaryResultsHeaderProps {
+  headerClassName?: string;
   currentWord: string;
   canGoBack: boolean;
   goBack: () => void;
@@ -306,6 +310,7 @@ interface DictionaryResultsHeaderProps {
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
+  headerClassName,
   currentWord,
   canGoBack,
   goBack,
@@ -313,7 +318,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
 }) => {
   const _ = useTranslation();
   return (
-    <div className='-mt-3 flex h-8 w-full items-center justify-between px-2'>
+    <div className={clsx('flex h-8 w-full items-center justify-between px-2', headerClassName)}>
       <div className='flex h-8 w-8 items-center justify-center'>
         {canGoBack ? (
           <button

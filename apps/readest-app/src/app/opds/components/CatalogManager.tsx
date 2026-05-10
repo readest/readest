@@ -2,17 +2,17 @@
 
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IoAdd,
   IoTrash,
-  IoOpenOutline,
   IoBook,
   IoEyeOff,
   IoEye,
   IoPencil,
   IoCloudDownloadOutline,
 } from 'react-icons/io5';
+import { MdChevronRight } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -75,6 +75,14 @@ async function validateOPDSCatalog(
   return { valid: result.isValid, error: result.error };
 }
 
+/**
+ * Debounce window for the auto-download enable trigger. Toggling the switch
+ * on schedules the `check-opds-subscriptions` dispatch via setTimeout;
+ * toggling off within this window cancels the pending dispatch. Gives users
+ * a chance to undo an accidental enable before any actual download starts.
+ */
+const AUTO_DOWNLOAD_DEBOUNCE_MS = 5000;
+
 const EMPTY_NEW_CATALOG = {
   name: '',
   url: '',
@@ -86,7 +94,17 @@ const EMPTY_NEW_CATALOG = {
   autoDownload: false,
 };
 
-export function CatalogManager() {
+interface CatalogManagerProps {
+  /**
+   * When true, the panel title block (h1 + description) is hidden because
+   * the host renders its own header (e.g. SubPageHeader inside Settings →
+   * Integrations). The OPDS dialog and standalone /opds page leave this off
+   * so the title shows.
+   */
+  inSubPage?: boolean;
+}
+
+export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
@@ -300,16 +318,46 @@ export function CatalogManager() {
     }
   };
 
+  // Per-catalog pending timeouts for the debounced auto-download trigger.
+  // Each catalog's enable schedules its own timer; toggling off cancels just
+  // that catalog's pending dispatch (other catalogs' timers are untouched).
+  const pendingAutoDownloadTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // Clear any pending auto-download timers when the panel unmounts so we
+  // don't fire dispatches against a torn-down React tree.
+  useEffect(() => {
+    const timeouts = pendingAutoDownloadTimeouts.current;
+    return () => {
+      timeouts.forEach(clearTimeout);
+      timeouts.clear();
+    };
+  }, []);
+
   const handleToggleAutoDownload = (id: string) => {
     const target = catalogs.find((c) => c.id === id);
     if (!target) return;
     const wasEnabled = !!target.autoDownload;
     useCustomOPDSStore.getState().updateCatalog(id, { autoDownload: !wasEnabled });
     persistMutation();
-    // When the user just enabled auto-download, sync now instead of waiting
-    // for the next app launch / pull-to-refresh.
+
+    // Cancel any pending sync trigger for this catalog — covers both:
+    //   - rapid on/off toggles (user clicked by accident, reverted in time)
+    //   - on → off → on (a fresh debounce window starts on the next enable)
+    const pending = pendingAutoDownloadTimeouts.current.get(id);
+    if (pending) {
+      clearTimeout(pending);
+      pendingAutoDownloadTimeouts.current.delete(id);
+    }
+
+    // When enabling, schedule the sync after the debounce window. If the user
+    // toggles off again within the window, the cancel above intercepts the
+    // dispatch so no download starts.
     if (!wasEnabled) {
-      eventDispatcher.dispatch('check-opds-subscriptions');
+      const timeoutId = setTimeout(() => {
+        pendingAutoDownloadTimeouts.current.delete(id);
+        eventDispatcher.dispatch('check-opds-subscriptions');
+      }, AUTO_DOWNLOAD_DEBOUNCE_MS);
+      pendingAutoDownloadTimeouts.current.set(id, timeoutId);
     }
   };
 
@@ -331,26 +379,33 @@ export function CatalogManager() {
 
   return (
     <div className='container max-w-2xl'>
-      <div className='mb-8'>
-        <h1 className='mb-2 text-base font-bold'>{_('OPDS Catalogs')}</h1>
-        <p className='text-base-content/70 text-xs'>
-          {_('Browse and download books from online catalogs')}
-        </p>
-      </div>
+      {!inSubPage && (
+        <div className='mb-8'>
+          <h1 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('OPDS Catalogs')}</h1>
+          <p className='text-base-content/70 text-sm leading-relaxed'>
+            {_('Browse and download books from online catalogs')}
+          </p>
+        </div>
+      )}
 
       {/* My Catalogs */}
-      <section className='mb-12 text-base'>
-        <div className='mb-4 flex items-center justify-between'>
-          <h2 className='font-semibold'>{_('My Catalogs')}</h2>
-          <button onClick={() => setShowAddDialog(true)} className='btn btn-primary btn-sm'>
+      <section className='mb-10 text-base'>
+        <div className='mb-3 flex items-center justify-between'>
+          <h3 className='text-base-content/65 text-[11px] font-semibold uppercase tracking-wider'>
+            {_('My Catalogs')}
+          </h3>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className='eink-bordered border-base-200 hover:border-base-300 hover:bg-base-200/60 focus-visible:ring-base-content/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+          >
             <IoAdd className='h-4 w-4' />
             {_('Add Catalog')}
           </button>
         </div>
 
         {catalogs.length === 0 ? (
-          <div className='border-base-300 rounded-lg border-2 border-dashed p-12 text-center'>
-            <IoBook className='text-base-content/30 mx-auto mb-4 h-12 w-12' />
+          <div className='eink-bordered border-base-300 rounded-lg border-2 border-dashed p-12 text-center'>
+            <IoBook className='text-base-content/40 mx-auto mb-4 h-12 w-12' />
             <h3 className='mb-2 font-semibold'>{_('No catalogs yet')}</h3>
             <p className='text-base-content/70 mb-4 text-sm'>
               {_('Add your first OPDS catalog to start browsing books')}
@@ -360,88 +415,66 @@ export function CatalogManager() {
             </button>
           </div>
         ) : (
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-            {catalogs.map((catalog) => (
-              <div
-                key={catalog.id}
-                className='card bg-base-100 border-base-300 h-full border shadow-sm transition-shadow hover:shadow-md'
-              >
-                <div className='card-body h-full justify-between p-4'>
-                  <div className='flex items-center justify-between'>
-                    <div className='min-w-0 flex-1'>
-                      <div className='mb-1 flex items-center justify-between'>
-                        <h3 className='card-title text-sm'>
-                          {catalog.icon && <span>{catalog.icon}</span>}
-                          <span className='line-clamp-1'>{catalog.name}</span>
-                        </h3>
-                        <div className='flex gap-1'>
-                          <button
-                            onClick={() => handleEditCatalog(catalog)}
-                            className='btn btn-ghost btn-xs btn-square'
-                            title={_('Edit')}
-                          >
-                            <IoPencil className='h-4 w-4' />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveCatalog(catalog.id)}
-                            className='btn btn-ghost btn-xs btn-square'
-                            title={_('Remove')}
-                          >
-                            <IoTrash className='h-4 w-4' />
-                          </button>
-                        </div>
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+            {catalogs.map((catalog) => {
+              const subState = subscriptionStates[catalog.id];
+              const lastCheckedAt = subState?.lastCheckedAt ?? 0;
+              const failedCount = subState?.failedEntries.length ?? 0;
+              const showSubscriptionStatus =
+                catalog.autoDownload && subState && (lastCheckedAt > 0 || failedCount > 0);
+
+              return (
+                <div
+                  key={catalog.id}
+                  className='card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border'
+                >
+                  <div className='flex flex-1 flex-col gap-2.5 p-4'>
+                    {/* Header: icon + name + edit/delete */}
+                    <div className='flex items-start justify-between gap-2'>
+                      <h4 className='flex min-w-0 items-center gap-1.5 text-sm font-semibold'>
+                        {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+                        <span className='truncate'>{catalog.name}</span>
+                      </h4>
+                      <div className='-mr-1.5 -mt-1 flex flex-shrink-0 gap-0.5'>
+                        <button
+                          onClick={() => handleEditCatalog(catalog)}
+                          className='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                          title={_('Edit')}
+                          aria-label={_('Edit')}
+                        >
+                          <IoPencil className='h-3.5 w-3.5' />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveCatalog(catalog.id)}
+                          className='text-base-content/55 hover:bg-base-200 hover:text-error focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                          title={_('Remove')}
+                          aria-label={_('Remove')}
+                        >
+                          <IoTrash className='h-3.5 w-3.5' />
+                        </button>
                       </div>
-                      {catalog.description && (
-                        <p className='text-base-content/70 mb-2 line-clamp-1 h-6 text-sm sm:line-clamp-2 sm:h-10'>
-                          {catalog.description}
-                        </p>
-                      )}
-                      <p className='text-base-content/50 line-clamp-1 text-xs'>{catalog.url}</p>
-                      {catalog.username && (
-                        <p className='text-base-content/50 mt-1 text-xs'>
-                          {_('Username')}: {catalog.username}
-                        </p>
-                      )}
-                      {hasOPDSCustomHeaders(catalog.customHeaders) && (
-                        <p className='text-base-content/50 mt-1 text-xs'>
-                          {_('Custom Headers')}: {Object.keys(catalog.customHeaders || {}).length}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                  <div className='mt-2 flex items-center gap-2'>
-                    <label
-                      className={clsx(
-                        'label gap-2 p-0',
-                        catalog.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-                      )}
-                    >
-                      <input
-                        type='checkbox'
-                        className='toggle toggle-sm toggle-primary'
-                        checked={!!catalog.autoDownload}
-                        disabled={!!catalog.disabled}
-                        onChange={() => handleToggleAutoDownload(catalog.id)}
-                      />
-                      <span className='label-text text-xs'>
-                        <IoCloudDownloadOutline className='mr-1 inline h-3.5 w-3.5' />
-                        {_('Auto-download')}
-                      </span>
-                    </label>
-                  </div>
-                  {(() => {
-                    const subState = subscriptionStates[catalog.id];
-                    if (!catalog.autoDownload || !subState) return null;
-                    const lastCheckedAt = subState.lastCheckedAt;
-                    const failedCount = subState.failedEntries.length;
-                    if (lastCheckedAt === 0 && failedCount === 0) return null;
-                    return (
-                      <div className='text-base-content/60 mt-1 flex items-center gap-2 text-xs'>
+
+                    {/* Description (optional) — single line in My Catalogs
+                        to keep cards compact and consistent in height
+                        regardless of description length. */}
+                    {catalog.description && (
+                      <p className='text-base-content/70 line-clamp-1 text-xs leading-relaxed'>
+                        {catalog.description}
+                      </p>
+                    )}
+
+                    {/* URL — quieter, mono-ish */}
+                    <p className='text-base-content/55 truncate text-[11px]' title={catalog.url}>
+                      {catalog.url}
+                    </p>
+
+                    {/* Subscription status (only when auto-download is on AND we have data) */}
+                    {showSubscriptionStatus && (
+                      <div className='text-base-content/55 -mt-1 flex flex-wrap items-center gap-x-2 text-[11px]'>
                         {lastCheckedAt > 0 && (
                           <span>
-                            {_('Last synced {{when}}', {
-                              when: dayjs(lastCheckedAt).fromNow(),
-                            })}
+                            {_('Last synced {{when}}', { when: dayjs(lastCheckedAt).fromNow() })}
                           </span>
                         )}
                         {failedCount > 0 && (
@@ -457,28 +490,56 @@ export function CatalogManager() {
                           </>
                         )}
                       </div>
-                    );
-                  })()}
-                  <div className='card-actions mt-4 justify-end'>
-                    <button
-                      onClick={() => handleOpenCatalog(catalog)}
-                      className='btn btn-sm btn-primary'
-                    >
-                      <IoOpenOutline className='h-4 w-4' />
-                      {_('Browse')}
-                    </button>
+                    )}
+
+                    {/* Footer block pinned to bottom: auto-download switch
+                        sits in the metadata area above the divider; Browse
+                        is the explicit action below the divider, right-
+                        aligned. The divider separates content from action,
+                        not switch from button. */}
+                    <div className='mt-auto'>
+                      <label
+                        className={clsx(
+                          'flex items-center justify-between',
+                          catalog.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                        )}
+                      >
+                        <span className='text-base-content/80 inline-flex items-center gap-1.5 text-xs'>
+                          <IoCloudDownloadOutline className='h-3.5 w-3.5' />
+                          {_('Auto-download')}
+                        </span>
+                        <input
+                          type='checkbox'
+                          className='toggle toggle-xs toggle-primary'
+                          checked={!!catalog.autoDownload}
+                          disabled={!!catalog.disabled}
+                          onChange={() => handleToggleAutoDownload(catalog.id)}
+                        />
+                      </label>
+                      <div className='border-base-200 mt-3 flex justify-end border-t pt-3'>
+                        <button
+                          onClick={() => handleOpenCatalog(catalog)}
+                          className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                        >
+                          {_('Browse')}
+                          <MdChevronRight className='h-4 w-4' />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
       {/* Popular Catalogs */}
       <section className={clsx('text-base', popularCatalogs.length === 0 && 'hidden')}>
-        <h2 className='mb-4 font-semibold'>{_('Popular Catalogs')}</h2>
-        <div className='grid gap-4 sm:grid-cols-2'>
+        <h3 className='text-base-content/65 mb-3 text-[11px] font-semibold uppercase tracking-wider'>
+          {_('Popular Catalogs')}
+        </h3>
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
           {popularCatalogs
             .filter((catalog) => !catalog.disabled)
             .map((catalog) => {
@@ -486,23 +547,23 @@ export function CatalogManager() {
               return (
                 <div
                   key={catalog.id}
-                  className='card bg-base-100 border-base-300 border shadow-sm transition-shadow hover:shadow-md'
+                  className='card eink-bordered bg-base-100 border-base-200 flex flex-col border'
                 >
-                  <div className='card-body p-4'>
-                    <h3 className='card-title mb-1 text-sm'>
-                      {catalog.icon && <span>{catalog.icon}</span>}
-                      {catalog.name}
-                    </h3>
+                  <div className='flex flex-1 flex-col gap-2.5 p-4'>
+                    <h4 className='flex items-center gap-1.5 text-sm font-semibold'>
+                      {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+                      <span className='truncate'>{catalog.name}</span>
+                    </h4>
                     {catalog.description && (
-                      <p className='text-base-content/70 line-clamp-2 text-sm'>
+                      <p className='text-base-content/70 line-clamp-2 text-xs leading-relaxed'>
                         {catalog.description}
                       </p>
                     )}
-                    <div className='card-actions mt-4 justify-end gap-2'>
+                    <div className='border-base-200 mt-auto flex items-center justify-end gap-1 border-t pt-3'>
                       {!isAdded && (
                         <button
                           onClick={() => handleAddPopularCatalog(catalog)}
-                          className='btn btn-sm'
+                          className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
                         >
                           <IoAdd className='h-4 w-4' />
                           {_('Add')}
@@ -510,10 +571,10 @@ export function CatalogManager() {
                       )}
                       <button
                         onClick={() => handleOpenCatalog(catalog)}
-                        className='btn btn-sm btn-primary'
+                        className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
                       >
-                        <IoOpenOutline className='h-4 w-4' />
                         {_('Browse')}
+                        <MdChevronRight className='h-4 w-4' />
                       </button>
                     </div>
                   </div>
@@ -528,7 +589,7 @@ export function CatalogManager() {
         <ModalPortal>
           <dialog className='modal modal-open'>
             <div className='modal-box'>
-              <h3 className='mb-4 text-lg font-bold'>
+              <h3 className='mb-4 text-lg font-semibold tracking-tight'>
                 {editingCatalogId ? _('Edit OPDS Catalog') : _('Add OPDS Catalog')}
               </h3>
               <form
@@ -547,7 +608,7 @@ export function CatalogManager() {
                     value={newCatalog.name}
                     onChange={(e) => setNewCatalog({ ...newCatalog, name: e.target.value })}
                     placeholder={_('My Calibre Library')}
-                    className='input input-bordered placeholder:text-sm'
+                    className='input input-bordered eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     required
                   />
@@ -565,7 +626,7 @@ export function CatalogManager() {
                       setUrlError('');
                     }}
                     placeholder='https://example.com/opds'
-                    className='input input-bordered placeholder:text-sm'
+                    className='input input-bordered eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     required
                   />
@@ -588,7 +649,7 @@ export function CatalogManager() {
                       setProxyConsentError('');
                     }}
                     placeholder={_('Username')}
-                    className='input input-bordered placeholder:text-sm'
+                    className='input input-bordered eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     autoComplete='username'
                   />
@@ -607,7 +668,7 @@ export function CatalogManager() {
                         setProxyConsentError('');
                       }}
                       placeholder={_('Password')}
-                      className='input input-bordered w-full pr-10 placeholder:text-sm'
+                      className='input input-bordered eink-bordered w-full pr-10 placeholder:text-sm'
                       disabled={isValidating}
                       autoComplete='current-password'
                     />
@@ -641,7 +702,7 @@ export function CatalogManager() {
                       'CF-Access-Client-Id': 'your-client-id',
                       'CF-Access-Client-Secret': 'your-client-secret',
                     })}
-                    className='textarea textarea-bordered font-mono text-sm placeholder:text-xs'
+                    className='textarea textarea-bordered eink-bordered font-mono text-sm placeholder:text-xs'
                     rows={4}
                     disabled={isValidating}
                     spellCheck={false}
@@ -693,7 +754,7 @@ export function CatalogManager() {
                     value={newCatalog.description}
                     onChange={(e) => setNewCatalog({ ...newCatalog, description: e.target.value })}
                     placeholder={_('A brief description of this catalog')}
-                    className='textarea textarea-bordered text-sm placeholder:text-sm'
+                    className='textarea textarea-bordered eink-bordered text-sm placeholder:text-sm'
                     rows={2}
                     disabled={isValidating}
                   />
@@ -719,16 +780,33 @@ export function CatalogManager() {
                   </label>
                 </div>
 
-                <div className='modal-action'>
+                <div className='modal-action gap-3'>
                   <button
                     type='button'
                     onClick={handleCloseDialog}
-                    className='btn'
                     disabled={isValidating}
+                    className={clsx(
+                      'eink-bordered',
+                      'h-10 rounded-lg px-4 text-sm font-medium',
+                      'text-base-content hover:bg-base-200',
+                      'transition-colors duration-150',
+                      'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                      'disabled:cursor-not-allowed disabled:opacity-60',
+                      'disabled:hover:bg-transparent',
+                    )}
                   >
                     {_('Cancel')}
                   </button>
-                  <button type='submit' className='btn btn-primary' disabled={isValidating}>
+                  <button
+                    type='submit'
+                    disabled={isValidating}
+                    className={clsx(
+                      'btn btn-primary',
+                      'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
+                      'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+                      isValidating && 'opacity-60',
+                    )}
+                  >
                     {isValidating ? (
                       <>
                         <span className='loading loading-spinner loading-sm'></span>
