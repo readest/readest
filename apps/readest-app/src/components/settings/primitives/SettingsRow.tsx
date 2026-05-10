@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
+import { isCaselessUILang } from '@/utils/misc';
 
 interface SettingsRowProps {
   /** Primary label. ReactNode so callers can embed icons/badges. */
@@ -56,9 +57,6 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       data-setting-id={dataSettingId}
       className={clsx(
         'flex min-h-14 justify-between gap-3 px-4',
-        // `start` adds symmetric py-3.5 so single-line content matches the
-        // 56px (min-h-14) baseline of `center`-aligned rows; multi-line
-        // content (wrapped grids) grows the row downward.
         align === 'start' ? 'items-start py-3.5' : 'items-center',
         disabled && 'cursor-not-allowed opacity-50',
         asLabel && !disabled && 'cursor-pointer',
@@ -66,11 +64,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       )}
     >
       <div className='flex min-w-0 flex-col'>
-        {/* No explicit text-sm — labels inherit from `.settings-content`
-            (14px desktop / 16px mobile per src/styles/globals.css), matching
-            the legacy `config-item` rows. Description uses an em-relative
-            size so it stays proportional on both. */}
-        <span className='font-medium'>{label}</span>
+        <span className={clsx(isCaselessUILang() ? '' : 'font-medium')}>{label}</span>
         {description && (
           <span className='text-base-content/65 text-[0.85em] leading-snug'>{description}</span>
         )}

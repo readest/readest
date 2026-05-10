@@ -354,9 +354,13 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
       )}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
+      // Settings panels can be tall (Layout / Color especially); native
+      // scrollbars vanish on Android/iOS webviews, so use OverlayScrollbars
+      // to keep a visible, theme-aware track on every platform.
+      useOverlayScroll
       header={
         <div className='flex w-full flex-col items-center'>
-          <div className='flex w-full items-center justify-center pb-2 sm:hidden'>
+          <div className='-mt-2 flex w-full items-center justify-center pb-2 sm:hidden'>
             <button
               tabIndex={-1}
               aria-label={_('Close')}
