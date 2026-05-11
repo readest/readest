@@ -45,7 +45,9 @@ const selectFileTauri = async (
   appService: AppService,
   _: (key: string) => string,
 ): Promise<string[]> => {
-  const noFilter = appService?.isIOSApp || (appService?.isAndroidApp && options.type === 'books');
+  const noFilter =
+    appService?.isIOSApp ||
+    (appService?.isAndroidApp && (options.type === 'books' || options.type === 'dictionaries'));
   const exts = noFilter ? [] : options.extensions || [];
   const title = options.dialogTitle || _('Select Files');
   let files = (await appService?.selectFiles(_(title), exts)) || [];
