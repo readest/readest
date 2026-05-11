@@ -127,7 +127,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   // Tall enough to fit a header + 2-3 expanded cards comfortably. The popup
   // shows all enabled providers stacked (no tabs) so it needs more vertical
   // room than the legacy single-tab layout.
-  const dictPopupHeight = Math.min(480, maxHeight);
+  const dictPopupHeight = Math.min(360, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);

@@ -75,6 +75,15 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   };
 };
 
+export const isPointInRect = (point: Point, rect: Rect, padding: number = 1): boolean => {
+  return (
+    point.x >= rect.left + padding &&
+    point.x <= rect.right - padding &&
+    point.y >= rect.top + padding &&
+    point.y <= rect.bottom - padding
+  );
+};
+
 export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
   if (selection.rangeCount === 0) return false;
   const range = selection.getRangeAt(0);

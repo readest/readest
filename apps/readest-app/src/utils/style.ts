@@ -182,6 +182,9 @@ const getColorStyles = (
     hr.background-img {
       mix-blend-mode: multiply;
     }
+    p[width][height] > img:only-child {
+      mix-blend-mode: multiply;
+    }
     /* inline images */
     *:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
@@ -348,6 +351,11 @@ const getPageLayoutStyles = (
     position: relative;
     width: auto;
     height: auto;
+  }
+  /* some mobi */
+  p[width][height] > img:only-child { 
+    width: unset !important;
+    height: unset !important;
   }
 
   /* page break */
