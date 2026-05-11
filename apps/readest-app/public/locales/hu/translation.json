@@ -227,7 +227,6 @@
   "Library Header": "Könyvtár fejléc",
   "Library Sync Progress": "Könyvtár szinkronizálási állapot",
   "Your Bookshelf": "Az Ön könyvespolca",
-  "Welcome to your library. You can import your books here and read them anytime.": "Üdvözöljük a könyvtárában. Importálhatja könyveit és bármikor olvashatja őket.",
   "URL must start with http:// or https://": "Az URL-nek http:// vagy https:// előtaggal kell kezdődnie",
   "Adding LAN addresses is not supported in the web app version.": "A LAN-címek hozzáadása nem támogatott a webes alkalmazásban.",
   "Please confirm that this OPDS connection will be proxied through Readest servers on the web app before continuing.": "Kérjük, erősítse meg, hogy ez az OPDS-kapcsolat a Readest szerverein keresztül lesz továbbítva a webalkalmazásban.",
@@ -1409,5 +1408,9 @@
   "Content Sources": "Tartalomforrások",
   "Scroll tabs": "Lapok görgetése",
   "Catalog actions": "Katalógusműveletek",
-  "File Content": "Fájl tartalma"
+  "File Content": "Fájl tartalma",
+  "Start your library": "Indítsa el a könyvtárát",
+  "Pick a book from your device to add it to your library.": "Válasszon egy könyvet az eszközéről, hogy hozzáadja a könyvtárához.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Húzzon egy könyvet bárhová ezen az ablakon, vagy válasszon egyet a számítógépéről.",
+  "Sign in to sync your library": "Jelentkezzen be a könyvtár szinkronizálásához"
 }

@@ -102,7 +102,6 @@
   "Updated": "Atualizado",
   "Version {{version}}": "Versão {{version}}",
   "Vertical Direction": "Direção Vertical",
-  "Welcome to your library. You can import your books here and read them anytime.": "Bem-vindo à sua biblioteca. Você pode importar seus livros aqui e lê-los a qualquer momento.",
   "Wikipedia": "Wikipédia",
   "Writing Mode": "Modo de Escrita",
   "Your Library": "Sua Biblioteca",
@@ -1434,5 +1433,9 @@
   "Content Sources": "Fontes de conteúdo",
   "Scroll tabs": "Deslocar separadores",
   "Catalog actions": "Ações do catálogo",
-  "File Content": "Conteúdo do ficheiro"
+  "File Content": "Conteúdo do ficheiro",
+  "Start your library": "Comece a sua biblioteca",
+  "Pick a book from your device to add it to your library.": "Escolha um livro do seu dispositivo para adicionar à sua biblioteca.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Largue um livro em qualquer parte desta janela, ou escolha um do seu computador.",
+  "Sign in to sync your library": "Inicie sessão para sincronizar a sua biblioteca"
 }

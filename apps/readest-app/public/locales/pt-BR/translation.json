@@ -256,7 +256,6 @@
   "Library Header": "Cabeçalho da biblioteca",
   "Library Sync Progress": "Progresso de sincronização da biblioteca",
   "Your Bookshelf": "Sua estante",
-  "Welcome to your library. You can import your books here and read them anytime.": "Bem-vindo à sua biblioteca. Você pode importar seus livros aqui e lê-los a qualquer momento.",
   "This link can't be opened": "Não foi possível abrir este link",
   "The annotation link is missing required information. The original link may have been truncated.": "Faltam informações necessárias no link da anotação. O link original pode ter sido truncado.",
   "Go to Readest": "Ir para o Readest",
@@ -1434,5 +1433,9 @@
   "Content Sources": "Fontes de conteúdo",
   "Scroll tabs": "Rolar abas",
   "Catalog actions": "Ações do catálogo",
-  "File Content": "Conteúdo do arquivo"
+  "File Content": "Conteúdo do arquivo",
+  "Start your library": "Comece sua biblioteca",
+  "Pick a book from your device to add it to your library.": "Escolha um livro do seu dispositivo para adicionar à sua biblioteca.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Solte um livro em qualquer parte desta janela, ou escolha um do seu computador.",
+  "Sign in to sync your library": "Entre para sincronizar sua biblioteca"
 }

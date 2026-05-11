@@ -217,7 +217,6 @@
   "Failed to delete local copy of the book: {{title}}": "מחיקת העעותק המקומי של הספר נכשלה: {{title}}",
   "Library Header": "כותרת הספרייה",
   "Library Sync Progress": "התקדמות סנכרון הספרייה",
-  "Welcome to your library. You can import your books here and read them anytime.": "ברוכים הבאים לספרייה שלכם. כאן תוכלו לייבא את הספרים שלכם ולקרוא אותם בכל עת.",
   "URL must start with http:// or https://": "הכתובת חייבת להתחיל ב-http:// או https://",
   "Adding LAN addresses is not supported in the web app version.": "הוספת כתובות LAN אינה נתמכת בגרסת אפליקציית האינטרנט.",
   "Invalid OPDS catalog. Please check the URL.": "קטלוג OPDS לא תקין. אנא בדוק את הכתובת.",
@@ -1434,5 +1433,9 @@
   "Content Sources": "מקורות תוכן",
   "Scroll tabs": "גלילת לשוניות",
   "Catalog actions": "פעולות קטלוג",
-  "File Content": "תוכן הקובץ"
+  "File Content": "תוכן הקובץ",
+  "Start your library": "התחילו את הספרייה שלכם",
+  "Pick a book from your device to add it to your library.": "בחרו ספר מהמכשיר שלכם כדי להוסיף אותו לספרייה.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "שחררו ספר בכל מקום בחלון הזה, או בחרו אחד מהמחשב שלכם.",
+  "Sign in to sync your library": "התחברו לסנכרון הספרייה שלכם"
 }

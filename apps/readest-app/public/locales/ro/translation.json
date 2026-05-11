@@ -233,7 +233,6 @@
   "Library Header": "Antet bibliotecă",
   "Library Sync Progress": "Progresul sincronizării bibliotecii",
   "Your Bookshelf": "Raftul tău",
-  "Welcome to your library. You can import your books here and read them anytime.": "Bun venit la biblioteca dvs. Vă puteți importa cărțile aici și le puteți citi oricând.",
   "URL must start with http:// or https://": "Adresa URL trebuie să înceapă cu http:// sau https://",
   "Adding LAN addresses is not supported in the web app version.": "Adăugarea de adrese LAN nu este acceptată în versiunea aplicației web.",
   "Invalid OPDS catalog. Please check the URL.": "Catalog OPDS nevalid. Vă rugăm să verificați adresa URL.",
@@ -1434,5 +1433,9 @@
   "Content Sources": "Surse de conținut",
   "Scroll tabs": "Derulează filele",
   "Catalog actions": "Acțiuni catalog",
-  "File Content": "Conținutul fișierului"
+  "File Content": "Conținutul fișierului",
+  "Start your library": "Începe-ți biblioteca",
+  "Pick a book from your device to add it to your library.": "Alege o carte de pe dispozitiv pentru a o adăuga în biblioteca ta.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Lasă o carte oriunde în această fereastră sau alege una de pe computer.",
+  "Sign in to sync your library": "Conectează-te pentru a-ți sincroniza biblioteca"
 }

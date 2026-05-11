@@ -90,7 +90,6 @@
   "Book deleted: {{title}}": "Boek verwijderd: {{title}}",
   "Failed to delete book: {{title}}": "Verwijderen van boek mislukt: {{title}}",
   "Your Library": "Uw bibliotheek",
-  "Welcome to your library. You can import your books here and read them anytime.": "Welkom bij uw bibliotheek. U kunt hier uw boeken importeren en ze op elk moment lezen.",
   "Copied to notebook": "Gekopieerd naar notitieblok",
   "No annotations to export": "Geen annotaties om te exporteren",
   "Exported from Readest": "Geëxporteerd uit Readest",
@@ -1409,5 +1408,9 @@
   "Content Sources": "Inhoudsbronnen",
   "Scroll tabs": "Tabbladen scrollen",
   "Catalog actions": "Catalogusacties",
-  "File Content": "Bestandsinhoud"
+  "File Content": "Bestandsinhoud",
+  "Start your library": "Begin je bibliotheek",
+  "Pick a book from your device to add it to your library.": "Kies een boek van je apparaat om aan je bibliotheek toe te voegen.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Sleep een boek ergens in dit venster, of kies er een van je computer.",
+  "Sign in to sync your library": "Meld je aan om je bibliotheek te synchroniseren"
 }

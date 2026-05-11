@@ -77,6 +77,7 @@ import {
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
+import LibraryEmptyState from './components/LibraryEmptyState';
 import GroupHeader from './components/GroupHeader';
 import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
@@ -1013,19 +1014,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         ) : (
           <div className='hero drop-zone h-screen items-center justify-center'>
             <DropIndicator />
-            <div className='hero-content text-neutral-content text-center'>
-              <div className='max-w-md'>
-                <h1 className='mb-5 text-5xl font-bold'>{_('Your Library')}</h1>
-                <p className='mb-5'>
-                  {_(
-                    'Welcome to your library. You can import your books here and read them anytime.',
-                  )}
-                </p>
-                <button className='btn btn-primary rounded-xl' onClick={handleImportBooksFromFiles}>
-                  {_('Import Books')}
-                </button>
-              </div>
-            </div>
+            <LibraryEmptyState onImport={handleImportBooksFromFiles} />
           </div>
         ))}
       {showDetailsBook && (

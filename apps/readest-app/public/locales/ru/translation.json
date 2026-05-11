@@ -102,7 +102,6 @@
   "Updated": "Обновлено",
   "Version {{version}}": "Версия {{version}}",
   "Vertical Direction": "Вертикальное направление",
-  "Welcome to your library. You can import your books here and read them anytime.": "Добро пожаловать в вашу библиотеку. Вы можете импортировать сюда книги и читать их в любое время.",
   "Wikipedia": "Википедия",
   "Writing Mode": "Режим записи",
   "Your Library": "Ваша библиотека",
@@ -1459,5 +1458,9 @@
   "Content Sources": "Источники контента",
   "Scroll tabs": "Прокрутить вкладки",
   "Catalog actions": "Действия каталога",
-  "File Content": "Содержимое файла"
+  "File Content": "Содержимое файла",
+  "Start your library": "Создайте свою библиотеку",
+  "Pick a book from your device to add it to your library.": "Выберите книгу с устройства, чтобы добавить её в библиотеку.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Перетащите книгу в любое место этого окна или выберите её на компьютере.",
+  "Sign in to sync your library": "Войдите, чтобы синхронизировать библиотеку"
 }

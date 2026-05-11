@@ -101,7 +101,6 @@
   "Updated": "تم التحديث",
   "Version {{version}}": "الإصدار {{version}}",
   "Vertical Direction": "الاتجاه العمودي",
-  "Welcome to your library. You can import your books here and read them anytime.": "مرحبًا بكم في مكتبتكم. يمكنكم استيراد كتبكم هنا وقراءتها في أي وقت.",
   "Wikipedia": "ويكيبيديا",
   "Writing Mode": "وضع الكتابة",
   "Your Library": "المكتبة الخاصة بك",
@@ -1509,5 +1508,9 @@
   "Content Sources": "مصادر المحتوى",
   "Scroll tabs": "تمرير علامات التبويب",
   "Catalog actions": "إجراءات الفهرس",
-  "File Content": "محتوى الملف"
+  "File Content": "محتوى الملف",
+  "Start your library": "ابدأ مكتبتك",
+  "Pick a book from your device to add it to your library.": "اختر كتابًا من جهازك لإضافته إلى مكتبتك.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "أفلِت كتابًا في أي مكان على هذه النافذة، أو اختر واحدًا من حاسوبك.",
+  "Sign in to sync your library": "سجّل الدخول لمزامنة مكتبتك"
 }

@@ -117,7 +117,6 @@
   "Failed to delete book: {{title}}": "புத்தகத்தை நீக்க முடியவில்லை: {{title}}",
   "Failed to delete cloud backup of the book: {{title}}": "புத்தகத்தின் cloud backup நீக்க முடியவில்லை: {{title}}",
   "Failed to delete local copy of the book: {{title}}": "புத்தகத்தின் உள்ளூர் நகல் நீக்க முடியவில்லை: {{title}}",
-  "Welcome to your library. You can import your books here and read them anytime.": "உங்கள் நூலகத்திற்கு வரவேற்கிறோம். நீங்கள் இங்கே உங்கள் புத்தகங்களை இறக்குமதி செய்து எப்போது வேண்டுமானாலும் படிக்கலாம்.",
   "Copied to notebook": "குறிப்பேட்டில் நகலெடுக்கப்பட்டது",
   "No annotations to export": "ஏற்றுமதி செய்ய குறிப்புகள் இல்லை",
   "Exported from Readest": "Readest இல் இருந்து ஏற்றுமதி செய்யப்பட்டது",
@@ -1409,5 +1408,9 @@
   "Content Sources": "உள்ளடக்க மூலங்கள்",
   "Scroll tabs": "தாவல்களை உருட்டவும்",
   "Catalog actions": "பட்டியல் செயல்கள்",
-  "File Content": "கோப்பு உள்ளடக்கம்"
+  "File Content": "கோப்பு உள்ளடக்கம்",
+  "Start your library": "உங்கள் நூலகத்தைத் தொடங்குங்கள்",
+  "Pick a book from your device to add it to your library.": "உங்கள் நூலகத்தில் சேர்க்க உங்கள் சாதனத்திலிருந்து ஒரு புத்தகத்தைத் தேர்ந்தெடுக்கவும்.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "இந்த சாளரத்தில் எங்கேனும் ஒரு புத்தகத்தை விடவும், அல்லது உங்கள் கணினியிலிருந்து ஒன்றைத் தேர்ந்தெடுக்கவும்.",
+  "Sign in to sync your library": "உங்கள் நூலகத்தை ஒத்திசைக்க உள்நுழையவும்"
 }

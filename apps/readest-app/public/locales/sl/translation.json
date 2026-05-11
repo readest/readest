@@ -222,7 +222,6 @@
   "Failed to delete local copy of the book: {{title}}": "Brisanje lokalne kopije knjige ni uspelo: {{title}}",
   "Library Header": "Glava knjižnice",
   "Library Sync Progress": "Napredek sinhronizacije knjižnice",
-  "Welcome to your library. You can import your books here and read them anytime.": "Dobrodošli v vaši knjižnici. Tukaj lahko uvozite svoje knjige in jih berete kadarkoli.",
   "URL must start with http:// or https://": "URL se mora začeti s http:// ali https://",
   "Adding LAN addresses is not supported in the web app version.": "Dodajanje naslovov LAN v različici spletne aplikacije ni podprto.",
   "Invalid OPDS catalog. Please check the URL.": "Neveljaven OPDS katalog. Prosimo, preverite URL.",
@@ -1459,5 +1458,9 @@
   "Content Sources": "Viri vsebin",
   "Scroll tabs": "Drsenje zavihkov",
   "Catalog actions": "Dejanja kataloga",
-  "File Content": "Vsebina datoteke"
+  "File Content": "Vsebina datoteke",
+  "Start your library": "Začnite svojo knjižnico",
+  "Pick a book from your device to add it to your library.": "Izberite knjigo iz svoje naprave, da jo dodate v svojo knjižnico.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Spustite knjigo kjer koli v tem oknu ali jo izberite iz svojega računalnika.",
+  "Sign in to sync your library": "Prijavite se za sinhronizacijo svoje knjižnice"
 }

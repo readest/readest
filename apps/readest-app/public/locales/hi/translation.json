@@ -102,7 +102,6 @@
   "Updated": "अपडेट किया गया",
   "Version {{version}}": "संस्करण {{version}}",
   "Vertical Direction": "ऊर्ध्वाधर दिशा",
-  "Welcome to your library. You can import your books here and read them anytime.": "आपकी लाइब्रेरी में आपका स्वागत है। आप यहां अपनी पुस्तकें आयात कर सकते हैं और कभी भी पढ़ सकते हैं।",
   "Wikipedia": "विकिपीडिया",
   "Writing Mode": "लेखन मोड",
   "Your Library": "आपकी लाइब्रेरी",
@@ -1409,5 +1408,9 @@
   "Content Sources": "सामग्री स्रोत",
   "Scroll tabs": "टैब स्क्रॉल करें",
   "Catalog actions": "कैटलॉग क्रियाएँ",
-  "File Content": "फ़ाइल सामग्री"
+  "File Content": "फ़ाइल सामग्री",
+  "Start your library": "अपनी लाइब्रेरी शुरू करें",
+  "Pick a book from your device to add it to your library.": "अपनी लाइब्रेरी में जोड़ने के लिए अपने डिवाइस से एक किताब चुनें।",
+  "Drop a book anywhere on this window, or pick one from your computer.": "इस विंडो में कहीं भी एक किताब छोड़ें, या अपने कंप्यूटर से कोई एक चुनें।",
+  "Sign in to sync your library": "अपनी लाइब्रेरी सिंक करने के लिए साइन इन करें"
 }

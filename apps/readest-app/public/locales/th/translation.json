@@ -110,7 +110,6 @@
   "Book deleted: {{title}}": "ลบหนังสือแล้ว: {{title}}",
   "Failed to delete book: {{title}}": "ไม่สามารถลบหนังสือ: {{title}}",
   "Deleted cloud backup of the book: {{title}}": "ลบสำรองบนคลาวด์แล้ว: {{title}}",
-  "Welcome to your library. You can import your books here and read them anytime.": "ยินดีต้อนรับสู่คลังหนังสือ คุณสามารถนำเข้าหนังสือและอ่านได้ตลอดเวลา",
   "Copied to notebook": "คัดลอกไปยังสมุดบันทึก",
   "No annotations to export": "ไม่มีบันทึกให้ส่งออก",
   "Exported from Readest": "ส่งออกจาก Readest",
@@ -1384,5 +1383,9 @@
   "Content Sources": "แหล่งเนื้อหา",
   "Scroll tabs": "เลื่อนแท็บ",
   "Catalog actions": "การดำเนินการแคตตาล็อก",
-  "File Content": "เนื้อหาไฟล์"
+  "File Content": "เนื้อหาไฟล์",
+  "Start your library": "เริ่มต้นห้องสมุดของคุณ",
+  "Pick a book from your device to add it to your library.": "เลือกหนังสือจากอุปกรณ์ของคุณเพื่อเพิ่มลงในห้องสมุดของคุณ",
+  "Drop a book anywhere on this window, or pick one from your computer.": "วางหนังสือที่ใดก็ได้บนหน้าต่างนี้ หรือเลือกจากคอมพิวเตอร์ของคุณ",
+  "Sign in to sync your library": "ลงชื่อเข้าใช้เพื่อซิงค์ห้องสมุดของคุณ"
 }

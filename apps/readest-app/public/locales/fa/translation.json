@@ -101,7 +101,6 @@
   "Updated": "به‌روزرسانی شده",
   "Version {{version}}": "نسخه‌ی {{version}}",
   "Vertical Direction": "جهت عمودی",
-  "Welcome to your library. You can import your books here and read them anytime.": "به کتابخانه‌تان خوش آمدید. می‌توانید کتاب‌هایتان را اینجا وارد کنید و هر زمان خواستید آن‌ها را بخوانید.",
   "Wikipedia": "ویکی‌پدیا",
   "Writing Mode": "حالت نوشتن",
   "Your Library": "کتابخانه‌ی شما",
@@ -1409,5 +1408,9 @@
   "Content Sources": "منابع محتوا",
   "Scroll tabs": "پیمایش زبانه‌ها",
   "Catalog actions": "اقدامات فهرست",
-  "File Content": "محتوای فایل"
+  "File Content": "محتوای فایل",
+  "Start your library": "کتابخانه‌ی خود را آغاز کنید",
+  "Pick a book from your device to add it to your library.": "از دستگاه خود کتابی انتخاب کنید تا به کتابخانه‌تان افزوده شود.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "کتابی را در هر جای این پنجره رها کنید، یا یکی را از رایانه‌ی خود انتخاب کنید.",
+  "Sign in to sync your library": "برای همگام‌سازی کتابخانه‌ی خود وارد شوید"
 }

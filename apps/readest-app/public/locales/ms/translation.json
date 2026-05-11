@@ -160,7 +160,6 @@
   "Failed to delete cloud backup of the book: {{title}}": "Gagal memadam sandaran awan buku: {{title}}",
   "Failed to delete local copy of the book: {{title}}": "Gagal memadam salinan tempatan buku: {{title}}",
   "Library Header": "Pengepala Perpustakaan",
-  "Welcome to your library. You can import your books here and read them anytime.": "Selamat datang ke perpustakaan anda. Anda boleh import buku anda di sini dan membacanya bila-bila masa.",
   "Copied to notebook": "Disalin ke buku nota",
   "No annotations to export": "Tiada anotasi untuk dieksport",
   "Exported from Readest": "Dieksport dari Readest",
@@ -1384,5 +1383,9 @@
   "Content Sources": "Sumber Kandungan",
   "Scroll tabs": "Skrol tab",
   "Catalog actions": "Tindakan katalog",
-  "File Content": "Kandungan fail"
+  "File Content": "Kandungan fail",
+  "Start your library": "Mulakan perpustakaan anda",
+  "Pick a book from your device to add it to your library.": "Pilih buku dari peranti anda untuk ditambahkan ke perpustakaan anda.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Lepaskan buku di mana-mana pada tetingkap ini, atau pilih satu dari komputer anda.",
+  "Sign in to sync your library": "Daftar masuk untuk menyegerakkan perpustakaan anda"
 }

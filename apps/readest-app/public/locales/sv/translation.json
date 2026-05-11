@@ -148,7 +148,6 @@
   "Failed to delete cloud backup of the book: {{title}}": "Kunde inte radera molnkopia av bok: {{title}}",
   "Failed to delete local copy of the book: {{title}}": "Kunde inte radera lokal kopia av bok: {{title}}",
   "Library Header": "Bibliotekshuvud",
-  "Welcome to your library. You can import your books here and read them anytime.": "Välkommen till ditt bibliotek. Du kan importera dina böcker här och läsa dem när som helst.",
   "Copied to notebook": "Kopierat till anteckningsbok",
   "No annotations to export": "Inga anteckningar att exportera",
   "Exported from Readest": "Exporterad från Readest",
@@ -1409,5 +1408,9 @@
   "Content Sources": "Innehållskällor",
   "Scroll tabs": "Bläddra mellan flikar",
   "Catalog actions": "Katalogåtgärder",
-  "File Content": "Filinnehåll"
+  "File Content": "Filinnehåll",
+  "Start your library": "Starta ditt bibliotek",
+  "Pick a book from your device to add it to your library.": "Välj en bok från din enhet att lägga till i ditt bibliotek.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Släpp en bok var som helst på det här fönstret, eller välj en från din dator.",
+  "Sign in to sync your library": "Logga in för att synkronisera ditt bibliotek"
 }

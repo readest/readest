@@ -102,7 +102,6 @@
   "Updated": "Оновлено",
   "Version {{version}}": "Версія {{version}}",
   "Vertical Direction": "Вертикальний напрямок",
-  "Welcome to your library. You can import your books here and read them anytime.": "Ласкаво просимо до вашої бібліотеки. Ви можете імпортувати сюди свої книги та читати їх будь-коли.",
   "Wikipedia": "Вікіпедія",
   "Writing Mode": "Режим письма",
   "Your Library": "Ваша бібліотека",
@@ -1459,5 +1458,9 @@
   "Content Sources": "Джерела вмісту",
   "Scroll tabs": "Прокрутити вкладки",
   "Catalog actions": "Дії каталогу",
-  "File Content": "Вміст файлу"
+  "File Content": "Вміст файлу",
+  "Start your library": "Створіть свою бібліотеку",
+  "Pick a book from your device to add it to your library.": "Виберіть книжку з вашого пристрою, щоб додати її до бібліотеки.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Перетягніть книжку будь-куди у це вікно або виберіть її з комп’ютера.",
+  "Sign in to sync your library": "Увійдіть, щоб синхронізувати бібліотеку"
 }

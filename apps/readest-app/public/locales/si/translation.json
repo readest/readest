@@ -117,7 +117,6 @@
   "Failed to delete book: {{title}}": "පොත මකා දැමීමට අසමත්: {{title}}",
   "Failed to delete cloud backup of the book: {{title}}": "පොතේ cloud backup මකා දැමීමට අසමත්: {{title}}",
   "Failed to delete local copy of the book: {{title}}": "පොතේ දේශීය පිටපත මකා දැමීමට අසමත්: {{title}}",
-  "Welcome to your library. You can import your books here and read them anytime.": "ඔබේ පුස්තකාලයට සාදරයෙන් පිළිගනිමු. ඔබට මෙහි ඔබේ පොත් ආයාත කර ඕනෑම වේලාවක කියවිය හැක.",
   "Copied to notebook": "සටහන් පොතට පිටපත් කරන ලදී",
   "No annotations to export": "නිර්යාත කිරීමට සටහන් නැත",
   "Exported from Readest": "Readest වෙතින් නිර්යාත කරන ලදී",
@@ -1409,5 +1408,9 @@
   "Content Sources": "අන්තර්ගත මූලාශ්‍ර",
   "Scroll tabs": "ටැබ් අනුචලනය කරන්න",
   "Catalog actions": "නාමාවලි ක්‍රියා",
-  "File Content": "ගොනුවේ අන්තර්ගතය"
+  "File Content": "ගොනුවේ අන්තර්ගතය",
+  "Start your library": "ඔබේ පුස්තකාලය ආරම්භ කරන්න",
+  "Pick a book from your device to add it to your library.": "ඔබේ පුස්තකාලයට එක් කිරීමට ඔබේ උපාංගයෙන් පොතක් තෝරන්න.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "මෙම කවුළුවේ ඕනෑම තැනක පොතක් දමන්න, නැතහොත් ඔබේ පරිගණකයෙන් එකක් තෝරන්න.",
+  "Sign in to sync your library": "ඔබේ පුස්තකාලය සමමුහුර්ත කිරීමට පුරනය වන්න"
 }

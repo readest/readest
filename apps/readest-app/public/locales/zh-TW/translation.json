@@ -102,7 +102,6 @@
   "Updated": "更新日期",
   "Version {{version}}": "版本 {{version}}",
   "Vertical Direction": "豎排",
-  "Welcome to your library. You can import your books here and read them anytime.": "書庫空空如也，您可以導入您的書籍並隨時閱讀。",
   "Wikipedia": "維基百科",
   "Writing Mode": "排版模式",
   "Your Library": "書庫",
@@ -1384,5 +1383,9 @@
   "Content Sources": "內容來源",
   "Scroll tabs": "捲動分頁",
   "Catalog actions": "目錄操作",
-  "File Content": "檔案內容"
+  "File Content": "檔案內容",
+  "Start your library": "開啟你的書庫",
+  "Pick a book from your device to add it to your library.": "從裝置中挑一本書加入書庫吧。",
+  "Drop a book anywhere on this window, or pick one from your computer.": "把書拖到視窗任一處，或從電腦中挑選一本。",
+  "Sign in to sync your library": "登入以同步書庫"
 }

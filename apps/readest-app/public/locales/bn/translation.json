@@ -117,7 +117,6 @@
   "Failed to delete book: {{title}}": "বই মুছতে ব্যর্থ: {{title}}",
   "Failed to delete cloud backup of the book: {{title}}": "বইয়ের ক্লাউড ব্যাকআপ মুছতে ব্যর্থ: {{title}}",
   "Failed to delete local copy of the book: {{title}}": "বইয়ের স্থানীয় কপি মুছতে ব্যর্থ: {{title}}",
-  "Welcome to your library. You can import your books here and read them anytime.": "আপনার লাইব্রেরিতে স্বাগতম। আপনি এখানে বই আমদানি করে যেকোনো সময় পড়তে পারেন।",
   "Copied to notebook": "নোটবুকে কপি করা হয়েছে",
   "No annotations to export": "রপ্তানি করার জন্য কোন টীকা নেই",
   "Exported from Readest": "রিডেস্ট থেকে রপ্তানি করা হয়েছে",
@@ -1409,5 +1408,9 @@
   "Content Sources": "কন্টেন্ট উৎস",
   "Scroll tabs": "ট্যাব স্ক্রোল করুন",
   "Catalog actions": "ক্যাটালগ অ্যাকশন",
-  "File Content": "ফাইল সামগ্রী"
+  "File Content": "ফাইল সামগ্রী",
+  "Start your library": "আপনার লাইব্রেরি শুরু করুন",
+  "Pick a book from your device to add it to your library.": "আপনার লাইব্রেরিতে যোগ করতে ডিভাইস থেকে একটি বই বেছে নিন।",
+  "Drop a book anywhere on this window, or pick one from your computer.": "এই উইন্ডোর যেকোনো জায়গায় একটি বই ছাড়ুন, অথবা আপনার কম্পিউটার থেকে একটি বেছে নিন।",
+  "Sign in to sync your library": "আপনার লাইব্রেরি সিঙ্ক করতে সাইন ইন করুন"
 }

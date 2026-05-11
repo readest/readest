@@ -102,7 +102,6 @@
   "Updated": "Ενημερώθηκε",
   "Version {{version}}": "Έκδοση {{version}}",
   "Vertical Direction": "Κάθετη κατεύθυνση",
-  "Welcome to your library. You can import your books here and read them anytime.": "Καλώς ήρθατε στη βιβλιοθήκη σας. Μπορείτε να εισάγετε τα βιβλία σας εδώ και να τα διαβάσετε οποιαδήποτε στιγμή.",
   "Wikipedia": "Βικιπαίδεια",
   "Writing Mode": "Λειτουργία γραφής",
   "Your Library": "Η βιβλιοθήκη σας",
@@ -1409,5 +1408,9 @@
   "Content Sources": "Πηγές περιεχομένου",
   "Scroll tabs": "Κύλιση καρτελών",
   "Catalog actions": "Ενέργειες καταλόγου",
-  "File Content": "Περιεχόμενο αρχείου"
+  "File Content": "Περιεχόμενο αρχείου",
+  "Start your library": "Ξεκινήστε τη βιβλιοθήκη σας",
+  "Pick a book from your device to add it to your library.": "Επιλέξτε ένα βιβλίο από τη συσκευή σας για να το προσθέσετε στη βιβλιοθήκη σας.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Αφήστε ένα βιβλίο οπουδήποτε σε αυτό το παράθυρο ή επιλέξτε ένα από τον υπολογιστή σας.",
+  "Sign in to sync your library": "Συνδεθείτε για να συγχρονίσετε τη βιβλιοθήκη σας"
 }

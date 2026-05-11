@@ -249,7 +249,6 @@
   "Library Header": "Kutubxona sarlavhasi",
   "Library Sync Progress": "Kutubxona sinxronlash jarayoni",
   "Your Bookshelf": "Kitob javoningiz",
-  "Welcome to your library. You can import your books here and read them anytime.": "Kutubxonangizga xush kelibsiz. Bu yerga kitoblaringizni import qilib, istalgan vaqtda oʻqishingiz mumkin.",
   "This link can't be opened": "Bu havolani ochib boʻlmadi",
   "The annotation link is missing required information. The original link may have been truncated.": "Izoh havolasida kerakli maʼlumot yetishmaydi. Asl havola qisqartirilgan boʻlishi mumkin.",
   "Go to Readest": "Readest-ga oʻtish",
@@ -1409,5 +1408,9 @@
   "Content Sources": "Kontent manbalari",
   "Scroll tabs": "Yorliqlarni aylantirish",
   "Catalog actions": "Katalog amallari",
-  "File Content": "Fayl tarkibi"
+  "File Content": "Fayl tarkibi",
+  "Start your library": "Kutubxonangizni boshlang",
+  "Pick a book from your device to add it to your library.": "Kutubxonangizga qo‘shish uchun qurilmangizdan kitob tanlang.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Ushbu oynaning istalgan joyiga kitob tashlang yoki kompyuteringizdan birini tanlang.",
+  "Sign in to sync your library": "Kutubxonangizni sinxronlash uchun tizimga kiring"
 }

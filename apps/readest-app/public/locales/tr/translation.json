@@ -102,7 +102,6 @@
   "Updated": "Güncellendi",
   "Version {{version}}": "Sürüm {{version}}",
   "Vertical Direction": "Dikey Yön",
-  "Welcome to your library. You can import your books here and read them anytime.": "Kütüphanenize hoş geldiniz. Buradan kitaplarınızı içe aktarabilir ve istediğiniz zaman okuyabilirsiniz.",
   "Wikipedia": "Vikipedi",
   "Writing Mode": "Yazma Modu",
   "Your Library": "Kütüphaneniz",
@@ -1409,5 +1408,9 @@
   "Content Sources": "İçerik kaynakları",
   "Scroll tabs": "Sekmeleri kaydır",
   "Catalog actions": "Katalog eylemleri",
-  "File Content": "Dosya içeriği"
+  "File Content": "Dosya içeriği",
+  "Start your library": "Kütüphanenizi başlatın",
+  "Pick a book from your device to add it to your library.": "Kütüphanenize eklemek için cihazınızdan bir kitap seçin.",
+  "Drop a book anywhere on this window, or pick one from your computer.": "Bu pencerede herhangi bir yere bir kitap bırakın veya bilgisayarınızdan birini seçin.",
+  "Sign in to sync your library": "Kütüphanenizi senkronize etmek için oturum açın"
 }

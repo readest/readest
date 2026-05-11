@@ -102,7 +102,6 @@
   "Updated": "བསྐྱར་བརྗེའི་ཚེས་གྲངས།",
   "Version {{version}}": "ཐོན་རིམ {{version}}",
   "Vertical Direction": "ཀྲིང་རིམ།",
-  "Welcome to your library. You can import your books here and read them anytime.": "དཔེ་མཛོད་སྟོང་པ་ཡིན། ཁྱེད་ཀྱིས་ཁྱེད་རང་གི་དཔེ་དེབ་ནང་འདྲེན་བྱས་ནས་དུས་དང་རྣམ་པ་ཀུན་ཏུ་ཀློག་ཐུབ།",
   "Wikipedia": "ཝེ་ཁི་པི་ཌི་ཡ།",
   "Writing Mode": "པར་སྒྲིག་གི་རྣམ་པ།",
   "Your Library": "དཔེ་མཛོད།",
@@ -1384,5 +1383,9 @@
   "Content Sources": "ནང་དོན་འབྱུང་ཁུངས།",
   "Scroll tabs": "ཤོག་བྱང་འགུལ་སྐྱོད།",
   "Catalog actions": "དཔེ་ཐོའི་བྱ་སྤྱོད།",
-  "File Content": "ཡིག་ཆའི་ནང་དོན།"
+  "File Content": "ཡིག་ཆའི་ནང་དོན།",
+  "Start your library": "ཁྱེད་ཀྱི་དཔེ་མཛོད་འགོ་འཛུགས།",
+  "Pick a book from your device to add it to your library.": "ཁྱེད་ཀྱི་སྒྲིག་ཆས་ནས་དཔེ་དེབ་ཅིག་འདེམས་ནས་ཁྱེད་ཀྱི་དཔེ་མཛོད་ལ་ཁ་སྣོན་གྱིས།",
+  "Drop a book anywhere on this window, or pick one from your computer.": "སྒེའུ་ཁུང་འདིའི་གང་སར་དཔེ་དེབ་ཅིག་འཇོག་པའམ་ཡང་ན་ཁྱེད་ཀྱི་གློག་ཀླད་ནས་འདེམས་རོགས།",
+  "Sign in to sync your library": "ཁྱེད་ཀྱི་དཔེ་མཛོད་མཉམ་སྦྱོར་གྱི་ཆེད་ནང་བསྐྱོད་གནང་རོགས།"
 }
