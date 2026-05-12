@@ -619,9 +619,15 @@ const getWarichuStyles = () => `
 `;
 
 const getRubyStyles = () => `
-  ruby rt {
+  .rt-rendered::before {
+    content: attr(data-text);
+  }
+  rt {
     user-select: none;
     -webkit-user-select: none;
+  }
+  rp {
+    display: none !important;
   }
 `;
 

@@ -8,6 +8,7 @@ import { simpleccTransformer } from './simplecc';
 import { styleTransformer } from './style';
 import { proofreadTransformer } from './proofread';
 import { warichuTransformer } from './warichu';
+import { rubyTransformer } from './ruby';
 
 export const availableTransformers: Transformer[] = [
   punctuationTransformer,
@@ -19,5 +20,6 @@ export const availableTransformers: Transformer[] = [
   simpleccTransformer,
   proofreadTransformer,
   warichuTransformer,
+  rubyTransformer,
   // Add more transformers here
 ];
