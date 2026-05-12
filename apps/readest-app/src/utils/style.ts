@@ -619,7 +619,7 @@ const getWarichuStyles = () => `
 `;
 
 const getRubyStyles = () => `
-  .rt-rendered::before {
+  .rt-text::before {
     content: attr(data-text);
   }
   rt {

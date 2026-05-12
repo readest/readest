@@ -10,7 +10,7 @@ export const rubyTransformer: Transformer = {
       const text = content.replace(/<[^>]+>/g, '').trim();
       if (!text) return `<rt${attrs}></rt>`;
       const escaped = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-      return `<rt${attrs} class="rt-rendered" data-text="${escaped}"></rt>`;
+      return `<rt${attrs}><span class="rt-text" data-text="${escaped}"></span></rt>`;
     });
 
     return result;
