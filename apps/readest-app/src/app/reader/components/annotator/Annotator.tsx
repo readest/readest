@@ -207,7 +207,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const getAnnotationText = useCallback(
     async (range: Range) => {
-      transformCtx['content'] = getTextFromRange(range, primaryLang.startsWith('ja') ? ['rt'] : []);
+      transformCtx['content'] = getTextFromRange(range, ['rt']);
       return await transformContent(transformCtx);
     },
     [primaryLang, transformCtx],

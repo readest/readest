@@ -181,7 +181,6 @@ const FoliateViewer: React.FC<{
                 'simplecc',
                 'proofread',
                 'warichu',
-                'ruby',
               ],
             };
             return Promise.resolve(transformContent(ctx));

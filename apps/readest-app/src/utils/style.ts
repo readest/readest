@@ -619,9 +619,6 @@ const getWarichuStyles = () => `
 `;
 
 const getRubyStyles = () => `
-  .rt-text::before {
-    content: attr(data-text);
-  }
   rt {
     user-select: none;
     -webkit-user-select: none;
