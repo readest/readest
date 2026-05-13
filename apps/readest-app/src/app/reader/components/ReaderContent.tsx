@@ -95,6 +95,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [loading, setLoading] = useState(false);
   const [errorLoading, setErrorLoading] = useState(false);
   const [readerDebugLayers, setReaderDebugLayers] = useState(false);
+  const [readerFrameIsolation, setReaderFrameIsolation] = useState(false);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
   useGamepad();
@@ -163,6 +164,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       (typeof window !== 'undefined' && localStorage.getItem('READER_DEBUG_LAYERS') === '1');
 
     setReaderDebugLayers(enabled);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const enabled =
+      process.env['NEXT_PUBLIC_READER_FRAME_ISOLATION'] === '1' ||
+      process.env['READER_FRAME_ISOLATION'] === '1' ||
+      searchParams?.get('readerFrameIsolation') === '1' ||
+      (typeof window !== 'undefined' && localStorage.getItem('READER_FRAME_ISOLATION') === '1');
+
+    setReaderFrameIsolation(enabled);
   }, [searchParams]);
 
   useEffect(() => {
@@ -292,7 +303,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   return (
     <div
-      className={`reader-content citadel-reader-shell full-height relative flex ${readerDebugLayers ? 'reader-debug-layers' : ''}`}
+      className={`reader-content citadel-reader-shell full-height relative flex ${readerDebugLayers ? 'reader-debug-layers' : ''} ${
+        readerFrameIsolation ? 'reader-debug-frame-isolation' : ''
+      }`}
     >
       {/* Subtle texture overlay for the reader shell */}
       <div
@@ -345,24 +358,17 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             position: relative;
             overflow: visible;
             margin: 8px 0;
-            border-radius: 16px;
+            border-radius: 3px;
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::before {
             content: '';
             position: absolute;
             inset: 8px 14px;
-            border-radius: 16px;
-            background:
-              radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.035), transparent 18%),
-              radial-gradient(circle at 50% 112%, rgba(94, 18, 14, 0.14), transparent 32%),
-              linear-gradient(180deg, rgba(28, 16, 13, 0.98), rgba(9, 6, 5, 1));
-            box-shadow:
-              inset 0 0 0 1px rgba(190, 146, 72, 0.32),
-              inset 0 10px 18px rgba(255, 237, 193, 0.006),
-              inset 0 -18px 28px rgba(0, 0, 0, 0.24),
-              0 16px 36px rgba(0, 0, 0, 0.4),
-              0 0 16px rgba(120, 24, 18, 0.06);
+            display: none;
+            border-radius: 3px;
+            background: transparent;
+            box-shadow: none;
             pointer-events: none;
             z-index: 0;
           }
@@ -370,15 +376,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 22px 30px 76px;
-            border-radius: 28px;
-            background:
-              radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
-              linear-gradient(180deg, rgba(18, 12, 10, 0.44), rgba(6, 5, 4, 0.18));
-            box-shadow:
-              inset 0 0 0 1px rgba(112, 72, 34, 0.34),
-              inset 0 20px 34px rgba(255, 224, 176, 0.012),
-              inset 0 -34px 52px rgba(0, 0, 0, 0.34);
+            inset: 30px 36px 70px;
+            display: none;
+            border-radius: 2px;
+            background: transparent;
+            box-shadow: none;
             pointer-events: none;
             z-index: 0;
           }
@@ -390,7 +392,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             left: 78px;
             height: auto;
             width: auto;
-            border-radius: 18px;
+            border-radius: 3px;
             background:
               radial-gradient(ellipse 58% 74% at 50% 20%, rgba(118, 80, 50, 0.17), transparent 58%),
               radial-gradient(ellipse 84% 94% at 50% 56%, rgba(72, 46, 30, 0.16), transparent 70%),
@@ -403,12 +405,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
               ),
               linear-gradient(180deg, rgb(24, 24, 21) 0%, rgb(18, 18, 16) 42%, rgb(12, 12, 11) 100%);
             box-shadow:
-              inset 0 0 0 1px rgba(184, 132, 54, 0.58),
-              inset 0 0 0 3px rgba(0, 0, 0, 0.48),
-              inset 0 0 0 4px rgba(214, 172, 94, 0.14),
-              inset 0 22px 48px rgba(255, 220, 150, 0.025),
-              inset 0 -34px 60px rgba(0, 0, 0, 0.42),
-              0 10px 26px rgba(0, 0, 0, 0.35);
+              inset 0 0 0 1px rgba(184, 132, 54, 0.48),
+              inset 0 0 0 2px rgba(0, 0, 0, 0.5),
+              inset 0 18px 38px rgba(255, 220, 150, 0.018),
+              inset 0 -30px 52px rgba(0, 0, 0, 0.4);
             z-index: 2;
           }
 
@@ -450,53 +450,72 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::before {
-            background:
-              radial-gradient(circle at 50% 10%, rgba(190, 146, 72, 0.045), transparent 20%),
-              radial-gradient(circle at 0% 50%, rgba(120, 28, 18, 0.09), transparent 24%),
-              radial-gradient(circle at 100% 50%, rgba(120, 28, 18, 0.09), transparent 24%),
-              linear-gradient(180deg, rgb(18, 11, 9), rgb(7, 5, 4));
-            box-shadow:
-              inset 0 0 0 1px rgba(190, 146, 72, 0.4),
-              inset 0 0 20px rgba(120, 28, 18, 0.06),
-              inset 0 10px 18px rgba(255, 237, 193, 0.008),
-              inset 0 -18px 28px rgba(0, 0, 0, 0.26),
-              0 16px 36px rgba(0, 0, 0, 0.44);
+            display: none;
+            background: transparent;
+            box-shadow: none;
           }
 
           .citadel-reader-shell .books-grid > [id^='gridcell-']::after {
             content: '';
             position: absolute;
-            inset: 22px 30px 76px;
-            border-radius: 28px;
-            background:
-              radial-gradient(circle at 50% 0%, rgba(150, 100, 48, 0.035), transparent 22%),
-              linear-gradient(180deg, rgba(18, 12, 10, 0.44), rgba(6, 5, 4, 0.18));
-            box-shadow:
-              inset 0 0 0 1px rgba(112, 72, 34, 0.34),
-              inset 0 20px 34px rgba(255, 224, 176, 0.012),
-              inset 0 -34px 52px rgba(0, 0, 0, 0.34);
+            inset: 30px 36px 70px;
+            display: none;
+            border-radius: 3px;
+            background: transparent;
+            box-shadow: none;
             pointer-events: none;
             z-index: 0;
           }
 
           .citadel-reader-shell.reader-debug-layers .books-grid > [id^='gridcell-']::before {
-            background: rgba(255, 0, 0, 0.2) !important;
-            box-shadow:
-              inset 0 0 0 7px rgba(255, 0, 0, 0.98),
-              inset 0 0 0 16px rgba(255, 0, 0, 0.2),
-              0 0 28px rgba(255, 0, 0, 0.44) !important;
+            display: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
             opacity: 1 !important;
             pointer-events: none !important;
           }
 
           .citadel-reader-shell.reader-debug-layers .books-grid > [id^='gridcell-']::after {
-            background: rgba(0, 80, 255, 0.24) !important;
-            box-shadow:
-              inset 0 0 0 7px rgba(0, 96, 255, 0.98),
-              inset 0 0 0 16px rgba(0, 96, 255, 0.2),
-              0 0 28px rgba(0, 96, 255, 0.38) !important;
+            display: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
             opacity: 1 !important;
             pointer-events: none !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-'] {
+            background: transparent !important;
+            border-radius: 3px !important;
+            box-shadow: none !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-']::before,
+          .citadel-reader-shell.reader-debug-frame-isolation.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-']::after {
+            background: transparent !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-']::before {
+            border-radius: 3px !important;
+            box-shadow:
+              inset 0 0 0 2px rgba(255, 48, 48, 0.96),
+              0 0 3px rgba(255, 0, 0, 0.12) !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation.reader-debug-layers
+            .books-grid
+            > [id^='gridcell-']::after {
+            border-radius: 2px !important;
+            box-shadow:
+              inset 0 0 0 2px rgba(0, 112, 255, 0.96),
+              0 0 3px rgba(0, 96, 255, 0.1) !important;
           }
 
           .citadel-reader-shell.reader-debug-layers
@@ -505,6 +524,62 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             > .foliate-viewer {
             outline: 4px dashed rgba(255, 255, 255, 0.82);
             outline-offset: -10px;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer {
+            color: transparent !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            filter: none !important;
+            opacity: 0 !important;
+            outline: 0 !important;
+            outline-offset: 0 !important;
+            pointer-events: none !important;
+            text-shadow: none !important;
+            visibility: hidden !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer
+            iframe,
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer
+            webview,
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer
+            object,
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer
+            embed {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+          }
+
+          .citadel-reader-shell.reader-debug-frame-isolation
+            .books-grid
+            > [id^='gridcell-']
+            > .foliate-viewer
+            * {
+            color: transparent !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            opacity: 0 !important;
+            text-shadow: none !important;
+            visibility: hidden !important;
           }
         }
       `}</style>
