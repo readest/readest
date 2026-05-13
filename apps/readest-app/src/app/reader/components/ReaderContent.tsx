@@ -394,21 +394,22 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
             width: auto;
             border-radius: 3px;
             background:
-              radial-gradient(ellipse 58% 74% at 50% 20%, rgba(118, 80, 50, 0.17), transparent 58%),
-              radial-gradient(ellipse 84% 94% at 50% 56%, rgba(72, 46, 30, 0.16), transparent 70%),
+              radial-gradient(ellipse 58% 74% at 50% 20%, rgba(108, 74, 48, 0.16), transparent 58%),
+              radial-gradient(ellipse 84% 94% at 50% 56%, rgba(66, 44, 30, 0.16), transparent 70%),
               linear-gradient(
                 90deg,
-                rgba(16, 10, 8, 0.28) 0%,
+                rgba(16, 10, 8, 0.3) 0%,
                 rgba(0, 0, 0, 0) 6%,
                 rgba(0, 0, 0, 0) 94%,
-                rgba(16, 10, 8, 0.28) 100%
+                rgba(16, 10, 8, 0.3) 100%
               ),
-              linear-gradient(180deg, rgb(24, 24, 21) 0%, rgb(18, 18, 16) 42%, rgb(12, 12, 11) 100%);
+              linear-gradient(180deg, rgb(23, 23, 20) 0%, rgb(17, 17, 15) 42%, rgb(11, 11, 10) 100%);
             box-shadow:
               inset 0 0 0 1px rgba(184, 132, 54, 0.48),
               inset 0 0 0 2px rgba(0, 0, 0, 0.5),
               inset 0 18px 38px rgba(255, 220, 150, 0.018),
-              inset 0 -30px 52px rgba(0, 0, 0, 0.4);
+              inset 0 0 16px rgba(0, 0, 0, 0.12),
+              inset 0 -30px 52px rgba(0, 0, 0, 0.42);
             z-index: 2;
           }
 

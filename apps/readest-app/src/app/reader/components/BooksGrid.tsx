@@ -301,8 +301,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
                 className='reader-book-image pointer-events-none absolute z-[1]'
                 style={{
                   ...bookImageStyle,
-                  opacity: 0.13,
-                  filter: 'brightness(0.46) contrast(1.22) saturate(0.7) sepia(0.36)',
+                  opacity: 0.14,
+                  filter: 'brightness(0.42) contrast(1.3) saturate(0.7) sepia(0.36)',
                   mixBlendMode: 'normal',
                 }}
               />
@@ -349,8 +349,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
                 className='reader-book-image-overlay pointer-events-none absolute z-[2]'
                 style={{
                   ...bookImageStyle,
-                  opacity: 0.18,
-                  filter: 'brightness(0.5) contrast(1.32) saturate(0.68) sepia(0.3)',
+                  opacity: 0.16,
+                  filter: 'brightness(0.42) contrast(1.42) saturate(0.64) sepia(0.3)',
                   mixBlendMode: 'multiply',
                 }}
               />
@@ -487,17 +487,17 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           mask-image:
             linear-gradient(
               90deg,
-              rgba(0, 0, 0, 0.88) 0 11%,
-              rgba(0, 0, 0, 0.38) 16%,
+              rgba(0, 0, 0, 0.9) 0 11%,
+              rgba(0, 0, 0, 0.4) 16%,
               rgba(0, 0, 0, 0) 25%,
-              rgba(0, 0, 0, 0) 47.6%,
-              rgba(0, 0, 0, 0.32) 49.1%,
-              rgba(0, 0, 0, 0.5) 50%,
-              rgba(0, 0, 0, 0.32) 50.9%,
-              rgba(0, 0, 0, 0) 52.4%,
+              rgba(0, 0, 0, 0) 47.7%,
+              rgba(0, 0, 0, 0.3) 49.1%,
+              rgba(0, 0, 0, 0.46) 50%,
+              rgba(0, 0, 0, 0.3) 50.9%,
+              rgba(0, 0, 0, 0) 52.3%,
               rgba(0, 0, 0, 0) 75%,
-              rgba(0, 0, 0, 0.38) 84%,
-              rgba(0, 0, 0, 0.88) 89% 100%
+              rgba(0, 0, 0, 0.4) 84%,
+              rgba(0, 0, 0, 0.9) 89% 100%
             ),
             linear-gradient(
               180deg,
@@ -511,17 +511,17 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
           -webkit-mask-image:
             linear-gradient(
               90deg,
-              rgba(0, 0, 0, 0.88) 0 11%,
-              rgba(0, 0, 0, 0.38) 16%,
+              rgba(0, 0, 0, 0.9) 0 11%,
+              rgba(0, 0, 0, 0.4) 16%,
               rgba(0, 0, 0, 0) 25%,
-              rgba(0, 0, 0, 0) 47.6%,
-              rgba(0, 0, 0, 0.32) 49.1%,
-              rgba(0, 0, 0, 0.5) 50%,
-              rgba(0, 0, 0, 0.32) 50.9%,
-              rgba(0, 0, 0, 0) 52.4%,
+              rgba(0, 0, 0, 0) 47.7%,
+              rgba(0, 0, 0, 0.3) 49.1%,
+              rgba(0, 0, 0, 0.46) 50%,
+              rgba(0, 0, 0, 0.3) 50.9%,
+              rgba(0, 0, 0, 0) 52.3%,
               rgba(0, 0, 0, 0) 75%,
-              rgba(0, 0, 0, 0.38) 84%,
-              rgba(0, 0, 0, 0.88) 89% 100%
+              rgba(0, 0, 0, 0.4) 84%,
+              rgba(0, 0, 0, 0.9) 89% 100%
             ),
             linear-gradient(
               180deg,
@@ -548,9 +548,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               rgba(0, 0, 0, 0.12) 16%,
               rgba(0, 0, 0, 0) 23%,
               rgba(0, 0, 0, 0) 48.1%,
-              rgba(0, 0, 0, 0.68) 49.3%,
-              rgba(0, 0, 0, 0.96) 50%,
-              rgba(0, 0, 0, 0.68) 50.7%,
+              rgba(0, 0, 0, 0.62) 49.3%,
+              rgba(0, 0, 0, 0.88) 50%,
+              rgba(0, 0, 0, 0.62) 50.7%,
               rgba(0, 0, 0, 0) 51.9%,
               rgba(0, 0, 0, 0) 77%,
               rgba(0, 0, 0, 0.12) 84%,
@@ -572,9 +572,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
               rgba(0, 0, 0, 0.12) 16%,
               rgba(0, 0, 0, 0) 23%,
               rgba(0, 0, 0, 0) 48.1%,
-              rgba(0, 0, 0, 0.68) 49.3%,
-              rgba(0, 0, 0, 0.96) 50%,
-              rgba(0, 0, 0, 0.68) 50.7%,
+              rgba(0, 0, 0, 0.62) 49.3%,
+              rgba(0, 0, 0, 0.88) 50%,
+              rgba(0, 0, 0, 0.62) 50.7%,
               rgba(0, 0, 0, 0) 51.9%,
               rgba(0, 0, 0, 0) 77%,
               rgba(0, 0, 0, 0.12) 84%,
@@ -761,18 +761,18 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             transparent 0%,
             rgba(0, 0, 0, 0.06) 18%,
             rgba(0, 0, 0, 0.26) 38%,
-            rgba(0, 0, 0, 0.46) 48%,
-            rgba(0, 0, 0, 0.54) 50%,
-            rgba(0, 0, 0, 0.46) 52%,
+            rgba(0, 0, 0, 0.44) 48%,
+            rgba(0, 0, 0, 0.5) 50%,
+            rgba(0, 0, 0, 0.44) 52%,
             rgba(0, 0, 0, 0.26) 62%,
             rgba(0, 0, 0, 0.06) 82%,
             transparent 100%
           );
           box-shadow:
-            -12px 0 26px rgba(0, 0, 0, 0.1),
-            12px 0 26px rgba(0, 0, 0, 0.1),
-            inset 8px 0 14px rgba(0, 0, 0, 0.08),
-            inset -8px 0 14px rgba(0, 0, 0, 0.08);
+            -12px 0 24px rgba(0, 0, 0, 0.09),
+            12px 0 24px rgba(0, 0, 0, 0.09),
+            inset 8px 0 14px rgba(0, 0, 0, 0.07),
+            inset -8px 0 14px rgba(0, 0, 0, 0.07);
         }
 
         .books-grid .reader-frame-spine::before {
@@ -787,7 +787,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             90deg,
             rgba(100, 72, 34, 0.02) 0%,
             transparent 30%,
-            rgba(0, 0, 0, 0.16) 50%,
+            rgba(0, 0, 0, 0.14) 50%,
             transparent 70%,
             rgba(100, 72, 34, 0.02) 100%
           );
@@ -1080,13 +1080,25 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
 
         .books-grid .reader-frame-well {
           background:
-            radial-gradient(ellipse 70% 30% at 50% 2%, rgba(232, 188, 124, 0.07), transparent 62%),
-            radial-gradient(ellipse 58% 76% at 50% 44%, rgba(96, 64, 38, 0.14), transparent 54%),
-            radial-gradient(ellipse 34% 88% at 2% 50%, rgba(0, 0, 0, 0.36), transparent 72%),
-            radial-gradient(ellipse 34% 88% at 98% 50%, rgba(0, 0, 0, 0.36), transparent 72%),
+            radial-gradient(ellipse 70% 30% at 50% 2%, rgba(232, 188, 124, 0.066), transparent 62%),
+            radial-gradient(ellipse 48% 82% at 50% 46%, rgba(84, 58, 36, 0.16), transparent 55%),
+            radial-gradient(ellipse 34% 88% at 2% 50%, rgba(0, 0, 0, 0.38), transparent 72%),
+            radial-gradient(ellipse 34% 88% at 98% 50%, rgba(0, 0, 0, 0.38), transparent 72%),
+            linear-gradient(
+              90deg,
+              rgba(0, 0, 0, 0.2) 0%,
+              rgba(0, 0, 0, 0.04) 18%,
+              rgba(255, 220, 150, 0.018) 34%,
+              rgba(0, 0, 0, 0.16) 47.5%,
+              rgba(0, 0, 0, 0.3) 50%,
+              rgba(0, 0, 0, 0.16) 52.5%,
+              rgba(255, 220, 150, 0.018) 66%,
+              rgba(0, 0, 0, 0.04) 82%,
+              rgba(0, 0, 0, 0.2) 100%
+            ),
             linear-gradient(
               180deg,
-              rgba(28, 28, 24, 0.996),
+              rgba(27, 27, 24, 0.998),
               rgba(17, 17, 15, 1) 38%,
               rgba(10, 10, 9, 1) 100%
             );
@@ -1096,9 +1108,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
             inset 0 0 0 3px rgba(126, 78, 34, 0.14),
             inset 0 1px 0 rgba(255, 232, 170, 0.06),
             inset -1px -1px 0 rgba(0, 0, 0, 0.42),
-            inset 0 0 22px rgba(0, 0, 0, 0.2),
-            inset 0 22px 46px rgba(255, 220, 150, 0.026),
-            inset 0 -34px 56px rgba(0, 0, 0, 0.42);
+            inset 0 0 24px rgba(0, 0, 0, 0.22),
+            inset 0 22px 44px rgba(255, 220, 150, 0.024),
+            inset 0 -36px 58px rgba(0, 0, 0, 0.44);
         }
 
         .books-grid .reader-frame-footer-seat {
