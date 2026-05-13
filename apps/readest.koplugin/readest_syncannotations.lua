@@ -5,7 +5,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
 local SyncAnnotations = {}
 

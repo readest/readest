@@ -18,7 +18,7 @@ local TitleBar     = require("ui/widget/titlebar")
 local Trapper      = require("ui/trapper")
 local UIManager    = require("ui/uimanager")
 local logger       = require("logger")
-local _            = require("i18n")
+local _            = require("readest_i18n")
 
 local LibraryStore   = require("library.librarystore")
 local libraryitem    = require("library.libraryitem")

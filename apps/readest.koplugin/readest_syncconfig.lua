@@ -4,7 +4,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local sha2 = require("ffi/sha2")
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
 local SyncConfig = {}
 

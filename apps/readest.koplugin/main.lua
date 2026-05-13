@@ -7,12 +7,12 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
-local SyncAuth = require("syncauth")
-local SyncConfig = require("syncconfig")
-local SyncAnnotations = require("syncannotations")
-local SelfUpdate = require("selfupdate")
+local SyncAuth = require("readest_syncauth")
+local SyncConfig = require("readest_syncconfig")
+local SyncAnnotations = require("readest_syncannotations")
+local SelfUpdate = require("readest_selfupdate")
 
 local ReadestSync = WidgetContainer:new{
     name = "readest",
