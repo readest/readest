@@ -60,6 +60,31 @@ that the harness is designed to catch.
 - Do not amend commits or force-push without explicit user instruction.
 - Audiobook sync code is off-limits unless the task explicitly names it.
 
+## Generated / native files — hands-off policy
+
+These paths are generated or externally managed. Do **not** touch them unless
+the task explicitly asks for native/Tauri permission work:
+
+- `apps/readest-app/src-tauri/Cargo.toml`
+- `apps/readest-app/src-tauri/plugins/**/permissions/**`
+- `apps/readest-app/src-tauri/plugins/tauri-plugin-turso`
+- `packages/tauri-plugins`
+
+If those paths appear dirty in `git status`, treat them as pre-existing noise.
+Only report them if the current task itself modified them. Do **not** include
+them in commits for UI, reader, library, or styling work.
+
+## Process management — no leftover processes
+
+- Prefer one-shot commands over watch / dev-server / persistent processes.
+- Do **not** leave these running when a task finishes:
+  `pnpm dev`, `pnpm dev-web`, `pnpm tauri dev`, `vitest --watch`,
+  Playwright browser sessions, or ad-hoc Node helper processes.
+- If a long-running process is strictly required, record the command and PID
+  when you start it, stop it before the final report, and confirm cleanup.
+- Before the final report, run `git status --short` and list only files
+  intentionally changed.
+
 ## Where to look first
 
 - Reader shell: `apps/readest-app/src/app/reader/components/ReaderContent.tsx`,
