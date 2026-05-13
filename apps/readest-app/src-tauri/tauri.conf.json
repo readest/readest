@@ -172,6 +172,10 @@
         "https://download.readest.com/releases/latest.json",
         "https://github.com/readest/readest/releases/latest/download/latest.json"
       ]
+    },
+    "webview-upgrade": {
+      "minUpgradeMajor": 121,
+      "minSupportedMajor": 92
     }
   }
 }

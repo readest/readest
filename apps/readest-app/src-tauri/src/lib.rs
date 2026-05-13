@@ -191,7 +191,8 @@ pub fn run() {
         .plugin(tauri_plugin_device_info::init())
         .plugin(tauri_plugin_turso::init())
         .plugin(tauri_plugin_native_bridge::init())
-        .plugin(tauri_plugin_native_tts::init());
+        .plugin(tauri_plugin_native_tts::init())
+        .plugin(tauri_plugin_webview_upgrade::init());
 
     #[cfg(desktop)]
     let builder = builder.plugin(
