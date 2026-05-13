@@ -187,13 +187,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       viewSettings.ttsLocation = cfi;
       setViewSettings(bookKey, viewSettings);
 
-      if (!followingTTSLocationRef.current) return;
-
-      const docs = view.renderer.getContents();
-      if (docs.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) {
-        return;
-      }
-
       const hlContents = view.renderer.getContents();
       const hlPrimaryIdx = view.renderer.primaryIndex;
       const { doc, index: viewSectionIndex } = (hlContents.find((x) => x.index === hlPrimaryIdx) ??
@@ -204,6 +197,27 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const { anchor, index: ttsSectionIndex } = view.resolveCFI(cfi);
       if (viewSectionIndex !== ttsSectionIndex) {
+        // TTS crossed into a new section before the view caught up. The
+        // `await onSectionChange` path in TTSController fires renderer.goTo
+        // via handleSectionChange, but the new paginator's #goTo can resolve
+        // before the visible page actually flips when the target section is
+        // already preloaded as an adjacent view — leaving the user stuck on
+        // the last page of the previous chapter while audio continues. Drive
+        // navigation from the highlight cfi directly, stamping the timestamp
+        // so the "back-to-TTS" button stays suppressed while progress.location
+        // catches up. Skip only when the user is actively selecting text.
+        if (hlContents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) {
+          return;
+        }
+        sectionChangingTimestampRef.current = Date.now();
+        followingTTSLocationRef.current = true;
+        view.goTo?.(cfi);
+        return;
+      }
+
+      if (!followingTTSLocationRef.current) return;
+
+      if (hlContents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) {
         return;
       }
 
@@ -363,7 +377,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       if (!sections || sectionIndex < 0 || sectionIndex >= sections.length) return;
       sectionChangingTimestampRef.current = Date.now();
       const resolved = view.resolveNavigation(sectionIndex);
-      view.renderer.goTo?.(resolved);
+      // Await so TTSController's `await onSectionChange` doesn't proceed to
+      // speak the new section before the view has finished navigating to it.
+      await view.renderer.goTo?.(resolved);
     },
     [bookKey, getView],
   );
