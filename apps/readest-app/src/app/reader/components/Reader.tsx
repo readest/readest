@@ -167,9 +167,22 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   return libraryLoaded && settings.globalReadSettings ? (
     <div
       className={clsx(
-        'reader-page full-height text-base-content select-none overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(95,32,24,0.92)_0%,rgba(46,20,16,0.84)_22%,rgba(15,10,9,0.94)_52%,rgba(6,5,5,1)_100%),radial-gradient(circle_at_12%_52%,rgba(118,27,20,0.2)_0%,transparent_28%),radial-gradient(circle_at_88%_52%,rgba(118,27,20,0.2)_0%,transparent_28%)]',
+        'reader-page full-height text-base-content select-none overflow-hidden',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
+      style={{
+        backgroundColor: '#040404',
+        backgroundImage: `
+          radial-gradient(ellipse 38% 48% at 72% 34%, rgba(185, 16, 14, 0.24) 0%, rgba(118, 9, 8, 0.14) 28%, rgba(56, 4, 3, 0.06) 52%, transparent 74%),
+          radial-gradient(ellipse 26% 38% at 76% 36%, rgba(232, 22, 18, 0.16) 0%, rgba(138, 10, 8, 0.08) 36%, transparent 68%),
+          radial-gradient(ellipse 28% 42% at 18% 56%, rgba(98, 8, 6, 0.1) 0%, rgba(52, 4, 3, 0.04) 42%, transparent 76%),
+          radial-gradient(ellipse 115% 95% at 50% 50%, rgba(255,255,255,0.015) 0%, transparent 40%),
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 6px),
+          repeating-linear-gradient(90deg, rgba(255,255,255,0.008) 0px, rgba(255,255,255,0.008) 1px, transparent 1px, transparent 7px),
+          radial-gradient(ellipse 120% 115% at 50% 50%, transparent 54%, rgba(0,0,0,0.34) 76%, rgba(0,0,0,0.78) 100%)
+        `,
+        backgroundBlendMode: 'screen, screen, screen, soft-light, overlay, overlay, normal',
+      }}
     >
       <Suspense fallback={<div className='full-height'></div>}>
         <ReaderContent ids={ids} settings={settings} />

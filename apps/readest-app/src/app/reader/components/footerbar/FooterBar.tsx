@@ -298,13 +298,13 @@ const FooterBar: React.FC<FooterBarProps> = ({
             inset: 0;
             z-index: 0;
             border-radius: inherit;
-            background: linear-gradient(180deg, rgb(10, 7, 5), rgb(3, 2, 2));
-            border-top: 1px solid rgba(210, 166, 88, 0.58);
+            background: linear-gradient(180deg, rgba(9, 7, 6, 0.96), rgba(3, 3, 3, 0.98));
+            border-top: 1px solid rgba(185, 133, 44, 0.36);
             box-shadow:
-              inset 0 1px 0 rgba(255, 220, 140, 0.1),
-              inset 0 22px 36px rgba(0, 0, 0, 0.44),
-              inset 1px 0 0 rgba(184, 132, 54, 0.14),
-              inset -1px 0 0 rgba(184, 132, 54, 0.14);
+              inset 0 1px 0 rgba(255, 220, 140, 0.06),
+              inset 0 18px 30px rgba(0, 0, 0, 0.42),
+              inset 1px 0 0 rgba(184, 132, 54, 0.08),
+              inset -1px 0 0 rgba(184, 132, 54, 0.08);
             pointer-events: none;
           }
 
@@ -319,9 +319,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
             background: linear-gradient(
               90deg,
               rgba(178, 135, 70, 0) 0%,
-              rgba(210, 166, 88, 0.58) 16%,
-              rgba(210, 166, 88, 0.38) 50%,
-              rgba(210, 166, 88, 0.58) 84%,
+              rgba(210, 166, 88, 0.36) 16%,
+              rgba(210, 166, 88, 0.22) 50%,
+              rgba(210, 166, 88, 0.36) 84%,
               rgba(178, 135, 70, 0) 100%
             );
             pointer-events: none;
@@ -346,12 +346,12 @@ const FooterBar: React.FC<FooterBarProps> = ({
             height: 18px;
             transform: translateY(-50%);
             border-radius: 9999px;
-            background: linear-gradient(180deg, rgba(8, 5, 3, 0.94), rgba(18, 12, 7, 0.26));
+            background: linear-gradient(180deg, rgba(7, 5, 4, 0.88), rgba(16, 11, 7, 0.2));
             box-shadow:
-              inset 0 3px 7px rgba(0, 0, 0, 0.5),
-              inset 0 1px 0 rgba(0, 0, 0, 0.55),
-              0 0 0 1px rgba(55, 36, 14, 0.24),
-              0 1px 0 rgba(190, 148, 65, 0.08);
+              inset 0 3px 7px rgba(0, 0, 0, 0.44),
+              inset 0 1px 0 rgba(0, 0, 0, 0.48),
+              0 0 0 1px rgba(55, 36, 14, 0.18),
+              0 1px 0 rgba(190, 148, 65, 0.05);
             pointer-events: none;
           }
         }

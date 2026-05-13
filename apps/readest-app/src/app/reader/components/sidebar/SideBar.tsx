@@ -195,7 +195,7 @@ const SideBar = ({}) => {
           .citadel-sidebar-restore-tab {
             color: rgba(212, 168, 88, 0.92);
             background: linear-gradient(180deg, rgba(28, 18, 14, 0.98), rgba(12, 8, 7, 0.98));
-            border: 1px solid rgba(168, 124, 64, 0.55);
+            border: 1px solid rgba(185, 133, 44, 0.52);
             border-left: 0;
             border-radius: 0 12px 12px 0;
             box-shadow:
@@ -211,7 +211,7 @@ const SideBar = ({}) => {
           }
           .citadel-sidebar-restore-tab:hover {
             color: rgba(243, 215, 140, 0.98);
-            border-color: rgba(214, 168, 88, 0.85);
+            border-color: rgba(210, 160, 72, 0.82);
             background: linear-gradient(180deg, rgba(46, 22, 18, 0.98), rgba(20, 12, 10, 0.98));
             transform: translate(2px, -50%);
           }
@@ -273,19 +273,18 @@ const SideBar = ({}) => {
               margin: 18px 0 18px 16px;
               border-radius: 24px;
               padding: 0;
-              border: 1px solid rgba(179, 137, 70, 0.72);
+              border: 1px solid rgba(185, 133, 44, 0.26);
               box-sizing: border-box;
               background: linear-gradient(
                 180deg,
-                rgba(29, 25, 23, 0.98) 0%,
-                rgba(20, 18, 17, 0.98) 38%,
-                rgba(15, 14, 13, 1) 72%,
-                rgba(10, 9, 9, 1) 100%
+                rgba(22, 18, 16, 0.98) 0%,
+                rgba(16, 14, 13, 0.98) 42%,
+                rgba(11, 10, 10, 1) 100%
               );
               box-shadow:
-                inset 0 0 0 1px rgba(230, 184, 92, 0.12),
-                inset 0 18px 34px rgba(255, 210, 120, 0.035),
-                0 12px 30px rgba(0, 0, 0, 0.45);
+                inset 0 0 0 1px rgba(230, 184, 92, 0.08),
+                inset 0 16px 30px rgba(255, 210, 120, 0.02),
+                0 12px 30px rgba(0, 0, 0, 0.42);
             }
 
             .sidebar-container > * {
@@ -341,16 +340,15 @@ const SideBar = ({}) => {
               bottom: 28px;
               width: 376px;
               max-height: calc(100dvh - 72px);
-              border: 1px solid rgba(201, 164, 90, 0.34);
-              border-radius: 28px;
+              border: 1px solid rgba(185, 133, 44, 0.24);
+              border-radius: 18px;
               background:
-                radial-gradient(circle at 18% 14%, rgba(117, 24, 17, 0.24), transparent 24%),
-                radial-gradient(circle at 82% 72%, rgba(71, 16, 12, 0.16), transparent 26%),
-                linear-gradient(180deg, rgba(19, 13, 11, 0.98), rgba(9, 7, 6, 0.98));
+                radial-gradient(circle at 18% 14%, rgba(117, 24, 17, 0.14), transparent 28%),
+                linear-gradient(180deg, rgba(17, 12, 10, 0.98), rgba(8, 7, 6, 0.98));
               box-shadow:
                 0 24px 48px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(95, 68, 31, 0.18),
-                0 0 34px rgba(126, 31, 25, 0.24);
+                0 0 0 1px rgba(95, 68, 31, 0.12),
+                0 0 24px rgba(126, 31, 25, 0.14);
               opacity: 0;
               transform: translateX(-12px);
               pointer-events: none;
@@ -441,7 +439,7 @@ const SideBar = ({}) => {
             }
 
             .sidebar-container .citadel-rail-collapse-anchor {
-              border: 1px solid rgba(207, 164, 84, 0.72);
+              border: 1px solid rgba(185, 133, 44, 0.6);
               background-color: rgba(35, 29, 25, 0.98);
               background-image: linear-gradient(
                 180deg,
@@ -461,7 +459,7 @@ const SideBar = ({}) => {
             }
 
             .sidebar-container .citadel-rail-collapse-anchor:hover {
-              border-color: rgba(228, 190, 108, 0.8);
+              border-color: rgba(210, 160, 72, 0.78);
               background-image: linear-gradient(
                 180deg,
                 rgba(43, 35, 30, 0.98),
@@ -479,8 +477,8 @@ const SideBar = ({}) => {
           }
           @media (max-width: 640px) {
             .sidebar-container {
-              border-top-left-radius: 16px;
-              border-top-right-radius: 16px;
+              border-top-left-radius: 14px;
+              border-top-right-radius: 14px;
               box-shadow:
                 inset 0 1px 0 rgba(255, 237, 193, 0.06),
                 0 -18px 40px rgba(0, 0, 0, 0.38);
@@ -530,7 +528,7 @@ const SideBar = ({}) => {
           />
           <div
             className={clsx(
-              'search-bar border-[#c9a45a]/28 rounded-[18px] border bg-[linear-gradient(180deg,rgba(20,13,11,0.98),rgba(11,8,7,0.98))] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.16)]',
+              'search-bar rounded-[18px] border border-[rgba(185,133,44,0.22)] bg-[linear-gradient(180deg,rgba(20,13,11,0.98),rgba(11,8,7,0.98))] shadow-[0_18px_40px_rgba(0,0,0,0.34),0_0_22px_rgba(126,31,25,0.16)]',
               {
                 'search-bar-visible': isSearchBarVisible,
               },

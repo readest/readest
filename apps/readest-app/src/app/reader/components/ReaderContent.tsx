@@ -303,7 +303,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   return (
     <div
-      className={`reader-content citadel-reader-shell full-height relative flex ${readerDebugLayers ? 'reader-debug-layers' : ''} ${
+      className={`reader-content citadel-reader-shell full-height relative isolate flex overflow-hidden ${readerDebugLayers ? 'reader-debug-layers' : ''} ${
         readerFrameIsolation ? 'reader-debug-frame-isolation' : ''
       }`}
     >
@@ -332,24 +332,84 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       )}
       <style jsx global>{`
         .citadel-reader-texture {
-          opacity: 0.12;
+          opacity: 0.09;
           mix-blend-mode: overlay;
           background-image: url('/citadel/textures/citadel_texture_overlay_03_dark_dust_scratches_black_alpha.png');
           background-repeat: repeat;
-          background-size: 200px 200px;
+          background-size: 280px 280px;
         }
 
         @media (min-width: 640px) {
+          .citadel-reader-shell::before,
+          .citadel-reader-shell::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+          }
+
+          .citadel-reader-shell::before {
+            z-index: 0;
+            background:
+              radial-gradient(
+                ellipse 44% 58% at 74% 38%,
+                rgba(168, 16, 10, 0.14) 0%,
+                rgba(98, 8, 6, 0.08) 36%,
+                rgba(36, 2, 2, 0.03) 66%,
+                transparent 86%
+              ),
+              radial-gradient(
+                ellipse 34% 52% at 16% 52%,
+                rgba(108, 12, 8, 0.09) 0%,
+                rgba(56, 5, 4, 0.04) 42%,
+                transparent 78%
+              );
+            filter: blur(14px);
+            opacity: 0.78;
+          }
+
+          .citadel-reader-shell::after {
+            z-index: 0;
+            background:
+              radial-gradient(
+                ellipse 105% 90% at 50% 46%,
+                transparent 52%,
+                rgba(0, 0, 0, 0.36) 80%,
+                rgba(0, 0, 0, 0.72) 100%
+              ),
+              linear-gradient(
+                90deg,
+                rgba(0, 0, 0, 0.42),
+                transparent 18%,
+                transparent 82%,
+                rgba(0, 0, 0, 0.42)
+              );
+          }
+
           .citadel-reader-shell {
             background:
-              radial-gradient(circle at 50% 12%, rgba(122, 32, 24, 0.22), transparent 30%),
-              radial-gradient(circle at 16% 56%, rgba(96, 18, 14, 0.14), transparent 22%),
-              radial-gradient(circle at 84% 56%, rgba(96, 18, 14, 0.14), transparent 22%),
-              linear-gradient(180deg, rgba(28, 16, 13, 0.98), rgba(11, 8, 7, 1));
+              radial-gradient(ellipse 105% 76% at 54% 4%, rgba(78, 16, 12, 0.12), transparent 50%),
+              repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.008) 0px,
+                rgba(255, 255, 255, 0.008) 1px,
+                transparent 1px,
+                transparent 6px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.006) 0px,
+                rgba(255, 255, 255, 0.006) 1px,
+                transparent 1px,
+                transparent 7px
+              ),
+              linear-gradient(180deg, #050403 0%, #040303 44%, #020202 100%);
+            background-blend-mode: screen, overlay, overlay, normal;
           }
 
           .citadel-reader-shell .books-grid {
             position: relative;
+            z-index: 1;
             padding: 24px 26px 22px 18px;
             background: transparent;
           }

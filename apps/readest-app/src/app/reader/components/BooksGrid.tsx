@@ -110,7 +110,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
 
   return (
     <div
-      className={clsx('books-grid relative grid h-full flex-grow overflow-hidden bg-[#080606]')}
+      className={clsx('books-grid relative grid h-full flex-grow overflow-hidden bg-[#050404]')}
       style={{
         gridTemplateColumns: gridTemplate.columns,
         gridTemplateRows: gridTemplate.rows,

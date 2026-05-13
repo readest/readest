@@ -100,11 +100,11 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
       </div>
       <style jsx global>{`
         .reader-top-bar.titlebar {
-          background: transparent;
+          background: linear-gradient(180deg, rgba(4, 4, 4, 0.42), rgba(4, 4, 4, 0));
           border-bottom: 0;
           box-shadow: none;
-          backdrop-filter: none;
-          -webkit-backdrop-filter: none;
+          backdrop-filter: blur(1px);
+          -webkit-backdrop-filter: blur(1px);
         }
 
         .reader-window-drag-region {
@@ -114,7 +114,7 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
         .reader-top-bar .btn {
           box-shadow: none;
           color: #8c816d;
-          background: transparent;
+          background: rgba(8, 8, 9, 0.1);
           border: 1px solid transparent;
           border-radius: 5px;
           transition:
@@ -141,13 +141,14 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
           height: 32px;
           min-height: 32px;
           padding: 0 14px;
-          border-radius: 8px;
-          border: 1px solid rgba(168, 124, 64, 0.62);
-          background: linear-gradient(180deg, rgba(26, 17, 13, 0.96), rgba(14, 10, 8, 0.98));
+          border-radius: 5px;
+          border: 1px solid rgba(155, 106, 30, 0.78);
+          background: rgba(8, 8, 9, 0.14);
           box-shadow:
-            inset 0 1px 0 rgba(255, 237, 193, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.36),
-            0 6px 14px rgba(0, 0, 0, 0.42);
+            inset 0 1px 0 rgba(255, 248, 235, 0.02),
+            0 6px 14px rgba(0, 0, 0, 0.18);
+          backdrop-filter: blur(1px);
+          -webkit-backdrop-filter: blur(1px);
           transition:
             color 140ms ease,
             background 140ms ease,
@@ -156,17 +157,17 @@ const ReaderTopBar: React.FC<ReaderTopBarProps> = ({
         }
 
         .reader-top-bar .citadel-library-btn:hover {
-          background: linear-gradient(180deg, rgba(46, 26, 20, 0.97), rgba(22, 14, 11, 0.98));
-          border-color: rgba(214, 168, 88, 0.85);
+          background: rgba(20, 16, 12, 0.22);
+          border-color: #b9852c;
           transform: translateY(-1px);
         }
 
         .reader-top-bar .citadel-library-btn .citadel-library-btn-label {
           font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
           font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.22em;
-          color: rgba(218, 181, 114, 0.96);
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          color: #b9852c;
           text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
         }
 
