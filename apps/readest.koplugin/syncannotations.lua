@@ -92,6 +92,8 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full
             end
 
             local id = item.id or self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
+            local note_text = item.note
+            if note_text == "" then note_text = nil end
             table.insert(notes, {
                 bookHash = book_hash,
                 metaHash = meta_hash,
@@ -100,7 +102,7 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full
                 xpointer0 = tostring(pos0),
                 xpointer1 = pos1 and tostring(pos1) or nil,
                 text = item.text or "",
-                note = item.note or "",
+                note = note_text,
                 style = style,
                 color = KO_TO_READEST_COLOR[item.color or "yellow"],
                 page = item.pageno,
@@ -111,6 +113,8 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full
             -- Bookmark: no drawer, position in page field (xpointer string)
             local page_xp = item.page
             local id = item.id or self:generateNoteId(book_hash, "bookmark", page_xp)
+            local note_text = item.note
+            if note_text == "" then note_text = nil end
             table.insert(notes, {
                 bookHash = book_hash,
                 metaHash = meta_hash,
@@ -118,7 +122,7 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full
                 type = "bookmark",
                 xpointer0 = page_xp,
                 text = item.text or "",
-                note = item.note or "",
+                note = note_text,
                 page = item.pageno,
                 createdAt = self:parseDatetimeToMs(item.datetime),
                 updatedAt = updated_at,
@@ -301,6 +305,9 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 -- Resolve KOReader page number from xpointer
                 local pageno = ui.document:getPageFromXPointer(xp0) or note.page
 
+                local note_text = note.note
+                if note_text == "" then note_text = nil end
+
                 if note_type == "bookmark" then
                     if existing_bookmarks[xp0] then goto continue end
 
@@ -308,7 +315,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                         id = note.id,
                         page = xp0,
                         text = note.text or "",
-                        note = note.note or "",
+                        note = note_text,
                         pageno = pageno,
                         datetime = datetime_str,
                         datetime_updated = datetime_updated_str,
@@ -332,7 +339,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                         pos1 = xp1 or xp0,
                         page = xp0,
                         text = note.text or "",
-                        note = note.note or "",
+                        note = note_text,
                         drawer = drawer,
                         color = READEST_TO_KO_COLOR[note.color] or "yellow",
                         pageno = pageno,
