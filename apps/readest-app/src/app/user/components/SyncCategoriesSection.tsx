@@ -129,10 +129,7 @@ export function SyncCategoriesSection() {
                   if (locked) return;
                   handleToggle(category, e.target.checked);
                 }}
-                className={clsx(
-                  'toggle toggle-primary eink-bordered',
-                  locked && 'cursor-not-allowed',
-                )}
+                className={clsx('toggle', locked && 'cursor-not-allowed')}
               />
             </li>
           );
