@@ -1,0 +1,32 @@
+diff --git a/dist/index.js b/dist/index.js
+index f6fa5a295309e45bfa9d0114976751706c6613bf..507892f405ed6843484bc6fbb09441338e81ab51 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1824,8 +1824,9 @@ function stringifyRegExpWithFlags(regex, refs) {
+     }
+     if (flags.m) {
+       if (source[i] === "^") {
+-        pattern += `(^|(?<=[\r
+-]))`;
++        // Changed from lookbehind (?<=[\r\n]) to support older iOS Safari (before 16.4)
++        pattern += `(^|[\r
++])`;
+         continue;
+       } else if (source[i] === "$") {
+         pattern += `($|(?=[\r
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 6f3887f5cc4b62a386978f7504b8083a7f56b82f..715483c0b59f52d64b3bf96c6fa0371bb5456e8d 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1734,8 +1734,9 @@ function stringifyRegExpWithFlags(regex, refs) {
+     }
+     if (flags.m) {
+       if (source[i] === "^") {
+-        pattern += `(^|(?<=[\r
+-]))`;
++        // Changed from lookbehind (?<=[\r\n]) to support older iOS Safari (before 16.4)
++        pattern += `(^|[\r
++])`;
+         continue;
+       } else if (source[i] === "$") {
+         pattern += `($|(?=[\r

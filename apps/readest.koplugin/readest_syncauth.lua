@@ -6,7 +6,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local T = require("ffi/util").template
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
 local SyncAuth = {}
 
@@ -76,7 +76,7 @@ function SyncAuth:getSupabaseAuthClient(settings, path)
         return nil
     end
 
-    local SupabaseAuthClient = require("supabaseauth")
+    local SupabaseAuthClient = require("readest_supabaseauth")
     return SupabaseAuthClient:new{
         service_spec = path .. "/supabase-auth-api.json",
         custom_url = settings.supabase_url .. "/auth/v1/",
@@ -89,7 +89,7 @@ function SyncAuth:getReadestSyncClient(settings, path)
         return nil
     end
 
-    local ReadestSyncClient = require("readestsync")
+    local ReadestSyncClient = require("readest_syncclient")
     return ReadestSyncClient:new{
         service_spec = path .. "/readest-sync-api.json",
         access_token = settings.access_token,

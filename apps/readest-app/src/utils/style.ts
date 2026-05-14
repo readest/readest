@@ -618,6 +618,16 @@ const getWarichuStyles = () => `
   }
 `;
 
+const getRubyStyles = () => `
+  rt {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  rp {
+    display: none !important;
+  }
+`;
+
 export interface ThemeCode {
   bg: string;
   fg: string;
@@ -714,8 +724,9 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const warichuStyles = getWarichuStyles();
+  const rubyStyles = getRubyStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${userStylesheet}`;
+  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {

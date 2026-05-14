@@ -5,7 +5,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
 local SyncAnnotations = {}
 
@@ -304,6 +304,10 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
 
                 -- Resolve KOReader page number from xpointer
                 local pageno = ui.document:getPageFromXPointer(xp0) or note.page
+                -- Resolve chapter title so downstream tools can group by chapter,
+                -- matching native KOReader highlight creation behavior.
+                local chapter = ui.toc and ui.toc:getTocTitleByPage(xp0) or nil
+                if chapter == "" then chapter = nil end
 
                 local note_text = note.note
                 if note_text == "" then note_text = nil end
@@ -316,6 +320,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                         page = xp0,
                         text = note.text or "",
                         note = note_text,
+                        chapter = chapter,
                         pageno = pageno,
                         datetime = datetime_str,
                         datetime_updated = datetime_updated_str,
@@ -342,6 +347,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                         note = note_text,
                         drawer = drawer,
                         color = READEST_TO_KO_COLOR[note.color] or "yellow",
+                        chapter = chapter,
                         pageno = pageno,
                         datetime = datetime_str,
                         datetime_updated = datetime_updated_str,

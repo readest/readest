@@ -29,6 +29,7 @@ apps/readest-app/.claude
 apps/readest-app/public/*.js
 apps/readest-app/public/vendor
 apps/readest-app/src-tauri/plugins/tauri-plugin-turso
+apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade
 
 # Environment & Editor
 .env
