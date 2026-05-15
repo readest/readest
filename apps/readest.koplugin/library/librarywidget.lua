@@ -427,6 +427,21 @@ function M.refresh()
     M._menu:switchItemTable(title_for(M._search), items, jump_to)
 end
 
+-- ---------------------------------------------------------------------------
+-- close() — tear down the Library Menu if it's open.
+-- ---------------------------------------------------------------------------
+-- UIManager:close fires the Menu's onCloseWidget, which M.open wraps to
+-- clear M._menu + the visible-hash filter. That matters because background
+-- work (book-sync and cover-download completions) calls M.refresh(): once
+-- M._menu is nil, refresh() no-ops instead of repainting a ghost Library
+-- on top of whatever replaced it — e.g. the reader, after a book was
+-- opened from the Library. Safe to call when nothing is open.
+function M.close()
+    if M._menu then
+        UIManager:close(M._menu)
+    end
+end
+
 -- Close the current Menu and rebuild it from scratch using the latest
 -- settings. Used after view-menu changes that affect layout dimensions
 -- (view mode, column count, cover fit) — those are baked in at Menu
@@ -435,13 +450,7 @@ end
 -- query (sort, group, search) keep using M.refresh() since rebuilding
 -- the whole Menu would be needless flicker.
 function M.reopen()
-    if M._menu then
-        UIManager:close(M._menu)
-        M._menu = nil
-        -- Clear the visible-hash filter so any in-flight BIM lookups
-        -- after close don't kick off downloads we no longer want.
-        libraryitem.set_visible_hashes(nil)
-    end
+    M.close()
     -- A view-mode/columns/cover-fit change is layout-only — keep the
     -- user's current drill-in. _keep_state tells M.open to skip its
     -- per-session resets (group_path, search reset).
@@ -691,6 +700,21 @@ function M.open(opts, internal)
     }
     menu.onTapTitle = function() view_menu_callback() return true end
 
+    -- Drop the module reference whenever this Menu leaves the screen —
+    -- the title-bar X, the hardware Back key, M.close() on book-open, or
+    -- any other path all funnel through UIManager:close → onCloseWidget.
+    -- Without this, M._menu stays set after the Menu is gone and a later
+    -- M.refresh() (book-sync or cover-download completion) repaints a
+    -- ghost Library over whatever replaced it — e.g. the open reader.
+    local prev_on_close_widget = menu.onCloseWidget
+    menu.onCloseWidget = function(self, ...)
+        if M._menu == self then
+            M._menu = nil
+            libraryitem.set_visible_hashes(nil)
+        end
+        if prev_on_close_widget then return prev_on_close_widget(self, ...) end
+    end
+
     M._menu = menu
     UIManager:show(menu)
 
@@ -740,7 +764,10 @@ function M.handleTap(item, opts)
             })
             return
         end
+        -- Close the Library before handing off to the reader so it isn't
+        -- left in the widget stack underneath — see M.close().
         local ReaderUI = require("apps/reader/readerui")
+        M.close()
         ReaderUI:showReader(row.file_path)
         return
     end
@@ -784,8 +811,10 @@ function M.handleTap(item, opts)
                         hash = row.hash, title = row.title,
                         local_present = 1, file_path = dst_or_err,
                     })
-                    M.refresh()
+                    -- Hand off to the reader and close the Library — no
+                    -- M.refresh() needed since the Menu is going away.
                     local ReaderUI = require("apps/reader/readerui")
+                    M.close()
                     ReaderUI:showReader(dst_or_err)
                 end)
             end,
