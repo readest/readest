@@ -250,7 +250,6 @@
   "Grid": "དྲྭ་རྡལ།",
   "(from 'As You Like It', Act II)": "《ཐམས་ཅད་དགའ་བ》ནས་དྲངས་པ། ལེའུ་གཉིས་པ།",
   "Link Color": "སྦྲེལ་ཐག་གི་ཚོན་མདོག",
-  "Volume Keys for Page Flip": "སྒྲ་ཚད་ལྡེ་མིག་གིས་ཤོག་ལྷེ་བསྒྱུར་བ།",
   "Screen": "བརྡ་ཁྱབ་ངོས།",
   "Orientation": "བརྡ་ཁྱབ་ངོས་ཀྱི་ཁ་ཕྱོགས།",
   "Portrait": "ཀྲིང་ངོས།",
@@ -1391,8 +1390,6 @@
   "Listening…": "ཉན་གྱི་ཡོད…",
   "Set key": "མཐེབ་གཞི་གཏན་འཁེལ།",
   "Page Turner": "ཤོག་གྲུ་འཕར་མཁན།",
-  "Hardware Page Turner": "ཆས་ཕྲན་ཤོག་གྲུ་འཕར་མཁན།",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"མཐེབ་གཞི་གཏན་འཁེལ།\" ལ་དབྱིས་རྗེས་ཁྱེད་ཀྱི་རྒྱང་འཛིན་གྱི་མཐེབ་ཅིག་གནོན་རོགས། མི་ཡིའི་མཐེབ་གཞིའི་རྒྱབ་སྐྱོར་ནི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་དང་རྒྱང་འཛིན་ལ་རག་ལས།",
   "Media Next": "མི་ཡིའི་རྗེས་མ།",
   "Media Previous": "མི་ཡིའི་སྔོན་མ།",
   "Media Play/Pause": "མི་ཡི་བཏང་/བཀག",
@@ -1407,5 +1404,8 @@
   "Page Up": "ཤོག་ལྷེ་ཡར།",
   "Page Down": "ཤོག་ལྷེ་མར།",
   "Space": "བར་ཐག",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"མཐེབ་གཞི་གཏན་འཁེལ།\" ལ་རེག་རྗེས། ཁྱེད་ཀྱི་རྒྱང་འཐེན་སྒྲིག་ཆས་སམ་མཐེབ་གཞི་གང་རུང་གི་ཐོག་མཐེབ་གཅིག་གནོན་རོགས།",
+  "Use Volume Keys": "སྒྲ་སྐད་མཐེབ་གཞི་སྤྱོད་པ།",
+  "Custom Page Turner": "རང་སྒྲུབ་ཤོག་ལྷེ་སྤོ་བའི་ལམ་ལུགས།"
 }

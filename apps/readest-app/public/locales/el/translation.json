@@ -251,7 +251,6 @@
   "Grid": "Πλέγμα",
   "(from 'As You Like It', Act II)": "('Όπως σας αρέσει', Πράξη II)",
   "Link Color": "Χρώμα συνδέσμου",
-  "Volume Keys for Page Flip": "Ανατροπή με πλήκτρα έντασης",
   "Screen": "Οθόνη",
   "Orientation": "Προσανατολισμός",
   "Portrait": "Πορτραίτο",
@@ -1416,8 +1415,6 @@
   "Listening…": "Αναμονή…",
   "Set key": "Ορισμός πλήκτρου",
   "Page Turner": "Στροφέας σελίδων",
-  "Hardware Page Turner": "Υλικός στροφέας σελίδων",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Πατήστε ένα κουμπί στο τηλεχειριστήριό σας αφού πατήσετε \"Ορισμός πλήκτρου\". Η υποστήριξη πλήκτρων πολυμέσων εξαρτάται από τη συσκευή και το τηλεχειριστήριό σας.",
   "Media Next": "Πολυμέσα: Επόμενο",
   "Media Previous": "Πολυμέσα: Προηγούμενο",
   "Media Play/Pause": "Πολυμέσα: Αναπαραγωγή/Παύση",
@@ -1432,5 +1429,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Κενό",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Πατήστε ένα κουμπί στο τηλεχειριστήριο ή το πληκτρολόγιό σας αφού πατήσετε «Ορισμός πλήκτρου».",
+  "Use Volume Keys": "Χρήση πλήκτρων έντασης",
+  "Custom Page Turner": "Προσαρμοσμένος αναλτήρας σελίδων"
 }

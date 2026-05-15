@@ -251,7 +251,6 @@
   "Grid": "Lưới",
   "(from 'As You Like It', Act II)": "(từ 'Như bạn thích', Hành động II)",
   "Link Color": "Màu liên kết",
-  "Volume Keys for Page Flip": "Phím âm lượng để lật trang",
   "Screen": "Màn hình",
   "Orientation": "Định hướng",
   "Portrait": "Chân dung",
@@ -1391,8 +1390,6 @@
   "Listening…": "Đang lắng nghe…",
   "Set key": "Đặt phím",
   "Page Turner": "Bộ Lật Trang",
-  "Hardware Page Turner": "Bộ Lật Trang Phần Cứng",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Nhấn một nút trên điều khiển của bạn sau khi nhấn \"Đặt phím\". Hỗ trợ phím media phụ thuộc vào thiết bị và điều khiển của bạn.",
   "Media Next": "Media Tiếp Theo",
   "Media Previous": "Media Trước",
   "Media Play/Pause": "Media Phát/Tạm Dừng",
@@ -1407,5 +1404,8 @@
   "Page Up": "Trang Trên",
   "Page Down": "Trang Dưới",
   "Space": "Dấu Cách",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Nhấn một nút trên bộ điều khiển từ xa hoặc bàn phím sau khi chạm \"Đặt phím\".",
+  "Use Volume Keys": "Dùng Phím Âm Lượng",
+  "Custom Page Turner": "Nút Lật Trang Tùy Chỉnh"
 }

@@ -273,7 +273,6 @@
   "Grid": "Cuadrícula",
   "(from 'As You Like It', Act II)": "(de 'Como gustéis', Acto II)",
   "Link Color": "Color del enlace",
-  "Volume Keys for Page Flip": "Botones de volumen para pasar página",
   "Screen": "Pantalla",
   "Orientation": "Orientación",
   "Portrait": "Vertical",
@@ -1441,8 +1440,6 @@
   "Listening…": "Escuchando…",
   "Set key": "Asignar tecla",
   "Page Turner": "Pasador de páginas",
-  "Hardware Page Turner": "Pasador de páginas por hardware",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Presiona un botón en tu mando después de tocar \"Asignar tecla\". La compatibilidad con teclas multimedia depende de tu dispositivo y mando.",
   "Media Next": "Multimedia: Siguiente",
   "Media Previous": "Multimedia: Anterior",
   "Media Play/Pause": "Multimedia: Reproducir/Pausa",
@@ -1457,5 +1454,8 @@
   "Page Up": "Re Pág",
   "Page Down": "Av Pág",
   "Space": "Espacio",
-  "Enter": "Intro"
+  "Enter": "Intro",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pulse un botón en su mando a distancia o teclado después de tocar \"Asignar tecla\".",
+  "Use Volume Keys": "Usar teclas de volumen",
+  "Custom Page Turner": "Pasador de páginas personalizado"
 }

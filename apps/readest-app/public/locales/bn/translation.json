@@ -195,7 +195,6 @@
   "Scrolled Mode": "স্ক্রল মোড",
   "Overlap Pixels": "ওভারল্যাপ পিক্সেল",
   "Disable Double Click": "ডাবল ক্লিক নিষ্ক্রিয়",
-  "Volume Keys for Page Flip": "পৃষ্ঠা উল্টানোর জন্য ভলিউম কী",
   "Animation": "অ্যানিমেশন",
   "Paging Animation": "পৃষ্ঠা অ্যানিমেশন",
   "Security": "নিরাপত্তা",
@@ -1416,8 +1415,6 @@
   "Listening…": "শুনছে…",
   "Set key": "কী সেট করুন",
   "Page Turner": "পেজ টার্নার",
-  "Hardware Page Turner": "হার্ডওয়্যার পেজ টার্নার",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"কী সেট করুন\" ট্যাপ করার পরে আপনার রিমোটে একটি বোতাম চাপুন। মিডিয়া-কী সমর্থন আপনার ডিভাইস এবং রিমোটের উপর নির্ভর করে।",
   "Media Next": "মিডিয়া পরবর্তী",
   "Media Previous": "মিডিয়া পূর্ববর্তী",
   "Media Play/Pause": "মিডিয়া প্লে/পজ",
@@ -1432,5 +1429,8 @@
   "Page Up": "পেজ আপ",
   "Page Down": "পেজ ডাউন",
   "Space": "স্পেস",
-  "Enter": "এন্টার"
+  "Enter": "এন্টার",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"কী সেট করুন\" ট্যাপ করার পর আপনার রিমোট কন্ট্রোলার বা কীবোর্ডের একটি বোতাম চাপুন।",
+  "Use Volume Keys": "ভলিউম কী ব্যবহার করুন",
+  "Custom Page Turner": "কাস্টম পেজ টার্নার"
 }

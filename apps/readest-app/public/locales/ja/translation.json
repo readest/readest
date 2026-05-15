@@ -251,7 +251,6 @@
   "Grid": "グリッド",
   "(from 'As You Like It', Act II)": "(「お気に召すまま」第2幕)",
   "Link Color": "リンクカラー",
-  "Volume Keys for Page Flip": "音量キーでページめくり",
   "Screen": "画面",
   "Orientation": "向き",
   "Portrait": "縦",
@@ -1391,8 +1390,6 @@
   "Listening…": "待機中…",
   "Set key": "キーを設定",
   "Page Turner": "ページターナー",
-  "Hardware Page Turner": "ハードウェアページターナー",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"キーを設定\"をタップした後、リモコンのボタンを押してください。メディアキーのサポートはデバイスとリモコンによって異なります。",
   "Media Next": "メディア: 次へ",
   "Media Previous": "メディア: 前へ",
   "Media Play/Pause": "メディア: 再生/一時停止",
@@ -1407,5 +1404,8 @@
   "Page Up": "ページアップ",
   "Page Down": "ページダウン",
   "Space": "スペース",
-  "Enter": "エンター"
+  "Enter": "エンター",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "「キーを設定」をタップした後、リモコンまたはキーボードのボタンを押してください。",
+  "Use Volume Keys": "音量キーを使用",
+  "Custom Page Turner": "カスタムページターナー"
 }

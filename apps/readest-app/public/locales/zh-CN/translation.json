@@ -252,7 +252,6 @@
   "Grid": "网格",
   "(from 'As You Like It', Act II)": "出自《皆大欢喜》，第二幕",
   "Link Color": "链接颜色",
-  "Volume Keys for Page Flip": "音量键翻页",
   "Screen": "屏幕",
   "Orientation": "屏幕方向",
   "Portrait": "竖屏",
@@ -1391,8 +1390,6 @@
   "Listening…": "监听中…",
   "Set key": "设置按键",
   "Page Turner": "翻页器",
-  "Hardware Page Turner": "硬件翻页器",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "点击「设置按键」后，按下遥控器上的按钮。媒体键支持取决于设备和遥控器。",
   "Media Next": "媒体下一首",
   "Media Previous": "媒体上一首",
   "Media Play/Pause": "媒体播放/暂停",
@@ -1407,5 +1404,8 @@
   "Page Up": "向上翻页",
   "Page Down": "向下翻页",
   "Space": "空格键",
-  "Enter": "回车键"
+  "Enter": "回车键",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "点击「设置按键」后，按下遥控器或键盘上的按钮。",
+  "Use Volume Keys": "使用音量键",
+  "Custom Page Turner": "自定义翻页器"
 }

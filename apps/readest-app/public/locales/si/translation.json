@@ -195,7 +195,6 @@
   "Scrolled Mode": "අනුචලන ආකාරය",
   "Overlap Pixels": "අතිච්ඡාදන පික්සල්",
   "Disable Double Click": "ද්විත්ව ක්ලික් අබල කරන්න",
-  "Volume Keys for Page Flip": "පිටු පෙරැළීම සඳහා ශබ්ද යතුර",
   "Animation": "සජීවිකරණය",
   "Paging Animation": "පිටු සජීවිකරණය",
   "Security": "ආරක්ෂාව",
@@ -1416,8 +1415,6 @@
   "Listening…": "සවන් දෙමින්…",
   "Set key": "යතුර සකසන්න",
   "Page Turner": "පිටු හරවනය",
-  "Hardware Page Turner": "දෘඩාංග පිටු හරවනය",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"යතුර සකසන්න\" තට්ටු කිරීමෙන් පසු ඔබේ රිමෝට් එකේ බොත්තමක්누ඔත්තන්න. මාධ්‍ය-යතුරු සහාය ඔබේ උපාංගය සහ රිමෝට් එක මත රඳා පවතී.",
   "Media Next": "මාධ්‍ය ඊළඟ",
   "Media Previous": "මාධ්‍ය පෙර",
   "Media Play/Pause": "මාධ්‍ය ධාවනය/විරාමය",
@@ -1432,5 +1429,8 @@
   "Page Up": "පිටුව ඉහළට",
   "Page Down": "පිටුව පහළට",
   "Space": "අවකාශය",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"යතුර සකසන්න\" තට්ටු කිරීමෙන් පසු ඔබේ දුරස්ථ පාලකයේ හෝ යතුරු පුවරුවේ බොත්තමක් එබෙන්න.",
+  "Use Volume Keys": "ශබ්ද කතා යතුරු භාවිතා කරන්න",
+  "Custom Page Turner": "අභිරුචි පිටු හරවනය"
 }

@@ -250,7 +250,6 @@
   "Grid": "Grille",
   "(from 'As You Like It', Act II)": "(de 'Comme il vous plaira', Acte II)",
   "Link Color": "Couleur du lien",
-  "Volume Keys for Page Flip": "Boutons volume pour tourner la page",
   "Screen": "Écran",
   "Orientation": "Orientation",
   "Portrait": "Portrait",
@@ -1441,8 +1440,6 @@
   "Listening…": "En attente…",
   "Set key": "Définir la touche",
   "Page Turner": "Tourne-page",
-  "Hardware Page Turner": "Tourne-page matériel",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Appuyez sur un bouton de votre télécommande après avoir appuyé sur \"Définir la touche\". La prise en charge des touches multimédia dépend de votre appareil et de votre télécommande.",
   "Media Next": "Média : Suivant",
   "Media Previous": "Média : Précédent",
   "Media Play/Pause": "Média : Lecture/Pause",
@@ -1457,5 +1454,8 @@
   "Page Up": "Page préc.",
   "Page Down": "Page suiv.",
   "Space": "Espace",
-  "Enter": "Entrée"
+  "Enter": "Entrée",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Appuyez sur un bouton de votre télécommande ou de votre clavier après avoir appuyé sur « Définir la touche ».",
+  "Use Volume Keys": "Utiliser les touches de volume",
+  "Custom Page Turner": "Tourne-page personnalisé"
 }

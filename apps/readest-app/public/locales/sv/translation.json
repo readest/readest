@@ -441,7 +441,6 @@
   "Scroll": "Rullning",
   "Overlap Pixels": "Överlappande pixlar",
   "Disable Double Click": "Inaktivera dubbelklick",
-  "Volume Keys for Page Flip": "Volymknappar för sidbyte",
   "Animation": "Animation",
   "Paging Animation": "Sidanimation",
   "Security": "Säkerhet",
@@ -1416,8 +1415,6 @@
   "Listening…": "Lyssnar…",
   "Set key": "Ange tangent",
   "Page Turner": "Sidvändare",
-  "Hardware Page Turner": "Maskinvarusidvändare",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Tryck på en knapp på fjärrkontrollen efter att du tryckt på \"Ange tangent\". Stöd för medietangenter beror på din enhet och fjärrkontroll.",
   "Media Next": "Media: Nästa",
   "Media Previous": "Media: Föregående",
   "Media Play/Pause": "Media: Spela/Pausa",
@@ -1432,5 +1429,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Mellanslag",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Tryck på en knapp på din fjärrkontroll eller tangentbord efter att ha tryckt på \"Ange tangent\".",
+  "Use Volume Keys": "Använd volymknappar",
+  "Custom Page Turner": "Anpassad sidvändare"
 }

@@ -251,7 +251,6 @@
   "Grid": "Izgara",
   "(from 'As You Like It', Act II)": "(As You Like It, 2. Perde)",
   "Link Color": "Bağlantı Rengi",
-  "Volume Keys for Page Flip": "Sayfa Çevirme için Ses Seviyesi Tuşları",
   "Screen": "Ekran",
   "Orientation": "Yönlendirme",
   "Portrait": "Portre",
@@ -1416,8 +1415,6 @@
   "Listening…": "Dinleniyor…",
   "Set key": "Tuş ayarla",
   "Page Turner": "Sayfa Çevirici",
-  "Hardware Page Turner": "Donanımsal Sayfa Çevirici",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"Tuş ayarla\" düğmesine dokunduktan sonra uzaktan kumandanızdaki bir düğmeye basın. Medya tuşu desteği cihazınıza ve uzaktan kumandanıza bağlıdır.",
   "Media Next": "Medya: Sonraki",
   "Media Previous": "Medya: Önceki",
   "Media Play/Pause": "Medya: Oynat/Duraklat",
@@ -1432,5 +1429,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Boşluk",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"Tuş ayarla\" düğmesine dokunduktan sonra uzaktan kumandanızdaki veya klavyenizdeki bir düğmeye basın.",
+  "Use Volume Keys": "Ses Tuşlarını Kullan",
+  "Custom Page Turner": "Özel Sayfa Çevirici"
 }

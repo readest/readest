@@ -250,7 +250,6 @@
   "Grid": "Raster",
   "(from 'As You Like It', Act II)": "(aus 'Wie es euch gefällt', Akt II)",
   "Link Color": "Linkfarbe",
-  "Volume Keys for Page Flip": "Volumen-Tasten für Seitenwechsel",
   "Screen": "Bildschirm",
   "Orientation": "Orientierung",
   "Portrait": "Hochformat",
@@ -1416,8 +1415,6 @@
   "Listening…": "Warte auf Eingabe…",
   "Set key": "Taste festlegen",
   "Page Turner": "Seitenblätterer",
-  "Hardware Page Turner": "Hardware-Seitenblätterer",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Drücken Sie nach dem Tippen auf \"Taste festlegen\" eine Taste auf Ihrer Fernbedienung. Die Unterstützung von Medientasten hängt von Ihrem Gerät und der Fernbedienung ab.",
   "Media Next": "Medien: Weiter",
   "Media Previous": "Medien: Zurück",
   "Media Play/Pause": "Medien: Wiedergabe/Pause",
@@ -1432,5 +1429,8 @@
   "Page Up": "Bild auf",
   "Page Down": "Bild ab",
   "Space": "Leertaste",
-  "Enter": "Eingabe"
+  "Enter": "Eingabe",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Drücken Sie eine Taste auf Ihrer Fernbedienung oder Tastatur, nachdem Sie auf \"Taste festlegen\" getippt haben.",
+  "Use Volume Keys": "Lautstärketasten verwenden",
+  "Custom Page Turner": "Benutzerdefinierter Seitenumblätterer"
 }

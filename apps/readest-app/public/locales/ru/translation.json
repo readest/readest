@@ -251,7 +251,6 @@
   "Grid": "Сетка",
   "(from 'As You Like It', Act II)": "(из 'Как вам это понравится', Акт II)",
   "Link Color": "Цвет ссылки",
-  "Volume Keys for Page Flip": "Клавиши громкости для перелистывания страниц",
   "Screen": "Экран",
   "Orientation": "Ориентация",
   "Portrait": "Портрет",
@@ -1466,8 +1465,6 @@
   "Listening…": "Ожидание…",
   "Set key": "Назначить клавишу",
   "Page Turner": "Листалка страниц",
-  "Hardware Page Turner": "Аппаратная листалка страниц",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Нажмите кнопку на пульте после нажатия \"Назначить клавишу\". Поддержка медиаклавиш зависит от вашего устройства и пульта.",
   "Media Next": "Медиа: Следующий",
   "Media Previous": "Медиа: Предыдущий",
   "Media Play/Pause": "Медиа: Воспроизведение/Пауза",
@@ -1482,5 +1479,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Пробел",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Нажмите кнопку на пульте дистанционного управления или клавиатуре после нажатия \"Назначить клавишу\".",
+  "Use Volume Keys": "Использовать клавиши громкости",
+  "Custom Page Turner": "Пользовательское перелистывание страниц"
 }

@@ -1026,7 +1026,6 @@
   "Swap Click Sides": "Bosish tomonlarini almashtirish",
   "Disable Double Tap": "Ikki marta bosishni oʻchirish",
   "Disable Double Click": "Ikki marta bosishni oʻchirish",
-  "Volume Keys for Page Flip": "Sahifani aylantirish uchun ovoz tugmalari",
   "Show Page Navigation Buttons": "Sahifalararo navigatsiya tugmalarini koʻrsatish",
   "Annotation Tools": "Izoh vositalari",
   "Enable Quick Actions": "Tezkor amallarni yoqish",
@@ -1416,8 +1415,6 @@
   "Listening…": "Tinglanmoqda…",
   "Set key": "Tugmani o'rnatish",
   "Page Turner": "Sahifa buruvchi",
-  "Hardware Page Turner": "Apparat sahifa buruvchi",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"Tugmani o'rnatish\" tugmasini bosganingizdan so'ng masofadan boshqaruv pultidagi tugmani bosing. Media-tugma qo'llab-quvvatlash qurilma va masofadan boshqaruv pultingizga bog'liq.",
   "Media Next": "Media keyingi",
   "Media Previous": "Media oldingi",
   "Media Play/Pause": "Media ijro/to'xtatish",
@@ -1432,5 +1429,8 @@
   "Page Up": "Sahifa yuqori",
   "Page Down": "Sahifa pastga",
   "Space": "Bo'sh joy",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"Tugmani o'rnatish\" tugmasini bosgandan so'ng masofadan boshqarish pultingiz yoki klaviaturangizdagi tugmani bosing.",
+  "Use Volume Keys": "Ovoz balandligi tugmalarini ishlatish",
+  "Custom Page Turner": "Maxsus sahifa buruvchi"
 }

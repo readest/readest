@@ -250,7 +250,6 @@
   "Grid": "شبكة",
   "(from 'As You Like It', Act II)": "(من 'كما تحب'، الفصل الثاني)",
   "Link Color": "لون الرابط",
-  "Volume Keys for Page Flip": "مفاتيح الصوت لتقليب الصفحات",
   "Screen": "الشاشة",
   "Orientation": "الاتجاه",
   "Portrait": "عمودي",
@@ -1516,8 +1515,6 @@
   "Listening…": "يستمع…",
   "Set key": "تعيين مفتاح",
   "Page Turner": "قالب الصفحات",
-  "Hardware Page Turner": "قالب الصفحات المادي",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "اضغط زرًا على جهاز التحكم عن بُعد بعد النقر على \"تعيين مفتاح\". يعتمد دعم مفاتيح الوسائط على جهازك وجهاز التحكم.",
   "Media Next": "وسائط التالي",
   "Media Previous": "وسائط السابق",
   "Media Play/Pause": "وسائط تشغيل/إيقاف مؤقت",
@@ -1532,5 +1529,8 @@
   "Page Up": "صفحة للأعلى",
   "Page Down": "صفحة للأسفل",
   "Space": "مسافة",
-  "Enter": "إدخال"
+  "Enter": "إدخال",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "اضغط على زر في جهاز التحكم عن بُعد أو لوحة المفاتيح بعد النقر على \"تعيين مفتاح\".",
+  "Use Volume Keys": "استخدام مفاتيح الصوت",
+  "Custom Page Turner": "قلّاب الصفحات المخصص"
 }

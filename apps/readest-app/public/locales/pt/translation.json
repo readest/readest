@@ -251,7 +251,6 @@
   "Grid": "Grade",
   "(from 'As You Like It', Act II)": "(de 'Como Gostais', Ato II)",
   "Link Color": "Cor do Link",
-  "Volume Keys for Page Flip": "Teclas de Volume para Virar Página",
   "Screen": "Tela",
   "Orientation": "Orientação",
   "Portrait": "Retrato",
@@ -1441,8 +1440,6 @@
   "Listening…": "A aguardar…",
   "Set key": "Definir tecla",
   "Page Turner": "Virador de páginas",
-  "Hardware Page Turner": "Virador de páginas por hardware",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Prima um botão no seu controlo remoto após tocar em \"Definir tecla\". O suporte de teclas de multimédia depende do seu dispositivo e controlo remoto.",
   "Media Next": "Multimédia: Seguinte",
   "Media Previous": "Multimédia: Anterior",
   "Media Play/Pause": "Multimédia: Reproduzir/Pausar",
@@ -1457,5 +1454,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Espaço",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pressione um botão no seu controle remoto ou teclado após tocar em \"Definir tecla\".",
+  "Use Volume Keys": "Usar teclas de volume",
+  "Custom Page Turner": "Virador de página personalizado"
 }

@@ -930,7 +930,6 @@
   "Swap Click Sides": "Kattintási oldalak cseréje",
   "Disable Double Tap": "Dupla koppintás letiltása",
   "Disable Double Click": "Dupla kattintás letiltása",
-  "Volume Keys for Page Flip": "Hangerőgombok a lapozáshoz",
   "Show Page Navigation Buttons": "Oldalnavigációs gombok megjelenítése",
   "Annotation Tools": "Jegyzetelési eszközök",
   "Enable Quick Actions": "Gyorsműveletek engedélyezése",
@@ -1416,8 +1415,6 @@
   "Listening…": "Figyelés…",
   "Set key": "Billentyű beállítása",
   "Page Turner": "Lapozó eszköz",
-  "Hardware Page Turner": "Hardveres lapozó eszköz",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Nyomjon meg egy gombot a távirányítón, miután megérinti a „Billentyű beállítása” gombot. A médiabillentyű-támogatás az eszköztől és a távirányítótól függ.",
   "Media Next": "Média következő",
   "Media Previous": "Média előző",
   "Media Play/Pause": "Média lejátszás/szünet",
@@ -1432,5 +1429,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Szóköz",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Nyomjon meg egy gombot a távirányítón vagy a billentyűzeten a „Billentyű beállítása” érintése után.",
+  "Use Volume Keys": "Hangerőgombok használata",
+  "Custom Page Turner": "Egyéni lapozó eszköz"
 }

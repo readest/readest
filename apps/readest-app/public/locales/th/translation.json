@@ -164,7 +164,6 @@
   "Scroll": "เลื่อน",
   "Scrolled Mode": "โหมดเลื่อน",
   "Overlap Pixels": "พิกเซลซ้อน",
-  "Volume Keys for Page Flip": "ปุ่มเสียงเพื่อพลิกหน้า",
   "Animation": "ภาพเคลื่อนไหว",
   "Paging Animation": "ภาพเคลื่อนไหวพลิกหน้า",
   "Security": "ความปลอดภัย",
@@ -1391,8 +1390,6 @@
   "Listening…": "กำลังฟัง…",
   "Set key": "ตั้งปุ่ม",
   "Page Turner": "ตัวพลิกหน้า",
-  "Hardware Page Turner": "ตัวพลิกหน้าฮาร์ดแวร์",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "กดปุ่มบนรีโมตของคุณหลังจากแตะ \"ตั้งปุ่ม\" การรองรับปุ่มสื่อขึ้นอยู่กับอุปกรณ์และรีโมตของคุณ",
   "Media Next": "มีเดียถัดไป",
   "Media Previous": "มีเดียก่อนหน้า",
   "Media Play/Pause": "มีเดียเล่น/หยุดชั่วคราว",
@@ -1407,5 +1404,8 @@
   "Page Up": "หน้าขึ้น",
   "Page Down": "หน้าลง",
   "Space": "สเปซบาร์",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "กดปุ่มบนรีโมทคอนโทรลหรือคีย์บอร์ดหลังจากแตะ \"ตั้งปุ่ม\"",
+  "Use Volume Keys": "ใช้ปุ่มระดับเสียง",
+  "Custom Page Turner": "ปุ่มพลิกหน้าแบบกำหนดเอง"
 }

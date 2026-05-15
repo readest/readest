@@ -251,7 +251,6 @@
   "Grid": "Сітка",
   "(from 'As You Like It', Act II)": "(із 'Як вам це подобається', Дія II)",
   "Link Color": "Колір посилання",
-  "Volume Keys for Page Flip": "Перегортати сторінки клавішами гучності",
   "Screen": "Екран",
   "Orientation": "Орієнтація",
   "Portrait": "Портрет",
@@ -1466,8 +1465,6 @@
   "Listening…": "Очікування…",
   "Set key": "Призначити клавішу",
   "Page Turner": "Перегортач сторінок",
-  "Hardware Page Turner": "Апаратний перегортач сторінок",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Натисніть кнопку на пульті після торкання \"Призначити клавішу\". Підтримка медіаклавіш залежить від вашого пристрою та пульта.",
   "Media Next": "Медіа: Наступний",
   "Media Previous": "Медіа: Попередній",
   "Media Play/Pause": "Медіа: Відтворення/Пауза",
@@ -1482,5 +1479,8 @@
   "Page Up": "Сторінка вгору",
   "Page Down": "Сторінка вниз",
   "Space": "Пробіл",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Натисніть кнопку на пульті або клавіатурі після натискання \"Призначити клавішу\".",
+  "Use Volume Keys": "Використовувати клавіші гучності",
+  "Custom Page Turner": "Власне перегортання сторінок"
 }

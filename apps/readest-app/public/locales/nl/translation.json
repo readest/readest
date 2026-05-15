@@ -177,7 +177,6 @@
   "Portrait": "Portret",
   "Landscape": "Landschap",
   "Behavior": "Gedrag",
-  "Volume Keys for Page Flip": "Volumetoetsen voor pagina omslaan",
   "Apply": "Toepassen",
   "Font": "Lettertype",
   "Layout": "Opmaak",
@@ -1416,8 +1415,6 @@
   "Listening…": "Luisteren…",
   "Set key": "Toets instellen",
   "Page Turner": "Pagina-omslaan",
-  "Hardware Page Turner": "Hardware pagina-omslaan",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Druk op een knop op je afstandsbediening na het tikken op \"Toets instellen\". Ondersteuning voor mediatoetsen is afhankelijk van je apparaat en afstandsbediening.",
   "Media Next": "Media: Volgende",
   "Media Previous": "Media: Vorige",
   "Media Play/Pause": "Media: Afspelen/Pauzeren",
@@ -1432,5 +1429,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Spatie",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Druk op een knop op uw afstandsbediening of toetsenbord nadat u op \"Toets instellen\" hebt getikt.",
+  "Use Volume Keys": "Volumetoetsen gebruiken",
+  "Custom Page Turner": "Aangepaste paginaknop"
 }

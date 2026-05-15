@@ -502,7 +502,6 @@
   "Swap Click Sides": "Tukar Sisi Klik",
   "Disable Double Tap": "Lumpuhkan Ketuk Dua Kali",
   "Disable Double Click": "Lumpuhkan Klik Dua Kali",
-  "Volume Keys for Page Flip": "Kekunci Volum untuk Balik Halaman",
   "Animation": "Animasi",
   "Paging Animation": "Animasi Halaman",
   "Device": "Peranti",
@@ -1391,8 +1390,6 @@
   "Listening…": "Mendengar…",
   "Set key": "Tetapkan kekunci",
   "Page Turner": "Pembalik Halaman",
-  "Hardware Page Turner": "Pembalik Halaman Perkakasan",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Tekan butang pada alat kawalan jauh anda selepas mengetuk \"Tetapkan kekunci\". Sokongan kekunci media bergantung pada peranti dan alat kawalan jauh anda.",
   "Media Next": "Media Seterusnya",
   "Media Previous": "Media Sebelumnya",
   "Media Play/Pause": "Media Main/Jeda",
@@ -1407,5 +1404,8 @@
   "Page Up": "Halaman Atas",
   "Page Down": "Halaman Bawah",
   "Space": "Ruang",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Tekan butang pada pengawal jauh atau papan kekunci anda selepas mengetuk \"Tetapkan kekunci\".",
+  "Use Volume Keys": "Guna Kekunci Kelantangan",
+  "Custom Page Turner": "Pembalik Halaman Tersuai"
 }

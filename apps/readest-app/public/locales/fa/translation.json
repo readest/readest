@@ -250,7 +250,6 @@
   "Grid": "جدول",
   "(from 'As You Like It', Act II)": "(از «همان‌طور که دوست دارید»، پرده‌ی دوم)",
   "Link Color": "رنگ لینک",
-  "Volume Keys for Page Flip": "استفاده از کلیدهای صدا برای ورق زدن صفحه",
   "Screen": "صفحه",
   "Orientation": "جهت",
   "Portrait": "عمودی",
@@ -1416,8 +1415,6 @@
   "Listening…": "در حال گوش دادن…",
   "Set key": "تنظیم کلید",
   "Page Turner": "ورق‌زن صفحه",
-  "Hardware Page Turner": "ورق‌زن سخت‌افزاری صفحه",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "پس از ضربه زدن روی \"تنظیم کلید\"، دکمه‌ای روی ریموت خود فشار دهید. پشتیبانی از کلیدهای رسانه‌ای به دستگاه و ریموت شما بستگی دارد.",
   "Media Next": "رسانه: بعدی",
   "Media Previous": "رسانه: قبلی",
   "Media Play/Pause": "رسانه: پخش/مکث",
@@ -1432,5 +1429,8 @@
   "Page Up": "صفحه بالا",
   "Page Down": "صفحه پایین",
   "Space": "فاصله",
-  "Enter": "اینتر"
+  "Enter": "اینتر",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "پس از ضربه زدن به «تنظیم کلید»، دکمه‌ای روی کنترلر یا صفحه‌کلید خود فشار دهید.",
+  "Use Volume Keys": "استفاده از کلیدهای صدا",
+  "Custom Page Turner": "صفحه‌گردان سفارشی"
 }

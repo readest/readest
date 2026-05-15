@@ -251,7 +251,6 @@
   "Grid": "Siatka",
   "(from 'As You Like It', Act II)": "(z „Jak wam się podoba”, Akt II)",
   "Link Color": "Kolor linku",
-  "Volume Keys for Page Flip": "Klucze głośności do przewracania stron",
   "Screen": "Ekran",
   "Orientation": "Orientacja",
   "Portrait": "Portret",
@@ -1466,8 +1465,6 @@
   "Listening…": "Nasłuchiwanie…",
   "Set key": "Ustaw klawisz",
   "Page Turner": "Przewijacz stron",
-  "Hardware Page Turner": "Sprzętowy przewijacz stron",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Naciśnij przycisk na pilocie po dotknięciu \"Ustaw klawisz\". Obsługa klawiszy multimedialnych zależy od urządzenia i pilota.",
   "Media Next": "Media: Następny",
   "Media Previous": "Media: Poprzedni",
   "Media Play/Pause": "Media: Odtwórz/Pauza",
@@ -1482,5 +1479,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Spacja",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Naciśnij przycisk na pilocie lub klawiaturze po dotknięciu \"Ustaw klawisz\".",
+  "Use Volume Keys": "Używaj klawiszy głośności",
+  "Custom Page Turner": "Własne przełączanie stron"
 }

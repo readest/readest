@@ -251,7 +251,6 @@
   "Grid": "Jala",
   "(from 'As You Like It', Act II)": "(dari 'Seperti yang Anda Inginkan', Bab II)",
   "Link Color": "Warna Tautan",
-  "Volume Keys for Page Flip": "Volume Keys untuk Pembalikan Halaman",
   "Screen": "Screen",
   "Orientation": "Orientasi",
   "Portrait": "Potret",
@@ -1391,8 +1390,6 @@
   "Listening…": "Mendengarkan…",
   "Set key": "Atur tombol",
   "Page Turner": "Pembalik Halaman",
-  "Hardware Page Turner": "Pembalik Halaman Perangkat Keras",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Tekan tombol pada remote Anda setelah mengetuk \"Atur tombol\". Dukungan tombol media tergantung pada perangkat dan remote Anda.",
   "Media Next": "Media Berikutnya",
   "Media Previous": "Media Sebelumnya",
   "Media Play/Pause": "Media Putar/Jeda",
@@ -1407,5 +1404,8 @@
   "Page Up": "Halaman Atas",
   "Page Down": "Halaman Bawah",
   "Space": "Spasi",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Tekan tombol pada remote controller atau keyboard Anda setelah mengetuk \"Atur tombol\".",
+  "Use Volume Keys": "Gunakan Tombol Volume",
+  "Custom Page Turner": "Pembalik Halaman Kustom"
 }

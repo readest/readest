@@ -251,7 +251,6 @@
   "Grid": "ग्रिड",
   "(from 'As You Like It', Act II)": "('जैसा आप इसे पसंद करते हैं', अधिनियम II)",
   "Link Color": "लिंक रंग",
-  "Volume Keys for Page Flip": "पृष्ठ फ़्लिप के लिए वॉल्यूम कुंजियाँ",
   "Screen": "स्क्रीन",
   "Orientation": "अवयव",
   "Portrait": "पोर्ट्रेट",
@@ -1416,8 +1415,6 @@
   "Listening…": "सुन रहे हैं…",
   "Set key": "कुंजी सेट करें",
   "Page Turner": "पेज टर्नर",
-  "Hardware Page Turner": "हार्डवेयर पेज टर्नर",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"कुंजी सेट करें\" टैप करने के बाद अपने रिमोट पर एक बटन दबाएं। मीडिया-कुंजी समर्थन आपके डिवाइस और रिमोट पर निर्भर करता है।",
   "Media Next": "मीडिया अगला",
   "Media Previous": "मीडिया पिछला",
   "Media Play/Pause": "मीडिया प्ले/पॉज़",
@@ -1432,5 +1429,8 @@
   "Page Up": "पेज ऊपर",
   "Page Down": "पेज नीचे",
   "Space": "स्पेस",
-  "Enter": "एंटर"
+  "Enter": "एंटर",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"कुंजी सेट करें\" दबाने के बाद अपने रिमोट कंट्रोलर या कीबोर्ड पर एक बटन दबाएं।",
+  "Use Volume Keys": "वॉल्यूम कुंजियों का उपयोग करें",
+  "Custom Page Turner": "कस्टम पेज टर्नर"
 }

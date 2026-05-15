@@ -918,7 +918,6 @@
   "Swap Click Sides": "Schimbă părțile de clic",
   "Disable Double Tap": "Dezactivează dubla apăsare",
   "Disable Double Click": "Dezactivează dublu clic",
-  "Volume Keys for Page Flip": "Taste de volum pentru schimbarea paginii",
   "Show Page Navigation Buttons": "Afișează butoanele de navigare pe pagină",
   "Annotation Tools": "Instrumente de adnotare",
   "Enable Quick Actions": "Activează acțiunile rapide",
@@ -1441,8 +1440,6 @@
   "Listening…": "Ascultă…",
   "Set key": "Setează tasta",
   "Page Turner": "Dispozitiv de întoarcere pagini",
-  "Hardware Page Turner": "Dispozitiv hardware de întoarcere pagini",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Apasă un buton pe telecomandă după ce atingi \"Setează tasta\". Suportul pentru taste media depinde de dispozitiv și telecomandă.",
   "Media Next": "Media Următor",
   "Media Previous": "Media Anterior",
   "Media Play/Pause": "Media Redare/Pauză",
@@ -1457,5 +1454,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Spațiu",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Apăsați un buton pe telecomandă sau tastatură după ce atingeți \"Setează tasta\".",
+  "Use Volume Keys": "Folosiți tastele de volum",
+  "Custom Page Turner": "Dispozitiv personalizat de întoarcere pagini"
 }

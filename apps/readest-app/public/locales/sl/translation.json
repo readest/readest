@@ -889,7 +889,6 @@
   "Swap Click Sides": "Zamenjaj strani za klike",
   "Disable Double Tap": "Onemogoči dvojni tap",
   "Disable Double Click": "Onemogoči dvojni klik",
-  "Volume Keys for Page Flip": "Tipke za glasnost za obračanje strani",
   "Show Page Navigation Buttons": "Prikaži gumbe za navigacijo po straneh",
   "Annotation Tools": "Orodja za opombe",
   "Enable Quick Actions": "Omogoči hitra dejanja",
@@ -1466,8 +1465,6 @@
   "Listening…": "Poslušanje…",
   "Set key": "Nastavi tipko",
   "Page Turner": "Obračalnik strani",
-  "Hardware Page Turner": "Strojni obračalnik strani",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Pritisnite gumb na daljincu po dotiku \"Nastavi tipko\". Podpora za medijske tipke je odvisna od vaše naprave in daljinca.",
   "Media Next": "Mediji: Naslednje",
   "Media Previous": "Mediji: Prejšnje",
   "Media Play/Pause": "Mediji: Predvajaj/Premor",
@@ -1482,5 +1479,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Preslednica",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pritisnite gumb na daljinskem upravljalniku ali tipkovnici po tapkanju na \"Nastavi tipko\".",
+  "Use Volume Keys": "Uporabi tipki za glasnost",
+  "Custom Page Turner": "Tipka za obračanje strani po meri"
 }

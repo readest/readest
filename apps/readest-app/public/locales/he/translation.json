@@ -850,7 +850,6 @@
   "Swap Click Sides": "החלף צדדי לחיצה",
   "Disable Double Tap": "השבת הקשה כפולה",
   "Disable Double Click": "השבת לחיצה כפולה",
-  "Volume Keys for Page Flip": "מקשי עוצמת קול לדפדוף",
   "Show Page Navigation Buttons": "הצג כפתורי ניווט בעמוד",
   "Annotation Tools": "כלי הערות",
   "Enable Quick Actions": "הפעל פעולות מהירות",
@@ -1441,8 +1440,6 @@
   "Listening…": "מאזין…",
   "Set key": "הגדר מקש",
   "Page Turner": "מהפך עמודים",
-  "Hardware Page Turner": "מהפך עמודים חומרתי",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "לחצו על כפתור בשלט לאחר הקשה על \"הגדר מקש\". תמיכה במקשי מדיה תלויה במכשיר ובשלט שלכם.",
   "Media Next": "מדיה הבא",
   "Media Previous": "מדיה הקודם",
   "Media Play/Pause": "מדיה ניגון/השהייה",
@@ -1457,5 +1454,8 @@
   "Page Up": "עמוד קודם",
   "Page Down": "עמוד הבא",
   "Space": "רווח",
-  "Enter": "אנטר"
+  "Enter": "אנטר",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "לחץ על כפתור בשלט הרחוק או במקלדת לאחר הקשה על \"הגדר מקש\".",
+  "Use Volume Keys": "השתמש במקשי עוצמת קול",
+  "Custom Page Turner": "מהפך עמודים מותאם אישית"
 }

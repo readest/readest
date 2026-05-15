@@ -195,7 +195,6 @@
   "Scrolled Mode": "உருட்டல் பயன்முறை",
   "Overlap Pixels": "ஒன்றுடன் ஒன்று பிக்சல்கள்",
   "Disable Double Click": "இரட்டை கிளிக்கை முடக்கவும்",
-  "Volume Keys for Page Flip": "பக்கம் புரட்டுவதற்கு ஒலி விசைகள்",
   "Animation": "அனிமேஷன்",
   "Paging Animation": "பக்க அனிமேஷன்",
   "Security": "பாதுகாப்பு",
@@ -1416,8 +1415,6 @@
   "Listening…": "கேட்கிறது…",
   "Set key": "விசை அமை",
   "Page Turner": "பக்க திருப்பி",
-  "Hardware Page Turner": "வன்பொருள் பக்க திருப்பி",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "\"விசை அமை\" என்பதை தட்டிய பின் உங்கள் ரிமோட்டில் ஒரு பொத்தானை அழுத்தவும். மீடியா-விசை ஆதரவு உங்கள் சாதனம் மற்றும் ரிமோட்டைப் பொறுத்தது.",
   "Media Next": "மீடியா அடுத்தது",
   "Media Previous": "மீடியா முந்தையது",
   "Media Play/Pause": "மீடியா இயக்கு/இடைநிறுத்து",
@@ -1432,5 +1429,8 @@
   "Page Up": "பக்கம் மேலே",
   "Page Down": "பக்கம் கீழே",
   "Space": "இடைவெளி",
-  "Enter": "என்டர்"
+  "Enter": "என்டர்",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"விசை அமை\" தட்டிய பிறகு உங்கள் ரிமோட் கன்ட்ரோலர் அல்லது கீபோர்டில் ஒரு பட்டனை அழுத்தவும்.",
+  "Use Volume Keys": "ஒலி அளவு விசைகளைப் பயன்படுத்து",
+  "Custom Page Turner": "தனிப்பயன் பக்க திருப்பி"
 }

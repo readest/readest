@@ -1046,7 +1046,6 @@
   "Swap Click Sides": "Trocar lados do clique",
   "Disable Double Tap": "Desativar toque duplo",
   "Disable Double Click": "Desativar clique duplo",
-  "Volume Keys for Page Flip": "Teclas de volume para virar página",
   "Show Page Navigation Buttons": "Botões de navegação",
   "Annotation Tools": "Ferramentas de anotação",
   "Enable Quick Actions": "Ativar ações rápidas",
@@ -1441,8 +1440,6 @@
   "Listening…": "Aguardando…",
   "Set key": "Definir tecla",
   "Page Turner": "Virador de páginas",
-  "Hardware Page Turner": "Virador de páginas por hardware",
-  "Press a button on your remote after tapping \"Set key\". Media-key support depends on your device and remote.": "Pressione um botão no controle remoto após tocar em \"Definir tecla\". O suporte a teclas de mídia depende do seu dispositivo e controle remoto.",
   "Media Next": "Mídia: Próxima",
   "Media Previous": "Mídia: Anterior",
   "Media Play/Pause": "Mídia: Reproduzir/Pausar",
@@ -1457,5 +1454,8 @@
   "Page Up": "Page Up",
   "Page Down": "Page Down",
   "Space": "Espaço",
-  "Enter": "Enter"
+  "Enter": "Enter",
+  "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pressione um botão no controle remoto ou teclado após tocar em \"Definir tecla\".",
+  "Use Volume Keys": "Usar teclas de volume",
+  "Custom Page Turner": "Virador de páginas personalizado"
 }
