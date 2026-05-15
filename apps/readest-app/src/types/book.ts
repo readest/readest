@@ -253,8 +253,6 @@ export interface ViewConfig {
   showCurrentBatteryStatus: boolean;
   showBatteryPercentage: boolean;
   tapToToggleFooter: boolean;
-  showBarsOnScroll: boolean;
-  showMarginsOnScroll: boolean;
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: ProgressBarMode;

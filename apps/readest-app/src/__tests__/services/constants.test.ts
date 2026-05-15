@@ -586,7 +586,6 @@ describe('services/constants', () => {
     it('has boolean display flags', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showHeader).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showBarsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingTime).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingPages).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showProgressInfo).toBe('boolean');
@@ -595,7 +594,6 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showBatteryPercentage).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.use24HourClock).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.tapToToggleFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showMarginsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showPaginationButtons).toBe('boolean');
     });
 

@@ -632,11 +632,11 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     const showBottomFooter = viewSettings.showFooter && !viewSettings.vertical;
-    const moreTopInset = showTopHeader ? Math.max(0, 44 - insets.top) : 0;
+    const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     const ttsBarHeight =
       viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(ttsBarHeight, 52) - insets.bottom)
+      ? Math.max(0, Math.max(ttsBarHeight, 16) - insets.bottom)
       : Math.max(0, ttsBarHeight);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
@@ -644,19 +644,17 @@ const FoliateViewer: React.FC<{
     const rightMargin = insets.right + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
     const leftMargin = insets.left + moreLeftInset;
-    const viewMargins = viewSettings.showMarginsOnScroll && viewSettings.scrolled;
-
-    viewRef.current?.renderer.setAttribute('margin-top', `${viewMargins ? 0 : topMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
-    viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
-    if (viewMargins) {
-      const showBarsOnScroll = viewSettings.showBarsOnScroll;
-      const headerVisible = showTopHeader && showBarsOnScroll;
-      const footerVisible = showBottomFooter && showBarsOnScroll;
+
+    if (viewSettings.scrolled) {
+      const headerVisible = showTopHeader;
+      const footerVisible = showBottomFooter;
       const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-      const footerBarHeight = 52 + safeBottomPadding;
-      const scrollTop = headerVisible ? gridInsets.top + 44 : 0;
+      const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
+      const scrollTop = headerVisible ? gridInsets.top + viewSettings.marginTopPx : 0;
       const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
       setScrollMargins({ top: scrollTop, bottom: scrollBottom });
     } else {
@@ -754,8 +752,6 @@ const FoliateViewer: React.FC<{
     viewSettings?.showHeader,
     viewSettings?.showFooter,
     viewSettings?.showTTSBar,
-    viewSettings?.showBarsOnScroll,
-    viewSettings?.showMarginsOnScroll,
     viewSettings?.scrolled,
     viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,

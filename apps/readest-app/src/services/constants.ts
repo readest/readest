@@ -306,7 +306,6 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
 
   showHeader: true,
   showFooter: true,
-  showBarsOnScroll: false,
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
@@ -315,7 +314,6 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showBatteryPercentage: true,
   use24HourClock: false,
   tapToToggleFooter: false,
-  showMarginsOnScroll: false,
   showPaginationButtons: false,
   progressStyle: 'fraction',
   progressInfoMode: 'all',

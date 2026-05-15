@@ -72,8 +72,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor);
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader);
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter);
-  const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll);
-  const [showMarginsOnScroll, setShowMarginsOnScroll] = useState(viewSettings.showMarginsOnScroll);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
@@ -118,7 +116,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       borderColor: setBorderColor,
       showHeader: setShowHeader,
       showFooter: setShowFooter,
-      showBarsOnScroll: setShowBarsOnScroll,
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
@@ -127,7 +124,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
       showBatteryPercentage: setShowBatteryPercentage,
       tapToToggleFooter: setTapToToggleFooter,
-      showMarginsOnScroll: setShowMarginsOnScroll,
     });
   };
 
@@ -339,16 +335,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'borderColor', borderColor, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [borderColor]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showBarsOnScroll', showBarsOnScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showBarsOnScroll]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showMarginsOnScroll', showMarginsOnScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showMarginsOnScroll]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showRemainingTime', showRemainingTime, false, false);
@@ -606,7 +592,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
           onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
           min={
-            showHeader && !isVertical ? Math.max(0, Math.round((44 - gridInsets.top) / 4) * 4) : 0
+            showHeader && !isVertical ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) : 0
           }
           max={88}
           step={4}
@@ -617,7 +603,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
           min={
             showFooter && !isVertical
-              ? Math.max(0, Math.round((44 - gridInsets.bottom) / 4) * 4)
+              ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4)
               : 0
           }
           max={88}
@@ -674,11 +660,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           max={9999}
           step={50}
           data-setting-id='settings.layout.maxBlockSize'
-        />
-        <SettingsSwitchRow
-          label={_('Apply also in Scrolled Mode')}
-          checked={showMarginsOnScroll}
-          onChange={() => setShowMarginsOnScroll(!showMarginsOnScroll)}
         />
       </BoxedList>
 
@@ -772,11 +753,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           checked={tapToToggleFooter}
           disabled={!showFooter}
           onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
-        />
-        <SettingsSwitchRow
-          label={_('Apply also in Scrolled Mode')}
-          checked={showBarsOnScroll}
-          onChange={() => setShowBarsOnScroll(!showBarsOnScroll)}
         />
       </BoxedList>
 

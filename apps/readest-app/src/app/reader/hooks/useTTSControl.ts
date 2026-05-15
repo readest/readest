@@ -232,9 +232,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
         const showHeader = viewSettings.showHeader;
         const showFooter = viewSettings.showFooter;
-        const showBarsOnScroll = viewSettings.showBarsOnScroll;
-        const headerScrollOverlap = showHeader && showBarsOnScroll ? 44 : 0;
-        const footerScrollOverlap = showFooter && showBarsOnScroll ? 44 : 0;
+        const headerScrollOverlap = showHeader ? viewSettings.marginTopPx : 0;
+        const footerScrollOverlap = showFooter ? viewSettings.marginBottomPx : 0;
         const scrollingOverlap = viewSettings.scrollingOverlap;
         const outOfView =
           rangeBottom > end - footerScrollOverlap - scrollingOverlap ||

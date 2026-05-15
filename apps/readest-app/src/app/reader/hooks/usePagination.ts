@@ -61,8 +61,8 @@ export const viewPagination = (
   }
   if (renderer.scrolled) {
     const { size } = renderer;
-    const showHeader = viewSettings.showHeader && viewSettings.showBarsOnScroll;
-    const showFooter = viewSettings.showFooter && viewSettings.showBarsOnScroll;
+    const showHeader = viewSettings.showHeader;
+    const showFooter = viewSettings.showFooter;
     const scrollingOverlap = viewSettings.scrollingOverlap;
     const distance = size - scrollingOverlap - (showHeader ? 44 : 0) - (showFooter ? 44 : 0);
     switch (mode) {
