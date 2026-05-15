@@ -5,6 +5,7 @@ import { MdCheck } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -38,10 +39,22 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
+  const { getConfig } = useBookDataStore();
   const { parallelViews, setParallel, unsetParallel } = useParallelViewStore();
   const viewSettings = getViewSettings(sideBarBookKey!);
 
   const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
+
+  // Used purely to grey out "Clear Annotations" when there's nothing to
+  // clear. The actual delete + confirm dialog lives in Annotator (which
+  // outlives this dropdown menu, so the dialog isn't unmounted along
+  // with the menu when the user clicks the entry).
+  const annotationsToClear = React.useMemo(() => {
+    if (!sideBarBookKey) return 0;
+    const cfg = getConfig(sideBarBookKey);
+    if (!cfg?.booknotes) return 0;
+    return cfg.booknotes.filter((n) => n.type === 'annotation' && !n.deletedAt).length;
+  }, [sideBarBookKey, getConfig]);
 
   const handleParallelView = (id: string) => {
     openParallelView(id);
@@ -113,6 +126,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     if (discordRichPresenceEnabled && !user) {
       navigateToLogin(router);
     }
+  };
+
+  // Routed through Annotator (per-book, long-lived) so that the
+  // confirmation dialog isn't unmounted with the dropdown menu.
+  const handleClearAnnotations = () => {
+    eventDispatcher.dispatch('clear-annotations', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
   };
 
   return (
@@ -200,6 +220,11 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
+      <MenuItem
+        label={_('Clear Annotations')}
+        disabled={annotationsToClear === 0}
+        onClick={handleClearAnnotations}
+      />
       <MenuItem
         label={_('Sort TOC by Page')}
         Icon={isSortedTOC ? MdCheck : undefined}

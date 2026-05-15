@@ -13,6 +13,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -38,7 +39,7 @@ import { getWordCount } from '@/utils/word';
 import { getIndexFromCfi, isCfiInLocation } from '@/utils/cfi';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
-import { getHighlightColorHex } from '../../utils/annotatorUtil';
+import { getHighlightColorHex, removeBookNoteOverlays } from '../../utils/annotatorUtil';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
@@ -49,6 +50,8 @@ import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
+import Alert from '@/components/Alert';
+import ModalPortal from '@/components/ModalPortal';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -59,6 +62,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
+  const { clearBooknotesNav } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
   const { loadCustomDictionaries } = useCustomDictionaryStore();
 
@@ -99,6 +103,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  // "Clear Annotations" confirm dialog. Hosted here (and not in BookMenu)
+  // because the menu unmounts the moment the user picks the entry, which
+  // would otherwise tear down the dialog state immediately.
+  const [clearAnnotationsCount, setClearAnnotationsCount] = useState(0);
   const [exportData, setExportData] = useState<{
     booknotes: BookNote[];
     booknoteGroups: { [href: string]: BooknoteGroup };
@@ -475,8 +483,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
+    eventDispatcher.on('clear-annotations', handleClearAnnotations);
     return () => {
       eventDispatcher.off('export-annotations', handleExportMarkdown);
+      eventDispatcher.off('clear-annotations', handleClearAnnotations);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -927,6 +937,56 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setExportData(null);
   };
 
+  // Show the confirm dialog when the BookMenu fires "clear-annotations"
+  // for this book. We snapshot the count up-front so the dialog shows a
+  // stable number even if `getConfig` updates underneath us.
+  const handleClearAnnotations = (event: CustomEvent) => {
+    const { bookKey: targetBookKey } = event.detail;
+    if (bookKey !== targetBookKey) return;
+    const cfg = getConfig(bookKey);
+    const count = (cfg?.booknotes ?? []).filter(
+      (n) => n.type === 'annotation' && !n.deletedAt,
+    ).length;
+    if (count === 0) return;
+    setClearAnnotationsCount(count);
+  };
+
+  // Soft-delete every type='annotation' booknote on the active book by
+  // stamping `deletedAt`. Bookmarks and excerpts are intentionally left
+  // alone — they live in distinct sidebar tabs.
+  const performClearAnnotations = () => {
+    const latestConfig = getConfig(bookKey);
+    if (!latestConfig) return;
+    const { booknotes: storedNotes = [] } = latestConfig;
+    const now = Date.now();
+    const views = getViewsById(bookKey.split('-')[0]!);
+    let cleared = 0;
+    storedNotes.forEach((note) => {
+      if (note.type === 'annotation' && !note.deletedAt) {
+        note.deletedAt = now;
+        cleared += 1;
+        // Drop the rendered overlay so the page reflects the cleared
+        // state immediately without waiting for a relocate.
+        views.forEach((view) => removeBookNoteOverlays(view, note));
+      }
+    });
+    if (cleared === 0) return;
+
+    const updatedConfig = updateBooknotes(bookKey, storedNotes);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
+    // Reset any browse-mode state in the annotations sidebar tab so it
+    // doesn't keep paging through stale (now soft-deleted) entries.
+    clearBooknotesNav(bookKey);
+
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Cleared {{count}} highlights and notes.', { count: cleared }),
+      timeout: 2000,
+    });
+  };
+
   const selectionAnnotated = selection?.annotated;
   const toolButtons = annotationToolButtons.map(({ type, label, Icon }) => {
     switch (type) {
@@ -1081,6 +1141,21 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onCancel={handleCancelExport}
           onExport={handleConfirmExport}
         />
+      )}
+      {clearAnnotationsCount > 0 && (
+        <ModalPortal>
+          <Alert
+            title={_('Clear Annotations')}
+            message={_('Are you sure to clear all {{count}} highlights and notes?', {
+              count: clearAnnotationsCount,
+            })}
+            onCancel={() => setClearAnnotationsCount(0)}
+            onConfirm={() => {
+              setClearAnnotationsCount(0);
+              performClearAnnotations();
+            }}
+          />
+        </ModalPortal>
       )}
     </div>
   );
