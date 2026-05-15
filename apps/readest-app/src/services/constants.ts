@@ -24,6 +24,7 @@ import {
   ReadSettings,
   ReadwiseSettings,
   SystemSettings,
+  WebDAVSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -83,6 +84,20 @@ export const DEFAULT_HARDCOVER_SETTINGS = {
   lastSyncedAt: 0,
 } as HardcoverSettings;
 
+export const DEFAULT_WEBDAV_SETTINGS = {
+  enabled: false,
+  serverUrl: '',
+  username: '',
+  password: '',
+  rootPath: '/',
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as WebDAVSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -129,6 +144,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   kosync: DEFAULT_KOSYNC_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
+  webdav: DEFAULT_WEBDAV_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,

@@ -85,6 +85,29 @@ export interface HardcoverSettings {
   lastSyncedAt: number;
 }
 
+export interface WebDAVSettings {
+  enabled: boolean;
+  serverUrl: string;
+  username: string;
+  password: string;
+  rootPath: string;
+  // Sync sub-toggles. WebDAV sync runs as a parallel channel alongside the
+  // native cloud sync, KOSync, Readwise, and Hardcover; each sub-toggle
+  // gates a category independently so a user can e.g. mirror progress to
+  // their own server without uploading book binaries.
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  // Conflict policy — same vocabulary as KOSync so users only learn one.
+  strategy?: KOSyncStrategy;
+  // Stable per-device id (uuidv4); written into library.json so we can tell
+  // which device last touched a given book.
+  deviceId?: string;
+  // Wall-clock millisecond timestamp of the last successful end-to-end
+  // sync, surfaced in the WebDAV settings sub-page.
+  lastSyncedAt?: number;
+}
+
 /**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
@@ -193,6 +216,7 @@ export interface SystemSettings {
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
+  webdav: WebDAVSettings;
 
   aiSettings: AISettings;
   /**

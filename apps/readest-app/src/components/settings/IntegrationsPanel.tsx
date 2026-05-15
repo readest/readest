@@ -9,6 +9,7 @@ import {
   RiBook3Line,
   RiDiscordLine,
   RiSendPlaneLine,
+  RiCloudLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -22,10 +23,11 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
+import WebDAVForm from './integrations/WebDAVForm';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage = 'kosync' | 'webdav' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -66,6 +68,7 @@ const IntegrationsPanel: React.FC = () => {
     if (!requestedSubPage) return;
     if (
       requestedSubPage === 'kosync' ||
+      requestedSubPage === 'webdav' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
@@ -84,6 +87,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <KOSyncForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'webdav')
+    return (
+      <div className='my-4 w-full'>
+        <WebDAVForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'readwise')
@@ -125,6 +134,11 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
+  const webdavStatus = settings.webdav?.enabled
+    ? settings.webdav.username
+      ? _('Connected as {{user}}', { user: settings.webdav.username })
+      : _('Connected')
+    : _('Not connected');
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
 
@@ -146,6 +160,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('KOReader Sync')}
               status={koSyncStatus}
               onClick={() => setSubPage('kosync')}
+            />
+            <IntegrationRow
+              icon={RiCloudLine}
+              title={_('WebDAV')}
+              status={webdavStatus}
+              onClick={() => setSubPage('webdav')}
             />
             <IntegrationRow
               icon={RiBookReadLine}
