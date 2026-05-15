@@ -125,6 +125,8 @@ export interface HardwarePageTurnerSettings {
   bindings: {
     pagePrev: KeyBinding | null;
     pageNext: KeyBinding | null;
+    sectionPrev: KeyBinding | null;
+    sectionNext: KeyBinding | null;
   };
 }
 

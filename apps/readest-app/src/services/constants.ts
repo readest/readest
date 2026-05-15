@@ -96,7 +96,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   autoScreenBrightness: true,
   hardwarePageTurner: {
     enabled: false,
-    bindings: { pagePrev: null, pageNext: null },
+    bindings: { pagePrev: null, pageNext: null, sectionPrev: null, sectionNext: null },
   },
   openLastBooks: false,
   lastOpenBooks: [],

@@ -8,7 +8,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
-import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/hardwareKeys';
+import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/keybinding';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -259,9 +259,11 @@ export const usePagination = (
   };
 
   // Hardware page turner: media keys arrive via the `native-key-down`
-  // event; D-pad / keyboard keys arrive as DOM `keydown`. Both resolve
-  // through the shared binding registry. Suppressed while the toolbar is
-  // visible so D-pad keys keep driving toolbar spatial navigation.
+  // event; D-pad / keyboard keys arrive either as a top-window `keydown`
+  // or — when focus is inside a book iframe — as an `iframe-keydown`
+  // postMessage (mirroring useShortcuts' unified window + iframe handling).
+  // All resolve through the shared binding registry. Suppressed while the
+  // toolbar is visible so D-pad keys keep driving toolbar spatial navigation.
   const handleHardwarePageTurn = (candidate: KeyCandidate): boolean => {
     const settings = useSettingsStore.getState().settings.hardwarePageTurner;
     if (!settings?.enabled) return false;
@@ -274,13 +276,15 @@ export const usePagination = (
     const viewState = getViewState(bookKey);
     if (!viewState?.inited) return false;
 
-    const direction = resolvePageTurn(settings, candidate);
-    if (!direction) return false;
+    const action = resolvePageTurn(settings, candidate);
+    if (!action) return false;
 
     const viewSettings = getViewSettings(bookKey);
-    const side = direction === 'prev' ? 'up' : 'down';
+    const side = action === 'pagePrev' || action === 'sectionPrev' ? 'up' : 'down';
+    const mode = action === 'sectionPrev' || action === 'sectionNext' ? 'section' : 'page';
     setHoveredBookKey('');
     if (
+      mode === 'page' &&
       viewSettings?.readingRulerEnabled &&
       eventDispatcher.dispatchSync('reading-ruler-move', {
         bookKey,
@@ -289,7 +293,7 @@ export const usePagination = (
     ) {
       return true;
     }
-    viewPagination(viewRef.current, viewSettings, side);
+    viewPagination(viewRef.current, viewSettings, side, mode);
     return true;
   };
 
@@ -299,16 +303,27 @@ export const usePagination = (
     handleHardwarePageTurn({ source: 'native', id: keyName });
   };
 
-  const handleHardwareDomKey = (event: KeyboardEvent) => {
-    if (event.repeat) return;
-    const target = event.target as HTMLElement | null;
-    if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '')) {
+  const handleHardwareDomKey = (event: KeyboardEvent | MessageEvent) => {
+    let candidate: KeyCandidate;
+    if (event instanceof KeyboardEvent) {
+      if (event.repeat) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '')) {
+        return;
+      }
+      candidate = normalizeDomKeyEvent(event);
+    } else if (event.data?.type === 'iframe-keydown' && event.data.bookKey === bookKey) {
+      const id = event.data.code || event.data.key;
+      if (typeof id !== 'string' || !id) return;
+      candidate = { source: 'dom', id };
+    } else {
       return;
     }
-    const consumed = handleHardwarePageTurn(normalizeDomKeyEvent(event));
-    if (consumed) {
-      // Capture-phase: stop `useShortcuts` from also paging on this key.
-      event.preventDefault();
+
+    if (handleHardwarePageTurn(candidate)) {
+      // Stop `useShortcuts` from also paging on this key — capture-phase
+      // for the window keydown, registration order for the iframe message.
+      if (event instanceof KeyboardEvent) event.preventDefault();
       event.stopImmediatePropagation();
     }
   };
@@ -336,7 +351,9 @@ export const usePagination = (
   useEffect(() => {
     const hasNativeBinding =
       hardwarePageTurner?.bindings.pagePrev?.source === 'native' ||
-      hardwarePageTurner?.bindings.pageNext?.source === 'native';
+      hardwarePageTurner?.bindings.pageNext?.source === 'native' ||
+      hardwarePageTurner?.bindings.sectionPrev?.source === 'native' ||
+      hardwarePageTurner?.bindings.sectionNext?.source === 'native';
     const needsNativeInterception =
       !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasNativeBinding;
 
@@ -347,6 +364,7 @@ export const usePagination = (
       eventDispatcher.on('native-key-down', handleHardwareNativeKey);
     }
     window.addEventListener('keydown', handleHardwareDomKey, true);
+    window.addEventListener('message', handleHardwareDomKey);
 
     return () => {
       if (needsNativeInterception) {
@@ -356,12 +374,15 @@ export const usePagination = (
         eventDispatcher.off('native-key-down', handleHardwareNativeKey);
       }
       window.removeEventListener('keydown', handleHardwareDomKey, true);
+      window.removeEventListener('message', handleHardwareDomKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     hardwarePageTurner?.enabled,
     hardwarePageTurner?.bindings.pagePrev?.source,
     hardwarePageTurner?.bindings.pageNext?.source,
+    hardwarePageTurner?.bindings.sectionPrev?.source,
+    hardwarePageTurner?.bindings.sectionNext?.source,
   ]);
 
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor

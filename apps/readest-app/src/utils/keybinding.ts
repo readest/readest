@@ -2,7 +2,14 @@ import { HardwarePageTurnerSettings, KeyBinding } from '@/types/settings';
 import { stubTranslation as _ } from '@/utils/misc';
 
 export type KeyCandidate = { source: 'native' | 'dom'; id: string };
-export type PageTurnDirection = 'prev' | 'next';
+export type PageTurnAction = 'pagePrev' | 'pageNext' | 'sectionPrev' | 'sectionNext';
+
+export const PAGE_TURN_ACTIONS: PageTurnAction[] = [
+  'pagePrev',
+  'pageNext',
+  'sectionPrev',
+  'sectionNext',
+];
 
 const NATIVE_KEY_LABELS: Record<string, string> = {
   MediaNext: _('Media Next'),
@@ -50,15 +57,16 @@ export const matchesBinding = (binding: KeyBinding | null, candidate: KeyCandida
   !!binding && binding.source === candidate.source && binding.id === candidate.id;
 
 /**
- * Decide whether an incoming key should flip a page. Returns the direction,
- * or `null` when the feature is disabled or the key is unbound.
+ * Decide which page-turn action an incoming key triggers. Returns the
+ * action, or `null` when the feature is disabled or the key is unbound.
  */
 export const resolvePageTurn = (
   settings: HardwarePageTurnerSettings,
   candidate: KeyCandidate,
-): PageTurnDirection | null => {
+): PageTurnAction | null => {
   if (!settings.enabled) return null;
-  if (matchesBinding(settings.bindings.pagePrev, candidate)) return 'prev';
-  if (matchesBinding(settings.bindings.pageNext, candidate)) return 'next';
+  for (const action of PAGE_TURN_ACTIONS) {
+    if (matchesBinding(settings.bindings[action], candidate)) return action;
+  }
   return null;
 };

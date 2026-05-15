@@ -300,6 +300,8 @@ describe('services/constants', () => {
       expect(hw.enabled).toBe(false);
       expect(hw.bindings.pagePrev).toBeNull();
       expect(hw.bindings.pageNext).toBeNull();
+      expect(hw.bindings.sectionPrev).toBeNull();
+      expect(hw.bindings.sectionNext).toBeNull();
     });
   });
 

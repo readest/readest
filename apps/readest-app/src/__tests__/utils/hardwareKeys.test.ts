@@ -4,7 +4,7 @@ import {
   normalizeDomKeyEvent,
   matchesBinding,
   resolvePageTurn,
-} from '@/utils/hardwareKeys';
+} from '@/utils/keybinding';
 import { HardwarePageTurnerSettings } from '@/types/settings';
 
 describe('normalizeNativeKey', () => {
@@ -71,15 +71,25 @@ describe('resolvePageTurn', () => {
     bindings: {
       pagePrev: { source: 'native', id: 'MediaPrevious', label: 'Media Previous' },
       pageNext: { source: 'native', id: 'MediaNext', label: 'Media Next' },
+      sectionPrev: { source: 'dom', id: 'PageUp', label: 'Page Up' },
+      sectionNext: { source: 'dom', id: 'PageDown', label: 'Page Down' },
     },
   };
 
-  test('returns "prev" for the pagePrev binding', () => {
-    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaPrevious' })).toBe('prev');
+  test('returns "pagePrev" for the pagePrev binding', () => {
+    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaPrevious' })).toBe('pagePrev');
   });
 
-  test('returns "next" for the pageNext binding', () => {
-    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaNext' })).toBe('next');
+  test('returns "pageNext" for the pageNext binding', () => {
+    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaNext' })).toBe('pageNext');
+  });
+
+  test('returns "sectionPrev" for the sectionPrev binding', () => {
+    expect(resolvePageTurn(settings, { source: 'dom', id: 'PageUp' })).toBe('sectionPrev');
+  });
+
+  test('returns "sectionNext" for the sectionNext binding', () => {
+    expect(resolvePageTurn(settings, { source: 'dom', id: 'PageDown' })).toBe('sectionNext');
   });
 
   test('returns null for an unbound key', () => {

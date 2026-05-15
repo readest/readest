@@ -3,21 +3,38 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
-import { saveSysSettings } from '@/helpers/settings';
+import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { eventDispatcher } from '@/utils/event';
-import { normalizeNativeKey, normalizeDomKeyEvent } from '@/utils/hardwareKeys';
+import {
+  normalizeNativeKey,
+  normalizeDomKeyEvent,
+  PAGE_TURN_ACTIONS,
+  PageTurnAction,
+} from '@/utils/keybinding';
 import { HardwarePageTurnerSettings, KeyBinding } from '@/types/settings';
-import { BoxedList, SettingsRow, SettingsSwitchRow, Tips } from './primitives';
+import { BoxedList, SettingsRow, SettingsSwitchRow } from './primitives';
+import { useReaderStore } from '@/store/readerStore';
 
-type Slot = 'pagePrev' | 'pageNext';
+type Slot = PageTurnAction;
 const LEARN_TIMEOUT_MS = 8000;
 
-const PageTurnerSettings: React.FC = () => {
+interface PageTurnerSettingsProps {
+  bookKey: string;
+  onRegisterReset?: (resetFn: () => void) => void;
+}
+
+const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { getViewSettings } = useReaderStore();
+  const { setKeyLearnMode, acquireVolumeKeyInterception, releaseVolumeKeyInterception } =
+    useDeviceControlStore();
   const { settings } = useSettingsStore();
-  const { setKeyLearnMode } = useDeviceControlStore();
+  const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const resetToDefaults = useResetViewSettings();
 
+  const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
   const [config, setConfig] = useState<HardwarePageTurnerSettings>(settings.hardwarePageTurner);
   const configRef = useRef(config);
   configRef.current = config;
@@ -44,15 +61,16 @@ const PageTurnerSettings: React.FC = () => {
 
   const captureBinding = (slot: Slot, binding: KeyBinding) => {
     const current = configRef.current;
-    const other: Slot = slot === 'pagePrev' ? 'pageNext' : 'pagePrev';
     const bindings = { ...current.bindings, [slot]: binding };
-    // A single key cannot drive both directions.
-    if (
-      bindings[other] &&
-      bindings[other]!.source === binding.source &&
-      bindings[other]!.id === binding.id
-    ) {
-      bindings[other] = null;
+    // A key can drive only one action — clear it from every other slot.
+    for (const other of PAGE_TURN_ACTIONS) {
+      if (
+        other !== slot &&
+        bindings[other]?.source === binding.source &&
+        bindings[other]?.id === binding.id
+      ) {
+        bindings[other] = null;
+      }
     }
     persist({ ...current, bindings });
     stopListening();
@@ -92,7 +110,23 @@ const PageTurnerSettings: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  // Disabling the feature exits any in-progress capture.
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'volumeKeysToFlip', volumeKeysToFlip, false, false);
+    if (appService?.isMobileApp) {
+      if (volumeKeysToFlip) {
+        acquireVolumeKeyInterception();
+      } else {
+        releaseVolumeKeyInterception();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [volumeKeysToFlip]);
+
+  useEffect(() => {
+    onRegisterReset?.(() => resetToDefaults({ volumeKeysToFlip: setVolumeKeysToFlip }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!config.enabled && listening) stopListening();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,11 +141,11 @@ const PageTurnerSettings: React.FC = () => {
         disabled={!config.enabled}
         data-setting-id={`settings.control.pageTurner.${slot}`}
       >
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-5'>
           {binding && !isListening && (
             <button
               type='button'
-              className='text-base-content/60 hover:text-base-content text-[0.85em]'
+              className='text-base-content/70 hover:text-base-content text-end text-[0.85em] focus:outline-none'
               disabled={!config.enabled}
               aria-label={`${_('Clear')}: ${label}`}
               onClick={() => persist({ ...config, bindings: { ...config.bindings, [slot]: null } })}
@@ -121,7 +155,7 @@ const PageTurnerSettings: React.FC = () => {
           )}
           <button
             type='button'
-            className='eink-bordered rounded-md px-3 py-1 text-[0.85em]'
+            className='text-base-content/70 hover:text-base-content py-1 text-end text-[0.85em] focus:outline-none'
             disabled={!config.enabled}
             aria-pressed={isListening}
             aria-label={`${label}: ${isListening ? _('Listening…') : _('Set key')}`}
@@ -136,22 +170,30 @@ const PageTurnerSettings: React.FC = () => {
 
   return (
     <div className='space-y-2'>
-      <BoxedList title={_('Page Turner')} data-setting-id='settings.control.pageTurner'>
+      <BoxedList
+        title={_('Page Turner')}
+        data-setting-id='settings.control.pageTurner'
+        description={_(
+          'Press a button on your remote controller or keyboard after tapping "Set key".',
+        )}
+      >
+        {appService?.isMobileApp && (
+          <SettingsSwitchRow
+            label={_('Use Volume Keys')}
+            checked={volumeKeysToFlip}
+            onChange={() => setVolumeKeysToFlip(!volumeKeysToFlip)}
+          />
+        )}
         <SettingsSwitchRow
-          label={_('Hardware Page Turner')}
+          label={_('Custom Page Turner')}
           checked={config.enabled}
           onChange={() => persist({ ...config, enabled: !config.enabled })}
         />
         {renderSlot('pagePrev', _('Previous Page'))}
         {renderSlot('pageNext', _('Next Page'))}
+        {renderSlot('sectionPrev', _('Previous Section'))}
+        {renderSlot('sectionNext', _('Next Section'))}
       </BoxedList>
-      <Tips>
-        <li>
-          {_(
-            'Press a button on your remote after tapping "Set key". Media-key support depends on your device and remote.',
-          )}
-        </li>
-      </Tips>
     </div>
   );
 };
