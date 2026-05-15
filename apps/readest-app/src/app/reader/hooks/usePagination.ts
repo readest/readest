@@ -5,7 +5,10 @@ import { ViewSettings } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
+import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/hardwareKeys';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -109,7 +112,15 @@ export const usePagination = (
   const { getBookData } = useBookDataStore();
   const { getViewSettings, getViewState } = useReaderStore();
   const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
-  const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
+  const {
+    acquireVolumeKeyInterception,
+    releaseVolumeKeyInterception,
+    acquirePageTurnerKeyInterception,
+    releasePageTurnerKeyInterception,
+  } = useDeviceControlStore();
+  // Reactive subscription: drives the effect dependency array below. The
+  // handlers themselves re-read via getState() to avoid stale closures.
+  const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -247,6 +258,61 @@ export const usePagination = (
     }
   };
 
+  // Hardware page turner: media keys arrive via the `native-key-down`
+  // event; D-pad / keyboard keys arrive as DOM `keydown`. Both resolve
+  // through the shared binding registry. Suppressed while the toolbar is
+  // visible so D-pad keys keep driving toolbar spatial navigation.
+  const handleHardwarePageTurn = (candidate: KeyCandidate): boolean => {
+    const settings = useSettingsStore.getState().settings.hardwarePageTurner;
+    if (!settings?.enabled) return false;
+    if (useReaderStore.getState().hoveredBookKey) return false;
+
+    // Only the active book (the one driving the sidebar) responds, so a
+    // single key press doesn't flip every book open in a parallel view.
+    if (useSidebarStore.getState().sideBarBookKey !== bookKey) return false;
+
+    const viewState = getViewState(bookKey);
+    if (!viewState?.inited) return false;
+
+    const direction = resolvePageTurn(settings, candidate);
+    if (!direction) return false;
+
+    const viewSettings = getViewSettings(bookKey);
+    const side = direction === 'prev' ? 'up' : 'down';
+    setHoveredBookKey('');
+    if (
+      viewSettings?.readingRulerEnabled &&
+      eventDispatcher.dispatchSync('reading-ruler-move', {
+        bookKey,
+        direction: getReadingRulerMoveDirection(side, viewRef.current?.book.dir),
+      })
+    ) {
+      return true;
+    }
+    viewPagination(viewRef.current, viewSettings, side);
+    return true;
+  };
+
+  const handleHardwareNativeKey = (msg: CustomEvent) => {
+    const keyName = msg.detail?.keyName;
+    if (typeof keyName !== 'string') return;
+    handleHardwarePageTurn({ source: 'native', id: keyName });
+  };
+
+  const handleHardwareDomKey = (event: KeyboardEvent) => {
+    if (event.repeat) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '')) {
+      return;
+    }
+    const consumed = handleHardwarePageTurn(normalizeDomKeyEvent(event));
+    if (consumed) {
+      // Capture-phase: stop `useShortcuts` from also paging on this key.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
+
   useEffect(() => {
     if (!appService?.isMobileApp) return;
 
@@ -264,6 +330,39 @@ export const usePagination = (
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Hardware page turner: native-key + DOM-key listeners and native
+  // media-key interception, re-evaluated whenever the setting changes.
+  useEffect(() => {
+    const hasNativeBinding =
+      hardwarePageTurner?.bindings.pagePrev?.source === 'native' ||
+      hardwarePageTurner?.bindings.pageNext?.source === 'native';
+    const needsNativeInterception =
+      !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasNativeBinding;
+
+    if (needsNativeInterception) {
+      acquirePageTurnerKeyInterception();
+    }
+    if (hasNativeBinding) {
+      eventDispatcher.on('native-key-down', handleHardwareNativeKey);
+    }
+    window.addEventListener('keydown', handleHardwareDomKey, true);
+
+    return () => {
+      if (needsNativeInterception) {
+        releasePageTurnerKeyInterception();
+      }
+      if (hasNativeBinding) {
+        eventDispatcher.off('native-key-down', handleHardwareNativeKey);
+      }
+      window.removeEventListener('keydown', handleHardwareDomKey, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    hardwarePageTurner?.enabled,
+    hardwarePageTurner?.bindings.pagePrev?.source,
+    hardwarePageTurner?.bindings.pageNext?.source,
+  ]);
 
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor
   // so it participates in the priority-based consumption chain.

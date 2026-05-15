@@ -293,6 +293,14 @@ describe('services/constants', () => {
       expect(Array.isArray(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks)).toBe(true);
       expect(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks!.length).toBe(0);
     });
+
+    it('has a disabled hardwarePageTurner with empty bindings', () => {
+      const hw = DEFAULT_SYSTEM_SETTINGS.hardwarePageTurner!;
+      expect(hw).toBeDefined();
+      expect(hw.enabled).toBe(false);
+      expect(hw.bindings.pagePrev).toBeNull();
+      expect(hw.bindings.pageNext).toBeNull();
+    });
   });
 
   describe('DEFAULT_MOBILE_SYSTEM_SETTINGS', () => {

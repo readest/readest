@@ -66,6 +66,8 @@ class SetSystemUIVisibilityRequestArgs {
 class InterceptKeysRequestArgs {
     var volumeKeys: Boolean? = null
     var backKey: Boolean? = null
+    var pageTurnerKeys: Boolean? = null
+    var learnMode: Boolean? = null
 }
 
 @InvokeArg
@@ -115,6 +117,8 @@ data class PurchaseData(
 interface KeyDownInterceptor {
     fun interceptVolumeKeys(enabled: Boolean)
     fun interceptBackKey(enabled: Boolean)
+    fun interceptPageTurnerKeys(enabled: Boolean)
+    fun setKeyLearnMode(enabled: Boolean)
 }
 
 @TauriPlugin(
@@ -401,16 +405,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun intercept_keys(invoke: Invoke) {
         val args = invoke.parseArgs(InterceptKeysRequestArgs::class.java)
         if (activity is KeyDownInterceptor) {
-          when (args.backKey) {
-              true -> (activity as KeyDownInterceptor).interceptBackKey(true)
-              false -> (activity as KeyDownInterceptor).interceptBackKey(false)
-              else -> {}
-          }
-          when (args.volumeKeys) {
-              true -> (activity as KeyDownInterceptor).interceptVolumeKeys(true)
-              false -> (activity as KeyDownInterceptor).interceptVolumeKeys(false)
-              else -> {}
-          }
+            val interceptor = activity as KeyDownInterceptor
+            args.backKey?.let { interceptor.interceptBackKey(it) }
+            args.volumeKeys?.let { interceptor.interceptVolumeKeys(it) }
+            args.pageTurnerKeys?.let { interceptor.interceptPageTurnerKeys(it) }
+            args.learnMode?.let { interceptor.setKeyLearnMode(it) }
         } else {
             Log.e("NativeBridgePlugin", "Activity does not implement KeyDownInterceptor")
         }

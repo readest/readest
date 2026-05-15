@@ -27,6 +27,8 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
+    private var interceptPageTurnerKeysEnabled = false
+    private var keyLearnModeEnabled = false
 
     override fun onWebViewCreate(webView: WebView) {
         wv = webView
@@ -38,6 +40,24 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         KeyEvent.KEYCODE_VOLUME_UP to "VolumeUp"
     )
 
+    private val mediaKeyMap = mapOf(
+        KeyEvent.KEYCODE_MEDIA_NEXT to "MediaNext",
+        KeyEvent.KEYCODE_MEDIA_PREVIOUS to "MediaPrevious",
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to "MediaPlayPause",
+        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD to "MediaFastForward",
+        KeyEvent.KEYCODE_MEDIA_REWIND to "MediaRewind"
+    )
+
+    private fun keyNameFor(keyCode: Int): String =
+        keyEventMap[keyCode] ?: mediaKeyMap[keyCode] ?: "Keycode$keyCode"
+
+    private fun forwardKeyToWebView(keyName: String, keyCode: Int) {
+        wv?.evaluateJavascript(
+            """try { window.onNativeKeyDown("$keyName", $keyCode); } catch (_) {}""",
+            null
+        )
+    }
+
     override fun interceptVolumeKeys(enabled: Boolean) {
         Log.d("MainActivity", "Intercept volume keys: $enabled")
         interceptVolumeKeysEnabled = enabled
@@ -46,6 +66,16 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun interceptBackKey(enabled: Boolean) {
         Log.d("MainActivity", "Intercept back key: $enabled")
         interceptBackKeyEnabled = enabled
+    }
+
+    override fun interceptPageTurnerKeys(enabled: Boolean) {
+        Log.d("MainActivity", "Intercept page turner keys: $enabled")
+        interceptPageTurnerKeysEnabled = enabled
+    }
+
+    override fun setKeyLearnMode(enabled: Boolean) {
+        Log.d("MainActivity", "Key learn mode: $enabled")
+        keyLearnModeEnabled = enabled
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -93,22 +123,31 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val keyCode = event.keyCode
-            val keyName = keyEventMap[keyCode]
 
+            // Learn mode: forward and consume every key so the settings UI
+            // can capture whatever the remote sends.
+            if (keyLearnModeEnabled && keyCode != KeyEvent.KEYCODE_BACK) {
+                forwardKeyToWebView(keyNameFor(keyCode), keyCode)
+                return true
+            }
+
+            // Hardware page turner: intercept media keys when enabled.
+            if (interceptPageTurnerKeysEnabled && mediaKeyMap.containsKey(keyCode)) {
+                forwardKeyToWebView(mediaKeyMap[keyCode]!!, keyCode)
+                return true
+            }
+
+            val keyName = keyEventMap[keyCode]
             if (keyName != null) {
                 val shouldIntercept = when (keyCode) {
                     KeyEvent.KEYCODE_BACK -> interceptBackKeyEnabled
-                    KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> interceptVolumeKeysEnabled
+                    KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN ->
+                        interceptVolumeKeysEnabled
                     else -> false
                 }
 
                 if (shouldIntercept) {
-                    wv?.evaluateJavascript(
-                        """
-                        try { window.onNativeKeyDown("$keyName", $keyCode); } catch (_) {}
-                        """.trimIndent(),
-                        null
-                    )
+                    forwardKeyToWebView(keyName, keyCode)
                     return true
                 }
             }

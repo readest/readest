@@ -14,6 +14,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import NumberInput from './NumberInput';
+import PageTurnerSettings from './PageTurnerSettings';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -314,6 +315,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           data-setting-id='settings.control.showPaginationButtons'
         />
       </BoxedList>
+
+      <PageTurnerSettings />
 
       <BoxedList
         title={_('Annotation Tools')}

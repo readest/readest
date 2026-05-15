@@ -46,6 +46,10 @@ export interface GetSystemFontsListResponse {
 export interface InterceptKeysRequest {
   volumeKeys?: boolean;
   backKey?: boolean;
+  /** Intercept media keys (next/previous/play-pause) for the hardware page turner. */
+  pageTurnerKeys?: boolean;
+  /** Forward every key press to JS so the settings UI can capture a binding. */
+  learnMode?: boolean;
 }
 
 export interface LockScreenRequest {

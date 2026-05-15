@@ -43,6 +43,8 @@ class SetSystemUIVisibilityRequestArgs: Decodable {
 class InterceptKeysRequestArgs: Decodable {
   let backKey: Bool?
   let volumeKeys: Bool?
+  let pageTurnerKeys: Bool?
+  let learnMode: Bool?
 }
 
 class LockScreenOrientationRequestArgs: Decodable {
@@ -188,6 +190,44 @@ class VolumeKeyHandler: NSObject {
       }
       self.previousVolume = currentVolume
       self.setSessionVolume(self.referenceVolume)
+    }
+  }
+}
+
+class MediaKeyHandler {
+  private weak var webView: WKWebView?
+  private var registered = false
+  private let commandCenter = MPRemoteCommandCenter.shared()
+
+  func start(webView: WKWebView) {
+    self.webView = webView
+    if registered { return }
+    registered = true
+    commandCenter.nextTrackCommand.isEnabled = true
+    commandCenter.previousTrackCommand.isEnabled = true
+    commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+      self?.forward("MediaNext")
+      return .success
+    }
+    commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+      self?.forward("MediaPrevious")
+      return .success
+    }
+    logger.log("MediaKeyHandler: started")
+  }
+
+  func stop() {
+    if !registered { return }
+    registered = false
+    commandCenter.nextTrackCommand.removeTarget(nil)
+    commandCenter.previousTrackCommand.removeTarget(nil)
+    logger.log("MediaKeyHandler: stopped")
+  }
+
+  private func forward(_ name: String) {
+    DispatchQueue.main.async { [weak self] in
+      self?.webView?.evaluateJavaScript(
+        "try { window.onNativeKeyDown('\(name)', 0); } catch (_) {}", completionHandler: nil)
     }
   }
 }
@@ -503,6 +543,8 @@ class NativeBridgePlugin: Plugin {
   private struct AssociatedKeys {
     static var volumeKeyHandler = "volumeKeyHandler"
     static var interceptingVolumeKeys = "interceptingVolumeKeys"
+    static var mediaKeyHandler = "mediaKeyHandler"
+    static var mediaKeyState = "mediaKeyState"
   }
 
   private var volumeKeyHandler: VolumeKeyHandler? {
@@ -523,6 +565,44 @@ class NativeBridgePlugin: Plugin {
     set {
       objc_setAssociatedObject(
         self, &AssociatedKeys.interceptingVolumeKeys, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  private var mediaKeyHandler: MediaKeyHandler? {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.mediaKeyHandler) as? MediaKeyHandler
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.mediaKeyHandler, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  // Bit 0 = pageTurnerKeys interception, bit 1 = learn mode.
+  private var mediaKeyState: Int {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.mediaKeyState) as? Int ?? 0
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.mediaKeyState, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  private func updateMediaKeyHandler() {
+    let shouldRun = mediaKeyState != 0
+    if shouldRun {
+      if mediaKeyHandler == nil {
+        mediaKeyHandler = MediaKeyHandler()
+      }
+      if let webView = self.webView {
+        mediaKeyHandler?.start(webView: webView)
+      } else {
+        logger.warning("Cannot start media key handler: webView is nil")
+      }
+    } else {
+      mediaKeyHandler?.stop()
+      mediaKeyHandler = nil
     }
   }
 
@@ -633,6 +713,19 @@ class NativeBridgePlugin: Plugin {
           }
         }
       }
+
+      if let pageTurnerKeys = args.pageTurnerKeys {
+        mediaKeyState = pageTurnerKeys ? (mediaKeyState | 1) : (mediaKeyState & ~1)
+      }
+      if let learnMode = args.learnMode {
+        mediaKeyState = learnMode ? (mediaKeyState | 2) : (mediaKeyState & ~2)
+      }
+      if args.pageTurnerKeys != nil || args.learnMode != nil {
+        DispatchQueue.main.async { [weak self] in
+          self?.updateMediaKeyHandler()
+        }
+      }
+
       invoke.resolve()
     } catch {
       invoke.reject(error.localizedDescription)

@@ -111,6 +111,23 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'credentials',
 ] as const;
 
+export interface KeyBinding {
+  /** `native` = media keys forwarded by the OS bridge; `dom` = keyboard/D-pad keys. */
+  source: 'native' | 'dom';
+  /** Native key name (e.g. `MediaNext`) or DOM `event.code` (e.g. `ArrowLeft`). */
+  id: string;
+  /** Human-readable label shown in settings. */
+  label: string;
+}
+
+export interface HardwarePageTurnerSettings {
+  enabled: boolean;
+  bindings: {
+    pagePrev: KeyBinding | null;
+    pageNext: KeyBinding | null;
+  };
+}
+
 export interface SystemSettings {
   version: number;
   migrationVersion: number;
@@ -125,6 +142,7 @@ export interface SystemSettings {
   screenWakeLock: boolean;
   screenBrightness: number;
   autoScreenBrightness: boolean;
+  hardwarePageTurner: HardwarePageTurnerSettings;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;
   openLastBooks: boolean;
