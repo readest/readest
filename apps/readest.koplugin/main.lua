@@ -669,8 +669,10 @@ end
 -- syncBooksLibrary(mode, interactive) — bidirectional book-row sync,
 -- mirroring useBooksSync.handleAutoSync at apps/readest-app/src/app/
 -- library/hooks/useBooksSync.ts:66-78. mode: "push"|"pull"|"both".
--- Touches the currently-open book first so its updated_at gets included
--- in the push delta. Interactive=true shows toast feedback.
+-- The touched-row bump happens via the before_push callback so it lands
+-- AFTER pull has refreshed the local row with the cloud's uploaded_at /
+-- metadata / group_id — see syncbooks.syncBooks docstring + issue #4138.
+-- Interactive=true shows toast feedback.
 function ReadestSync:syncBooksLibrary(mode, interactive)
     if not self.settings.access_token or not self.settings.user_id then
         if interactive then
@@ -684,11 +686,6 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
             UIManager:show(InfoMessage:new{ text = _("Library not initialized"), timeout = 2 })
         end
         return
-    end
-
-    if mode ~= "pull" then
-        -- Touch only matters for push (and 'both' which includes push)
-        self:touchOpenBook()
     end
 
     local syncbooks = require("library.syncbooks")
@@ -711,6 +708,12 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
         -- If the Library widget is open, refresh it so newly-pulled rows show
         local LibraryWidget = require("library.librarywidget")
         if LibraryWidget._menu then LibraryWidget.refresh() end
+    end, function()
+        -- before_push: bump updated_at on the open book so its row is in
+        -- the push delta. Runs after pull so the cloud's uploaded_at /
+        -- metadata / group_id have already merged into the local row;
+        -- touchBook then preserves those fields.
+        self:touchOpenBook()
     end)
 end
 

@@ -278,28 +278,41 @@ function M.pushChangedBooks(opts, cb)
 end
 
 -- ---------------------------------------------------------------------------
--- syncBooks(opts, mode, cb) — convenience wrapper for the bidirectional
--- sync the web does on auto-sync (useBooksSync.handleAutoSync). Modes:
+-- syncBooks(opts, mode, cb, before_push) — convenience wrapper for the
+-- bidirectional sync the web does on auto-sync (useBooksSync.handleAutoSync).
+-- Modes:
 --   "push" — pushChangedBooks only
 --   "pull" — pullBooks only (existing fetch)
---   "both" — push then pull (matches the web's syncBooks(..., 'both') call)
+--   "both" — pull then push (closes #4138)
 -- cb is invoked once after the LAST step completes; intermediate failures
--- are logged but do not abort (push failure shouldn't prevent pull).
+-- are logged but do not abort (pull failure shouldn't prevent push).
+--
+-- before_push (optional): callback invoked AFTER pull and BEFORE push in
+-- "both" / "push" modes. Callers use this to bump updated_at on the open
+-- book so its touched row gets included in the push delta — but crucially,
+-- AFTER pull has refreshed the local row with the cloud's uploaded_at /
+-- metadata / group_id. Doing the touch before pull (the original ordering)
+-- meant the push could send a row with those fields nil, and the server's
+-- transformBookToDB explicit-nulls uploaded_at and metadata for any field
+-- absent in the wire payload — wiping the cloud copy on every device.
+-- See apps/readest-app/src/utils/transform.ts:99,103.
 -- ---------------------------------------------------------------------------
-function M.syncBooks(opts, mode, cb)
+function M.syncBooks(opts, mode, cb, before_push)
     mode = mode or "both"
     if mode == "push" then
+        if before_push then before_push() end
         M.pushChangedBooks(opts, cb)
     elseif mode == "pull" then
         M.pullBooks(opts, cb)
     else  -- "both"
-        M.pushChangedBooks(opts, function(push_ok, push_msg)
-            M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+        M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+            if before_push then before_push() end
+            M.pushChangedBooks(opts, function(push_ok, push_msg)
                 if cb then
-                    cb(push_ok and pull_ok,
-                       string.format("push=%s/%s pull=%s/%s",
-                           tostring(push_ok), tostring(push_msg),
-                           tostring(pull_ok), tostring(pull_msg)),
+                    cb(pull_ok and push_ok,
+                       string.format("pull=%s/%s push=%s/%s",
+                           tostring(pull_ok), tostring(pull_msg),
+                           tostring(push_ok), tostring(push_msg)),
                        pull_status)
                 end
             end)
