@@ -49,6 +49,7 @@ import {
   isSearchLink,
   resolveURL,
   getFileExtFromPath,
+  looksLikeXMLContent,
   MIME,
   validateOPDSURL,
 } from '@/app/opds/utils/opdsUtils';
@@ -354,6 +355,46 @@ describe('opdsUtils', () => {
     });
   });
 
+  describe('looksLikeXMLContent', () => {
+    it('detects XML that starts with the root element directly', () => {
+      expect(looksLikeXMLContent('<feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toBe(true);
+    });
+
+    it('detects XML with an <?xml ?> declaration', () => {
+      expect(looksLikeXMLContent('<?xml version="1.0"?><feed></feed>')).toBe(true);
+    });
+
+    // Regression for https://github.com/readest/readest/issues/4181
+    // The Hungarian MEK catalog returns XML feeds with leading whitespace and
+    // newlines before <feed> (and no <?xml ?> declaration). A naive
+    // text.startsWith('<') check misfired, sending the body to JSON.parse.
+    it('detects XML with leading whitespace and newlines', () => {
+      expect(looksLikeXMLContent('  \n  <feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toBe(
+        true,
+      );
+    });
+
+    it('detects XML with a leading UTF-8 BOM', () => {
+      expect(looksLikeXMLContent('﻿<feed></feed>')).toBe(true);
+    });
+
+    it('returns false for JSON content', () => {
+      expect(looksLikeXMLContent('{"metadata":{}}')).toBe(false);
+    });
+
+    it('returns false for JSON with leading whitespace', () => {
+      expect(looksLikeXMLContent('  \n  {"metadata":{}}')).toBe(false);
+    });
+
+    it('returns false for plain text', () => {
+      expect(looksLikeXMLContent('Just some plain text')).toBe(false);
+    });
+
+    it('returns false for an empty string', () => {
+      expect(looksLikeXMLContent('')).toBe(false);
+    });
+  });
+
   describe('validateOPDSURL', () => {
     beforeEach(() => {
       mockFetchWithAuth.mockReset();
@@ -520,6 +561,22 @@ describe('opdsUtils', () => {
 
       const result = await validateOPDSURL('https://example.com/opds.json');
       expect(result.isValid).toBe(true);
+    });
+
+    // Regression for https://github.com/readest/readest/issues/4181
+    it('should accept an XML feed with leading whitespace and a text/html Content-Type', async () => {
+      const xmlFeed = `  \n<feed xmlns="http://www.w3.org/2005/Atom">\n  <title>MEK</title>\n</feed>`;
+
+      mockFetchWithAuth.mockResolvedValue({
+        ok: true,
+        url: 'https://bookserver.mek.oszk.hu/all/epub/0',
+        text: () => Promise.resolve(xmlFeed),
+        headers: new Headers({ 'Content-Type': 'text/html' }),
+      } as Response);
+
+      const result = await validateOPDSURL('https://bookserver.mek.oszk.hu/all/epub/0');
+      expect(result.isValid).toBe(true);
+      expect(result.data?.type).toBe('feed');
     });
 
     it('should return invalid for XML that is not a recognized OPDS document type', async () => {
