@@ -864,7 +864,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (bookKey !== exportBookKey) return;
 
     const { bookDoc, book } = bookData;
-    if (!bookDoc || !book || !bookDoc.toc) return;
+    if (!bookDoc || !book) return;
 
     const config = getConfig(bookKey)!;
     const { booknotes: allNotes = [] } = config;

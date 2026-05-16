@@ -1407,5 +1407,9 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "กดปุ่มบนรีโมทคอนโทรลหรือคีย์บอร์ดหลังจากแตะ \"ตั้งปุ่ม\"",
   "Use Volume Keys": "ใช้ปุ่มระดับเสียง",
-  "Custom Page Turner": "ปุ่มพลิกหน้าแบบกำหนดเอง"
+  "Custom Page Turner": "ปุ่มพลิกหน้าแบบกำหนดเอง",
+  "Cleared {{count}} highlights and notes._other": "ล้างไฮไลต์และบันทึก {{count}} รายการแล้ว",
+  "Clear Annotations": "ล้างบันทึก",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "แน่ใจหรือไม่ว่าต้องการล้างไฮไลต์และบันทึกทั้งหมด {{count}} รายการ?",
+  "Discord": "Discord"
 }

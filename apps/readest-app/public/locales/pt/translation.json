@@ -1457,5 +1457,13 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pressione um botão no seu controle remoto ou teclado após tocar em \"Definir tecla\".",
   "Use Volume Keys": "Usar teclas de volume",
-  "Custom Page Turner": "Virador de página personalizado"
+  "Custom Page Turner": "Virador de página personalizado",
+  "Cleared {{count}} highlights and notes._one": "{{count}} destaque e nota limpos.",
+  "Cleared {{count}} highlights and notes._many": "{{count}} destaques e notas limpos.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} destaques e notas limpos.",
+  "Clear Annotations": "Limpar Anotações",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Tem certeza de que deseja limpar {{count}} destaque e nota?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Tem certeza de que deseja limpar todos os {{count}} destaques e notas?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Tem certeza de que deseja limpar todos os {{count}} destaques e notas?",
+  "Discord": "Discord"
 }

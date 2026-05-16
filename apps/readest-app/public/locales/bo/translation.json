@@ -1407,5 +1407,9 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"མཐེབ་གཞི་གཏན་འཁེལ།\" ལ་རེག་རྗེས། ཁྱེད་ཀྱི་རྒྱང་འཐེན་སྒྲིག་ཆས་སམ་མཐེབ་གཞི་གང་རུང་གི་ཐོག་མཐེབ་གཅིག་གནོན་རོགས།",
   "Use Volume Keys": "སྒྲ་སྐད་མཐེབ་གཞི་སྤྱོད་པ།",
-  "Custom Page Turner": "རང་སྒྲུབ་ཤོག་ལྷེ་སྤོ་བའི་ལམ་ལུགས།"
+  "Custom Page Turner": "རང་སྒྲུབ་ཤོག་ལྷེ་སྤོ་བའི་ལམ་ལུགས།",
+  "Cleared {{count}} highlights and notes._other": "གཙོ་གནད་དང་ཟིན་བྲིས་ {{count}} སུབ་ཟིན།",
+  "Clear Annotations": "ཟིན་བྲིས་སུབ་པ།",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "གཙོ་གནད་དང་ཟིན་བྲིས་ {{count}} ཚང་མ་སུབ་པར་གཏན་འཁེལ་ལམ།",
+  "Discord": "Discord"
 }

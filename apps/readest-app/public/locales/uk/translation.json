@@ -1482,5 +1482,15 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Натисніть кнопку на пульті або клавіатурі після натискання \"Призначити клавішу\".",
   "Use Volume Keys": "Використовувати клавіші гучності",
-  "Custom Page Turner": "Власне перегортання сторінок"
+  "Custom Page Turner": "Власне перегортання сторінок",
+  "Cleared {{count}} highlights and notes._one": "Очищено {{count}} виділення та нотатку.",
+  "Cleared {{count}} highlights and notes._few": "Очищено {{count}} виділення та нотатки.",
+  "Cleared {{count}} highlights and notes._many": "Очищено {{count}} виділень та нотаток.",
+  "Cleared {{count}} highlights and notes._other": "Очищено {{count}} виділень та нотаток.",
+  "Clear Annotations": "Очистити анотації",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Очистити {{count}} виділення та нотатку?",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "Очистити всі {{count}} виділення та нотатки?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Очистити всі {{count}} виділень та нотаток?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Очистити всі {{count}} виділень та нотаток?",
+  "Discord": "Discord"
 }

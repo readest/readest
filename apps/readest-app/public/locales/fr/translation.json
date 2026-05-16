@@ -1457,5 +1457,13 @@
   "Enter": "Entrée",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Appuyez sur un bouton de votre télécommande ou de votre clavier après avoir appuyé sur « Définir la touche ».",
   "Use Volume Keys": "Utiliser les touches de volume",
-  "Custom Page Turner": "Tourne-page personnalisé"
+  "Custom Page Turner": "Tourne-page personnalisé",
+  "Cleared {{count}} highlights and notes._one": "{{count}} surlignage et note effacés.",
+  "Cleared {{count}} highlights and notes._many": "{{count}} surlignages et notes effacés.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} surlignages et notes effacés.",
+  "Clear Annotations": "Effacer les annotations",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Voulez-vous vraiment effacer {{count}} surlignage et note ?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Voulez-vous vraiment effacer les {{count}} surlignages et notes ?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Voulez-vous vraiment effacer les {{count}} surlignages et notes ?",
+  "Discord": "Discord"
 }

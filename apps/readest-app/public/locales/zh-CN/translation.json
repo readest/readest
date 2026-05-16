@@ -1407,5 +1407,9 @@
   "Enter": "回车键",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "点击「设置按键」后，按下遥控器或键盘上的按钮。",
   "Use Volume Keys": "使用音量键",
-  "Custom Page Turner": "自定义翻页器"
+  "Custom Page Turner": "自定义翻页器",
+  "Cleared {{count}} highlights and notes._other": "已清除 {{count}} 个高亮和笔记。",
+  "Clear Annotations": "清除笔记",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "确定要清除全部 {{count}} 个高亮和笔记吗？",
+  "Discord": "Discord"
 }

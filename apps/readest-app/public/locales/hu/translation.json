@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Nyomjon meg egy gombot a távirányítón vagy a billentyűzeten a „Billentyű beállítása” érintése után.",
   "Use Volume Keys": "Hangerőgombok használata",
-  "Custom Page Turner": "Egyéni lapozó eszköz"
+  "Custom Page Turner": "Egyéni lapozó eszköz",
+  "Cleared {{count}} highlights and notes._one": "{{count}} kiemelés és jegyzet törölve.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} kiemelés és jegyzet törölve.",
+  "Clear Annotations": "Jegyzetek törlése",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Biztosan törli ezt a {{count}} kiemelést és jegyzetet?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Biztosan törli mind a(z) {{count}} kiemelést és jegyzetet?",
+  "Discord": "Discord"
 }

@@ -1407,5 +1407,9 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Nhấn một nút trên bộ điều khiển từ xa hoặc bàn phím sau khi chạm \"Đặt phím\".",
   "Use Volume Keys": "Dùng Phím Âm Lượng",
-  "Custom Page Turner": "Nút Lật Trang Tùy Chỉnh"
+  "Custom Page Turner": "Nút Lật Trang Tùy Chỉnh",
+  "Cleared {{count}} highlights and notes._other": "Đã xóa {{count}} đánh dấu và ghi chú.",
+  "Clear Annotations": "Xóa chú thích",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Bạn có chắc muốn xóa tất cả {{count}} đánh dấu và ghi chú không?",
+  "Discord": "Discord"
 }

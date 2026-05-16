@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"Tugmani o'rnatish\" tugmasini bosgandan so'ng masofadan boshqarish pultingiz yoki klaviaturangizdagi tugmani bosing.",
   "Use Volume Keys": "Ovoz balandligi tugmalarini ishlatish",
-  "Custom Page Turner": "Maxsus sahifa buruvchi"
+  "Custom Page Turner": "Maxsus sahifa buruvchi",
+  "Cleared {{count}} highlights and notes._one": "{{count}} ta belgilash va eslatma tozalandi.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} ta belgilash va eslatma tozalandi.",
+  "Clear Annotations": "Izohlarni tozalash",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} ta belgilash va eslatmani tozalamoqchimisiz?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Barcha {{count}} ta belgilash va eslatmani tozalamoqchimisiz?",
+  "Discord": "Discord"
 }

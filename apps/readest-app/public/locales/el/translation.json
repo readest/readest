@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Πατήστε ένα κουμπί στο τηλεχειριστήριο ή το πληκτρολόγιό σας αφού πατήσετε «Ορισμός πλήκτρου».",
   "Use Volume Keys": "Χρήση πλήκτρων έντασης",
-  "Custom Page Turner": "Προσαρμοσμένος αναλτήρας σελίδων"
+  "Custom Page Turner": "Προσαρμοσμένος αναλτήρας σελίδων",
+  "Cleared {{count}} highlights and notes._one": "Διαγράφηκε {{count}} επισήμανση και σημείωση.",
+  "Cleared {{count}} highlights and notes._other": "Διαγράφηκαν {{count}} επισημάνσεις και σημειώσεις.",
+  "Clear Annotations": "Εκκαθάριση σχολιασμών",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Είστε σίγουροι ότι θέλετε να διαγράψετε {{count}} επισήμανση και σημείωση;",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Είστε σίγουροι ότι θέλετε να διαγράψετε και τις {{count}} επισημάνσεις και σημειώσεις;",
+  "Discord": "Discord"
 }

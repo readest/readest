@@ -1432,5 +1432,11 @@
   "Enter": "என்டர்",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"விசை அமை\" தட்டிய பிறகு உங்கள் ரிமோட் கன்ட்ரோலர் அல்லது கீபோர்டில் ஒரு பட்டனை அழுத்தவும்.",
   "Use Volume Keys": "ஒலி அளவு விசைகளைப் பயன்படுத்து",
-  "Custom Page Turner": "தனிப்பயன் பக்க திருப்பி"
+  "Custom Page Turner": "தனிப்பயன் பக்க திருப்பி",
+  "Cleared {{count}} highlights and notes._one": "{{count}} சிறப்பம்சம் மற்றும் குறிப்பு அழிக்கப்பட்டது.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} சிறப்பம்சங்கள் மற்றும் குறிப்புகள் அழிக்கப்பட்டன.",
+  "Clear Annotations": "குறிப்புகளை அழி",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} சிறப்பம்சம் மற்றும் குறிப்பை அழிக்க வேண்டும் என்பது உறுதியா?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "அனைத்து {{count}} சிறப்பம்சங்கள் மற்றும் குறிப்புகளையும் அழிக்க வேண்டும் என்பது உறுதியா?",
+  "Discord": "Discord"
 }

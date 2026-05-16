@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Druk op een knop op uw afstandsbediening of toetsenbord nadat u op \"Toets instellen\" hebt getikt.",
   "Use Volume Keys": "Volumetoetsen gebruiken",
-  "Custom Page Turner": "Aangepaste paginaknop"
+  "Custom Page Turner": "Aangepaste paginaknop",
+  "Cleared {{count}} highlights and notes._one": "{{count}} markering en notitie gewist.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} markeringen en notities gewist.",
+  "Clear Annotations": "Annotaties wissen",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Weet u zeker dat u {{count}} markering en notitie wilt wissen?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Weet u zeker dat u alle {{count}} markeringen en notities wilt wissen?",
+  "Discord": "Discord"
 }

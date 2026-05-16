@@ -1432,5 +1432,11 @@
   "Enter": "एंटर",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"कुंजी सेट करें\" दबाने के बाद अपने रिमोट कंट्रोलर या कीबोर्ड पर एक बटन दबाएं।",
   "Use Volume Keys": "वॉल्यूम कुंजियों का उपयोग करें",
-  "Custom Page Turner": "कस्टम पेज टर्नर"
+  "Custom Page Turner": "कस्टम पेज टर्नर",
+  "Cleared {{count}} highlights and notes._one": "{{count}} हाइलाइट और नोट साफ़ किया गया।",
+  "Cleared {{count}} highlights and notes._other": "{{count}} हाइलाइट और नोट साफ़ किए गए।",
+  "Clear Annotations": "टिप्पणियाँ साफ़ करें",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "क्या आप वाकई {{count}} हाइलाइट और नोट साफ़ करना चाहते हैं?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "क्या आप वाकई सभी {{count}} हाइलाइट और नोट साफ़ करना चाहते हैं?",
+  "Discord": "Discord"
 }

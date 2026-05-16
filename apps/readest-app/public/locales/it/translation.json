@@ -1457,5 +1457,13 @@
   "Enter": "Invio",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Premi un pulsante sul telecomando o sulla tastiera dopo aver toccato \"Imposta tasto\".",
   "Use Volume Keys": "Usa i tasti del volume",
-  "Custom Page Turner": "Giratore di pagine personalizzato"
+  "Custom Page Turner": "Giratore di pagine personalizzato",
+  "Cleared {{count}} highlights and notes._one": "{{count}} evidenziazione e nota cancellate.",
+  "Cleared {{count}} highlights and notes._many": "{{count}} evidenziazioni e note cancellate.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} evidenziazioni e note cancellate.",
+  "Clear Annotations": "Cancella annotazioni",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Vuoi davvero cancellare {{count}} evidenziazione e nota?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Vuoi davvero cancellare tutte le {{count}} evidenziazioni e note?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Vuoi davvero cancellare tutte le {{count}} evidenziazioni e note?",
+  "Discord": "Discord"
 }

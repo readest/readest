@@ -1407,5 +1407,9 @@
   "Enter": "Enter 鍵",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "點擊「設定按鍵」後，按下遙控器或鍵盤上的按鈕。",
   "Use Volume Keys": "使用音量鍵",
-  "Custom Page Turner": "自訂翻頁器"
+  "Custom Page Turner": "自訂翻頁器",
+  "Cleared {{count}} highlights and notes._other": "已清除 {{count}} 個標記和筆記。",
+  "Clear Annotations": "清除筆記",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "確定要清除全部 {{count}} 個標記和筆記嗎？",
+  "Discord": "Discord"
 }

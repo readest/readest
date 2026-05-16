@@ -1482,5 +1482,15 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Нажмите кнопку на пульте дистанционного управления или клавиатуре после нажатия \"Назначить клавишу\".",
   "Use Volume Keys": "Использовать клавиши громкости",
-  "Custom Page Turner": "Пользовательское перелистывание страниц"
+  "Custom Page Turner": "Пользовательское перелистывание страниц",
+  "Cleared {{count}} highlights and notes._one": "Очищено {{count}} выделение и заметка.",
+  "Cleared {{count}} highlights and notes._few": "Очищено {{count}} выделения и заметки.",
+  "Cleared {{count}} highlights and notes._many": "Очищено {{count}} выделений и заметок.",
+  "Cleared {{count}} highlights and notes._other": "Очищено {{count}} выделений и заметок.",
+  "Clear Annotations": "Очистить аннотации",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Очистить {{count}} выделение и заметку?",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "Очистить все {{count}} выделения и заметки?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Очистить все {{count}} выделений и заметок?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Очистить все {{count}} выделений и заметок?",
+  "Discord": "Discord"
 }

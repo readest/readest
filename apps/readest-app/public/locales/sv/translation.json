@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Tryck på en knapp på din fjärrkontroll eller tangentbord efter att ha tryckt på \"Ange tangent\".",
   "Use Volume Keys": "Använd volymknappar",
-  "Custom Page Turner": "Anpassad sidvändare"
+  "Custom Page Turner": "Anpassad sidvändare",
+  "Cleared {{count}} highlights and notes._one": "{{count}} markering och anteckning rensades.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} markeringar och anteckningar rensades.",
+  "Clear Annotations": "Rensa anteckningar",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Är du säker på att du vill rensa {{count}} markering och anteckning?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Är du säker på att du vill rensa alla {{count}} markeringar och anteckningar?",
+  "Discord": "Discord"
 }

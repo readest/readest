@@ -1482,5 +1482,15 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Naciśnij przycisk na pilocie lub klawiaturze po dotknięciu \"Ustaw klawisz\".",
   "Use Volume Keys": "Używaj klawiszy głośności",
-  "Custom Page Turner": "Własne przełączanie stron"
+  "Custom Page Turner": "Własne przełączanie stron",
+  "Cleared {{count}} highlights and notes._one": "Wyczyszczono {{count}} zaznaczenie i notatkę.",
+  "Cleared {{count}} highlights and notes._few": "Wyczyszczono {{count}} zaznaczenia i notatki.",
+  "Cleared {{count}} highlights and notes._many": "Wyczyszczono {{count}} zaznaczeń i notatek.",
+  "Cleared {{count}} highlights and notes._other": "Wyczyszczono {{count}} zaznaczeń i notatek.",
+  "Clear Annotations": "Wyczyść adnotacje",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Czy na pewno chcesz wyczyścić {{count}} zaznaczenie i notatkę?",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczenia i notatki?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczeń i notatek?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczeń i notatek?",
+  "Discord": "Discord"
 }

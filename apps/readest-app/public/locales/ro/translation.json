@@ -1457,5 +1457,13 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Apăsați un buton pe telecomandă sau tastatură după ce atingeți \"Setează tasta\".",
   "Use Volume Keys": "Folosiți tastele de volum",
-  "Custom Page Turner": "Dispozitiv personalizat de întoarcere pagini"
+  "Custom Page Turner": "Dispozitiv personalizat de întoarcere pagini",
+  "Cleared {{count}} highlights and notes._one": "{{count}} evidențiere și notă ștearsă.",
+  "Cleared {{count}} highlights and notes._few": "{{count}} evidențieri și note șterse.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} de evidențieri și note șterse.",
+  "Clear Annotations": "Ștergeți adnotările",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Sigur ștergeți {{count}} evidențiere și notă?",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "Sigur ștergeți toate cele {{count}} evidențieri și note?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Sigur ștergeți toate cele {{count}} de evidențieri și note?",
+  "Discord": "Discord"
 }

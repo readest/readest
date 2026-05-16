@@ -1482,5 +1482,15 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pritisnite gumb na daljinskem upravljalniku ali tipkovnici po tapkanju na \"Nastavi tipko\".",
   "Use Volume Keys": "Uporabi tipki za glasnost",
-  "Custom Page Turner": "Tipka za obračanje strani po meri"
+  "Custom Page Turner": "Tipka za obračanje strani po meri",
+  "Cleared {{count}} highlights and notes._one": "Počiščena {{count}} označba in opomba.",
+  "Cleared {{count}} highlights and notes._two": "Počiščeni {{count}} označbi in opombi.",
+  "Cleared {{count}} highlights and notes._few": "Počiščene {{count}} označbe in opombe.",
+  "Cleared {{count}} highlights and notes._other": "Počiščenih {{count}} označb in opomb.",
+  "Clear Annotations": "Počisti opombe",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "Ali res želite počistiti {{count}} označbo in opombo?",
+  "Are you sure to clear all {{count}} highlights and notes?_two": "Ali res želite počistiti {{count}} označbi in opombi?",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "Ali res želite počistiti vse {{count}} označbe in opombe?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Ali res želite počistiti vseh {{count}} označb in opomb?",
+  "Discord": "Discord"
 }

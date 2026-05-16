@@ -1457,5 +1457,13 @@
   "Enter": "אנטר",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "לחץ על כפתור בשלט הרחוק או במקלדת לאחר הקשה על \"הגדר מקש\".",
   "Use Volume Keys": "השתמש במקשי עוצמת קול",
-  "Custom Page Turner": "מהפך עמודים מותאם אישית"
+  "Custom Page Turner": "מהפך עמודים מותאם אישית",
+  "Cleared {{count}} highlights and notes._one": "{{count}} הדגשה והערה נוקו.",
+  "Cleared {{count}} highlights and notes._two": "{{count}} הדגשות והערות נוקו.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} הדגשות והערות נוקו.",
+  "Clear Annotations": "נקה הערות",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "האם לנקות {{count}} הדגשה והערה?",
+  "Are you sure to clear all {{count}} highlights and notes?_two": "האם לנקות את כל {{count}} ההדגשות וההערות?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "האם לנקות את כל {{count}} ההדגשות וההערות?",
+  "Discord": "Discord"
 }

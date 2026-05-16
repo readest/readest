@@ -2,9 +2,7 @@ import clsx from 'clsx';
 import React from 'react';
 
 import { MdCheck } from 'react-icons/md';
-import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
-import { useAuth } from '@/context/AuthContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -16,8 +14,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
-import { navigateToLogin } from '@/utils/nav';
-import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import { saveViewSettings } from '@/helpers/settings';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import useBooksManager from '../../hooks/useBooksManager';
@@ -31,9 +28,7 @@ interface BookMenuProps {
 
 const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen }) => {
   const _ = useTranslation();
-  const router = useRouter();
-  const { envConfig, appService } = useEnv();
-  const { user } = useAuth();
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { bookKeys, recreateViewer, getViewSettings } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
@@ -119,15 +114,6 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('hardcover-push-progress', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
-  const toggleDiscordPresence = () => {
-    const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;
-    saveSysSettings(envConfig, 'discordRichPresenceEnabled', discordRichPresenceEnabled);
-    setIsDropdownOpen?.(false);
-    if (discordRichPresenceEnabled && !user) {
-      navigateToLogin(router);
-    }
-  };
-
   // Routed through Annotator (per-book, long-lived) so that the
   // confirmation dialog isn't unmounted with the dropdown menu.
   const handleClearAnnotations = () => {
@@ -204,17 +190,6 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
             <MenuItem label={_('Push Notes')} noIcon onClick={handlePushHardcoverNotes} />
           </ul>
         </MenuItem>
-      )}
-      {appService?.isDesktopApp && (
-        <>
-          <hr aria-hidden='true' className='border-base-200 my-1' />
-          <MenuItem
-            label={_('Show on Discord')}
-            tooltip={_("Display what I'm reading on Discord")}
-            toggled={settings.discordRichPresenceEnabled}
-            onClick={toggleDiscordPresence}
-          />
-        </>
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />

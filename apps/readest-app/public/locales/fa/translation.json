@@ -1432,5 +1432,11 @@
   "Enter": "اینتر",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "پس از ضربه زدن به «تنظیم کلید»، دکمه‌ای روی کنترلر یا صفحه‌کلید خود فشار دهید.",
   "Use Volume Keys": "استفاده از کلیدهای صدا",
-  "Custom Page Turner": "صفحه‌گردان سفارشی"
+  "Custom Page Turner": "صفحه‌گردان سفارشی",
+  "Cleared {{count}} highlights and notes._one": "{{count}} برجسته و یادداشت پاک شد.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} برجسته و یادداشت پاک شد.",
+  "Clear Annotations": "پاک کردن حاشیه‌نویسی‌ها",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "آیا مطمئنید که می‌خواهید {{count}} برجسته و یادداشت را پاک کنید؟",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "آیا مطمئنید که می‌خواهید همهٔ {{count}} برجسته و یادداشت را پاک کنید؟",
+  "Discord": "Discord"
 }

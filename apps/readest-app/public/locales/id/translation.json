@@ -1407,5 +1407,9 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Tekan tombol pada remote controller atau keyboard Anda setelah mengetuk \"Atur tombol\".",
   "Use Volume Keys": "Gunakan Tombol Volume",
-  "Custom Page Turner": "Pembalik Halaman Kustom"
+  "Custom Page Turner": "Pembalik Halaman Kustom",
+  "Cleared {{count}} highlights and notes._other": "{{count}} sorotan dan catatan dihapus.",
+  "Clear Annotations": "Hapus Anotasi",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Yakin ingin menghapus semua {{count}} sorotan dan catatan?",
+  "Discord": "Discord"
 }

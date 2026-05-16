@@ -1532,5 +1532,19 @@
   "Enter": "إدخال",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "اضغط على زر في جهاز التحكم عن بُعد أو لوحة المفاتيح بعد النقر على \"تعيين مفتاح\".",
   "Use Volume Keys": "استخدام مفاتيح الصوت",
-  "Custom Page Turner": "قلّاب الصفحات المخصص"
+  "Custom Page Turner": "قلّاب الصفحات المخصص",
+  "Cleared {{count}} highlights and notes._zero": "لم يتم مسح أي تمييزات أو ملاحظات.",
+  "Cleared {{count}} highlights and notes._one": "تم مسح تمييز وملاحظة واحدة.",
+  "Cleared {{count}} highlights and notes._two": "تم مسح تمييزين وملاحظتين.",
+  "Cleared {{count}} highlights and notes._few": "تم مسح {{count}} تمييزات وملاحظات.",
+  "Cleared {{count}} highlights and notes._many": "تم مسح {{count}} تمييزًا وملاحظة.",
+  "Cleared {{count}} highlights and notes._other": "تم مسح {{count}} تمييز وملاحظة.",
+  "Clear Annotations": "مسح التعليقات",
+  "Are you sure to clear all {{count}} highlights and notes?_zero": "هل أنت متأكد من مسح جميع التمييزات والملاحظات؟",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "هل أنت متأكد من مسح تمييز وملاحظة واحدة؟",
+  "Are you sure to clear all {{count}} highlights and notes?_two": "هل أنت متأكد من مسح تمييزين وملاحظتين؟",
+  "Are you sure to clear all {{count}} highlights and notes?_few": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
+  "Discord": "Discord"
 }

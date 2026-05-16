@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"යතුර සකසන්න\" තට්ටු කිරීමෙන් පසු ඔබේ දුරස්ථ පාලකයේ හෝ යතුරු පුවරුවේ බොත්තමක් එබෙන්න.",
   "Use Volume Keys": "ශබ්ද කතා යතුරු භාවිතා කරන්න",
-  "Custom Page Turner": "අභිරුචි පිටු හරවනය"
+  "Custom Page Turner": "අභිරුචි පිටු හරවනය",
+  "Cleared {{count}} highlights and notes._one": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ක් හිස් කරන ලදී.",
+  "Cleared {{count}} highlights and notes._other": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ක් හිස් කරන ලදී.",
+  "Clear Annotations": "විවරණ හිස් කරන්න",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ක් හිස් කිරීමට අවශ්‍ය බව විශ්වාසද?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ම හිස් කිරීමට අවශ්‍ය බව විශ්වාසද?",
+  "Discord": "Discord"
 }

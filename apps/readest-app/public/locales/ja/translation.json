@@ -1407,5 +1407,9 @@
   "Enter": "エンター",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "「キーを設定」をタップした後、リモコンまたはキーボードのボタンを押してください。",
   "Use Volume Keys": "音量キーを使用",
-  "Custom Page Turner": "カスタムページターナー"
+  "Custom Page Turner": "カスタムページターナー",
+  "Cleared {{count}} highlights and notes._other": "{{count}} 件のハイライトとメモをクリアしました。",
+  "Clear Annotations": "注釈をクリア",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "{{count}} 件のハイライトとメモをすべてクリアしてもよろしいですか？",
+  "Discord": "Discord"
 }

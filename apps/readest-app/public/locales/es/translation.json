@@ -1457,5 +1457,13 @@
   "Enter": "Intro",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "Pulse un botón en su mando a distancia o teclado después de tocar \"Asignar tecla\".",
   "Use Volume Keys": "Usar teclas de volumen",
-  "Custom Page Turner": "Pasador de páginas personalizado"
+  "Custom Page Turner": "Pasador de páginas personalizado",
+  "Cleared {{count}} highlights and notes._one": "Se borró {{count}} resaltado y nota.",
+  "Cleared {{count}} highlights and notes._many": "Se borraron {{count}} resaltados y notas.",
+  "Cleared {{count}} highlights and notes._other": "Se borraron {{count}} resaltados y notas.",
+  "Clear Annotations": "Borrar anotaciones",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "¿Seguro que quieres borrar {{count}} resaltado y nota?",
+  "Are you sure to clear all {{count}} highlights and notes?_many": "¿Seguro que quieres borrar los {{count}} resaltados y notas?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "¿Seguro que quieres borrar los {{count}} resaltados y notas?",
+  "Discord": "Discord"
 }

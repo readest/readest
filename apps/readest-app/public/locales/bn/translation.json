@@ -1432,5 +1432,11 @@
   "Enter": "এন্টার",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"কী সেট করুন\" ট্যাপ করার পর আপনার রিমোট কন্ট্রোলার বা কীবোর্ডের একটি বোতাম চাপুন।",
   "Use Volume Keys": "ভলিউম কী ব্যবহার করুন",
-  "Custom Page Turner": "কাস্টম পেজ টার্নার"
+  "Custom Page Turner": "কাস্টম পেজ টার্নার",
+  "Cleared {{count}} highlights and notes._one": "{{count}}টি হাইলাইট ও নোট মুছে ফেলা হয়েছে।",
+  "Cleared {{count}} highlights and notes._other": "{{count}}টি হাইলাইট ও নোট মুছে ফেলা হয়েছে।",
+  "Clear Annotations": "টীকা মুছুন",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "আপনি কি নিশ্চিত যে {{count}}টি হাইলাইট ও নোট মুছে ফেলতে চান?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "আপনি কি নিশ্চিত যে সব {{count}}টি হাইলাইট ও নোট মুছে ফেলতে চান?",
+  "Discord": "Discord"
 }

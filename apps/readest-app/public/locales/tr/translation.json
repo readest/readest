@@ -1432,5 +1432,11 @@
   "Enter": "Enter",
   "Press a button on your remote controller or keyboard after tapping \"Set key\".": "\"Tuş ayarla\" düğmesine dokunduktan sonra uzaktan kumandanızdaki veya klavyenizdeki bir düğmeye basın.",
   "Use Volume Keys": "Ses Tuşlarını Kullan",
-  "Custom Page Turner": "Özel Sayfa Çevirici"
+  "Custom Page Turner": "Özel Sayfa Çevirici",
+  "Cleared {{count}} highlights and notes._one": "{{count}} vurgu ve not temizlendi.",
+  "Cleared {{count}} highlights and notes._other": "{{count}} vurgu ve not temizlendi.",
+  "Clear Annotations": "Notları Temizle",
+  "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} vurgu ve notu temizlemek istediğinizden emin misiniz?",
+  "Are you sure to clear all {{count}} highlights and notes?_other": "Tüm {{count}} vurgu ve notu temizlemek istediğinizden emin misiniz?",
+  "Discord": "Discord"
 }
