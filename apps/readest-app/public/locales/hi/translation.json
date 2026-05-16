@@ -1438,5 +1438,7 @@
   "Clear Annotations": "टिप्पणियाँ साफ़ करें",
   "Are you sure to clear all {{count}} highlights and notes?_one": "क्या आप वाकई {{count}} हाइलाइट और नोट साफ़ करना चाहते हैं?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "क्या आप वाकई सभी {{count}} हाइलाइट और नोट साफ़ करना चाहते हैं?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "सिंक बेस URL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "आधिकारिक Readwise API का उपयोग करने के लिए खाली छोड़ें। कस्टम URL केवल तभी सेट करें जब किसी स्वयं-होस्ट किए गए, Readwise-संगत सेवा को लक्षित करना हो।"
 }

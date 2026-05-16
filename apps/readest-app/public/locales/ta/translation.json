@@ -1438,5 +1438,7 @@
   "Clear Annotations": "குறிப்புகளை அழி",
   "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} சிறப்பம்சம் மற்றும் குறிப்பை அழிக்க வேண்டும் என்பது உறுதியா?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "அனைத்து {{count}} சிறப்பம்சங்கள் மற்றும் குறிப்புகளையும் அழிக்க வேண்டும் என்பது உறுதியா?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "ஒத்திசைவு அடிப்படை URL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "அதிகாரப்பூர்வ Readwise API ஐப் பயன்படுத்த காலியாக விடவும். சுய-ஹோஸ்ட் செய்யப்பட்ட, Readwise-இணக்கமான சேவையை இலக்காகக் கொள்ள மட்டுமே தனிப்பயன் URL ஐ அமைக்கவும்."
 }

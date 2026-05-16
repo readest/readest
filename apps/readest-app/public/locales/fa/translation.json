@@ -1438,5 +1438,7 @@
   "Clear Annotations": "پاک کردن حاشیه‌نویسی‌ها",
   "Are you sure to clear all {{count}} highlights and notes?_one": "آیا مطمئنید که می‌خواهید {{count}} برجسته و یادداشت را پاک کنید؟",
   "Are you sure to clear all {{count}} highlights and notes?_other": "آیا مطمئنید که می‌خواهید همهٔ {{count}} برجسته و یادداشت را پاک کنید؟",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "نشانی پایه همگام‌سازی",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "برای استفاده از API رسمی Readwise خالی بگذارید. تنها برای اتصال به یک سرویس خودمیزبان سازگار با Readwise یک نشانی سفارشی تنظیم کنید."
 }

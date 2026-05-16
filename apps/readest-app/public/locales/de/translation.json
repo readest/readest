@@ -1438,5 +1438,7 @@
   "Clear Annotations": "Anmerkungen löschen",
   "Are you sure to clear all {{count}} highlights and notes?_one": "Möchten Sie wirklich {{count}} Markierung und Notiz löschen?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Möchten Sie wirklich alle {{count}} Markierungen und Notizen löschen?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "Basis-URL für Synchronisierung",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Leer lassen, um die offizielle Readwise-API zu verwenden. Eine benutzerdefinierte URL nur festlegen, um einen selbst gehosteten, Readwise-kompatiblen Dienst anzusprechen."
 }

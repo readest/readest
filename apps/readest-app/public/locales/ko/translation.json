@@ -1411,5 +1411,7 @@
   "Cleared {{count}} highlights and notes._other": "하이라이트 및 메모 {{count}}개를 지웠습니다.",
   "Clear Annotations": "주석 지우기",
   "Are you sure to clear all {{count}} highlights and notes?_other": "하이라이트 및 메모 {{count}}개를 모두 지우시겠습니까?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "동기화 기본 URL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "공식 Readwise API를 사용하려면 비워 두세요. 사용자 지정 URL은 자체 호스팅된 Readwise 호환 서비스를 대상으로 할 때만 설정하세요."
 }

@@ -1411,5 +1411,7 @@
   "Cleared {{count}} highlights and notes._other": "{{count}} serlahan dan nota telah dikosongkan.",
   "Clear Annotations": "Kosongkan Anotasi",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Adakah anda pasti mahu mengosongkan semua {{count}} serlahan dan nota?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "URL Asas Penyegerakan",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Biarkan kosong untuk menggunakan API Readwise rasmi. Tetapkan URL tersuai hanya untuk menyasarkan perkhidmatan layan-diri yang serasi dengan Readwise."
 }

@@ -1465,5 +1465,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "האם לנקות {{count}} הדגשה והערה?",
   "Are you sure to clear all {{count}} highlights and notes?_two": "האם לנקות את כל {{count}} ההדגשות וההערות?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "האם לנקות את כל {{count}} ההדגשות וההערות?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "כתובת URL בסיסית לסנכרון",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "השאירו ריק כדי להשתמש ב-API הרשמי של Readwise. הגדירו כתובת URL מותאמת אישית רק כדי להפנות לשירות בעל אירוח עצמי התואם ל-Readwise."
 }

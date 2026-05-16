@@ -1465,5 +1465,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "¿Seguro que quieres borrar {{count}} resaltado y nota?",
   "Are you sure to clear all {{count}} highlights and notes?_many": "¿Seguro que quieres borrar los {{count}} resaltados y notas?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "¿Seguro que quieres borrar los {{count}} resaltados y notas?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "URL base de sincronización",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Déjalo en blanco para usar la API oficial de Readwise. Establece una URL personalizada solo para apuntar a un servicio autoalojado compatible con Readwise."
 }

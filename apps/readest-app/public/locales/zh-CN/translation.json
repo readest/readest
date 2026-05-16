@@ -1411,5 +1411,7 @@
   "Cleared {{count}} highlights and notes._other": "已清除 {{count}} 个高亮和笔记。",
   "Clear Annotations": "清除笔记",
   "Are you sure to clear all {{count}} highlights and notes?_other": "确定要清除全部 {{count}} 个高亮和笔记吗？",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "同步基础 URL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "留空以使用官方 Readwise API。仅在需要连接自托管的 Readwise 兼容服务时才设置自定义 URL。"
 }

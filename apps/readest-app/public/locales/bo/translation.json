@@ -1411,5 +1411,7 @@
   "Cleared {{count}} highlights and notes._other": "གཙོ་གནད་དང་ཟིན་བྲིས་ {{count}} སུབ་ཟིན།",
   "Clear Annotations": "ཟིན་བྲིས་སུབ་པ།",
   "Are you sure to clear all {{count}} highlights and notes?_other": "གཙོ་གནད་དང་ཟིན་བྲིས་ {{count}} ཚང་མ་སུབ་པར་གཏན་འཁེལ་ལམ།",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "མཉམ་སྒྲིག་གཞི་རྩའི་URL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Readwise ཡི་ངོ་མའི་API སྤྱོད་ན་སྟོང་པར་བཞག Readwise དང་མཐུན་པའི་རང་འཇོག་ཞབས་ཞུའི་ཆེད་ཁོ་ནར་སྒེར་གྱི་URL འགོད་དགོས།"
 }

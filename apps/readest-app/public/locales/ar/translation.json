@@ -1546,5 +1546,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_few": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
   "Are you sure to clear all {{count}} highlights and notes?_many": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
   "Are you sure to clear all {{count}} highlights and notes?_other": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "عنوان URL الأساسي للمزامنة",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "اتركه فارغًا لاستخدام واجهة Readwise الرسمية. عيّن عنوان URL مخصصًا فقط للاتصال بخدمة مستضافة ذاتيًا ومتوافقة مع Readwise."
 }

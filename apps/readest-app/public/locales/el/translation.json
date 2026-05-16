@@ -1438,5 +1438,7 @@
   "Clear Annotations": "Εκκαθάριση σχολιασμών",
   "Are you sure to clear all {{count}} highlights and notes?_one": "Είστε σίγουροι ότι θέλετε να διαγράψετε {{count}} επισήμανση και σημείωση;",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Είστε σίγουροι ότι θέλετε να διαγράψετε και τις {{count}} επισημάνσεις και σημειώσεις;",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "Βασικό URL συγχρονισμού",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Αφήστε το κενό για χρήση του επίσημου Readwise API. Ορίστε προσαρμοσμένο URL μόνο για να στοχεύσετε μια αυτο-φιλοξενούμενη υπηρεσία συμβατή με το Readwise."
 }

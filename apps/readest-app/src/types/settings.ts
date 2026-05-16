@@ -71,6 +71,12 @@ export interface ReadwiseSettings {
   enabled: boolean;
   accessToken: string;
   lastSyncedAt: number;
+  /**
+   * Advanced: override the Readwise API base URL (e.g. for a self-hosted,
+   * Readwise-compatible receiver). When unset or blank, the official
+   * `READWISE_API_BASE_URL` is used.
+   */
+  baseUrl?: string;
 }
 
 export interface HardcoverSettings {

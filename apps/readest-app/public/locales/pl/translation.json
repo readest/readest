@@ -1492,5 +1492,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_few": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczenia i notatki?",
   "Are you sure to clear all {{count}} highlights and notes?_many": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczeń i notatek?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Czy na pewno chcesz wyczyścić wszystkie {{count}} zaznaczeń i notatek?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "Bazowy adres URL synchronizacji",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Pozostaw puste, aby używać oficjalnego API Readwise. Ustaw niestandardowy adres URL tylko po to, aby kierować ruch do samodzielnie hostowanej usługi zgodnej z Readwise."
 }

@@ -1438,5 +1438,7 @@
   "Clear Annotations": "Izohlarni tozalash",
   "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} ta belgilash va eslatmani tozalamoqchimisiz?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Barcha {{count}} ta belgilash va eslatmani tozalamoqchimisiz?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "Sinxronizatsiya asosiy URL manzili",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Rasmiy Readwise API'sidan foydalanish uchun bo'sh qoldiring. Maxsus URL manzilini faqat o'zingiz joylashtirgan, Readwise bilan mos xizmatga ulanish uchun belgilang."
 }

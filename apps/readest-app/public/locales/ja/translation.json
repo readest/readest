@@ -1411,5 +1411,7 @@
   "Cleared {{count}} highlights and notes._other": "{{count}} 件のハイライトとメモをクリアしました。",
   "Clear Annotations": "注釈をクリア",
   "Are you sure to clear all {{count}} highlights and notes?_other": "{{count}} 件のハイライトとメモをすべてクリアしてもよろしいですか？",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "同期ベースURL",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "公式のReadwise APIを使用する場合は空白のままにします。カスタムURLは、セルフホストのReadwise互換サービスに接続する場合のみ設定してください。"
 }

@@ -1492,5 +1492,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_few": "Очистити всі {{count}} виділення та нотатки?",
   "Are you sure to clear all {{count}} highlights and notes?_many": "Очистити всі {{count}} виділень та нотаток?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Очистити всі {{count}} виділень та нотаток?",
-  "Discord": "Discord"
+  "Discord": "Discord",
+  "Sync Base URL": "Базова URL-адреса синхронізації",
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Залиште порожнім, щоб використовувати офіційний API Readwise. Указуйте власну URL-адресу лише для підключення до самостійно розміщеної служби, сумісної з Readwise."
 }
