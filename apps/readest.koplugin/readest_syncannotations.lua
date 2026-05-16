@@ -133,6 +133,75 @@ function SyncAnnotations:getAnnotations(ui, settings, book_hash, meta_hash, full
     return notes
 end
 
+-- Drop local annotations the server has tombstoned (deleted_at set), so a
+-- highlight deleted on Readest also disappears in KOReader. Without this,
+-- pull only skips deleted notes — the local copy lingers and any later
+-- push resurrects it on the server, making it reappear (issue #4119).
+function SyncAnnotations:removeDeletedAnnotations(annotation_mgr, notes, book_hash)
+    local annotations = annotation_mgr and annotation_mgr.annotations
+    if not annotations or #annotations == 0 then return 0 end
+
+    -- Map every local annotation to its index by id and by position so a
+    -- tombstone can be matched however it was originally created: pulled
+    -- notes carry a stored id, native KOReader highlights don't (their id
+    -- is derived from book hash + positions, matching what push uploads).
+    local index_by_id = {}
+    local index_by_anno = {}
+    local index_by_bookmark = {}
+    for i, item in ipairs(annotations) do
+        if item.id then
+            index_by_id[item.id] = i
+        end
+        if item.drawer then
+            local pos0 = item.pos0
+            local pos1 = item.pos1
+            if type(pos0) == "table" then pos0 = nil end
+            if type(pos1) == "table" then pos1 = nil end
+            if pos0 then
+                index_by_anno[tostring(pos0) .. "|" .. tostring(pos1 or "")] = i
+                if not item.id then
+                    local id = self:generateNoteId(book_hash, "annotation", tostring(pos0), pos1 and tostring(pos1))
+                    index_by_id[id] = i
+                end
+            end
+        elseif type(item.page) == "string" then
+            index_by_bookmark[item.page] = i
+            if not item.id then
+                local id = self:generateNoteId(book_hash, "bookmark", item.page)
+                index_by_id[id] = i
+            end
+        end
+    end
+
+    local to_remove = {}
+    for _, note in ipairs(notes) do
+        if note.deleted_at then
+            local idx
+            if note.id and index_by_id[note.id] then
+                idx = index_by_id[note.id]
+            elseif note.type == "bookmark" and note.xpointer0 then
+                idx = index_by_bookmark[note.xpointer0]
+            elseif note.xpointer0 then
+                idx = index_by_anno[note.xpointer0 .. "|" .. (note.xpointer1 or "")]
+            end
+            if idx then
+                to_remove[idx] = true
+            end
+        end
+    end
+
+    -- Remove highest index first so earlier indexes stay valid.
+    local indexes = {}
+    for idx in pairs(to_remove) do
+        indexes[#indexes + 1] = idx
+    end
+    table.sort(indexes, function(a, b) return a > b end)
+    for _, idx in ipairs(indexes) do
+        table.remove(annotations, idx)
+    end
+    return #indexes
+end
+
 function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
     local book_hash = ui.doc_settings:readSetting("partial_md5_checksum")
     local meta_hash = ui.doc_settings:readSetting("readest_sync") or {}
@@ -251,6 +320,10 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
             logger.dbg("ReadestSync: Pulled annotations from sync:", #data)
             local annotation_mgr = ui.annotation
             if not annotation_mgr then return end
+
+            -- Honor remote deletions before adding: drop local annotations
+            -- the server has tombstoned so they don't reappear (issue #4119).
+            local removed = self:removeDeletedAnnotations(annotation_mgr, data, book_hash)
 
             -- Build dedup sets: by ID, by pos0|pos1 for annotations, by page xpointer for bookmarks
             local existing_ids = {}
@@ -378,7 +451,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 })
             end
 
-            if added > 0 then
+            if added > 0 or removed > 0 then
                 UIManager:setDirty(dialog, "ui")
             end
         end
