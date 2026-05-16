@@ -81,6 +81,7 @@ import LibraryEmptyState from './components/LibraryEmptyState';
 import GroupHeader from './components/GroupHeader';
 import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
+import { useCustomFonts } from '@/hooks/useCustomFonts';
 import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
@@ -124,6 +125,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useReplicaPull({
     kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'settings'],
   });
+  // Hydrate the custom-font store from persisted settings so the Font
+  // panel sees imported fonts even when opened straight from the
+  // library — the replica pull above is auth-gated and the reader's
+  // FoliateViewer hydration never runs without a book open.
+  useCustomFonts();
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
