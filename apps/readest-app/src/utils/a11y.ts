@@ -53,7 +53,7 @@ export const handleA11yNavigation = (
     skipLink.setAttribute('aria-hidden', 'false');
     skipLink.setAttribute('aria-label', options?.skipToNextSectionLabel ?? '');
     Object.assign(skipLink.style, {
-      position: 'relative',
+      position: 'absolute',
       left: '0px',
       top: 'auto',
       width: '1px',
