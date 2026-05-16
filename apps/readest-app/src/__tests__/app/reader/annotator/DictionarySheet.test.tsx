@@ -195,6 +195,23 @@ const buildEmptyProvider = (id: string, label: string): DictionaryProvider => ({
   },
 });
 
+// A case-sensitive, whitespace-sensitive provider that only resolves the
+// exact stored headword — mimics mdict's lookup path. Used to assert the
+// query-normalization fallback (trim + case folding).
+const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
+  const provider: DictionaryProvider = {
+    id: 'exact',
+    kind: 'mdict',
+    label: 'Exact Match',
+    async lookup(word, ctx) {
+      if (word !== storedHeadword) return { ok: false, reason: 'empty' };
+      ctx.container.append(document.createTextNode(`def for ${word}`));
+      return { ok: true, headword: word, sourceLabel: 'Exact Match' };
+    },
+  };
+  return provider;
+};
+
 // ---------------------------------------------------------------------------
 // Sheet harness
 // ---------------------------------------------------------------------------
@@ -290,6 +307,45 @@ describe('DictionarySheet — concurrent lookup', () => {
     // The two empty providers never render a card.
     expect(screen.queryByText('Empty One')).toBeNull();
     expect(screen.queryByText('Empty Two')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — query normalization', () => {
+  it('resolves a lowercase-stored entry from a capitalized selection', async () => {
+    const exact = buildExactProvider('hello');
+    const spy = vi.spyOn(exact, 'lookup');
+    providersForNextRender.push(exact);
+    renderSheet({ word: 'Hello' });
+
+    await screen.findByText('Exact Match');
+    // First probe is the selection as-is; the lowercase fallback hits.
+    expect(spy).toHaveBeenCalledWith('Hello', expect.any(Object));
+    expect(spy).toHaveBeenCalledWith('hello', expect.any(Object));
+  });
+
+  it('resolves an entry from a selection with trailing whitespace', async () => {
+    providersForNextRender.push(buildExactProvider('world'));
+    renderSheet({ word: 'world ' });
+
+    await screen.findByText('Exact Match');
+  });
+
+  it('trims trailing whitespace from the displayed title', async () => {
+    providersForNextRender.push(buildExactProvider('world'));
+    renderSheet({ word: 'world ' });
+
+    expect((await screen.findByTestId('dict-title')).textContent).toBe('world');
+  });
+
+  it('stops at the first matching variant without probing the rest', async () => {
+    const exact = buildExactProvider('hello');
+    const spy = vi.spyOn(exact, 'lookup');
+    providersForNextRender.push(exact);
+    renderSheet({ word: 'hello' });
+
+    await screen.findByText('Exact Match');
+    // 'hello' hits immediately — no title-case / upper-case probes follow.
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });
 

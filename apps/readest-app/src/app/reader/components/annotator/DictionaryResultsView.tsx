@@ -10,6 +10,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
+import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import {
   getBuiltinWebSearch,
@@ -84,13 +85,14 @@ export function useDictionaryResults({
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
 
-  const [historyStack, setHistoryStack] = useState<string[]>([word]);
-  const currentWord = historyStack[historyStack.length - 1] ?? word;
+  const [historyStack, setHistoryStack] = useState<string[]>([word.trim()]);
+  const currentWord = historyStack[historyStack.length - 1] ?? word.trim();
 
   // Reset the history when the host reopens with a new word from outside
-  // (selection change in the reader).
+  // (selection change in the reader). A double-click selection can carry
+  // trailing whitespace, so trim before seeding.
   useEffect(() => {
-    setHistoryStack([word]);
+    setHistoryStack([word.trim()]);
   }, [word]);
 
   const [cards, setCards] = useState<Record<string, CardState>>({});
@@ -209,16 +211,25 @@ export function useDictionaryResults({
           if (!container) {
             outcome = { ok: false, reason: 'error', message: 'no container' };
           } else {
-            container.replaceChildren();
-            outcome = await provider.lookup(currentWord, {
-              lang: langCode,
-              signal: controller.signal,
-              container,
-              onNavigate: pushWord,
-              isDarkMode,
-              bg: themeCode.bg,
-              fg: themeCode.fg,
-            });
+            // Try normalized query variants (trimmed, case-folded) in
+            // priority order and keep the first hit. Case-sensitive
+            // formats (mdict) otherwise miss `Hello` / `world ` style
+            // selections whose headword is stored lowercased.
+            outcome = { ok: false, reason: 'empty' };
+            for (const candidate of buildLookupCandidates(currentWord)) {
+              container.replaceChildren();
+              outcome = await provider.lookup(candidate, {
+                lang: langCode,
+                signal: controller.signal,
+                container,
+                onNavigate: pushWord,
+                isDarkMode,
+                bg: themeCode.bg,
+                fg: themeCode.fg,
+              });
+              if (controller.signal.aborted) return;
+              if (outcome.ok || outcome.reason !== 'empty') break;
+            }
           }
         } catch (err) {
           outcome = {
