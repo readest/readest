@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "Biztosan törli ezt a {{count}} kiemelést és jegyzetet?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Biztosan törli mind a(z) {{count}} kiemelést és jegyzetet?",
   "Discord": "Discord",
-  "Sync Base URL": "Szinkronizálási alap-URL",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Hagyja üresen a hivatalos Readwise API használatához. Egyéni URL-t csak akkor adjon meg, ha saját üzemeltetésű, Readwise-kompatibilis szolgáltatást szeretne megcélozni."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Hagyja üresen a hivatalos Readwise API használatához. Egyéni URL-t csak akkor adjon meg, ha saját üzemeltetésű, Readwise-kompatibilis szolgáltatást szeretne megcélozni.",
+  "Custom URL": "Egyéni URL"
 }

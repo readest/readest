@@ -137,7 +137,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
               </label>
               {configuredBaseUrl && (
                 <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
-                  <SettingLabel>{_('Sync Base URL')}</SettingLabel>
+                  <SettingLabel>{_('Custom URL')}</SettingLabel>
                   <span
                     className='text-base-content/60 min-w-0 truncate text-end text-sm'
                     title={configuredBaseUrl}
@@ -198,7 +198,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
             <div className='space-y-3 pt-3'>
               <div className='space-y-1.5'>
                 <SectionTitle as='label' htmlFor='readwise-base-url' className='block'>
-                  {_('Sync Base URL')}
+                  {_('Custom URL')}
                 </SectionTitle>
                 <input
                   id='readwise-base-url'

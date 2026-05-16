@@ -1493,6 +1493,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_many": "Очистить все {{count}} выделений и заметок?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Очистить все {{count}} выделений и заметок?",
   "Discord": "Discord",
-  "Sync Base URL": "Базовый URL синхронизации",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Оставьте пустым, чтобы использовать официальный API Readwise. Указывайте собственный URL только для подключения к самостоятельно размещённому сервису, совместимому с Readwise."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Оставьте пустым, чтобы использовать официальный API Readwise. Указывайте собственный URL только для подключения к самостоятельно размещённому сервису, совместимому с Readwise.",
+  "Custom URL": "Пользовательский URL"
 }

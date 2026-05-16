@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ක් හිස් කිරීමට අවශ්‍ය බව විශ්වාසද?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ම හිස් කිරීමට අවශ්‍ය බව විශ්වාසද?",
   "Discord": "Discord",
-  "Sync Base URL": "සමමුහුර්ත මූලික URL",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "නිල Readwise API භාවිතා කිරීමට හිස්ව තබන්න. ස්වයං-සත්කාරක, Readwise-අනුකූල සේවාවක් ඉලක්ක කිරීමට පමණක් අභිරුචි URL එකක් සකසන්න."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "නිල Readwise API භාවිතා කිරීමට හිස්ව තබන්න. ස්වයං-සත්කාරක, Readwise-අනුකූල සේවාවක් ඉලක්ක කිරීමට පමණක් අභිරුචි URL එකක් සකසන්න.",
+  "Custom URL": "අභිරුචි URL"
 }

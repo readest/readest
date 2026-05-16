@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "{{count}} vurgu ve notu temizlemek istediğinizden emin misiniz?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Tüm {{count}} vurgu ve notu temizlemek istediğinizden emin misiniz?",
   "Discord": "Discord",
-  "Sync Base URL": "Eşitleme Temel URL'si",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Resmi Readwise API'sini kullanmak için boş bırakın. Özel bir URL'yi yalnızca kendi barındırdığınız, Readwise uyumlu bir hizmeti hedeflemek için ayarlayın."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Resmi Readwise API'sini kullanmak için boş bırakın. Özel bir URL'yi yalnızca kendi barındırdığınız, Readwise uyumlu bir hizmeti hedeflemek için ayarlayın.",
+  "Custom URL": "Özel URL"
 }

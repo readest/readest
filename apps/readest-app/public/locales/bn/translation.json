@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "আপনি কি নিশ্চিত যে {{count}}টি হাইলাইট ও নোট মুছে ফেলতে চান?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "আপনি কি নিশ্চিত যে সব {{count}}টি হাইলাইট ও নোট মুছে ফেলতে চান?",
   "Discord": "Discord",
-  "Sync Base URL": "সিঙ্ক বেস URL",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "অফিসিয়াল Readwise API ব্যবহার করতে ফাঁকা রাখুন। শুধুমাত্র একটি স্ব-হোস্ট করা, Readwise-সামঞ্জস্যপূর্ণ পরিষেবার জন্য একটি কাস্টম URL সেট করুন।"
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "অফিসিয়াল Readwise API ব্যবহার করতে ফাঁকা রাখুন। শুধুমাত্র একটি স্ব-হোস্ট করা, Readwise-সামঞ্জস্যপূর্ণ পরিষেবার জন্য একটি কাস্টম URL সেট করুন।",
+  "Custom URL": "কাস্টম URL"
 }

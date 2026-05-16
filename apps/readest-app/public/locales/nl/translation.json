@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "Weet u zeker dat u {{count}} markering en notitie wilt wissen?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Weet u zeker dat u alle {{count}} markeringen en notities wilt wissen?",
   "Discord": "Discord",
-  "Sync Base URL": "Basis-URL voor synchronisatie",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Laat leeg om de officiële Readwise-API te gebruiken. Stel alleen een aangepaste URL in om een zelf-gehoste, Readwise-compatibele service te benaderen."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Laat leeg om de officiële Readwise-API te gebruiken. Stel alleen een aangepaste URL in om een zelf-gehoste, Readwise-compatibele service te benaderen.",
+  "Custom URL": "Aangepaste URL"
 }

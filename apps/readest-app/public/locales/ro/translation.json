@@ -1466,6 +1466,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_few": "Sigur ștergeți toate cele {{count}} evidențieri și note?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Sigur ștergeți toate cele {{count}} de evidențieri și note?",
   "Discord": "Discord",
-  "Sync Base URL": "URL de bază pentru sincronizare",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lăsați necompletat pentru a folosi API-ul oficial Readwise. Setați un URL personalizat doar pentru a viza un serviciu găzduit local, compatibil cu Readwise."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lăsați necompletat pentru a folosi API-ul oficial Readwise. Setați un URL personalizat doar pentru a viza un serviciu găzduit local, compatibil cu Readwise.",
+  "Custom URL": "URL personalizat"
 }

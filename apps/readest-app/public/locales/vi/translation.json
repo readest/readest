@@ -1412,6 +1412,6 @@
   "Clear Annotations": "Xóa chú thích",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Bạn có chắc muốn xóa tất cả {{count}} đánh dấu và ghi chú không?",
   "Discord": "Discord",
-  "Sync Base URL": "URL cơ sở đồng bộ",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Để trống để dùng API Readwise chính thức. Chỉ đặt URL tùy chỉnh để trỏ đến dịch vụ tự lưu trữ tương thích với Readwise."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Để trống để dùng API Readwise chính thức. Chỉ đặt URL tùy chỉnh để trỏ đến dịch vụ tự lưu trữ tương thích với Readwise.",
+  "Custom URL": "URL tùy chỉnh"
 }

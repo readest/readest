@@ -1439,6 +1439,6 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "Är du säker på att du vill rensa {{count}} markering och anteckning?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Är du säker på att du vill rensa alla {{count}} markeringar och anteckningar?",
   "Discord": "Discord",
-  "Sync Base URL": "Bas-URL för synkronisering",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lämna tomt för att använda det officiella Readwise-API:et. Ange en anpassad URL endast för att rikta mot en självhostad, Readwise-kompatibel tjänst."
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lämna tomt för att använda det officiella Readwise-API:et. Ange en anpassad URL endast för att rikta mot en självhostad, Readwise-kompatibel tjänst.",
+  "Custom URL": "Anpassad URL"
 }

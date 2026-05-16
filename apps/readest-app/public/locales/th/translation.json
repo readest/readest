@@ -1412,6 +1412,6 @@
   "Clear Annotations": "ล้างบันทึก",
   "Are you sure to clear all {{count}} highlights and notes?_other": "แน่ใจหรือไม่ว่าต้องการล้างไฮไลต์และบันทึกทั้งหมด {{count}} รายการ?",
   "Discord": "Discord",
-  "Sync Base URL": "URL พื้นฐานสำหรับการซิงค์",
-  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "เว้นว่างไว้เพื่อใช้ API อย่างเป็นทางการของ Readwise ตั้งค่า URL ที่กำหนดเองเฉพาะเมื่อต้องการเชื่อมต่อกับบริการที่โฮสต์เองซึ่งเข้ากันได้กับ Readwise"
+  "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "เว้นว่างไว้เพื่อใช้ API อย่างเป็นทางการของ Readwise ตั้งค่า URL ที่กำหนดเองเฉพาะเมื่อต้องการเชื่อมต่อกับบริการที่โฮสต์เองซึ่งเข้ากันได้กับ Readwise",
+  "Custom URL": "URL ที่กำหนดเอง"
 }
