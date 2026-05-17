@@ -463,6 +463,7 @@ class NativeBridgePlugin: Plugin {
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
   private var webViewLifecycleManager: WebViewLifecycleManager?
+  private var traitChangeRegistered = false
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
@@ -471,6 +472,14 @@ class NativeBridgePlugin: Plugin {
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
+
+    // The WKWebView never fires the `prefers-color-scheme` media query
+    // `change` event while the app stays foregrounded, so observe the
+    // native appearance and push changes to JS instead. Registration is
+    // deferred because the window scene may not be connected yet.
+    DispatchQueue.main.async { [weak self] in
+      self?.registerTraitChangeObserverIfNeeded()
+    }
 
     NotificationCenter.default.addObserver(
       self,
@@ -509,6 +518,48 @@ class NativeBridgePlugin: Plugin {
   @objc func appDidBecomeActive() {
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
+    }
+    registerTraitChangeObserverIfNeeded()
+    // Fallback for iOS < 17 (no `registerForTraitChanges`): re-check the
+    // appearance whenever the app becomes active, e.g. after toggling
+    // dark mode from Control Center.
+    notifyColorSchemeChange()
+  }
+
+  // Resolves the foreground window scene. Its trait collection reflects
+  // the real system appearance and is unaffected by the per-window
+  // `overrideUserInterfaceStyle` that `set_system_ui_visibility` applies.
+  private func foregroundWindowScene() -> UIWindowScene? {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    return scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+  }
+
+  private func systemColorScheme() -> String {
+    let userInterfaceStyle =
+      foregroundWindowScene()?.traitCollection.userInterfaceStyle
+      ?? UITraitCollection.current.userInterfaceStyle
+    return (userInterfaceStyle == .dark) ? "dark" : "light"
+  }
+
+  private func registerTraitChangeObserverIfNeeded() {
+    guard !traitChangeRegistered, #available(iOS 17.0, *) else { return }
+    guard let windowScene = foregroundWindowScene() else { return }
+    traitChangeRegistered = true
+    MainActor.assumeIsolated {
+      windowScene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) {
+        [weak self] (_: UIWindowScene, _: UITraitCollection) in
+        self?.notifyColorSchemeChange()
+      }
+    }
+  }
+
+  private func notifyColorSchemeChange() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self, let webView = self.webView else { return }
+      let colorScheme = self.systemColorScheme()
+      webView.evaluateJavaScript(
+        "try { window.onNativeColorSchemeChange && window.onNativeColorSchemeChange('\(colorScheme)'); } catch (_) {}",
+        completionHandler: nil)
     }
   }
 
@@ -887,9 +938,9 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc public func get_system_color_scheme(_ invoke: Invoke) {
-    let userInterfaceStyle = UITraitCollection.current.userInterfaceStyle
-    let colorScheme = (userInterfaceStyle == .dark) ? "dark" : "light"
-    invoke.resolve(["colorScheme": colorScheme])
+    DispatchQueue.main.async { [weak self] in
+      invoke.resolve(["colorScheme": self?.systemColorScheme() ?? "light"])
+    }
   }
 
   @objc public func get_screen_brightness(_ invoke: Invoke) {
