@@ -46,7 +46,7 @@ export async function deleteBook(
     for (const fp of fps) {
       const cfp = `${CLOUD_BOOKS_SUBDIR}/${fp}`;
       try {
-        deleteCloudFile(cfp);
+        await deleteCloudFile(cfp);
       } catch (error) {
         console.log('Failed to delete uploaded file:', error);
       }

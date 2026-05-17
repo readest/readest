@@ -56,7 +56,7 @@ type TxtConverterFlowPrivateAPI = TxtConverterPrivateAPI & {
 
 const getBufferSize = (input?: BufferSource): number => {
   if (!input) return 0;
-  return input instanceof ArrayBuffer ? input.byteLength : input.byteLength;
+  return input.byteLength;
 };
 
 describe('TxtToEpubConverter', () => {

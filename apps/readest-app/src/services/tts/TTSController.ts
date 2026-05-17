@@ -270,7 +270,7 @@ export class TTSController extends EventTarget {
 
   async preloadSSML(ssml: string | undefined, signal: AbortSignal) {
     if (!ssml) return;
-    const iter = await this.ttsClient.speak(ssml, signal, true);
+    const iter = this.ttsClient.speak(ssml, signal, true);
     for await (const _ of iter);
   }
 

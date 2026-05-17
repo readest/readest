@@ -245,7 +245,7 @@ export class EdgeTTSClient implements TTSClient {
   async pause() {
     if (!this.#isPlaying || !this.#audioElement) return true;
     this.#pausedAt = this.#audioElement.currentTime - this.#startedAt;
-    await this.#audioElement.pause();
+    this.#audioElement.pause();
     this.#isPlaying = false;
     return true;
   }

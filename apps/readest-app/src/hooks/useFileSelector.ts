@@ -91,7 +91,7 @@ export const useFileSelector = (appService: AppService | null, _: (key: string) 
     try {
       if (isTauriAppPlatform()) {
         const filePaths = await selectFileTauri(options, appService, _);
-        const files = await processTauriFiles(filePaths);
+        const files = processTauriFiles(filePaths);
         return { files };
       } else {
         const webFiles = await selectFileWeb(options);

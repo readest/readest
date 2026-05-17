@@ -34,13 +34,7 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
   };
   return (
     <Button
-      icon={
-        sideBarBookKey == bookKey && isNotebookVisible ? (
-          <LuNotebookPen size={iconSize16} className='text-base-content' />
-        ) : (
-          <LuNotebookPen size={iconSize16} className='text-base-content' />
-        )
-      }
+      icon={<LuNotebookPen size={iconSize16} className='text-base-content' />}
       onClick={handleToggleSidebar}
       label={_('Notebook')}
     ></Button>

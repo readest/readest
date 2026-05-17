@@ -232,8 +232,8 @@ export async function POST(req: NextRequest) {
       });
 
       // Separate into inserts and updates
-      const toInsert: (DBBook | DBBookConfig | DBBookConfig)[] = [];
-      const toUpdate: (DBBook | DBBookConfig | DBBookConfig)[] = [];
+      const toInsert: (DBBook | DBBookConfig)[] = [];
+      const toUpdate: (DBBook | DBBookConfig)[] = [];
       const batchAuthoritativeRecords: BookDataRecord[] = [];
 
       for (const { original, db: dbRec } of dbRecords) {
