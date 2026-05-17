@@ -25,6 +25,7 @@ Default permissions for the plugin
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
 - `allow-open-external-url`
+- `allow-show-lookup-popover`
 - `allow-select-directory`
 - `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
@@ -954,6 +955,32 @@ Enables the set_system_ui_visibility command without any pre-configured scope.
 <td>
 
 Denies the set_system_ui_visibility command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-show-lookup-popover`
+
+</td>
+<td>
+
+Enables the show_lookup_popover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-show-lookup-popover`
+
+</td>
+<td>
+
+Denies the show_lookup_popover command without any pre-configured scope.
 
 </td>
 </tr>

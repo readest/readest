@@ -45,6 +45,9 @@ interface RegistryArgs {
 const builtinFor = (id: string): DictionaryProvider | undefined => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return wiktionaryProvider;
   if (id === BUILTIN_PROVIDER_IDS.wikipedia) return wikipediaProvider;
+  // System dictionary is a sentinel — it has no in-popup UI. The
+  // annotator handles it before reaching the popup; the registry
+  // filters it out of `getEnabledProviders` so no empty tab appears.
   return undefined;
 };
 
@@ -110,6 +113,8 @@ const getOrCreate = (
  * - Filters out disabled ids.
  * - Filters out imported entries that are soft-deleted, unavailable on this
  *   device, or flagged unsupported.
+ * - Filters out the system-dictionary sentinel (no in-popup UI; handled
+ *   directly by the annotator before the popup opens).
  * - Preserves the order in `settings.providerOrder`.
  */
 export const getEnabledProviders = ({
@@ -121,6 +126,10 @@ export const getEnabledProviders = ({
   const out: DictionaryProvider[] = [];
   for (const id of settings.providerOrder) {
     if (settings.providerEnabled[id] === false) continue;
+    // System-dictionary sentinel is intentionally skipped here — see
+    // `isSystemDictionaryEnabled` for the dispatch path used by the
+    // annotator's "Dictionary" button.
+    if (id === BUILTIN_PROVIDER_IDS.systemDictionary) continue;
     if (id.startsWith('builtin:')) {
       const provider = getOrCreate(id, undefined, undefined, settings);
       if (provider) out.push(provider);
@@ -138,6 +147,18 @@ export const getEnabledProviders = ({
     if (provider) out.push(provider);
   }
   return out;
+};
+
+/**
+ * True when the user has enabled the system-dictionary entry in
+ * settings. The annotator checks this before opening the in-app popup
+ * — when set, the selection is handed to the OS instead. Independent
+ * of `getEnabledProviders` (which filters the sentinel out so no empty
+ * tab appears) so callers don't need to look at order/list shape to
+ * make the dispatch decision.
+ */
+export const isSystemDictionaryEnabled = (settings: DictionarySettings): boolean => {
+  return settings.providerEnabled[BUILTIN_PROVIDER_IDS.systemDictionary] === true;
 };
 
 /** Drop a single provider from the cache (e.g. after dictionary deletion). */

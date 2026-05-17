@@ -1143,10 +1143,101 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve(["available": false, "error": "OSStatus \(status)"])
     }
   }
+
+  @objc public func show_lookup_popover(_ invoke: Invoke) {
+    // Bridge for the system-dictionary "Look Up" surface on iOS.
+    // We use `UIReferenceLibraryViewController`, which is the same
+    // view UIKit presents for the Look Up callout in editable text
+    // views. Two notes:
+    //
+    //   * The controller refuses to render and `dictionaryHasDefinitionForTerm`
+    //     returns false for empty strings, so guard for that explicitly
+    //     to keep the rejection path consistent with the Rust models.
+    //   * Presentation must happen on the main thread, against a
+    //     view controller that's actually in the active window
+    //     hierarchy. We reach the foreground scene (matching how
+    //     other commands here pick a `keyWindow`) and walk down to
+    //     the topmost presented controller so the lookup view sits
+    //     above any modal sheet (settings, notebook, etc.) the user
+    //     might have open when they tap "dictionary".
+    guard let args = try? invoke.parseArgs(ShowLookupPopoverArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    let trimmed = args.word.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      return invoke.reject("empty word")
+    }
+
+    DispatchQueue.main.async {
+      let windows = UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap { $0.windows }
+      let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
+      guard let rootVC = keyWindow?.rootViewController else {
+        invoke.reject("no root view controller")
+        return
+      }
+      // Drill past any modally-presented stack so the dictionary
+      // view appears on top of (not behind) settings dialogs etc.
+      var presenter: UIViewController = rootVC
+      while let next = presenter.presentedViewController {
+        presenter = next
+      }
+
+      // `UIReferenceLibraryViewController` itself doesn't expose
+      // dictionary availability, but the static
+      // `dictionaryHasDefinitionForTerm:` does. We don't surface
+      // "no definition" as an error — Apple's view shows its own
+      // "No definition found" / download UI in that case, which is
+      // the expected UX. Logging it is enough for diagnostics.
+      let hasDefinition = UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: trimmed)
+      if !hasDefinition {
+        logger.log("[show_lookup_popover] no built-in dictionary entry for '\(trimmed, privacy: .private)'")
+      }
+
+      let dictVC = UIReferenceLibraryViewController(term: trimmed)
+      // Constrain the lookup to the lower half of the screen so the
+      // book content the user just selected from stays visible above
+      // it — the full-screen default feels heavyweight for a quick
+      // dictionary glance. On iOS 15+ we use a half-detent sheet
+      // presentation: medium height by default, but the user can
+      // drag-to-expand to full if they want more room. iPad keeps
+      // the form sheet (a native floating panel) since half-screen
+      // sheets look out of place on tablet-class screens.
+      if UIDevice.current.userInterfaceIdiom == .pad {
+        dictVC.modalPresentationStyle = .formSheet
+      } else if #available(iOS 15.0, *) {
+        dictVC.modalPresentationStyle = .pageSheet
+        if let sheet = dictVC.sheetPresentationController {
+          sheet.detents = [.medium(), .large()]
+          // Default to medium (lower half). The system handles drag
+          // to expand to large; we don't need to track changes.
+          sheet.selectedDetentIdentifier = .medium
+          // Keep the grabber visible so users discover they can
+          // expand or drag down to dismiss.
+          sheet.prefersGrabberVisible = true
+          // Round only the top corners (the standard iOS sheet look).
+          sheet.preferredCornerRadius = 16
+        }
+      } else {
+        // iOS 14 and earlier — sheets/detents API doesn't exist; fall
+        // back to a centered form sheet so it at least doesn't take
+        // the full screen.
+        dictVC.modalPresentationStyle = .formSheet
+      }
+      presenter.present(dictVC, animated: true) {
+        invoke.resolve(["success": true])
+      }
+    }
+  }
 }
 
 class SyncPassphraseSetArgs: Decodable {
   let passphrase: String
+}
+
+class ShowLookupPopoverArgs: Decodable {
+  let word: String
 }
 
 @_cdecl("init_plugin_native_bridge")

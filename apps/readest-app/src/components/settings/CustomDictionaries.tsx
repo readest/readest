@@ -30,6 +30,10 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { eventDispatcher } from '@/utils/event';
 import { evictProvider } from '@/services/dictionaries/registry';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
+import {
+  isSystemDictionaryAvailable,
+  isSystemDictionarySupported,
+} from '@/services/dictionaries/systemDictionary';
 import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import type { ImportedDictionary, WebSearchEntry } from '@/services/dictionaries/types';
 import {
@@ -92,6 +96,7 @@ const builtinWebLabel = (id: string, _: (key: string) => string): string => {
 const builtinLabel = (id: string, _: (key: string) => string): string => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return _('Wiktionary');
   if (id === BUILTIN_PROVIDER_IDS.wikipedia) return _('Wikipedia');
+  if (id === BUILTIN_PROVIDER_IDS.systemDictionary) return _('System Dictionary');
   return id;
 };
 
@@ -338,7 +343,32 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     const dictById = new Map(dictionaries.map((d) => [d.id, d]));
     const webById = new Map((settings.webSearches ?? []).map((w) => [w.id, w]));
     const rows: ProviderRow[] = [];
+    // Cache cross-row platform checks so we don't re-walk navigator
+    // for every system-id encounter (and so the first iteration
+    // settles before the conditional inside the loop).
+    const systemSupported = isSystemDictionarySupported();
+    const systemAvailable = isSystemDictionaryAvailable();
     for (const id of settings.providerOrder) {
+      if (id === BUILTIN_PROVIDER_IDS.systemDictionary) {
+        // On platforms that don't expose a native dictionary surface
+        // (web, Linux, Windows), hide the row entirely so the user
+        // never sees an option that can't work. On supported-but-not-
+        // yet-wired platforms (iOS, Android in v1), surface the row
+        // with the toggle disabled so it stays discoverable.
+        if (!systemSupported) continue;
+        const disabled = !systemAvailable;
+        rows.push({
+          id,
+          label: builtinLabel(id, _),
+          kind: 'builtin',
+          badge: _('System'),
+          disabled,
+          reason: disabled
+            ? _('System dictionary integration is coming soon on this platform.')
+            : undefined,
+        });
+        continue;
+      }
       if (id.startsWith('builtin:')) {
         rows.push({
           id,

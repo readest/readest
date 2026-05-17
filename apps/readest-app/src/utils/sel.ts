@@ -84,6 +84,92 @@ export const isPointInRect = (point: Point, rect: Rect, padding: number = 1): bo
   );
 };
 
+/**
+ * Resolve the bounding rect of a {@link Range} in the OUTER webview's
+ * viewport coordinate system (CSS pixels, top-down).
+ *
+ * Foliate renders book pages inside an iframe with a CSS transform
+ * (its column-pagination layout uses non-identity `matrix(...)` to
+ * shift columns). A naive `range.getBoundingClientRect()` returns
+ * coordinates in the iframe's local viewport, which won't line up
+ * with anything outside the iframe. This helper applies the iframe's
+ * transform scale and offset, mirroring the math in {@link getPosition}.
+ *
+ * Returns `null` when the range is detached (no iframe ancestor) or
+ * has no client rects (collapsed / off-screen).
+ */
+export const getRangeRectInWebview = (range: Range): Rect | null => {
+  const rect = range.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return null;
+  const frameElement = getIframeElement(range);
+  // No iframe ancestor — range lives directly in the host document
+  // (e.g. fixed-layout PDF). Pass through the rect as-is.
+  if (!frameElement) {
+    return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+  }
+  const transform = getComputedStyle(frameElement).transform;
+  const match = transform.match(/matrix\((.+)\)/);
+  const [sx, , , sy] = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x)) ?? [];
+  const scaleX = Number.isFinite(sx) ? sx! : 1;
+  const scaleY = Number.isFinite(sy) ? sy! : 1;
+  const frame = frameElement.getBoundingClientRect();
+  return {
+    top: scaleY * rect.top + frame.top,
+    bottom: scaleY * rect.bottom + frame.top,
+    left: scaleX * rect.left + frame.left,
+    right: scaleX * rect.right + frame.left,
+  };
+};
+
+/**
+ * Sample the visual style (font size / family / color) of the text
+ * underneath a {@link Range}. Used by the macOS system-dictionary
+ * bridge so the inline HUD label matches the original paragraph's
+ * typography — `-[NSView showDefinitionForAttributedString:atPoint:]`
+ * re-draws the word using whatever attributes we hand in, and a plain
+ * unattributed string falls back to AppKit's small system font.
+ *
+ * The font-size is scaled by the iframe's vertical transform so the
+ * value is in **outer webview** CSS pixels (matching what AppKit
+ * receives via the contentView, which itself reports its bounds in
+ * CSS pixels on standard Tauri/macOS).
+ *
+ * Returns `null` when the range has no element parent we can sample.
+ */
+export interface RangeTextStyle {
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+}
+
+export const getRangeTextStyleInWebview = (range: Range): RangeTextStyle | null => {
+  const node: Node | null =
+    range.startContainer.nodeType === Node.ELEMENT_NODE
+      ? range.startContainer
+      : range.startContainer.parentElement;
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return null;
+  const element = node as Element;
+  const style = element.ownerDocument?.defaultView?.getComputedStyle(element);
+  if (!style) return null;
+
+  const frameElement = getIframeElement(range);
+  let scaleY = 1;
+  if (frameElement) {
+    const transform = getComputedStyle(frameElement).transform;
+    const match = transform.match(/matrix\((.+)\)/);
+    const parts = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x));
+    const sy = parts?.[3];
+    if (Number.isFinite(sy)) scaleY = sy!;
+  }
+
+  const fontSizePx = parseFloat(style.fontSize) || 0;
+  return {
+    fontSize: fontSizePx * scaleY,
+    fontFamily: style.fontFamily,
+    color: style.color,
+  };
+};
+
 export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
   if (selection.rangeCount === 0) return false;
   const range = selection.getRangeAt(0);

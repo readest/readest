@@ -20,6 +20,7 @@ const COMMANDS: &[&str] = &[
     "set_screen_brightness",
     "get_external_sdcard_path",
     "open_external_url",
+    "show_lookup_popover",
     "select_directory",
     "get_storefront_region_code",
     "register_listener",

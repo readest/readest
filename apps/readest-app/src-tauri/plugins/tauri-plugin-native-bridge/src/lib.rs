@@ -76,6 +76,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::set_screen_brightness,
             commands::get_external_sdcard_path,
             commands::open_external_url,
+            commands::show_lookup_popover,
             commands::select_directory,
             commands::get_storefront_region_code,
             commands::request_manage_storage_permission,

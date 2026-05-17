@@ -217,6 +217,17 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn show_lookup_popover(
+        &self,
+        payload: ShowLookupPopoverRequest,
+    ) -> crate::Result<ShowLookupPopoverResponse> {
+        self.0
+            .run_mobile_plugin("show_lookup_popover", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         self.0
             .run_mobile_plugin("select_directory", ())

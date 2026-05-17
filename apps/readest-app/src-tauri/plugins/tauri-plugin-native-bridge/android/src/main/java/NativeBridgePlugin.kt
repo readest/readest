@@ -86,6 +86,11 @@ class OpenExternalUrlArgs {
 }
 
 @InvokeArg
+class ShowLookupPopoverArgs {
+    var word: String? = null
+}
+
+@InvokeArg
 class FetchProductsRequestArgs {
     val productIds: List<String>? = null
 }
@@ -875,6 +880,77 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             ret.put("error", e.message ?: "unknown")
         }
         invoke.resolve(ret)
+    }
+
+    /**
+     * Hand a selected word off to whatever dictionary / lookup app the
+     * user has installed, via the standard `ACTION_PROCESS_TEXT`
+     * intent (Android 6.0+). This is the same dispatch the system
+     * "selection toolbar" uses for "Translate" / "Define" actions, so
+     * any third-party dictionary that registers the intent (ColorDict,
+     * GoldenDict, 欧路, Pleco, etc.) shows up without extra work on
+     * our side.
+     *
+     * Important: we deliberately do NOT wrap the intent with
+     * `Intent.createChooser`. Chooser-style dialogs always re-prompt
+     * (no "Always use this app" affordance), which the user found
+     * annoying when they have a single preferred dictionary. Plain
+     * `startActivity(intent)` instead surfaces the standard system
+     * disambiguation dialog with the "Just once / Always" buttons —
+     * picking "Always" makes subsequent lookups go straight to that
+     * app. When only one app handles the intent, Android skips the
+     * picker entirely and launches it directly.
+     *
+     * If no app is installed that responds to the intent, returns
+     * `unavailable: true` instead of throwing — the TS layer surfaces
+     * a hint rather than a generic error in that case.
+     */
+    @Command
+    fun show_lookup_popover(invoke: Invoke) {
+        val args = invoke.parseArgs(ShowLookupPopoverArgs::class.java)
+        val word = args.word?.trim().orEmpty()
+        if (word.isEmpty()) {
+            return invoke.reject("empty word")
+        }
+
+        try {
+            val intent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_PROCESS_TEXT, word)
+                // Read-only — we don't want third-party apps writing
+                // back into a clipboard or selection slot we don't own.
+                putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true)
+            }
+
+            // Probe for handlers before dispatching. An ActivityNotFound
+            // crash is a worse UX than a quiet "no dictionary app"
+            // result; surface the empty case explicitly.
+            val pm = activity.packageManager
+            val handlers = pm.queryIntentActivities(intent, 0)
+            if (handlers.isEmpty()) {
+                val ret = JSObject()
+                ret.put("success", false)
+                ret.put("unavailable", true)
+                return invoke.resolve(ret)
+            }
+
+            // FLAG_ACTIVITY_NEW_TASK is required because `activity`
+            // here is the plugin's host activity context — without it,
+            // some OEM ROMs reject the dispatch with "Calling
+            // startActivity() from outside of an Activity context".
+            // The system disambiguation dialog still appears (with the
+            // Always/Just once buttons) for multi-handler cases; for
+            // single-handler cases it goes straight through.
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+
+            val ret = JSObject()
+            ret.put("success", true)
+            invoke.resolve(ret)
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "show_lookup_popover failed", e)
+            invoke.reject("Failed to look up word: ${e.message}")
+        }
     }
 }
 
