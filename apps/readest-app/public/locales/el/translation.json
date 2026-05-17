@@ -1067,7 +1067,6 @@
   "Select Backup": "Επιλογή αντιγράφου ασφαλείας",
   "Restore failed: {{error}}": "Η επαναφορά απέτυχε: {{error}}",
   "Backup & Restore": "Αντίγραφα ασφαλείας & Επαναφορά",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Δημιουργήστε αντίγραφο ασφαλείας της βιβλιοθήκης σας ή επαναφέρετε από προηγούμενο αντίγραφο. Η επαναφορά θα συγχωνευθεί με την τρέχουσα βιβλιοθήκη σας.",
   "Backup Library": "Αντίγραφο βιβλιοθήκης",
   "Restore Library": "Επαναφορά βιβλιοθήκης",
   "Creating backup...": "Δημιουργία αντιγράφου ασφαλείας...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} από {{total}} στοιχεία",
   "Backup completed successfully!": "Το αντίγραφο ασφαλείας ολοκληρώθηκε!",
   "Restore completed successfully!": "Η επαναφορά ολοκληρώθηκε!",
-  "Your library has been saved to the selected location.": "Η βιβλιοθήκη σας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} βιβλία προστέθηκαν, {{updated}} βιβλία ενημερώθηκαν.",
   "Operation failed": "Η λειτουργία απέτυχε",
   "Loading library...": "Φόρτωση βιβλιοθήκης...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "Δεν υπάρχουν νέα σχόλια για εισαγωγή",
   "Import from Moon+ Reader": "Εισαγωγή από Moon+ Reader",
   "Character Mode": "Λειτουργία χαρακτήρων",
-  "Highlight Word": "Επισήμανση λέξης"
+  "Highlight Word": "Επισήμανση λέξης",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Δημιουργήστε ένα αντίγραφο ασφαλείας της βιβλιοθήκης και των ρυθμίσεών σας ή κάντε επαναφορά από προηγούμενο αντίγραφο ασφαλείας. Η επαναφορά θα συγχωνευτεί με την τρέχουσα βιβλιοθήκη σας.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Συμπερίληψη διαπιστευτηρίων λογαριασμού (διακριτικά συγχρονισμού, κωδικοί πρόσβασης). Το αρχείο αντιγράφου ασφαλείας δεν είναι κρυπτογραφημένο.",
+  "Your library and settings have been saved to the selected location.": "Η βιβλιοθήκη και οι ρυθμίσεις σας αποθηκεύτηκαν στην επιλεγμένη τοποθεσία.",
+  "Settings have been restored.": "Οι ρυθμίσεις επαναφέρθηκαν."
 }

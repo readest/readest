@@ -1067,7 +1067,6 @@
   "Select Backup": "انتخاب پشتیبان",
   "Restore failed: {{error}}": "بازیابی ناموفق: {{error}}",
   "Backup & Restore": "پشتیبان‌گیری و بازیابی",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "از کتابخانه خود پشتیبان بگیرید یا از پشتیبان قبلی بازیابی کنید. بازیابی با کتابخانه فعلی شما ادغام خواهد شد.",
   "Backup Library": "پشتیبان‌گیری کتابخانه",
   "Restore Library": "بازیابی کتابخانه",
   "Creating backup...": "در حال ایجاد پشتیبان...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} از {{total}} مورد",
   "Backup completed successfully!": "پشتیبان‌گیری با موفقیت انجام شد!",
   "Restore completed successfully!": "بازیابی با موفقیت انجام شد!",
-  "Your library has been saved to the selected location.": "کتابخانه شما در مکان انتخاب‌شده ذخیره شد.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} کتاب اضافه شد، {{updated}} کتاب به‌روزرسانی شد.",
   "Operation failed": "عملیات ناموفق",
   "Loading library...": "در حال بارگذاری کتابخانه...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "یادداشت جدیدی برای وارد کردن وجود ندارد",
   "Import from Moon+ Reader": "وارد کردن از Moon+ Reader",
   "Character Mode": "حالت نویسه",
-  "Highlight Word": "برجسته‌سازی واژه"
+  "Highlight Word": "برجسته‌سازی واژه",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "از کتابخانه و تنظیمات خود نسخه پشتیبان تهیه کنید یا از یک نسخه پشتیبان قبلی بازیابی کنید. بازیابی با کتابخانه فعلی شما ادغام می‌شود.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "گنجاندن اطلاعات ورود حساب (توکن‌های همگام‌سازی، گذرواژه‌ها). فایل پشتیبان رمزگذاری نشده است.",
+  "Your library and settings have been saved to the selected location.": "کتابخانه و تنظیمات شما در محل انتخاب‌شده ذخیره شد.",
+  "Settings have been restored.": "تنظیمات بازیابی شد."
 }

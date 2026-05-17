@@ -1079,7 +1079,6 @@
   "Select Backup": "Sélectionner une sauvegarde",
   "Restore failed: {{error}}": "Échec de la restauration : {{error}}",
   "Backup & Restore": "Sauvegarde et restauration",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Créez une sauvegarde de votre bibliothèque ou restaurez à partir d'une sauvegarde précédente. La restauration fusionnera avec votre bibliothèque actuelle.",
   "Backup Library": "Sauvegarder la bibliothèque",
   "Restore Library": "Restaurer la bibliothèque",
   "Creating backup...": "Création de la sauvegarde...",
@@ -1087,7 +1086,6 @@
   "{{current}} of {{total}} items": "{{current}} sur {{total}} éléments",
   "Backup completed successfully!": "Sauvegarde terminée avec succès !",
   "Restore completed successfully!": "Restauration terminée avec succès !",
-  "Your library has been saved to the selected location.": "Votre bibliothèque a été enregistrée à l'emplacement sélectionné.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} livres ajoutés, {{updated}} livres mis à jour.",
   "Operation failed": "L'opération a échoué",
   "Loading library...": "Chargement de la bibliothèque...",
@@ -1480,5 +1478,9 @@
   "No new annotations to import": "Aucune nouvelle annotation à importer",
   "Import from Moon+ Reader": "Importer depuis Moon+ Reader",
   "Character Mode": "Mode caractère",
-  "Highlight Word": "Surligner le mot"
+  "Highlight Word": "Surligner le mot",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Créez une sauvegarde de votre bibliothèque et de vos paramètres, ou restaurez à partir d’une sauvegarde précédente. La restauration fusionnera avec votre bibliothèque actuelle.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Inclure les identifiants du compte (jetons de synchronisation, mots de passe). Le fichier de sauvegarde n’est pas chiffré.",
+  "Your library and settings have been saved to the selected location.": "Votre bibliothèque et vos paramètres ont été enregistrés à l’emplacement sélectionné.",
+  "Settings have been restored.": "Les paramètres ont été restaurés."
 }

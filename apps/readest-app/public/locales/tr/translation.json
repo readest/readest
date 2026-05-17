@@ -1067,7 +1067,6 @@
   "Select Backup": "Yedek Seç",
   "Restore failed: {{error}}": "Geri yükleme başarısız: {{error}}",
   "Backup & Restore": "Yedekleme & Geri Yükleme",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Kütüphanenizin yedeğini oluşturun veya önceki bir yedekten geri yükleyin. Geri yükleme mevcut kütüphanenizle birleştirilecektir.",
   "Backup Library": "Kütüphaneyi Yedekle",
   "Restore Library": "Kütüphaneyi Geri Yükle",
   "Creating backup...": "Yedek oluşturuluyor...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} öğe",
   "Backup completed successfully!": "Yedekleme başarıyla tamamlandı!",
   "Restore completed successfully!": "Geri yükleme başarıyla tamamlandı!",
-  "Your library has been saved to the selected location.": "Kütüphaneniz seçilen konuma kaydedildi.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} kitap eklendi, {{updated}} kitap güncellendi.",
   "Operation failed": "İşlem başarısız",
   "Loading library...": "Kütüphane yükleniyor...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "İçe aktarılacak yeni açıklama yok",
   "Import from Moon+ Reader": "Moon+ Reader'dan içe aktar",
   "Character Mode": "Karakter modu",
-  "Highlight Word": "Kelimeyi vurgula"
+  "Highlight Word": "Kelimeyi vurgula",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Kitaplığınızın ve ayarlarınızın bir yedeğini oluşturun veya önceki bir yedekten geri yükleyin. Geri yükleme, mevcut kitaplığınızla birleştirilir.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Hesap kimlik bilgilerini (eşitleme belirteçleri, parolalar) dahil et. Yedek dosyası şifrelenmemiştir.",
+  "Your library and settings have been saved to the selected location.": "Kitaplığınız ve ayarlarınız seçilen konuma kaydedildi.",
+  "Settings have been restored.": "Ayarlar geri yüklendi."
 }

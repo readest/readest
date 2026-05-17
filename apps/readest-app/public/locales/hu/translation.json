@@ -48,7 +48,6 @@
   "Select Backup": "Biztonsági mentés kiválasztása",
   "Restore failed: {{error}}": "Visszaállítás sikertelen: {{error}}",
   "Backup & Restore": "Biztonsági mentés és visszaállítás",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Készítsen biztonsági mentést könyvtáráról, vagy állítsa vissza egy korábbi mentésből. A visszaállítás egyesítésre kerül a jelenlegi könyvtárával.",
   "Backup Library": "Könyvtár mentése",
   "Restore Library": "Könyvtár visszaállítása",
   "Creating backup...": "Biztonsági mentés létrehozása...",
@@ -56,7 +55,6 @@
   "{{current}} of {{total}} items": "{{current}}/{{total}} elem",
   "Backup completed successfully!": "Biztonsági mentés sikeresen elkészült!",
   "Restore completed successfully!": "Visszaállítás sikeresen befejeződött!",
-  "Your library has been saved to the selected location.": "Könyvtára a kiválasztott helyre lett mentve.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} könyv hozzáadva, {{updated}} könyv frissítve.",
   "Operation failed": "A művelet sikertelen",
   "Close": "Bezárás",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "Nincs új importálható jegyzet",
   "Import from Moon+ Reader": "Importálás Moon+ Reader programból",
   "Character Mode": "Karakter mód",
-  "Highlight Word": "Szó kiemelése"
+  "Highlight Word": "Szó kiemelése",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Készíts biztonsági mentést a könyvtáradról és a beállításaidról, vagy állítsd vissza egy korábbi biztonsági mentésből. A visszaállítás összevonásra kerül a jelenlegi könyvtáraddal.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Fiók hitelesítő adatainak (szinkronizációs tokenek, jelszavak) felvétele. A biztonsági mentés fájlja nincs titkosítva.",
+  "Your library and settings have been saved to the selected location.": "A könyvtárad és a beállításaid a kiválasztott helyre lettek mentve.",
+  "Settings have been restored.": "A beállítások visszaállítva."
 }

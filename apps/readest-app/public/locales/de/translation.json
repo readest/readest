@@ -1067,7 +1067,6 @@
   "Select Backup": "Sicherung auswählen",
   "Restore failed: {{error}}": "Wiederherstellung fehlgeschlagen: {{error}}",
   "Backup & Restore": "Sichern & Wiederherstellen",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Erstellen Sie eine Sicherung Ihrer Bibliothek oder stellen Sie eine frühere Sicherung wieder her. Die Wiederherstellung wird mit Ihrer aktuellen Bibliothek zusammengeführt.",
   "Backup Library": "Bibliothek sichern",
   "Restore Library": "Bibliothek wiederherstellen",
   "Creating backup...": "Sicherung wird erstellt...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} von {{total}} Elementen",
   "Backup completed successfully!": "Sicherung erfolgreich abgeschlossen!",
   "Restore completed successfully!": "Wiederherstellung erfolgreich abgeschlossen!",
-  "Your library has been saved to the selected location.": "Ihre Bibliothek wurde am ausgewählten Ort gespeichert.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} Bücher hinzugefügt, {{updated}} Bücher aktualisiert.",
   "Operation failed": "Vorgang fehlgeschlagen",
   "Loading library...": "Bibliothek wird geladen...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "Keine neuen Anmerkungen zum Importieren",
   "Import from Moon+ Reader": "Aus Moon+ Reader importieren",
   "Character Mode": "Zeichenmodus",
-  "Highlight Word": "Wort hervorheben"
+  "Highlight Word": "Wort hervorheben",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Erstellen Sie eine Sicherung Ihrer Bibliothek und Einstellungen oder stellen Sie eine frühere Sicherung wieder her. Die Wiederherstellung wird mit Ihrer aktuellen Bibliothek zusammengeführt.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Anmeldedaten einschließen (Sync-Tokens, Passwörter). Die Sicherungsdatei ist nicht verschlüsselt.",
+  "Your library and settings have been saved to the selected location.": "Ihre Bibliothek und Einstellungen wurden am ausgewählten Ort gespeichert.",
+  "Settings have been restored.": "Einstellungen wurden wiederhergestellt."
 }

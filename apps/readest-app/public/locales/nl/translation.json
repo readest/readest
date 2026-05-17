@@ -1067,7 +1067,6 @@
   "Select Backup": "Selecteer back-up",
   "Restore failed: {{error}}": "Herstel mislukt: {{error}}",
   "Backup & Restore": "Back-up & Herstel",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Maak een back-up van uw bibliotheek of herstel vanuit een eerdere back-up. Herstel wordt samengevoegd met uw huidige bibliotheek.",
   "Backup Library": "Bibliotheek back-uppen",
   "Restore Library": "Bibliotheek herstellen",
   "Creating backup...": "Back-up maken...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} van {{total}} items",
   "Backup completed successfully!": "Back-up succesvol voltooid!",
   "Restore completed successfully!": "Herstel succesvol voltooid!",
-  "Your library has been saved to the selected location.": "Uw bibliotheek is opgeslagen op de geselecteerde locatie.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} boeken toegevoegd, {{updated}} boeken bijgewerkt.",
   "Operation failed": "Bewerking mislukt",
   "Loading library...": "Bibliotheek laden...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "Geen nieuwe annotaties om te importeren",
   "Import from Moon+ Reader": "Importeren uit Moon+ Reader",
   "Character Mode": "Tekenmodus",
-  "Highlight Word": "Woord markeren"
+  "Highlight Word": "Woord markeren",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Maak een back-up van je bibliotheek en instellingen of herstel vanuit een eerdere back-up. Bij herstellen wordt samengevoegd met je huidige bibliotheek.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Accountgegevens opnemen (synchronisatietokens, wachtwoorden). Het back-upbestand is niet versleuteld.",
+  "Your library and settings have been saved to the selected location.": "Je bibliotheek en instellingen zijn opgeslagen op de geselecteerde locatie.",
+  "Settings have been restored.": "Instellingen zijn hersteld."
 }

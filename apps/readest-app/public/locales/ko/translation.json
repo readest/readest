@@ -1055,7 +1055,6 @@
   "Select Backup": "백업 선택",
   "Restore failed: {{error}}": "복원 실패: {{error}}",
   "Backup & Restore": "백업 및 복원",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "라이브러리를 백업하거나 이전 백업에서 복원하세요. 복원 시 현재 라이브러리와 병합됩니다.",
   "Backup Library": "라이브러리 백업",
   "Restore Library": "라이브러리 복원",
   "Creating backup...": "백업 생성 중...",
@@ -1063,7 +1062,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} 항목",
   "Backup completed successfully!": "백업이 완료되었습니다!",
   "Restore completed successfully!": "복원이 완료되었습니다!",
-  "Your library has been saved to the selected location.": "라이브러리가 선택한 위치에 저장되었습니다.",
   "{{added}} books added, {{updated}} books updated.": "{{added}}권 추가, {{updated}}권 업데이트되었습니다.",
   "Operation failed": "작업 실패",
   "Loading library...": "라이브러리 로딩 중...",
@@ -1424,5 +1422,9 @@
   "No new annotations to import": "가져올 새 주석이 없습니다",
   "Import from Moon+ Reader": "Moon+ Reader에서 가져오기",
   "Character Mode": "글자 모드",
-  "Highlight Word": "단어 강조"
+  "Highlight Word": "단어 강조",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "라이브러리와 설정의 백업을 만들거나 이전 백업에서 복원합니다. 복원하면 현재 라이브러리와 병합됩니다.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "계정 자격 증명(동기화 토큰, 비밀번호)을 포함합니다. 백업 파일은 암호화되지 않습니다.",
+  "Your library and settings have been saved to the selected location.": "라이브러리와 설정이 선택한 위치에 저장되었습니다.",
+  "Settings have been restored.": "설정이 복원되었습니다."
 }

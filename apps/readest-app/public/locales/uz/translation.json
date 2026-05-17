@@ -48,7 +48,6 @@
   "Select Backup": "Zaxira nusxani tanlang",
   "Restore failed: {{error}}": "Tiklashda xato: {{error}}",
   "Backup & Restore": "Zaxira nusxa va tiklash",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Kutubxonangizning zaxira nusxasini yarating yoki oldingi zaxira nusxadan tiklang. Tiklash joriy kutubxonangiz bilan birlashtiriladi.",
   "Backup Library": "Kutubxonani zaxiralash",
   "Restore Library": "Kutubxonani tiklash",
   "Creating backup...": "Zaxira nusxa yaratilmoqda...",
@@ -56,7 +55,6 @@
   "{{current}} of {{total}} items": "{{total}} elementdan {{current}}",
   "Backup completed successfully!": "Zaxira nusxa muvaffaqiyatli yaratildi!",
   "Restore completed successfully!": "Tiklash muvaffaqiyatli yakunlandi!",
-  "Your library has been saved to the selected location.": "Kutubxonangiz tanlangan joyga saqlandi.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} ta kitob qoʻshildi, {{updated}} ta kitob yangilandi.",
   "Operation failed": "Amal bajarilmadi",
   "Close": "Yopish",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "Import qilish uchun yangi izohlar yoʻq",
   "Import from Moon+ Reader": "Moon+ Reader’dan import qilish",
   "Character Mode": "Belgi rejimi",
-  "Highlight Word": "So'zni ajratish"
+  "Highlight Word": "So'zni ajratish",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Kutubxonangiz va sozlamalaringizning zaxira nusxasini yarating yoki avvalgi zaxira nusxasidan tiklang. Tiklash joriy kutubxonangiz bilan birlashtiriladi.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Hisob hisob maʼlumotlarini (sinxronlash tokenlari, parollar) kiritish. Zaxira nusxa fayli shifrlanmagan.",
+  "Your library and settings have been saved to the selected location.": "Kutubxonangiz va sozlamalaringiz tanlangan joyga saqlandi.",
+  "Settings have been restored.": "Sozlamalar tiklandi."
 }

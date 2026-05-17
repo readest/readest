@@ -1079,7 +1079,6 @@
   "Select Backup": "Seleziona backup",
   "Restore failed: {{error}}": "Ripristino fallito: {{error}}",
   "Backup & Restore": "Backup e ripristino",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Crea un backup della tua libreria o ripristina da un backup precedente. Il ripristino verrà unito alla tua libreria attuale.",
   "Backup Library": "Backup libreria",
   "Restore Library": "Ripristina libreria",
   "Creating backup...": "Creazione backup...",
@@ -1087,7 +1086,6 @@
   "{{current}} of {{total}} items": "{{current}} di {{total}} elementi",
   "Backup completed successfully!": "Backup completato con successo!",
   "Restore completed successfully!": "Ripristino completato con successo!",
-  "Your library has been saved to the selected location.": "La tua libreria è stata salvata nella posizione selezionata.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} libri aggiunti, {{updated}} libri aggiornati.",
   "Operation failed": "Operazione fallita",
   "Loading library...": "Caricamento libreria...",
@@ -1480,5 +1478,9 @@
   "No new annotations to import": "Nessuna nuova annotazione da importare",
   "Import from Moon+ Reader": "Importa da Moon+ Reader",
   "Character Mode": "Modalità carattere",
-  "Highlight Word": "Evidenzia parola"
+  "Highlight Word": "Evidenzia parola",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Crea un backup della tua libreria e delle impostazioni o ripristina da un backup precedente. Il ripristino verrà unito alla tua libreria attuale.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Includi le credenziali dell’account (token di sincronizzazione, password). Il file di backup non è crittografato.",
+  "Your library and settings have been saved to the selected location.": "La tua libreria e le impostazioni sono state salvate nel percorso selezionato.",
+  "Settings have been restored.": "Le impostazioni sono state ripristinate."
 }

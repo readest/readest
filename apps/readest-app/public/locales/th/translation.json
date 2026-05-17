@@ -1055,7 +1055,6 @@
   "Select Backup": "เลือกข้อมูลสำรอง",
   "Restore failed: {{error}}": "การกู้คืนล้มเหลว: {{error}}",
   "Backup & Restore": "สำรองและกู้คืน",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "สร้างข้อมูลสำรองของห้องสมุดหรือกู้คืนจากข้อมูลสำรองก่อนหน้า การกู้คืนจะรวมกับห้องสมุดปัจจุบันของคุณ",
   "Backup Library": "สำรองห้องสมุด",
   "Restore Library": "กู้คืนห้องสมุด",
   "Creating backup...": "กำลังสร้างข้อมูลสำรอง...",
@@ -1063,7 +1062,6 @@
   "{{current}} of {{total}} items": "{{current}} จาก {{total}} รายการ",
   "Backup completed successfully!": "สำรองข้อมูลสำเร็จ!",
   "Restore completed successfully!": "กู้คืนสำเร็จ!",
-  "Your library has been saved to the selected location.": "ห้องสมุดของคุณถูกบันทึกไปยังตำแหน่งที่เลือก",
   "{{added}} books added, {{updated}} books updated.": "เพิ่ม {{added}} เล่ม, อัปเดต {{updated}} เล่ม",
   "Operation failed": "การดำเนินการล้มเหลว",
   "Loading library...": "กำลังโหลดห้องสมุด...",
@@ -1424,5 +1422,9 @@
   "No new annotations to import": "ไม่มีคำอธิบายประกอบใหม่ให้นำเข้า",
   "Import from Moon+ Reader": "นำเข้าจาก Moon+ Reader",
   "Character Mode": "โหมดอักขระ",
-  "Highlight Word": "เน้นคำ"
+  "Highlight Word": "เน้นคำ",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "สร้างข้อมูลสำรองของคลังหนังสือและการตั้งค่าของคุณ หรือกู้คืนจากข้อมูลสำรองก่อนหน้า การกู้คืนจะรวมเข้ากับคลังหนังสือปัจจุบันของคุณ",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "รวมข้อมูลรับรองบัญชี (โทเค็นการซิงค์ รหัสผ่าน) ไฟล์ข้อมูลสำรองไม่ได้เข้ารหัส",
+  "Your library and settings have been saved to the selected location.": "คลังหนังสือและการตั้งค่าของคุณถูกบันทึกไปยังตำแหน่งที่เลือกแล้ว",
+  "Settings have been restored.": "กู้คืนการตั้งค่าแล้ว"
 }

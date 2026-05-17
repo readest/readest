@@ -1055,7 +1055,6 @@
   "Select Backup": "གྲབས་ཉར་འདེམས་པ",
   "Restore failed: {{error}}": "སླར་གསོ་བྱེད་མ་ཐུབ: {{error}}",
   "Backup & Restore": "གྲབས་ཉར་དང་སླར་གསོ",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "ཁྱོད་ཀྱི་དཔེ་མཛོད་ཀྱི་གྲབས་ཉར་བཟོ་བའམ་སྔོན་གྱི་གྲབས་ཉར་ནས་སླར་གསོ་བྱོས། སླར་གསོ་བྱས་ན་ཁྱོད་ཀྱི་ད་ལྟའི་དཔེ་མཛོད་དང་སྤྲོད་རེས་བྱེད།",
   "Backup Library": "དཔེ་མཛོད་གྲབས་ཉར",
   "Restore Library": "དཔེ་མཛོད་སླར་གསོ",
   "Creating backup...": "གྲབས་ཉར་བཟོ་བཞིན་པ...",
@@ -1063,7 +1062,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} རྣམ་གྲངས",
   "Backup completed successfully!": "གྲབས་ཉར་ལེགས་གྲུབ་བྱུང་!",
   "Restore completed successfully!": "སླར་གསོ་ལེགས་གྲུབ་བྱུང་!",
-  "Your library has been saved to the selected location.": "ཁྱོད་ཀྱི་དཔེ་མཛོད་འདེམས་ས་དེར་ཉར་ཟིན།",
   "{{added}} books added, {{updated}} books updated.": "དཔེ་དེབ {{added}} བསྣན་ཟིན, {{updated}} གསར་བསྒྱུར་བྱས་ཟིན།",
   "Operation failed": "བཀོལ་སྤྱོད་བྱེད་མ་ཐུབ",
   "Loading library...": "དཔེ་མཛོད་འཇུག་བཞིན་པ...",
@@ -1424,5 +1422,9 @@
   "No new annotations to import": "ནང་འདྲེན་བྱ་རྒྱུའི་མཆན་འགྲེལ་གསར་པ་མེད།",
   "Import from Moon+ Reader": "Moon+ Reader ནས་ནང་འདྲེན།",
   "Character Mode": "ཡིག་འབྲུའི་སྒྲིག་སྟངས།",
-  "Highlight Word": "ཐ་སྙད་གསལ་སྟོན།"
+  "Highlight Word": "ཐ་སྙད་གསལ་སྟོན།",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་སྒྲིག་འགོད་ཀྱི་ཉར་ཚགས་ཤིག་བཟོ་བའམ་སྔོན་གྱི་ཉར་ཚགས་ཤིག་ནས་སོར་ཆུད་བྱེད། སོར་ཆུད་བྱས་ཚེ་ད་ལྟའི་དཔེ་མཛོད་དང་ཟླ་སྒྲིལ་འགྲོ།",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "རྩིས་ཐོའི་ངོས་སྦྱོར་ཆ་འཕྲིན་ (ཟུང་སྒྲིག་མཚོན་རྟགས། གསང་ཨང་) ཚུད་པར་བྱེད། ཉར་ཚགས་ཡིག་ཆ་གསང་སྦས་མ་བྱས།",
+  "Your library and settings have been saved to the selected location.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་སྒྲིག་འགོད་འདེམས་པའི་གནས་སར་ཉར་ཚགས་བྱས་ཟིན།",
+  "Settings have been restored.": "སྒྲིག་འགོད་སོར་ཆུད་ཟིན།"
 }

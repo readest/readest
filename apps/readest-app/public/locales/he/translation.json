@@ -1079,7 +1079,6 @@
   "Select Backup": "בחר גיבוי",
   "Restore failed: {{error}}": "השחזור נכשל: {{error}}",
   "Backup & Restore": "גיבוי ושחזור",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "צור גיבוי של הספרייה שלך או שחזר מגיבוי קודם. השחזור ימוזג עם הספרייה הנוכחית שלך.",
   "Backup Library": "גיבוי ספרייה",
   "Restore Library": "שחזור ספרייה",
   "Creating backup...": "יוצר גיבוי...",
@@ -1087,7 +1086,6 @@
   "{{current}} of {{total}} items": "{{current}} מתוך {{total}} פריטים",
   "Backup completed successfully!": "הגיבוי הושלם בהצלחה!",
   "Restore completed successfully!": "השחזור הושלם בהצלחה!",
-  "Your library has been saved to the selected location.": "הספרייה שלך נשמרה במיקום שנבחר.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} ספרים נוספו, {{updated}} ספרים עודכנו.",
   "Operation failed": "הפעולה נכשלה",
   "Loading library...": "טוען ספרייה...",
@@ -1480,5 +1478,9 @@
   "No new annotations to import": "אין הערות חדשות לייבוא",
   "Import from Moon+ Reader": "ייבוא מ-Moon+ Reader",
   "Character Mode": "מצב תווים",
-  "Highlight Word": "הדגשת מילה"
+  "Highlight Word": "הדגשת מילה",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "צור גיבוי של הספרייה וההגדרות שלך או שחזר מגיבוי קודם. השחזור ימוזג עם הספרייה הנוכחית שלך.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "כלול את פרטי הכניסה לחשבון (אסימוני סנכרון, סיסמאות). קובץ הגיבוי אינו מוצפן.",
+  "Your library and settings have been saved to the selected location.": "הספרייה וההגדרות שלך נשמרו במיקום שנבחר.",
+  "Settings have been restored.": "ההגדרות שוחזרו."
 }

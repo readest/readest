@@ -1091,7 +1091,6 @@
   "Select Backup": "Wybierz kopię zapasową",
   "Restore failed: {{error}}": "Przywracanie nie powiodło się: {{error}}",
   "Backup & Restore": "Kopia zapasowa i przywracanie",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Utwórz kopię zapasową biblioteki lub przywróć z poprzedniej kopii. Przywracanie zostanie połączone z bieżącą biblioteką.",
   "Backup Library": "Kopia zapasowa biblioteki",
   "Restore Library": "Przywróć bibliotekę",
   "Creating backup...": "Tworzenie kopii zapasowej...",
@@ -1099,7 +1098,6 @@
   "{{current}} of {{total}} items": "{{current}} z {{total}} elementów",
   "Backup completed successfully!": "Kopia zapasowa ukończona!",
   "Restore completed successfully!": "Przywracanie ukończone!",
-  "Your library has been saved to the selected location.": "Biblioteka została zapisana w wybranej lokalizacji.",
   "{{added}} books added, {{updated}} books updated.": "Dodano {{added}} książek, zaktualizowano {{updated}} książek.",
   "Operation failed": "Operacja nie powiodła się",
   "Loading library...": "Wczytywanie biblioteki...",
@@ -1508,5 +1506,9 @@
   "No new annotations to import": "Brak nowych adnotacji do zaimportowania",
   "Import from Moon+ Reader": "Importuj z Moon+ Reader",
   "Character Mode": "Tryb znaków",
-  "Highlight Word": "Podświetl słowo"
+  "Highlight Word": "Podświetl słowo",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Utwórz kopię zapasową swojej biblioteki i ustawień lub przywróć z poprzedniej kopii zapasowej. Przywracanie zostanie scalone z bieżącą biblioteką.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Uwzględnij dane logowania do konta (tokeny synchronizacji, hasła). Plik kopii zapasowej nie jest zaszyfrowany.",
+  "Your library and settings have been saved to the selected location.": "Twoja biblioteka i ustawienia zostały zapisane w wybranej lokalizacji.",
+  "Settings have been restored.": "Ustawienia zostały przywrócone."
 }

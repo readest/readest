@@ -1091,7 +1091,6 @@
   "Select Backup": "Обрати резервну копію",
   "Restore failed: {{error}}": "Помилка відновлення: {{error}}",
   "Backup & Restore": "Резервне копіювання та відновлення",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Створіть резервну копію бібліотеки або відновіть з попередньої копії. Відновлення буде об'єднано з поточною бібліотекою.",
   "Backup Library": "Резервна копія бібліотеки",
   "Restore Library": "Відновити бібліотеку",
   "Creating backup...": "Створення резервної копії...",
@@ -1099,7 +1098,6 @@
   "{{current}} of {{total}} items": "{{current}} з {{total}} елементів",
   "Backup completed successfully!": "Резервне копіювання завершено!",
   "Restore completed successfully!": "Відновлення завершено!",
-  "Your library has been saved to the selected location.": "Вашу бібліотеку збережено у вибраному місці.",
   "{{added}} books added, {{updated}} books updated.": "Додано {{added}} книг, оновлено {{updated}} книг.",
   "Operation failed": "Операція не вдалася",
   "Loading library...": "Завантаження бібліотеки...",
@@ -1508,5 +1506,9 @@
   "No new annotations to import": "Немає нових анотацій для імпорту",
   "Import from Moon+ Reader": "Імпорт із Moon+ Reader",
   "Character Mode": "Посимвольний режим",
-  "Highlight Word": "Підсвічування слова"
+  "Highlight Word": "Підсвічування слова",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Створіть резервну копію вашої бібліотеки та налаштувань або відновіть із попередньої резервної копії. Відновлення буде об’єднано з вашою поточною бібліотекою.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Включити облікові дані акаунта (токени синхронізації, паролі). Файл резервної копії не зашифровано.",
+  "Your library and settings have been saved to the selected location.": "Вашу бібліотеку та налаштування збережено у вибраному місці.",
+  "Settings have been restored.": "Налаштування відновлено."
 }

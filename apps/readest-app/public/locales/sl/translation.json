@@ -1091,7 +1091,6 @@
   "Select Backup": "Izberi varnostno kopijo",
   "Restore failed: {{error}}": "Obnovitev ni uspela: {{error}}",
   "Backup & Restore": "Varnostno kopiranje in obnovitev",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Ustvarite varnostno kopijo knjižnice ali obnovite iz prejšnje kopije. Obnovitev bo združena z vašo trenutno knjižnico.",
   "Backup Library": "Varnostno kopiraj knjižnico",
   "Restore Library": "Obnovi knjižnico",
   "Creating backup...": "Ustvarjanje varnostne kopije...",
@@ -1099,7 +1098,6 @@
   "{{current}} of {{total}} items": "{{current}} od {{total}} elementov",
   "Backup completed successfully!": "Varnostno kopiranje uspešno!",
   "Restore completed successfully!": "Obnovitev uspešno zaključena!",
-  "Your library has been saved to the selected location.": "Vaša knjižnica je shranjena na izbrani lokaciji.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} knjig dodanih, {{updated}} knjig posodobljenih.",
   "Operation failed": "Operacija ni uspela",
   "Loading library...": "Nalaganje knjižnice...",
@@ -1508,5 +1506,9 @@
   "No new annotations to import": "Ni novih opomb za uvoz",
   "Import from Moon+ Reader": "Uvozi iz Moon+ Reader",
   "Character Mode": "Znakovni način",
-  "Highlight Word": "Označi besedo"
+  "Highlight Word": "Označi besedo",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Ustvarite varnostno kopijo svoje knjižnice in nastavitev ali jo obnovite iz prejšnje varnostne kopije. Obnovitev se bo združila z vašo trenutno knjižnico.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Vključi poverilnice računa (žetone za sinhronizacijo, gesla). Datoteka varnostne kopije ni šifrirana.",
+  "Your library and settings have been saved to the selected location.": "Vaša knjižnica in nastavitve so bile shranjene na izbrano mesto.",
+  "Settings have been restored.": "Nastavitve so bile obnovljene."
 }

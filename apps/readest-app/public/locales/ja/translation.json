@@ -1055,7 +1055,6 @@
   "Select Backup": "バックアップを選択",
   "Restore failed: {{error}}": "復元に失敗しました: {{error}}",
   "Backup & Restore": "バックアップと復元",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "ライブラリのバックアップを作成するか、以前のバックアップから復元します。復元は現在のライブラリとマージされます。",
   "Backup Library": "ライブラリをバックアップ",
   "Restore Library": "ライブラリを復元",
   "Creating backup...": "バックアップを作成中...",
@@ -1063,7 +1062,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} 件",
   "Backup completed successfully!": "バックアップが完了しました！",
   "Restore completed successfully!": "復元が完了しました！",
-  "Your library has been saved to the selected location.": "ライブラリが選択した場所に保存されました。",
   "{{added}} books added, {{updated}} books updated.": "{{added}}冊追加、{{updated}}冊更新されました。",
   "Operation failed": "操作に失敗しました",
   "Loading library...": "ライブラリを読み込み中...",
@@ -1424,5 +1422,9 @@
   "No new annotations to import": "インポートする新しい注釈はありません",
   "Import from Moon+ Reader": "Moon+ Reader からインポート",
   "Character Mode": "文字モード",
-  "Highlight Word": "単語を強調"
+  "Highlight Word": "単語を強調",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "ライブラリと設定のバックアップを作成するか、以前のバックアップから復元します。復元すると、現在のライブラリと統合されます。",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "アカウントの認証情報（同期トークン、パスワード）を含めます。バックアップファイルは暗号化されません。",
+  "Your library and settings have been saved to the selected location.": "ライブラリと設定が選択した場所に保存されました。",
+  "Settings have been restored.": "設定が復元されました。"
 }

@@ -48,7 +48,6 @@
   "Select Backup": "Selecionar backup",
   "Restore failed: {{error}}": "Falha na restauração: {{error}}",
   "Backup & Restore": "Backup e restauração",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "Crie um backup da sua biblioteca ou restaure a partir de um backup anterior. A restauração será mesclada com sua biblioteca atual.",
   "Backup Library": "Fazer backup da biblioteca",
   "Restore Library": "Restaurar biblioteca",
   "Creating backup...": "Criando backup...",
@@ -56,7 +55,6 @@
   "{{current}} of {{total}} items": "{{current}} de {{total}} itens",
   "Backup completed successfully!": "Backup concluído com sucesso!",
   "Restore completed successfully!": "Restauração concluída com sucesso!",
-  "Your library has been saved to the selected location.": "Sua biblioteca foi salva no local selecionado.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} livros adicionados, {{updated}} livros atualizados.",
   "Operation failed": "A operação falhou",
   "Close": "Fechar",
@@ -1480,5 +1478,9 @@
   "No new annotations to import": "Não há novas anotações para importar",
   "Import from Moon+ Reader": "Importar do Moon+ Reader",
   "Character Mode": "Modo de caracteres",
-  "Highlight Word": "Destacar palavra"
+  "Highlight Word": "Destacar palavra",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Crie um backup da sua biblioteca e configurações ou restaure a partir de um backup anterior. A restauração será mesclada com a sua biblioteca atual.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Incluir credenciais da conta (tokens de sincronização, senhas). O arquivo de backup não é criptografado.",
+  "Your library and settings have been saved to the selected location.": "Sua biblioteca e configurações foram salvas no local selecionado.",
+  "Settings have been restored.": "As configurações foram restauradas."
 }

@@ -1067,7 +1067,6 @@
   "Select Backup": "காப்புப்பிரதியைத் தேர்ந்தெடுக்கவும்",
   "Restore failed: {{error}}": "மீட்டமைப்பு தோல்வி: {{error}}",
   "Backup & Restore": "காப்புப்பிரதி & மீட்டமைப்பு",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "உங்கள் நூலகத்தின் காப்புப்பிரதியை உருவாக்கவும் அல்லது முந்தைய காப்புப்பிரதியிலிருந்து மீட்டமைக்கவும். மீட்டமைப்பு உங்கள் தற்போதைய நூலகத்துடன் இணைக்கப்படும்.",
   "Backup Library": "நூலகத்தை காப்புப்பிரதி எடு",
   "Restore Library": "நூலகத்தை மீட்டமை",
   "Creating backup...": "காப்புப்பிரதி உருவாக்கப்படுகிறது...",
@@ -1075,7 +1074,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} உருப்படிகள்",
   "Backup completed successfully!": "காப்புப்பிரதி வெற்றிகரமாக முடிந்தது!",
   "Restore completed successfully!": "மீட்டமைப்பு வெற்றிகரமாக முடிந்தது!",
-  "Your library has been saved to the selected location.": "உங்கள் நூலகம் தேர்ந்தெடுக்கப்பட்ட இடத்தில் சேமிக்கப்பட்டது.",
   "{{added}} books added, {{updated}} books updated.": "{{added}} புத்தகங்கள் சேர்க்கப்பட்டன, {{updated}} புத்தகங்கள் புதுப்பிக்கப்பட்டன.",
   "Operation failed": "செயல்பாடு தோல்வி",
   "Loading library...": "நூலகம் ஏற்றப்படுகிறது...",
@@ -1452,5 +1450,9 @@
   "No new annotations to import": "இறக்குமதி செய்ய புதிய குறிப்புகள் இல்லை",
   "Import from Moon+ Reader": "Moon+ Reader இலிருந்து இறக்குமதி செய்",
   "Character Mode": "எழுத்து முறை",
-  "Highlight Word": "சொல்லை முன்னிலைப்படுத்து"
+  "Highlight Word": "சொல்லை முன்னிலைப்படுத்து",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "உங்கள் நூலகம் மற்றும் அமைப்புகளின் காப்புப்பிரதியை உருவாக்கவும் அல்லது முந்தைய காப்புப்பிரதியிலிருந்து மீட்டெடுக்கவும். மீட்டெடுப்பது உங்கள் தற்போதைய நூலகத்துடன் இணைக்கப்படும்.",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "கணக்கு அறிமுகச் சான்றுகளை (ஒத்திசைவு டோக்கன்கள், கடவுச்சொற்கள்) சேர்க்கவும். காப்புப்பிரதி கோப்பு குறியாக்கம் செய்யப்படவில்லை.",
+  "Your library and settings have been saved to the selected location.": "உங்கள் நூலகம் மற்றும் அமைப்புகள் தேர்ந்தெடுக்கப்பட்ட இடத்தில் சேமிக்கப்பட்டன.",
+  "Settings have been restored.": "அமைப்புகள் மீட்டெடுக்கப்பட்டன."
 }

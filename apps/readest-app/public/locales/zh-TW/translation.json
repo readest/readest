@@ -1055,7 +1055,6 @@
   "Select Backup": "選擇備份",
   "Restore failed: {{error}}": "還原失敗：{{error}}",
   "Backup & Restore": "備份與還原",
-  "Create a backup of your library or restore from a previous backup. Restoring will merge with your current library.": "建立書庫備份或從先前的備份還原。還原將與目前的書庫合併。",
   "Backup Library": "備份書庫",
   "Restore Library": "還原書庫",
   "Creating backup...": "正在建立備份...",
@@ -1063,7 +1062,6 @@
   "{{current}} of {{total}} items": "{{current}} / {{total}} 項",
   "Backup completed successfully!": "備份成功！",
   "Restore completed successfully!": "還原成功！",
-  "Your library has been saved to the selected location.": "您的書庫已儲存至所選位置。",
   "{{added}} books added, {{updated}} books updated.": "新增 {{added}} 本書，更新 {{updated}} 本書。",
   "Operation failed": "操作失敗",
   "Loading library...": "正在載入書庫...",
@@ -1424,5 +1422,9 @@
   "No new annotations to import": "沒有可匯入的新註解",
   "Import from Moon+ Reader": "從 Moon+ Reader 匯入",
   "Character Mode": "單字模式",
-  "Highlight Word": "高亮整詞"
+  "Highlight Word": "高亮整詞",
+  "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "建立您的書庫與設定的備份，或從先前的備份還原。還原將與您目前的書庫合併。",
+  "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "包含帳戶憑證（同步權杖、密碼）。備份檔案未加密。",
+  "Your library and settings have been saved to the selected location.": "您的書庫與設定已儲存至所選位置。",
+  "Settings have been restored.": "設定已還原。"
 }
