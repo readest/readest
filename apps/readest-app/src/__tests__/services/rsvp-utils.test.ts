@@ -324,4 +324,46 @@ describe('rsvp/utils', () => {
       expect(getHyphenParts('...')).toEqual(['...']);
     });
   });
+
+  describe('CJK character mode', () => {
+    test('segmentCJKText splits CJK text per-character when cjkCharMode is true', () => {
+      expect(segmentCJKText('你好世界', undefined, true)).toEqual(['你', '好', '世', '界']);
+    });
+
+    test('segmentCJKText attaches CJK punctuation to the preceding character in char mode', () => {
+      expect(segmentCJKText('你好。世界！', undefined, true)).toEqual(['你', '好。', '世', '界！']);
+    });
+
+    test('segmentCJKText keeps leading punctuation as its own token in char mode', () => {
+      expect(segmentCJKText('。你好', undefined, true)).toEqual(['。', '你', '好']);
+    });
+
+    test('segmentCJKText returns empty array for empty text in char mode', () => {
+      expect(segmentCJKText('', undefined, true)).toEqual([]);
+    });
+
+    test('splitTextIntoWords splits CJK per-character in char mode', () => {
+      expect(splitTextIntoWords('我喜欢阅读', undefined, true)).toEqual([
+        '我',
+        '喜',
+        '欢',
+        '阅',
+        '读',
+      ]);
+    });
+
+    test('splitTextIntoWords leaves Latin words intact in char mode', () => {
+      expect(splitTextIntoWords('Hello 你好 World', undefined, true)).toEqual([
+        'Hello',
+        '你',
+        '好',
+        'World',
+      ]);
+    });
+
+    test('splitTextIntoWords groups CJK characters when char mode is off', () => {
+      // Default segmentation should group multi-character words like 喜欢 / 阅读.
+      expect(splitTextIntoWords('我喜欢阅读').length).toBeLessThan(5);
+    });
+  });
 });

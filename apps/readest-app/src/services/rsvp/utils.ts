@@ -77,8 +77,15 @@ export function getSegmenterLocale(text: string): string | null {
  * If `language` starts with `zh` and jieba-wasm has been initialized
  * (see `initJieba` in @/utils/jieba), use it for higher-quality Chinese
  * segmentation.
+ *
+ * When `cjkCharMode` is true, segmentation is skipped entirely and the text is
+ * split into individual characters (see `segmentCJKByCharacter`).
  */
-export function segmentCJKText(text: string, language?: string): string[] {
+export function segmentCJKText(text: string, language?: string, cjkCharMode = false): string[] {
+  if (cjkCharMode) {
+    return segmentCJKByCharacter(text);
+  }
+
   if (language?.toLowerCase().startsWith('zh') && isJiebaReady()) {
     try {
       return segmentWithJieba(text);
@@ -226,6 +233,26 @@ function segmentWithJieba(text: string): string[] {
 }
 
 /**
+ * Split a CJK run into individual characters. Trailing CJK punctuation is
+ * attached to the preceding character so downstream pause logic still sees
+ * punctuation at token boundaries; a leading punctuation run with no preceding
+ * character is emitted as its own token. Iterates by code point so characters
+ * outside the BMP (e.g. CJK Extension B) stay intact.
+ */
+function segmentCJKByCharacter(text: string): string[] {
+  const words: string[] = [];
+  for (const char of text) {
+    if (char.trim() === '') continue;
+    if (isCJKPunctuation(char) && words.length > 0) {
+      words[words.length - 1] = words[words.length - 1] + char;
+    } else {
+      words.push(char);
+    }
+  }
+  return words;
+}
+
+/**
  * Split a token on em-dash (—) and en-dash (–), keeping the dash attached to
  * the preceding non-empty segment so downstream pause logic still sees it as
  * trailing punctuation. A leading dash with no preceding word is emitted as
@@ -253,9 +280,11 @@ function splitOnLongDashes(token: string): string[] {
 }
 
 /**
- * Split text into words, handling both CJK and non-CJK text
+ * Split text into words, handling both CJK and non-CJK text. When
+ * `cjkCharMode` is true, CJK runs are split per-character instead of by
+ * word segmentation; non-CJK text is unaffected.
  */
-export function splitTextIntoWords(text: string, language?: string): string[] {
+export function splitTextIntoWords(text: string, language?: string, cjkCharMode = false): string[] {
   const hasCJK = containsCJK(text);
 
   if (!hasCJK) {
@@ -301,7 +330,7 @@ export function splitTextIntoWords(text: string, language?: string): string[] {
       if (currentSegment) {
         if (inCJKSequence) {
           // Segment the CJK text (with any trailing punctuation)
-          words.push(...segmentCJKText(currentSegment, language));
+          words.push(...segmentCJKText(currentSegment, language, cjkCharMode));
         } else {
           words.push(currentSegment);
         }
@@ -312,7 +341,7 @@ export function splitTextIntoWords(text: string, language?: string): string[] {
       // Non-CJK, non-punctuation, non-whitespace character
       if (inCJKSequence && currentSegment) {
         // Segment the CJK text before continuing with non-CJK
-        words.push(...segmentCJKText(currentSegment, language));
+        words.push(...segmentCJKText(currentSegment, language, cjkCharMode));
         currentSegment = '';
       }
       currentSegment += char;
@@ -322,7 +351,7 @@ export function splitTextIntoWords(text: string, language?: string): string[] {
 
   if (currentSegment) {
     if (inCJKSequence) {
-      words.push(...segmentCJKText(currentSegment, language));
+      words.push(...segmentCJKText(currentSegment, language, cjkCharMode));
     } else {
       words.push(currentSegment);
     }

@@ -32,6 +32,8 @@ const buildState = (overrides: Partial<RsvpState> = {}): RsvpState => ({
   wpm: 300,
   punctuationPauseMs: 100,
   splitHyphens: false,
+  cjkCharMode: false,
+  hasCJK: false,
   progress: 0,
   ...overrides,
 });
@@ -60,6 +62,7 @@ const buildController = (state: RsvpState) => {
     setWpm: vi.fn(),
     setPunctuationPause: vi.fn(),
     setSplitHyphens: vi.fn(),
+    setCjkCharMode: vi.fn(),
     getWpmOptions: vi.fn(() => [100, 200, 300]),
     getPunctuationPauseOptions: vi.fn(() => [25, 50, 100]),
     addEventListener: vi.fn((type: string, listener: EventListener) => {
@@ -192,5 +195,97 @@ describe('RSVPOverlay — progress bar drag on mobile', () => {
     const slider = container.querySelector('[role="slider"]') as HTMLElement;
     expect(slider).not.toBeNull();
     expect(slider.style.touchAction).toBe('none');
+  });
+});
+
+describe('RSVPOverlay — CJK reading options', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  const openSettings = (container: HTMLElement) => {
+    fireEvent.click(container.querySelector('[aria-label="Settings"]') as HTMLElement);
+  };
+
+  test('shows Character Mode and Highlight Word toggles for CJK sections', () => {
+    const state = buildState({
+      words: [{ text: '喜欢', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: true,
+    });
+    const { container } = renderOverlay(state);
+    openSettings(container);
+
+    expect(container.querySelector('[data-testid="rsvp-char-mode-toggle"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="rsvp-highlight-word-toggle"]')).not.toBeNull();
+  });
+
+  test('hides CJK toggles when the section has no CJK text', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: false,
+    });
+    const { container } = renderOverlay(state);
+    openSettings(container);
+
+    expect(container.querySelector('[data-testid="rsvp-char-mode-toggle"]')).toBeNull();
+    expect(container.querySelector('[data-testid="rsvp-highlight-word-toggle"]')).toBeNull();
+  });
+
+  test('toggling Character Mode calls controller.setCjkCharMode', () => {
+    const state = buildState({
+      words: [{ text: '喜欢', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: true,
+    });
+    const { container, controller } = renderOverlay(state);
+    openSettings(container);
+
+    fireEvent.click(
+      container.querySelector('[data-testid="rsvp-char-mode-toggle"]') as HTMLElement,
+    );
+    expect(controller.setCjkCharMode).toHaveBeenCalledWith(true);
+  });
+
+  test('renders the focus-letter layout for a CJK word by default', () => {
+    const state = buildState({
+      words: [{ text: '喜欢', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: true,
+    });
+    const { container } = renderOverlay(state);
+
+    expect(container.querySelector('.rsvp-word-orp')).not.toBeNull();
+    expect(container.querySelector('.rsvp-word-whole')).toBeNull();
+  });
+
+  test('renders a single centered span when Highlight Word is enabled', () => {
+    localStorage.setItem('readest_rsvp_cjk_highlight_word', '1');
+    const state = buildState({
+      words: [{ text: '喜欢', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: true,
+    });
+    const { container } = renderOverlay(state);
+
+    const whole = container.querySelector('.rsvp-word-whole');
+    expect(whole).not.toBeNull();
+    expect(whole!.textContent).toBe('喜欢');
+    expect(container.querySelector('.rsvp-word-orp')).toBeNull();
+  });
+
+  test('keeps the focus-letter layout for Latin words even with Highlight Word enabled', () => {
+    localStorage.setItem('readest_rsvp_cjk_highlight_word', '1');
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      hasCJK: false,
+    });
+    const { container } = renderOverlay(state);
+
+    expect(container.querySelector('.rsvp-word-orp')).not.toBeNull();
+    expect(container.querySelector('.rsvp-word-whole')).toBeNull();
   });
 });

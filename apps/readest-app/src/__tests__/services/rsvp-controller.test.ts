@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RSVPController } from '@/services/rsvp/RSVPController';
 import { FoliateView } from '@/types/view';
 
@@ -345,6 +345,79 @@ describe('RSVPController', () => {
       expect(words.length).toBe(2);
       expect(words[0]!.text).toBe('the');
       expect(words[1]!.text).toBe('cat');
+    });
+  });
+
+  describe('CJK character mode', () => {
+    beforeEach(() => localStorage.clear());
+    afterEach(() => localStorage.clear());
+
+    test('cjkCharMode defaults to false and hasCJK is false for Latin text', () => {
+      const view = createMockView(0, [makeDoc('Hello world')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      expect(controller.currentState.cjkCharMode).toBe(false);
+      expect(controller.currentState.hasCJK).toBe(false);
+    });
+
+    test('hasCJK is true when the section contains CJK text', () => {
+      const view = createMockView(0, [makeDoc('你好世界')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      expect(controller.currentState.hasCJK).toBe(true);
+    });
+
+    test('setCjkCharMode(true) re-segments the active section per-character', () => {
+      const view = createMockView(0, [makeDoc('我喜欢阅读')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+      controller.setCjkCharMode(true);
+
+      expect(controller.currentState.words.map((w) => w.text)).toEqual([
+        '我',
+        '喜',
+        '欢',
+        '阅',
+        '读',
+      ]);
+    });
+
+    test('setCjkCharMode persists the choice to localStorage', () => {
+      const view = createMockView(0, [makeDoc('你好')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setCjkCharMode(true);
+
+      expect(localStorage.getItem('readest_rsvp_cjk_char_mode')).toBe('1');
+    });
+
+    test('keeps the focus character off trailing punctuation in char mode', () => {
+      const view = createMockView(0, [makeDoc('是。')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setCjkCharMode(true);
+      controller.start();
+
+      const word = controller.currentState.words[0]!;
+      expect(word.text).toBe('是。');
+      // The focus must land on 是 (index 0), not the trailing 。
+      expect(word.orpIndex).toBe(0);
+    });
+
+    test('char mode is restored from localStorage on construction', () => {
+      localStorage.setItem('readest_rsvp_cjk_char_mode', '1');
+      const view = createMockView(0, [makeDoc('我喜欢阅读')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      expect(controller.currentState.cjkCharMode).toBe(true);
+      expect(controller.currentState.words.map((w) => w.text)).toEqual([
+        '我',
+        '喜',
+        '欢',
+        '阅',
+        '读',
+      ]);
     });
   });
 });
