@@ -50,7 +50,7 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
                 `as='span'` because this lives inside a button, not as a
                 document heading; opacity override expresses the
                 "secondary on this surface" relationship. */}
-            <SectionTitle as='span' className='!text-base-content/55'>
+            <SectionTitle as='span' className='!text-base-content/55 !ps-0'>
               {_('This device')}
             </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>
@@ -72,7 +72,7 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
             {/* On the primary-color button background the default
                 /65 token would clash; opacity-75 inherits the button's
                 contrast color and dims it uniformly. */}
-            <SectionTitle as='span' className='!text-current opacity-75'>
+            <SectionTitle as='span' className='!ps-0 !text-current opacity-75'>
               {remoteDeviceName}
             </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>
