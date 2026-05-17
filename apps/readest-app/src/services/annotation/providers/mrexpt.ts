@@ -18,6 +18,68 @@ export interface MrexptConversionResult {
   total: number;
 }
 
+/**
+ * Result of merging freshly-imported BookNotes into a book's existing notes.
+ */
+export interface MrexptMergeResult {
+  /** The full, de-duplicated booknote list to persist. */
+  merged: BookNote[];
+  /** Notes added, resurrected, or updated this round — to redraw in views. */
+  applied: BookNote[];
+  /** Count of notes newly added or resurrected. */
+  added: number;
+  /** Count of existing notes updated with a newer copy. */
+  updated: number;
+}
+
+/**
+ * Merge imported BookNotes into a book's existing notes, deduplicating by id.
+ *
+ * - An unseen id is added.
+ * - A previously soft-deleted note is resurrected (so re-importing the same
+ *   file restores annotations the user had cleared).
+ * - An existing note is updated only when the incoming copy is newer.
+ * - An unchanged duplicate is left untouched and reported in neither count,
+ *   so callers can reliably tell "nothing new" from "imported N".
+ */
+export const mergeImportedBookNotes = (
+  existing: BookNote[],
+  incoming: BookNote[],
+): MrexptMergeResult => {
+  const byId = new Map<string, BookNote>();
+  for (const note of existing) byId.set(note.id, note);
+
+  const applied: BookNote[] = [];
+  let added = 0;
+  let updated = 0;
+
+  for (const note of incoming) {
+    const prev = byId.get(note.id);
+    if (!prev) {
+      byId.set(note.id, note);
+      added += 1;
+      applied.push(note);
+    } else if (prev.deletedAt) {
+      const resurrected: BookNote = {
+        ...prev,
+        ...note,
+        deletedAt: null,
+        updatedAt: Date.now(),
+      };
+      byId.set(note.id, resurrected);
+      added += 1;
+      applied.push(resurrected);
+    } else if (prev.updatedAt < note.updatedAt) {
+      const merged: BookNote = { ...prev, ...note };
+      byId.set(note.id, merged);
+      updated += 1;
+      applied.push(merged);
+    }
+  }
+
+  return { merged: Array.from(byId.values()), applied, added, updated };
+};
+
 export interface MrexptConversionOptions {
   /**
    * Color used for plain highlights (Moon+ Reader's "highlight" color

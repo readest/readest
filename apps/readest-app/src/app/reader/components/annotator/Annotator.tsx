@@ -54,7 +54,10 @@ import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { parseMrexpt } from '@/utils/mrexpt';
-import { convertMrexptEntriesToBookNotes } from '@/services/annotation/providers/mrexpt';
+import {
+  convertMrexptEntriesToBookNotes,
+  mergeImportedBookNotes,
+} from '@/services/annotation/providers/mrexpt';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -900,12 +903,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       }
     } catch (e) {
       console.warn('Failed to read mrexpt file:', e);
-      eventDispatcher.dispatch('toast', {
-        type: 'warning',
-        message: _('Failed to read the selected file.'),
-        timeout: 2000,
-      });
-      return;
     }
 
     if (!content) {
@@ -926,14 +923,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       });
       return;
     }
-
-    // Show a progress hint while we resolve CFIs (this can be slow on
-    // large books since each entry may load section documents).
-    eventDispatcher.dispatch('toast', {
-      type: 'info',
-      message: _('Importing {{n}} annotations…', { n: entries.length }),
-      timeout: 2000,
-    });
 
     let conversion;
     try {
@@ -964,42 +953,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // Merge into the current book config, deduplicating by note id and
     // preferring the latest updatedAt for any conflicting entries.
     const config = getConfig(bookKey)!;
-    const existing = config.booknotes ?? [];
-    const byId = new Map<string, BookNote>();
-    for (const note of existing) byId.set(note.id, note);
-    let added = 0;
-    let updated = 0;
-    const appliedNotes: BookNote[] = [];
-    for (const incoming of conversion.notes) {
-      const prev = byId.get(incoming.id);
-      if (!prev) {
-        byId.set(incoming.id, incoming);
-        added += 1;
-        appliedNotes.push(incoming);
-      } else if (prev.deletedAt) {
-        // The user previously cleared this note (e.g. via the sidebar's
-        // "Clear All" action). Resurrect it by clearing deletedAt and
-        // overlaying the freshly-imported fields so re-importing the same
-        // mrexpt file restores the annotations rather than reporting
-        // "Already imported".
-        const resurrected: BookNote = {
-          ...prev,
-          ...incoming,
-          deletedAt: null,
-          updatedAt: Date.now(),
-        };
-        byId.set(incoming.id, resurrected);
-        added += 1;
-        appliedNotes.push(resurrected);
-      } else if (prev.updatedAt < incoming.updatedAt) {
-        const merged: BookNote = { ...prev, ...incoming };
-        byId.set(incoming.id, merged);
-        updated += 1;
-        appliedNotes.push(merged);
-      }
-    }
-    const mergedNotes = Array.from(byId.values());
-    const updatedConfig = updateBooknotes(bookKey, mergedNotes);
+    const { merged, applied, added, updated } = mergeImportedBookNotes(
+      config.booknotes ?? [],
+      conversion.notes,
+    );
+    const updatedConfig = updateBooknotes(bookKey, merged);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
@@ -1009,7 +967,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // changed in this round, otherwise duplicate addAnnotation calls
     // can confuse the overlay layer.
     const views = getViewsById(bookKey.split('-')[0]!);
-    for (const note of appliedNotes) {
+    for (const note of applied) {
       try {
         views.forEach((v) => v?.addAnnotation(note));
       } catch (err) {
@@ -1017,30 +975,17 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       }
     }
 
-    const total = added + updated;
-    const skipped = conversion.unmatched;
-    if (total === 0 && skipped > 0) {
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message: _('Already imported, no new annotations.'),
-        timeout: 2500,
-      });
-    } else if (skipped > 0) {
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message: _('Imported {{n}} annotations ({{skipped}} unmatched).', {
-          n: total,
-          skipped,
-        }),
-        timeout: 3000,
-      });
-    } else {
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message: _('Imported {{n}} annotations.', { n: total }),
-        timeout: 2500,
-      });
-    }
+    // A single result toast: the count if anything changed, otherwise a
+    // plain "nothing new" hint for a repeated import of the same file.
+    const imported = added + updated;
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message:
+        imported > 0
+          ? _('Imported {{count}} annotations', { count: imported })
+          : _('No new annotations to import'),
+      timeout: 2500,
+    });
   };
 
   const handleExportMarkdown = async (event: CustomEvent) => {
