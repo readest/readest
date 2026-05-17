@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "আপনি কি নিশ্চিত যে সব {{count}}টি হাইলাইট ও নোট মুছে ফেলতে চান?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "অফিসিয়াল Readwise API ব্যবহার করতে ফাঁকা রাখুন। শুধুমাত্র একটি স্ব-হোস্ট করা, Readwise-সামঞ্জস্যপূর্ণ পরিষেবার জন্য একটি কাস্টম URL সেট করুন।",
-  "Custom URL": "কাস্টম URL"
+  "Custom URL": "কাস্টম URL",
+  "Book is not ready yet, please try again.": "বইটি এখনও প্রস্তুত নয়, অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "Select Moon+ Reader Export File": "Moon+ Reader এক্সপোর্ট ফাইল নির্বাচন করুন",
+  "Failed to read the selected file.": "নির্বাচিত ফাইলটি পড়তে ব্যর্থ হয়েছে।",
+  "No annotations found in the file.": "ফাইলে কোনো টীকা পাওয়া যায়নি।",
+  "Failed to import annotations.": "টীকা ইম্পোর্ট করতে ব্যর্থ হয়েছে।",
+  "No annotations could be located in this book.": "এই বইয়ে কোনো টীকার অবস্থান নির্ণয় করা যায়নি।",
+  "Imported {{count}} annotations_one": "{{count}}টি টীকা ইম্পোর্ট করা হয়েছে",
+  "Imported {{count}} annotations_other": "{{count}}টি টীকা ইম্পোর্ট করা হয়েছে",
+  "No new annotations to import": "ইম্পোর্ট করার জন্য কোনো নতুন টীকা নেই",
+  "Import from Moon+ Reader": "Moon+ Reader থেকে ইম্পোর্ট করুন"
 }

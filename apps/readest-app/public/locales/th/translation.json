@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "แน่ใจหรือไม่ว่าต้องการล้างไฮไลต์และบันทึกทั้งหมด {{count}} รายการ?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "เว้นว่างไว้เพื่อใช้ API อย่างเป็นทางการของ Readwise ตั้งค่า URL ที่กำหนดเองเฉพาะเมื่อต้องการเชื่อมต่อกับบริการที่โฮสต์เองซึ่งเข้ากันได้กับ Readwise",
-  "Custom URL": "URL ที่กำหนดเอง"
+  "Custom URL": "URL ที่กำหนดเอง",
+  "Book is not ready yet, please try again.": "หนังสือยังไม่พร้อม โปรดลองอีกครั้ง",
+  "Select Moon+ Reader Export File": "เลือกไฟล์ส่งออกของ Moon+ Reader",
+  "Failed to read the selected file.": "อ่านไฟล์ที่เลือกไม่สำเร็จ",
+  "No annotations found in the file.": "ไม่พบคำอธิบายประกอบในไฟล์",
+  "Failed to import annotations.": "นำเข้าคำอธิบายประกอบไม่สำเร็จ",
+  "No annotations could be located in this book.": "ไม่พบตำแหน่งของคำอธิบายประกอบในหนังสือเล่มนี้",
+  "Imported {{count}} annotations_other": "นำเข้าคำอธิบายประกอบ {{count}} รายการแล้ว",
+  "No new annotations to import": "ไม่มีคำอธิบายประกอบใหม่ให้นำเข้า",
+  "Import from Moon+ Reader": "นำเข้าจาก Moon+ Reader"
 }

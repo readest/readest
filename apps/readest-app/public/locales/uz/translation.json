@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Barcha {{count}} ta belgilash va eslatmani tozalamoqchimisiz?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Rasmiy Readwise API'sidan foydalanish uchun bo'sh qoldiring. Maxsus URL manzilini faqat o'zingiz joylashtirgan, Readwise bilan mos xizmatga ulanish uchun belgilang.",
-  "Custom URL": "Maxsus URL"
+  "Custom URL": "Maxsus URL",
+  "Book is not ready yet, please try again.": "Kitob hali tayyor emas, qaytadan urinib koʻring.",
+  "Select Moon+ Reader Export File": "Moon+ Reader eksport faylini tanlang",
+  "Failed to read the selected file.": "Tanlangan faylni oʻqib boʻlmadi.",
+  "No annotations found in the file.": "Faylda hech qanday izoh topilmadi.",
+  "Failed to import annotations.": "Izohlarni import qilib boʻlmadi.",
+  "No annotations could be located in this book.": "Bu kitobda hech qanday izohni aniqlab boʻlmadi.",
+  "Imported {{count}} annotations_one": "{{count}} ta izoh import qilindi",
+  "Imported {{count}} annotations_other": "{{count}} ta izoh import qilindi",
+  "No new annotations to import": "Import qilish uchun yangi izohlar yoʻq",
+  "Import from Moon+ Reader": "Moon+ Reader’dan import qilish"
 }

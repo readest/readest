@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "確定要清除全部 {{count}} 個標記和筆記嗎？",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "留空以使用官方 Readwise API。僅在需要連接自架的 Readwise 相容服務時才設定自訂 URL。",
-  "Custom URL": "自訂 URL"
+  "Custom URL": "自訂 URL",
+  "Book is not ready yet, please try again.": "書籍尚未就緒，請重試。",
+  "Select Moon+ Reader Export File": "選擇 Moon+ Reader 匯出檔案",
+  "Failed to read the selected file.": "無法讀取所選檔案。",
+  "No annotations found in the file.": "檔案中未找到註解。",
+  "Failed to import annotations.": "匯入註解失敗。",
+  "No annotations could be located in this book.": "無法在本書中定位任何註解。",
+  "Imported {{count}} annotations_other": "已匯入 {{count}} 條註解",
+  "No new annotations to import": "沒有可匯入的新註解",
+  "Import from Moon+ Reader": "從 Moon+ Reader 匯入"
 }

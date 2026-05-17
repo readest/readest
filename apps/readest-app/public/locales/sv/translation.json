@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Är du säker på att du vill rensa alla {{count}} markeringar och anteckningar?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lämna tomt för att använda det officiella Readwise-API:et. Ange en anpassad URL endast för att rikta mot en självhostad, Readwise-kompatibel tjänst.",
-  "Custom URL": "Anpassad URL"
+  "Custom URL": "Anpassad URL",
+  "Book is not ready yet, please try again.": "Boken är inte redo än, försök igen.",
+  "Select Moon+ Reader Export File": "Välj exportfil från Moon+ Reader",
+  "Failed to read the selected file.": "Kunde inte läsa den valda filen.",
+  "No annotations found in the file.": "Inga anteckningar hittades i filen.",
+  "Failed to import annotations.": "Kunde inte importera anteckningar.",
+  "No annotations could be located in this book.": "Kunde inte hitta några anteckningar i den här boken.",
+  "Imported {{count}} annotations_one": "{{count}} anteckning importerad",
+  "Imported {{count}} annotations_other": "{{count}} anteckningar importerade",
+  "No new annotations to import": "Inga nya anteckningar att importera",
+  "Import from Moon+ Reader": "Importera från Moon+ Reader"
 }

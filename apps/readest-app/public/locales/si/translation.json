@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "ඉස්මතු කිරීම් සහ සටහන් {{count}}ම හිස් කිරීමට අවශ්‍ය බව විශ්වාසද?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "නිල Readwise API භාවිතා කිරීමට හිස්ව තබන්න. ස්වයං-සත්කාරක, Readwise-අනුකූල සේවාවක් ඉලක්ක කිරීමට පමණක් අභිරුචි URL එකක් සකසන්න.",
-  "Custom URL": "අභිරුචි URL"
+  "Custom URL": "අභිරුචි URL",
+  "Book is not ready yet, please try again.": "පොත තවම සූදානම් නැත, කරුණාකර නැවත උත්සාහ කරන්න.",
+  "Select Moon+ Reader Export File": "Moon+ Reader නිර්යාත ගොනුව තෝරන්න",
+  "Failed to read the selected file.": "තෝරාගත් ගොනුව කියවීමට අසමත් විය.",
+  "No annotations found in the file.": "ගොනුවේ සටහන් කිසිවක් හමු නොවීය.",
+  "Failed to import annotations.": "සටහන් ආයාත කිරීමට අසමත් විය.",
+  "No annotations could be located in this book.": "මෙම පොතේ සටහන් කිසිවක් සොයාගත නොහැකි විය.",
+  "Imported {{count}} annotations_one": "සටහන් {{count}}ක් ආයාත කරන ලදී",
+  "Imported {{count}} annotations_other": "සටහන් {{count}}ක් ආයාත කරන ලදී",
+  "No new annotations to import": "ආයාත කිරීමට නව සටහන් නැත",
+  "Import from Moon+ Reader": "Moon+ Reader වෙතින් ආයාත කරන්න"
 }

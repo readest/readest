@@ -1467,5 +1467,16 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Sigur ștergeți toate cele {{count}} de evidențieri și note?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Lăsați necompletat pentru a folosi API-ul oficial Readwise. Setați un URL personalizat doar pentru a viza un serviciu găzduit local, compatibil cu Readwise.",
-  "Custom URL": "URL personalizat"
+  "Custom URL": "URL personalizat",
+  "Book is not ready yet, please try again.": "Cartea nu este încă gata, încearcă din nou.",
+  "Select Moon+ Reader Export File": "Selectează fișierul de export Moon+ Reader",
+  "Failed to read the selected file.": "Citirea fișierului selectat a eșuat.",
+  "No annotations found in the file.": "Nu s-au găsit adnotări în fișier.",
+  "Failed to import annotations.": "Importul adnotărilor a eșuat.",
+  "No annotations could be located in this book.": "Nu s-a putut localiza nicio adnotare în această carte.",
+  "Imported {{count}} annotations_one": "{{count}} adnotare importată",
+  "Imported {{count}} annotations_few": "{{count}} adnotări importate",
+  "Imported {{count}} annotations_other": "{{count}} de adnotări importate",
+  "No new annotations to import": "Nicio adnotare nouă de importat",
+  "Import from Moon+ Reader": "Importă din Moon+ Reader"
 }

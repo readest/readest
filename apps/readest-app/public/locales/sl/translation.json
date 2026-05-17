@@ -1494,5 +1494,17 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Ali res želite počistiti vseh {{count}} označb in opomb?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Pustite prazno za uporabo uradnega API-ja Readwise. URL po meri nastavite samo za ciljanje na samostojno gostovano storitev, združljivo z Readwise.",
-  "Custom URL": "URL po meri"
+  "Custom URL": "URL po meri",
+  "Book is not ready yet, please try again.": "Knjiga še ni pripravljena, poskusite znova.",
+  "Select Moon+ Reader Export File": "Izberite izvozno datoteko Moon+ Reader",
+  "Failed to read the selected file.": "Izbrane datoteke ni mogoče prebrati.",
+  "No annotations found in the file.": "V datoteki ni najdenih opomb.",
+  "Failed to import annotations.": "Opomb ni mogoče uvoziti.",
+  "No annotations could be located in this book.": "V tej knjigi ni mogoče najti nobenih opomb.",
+  "Imported {{count}} annotations_one": "Uvožena {{count}} opomba",
+  "Imported {{count}} annotations_two": "Uvoženi {{count}} opombi",
+  "Imported {{count}} annotations_few": "Uvožene {{count}} opombe",
+  "Imported {{count}} annotations_other": "Uvoženih {{count}} opomb",
+  "No new annotations to import": "Ni novih opomb za uvoz",
+  "Import from Moon+ Reader": "Uvozi iz Moon+ Reader"
 }

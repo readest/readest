@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "གཙོ་གནད་དང་ཟིན་བྲིས་ {{count}} ཚང་མ་སུབ་པར་གཏན་འཁེལ་ལམ།",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Readwise ཡི་ངོ་མའི་API སྤྱོད་ན་སྟོང་པར་བཞག Readwise དང་མཐུན་པའི་རང་འཇོག་ཞབས་ཞུའི་ཆེད་ཁོ་ནར་སྒེར་གྱི་URL འགོད་དགོས།",
-  "Custom URL": "སྒེར་གྱི་URL"
+  "Custom URL": "སྒེར་གྱི་URL",
+  "Book is not ready yet, please try again.": "དཔེ་ཆ་ད་དུང་གྲ་སྒྲིག་མ་ཟིན་པས། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
+  "Select Moon+ Reader Export File": "Moon+ Reader ཕྱིར་འདྲེན་ཡིག་ཆ་འདེམས།",
+  "Failed to read the selected file.": "འདེམས་ཟིན་པའི་ཡིག་ཆ་ཀློག་མ་ཐུབ།",
+  "No annotations found in the file.": "ཡིག་ཆའི་ནང་མཆན་འགྲེལ་མ་རྙེད།",
+  "Failed to import annotations.": "མཆན་འགྲེལ་ནང་འདྲེན་མ་ཐུབ།",
+  "No annotations could be located in this book.": "དཔེ་ཆ་འདིའི་ནང་མཆན་འགྲེལ་གང་ཡང་གནས་ས་ངོས་འཛིན་མ་ཐུབ།",
+  "Imported {{count}} annotations_other": "མཆན་འགྲེལ་ {{count}} ནང་འདྲེན་བྱས་ཟིན།",
+  "No new annotations to import": "ནང་འདྲེན་བྱ་རྒྱུའི་མཆན་འགྲེལ་གསར་པ་མེད།",
+  "Import from Moon+ Reader": "Moon+ Reader ནས་ནང་འདྲེན།"
 }

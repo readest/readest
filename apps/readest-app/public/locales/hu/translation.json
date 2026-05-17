@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Biztosan törli mind a(z) {{count}} kiemelést és jegyzetet?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Hagyja üresen a hivatalos Readwise API használatához. Egyéni URL-t csak akkor adjon meg, ha saját üzemeltetésű, Readwise-kompatibilis szolgáltatást szeretne megcélozni.",
-  "Custom URL": "Egyéni URL"
+  "Custom URL": "Egyéni URL",
+  "Book is not ready yet, please try again.": "A könyv még nincs kész, próbáld újra.",
+  "Select Moon+ Reader Export File": "Moon+ Reader exportfájl kiválasztása",
+  "Failed to read the selected file.": "A kiválasztott fájl beolvasása sikertelen.",
+  "No annotations found in the file.": "Nem található jegyzet a fájlban.",
+  "Failed to import annotations.": "A jegyzetek importálása sikertelen.",
+  "No annotations could be located in this book.": "Nem sikerült jegyzeteket azonosítani ebben a könyvben.",
+  "Imported {{count}} annotations_one": "{{count}} jegyzet importálva",
+  "Imported {{count}} annotations_other": "{{count}} jegyzet importálva",
+  "No new annotations to import": "Nincs új importálható jegyzet",
+  "Import from Moon+ Reader": "Importálás Moon+ Reader programból"
 }

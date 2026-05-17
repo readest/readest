@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "அனைத்து {{count}} சிறப்பம்சங்கள் மற்றும் குறிப்புகளையும் அழிக்க வேண்டும் என்பது உறுதியா?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "அதிகாரப்பூர்வ Readwise API ஐப் பயன்படுத்த காலியாக விடவும். சுய-ஹோஸ்ட் செய்யப்பட்ட, Readwise-இணக்கமான சேவையை இலக்காகக் கொள்ள மட்டுமே தனிப்பயன் URL ஐ அமைக்கவும்.",
-  "Custom URL": "தனிப்பயன் URL"
+  "Custom URL": "தனிப்பயன் URL",
+  "Book is not ready yet, please try again.": "புத்தகம் இன்னும் தயாராக இல்லை, மீண்டும் முயற்சிக்கவும்.",
+  "Select Moon+ Reader Export File": "Moon+ Reader ஏற்றுமதி கோப்பைத் தேர்ந்தெடுக்கவும்",
+  "Failed to read the selected file.": "தேர்ந்தெடுத்த கோப்பைப் படிக்க முடியவில்லை.",
+  "No annotations found in the file.": "கோப்பில் எந்தக் குறிப்புகளும் இல்லை.",
+  "Failed to import annotations.": "குறிப்புகளை இறக்குமதி செய்ய முடியவில்லை.",
+  "No annotations could be located in this book.": "இந்தப் புத்தகத்தில் எந்தக் குறிப்புகளையும் கண்டறிய முடியவில்லை.",
+  "Imported {{count}} annotations_one": "{{count}} குறிப்பு இறக்குமதி செய்யப்பட்டது",
+  "Imported {{count}} annotations_other": "{{count}} குறிப்புகள் இறக்குமதி செய்யப்பட்டன",
+  "No new annotations to import": "இறக்குமதி செய்ய புதிய குறிப்புகள் இல்லை",
+  "Import from Moon+ Reader": "Moon+ Reader இலிருந்து இறக்குமதி செய்"
 }

@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Weet u zeker dat u alle {{count}} markeringen en notities wilt wissen?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Laat leeg om de officiële Readwise-API te gebruiken. Stel alleen een aangepaste URL in om een zelf-gehoste, Readwise-compatibele service te benaderen.",
-  "Custom URL": "Aangepaste URL"
+  "Custom URL": "Aangepaste URL",
+  "Book is not ready yet, please try again.": "Het boek is nog niet gereed, probeer het opnieuw.",
+  "Select Moon+ Reader Export File": "Moon+ Reader-exportbestand selecteren",
+  "Failed to read the selected file.": "Kan het geselecteerde bestand niet lezen.",
+  "No annotations found in the file.": "Geen annotaties gevonden in het bestand.",
+  "Failed to import annotations.": "Kan annotaties niet importeren.",
+  "No annotations could be located in this book.": "Kan geen annotaties in dit boek vinden.",
+  "Imported {{count}} annotations_one": "{{count}} annotatie geïmporteerd",
+  "Imported {{count}} annotations_other": "{{count}} annotaties geïmporteerd",
+  "No new annotations to import": "Geen nieuwe annotaties om te importeren",
+  "Import from Moon+ Reader": "Importeren uit Moon+ Reader"
 }

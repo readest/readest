@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Bạn có chắc muốn xóa tất cả {{count}} đánh dấu và ghi chú không?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Để trống để dùng API Readwise chính thức. Chỉ đặt URL tùy chỉnh để trỏ đến dịch vụ tự lưu trữ tương thích với Readwise.",
-  "Custom URL": "URL tùy chỉnh"
+  "Custom URL": "URL tùy chỉnh",
+  "Book is not ready yet, please try again.": "Sách chưa sẵn sàng, vui lòng thử lại.",
+  "Select Moon+ Reader Export File": "Chọn tệp xuất của Moon+ Reader",
+  "Failed to read the selected file.": "Không thể đọc tệp đã chọn.",
+  "No annotations found in the file.": "Không tìm thấy chú thích nào trong tệp.",
+  "Failed to import annotations.": "Không thể nhập chú thích.",
+  "No annotations could be located in this book.": "Không thể xác định vị trí chú thích nào trong cuốn sách này.",
+  "Imported {{count}} annotations_other": "Đã nhập {{count}} chú thích",
+  "No new annotations to import": "Không có chú thích mới để nhập",
+  "Import from Moon+ Reader": "Nhập từ Moon+ Reader"
 }

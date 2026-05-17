@@ -1548,5 +1548,19 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "هل أنت متأكد من مسح التمييزات والملاحظات الـ{{count}}؟",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "اتركه فارغًا لاستخدام واجهة Readwise الرسمية. عيّن عنوان URL مخصصًا فقط للاتصال بخدمة مستضافة ذاتيًا ومتوافقة مع Readwise.",
-  "Custom URL": "عنوان URL مخصص"
+  "Custom URL": "عنوان URL مخصص",
+  "Book is not ready yet, please try again.": "الكتاب غير جاهز بعد، يرجى المحاولة مرة أخرى.",
+  "Select Moon+ Reader Export File": "اختر ملف تصدير Moon+ Reader",
+  "Failed to read the selected file.": "فشل قراءة الملف المحدد.",
+  "No annotations found in the file.": "لم يتم العثور على أي تعليقات في الملف.",
+  "Failed to import annotations.": "فشل استيراد التعليقات.",
+  "No annotations could be located in this book.": "تعذّر تحديد موضع أي تعليقات في هذا الكتاب.",
+  "Imported {{count}} annotations_zero": "لم يتم استيراد أي تعليقات",
+  "Imported {{count}} annotations_one": "تم استيراد تعليق واحد",
+  "Imported {{count}} annotations_two": "تم استيراد تعليقين",
+  "Imported {{count}} annotations_few": "تم استيراد {{count}} تعليقات",
+  "Imported {{count}} annotations_many": "تم استيراد {{count}} تعليقًا",
+  "Imported {{count}} annotations_other": "تم استيراد {{count}} تعليق",
+  "No new annotations to import": "لا توجد تعليقات جديدة للاستيراد",
+  "Import from Moon+ Reader": "استيراد من Moon+ Reader"
 }

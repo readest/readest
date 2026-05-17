@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Tüm {{count}} vurgu ve notu temizlemek istediğinizden emin misiniz?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Resmi Readwise API'sini kullanmak için boş bırakın. Özel bir URL'yi yalnızca kendi barındırdığınız, Readwise uyumlu bir hizmeti hedeflemek için ayarlayın.",
-  "Custom URL": "Özel URL"
+  "Custom URL": "Özel URL",
+  "Book is not ready yet, please try again.": "Kitap henüz hazır değil, lütfen tekrar deneyin.",
+  "Select Moon+ Reader Export File": "Moon+ Reader dışa aktarma dosyasını seçin",
+  "Failed to read the selected file.": "Seçilen dosya okunamadı.",
+  "No annotations found in the file.": "Dosyada açıklama bulunamadı.",
+  "Failed to import annotations.": "Açıklamalar içe aktarılamadı.",
+  "No annotations could be located in this book.": "Bu kitapta hiçbir açıklama konumlandırılamadı.",
+  "Imported {{count}} annotations_one": "{{count}} açıklama içe aktarıldı",
+  "Imported {{count}} annotations_other": "{{count}} açıklama içe aktarıldı",
+  "No new annotations to import": "İçe aktarılacak yeni açıklama yok",
+  "Import from Moon+ Reader": "Moon+ Reader'dan içe aktar"
 }

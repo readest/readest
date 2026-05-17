@@ -1494,5 +1494,17 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Очистить все {{count}} выделений и заметок?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Оставьте пустым, чтобы использовать официальный API Readwise. Указывайте собственный URL только для подключения к самостоятельно размещённому сервису, совместимому с Readwise.",
-  "Custom URL": "Пользовательский URL"
+  "Custom URL": "Пользовательский URL",
+  "Book is not ready yet, please try again.": "Книга ещё не готова, попробуйте снова.",
+  "Select Moon+ Reader Export File": "Выберите файл экспорта Moon+ Reader",
+  "Failed to read the selected file.": "Не удалось прочитать выбранный файл.",
+  "No annotations found in the file.": "В файле не найдено аннотаций.",
+  "Failed to import annotations.": "Не удалось импортировать аннотации.",
+  "No annotations could be located in this book.": "Не удалось найти аннотации в этой книге.",
+  "Imported {{count}} annotations_one": "Импортирована {{count}} аннотация",
+  "Imported {{count}} annotations_few": "Импортировано {{count}} аннотации",
+  "Imported {{count}} annotations_many": "Импортировано {{count}} аннотаций",
+  "Imported {{count}} annotations_other": "Импортировано {{count}} аннотаций",
+  "No new annotations to import": "Нет новых аннотаций для импорта",
+  "Import from Moon+ Reader": "Импорт из Moon+ Reader"
 }

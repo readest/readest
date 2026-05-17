@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Yakin ingin menghapus semua {{count}} sorotan dan catatan?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Kosongkan untuk menggunakan API Readwise resmi. Setel URL khusus hanya untuk menargetkan layanan yang dihosting sendiri dan kompatibel dengan Readwise.",
-  "Custom URL": "URL Khusus"
+  "Custom URL": "URL Khusus",
+  "Book is not ready yet, please try again.": "Buku belum siap, silakan coba lagi.",
+  "Select Moon+ Reader Export File": "Pilih file ekspor Moon+ Reader",
+  "Failed to read the selected file.": "Gagal membaca file yang dipilih.",
+  "No annotations found in the file.": "Tidak ada anotasi ditemukan dalam file.",
+  "Failed to import annotations.": "Gagal mengimpor anotasi.",
+  "No annotations could be located in this book.": "Tidak ada anotasi yang dapat ditemukan di buku ini.",
+  "Imported {{count}} annotations_other": "{{count}} anotasi diimpor",
+  "No new annotations to import": "Tidak ada anotasi baru untuk diimpor",
+  "Import from Moon+ Reader": "Impor dari Moon+ Reader"
 }

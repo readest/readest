@@ -1467,5 +1467,16 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "האם לנקות את כל {{count}} ההדגשות וההערות?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "השאירו ריק כדי להשתמש ב-API הרשמי של Readwise. הגדירו כתובת URL מותאמת אישית רק כדי להפנות לשירות בעל אירוח עצמי התואם ל-Readwise.",
-  "Custom URL": "כתובת URL מותאמת אישית"
+  "Custom URL": "כתובת URL מותאמת אישית",
+  "Book is not ready yet, please try again.": "הספר עדיין לא מוכן, נסה שוב.",
+  "Select Moon+ Reader Export File": "בחר קובץ ייצוא של Moon+ Reader",
+  "Failed to read the selected file.": "קריאת הקובץ הנבחר נכשלה.",
+  "No annotations found in the file.": "לא נמצאו הערות בקובץ.",
+  "Failed to import annotations.": "ייבוא ההערות נכשל.",
+  "No annotations could be located in this book.": "לא ניתן היה לאתר הערות בספר זה.",
+  "Imported {{count}} annotations_one": "יובאה הערה אחת",
+  "Imported {{count}} annotations_two": "יובאו שתי הערות",
+  "Imported {{count}} annotations_other": "יובאו {{count}} הערות",
+  "No new annotations to import": "אין הערות חדשות לייבוא",
+  "Import from Moon+ Reader": "ייבוא מ-Moon+ Reader"
 }

@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Είστε σίγουροι ότι θέλετε να διαγράψετε και τις {{count}} επισημάνσεις και σημειώσεις;",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Αφήστε το κενό για χρήση του επίσημου Readwise API. Ορίστε προσαρμοσμένο URL μόνο για να στοχεύσετε μια αυτο-φιλοξενούμενη υπηρεσία συμβατή με το Readwise.",
-  "Custom URL": "Προσαρμοσμένο URL"
+  "Custom URL": "Προσαρμοσμένο URL",
+  "Book is not ready yet, please try again.": "Το βιβλίο δεν είναι ακόμη έτοιμο, δοκιμάστε ξανά.",
+  "Select Moon+ Reader Export File": "Επιλογή αρχείου εξαγωγής Moon+ Reader",
+  "Failed to read the selected file.": "Αποτυχία ανάγνωσης του επιλεγμένου αρχείου.",
+  "No annotations found in the file.": "Δεν βρέθηκαν σχόλια στο αρχείο.",
+  "Failed to import annotations.": "Αποτυχία εισαγωγής σχολίων.",
+  "No annotations could be located in this book.": "Δεν ήταν δυνατός ο εντοπισμός σχολίων σε αυτό το βιβλίο.",
+  "Imported {{count}} annotations_one": "Εισήχθη {{count}} σχόλιο",
+  "Imported {{count}} annotations_other": "Εισήχθησαν {{count}} σχόλια",
+  "No new annotations to import": "Δεν υπάρχουν νέα σχόλια για εισαγωγή",
+  "Import from Moon+ Reader": "Εισαγωγή από Moon+ Reader"
 }

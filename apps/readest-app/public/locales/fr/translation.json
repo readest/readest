@@ -1467,5 +1467,16 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "Voulez-vous vraiment effacer les {{count}} surlignages et notes ?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "Laissez vide pour utiliser l'API officielle de Readwise. Définissez une URL personnalisée uniquement pour cibler un service auto-hébergé compatible avec Readwise.",
-  "Custom URL": "URL personnalisée"
+  "Custom URL": "URL personnalisée",
+  "Book is not ready yet, please try again.": "Le livre n'est pas encore prêt, veuillez réessayer.",
+  "Select Moon+ Reader Export File": "Sélectionner le fichier d'exportation Moon+ Reader",
+  "Failed to read the selected file.": "Échec de la lecture du fichier sélectionné.",
+  "No annotations found in the file.": "Aucune annotation trouvée dans le fichier.",
+  "Failed to import annotations.": "Échec de l'importation des annotations.",
+  "No annotations could be located in this book.": "Impossible de localiser des annotations dans ce livre.",
+  "Imported {{count}} annotations_one": "{{count}} annotation importée",
+  "Imported {{count}} annotations_many": "{{count}} annotations importées",
+  "Imported {{count}} annotations_other": "{{count}} annotations importées",
+  "No new annotations to import": "Aucune nouvelle annotation à importer",
+  "Import from Moon+ Reader": "Importer depuis Moon+ Reader"
 }

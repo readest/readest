@@ -1440,5 +1440,15 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "آیا مطمئنید که می‌خواهید همهٔ {{count}} برجسته و یادداشت را پاک کنید؟",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "برای استفاده از API رسمی Readwise خالی بگذارید. تنها برای اتصال به یک سرویس خودمیزبان سازگار با Readwise یک نشانی سفارشی تنظیم کنید.",
-  "Custom URL": "نشانی سفارشی"
+  "Custom URL": "نشانی سفارشی",
+  "Book is not ready yet, please try again.": "کتاب هنوز آماده نیست، لطفاً دوباره تلاش کنید.",
+  "Select Moon+ Reader Export File": "انتخاب فایل خروجی Moon+ Reader",
+  "Failed to read the selected file.": "خواندن فایل انتخاب‌شده ناموفق بود.",
+  "No annotations found in the file.": "هیچ یادداشتی در فایل یافت نشد.",
+  "Failed to import annotations.": "وارد کردن یادداشت‌ها ناموفق بود.",
+  "No annotations could be located in this book.": "مکان هیچ یادداشتی در این کتاب پیدا نشد.",
+  "Imported {{count}} annotations_one": "{{count}} یادداشت وارد شد",
+  "Imported {{count}} annotations_other": "{{count}} یادداشت وارد شد",
+  "No new annotations to import": "یادداشت جدیدی برای وارد کردن وجود ندارد",
+  "Import from Moon+ Reader": "وارد کردن از Moon+ Reader"
 }

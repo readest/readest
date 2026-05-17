@@ -1413,5 +1413,14 @@
   "Are you sure to clear all {{count}} highlights and notes?_other": "하이라이트 및 메모 {{count}}개를 모두 지우시겠습니까?",
   "Discord": "Discord",
   "Leave blank to use the official Readwise API. Set a custom URL only to target a self-hosted, Readwise-compatible service.": "공식 Readwise API를 사용하려면 비워 두세요. 사용자 지정 URL은 자체 호스팅된 Readwise 호환 서비스를 대상으로 할 때만 설정하세요.",
-  "Custom URL": "사용자 지정 URL"
+  "Custom URL": "사용자 지정 URL",
+  "Book is not ready yet, please try again.": "책이 아직 준비되지 않았습니다. 다시 시도해 주세요.",
+  "Select Moon+ Reader Export File": "Moon+ Reader 내보내기 파일 선택",
+  "Failed to read the selected file.": "선택한 파일을 읽지 못했습니다.",
+  "No annotations found in the file.": "파일에서 주석을 찾을 수 없습니다.",
+  "Failed to import annotations.": "주석을 가져오지 못했습니다.",
+  "No annotations could be located in this book.": "이 책에서 주석의 위치를 찾을 수 없습니다.",
+  "Imported {{count}} annotations_other": "주석 {{count}}개를 가져왔습니다",
+  "No new annotations to import": "가져올 새 주석이 없습니다",
+  "Import from Moon+ Reader": "Moon+ Reader에서 가져오기"
 }
