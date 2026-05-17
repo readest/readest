@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,7 +19,7 @@ export const useProgressSync = (bookKey: string) => {
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getProgress, setHoveredBookKey } = useReaderStore();
   const { settings } = useSettingsStore();
-  const { syncedConfigs, syncConfigs } = useSync(bookKey);
+  const { syncedConfigs, syncConfigs, syncBooks } = useSync(bookKey);
   const { user } = useAuth();
   const progress = getProgress(bookKey);
 
@@ -36,6 +37,18 @@ export const useProgressSync = (bookKey: string) => {
     );
     delete compressedConfig.booknotes;
     await syncConfigs([compressedConfig], bookHash, metaHash, 'push');
+
+    // Also push the corresponding `books` row. The library sync lane
+    // (useBooksSync) only runs while the library page is mounted, so while a
+    // reader stays open the server's `books` record is never re-pushed and
+    // other devices' library pull-to-refresh keeps showing stale progress
+    // (issue #4198). useProgressAutoSave has already merged config.progress
+    // into the in-memory library Book via saveConfig, so we just forward
+    // that book through the books lane.
+    const libraryBook = useLibraryStore.getState().library.find((b) => b.hash === bookHash);
+    if (libraryBook && !libraryBook.deletedAt) {
+      await syncBooks([libraryBook], 'push');
+    }
   };
 
   const pullConfig = async (bookKey: string) => {
