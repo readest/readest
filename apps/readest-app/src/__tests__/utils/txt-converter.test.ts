@@ -346,6 +346,86 @@ describe('TxtToEpubConverter', () => {
   });
 });
 
+describe('scene-break dividers do not pollute the TOC (issue #4063)', () => {
+  const zhMetadata: TestMetadata = {
+    bookTitle: 'Test',
+    author: '',
+    language: 'zh',
+    identifier: 'test',
+  };
+  const option = { linesBetweenSegments: 8, fallbackParagraphsPerChapter: 100 };
+  const divider = '-'.repeat(37);
+
+  it('keeps a single chapter when dash dividers split scene breaks', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = [
+      '第15章',
+      '这是第十五章的开头内容。',
+      divider,
+      '场景切换后的内容继续。',
+      divider,
+      '又一个场景的内容。',
+    ].join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.length).toBe(1);
+    expect(chapters[0]!.title).toContain('第15章');
+    expect(chapters[0]!.content).toContain('场景切换后的内容继续');
+    expect(chapters[0]!.content).toContain('又一个场景的内容');
+  });
+
+  it('merges mid-chapter content split off before the next heading', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = [
+      '第1章',
+      '绿水青山就是金山银山。',
+      divider,
+      '分隔符之后继续讲述的内容。',
+      '第2章',
+      '新的章节正式开始了。',
+    ].join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.map((c) => c.title)).toEqual(['第1章', '第2章']);
+    expect(chapters[0]!.content).toContain('分隔符之后继续讲述的内容');
+    expect(chapters[0]!.content).not.toContain('<h3>');
+  });
+
+  it('still chunks heading-less plain text by paragraph fallback', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const paragraphs = Array.from({ length: 250 }, (_, i) => `段落${i + 1}`).join('\n');
+
+    const chapters = converter.extractChapters(paragraphs, zhMetadata, option);
+
+    expect(chapters.length).toBe(3);
+  });
+
+  it('merges divider-split scene breaks in the chunked file path', async () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = [
+      '第15章',
+      '这是第十五章的开头内容。',
+      divider,
+      '场景切换后的内容继续。',
+      divider,
+      '又一个场景的内容。',
+    ].join('\n');
+    const file = new File([text], 'sample.txt');
+
+    const chapters = await converter.extractChaptersFromFileBySegments(
+      file,
+      'utf-8',
+      zhMetadata,
+      option,
+    );
+
+    expect(chapters.length).toBe(1);
+    expect(chapters[0]!.title).toContain('第15章');
+  });
+});
+
 describe('extractTxtFilenameMetadata', () => {
   it('extracts the title from CJK 《》 brackets', () => {
     expect(extractTxtFilenameMetadata('《三体》.txt')).toEqual({ title: '三体' });

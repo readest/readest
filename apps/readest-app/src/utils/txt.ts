@@ -54,6 +54,11 @@ interface Chapter {
   title: string;
   content: string;
   isVolume: boolean;
+  // True when the title came from a detected chapter heading. Chapters whose
+  // content was not found under a heading (paragraph fallback, or stray text
+  // split off by the segment regex) are merged into the preceding detected
+  // chapter instead of becoming bogus TOC entries. See issue #4063.
+  detected?: boolean;
 }
 
 interface Txt2EpubOptions {
@@ -242,10 +247,28 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
 
     return chapters;
+  }
+
+  /**
+   * Append a segment's chapters to the running list. The segment regex also
+   * splits on dash dividers, which authors frequently use as in-chapter scene
+   * breaks; the content after such a divider has no heading of its own. When a
+   * heading-less chapter follows a detected chapter, merge its content into
+   * that chapter instead of emitting a separate (bogus) TOC entry. See #4063.
+   */
+  private appendSegmentChapters(chapters: Chapter[], segmentChapters: Chapter[]): void {
+    for (const chapter of segmentChapters) {
+      const previous = chapters[chapters.length - 1];
+      if (!chapter.detected && previous?.detected) {
+        previous.content += chapter.content.replace(/^<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/, '');
+      } else {
+        chapters.push(chapter);
+      }
+    }
   }
 
   private probeChapterCount(
@@ -286,7 +309,7 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
     return chapters;
   }
@@ -545,7 +568,7 @@ export class TxtToEpubConverter {
         const formattedSegment = this.formatSegment(chunks.join('\n'));
         const title = `${chapterOffset + chapters.length + 1}`;
         const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-        chapters.push({ title, content, isVolume: false });
+        chapters.push({ title, content, isVolume: false, detected: false });
       }
       return chapters;
     }
@@ -568,6 +591,7 @@ export class TxtToEpubConverter {
         title: escapeXml(title),
         content: `${headTitle}<p>${formattedSegment}</p>`,
         isVolume,
+        detected: true,
       });
     }
 
@@ -582,6 +606,7 @@ export class TxtToEpubConverter {
         title: escapeXml(segmentTitle),
         content: `<h3></h3><p>${formattedSegment}</p>`,
         isVolume: false,
+        detected: false,
       });
     }
 
