@@ -47,6 +47,12 @@ import {
 import { syncLibrary } from '@/services/webdav/WebDAVSync';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
 import { EXTS } from '@/libs/document';
+import {
+  WEBDAV_SYNC_LOG_LIMIT,
+  WebDAVSyncLogEntry,
+  WebDAVSyncLogFailure,
+  WebDAVSyncLogStatus,
+} from '@/types/settings';
 import SubPageHeader from '../SubPageHeader';
 import {
   BoxedList,
@@ -227,8 +233,20 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   // —— Sync sub-toggles & manual triggers ——
   // The toggles persist via saveSettings synchronously (debouncing isn't
   // worth the extra state — users tap each toggle at most once per session).
+  //
+  // IMPORTANT: read latest settings from the store (NOT the closure
+  // variable) when computing `next`. `handleSyncNow` issues two
+  // back-to-back persistWebdav calls — first `lastSyncedAt`, then
+  // `syncLog`. The closure's `settings` was captured before either
+  // write landed, so a closure-based merge would clobber the freshly-
+  // written `lastSyncedAt` when the second call rebuilds the webdav
+  // object from the stale snapshot. Symptom: the "Last synced" label
+  // stays pinned to the previous value while the Sync History row
+  // shows the up-to-date timestamp. Use `useSettingsStore.getState()`
+  // so each call merges into whatever's currently committed.
   const persistWebdav = async (patch: Partial<typeof stored>) => {
-    const next = { ...settings, webdav: { ...settings.webdav, ...patch } };
+    const latest = useSettingsStore.getState().settings;
+    const next = { ...latest, webdav: { ...latest.webdav, ...patch } };
     setSettings(next);
     await saveSettings(envConfig, next);
   };
@@ -239,6 +257,29 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   const handleToggleSyncBooks = () => persistWebdav({ syncBooks: !(stored?.syncBooks ?? false) });
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     await persistWebdav({ strategy: e.target.value as typeof stored.strategy });
+  };
+
+  /**
+   * Append a diagnostic entry to the bounded sync history.
+   *
+   * We deliberately re-read settings from the store at write time
+   * (rather than closing over `stored`) so concurrent updates — e.g.
+   * the user flips the syncBooks toggle while a Sync now is in flight —
+   * don't clobber each other. The 10-entry cap matches
+   * `WEBDAV_SYNC_LOG_LIMIT` and trims oldest-first; we keep the
+   * persisted JSON small so settings.json round-trips on every app
+   * start stay cheap.
+   */
+  const appendSyncLogEntry = async (entry: WebDAVSyncLogEntry) => {
+    const current = useSettingsStore.getState().settings.webdav?.syncLog ?? [];
+    // Newest first — UI renders in array order, so unshift keeps the
+    // freshest run at the top without reversing on every render.
+    const next = [entry, ...current].slice(0, WEBDAV_SYNC_LOG_LIMIT);
+    await persistWebdav({ syncLog: next });
+  };
+
+  const handleClearSyncLog = async () => {
+    await persistWebdav({ syncLog: [] });
   };
 
   /**
@@ -278,6 +319,11 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     }
 
     setSyncProgressLabel(_('Syncing 0 / {{total}}', { total: eligibleBooks.length }));
+
+    // Captured before the run begins so we can attribute startedAt
+    // accurately even when the run fails in the catch block (the
+    // pre-flight library load can take a moment on slow disks).
+    const startedAt = Date.now();
 
     try {
       const result = await syncLibrary(stored, eligibleBooks, {
@@ -438,12 +484,67 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         type: toastType,
         message: summary,
       });
+      // Append a diagnostic entry to the persistent sync log. Status
+      // mirrors the toast classification: warning toast → 'partial'
+      // (some failures, some ok); info/success toast → 'success'. We
+      // also collapse the per-book failure phase + reason into the
+      // shape the UI expects (no internal type leakage into settings).
+      const status: WebDAVSyncLogStatus = result.failures > 0 ? 'partial' : 'success';
+      const failedBooks: WebDAVSyncLogFailure[] | undefined =
+        result.failedBooks.length > 0
+          ? result.failedBooks.map((f) => ({
+              hash: f.hash,
+              title: f.title,
+              reason: `[${f.phase}] ${f.reason}`,
+            }))
+          : undefined;
+      const entry: WebDAVSyncLogEntry = {
+        id: uuidv4(),
+        startedAt,
+        finishedAt: Date.now(),
+        status,
+        trigger: 'manual',
+        totalBooks: result.totalBooks,
+        booksDownloaded: result.booksDownloaded,
+        filesUploaded: result.filesUploaded,
+        filesAlreadyInSync: result.filesAlreadyInSync,
+        configsUploaded: result.configsUploaded,
+        configsDownloaded: result.configsDownloaded,
+        coversUploaded: result.coversUploaded,
+        failures: result.failures,
+        summary,
+        failedBooks,
+      };
+      await appendSyncLogEntry(entry);
     } catch (e) {
       const message =
         e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED'
           ? _('WebDAV authentication failed. Reconnect in Settings.')
           : _('Sync failed: {{error}}', { error: (e as Error).message ?? String(e) });
       eventDispatcher.dispatch('toast', { type: 'error', message });
+      // Persist a "failure" entry so the user can show what went wrong
+      // without rummaging through the dev console. We don't have a
+      // SyncLibraryResult to draw counters from (the run aborted before
+      // returning), so all the count fields stay zero except totalBooks
+      // for context.
+      const entry: WebDAVSyncLogEntry = {
+        id: uuidv4(),
+        startedAt,
+        finishedAt: Date.now(),
+        status: 'failure',
+        trigger: 'manual',
+        totalBooks: eligibleBooks.length,
+        booksDownloaded: 0,
+        filesUploaded: 0,
+        filesAlreadyInSync: 0,
+        configsUploaded: 0,
+        configsDownloaded: 0,
+        coversUploaded: 0,
+        failures: 0,
+        summary: message,
+        errorMessage: e instanceof Error ? e.message : String(e),
+      };
+      await appendSyncLogEntry(entry);
     } finally {
       setSyncProgressLabel(null);
     }
@@ -638,6 +739,14 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
               </button>
             </SettingsRow>
           </BoxedList>
+
+          {/* Sync history panel — diagnostic surface for users to
+              screenshot when reporting issues. Collapsed by default to
+              keep the page compact; opens to show the most-recent ten
+              runs with full counters and per-book failures. We render
+              even when the log is empty so users can find where it
+              lives before their first run. */}
+          <SyncHistoryPanel entries={stored.syncLog ?? []} onClear={handleClearSyncLog} t={_} />
 
           <div className='flex items-center justify-between gap-3 px-1'>
             <div className='flex min-w-0 items-center gap-2'>
@@ -1042,6 +1151,294 @@ const getEntryIcon = (filename: string): React.ComponentType<{ className?: strin
     default:
       return MdInsertDriveFile;
   }
+};
+
+/**
+ * Diagnostic surface for the most-recent ten Sync now runs.
+ *
+ * Why a separate component (rather than inline JSX in WebDAVForm):
+ *  - Lets the outer form file stay legible at ~1000 lines; the panel
+ *    has its own state model (which entry is expanded) that doesn't
+ *    belong in the parent.
+ *  - Keeps the rendering of an entry — counters, failure list,
+ *    duration — colocated with the component that owns it. The parent
+ *    only knows about "the log" as a whole and how to clear it.
+ *
+ * The component is presentational: all persistence happens in the
+ * parent (`appendSyncLogEntry` / `handleClearSyncLog`). We accept the
+ * translation function `t` rather than calling `useTranslation` here
+ * so the parent can keep a single source of locale truth.
+ */
+interface SyncHistoryPanelProps {
+  entries: WebDAVSyncLogEntry[];
+  onClear: () => void | Promise<void>;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t }) => {
+  // Only one entry expanded at a time keeps the panel scannable on
+  // mobile — multiple open rows can quickly push the disconnect button
+  // off-screen. Set to null when no row is expanded.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const hasEntries = entries.length > 0;
+
+  return (
+    <BoxedList>
+      <SettingsRow
+        label={t('Sync History')}
+        description={t("Manual syncs only — automatic syncs while reading aren't logged here.")}
+      >
+        {hasEntries ? (
+          <button
+            type='button'
+            onClick={() => onClear()}
+            className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
+            title={t('Clear Sync History')}
+            aria-label={t('Clear Sync History')}
+          >
+            {t('Clear')}
+          </button>
+        ) : (
+          <span className='text-base-content/50 text-xs'>{t('No manual syncs yet')}</span>
+        )}
+      </SettingsRow>
+      {hasEntries && (
+        <ul className='divide-base-200 divide-y'>
+          {entries.map((entry) => {
+            const isExpanded = expandedId === entry.id;
+            return (
+              <li key={entry.id} className='px-4 py-3'>
+                <button
+                  type='button'
+                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                  className='group flex w-full items-center gap-3 text-left'
+                  aria-expanded={isExpanded}
+                >
+                  <SyncStatusBadge status={entry.status} t={t} />
+                  <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+                    <span className='text-sm'>{formatSyncSummaryLine(entry, t)}</span>
+                    <span className='text-base-content/60 text-[0.75em]'>
+                      {formatSyncTimestamp(entry.startedAt, entry.finishedAt, t)}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      'text-base-content/50 transition-transform',
+                      isExpanded && 'rotate-90',
+                    )}
+                    aria-hidden
+                  >
+                    ›
+                  </span>
+                </button>
+                {isExpanded && <SyncHistoryDetails entry={entry} t={t} />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </BoxedList>
+  );
+};
+
+/**
+ * Coloured pill summarising an entry's status. We pick semantic
+ * Tailwind utilities (success / warning / error) so the badge respects
+ * the user's theme (eink, dark, light) without per-mode overrides.
+ */
+const SyncStatusBadge: React.FC<{ status: WebDAVSyncLogStatus; t: SyncHistoryPanelProps['t'] }> = ({
+  status,
+  t,
+}) => {
+  const map: Record<WebDAVSyncLogStatus, { label: string; className: string }> = {
+    success: { label: t('OK'), className: 'bg-success/15 text-success' },
+    partial: { label: t('Partial'), className: 'bg-warning/15 text-warning' },
+    failure: { label: t('Failed'), className: 'bg-error/15 text-error' },
+  };
+  const { label, className } = map[status];
+  return (
+    <span
+      className={clsx(
+        'flex h-6 flex-shrink-0 items-center rounded px-2 text-[0.7rem] font-medium',
+        className,
+      )}
+    >
+      {label}
+    </span>
+  );
+};
+
+/**
+ * Build the one-line summary shown next to each history row's status
+ * badge. We re-derive it from the structured counters (rather than
+ * reusing the toast's `entry.summary`) so the text in the log stays
+ * compact even when the original toast was multi-line.
+ */
+const formatSyncSummaryLine = (
+  entry: WebDAVSyncLogEntry,
+  t: SyncHistoryPanelProps['t'],
+): string => {
+  if (entry.status === 'failure') {
+    return entry.errorMessage || t('Sync failed');
+  }
+  const parts: string[] = [];
+  if (entry.booksDownloaded > 0) {
+    parts.push(t('{{n}} downloaded', { n: entry.booksDownloaded }));
+  }
+  if (entry.filesUploaded > 0) {
+    parts.push(t('{{n}} uploaded', { n: entry.filesUploaded }));
+  }
+  if (entry.configsUploaded > 0 || entry.configsDownloaded > 0) {
+    parts.push(t('{{n}} progress', { n: entry.configsUploaded + entry.configsDownloaded }));
+  }
+  if (entry.failures > 0) {
+    parts.push(t('{{n}} failed', { n: entry.failures }));
+  }
+  return parts.length > 0 ? parts.join(' · ') : t('Up to date');
+};
+
+/**
+ * "Mar 18, 14:32 · 4.2 s" — short locale-aware timestamp plus a
+ * duration so users can spot abnormally slow runs at a glance.
+ */
+const formatSyncTimestamp = (
+  startedAt: number,
+  finishedAt: number,
+  t: SyncHistoryPanelProps['t'],
+): string => {
+  const when = new Date(startedAt).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const durMs = Math.max(0, finishedAt - startedAt);
+  const dur = durMs >= 1000 ? `${(durMs / 1000).toFixed(1)} s` : `${durMs} ms`;
+  return t('{{when}} · {{dur}}', { when, dur });
+};
+
+/**
+ * Expanded body of one history entry: the full counter grid plus the
+ * per-book failure list when present. Counters that are zero are
+ * suppressed so the grid only shows what actually happened — a
+ * partial-failure row with three items is much easier to read than
+ * the same row with seven zeroes interleaved.
+ */
+const SyncHistoryDetails: React.FC<{
+  entry: WebDAVSyncLogEntry;
+  t: SyncHistoryPanelProps['t'];
+}> = ({ entry, t }) => {
+  // Counters are grouped semantically so the user can scan them at a
+  // glance instead of treating eight numbers as a flat blob:
+  //   - "activity": work performed during this run
+  //   - "skipped":  work that was deduped / no-op'd
+  //   - "outcome":  totals + failure count for at-a-glance triage
+  // Each group renders independently and is separated by a divider so
+  // it's visually obvious that "Configs uploaded" and "Total books"
+  // are different things — they previously sat side-by-side in a
+  // single grid which read as one block.
+  const groups: { label: string; value: number }[][] = [
+    [
+      { label: t('Books downloaded'), value: entry.booksDownloaded },
+      { label: t('Files uploaded'), value: entry.filesUploaded },
+      { label: t('Configs uploaded'), value: entry.configsUploaded },
+      { label: t('Configs downloaded'), value: entry.configsDownloaded },
+      { label: t('Covers uploaded'), value: entry.coversUploaded },
+    ],
+    [{ label: t('Files in sync'), value: entry.filesAlreadyInSync }],
+    [
+      { label: t('Failures'), value: entry.failures },
+      { label: t('Total books'), value: entry.totalBooks },
+    ],
+  ]
+    // Suppress zero-only groups entirely so we don't render an empty
+    // section + divider for a group whose every counter happens to be
+    // zero this run (common: 'skipped' and 'outcome' rows on a quiet
+    // sync). The within-group filter keeps individual zero entries out
+    // of mixed groups.
+    .map((group) => group.filter((c) => c.value > 0))
+    .filter((group) => group.length > 0);
+
+  return (
+    <div className='mt-3 flex flex-col gap-3 pl-9'>
+      {groups.length > 0 && (
+        // Six-column grid: each of the three semantic groups occupies
+        // a (label-column, value-column) pair. Label columns flex with
+        // available space and wrap naturally for long strings like
+        // "Configs uploaded"; value columns are sized to content so
+        // the numbers stay tightly packed against their labels. Border
+        // dividers between every other column visually separate the
+        // three groups; we draw them with `border-l` on columns 3 and
+        // 5 rather than CSS `divide-x` because divide-x can't honour
+        // the "skip every two columns" pattern.
+        <div
+          className={clsx(
+            'border-base-200 grid rounded border',
+            'gap-x-3 gap-y-2 px-3 py-2 text-xs',
+          )}
+          style={{
+            gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto',
+          }}
+        >
+          {(() => {
+            // All three columns share row count to keep the grid rows
+            // aligned. Compute it once outside the per-group map so
+            // each column sees the same value.
+            const maxRows = Math.max(...groups.map((g) => g.length), 0);
+            return [0, 1, 2].map((groupIdx) => {
+              const group = groups[groupIdx] ?? [];
+              const cells: React.ReactNode[] = [];
+              for (let row = 0; row < maxRows; row++) {
+                const c = group[row];
+                cells.push(
+                  <div
+                    key={`l-${groupIdx}-${row}`}
+                    className={clsx(
+                      'text-base-content/60 leading-tight',
+                      // Group separator: every group except the first
+                      // gets a left border on its label column. The
+                      // negative left margin offsets the gap so the
+                      // line falls inside the gutter rather than
+                      // beside the text itself.
+                      groupIdx > 0 && 'border-base-200 -ml-3 border-l pl-3',
+                    )}
+                  >
+                    {c?.label ?? ''}
+                  </div>,
+                );
+                cells.push(
+                  <div key={`v-${groupIdx}-${row}`} className='text-end font-medium tabular-nums'>
+                    {c?.value ?? ''}
+                  </div>,
+                );
+              }
+              return cells;
+            });
+          })()}
+        </div>
+      )}
+      {entry.errorMessage && (
+        <div className='text-error/90 break-words text-xs'>
+          <span className='text-base-content/60 mr-1'>{t('Error:')}</span>
+          {entry.errorMessage}
+        </div>
+      )}
+      {entry.failedBooks && entry.failedBooks.length > 0 && (
+        <div className='flex flex-col gap-1'>
+          <span className='text-base-content/60 text-xs'>{t('Failed books')}</span>
+          <ul className='flex flex-col gap-1 text-xs'>
+            {entry.failedBooks.map((f) => (
+              <li key={f.hash} className='border-base-200 break-words rounded border px-2 py-1.5'>
+                <div className='font-medium'>{f.title}</div>
+                <div className='text-base-content/70 mt-0.5'>{f.reason}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default WebDAVForm;

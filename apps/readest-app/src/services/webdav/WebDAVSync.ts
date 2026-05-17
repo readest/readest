@@ -51,6 +51,22 @@ export interface RemoteBookConfig {
  * Convert the live local BookConfig into the wire envelope. We deliberately
  * drop transient view state (search config, RSVP position, viewSettings,
  * etc.) — those are device-local UI preferences, not progress.
+ *
+ * Why viewSettings stays local even though it lives in BookConfig:
+ *   - Different devices have different screen sizes / DPI / typography
+ *     preferences. Pushing a phone's 14pt setting onto a desktop would
+ *     surprise users in a bad way.
+ *   - readest's own cloud sync similarly carves out viewSettings from
+ *     cross-device replication. Duplicating that policy here keeps the
+ *     two backends behaviourally aligned.
+ *   - The trim list below is the SOURCE OF TRUTH for what travels —
+ *     when adding a new BookConfig field, decide here whether it's a
+ *     "reading state" (include) or a "device preference" (skip).
+ *
+ * Anything not in `trimmed` therefore never reaches the server, and
+ * conversely `pullBookConfig` only ever merges fields the server
+ * actually carries (see filteredRemote spread there) — so a malicious
+ * or buggy server can't somehow inject viewSettings into a local config.
  */
 const buildRemotePayload = (book: Book, config: BookConfig, deviceId: string): RemoteBookConfig => {
   const trimmed: Partial<BookConfig> = {
@@ -157,6 +173,14 @@ export const pullBookConfig = async (
   // cloud sync uses in useProgressSync.applyRemoteProgress.
   const remoteConfigUpdated = remote.config.updatedAt ?? remote.updatedAt;
   const localConfigUpdated = localConfig.updatedAt ?? 0;
+  // Drop null/undefined fields the server might have left in (e.g. an
+  // older client that didn't write `xpointer`). Crucially, this also
+  // means the spread below can NEVER introduce server-driven values for
+  // keys the server isn't supposed to care about (viewSettings,
+  // searchConfig, RSVP) — those keys never appear in `remote.config` to
+  // begin with because `buildRemotePayload` strips them on push. The
+  // invariant "wire envelope only carries reading state" therefore
+  // protects pull as well as push.
   const filteredRemote = Object.fromEntries(
     Object.entries(remote.config).filter(([, v]) => v !== null && v !== undefined),
   ) as Partial<BookConfig>;
@@ -412,6 +436,23 @@ export interface SyncLibraryResult {
   coversUploaded: number;
   booksDownloaded: number;
   failures: number;
+  /**
+   * Per-book failure breakdown for the diagnostic log surfaced in the
+   * Settings UI. Populated alongside `failures` so the user-facing log
+   * can show which books failed and why without needing to re-run with
+   * verbose console output. `reason` is a short single-line string —
+   * the caller is responsible for truncating server XML / stacks
+   * before persisting.
+   */
+  failedBooks: SyncFailureEntry[];
+}
+
+export interface SyncFailureEntry {
+  hash: string;
+  title: string;
+  reason: string;
+  /** Which phase of the per-book pipeline failed; helps users self-triage. */
+  phase: 'download' | 'upload-config' | 'upload-file' | 'upload-cover';
 }
 
 export interface SyncLibraryOptions {
@@ -480,6 +521,40 @@ export interface SyncLibraryOptions {
  * single bad apple doesn't abort the rest of the library. The aggregate
  * counters returned to the caller drive the final toast.
  */
+/**
+ * Reduce an arbitrary error to a short, single-line description suitable
+ * for surfacing in the user-visible sync log.
+ *
+ * Goals:
+ *   - Strip stack traces and any embedded server XML so the persisted
+ *     `syncLog` in settings.json doesn't bloat (settings is read on every
+ *     app start, so size matters).
+ *   - Preserve the semantically useful bits — HTTP status, our own
+ *     `code` enum (`AUTH_FAILED`, `NOT_FOUND`, `NETWORK`) — because that
+ *     is what tells a user whether they should re-tap or fix their
+ *     credentials.
+ *   - Cap at 200 chars so a runaway server response doesn't make a
+ *     single failure entry dominate the log file.
+ */
+const formatFailureReason = (e: unknown): string => {
+  let message: string;
+  if (e instanceof WebDAVRequestError) {
+    const parts: string[] = [];
+    if (e.code) parts.push(e.code);
+    if (typeof e.status === 'number') parts.push(`HTTP ${e.status}`);
+    parts.push(e.message || 'Request failed');
+    message = parts.join(' · ');
+  } else if (e instanceof Error) {
+    message = e.message || e.name || 'Unknown error';
+  } else {
+    message = String(e);
+  }
+  // Collapse whitespace (newlines, tabs from server XML) to single spaces
+  // so the entry stays a true one-liner in the UI.
+  message = message.replace(/\s+/g, ' ').trim();
+  return message.length > 200 ? `${message.slice(0, 197)}...` : message;
+};
+
 export const syncLibrary = async (
   settings: WebDAVSettings,
   books: Book[],
@@ -494,6 +569,7 @@ export const syncLibrary = async (
     coversUploaded: 0,
     booksDownloaded: 0,
     failures: 0,
+    failedBooks: [],
   };
 
   const strategy = options.strategy || 'silent';
@@ -669,10 +745,22 @@ export const syncLibrary = async (
           // No bytes returned (typically a 404 we couldn't resolve) —
           // count as a failure so the user sees something happened.
           result.failures += 1;
+          result.failedBooks.push({
+            hash: rb.hash,
+            title: rb.title || rb.hash,
+            phase: 'download',
+            reason: 'No bytes returned (file may have been moved or deleted on the server)',
+          });
           console.warn('WD library sync: book download produced no bytes', rb.hash, explicitPath);
         }
       } catch (e) {
         result.failures += 1;
+        result.failedBooks.push({
+          hash: rb.hash,
+          title: rb.title || rb.hash,
+          phase: 'download',
+          reason: formatFailureReason(e),
+        });
         console.warn('WD library sync: book download failed', rb.hash, e);
       }
     }
@@ -689,6 +777,11 @@ export const syncLibrary = async (
     for (let i = 0; i < booksToPush.length; i += 1) {
       const book = booksToPush[i]!;
       options.onProgress?.({ book, index: i, total: booksToPush.length, action: 'uploading' });
+      // Track which step we were in when an exception escapes the inner
+      // try, so the user-facing log can pinpoint whether config / file /
+      // cover upload tripped the wire. Cover failures are caught locally
+      // (covers are best-effort) and don't update this.
+      let phase: SyncFailureEntry['phase'] = 'upload-config';
       try {
         const config = await options.loadConfig(book);
         if (config) {
@@ -696,6 +789,7 @@ export const syncLibrary = async (
           result.configsUploaded += 1;
         }
         if (options.syncBooks) {
+          phase = 'upload-file';
           const fileResult = await pushBookFile(settings, book, () => options.loadBookFile(book));
           if (fileResult.uploaded) {
             result.filesUploaded += 1;
@@ -715,6 +809,12 @@ export const syncLibrary = async (
         }
       } catch (e) {
         result.failures += 1;
+        result.failedBooks.push({
+          hash: book.hash,
+          title: book.title || book.hash,
+          phase,
+          reason: formatFailureReason(e),
+        });
         console.warn('WD library sync: book failed', book.hash, e);
       }
     }
