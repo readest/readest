@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} annotatie geïmporteerd",
   "Imported {{count}} annotations_other": "{{count}} annotaties geïmporteerd",
   "No new annotations to import": "Geen nieuwe annotaties om te importeren",
-  "Import from Moon+ Reader": "Importeren uit Moon+ Reader"
+  "Import from Moon+ Reader": "Importeren uit Moon+ Reader",
+  "Character Mode": "Tekenmodus",
+  "Highlight Word": "Woord markeren"
 }

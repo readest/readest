@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "Không thể xác định vị trí chú thích nào trong cuốn sách này.",
   "Imported {{count}} annotations_other": "Đã nhập {{count}} chú thích",
   "No new annotations to import": "Không có chú thích mới để nhập",
-  "Import from Moon+ Reader": "Nhập từ Moon+ Reader"
+  "Import from Moon+ Reader": "Nhập từ Moon+ Reader",
+  "Character Mode": "Chế độ ký tự",
+  "Highlight Word": "Tô sáng từ"
 }

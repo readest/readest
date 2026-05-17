@@ -1562,5 +1562,7 @@
   "Imported {{count}} annotations_many": "تم استيراد {{count}} تعليقًا",
   "Imported {{count}} annotations_other": "تم استيراد {{count}} تعليق",
   "No new annotations to import": "لا توجد تعليقات جديدة للاستيراد",
-  "Import from Moon+ Reader": "استيراد من Moon+ Reader"
+  "Import from Moon+ Reader": "استيراد من Moon+ Reader",
+  "Character Mode": "وضع الحروف",
+  "Highlight Word": "تمييز الكلمة"
 }

@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "ไม่พบตำแหน่งของคำอธิบายประกอบในหนังสือเล่มนี้",
   "Imported {{count}} annotations_other": "นำเข้าคำอธิบายประกอบ {{count}} รายการแล้ว",
   "No new annotations to import": "ไม่มีคำอธิบายประกอบใหม่ให้นำเข้า",
-  "Import from Moon+ Reader": "นำเข้าจาก Moon+ Reader"
+  "Import from Moon+ Reader": "นำเข้าจาก Moon+ Reader",
+  "Character Mode": "โหมดอักขระ",
+  "Highlight Word": "เน้นคำ"
 }

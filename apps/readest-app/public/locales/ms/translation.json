@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "Tiada anotasi dapat dikesan dalam buku ini.",
   "Imported {{count}} annotations_other": "{{count}} anotasi diimport",
   "No new annotations to import": "Tiada anotasi baharu untuk diimport",
-  "Import from Moon+ Reader": "Import dari Moon+ Reader"
+  "Import from Moon+ Reader": "Import dari Moon+ Reader",
+  "Character Mode": "Mod Aksara",
+  "Highlight Word": "Serlah Perkataan"
 }

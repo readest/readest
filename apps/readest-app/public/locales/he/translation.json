@@ -1478,5 +1478,7 @@
   "Imported {{count}} annotations_two": "יובאו שתי הערות",
   "Imported {{count}} annotations_other": "יובאו {{count}} הערות",
   "No new annotations to import": "אין הערות חדשות לייבוא",
-  "Import from Moon+ Reader": "ייבוא מ-Moon+ Reader"
+  "Import from Moon+ Reader": "ייבוא מ-Moon+ Reader",
+  "Character Mode": "מצב תווים",
+  "Highlight Word": "הדגשת מילה"
 }

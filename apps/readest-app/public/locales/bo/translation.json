@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "དཔེ་ཆ་འདིའི་ནང་མཆན་འགྲེལ་གང་ཡང་གནས་ས་ངོས་འཛིན་མ་ཐུབ།",
   "Imported {{count}} annotations_other": "མཆན་འགྲེལ་ {{count}} ནང་འདྲེན་བྱས་ཟིན།",
   "No new annotations to import": "ནང་འདྲེན་བྱ་རྒྱུའི་མཆན་འགྲེལ་གསར་པ་མེད།",
-  "Import from Moon+ Reader": "Moon+ Reader ནས་ནང་འདྲེན།"
+  "Import from Moon+ Reader": "Moon+ Reader ནས་ནང་འདྲེན།",
+  "Character Mode": "ཡིག་འབྲུའི་སྒྲིག་སྟངས།",
+  "Highlight Word": "ཐ་སྙད་གསལ་སྟོན།"
 }

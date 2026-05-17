@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "Tidak ada anotasi yang dapat ditemukan di buku ini.",
   "Imported {{count}} annotations_other": "{{count}} anotasi diimpor",
   "No new annotations to import": "Tidak ada anotasi baru untuk diimpor",
-  "Import from Moon+ Reader": "Impor dari Moon+ Reader"
+  "Import from Moon+ Reader": "Impor dari Moon+ Reader",
+  "Character Mode": "Mode Karakter",
+  "Highlight Word": "Sorot Kata"
 }

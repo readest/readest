@@ -1478,5 +1478,7 @@
   "Imported {{count}} annotations_few": "{{count}} adnotări importate",
   "Imported {{count}} annotations_other": "{{count}} de adnotări importate",
   "No new annotations to import": "Nicio adnotare nouă de importat",
-  "Import from Moon+ Reader": "Importă din Moon+ Reader"
+  "Import from Moon+ Reader": "Importă din Moon+ Reader",
+  "Character Mode": "Mod caracter",
+  "Highlight Word": "Evidențiere cuvânt"
 }

@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "이 책에서 주석의 위치를 찾을 수 없습니다.",
   "Imported {{count}} annotations_other": "주석 {{count}}개를 가져왔습니다",
   "No new annotations to import": "가져올 새 주석이 없습니다",
-  "Import from Moon+ Reader": "Moon+ Reader에서 가져오기"
+  "Import from Moon+ Reader": "Moon+ Reader에서 가져오기",
+  "Character Mode": "글자 모드",
+  "Highlight Word": "단어 강조"
 }

@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} jegyzet importálva",
   "Imported {{count}} annotations_other": "{{count}} jegyzet importálva",
   "No new annotations to import": "Nincs új importálható jegyzet",
-  "Import from Moon+ Reader": "Importálás Moon+ Reader programból"
+  "Import from Moon+ Reader": "Importálás Moon+ Reader programból",
+  "Character Mode": "Karakter mód",
+  "Highlight Word": "Szó kiemelése"
 }

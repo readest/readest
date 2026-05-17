@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "Εισήχθη {{count}} σχόλιο",
   "Imported {{count}} annotations_other": "Εισήχθησαν {{count}} σχόλια",
   "No new annotations to import": "Δεν υπάρχουν νέα σχόλια για εισαγωγή",
-  "Import from Moon+ Reader": "Εισαγωγή από Moon+ Reader"
+  "Import from Moon+ Reader": "Εισαγωγή από Moon+ Reader",
+  "Character Mode": "Λειτουργία χαρακτήρων",
+  "Highlight Word": "Επισήμανση λέξης"
 }

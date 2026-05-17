@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} anteckning importerad",
   "Imported {{count}} annotations_other": "{{count}} anteckningar importerade",
   "No new annotations to import": "Inga nya anteckningar att importera",
-  "Import from Moon+ Reader": "Importera från Moon+ Reader"
+  "Import from Moon+ Reader": "Importera från Moon+ Reader",
+  "Character Mode": "Teckenläge",
+  "Highlight Word": "Markera ord"
 }

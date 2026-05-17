@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "この本で注釈の位置を特定できませんでした。",
   "Imported {{count}} annotations_other": "{{count}} 件の注釈をインポートしました",
   "No new annotations to import": "インポートする新しい注釈はありません",
-  "Import from Moon+ Reader": "Moon+ Reader からインポート"
+  "Import from Moon+ Reader": "Moon+ Reader からインポート",
+  "Character Mode": "文字モード",
+  "Highlight Word": "単語を強調"
 }

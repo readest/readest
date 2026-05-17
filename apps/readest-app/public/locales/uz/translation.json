@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} ta izoh import qilindi",
   "Imported {{count}} annotations_other": "{{count}} ta izoh import qilindi",
   "No new annotations to import": "Import qilish uchun yangi izohlar yoʻq",
-  "Import from Moon+ Reader": "Moon+ Reader’dan import qilish"
+  "Import from Moon+ Reader": "Moon+ Reader’dan import qilish",
+  "Character Mode": "Belgi rejimi",
+  "Highlight Word": "So'zni ajratish"
 }

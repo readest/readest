@@ -1478,5 +1478,7 @@
   "Imported {{count}} annotations_many": "{{count}} annotazioni importate",
   "Imported {{count}} annotations_other": "{{count}} annotazioni importate",
   "No new annotations to import": "Nessuna nuova annotazione da importare",
-  "Import from Moon+ Reader": "Importa da Moon+ Reader"
+  "Import from Moon+ Reader": "Importa da Moon+ Reader",
+  "Character Mode": "Modalità carattere",
+  "Highlight Word": "Evidenzia parola"
 }

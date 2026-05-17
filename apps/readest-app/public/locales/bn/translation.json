@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}}টি টীকা ইম্পোর্ট করা হয়েছে",
   "Imported {{count}} annotations_other": "{{count}}টি টীকা ইম্পোর্ট করা হয়েছে",
   "No new annotations to import": "ইম্পোর্ট করার জন্য কোনো নতুন টীকা নেই",
-  "Import from Moon+ Reader": "Moon+ Reader থেকে ইম্পোর্ট করুন"
+  "Import from Moon+ Reader": "Moon+ Reader থেকে ইম্পোর্ট করুন",
+  "Character Mode": "অক্ষর মোড",
+  "Highlight Word": "শব্দ হাইলাইট"
 }

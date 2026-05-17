@@ -1422,5 +1422,7 @@
   "No annotations could be located in this book.": "无法在本书中定位任何注释。",
   "Imported {{count}} annotations_other": "已导入 {{count}} 条注释",
   "No new annotations to import": "没有可导入的新注释",
-  "Import from Moon+ Reader": "从 Moon+ Reader 导入"
+  "Import from Moon+ Reader": "从 Moon+ Reader 导入",
+  "Character Mode": "单字模式",
+  "Highlight Word": "高亮整词"
 }

@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "සටහන් {{count}}ක් ආයාත කරන ලදී",
   "Imported {{count}} annotations_other": "සටහන් {{count}}ක් ආයාත කරන ලදී",
   "No new annotations to import": "ආයාත කිරීමට නව සටහන් නැත",
-  "Import from Moon+ Reader": "Moon+ Reader වෙතින් ආයාත කරන්න"
+  "Import from Moon+ Reader": "Moon+ Reader වෙතින් ආයාත කරන්න",
+  "Character Mode": "අක්ෂර ප්‍රකාරය",
+  "Highlight Word": "වචනය උද්දීපනය"
 }

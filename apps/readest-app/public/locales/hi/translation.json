@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} एनोटेशन आयात किया गया",
   "Imported {{count}} annotations_other": "{{count}} एनोटेशन आयात किए गए",
   "No new annotations to import": "आयात करने के लिए कोई नया एनोटेशन नहीं",
-  "Import from Moon+ Reader": "Moon+ Reader से आयात करें"
+  "Import from Moon+ Reader": "Moon+ Reader से आयात करें",
+  "Character Mode": "वर्ण मोड",
+  "Highlight Word": "शब्द हाइलाइट करें"
 }

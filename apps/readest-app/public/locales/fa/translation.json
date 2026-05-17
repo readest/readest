@@ -1450,5 +1450,7 @@
   "Imported {{count}} annotations_one": "{{count}} یادداشت وارد شد",
   "Imported {{count}} annotations_other": "{{count}} یادداشت وارد شد",
   "No new annotations to import": "یادداشت جدیدی برای وارد کردن وجود ندارد",
-  "Import from Moon+ Reader": "وارد کردن از Moon+ Reader"
+  "Import from Moon+ Reader": "وارد کردن از Moon+ Reader",
+  "Character Mode": "حالت نویسه",
+  "Highlight Word": "برجسته‌سازی واژه"
 }

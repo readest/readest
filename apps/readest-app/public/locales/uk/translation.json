@@ -1506,5 +1506,7 @@
   "Imported {{count}} annotations_many": "Імпортовано {{count}} анотацій",
   "Imported {{count}} annotations_other": "Імпортовано {{count}} анотацій",
   "No new annotations to import": "Немає нових анотацій для імпорту",
-  "Import from Moon+ Reader": "Імпорт із Moon+ Reader"
+  "Import from Moon+ Reader": "Імпорт із Moon+ Reader",
+  "Character Mode": "Посимвольний режим",
+  "Highlight Word": "Підсвічування слова"
 }
