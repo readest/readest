@@ -190,6 +190,45 @@ export function mergeBookMetadata(current: Book, backup: Book): Book {
   return base;
 }
 
+/** A book restored from a backup whose local copy had been soft-deleted. */
+export interface RevivedBook {
+  /** The live library record, mutated in place by `reviveRestoredBooks`. */
+  book: Book;
+  /** The book's metadata as stored in the backup. */
+  backup: Book;
+}
+
+/**
+ * Fix up books revived from a backup — present (not deleted) in the backup
+ * but soft-deleted in the current library — see issue #4098.
+ *
+ * Their files were just re-extracted, so `downloadedAt` / `coverDownloadedAt`
+ * are taken from the backup record (the local deletion had cleared them).
+ *
+ * `updatedAt` is bumped so the restore out-ranks the cloud's deletion
+ * tombstone in the next sync's last-writer-wins merge. A single uniform
+ * offset is applied to every revived book, so their relative `updatedAt`
+ * order — and thus the library's "Updated" sort — is preserved exactly.
+ * `syncedAt` is cleared so the next push re-uploads them and corrects the
+ * cloud rows. Mutates the `book` of each entry in place.
+ */
+export function reviveRestoredBooks(revived: RevivedBook[], now: number = Date.now()): void {
+  if (revived.length === 0) return;
+  let maxUpdatedAt = 0;
+  for (const { book } of revived) {
+    if (book.updatedAt > maxUpdatedAt) maxUpdatedAt = book.updatedAt;
+  }
+  // offset >= 1 guarantees every book out-ranks its (un-bumped) cloud copy
+  // while a single shared offset keeps their relative order intact.
+  const offset = Math.max(1, now - maxUpdatedAt);
+  for (const { book, backup } of revived) {
+    book.updatedAt += offset;
+    book.syncedAt = null;
+    book.downloadedAt = backup.downloadedAt ?? book.downloadedAt ?? now;
+    book.coverDownloadedAt = backup.coverDownloadedAt ?? book.coverDownloadedAt ?? now;
+  }
+}
+
 /** Library metadata files to skip from the directory scan. */
 const LIBRARY_META_FILES = new Set([
   'library.json',
@@ -374,6 +413,7 @@ export async function restoreFromBackupZip(
 
   let booksAdded = 0;
   let booksUpdated = 0;
+  const revivedBooks: RevivedBook[] = [];
   const total = backupBooks.length + orphanHashes.size;
 
   for (let i = 0; i < backupBooks.length; i++) {
@@ -410,8 +450,12 @@ export async function restoreFromBackupZip(
         }
       }
 
-      // Merge book metadata (timestamps, deletedAt reconciliation)
+      // Merge book metadata (timestamps, deletedAt reconciliation). A book
+      // deleted locally but present in the backup is "revived" — collect it
+      // so its download state and updatedAt can be fixed up after the loop.
+      const wasRevived = !!existingBook.deletedAt && !backupBook.deletedAt;
       Object.assign(existingBook, mergeBookMetadata(existingBook, backupBook));
+      if (wasRevived) revivedBooks.push({ book: existingBook, backup: backupBook });
       booksUpdated++;
     } else {
       // Add new book: extract all files
@@ -463,6 +507,10 @@ export async function restoreFromBackupZip(
       console.warn(`Failed to import orphan book from ${hash}:`, error);
     }
   }
+
+  // Make revived books out-rank the cloud's deletion tombstone in the
+  // next sync, without disturbing the library's "Updated" sort order.
+  reviveRestoredBooks(revivedBooks);
 
   // Save merged library
   await appService.saveLibraryBooks(currentBooks);
