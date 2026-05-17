@@ -396,7 +396,10 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export const BOOK_CONFIG_SCHEMA_VERSION = 1;
+
 export interface BookConfig {
+  schemaVersion?: number;
   bookHash?: string;
   metaHash?: string;
   progress?: [number, number]; // [current pagenum, total pagenum], 1-based page number

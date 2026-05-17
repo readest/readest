@@ -1,4 +1,17 @@
-import { BookConfig, BookSearchConfig, ViewSettings } from '@/types/book';
+import {
+  BOOK_CONFIG_SCHEMA_VERSION,
+  BookConfig,
+  BookSearchConfig,
+  ViewSettings,
+} from '@/types/book';
+
+export const stampBookConfigSchema = <T extends Partial<BookConfig>>(config: T): T => {
+  return { ...config, schemaVersion: BOOK_CONFIG_SCHEMA_VERSION };
+};
+
+export const serializeRawConfig = (config: Partial<BookConfig>): string => {
+  return JSON.stringify(stampBookConfigSchema(config));
+};
 
 export const serializeConfig = (
   config: BookConfig,
@@ -26,6 +39,7 @@ export const serializeConfig = (
     },
     {} as Partial<BookSearchConfig>,
   ) as Partial<BookSearchConfig>;
+  config.schemaVersion = BOOK_CONFIG_SCHEMA_VERSION;
 
   return JSON.stringify(config);
 };
@@ -39,6 +53,7 @@ export const deserializeConfig = (
   const { viewSettings, searchConfig } = config;
   config.viewSettings = { ...globalViewSettings, ...viewSettings };
   config.searchConfig = { ...defaultSearchConfig, ...searchConfig };
+  config.schemaVersion ??= BOOK_CONFIG_SCHEMA_VERSION;
   config.updatedAt ??= Date.now();
   return config;
 };

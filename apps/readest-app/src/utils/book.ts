@@ -1,5 +1,11 @@
 import { BookMetadata, EXTS } from '@/libs/document';
-import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
+import {
+  Book,
+  BOOK_CONFIG_SCHEMA_VERSION,
+  BookConfig,
+  BookProgress,
+  WritingMode,
+} from '@/types/book';
 import { SUPPORTED_LANGS } from '@/services/constants';
 import { getLocale, getUserLang, makeSafeFilename } from './misc';
 import { getStorageType } from './storage';
@@ -43,6 +49,7 @@ export const isBookFile = (filename: string) => {
 };
 
 export const INIT_BOOK_CONFIG: BookConfig = {
+  schemaVersion: BOOK_CONFIG_SCHEMA_VERSION,
   updatedAt: 0,
 };
 

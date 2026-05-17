@@ -4,6 +4,7 @@ import { EXTS } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { getLibraryFilename } from '@/utils/book';
+import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
 
 /** Book file extensions for identifying book files in backup directories. */
@@ -36,7 +37,7 @@ export function mergeBookConfigs(
   }
   base.booknotes = [...noteMap.values()];
 
-  return base;
+  return stampBookConfigSchema(base);
 }
 
 /**
