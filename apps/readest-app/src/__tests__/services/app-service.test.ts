@@ -1,4 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as nodePath from 'node:path';
 import { BaseDir, FileSystem, ResolvedPath } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
@@ -144,7 +145,7 @@ function createMockFs(): FileSystem {
       atime: null,
       birthtime: null,
     }),
-    getPrefix: vi.fn().mockResolvedValue('/base/books'),
+    getPrefix: vi.fn().mockResolvedValue(nodePath.join('base', 'books')),
   };
 }
 
@@ -185,7 +186,7 @@ describe('BaseAppService', () => {
     test('sets localBooksDir from fs.getPrefix', async () => {
       await service.prepareBooksDir();
       expect(mockFs.getPrefix).toHaveBeenCalledWith('Books');
-      expect(service.localBooksDir).toBe('/base/books');
+      expect(service.localBooksDir).toBe(nodePath.join('base', 'books'));
     });
   });
 
@@ -258,12 +259,12 @@ describe('BaseAppService', () => {
   describe('resolveFilePath', () => {
     test('combines prefix with path', async () => {
       const result = await service.resolveFilePath('test.json', 'Data');
-      expect(result).toBe('/base/books/test.json');
+      expect(result).toBe(nodePath.join('base', 'books', 'test.json'));
     });
 
     test('returns just prefix when path is empty', async () => {
       const result = await service.resolveFilePath('', 'Data');
-      expect(result).toBe('/base/books');
+      expect(result).toBe(nodePath.join('base', 'books'));
     });
   });
 

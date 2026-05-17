@@ -23,6 +23,7 @@ import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
 import type { ImportedDictionary } from './dictionaries/types';
 import type { SelectedFile } from '@/hooks/useFileSelector';
+import * as nodePath from 'node:path';
 
 import * as BookSvc from './bookService';
 import * as CloudSvc from './cloudService';
@@ -157,7 +158,7 @@ export abstract class BaseAppService implements AppService {
 
   async resolveFilePath(path: string, base: BaseDir): Promise<string> {
     const prefix = await this.fs.getPrefix(base);
-    return path ? `${prefix}/${path}` : prefix;
+    return path ? nodePath.join(prefix, path) : prefix;
   }
 
   async readDirectory(path: string, base: BaseDir): Promise<FileItem[]> {

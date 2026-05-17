@@ -109,9 +109,20 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
           'Dictionaries',
         ];
         const leafDir = dataDirs.includes(base) ? '' : base;
-        return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
+        return leafDir ? nodePath.join(customRootDir!, leafDir) : customRootDir!;
       }
     : undefined;
+
+  const buildFilePath = (
+    customPath: string | undefined,
+    subDir: string,
+    fp: string | undefined,
+  ): string => {
+    const filePath = fp ? fp : '';
+    return customPath
+      ? nodePath.join(customPath, subDir, filePath)
+      : nodePath.join(subDir, filePath);
+  };
 
   return (fp: string, base: BaseDir): ResolvedPath => {
     const custom = getCustomBasePrefix?.(base);
@@ -120,7 +131,7 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppConfigDir(),
-          fp: custom ? `${custom}${fp ? `/${fp}` : ''}` : fp,
+          fp: custom ? nodePath.join(custom, fp ? fp : '') : fp,
           base,
         };
       case 'Cache':
@@ -134,52 +145,42 @@ const getPathResolver = ({ customRootDir }: { customRootDir?: string } = {}) => 
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppLogDir(),
-          fp: custom ? `${custom}${fp ? `/${fp}` : ''}` : fp,
+          fp: custom ? nodePath.join(custom, fp ? fp : '') : fp,
           base,
         };
       case 'Data':
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppDataDir(),
-          fp: custom
-            ? `${custom}/${DATA_SUBDIR}${fp ? `/${fp}` : ''}`
-            : `${DATA_SUBDIR}${fp ? `/${fp}` : ''}`,
+          fp: buildFilePath(custom, DATA_SUBDIR, fp),
           base,
         };
       case 'Books':
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppDataDir(),
-          fp: custom
-            ? `${custom}/${LOCAL_BOOKS_SUBDIR}${fp ? `/${fp}` : ''}`
-            : `${LOCAL_BOOKS_SUBDIR}${fp ? `/${fp}` : ''}`,
+          fp: buildFilePath(custom, LOCAL_BOOKS_SUBDIR, fp),
           base,
         };
       case 'Fonts':
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppDataDir(),
-          fp: custom
-            ? `${custom}/${LOCAL_FONTS_SUBDIR}${fp ? `/${fp}` : ''}`
-            : `${LOCAL_FONTS_SUBDIR}${fp ? `/${fp}` : ''}`,
+          fp: buildFilePath(custom, LOCAL_FONTS_SUBDIR, fp),
           base,
         };
       case 'Images':
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppDataDir(),
-          fp: custom
-            ? `${custom}/${LOCAL_IMAGES_SUBDIR}${fp ? `/${fp}` : ''}`
-            : `${LOCAL_IMAGES_SUBDIR}${fp ? `/${fp}` : ''}`,
+          fp: buildFilePath(custom, LOCAL_IMAGES_SUBDIR, fp),
           base,
         };
       case 'Dictionaries':
         return {
           baseDir: 0,
           basePrefix: async () => custom ?? getAppDataDir(),
-          fp: custom
-            ? `${custom}/${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`
-            : `${LOCAL_DICTIONARIES_SUBDIR}${fp ? `/${fp}` : ''}`,
+          fp: buildFilePath(custom, LOCAL_DICTIONARIES_SUBDIR, fp),
           base,
         };
       case 'None':
