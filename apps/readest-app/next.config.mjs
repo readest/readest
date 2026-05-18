@@ -27,6 +27,13 @@ const nextConfig = {
     unoptimized: true,
   },
   devIndicators: false,
+  experimental: {
+    // Persist Turbopack's compilation cache to `.next/` so CI can restore it
+    // between runs. Dev caching is on by default since Next 16.1; build
+    // caching is opt-in (beta).
+    turbopackFileSystemCacheForDev: true,
+    turbopackFileSystemCacheForBuild: true,
+  },
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,

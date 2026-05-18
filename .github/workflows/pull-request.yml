@@ -58,14 +58,17 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
+      # Turbopack persists its build cache here (turbopackFileSystemCacheForBuild).
+      # The key is deterministic (no commit SHA) so every PR restores the same
+      # entry — in practice the one `main` last saved, which is the only cache
+      # sibling PRs can all see.
+      - name: cache Turbopack build cache
         uses: actions/cache@v5
         with:
           path: apps/readest-app/.next/cache
-          key: nextjs-web-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: turbo-build-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            nextjs-web-${{ github.sha }}-
-            nextjs-web-
+            turbo-build-web-${{ runner.os }}-
 
       - name: install Dependencies
         working-directory: apps/readest-app
@@ -134,15 +137,6 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
-        uses: actions/cache@v5
-        with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-test-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            nextjs-test-${{ github.sha }}-
-            nextjs-test-
-
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
@@ -210,14 +204,15 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
+      # The tauri tests run `next dev`, whose Turbopack cache lives in
+      # `.next/dev/cache` (a different path from the `next build` cache).
+      - name: cache Turbopack dev cache
         uses: actions/cache@v5
         with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-tauri-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          path: apps/readest-app/.next/dev/cache
+          key: turbo-dev-tauri-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            nextjs-tauri-${{ github.sha }}-
-            nextjs-tauri-
+            turbo-dev-tauri-${{ runner.os }}-
 
       - name: install Dependencies
         working-directory: apps/readest-app
