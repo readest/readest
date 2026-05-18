@@ -140,6 +140,10 @@ jobs:
         working-directory: apps/readest-app
         run: pnpm test:pr:web
 
+      - name: build web app
+        working-directory: apps/readest-app
+        run: pnpm build-web
+
       - name: run web e2e tests
         id: web_e2e
         working-directory: apps/readest-app

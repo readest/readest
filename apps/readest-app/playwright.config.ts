@@ -35,7 +35,10 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'pnpm dev-web',
+    // CI runs against a production build (`pnpm build-web` runs first as a
+    // separate CI step) — `next dev` shows an error overlay on the app's
+    // `next-view-transitions` unhandled rejection, which intercepts clicks.
+    command: process.env.CI ? 'pnpm start-web' : 'pnpm dev-web',
     port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
