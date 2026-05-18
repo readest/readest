@@ -27,6 +27,8 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/.claude/**',
+      // Playwright web e2e specs — run via `pnpm test:e2e:web`, not vitest.
+      '**/e2e/**',
       '**/*.browser.test.ts',
       '**/*.browser.test.tsx',
       '**/*.tauri.test.ts',
