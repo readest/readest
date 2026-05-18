@@ -17,8 +17,8 @@ test.describe('Reading', () => {
 
     await reader.openTocChapter(6);
 
-    const chapterProgress = await reader.readingProgress();
-    expect(chapterProgress).toBeGreaterThan(startProgress);
+    // Reading progress updates asynchronously after the section loads.
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(startProgress);
   });
 
   test('finds matches with in-book search', async ({ openBook }) => {

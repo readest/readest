@@ -160,29 +160,34 @@ export class ReaderPage extends BasePage {
    */
   private async visibleSectionFrame(): Promise<FrameLocator> {
     const viewport = this.page.viewportSize() ?? { width: 1280, height: 720 };
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       const iframes = this.page.locator('.foliate-viewer iframe');
       const frameCount = await iframes.count();
       for (let i = 0; i < frameCount; i += 1) {
-        const frame = iframes.nth(i).contentFrame();
-        const paragraphs = frame.locator('p');
-        const paragraphCount = await paragraphs.count();
-        for (let j = 0; j < Math.min(paragraphCount, 15); j += 1) {
-          const box = await paragraphs.nth(j).boundingBox();
+        const paragraphs = iframes.nth(i).contentFrame().locator('p');
+        // A frame may be detaching mid-navigation; skip it if so.
+        const paragraphCount = await paragraphs.count().catch(() => 0);
+        for (let j = 0; j < Math.min(paragraphCount, 30); j += 1) {
+          const box = await paragraphs
+            .nth(j)
+            .boundingBox()
+            .catch(() => null);
+          // Accept a paragraph that intersects the viewport — off-screen
+          // prerendered sections sit fully outside it.
           if (
             box &&
             box.width > 120 &&
             box.height > 16 &&
-            box.x >= 0 &&
-            box.y >= 0 &&
-            box.x + box.width <= viewport.width &&
-            box.y + box.height <= viewport.height
+            box.x < viewport.width &&
+            box.x + box.width > 0 &&
+            box.y < viewport.height &&
+            box.y + box.height > 0
           ) {
-            return frame;
+            return iframes.nth(i).contentFrame();
           }
         }
       }
-      await this.page.waitForTimeout(500);
+      await this.page.waitForTimeout(400);
     }
     throw new Error('no visible book section found in the viewer');
   }
