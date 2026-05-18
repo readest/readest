@@ -89,9 +89,21 @@ jobs:
         run: |
           pnpm build-web && pnpm check:all
 
+      - name: cache playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: install playwright browsers
         working-directory: apps/readest-app
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: run web e2e tests
         id: web_e2e
@@ -136,6 +148,12 @@ jobs:
         run: |
           pnpm install && pnpm setup-vendors
 
+      - name: cache apt packages
+        uses: actions/cache@v5
+        with:
+          path: /var/cache/apt/archives
+          key: apt-test-web-${{ runner.os }}
+
       - name: install LuaJIT + busted (for koplugin tests)
         run: |
           sudo apt-get update
@@ -149,9 +167,21 @@ jobs:
           sudo luarocks --lua-version=5.1 install busted
           sudo luarocks --lua-version=5.1 install lsqlite3complete
 
+      - name: cache playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: install playwright browsers
         working-directory: apps/readest-app
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: run web tests
         working-directory: apps/readest-app
