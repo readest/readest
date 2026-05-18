@@ -21,7 +21,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Tests are isolated (a fresh browser context per test), so they run in
+  // parallel. `test:e2e:web:headed` overrides this to 1 to stay watchable.
+  workers: 4,
   // Always write the HTML report so `pnpm test:e2e:web:report` can open it.
   reporter: process.env.CI
     ? [['github'], ['html', { open: 'never' }]]
