@@ -89,6 +89,23 @@ jobs:
         run: |
           pnpm build-web && pnpm check:all
 
+      - name: install playwright browsers
+        working-directory: apps/readest-app
+        run: npx playwright install --with-deps chromium
+
+      - name: run web e2e tests
+        id: web_e2e
+        working-directory: apps/readest-app
+        run: pnpm test:e2e:web
+
+      - name: upload e2e report
+        if: ${{ failure() && steps.web_e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/readest-app/playwright-report/
+          retention-days: 7
+
   test_web_app:
     runs-on: ubuntu-latest
     steps:
@@ -139,23 +156,6 @@ jobs:
       - name: run web tests
         working-directory: apps/readest-app
         run: pnpm test:pr:web
-
-      - name: build web app
-        working-directory: apps/readest-app
-        run: pnpm build-web
-
-      - name: run web e2e tests
-        id: web_e2e
-        working-directory: apps/readest-app
-        run: pnpm test:e2e:web
-
-      - name: upload e2e report
-        if: ${{ failure() && steps.web_e2e.outcome == 'failure' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/readest-app/playwright-report/
-          retention-days: 7
 
       - name: run koplugin tests
         working-directory: apps/readest-app
