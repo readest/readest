@@ -11,9 +11,13 @@ context, so each test starts from an isolated, empty local library.
 
 ```bash
 pnpm test:e2e:web          # run the web e2e suite (auto-starts pnpm dev-web)
+pnpm test:e2e:web:headed   # run headed, one test at a time, with traces
 pnpm test:e2e:web:ui       # run in the Playwright UI mode
 pnpm test:e2e:web:report   # open the last HTML report
 ```
+
+Every run writes an HTML report to `playwright-report/`; open it with
+`pnpm test:e2e:web:report`.
 
 Layout:
 
