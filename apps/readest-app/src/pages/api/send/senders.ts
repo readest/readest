@@ -5,7 +5,10 @@ import { validateUserAndToken } from '@/utils/access';
 import { normalizeSenderEmail } from '@/services/send/sendAddress';
 import type { DBSendAllowedSender } from '@/types/sendRecords';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Linear-time email check: domain labels exclude '.' so there is no
+// quantifier ambiguity (a polynomial-backtracking ReDoS would need it).
+const EMAIL_RE = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
+const MAX_EMAIL_LENGTH = 254;
 
 /**
  * The approved-sender allowlist.
@@ -37,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const email = normalizeSenderEmail(String(req.body?.email ?? ''));
-    if (!EMAIL_RE.test(email)) {
+    if (email.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'Invalid email address' });
     }
     const { data, error } = await supabase

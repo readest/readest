@@ -2,7 +2,7 @@ import mammoth from 'mammoth';
 import { Readability } from '@mozilla/readability';
 import { TxtToEpubConverter } from '@/utils/txt';
 import { detectLanguage } from '@/utils/lang';
-import { sanitizeHtml } from './sanitizeHtml';
+import { sanitizeHtml, sanitizeForParsing } from './sanitizeHtml';
 import { buildEpub } from './buildEpub';
 import { ConversionError } from './types';
 import type { ConvertibleMime, ConvertedBook, EpubChapter } from './types';
@@ -81,7 +81,7 @@ async function htmlToBook(rawHtml: string, title: string, author: string): Promi
 /** Pull `<title>` / first `<h1>` out of a full HTML document. */
 function extractHtmlTitle(html: string, fallback: string): string {
   try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
     const t = doc.querySelector('title')?.textContent?.trim();
     if (t) return t;
     const h1 = doc.querySelector('h1')?.textContent?.trim();
@@ -152,7 +152,7 @@ export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook>
     case 'article': {
       let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
       try {
-        const doc = new DOMParser().parseFromString(input.html, 'text/html');
+        const doc = new DOMParser().parseFromString(sanitizeForParsing(input.html), 'text/html');
         parsed = new Readability(doc).parse();
       } catch (err) {
         throw new ConversionError(`Could not extract article: ${String(err)}`, 'parse_failed');
