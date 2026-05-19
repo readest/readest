@@ -361,11 +361,38 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const getBooksToDelete = () => {
     const booksToDelete: Book[] = [];
+    const seenHashes = new Set<string>();
+    const pushIfFresh = (book?: Book) => {
+      if (!book || book.deletedAt) return;
+      if (seenHashes.has(book.hash)) return;
+      seenHashes.add(book.hash);
+      booksToDelete.push(book);
+    };
+
     bookIdsToDelete.forEach((id) => {
-      for (const book of filteredBooks.filter((book) => book.hash === id || book.groupId === id)) {
-        if (book && !book.deletedAt) {
-          booksToDelete.push(book);
-        }
+      // Direct match: a single book hash, or a book whose top-level
+      // groupId equals the id (the only case the previous strict
+      // equality covered).
+      filteredBooks.forEach((book) => {
+        if (book.hash === id || book.groupId === id) pushIfFresh(book);
+      });
+      // Sub-folder fallback: if the id corresponds to a known group,
+      // also collect every book whose groupName lives somewhere under
+      // that group's path. Books imported from a folder with nested
+      // sub-directories carry `groupId = md5(groupName/sub)` rather
+      // than `md5(groupName)` — without this prefix sweep the parent
+      // group could never be cleared because deleting "MyDir" would
+      // leave "MyDir/sub/book" untouched, and `refreshGroups` would
+      // re-create the parent group on the next render.
+      const groupName = getGroupName(id);
+      if (groupName) {
+        const prefix = `${groupName}/`;
+        filteredBooks.forEach((book) => {
+          if (!book.groupName) return;
+          if (book.groupName === groupName || book.groupName.startsWith(prefix)) {
+            pushIfFresh(book);
+          }
+        });
       }
     });
     return booksToDelete;
