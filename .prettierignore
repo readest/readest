@@ -32,6 +32,7 @@ apps/readest-app/src-tauri/plugins/tauri-plugin-turso
 apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade
 
 # Environment & Editor
+.github
 .env
 .env.*
 .vscode
