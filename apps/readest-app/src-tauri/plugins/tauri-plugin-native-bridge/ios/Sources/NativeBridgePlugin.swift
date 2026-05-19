@@ -469,6 +469,10 @@ class NativeBridgePlugin: Plugin {
     self.webView = webview
     logger.log("NativeBridgePlugin loaded")
 
+    // Suppress the iOS system text-selection edit menu so it never
+    // covers Readest's annotation toolbar. See ContextMenuSuppressor.
+    ContextMenuSuppressor.installIfNeeded()
+
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")

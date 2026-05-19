@@ -68,27 +68,6 @@ export const useTextSelector = (
       index,
     });
   };
-  // FIXME: extremely hacky way to dismiss system selection tools on iOS
-  const makeSelectionOnIOS = async (sel: Selection, index: number) => {
-    isTextSelected.current = true;
-    const range = sel.getRangeAt(0);
-    setTimeout(() => {
-      sel.removeAllRanges();
-      setTimeout(async () => {
-        if (!isTextSelected.current) return;
-        sel.addRange(range);
-        const progress = getProgress(bookKey);
-        setSelection({
-          key: bookKey,
-          text: await getAnnotationText(range),
-          cfi: view?.getCFI(index, range),
-          page: bookData?.isFixedLayout ? index + 1 : progress?.page || 0,
-          range,
-          index,
-        });
-      }, 30);
-    }, 30);
-  };
 
   const startInstantAnnotating = (ev: PointerEvent) => {
     isInstantAnnotating.current = true;
@@ -175,11 +154,11 @@ export const useTextSelector = (
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
       const isPointerInside = ev && isPointerInsideSelection(sel, ev);
-      const isIOS = osPlatform === 'ios' || appService?.isIOSApp;
 
-      if (isPointerInside && isIOS) {
-        makeSelectionOnIOS(sel, index);
-      } else if (isPointerInside) {
+      // iOS no longer needs a special path: the native plugin
+      // (ContextMenuSuppressor) suppresses the system selection menu, so
+      // iOS selections go through the same path as desktop.
+      if (isPointerInside) {
         isUpToPopup.current = true;
         makeSelection(sel, index, true);
       } else if (appService?.isAndroidApp) {
