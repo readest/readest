@@ -313,6 +313,10 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
+          # On Linux, build with the Rust `cargo tauri` CLI installed in the
+          # step above so the new (truly-portable AppImage) bundler is used.
+          # Without this, tauri-action falls back to the npm @tauri-apps/cli.
+          tauriScript: ${{ matrix.config.release == 'linux' && 'cargo tauri' || '' }}
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
