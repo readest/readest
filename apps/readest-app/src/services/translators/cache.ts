@@ -424,12 +424,7 @@ export const getCacheStats = async (
 };
 
 export const pruneCache = async (
-  options: {
-    maxAge?: number;
-    maxEntries?: number;
-    maxSizeInBytes?: number;
-    dryRun?: boolean;
-  } = {},
+  options: { maxAge?: number; maxEntries?: number; maxSizeInBytes?: number; dryRun?: boolean } = {},
 ): Promise<number> => {
   const { maxAge, maxEntries, maxSizeInBytes, dryRun = false } = options;
 

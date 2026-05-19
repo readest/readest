@@ -340,8 +340,7 @@ export interface ViewSettingsConfig {
 }
 
 export interface ViewSettings
-  extends
-    BookLayout,
+  extends BookLayout,
     BookStyle,
     BookFont,
     BookLanguage,

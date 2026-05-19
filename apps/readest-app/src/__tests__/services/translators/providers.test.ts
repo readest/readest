@@ -352,8 +352,9 @@ describe('provider registry disabled handling', () => {
   });
 
   it('isTranslatorAvailable returns false for disabled providers', async () => {
-    const { getTranslator, isTranslatorAvailable } =
-      await import('@/services/translators/providers');
+    const { getTranslator, isTranslatorAvailable } = await import(
+      '@/services/translators/providers'
+    );
     const yandex = getTranslator('yandex')!;
     expect(isTranslatorAvailable(yandex, true)).toBe(false);
     expect(isTranslatorAvailable(yandex, false)).toBe(false);
@@ -373,8 +374,9 @@ describe('provider registry disabled handling', () => {
   });
 
   it('getTranslatorDisplayLabel returns the plain label for healthy providers', async () => {
-    const { getTranslator, getTranslatorDisplayLabel } =
-      await import('@/services/translators/providers');
+    const { getTranslator, getTranslatorDisplayLabel } = await import(
+      '@/services/translators/providers'
+    );
     const google = getTranslator('google')!;
     expect(getTranslatorDisplayLabel(google, true, (s) => s)).toBe('Google Translate');
   });

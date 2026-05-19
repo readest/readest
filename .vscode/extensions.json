@@ -2,7 +2,7 @@
   "recommendations": [
     "ms-vscode.vscode-typescript-next",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
+    "biomejs.biome",
     "rust-lang.rust-analyzer"
   ]
 }

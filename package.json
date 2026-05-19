@@ -12,8 +12,8 @@
     "prepare": "husky",
     "fmt:check": "pnpm --filter @readest/readest-app fmt:check",
     "clippy:check": "pnpm --filter @readest/readest-app clippy:check",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,css,json,md,html,yml}\""
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "packageManager": "pnpm@11.1.1",
   "devDependencies": {
@@ -21,13 +21,11 @@
     "@sindresorhus/tsconfig": "^6.0.0",
     "husky": "^9.1.6",
     "lint-staged": "^16.2.7",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
     "typescript": "^5"
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,css,json,md,html,yml}": [
-      "prettier --write"
+    "**/*.{js,jsx,ts,tsx,css,json}": [
+      "biome format --write --no-errors-on-unmatched"
     ]
   }
 }

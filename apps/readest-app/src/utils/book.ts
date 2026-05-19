@@ -112,7 +112,7 @@ export const flattenContributors = (
       : formatLanguageMap(contributors?.name);
 };
 
-// prettier-ignore
+// biome-ignore format: keep the language codes compact on a single line
 const LASTNAME_AUTHOR_SORT_LANGS = [ 'ar', 'bo', 'de', 'en', 'es', 'fr', 'hi', 'it', 'nl', 'pl', 'pt', 'ru', 'th', 'tr', 'uk' ];
 
 const formatAuthorName = (name: string, lastNameFirst: boolean) => {

@@ -166,8 +166,9 @@ describe('publishSettingsIfChanged', () => {
   });
 
   test('publishes dictionarySettings.providerOrder when markExplicitProviderOrderPublish was called', async () => {
-    const { markExplicitProviderOrderPublish } =
-      await import('@/services/sync/replicaSettingsSync');
+    const { markExplicitProviderOrderPublish } = await import(
+      '@/services/sync/replicaSettingsSync'
+    );
     markExplicitProviderOrderPublish();
     await publishSettingsIfChanged(
       makeSettings({
@@ -184,8 +185,9 @@ describe('publishSettingsIfChanged', () => {
   });
 
   test('explicit-publish opt-in is consumed after one publish (no carryover)', async () => {
-    const { markExplicitProviderOrderPublish } =
-      await import('@/services/sync/replicaSettingsSync');
+    const { markExplicitProviderOrderPublish } = await import(
+      '@/services/sync/replicaSettingsSync'
+    );
     markExplicitProviderOrderPublish();
     const settings1 = makeSettings({
       dictionarySettings: {

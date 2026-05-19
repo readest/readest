@@ -23,8 +23,8 @@ pnpm test:tauri            # Run Tauri integration tests
 
 # Linting & Formatting
 pnpm lint                  # Biome (linter) + tsgo (type check)
-pnpm format                # Prettier (runs from monorepo root)
-pnpm format:check          # Check formatting without writing
+pnpm format                # Biome formatter (runs from monorepo root)
+pnpm format:check          # Check formatting without writing (Biome)
 
 # Rust
 pnpm fmt:check             # Check formatting Rust code (src-tauri)
