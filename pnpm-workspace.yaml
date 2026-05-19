@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - apps/readest-app/workers/send-email
   - packages/foliate-js
 
 allowBuilds:

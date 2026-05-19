@@ -8,6 +8,7 @@ import {
   RiBookReadLine,
   RiBook3Line,
   RiDiscordLine,
+  RiSendPlaneLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -20,10 +21,11 @@ import { navigateToLogin } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
+import SendToReadestForm from './integrations/SendToReadestForm';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | null;
+type SubPage = 'kosync' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -66,7 +68,8 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'kosync' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
-      requestedSubPage === 'opds'
+      requestedSubPage === 'opds' ||
+      requestedSubPage === 'send'
     ) {
       setSubPage(requestedSubPage);
     }
@@ -105,6 +108,12 @@ const IntegrationsPanel: React.FC = () => {
           onBack={() => setSubPage(null)}
         />
         <CatalogManager inSubPage />
+      </div>
+    );
+  if (subPage === 'send')
+    return (
+      <div className='my-4 w-full'>
+        <SendToReadestForm onBack={() => setSubPage(null)} />
       </div>
     );
 
@@ -163,6 +172,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('OPDS Catalogs')}
               status={opdsStatus}
               onClick={() => setSubPage('opds')}
+            />
+            <IntegrationRow
+              icon={RiSendPlaneLine}
+              title={_('Send to Readest')}
+              status={_('Email books to your library')}
+              onClick={() => setSubPage('send')}
             />
           </div>
         </div>

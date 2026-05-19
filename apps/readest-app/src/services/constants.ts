@@ -746,6 +746,13 @@ export const READEST_NODE_BASE_URL = 'https://node.readest.com';
 
 export const SHARE_BASE_URL = `${READEST_WEB_BASE_URL}/s`;
 export const SHARE_EXPIRATION_DAYS = [1, 3, 7] as const;
+
+// Send to Readest — the domain inbound capture emails are addressed to, the
+// R2 bucket holding raw inbound payloads, and the per-user cap on undrained
+// inbox items (defense against a leaked address).
+export const SEND_EMAIL_DOMAIN = 'readest.com';
+export const SEND_INBOX_BUCKET = 'readest-send-inbox';
+export const SEND_INBOX_PENDING_LIMIT = 50;
 export const SHARE_DEFAULT_EXPIRATION_DAYS = 3;
 export const SHARE_MAX_PER_USER = 50;
 export const SHARE_TOKEN_LENGTH = 22;

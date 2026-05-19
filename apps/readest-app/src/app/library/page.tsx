@@ -12,6 +12,7 @@ import { buildBookLookupIndex } from '@/services/bookService';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
+import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
@@ -35,6 +36,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
@@ -186,6 +188,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const { pullLibrary, pushLibrary } = useBooksSync();
   const { checkOPDSSubscriptions } = useOPDSSubscriptions();
+  useInboxDrainer();
   const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
@@ -380,16 +383,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         console.log('Open with book:', file);
         try {
           const temp = appService.isMobile ? false : !settings.autoImportBooksOnOpen;
-          const book = await appService.importBook(file, libraryBooks, { transient: temp });
+          // A file shared into Readest on mobile (the OS share-sheet) is a
+          // "Send to Readest" capture — force it to the cloud so it syncs to
+          // every device. Desktop "open with" keeps the autoUpload setting.
+          const book = await ingestFile(
+            {
+              file,
+              books: libraryBooks,
+              transient: temp,
+              forceUpload: !!appService.isMobile && !!user,
+            },
+            { appService, settings, isLoggedIn: !!user },
+          );
           if (book) {
             bookIds.push(book.hash);
-          }
-          if (user && book && !temp && !book.uploadedAt && settings.autoUpload) {
-            setTimeout(() => {
-              console.log('Queueing upload for book:', book.title);
-              transferManager.queueUpload(book);
-              // wait for the initialization of the transfer manager and opening of the book
-            }, 3000);
           }
         } catch (error) {
           console.log('Failed to import book:', file, error);
@@ -585,24 +592,27 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const processFile = async (selectedFile: SelectedFile): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
       if (!file) return null;
+      if (!appService) return null;
       try {
-        const book = await appService?.importBook(file, library, { lookupIndex });
-        if (!book) return null;
         const { path, basePath } = selectedFile;
-        if (groupId) {
-          book.groupId = groupId;
-          book.groupName = getGroupName(groupId);
-        } else if (path && basePath) {
+        let resolvedGroupId = groupId;
+        let resolvedGroupName = groupId ? getGroupName(groupId) : undefined;
+        if (!resolvedGroupId && path && basePath) {
           const rootPath = getDirPath(basePath);
-          const groupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
-          book.groupName = groupName;
-          book.groupId = getGroupId(groupName);
+          resolvedGroupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
+          resolvedGroupId = getGroupId(resolvedGroupName);
         }
-
-        if (user && !book.uploadedAt && settings.autoUpload) {
-          console.log('Queueing upload for book:', book.title);
-          transferManager.queueUpload(book);
-        }
+        const book = await ingestFile(
+          {
+            file,
+            books: library,
+            lookupIndex,
+            groupId: resolvedGroupId,
+            groupName: resolvedGroupName,
+          },
+          { appService, settings, isLoggedIn: !!user },
+        );
+        if (!book) return null;
         successfulImports.push(book.title);
         return book;
       } catch (error) {
