@@ -33,15 +33,17 @@ overrides:
   picomatch: '>=4.0.4'
   path-to-regexp: '>=8.4.0'
   protobufjs: '>=7.5.5'
-  serialize-javascript: '>=7.0.5'
+  serialize-javascript: 7.0.5
   fast-xml-parser: '>=5.7.0'
   lodash: '>=4.18.0'
   lodash-es: '>=4.18.0'
+  postcss: 8.5.14
   basic-ftp: '>=5.3.0'
   qs: '>=6.14.2'
   '@babel/runtime': '>=7.26.10'
   '@babel/helpers': '>=7.26.10'
   mdast-util-gfm-autolink-literal: 2.0.1
   uuid: '>=14.0.0'
+  ws: 8.20.1
   '@emnapi/core': 1.8.1
   '@emnapi/runtime': 1.8.1
