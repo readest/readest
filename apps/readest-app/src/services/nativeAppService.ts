@@ -546,6 +546,14 @@ export class NativeAppService extends BaseAppService {
       multiple: false,
       recursive: true,
     });
+    if (selected) {
+      // Tauri's dialog plugin only auto-grants fs_scope; the asset
+      // protocol scope still needs an explicit allow before
+      // RemoteFile / convertFileSrc-based reads can succeed against
+      // arbitrary user paths. Persisted-scope plugin makes this
+      // sticky across restarts.
+      await this.allowPathsInScopes([selected as string], true);
+    }
     return selected as string;
   }
 
@@ -555,7 +563,26 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     const files = Array.isArray(selected) ? selected : selected ? [selected] : [];
-    return OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    const decoded = OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    if (decoded.length > 0) {
+      // See the note in selectDirectory above.
+      await this.allowPathsInScopes(decoded, false);
+    }
+    return decoded;
+  }
+
+  /**
+   * Best-effort: ask the Rust side to extend `fs_scope` and
+   * `asset_protocol_scope` to cover the given paths. Errors are logged
+   * and swallowed because the import path can still succeed via the
+   * NativeFile fallback even when scope extension fails.
+   */
+  async allowPathsInScopes(paths: string[], isDirectory: boolean): Promise<void> {
+    try {
+      await invoke('allow_paths_in_scopes', { paths, isDirectory });
+    } catch (e) {
+      console.warn('allow_paths_in_scopes failed:', e);
+    }
   }
 
   async saveFile(

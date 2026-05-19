@@ -81,6 +81,9 @@ import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import LibraryEmptyState from './components/LibraryEmptyState';
 import GroupHeader from './components/GroupHeader';
+import ImportFromFolderDialog, {
+  ImportFromFolderResult,
+} from './components/ImportFromFolderDialog';
 import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
@@ -88,6 +91,31 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+
+/**
+ * Key used to persist the last directory the user imported books from.
+ * Stored in localStorage so re-opening the dialog (even across app
+ * restarts) seeds the path field with their previous choice — this
+ * mirrors the behaviour of native file pickers on most desktop OSes.
+ */
+const LAST_IMPORT_FOLDER_KEY = 'readest:lastImportFolder';
+/**
+ * Key used to persist the user's last "Folder Structure" choice
+ * ('keep' vs 'flatten'). Restored as the default radio selection on
+ * the next dialog open.
+ */
+const LAST_IMPORT_FOLDER_MODE_KEY = 'readest:lastImportFolderMode';
+/**
+ * Key used to persist the comma-separated list of FormatGroup ids the
+ * user last ticked, e.g. "epub,pdf". Empty / missing falls back to the
+ * dialog's built-in default ("epub,pdf").
+ */
+const LAST_IMPORT_FOLDER_FORMATS_KEY = 'readest:lastImportFolderFormats';
+/**
+ * Key used to persist the last "File size larger than" threshold (KB).
+ * Stored as a stringified non-negative integer.
+ */
+const LAST_IMPORT_FOLDER_MIN_SIZE_KEY = 'readest:lastImportFolderMinSizeKB';
 
 const LibraryPageWithSearchParams = () => {
   const searchParams = useSearchParams();
@@ -141,6 +169,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  // "Import from folder" dialog state. Held as a small object rather
+  // than a boolean because we need a default starting directory to seed
+  // the path field, and we want the dialog to remain mounted long
+  // enough for the platform's folder picker to overlay it.
+  const [importFromFolderState, setImportFromFolderState] = useState<{
+    initialDirectory: string;
+    initialFolderMode: 'keep' | 'flatten';
+    initialSelectedGroupIds?: string[];
+    initialMinSizeKB?: number;
+  } | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
     groupBy: typeof LibraryGroupByType.Series | typeof LibraryGroupByType.Author;
@@ -595,9 +633,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       if (!appService) return null;
       try {
         const { path, basePath } = selectedFile;
+        // `groupId` is treated as a tri-state:
+        //   - undefined  → caller didn't specify; derive grouping from
+        //                  basePath (Import-from-Folder "keep" mode).
+        //   - '' (empty) → caller explicitly wants the library root.
+        //   - any string → caller explicitly wants that group.
+        // Distinguishing '' from undefined matters for re-imports of an
+        // already-known book: without it, a falsy check would silently
+        // keep the existingBook's stale groupId/groupName from a prior
+        // import instead of moving the book to the root.
         let resolvedGroupId = groupId;
-        let resolvedGroupName = groupId ? getGroupName(groupId) : undefined;
-        if (!resolvedGroupId && path && basePath) {
+        let resolvedGroupName = groupId !== undefined ? getGroupName(groupId) : undefined;
+        if (resolvedGroupId === undefined && path && basePath) {
           const rootPath = getDirPath(basePath);
           resolvedGroupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
           resolvedGroupId = getGroupId(resolvedGroupName);
@@ -841,36 +888,133 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     if (!appService || !isTauriAppPlatform()) return;
 
     setIsSelectMode(false);
-    console.log('Importing books from directory...');
-    let importDirectory: string | undefined = dirPath;
-    if (!importDirectory) {
-      if (appService.isAndroidApp) {
-        if (!(await requestStoragePermission())) return;
-        const response = await selectDirectory();
-        importDirectory = response.path;
-      } else {
-        const selectedDir = await appService.selectDirectory?.('read');
-        importDirectory = selectedDir;
-      }
-    }
-    if (!importDirectory) {
-      console.log('No directory selected');
+
+    // When a path is supplied (e.g. URL ingress / drag-drop replay) we
+    // honour the legacy "import everything" behaviour without opening
+    // the dialog. Manual menu invocations always go through the dialog
+    // so users can pick formats and a size threshold before scanning.
+    if (dirPath) {
+      await runFolderImport({
+        directory: dirPath,
+        extensions: SUPPORTED_BOOK_EXTS.slice(),
+        // The non-dialog path is invoked by URL ingress / drag-drop
+        // replay, where the user never picked any filter — keep the
+        // synthetic values minimal and non-restrictive.
+        selectedGroupIds: [],
+        minSizeKB: 0,
+        flatten: false,
+      });
       return;
     }
-    const files = await appService.readDirectory(importDirectory, 'None');
-    const supportedFiles = files.filter((file) => {
+
+    // Restore both the last-used folder and the last folder-structure
+    // mode from localStorage. Anything else (or first-time use) falls
+    // back to the dialog's built-in defaults.
+    const ls = typeof window !== 'undefined' ? window.localStorage : null;
+    const storedDirectory = ls?.getItem(LAST_IMPORT_FOLDER_KEY) || '';
+    const storedMode = ls?.getItem(LAST_IMPORT_FOLDER_MODE_KEY);
+    const storedFormats = ls?.getItem(LAST_IMPORT_FOLDER_FORMATS_KEY);
+    const storedMinSize = ls?.getItem(LAST_IMPORT_FOLDER_MIN_SIZE_KEY);
+    const parsedFormats = storedFormats
+      ? storedFormats
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+    const parsedMinSize =
+      storedMinSize !== null && storedMinSize !== undefined
+        ? Number.parseInt(storedMinSize, 10)
+        : undefined;
+    setImportFromFolderState({
+      initialDirectory: storedDirectory,
+      initialFolderMode: storedMode === 'flatten' ? 'flatten' : 'keep',
+      initialSelectedGroupIds: parsedFormats,
+      initialMinSizeKB:
+        parsedMinSize !== undefined && Number.isFinite(parsedMinSize) && parsedMinSize >= 0
+          ? parsedMinSize
+          : undefined,
+    });
+  };
+
+  /**
+   * Pop the platform's native folder picker. Wrapped here (rather than
+   * inlined into the dialog) so the same Android-permission / Tauri
+   * dialog dance is shared between the dialog's "change folder" button
+   * and any future programmatic import paths.
+   */
+  const pickImportDirectory = async (): Promise<string | undefined> => {
+    if (!appService) return undefined;
+    if (appService.isAndroidApp) {
+      if (!(await requestStoragePermission())) return undefined;
+      const response = await selectDirectory();
+      return response.path || undefined;
+    }
+    return (await appService.selectDirectory?.('read')) || undefined;
+  };
+
+  /**
+   * Recursively scan {@link result.directory}, keep files matching one
+   * of {@link result.extensions} that are at least
+   * {@link result.minSizeKB} KB, and feed them through {@link importBooks}.
+   *
+   * Two cooperating signals carry "where should the imported books
+   * end up" downstream:
+   *   1. Each {@link SelectedFile}'s `basePath` — when present,
+   *      {@link importBooks}' `processFile` derives a nested groupName
+   *      relative to it (`<sub>` / `<sub>/<deeper>`).
+   *   2. The `groupId` argument passed to {@link importBooks} —
+   *      tri-state per the comment in `processFile`. An explicit
+   *      string (including '') wins over basePath-derived grouping.
+   *
+   * The two flatten/keep modes use these signals as follows:
+   *   - keep    → omit basePath? no, *include* basePath; pass
+   *               groupId=undefined so basePath wins.
+   *   - flatten → omit basePath AND pass an explicit groupId equal to
+   *               the user's currently-viewed group ('' = root). The
+   *               omitted basePath alone wouldn't be enough on a
+   *               re-import, since deduped books carry stale groupIds
+   *               from prior sessions; the explicit groupId is what
+   *               actually reseats them. Dropping basePath in flatten
+   *               mode is therefore belt-and-suspenders.
+   */
+  const runFolderImport = async (result: ImportFromFolderResult) => {
+    if (!appService || !result.directory) return;
+    // Re-grant scopes for the directory before scanning. This matters
+    // when `result.directory` came from somewhere the dialog plugin
+    // didn't authorise — typically the persisted "last import folder"
+    // restored from localStorage when the user just hit OK without
+    // re-picking. Without this, `RemoteFile` reads through the asset
+    // protocol later in `importBook` would fail with
+    // "asset protocol not configured to allow the path".
+    await appService.allowPathsInScopes?.([result.directory], true);
+    const exts = result.extensions.map((e) => e.toLowerCase());
+    const minSizeBytes = Math.max(0, Math.floor(result.minSizeKB)) * 1024;
+    const files = await appService.readDirectory(result.directory, 'None');
+    const filtered = files.filter((file) => {
       const ext = file.path.split('.').pop()?.toLowerCase() || '';
-      return SUPPORTED_BOOK_EXTS.includes(ext);
+      if (!exts.includes(ext)) return false;
+      if (minSizeBytes > 0 && file.size < minSizeBytes) return false;
+      return true;
     });
     const toImportFiles = await Promise.all(
-      supportedFiles.map(async (file) => {
-        return {
-          path: await joinPaths(importDirectory, file.path),
-          basePath: importDirectory,
-        };
+      filtered.map(async (file) => {
+        const fullPath = await joinPaths(result.directory, file.path);
+        return result.flatten ? { path: fullPath } : { path: fullPath, basePath: result.directory };
       }),
     );
-    importBooks(toImportFiles, undefined);
+    if (toImportFiles.length === 0) {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('No matching books found in the selected folder.'),
+      });
+      return;
+    }
+    // When flattening, route the books into whichever group the user
+    // is currently viewing (empty string == library root). When
+    // preserving structure we leave groupId undefined so importBooks
+    // derives nested groupNames from each file's basePath.
+    const targetGroupId = result.flatten ? searchParams?.get('group') || '' : undefined;
+    importBooks(toImportFiles, targetGroupId);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {
@@ -1058,6 +1202,43 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {importFromFolderState && (
+        <ImportFromFolderDialog
+          initialDirectory={importFromFolderState.initialDirectory}
+          initialFolderMode={importFromFolderState.initialFolderMode}
+          initialSelectedGroupIds={importFromFolderState.initialSelectedGroupIds}
+          initialMinSizeKB={importFromFolderState.initialMinSizeKB}
+          onPickDirectory={pickImportDirectory}
+          onCancel={() => setImportFromFolderState(null)}
+          onConfirm={(result) => {
+            setImportFromFolderState(null);
+            // Remember the folder + filters for next time. Done here
+            // (rather than inside pickImportDirectory) so we only
+            // persist values the user actually committed to, not
+            // ones they cancelled out of.
+            if (typeof window !== 'undefined') {
+              if (result.directory) {
+                window.localStorage.setItem(LAST_IMPORT_FOLDER_KEY, result.directory);
+              }
+              window.localStorage.setItem(
+                LAST_IMPORT_FOLDER_MODE_KEY,
+                result.flatten ? 'flatten' : 'keep',
+              );
+              if (result.selectedGroupIds.length > 0) {
+                window.localStorage.setItem(
+                  LAST_IMPORT_FOLDER_FORMATS_KEY,
+                  result.selectedGroupIds.join(','),
+                );
+              }
+              window.localStorage.setItem(
+                LAST_IMPORT_FOLDER_MIN_SIZE_KEY,
+                String(result.minSizeKB),
+              );
+            }
+            void runFolderImport(result);
+          }}
+        />
+      )}
       <Toast />
     </div>
   );

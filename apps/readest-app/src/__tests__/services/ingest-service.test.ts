@@ -77,6 +77,38 @@ describe('ingestFile', () => {
     expect(book?.groupName).toBe('Sci-Fi');
   });
 
+  test('clears the group when groupId is the empty string (flatten-into-root)', async () => {
+    // A previously-imported book may already carry a groupId/Name from
+    // a prior import. Re-importing with an explicit empty groupId
+    // should demote it back to the library root rather than silently
+    // keeping the stale group — that behaviour matters for the
+    // Import-from-Folder dialog's "flatten" mode.
+    const { appService, settings, isLoggedIn } = makeDeps({
+      importResult: makeBook({ groupId: 'old', groupName: 'Old/Folder' }),
+    });
+    const book = await ingestFile(
+      { file: 'book.epub', books: [], groupId: '', groupName: undefined },
+      { appService, settings, isLoggedIn },
+    );
+    expect(book?.groupId).toBe('');
+    expect(book?.groupName).toBeUndefined();
+  });
+
+  test('leaves the group untouched when groupId is omitted', async () => {
+    // Sanity check for the tri-state contract: undefined groupId means
+    // "don't touch the existing group" (used by the inbox drainer and
+    // /send page where the user hasn't picked a destination).
+    const { appService, settings, isLoggedIn } = makeDeps({
+      importResult: makeBook({ groupId: 'keep', groupName: 'Keep/Me' }),
+    });
+    const book = await ingestFile(
+      { file: 'book.epub', books: [] },
+      { appService, settings, isLoggedIn },
+    );
+    expect(book?.groupId).toBe('keep');
+    expect(book?.groupName).toBe('Keep/Me');
+  });
+
   test('applies a subject tag and bumps updatedAt', async () => {
     const { appService, settings, isLoggedIn } = makeDeps();
     const book = await ingestFile(

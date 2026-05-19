@@ -59,6 +59,18 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Hide the native number-input spinner arrows. WebKit on macOS draws
+     them on top of rounded input borders, which looks broken; Firefox
+     respects -moz-appearance: textfield. */
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 .full-height {

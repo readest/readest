@@ -49,7 +49,13 @@ export async function ingestFile(
   });
   if (!book) return null;
 
-  if (opts.groupId) {
+  // Tri-state: undefined leaves whatever group the existing
+  // (deduped) book already had untouched; an explicit string —
+  // including the empty string — replaces it. The empty-string case
+  // is what library imports use to "demote" a book back to the root
+  // when the user picks Import-from-Folder → flatten on a previously
+  // grouped book.
+  if (opts.groupId !== undefined) {
     book.groupId = opts.groupId;
     book.groupName = opts.groupName;
   }

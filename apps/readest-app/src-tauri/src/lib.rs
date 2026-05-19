@@ -73,6 +73,41 @@ fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
     }
 }
 
+/// Frontend-callable shim around [`allow_file_in_scopes`] /
+/// [`allow_dir_in_scopes`]. Used after dialog-based file/folder pickers
+/// because the Tauri `dialog` plugin only auto-grants `fs_scope`, not
+/// `asset_protocol_scope` — and our importer relies on the asset
+/// protocol (`RemoteFile`) to read user-selected files. Without this,
+/// importing a book from e.g. `~/Downloads/...` fails with
+/// "asset protocol not configured to allow the path".
+///
+/// Granted scopes are persisted across app restarts thanks to
+/// `tauri_plugin_persisted_scope`, so re-picking the same file isn't
+/// required after the first allow call.
+#[command]
+fn allow_paths_in_scopes(_app: AppHandle, _paths: Vec<String>, _is_directory: bool) {
+    #[cfg(desktop)]
+    {
+        for raw in _paths {
+            if raw.is_empty() {
+                continue;
+            }
+            let path = PathBuf::from(&raw);
+            if _is_directory {
+                allow_dir_in_scopes(&_app, &path);
+            } else {
+                allow_file_in_scopes(&_app, vec![path]);
+            }
+        }
+    }
+    #[cfg(target_os = "android")]
+    {
+        // Android picker already routes through register_select_directory_callback
+        // for directories; files go through SAF / content-URIs and don't use
+        // asset_protocol_scope. Nothing to do here.
+    }
+}
+
 #[cfg(desktop)]
 fn get_files_from_argv(argv: Vec<String>) -> Vec<PathBuf> {
     let mut files = Vec::new();
@@ -168,6 +203,7 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            allow_paths_in_scopes,
             dir_scanner::read_dir,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
