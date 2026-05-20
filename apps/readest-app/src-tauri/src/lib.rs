@@ -84,15 +84,31 @@ fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
 /// Granted scopes are persisted across app restarts thanks to
 /// `tauri_plugin_persisted_scope`, so re-picking the same file isn't
 /// required after the first allow call.
+///
+/// Security: this command refuses to extend `asset_protocol_scope` for
+/// any path that is not already allowed in `fs_scope`. The `fs_scope`
+/// is populated only by the Tauri `dialog` plugin (when the user picks
+/// through the OS picker) or by `tauri_plugin_persisted_scope` (which
+/// restores prior dialog grants on startup). That gate constrains the
+/// command to user-selected paths only — otherwise any frontend code
+/// (including a future XSS via book content, OPDS HTML, dictionary
+/// lookups, or a compromised dependency) could invoke it with an
+/// arbitrary path like `/` or `~/.ssh` and gain persistent read access
+/// to the entire user home directory via the asset protocol.
 #[command]
 fn allow_paths_in_scopes(_app: AppHandle, _paths: Vec<String>, _is_directory: bool) {
     #[cfg(desktop)]
     {
+        let fs_scope = _app.fs_scope();
         for raw in _paths {
             if raw.is_empty() {
                 continue;
             }
             let path = PathBuf::from(&raw);
+            if !fs_scope.is_allowed(&path) {
+                log::warn!("allow_paths_in_scopes refused (path not in fs_scope): {path:?}");
+                continue;
+            }
             if _is_directory {
                 allow_dir_in_scopes(&_app, &path);
             } else {

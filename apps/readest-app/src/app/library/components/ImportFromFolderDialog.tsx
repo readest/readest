@@ -4,7 +4,7 @@ import { MdFolderOpen } from 'react-icons/md';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
-import ModalPortal from '@/components/ModalPortal';
+import Dialog from '@/components/Dialog';
 
 /**
  * Per-extension grouping presented to the user. Each card is a single
@@ -91,19 +91,20 @@ interface ImportFromFolderDialogProps {
   onConfirm: (result: ImportFromFolderResult) => void;
 }
 
+const DEFAULT_SELECTED_GROUP_IDS = ['epub', 'pdf'];
+const DEFAULT_MIN_SIZE_KB = 20;
+
 /**
  * Folder import dialog: lets the user pick a directory, choose which
  * book formats to include, and skip files below a size threshold. The
  * caller is responsible for the actual scan & import — we just collect
  * the user's intent and hand it back via {@link onConfirm}.
  *
- * Rendered through {@link ModalPortal} so it sits above the library
- * dropdown menu (which would otherwise clip / dismiss the dialog when
- * the user clicks inside it).
+ * Renders inside the project's shared `<Dialog>` primitive so it picks
+ * up the standard chassis (modal-box, eink-aware borders, mobile bottom
+ * sheet, RTL direction, focus management) instead of reimplementing
+ * them locally.
  */
-const DEFAULT_SELECTED_GROUP_IDS = ['epub', 'pdf'];
-const DEFAULT_MIN_SIZE_KB = 20;
-
 const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   initialDirectory,
   initialFolderMode = 'keep',
@@ -139,8 +140,8 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   const [folderMode, setFolderMode] = useState<'keep' | 'flatten'>(initialFolderMode);
   const [picking, setPicking] = useState(false);
 
-  const divRef = useKeyDownActions({
-    onCancel,
+  // Enter to confirm. Escape is handled by <Dialog> via onClose.
+  useKeyDownActions({
     onConfirm: () => {
       // Block the Enter shortcut while a folder pick is in flight so
       // we don't dispatch a confirm with a stale directory.
@@ -196,24 +197,14 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   const confirmDisabled = !directory || selectedGroups.size === 0;
 
   return (
-    <ModalPortal>
-      <div
-        ref={divRef}
-        role='dialog'
-        aria-modal='true'
-        aria-labelledby='import-from-folder-title'
-        className={clsx(
-          'bg-base-100 text-base-content',
-          'flex flex-col gap-4',
-          'w-full max-w-[92vw] sm:max-w-[480px]',
-          'max-h-[90vh] overflow-y-auto',
-          'rounded-2xl p-6 shadow-2xl',
-        )}
-      >
-        <h2 id='import-from-folder-title' className='text-lg font-semibold'>
-          {_('Import Books')}
-        </h2>
-
+    <Dialog
+      isOpen
+      title={_('Import Books')}
+      onClose={onCancel}
+      boxClassName='sm:min-w-[480px] sm:max-w-[480px] sm:h-auto sm:max-h-[90%]'
+      contentClassName='!px-6 !py-2'
+    >
+      <div className='flex flex-col gap-4 pt-2'>
         {/* Directory row — clickable input that pops the native folder
             picker. We render it as a real <button> so screen readers and
             keyboard navigation work, but style it as an input row so the
@@ -226,7 +217,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
             disabled={picking}
             className={clsx(
               'eink-bordered flex w-full items-center gap-2 rounded-lg px-3 py-2.5',
-              'text-left text-sm transition-colors duration-150',
+              'text-start text-sm transition-colors duration-150',
               'border-base-300 bg-base-200/40 hover:bg-base-200/70',
               'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
               picking && 'opacity-60',
@@ -273,7 +264,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
         {/* Min-size filter — number input with the KB suffix nested
             inside the field so it reads as a single unit. The native
             number-spinner arrows are hidden because they overlapped
-            the rounded border and looked broken on macOS / WebKit. */}
+            the rounded input border and looked broken on macOS / WebKit. */}
         <div className='flex items-center justify-between gap-3'>
           <span className='text-sm'>{_('File size larger than')}</span>
           <div
@@ -296,13 +287,13 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
               }}
               className={clsx(
                 'no-spinner',
-                'h-full min-w-0 flex-1 rounded-l-lg bg-transparent',
-                'pl-2 pr-1 text-right text-sm',
+                'h-full min-w-0 flex-1 rounded-s-lg bg-transparent',
+                'ps-2 pe-1 text-end text-sm',
                 'focus:outline-none',
               )}
               aria-label={_('Minimum file size (KB)')}
             />
-            <span className='text-base-content/70 select-none pr-2 text-xs'>{_('KB')}</span>
+            <span className='text-base-content/70 select-none pe-2 text-xs'>{_('KB')}</span>
           </div>
         </div>
 
@@ -353,7 +344,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
           </label>
         </div>
 
-        <div className='mt-1 flex justify-end gap-2'>
+        <div className='mt-1 flex justify-end gap-2 pb-2'>
           <button type='button' className='btn btn-ghost btn-sm' onClick={onCancel}>
             {_('Cancel')}
           </button>
@@ -367,7 +358,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
           </button>
         </div>
       </div>
-    </ModalPortal>
+    </Dialog>
   );
 };
 
