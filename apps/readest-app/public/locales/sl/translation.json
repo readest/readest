@@ -1547,5 +1547,10 @@
   "Process incoming items on this device": "Obdelaj dohodne elemente na tej napravi",
   "Email books to your library": "Pošiljajte knjige v svojo knjižnico po e-pošti",
   "Email a book or document to this address from an approved sender below.": "Pošljite knjigo ali dokument na ta naslov od odobrenega pošiljatelja spodaj.",
-  "Download and import books emailed to your address.": "Prenesite in uvozite knjige, poslane na vaš naslov po e-pošti."
+  "Download and import books emailed to your address.": "Prenesite in uvozite knjige, poslane na vaš naslov po e-pošti.",
+  "System Dictionary": "Sistemski slovar",
+  "System": "Sistem",
+  "System dictionary integration is coming soon on this platform.": "Integracija sistemskega slovarja bo kmalu na voljo na tej platformi.",
+  "Waiting to be processed": "Čaka na obdelavo",
+  "Processing…": "Obdelovanje…"
 }

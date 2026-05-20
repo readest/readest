@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "پردازش موارد ورودی روی این دستگاه",
   "Email books to your library": "ارسال کتاب‌ها با ایمیل به کتابخانه‌تان",
   "Email a book or document to this address from an approved sender below.": "از فرستندهٔ تأییدشدهٔ زیر، کتاب یا سندی را به این نشانی ایمیل کنید.",
-  "Download and import books emailed to your address.": "دانلود و وارد کردن کتاب‌هایی که به نشانی شما ایمیل شده‌اند."
+  "Download and import books emailed to your address.": "دانلود و وارد کردن کتاب‌هایی که به نشانی شما ایمیل شده‌اند.",
+  "System Dictionary": "فرهنگ‌نامه سیستم",
+  "System": "سیستم",
+  "System dictionary integration is coming soon on this platform.": "یکپارچه‌سازی فرهنگ‌نامه سیستم به‌زودی در این پلتفرم در دسترس قرار می‌گیرد.",
+  "Waiting to be processed": "در انتظار پردازش",
+  "Processing…": "در حال پردازش…"
 }

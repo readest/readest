@@ -1547,5 +1547,10 @@
   "Process incoming items on this device": "Обробляти вхідні елементи на цьому пристрої",
   "Email books to your library": "Надсилайте книги до своєї бібліотеки електронною поштою",
   "Email a book or document to this address from an approved sender below.": "Надішліть книгу або документ на цю адресу від схваленого відправника зі списку нижче.",
-  "Download and import books emailed to your address.": "Завантажуйте та імпортуйте книги, надіслані на вашу адресу електронною поштою."
+  "Download and import books emailed to your address.": "Завантажуйте та імпортуйте книги, надіслані на вашу адресу електронною поштою.",
+  "System Dictionary": "Системний словник",
+  "System": "Система",
+  "System dictionary integration is coming soon on this platform.": "Інтеграція системного словника незабаром з’явиться на цій платформі.",
+  "Waiting to be processed": "Очікує на обробку",
+  "Processing…": "Обробка…"
 }

@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "இந்தச் சாதனத்தில் உள்வரும் உருப்படிகளைச் செயலாக்கு",
   "Email books to your library": "உங்கள் நூலகத்திற்குப் புத்தகங்களை மின்னஞ்சல் செய்யவும்",
   "Email a book or document to this address from an approved sender below.": "கீழே உள்ள அங்கீகரிக்கப்பட்ட அனுப்புநரிடமிருந்து இந்த முகவரிக்கு ஒரு புத்தகம் அல்லது ஆவணத்தை மின்னஞ்சல் செய்யவும்.",
-  "Download and import books emailed to your address.": "உங்கள் முகவரிக்கு மின்னஞ்சல் செய்யப்பட்ட புத்தகங்களைப் பதிவிறக்கி இறக்குமதி செய்யவும்."
+  "Download and import books emailed to your address.": "உங்கள் முகவரிக்கு மின்னஞ்சல் செய்யப்பட்ட புத்தகங்களைப் பதிவிறக்கி இறக்குமதி செய்யவும்.",
+  "System Dictionary": "கணினி அகராதி",
+  "System": "கணினி",
+  "System dictionary integration is coming soon on this platform.": "இந்த தளத்தில் கணினி அகராதி ஒருங்கிணைப்பு விரைவில் வரும்.",
+  "Waiting to be processed": "செயலாக்கத்திற்காகக் காத்திருக்கிறது",
+  "Processing…": "செயலாக்கப்படுகிறது…"
 }

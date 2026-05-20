@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "このデバイスで受信アイテムを処理",
   "Email books to your library": "本をメールでライブラリに送信",
   "Email a book or document to this address from an approved sender below.": "下記の承認済み送信者から、書籍やドキュメントをこのアドレスにメールで送信します。",
-  "Download and import books emailed to your address.": "あなたのアドレスにメールで送られた書籍をダウンロードして取り込みます。"
+  "Download and import books emailed to your address.": "あなたのアドレスにメールで送られた書籍をダウンロードして取り込みます。",
+  "System Dictionary": "システム辞書",
+  "System": "システム",
+  "System dictionary integration is coming soon on this platform.": "システム辞書の統合は、このプラットフォームでまもなく利用可能になります。",
+  "Waiting to be processed": "処理待ち",
+  "Processing…": "処理中…"
 }

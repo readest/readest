@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "ประมวลผลรายการที่เข้ามาบนอุปกรณ์นี้",
   "Email books to your library": "ส่งหนังสือทางอีเมลไปยังคลังของคุณ",
   "Email a book or document to this address from an approved sender below.": "ส่งหนังสือหรือเอกสารทางอีเมลไปยังที่อยู่นี้จากผู้ส่งที่อนุมัติด้านล่าง",
-  "Download and import books emailed to your address.": "ดาวน์โหลดและนำเข้าหนังสือที่ส่งทางอีเมลมายังที่อยู่ของคุณ"
+  "Download and import books emailed to your address.": "ดาวน์โหลดและนำเข้าหนังสือที่ส่งทางอีเมลมายังที่อยู่ของคุณ",
+  "System Dictionary": "พจนานุกรมของระบบ",
+  "System": "ระบบ",
+  "System dictionary integration is coming soon on this platform.": "การผสานพจนานุกรมของระบบจะมาถึงในไม่ช้าบนแพลตฟอร์มนี้",
+  "Waiting to be processed": "รอการประมวลผล",
+  "Processing…": "กำลังประมวลผล…"
 }

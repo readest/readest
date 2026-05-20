@@ -1519,5 +1519,10 @@
   "Process incoming items on this device": "עיבוד פריטים נכנסים במכשיר זה",
   "Email books to your library": "שליחת ספרים אל הספרייה שלך באימייל",
   "Email a book or document to this address from an approved sender below.": "שלחו ספר או מסמך לכתובת זו משולח מאושר מהרשימה למטה.",
-  "Download and import books emailed to your address.": "הורדה וייבוא של ספרים שנשלחו לכתובת שלך בדוא״ל."
+  "Download and import books emailed to your address.": "הורדה וייבוא של ספרים שנשלחו לכתובת שלך בדוא״ל.",
+  "System Dictionary": "מילון המערכת",
+  "System": "מערכת",
+  "System dictionary integration is coming soon on this platform.": "שילוב מילון המערכת יהיה זמין בקרוב בפלטפורמה זו.",
+  "Waiting to be processed": "ממתין לעיבוד",
+  "Processing…": "מעבד…"
 }

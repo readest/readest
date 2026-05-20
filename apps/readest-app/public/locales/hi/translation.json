@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "इस डिवाइस पर आने वाली वस्तुओं को प्रोसेस करें",
   "Email books to your library": "अपनी लाइब्रेरी में किताबें ईमेल करें",
   "Email a book or document to this address from an approved sender below.": "नीचे दिए गए किसी अनुमोदित प्रेषक से इस पते पर कोई पुस्तक या दस्तावेज़ ईमेल करें।",
-  "Download and import books emailed to your address.": "आपके पते पर ईमेल की गई पुस्तकें डाउनलोड और आयात करें।"
+  "Download and import books emailed to your address.": "आपके पते पर ईमेल की गई पुस्तकें डाउनलोड और आयात करें।",
+  "System Dictionary": "सिस्टम शब्दकोश",
+  "System": "सिस्टम",
+  "System dictionary integration is coming soon on this platform.": "इस प्लेटफ़ॉर्म पर सिस्टम शब्दकोश एकीकरण जल्द ही आ रहा है।",
+  "Waiting to be processed": "संसाधन की प्रतीक्षा में",
+  "Processing…": "संसाधित किया जा रहा है…"
 }

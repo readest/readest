@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "Xử lý các mục đến trên thiết bị này",
   "Email books to your library": "Gửi sách vào thư viện của bạn qua email",
   "Email a book or document to this address from an approved sender below.": "Gửi sách hoặc tài liệu qua email đến địa chỉ này từ người gửi đã được phê duyệt bên dưới.",
-  "Download and import books emailed to your address.": "Tải xuống và nhập sách được gửi qua email đến địa chỉ của bạn."
+  "Download and import books emailed to your address.": "Tải xuống và nhập sách được gửi qua email đến địa chỉ của bạn.",
+  "System Dictionary": "Từ điển hệ thống",
+  "System": "Hệ thống",
+  "System dictionary integration is coming soon on this platform.": "Tích hợp từ điển hệ thống sẽ sớm có mặt trên nền tảng này.",
+  "Waiting to be processed": "Đang chờ xử lý",
+  "Processing…": "Đang xử lý…"
 }

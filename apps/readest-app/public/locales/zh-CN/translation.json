@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "在此设备上处理接收的项目",
   "Email books to your library": "通过电子邮件将图书发送到您的书库",
   "Email a book or document to this address from an approved sender below.": "从下方已批准的发件人，将图书或文档通过电子邮件发送到此地址。",
-  "Download and import books emailed to your address.": "下载并导入通过电子邮件发送到您地址的图书。"
+  "Download and import books emailed to your address.": "下载并导入通过电子邮件发送到您地址的图书。",
+  "System Dictionary": "系统词典",
+  "System": "系统",
+  "System dictionary integration is coming soon on this platform.": "即将在此平台支持系统词典集成。",
+  "Waiting to be processed": "等待处理",
+  "Processing…": "处理中…"
 }

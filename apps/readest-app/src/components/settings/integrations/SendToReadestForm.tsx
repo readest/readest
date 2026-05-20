@@ -346,9 +346,10 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
                         {item.filename || item.url || _('Untitled')}
                       </SettingLabel>
                       <span className='text-base-content/60 text-[0.8em]'>
-                        {item.status === 'failed'
-                          ? item.error || _('Failed')
-                          : _(activityStatusLabel(item.status))}
+                        {item.status === 'done' && _('Added to your library')}
+                        {item.status === 'pending' && _('Waiting to be processed')}
+                        {item.status === 'claimed' && _('Processing…')}
+                        {item.status === 'failed' && (item.error || _('Failed'))}
                       </span>
                     </div>
                   </div>
@@ -372,18 +373,5 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
     </div>
   );
 };
-
-function activityStatusLabel(status: DBSendInboxItem['status']): string {
-  switch (status) {
-    case 'done':
-      return 'Added to your library';
-    case 'pending':
-      return 'Waiting to be processed';
-    case 'claimed':
-      return 'Processing…';
-    default:
-      return 'Failed';
-  }
-}
 
 export default SendToReadestForm;

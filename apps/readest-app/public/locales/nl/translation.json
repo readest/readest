@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "Inkomende items op dit apparaat verwerken",
   "Email books to your library": "Boeken per e-mail naar je bibliotheek sturen",
   "Email a book or document to this address from an approved sender below.": "E-mail een boek of document naar dit adres vanaf een goedgekeurde afzender hieronder.",
-  "Download and import books emailed to your address.": "Download en importeer boeken die naar je adres zijn gemaild."
+  "Download and import books emailed to your address.": "Download en importeer boeken die naar je adres zijn gemaild.",
+  "System Dictionary": "Systeemwoordenboek",
+  "System": "Systeem",
+  "System dictionary integration is coming soon on this platform.": "Integratie van het systeemwoordenboek komt binnenkort beschikbaar op dit platform.",
+  "Waiting to be processed": "Wacht op verwerking",
+  "Processing…": "Bezig met verwerken…"
 }

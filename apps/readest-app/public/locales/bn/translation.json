@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "এই ডিভাইসে আগত আইটেমগুলি প্রক্রিয়া করুন",
   "Email books to your library": "আপনার লাইব্রেরিতে বই ইমেল করুন",
   "Email a book or document to this address from an approved sender below.": "নিচের অনুমোদিত কোনো প্রেরক থেকে এই ঠিকানায় একটি বই বা নথি ইমেল করুন।",
-  "Download and import books emailed to your address.": "আপনার ঠিকানায় ইমেল করা বই ডাউনলোড ও আমদানি করুন।"
+  "Download and import books emailed to your address.": "আপনার ঠিকানায় ইমেল করা বই ডাউনলোড ও আমদানি করুন।",
+  "System Dictionary": "সিস্টেম অভিধান",
+  "System": "সিস্টেম",
+  "System dictionary integration is coming soon on this platform.": "এই প্ল্যাটফর্মে সিস্টেম অভিধান ইন্টিগ্রেশন শীঘ্রই আসছে।",
+  "Waiting to be processed": "প্রক্রিয়াকরণের অপেক্ষায়",
+  "Processing…": "প্রক্রিয়াকরণ হচ্ছে…"
 }

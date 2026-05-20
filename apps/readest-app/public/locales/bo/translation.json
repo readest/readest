@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "སྒྲིག་ཆས་འདིའི་སྟེང་ནང་འབྱོར་གྱི་དངོས་པོ་སྒྲིག་སྦྱོར་བྱེད།",
   "Email books to your library": "ཁྱེད་ཀྱི་དཔེ་མཛོད་ལ་དེབ་གློག་འཕྲིན་གྱིས་སྐུར།",
   "Email a book or document to this address from an approved sender below.": "འོག་གི་ཆོག་མཆན་ཐོབ་པའི་སྐུར་མཁན་ཞིག་ནས་དཔེ་ཆའམ་ཡིག་ཆ་ཞིག་ཁ་བྱང་འདིར་གློག་འཕྲིན་གྱིས་སྐུར་རོགས།",
-  "Download and import books emailed to your address.": "ཁྱེད་ཀྱི་ཁ་བྱང་ལ་གློག་འཕྲིན་གྱིས་སྐུར་བའི་དཔེ་ཆ་རྣམས་ཕབ་ལེན་དང་ནང་འདྲེན་བྱེད།"
+  "Download and import books emailed to your address.": "ཁྱེད་ཀྱི་ཁ་བྱང་ལ་གློག་འཕྲིན་གྱིས་སྐུར་བའི་དཔེ་ཆ་རྣམས་ཕབ་ལེན་དང་ནང་འདྲེན་བྱེད།",
+  "System Dictionary": "མ་ལག་ཚིག་མཛོད",
+  "System": "མ་ལག",
+  "System dictionary integration is coming soon on this platform.": "སྡོམ་གཞི་འདིའི་ནང་མ་ལག་ཚིག་མཛོད་མཐུན་སྒྲིལ་གྱི་ནུས་པ་མྱུར་དུ་འབྱུང་ངེས།",
+  "Waiting to be processed": "སྦྱོར་སྦྱང་གི་སྒུག་ནས།",
+  "Processing…": "སྦྱོར་སྦྱང་བྱེད་བཞིན་པ…"
 }

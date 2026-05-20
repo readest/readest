@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "Bearbeta inkommande objekt på den här enheten",
   "Email books to your library": "Skicka böcker till ditt bibliotek via e-post",
   "Email a book or document to this address from an approved sender below.": "Mejla en bok eller ett dokument till den här adressen från en godkänd avsändare nedan.",
-  "Download and import books emailed to your address.": "Ladda ner och importera böcker som mejlats till din adress."
+  "Download and import books emailed to your address.": "Ladda ner och importera böcker som mejlats till din adress.",
+  "System Dictionary": "Systemets ordbok",
+  "System": "System",
+  "System dictionary integration is coming soon on this platform.": "Integration med systemets ordbok kommer snart till denna plattform.",
+  "Waiting to be processed": "Väntar på bearbetning",
+  "Processing…": "Bearbetar…"
 }

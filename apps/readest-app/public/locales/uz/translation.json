@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "Bu qurilmada kiruvchi elementlarni qayta ishlash",
   "Email books to your library": "Kitoblarni kutubxonangizga e-pochta orqali yuborish",
   "Email a book or document to this address from an approved sender below.": "Quyidagi tasdiqlangan jo‘natuvchidan ushbu manzilga kitob yoki hujjatni e-pochta orqali yuboring.",
-  "Download and import books emailed to your address.": "Manzilingizga e-pochta orqali yuborilgan kitoblarni yuklab oling va import qiling."
+  "Download and import books emailed to your address.": "Manzilingizga e-pochta orqali yuborilgan kitoblarni yuklab oling va import qiling.",
+  "System Dictionary": "Tizim lug‘ati",
+  "System": "Tizim",
+  "System dictionary integration is coming soon on this platform.": "Tizim lug‘ati integratsiyasi tez orada ushbu platformada paydo bo‘ladi.",
+  "Waiting to be processed": "Qayta ishlanishi kutilmoqda",
+  "Processing…": "Qayta ishlanmoqda…"
 }

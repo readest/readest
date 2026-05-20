@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "Επεξεργασία εισερχόμενων στοιχείων σε αυτή τη συσκευή",
   "Email books to your library": "Στείλτε βιβλία στη βιβλιοθήκη σας μέσω email",
   "Email a book or document to this address from an approved sender below.": "Στείλτε ένα βιβλίο ή έγγραφο σε αυτή τη διεύθυνση από εγκεκριμένο αποστολέα παρακάτω.",
-  "Download and import books emailed to your address.": "Λήψη και εισαγωγή βιβλίων που στάλθηκαν με email στη διεύθυνσή σας."
+  "Download and import books emailed to your address.": "Λήψη και εισαγωγή βιβλίων που στάλθηκαν με email στη διεύθυνσή σας.",
+  "System Dictionary": "Λεξικό συστήματος",
+  "System": "Σύστημα",
+  "System dictionary integration is coming soon on this platform.": "Η ενσωμάτωση λεξικού συστήματος έρχεται σύντομα σε αυτή την πλατφόρμα.",
+  "Waiting to be processed": "Αναμονή για επεξεργασία",
+  "Processing…": "Επεξεργασία…"
 }

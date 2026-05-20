@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "이 기기에서 수신 항목 처리",
   "Email books to your library": "책을 이메일로 라이브러리에 보내기",
   "Email a book or document to this address from an approved sender below.": "아래의 승인된 발신자에서 책이나 문서를 이 주소로 이메일로 보내세요.",
-  "Download and import books emailed to your address.": "이 주소로 이메일로 보낸 책을 다운로드하여 가져옵니다."
+  "Download and import books emailed to your address.": "이 주소로 이메일로 보낸 책을 다운로드하여 가져옵니다.",
+  "System Dictionary": "시스템 사전",
+  "System": "시스템",
+  "System dictionary integration is coming soon on this platform.": "이 플랫폼에서 시스템 사전 통합이 곧 제공됩니다.",
+  "Waiting to be processed": "처리 대기 중",
+  "Processing…": "처리 중…"
 }

@@ -1519,5 +1519,10 @@
   "Process incoming items on this device": "Procesează elementele primite pe acest dispozitiv",
   "Email books to your library": "Trimiteți cărți în biblioteca dvs. prin e-mail",
   "Email a book or document to this address from an approved sender below.": "Trimite o carte sau un document la această adresă de la un expeditor aprobat de mai jos.",
-  "Download and import books emailed to your address.": "Descarcă și importă cărțile trimise prin e-mail la adresa ta."
+  "Download and import books emailed to your address.": "Descarcă și importă cărțile trimise prin e-mail la adresa ta.",
+  "System Dictionary": "Dicționarul sistemului",
+  "System": "Sistem",
+  "System dictionary integration is coming soon on this platform.": "Integrarea cu dicționarul sistemului va fi disponibilă în curând pe această platformă.",
+  "Waiting to be processed": "În așteptarea procesării",
+  "Processing…": "Se procesează…"
 }

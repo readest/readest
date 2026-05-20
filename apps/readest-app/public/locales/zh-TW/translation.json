@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "在此裝置上處理接收的項目",
   "Email books to your library": "透過電子郵件將書籍傳送到您的書庫",
   "Email a book or document to this address from an approved sender below.": "從下方已核准的寄件者，將書籍或文件透過電子郵件傳送到此地址。",
-  "Download and import books emailed to your address.": "下載並匯入透過電子郵件傳送到您地址的書籍。"
+  "Download and import books emailed to your address.": "下載並匯入透過電子郵件傳送到您地址的書籍。",
+  "System Dictionary": "系統字典",
+  "System": "系統",
+  "System dictionary integration is coming soon on this platform.": "即將在此平臺支援系統字典整合。",
+  "Waiting to be processed": "等待處理",
+  "Processing…": "處理中…"
 }

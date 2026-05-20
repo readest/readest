@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "මෙම උපාංගයේ පැමිණෙන අයිතම සකසන්න",
   "Email books to your library": "ඔබේ පුස්තකාලයට පොත් විද්‍යුත් තැපැල් කරන්න",
   "Email a book or document to this address from an approved sender below.": "පහත අනුමත එවන්නෙකුගෙන් මෙම ලිපිනයට පොතක් හෝ ලේඛනයක් විද්‍යුත් තැපෑලෙන් එවන්න.",
-  "Download and import books emailed to your address.": "ඔබේ ලිපිනයට විද්‍යුත් තැපෑලෙන් එවූ පොත් බාගත කර ආයාත කරන්න."
+  "Download and import books emailed to your address.": "ඔබේ ලිපිනයට විද්‍යුත් තැපෑලෙන් එවූ පොත් බාගත කර ආයාත කරන්න.",
+  "System Dictionary": "පද්ධතියේ ශබ්දකෝෂය",
+  "System": "පද්ධතිය",
+  "System dictionary integration is coming soon on this platform.": "මෙම වේදිකාවේ පද්ධති ශබ්දකෝෂ ඒකාබද්ධතාව ඉක්මනින් පැමිණේ.",
+  "Waiting to be processed": "සැකසීමට බලාපොරොත්තු වෙමින්",
+  "Processing…": "සැකසෙමින්…"
 }

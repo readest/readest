@@ -1603,5 +1603,10 @@
   "Process incoming items on this device": "معالجة العناصر الواردة على هذا الجهاز",
   "Email books to your library": "إرسال الكتب إلى مكتبتك بالبريد الإلكتروني",
   "Email a book or document to this address from an approved sender below.": "أرسل كتابًا أو مستندًا إلى هذا العنوان من مُرسِل معتمد أدناه.",
-  "Download and import books emailed to your address.": "تنزيل واستيراد الكتب المُرسَلة إلى عنوانك عبر البريد الإلكتروني."
+  "Download and import books emailed to your address.": "تنزيل واستيراد الكتب المُرسَلة إلى عنوانك عبر البريد الإلكتروني.",
+  "System Dictionary": "قاموس النظام",
+  "System": "النظام",
+  "System dictionary integration is coming soon on this platform.": "تكامل قاموس النظام قادم قريباً على هذه المنصة.",
+  "Waiting to be processed": "في انتظار المعالجة",
+  "Processing…": "جارٍ المعالجة…"
 }

@@ -1463,5 +1463,10 @@
   "Process incoming items on this device": "Proses item masuk di perangkat ini",
   "Email books to your library": "Kirim buku ke perpustakaan Anda melalui email",
   "Email a book or document to this address from an approved sender below.": "Kirim buku atau dokumen melalui email ke alamat ini dari pengirim yang disetujui di bawah.",
-  "Download and import books emailed to your address.": "Unduh dan impor buku yang dikirim melalui email ke alamat Anda."
+  "Download and import books emailed to your address.": "Unduh dan impor buku yang dikirim melalui email ke alamat Anda.",
+  "System Dictionary": "Kamus Sistem",
+  "System": "Sistem",
+  "System dictionary integration is coming soon on this platform.": "Integrasi kamus sistem akan segera hadir di platform ini.",
+  "Waiting to be processed": "Menunggu untuk diproses",
+  "Processing…": "Memproses…"
 }

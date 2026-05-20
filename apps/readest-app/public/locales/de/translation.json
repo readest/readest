@@ -1491,5 +1491,10 @@
   "Process incoming items on this device": "Eingehende Elemente auf diesem Gerät verarbeiten",
   "Email books to your library": "Bücher an deine Bibliothek per E-Mail senden",
   "Email a book or document to this address from an approved sender below.": "Senden Sie ein Buch oder Dokument von einem genehmigten Absender unten per E-Mail an diese Adresse.",
-  "Download and import books emailed to your address.": "Bücher herunterladen und importieren, die an Ihre Adresse gesendet wurden."
+  "Download and import books emailed to your address.": "Bücher herunterladen und importieren, die an Ihre Adresse gesendet wurden.",
+  "System Dictionary": "Systemwörterbuch",
+  "System": "System",
+  "System dictionary integration is coming soon on this platform.": "Die Integration des Systemwörterbuchs ist auf dieser Plattform bald verfügbar.",
+  "Waiting to be processed": "Wartet auf Verarbeitung",
+  "Processing…": "Wird verarbeitet…"
 }
