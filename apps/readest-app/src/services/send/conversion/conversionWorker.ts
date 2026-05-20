@@ -1,4 +1,4 @@
-import { convertToEpub, type ConvertInput } from './convertToEpub';
+import type { ConvertInput } from './convertToEpub';
 import type { ConvertedBook } from './types';
 import type {
   ConversionWorkerRequest,
@@ -61,6 +61,16 @@ async function convertInWorker(input: ConvertInput, timeoutMs: number): Promise<
 }
 
 /**
+ * Main-thread fallback. Dynamic-imported so the heavy conversion deps
+ * (mammoth, Readability, DOMPurify, zip.js) never load on the main thread
+ * unless the Worker path is actually unavailable.
+ */
+async function convertOnMainThread(input: ConvertInput): Promise<ConvertedBook> {
+  const { convertToEpub } = await import('./convertToEpub');
+  return convertToEpub(input);
+}
+
+/**
  * Convert a document to EPUB off the main thread, falling back to in-thread
  * conversion when Web Workers are unavailable or the worker fails.
  */
@@ -69,13 +79,13 @@ export async function convertToEpubWithWorker(
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<ConvertedBook> {
   if (typeof Worker === 'undefined') {
-    return convertToEpub(input);
+    return convertOnMainThread(input);
   }
   try {
     return await convertInWorker(input, timeoutMs);
   } catch (error) {
     console.warn('Conversion worker failed, falling back to main thread:', error);
-    return convertToEpub(input);
+    return convertOnMainThread(input);
   }
 }
 
