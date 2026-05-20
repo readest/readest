@@ -14,6 +14,8 @@ import {
   pushBookFile,
 } from '@/services/webdav/WebDAVSync';
 import { WebDAVRequestError } from '@/services/webdav/WebDAVClient';
+import { isTauriAppPlatform } from '@/services/environment';
+import { tauriUpload } from '@/utils/transfer';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
@@ -209,16 +211,59 @@ export const useWebDAVSync = (bookKey: string) => {
     if (!book || !appService) return;
 
     try {
-      const result = await pushBookFile(settings.webdav!, book, async () => {
-        // Loader closure: read the local book file off disk lazily so we
-        // only do the expensive ArrayBuffer materialisation when the
-        // HEAD probe says we actually need to upload.
-        const fp = getLocalBookFilename(book);
-        if (!(await appService.exists(fp, 'Books'))) return null;
-        const file = await appService.openFile(fp, 'Books');
-        const bytes = await file.arrayBuffer();
-        return { bytes, size: bytes.byteLength };
-      });
+      const result = await pushBookFile(
+        settings.webdav!,
+        book,
+        async () => {
+          // Buffered fallback: read the local book file off disk lazily
+          // so we only do the expensive ArrayBuffer materialisation when
+          // the HEAD probe says we actually need to upload. Used on web
+          // targets where streaming PUTs aren't available.
+          const fp = getLocalBookFilename(book);
+          if (!(await appService.exists(fp, 'Books'))) return null;
+          const file = await appService.openFile(fp, 'Books');
+          const bytes = await file.arrayBuffer();
+          return { bytes, size: bytes.byteLength };
+        },
+        // Tauri-only: stream the book file straight from disk to the
+        // server via Rust-side `upload_file`, never letting the bytes
+        // land in the JS heap. Without this, opening a multi-hundred-
+        // megabyte PDF / scanned book would buffer the whole file into
+        // V8 just to PUT it, blowing the renderer's heap and freezing
+        // the reader to a blank screen mid-open. Same flow as the
+        // library Sync now path in WebDAVForm.
+        isTauriAppPlatform()
+          ? async () => {
+              const fp = getLocalBookFilename(book);
+              if (!(await appService.exists(fp, 'Books'))) return null;
+              const file = await appService.openFile(fp, 'Books');
+              const size = file.size;
+              // Release the FD before streaming so the Tauri side can
+              // re-open the path for the PUT without contending.
+              const closable = file as { close?: () => Promise<void> };
+              if (closable.close) await closable.close();
+              const dst = await appService.resolveFilePath(fp, 'Books');
+              return {
+                size,
+                upload: async (remoteUrl, headers) => {
+                  try {
+                    await tauriUpload(
+                      remoteUrl,
+                      dst,
+                      'PUT',
+                      undefined,
+                      headers as unknown as Map<string, string>,
+                    );
+                    return true;
+                  } catch (e) {
+                    console.warn('WD per-book push: tauriUpload failed', book.hash, e);
+                    return false;
+                  }
+                },
+              };
+            }
+          : undefined,
+      );
       if (result.uploaded) {
         await updateLastSyncedAt(Date.now());
       }

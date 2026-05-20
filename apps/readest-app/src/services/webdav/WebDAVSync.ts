@@ -2,6 +2,8 @@ import { Book, BookConfig, BookNote } from '@/types/book';
 import { WebDAVSettings } from '@/types/settings';
 import {
   WebDAVConfig,
+  buildBasicAuthHeader,
+  buildRequestUrl,
   ensureDirectory,
   getFile,
   getFileBinary,
@@ -244,6 +246,45 @@ export interface BookFileSource {
 
 export type BookFileLoader = () => Promise<BookFileSource | null>;
 
+/**
+ * Streaming alternative to {@link BookFileLoader}: hands the syncer a
+ * cheap-to-resolve metadata bundle (just `size` is needed for the
+ * HEAD-vs-local short-circuit) plus an `upload` callback that streams
+ * the bytes directly from disk to the WebDAV server, never letting the
+ * full file land in the JS heap.
+ *
+ * Why this exists separately from BookFileLoader:
+ *   - `loader` materialises the entire file as an ArrayBuffer up-front,
+ *     which is fine for small books (a few MB) but a hard kill switch
+ *     for a library of multi-hundred-megabyte PDFs: each book opens
+ *     its own ArrayBuffer in the renderer's V8 heap, and even with
+ *     sequential `pushBookFile` calls the GC can't reliably free them
+ *     before the next `arrayBuffer()` allocates. After 2–3 large
+ *     books the renderer hits the heap ceiling and the WebView
+ *     crashes — symptom: the entire UI goes blank mid-sync.
+ *   - The streaming loader hands the file path to a Tauri command
+ *     (`upload_file` via `tauriUpload`) which reads + uploads off the
+ *     Rust side in chunks. JS heap stays flat regardless of book size.
+ *
+ * Callers should provide `streamingLoader` when running on Tauri (where
+ * `tauriUpload` is available) and fall back to `loader` on web targets
+ * that don't have a streaming HTTP primitive.
+ */
+export interface BookFileStreamingSource {
+  /** File size in bytes, for the HEAD-vs-local short-circuit. */
+  size: number;
+  /**
+   * Stream the bytes to `remoteUrl` via PUT. Authentication headers
+   * are pre-baked by the caller (typically via {@link buildBasicAuthHeader})
+   * because the streaming primitive can't see the WebDAV settings.
+   * Returns `true` on success, `false` when the upload was skipped or
+   * failed in a way the caller wants to swallow.
+   */
+  upload: (remoteUrl: string, headers: Record<string, string>) => Promise<boolean>;
+}
+
+export type BookFileStreamingLoader = () => Promise<BookFileStreamingSource | null>;
+
 export interface PushBookFileResult {
   /** True when bytes were uploaded; false when the upload was skipped. */
   uploaded: boolean;
@@ -263,14 +304,24 @@ export interface PushBookFileResult {
  * is seen on a device. Renaming a book locally never re-uploads — we
  * MOVE the friendly file name in a future patch (Step 3).
  *
- * Caller-controlled file loading keeps this module free of any
- * AppService / FileSystem dependency: the React layer wires up a
- * `loader` that reads from the local Books directory.
+ * Two upload modes are supported and mutually exclusive:
+ *   - {@link BookFileStreamingLoader} (preferred when available): hands
+ *     the file path off to a Tauri-side streamer. Constant JS heap
+ *     regardless of book size — required for libraries with multi-
+ *     hundred-megabyte PDFs, where buffering was crashing the renderer.
+ *   - {@link BookFileLoader} (fallback): materialises the file as an
+ *     ArrayBuffer in JS, then PUTs it via `putFileBinary`. Fine for
+ *     small files; OOMs the WebView for large libraries.
+ *
+ * Pass `streamingLoader` when running on Tauri; pass `loader` otherwise.
+ * Passing both makes streaming win — the HEAD short-circuit is shared
+ * either way so steady-state syncs cost a single round-trip per book.
  */
 export const pushBookFile = async (
   settings: WebDAVSettings,
   book: Book,
   loader: BookFileLoader,
+  streamingLoader?: BookFileStreamingLoader,
 ): Promise<PushBookFileResult> => {
   const client = toClientConfig(settings);
   const dirPath = buildBookDirPath(settings.rootPath, book.hash);
@@ -285,6 +336,43 @@ export const pushBookFile = async (
     // HEAD failures other than 404 propagate; the caller decides whether
     // to surface them as a toast.
     if (!(e instanceof WebDAVRequestError) || e.code !== 'NETWORK') throw e;
+  }
+
+  // Streaming path: resolve metadata only, then stream bytes off disk.
+  // The metadata fetch (file.size) doesn't read the body, so heap
+  // stays flat even for gigabyte-scale PDFs.
+  if (streamingLoader) {
+    const meta = await streamingLoader();
+    if (!meta) {
+      // Loader returned null — most often "file isn't on this device";
+      // check the buffered loader as a last resort so callers that
+      // wired both keep working when one path is unavailable.
+      if (!loader) return { uploaded: false, reason: 'no-source' };
+    } else {
+      if (remoteHead && remoteHead.size === meta.size) {
+        return { uploaded: false, reason: 'remote-matches' };
+      }
+      const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
+      await ensureDirectory(client, dirs);
+      const remoteUrl = buildRequestUrl(settings.serverUrl, path);
+      const headers: Record<string, string> = {
+        Authorization: buildBasicAuthHeader(settings.username, settings.password),
+      };
+      const ok = await meta.upload(remoteUrl, headers);
+      if (!ok) {
+        // Some upstream servers return 409 if a parent is recreated
+        // mid-PUT. Mirror the buffered path's one-shot retry: re-
+        // ensure directories and try again. The caller's `upload`
+        // implementation owns the actual error mapping; we just give
+        // it one more chance.
+        await ensureDirectory(client, dirs);
+        const retried = await meta.upload(remoteUrl, headers);
+        if (!retried) {
+          throw new WebDAVRequestError('Streaming upload failed', undefined, 'NETWORK');
+        }
+      }
+      return { uploaded: true };
+    }
   }
 
   const local = await loader();
@@ -466,6 +554,19 @@ export interface SyncLibraryOptions {
    * actually has the binary).
    */
   loadBookFile: (book: Book) => Promise<BookFileSource | null>;
+  /**
+   * Streaming alternative to {@link SyncLibraryOptions.loadBookFile}.
+   * When supplied, the per-book upload path uses this in preference to
+   * `loadBookFile`, handing the file off to a transport that streams
+   * the bytes off disk directly to the WebDAV server. Required for
+   * libraries with multi-hundred-megabyte books — see
+   * {@link BookFileStreamingSource} for the heap-pressure rationale.
+   *
+   * Tauri callers should provide this; web callers (where streaming
+   * PUTs aren't available) leave it undefined and fall back to the
+   * buffered `loadBookFile` path.
+   */
+  loadBookFileStreaming?: (book: Book) => Promise<BookFileStreamingSource | null>;
   /**
    * Provider that returns the bytes of a book's local cover image.
    * Books without a cover (e.g. plaintext imports) resolve to `null`
@@ -790,7 +891,12 @@ export const syncLibrary = async (
         }
         if (options.syncBooks) {
           phase = 'upload-file';
-          const fileResult = await pushBookFile(settings, book, () => options.loadBookFile(book));
+          const fileResult = await pushBookFile(
+            settings,
+            book,
+            () => options.loadBookFile(book),
+            options.loadBookFileStreaming ? () => options.loadBookFileStreaming!(book) : undefined,
+          );
           if (fileResult.uploaded) {
             result.filesUploaded += 1;
           } else if (fileResult.reason === 'remote-matches') {

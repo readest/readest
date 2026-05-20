@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { isTauriAppPlatform } from '@/services/environment';
-import { tauriDownload } from '@/utils/transfer';
+import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
 import {
   buildBasicAuthHeader,
@@ -243,6 +243,57 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
           const bytes = await file.arrayBuffer();
           return { bytes, size: bytes.byteLength };
         },
+        // Tauri-only: stream the book file straight from disk to the
+        // WebDAV server via Rust-side `upload_file`, never letting the
+        // bytes land in the JS heap. Without this, syncing a library
+        // with multiple multi-hundred-megabyte PDFs accumulates
+        // ArrayBuffers that V8 can't free fast enough between
+        // sequential `pushBookFile` calls — the renderer eventually
+        // hits its heap ceiling and the WebView crashes mid-sync,
+        // surfacing as a blank white screen on desktop and as a
+        // binder-OOM kill on Android. The metadata-only fast path
+        // (open file just to read `.size`) keeps the HEAD short-
+        // circuit working the same way the buffered path does.
+        loadBookFileStreaming: isTauriAppPlatform()
+          ? async (book) => {
+              if (!appService) return null;
+              const fp = getLocalBookFilename(book);
+              if (!(await appService.exists(fp, 'Books'))) return null;
+              const file = await appService.openFile(fp, 'Books');
+              const size = file.size;
+              // openFile returns a File-like handle; close eagerly when
+              // the platform exposes it so the Tauri side can re-open
+              // the path for the streamed PUT without holding two FDs.
+              const closable = file as { close?: () => Promise<void> };
+              if (closable.close) await closable.close();
+              const dst = await appService.resolveFilePath(fp, 'Books');
+              return {
+                size,
+                upload: async (remoteUrl, headers) => {
+                  try {
+                    // tauriUpload's TS type says Map, but its Tauri
+                    // command on the Rust side accepts a JSON object →
+                    // HashMap<String, String>. The internal `headers ??
+                    // {}` default already proves a plain object works,
+                    // so cast and pass the headers object directly
+                    // rather than building a Map (which Tauri's IPC
+                    // serialiser handles less consistently).
+                    await tauriUpload(
+                      remoteUrl,
+                      dst,
+                      'PUT',
+                      undefined,
+                      headers as unknown as Map<string, string>,
+                    );
+                    return true;
+                  } catch (e) {
+                    console.warn('WD library sync: tauriUpload failed', book.hash, e);
+                    return false;
+                  }
+                },
+              };
+            }
+          : undefined,
         loadBookCover: async (book) => {
           // Covers are best-effort — books without one (TXT/MD without
           // metadata, custom imports without art) just return null and
