@@ -162,9 +162,36 @@ export const getRangeTextStyleInWebview = (range: Range): RangeTextStyle | null 
     if (Number.isFinite(sy)) scaleY = sy!;
   }
 
-  const fontSizePx = parseFloat(style.fontSize) || 0;
+  // Cross-check the declared font-size against the range's actual
+  // visual height. In typical EPUB layout the inline box is roughly
+  // `font-size × line-height` tall (≈1.2× by default), so a declared
+  // font-size noticeably *larger* than the rendered height means the
+  // value isn't a real CSS pixel measurement we can hand to NSFont —
+  // pdf.js's text layer is the canonical offender: each glyph span
+  // can carry an intrinsic `font-size` that reflects the document's
+  // unit-em size before `transform: scale(...)` shrinks it back to
+  // page-coordinate pixels, leaving `getComputedStyle(...).fontSize`
+  // many times bigger than the on-screen glyph. Without compensation
+  // the macOS HUD lays out a giant attributed string and the yellow
+  // highlight rectangle behind it engulfs neighbouring paragraphs.
+  //
+  // Fix: when the declared size exceeds the inline box height by
+  // more than 30 %, treat the inline box height as the source of
+  // truth and back out a plausible font-size. 0.85 is the typical
+  // ratio of cap-height-ish font-size to a 1.2 line-height box; it
+  // matches normal EPUB body text (the common case) within a few
+  // percent and converges PDF text layers onto something AppKit can
+  // render at a sensible scale. Below the threshold (the common
+  // EPUB case) we leave the declared value alone.
+  const declaredFontSize = (parseFloat(style.fontSize) || 0) * scaleY;
+  let fontSize = declaredFontSize;
+  const renderedHeight = range.getBoundingClientRect().height;
+  if (renderedHeight > 0 && declaredFontSize > renderedHeight * 1.3) {
+    fontSize = renderedHeight * 0.85;
+  }
+
   return {
-    fontSize: fontSizePx * scaleY,
+    fontSize,
     fontFamily: style.fontFamily,
     color: style.color,
   };
