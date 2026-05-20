@@ -1537,5 +1537,17 @@
   "Import all into library": "Importă tot în bibliotecă",
   "Recursively add every matching file directly to the library.": "Adaugă recursiv fiecare fișier potrivit direct în bibliotecă.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Nu s-au găsit cărți potrivite în folderul selectat."
+  "No matching books found in the selected folder.": "Nu s-au găsit cărți potrivite în folderul selectat.",
+  "Send a web article": "Trimite un articol web",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Instalează extensia de browser Readest pentru a trimite articolul pe care îl citești în biblioteca ta — taie pagina din browserul tău, așa că funcționează și pe site-urile cu plată sau care necesită autentificare.",
+  "Enter a URL starting with http:// or https://": "Introdu o adresă URL care începe cu http:// sau https://",
+  "Import": "Importă",
+  "Import from Web URL": "Importă dintr-un URL web",
+  "From Web URL": "Dintr-un URL web",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Lipiți un link către articol. Readest captează pagina și o salvează în biblioteca dvs.",
+  "Saving to your Readest library…": "Se salvează în biblioteca dvs. Readest…",
+  "Saving to Readest": "Se salvează în Readest",
+  "Loading article…": "Se încarcă articolul…",
+  "Capturing article…": "Se capturează articolul…",
+  "Saved to Readest": "Salvat în Readest"
 }

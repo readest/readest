@@ -1481,5 +1481,17 @@
   "Import all into library": "ཡོངས་སུ་དཔེ་མཛོད་དུ་ནང་འདྲེན་བྱེད།",
   "Recursively add every matching file directly to the library.": "མཐུན་པའི་ཡིག་ཆ་ཡོངས་སུ་དཔེ་མཛོད་དུ་ཐད་ཀར་ལོག་སྣོན་བྱས་ཏེ་ཁ་སྣོན་གྱིས།",
   "OK": "ཡིན།",
-  "No matching books found in the selected folder.": "བདམས་པའི་ཡིག་སྣོད་ནང་མཐུན་པའི་དཔེ་ཆ་ག་ཡང་མ་རྙེད།"
+  "No matching books found in the selected folder.": "བདམས་པའི་ཡིག་སྣོད་ནང་མཐུན་པའི་དཔེ་ཆ་ག་ཡང་མ་རྙེད།",
+  "Send a web article": "དྲ་ངོས་ཀྱི་གཏམ་རྩོམ་སྐུར་སྤྲོད་པ",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "ཁྱེད་ཀྱི་ཀློག་བཞིན་པའི་གཏམ་རྩོམ་ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་སྐུར་འདོན་བྱེད་པར་Readest་ཕྲ་མེག་གི་ཁ་སྣོན་གཏོགས་གཞུང་སྒྲིག་འཇུག་གནང་རོགས — དེས་ཁྱེད་ཀྱི་ཁ་པར་ནང་ནས་ཤོག་ངོས་ལེན་པས་ངུལ་སྤྲོད་དགོས་པ་དང་ཐོ་འགོད་རྐྱང་གི་དྲ་ངོས་དག་ཀྱང་ལས་ཀ་བྱེད་ཐུབ།",
+  "Enter a URL starting with http:// or https://": "http:// ཡང་ན་ https:// ནས་འགོ་འཛུགས་པའི་URL་ཞིག་འཇུག",
+  "Import": "ནང་འདྲེན།",
+  "Import from Web URL": "དྲ་ངོས་ཀྱི་URL་ནས་ནང་འདྲེན།",
+  "From Web URL": "དྲ་ངོས་ཀྱི་URL་ནས།",
+  "Paste an article link. Readest clips the page and saves it to your library.": "རྩོམ་ཡིག་གི་འབྲེལ་མཐུད་ཕབ་སྦྱར་གནང༌། Readest གྱིས་ཤོག་ངོས་འཛིན་ནས་ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་ཉར་འཇོག་བྱེད།",
+  "Saving to your Readest library…": "ཁྱེད་ཀྱི་ Readest དཔེ་མཛོད་དུ་ཉར་བཞིན་པ་…",
+  "Saving to Readest": "Readest དུ་ཉར་བཞིན་པ་",
+  "Loading article…": "རྩོམ་ཡིག་སྦྱར་བཞིན་པ་…",
+  "Capturing article…": "རྩོམ་ཡིག་འཛིན་བཞིན་པ་…",
+  "Saved to Readest": "Readest དུ་ཉར་ཟིན།"
 }

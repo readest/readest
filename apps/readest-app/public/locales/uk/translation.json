@@ -1565,5 +1565,17 @@
   "Import all into library": "Імпортувати все до бібліотеки",
   "Recursively add every matching file directly to the library.": "Рекурсивно додати кожен відповідний файл безпосередньо до бібліотеки.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Не знайдено відповідних книг у вибраній папці."
+  "No matching books found in the selected folder.": "Не знайдено відповідних книг у вибраній папці.",
+  "Send a web article": "Надіслати веб-статтю",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Встановіть розширення браузера Readest, щоб надіслати статтю, яку ви читаєте, до вашої бібліотеки — воно вирізає сторінку з вашого браузера, тож працюють також платні та лише авторизовані сайти.",
+  "Enter a URL starting with http:// or https://": "Введіть URL, що починається з http:// або https://",
+  "Import": "Імпорт",
+  "Import from Web URL": "Імпорт з веб-адреси",
+  "From Web URL": "З веб-адреси",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Вставте посилання на статтю. Readest захоплює сторінку та зберігає її у вашу бібліотеку.",
+  "Saving to your Readest library…": "Збереження у вашу бібліотеку Readest…",
+  "Saving to Readest": "Збереження в Readest",
+  "Loading article…": "Завантаження статті…",
+  "Capturing article…": "Захоплення статті…",
+  "Saved to Readest": "Збережено в Readest"
 }

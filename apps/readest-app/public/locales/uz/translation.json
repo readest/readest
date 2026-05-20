@@ -1509,5 +1509,17 @@
   "Import all into library": "Hammasini kutubxonaga import qiling",
   "Recursively add every matching file directly to the library.": "Har bir mos keladigan faylni to'g'ridan-to'g'ri kutubxonaga rekursiv qo'shing.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Tanlangan papkada mos keladigan kitoblar topilmadi."
+  "No matching books found in the selected folder.": "Tanlangan papkada mos keladigan kitoblar topilmadi.",
+  "Send a web article": "Veb-maqola yuborish",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "O‘qiyotgan maqolangizni kutubxonangizga jo‘natish uchun Readest brauzer kengaytmasini o‘rnating — u sahifani brauzeringizdan qirqib oladi, shu sababli pul to‘lov to‘sig‘i va faqat hisob bilan kirish talab qilinadigan saytlar ham ishlaydi.",
+  "Enter a URL starting with http:// or https://": "http:// yoki https:// bilan boshlanadigan URL kiriting",
+  "Import": "Import qilish",
+  "Import from Web URL": "Veb URL’dan import qilish",
+  "From Web URL": "Veb URL’dan",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Maqola havolasini joylashtiring. Readest sahifani olib, kutubxonangizga saqlaydi.",
+  "Saving to your Readest library…": "Readest kutubxonangizga saqlanmoqda…",
+  "Saving to Readest": "Readest'ga saqlanmoqda",
+  "Loading article…": "Maqola yuklanmoqda…",
+  "Capturing article…": "Maqola olinmoqda…",
+  "Saved to Readest": "Readest'ga saqlandi"
 }

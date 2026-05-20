@@ -41,7 +41,6 @@ export function useInboxDrainer(): void {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings } = useSettingsStore();
-  const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
   const runningRef = useRef(false);
   const lastDrainAtRef = useRef(0);
 
@@ -98,6 +97,19 @@ export function useInboxDrainer(): void {
         const filename = item.filename ?? 'document';
 
         if (item.kind === 'html') {
+          // A captured page from the bookmarklet / browser extension carries
+          // `url` (the source); run Readability so the EPUB is just the
+          // article body, not the surrounding page chrome. A standalone
+          // .html attachment (no url) gets converted as a document.
+          if (item.url) {
+            const html = new TextDecoder('utf-8').decode(bytes);
+            const book = await convertToEpubWithWorker({
+              kind: 'article',
+              html,
+              url: item.url,
+            });
+            return book.file;
+          }
           const book = await convertToEpubWithWorker({
             kind: 'html',
             bytes,
@@ -163,10 +175,7 @@ export function useInboxDrainer(): void {
   }, [user, appService, settings, envConfig]);
 
   useEffect(() => {
-    // Hold off until the library has loaded — otherwise the very first
-    // drained item would force `updateBooks` to fall back to its own disk
-    // load. Once `libraryLoaded` flips true this effect re-runs.
-    if (!user || !libraryLoaded) return;
+    if (!user) return;
     void runDrain();
     const interval = setInterval(() => void runDrain(), DRAIN_INTERVAL_MS);
     const onFocus = () => void runDrain();
@@ -175,7 +184,7 @@ export function useInboxDrainer(): void {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
     };
-  }, [user, libraryLoaded, runDrain]);
+  }, [user, runDrain]);
 }
 
 /**

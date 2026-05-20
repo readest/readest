@@ -1565,5 +1565,17 @@
   "Import all into library": "Uvozi vse v knjižnico",
   "Recursively add every matching file directly to the library.": "Rekurzivno dodaj vsako ujemajočo datoteko neposredno v knjižnico.",
   "OK": "V redu",
-  "No matching books found in the selected folder.": "V izbrani mapi ni najdenih ujemajočih se knjig."
+  "No matching books found in the selected folder.": "V izbrani mapi ni najdenih ujemajočih se knjig.",
+  "Send a web article": "Pošlji spletni članek",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Namesti razširitev brskalnika Readest, da pošlješ članek, ki ga bereš, v svojo knjižnico — izreže stran iz brskalnika, zato delujejo tudi plačljive in samo prijavljene strani.",
+  "Enter a URL starting with http:// or https://": "Vnesi URL, ki se začne s http:// ali https://",
+  "Import": "Uvozi",
+  "Import from Web URL": "Uvozi s spletnega URL",
+  "From Web URL": "S spletnega URL",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Prilepite povezavo do članka. Readest zajame stran in jo shrani v vašo knjižnico.",
+  "Saving to your Readest library…": "Shranjevanje v vašo knjižnico Readest…",
+  "Saving to Readest": "Shranjevanje v Readest",
+  "Loading article…": "Nalaganje članka…",
+  "Capturing article…": "Zajemanje članka…",
+  "Saved to Readest": "Shranjeno v Readest"
 }

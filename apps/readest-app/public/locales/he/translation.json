@@ -1537,5 +1537,17 @@
   "Import all into library": "ייבא הכול לספרייה",
   "Recursively add every matching file directly to the library.": "הוסף באופן רקורסיבי כל קובץ תואם ישירות לספרייה.",
   "OK": "אישור",
-  "No matching books found in the selected folder.": "לא נמצאו ספרים תואמים בתיקייה שנבחרה."
+  "No matching books found in the selected folder.": "לא נמצאו ספרים תואמים בתיקייה שנבחרה.",
+  "Send a web article": "שלח מאמר אינטרנט",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "התקן את הרחבת הדפדפן של Readest כדי לשלוח את המאמר שאתה קורא לספרייה שלך — היא חותכת את הדף מהדפדפן שלך כך שגם אתרים עם חומת תשלום ואתרים שדורשים התחברות עובדים.",
+  "Enter a URL starting with http:// or https://": "הזן URL שמתחיל ב-http:// או ב-https://",
+  "Import": "יבוא",
+  "Import from Web URL": "יבוא מ-URL של אתר",
+  "From Web URL": "מ-URL של אתר",
+  "Paste an article link. Readest clips the page and saves it to your library.": "הדבק קישור למאמר. Readest יצלם את הדף וישמור אותו בספרייה שלך.",
+  "Saving to your Readest library…": "שומר בספריית Readest שלך…",
+  "Saving to Readest": "שומר ב-Readest",
+  "Loading article…": "טוען מאמר…",
+  "Capturing article…": "לוכד מאמר…",
+  "Saved to Readest": "נשמר ב-Readest"
 }

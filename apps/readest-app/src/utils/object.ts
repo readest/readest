@@ -33,6 +33,22 @@ export const getUploadSignedUrl = async (
   }
 };
 
+export const putObject = async (
+  fileKey: string,
+  body: ArrayBuffer | string,
+  contentType: string,
+  bucketName?: string,
+) => {
+  const storageType = getStorageType();
+  if (storageType === 'r2') {
+    bucketName = bucketName || process.env['R2_BUCKET_NAME'] || '';
+    return await r2Storage.putObject(bucketName, fileKey, body, contentType);
+  } else {
+    bucketName = bucketName || process.env['S3_BUCKET_NAME'] || '';
+    return await s3Storage.putObject(bucketName, fileKey, body, contentType);
+  }
+};
+
 export const deleteObject = async (fileKey: string, bucketName?: string) => {
   const storageType = getStorageType();
   if (storageType === 'r2') {

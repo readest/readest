@@ -1481,5 +1481,17 @@
   "Import all into library": "全部导入到书库",
   "Recursively add every matching file directly to the library.": "递归地将所有匹配的文件直接添加到书库。",
   "OK": "确定",
-  "No matching books found in the selected folder.": "在所选文件夹中未找到匹配的书籍。"
+  "No matching books found in the selected folder.": "在所选文件夹中未找到匹配的书籍。",
+  "Send a web article": "发送网页文章",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "安装 Readest 浏览器扩展，把你正在阅读的文章发送到你的书库——它直接在你的浏览器中剪辑页面，因此付费墙和需要登录的网站也能正常使用。",
+  "Enter a URL starting with http:// or https://": "请输入以 http:// 或 https:// 开头的网址",
+  "Import": "导入",
+  "Import from Web URL": "从网页 URL 导入",
+  "From Web URL": "从网页 URL",
+  "Paste an article link. Readest clips the page and saves it to your library.": "粘贴文章链接。Readest 会抓取页面并保存到您的书库。",
+  "Saving to your Readest library…": "正在保存到您的 Readest 书库…",
+  "Saving to Readest": "正在保存到 Readest",
+  "Loading article…": "正在加载文章…",
+  "Capturing article…": "正在抓取文章…",
+  "Saved to Readest": "已保存到 Readest"
 }

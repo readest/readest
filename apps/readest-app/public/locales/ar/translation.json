@@ -1621,5 +1621,17 @@
   "Import all into library": "استيراد الكل إلى المكتبة",
   "Recursively add every matching file directly to the library.": "إضافة كل ملف مطابق مباشرةً إلى المكتبة بشكل تكراري.",
   "OK": "موافق",
-  "No matching books found in the selected folder.": "لم يتم العثور على كتب مطابقة في المجلد المحدد."
+  "No matching books found in the selected folder.": "لم يتم العثور على كتب مطابقة في المجلد المحدد.",
+  "Send a web article": "إرسال مقالة من الويب",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "ثبّت إضافة Readest للمتصفح لإرسال المقالة التي تقرأها إلى مكتبتك — تلتقط الصفحة من متصفحك لذا تعمل المواقع المدفوعة والتي تتطلب تسجيل الدخول أيضًا.",
+  "Enter a URL starting with http:// or https://": "أدخل رابطًا يبدأ بـ http:// أو https://",
+  "Import": "استيراد",
+  "Import from Web URL": "استيراد من رابط ويب",
+  "From Web URL": "من رابط الويب",
+  "Paste an article link. Readest clips the page and saves it to your library.": "الصق رابط مقالة. سيلتقط Readest الصفحة ويحفظها في مكتبتك.",
+  "Saving to your Readest library…": "جارٍ الحفظ في مكتبة Readest الخاصة بك…",
+  "Saving to Readest": "جارٍ الحفظ في Readest",
+  "Loading article…": "جارٍ تحميل المقالة…",
+  "Capturing article…": "جارٍ التقاط المقالة…",
+  "Saved to Readest": "تم الحفظ في Readest"
 }

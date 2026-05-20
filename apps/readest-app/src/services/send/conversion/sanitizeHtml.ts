@@ -50,7 +50,10 @@ export function sanitizeHtml(html: string): string {
       'figure',
       'figcaption',
     ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan'],
+    // `id` is allowed so heading anchors survive — the EPUB's nested
+    // navMap uses `chapter1.xhtml#heading-id` to link the TOC sidebar to
+    // each section. Without it readers see one entry per chapter only.
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'id'],
     // Drop anything that would load or run remote code.
     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
     FORBID_ATTR: ['srcset'],

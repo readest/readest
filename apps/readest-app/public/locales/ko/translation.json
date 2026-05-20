@@ -1481,5 +1481,17 @@
   "Import all into library": "모두 라이브러리로 가져오기",
   "Recursively add every matching file directly to the library.": "일치하는 모든 파일을 재귀적으로 라이브러리에 직접 추가합니다.",
   "OK": "확인",
-  "No matching books found in the selected folder.": "선택한 폴더에서 일치하는 책을 찾을 수 없습니다."
+  "No matching books found in the selected folder.": "선택한 폴더에서 일치하는 책을 찾을 수 없습니다.",
+  "Send a web article": "웹 기사 보내기",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "읽고 있는 기사를 라이브러리로 보내려면 Readest 브라우저 확장 프로그램을 설치하세요 — 브라우저에서 페이지를 잘라내므로 유료 결제벽이나 로그인이 필요한 사이트도 작동합니다.",
+  "Enter a URL starting with http:// or https://": "http:// 또는 https://로 시작하는 URL을 입력하세요",
+  "Import": "가져오기",
+  "Import from Web URL": "웹 URL에서 가져오기",
+  "From Web URL": "웹 URL에서",
+  "Paste an article link. Readest clips the page and saves it to your library.": "기사 링크를 붙여넣으세요. Readest가 페이지를 캡처하여 라이브러리에 저장합니다.",
+  "Saving to your Readest library…": "Readest 라이브러리에 저장 중…",
+  "Saving to Readest": "Readest에 저장 중",
+  "Loading article…": "기사 로드 중…",
+  "Capturing article…": "기사 캡처 중…",
+  "Saved to Readest": "Readest에 저장됨"
 }

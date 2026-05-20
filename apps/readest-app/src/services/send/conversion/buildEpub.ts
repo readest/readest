@@ -1,5 +1,6 @@
 import { configureZip } from '@/utils/zip';
-import type { EpubChapter, EpubBuildMetadata } from './types';
+import { buildNavMap } from './toc';
+import type { EpubChapter, EpubBuildMetadata, EpubImage } from './types';
 
 // Zero the zip timestamps so converting the same source twice yields
 // byte-identical EPUBs — that keeps the import-time hash stable and dedups
@@ -19,11 +20,20 @@ const escapeXml = (str: string): string => {
     .replace(/'/g, '&apos;');
 };
 
+// System font stack only — the bundled EPUB stays self-contained and never
+// reaches out to the network when opened offline.
 const CSS = `
-body { line-height: 1.6; font-size: 1em; text-align: justify; }
+body { line-height: 1.6; font-size: 1em; text-align: justify;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; }
 h1, h2, h3 { line-height: 1.3; }
 p { margin: 0.6em 0; }
 img { max-width: 100%; height: auto; }
+figure { margin: 1em 0; }
+figcaption { font-size: 0.9em; color: #666; text-align: center; }
+blockquote { margin: 1em 1.5em; color: #444; border-left: 3px solid #ccc; padding-left: 1em; }
+pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+pre { white-space: pre-wrap; background: #f5f5f5; padding: 0.6em 0.8em; border-radius: 4px; }
 `;
 
 /**
@@ -35,12 +45,13 @@ img { max-width: 100%; height: auto; }
 export async function buildEpub(
   chapters: EpubChapter[],
   metadata: EpubBuildMetadata,
+  images: EpubImage[] = [],
 ): Promise<Blob> {
   if (chapters.length === 0) {
     throw new Error('buildEpub: no chapters');
   }
   await configureZip();
-  const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
+  const { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } = await import('@zip.js/zip.js');
   const { title, author, language, identifier } = metadata;
 
   const zipWriter = new ZipWriter(new BlobWriter('application/epub+zip'), {
@@ -56,16 +67,24 @@ export async function buildEpub(
 </container>`;
   await zipWriter.add('META-INF/container.xml', new TextReader(containerXml), zipWriteOptions);
 
-  const navPoints = chapters
-    .map((chapter, i) => {
-      const id = `chapter${i + 1}`;
-      return (
-        `<navPoint id="navPoint-${id}" playOrder="${i + 1}">` +
-        `<navLabel><text>${escapeXml(chapter.title)}</text></navLabel>` +
-        `<content src="./OEBPS/${id}.xhtml"/></navPoint>`
-      );
-    })
-    .join('\n');
+  // Prefer a heading-based nested navMap when the caller supplied one —
+  // the EPUB reader's TOC sidebar then mirrors the article's section
+  // structure rather than showing a single "Article Title" entry. Falls
+  // back to one navPoint per chapter when no headings were extracted
+  // (a Substack-style image-and-paragraph post with no h2s, etc).
+  const navPoints =
+    metadata.toc && metadata.toc.length > 0
+      ? buildNavMap(metadata.toc, 'OEBPS/chapter1.xhtml', escapeXml)
+      : chapters
+          .map((chapter, i) => {
+            const id = `chapter${i + 1}`;
+            return (
+              `<navPoint id="navPoint-${id}" playOrder="${i + 1}">` +
+              `<navLabel><text>${escapeXml(chapter.title)}</text></navLabel>` +
+              `<content src="./OEBPS/${id}.xhtml"/></navPoint>`
+            );
+          })
+          .join('\n');
 
   const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
@@ -82,6 +101,16 @@ export async function buildEpub(
   await zipWriter.add('toc.ncx', new TextReader(tocNcx), zipWriteOptions);
 
   await zipWriter.add('style.css', new TextReader(CSS), zipWriteOptions);
+
+  // Inline images: keep relative to OEBPS/ so `<img src="images/abc.png">`
+  // inside a chapter resolves correctly.
+  for (const image of images) {
+    await zipWriter.add(
+      `OEBPS/${image.path}`,
+      new Uint8ArrayReader(new Uint8Array(image.bytes)),
+      zipWriteOptions,
+    );
+  }
 
   for (let i = 0; i < chapters.length; i++) {
     const chapter = chapters[i]!;
@@ -103,6 +132,12 @@ export async function buildEpub(
         `<item id="chap${i + 1}" href="OEBPS/chapter${i + 1}.xhtml" media-type="application/xhtml+xml"/>`,
     )
     .join('\n    ');
+  const imageManifest = images
+    .map(
+      (image, i) =>
+        `<item id="img${i + 1}" href="OEBPS/${escapeXml(image.path)}" media-type="${escapeXml(image.mime)}"/>`,
+    )
+    .join('\n    ');
   const spine = chapters.map((_, i) => `<itemref idref="chap${i + 1}"/>`).join('\n    ');
 
   const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
@@ -115,6 +150,7 @@ export async function buildEpub(
   </metadata>
   <manifest>
     ${manifest}
+    ${imageManifest}
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item id="css" href="style.css" media-type="text/css"/>
   </manifest>

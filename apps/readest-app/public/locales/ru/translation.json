@@ -1565,5 +1565,17 @@
   "Import all into library": "Импортировать всё в библиотеку",
   "Recursively add every matching file directly to the library.": "Рекурсивно добавить каждый подходящий файл напрямую в библиотеку.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "В выбранной папке не найдено подходящих книг."
+  "No matching books found in the selected folder.": "В выбранной папке не найдено подходящих книг.",
+  "Send a web article": "Отправить веб-статью",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Установите расширение Readest для браузера, чтобы отправить читаемую статью в библиотеку — оно вырезает страницу из вашего браузера, поэтому платные и требующие входа сайты тоже работают.",
+  "Enter a URL starting with http:// or https://": "Введите URL, начинающийся с http:// или https://",
+  "Import": "Импорт",
+  "Import from Web URL": "Импорт по веб-адресу",
+  "From Web URL": "По веб-адресу",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Вставьте ссылку на статью. Readest захватит страницу и сохранит её в вашей библиотеке.",
+  "Saving to your Readest library…": "Сохранение в вашу библиотеку Readest…",
+  "Saving to Readest": "Сохранение в Readest",
+  "Loading article…": "Загрузка статьи…",
+  "Capturing article…": "Захват статьи…",
+  "Saved to Readest": "Сохранено в Readest"
 }

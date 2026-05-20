@@ -1509,5 +1509,17 @@
   "Import all into library": "Tümünü kitaplığa aktar",
   "Recursively add every matching file directly to the library.": "Eşleşen her dosyayı doğrudan kitaplığa özyinelemeli olarak ekle.",
   "OK": "Tamam",
-  "No matching books found in the selected folder.": "Seçilen klasörde eşleşen kitap bulunamadı."
+  "No matching books found in the selected folder.": "Seçilen klasörde eşleşen kitap bulunamadı.",
+  "Send a web article": "Bir web makalesi gönder",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Okuduğunuz makaleyi kitaplığınıza göndermek için Readest tarayıcı eklentisini yükleyin — sayfayı tarayıcınızdan kırpar, böylece ödeme duvarlı ve yalnızca giriş yapılan siteler de çalışır.",
+  "Enter a URL starting with http:// or https://": "http:// veya https:// ile başlayan bir URL girin",
+  "Import": "İçe aktar",
+  "Import from Web URL": "Web URL'sinden içe aktar",
+  "From Web URL": "Web URL'sinden",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Bir makale bağlantısı yapıştırın. Readest sayfayı yakalayıp kütüphanenize kaydeder.",
+  "Saving to your Readest library…": "Readest kütüphanenize kaydediliyor…",
+  "Saving to Readest": "Readest'e kaydediliyor",
+  "Loading article…": "Makale yükleniyor…",
+  "Capturing article…": "Makale yakalanıyor…",
+  "Saved to Readest": "Readest'e kaydedildi"
 }

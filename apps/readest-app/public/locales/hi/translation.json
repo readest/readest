@@ -1509,5 +1509,17 @@
   "Import all into library": "सभी को लाइब्रेरी में आयात करें",
   "Recursively add every matching file directly to the library.": "हर मेल खाने वाली फ़ाइल को सीधे लाइब्रेरी में पुनरावर्ती रूप से जोड़ें।",
   "OK": "ठीक है",
-  "No matching books found in the selected folder.": "चयनित फ़ोल्डर में कोई मेल खाती पुस्तक नहीं मिली।"
+  "No matching books found in the selected folder.": "चयनित फ़ोल्डर में कोई मेल खाती पुस्तक नहीं मिली।",
+  "Send a web article": "एक वेब लेख भेजें",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "जो लेख आप पढ़ रहे हैं उसे अपनी लाइब्रेरी में भेजने के लिए Readest ब्राउज़र एक्सटेंशन इंस्टॉल करें — यह आपके ब्राउज़र से पृष्ठ क्लिप करता है, इसलिए पेवॉल और लॉगिन-केवल साइटें भी काम करती हैं।",
+  "Enter a URL starting with http:// or https://": "http:// या https:// से शुरू होने वाला URL दर्ज करें",
+  "Import": "आयात करें",
+  "Import from Web URL": "वेब URL से आयात करें",
+  "From Web URL": "वेब URL से",
+  "Paste an article link. Readest clips the page and saves it to your library.": "एक लेख का लिंक चिपकाएं। Readest पेज कैप्चर करके आपकी लाइब्रेरी में सहेज देगा।",
+  "Saving to your Readest library…": "आपकी Readest लाइब्रेरी में सहेजा जा रहा है…",
+  "Saving to Readest": "Readest में सहेजा जा रहा है",
+  "Loading article…": "लेख लोड हो रहा है…",
+  "Capturing article…": "लेख कैप्चर हो रहा है…",
+  "Saved to Readest": "Readest में सहेजा गया"
 }

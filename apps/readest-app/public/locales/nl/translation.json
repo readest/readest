@@ -1509,5 +1509,17 @@
   "Import all into library": "Alles in bibliotheek importeren",
   "Recursively add every matching file directly to the library.": "Voeg recursief elk overeenkomend bestand rechtstreeks toe aan de bibliotheek.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Geen overeenkomende boeken gevonden in de geselecteerde map."
+  "No matching books found in the selected folder.": "Geen overeenkomende boeken gevonden in de geselecteerde map.",
+  "Send a web article": "Webartikel verzenden",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Installeer de Readest-browserextensie om het artikel dat je leest naar je bibliotheek te sturen — het knipt de pagina vanuit je browser, dus betaalde en alleen-met-inloggen sites werken ook.",
+  "Enter a URL starting with http:// or https://": "Voer een URL in die met http:// of https:// begint",
+  "Import": "Importeren",
+  "Import from Web URL": "Importeren vanaf web-URL",
+  "From Web URL": "Van web-URL",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Plak een artikellink. Readest legt de pagina vast en slaat hem op in je bibliotheek.",
+  "Saving to your Readest library…": "Opslaan in je Readest-bibliotheek…",
+  "Saving to Readest": "Opslaan in Readest",
+  "Loading article…": "Artikel laden…",
+  "Capturing article…": "Artikel vastleggen…",
+  "Saved to Readest": "Opgeslagen in Readest"
 }

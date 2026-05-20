@@ -1481,5 +1481,17 @@
   "Import all into library": "全部匯入書庫",
   "Recursively add every matching file directly to the library.": "遞迴地將所有相符的檔案直接新增到書庫。",
   "OK": "確定",
-  "No matching books found in the selected folder.": "在所選資料夾中找不到相符的書籍。"
+  "No matching books found in the selected folder.": "在所選資料夾中找不到相符的書籍。",
+  "Send a web article": "傳送網頁文章",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "安裝 Readest 瀏覽器擴充功能，把你正在閱讀的文章傳送到你的書庫——它直接在你的瀏覽器中剪輯頁面，因此付費牆和需要登入的網站也能正常使用。",
+  "Enter a URL starting with http:// or https://": "請輸入以 http:// 或 https:// 開頭的網址",
+  "Import": "匯入",
+  "Import from Web URL": "從網頁 URL 匯入",
+  "From Web URL": "從網頁 URL",
+  "Paste an article link. Readest clips the page and saves it to your library.": "貼上文章連結。Readest 會擷取頁面並儲存到您的書庫。",
+  "Saving to your Readest library…": "正在儲存到您的 Readest 書庫…",
+  "Saving to Readest": "正在儲存到 Readest",
+  "Loading article…": "正在載入文章…",
+  "Capturing article…": "正在擷取文章…",
+  "Saved to Readest": "已儲存到 Readest"
 }

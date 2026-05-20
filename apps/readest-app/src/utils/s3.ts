@@ -69,6 +69,21 @@ export const s3Storage = {
     return uploadUrl;
   },
 
+  putObject: async (
+    bucketName: string,
+    fileKey: string,
+    body: ArrayBuffer | string,
+    contentType: string,
+  ) => {
+    const putCommand = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: fileKey,
+      Body: body instanceof ArrayBuffer ? new Uint8Array(body) : body,
+      ContentType: contentType,
+    });
+    return await s3Storage.getClient().send(putCommand);
+  },
+
   deleteObject: async (bucketName: string, fileKey: string) => {
     const deleteCommand = new DeleteObjectCommand({
       Bucket: bucketName,

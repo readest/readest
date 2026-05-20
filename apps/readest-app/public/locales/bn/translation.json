@@ -1509,5 +1509,17 @@
   "Import all into library": "সব লাইব্রেরিতে আমদানি করুন",
   "Recursively add every matching file directly to the library.": "প্রতিটি মিলিত ফাইলকে পুনরাবৃত্তিকভাবে সরাসরি লাইব্রেরিতে যোগ করুন।",
   "OK": "ঠিক আছে",
-  "No matching books found in the selected folder.": "নির্বাচিত ফোল্ডারে কোনো মিলিত বই পাওয়া যায়নি।"
+  "No matching books found in the selected folder.": "নির্বাচিত ফোল্ডারে কোনো মিলিত বই পাওয়া যায়নি।",
+  "Send a web article": "একটি ওয়েব নিবন্ধ পাঠান",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "আপনি যে নিবন্ধটি পড়ছেন তা আপনার লাইব্রেরিতে পাঠাতে Readest ব্রাউজার এক্সটেনশন ইনস্টল করুন — এটি আপনার ব্রাউজার থেকে পৃষ্ঠাটি ক্লিপ করে, তাই পেওয়াল এবং শুধুমাত্র-লগইন সাইটগুলিও কাজ করে।",
+  "Enter a URL starting with http:// or https://": "http:// বা https:// দিয়ে শুরু হওয়া একটি URL লিখুন",
+  "Import": "আমদানি করুন",
+  "Import from Web URL": "ওয়েব URL থেকে আমদানি করুন",
+  "From Web URL": "ওয়েব URL থেকে",
+  "Paste an article link. Readest clips the page and saves it to your library.": "একটি নিবন্ধের লিঙ্ক পেস্ট করুন। Readest পৃষ্ঠাটি ক্যাপচার করে আপনার লাইব্রেরিতে সংরক্ষণ করবে।",
+  "Saving to your Readest library…": "আপনার Readest লাইব্রেরিতে সংরক্ষণ করা হচ্ছে…",
+  "Saving to Readest": "Readest-এ সংরক্ষণ করা হচ্ছে",
+  "Loading article…": "নিবন্ধ লোড হচ্ছে…",
+  "Capturing article…": "নিবন্ধ ক্যাপচার করা হচ্ছে…",
+  "Saved to Readest": "Readest-এ সংরক্ষিত"
 }

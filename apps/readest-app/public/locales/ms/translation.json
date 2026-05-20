@@ -1481,5 +1481,17 @@
   "Import all into library": "Import semua ke pustaka",
   "Recursively add every matching file directly to the library.": "Tambah secara rekursif setiap fail yang sepadan terus ke pustaka.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Tiada buku sepadan dijumpai dalam folder yang dipilih."
+  "No matching books found in the selected folder.": "Tiada buku sepadan dijumpai dalam folder yang dipilih.",
+  "Send a web article": "Hantar artikel web",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Pasang sambungan pelayar Readest untuk menghantar artikel yang anda baca ke perpustakaan anda — ia memotong halaman daripada pelayar anda jadi laman berbayar dan log-masuk-sahaja pun berfungsi.",
+  "Enter a URL starting with http:// or https://": "Masukkan URL yang bermula dengan http:// atau https://",
+  "Import": "Import",
+  "Import from Web URL": "Import dari URL web",
+  "From Web URL": "Dari URL web",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Tampal pautan artikel. Readest akan menangkap halaman dan menyimpannya ke pustaka anda.",
+  "Saving to your Readest library…": "Menyimpan ke pustaka Readest anda…",
+  "Saving to Readest": "Menyimpan ke Readest",
+  "Loading article…": "Memuatkan artikel…",
+  "Capturing article…": "Menangkap artikel…",
+  "Saved to Readest": "Disimpan ke Readest"
 }

@@ -1509,5 +1509,17 @@
   "Import all into library": "அனைத்தையும் நூலகத்திற்கு இறக்குமதி செய்",
   "Recursively add every matching file directly to the library.": "பொருந்தும் ஒவ்வொரு கோப்பையும் நேரடியாக நூலகத்திற்கு மீள்கூற்று முறையில் சேர்க்கவும்.",
   "OK": "சரி",
-  "No matching books found in the selected folder.": "தேர்ந்தெடுக்கப்பட்ட கோப்புறையில் பொருந்தும் புத்தகங்கள் எதுவும் கிடைக்கவில்லை."
+  "No matching books found in the selected folder.": "தேர்ந்தெடுக்கப்பட்ட கோப்புறையில் பொருந்தும் புத்தகங்கள் எதுவும் கிடைக்கவில்லை.",
+  "Send a web article": "ஒரு வலை கட்டுரையை அனுப்பவும்",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "நீங்கள் வாசிக்கும் கட்டுரையை உங்கள் நூலகத்திற்கு அனுப்ப Readest உலாவி நீட்டிப்பை நிறுவவும் — இது உங்கள் உலாவியில் இருந்தே பக்கத்தை வெட்டுகிறது, எனவே கட்டண சுவர்கள் மற்றும் உள்நுழைவு மட்டுமே அனுமதிக்கும் தளங்களும் வேலை செய்யும்.",
+  "Enter a URL starting with http:// or https://": "http:// அல்லது https:// உடன் தொடங்கும் URL-ஐ உள்ளிடவும்",
+  "Import": "இறக்கு",
+  "Import from Web URL": "வலை URL-இலிருந்து இறக்குமதி செய்",
+  "From Web URL": "வலை URL-இலிருந்து",
+  "Paste an article link. Readest clips the page and saves it to your library.": "கட்டுரை இணைப்பை ஒட்டவும். Readest பக்கத்தை எடுத்து உங்கள் நூலகத்தில் சேமிக்கும்.",
+  "Saving to your Readest library…": "உங்கள் Readest நூலகத்தில் சேமிக்கப்படுகிறது…",
+  "Saving to Readest": "Readest-இல் சேமிக்கப்படுகிறது",
+  "Loading article…": "கட்டுரை ஏற்றப்படுகிறது…",
+  "Capturing article…": "கட்டுரை பெறப்படுகிறது…",
+  "Saved to Readest": "Readest-இல் சேமிக்கப்பட்டது"
 }

@@ -1481,5 +1481,17 @@
   "Import all into library": "นำเข้าทั้งหมดไปยังห้องสมุด",
   "Recursively add every matching file directly to the library.": "เพิ่มทุกไฟล์ที่ตรงกันโดยตรงไปยังห้องสมุดแบบเรียกซ้ำ",
   "OK": "ตกลง",
-  "No matching books found in the selected folder.": "ไม่พบหนังสือที่ตรงกันในโฟลเดอร์ที่เลือก"
+  "No matching books found in the selected folder.": "ไม่พบหนังสือที่ตรงกันในโฟลเดอร์ที่เลือก",
+  "Send a web article": "ส่งบทความเว็บ",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "ติดตั้งส่วนขยายเบราว์เซอร์ Readest เพื่อส่งบทความที่คุณกำลังอ่านไปยังคลังของคุณ — มันตัดหน้าจากเบราว์เซอร์ของคุณ ดังนั้นเว็บไซต์ที่มีกำแพงค่าใช้จ่ายและเฉพาะผู้ที่ล็อกอินก็ยังคงทำงาน",
+  "Enter a URL starting with http:// or https://": "ใส่ URL ที่ขึ้นต้นด้วย http:// หรือ https://",
+  "Import": "นำเข้า",
+  "Import from Web URL": "นำเข้าจาก URL เว็บ",
+  "From Web URL": "จาก URL เว็บ",
+  "Paste an article link. Readest clips the page and saves it to your library.": "วางลิงก์บทความ Readest จะจับภาพหน้าเว็บและบันทึกลงในไลบรารีของคุณ",
+  "Saving to your Readest library…": "กำลังบันทึกในไลบรารี Readest ของคุณ…",
+  "Saving to Readest": "กำลังบันทึกลงใน Readest",
+  "Loading article…": "กำลังโหลดบทความ…",
+  "Capturing article…": "กำลังจับภาพบทความ…",
+  "Saved to Readest": "บันทึกลงใน Readest แล้ว"
 }

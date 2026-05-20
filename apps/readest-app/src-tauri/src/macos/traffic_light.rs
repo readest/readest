@@ -93,6 +93,17 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
     use objc::runtime::{Object, Sel};
     use std::ffi::c_void;
 
+    // The on_window_did_resize handler below already gates positioning to
+    // the main/reader windows by label — extending the same gate to the
+    // initial positioning. Other windows (the clip-* webview, future
+    // decorationless utility windows) have no standard NSWindow buttons,
+    // and `close.superview().superview()` in position_traffic_lights
+    // would null-deref on them.
+    let label = window.label().to_string();
+    if label != "main" && !label.starts_with("reader") {
+        return;
+    }
+
     // Do the initial positioning
     unsafe {
         position_traffic_lights(

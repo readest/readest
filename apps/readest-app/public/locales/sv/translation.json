@@ -1509,5 +1509,17 @@
   "Import all into library": "Importera allt till biblioteket",
   "Recursively add every matching file directly to the library.": "Lägg rekursivt till varje matchande fil direkt i biblioteket.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Inga matchande böcker hittades i den valda mappen."
+  "No matching books found in the selected folder.": "Inga matchande böcker hittades i den valda mappen.",
+  "Send a web article": "Skicka en webbartikel",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Installera Readests webbläsartillägg för att skicka artikeln du läser till ditt bibliotek — det klipper sidan från din webbläsare så att betalda och inloggade sajter också fungerar.",
+  "Enter a URL starting with http:// or https://": "Ange en URL som börjar med http:// eller https://",
+  "Import": "Importera",
+  "Import from Web URL": "Importera från webbadress",
+  "From Web URL": "Från webbadress",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Klistra in en artikellänk. Readest fångar sidan och sparar den i ditt bibliotek.",
+  "Saving to your Readest library…": "Sparar till ditt Readest-bibliotek…",
+  "Saving to Readest": "Sparar till Readest",
+  "Loading article…": "Laddar artikel…",
+  "Capturing article…": "Fångar artikel…",
+  "Saved to Readest": "Sparad till Readest"
 }

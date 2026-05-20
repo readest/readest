@@ -21,6 +21,14 @@ export interface EpubChapter {
   html: string;
 }
 
+/** An image resource embedded directly in the EPUB. Path is relative to
+ *  `OEBPS/` and must match the rewritten `<img src>` in the chapter HTML. */
+export interface EpubImage {
+  path: string;
+  bytes: ArrayBuffer;
+  mime: string;
+}
+
 export interface EpubBuildMetadata {
   title: string;
   author: string;
@@ -28,6 +36,20 @@ export interface EpubBuildMetadata {
   /** Stable EPUB `dc:identifier` — derive deterministically so re-converting
    *  the same source yields the same bytes and dedups on import. */
   identifier: string;
+  /** Optional in-chapter heading TOC. When present, `toc.ncx` `navMap`
+   *  uses these instead of a single chapter-level navPoint — the EPUB
+   *  reader's sidebar then shows the article's section structure. */
+  toc?: TocEntry[];
+}
+
+/** One entry in the EPUB's nested TOC — a single `<h1>`–`<h6>` from the
+ *  article. `level` is 1–6; `chapterIndex` is 0 for now (page clips are
+ *  single-chapter). */
+export interface TocEntry {
+  id: string;
+  text: string;
+  level: number;
+  chapterIndex?: number;
 }
 
 export class ConversionError extends Error {

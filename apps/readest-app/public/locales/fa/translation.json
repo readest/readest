@@ -1509,5 +1509,17 @@
   "Import all into library": "وارد کردن همه به کتابخانه",
   "Recursively add every matching file directly to the library.": "افزودن بازگشتی همه فایل‌های مطابق به‌طور مستقیم به کتابخانه.",
   "OK": "تأیید",
-  "No matching books found in the selected folder.": "هیچ کتاب مطابقی در پوشه انتخاب‌شده یافت نشد."
+  "No matching books found in the selected folder.": "هیچ کتاب مطابقی در پوشه انتخاب‌شده یافت نشد.",
+  "Send a web article": "ارسال یک مقاله وب",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "افزونه مرورگر Readest را نصب کنید تا مقاله‌ای را که می‌خوانید به کتابخانه خود ارسال کنید — صفحه را از مرورگر شما برش می‌دهد، بنابراین سایت‌های پولی و فقط ورود نیز کار می‌کنند.",
+  "Enter a URL starting with http:// or https://": "یک URL وارد کنید که با http:// یا https:// شروع شود",
+  "Import": "وارد کردن",
+  "Import from Web URL": "وارد کردن از آدرس وب",
+  "From Web URL": "از آدرس وب",
+  "Paste an article link. Readest clips the page and saves it to your library.": "پیوند یک مقاله را الصاق کنید. Readest صفحه را گرفته و در کتابخانه شما ذخیره می‌کند.",
+  "Saving to your Readest library…": "در حال ذخیره در کتابخانه Readest شما…",
+  "Saving to Readest": "در حال ذخیره در Readest",
+  "Loading article…": "در حال بارگذاری مقاله…",
+  "Capturing article…": "در حال دریافت مقاله…",
+  "Saved to Readest": "در Readest ذخیره شد"
 }

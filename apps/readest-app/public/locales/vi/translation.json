@@ -1481,5 +1481,17 @@
   "Import all into library": "Nhập tất cả vào thư viện",
   "Recursively add every matching file directly to the library.": "Đệ quy thêm mọi tệp khớp trực tiếp vào thư viện.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Không tìm thấy sách khớp trong thư mục đã chọn."
+  "No matching books found in the selected folder.": "Không tìm thấy sách khớp trong thư mục đã chọn.",
+  "Send a web article": "Gửi một bài viết web",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Cài tiện ích trình duyệt Readest để gửi bài viết bạn đang đọc vào thư viện — nó cắt trang từ trình duyệt của bạn nên các trang trả phí và yêu cầu đăng nhập cũng hoạt động.",
+  "Enter a URL starting with http:// or https://": "Nhập URL bắt đầu bằng http:// hoặc https://",
+  "Import": "Nhập",
+  "Import from Web URL": "Nhập từ URL web",
+  "From Web URL": "Từ URL web",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Dán liên kết bài viết. Readest sẽ chụp trang và lưu vào thư viện của bạn.",
+  "Saving to your Readest library…": "Đang lưu vào thư viện Readest của bạn…",
+  "Saving to Readest": "Đang lưu vào Readest",
+  "Loading article…": "Đang tải bài viết…",
+  "Capturing article…": "Đang chụp bài viết…",
+  "Saved to Readest": "Đã lưu vào Readest"
 }

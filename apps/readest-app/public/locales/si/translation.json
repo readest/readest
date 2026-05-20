@@ -1509,5 +1509,17 @@
   "Import all into library": "සියල්ල පුස්තකාලයට ආයාත කරන්න",
   "Recursively add every matching file directly to the library.": "ගැලපෙන සෑම ගොනුවක්ම පුස්තකාලයට කෙළින්ම පුනරාවර්තනීයව එක් කරන්න.",
   "OK": "හරි",
-  "No matching books found in the selected folder.": "තෝරාගත් ෆෝල්ඩරයේ ගැලපෙන පොත් කිසිවක් හමු නොවීය."
+  "No matching books found in the selected folder.": "තෝරාගත් ෆෝල්ඩරයේ ගැලපෙන පොත් කිසිවක් හමු නොවීය.",
+  "Send a web article": "වෙබ් ලිපියක් යවන්න",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "ඔබ කියවන ලිපිය ඔබේ පුස්තකාලයට යැවීමට Readest බ්‍රවුසර දිගුව ස්ථාපනය කරන්න — එය ඔබේ බ්‍රවුසරයෙන් පිටුව කපා ගන්නා නිසා ගෙවීම් අවශ්‍ය හා ඇතුළු වීම පමණක් ඇති වෙබ් අඩවි ද ක්‍රියා කරයි.",
+  "Enter a URL starting with http:// or https://": "http:// හෝ https:// වලින් ආරම්භ වන URL එකක් ඇතුළත් කරන්න",
+  "Import": "ආයාත කරන්න",
+  "Import from Web URL": "වෙබ් URL වෙතින් ආයාත කරන්න",
+  "From Web URL": "වෙබ් URL වෙතින්",
+  "Paste an article link. Readest clips the page and saves it to your library.": "ලිපියක සබැඳියක් අලවන්න. Readest පිටුව ග්‍රහණය කර ඔබගේ පුස්තකාලයට සුරකියි.",
+  "Saving to your Readest library…": "ඔබගේ Readest පුස්තකාලයට සුරකියි…",
+  "Saving to Readest": "Readest වෙත සුරකියි",
+  "Loading article…": "ලිපිය පූරණය වෙමින්…",
+  "Capturing article…": "ලිපිය ලබා ගනියි…",
+  "Saved to Readest": "Readest හි සුරැකිණි"
 }

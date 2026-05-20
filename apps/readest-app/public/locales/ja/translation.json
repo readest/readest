@@ -1481,5 +1481,17 @@
   "Import all into library": "すべてライブラリに取り込む",
   "Recursively add every matching file directly to the library.": "一致するすべてのファイルを再帰的にライブラリに直接追加します。",
   "OK": "OK",
-  "No matching books found in the selected folder.": "選択したフォルダ内に一致する書籍が見つかりませんでした。"
+  "No matching books found in the selected folder.": "選択したフォルダ内に一致する書籍が見つかりませんでした。",
+  "Send a web article": "ウェブ記事を送信",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "読んでいる記事をライブラリに送るには、Readestのブラウザ拡張機能をインストールしてください — ブラウザからページをクリップするため、ペイウォールやログインが必要なサイトでも動作します。",
+  "Enter a URL starting with http:// or https://": "http:// または https:// で始まる URL を入力してください",
+  "Import": "インポート",
+  "Import from Web URL": "ウェブURLからインポート",
+  "From Web URL": "ウェブURLから",
+  "Paste an article link. Readest clips the page and saves it to your library.": "記事のリンクを貼り付けてください。Readest がページを取得してライブラリに保存します。",
+  "Saving to your Readest library…": "Readest ライブラリに保存中…",
+  "Saving to Readest": "Readest に保存中",
+  "Loading article…": "記事を読み込み中…",
+  "Capturing article…": "記事を取得中…",
+  "Saved to Readest": "Readest に保存しました"
 }

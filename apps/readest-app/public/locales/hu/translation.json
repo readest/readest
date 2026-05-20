@@ -1509,5 +1509,17 @@
   "Import all into library": "Mindent importálni a könyvtárba",
   "Recursively add every matching file directly to the library.": "Minden megfelelő fájl rekurzív hozzáadása közvetlenül a könyvtárhoz.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Nem található megfelelő könyv a kiválasztott mappában."
+  "No matching books found in the selected folder.": "Nem található megfelelő könyv a kiválasztott mappában.",
+  "Send a web article": "Webcikk küldése",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Telepítsd a Readest böngészőbővítményt, hogy a jelenleg olvasott cikket a könyvtáradba küldhesd — kivágja az oldalt a böngésződből, így a fizetős és csak bejelentkezéssel elérhető oldalak is működnek.",
+  "Enter a URL starting with http:// or https://": "Adj meg egy URL-t, ami http://-vel vagy https://-vel kezdődik",
+  "Import": "Importálás",
+  "Import from Web URL": "Importálás webcímről",
+  "From Web URL": "Webcímről",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Illesszen be egy cikkre mutató hivatkozást. A Readest rögzíti az oldalt, és elmenti a könyvtárába.",
+  "Saving to your Readest library…": "Mentés a Readest könyvtárba…",
+  "Saving to Readest": "Mentés a Readestbe",
+  "Loading article…": "Cikk betöltése…",
+  "Capturing article…": "Cikk rögzítése…",
+  "Saved to Readest": "Mentve a Readestbe"
 }

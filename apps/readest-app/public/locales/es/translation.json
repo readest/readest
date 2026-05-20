@@ -1537,5 +1537,17 @@
   "Import all into library": "Importar todo a la biblioteca",
   "Recursively add every matching file directly to the library.": "Añadir recursivamente cada archivo coincidente directamente a la biblioteca.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "No se encontraron libros que coincidan en la carpeta seleccionada."
+  "No matching books found in the selected folder.": "No se encontraron libros que coincidan en la carpeta seleccionada.",
+  "Send a web article": "Enviar un artículo web",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Instala la extensión de navegador Readest para enviar el artículo que estás leyendo a tu biblioteca — recorta la página desde tu navegador, así que los sitios con muro de pago o que requieren inicio de sesión también funcionan.",
+  "Enter a URL starting with http:// or https://": "Introduce una URL que empiece por http:// o https://",
+  "Import": "Importar",
+  "Import from Web URL": "Importar desde URL web",
+  "From Web URL": "Desde URL web",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Pega el enlace de un artículo. Readest captura la página y la guarda en tu biblioteca.",
+  "Saving to your Readest library…": "Guardando en tu biblioteca de Readest…",
+  "Saving to Readest": "Guardando en Readest",
+  "Loading article…": "Cargando artículo…",
+  "Capturing article…": "Capturando artículo…",
+  "Saved to Readest": "Guardado en Readest"
 }

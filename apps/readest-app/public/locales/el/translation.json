@@ -1509,5 +1509,17 @@
   "Import all into library": "Εισαγωγή όλων στη βιβλιοθήκη",
   "Recursively add every matching file directly to the library.": "Αναδρομική προσθήκη κάθε αντίστοιχου αρχείου απευθείας στη βιβλιοθήκη.",
   "OK": "OK",
-  "No matching books found in the selected folder.": "Δεν βρέθηκαν αντίστοιχα βιβλία στον επιλεγμένο φάκελο."
+  "No matching books found in the selected folder.": "Δεν βρέθηκαν αντίστοιχα βιβλία στον επιλεγμένο φάκελο.",
+  "Send a web article": "Αποστολή άρθρου από τον ιστό",
+  "Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.": "Εγκαταστήστε την επέκταση Readest για το πρόγραμμα περιήγησης για να στείλετε το άρθρο που διαβάζετε στη βιβλιοθήκη σας — αποκόπτει τη σελίδα από τον φυλλομετρητή σας ώστε να λειτουργούν και ιστότοποι με συνδρομή ή υποχρεωτική σύνδεση.",
+  "Enter a URL starting with http:// or https://": "Εισαγάγετε ένα URL που ξεκινά με http:// ή https://",
+  "Import": "Εισαγωγή",
+  "Import from Web URL": "Εισαγωγή από διεύθυνση ιστού",
+  "From Web URL": "Από διεύθυνση ιστού",
+  "Paste an article link. Readest clips the page and saves it to your library.": "Επικολλήστε έναν σύνδεσμο άρθρου. Το Readest αποτυπώνει τη σελίδα και την αποθηκεύει στη βιβλιοθήκη σας.",
+  "Saving to your Readest library…": "Αποθήκευση στη βιβλιοθήκη Readest…",
+  "Saving to Readest": "Αποθήκευση στο Readest",
+  "Loading article…": "Φόρτωση άρθρου…",
+  "Capturing article…": "Λήψη άρθρου…",
+  "Saved to Readest": "Αποθηκεύτηκε στο Readest"
 }

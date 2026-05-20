@@ -1,19 +1,20 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { MdUploadFile, MdCheckCircle, MdError, MdLink } from 'react-icons/md';
+import { MdUploadFile, MdCheckCircle, MdError, MdLink, MdExtension } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { fetchWithAuth } from '@/utils/fetch';
-import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import {
   convertFileIfNeeded,
   convertToEpubWithWorker,
 } from '@/services/send/conversion/conversionWorker';
+import { getClipOptions } from '@/services/send/clipOptions';
+import { invoke } from '@tauri-apps/api/core';
 
 type ItemStatus = 'working' | 'done' | 'error';
 
@@ -34,6 +35,12 @@ export default function SendPage() {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings } = useSettingsStore();
+  // Direct client fetch only works without CORS, i.e. inside the Tauri
+  // webview. On the pure web build the URL flow has no reliable way to scrape
+  // the full article (server-proxied fetches lose to bot detection / login
+  // walls / JS rendering), so the URL field is hidden and the user is pointed
+  // at the browser extension instead.
+  const canClipFromUrl = isTauriAppPlatform();
 
   const [items, setItems] = useState<SendItem[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -85,24 +92,24 @@ export default function SendPage() {
     const id = crypto.randomUUID();
     setItems((prev) => [...prev, { id, label: target, status: 'working' }]);
     try {
-      let html: string;
-      if (isTauriAppPlatform()) {
-        const res = await fetch(target);
-        if (!res.ok) throw new Error(`Could not fetch URL (${res.status})`);
-        html = await res.text();
-      } else {
-        const res = await fetchWithAuth(
-          `${getAPIBaseUrl()}/send/fetch-url?url=${encodeURIComponent(target)}`,
-          { method: 'GET' },
-        );
-        html = ((await res.json()) as { html: string }).html;
-      }
-      const book = await convertToEpubWithWorker({ kind: 'article', html, url: target });
+      // Tauri-only: route through the Rust `clip_url` command which
+      // spawns a hidden webview, lets the real browser engine load the
+      // URL (so TLS fingerprint + JS challenges resolve naturally) and
+      // returns `document.documentElement.outerHTML`. On web we never
+      // reach here — the URL field is hidden.
+      const html = await invoke<string>('clip_url', { url: target, options: getClipOptions(_) });
+      const book = await convertToEpubWithWorker({ kind: 'page', html, url: target });
       await importResolvedFile(book.file, id, book.title);
     } catch (err) {
+      const detail =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : _('Could not fetch this page');
       setItem(id, {
         status: 'error',
-        detail: err instanceof Error ? err.message : _('Could not fetch this page'),
+        detail,
       });
     }
   }, [url, importResolvedFile, setItem, _]);
@@ -163,22 +170,36 @@ export default function SendPage() {
         }}
       />
 
-      <div className='flex gap-2'>
-        <input
-          type='url'
-          className='input input-bordered eink-bordered flex-1'
-          placeholder={_('Paste an article URL')}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void handleUrl();
-          }}
-        />
-        <button type='button' className='btn btn-contrast' onClick={() => void handleUrl()}>
-          <MdLink className='h-4 w-4' />
-          {_('Add')}
-        </button>
-      </div>
+      {canClipFromUrl ? (
+        <div className='flex gap-2'>
+          <input
+            type='url'
+            className='input input-bordered eink-bordered flex-1'
+            placeholder={_('Paste an article URL')}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleUrl();
+            }}
+          />
+          <button type='button' className='btn btn-contrast' onClick={() => void handleUrl()}>
+            <MdLink className='h-4 w-4' />
+            {_('Add')}
+          </button>
+        </div>
+      ) : (
+        <section className='card eink-bordered border-base-200 bg-base-100 flex flex-col gap-2 border p-5'>
+          <div className='flex items-center gap-2'>
+            <MdExtension className='text-base-content/70 h-5 w-5 flex-shrink-0' />
+            <h2 className='text-sm font-medium'>{_('Send a web article')}</h2>
+          </div>
+          <p className='text-base-content/70 text-xs leading-relaxed'>
+            {_(
+              'Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.',
+            )}
+          </p>
+        </section>
+      )}
 
       {items.length > 0 && (
         <ul className='card eink-bordered border-base-200 bg-base-100 divide-base-200 divide-y overflow-hidden border'>

@@ -54,6 +54,19 @@ export const r2Storage = {
     ).url.toString();
   },
 
+  putObject: async (
+    bucketName: string,
+    fileKey: string,
+    body: ArrayBuffer | string,
+    contentType: string,
+  ) => {
+    return await r2Storage.getR2Client().fetch(`${r2Storage.getR2Url()}/${bucketName}/${fileKey}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body,
+    });
+  },
+
   deleteObject: async (bucketName: string, fileKey: string) => {
     return await r2Storage.getR2Client().fetch(`${r2Storage.getR2Url()}/${bucketName}/${fileKey}`, {
       method: 'DELETE',

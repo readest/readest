@@ -84,6 +84,10 @@ import GroupHeader from './components/GroupHeader';
 import ImportFromFolderDialog, {
   ImportFromFolderResult,
 } from './components/ImportFromFolderDialog';
+import ImportFromUrlDialog from './components/ImportFromUrlDialog';
+import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWorker';
+import { getClipOptions } from '@/services/send/clipOptions';
+import { invoke } from '@tauri-apps/api/core';
 import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
@@ -163,6 +167,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
+  const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -884,6 +889,37 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     });
   };
 
+  const handleImportBookFromUrl = async (url: string) => {
+    // Tauri-only. Routes through the Rust `clip_url` command which spawns
+    // a hidden Tauri webview, loads the URL with the real browser engine
+    // (correct TLS fingerprint, runs the page's JS, executes any
+    // Cloudflare challenge), then captures `document.documentElement
+    // .outerHTML` and returns it. End to end this is exactly the local-
+    // file path — no inbox, no upload-then-download, no server round-trip
+    // — `importBooks` is the same call drag-drop uses.
+    if (!isTauriAppPlatform()) return;
+    console.log('[clip] start', { url });
+    setIsSelectMode(false);
+    const t0 = performance.now();
+    const html = await invoke<string>('clip_url', { url, options: getClipOptions(_) });
+    console.log('[clip] fetched', {
+      bytes: html.length,
+      ms: Math.round(performance.now() - t0),
+    });
+    const t1 = performance.now();
+    const book = await convertToEpubWithWorker({ kind: 'page', html, url });
+    console.log('[clip] epub built', {
+      title: book.title,
+      author: book.author || undefined,
+      bytes: book.file.size,
+      ms: Math.round(performance.now() - t1),
+    });
+    const groupId = searchParams?.get('group') || '';
+    console.log('[clip] importing locally', { name: book.file.name, groupId: groupId || null });
+    await importBooks([{ file: book.file }], groupId);
+    console.log('[clip] done');
+  };
+
   const handleImportBooksFromDirectory = async (dirPath?: string) => {
     if (!appService || !isTauriAppPlatform()) return;
 
@@ -1077,6 +1113,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
+          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
           onOpenCatalogManager={handleShowOPDSDialog}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
@@ -1239,6 +1276,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           }}
         />
       )}
+      <ImportFromUrlDialog
+        isOpen={showImportFromUrl}
+        onClose={() => setShowImportFromUrl(false)}
+        onSubmit={handleImportBookFromUrl}
+      />
       <Toast />
     </div>
   );

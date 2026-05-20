@@ -1,4 +1,4 @@
-import type { ConvertInput } from './convertToEpub';
+import { convertToEpub, type ConvertInput } from './convertToEpub';
 import type { ConvertedBook } from './types';
 import type {
   ConversionWorkerRequest,
@@ -61,31 +61,26 @@ async function convertInWorker(input: ConvertInput, timeoutMs: number): Promise<
 }
 
 /**
- * Main-thread fallback. Dynamic-imported so the heavy conversion deps
- * (mammoth, Readability, DOMPurify, zip.js) never load on the main thread
- * unless the Worker path is actually unavailable.
- */
-async function convertOnMainThread(input: ConvertInput): Promise<ConvertedBook> {
-  const { convertToEpub } = await import('./convertToEpub');
-  return convertToEpub(input);
-}
-
-/**
  * Convert a document to EPUB off the main thread, falling back to in-thread
  * conversion when Web Workers are unavailable or the worker fails.
+ *
+ * `kind: 'page'` is the exception — its asset bundler uses the
+ * `@tauri-apps/plugin-http` fetch to bypass CORS, and that binding lives on
+ * `window.__TAURI_INTERNALS__` which a Web Worker can't reach. So page
+ * clips always run on the main thread.
  */
 export async function convertToEpubWithWorker(
   input: ConvertInput,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<ConvertedBook> {
-  if (typeof Worker === 'undefined') {
-    return convertOnMainThread(input);
+  if (input.kind === 'page' || typeof Worker === 'undefined') {
+    return convertToEpub(input);
   }
   try {
     return await convertInWorker(input, timeoutMs);
   } catch (error) {
     console.warn('Conversion worker failed, falling back to main thread:', error);
-    return convertOnMainThread(input);
+    return convertToEpub(input);
   }
 }
 
