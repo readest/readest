@@ -2,16 +2,13 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { AppService } from '@/types/system';
 
-const WINDOW_CONTROL_PAD_X = 10.0;
-const WINDOW_CONTROL_PAD_Y = 22.0;
-
 interface TrafficLightState {
   appService?: AppService;
   isTrafficLightVisible: boolean;
   shouldShowTrafficLight: boolean;
   trafficLightInFullscreen: boolean;
   initializeTrafficLightStore: (appService: AppService) => void;
-  setTrafficLightVisibility: (visible: boolean, position?: { x: number; y: number }) => void;
+  setTrafficLightVisibility: (visible: boolean) => void;
   initializeTrafficLightListeners: () => Promise<void>;
   cleanupTrafficLightListeners: () => void;
   unlistenEnterFullScreen?: () => void;
@@ -33,7 +30,7 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
       });
     },
 
-    setTrafficLightVisibility: async (visible: boolean, position?: { x: number; y: number }) => {
+    setTrafficLightVisibility: async (visible: boolean) => {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const currentWindow = getCurrentWindow();
       const isFullscreen = await currentWindow.isFullscreen();
@@ -42,11 +39,11 @@ export const useTrafficLightStore = create<TrafficLightState>((set, get) => {
         shouldShowTrafficLight: visible,
         trafficLightInFullscreen: isFullscreen,
       });
-      invoke('set_traffic_lights', {
-        visible: visible,
-        x: position?.x ?? WINDOW_CONTROL_PAD_X,
-        y: position?.y ?? WINDOW_CONTROL_PAD_Y,
-      });
+      // Position is owned by Tauri's `trafficLightPosition` declared
+      // at window creation; this IPC only toggles whether the title
+      // bar is collapsed (to hide the buttons during reader chrome
+      // auto-hide) or restored.
+      invoke('set_traffic_lights', { visible });
     },
 
     initializeTrafficLightListeners: async () => {

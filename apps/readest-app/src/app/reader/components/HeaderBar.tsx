@@ -108,7 +108,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     if (!appService?.hasTrafficLight) return;
 
     if (hoveredBookKey === bookKey && isTopLeft) {
-      setTrafficLightVisibility(true, { x: 10, y: 20 });
+      setTrafficLightVisibility(true);
     } else if (!hoveredBookKey) {
       setTimeout(() => {
         if (!getIsSideBarVisible()) {

@@ -119,27 +119,27 @@ describe('trafficLightStore', () => {
       expect(state.shouldShowTrafficLight).toBe(false);
     });
 
-    test('invokes set_traffic_lights with default position', async () => {
+    test('invokes set_traffic_lights with only the visibility flag', async () => {
+      // Position is now declared on the window itself via Tauri's
+      // `trafficLightPosition`. The IPC payload only carries `visible`
+      // — the Rust command no longer accepts (and no longer needs)
+      // x/y coordinates.
       mockIsFullscreen.mockResolvedValue(false);
 
       await useTrafficLightStore.getState().setTrafficLightVisibility(true);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
         visible: true,
-        x: 10.0,
-        y: 22.0,
       });
     });
 
-    test('invokes set_traffic_lights with custom position', async () => {
+    test('invokes set_traffic_lights with visible=false to collapse', async () => {
       mockIsFullscreen.mockResolvedValue(false);
 
-      await useTrafficLightStore.getState().setTrafficLightVisibility(true, { x: 20, y: 30 });
+      await useTrafficLightStore.getState().setTrafficLightVisibility(false);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
-        visible: true,
-        x: 20,
-        y: 30,
+        visible: false,
       });
     });
   });

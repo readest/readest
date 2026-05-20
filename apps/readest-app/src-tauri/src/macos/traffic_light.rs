@@ -6,9 +6,21 @@ use tauri::{
     Emitter, Runtime, Window,
 };
 
-static mut WINDOW_CONTROL_PAD_X: f64 = 10.0;
-static mut WINDOW_CONTROL_PAD_Y: f64 = 22.0;
+// Tracks visibility across IPC calls, resize/fullscreen-exit callbacks,
+// and the initial window-ready hook. Position is owned declaratively by
+// Tauri's `trafficLightPosition` (set by `WebviewWindowBuilder` in
+// `lib.rs` and `new WebviewWindow(...)` in `nav.ts`); this file no
+// longer carries an x/y default.
 static mut TRAFFIC_LIGHTS_VISIBLE: bool = true;
+
+/// Vertical inset used **only** to restore the title-bar container
+/// height after a `visible: false` collapse. Must agree with the y
+/// component of `trafficLightPosition` declared in `lib.rs` and
+/// `nav.ts`; if you adjust the visual placement, change all three
+/// together. We could in principle cache each window's natural title
+/// bar height before the first collapse, but the per-window state
+/// machine that buys is not worth the complexity for a single number.
+const TRAFFIC_LIGHT_RESTORE_Y_INSET: f64 = 24.0;
 
 struct UnsafeWindowHandle(*mut std::ffi::c_void);
 unsafe impl Send for UnsafeWindowHandle {}
@@ -31,53 +43,52 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 }
 
 #[command]
-pub fn set_traffic_lights(window: Window, visible: bool, x: f64, y: f64) {
+pub fn set_traffic_lights(window: Window, visible: bool) {
     unsafe {
+        let was_visible = TRAFFIC_LIGHTS_VISIBLE;
         TRAFFIC_LIGHTS_VISIBLE = visible;
-        WINDOW_CONTROL_PAD_X = x;
-        WINDOW_CONTROL_PAD_Y = y;
+
+        // No-op when the visibility didn't actually change: position is
+        // declared at window creation, so there's nothing to re-apply.
+        // Skipping the cocoa setFrame avoids a redundant relayout that
+        // would otherwise fight AppKit's own traffic-light tracking.
+        if was_visible == visible {
+            return;
+        }
 
         position_traffic_lights(
             UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
-            TRAFFIC_LIGHTS_VISIBLE,
-            WINDOW_CONTROL_PAD_X,
-            WINDOW_CONTROL_PAD_Y,
+            visible,
         );
     }
 }
 
-fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool, x: f64, y: f64) {
+/// Toggle the title-bar container view between its natural height (so
+/// the declared `trafficLightPosition` shows through) and zero (which
+/// hides the buttons during reader chrome auto-hide). x/y positioning
+/// of the buttons themselves is no longer touched here — that is done
+/// once at window creation by Tauri/wry's supported macOS API and then
+/// maintained by AppKit across resizes and theme changes.
+fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool) {
     use cocoa::appkit::{NSView, NSWindow, NSWindowButton};
     use cocoa::foundation::NSRect;
     let ns_window = ns_window_handle.0 as cocoa::base::id;
     unsafe {
         let close = ns_window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
-        let miniaturize =
-            ns_window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
-        let zoom = ns_window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
-
         let title_bar_container_view = close.superview().superview();
 
         let close_rect: NSRect = msg_send![close, frame];
         let button_height = close_rect.size.height;
 
-        let mut title_bar_frame_height = button_height + y;
-        if !visible {
-            title_bar_frame_height = 0.0;
-        }
+        let title_bar_frame_height = if visible {
+            button_height + TRAFFIC_LIGHT_RESTORE_Y_INSET
+        } else {
+            0.0
+        };
         let mut title_bar_rect = NSView::frame(title_bar_container_view);
         title_bar_rect.size.height = title_bar_frame_height;
         title_bar_rect.origin.y = NSView::frame(ns_window).size.height - title_bar_frame_height;
         let _: () = msg_send![title_bar_container_view, setFrame: title_bar_rect];
-
-        let window_buttons = vec![close, miniaturize, zoom];
-        let space_between = NSView::frame(miniaturize).origin.x - NSView::frame(close).origin.x;
-
-        for (i, button) in window_buttons.into_iter().enumerate() {
-            let mut rect: NSRect = NSView::frame(button);
-            rect.origin.x = x + (i as f64 * space_between);
-            button.setFrameOrigin(rect.origin);
-        }
     }
 }
 
@@ -109,8 +120,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
         position_traffic_lights(
             UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
             TRAFFIC_LIGHTS_VISIBLE,
-            WINDOW_CONTROL_PAD_X,
-            WINDOW_CONTROL_PAD_Y,
         );
     }
 
@@ -160,8 +169,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                         position_traffic_lights(
                             UnsafeWindowHandle(id as *mut std::ffi::c_void),
                             TRAFFIC_LIGHTS_VISIBLE,
-                            WINDOW_CONTROL_PAD_X,
-                            WINDOW_CONTROL_PAD_Y,
                         );
                     }
                 });
@@ -295,8 +302,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                         position_traffic_lights(
                             UnsafeWindowHandle(id as *mut std::ffi::c_void),
                             TRAFFIC_LIGHTS_VISIBLE,
-                            WINDOW_CONTROL_PAD_X,
-                            WINDOW_CONTROL_PAD_Y,
                         );
                     }
                 });

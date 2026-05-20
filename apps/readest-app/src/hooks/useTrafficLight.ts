@@ -18,7 +18,13 @@ export const useTrafficLight = () => {
 
     initializeTrafficLightStore(appService);
     initializeTrafficLightListeners();
-    setTrafficLightVisibility(true, { x: 10, y: 20 });
+    // Position is declared on the window itself via Tauri's
+    // `trafficLightPosition` (Rust `WebviewWindowBuilder` for the
+    // main window in `src-tauri/src/lib.rs`; `new WebviewWindow(...)`
+    // for reader windows in `utils/nav.ts`). This call only flips the
+    // visibility flag — the buttons stay in their declared inset until
+    // the reader explicitly hides them on a HeaderBar dwell.
+    setTrafficLightVisibility(true);
     return () => {
       cleanupTrafficLightListeners();
     };

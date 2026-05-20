@@ -1,5 +1,6 @@
 import { redirect, useRouter } from 'next/navigation';
 import { getCurrentWindow, ScrollBarStyle } from '@tauri-apps/api/window';
+import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
@@ -21,6 +22,14 @@ const createReaderWindow = (appService: AppService, url: string) => {
     transparent: !appService.isMacOSApp,
     shadow: appService.isMacOSApp ? undefined : true,
     titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+    // Mirrors the value set by the Rust-side WebviewWindowBuilder for
+    // the initial main window (`src-tauri/src/lib.rs`); both stay in
+    // sync because they describe the same visual placement inside
+    // readest's header bar. Tauri/wry forwards this to macOS' supported
+    // traffic-light inset API, replacing the cocoa private-API
+    // positioning the legacy `useTrafficLight` hook used to drive over
+    // IPC.
+    trafficLightPosition: appService.isMacOSApp ? new LogicalPosition(10, 24) : undefined,
     // Enum ScrollBarStyle is exported as type by tauri, so it cannot be used directly.
     scrollBarStyle: (appService.osPlatform === 'windows'
       ? 'fluentOverlay'
@@ -77,6 +86,12 @@ export const ensureMainLibraryWindow = async (appService: AppService) => {
     transparent: !appService.isMacOSApp,
     shadow: appService.isMacOSApp ? undefined : true,
     titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+    // See createReaderWindow above for context. The recreated main
+    // window must declare the same traffic-light inset as the original
+    // main window built in `src-tauri/src/lib.rs`, otherwise AppKit
+    // would fall back to its default placement and the buttons would
+    // not align with readest's header bar.
+    trafficLightPosition: appService.isMacOSApp ? new LogicalPosition(10, 24) : undefined,
     scrollBarStyle: (appService.osPlatform === 'windows'
       ? 'fluentOverlay'
       : 'default') as unknown as ScrollBarStyle,

@@ -14,6 +14,8 @@ mod android;
 
 use tauri::utils::config::BackgroundThrottlingPolicy;
 #[cfg(target_os = "macos")]
+use tauri::LogicalPosition;
+#[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 
 use std::path::PathBuf;
@@ -444,6 +446,20 @@ pub fn run() {
             let win_builder = win_builder
                 .decorations(true)
                 .title_bar_style(TitleBarStyle::Overlay)
+                // Single source of truth for traffic light placement.
+                // Tauri/wry sets the inset through macOS' supported API
+                // at window creation, which AppKit then maintains across
+                // resizes, theme changes, and full-screen transitions.
+                // The reader window (created from the frontend in
+                // `nav.ts`) mirrors this with `trafficLightPosition`
+                // on its `new WebviewWindow(...)` options. The cocoa
+                // private-API helper in `macos::traffic_light` no longer
+                // moves the buttons in this configuration; it only
+                // collapses the title bar to hide the buttons when the
+                // app explicitly requests `visible: false`. The y inset
+                // visually centers the ~12px button glyphs inside
+                // readest's ~48px header bar; tuned by eye on macOS 26.
+                .traffic_light_position(LogicalPosition::new(10.0, 24.0))
                 .title("");
 
             #[cfg(all(not(target_os = "macos"), desktop))]
