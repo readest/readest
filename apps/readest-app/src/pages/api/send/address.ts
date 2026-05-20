@@ -7,6 +7,7 @@ import {
   buildSendAddress,
   sanitizeSlug,
   isReservedSlug,
+  normalizeSenderEmail,
 } from '@/services/send/sendAddress';
 import { SEND_EMAIL_DOMAIN } from '@/services/constants';
 import type { DBSendAddress } from '@/types/sendRecords';
@@ -50,6 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!created) {
       return res.status(500).json({ error: 'Could not allocate an address' });
     }
+    // Auto-seed the allowlist with the user's account email so the most common
+    // first send ("email it to yourself") works without a separate approval.
+    // Best-effort: address creation succeeds even if the seed insert fails.
+    if (user.email) {
+      await seedOwnEmail(supabase, user.id, user.email);
+    }
     return res.status(200).json({ address: fullAddress(created), enabled: true });
   }
 
@@ -92,6 +99,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function seedOwnEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  userId: string,
+  email: string,
+): Promise<void> {
+  const normalized = normalizeSenderEmail(email);
+  if (!normalized) return;
+  await supabase
+    .from('send_allowed_senders')
+    .upsert(
+      { user_id: userId, email: normalized, status: 'approved' },
+      { onConflict: 'user_id,email' },
+    );
 }
 
 async function insertWithRetry(
