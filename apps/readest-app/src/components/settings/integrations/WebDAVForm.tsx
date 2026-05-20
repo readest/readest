@@ -6,6 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useWebDAVSyncStore } from '@/store/webdavSyncStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
@@ -75,10 +76,19 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   const [rootPath, setRootPath] = useState(stored?.rootPath || '/');
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  // Library-wide Sync now state — surfaces a progress hint while we
-  // walk through the bookshelf and disables the button to prevent
-  // re-entry.
-  const [syncProgressLabel, setSyncProgressLabel] = useState<string | null>(null);
+  // Library-wide Sync now state — stored in a process-local zustand
+  // store rather than component state so the run survives navigation
+  // events that would otherwise unmount us (drilling back to the
+  // Integrations list, closing the SettingsDialog and reopening it).
+  // Without this hoist, the user would see the button re-enable, no
+  // progress affordance, and could trigger a second concurrent
+  // syncLibrary while the first was still in flight against the
+  // server. See `webdavSyncStore.ts` for the design rationale.
+  const isSyncing = useWebDAVSyncStore((s) => s.isSyncing);
+  const syncProgressLabel = useWebDAVSyncStore((s) => s.progressLabel);
+  const beginSync = useWebDAVSyncStore((s) => s.beginSync);
+  const updateProgress = useWebDAVSyncStore((s) => s.updateProgress);
+  const endSync = useWebDAVSyncStore((s) => s.endSync);
 
   const handleConnect = async () => {
     if (!url || !username) return;
@@ -196,7 +206,10 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
    * surface a status string and disable the button.
    */
   const handleSyncNow = async () => {
-    if (syncProgressLabel) return; // already running
+    // Re-entrancy gate must read the live store, not the closure: a
+    // second click after we re-mount could otherwise see the captured
+    // `isSyncing` from this render rather than the up-to-date one.
+    if (useWebDAVSyncStore.getState().isSyncing) return;
     if (!stored?.enabled || !stored.serverUrl) return;
 
     // Load library from disk if not loaded yet
@@ -221,7 +234,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       await persistWebdav({ deviceId });
     }
 
-    setSyncProgressLabel(_('Syncing 0 / {{total}}', { total: eligibleBooks.length }));
+    beginSync(_('Syncing 0 / {{total}}', { total: eligibleBooks.length }));
 
     // Captured before the run begins so we can attribute startedAt
     // accurately even when the run fails in the catch block (the
@@ -377,7 +390,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         },
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
-          setSyncProgressLabel(
+          updateProgress(
             _('{{action}} {{n}} / {{total}} — {{title}}', {
               action: actionStr,
               n: index + 1,
@@ -500,7 +513,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       };
       await appendSyncLogEntry(entry);
     } finally {
-      setSyncProgressLabel(null);
+      endSync();
     }
   };
 
@@ -563,15 +576,15 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
               <button
                 type='button'
                 onClick={handleSyncNow}
-                disabled={!!syncProgressLabel}
+                disabled={isSyncing}
                 className={clsx(
                   'btn btn-ghost btn-sm h-8 min-h-8 gap-1 px-2',
-                  syncProgressLabel && 'opacity-60',
+                  isSyncing && 'opacity-60',
                 )}
                 title={_('Sync now')}
                 aria-label={_('Sync now')}
               >
-                {syncProgressLabel ? (
+                {isSyncing ? (
                   <span className='loading loading-spinner loading-xs' />
                 ) : (
                   <MdCloudSync className='h-4 w-4' />
