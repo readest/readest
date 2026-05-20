@@ -10,6 +10,7 @@ import {
   ensureLibraryGroupByType,
   findGroupById,
   getGroupDisplayName,
+  expandBookshelfSelection,
 } from '../../app/library/utils/libraryUtils';
 import { Book, BooksGroup } from '../../types/book';
 import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
@@ -981,5 +982,86 @@ describe('getGroupDisplayName', () => {
     const items: (Book | BooksGroup)[] = [createMockGroup({ id: 'group-1', name: 'Name' })];
 
     expect(getGroupDisplayName(items, 'non-existent')).toBeUndefined();
+  });
+});
+
+describe('expandBookshelfSelection', () => {
+  const createMockGroup = (overrides: Partial<BooksGroup> = {}): BooksGroup => ({
+    id: 'test-group',
+    name: 'Test Group',
+    displayName: 'Test Display Name',
+    books: [],
+    updatedAt: Date.now(),
+    ...overrides,
+  });
+
+  it('passes through standalone book hashes unchanged', () => {
+    const items: (Book | BooksGroup)[] = [
+      createMockBook({ hash: 'book-1' }),
+      createMockBook({ hash: 'book-2' }),
+    ];
+
+    expect(expandBookshelfSelection(['book-1', 'book-2'], items)).toEqual(['book-1', 'book-2']);
+  });
+
+  it('expands a group id into every book hash in the rendered rollup', () => {
+    // generateBookshelfItems rolls nested-folder books into the top-level
+    // group, so the rendered BooksGroup.books already includes them. The
+    // helper must rely on that rollup so deleting "MyDir" also catches
+    // books whose own groupName is "MyDir/sub".
+    const items: (Book | BooksGroup)[] = [
+      createMockGroup({
+        id: 'group-mydir',
+        name: 'MyDir',
+        books: [
+          createMockBook({ hash: 'direct-book', groupName: 'MyDir', groupId: 'group-mydir' }),
+          createMockBook({ hash: 'nested-book', groupName: 'MyDir/sub', groupId: 'group-sub' }),
+        ],
+      }),
+    ];
+
+    expect(expandBookshelfSelection(['group-mydir'], items).sort()).toEqual([
+      'direct-book',
+      'nested-book',
+    ]);
+  });
+
+  it('deduplicates when a book hash and its parent group are both selected', () => {
+    const items: (Book | BooksGroup)[] = [
+      createMockGroup({
+        id: 'group-1',
+        books: [createMockBook({ hash: 'book-a' }), createMockBook({ hash: 'book-b' })],
+      }),
+    ];
+
+    expect(expandBookshelfSelection(['book-a', 'group-1'], items).sort()).toEqual([
+      'book-a',
+      'book-b',
+    ]);
+  });
+
+  it('skips soft-deleted books inside a group', () => {
+    const items: (Book | BooksGroup)[] = [
+      createMockGroup({
+        id: 'group-1',
+        books: [
+          createMockBook({ hash: 'alive' }),
+          createMockBook({ hash: 'gone', deletedAt: Date.now() }),
+        ],
+      }),
+    ];
+
+    expect(expandBookshelfSelection(['group-1'], items)).toEqual(['alive']);
+  });
+
+  it('returns an empty array when no ids are given', () => {
+    expect(expandBookshelfSelection([], [])).toEqual([]);
+  });
+
+  it('preserves unknown ids so callers can surface stale selections', () => {
+    // Defensive: if the rendered items no longer contain a selected id (e.g.
+    // it was a hash from another view), the helper leaves it alone rather
+    // than silently dropping it.
+    expect(expandBookshelfSelection(['ghost-hash'], [])).toEqual(['ghost-hash']);
   });
 });

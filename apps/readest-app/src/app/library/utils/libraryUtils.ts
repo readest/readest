@@ -59,6 +59,32 @@ export const getGroupDisplayName = (
   return group?.displayName || group?.name;
 };
 
+/**
+ * Expand a list of selection ids (book hashes or group ids from the rendered
+ * bookshelf) into the unique book hashes those ids represent.
+ *
+ * Group ids resolve to every (non-soft-deleted) book in the group's visible
+ * rollup — `generateBookshelfItems` already folds nested-folder books into
+ * their top-level group, so the rendered `BooksGroup.books` is the source of
+ * truth. Standalone book hashes (and any unknown ids) pass through unchanged,
+ * letting callers like the bookshelf delete flow collect the right set up
+ * front instead of re-deriving it later.
+ */
+export const expandBookshelfSelection = (ids: string[], items: (Book | BooksGroup)[]): string[] => {
+  const hashes = new Set<string>();
+  for (const id of ids) {
+    const group = findGroupById(items, id);
+    if (group) {
+      for (const book of group.books) {
+        if (!book.deletedAt) hashes.add(book.hash);
+      }
+    } else {
+      hashes.add(id);
+    }
+  }
+  return [...hashes];
+};
+
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;

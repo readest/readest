@@ -317,7 +317,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const deleteGroupMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        eventDispatcher.dispatch('delete-books', { ids: [group.id] });
+        // Dispatch the constituent book hashes — `group.books` is the
+        // rendered rollup and already includes books from nested sub-
+        // folders, so the deletion path doesn't need to re-derive what
+        // belongs to the group from the id alone.
+        const ids = group.books.filter((book) => !book.deletedAt).map((book) => book.hash);
+        eventDispatcher.dispatch('delete-books', { ids });
       },
     });
     const menu = await Menu.new();

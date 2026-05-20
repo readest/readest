@@ -36,6 +36,7 @@ import {
   createWithinGroupSorter,
   ensureLibraryGroupByType,
   ensureLibrarySortByType,
+  expandBookshelfSelection,
   getBookSortValue,
   getGroupSortValue,
   compareSortValues,
@@ -359,43 +360,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
+  // `bookIdsToDelete` always holds book hashes by the time we get here —
+  // group ids are expanded into their constituent hashes at intake (see
+  // `deleteSelectedBooks` and `handleDeleteBooksIntent`), so a top-level
+  // folder is now resolved against the rendered group's `books` rollup,
+  // which already includes nested sub-folder books.
   const getBooksToDelete = () => {
-    const booksToDelete: Book[] = [];
-    const seenHashes = new Set<string>();
-    const pushIfFresh = (book?: Book) => {
-      if (!book || book.deletedAt) return;
-      if (seenHashes.has(book.hash)) return;
-      seenHashes.add(book.hash);
-      booksToDelete.push(book);
-    };
-
-    bookIdsToDelete.forEach((id) => {
-      // Direct match: a single book hash, or a book whose top-level
-      // groupId equals the id (the only case the previous strict
-      // equality covered).
-      filteredBooks.forEach((book) => {
-        if (book.hash === id || book.groupId === id) pushIfFresh(book);
-      });
-      // Sub-folder fallback: if the id corresponds to a known group,
-      // also collect every book whose groupName lives somewhere under
-      // that group's path. Books imported from a folder with nested
-      // sub-directories carry `groupId = md5(groupName/sub)` rather
-      // than `md5(groupName)` — without this prefix sweep the parent
-      // group could never be cleared because deleting "MyDir" would
-      // leave "MyDir/sub/book" untouched, and `refreshGroups` would
-      // re-create the parent group on the next render.
-      const groupName = getGroupName(id);
-      if (groupName) {
-        const prefix = `${groupName}/`;
-        filteredBooks.forEach((book) => {
-          if (!book.groupName) return;
-          if (book.groupName === groupName || book.groupName.startsWith(prefix)) {
-            pushIfFresh(book);
-          }
-        });
-      }
-    });
-    return booksToDelete;
+    const wanted = new Set(bookIdsToDelete);
+    return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
   const confirmDelete = async () => {
@@ -417,7 +389,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const deleteSelectedBooks = () => {
-    setBookIdsToDelete(getSelectedBooks());
+    // Expand any group ids in the selection into the book hashes they
+    // visually represent — `generateBookshelfItems` rolls nested-folder
+    // books into the parent group, and we want every one of them queued
+    // for deletion, not just the books whose own `groupId` happens to
+    // match the top-level group's id.
+    setBookIdsToDelete(expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems));
     setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };
