@@ -1524,5 +1524,18 @@
   "System": "Sistema",
   "System dictionary integration is coming soon on this platform.": "A integração com o dicionário do sistema chegará em breve nesta plataforma.",
   "Waiting to be processed": "Aguardando processamento",
-  "Processing…": "A processar…"
+  "Processing…": "A processar…",
+  "Folder": "Pasta",
+  "Choose a folder": "Escolher uma pasta",
+  "File Formats": "Formatos de ficheiro",
+  "File size larger than": "Tamanho do ficheiro maior que",
+  "Minimum file size (KB)": "Tamanho mínimo do ficheiro (KB)",
+  "KB": "KB",
+  "Folder Structure": "Estrutura de pastas",
+  "Create groups from subfolders": "Criar grupos a partir de subpastas",
+  "Each first-level subfolder becomes a library group.": "Cada subpasta de primeiro nível torna-se um grupo da biblioteca.",
+  "Import all into library": "Importar tudo para a biblioteca",
+  "Recursively add every matching file directly to the library.": "Adicionar recursivamente cada ficheiro correspondente diretamente à biblioteca.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Não foram encontrados livros correspondentes na pasta selecionada."
 }

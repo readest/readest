@@ -1468,5 +1468,18 @@
   "System": "Hệ thống",
   "System dictionary integration is coming soon on this platform.": "Tích hợp từ điển hệ thống sẽ sớm có mặt trên nền tảng này.",
   "Waiting to be processed": "Đang chờ xử lý",
-  "Processing…": "Đang xử lý…"
+  "Processing…": "Đang xử lý…",
+  "Folder": "Thư mục",
+  "Choose a folder": "Chọn thư mục",
+  "File Formats": "Định dạng tệp",
+  "File size larger than": "Kích thước tệp lớn hơn",
+  "Minimum file size (KB)": "Kích thước tệp tối thiểu (KB)",
+  "KB": "KB",
+  "Folder Structure": "Cấu trúc thư mục",
+  "Create groups from subfolders": "Tạo nhóm từ thư mục con",
+  "Each first-level subfolder becomes a library group.": "Mỗi thư mục con cấp đầu tiên trở thành một nhóm thư viện.",
+  "Import all into library": "Nhập tất cả vào thư viện",
+  "Recursively add every matching file directly to the library.": "Đệ quy thêm mọi tệp khớp trực tiếp vào thư viện.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Không tìm thấy sách khớp trong thư mục đã chọn."
 }

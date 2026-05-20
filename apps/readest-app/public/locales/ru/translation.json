@@ -1552,5 +1552,18 @@
   "System": "Система",
   "System dictionary integration is coming soon on this platform.": "Интеграция системного словаря скоро появится на этой платформе.",
   "Waiting to be processed": "Ожидает обработки",
-  "Processing…": "Обработка…"
+  "Processing…": "Обработка…",
+  "Folder": "Папка",
+  "Choose a folder": "Выберите папку",
+  "File Formats": "Форматы файлов",
+  "File size larger than": "Размер файла больше чем",
+  "Minimum file size (KB)": "Минимальный размер файла (КБ)",
+  "KB": "КБ",
+  "Folder Structure": "Структура папок",
+  "Create groups from subfolders": "Создать группы из подпапок",
+  "Each first-level subfolder becomes a library group.": "Каждая подпапка первого уровня становится группой библиотеки.",
+  "Import all into library": "Импортировать всё в библиотеку",
+  "Recursively add every matching file directly to the library.": "Рекурсивно добавить каждый подходящий файл напрямую в библиотеку.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "В выбранной папке не найдено подходящих книг."
 }

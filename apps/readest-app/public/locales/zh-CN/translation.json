@@ -1468,5 +1468,18 @@
   "System": "系统",
   "System dictionary integration is coming soon on this platform.": "即将在此平台支持系统词典集成。",
   "Waiting to be processed": "等待处理",
-  "Processing…": "处理中…"
+  "Processing…": "处理中…",
+  "Folder": "文件夹",
+  "Choose a folder": "选择一个文件夹",
+  "File Formats": "文件格式",
+  "File size larger than": "文件大小大于",
+  "Minimum file size (KB)": "最小文件大小 (KB)",
+  "KB": "KB",
+  "Folder Structure": "文件夹结构",
+  "Create groups from subfolders": "从子文件夹创建分组",
+  "Each first-level subfolder becomes a library group.": "每个一级子文件夹将成为一个书库分组。",
+  "Import all into library": "全部导入到书库",
+  "Recursively add every matching file directly to the library.": "递归地将所有匹配的文件直接添加到书库。",
+  "OK": "确定",
+  "No matching books found in the selected folder.": "在所选文件夹中未找到匹配的书籍。"
 }

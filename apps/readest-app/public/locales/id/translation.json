@@ -1468,5 +1468,18 @@
   "System": "Sistem",
   "System dictionary integration is coming soon on this platform.": "Integrasi kamus sistem akan segera hadir di platform ini.",
   "Waiting to be processed": "Menunggu untuk diproses",
-  "Processing…": "Memproses…"
+  "Processing…": "Memproses…",
+  "Folder": "Folder",
+  "Choose a folder": "Pilih folder",
+  "File Formats": "Format Berkas",
+  "File size larger than": "Ukuran berkas lebih besar dari",
+  "Minimum file size (KB)": "Ukuran berkas minimum (KB)",
+  "KB": "KB",
+  "Folder Structure": "Struktur Folder",
+  "Create groups from subfolders": "Buat grup dari subfolder",
+  "Each first-level subfolder becomes a library group.": "Setiap subfolder tingkat pertama menjadi grup pustaka.",
+  "Import all into library": "Impor semua ke pustaka",
+  "Recursively add every matching file directly to the library.": "Tambahkan secara rekursif setiap berkas yang cocok langsung ke pustaka.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Tidak ada buku yang cocok ditemukan di folder yang dipilih."
 }

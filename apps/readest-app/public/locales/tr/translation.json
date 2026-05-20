@@ -1496,5 +1496,18 @@
   "System": "Sistem",
   "System dictionary integration is coming soon on this platform.": "Sistem sözlüğü entegrasyonu yakında bu platformda kullanıma sunulacak.",
   "Waiting to be processed": "İşlenmeyi bekliyor",
-  "Processing…": "İşleniyor…"
+  "Processing…": "İşleniyor…",
+  "Folder": "Klasör",
+  "Choose a folder": "Bir klasör seçin",
+  "File Formats": "Dosya Biçimleri",
+  "File size larger than": "Dosya boyutu şundan büyük",
+  "Minimum file size (KB)": "Minimum dosya boyutu (KB)",
+  "KB": "KB",
+  "Folder Structure": "Klasör Yapısı",
+  "Create groups from subfolders": "Alt klasörlerden gruplar oluştur",
+  "Each first-level subfolder becomes a library group.": "Her birinci düzey alt klasör bir kitaplık grubu olur.",
+  "Import all into library": "Tümünü kitaplığa aktar",
+  "Recursively add every matching file directly to the library.": "Eşleşen her dosyayı doğrudan kitaplığa özyinelemeli olarak ekle.",
+  "OK": "Tamam",
+  "No matching books found in the selected folder.": "Seçilen klasörde eşleşen kitap bulunamadı."
 }

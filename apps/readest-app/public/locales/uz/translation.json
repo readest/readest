@@ -1496,5 +1496,18 @@
   "System": "Tizim",
   "System dictionary integration is coming soon on this platform.": "Tizim lug‘ati integratsiyasi tez orada ushbu platformada paydo bo‘ladi.",
   "Waiting to be processed": "Qayta ishlanishi kutilmoqda",
-  "Processing…": "Qayta ishlanmoqda…"
+  "Processing…": "Qayta ishlanmoqda…",
+  "Folder": "Papka",
+  "Choose a folder": "Papkani tanlang",
+  "File Formats": "Fayl formatlari",
+  "File size larger than": "Fayl hajmi shundan katta",
+  "Minimum file size (KB)": "Minimal fayl hajmi (KB)",
+  "KB": "KB",
+  "Folder Structure": "Papka tuzilishi",
+  "Create groups from subfolders": "Quyi papkalardan guruhlar yarating",
+  "Each first-level subfolder becomes a library group.": "Birinchi darajadagi har bir quyi papka kutubxona guruhiga aylanadi.",
+  "Import all into library": "Hammasini kutubxonaga import qiling",
+  "Recursively add every matching file directly to the library.": "Har bir mos keladigan faylni to'g'ridan-to'g'ri kutubxonaga rekursiv qo'shing.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Tanlangan papkada mos keladigan kitoblar topilmadi."
 }

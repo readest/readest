@@ -1496,5 +1496,18 @@
   "System": "Σύστημα",
   "System dictionary integration is coming soon on this platform.": "Η ενσωμάτωση λεξικού συστήματος έρχεται σύντομα σε αυτή την πλατφόρμα.",
   "Waiting to be processed": "Αναμονή για επεξεργασία",
-  "Processing…": "Επεξεργασία…"
+  "Processing…": "Επεξεργασία…",
+  "Folder": "Φάκελος",
+  "Choose a folder": "Επιλέξτε φάκελο",
+  "File Formats": "Μορφές αρχείων",
+  "File size larger than": "Μέγεθος αρχείου μεγαλύτερο από",
+  "Minimum file size (KB)": "Ελάχιστο μέγεθος αρχείου (KB)",
+  "KB": "KB",
+  "Folder Structure": "Δομή φακέλων",
+  "Create groups from subfolders": "Δημιουργία ομάδων από υποφακέλους",
+  "Each first-level subfolder becomes a library group.": "Κάθε υποφάκελος πρώτου επιπέδου γίνεται ομάδα στη βιβλιοθήκη.",
+  "Import all into library": "Εισαγωγή όλων στη βιβλιοθήκη",
+  "Recursively add every matching file directly to the library.": "Αναδρομική προσθήκη κάθε αντίστοιχου αρχείου απευθείας στη βιβλιοθήκη.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Δεν βρέθηκαν αντίστοιχα βιβλία στον επιλεγμένο φάκελο."
 }

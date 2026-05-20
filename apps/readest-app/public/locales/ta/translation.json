@@ -1496,5 +1496,18 @@
   "System": "கணினி",
   "System dictionary integration is coming soon on this platform.": "இந்த தளத்தில் கணினி அகராதி ஒருங்கிணைப்பு விரைவில் வரும்.",
   "Waiting to be processed": "செயலாக்கத்திற்காகக் காத்திருக்கிறது",
-  "Processing…": "செயலாக்கப்படுகிறது…"
+  "Processing…": "செயலாக்கப்படுகிறது…",
+  "Folder": "கோப்புறை",
+  "Choose a folder": "ஒரு கோப்புறையை தேர்வுசெய்க",
+  "File Formats": "கோப்பு வடிவங்கள்",
+  "File size larger than": "கோப்பு அளவு இதைவிட பெரியது",
+  "Minimum file size (KB)": "குறைந்தபட்ச கோப்பு அளவு (KB)",
+  "KB": "KB",
+  "Folder Structure": "கோப்புறை அமைப்பு",
+  "Create groups from subfolders": "துணை கோப்புறைகளில் இருந்து குழுக்களை உருவாக்கு",
+  "Each first-level subfolder becomes a library group.": "முதல் நிலை ஒவ்வொரு துணை கோப்புறையும் ஒரு நூலக குழுவாக மாறும்.",
+  "Import all into library": "அனைத்தையும் நூலகத்திற்கு இறக்குமதி செய்",
+  "Recursively add every matching file directly to the library.": "பொருந்தும் ஒவ்வொரு கோப்பையும் நேரடியாக நூலகத்திற்கு மீள்கூற்று முறையில் சேர்க்கவும்.",
+  "OK": "சரி",
+  "No matching books found in the selected folder.": "தேர்ந்தெடுக்கப்பட்ட கோப்புறையில் பொருந்தும் புத்தகங்கள் எதுவும் கிடைக்கவில்லை."
 }

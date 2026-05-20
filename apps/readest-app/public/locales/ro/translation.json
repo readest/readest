@@ -1524,5 +1524,18 @@
   "System": "Sistem",
   "System dictionary integration is coming soon on this platform.": "Integrarea cu dicționarul sistemului va fi disponibilă în curând pe această platformă.",
   "Waiting to be processed": "În așteptarea procesării",
-  "Processing…": "Se procesează…"
+  "Processing…": "Se procesează…",
+  "Folder": "Folder",
+  "Choose a folder": "Alege un folder",
+  "File Formats": "Formate de fișier",
+  "File size larger than": "Dimensiunea fișierului mai mare decât",
+  "Minimum file size (KB)": "Dimensiunea minimă a fișierului (KB)",
+  "KB": "KB",
+  "Folder Structure": "Structura folderului",
+  "Create groups from subfolders": "Creează grupuri din subfoldere",
+  "Each first-level subfolder becomes a library group.": "Fiecare subfolder de prim nivel devine un grup în bibliotecă.",
+  "Import all into library": "Importă tot în bibliotecă",
+  "Recursively add every matching file directly to the library.": "Adaugă recursiv fiecare fișier potrivit direct în bibliotecă.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Nu s-au găsit cărți potrivite în folderul selectat."
 }

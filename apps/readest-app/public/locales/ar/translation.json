@@ -1608,5 +1608,18 @@
   "System": "النظام",
   "System dictionary integration is coming soon on this platform.": "تكامل قاموس النظام قادم قريباً على هذه المنصة.",
   "Waiting to be processed": "في انتظار المعالجة",
-  "Processing…": "جارٍ المعالجة…"
+  "Processing…": "جارٍ المعالجة…",
+  "Folder": "مجلد",
+  "Choose a folder": "اختر مجلداً",
+  "File Formats": "صيغ الملفات",
+  "File size larger than": "حجم الملف أكبر من",
+  "Minimum file size (KB)": "الحد الأدنى لحجم الملف (كيلوبايت)",
+  "KB": "كيلوبايت",
+  "Folder Structure": "بنية المجلدات",
+  "Create groups from subfolders": "إنشاء مجموعات من المجلدات الفرعية",
+  "Each first-level subfolder becomes a library group.": "يصبح كل مجلد فرعي من المستوى الأول مجموعةً في المكتبة.",
+  "Import all into library": "استيراد الكل إلى المكتبة",
+  "Recursively add every matching file directly to the library.": "إضافة كل ملف مطابق مباشرةً إلى المكتبة بشكل تكراري.",
+  "OK": "موافق",
+  "No matching books found in the selected folder.": "لم يتم العثور على كتب مطابقة في المجلد المحدد."
 }

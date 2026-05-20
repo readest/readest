@@ -1552,5 +1552,18 @@
   "System": "Sistem",
   "System dictionary integration is coming soon on this platform.": "Integracija sistemskega slovarja bo kmalu na voljo na tej platformi.",
   "Waiting to be processed": "Čaka na obdelavo",
-  "Processing…": "Obdelovanje…"
+  "Processing…": "Obdelovanje…",
+  "Folder": "Mapa",
+  "Choose a folder": "Izberite mapo",
+  "File Formats": "Oblike datotek",
+  "File size larger than": "Velikost datoteke večja od",
+  "Minimum file size (KB)": "Najmanjša velikost datoteke (KB)",
+  "KB": "KB",
+  "Folder Structure": "Struktura map",
+  "Create groups from subfolders": "Ustvari skupine iz podmap",
+  "Each first-level subfolder becomes a library group.": "Vsaka podmapa prve ravni postane skupina v knjižnici.",
+  "Import all into library": "Uvozi vse v knjižnico",
+  "Recursively add every matching file directly to the library.": "Rekurzivno dodaj vsako ujemajočo datoteko neposredno v knjižnico.",
+  "OK": "V redu",
+  "No matching books found in the selected folder.": "V izbrani mapi ni najdenih ujemajočih se knjig."
 }

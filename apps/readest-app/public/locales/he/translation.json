@@ -1524,5 +1524,18 @@
   "System": "מערכת",
   "System dictionary integration is coming soon on this platform.": "שילוב מילון המערכת יהיה זמין בקרוב בפלטפורמה זו.",
   "Waiting to be processed": "ממתין לעיבוד",
-  "Processing…": "מעבד…"
+  "Processing…": "מעבד…",
+  "Folder": "תיקייה",
+  "Choose a folder": "בחר תיקייה",
+  "File Formats": "סוגי קבצים",
+  "File size larger than": "גודל קובץ גדול מ-",
+  "Minimum file size (KB)": "גודל קובץ מינימלי (KB)",
+  "KB": "KB",
+  "Folder Structure": "מבנה תיקיות",
+  "Create groups from subfolders": "צור קבוצות מתת-תיקיות",
+  "Each first-level subfolder becomes a library group.": "כל תת-תיקייה ברמה הראשונה הופכת לקבוצה בספרייה.",
+  "Import all into library": "ייבא הכול לספרייה",
+  "Recursively add every matching file directly to the library.": "הוסף באופן רקורסיבי כל קובץ תואם ישירות לספרייה.",
+  "OK": "אישור",
+  "No matching books found in the selected folder.": "לא נמצאו ספרים תואמים בתיקייה שנבחרה."
 }

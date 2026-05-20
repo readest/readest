@@ -1524,5 +1524,18 @@
   "System": "Système",
   "System dictionary integration is coming soon on this platform.": "L’intégration du dictionnaire système arrive bientôt sur cette plateforme.",
   "Waiting to be processed": "En attente de traitement",
-  "Processing…": "Traitement…"
+  "Processing…": "Traitement…",
+  "Folder": "Dossier",
+  "Choose a folder": "Choisir un dossier",
+  "File Formats": "Formats de fichier",
+  "File size larger than": "Taille de fichier supérieure à",
+  "Minimum file size (KB)": "Taille minimale du fichier (Ko)",
+  "KB": "Ko",
+  "Folder Structure": "Structure des dossiers",
+  "Create groups from subfolders": "Créer des groupes à partir des sous-dossiers",
+  "Each first-level subfolder becomes a library group.": "Chaque sous-dossier de premier niveau devient un groupe de la bibliothèque.",
+  "Import all into library": "Tout importer dans la bibliothèque",
+  "Recursively add every matching file directly to the library.": "Ajouter récursivement tous les fichiers correspondants directement à la bibliothèque.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Aucun livre correspondant trouvé dans le dossier sélectionné."
 }

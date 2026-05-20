@@ -1496,5 +1496,18 @@
   "System": "সিস্টেম",
   "System dictionary integration is coming soon on this platform.": "এই প্ল্যাটফর্মে সিস্টেম অভিধান ইন্টিগ্রেশন শীঘ্রই আসছে।",
   "Waiting to be processed": "প্রক্রিয়াকরণের অপেক্ষায়",
-  "Processing…": "প্রক্রিয়াকরণ হচ্ছে…"
+  "Processing…": "প্রক্রিয়াকরণ হচ্ছে…",
+  "Folder": "ফোল্ডার",
+  "Choose a folder": "একটি ফোল্ডার নির্বাচন করুন",
+  "File Formats": "ফাইল ফরম্যাট",
+  "File size larger than": "ফাইলের আকার বড়",
+  "Minimum file size (KB)": "ন্যূনতম ফাইলের আকার (KB)",
+  "KB": "KB",
+  "Folder Structure": "ফোল্ডার গঠন",
+  "Create groups from subfolders": "সাবফোল্ডার থেকে গ্রুপ তৈরি করুন",
+  "Each first-level subfolder becomes a library group.": "প্রথম স্তরের প্রতিটি সাবফোল্ডার একটি লাইব্রেরি গ্রুপ হয়ে যায়।",
+  "Import all into library": "সব লাইব্রেরিতে আমদানি করুন",
+  "Recursively add every matching file directly to the library.": "প্রতিটি মিলিত ফাইলকে পুনরাবৃত্তিকভাবে সরাসরি লাইব্রেরিতে যোগ করুন।",
+  "OK": "ঠিক আছে",
+  "No matching books found in the selected folder.": "নির্বাচিত ফোল্ডারে কোনো মিলিত বই পাওয়া যায়নি।"
 }

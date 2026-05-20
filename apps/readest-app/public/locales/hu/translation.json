@@ -1496,5 +1496,18 @@
   "System": "Rendszer",
   "System dictionary integration is coming soon on this platform.": "A rendszerszótár integrációja hamarosan elérhető lesz ezen a platformon.",
   "Waiting to be processed": "Feldolgozásra vár",
-  "Processing…": "Feldolgozás…"
+  "Processing…": "Feldolgozás…",
+  "Folder": "Mappa",
+  "Choose a folder": "Mappa kiválasztása",
+  "File Formats": "Fájlformátumok",
+  "File size larger than": "Fájlméret nagyobb mint",
+  "Minimum file size (KB)": "Minimális fájlméret (KB)",
+  "KB": "KB",
+  "Folder Structure": "Mappastruktúra",
+  "Create groups from subfolders": "Csoportok létrehozása almappákból",
+  "Each first-level subfolder becomes a library group.": "Minden első szintű almappa könyvtárcsoporttá válik.",
+  "Import all into library": "Mindent importálni a könyvtárba",
+  "Recursively add every matching file directly to the library.": "Minden megfelelő fájl rekurzív hozzáadása közvetlenül a könyvtárhoz.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Nem található megfelelő könyv a kiválasztott mappában."
 }

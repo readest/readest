@@ -1468,5 +1468,18 @@
   "System": "མ་ལག",
   "System dictionary integration is coming soon on this platform.": "སྡོམ་གཞི་འདིའི་ནང་མ་ལག་ཚིག་མཛོད་མཐུན་སྒྲིལ་གྱི་ནུས་པ་མྱུར་དུ་འབྱུང་ངེས།",
   "Waiting to be processed": "སྦྱོར་སྦྱང་གི་སྒུག་ནས།",
-  "Processing…": "སྦྱོར་སྦྱང་བྱེད་བཞིན་པ…"
+  "Processing…": "སྦྱོར་སྦྱང་བྱེད་བཞིན་པ…",
+  "Folder": "ཡིག་སྣོད་",
+  "Choose a folder": "ཡིག་སྣོད་ཞིག་འདེམས།",
+  "File Formats": "ཡིག་ཆའི་རྣམ་གཞག",
+  "File size larger than": "ཡིག་ཆའི་ཆེ་ཆུང་འདི་ལས་ཆེ་བ་",
+  "Minimum file size (KB)": "ཡིག་ཆའི་ཆེ་ཆུང་ཉུང་མཐར་ (KB)",
+  "KB": "KB",
+  "Folder Structure": "ཡིག་སྣོད་ཀྱི་གཞི་རྩ་",
+  "Create groups from subfolders": "ཡན་ལག་ཡིག་སྣོད་ནས་སྡེ་ཚན་གསར་སྐྲུན་བྱེད།",
+  "Each first-level subfolder becomes a library group.": "རིམ་པ་དང་པོའི་ཡན་ལག་ཡིག་སྣོད་རེ་དཔེ་མཛོད་ཀྱི་སྡེ་ཚན་དུ་འགྱུར་ངེས།",
+  "Import all into library": "ཡོངས་སུ་དཔེ་མཛོད་དུ་ནང་འདྲེན་བྱེད།",
+  "Recursively add every matching file directly to the library.": "མཐུན་པའི་ཡིག་ཆ་ཡོངས་སུ་དཔེ་མཛོད་དུ་ཐད་ཀར་ལོག་སྣོན་བྱས་ཏེ་ཁ་སྣོན་གྱིས།",
+  "OK": "ཡིན།",
+  "No matching books found in the selected folder.": "བདམས་པའི་ཡིག་སྣོད་ནང་མཐུན་པའི་དཔེ་ཆ་ག་ཡང་མ་རྙེད།"
 }

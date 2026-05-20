@@ -1468,5 +1468,18 @@
   "System": "系統",
   "System dictionary integration is coming soon on this platform.": "即將在此平臺支援系統字典整合。",
   "Waiting to be processed": "等待處理",
-  "Processing…": "處理中…"
+  "Processing…": "處理中…",
+  "Folder": "資料夾",
+  "Choose a folder": "選擇一個資料夾",
+  "File Formats": "檔案格式",
+  "File size larger than": "檔案大小大於",
+  "Minimum file size (KB)": "最小檔案大小 (KB)",
+  "KB": "KB",
+  "Folder Structure": "資料夾結構",
+  "Create groups from subfolders": "從子資料夾建立群組",
+  "Each first-level subfolder becomes a library group.": "每個第一層子資料夾將成為一個書庫群組。",
+  "Import all into library": "全部匯入書庫",
+  "Recursively add every matching file directly to the library.": "遞迴地將所有相符的檔案直接新增到書庫。",
+  "OK": "確定",
+  "No matching books found in the selected folder.": "在所選資料夾中找不到相符的書籍。"
 }

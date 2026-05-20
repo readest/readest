@@ -1496,5 +1496,18 @@
   "System": "Systeem",
   "System dictionary integration is coming soon on this platform.": "Integratie van het systeemwoordenboek komt binnenkort beschikbaar op dit platform.",
   "Waiting to be processed": "Wacht op verwerking",
-  "Processing…": "Bezig met verwerken…"
+  "Processing…": "Bezig met verwerken…",
+  "Folder": "Map",
+  "Choose a folder": "Kies een map",
+  "File Formats": "Bestandsformaten",
+  "File size larger than": "Bestandsgrootte groter dan",
+  "Minimum file size (KB)": "Minimale bestandsgrootte (KB)",
+  "KB": "KB",
+  "Folder Structure": "Mapstructuur",
+  "Create groups from subfolders": "Groepen maken van submappen",
+  "Each first-level subfolder becomes a library group.": "Elke submap op het eerste niveau wordt een bibliotheekgroep.",
+  "Import all into library": "Alles in bibliotheek importeren",
+  "Recursively add every matching file directly to the library.": "Voeg recursief elk overeenkomend bestand rechtstreeks toe aan de bibliotheek.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Geen overeenkomende boeken gevonden in de geselecteerde map."
 }

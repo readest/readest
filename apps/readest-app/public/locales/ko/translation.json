@@ -1468,5 +1468,18 @@
   "System": "시스템",
   "System dictionary integration is coming soon on this platform.": "이 플랫폼에서 시스템 사전 통합이 곧 제공됩니다.",
   "Waiting to be processed": "처리 대기 중",
-  "Processing…": "처리 중…"
+  "Processing…": "처리 중…",
+  "Folder": "폴더",
+  "Choose a folder": "폴더 선택",
+  "File Formats": "파일 형식",
+  "File size larger than": "파일 크기가 다음보다 큰 경우",
+  "Minimum file size (KB)": "최소 파일 크기 (KB)",
+  "KB": "KB",
+  "Folder Structure": "폴더 구조",
+  "Create groups from subfolders": "하위 폴더로 그룹 만들기",
+  "Each first-level subfolder becomes a library group.": "첫 번째 수준의 각 하위 폴더가 라이브러리 그룹이 됩니다.",
+  "Import all into library": "모두 라이브러리로 가져오기",
+  "Recursively add every matching file directly to the library.": "일치하는 모든 파일을 재귀적으로 라이브러리에 직접 추가합니다.",
+  "OK": "확인",
+  "No matching books found in the selected folder.": "선택한 폴더에서 일치하는 책을 찾을 수 없습니다."
 }

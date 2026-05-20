@@ -1496,5 +1496,18 @@
   "System": "System",
   "System dictionary integration is coming soon on this platform.": "Integration med systemets ordbok kommer snart till denna plattform.",
   "Waiting to be processed": "Väntar på bearbetning",
-  "Processing…": "Bearbetar…"
+  "Processing…": "Bearbetar…",
+  "Folder": "Mapp",
+  "Choose a folder": "Välj en mapp",
+  "File Formats": "Filformat",
+  "File size larger than": "Filstorlek större än",
+  "Minimum file size (KB)": "Minsta filstorlek (KB)",
+  "KB": "KB",
+  "Folder Structure": "Mappstruktur",
+  "Create groups from subfolders": "Skapa grupper från undermappar",
+  "Each first-level subfolder becomes a library group.": "Varje undermapp på första nivån blir en biblioteksgrupp.",
+  "Import all into library": "Importera allt till biblioteket",
+  "Recursively add every matching file directly to the library.": "Lägg rekursivt till varje matchande fil direkt i biblioteket.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "Inga matchande böcker hittades i den valda mappen."
 }

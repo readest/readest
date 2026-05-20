@@ -1468,5 +1468,18 @@
   "System": "ระบบ",
   "System dictionary integration is coming soon on this platform.": "การผสานพจนานุกรมของระบบจะมาถึงในไม่ช้าบนแพลตฟอร์มนี้",
   "Waiting to be processed": "รอการประมวลผล",
-  "Processing…": "กำลังประมวลผล…"
+  "Processing…": "กำลังประมวลผล…",
+  "Folder": "โฟลเดอร์",
+  "Choose a folder": "เลือกโฟลเดอร์",
+  "File Formats": "รูปแบบไฟล์",
+  "File size larger than": "ขนาดไฟล์ใหญ่กว่า",
+  "Minimum file size (KB)": "ขนาดไฟล์ขั้นต่ำ (KB)",
+  "KB": "KB",
+  "Folder Structure": "โครงสร้างโฟลเดอร์",
+  "Create groups from subfolders": "สร้างกลุ่มจากโฟลเดอร์ย่อย",
+  "Each first-level subfolder becomes a library group.": "โฟลเดอร์ย่อยระดับแรกแต่ละโฟลเดอร์จะกลายเป็นกลุ่มในห้องสมุด",
+  "Import all into library": "นำเข้าทั้งหมดไปยังห้องสมุด",
+  "Recursively add every matching file directly to the library.": "เพิ่มทุกไฟล์ที่ตรงกันโดยตรงไปยังห้องสมุดแบบเรียกซ้ำ",
+  "OK": "ตกลง",
+  "No matching books found in the selected folder.": "ไม่พบหนังสือที่ตรงกันในโฟลเดอร์ที่เลือก"
 }

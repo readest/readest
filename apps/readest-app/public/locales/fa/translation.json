@@ -1496,5 +1496,18 @@
   "System": "سیستم",
   "System dictionary integration is coming soon on this platform.": "یکپارچه‌سازی فرهنگ‌نامه سیستم به‌زودی در این پلتفرم در دسترس قرار می‌گیرد.",
   "Waiting to be processed": "در انتظار پردازش",
-  "Processing…": "در حال پردازش…"
+  "Processing…": "در حال پردازش…",
+  "Folder": "پوشه",
+  "Choose a folder": "یک پوشه انتخاب کنید",
+  "File Formats": "قالب‌های فایل",
+  "File size larger than": "اندازه فایل بزرگ‌تر از",
+  "Minimum file size (KB)": "حداقل اندازه فایل (کیلوبایت)",
+  "KB": "کیلوبایت",
+  "Folder Structure": "ساختار پوشه",
+  "Create groups from subfolders": "ایجاد گروه از زیرپوشه‌ها",
+  "Each first-level subfolder becomes a library group.": "هر زیرپوشه سطح اول به یک گروه کتابخانه تبدیل می‌شود.",
+  "Import all into library": "وارد کردن همه به کتابخانه",
+  "Recursively add every matching file directly to the library.": "افزودن بازگشتی همه فایل‌های مطابق به‌طور مستقیم به کتابخانه.",
+  "OK": "تأیید",
+  "No matching books found in the selected folder.": "هیچ کتاب مطابقی در پوشه انتخاب‌شده یافت نشد."
 }

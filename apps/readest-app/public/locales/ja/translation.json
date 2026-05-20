@@ -1468,5 +1468,18 @@
   "System": "システム",
   "System dictionary integration is coming soon on this platform.": "システム辞書の統合は、このプラットフォームでまもなく利用可能になります。",
   "Waiting to be processed": "処理待ち",
-  "Processing…": "処理中…"
+  "Processing…": "処理中…",
+  "Folder": "フォルダ",
+  "Choose a folder": "フォルダを選択",
+  "File Formats": "ファイル形式",
+  "File size larger than": "ファイルサイズが次より大きい",
+  "Minimum file size (KB)": "最小ファイルサイズ (KB)",
+  "KB": "KB",
+  "Folder Structure": "フォルダ構造",
+  "Create groups from subfolders": "サブフォルダからグループを作成",
+  "Each first-level subfolder becomes a library group.": "第一階層の各サブフォルダがライブラリグループになります。",
+  "Import all into library": "すべてライブラリに取り込む",
+  "Recursively add every matching file directly to the library.": "一致するすべてのファイルを再帰的にライブラリに直接追加します。",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "選択したフォルダ内に一致する書籍が見つかりませんでした。"
 }

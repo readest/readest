@@ -1524,5 +1524,18 @@
   "System": "Sistema",
   "System dictionary integration is coming soon on this platform.": "La integración del diccionario del sistema estará disponible próximamente en esta plataforma.",
   "Waiting to be processed": "Esperando ser procesado",
-  "Processing…": "Procesando…"
+  "Processing…": "Procesando…",
+  "Folder": "Carpeta",
+  "Choose a folder": "Elegir una carpeta",
+  "File Formats": "Formatos de archivo",
+  "File size larger than": "Tamaño de archivo mayor que",
+  "Minimum file size (KB)": "Tamaño mínimo de archivo (KB)",
+  "KB": "KB",
+  "Folder Structure": "Estructura de carpetas",
+  "Create groups from subfolders": "Crear grupos a partir de subcarpetas",
+  "Each first-level subfolder becomes a library group.": "Cada subcarpeta de primer nivel se convierte en un grupo de la biblioteca.",
+  "Import all into library": "Importar todo a la biblioteca",
+  "Recursively add every matching file directly to the library.": "Añadir recursivamente cada archivo coincidente directamente a la biblioteca.",
+  "OK": "OK",
+  "No matching books found in the selected folder.": "No se encontraron libros que coincidan en la carpeta seleccionada."
 }
