@@ -823,6 +823,18 @@ export const syncLibrary = async (
   // Push the merged index whenever we're allowed to write to the remote,
   // even if we didn't upload any binaries this turn (e.g. all books were
   // freshly pulled from the remote). Keeps library.json authoritative.
+  //
+  // TODO(garbage-collect-deleted): tombstoned books (those with
+  // `deletedAt` set) are propagated through the index so other devices
+  // hide them, but the per-hash directory at
+  // `<rootPath>/Readest/books/<hash>/` is never DELETEd from the
+  // server. Storage usage on the remote therefore grows monotonically.
+  // A periodic sweep — driven from this same code path, e.g. once we
+  // have built `newIndex` — could DELETE the hash dir for every entry
+  // whose deletedAt is older than some grace period (a week?) on every
+  // device that has acknowledged the deletion. Needs a second remote
+  // acknowledgment field on RemoteLibraryIndex so we don't wipe data
+  // that some peer hasn't seen the deletion for yet.
   if (canPush) {
     try {
       const newIndex: RemoteLibraryIndex = {

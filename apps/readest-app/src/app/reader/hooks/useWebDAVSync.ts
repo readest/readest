@@ -55,8 +55,16 @@ const PUSH_DEBOUNCE_MS = 15_000;
 const PULL_COOLDOWN_MS = 60_000;
 /**
  * If this hook ran a successful pull less than this long ago for the
- * current book, skip the open-book pull entirely. Catches the
- * close-then-reopen flow that would otherwise burn a request for nothing.
+ * current book, skip the open-book pull entirely.
+ *
+ * Note: `lastPulledAtRef` is component-instance state, so closing the
+ * reader unmounts the hook and resets the ref. A real "close-then-
+ * reopen" therefore *doesn't* trigger this guard — the new instance
+ * starts at 0 and proceeds to pull. The skip only fires when the
+ * open-book effect re-runs within a single hook lifetime (e.g.
+ * navigating between two books in the same reader window, or
+ * progress arriving in two ticks before `hasPulledOnce` is set),
+ * which is the common case we actually want to deduplicate.
  */
 const OPEN_PULL_SKIP_MS = 30_000;
 
@@ -376,9 +384,11 @@ export const useWebDAVSync = (bookKey: string) => {
     if (!progress?.location) return;
     if (hasPulledOnce.current) return;
     hasPulledOnce.current = true;
-    // Quick reopen guard — if we pulled less than OPEN_PULL_SKIP_MS ago
-    // for this book, the remote almost certainly hasn't moved. Skip the
-    // network round-trip and the bootstrap push too.
+    // Same-instance dedupe — if we already pulled for this book within
+    // the cooldown window, skip the second pull (and its bootstrap push)
+    // since the remote almost certainly hasn't moved. See the comment
+    // on `OPEN_PULL_SKIP_MS`: this guard only fires on re-runs of this
+    // effect within one hook lifetime, not on close-then-reopen.
     if (Date.now() - lastPulledAtRef.current < OPEN_PULL_SKIP_MS) return;
     (async () => {
       const merged = await syncRefs.current.pullNow();

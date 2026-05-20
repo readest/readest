@@ -86,12 +86,29 @@ export const normalizeRootPath = (path: string): string => {
  * Encode every path segment for use in a URL while preserving '/' separators.
  * Spaces and unicode characters get %-escaped; existing %-escapes are
  * deliberately left alone so we don't double-encode caller input.
+ *
+ * The naive `encodeURIComponent(segment)` would re-escape the `%` in an
+ * already-escaped triplet (e.g. `%20` becomes `%2520`), which silently
+ * corrupts any path the caller chose to pre-encode. Tokenise the segment
+ * into "already-escaped %XX" runs and "everything else" first, then
+ * encode only the latter.
  */
-const encodePath = (path: string): string =>
-  path
-    .split('/')
-    .map((segment) => (segment ? encodeURIComponent(segment) : ''))
-    .join('/');
+// Two regexes so the `g`-flag splitter and the non-`g` classifier don't
+// share lastIndex state — `RegExp.test` on a `g` regex is stateful and
+// would skip every other token here.
+const PERCENT_ESCAPE_SPLIT_RE = /(%[0-9A-Fa-f]{2})/g;
+const PERCENT_ESCAPE_RE = /^%[0-9A-Fa-f]{2}$/;
+const encodeSegment = (segment: string): string => {
+  if (!segment) return '';
+  // `split` with a capturing group keeps the matched delimiters in the
+  // resulting array, so we end up with alternating
+  // "raw text"/"%XX"/"raw text"/"%XX" tokens.
+  return segment
+    .split(PERCENT_ESCAPE_SPLIT_RE)
+    .map((token) => (PERCENT_ESCAPE_RE.test(token) ? token : encodeURIComponent(token)))
+    .join('');
+};
+const encodePath = (path: string): string => path.split('/').map(encodeSegment).join('/');
 
 const buildUrl = (serverUrl: string, path: string): string => {
   const base = trimTrailingSlash(serverUrl);
