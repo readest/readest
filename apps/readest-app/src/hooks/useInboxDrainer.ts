@@ -41,6 +41,7 @@ export function useInboxDrainer(): void {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings } = useSettingsStore();
+  const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
   const runningRef = useRef(false);
   const lastDrainAtRef = useRef(0);
 
@@ -162,7 +163,10 @@ export function useInboxDrainer(): void {
   }, [user, appService, settings, envConfig]);
 
   useEffect(() => {
-    if (!user) return;
+    // Hold off until the library has loaded — otherwise the very first
+    // drained item would force `updateBooks` to fall back to its own disk
+    // load. Once `libraryLoaded` flips true this effect re-runs.
+    if (!user || !libraryLoaded) return;
     void runDrain();
     const interval = setInterval(() => void runDrain(), DRAIN_INTERVAL_MS);
     const onFocus = () => void runDrain();
@@ -171,7 +175,7 @@ export function useInboxDrainer(): void {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
     };
-  }, [user, runDrain]);
+  }, [user, libraryLoaded, runDrain]);
 }
 
 /**
