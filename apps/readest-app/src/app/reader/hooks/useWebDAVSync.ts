@@ -89,16 +89,25 @@ export const useWebDAVSync = (bookKey: string) => {
 
   // The deviceId is generated lazily on first push so users who never
   // enable WebDAV don't carry it around.
+  //
+  // Read latest settings from the store rather than the closure for the
+  // same reason `updateLastSyncedAt` does: `pullNow → pushNow` can fire
+  // back-to-back when a book opens, and the closure's `settings` may
+  // not reflect a sibling write that just landed (e.g. the settings
+  // panel flipping `syncBooks`). A closure-based merge here would
+  // rebuild the webdav block from a stale snapshot and silently
+  // clobber that write.
   const ensureDeviceId = useCallback((): string => {
-    let id = settings.webdav?.deviceId;
+    const latest = useSettingsStore.getState().settings;
+    let id = latest.webdav?.deviceId;
     if (!id) {
       id = uuidv4();
-      const next = { ...settings, webdav: { ...settings.webdav, deviceId: id } };
+      const next = { ...latest, webdav: { ...latest.webdav, deviceId: id } };
       setSettings(next);
       saveSettings(envConfig, next);
     }
     return id;
-  }, [settings, envConfig, setSettings, saveSettings]);
+  }, [envConfig, setSettings, saveSettings]);
 
   const updateLastSyncedAt = useCallback(
     async (ts: number) => {

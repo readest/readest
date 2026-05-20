@@ -45,6 +45,7 @@ import {
   WebDAVRequestError,
 } from '@/services/webdav/WebDAVClient';
 import { syncLibrary } from '@/services/webdav/WebDAVSync';
+import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
 import { EXTS } from '@/libs/document';
 import {
@@ -188,15 +189,19 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       setIsConnecting(false);
       return;
     }
+    // Spread previous webdav state so a reconnect preserves bookkeeping
+    // fields earned by prior use — deviceId, syncBooks, strategy,
+    // syncProgress, syncNotes, lastSyncedAt, syncLog. Rotating deviceId on
+    // reconnect would make this device look new to the cross-device
+    // clobber check in `RemoteBookConfig.writerDeviceId`.
     const newSettings = {
       ...settings,
-      webdav: {
-        enabled: true,
-        serverUrl: url.trim(),
+      webdav: buildWebDAVConnectSettings(settings.webdav, {
+        serverUrl: url,
         username,
         password,
         rootPath: normalizedRoot,
-      },
+      }),
     };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
