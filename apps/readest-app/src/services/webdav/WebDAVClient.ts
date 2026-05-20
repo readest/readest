@@ -557,3 +557,30 @@ export const deleteFile = async (config: WebDAVConfig, path: string): Promise<vo
   }
   throw new WebDAVRequestError(`DELETE failed with status ${response.status}`, response.status);
 };
+
+/**
+ * Recursively DELETE a collection (directory) and everything below it.
+ *
+ * Per RFC 4918 §9.6.1, `DELETE` on a collection is required to delete
+ * the entire subtree, and `Depth: infinity` is the only legal value
+ * (servers MUST treat a missing Depth on a collection-DELETE as
+ * `infinity`). Some implementations (older Apache mod_dav, a handful
+ * of community servers) reject the request with 400/412 if the header
+ * is absent — sending it explicitly removes that ambiguity at zero
+ * cost. NextCloud, sabre/dav, Synology and Microsoft IIS all accept
+ * the explicit form.
+ *
+ * 404 is treated as success: a directory that already isn't there is
+ * the desired post-condition.
+ */
+export const deleteDirectory = async (config: WebDAVConfig, path: string): Promise<void> => {
+  const response = await requestWithMethod(config, path, 'DELETE', {
+    headers: { Depth: 'infinity' },
+  });
+  if (response.status === 404) return;
+  if (response.status >= 200 && response.status < 300) return;
+  if (response.status === 401 || response.status === 403) {
+    throw new WebDAVRequestError('Authentication failed', response.status, 'AUTH_FAILED');
+  }
+  throw new WebDAVRequestError(`DELETE failed with status ${response.status}`, response.status);
+};

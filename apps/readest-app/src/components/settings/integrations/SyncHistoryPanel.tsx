@@ -4,7 +4,11 @@ import { WebDAVSyncLogEntry, WebDAVSyncLogStatus } from '@/types/settings';
 import { BoxedList, SettingsRow } from '../primitives';
 
 /**
- * Diagnostic surface for the most-recent ten WebDAV "Sync now" runs.
+ * Diagnostic surface for the most-recent ten WebDAV manual runs —
+ * Sync now from the form plus batch cleanups (Delete from server)
+ * issued from the WebDAV browser. Auto-syncs triggered while reading
+ * are intentionally NOT logged here; they fire once per page-turn
+ * and would drown out the manual signal users care about.
  *
  * Why a separate component (rather than inline JSX in WebDAVForm):
  *  - Keeps the outer form file legible; the panel has its own state
@@ -36,7 +40,9 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
     <BoxedList>
       <SettingsRow
         label={t('Sync History')}
-        description={t("Manual syncs only — automatic syncs while reading aren't logged here.")}
+        description={t(
+          "Manual syncs and cleanups — automatic syncs while reading aren't logged here.",
+        )}
       >
         {hasEntries ? (
           <button
@@ -65,6 +71,7 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
                   aria-expanded={isExpanded}
                 >
                   <SyncStatusBadge status={entry.status} t={t} />
+                  {entry.kind === 'cleanup' && <SyncKindBadge t={t} />}
                   <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
                     <span className='text-sm'>{formatSyncSummaryLine(entry, t)}</span>
                     <span className='text-base-content/60 text-[0.75em]'>
@@ -119,6 +126,28 @@ const SyncStatusBadge: React.FC<{ status: WebDAVSyncLogStatus; t: SyncHistoryPan
 };
 
 /**
+ * Secondary badge that flags non-sync runs (currently only batch
+ * cleanups from the WebDAV browser). Sync entries don't get a kind
+ * badge — the absence is the signal — so the row stays visually
+ * unchanged for the common case. The cleanup variant uses a neutral
+ * info colour rather than red/orange because the run already carries
+ * its own status badge (success / partial / failed) right next to
+ * it; piling more colour on would just shout.
+ */
+const SyncKindBadge: React.FC<{ t: SyncHistoryPanelProps['t'] }> = ({ t }) => {
+  return (
+    <span
+      className={clsx(
+        'flex h-6 flex-shrink-0 items-center rounded px-2 text-[0.7rem] font-medium',
+        'bg-info/15 text-info',
+      )}
+    >
+      {t('Cleanup')}
+    </span>
+  );
+};
+
+/**
  * Build the one-line summary shown next to each history row's status
  * badge. We re-derive it from the structured counters (rather than
  * reusing the toast's `entry.summary`) so the text in the log stays
@@ -129,7 +158,24 @@ const formatSyncSummaryLine = (
   t: SyncHistoryPanelProps['t'],
 ): string => {
   if (entry.status === 'failure') {
-    return entry.errorMessage || t('Sync failed');
+    return (
+      entry.errorMessage || (entry.kind === 'cleanup' ? t('Cleanup failed') : t('Sync failed'))
+    );
+  }
+  if (entry.kind === 'cleanup') {
+    // Cleanup runs only have two interesting numbers: how many
+    // server-side dirs got deleted and how many failed. None of the
+    // sync counters apply, so build a dedicated summary rather than
+    // running the cleanup entry through the upload/download formatter
+    // and watching every clause come up zero.
+    const parts: string[] = [];
+    if ((entry.booksDeleted ?? 0) > 0) {
+      parts.push(t('{{n}} deleted', { n: entry.booksDeleted ?? 0 }));
+    }
+    if (entry.failures > 0) {
+      parts.push(t('{{n}} failed', { n: entry.failures }));
+    }
+    return parts.length > 0 ? parts.join(' · ') : t('Nothing deleted');
   }
   const parts: string[] = [];
   if (entry.booksDownloaded > 0) {
@@ -194,6 +240,11 @@ const SyncHistoryDetails: React.FC<{
       { label: t('Configs uploaded'), value: entry.configsUploaded },
       { label: t('Configs downloaded'), value: entry.configsDownloaded },
       { label: t('Covers uploaded'), value: entry.coversUploaded },
+      // Cleanup-specific counter. Suppressed by the zero-filter on
+      // sync entries (which always set this to zero/undefined), so
+      // it only shows up on cleanup runs without polluting the
+      // common sync detail view.
+      { label: t('Books deleted'), value: entry.booksDeleted ?? 0 },
     ],
     [{ label: t('Files in sync'), value: entry.filesAlreadyInSync }],
     [

@@ -153,6 +153,15 @@ export interface WebDAVSyncLogEntry {
   finishedAt: number;
   status: WebDAVSyncLogStatus;
   /**
+   * What kind of run this entry records. Defaults to 'sync' when
+   * absent so log entries persisted before this field was introduced
+   * keep rendering the same way they always did. 'cleanup' is set
+   * for entries written by the WebDAV browser's batch
+   * Delete-from-server action; renderers use this to swap the badge
+   * label and pick a cleanup-specific summary line.
+   */
+  kind?: 'sync' | 'cleanup';
+  /**
    * What kicked off this run. v1 only writes 'manual' (the Sync now
    * button is the only entry point). The reader-hook auto-pushes are
    * intentionally NOT logged: they fire once per page-turn and would
@@ -167,6 +176,13 @@ export interface WebDAVSyncLogEntry {
   configsUploaded: number;
   configsDownloaded: number;
   coversUploaded: number;
+  /**
+   * Number of per-hash directories successfully removed from the
+   * server in a cleanup run. Only meaningful when `kind === 'cleanup'`;
+   * sync entries leave this undefined / zero. Kept optional to avoid
+   * a migration step on existing settings.json files.
+   */
+  booksDeleted?: number;
   failures: number;
   /** The same one-liner shown in the toast. Kept for at-a-glance reading. */
   summary: string;

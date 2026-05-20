@@ -4,6 +4,7 @@ import {
   WebDAVConfig,
   buildBasicAuthHeader,
   buildRequestUrl,
+  deleteDirectory,
   ensureDirectory,
   getFile,
   getFileBinary,
@@ -477,6 +478,54 @@ export const pullBookCover = async (
   return getFileBinary(client, path);
 };
 
+/**
+ * Delete the per-book directory `<rootPath>/Readest/books/<hash>/`
+ * — the file, the cover and the config.json — from the WebDAV
+ * server in one round-trip.
+ *
+ * Used by the WebDAV browser's cleanup mode to evict orphans (remote
+ * dirs whose local Book carries `deletedAt`). We deliberately do
+ * *not* touch the local library here: the local row's `deletedAt`
+ * tombstone is the signal that propagates the deletion to other
+ * sync clients, and clearing it would resurrect the book on next
+ * push from a sibling device. See the cleanup-pane comment in
+ * `WebDAVBrowsePane.tsx` for the broader rationale.
+ *
+ * The result shape mirrors {@link PushBookFileResult} so callers
+ * batching a list of hashes can aggregate without exception
+ * boilerplate. AUTH failures still throw — they're a global
+ * condition, not a per-book problem, and the caller surfaces a
+ * single re-auth toast.
+ */
+export interface DeleteRemoteBookDirResult {
+  /** True when the server confirmed deletion (or the dir was already gone). */
+  ok: boolean;
+  /** Compact reason string when `ok === false`, for the failure toast. */
+  reason?: string;
+}
+
+export const deleteRemoteBookDir = async (
+  settings: WebDAVSettings,
+  bookHash: string,
+): Promise<DeleteRemoteBookDirResult> => {
+  const client = toClientConfig(settings);
+  const path = buildBookDirPath(settings.rootPath, bookHash);
+  try {
+    await deleteDirectory(client, path);
+    return { ok: true };
+  } catch (e) {
+    // Auth failures aren't a "this hash failed" condition — every
+    // subsequent hash would fail the same way. Re-throw so the
+    // batch loop can short-circuit and the caller can surface a
+    // single re-auth prompt.
+    if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') throw e;
+    return {
+      ok: false,
+      reason: e instanceof Error ? e.message : String(e),
+    };
+  }
+};
+
 export interface RemoteLibraryIndex {
   schemaVersion: 1;
   books: Book[];
@@ -930,17 +979,13 @@ export const syncLibrary = async (
   // even if we didn't upload any binaries this turn (e.g. all books were
   // freshly pulled from the remote). Keeps library.json authoritative.
   //
-  // TODO(garbage-collect-deleted): tombstoned books (those with
-  // `deletedAt` set) are propagated through the index so other devices
-  // hide them, but the per-hash directory at
-  // `<rootPath>/Readest/books/<hash>/` is never DELETEd from the
-  // server. Storage usage on the remote therefore grows monotonically.
-  // A periodic sweep — driven from this same code path, e.g. once we
-  // have built `newIndex` — could DELETE the hash dir for every entry
-  // whose deletedAt is older than some grace period (a week?) on every
-  // device that has acknowledged the deletion. Needs a second remote
-  // acknowledgment field on RemoteLibraryIndex so we don't wipe data
-  // that some peer hasn't seen the deletion for yet.
+  // Per-hash directories of soft-deleted books are intentionally NOT
+  // GC'd from this sync path: a peer that hasn't pulled this push yet
+  // would see the `deletedAt` tombstone arrive together with the bytes
+  // already gone, surfacing as a phantom-deleted shelf row. The orphan
+  // sweep is instead exposed manually via WebDAVBrowsePane's cleanup
+  // mode, where it's the user (per device) who decides when the
+  // deletion has settled. See `deleteRemoteBookDir` above.
   if (canPush) {
     try {
       const newIndex: RemoteLibraryIndex = {
