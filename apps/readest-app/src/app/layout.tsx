@@ -1,5 +1,6 @@
 import * as React from 'react';
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { ViewTransitions } from 'next-view-transitions';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
@@ -128,11 +129,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang='en'
       className={process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}
     >
-      {shouldInjectDevHmrPatch ? (
-        <head>
+      <head>
+        <Script src='/runtime-config.js' strategy='beforeInteractive' />
+        {shouldInjectDevHmrPatch ? (
           <script dangerouslySetInnerHTML={{ __html: devHmrPatchScript }} />
-        </head>
-      ) : null}
+        ) : null}
+      </head>
       <body>
         <ViewTransitions>
           <EnvProvider>

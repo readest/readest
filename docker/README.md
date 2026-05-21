@@ -4,7 +4,7 @@
 
 | service         | Image                       | Description                                       |
 | --------------- | --------------------------- | ------------------------------------------------- |
-| **client**      | from `../Dockerfile`        | readest frontend                                  |
+| **client**      | `ghcr.io/readest/readest`   | readest frontend                                  |
 | **db**          | `supabase/postgres`         | psql db with supabase extensions                  |
 | **kong**        | `kong:2.8.1`                | api gateway routing requests to supabase services |
 | **auth**        | `supabase/gotrue:v2.185.0`  | auth service (email, JWT)                         |
@@ -40,16 +40,40 @@ update `docker/.env`:
   - `SERVICE_ROLE_KEY` payload: `{"role": "service_role"}`
 - set `MINIO_ROOT_PASSWORD` to a strong password
 
-### 2. Start the Stack
+### 2. Start the Stack (pull prebuilt client image)
 
 run from the `docker/` directory:
 
 ```bash
 cd docker
-docker compose up --build -d
+docker compose up -d
 ```
 
-the client image is built locally on first run. subsequent starts reuse the cached image.
+this pulls `${READEST_IMAGE}` (default: `ghcr.io/readest/readest:latest`) instead of building the client locally.
+the web client now reads `SUPABASE_PUBLIC_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`, `OBJECT_STORAGE_TYPE`, `STORAGE_FIXED_QUOTA`, and `TRANSLATION_FIXED_QUOTA` from runtime
+container env, so custom self-hosted values work with pulled images.
+
+if you prefer Docker Hub, set `READEST_IMAGE` in `docker/.env`, for example:
+
+```env
+READEST_IMAGE=docker.io/your-dockerhub-username/readest:latest
+```
+
+replace `your-dockerhub-username` with the Docker Hub namespace that publishes your `readest` image.
+for official images, use the namespace configured for this repository's Docker Hub publishing secrets.
+
+published tags:
+- `latest`: published from release events
+- `<release-tag>` (for example `v1.2.3`): published from release events
+- `main`: rolling image from the default branch
+- `sha-<commit>`: immutable commit tag
+
+### Build locally instead of pulling
+
+```bash
+cd docker
+docker compose -f compose.yaml -f compose.build.yaml up --build -d
+```
 
 ### 3. Access
 
@@ -58,7 +82,7 @@ the client image is built locally on first run. subsequent starts reuse the cach
 
 ### Hot Reload (development)
 
-to develop using the compose stack, set the build target on `client` to `development-stage`, which'll runs the next.js dev server. to enable hot reload, uncomment the `volumes` block in the `client` service in `compose.yaml`:
+to develop using the compose stack, use local builds (`compose.yaml` + `compose.build.yaml`) and set the build target on `client` to `development-stage` in `compose.build.yaml`, which runs the next.js dev server. to enable hot reload, uncomment the `volumes` block in the `client` service in `compose.yaml`:
 
 ```yaml
 volumes:
@@ -90,18 +114,10 @@ docker compose down -v
 
 ## Building the Dockerfile standalone
 
-the `Dockerfile` requires Build args for the next.js public env vars (they are inlined at build time)
-
 ```bash
 docker build \
   --target production-stage \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL=http://localhost:7000 \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key> \
   --build-arg NEXT_PUBLIC_APP_PLATFORM=web \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:3000 \
-  --build-arg NEXT_PUBLIC_OBJECT_STORAGE_TYPE=s3 \
-  --build-arg NEXT_PUBLIC_STORAGE_FIXED_QUOTA=1073741824 \
-  --build-arg NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA=50000 \
   -t readest-client \
   .
 ```
@@ -110,13 +126,22 @@ run the built image:
 
 ```bash
 docker run -p 3000:3000 \
-  -e SUPABASE_URL=http://kong:8000 \
+  -e SUPABASE_URL=http://host.docker.internal:7000 \
+  -e SUPABASE_PUBLIC_URL=http://localhost:7000 \
   -e SUPABASE_ANON_KEY=<anon-key> \
   -e SUPABASE_ADMIN_KEY=<service-role-key> \
-  -e S3_ENDPOINT=http://localhost:9000 \
+  -e API_BASE_URL=http://localhost:3000 \
+  -e OBJECT_STORAGE_TYPE=s3 \
+  -e S3_ENDPOINT=http://host.docker.internal:9000 \
   -e S3_REGION=us-east-1 \
   -e S3_BUCKET_NAME=readest-files \
   -e S3_ACCESS_KEY_ID=<minio-user> \
   -e S3_SECRET_ACCESS_KEY=<minio-password> \
+  -e STORAGE_FIXED_QUOTA=1073741824 \
+  -e TRANSLATION_FIXED_QUOTA=50000 \
   readest-client
 ```
+
+on Linux, some Docker setups do not resolve `host.docker.internal` by default.
+in that case, either replace it with your host IP or run with:
+`--add-host=host.docker.internal:host-gateway`.
