@@ -1,0 +1,164 @@
+name: Readest
+options:
+  bundleIdPrefix: com.bilingify.readest
+  deploymentTarget:
+    iOS: 15.0
+fileGroups: [../../src]
+configs:
+  debug: debug
+  release: release
+settingGroups:
+  app:
+    base:
+      PRODUCT_NAME: Readest
+      PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest
+      DEVELOPMENT_TEAM: J5W48D69VR
+targetTemplates:
+  app:
+    type: application
+    sources:
+      - path: Sources
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      groups: [app]
+targets:
+  Readest_iOS:
+    type: application
+    platform: iOS
+    # NOTE on In-App Purchase capability
+    # ----------------------------------
+    # IAP is enabled at three layers:
+    #   1. App ID `com.bilingify.readest` services (Apple Developer
+    #      portal) — must have "In-App Purchase" service ON.
+    #   2. Provisioning profile — pulled automatically by Xcode when
+    #      DEVELOPMENT_TEAM is set; inherits IAP from the App ID.
+    #   3. StoreKit framework — linked transitively by the
+    #      tauri-plugin-native-bridge plugin's iap_* commands.
+    # The `SystemCapabilities` pbxproj entry that Xcode writes when you
+    # add IAP via Signing & Capabilities is informational only; it
+    # doesn't gate the actual capability. xcodegen 2.45 can't
+    # round-trip nested dictionaries into pbxproj attributes (it
+    # serializes them as quoted strings), so we omit the entry rather
+    # than ship a malformed one. IAP works without it.
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+      # Only reference Externals as a file group (no compile/resource
+      # phases) — the actual libapp.a lookup happens via the
+      # `framework: libapp.a` dependency + LIBRARY_SEARCH_PATHS pointing
+      # at `Externals/arm64/$(CONFIGURATION)`. Listing the whole folder
+      # as a source caused xcodegen to add copy-resource phases for
+      # both `debug/libapp.a` and `release/libapp.a`, conflicting at
+      # build time:
+      #   "Multiple commands produce Readest.app/libapp.a"
+      - path: Externals
+        buildPhase: none
+      - path: Readest_iOS
+      - path: assets
+        buildPhase: resources
+        type: folder
+      - path: LaunchScreen.storyboard
+    # Info.plist and entitlements live on disk with hand-tuned content
+    # (CFBundleDocumentTypes, UTExportedTypeDeclarations, locales,
+    # CFBundleURLTypes for readest://, com.apple.developer.applesignin,
+    # associated-domains for Universal Links). Reference them via
+    # INFOPLIST_FILE / CODE_SIGN_ENTITLEMENTS instead of `info:` /
+    # `entitlements:` so xcodegen treats them as opaque inputs and
+    # doesn't rewrite them on regeneration.
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      base:
+        INFOPLIST_FILE: Readest_iOS/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Readest_iOS/Readest_iOS.entitlements
+        ENABLE_BITCODE: false
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64
+        LIBRARY_SEARCH_PATHS[arch=x86_64]: $(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)
+        LIBRARY_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: true
+        # Tell Xcode the app embeds Swift code (the new ShareExtension
+        # is a Swift app-extension target). Without this the
+        # swift-stdlib-tool phase that copies libswiftCore.dylib +
+        # friends into Readest.app/Frameworks runs incorrectly under
+        # Xcode 26 — the app launches and immediately dyld-fails with
+        # "libswiftCore.dylib: no such file".
+        EMBEDDED_CONTENT_CONTAINS_SWIFT_CODE: YES
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+      groups: [app]
+    dependencies:
+      - framework: libapp.a
+        embed: false
+      - target: ShareExtension
+        embed: true
+        codeSign: true
+      - sdk: CoreGraphics.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: QuartzCore.framework
+      - sdk: Security.framework
+      - sdk: UIKit.framework
+      - sdk: WebKit.framework
+    preBuildScripts:
+      - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+        name: Build Rust Code
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+
+  # Share-sheet extension that lets users send article URLs from Safari /
+  # Chrome / etc. directly to Readest. The extension grabs the URL via
+  # NSExtensionContext, encodes it into `readest://share?url=...`, and
+  # opens the main app — which catches the deep-link via
+  # `tauri-plugin-deep-link` and runs the clip-and-import pipeline.
+  ShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShareExtension
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Readest
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+    # Entitlements referenced via CODE_SIGN_ENTITLEMENTS build setting
+    # rather than xcodegen's `entitlements:` block — otherwise xcodegen
+    # may overwrite the file (even with no properties declared) during
+    # regeneration, and Xcode rejects the build with
+    #   "Entitlements file ... was modified during the build"
+    settings:
+      base:
+        PRODUCT_NAME: ShareExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ShareExtension
+        DEVELOPMENT_TEAM: J5W48D69VR
+        CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements
+        # Permit Xcode's productPackagingUtility to write the auto-derived
+        # signing entitlements (application-identifier, team-identifier,
+        # get-task-allow) back to the source entitlements file at build
+        # time. Without this, Xcode 16+ refuses the modification it
+        # itself just performed and the build fails with:
+        #   "Entitlements file ... was modified during the build"
+        # Safe for this target because the entitlements file is empty —
+        # the only modifications Xcode performs are the team / app-id
+        # auto-population every iOS extension target needs anyway.
+        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: 15.0
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+        ENABLE_BITCODE: false
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: false
+        SKIP_INSTALL: true
