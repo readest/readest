@@ -24,7 +24,7 @@ jobs:
       BUILD_ARGS: |
         NEXT_PUBLIC_APP_PLATFORM=web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: recursive
 
@@ -96,6 +96,8 @@ jobs:
           tags: ${{ steps.meta-ghcr.outputs.tags }}
           labels: ${{ steps.meta-ghcr.outputs.labels }}
           build-args: ${{ env.BUILD_ARGS }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache,mode=max
 
       - name: Published image summary (GHCR only)
         if: steps.dockerhub.outputs.enabled != 'true'
@@ -123,6 +125,8 @@ jobs:
           tags: ${{ steps.meta-all.outputs.tags }}
           labels: ${{ steps.meta-all.outputs.labels }}
           build-args: ${{ env.BUILD_ARGS }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache,mode=max
 
       - name: Published image summary (GHCR + Docker Hub)
         if: steps.dockerhub.outputs.enabled == 'true'

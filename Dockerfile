@@ -8,7 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/readest-app/package.json ./apps/readest-app/
 COPY patches/ ./patches/
 COPY packages/ ./packages/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,sharing=locked,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm --filter @readest/readest-app setup-vendors
 
 FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133b25563ae4d7f0692e4d1fe5db0e AS development-stage
@@ -50,7 +50,15 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 RUN corepack prepare pnpm@10.29.3 --activate
 WORKDIR /app
-COPY --from=build /app /app
+# Only copy what next start needs — omit source, Rust, tests, patches, etc.
+COPY --from=build /app/package.json /app/package.json
+COPY --from=build /app/pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/apps/readest-app/package.json /app/apps/readest-app/package.json
+COPY --from=build /app/apps/readest-app/next.config.mjs /app/apps/readest-app/next.config.mjs
+COPY --from=build /app/apps/readest-app/node_modules /app/apps/readest-app/node_modules
+COPY --from=build /app/apps/readest-app/.next /app/apps/readest-app/.next
+COPY --from=build /app/apps/readest-app/public /app/apps/readest-app/public
 WORKDIR /app/apps/readest-app
 ENTRYPOINT ["pnpm", "start-web", "-H", "0.0.0.0"]
 EXPOSE 3000

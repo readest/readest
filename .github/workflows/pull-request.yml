@@ -72,7 +72,7 @@ jobs:
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: install LuaJIT (for koplugin lint)
         run: sudo apt-get update && sudo apt-get install -y luajit
@@ -139,7 +139,7 @@ jobs:
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: cache apt packages
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
@@ -216,7 +216,7 @@ jobs:
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: setup sccache
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10

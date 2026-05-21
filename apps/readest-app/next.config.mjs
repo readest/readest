@@ -20,6 +20,11 @@ const nextConfig = {
   // Ensure Next.js uses SSG instead of SSR
   // https://nextjs.org/docs/pages/building-your-application/deploying/static-exports
   output: exportOutput ? 'export' : undefined,
+  // Linting runs as a dedicated CI step (`pnpm lint`), so skipping it during
+  // `next build` avoids duplicate work and shortens build time.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   pageExtensions: exportOutput ? ['jsx', 'tsx'] : ['js', 'jsx', 'ts', 'tsx'],
   // Note: This feature is required to use the Next.js Image component in SSG mode.
   // See https://nextjs.org/docs/messages/export-image-api for different workarounds.

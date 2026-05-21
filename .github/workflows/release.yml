@@ -186,7 +186,7 @@ jobs:
         run: sdkmanager "ndk;28.2.13676358"
 
       - name: install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: copy pdfjs-dist and simplecc-dist to public directory
         run: pnpm --filter @readest/readest-app setup-vendors
