@@ -17,7 +17,7 @@
 | Port   | Service          |
 | ------ | ---------------- |
 | `3000` | readest          |
-| `7000` | kong API gateway |
+| `8000` | kong API gateway |
 | `9000` | MinIO S3 API     |
 | `9001` | MinIO console UI |
 
@@ -126,13 +126,14 @@ run the built image:
 
 ```bash
 docker run -p 3000:3000 \
-  -e SUPABASE_URL=http://host.docker.internal:7000 \
-  -e SUPABASE_PUBLIC_URL=http://localhost:7000 \
+  -e SUPABASE_URL=http://host.docker.internal:8000 \
+  -e SUPABASE_PUBLIC_URL=http://localhost:8000 \
   -e SUPABASE_ANON_KEY=<anon-key> \
   -e SUPABASE_ADMIN_KEY=<service-role-key> \
   -e API_BASE_URL=http://localhost:3000 \
   -e OBJECT_STORAGE_TYPE=s3 \
   -e S3_ENDPOINT=http://host.docker.internal:9000 \
+  -e S3_PUBLIC_ENDPOINT=http://localhost:9000 \
   -e S3_REGION=us-east-1 \
   -e S3_BUCKET_NAME=readest-files \
   -e S3_ACCESS_KEY_ID=<minio-user> \

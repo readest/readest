@@ -134,11 +134,12 @@ services:
 #      - /app/packages/foliate-js/node_modules
     environment:
       SUPABASE_URL: http://kong:8000
-      SUPABASE_PUBLIC_URL: http://${HOST_IP}:${KONG_HTTP_PORT}
+      SUPABASE_PUBLIC_URL: http://${HOST_IP}:${KONG_HTTP_PORT:-8000}
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_ADMIN_KEY: ${SERVICE_ROLE_KEY}
       API_BASE_URL: ${SITE_URL}
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://${HOST_IP}:9000
       S3_REGION: us-east-1
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}

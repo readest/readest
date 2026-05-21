@@ -30,11 +30,13 @@ export const getServerRuntimeConfig = (): ReadestRuntimeConfig => ({
     process.env['SITE_URL'],
   // These were previously baked as NEXT_PUBLIC_* build args; now read from runtime env so
   // the published image can be configured without rebuilding.
-  objectStorageType: process.env['OBJECT_STORAGE_TYPE'],
-  storageFixedQuota: process.env['STORAGE_FIXED_QUOTA']
-    ? parseInt(process.env['STORAGE_FIXED_QUOTA'], 10)
-    : undefined,
-  translationFixedQuota: process.env['TRANSLATION_FIXED_QUOTA']
-    ? parseInt(process.env['TRANSLATION_FIXED_QUOTA'], 10)
-    : undefined,
+  objectStorageType: process.env['OBJECT_STORAGE_TYPE'] ?? process.env['NEXT_PUBLIC_OBJECT_STORAGE_TYPE'],
+  storageFixedQuota: (() => {
+    const raw = process.env['STORAGE_FIXED_QUOTA'] ?? process.env['NEXT_PUBLIC_STORAGE_FIXED_QUOTA'];
+    return raw ? parseInt(raw, 10) : undefined;
+  })(),
+  translationFixedQuota: (() => {
+    const raw = process.env['TRANSLATION_FIXED_QUOTA'] ?? process.env['NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA'];
+    return raw ? parseInt(raw, 10) : undefined;
+  })(),
 });
