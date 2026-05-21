@@ -297,6 +297,40 @@ pub struct GetSyncPassphraseResponse {
     pub error: Option<String>,
 }
 
+/// Args for the mobile URL-clip flow. Mirrors the public `ClipOptions`
+/// struct in `clip_url.rs` so the JS caller can pass the same payload
+/// to both desktop and mobile without branching. The native side honors
+/// `background`/`foreground` for the overlay backdrop and `windowTitle`/
+/// `overlayTitle`/`loadingStatus`/`capturingStatus`/`savedTitle` for the
+/// chrome and progress labels.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClipUrlRequest {
+    pub url: String,
+    #[serde(default)]
+    pub window_title: Option<String>,
+    #[serde(default)]
+    pub overlay_title: Option<String>,
+    #[serde(default)]
+    pub loading_status: Option<String>,
+    #[serde(default)]
+    pub capturing_status: Option<String>,
+    #[serde(default)]
+    pub saved_title: Option<String>,
+    #[serde(default)]
+    pub background: Option<String>,
+    #[serde(default)]
+    pub foreground: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClipUrlResponse {
+    /// Rendered `document.documentElement.outerHTML` captured from the
+    /// hidden WKWebView / WebView once load+settle completed.
+    pub html: String,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncKeychainAvailableResponse {

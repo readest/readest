@@ -267,6 +267,17 @@ impl<R: Runtime> NativeBridge<R> {
             }),
         }
     }
+
+    /// Desktop has its own URL-clip path (`src/clip_url.rs` spawns a
+    /// hidden `WebviewWindow` and listens on `127.0.0.1`). The plugin
+    /// branch is mobile-only — if anyone calls into it from desktop,
+    /// surface that mistake instead of silently returning empty HTML.
+    pub fn clip_url(&self, _payload: ClipUrlRequest) -> crate::Result<ClipUrlResponse> {
+        Err(crate::Error::NativeBridgeError(
+            "clip_url plugin is mobile-only; desktop callers should invoke the top-level command"
+                .to_string(),
+        ))
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";

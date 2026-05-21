@@ -30,6 +30,7 @@ const COMMANDS: &[&str] = &[
     "request_permissions",
     "checkPermissions",
     "requestPermissions",
+    "clip_url",
 ];
 
 fn main() {
