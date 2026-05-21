@@ -118,6 +118,117 @@ describe('transformBookNoteFromDB with xpointer fields', () => {
   });
 });
 
+describe('transformBookNote with global flag', () => {
+  const baseNote: BookNote = {
+    bookHash: 'abc123',
+    id: 'note-g',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2/1:0)',
+    text: 'highlighted text',
+    note: '',
+    style: 'highlight',
+    color: 'yellow',
+    createdAt: 1700000000000,
+    updatedAt: 1700000001000,
+  };
+
+  it('passes through global=true when serializing to DB', () => {
+    const note: BookNote = { ...baseNote, global: true };
+    const dbNote = transformBookNoteToDB(note, 'user1');
+    expect(dbNote.global).toBe(true);
+  });
+
+  it('passes through global=false when serializing to DB', () => {
+    const note: BookNote = { ...baseNote, global: false };
+    const dbNote = transformBookNoteToDB(note, 'user1');
+    expect(dbNote.global).toBe(false);
+  });
+
+  it('omits global when undefined (legacy notes)', () => {
+    const dbNote = transformBookNoteToDB(baseNote, 'user1');
+    expect(dbNote.global).toBeUndefined();
+  });
+
+  it('reads global=true from DB', () => {
+    const dbNote: DBBookNote = {
+      user_id: 'user1',
+      book_hash: 'abc123',
+      id: 'note-g',
+      type: 'annotation',
+      cfi: 'epubcfi(/6/4!/4/2/1:0)',
+      text: 'highlighted text',
+      note: '',
+      global: true,
+      created_at: '2023-11-14T22:13:20.000Z',
+      updated_at: '2023-11-14T22:13:21.000Z',
+    };
+    const note = transformBookNoteFromDB(dbNote);
+    expect(note.global).toBe(true);
+  });
+
+  it('leaves global undefined when missing from DB', () => {
+    const dbNote: DBBookNote = {
+      user_id: 'user1',
+      book_hash: 'abc123',
+      id: 'note-g',
+      type: 'annotation',
+      cfi: 'epubcfi(/6/4!/4/2/1:0)',
+      text: 'highlighted text',
+      note: '',
+      created_at: '2023-11-14T22:13:20.000Z',
+      updated_at: '2023-11-14T22:13:21.000Z',
+    };
+    const note = transformBookNoteFromDB(dbNote);
+    expect(note.global).toBeUndefined();
+  });
+
+  it('round-trips global=true through DB transform', () => {
+    const note: BookNote = { ...baseNote, global: true };
+    const db = transformBookNoteToDB(note, 'user1');
+    const dbRecord: DBBookNote = {
+      ...db,
+      created_at: new Date(note.createdAt).toISOString(),
+      updated_at: new Date(note.updatedAt).toISOString(),
+    };
+    const restored = transformBookNoteFromDB(dbRecord);
+    expect(restored.global).toBe(true);
+  });
+
+  // Regression: an old client that has not been updated to know about
+  // `global` will receive a note with global=true from the server, then
+  // upsert the same row back during a later sync. The legacy client only
+  // copies fields it knows about, so its outgoing payload omits `global`.
+  // We simulate that here by stripping `global` from the round-tripped
+  // BookNote and re-serializing — the resulting DB payload also omits the
+  // column, and the server-side merge therefore preserves the existing
+  // global=true value (the column is left untouched on UPDATE).
+  it('legacy client round-trip does not actively clear global (column omitted)', () => {
+    const note: BookNote = { ...baseNote, global: true };
+    const dbFromUpdated = transformBookNoteToDB(note, 'user1');
+    const dbRecord: DBBookNote = {
+      ...dbFromUpdated,
+      created_at: new Date(note.createdAt).toISOString(),
+      updated_at: new Date(note.updatedAt).toISOString(),
+    };
+    const restored = transformBookNoteFromDB(dbRecord);
+
+    // Simulate a legacy client: it doesn't know about `global`, so the
+    // field is dropped from the in-memory note before it gets sent back.
+    const legacyOutgoing: BookNote = { ...restored };
+    delete (legacyOutgoing as { global?: boolean }).global;
+
+    const legacyDb = transformBookNoteToDB(legacyOutgoing, 'user1');
+    expect(legacyDb.global).toBeUndefined();
+    // The destructure-spread inside transformBookNoteToDB assigns
+    // global=undefined as an own property, but JSON.stringify drops keys
+    // whose value is undefined. So the wire payload sent to Supabase has
+    // no `global` column, and the server-side merge preserves whatever is
+    // already stored — which is exactly what we want for legacy clients.
+    expect(Object.hasOwn(legacyDb, 'global')).toBe(true);
+    expect(JSON.parse(JSON.stringify(legacyDb))).not.toHaveProperty('global');
+  });
+});
+
 describe('transformBookConfigToDB / transformBookConfigFromDB rsvpPosition', () => {
   const baseConfig: BookConfig = {
     bookHash: 'hash1',

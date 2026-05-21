@@ -17,6 +17,10 @@
           {
             "/": "/s/*",
             "comment": "Matches book share links"
+          },
+          {
+            "/": "/clip*",
+            "comment": "Matches Share-Extension URL handoff: /clip?url=..."
           }
         ]
       }

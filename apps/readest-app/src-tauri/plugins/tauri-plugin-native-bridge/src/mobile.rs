@@ -287,3 +287,17 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    /// Open a full-screen `WKWebView` / `WebView` over the main app,
+    /// navigate to `payload.url` with a real Chrome UA, wait for load
+    /// + settle, then return `document.documentElement.outerHTML`. The
+    /// overlay UX (loading spinner, theme-matched backdrop, localized
+    /// labels) is driven by the same fields the desktop `clip_url`
+    /// command consumes — see `clip_url.rs` for the canonical struct.
+    pub fn clip_url(&self, payload: ClipUrlRequest) -> crate::Result<ClipUrlResponse> {
+        self.0
+            .run_mobile_plugin("clip_url", payload)
+            .map_err(Into::into)
+    }
+}

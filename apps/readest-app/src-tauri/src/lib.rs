@@ -22,7 +22,6 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
-#[cfg(desktop)]
 mod clip_url;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
@@ -235,7 +234,6 @@ pub fn run() {
             discord_rpc::update_book_presence,
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::clear_book_presence,
-            #[cfg(desktop)]
             clip_url::clip_url,
         ])
         .plugin(tauri_plugin_fs::init())

@@ -1234,6 +1234,62 @@ class NativeBridgePlugin: Plugin {
       }
     }
   }
+
+  /// Open a hidden-but-visible WKWebView at `url`, capture
+  /// `document.documentElement.outerHTML` after the page settles, and
+  /// resolve with `{ html }`. Implements the mobile half of the
+  /// `clip_url` command — see `clip_url.rs` for the desktop half and
+  /// `ClipUrlController.swift` for the actual lifecycle.
+  @objc public func clip_url(_ invoke: Invoke) {
+    let args: ClipUrlArgs
+    do {
+      args = try invoke.parseArgs(ClipUrlArgs.self)
+    } catch {
+      invoke.reject(error.localizedDescription)
+      return
+    }
+    DispatchQueue.main.async {
+      // Find the topmost view controller to present from. The Tauri
+      // root WKWebView lives in the app's key window — present over
+      // whatever's currently on top of it (e.g., the library page,
+      // a settings sheet) so the user keeps their place after the
+      // controller dismisses.
+      guard let presenter = topmostViewController() else {
+        invoke.reject("Could not find a view controller to present from")
+        return
+      }
+
+      let controller = ClipUrlController(args: args) { result in
+        switch result {
+        case .success(let html):
+          invoke.resolve(["html": html])
+        case .failure(let err):
+          invoke.reject(err.message)
+        }
+      }
+      presenter.present(controller, animated: true)
+    }
+  }
+}
+
+/// Find the visible top-of-stack `UIViewController` so the clip flow
+/// can present over whatever the user is looking at. Walks
+/// presentedViewController chains and unwraps standard container
+/// types (UINavigationController, UITabBarController).
+private func topmostViewController() -> UIViewController? {
+  let scene =
+    UIApplication.shared.connectedScenes
+    .compactMap { $0 as? UIWindowScene }
+    .first { $0.activationState == .foregroundActive }
+    ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+  let window = scene?.windows.first(where: \.isKeyWindow) ?? scene?.windows.first
+  var top = window?.rootViewController
+  while let presented = top?.presentedViewController {
+    top = presented
+  }
+  if let nav = top as? UINavigationController { top = nav.visibleViewController ?? nav }
+  if let tab = top as? UITabBarController { top = tab.selectedViewController ?? tab }
+  return top
 }
 
 class SyncPassphraseSetArgs: Decodable {

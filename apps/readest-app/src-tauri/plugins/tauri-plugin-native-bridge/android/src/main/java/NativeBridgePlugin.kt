@@ -952,6 +952,34 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             invoke.reject("Failed to look up word: ${e.message}")
         }
     }
+
+    /**
+     * Open a full-screen `WebView` at the supplied URL, capture
+     * `document.documentElement.outerHTML` once the page settles, and
+     * resolve with `{ html }`. Implements the Android half of the
+     * `clip_url` command — see `clip_url.rs` for the desktop half and
+     * `ClipUrlController.kt` for the actual lifecycle.
+     */
+    @Command
+    fun clip_url(invoke: Invoke) {
+        val args = try {
+            invoke.parseArgs(ClipUrlArgs::class.java)
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "Invalid clip_url args")
+            return
+        }
+        val controller = ClipUrlController(activity, args) { result ->
+            when (result) {
+                is ClipUrlResult.Success -> {
+                    val ret = JSObject()
+                    ret.put("html", result.html)
+                    invoke.resolve(ret)
+                }
+                is ClipUrlResult.Failure -> invoke.reject(result.message)
+            }
+        }
+        controller.show()
+    }
 }
 
 @app.tauri.annotation.InvokeArg

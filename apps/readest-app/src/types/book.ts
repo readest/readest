@@ -130,6 +130,14 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
+  /**
+   * If true, this annotation should be applied to every occurrence of `text`
+   * within the same section (chapter/spine item), in addition to the original
+   * range identified by `cfi`. Defaults to false / undefined (single-range).
+   * Only meaningful for annotations that have a `text` value; ignored for
+   * bookmarks and excerpts, and for fixed-layout formats (e.g. PDF).
+   */
+  global?: boolean;
 
   createdAt: number;
   updatedAt: number;

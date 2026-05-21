@@ -34,14 +34,20 @@
 //                            ▼
 //   ◀── outerHTML                close webview, return HTML
 
-use std::time::Duration;
-
 use serde::Deserialize;
+use tauri::AppHandle;
+
+#[cfg(desktop)]
+use std::time::Duration;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
-use tauri::{AppHandle, Url, WebviewUrl, WebviewWindowBuilder};
+#[cfg(desktop)]
+use tauri::{Url, WebviewUrl, WebviewWindowBuilder};
+#[cfg(desktop)]
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+#[cfg(desktop)]
 use tokio::net::TcpListener;
+#[cfg(desktop)]
 use tokio::sync::oneshot;
 
 /// Localised strings and theme colours supplied by the JS caller. Defaults
@@ -50,15 +56,15 @@ use tokio::sync::oneshot;
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ClipOptions {
-    window_title: Option<String>,
-    overlay_title: Option<String>,
-    loading_status: Option<String>,
-    capturing_status: Option<String>,
-    saved_title: Option<String>,
+    pub window_title: Option<String>,
+    pub overlay_title: Option<String>,
+    pub loading_status: Option<String>,
+    pub capturing_status: Option<String>,
+    pub saved_title: Option<String>,
     /// `#rrggbb` — matches `themeCode.bg` (base-100) in the renderer.
-    background: Option<String>,
+    pub background: Option<String>,
     /// `#rrggbb` — matches `themeCode.fg` (base-content) in the renderer.
-    foreground: Option<String>,
+    pub foreground: Option<String>,
 }
 
 impl ClipOptions {
@@ -119,6 +125,7 @@ fn escape_html(s: &str) -> String {
 /// 127.0.0.1 and we close it after the first valid POST), but it makes
 /// the URL path predictable for debugging and prevents a rogue process
 /// on the loopback interface from accidentally hitting us.
+#[cfg(desktop)]
 fn next_token() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -132,16 +139,21 @@ fn next_token() -> String {
 
 // The request URL now carries the page HTML as base64, so the request
 // LINE alone can be megabytes — bump generously.
+#[cfg(desktop)]
 const MAX_REQUEST_BYTES: usize = 64 * 1024 * 1024;
+#[cfg(desktop)]
 const READ_CHUNK_BYTES: usize = 64 * 1024;
+#[cfg(desktop)]
 const SOCKET_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Find the `\r\n\r\n` that terminates the HTTP request headers.
+#[cfg(desktop)]
 fn find_header_end(buf: &[u8]) -> Option<usize> {
     buf.windows(4).position(|w| w == b"\r\n\r\n")
 }
 
 /// Pull `Content-Length` out of header bytes (case-insensitive).
+#[cfg(desktop)]
 fn parse_content_length(headers: &str) -> usize {
     for line in headers.split("\r\n").skip(1) {
         if let Some((name, value)) = line.split_once(':') {
@@ -159,6 +171,7 @@ fn parse_content_length(headers: &str) -> usize {
 /// carries the data (so we don't need any cross-origin storage trick).
 /// Server decodes the base64, signals the oneshot, returns a tiny
 /// "captured" page so the user can see the round-trip worked.
+#[cfg(desktop)]
 async fn capture_one(
     listener: TcpListener,
     token: String,
@@ -299,6 +312,7 @@ stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points
 /// produces standard base64; we also accept URL-safe variants in case
 /// a future caller swaps). Returns the decoded UTF-8 string, or None
 /// on any decode error.
+#[cfg(desktop)]
 fn decode_b64(s: &str) -> Option<String> {
     use std::collections::HashMap;
     // Tiny hand-rolled base64 decoder — avoids pulling in another
@@ -348,6 +362,7 @@ fn decode_b64(s: &str) -> Option<String> {
 /// re-attaches itself for a few hundred milliseconds in case the page's
 /// hydration step wipes our node. It's just chrome — the page
 /// underneath still loads, runs scripts, and fires its lazy-loaders.
+#[cfg(desktop)]
 fn loading_overlay_script(
     overlay_title: &str,
     loading_status: &str,
@@ -433,6 +448,7 @@ fn loading_overlay_script(
 /// catch us through canvas / WebGL / audio fingerprinting. The goal is
 /// just to clear the "you look like Chrome but `navigator.webdriver` is
 /// set" tier of checks.
+#[cfg(desktop)]
 fn fingerprint_mask_script() -> String {
     r#"
     (function() {
@@ -642,4 +658,40 @@ pub async fn clip_url(
         Ok(Err(_)) => Err("Webview closed before capture".into()),
         Err(_) => Err("Page took too long to load".into()),
     }
+}
+
+/// Mobile clip path. iOS / Android can't spawn a separate
+/// `WebviewWindow` and have no equivalent localhost-listener escape
+/// hatch, so we hand the URL off to the native-bridge plugin which
+/// presents a full-screen `WKWebView` / `WebView`, runs the same Chrome-
+/// UA / fingerprint-mask / loading-overlay shape as the desktop flow,
+/// captures `document.documentElement.outerHTML` via the platform's
+/// `evaluateJavaScript`, and returns it back through the Tauri IPC.
+///
+/// The JS surface stays identical: `invoke('clip_url', { url, options })`
+/// returns the rendered HTML on both desktop and mobile.
+#[cfg(mobile)]
+#[tauri::command]
+pub async fn clip_url(
+    app: AppHandle,
+    url: String,
+    options: Option<ClipOptions>,
+) -> Result<String, String> {
+    use tauri_plugin_native_bridge::{ClipUrlRequest, NativeBridgeExt};
+
+    let options = options.unwrap_or_default();
+    let request = ClipUrlRequest {
+        url,
+        window_title: options.window_title,
+        overlay_title: options.overlay_title,
+        loading_status: options.loading_status,
+        capturing_status: options.capturing_status,
+        saved_title: options.saved_title,
+        background: options.background,
+        foreground: options.foreground,
+    };
+    app.native_bridge()
+        .clip_url(request)
+        .map(|r| r.html)
+        .map_err(|e| e.to_string())
 }
