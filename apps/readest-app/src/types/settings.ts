@@ -256,6 +256,16 @@ export interface SystemSettings {
   migrationVersion: number;
   localBooksDir: string;
   customRootDir?: string;
+  /**
+   * Absolute paths the user has registered as "external library folders" —
+   * directories managed by the user (or another reader app, e.g. Duokan,
+   * Calibre, Moon+ Reader) that Readest should read in place instead of
+   * copying into Books/<hash>/. Each entry must be an absolute path; entries
+   * are matched as path-prefix roots when ingesting a file. Device-local
+   * (path is meaningful only on this filesystem) and excluded from cloud
+   * settings backups via `BACKUP_SETTINGS_BLACKLIST`.
+   */
+  externalLibraryFolders?: string[];
 
   keepLogin: boolean;
   autoUpload: boolean;

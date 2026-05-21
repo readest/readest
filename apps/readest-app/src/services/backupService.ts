@@ -36,6 +36,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   // Device filesystem paths — invalid on another device / OS.
   'localBooksDir',
   'customRootDir',
+  'externalLibraryFolders',
   'savedBookCoverForLockScreenPath',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',

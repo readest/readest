@@ -219,9 +219,14 @@ export const useWebDAVSync = (bookKey: string) => {
           // so we only do the expensive ArrayBuffer materialisation when
           // the HEAD probe says we actually need to upload. Used on web
           // targets where streaming PUTs aren't available.
-          const fp = getLocalBookFilename(book);
-          if (!(await appService.exists(fp, 'Books'))) return null;
-          const file = await appService.openFile(fp, 'Books');
+          // In-place imports keep their bytes outside Books/<hash>/, so
+          // resolve to (book.filePath, 'None') when the field is set —
+          // mirrors the same fallback in cloudService.uploadBook so
+          // syncBooks treats in-place books as first-class.
+          const fp = book.filePath ?? getLocalBookFilename(book);
+          const base = book.filePath ? 'None' : 'Books';
+          if (!(await appService.exists(fp, base))) return null;
+          const file = await appService.openFile(fp, base);
           const bytes = await file.arrayBuffer();
           return { bytes, size: bytes.byteLength };
         },
@@ -234,15 +239,16 @@ export const useWebDAVSync = (bookKey: string) => {
         // library Sync now path in WebDAVForm.
         isTauriAppPlatform()
           ? async () => {
-              const fp = getLocalBookFilename(book);
-              if (!(await appService.exists(fp, 'Books'))) return null;
-              const file = await appService.openFile(fp, 'Books');
+              const fp = book.filePath ?? getLocalBookFilename(book);
+              const base = book.filePath ? 'None' : 'Books';
+              if (!(await appService.exists(fp, base))) return null;
+              const file = await appService.openFile(fp, base);
               const size = file.size;
               // Release the FD before streaming so the Tauri side can
               // re-open the path for the PUT without contending.
               const closable = file as { close?: () => Promise<void> };
               if (closable.close) await closable.close();
-              const dst = await appService.resolveFilePath(fp, 'Books');
+              const dst = await appService.resolveFilePath(fp, base);
               return {
                 size,
                 upload: async (remoteUrl, headers) => {

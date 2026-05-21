@@ -237,6 +237,7 @@ export async function importBook(
     saveCover = true,
     overwrite = false,
     transient = false,
+    inPlace = false,
     lookupIndex,
   } = options;
   const isPseStream = typeof file === 'string' && isPseStreamFileName(file);
@@ -379,6 +380,7 @@ export async function importBook(
     if (
       saveBook &&
       !transient &&
+      !inPlace &&
       fileobj &&
       (!(await fs.exists(bookFilename, 'Books')) || overwrite)
     ) {
@@ -464,8 +466,10 @@ export async function importBook(
       if (isValidURL(file)) {
         book.url = file;
         if (existingBook) existingBook.url = file;
-      }
-      if (transient) {
+      } else if (transient || inPlace) {
+        // transient: source file is loaded directly, never persisted in Books/.
+        // inPlace: source file is inside the user's library root and we read it
+        // there directly instead of duplicating it under Books/<hash>/.
         book.filePath = file;
         if (existingBook) existingBook.filePath = file;
       }

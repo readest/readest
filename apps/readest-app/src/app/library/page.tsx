@@ -527,6 +527,21 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const settings = await appService.loadSettings();
       setSettings(settings);
 
+      // Re-grant fs_scope / asset_protocol_scope for every external
+      // library folder the user registered in a previous session, so
+      // in-place books under those roots are immediately readable
+      // through both `dir_scanner::read_dir` and the fs plugin.
+      // Best-effort — `allowPathsInScopes` swallows its own errors.
+      // On iOS the corresponding native-bridge plugin separately
+      // re-acquires security-scoped resources via persisted
+      // bookmarks (see InPlaceFolderBookmarkStore in
+      // NativeBridgePlugin.swift); here we just sync Tauri's in-memory
+      // scope set with the persisted intent.
+      const externalRoots = settings.externalLibraryFolders ?? [];
+      if (externalRoots.length > 0 && appService.allowPathsInScopes) {
+        await appService.allowPathsInScopes(externalRoots, true);
+      }
+
       // Reuse the library from the store when we return from the reader
       const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
       let opened = false;

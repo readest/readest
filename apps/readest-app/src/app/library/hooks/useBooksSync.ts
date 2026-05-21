@@ -22,12 +22,24 @@ export const useBooksSync = () => {
   const getNewBooks = useCallback(() => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
-    const newBooks = library.filter(
-      (book) =>
-        !book.syncedAt ||
-        lastSyncedAtBooks < book.updatedAt ||
-        lastSyncedAtBooks < (book.deletedAt ?? 0),
-    );
+    const newBooks = library
+      .filter(
+        (book) =>
+          !book.syncedAt ||
+          lastSyncedAtBooks < book.updatedAt ||
+          lastSyncedAtBooks < (book.deletedAt ?? 0),
+      )
+      // book.filePath is a device-local absolute path used by the in-place
+      // import flow to point at a file outside Books/<hash>/. It is
+      // meaningless on any other device, so strip it before pushing to the
+      // cloud — peers always rehydrate via the hash-keyed copy that
+      // cloudService.downloadBook lands under Books/<hash>/. Keeping the
+      // source device's path in the cloud record would be dead data at
+      // best, and would become an active footgun if isBookAvailable ever
+      // got its branch order swapped (it currently checks Books/<hash>
+      // before falling back to filePath; flipping that order would make
+      // peers chase a non-existent path instead of downloading).
+      .map(({ filePath: _filePath, ...rest }): Book => rest);
     return {
       books: newBooks,
       lastSyncedAt: lastSyncedAtBooks,

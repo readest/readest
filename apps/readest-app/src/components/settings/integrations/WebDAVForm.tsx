@@ -300,9 +300,15 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
           appService ? appService.loadBookConfig(book, settings) : Promise.resolve(null),
         loadBookFile: async (book) => {
           if (!appService) return null;
-          const fp = getLocalBookFilename(book);
-          if (!(await appService.exists(fp, 'Books'))) return null;
-          const file = await appService.openFile(fp, 'Books');
+          // In-place imports live outside Books/<hash>/; resolve to
+          // (book.filePath, 'None') when set. Hash-copy books fall
+          // through to the original Books-relative path. Same fallback
+          // pattern as cloudService.uploadBook so library Sync now
+          // treats in-place books as first-class.
+          const fp = book.filePath ?? getLocalBookFilename(book);
+          const base = book.filePath ? 'None' : 'Books';
+          if (!(await appService.exists(fp, base))) return null;
+          const file = await appService.openFile(fp, base);
           const bytes = await file.arrayBuffer();
           return { bytes, size: bytes.byteLength };
         },
@@ -320,16 +326,17 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         loadBookFileStreaming: isTauriAppPlatform()
           ? async (book) => {
               if (!appService) return null;
-              const fp = getLocalBookFilename(book);
-              if (!(await appService.exists(fp, 'Books'))) return null;
-              const file = await appService.openFile(fp, 'Books');
+              const fp = book.filePath ?? getLocalBookFilename(book);
+              const base = book.filePath ? 'None' : 'Books';
+              if (!(await appService.exists(fp, base))) return null;
+              const file = await appService.openFile(fp, base);
               const size = file.size;
               // openFile returns a File-like handle; close eagerly when
               // the platform exposes it so the Tauri side can re-open
               // the path for the streamed PUT without holding two FDs.
               const closable = file as { close?: () => Promise<void> };
               if (closable.close) await closable.close();
-              const dst = await appService.resolveFilePath(fp, 'Books');
+              const dst = await appService.resolveFilePath(fp, base);
               return {
                 size,
                 upload: async (remoteUrl, headers) => {

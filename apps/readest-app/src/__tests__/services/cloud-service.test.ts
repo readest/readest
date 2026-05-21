@@ -203,5 +203,100 @@ describe('cloudService', () => {
         expect(book.uploadedAt).toBeNull();
       });
     });
+
+    // In-place imports keep their content at a user-controlled location
+    // (book.filePath, base 'None') rather than under Books/<hash>/. For
+    // 'local'/'both' deletes that source file IS the local copy and gets
+    // removed (symmetric with deleting Books/<hash>/<title>.epub for a
+    // normal book). The cloud upload path is shared, so cross-device sync
+    // can still pull the book back.
+    describe('in-place (book.filePath set)', () => {
+      test('local action removes the user-controlled source file', async () => {
+        const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
+        await deleteBook(mockFs, book, 'local');
+
+        // The source file is read from base 'None' (absolute path), not Books/.
+        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+      });
+
+      test('local action does not probe Books/<hash>/<title>.epub', async () => {
+        const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
+        await deleteBook(mockFs, book, 'local');
+
+        // The hash-copy path lives only on a normal book; for an in-place book
+        // there's nothing there, so we shouldn't even check.
+        expect(mockFs.exists).not.toHaveBeenCalledWith(`${book.hash}/${book.title}.epub`, 'Books');
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith(
+          `${book.hash}/${book.title}.epub`,
+          'Books',
+        );
+      });
+
+      test('local action still clears downloadedAt', async () => {
+        const book = createMockBook({
+          filePath: '/Users/me/Library/sample.epub',
+          downloadedAt: 12345,
+        });
+        await deleteBook(mockFs, book, 'local');
+        expect(book.downloadedAt).toBeNull();
+      });
+
+      test('local action does not throw when the source file is missing', async () => {
+        // exists() returns false → no removeFile call, but no error either.
+        vi.mocked(mockFs.exists).mockResolvedValue(false);
+        const book = createMockBook({
+          filePath: '/Users/me/Library/sample.epub',
+          downloadedAt: 12345,
+        });
+        await deleteBook(mockFs, book, 'local');
+
+        expect(mockFs.removeFile).not.toHaveBeenCalled();
+        expect(book.downloadedAt).toBeNull();
+      });
+
+      test('local action swallows errors from removeFile (best-effort source delete)', async () => {
+        vi.mocked(mockFs.removeFile).mockRejectedValueOnce(new Error('EPERM'));
+        const book = createMockBook({
+          filePath: '/Users/me/Library/sample.epub',
+          downloadedAt: 12345,
+        });
+
+        // Must not throw, and must still flip the metadata bit so the UI
+        // reflects the user's delete intent.
+        await deleteBook(mockFs, book, 'local');
+        expect(book.downloadedAt).toBeNull();
+      });
+
+      test('both action removes both the source file and the cover sidecar', async () => {
+        const book = createMockBook({
+          filePath: '/Users/me/Library/sample.epub',
+          uploadedAt: null,
+        });
+        await deleteBook(mockFs, book, 'both');
+
+        // Source file under user-controlled path:
+        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+        // Cover sidecar under Books/<hash>/:
+        expect(mockFs.removeFile).toHaveBeenCalledWith(`${book.hash}/cover.png`, 'Books');
+        // We must never poke at Books/<hash>/<title>.epub for an in-place book.
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith(
+          `${book.hash}/${book.title}.epub`,
+          'Books',
+        );
+      });
+
+      test('both action still flips deletedAt/downloadedAt/coverDownloadedAt', async () => {
+        const book = createMockBook({
+          filePath: '/Users/me/Library/sample.epub',
+          downloadedAt: 2000,
+          coverDownloadedAt: 3000,
+        });
+        await deleteBook(mockFs, book, 'both');
+
+        expect(book.deletedAt).toBeGreaterThan(0);
+        expect(book.downloadedAt).toBeNull();
+        expect(book.coverDownloadedAt).toBeNull();
+      });
+    });
   });
 });

@@ -24,6 +24,7 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     migrationVersion: 3,
     localBooksDir: '/Users/me/Books',
     customRootDir: '/Users/me/readest',
+    externalLibraryFolders: ['/Users/me/Duokan', '/Users/me/Calibre'],
     keepLogin: true,
     screenBrightness: 0.7,
     autoScreenBrightness: false,
@@ -85,6 +86,7 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     const out = rec(sanitizeSettingsForBackup(makeSettings()));
     expect(out['localBooksDir']).toBeUndefined();
     expect(out['customRootDir']).toBeUndefined();
+    expect(out['externalLibraryFolders']).toBeUndefined();
     expect(out['savedBookCoverForLockScreenPath']).toBeUndefined();
   });
 
