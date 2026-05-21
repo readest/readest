@@ -58,7 +58,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { isTrafficLightVisible } = useTrafficLight();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
   const { bookKeys, hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
@@ -77,7 +78,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const view = getView(bookKey);
   const iconSize16 = useResponsiveSize(16);
   const iconSize18 = useResponsiveSize(18);
-  const headerRef = useRef<HTMLDivElement>(null);
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');

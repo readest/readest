@@ -42,6 +42,7 @@ describe('trafficLightStore', () => {
       isTrafficLightVisible: false,
       shouldShowTrafficLight: false,
       trafficLightInFullscreen: false,
+      headerHeight: 44,
       unlistenEnterFullScreen: undefined,
       unlistenExitFullScreen: undefined,
     });
@@ -119,27 +120,41 @@ describe('trafficLightStore', () => {
       expect(state.shouldShowTrafficLight).toBe(false);
     });
 
-    test('invokes set_traffic_lights with only the visibility flag', async () => {
-      // Position is now declared on the window itself via Tauri's
-      // `trafficLightPosition`. The IPC payload only carries `visible`
-      // — the Rust command no longer accepts (and no longer needs)
-      // x/y coordinates.
+    test('invokes set_traffic_lights with default header height when none provided', async () => {
+      // y is computed Rust-side from headerHeight + the live close-button
+      // frame, so the IPC payload carries height-in-logical-px rather
+      // than a precomputed inset. Without an explicit value we fall
+      // back to readest's standard `h-11` (44px).
       mockIsFullscreen.mockResolvedValue(false);
 
       await useTrafficLightStore.getState().setTrafficLightVisibility(true);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
         visible: true,
+        headerHeight: 44,
       });
     });
 
-    test('invokes set_traffic_lights with visible=false to collapse', async () => {
+    test('invokes set_traffic_lights with caller-supplied header height', async () => {
       mockIsFullscreen.mockResolvedValue(false);
 
-      await useTrafficLightStore.getState().setTrafficLightVisibility(false);
+      await useTrafficLightStore.getState().setTrafficLightVisibility(true, 56);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
+        visible: true,
+        headerHeight: 56,
+      });
+    });
+
+    test('remembers the last header height across visibility toggles', async () => {
+      mockIsFullscreen.mockResolvedValue(false);
+
+      await useTrafficLightStore.getState().setTrafficLightVisibility(true, 56);
+      await useTrafficLightStore.getState().setTrafficLightVisibility(false);
+
+      expect(invoke).toHaveBeenLastCalledWith('set_traffic_lights', {
         visible: false,
+        headerHeight: 56,
       });
     });
   });

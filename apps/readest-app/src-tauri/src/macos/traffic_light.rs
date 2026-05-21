@@ -6,21 +6,27 @@ use tauri::{
     Emitter, Runtime, Window,
 };
 
-// Tracks visibility across IPC calls, resize/fullscreen-exit callbacks,
-// and the initial window-ready hook. Position is owned declaratively by
-// Tauri's `trafficLightPosition` (set by `WebviewWindowBuilder` in
-// `lib.rs` and `new WebviewWindow(...)` in `nav.ts`); this file no
-// longer carries an x/y default.
+// Tracks visibility + last-known header height for this app so resize /
+// fullscreen-exit callbacks can re-apply the same layout without an
+// extra IPC round-trip from the frontend.
 static mut TRAFFIC_LIGHTS_VISIBLE: bool = true;
+static mut TRAFFIC_LIGHT_HEADER_HEIGHT: f64 = DEFAULT_HEADER_HEIGHT;
 
-/// Vertical inset used **only** to restore the title-bar container
-/// height after a `visible: false` collapse. Must agree with the y
-/// component of `trafficLightPosition` declared in `lib.rs` and
-/// `nav.ts`; if you adjust the visual placement, change all three
-/// together. We could in principle cache each window's natural title
-/// bar height before the first collapse, but the per-window state
-/// machine that buys is not worth the complexity for a single number.
-const TRAFFIC_LIGHT_RESTORE_Y_INSET: f64 = 24.0;
+/// AppKit's natural rest position for `NSWindowButton.origin.y` inside
+/// the title-bar container. This is the per-OS offset Apple shifted in
+/// Tahoe (~5pt on macOS 15, ~7pt on macOS 26). Captured on the first
+/// read so subsequent reads — which may pick up a post-resize
+/// autoresized value rather than the natural one — don't feed back
+/// into the centering formula and cause it to drift.
+static NATURAL_BUTTON_ORIGIN_Y: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
+
+/// Fallback header height (logical px) when the frontend has not yet
+/// reported one. Matches readest's standard `h-11` header so the
+/// initial paint before React mounts is close to correct.
+const DEFAULT_HEADER_HEIGHT: f64 = 44.0;
+
+/// Horizontal inset for the leftmost close button.
+const TRAFFIC_LIGHT_X_INSET: f64 = 10.0;
 
 struct UnsafeWindowHandle(*mut std::ffi::c_void);
 unsafe impl Send for UnsafeWindowHandle {}
@@ -43,45 +49,92 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 }
 
 #[command]
-pub fn set_traffic_lights(window: Window, visible: bool) {
+pub fn set_traffic_lights(window: Window, visible: bool, header_height: f64) {
     unsafe {
-        let was_visible = TRAFFIC_LIGHTS_VISIBLE;
         TRAFFIC_LIGHTS_VISIBLE = visible;
-
-        // No-op when the visibility didn't actually change: position is
-        // declared at window creation, so there's nothing to re-apply.
-        // Skipping the cocoa setFrame avoids a redundant relayout that
-        // would otherwise fight AppKit's own traffic-light tracking.
-        if was_visible == visible {
-            return;
+        if header_height > 0.0 {
+            TRAFFIC_LIGHT_HEADER_HEIGHT = header_height;
         }
 
-        position_traffic_lights(
-            UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
-            visible,
-        );
+        let ns_window = match window.ns_window() {
+            Ok(handle) => handle,
+            Err(_) => return,
+        };
+        position_traffic_lights(UnsafeWindowHandle(ns_window), visible);
     }
 }
 
-/// Toggle the title-bar container view between its natural height (so
-/// the declared `trafficLightPosition` shows through) and zero (which
-/// hides the buttons during reader chrome auto-hide). x/y positioning
-/// of the buttons themselves is no longer touched here — that is done
-/// once at window creation by Tauri/wry's supported macOS API and then
-/// maintained by AppKit across resizes and theme changes.
+/// Centers the close button vertically inside `header_height`.
+///
+/// `y` (the value tao forwards to `[NSWindowButton setFrameOrigin:]`)
+/// is the distance from the title-bar container's top to the button's
+/// top. After tao applies it, the button's final position in window-
+/// top coords is `y - button_origin_y_in_container`, because tao does
+/// not touch `origin.y` — it preserves AppKit's natural rest position.
+///
+/// Apple shifted that rest position on macOS 26 (Tahoe): the close
+/// button sits ~2pt higher in the container than it did on macOS 15
+/// (`button.origin.y` reads ~7 on Tahoe vs ~5 on Sonoma/Sequoia). By
+/// reading `button.origin.y` live and adding it to the centering math,
+/// the formula self-corrects without an `NSProcessInfo` lookup.
+fn compute_traffic_light_y(header_height: f64, button_height: f64, button_origin_y: f64) -> f64 {
+    ((header_height - button_height) / 2.0 + button_origin_y).max(0.0)
+}
+
+/// Reads the close button's current frame.height and (on the first
+/// call only) caches its origin.y as the natural AppKit rest position.
+/// Returns `(14, 5)` if the window has no standard buttons (e.g.
+/// decorationless utility webviews never call this in practice).
+///
+/// We **must not** re-read origin.y on every invocation. Some macOS
+/// versions appear to autoresize the button's frame inside the
+/// title-bar container when the container is resized — feeding that
+/// value back into the centering formula produces a runaway where
+/// each push grows y, the container grows, AppKit re-pins the button,
+/// and the next push grows y again. Caching on first read makes the
+/// formula a fixed-point in the natural offset, which is what we want.
+unsafe fn measure_close_button(ns_window: *mut std::ffi::c_void) -> (f64, f64) {
+    use cocoa::appkit::{NSWindow, NSWindowButton};
+    use cocoa::foundation::NSRect;
+    let ns_window = ns_window as cocoa::base::id;
+    let close = ns_window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
+    if close.is_null() {
+        return (14.0, *NATURAL_BUTTON_ORIGIN_Y.get().unwrap_or(&5.0));
+    }
+    let frame: NSRect = msg_send![close, frame];
+    let cached_origin_y = *NATURAL_BUTTON_ORIGIN_Y.get_or_init(|| frame.origin.y);
+    (frame.size.height, cached_origin_y)
+}
+
+/// Owns both the title-bar container size and the standard window
+/// buttons' frame origins. We don't call Tauri's
+/// `set_traffic_light_position` (which would have routed through tao's
+/// `inset_traffic_lights` and ping-ponged with this code on every
+/// drawRect), so this is the sole authority for traffic-light layout.
+/// The plugin's resize / theme-change / full-screen-exit callbacks
+/// re-invoke this so AppKit can't leave the buttons stale.
 fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool) {
     use cocoa::appkit::{NSView, NSWindow, NSWindowButton};
     use cocoa::foundation::NSRect;
     let ns_window = ns_window_handle.0 as cocoa::base::id;
     unsafe {
         let close = ns_window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
+        if close.is_null() {
+            return;
+        }
+        let miniaturize =
+            ns_window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
+        let zoom = ns_window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
         let title_bar_container_view = close.superview().superview();
 
-        let close_rect: NSRect = msg_send![close, frame];
-        let button_height = close_rect.size.height;
-
         let title_bar_frame_height = if visible {
-            button_height + TRAFFIC_LIGHT_RESTORE_Y_INSET
+            let (button_height, button_origin_y) = measure_close_button(ns_window_handle.0);
+            let y = compute_traffic_light_y(
+                TRAFFIC_LIGHT_HEADER_HEIGHT,
+                button_height,
+                button_origin_y,
+            );
+            button_height + y
         } else {
             0.0
         };
@@ -89,6 +142,28 @@ fn position_traffic_lights(ns_window_handle: UnsafeWindowHandle, visible: bool) 
         title_bar_rect.size.height = title_bar_frame_height;
         title_bar_rect.origin.y = NSView::frame(ns_window).size.height - title_bar_frame_height;
         let _: () = msg_send![title_bar_container_view, setFrame: title_bar_rect];
+
+        if !visible || miniaturize.is_null() || zoom.is_null() {
+            return;
+        }
+
+        // Restore each button's frame.origin: x from the configured
+        // inset, y from the cached natural offset captured by
+        // measure_close_button so AppKit's autoresize on a container
+        // change can't drift us. Keeping origin.y stable means the
+        // centering formula stays a fixed point across resize / theme /
+        // full-screen events without per-OS tuning.
+        let cached_origin_y = *NATURAL_BUTTON_ORIGIN_Y.get().unwrap_or(&5.0);
+        let close_rect: NSRect = msg_send![close, frame];
+        let miniaturize_rect: NSRect = msg_send![miniaturize, frame];
+        let space_between = miniaturize_rect.origin.x - close_rect.origin.x;
+        for (i, button) in [close, miniaturize, zoom].iter().enumerate() {
+            let origin = cocoa::foundation::NSPoint::new(
+                TRAFFIC_LIGHT_X_INSET + (i as f64 * space_between),
+                cached_origin_y,
+            );
+            let _: () = msg_send![*button, setFrameOrigin: origin];
+        }
     }
 }
 
@@ -115,7 +190,12 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
         return;
     }
 
-    // Do the initial positioning
+    // Initial positioning. `position_traffic_lights` owns both the
+    // container size and the per-button frame origins, so the moment
+    // `on_window_ready` fires the buttons are centered against the
+    // current `TRAFFIC_LIGHT_HEADER_HEIGHT` — which defaults to the
+    // app's standard h-11 (44px) until React reports the active
+    // page's real height through the `set_traffic_lights` IPC.
     unsafe {
         position_traffic_lights(
             UnsafeWindowHandle(window.ns_window().expect("Failed to create window handle")),
