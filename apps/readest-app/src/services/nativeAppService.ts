@@ -665,10 +665,20 @@ export class NativeAppService extends BaseAppService {
     const rootPath = await this.resolveFilePath('..', 'Data');
     const newDir = await this.fs.getPrefix('Images');
     const oldDir = await join(rootPath, 'Images', 'Readest', 'Images');
+    const dirToDelete = await join(rootPath, 'Images', 'Readest');
+
+    // Skip silently on fresh installs that never had the legacy layout.
+    // copyFiles / deleteDir would otherwise throw `os error 2` when the
+    // old directory does not exist, which is harmless but noisy.
+    if (!(await this.fs.exists(oldDir, 'None'))) {
+      console.log('Migration 20251029: legacy Images/Readest/Images not found, skipping.');
+      return;
+    }
 
     await copyFiles(this, oldDir, newDir);
 
-    const dirToDelete = await join(rootPath, 'Images', 'Readest');
-    await this.deleteDir(dirToDelete, 'None', true);
+    if (await this.fs.exists(dirToDelete, 'None')) {
+      await this.deleteDir(dirToDelete, 'None', true);
+    }
   }
 }
