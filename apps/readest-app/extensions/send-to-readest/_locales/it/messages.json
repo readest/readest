@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Invia a Readest",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "Salva pagine web nella tua libreria Readest",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Invia a Readest",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

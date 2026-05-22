@@ -5,12 +5,18 @@ import type { EpubImage } from './types';
 
 // On Tauri we go through the Rust HTTP client (no browser-CORS); on web
 // we use the native fetch — the bundler is only ever invoked from a
-// CORS-free caller there (the future extension's content script). In
-// Tauri we also fold in the full image-fetch header set (UA + Sec-Ch-Ua +
-// Sec-Fetch-* + Referer) so CDNs that gate images on the browser shape
-// — NYT, WSJ, paywalled CDNs — cooperate.
+// CORS-free caller there (the browser extension's service worker, which
+// has broad `host_permissions`). In the non-Tauri path we set
+// `credentials: 'include'` so the browser sends the user's cookies for
+// paywalled / member-only CDN hosts — without that, an authenticated
+// Substack image returns a placeholder. In Tauri we also fold in the
+// full image-fetch header set (UA + Sec-Ch-Ua + Sec-Fetch-* + Referer)
+// so CDNs that gate images on the browser shape — NYT, WSJ, paywalled
+// CDNs — cooperate.
 const httpFetch = (url: string, referer: string | null, init?: RequestInit): Promise<Response> => {
-  if (!isTauriAppPlatform()) return globalThis.fetch(url, init);
+  if (!isTauriAppPlatform()) {
+    return globalThis.fetch(url, { credentials: 'include', ...init });
+  }
   const baseHeaders = imageFetchHeaders(referer);
   const headers = new Headers(init?.headers);
   for (const [k, v] of Object.entries(baseHeaders)) {

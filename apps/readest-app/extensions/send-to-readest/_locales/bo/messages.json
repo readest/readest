@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Readest ལ་གཏོང་།",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "དྲ་ཤོག་Readest་དཔེ་མཛོད་དུ་ཉར་ཚགས་བྱེད",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Readest ལ་གཏོང་།",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

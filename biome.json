@@ -61,6 +61,8 @@
       "!apps/readest-app/build/**",
       "!apps/readest-app/public/**",
       "!apps/readest-app/src-tauri/**",
+      "!apps/readest-app/extensions/**/dist/**",
+      "!apps/readest-app/extensions/**/node_modules/**",
       "!apps/readest-app/next-env.d.ts",
       "!apps/readest-app/i18next-scanner.config.cjs"
     ],
