@@ -15,7 +15,7 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
   // Unsafe to use filename including file extensions over 255 bytes on Android
   const maxFilenameBytes = 250;
 
-  let safeName = filename.replace(unsafeCharacters, replacement);
+  let safeName = filename.replace(unsafeCharacters, replacement).trim();
 
   if (reservedFilenames.test(safeName)) {
     safeName = `${safeName}${replacement}`;
@@ -29,7 +29,7 @@ export const makeSafeFilename = (filename: string, replacement = '_') => {
     utf8Bytes = encoder.encode(safeName);
   }
 
-  return safeName.trim();
+  return safeName;
 };
 
 export const getLocale = () => {
