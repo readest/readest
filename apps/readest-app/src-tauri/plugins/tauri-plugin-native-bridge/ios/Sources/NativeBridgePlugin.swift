@@ -473,6 +473,14 @@ class NativeBridgePlugin: Plugin {
     // covers Readest's annotation toolbar. See ContextMenuSuppressor.
     ContextMenuSuppressor.installIfNeeded()
 
+    // Register a WKScriptMessageHandler so JS can signal when its
+    // share-extension hook has mounted. On `{type: 'ready'}` we run a
+    // sync immediately, which is the cold-start path (app launched
+    // because the Share Extension just woke it up, JS may not have been
+    // listening when the first `appDidBecomeActive` fired).
+    webview.configuration.userContentController.add(
+      ShareBridgeMessageHandler(owner: self), name: "readestShareBridge")
+
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
@@ -528,6 +536,76 @@ class NativeBridgePlugin: Plugin {
     // appearance whenever the app becomes active, e.g. after toggling
     // dark mode from Control Center.
     notifyColorSchemeChange()
+    syncShareExtensionState()
+  }
+
+  /// JS-initiated entry point. The share-extension JS hook calls
+  /// `window.webkit.messageHandlers.readestShareBridge.postMessage({type:'ready'})`
+  /// once mounted, which routes here so the cold-start drain happens
+  /// even when the JS hook wasn't listening at app launch.
+  @objc func syncShareExtensionStateFromJS() {
+    syncShareExtensionState()
+  }
+
+  /// Bridge between the Readest Share Extension (separate process) and
+  /// the host app's JS, via the App Group container at
+  /// `group.com.bilingify.readest`. Two directions on every activation:
+  ///
+  ///   1. Groups (host → extension). Read the current library group list
+  ///      from JS (`window.__readestGetGroups`) and persist it so the
+  ///      extension's picker shows up-to-date options next time the user
+  ///      shares. If the JS function isn't installed yet (cold start, hook
+  ///      hasn't mounted), no-op — the next activation will refresh.
+  ///
+  ///   2. Pending saves (extension → host). Drain any queued saves the
+  ///      extension wrote, hand them to JS
+  ///      (`window.__readestOnShareExtensionPending`), then clear the
+  ///      queue only if JS confirmed receipt. If JS isn't ready yet,
+  ///      leave the queue intact — the next activation (or the JS hook
+  ///      on its own mount) will pick them up.
+  private func syncShareExtensionState() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self, let webView = self.webView else { return }
+      // Pull groups + the user-locale "Default" label from JS → App Group.
+      webView.evaluateJavaScript(
+        "(window.__readestGetGroups && window.__readestGetGroups()) || null"
+      ) { result, _ in
+        guard let payload = result as? [String: Any] else { return }
+        if let array = payload["groups"] as? [[String: Any]] {
+          let groups: [AppGroupBridge.LibraryGroup] = array.compactMap { item in
+            guard let id = item["id"] as? String, let name = item["name"] as? String else {
+              return nil
+            }
+            return AppGroupBridge.LibraryGroup(id: id, name: name)
+          }
+          AppGroupBridge.writeGroups(groups)
+        }
+        if let defaultName = payload["defaultGroupName"] as? String, !defaultName.isEmpty {
+          AppGroupBridge.writeDefaultGroupName(defaultName)
+        }
+      }
+      // Push pending saves → JS, clear queue iff JS confirmed.
+      let saves = AppGroupBridge.readPendingSaves()
+      guard !saves.isEmpty else { return }
+      let payload: [[String: Any?]] = saves.map { save in
+        [
+          "url": save.url,
+          "groupId": save.groupId,
+          "groupName": save.groupName,
+          "addedAt": save.addedAt,
+        ]
+      }
+      guard let json = try? JSONSerialization.data(withJSONObject: payload, options: []),
+        let jsonString = String(data: json, encoding: .utf8)
+      else { return }
+      let script =
+        "(window.__readestOnShareExtensionPending && window.__readestOnShareExtensionPending(\(jsonString))) === true"
+      webView.evaluateJavaScript(script) { result, _ in
+        if let acknowledged = result as? Bool, acknowledged {
+          AppGroupBridge.clearPendingSaves()
+        }
+      }
+    }
   }
 
   // Resolves the foreground window scene. Its trait collection reflects
@@ -1303,6 +1381,30 @@ class ShowLookupPopoverArgs: Decodable {
 @_cdecl("init_plugin_native_bridge")
 func initPlugin() -> Plugin {
   return NativeBridgePlugin()
+}
+
+/// JS → Swift bridge for the share-extension state. Lives in its own
+/// class because WKScriptMessageHandler conformance on NativeBridgePlugin
+/// would require routing every message type through the plugin's
+/// existing @objc method surface, which is noisier than a dedicated
+/// handler. We weakly retain the plugin so the WKWebView's
+/// WKUserContentController holding the handler doesn't extend the
+/// plugin's lifetime.
+private final class ShareBridgeMessageHandler: NSObject, WKScriptMessageHandler {
+  private weak var owner: NativeBridgePlugin?
+  init(owner: NativeBridgePlugin) { self.owner = owner }
+  func userContentController(
+    _ userContentController: WKUserContentController,
+    didReceive message: WKScriptMessage
+  ) {
+    guard message.name == "readestShareBridge" else { return }
+    guard let body = message.body as? [String: Any], let type = body["type"] as? String else {
+      return
+    }
+    if type == "ready" {
+      owner?.syncShareExtensionStateFromJS()
+    }
+  }
 }
 
 @available(iOS 13.0, *)

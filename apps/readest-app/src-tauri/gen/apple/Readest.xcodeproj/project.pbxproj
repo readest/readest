@@ -19,6 +19,7 @@
 		BA0A7C5B168460D96FA21D6B /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB595336F6275E2B879AF397 /* ShareViewController.swift */; };
 		D608DE39BD2F9FA892508F37 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B62E5ED5797D06981F30B6F /* UIKit.framework */; };
 		E6D9510F89AD18B18D0FCBC9 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E5F4A6E57CB4895FFFBC2DE8 /* ShareExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E853ADD6F720091D24E184FD /* AppGroupBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EACF94D1026C7A51CD0A63 /* AppGroupBridge.swift */; };
 		F6003A5A70DA4C33BDBD838B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 30D8E7F6023C1DF41F8BD47C /* LaunchScreen.storyboard */; };
 		FB2C2290EAFB8BA38C973E4B /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 40409827389F82307433878B /* assets */; };
 /* End PBXBuildFile section */
@@ -55,7 +56,6 @@
 		1A5492F8B4749D670A93DE66 /* clip_url.rs */ = {isa = PBXFileReference; path = clip_url.rs; sourceTree = "<group>"; };
 		1C29EFE86C85351F81C99F2A /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		1CF94262BF7499D2AD8B627D /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
-		1F45B5B458F63D98B6113A19 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		27B7FEAE989ABFF6C8FF0F77 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		282EE616A1F2B81C6121C9B6 /* transfer_file.rs */ = {isa = PBXFileReference; path = transfer_file.rs; sourceTree = "<group>"; };
 		2E226C87AD0606FFF9DDEE11 /* dir_scanner.rs */ = {isa = PBXFileReference; path = dir_scanner.rs; sourceTree = "<group>"; };
@@ -77,6 +77,7 @@
 		A7318D4877A991A1DAB79861 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		A77628B94260724841CB0C1F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		B16A12C78C47C4990EB4A028 /* apple_auth.rs */ = {isa = PBXFileReference; path = apple_auth.rs; sourceTree = "<group>"; };
+		C1EACF94D1026C7A51CD0A63 /* AppGroupBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupBridge.swift; sourceTree = "<group>"; };
 		CB595336F6275E2B879AF397 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		D3F4A4DF56E899C9DB0B7D60 /* eink.rs */ = {isa = PBXFileReference; path = eink.rs; sourceTree = "<group>"; };
 		DAC68A4107C30410409E5506 /* Readest_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Readest_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -186,6 +187,7 @@
 		A350AB745ED478D99A088984 /* ShareExtension */ = {
 			isa = PBXGroup;
 			children = (
+				C1EACF94D1026C7A51CD0A63 /* AppGroupBridge.swift */,
 				27B7FEAE989ABFF6C8FF0F77 /* Info.plist */,
 				4924DDD171577C52C0C5809E /* ShareExtension.entitlements */,
 				CB595336F6275E2B879AF397 /* ShareViewController.swift */,
@@ -196,7 +198,6 @@
 		ADF310BD2F14DA462EF79E53 /* Readest_iOS */ = {
 			isa = PBXGroup;
 			children = (
-				1F45B5B458F63D98B6113A19 /* Info.plist */,
 				7DADD61846736B0E638BF012 /* Readest_iOS.entitlements */,
 			);
 			path = Readest_iOS;
@@ -242,18 +243,18 @@
 			path = ../../src;
 			sourceTree = "<group>";
 		};
-		"TEMP_9CD1A90B-7A94-4ADB-B0C8-40427CCB2DCF" /* arm64 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = arm64;
-			sourceTree = "<group>";
-		};
-		"TEMP_BBED8FED-FDB6-46D2-A460-69DB6036C32D" /* x86_64 */ = {
+		"TEMP_6ABABE6F-F147-4A8E-9826-834A375CE506" /* x86_64 */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = x86_64;
+			sourceTree = "<group>";
+		};
+		"TEMP_9D718EEF-C4A1-4A02-899F-1BD1207ADF5C" /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = arm64;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -385,6 +386,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E853ADD6F720091D24E184FD /* AppGroupBridge.swift in Sources */,
 				BA0A7C5B168460D96FA21D6B /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

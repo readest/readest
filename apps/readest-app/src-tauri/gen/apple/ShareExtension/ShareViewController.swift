@@ -1,11 +1,35 @@
 // Share Extension for Readest: catches an article URL from any iOS share
-// sheet (Safari, Chrome, third-party browsers) and forwards it to the
-// main app via the existing `readest://` URL scheme. The main app's
-// `tauri-plugin-deep-link` integration emits an `onOpenUrl` event,
-// `useAppUrlIngress` re-broadcasts it as `app-incoming-url`, and
-// `useClipUrlIngress` clips + ingests the article through the same
-// pipeline the in-app "From Web URL" entry uses.
+// sheet (Safari, Chrome, third-party browsers), shows a small sheet UI
+// that lets the user pick a target library group, then queues the save
+// into the App Group container and best-effort launches Readest.
+//
+// Two delivery paths to the host app, in order of preference:
+//
+//   1. App Group queue + responder-chain launch.
+//      `AppGroupBridge.appendPendingSave` writes the URL + chosen group
+//      to the shared NSUserDefaults at `group.com.bilingify.readest`.
+//      We then walk the UIResponder chain looking for an object that
+//      responds to `openURL:options:completionHandler:` (UIApplication)
+//      and dispatch via an objc-runtime IMP cast. This is the pattern
+//      Chrome iOS ships in `ios/chrome/common/extension_open_url.mm`
+//      (using NSInvocation there; we use the equivalent IMP-cast trick
+//      since pure Swift can't see NSInvocation). Continues to work on
+//      iOS 26 — the deprecated `openURL:` selector is what breaks
+//      ("BUG IN CLIENT OF UIKIT" + no-op). The modern 3-arg selector is
+//      not directly visible to extensions but the responder chain still
+//      hands UIApplication over for runtime dispatch.
+//
+//   2. App Group queue as standalone fallback.
+//      If the launch trick is ever blocked by Apple, the save still
+//      sits in the queue. The host's `NativeBridgePlugin` drains it on
+//      `applicationDidBecomeActive` so the next time the user opens
+//      Readest manually, the article is ingested.
+//
+// `extensionContext.open(_:)` is intentionally not used — Apple docs
+// scope it to Today widgets only and it returns success=false from
+// Share Extensions on modern iOS regardless of URL scheme.
 
+import ObjectiveC
 import UIKit
 import UniformTypeIdentifiers
 
@@ -17,50 +41,101 @@ final class ShareViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     NSLog("[ReadestShare] viewDidLoad")
-    // Kick the work as early as possible — iOS 26 sometimes dismisses
-    // the extension before `viewDidAppear` fires when the activation
-    // rule matches a single URL exactly. Running from `viewDidLoad`
-    // gives us the longest possible window.
-    Task { await processInput() }
+    view.backgroundColor = .clear
+    Task { await self.loadAndPresent() }
   }
 
-  /// Walk the inputItems for a URL or text payload and forward it.
-  /// Cancels the extension if no URL was found.
-  private func processInput() async {
-    NSLog("[ReadestShare] processInput started")
+  // MARK: - Input handling
+
+  private func loadAndPresent() async {
     guard let context = extensionContext else {
-      NSLog("[ReadestShare] no extensionContext, bailing")
+      NSLog("[ReadestShare] no extensionContext")
       return
     }
-    let items = (context.inputItems.compactMap { $0 as? NSExtensionItem })
+    let items = context.inputItems.compactMap { $0 as? NSExtensionItem }
     NSLog("[ReadestShare] inputItems count=\(items.count)")
 
     let url = await firstShareableURL(from: items)
-    if let url = url {
-      NSLog("[ReadestShare] found URL: \(url.absoluteString)")
-      await openInMainApp(url: url)
-    } else {
-      NSLog("[ReadestShare] no URL found in any inputItem")
-    }
+    let pageTitle =
+      items
+      .compactMap { $0.attributedTitle?.string ?? $0.attributedContentText?.string }
+      .first { !$0.isEmpty }
+
     await MainActor.run {
-      if !self.didCompleteOnce {
-        self.didCompleteOnce = true
-        NSLog("[ReadestShare] completing extension request")
-        context.completeRequest(returningItems: [], completionHandler: nil)
+      guard let url = url else {
+        NSLog("[ReadestShare] no URL found, cancelling")
+        self.cancelRequest()
+        return
       }
+      NSLog("[ReadestShare] presenting picker for URL: %@", url.absoluteString)
+      self.presentPicker(url: url, pageTitle: pageTitle)
     }
   }
 
-  /// Probe attachments for the first usable URL. Prefers a real
-  /// `public.url` attachment; falls back to scanning a `public.plain-text`
-  /// payload for an http(s) substring (some apps share "Title\nURL").
+  private func presentPicker(url: URL, pageTitle: String?) {
+    let groups = AppGroupBridge.readGroups()
+    let options = SaveOptionsViewController(
+      url: url,
+      pageTitle: pageTitle,
+      groups: groups,
+      onCancel: { [weak self] in
+        self?.cancelRequest()
+      },
+      onSave: { [weak self] selectedGroup in
+        self?.handleSave(url: url, group: selectedGroup)
+      }
+    )
+    let nav = UINavigationController(rootViewController: options)
+    nav.view.translatesAutoresizingMaskIntoConstraints = false
+    addChild(nav)
+    view.addSubview(nav.view)
+    NSLayoutConstraint.activate([
+      nav.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      nav.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      nav.view.topAnchor.constraint(equalTo: view.topAnchor),
+      nav.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+    ])
+    nav.didMove(toParent: self)
+  }
+
+  // MARK: - Save / Cancel
+
+  private func handleSave(url: URL, group: AppGroupBridge.LibraryGroup?) {
+    let save = AppGroupBridge.PendingSave(
+      url: url.absoluteString,
+      groupId: group?.id,
+      groupName: group?.name,
+      addedAt: AppGroupBridge.nowIso8601()
+    )
+    AppGroupBridge.appendPendingSave(save)
+    NSLog("[ReadestShare] queued save for %@ group=%@", url.absoluteString, group?.name ?? "<none>")
+
+    if let target = buildTargetURL(scheme: "readest", host: "clip", inner: url) {
+      let opened = openViaResponderChain(target)
+      NSLog("[ReadestShare] responder-chain launch=%@", opened ? "yes" : "no")
+    }
+    completeOnce()
+  }
+
+  private func cancelRequest() {
+    guard !didCompleteOnce else { return }
+    didCompleteOnce = true
+    let err = NSError(domain: "ReadestShare", code: NSUserCancelledError, userInfo: nil)
+    extensionContext?.cancelRequest(withError: err)
+  }
+
+  private func completeOnce() {
+    guard !didCompleteOnce else { return }
+    didCompleteOnce = true
+    extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+  }
+
+  // MARK: - URL extraction
+
   private func firstShareableURL(from items: [NSExtensionItem]) async -> URL? {
-    for (itemIdx, item) in items.enumerated() {
+    for item in items {
       guard let attachments = item.attachments else { continue }
-      NSLog("[ReadestShare] item[\(itemIdx)] has \(attachments.count) attachments")
-      for (attIdx, attachment) in attachments.enumerated() {
-        NSLog(
-          "[ReadestShare] attachment[\(attIdx)] types: \(attachment.registeredTypeIdentifiers)")
+      for attachment in attachments {
         if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
           if let url = try? await loadURL(from: attachment), Self.isHttp(url) {
             return url
@@ -82,9 +157,7 @@ final class ShareViewController: UIViewController {
     let item = try await provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil)
     if let url = item as? URL { return url }
     if let str = item as? String { return URL(string: str) }
-    if let data = item as? Data,
-      let str = String(data: data, encoding: .utf8)
-    {
+    if let data = item as? Data, let str = String(data: data, encoding: .utf8) {
       return URL(string: str)
     }
     return nil
@@ -113,103 +186,254 @@ final class ShareViewController: UIViewController {
     return nil
   }
 
-  /// Open Readest with the article URL. Tries three paths in order:
-  ///
-  ///   1. `extensionContext.open(_:)` against `readest://clip?url=...`.
-  ///      Apple's sanctioned share-extension → host-app handoff for
-  ///      custom URL schemes. The main app's `tauri-plugin-deep-link`
-  ///      catches the `readest://` scheme.
-  ///   2. `extensionContext.open(_:)` against the Universal Link
-  ///      `https://web.readest.com/clip?url=...`. Only works when the
-  ///      web.readest.com AASA file claims `/clip` for the app —
-  ///      currently it likely doesn't, but tried as a defensive
-  ///      fallback in case (1) fails on some iOS version.
-  ///   3. Responder-chain `openURL:` trick. iOS 26 silently blocks
-  ///      this even when `responds(to: selector)` returns true and
-  ///      the responder is `UIApplication`, so it's purely a
-  ///      last-ditch attempt for older iOS.
-  ///
-  /// Inner URL gets RFC-3986 percent-encoded so the outer URL's
-  /// query parser sees exactly one `?` (separating outer query from
-  /// outer path) and exactly one `=` per param. URLComponents alone
-  /// is NOT enough — its `.urlQueryAllowed` set permits `=`, `?`,
-  /// `&` and leaves them unescaped, which silently breaks the deep-
-  /// link parse (the inner URL's first `?s=...` gets promoted to an
-  /// outer query param). All log messages use the `%@` format
-  /// specifier with the URL passed as an argument so `printf`'s
-  /// percent-spec parser doesn't try to interpret the percent-encoded
-  /// characters in the URL.
-  @MainActor
-  private func openInMainApp(url: URL) async {
-    // 1. Custom URL scheme via extensionContext.open — the modern
-    //    sanctioned path.
-    if let target = buildTargetURL(scheme: "readest", host: "clip", inner: url) {
-      NSLog("[ReadestShare] trying custom scheme via extensionContext: %@", target.absoluteString)
-      if await openViaExtensionContext(target) {
-        NSLog("[ReadestShare] custom scheme open succeeded")
-        return
-      }
-      NSLog("[ReadestShare] custom scheme open failed")
-    }
+  // MARK: - Launch trick (Chrome iOS pattern, IMP-cast variant)
 
-    // 2. Universal Link via extensionContext.open.
-    if let target = buildTargetURL(
-      scheme: "https", host: "web.readest.com", path: "/clip", inner: url)
-    {
-      NSLog("[ReadestShare] trying universal link: %@", target.absoluteString)
-      if await openViaExtensionContext(target) {
-        NSLog("[ReadestShare] universal link open succeeded")
-        return
-      }
-      NSLog("[ReadestShare] universal link open failed")
-    }
-
-    // 3. Responder-chain — usually blocked on iOS 26 but tried for
-    //    completeness so older devices still get the handoff.
-    if let target = buildTargetURL(scheme: "readest", host: "clip", inner: url) {
-      NSLog("[ReadestShare] trying responder-chain: %@", target.absoluteString)
-      openViaResponderChain(target)
-    }
-  }
-
-  /// Build a target URL like `<scheme>://<host><path>?url=<inner>`.
-  /// Hand-encodes the inner URL against the RFC 3986 "unreserved" set
-  /// (alnum + `-._~`) so every URL-significant character — including
-  /// `?`, `&`, `=`, `:`, `/`, `#` — gets percent-encoded. See
-  /// `openInMainApp` for why URLComponents alone is insufficient.
-  private func buildTargetURL(scheme: String, host: String, path: String = "", inner: URL) -> URL?
-  {
+  /// Build `<scheme>://<host>?url=<percent-encoded-inner>`. The inner URL
+  /// is encoded against the RFC 3986 unreserved set so every URL-
+  /// significant character (`?`, `&`, `=`, `:`, `/`, `#`) is escaped and
+  /// the outer parser sees exactly one `?` and one `=`.
+  private func buildTargetURL(scheme: String, host: String, inner: URL) -> URL? {
     let unreserved = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
-    guard
-      let encoded = inner.absoluteString.addingPercentEncoding(withAllowedCharacters: unreserved)
+    guard let encoded = inner.absoluteString.addingPercentEncoding(withAllowedCharacters: unreserved)
     else { return nil }
-    return URL(string: "\(scheme)://\(host)\(path)?url=\(encoded)")
+    return URL(string: "\(scheme)://\(host)?url=\(encoded)")
   }
 
-  @MainActor
-  private func openViaExtensionContext(_ url: URL) async -> Bool {
-    await withCheckedContinuation { continuation in
-      guard let ctx = extensionContext else {
-        continuation.resume(returning: false)
-        return
-      }
-      ctx.open(url, completionHandler: { success in
-        continuation.resume(returning: success)
-      })
-    }
-  }
-
-  private func openViaResponderChain(_ url: URL) {
+  /// Walk the responder chain to find a responder that implements
+  /// `openURL:options:completionHandler:` (UIApplication), then call it
+  /// via an Objective-C IMP cast. The IMP-cast path is equivalent to
+  /// Chrome's NSInvocation pattern in `ios/chrome/common/extension_open_url.mm`
+  /// but works in pure Swift — we never name `UIApplication` so the
+  /// App Store extension symbol scanner doesn't reject the binary.
+  ///
+  /// `openURL:options:completionHandler:` (non-deprecated) is what
+  /// continues to work on iOS 26. The legacy `openURL:` selector logs
+  /// "BUG IN CLIENT OF UIKIT" and no-ops.
+  @discardableResult
+  private func openViaResponderChain(_ url: URL) -> Bool {
+    typealias OpenURLFn = @convention(c) (
+      AnyObject, Selector, URL, NSDictionary?, AnyObject?
+    ) -> Void
+    let selector = NSSelectorFromString("openURL:options:completionHandler:")
     var responder: UIResponder? = self
-    let selector = sel_registerName("openURL:")
     while let r = responder {
       if r.responds(to: selector) {
-        _ = r.perform(selector, with: url)
-        NSLog("[ReadestShare] responder-chain openURL: invoked on \(type(of: r))")
-        return
+        let target = r as AnyObject
+        let cls: AnyClass = object_getClass(target) ?? type(of: target)
+        guard let method = class_getInstanceMethod(cls, selector) else {
+          responder = r.next
+          continue
+        }
+        let imp = method_getImplementation(method)
+        let fn = unsafeBitCast(imp, to: OpenURLFn.self)
+        fn(target, selector, url, nil, nil)
+        NSLog("[ReadestShare] openURL invoked on \(cls) via IMP")
+        return true
       }
       responder = r.next
     }
-    NSLog("[ReadestShare] responder-chain found no responder for openURL:")
+    NSLog("[ReadestShare] no responder accepted openURL:options:completionHandler:")
+    return false
+  }
+}
+
+// MARK: - SaveOptionsViewController
+
+/// URL preview row + per-group radio list, with Cancel and "Save"
+/// in the nav bar. Mirrors the Zotero / Pocket save UX.
+private final class SaveOptionsViewController: UITableViewController {
+
+  private let url: URL
+  private let pageTitle: String?
+  private let groups: [AppGroupBridge.LibraryGroup]
+  // nil means "Default" (no group). Initial selection: nil.
+  private var selectedGroupId: String?
+  private let onCancel: () -> Void
+  private let onSave: (AppGroupBridge.LibraryGroup?) -> Void
+
+  init(
+    url: URL,
+    pageTitle: String?,
+    groups: [AppGroupBridge.LibraryGroup],
+    onCancel: @escaping () -> Void,
+    onSave: @escaping (AppGroupBridge.LibraryGroup?) -> Void
+  ) {
+    self.url = url
+    self.pageTitle = pageTitle
+    self.groups = groups
+    self.onCancel = onCancel
+    self.onSave = onSave
+    super.init(style: .insetGrouped)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    title = NSLocalizedString("Save to Readest", comment: "Share extension title")
+    // Both Cancel and Save are iOS system bar button items — UIKit
+    // localizes them automatically for every language Apple ships, so
+    // the extension doesn't carry its own .strings file for them.
+    navigationItem.leftBarButtonItem = UIBarButtonItem(
+      barButtonSystemItem: .cancel, target: self, action: #selector(cancelTapped))
+    navigationItem.rightBarButtonItem = UIBarButtonItem(
+      barButtonSystemItem: .save, target: self, action: #selector(saveTapped))
+    tableView.register(URLPreviewCell.self, forCellReuseIdentifier: URLPreviewCell.reuseId)
+    tableView.register(UITableViewCell.self, forCellReuseIdentifier: "groupCell")
+  }
+
+  @objc private func cancelTapped() { onCancel() }
+
+  @objc private func saveTapped() {
+    let selected = groups.first { $0.id == selectedGroupId }
+    onSave(selected)
+  }
+
+  // MARK: Table source
+
+  override func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
+  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    section == 0 ? 1 : groups.count + 1  // +1 for "Default"
+  }
+
+  override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int)
+    -> String?
+  {
+    section == 1 ? NSLocalizedString("GROUP", comment: "Group picker header") : nil
+  }
+
+  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
+    -> UITableViewCell
+  {
+    if indexPath.section == 0 {
+      let cell =
+        tableView.dequeueReusableCell(withIdentifier: URLPreviewCell.reuseId, for: indexPath)
+        as! URLPreviewCell
+      cell.configure(url: url, pageTitle: pageTitle)
+      cell.selectionStyle = .none
+      return cell
+    }
+    let cell = tableView.dequeueReusableCell(withIdentifier: "groupCell", for: indexPath)
+    let name: String
+    let isSelected: Bool
+    if indexPath.row == 0 {
+      // JS-supplied user-locale "Default" label (see AppGroupBridge).
+      // Falls back to English when the host hasn't synced yet — happens
+      // on the very first share before the app has been opened.
+      name = AppGroupBridge.readDefaultGroupName() ?? "Default"
+      isSelected = selectedGroupId == nil
+    } else {
+      let group = groups[indexPath.row - 1]
+      name = group.name
+      isSelected = selectedGroupId == group.id
+    }
+    cell.textLabel?.text = name
+    cell.accessoryType = isSelected ? .checkmark : .none
+    return cell
+  }
+
+  override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    tableView.deselectRow(at: indexPath, animated: true)
+    guard indexPath.section == 1 else { return }
+    selectedGroupId = indexPath.row == 0 ? nil : groups[indexPath.row - 1].id
+    tableView.reloadSections(IndexSet(integer: 1), with: .none)
+  }
+}
+
+// MARK: - URLPreviewCell
+
+private final class URLPreviewCell: UITableViewCell {
+  static let reuseId = "URLPreviewCell"
+
+  private let iconView = UIImageView()
+  private let titleLabel = UILabel()
+  private let hostLabel = UILabel()
+  private var faviconTask: URLSessionDataTask?
+
+  override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+    super.init(style: .default, reuseIdentifier: reuseIdentifier)
+    iconView.translatesAutoresizingMaskIntoConstraints = false
+    iconView.contentMode = .scaleAspectFit
+    iconView.clipsToBounds = true
+    iconView.layer.cornerRadius = 4
+    iconView.image = UIImage(systemName: "doc.text")
+    iconView.tintColor = .secondaryLabel
+
+    titleLabel.translatesAutoresizingMaskIntoConstraints = false
+    titleLabel.font = .preferredFont(forTextStyle: .body)
+    titleLabel.numberOfLines = 2
+
+    hostLabel.translatesAutoresizingMaskIntoConstraints = false
+    hostLabel.font = .preferredFont(forTextStyle: .footnote)
+    hostLabel.textColor = .secondaryLabel
+    hostLabel.numberOfLines = 1
+
+    contentView.addSubview(iconView)
+    contentView.addSubview(titleLabel)
+    contentView.addSubview(hostLabel)
+    NSLayoutConstraint.activate([
+      iconView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+      iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+      iconView.widthAnchor.constraint(equalToConstant: 40),
+      iconView.heightAnchor.constraint(equalToConstant: 40),
+
+      titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+      titleLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+      titleLabel.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
+
+      hostLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+      hostLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+      hostLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+      hostLabel.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor),
+    ])
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    faviconTask?.cancel()
+    faviconTask = nil
+    iconView.image = UIImage(systemName: "doc.text")
+    iconView.tintColor = .secondaryLabel
+  }
+
+  func configure(url: URL, pageTitle: String?) {
+    let host = url.host ?? url.absoluteString
+    titleLabel.text = pageTitle?.isEmpty == false ? pageTitle : url.absoluteString
+    hostLabel.text = host
+    loadFavicon(for: url)
+  }
+
+  /// Best-effort favicon at `https://<host>/favicon.ico` with a 2s
+  /// timeout. On any failure we keep the placeholder — never blocking
+  /// the user's save action on a network round-trip.
+  private func loadFavicon(for url: URL) {
+    guard let host = url.host, var components = URLComponents(string: "https://\(host)") else {
+      return
+    }
+    components.path = "/favicon.ico"
+    guard let iconURL = components.url else { return }
+    let config = URLSessionConfiguration.ephemeral
+    config.timeoutIntervalForRequest = 2
+    let session = URLSession(configuration: config)
+    let task = session.dataTask(with: iconURL) { [weak self] data, response, _ in
+      guard let data = data,
+        let http = response as? HTTPURLResponse,
+        (200..<300).contains(http.statusCode),
+        let image = UIImage(data: data)
+      else { return }
+      DispatchQueue.main.async {
+        self?.iconView.image = image
+        self?.iconView.tintColor = nil
+      }
+    }
+    task.resume()
+    faviconTask = task
   }
 }

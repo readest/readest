@@ -12,24 +12,45 @@ import { eventDispatcher } from '@/utils/event';
 import { parseAnnotationDeepLink } from '@/utils/deeplink';
 import { useTranslation } from './useTranslation';
 
+interface ClipOptions {
+  groupId?: string;
+  groupName?: string;
+}
+
+interface PendingShareSave {
+  url: string;
+  groupId?: string | null;
+  groupName?: string | null;
+  addedAt?: string;
+}
+
 /**
  * Handle "Share to Readest" article URLs from the OS share sheet
- * (Safari, Chrome, etc.). Consumes the `app-incoming-url` event published
- * by `useAppUrlIngress`, filters URLs that look like article links, and
- * runs them through the same clip → EPUB → import pipeline the `/send`
- * page uses.
+ * (Safari, Chrome, etc.). Two paths feed in:
+ *
+ *   1. Deep-link wake-up (`app-incoming-url` event published by
+ *      `useAppUrlIngress`) — filters URLs that look like article links
+ *      and runs them through the clip → EPUB → import pipeline.
+ *
+ *   2. iOS Share-Extension App Group queue — the extension writes
+ *      `{url, groupId?, groupName?}` payloads into the shared
+ *      NSUserDefaults at `group.com.bilingify.readest`, and the host
+ *      plugin (NativeBridgePlugin) drains them on foreground by calling
+ *      `window.__readestOnShareExtensionPending(saves)`. Same ingest
+ *      pipeline, but the chosen library group is preserved.
+ *
+ * On iOS we also expose `window.__readestGetGroups()` so the
+ * Share-Extension picker can show up-to-date library groups, and we
+ * post a `{type:'ready'}` to the WKScriptMessageHandler the plugin
+ * registered, so the cold-start drain happens even when the extension
+ * woke the app up before this hook had mounted.
  *
  * Filter rules — only act on URLs that are:
  *   - http(s) (not file://, content://, readest://, blob:, data:)
- *   - NOT an annotation deep link (those go to useOpenAnnotationLink and
- *     would otherwise be double-handled)
+ *   - NOT an annotation deep link (those go to useOpenAnnotationLink)
  *
  * Failures surface as toasts. Successful clips show "Saving article…"
  * then "Saved to your library." once `ingestFile` completes.
- *
- * Mount this hook alongside `useAppUrlIngress` (same places as
- * `useOpenWithBooks` and `useOpenAnnotationLink`) so the ingress
- * dispatcher is running when URLs arrive.
  */
 export function useClipUrlIngress() {
   const _ = useTranslation();
@@ -38,7 +59,7 @@ export function useClipUrlIngress() {
   const inflight = useRef<Set<string>>(new Set());
 
   const clipAndImport = useCallback(
-    async (url: string) => {
+    async (url: string, options: ClipOptions = {}) => {
       if (!appService) return;
       if (inflight.current.has(url)) return;
       inflight.current.add(url);
@@ -64,6 +85,8 @@ export function useClipUrlIngress() {
         if (!ingested) {
           throw new Error('Import produced no book');
         }
+        if (options.groupId) ingested.groupId = options.groupId;
+        if (options.groupName) ingested.groupName = options.groupName;
         await useLibraryStore.getState().updateBooks(envConfig, [ingested]);
         eventDispatcher.dispatch('toast', {
           type: 'success',
@@ -91,6 +114,7 @@ export function useClipUrlIngress() {
     [_, appService, envConfig, user],
   );
 
+  // Deep-link path (existing).
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
 
@@ -136,6 +160,69 @@ export function useClipUrlIngress() {
 
     return () => {
       eventDispatcher.off('app-incoming-url', onIncoming);
+    };
+  }, [appService, clipAndImport]);
+
+  // iOS Share-Extension App Group bridge.
+  useEffect(() => {
+    if (!isTauriAppPlatform() || !appService) return;
+    if (typeof window === 'undefined') return;
+
+    const w = window as unknown as {
+      __readestGetGroups?: () => {
+        groups: { id: string; name: string }[];
+        defaultGroupName: string;
+      };
+      __readestOnShareExtensionPending?: (saves: PendingShareSave[]) => boolean;
+      webkit?: {
+        messageHandlers?: {
+          readestShareBridge?: { postMessage: (msg: { type: string }) => void };
+        };
+      };
+    };
+
+    // The Share Extension is a native UIKit module and can't read the web
+    // app's i18next catalogue. We pass it the user-locale-translated
+    // string for "Default" (the no-group entry) alongside the groups —
+    // saves maintaining a parallel iOS .strings file just for one phrase.
+    w.__readestGetGroups = () => {
+      try {
+        return {
+          groups: useLibraryStore.getState().getGroups(),
+          defaultGroupName: _('Default'),
+        };
+      } catch {
+        return { groups: [], defaultGroupName: 'Default' };
+      }
+    };
+
+    w.__readestOnShareExtensionPending = (saves) => {
+      if (!Array.isArray(saves)) return false;
+      for (const save of saves) {
+        if (!save || typeof save.url !== 'string') continue;
+        void clipAndImport(save.url, {
+          groupId: save.groupId ?? undefined,
+          groupName: save.groupName ?? undefined,
+        });
+      }
+      return true;
+    };
+
+    // Tell the plugin we're mounted so it can drain any pending saves
+    // queued before the hook was alive (cold-start path).
+    try {
+      w.webkit?.messageHandlers?.readestShareBridge?.postMessage({ type: 'ready' });
+    } catch {
+      // Non-iOS or handler not registered — no-op.
+    }
+
+    return () => {
+      const cleanup = window as unknown as {
+        __readestGetGroups?: unknown;
+        __readestOnShareExtensionPending?: unknown;
+      };
+      delete cleanup.__readestGetGroups;
+      delete cleanup.__readestOnShareExtensionPending;
     };
   }, [appService, clipAndImport]);
 }
