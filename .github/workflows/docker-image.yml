@@ -130,8 +130,10 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/readest
           tags: |
             type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
-            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
             type=sha,prefix=sha-
 
       - name: Extract image metadata (GHCR + Docker Hub)
@@ -144,8 +146,10 @@ jobs:
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/readest
           tags: |
             type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
-            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
             type=sha,prefix=sha-
 
       - name: Create manifest list and push (GHCR only)
