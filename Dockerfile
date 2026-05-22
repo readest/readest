@@ -2,7 +2,7 @@ FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@10.29.3 --activate
+RUN corepack prepare pnpm@11.1.1 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/readest-app/package.json ./apps/readest-app/
@@ -15,7 +15,7 @@ FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@10.29.3 --activate
+RUN corepack prepare pnpm@11.1.1 --activate
 WORKDIR /app
 COPY --from=dependencies /app /app
 COPY . .
@@ -27,7 +27,7 @@ FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@10.29.3 --activate
+RUN corepack prepare pnpm@11.1.1 --activate
 WORKDIR /app
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -48,7 +48,7 @@ FROM docker.io/library/node:24-slim@sha256:24dc26ef1e3c3690f27ebc4136c9c186c3133
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare pnpm@10.29.3 --activate
+RUN corepack prepare pnpm@11.1.1 --activate
 WORKDIR /app
 # Only copy what next start needs — omit source, Rust, tests, patches, etc.
 COPY --from=build /app/package.json /app/package.json
