@@ -565,6 +565,10 @@ input[type='range'].slider-input {
 }
 
 [data-eink='true'] button,
+[data-eink='true'] .btn {
+  color: theme('colors.base-content') !important;
+}
+
 /* btn-contrast — a solid, high-contrast CTA: base-content background with a
    base-100 label. Theme-neutral (unlike the colored btn-primary); fits the
    minimalist themes and is already e-ink-correct. */
@@ -575,10 +579,6 @@ input[type='range'].slider-input {
 }
 .btn-contrast:hover {
   opacity: 0.9;
-}
-
-[data-eink='true'] .btn {
-  color: theme('colors.base-content') !important;
 }
 
 [data-eink='true'] .btn-primary,
