@@ -1493,5 +1493,8 @@
   "Saving to Readest": "Đang lưu vào Readest",
   "Loading article…": "Đang tải bài viết…",
   "Capturing article…": "Đang chụp bài viết…",
-  "Saved to Readest": "Đã lưu vào Readest"
+  "Saved to Readest": "Đã lưu vào Readest",
+  "Apply to every occurrence in the book": "Áp dụng cho mọi lần xuất hiện trong sách",
+  "Saving article from share…": "Đang lưu bài viết được chia sẻ…",
+  "Saved “{{title}}” to your library.": "Đã lưu \"{{title}}\" vào thư viện của bạn."
 }

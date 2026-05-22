@@ -1521,5 +1521,8 @@
   "Saving to Readest": "در حال ذخیره در Readest",
   "Loading article…": "در حال بارگذاری مقاله…",
   "Capturing article…": "در حال دریافت مقاله…",
-  "Saved to Readest": "در Readest ذخیره شد"
+  "Saved to Readest": "در Readest ذخیره شد",
+  "Apply to every occurrence in the book": "اعمال در همه موارد در کتاب",
+  "Saving article from share…": "در حال ذخیره مقاله از اشتراک‌گذاری…",
+  "Saved “{{title}}” to your library.": "«{{title}}» در کتابخانه شما ذخیره شد."
 }

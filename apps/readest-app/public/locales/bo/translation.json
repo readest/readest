@@ -1493,5 +1493,8 @@
   "Saving to Readest": "Readest དུ་ཉར་བཞིན་པ་",
   "Loading article…": "རྩོམ་ཡིག་སྦྱར་བཞིན་པ་…",
   "Capturing article…": "རྩོམ་ཡིག་འཛིན་བཞིན་པ་…",
-  "Saved to Readest": "Readest དུ་ཉར་ཟིན།"
+  "Saved to Readest": "Readest དུ་ཉར་ཟིན།",
+  "Apply to every occurrence in the book": "དེབ་ནང་གི་སྐབས་ཐམས་ཅད་ལ་སྦྱར།",
+  "Saving article from share…": "མཉམ་སྤྱོད་ནས་ཡི་གེ་ཉར་ཚགས་བྱེད་བཞིན་པ…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་ཉར་ཚགས་བྱས་ཟིན།"
 }

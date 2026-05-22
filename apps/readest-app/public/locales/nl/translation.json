@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Opslaan in Readest",
   "Loading article…": "Artikel laden…",
   "Capturing article…": "Artikel vastleggen…",
-  "Saved to Readest": "Opgeslagen in Readest"
+  "Saved to Readest": "Opgeslagen in Readest",
+  "Apply to every occurrence in the book": "Toepassen op elk voorkomen in het boek",
+  "Saving article from share…": "Gedeeld artikel opslaan…",
+  "Saved “{{title}}” to your library.": "“{{title}}” is opgeslagen in je bibliotheek."
 }

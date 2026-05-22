@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest'ga saqlanmoqda",
   "Loading article…": "Maqola yuklanmoqda…",
   "Capturing article…": "Maqola olinmoqda…",
-  "Saved to Readest": "Readest'ga saqlandi"
+  "Saved to Readest": "Readest'ga saqlandi",
+  "Apply to every occurrence in the book": "Kitobdagi har bir hodisaga qoʻllang",
+  "Saving article from share…": "Ulashilgan maqola saqlanmoqda…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" kutubxonangizga saqlandi."
 }

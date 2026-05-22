@@ -1493,5 +1493,8 @@
   "Saving to Readest": "Readest에 저장 중",
   "Loading article…": "기사 로드 중…",
   "Capturing article…": "기사 캡처 중…",
-  "Saved to Readest": "Readest에 저장됨"
+  "Saved to Readest": "Readest에 저장됨",
+  "Apply to every occurrence in the book": "책의 모든 발생 위치에 적용",
+  "Saving article from share…": "공유된 기사 저장 중…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\"을(를) 라이브러리에 저장했습니다."
 }

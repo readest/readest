@@ -1633,5 +1633,8 @@
   "Saving to Readest": "جارٍ الحفظ في Readest",
   "Loading article…": "جارٍ تحميل المقالة…",
   "Capturing article…": "جارٍ التقاط المقالة…",
-  "Saved to Readest": "تم الحفظ في Readest"
+  "Saved to Readest": "تم الحفظ في Readest",
+  "Apply to every occurrence in the book": "تطبيق على كل تواجد في الكتاب",
+  "Saving article from share…": "جارٍ حفظ المقالة من المشاركة…",
+  "Saved “{{title}}” to your library.": "تم حفظ \"{{title}}\" في مكتبتك."
 }

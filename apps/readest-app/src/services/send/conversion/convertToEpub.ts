@@ -1,10 +1,16 @@
-import mammoth from 'mammoth';
 import { Readability } from '@mozilla/readability';
-import { TxtToEpubConverter } from '@/utils/txt';
 import { detectLanguage } from '@/utils/lang';
+// `mammoth` (DOCX → HTML) and `TxtToEpubConverter` are dynamically imported
+// inside their respective `case` bodies in `convertToEpub`. They're heavy
+// (≈500 KB combined) and only needed for the docx/txt input kinds — the
+// browser extension imports `convertPageToEpub` and never reaches those
+// branches, so dynamic imports let webpack code-split them out of the
+// extension bundle entirely.
 import { sanitizeHtml, sanitizeForParsing } from './sanitizeHtml';
 import { buildEpub } from './buildEpub';
 import { bundleAssets } from './assetBundler';
+import { generateCoverSvg } from './coverGenerator';
+import { fetchAuthorImage, fetchBestFavicon } from './faviconFetcher';
 import { findSiteRule, type SiteRule } from './siteRules';
 import { extractHeadings } from './toc';
 import { ConversionError } from './types';
@@ -48,7 +54,7 @@ function stableIdentifier(content: string): string {
   for (let i = 0; i < content.length; i++) {
     h = ((h << 5) + h + content.charCodeAt(i)) >>> 0;
   }
-  return `send-to-readest:${h.toString(16)}`;
+  return `readest:${h.toString(16)}`;
 }
 
 function stripTags(html: string): string {
@@ -96,12 +102,22 @@ function composeArticleContent(title: string, byline: string, body: string): str
 
 /** Assemble an EPUB from a single block of sanitized HTML (optionally with
  *  pre-fetched image resources to embed). Extracts an in-chapter heading
- *  TOC so the EPUB reader's sidebar shows the article's sections. */
+ *  TOC so the EPUB reader's sidebar shows the article's sections.
+ *
+ *  `identityKey` is the input the EPUB's `dc:identifier` is derived from.
+ *  Callers choose what to feed it:
+ *   - Page / article clips pass the canonical URL — the identifier then
+ *     stays stable across edits of the same article, so a re-clip after
+ *     the publisher tweaks a paragraph is recognised as the same work.
+ *   - Local file inputs (docx / html / rtf) pass the sanitized chapter
+ *     HTML — there's no URL, and content is the only stable handle. */
 async function htmlToBook(
   rawHtml: string,
   title: string,
   author: string,
+  identityKey: string,
   images: EpubImage[] = [],
+  coverImage?: EpubImage,
 ): Promise<ConvertedBook> {
   // Assign stable ids to headings BEFORE sanitization so the strict
   // `sanitizeHtml` step (which now allows `id`) preserves them — those
@@ -127,10 +143,11 @@ async function htmlToBook(
       title,
       author,
       language,
-      identifier: stableIdentifier(html),
+      identifier: stableIdentifier(identityKey),
       toc,
     },
     images,
+    coverImage,
   );
   const file = new File([blob], `${safeFileName(title)}.epub`, {
     type: 'application/epub+zip',
@@ -217,6 +234,108 @@ function extractArticleFallback(rawHtml: string, minTextChars: number): string |
   return bestText >= minTextChars ? bestHtml : null;
 }
 
+/**
+ * Pick the site name for the synthetic cover. Tries Open Graph + Twitter
+ * metadata first (most reliable; publishers set these for previews), falls
+ * through to `<meta name="application-name">`, then degrades to the URL's
+ * hostname stripped of the leading `www.` so e.g. `https://nytimes.com/foo`
+ * yields "nytimes.com".
+ */
+function extractSiteName(doc: Document, pageUrl: string): string {
+  const metaSelectors = [
+    'meta[property="og:site_name"]',
+    'meta[name="og:site_name"]',
+    'meta[name="application-name"]',
+    'meta[name="apple-mobile-web-app-title"]',
+    'meta[property="twitter:site"]',
+  ];
+  for (const sel of metaSelectors) {
+    const value = doc.querySelector(sel)?.getAttribute('content')?.trim();
+    if (value) return value;
+  }
+  try {
+    return new URL(pageUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Build a synthetic cover for a clipped article. Parses the page HTML once
+ * to find the site name and favicon, then hands those off to
+ * `generateCoverSvg`. Returns `undefined` only when the cover can't be
+ * generated at all (e.g. the parser threw) — the favicon-fetch failing is
+ * already handled by the cover generator's initial-letter fallback.
+ */
+async function buildArticleCover(
+  pageHtml: string,
+  pageUrl: string,
+  title: string,
+  author: string,
+  rule: SiteRule | null,
+): Promise<EpubImage | undefined> {
+  let doc: Document;
+  try {
+    doc = new DOMParser().parseFromString(sanitizeForParsing(pageHtml), 'text/html');
+  } catch {
+    return generateCoverSvg({ title, author, siteName: hostnameFallback(pageUrl) });
+  }
+  const siteName = extractSiteName(doc, pageUrl);
+
+  // Prefer an author profile image (richer than a site-wide favicon).
+  // When the site rule exposes an `authorImage` selector, resolve the URL
+  // and fetch it. Falls through to the favicon on any failure.
+  let authorImage: { bytes: ArrayBuffer; mime: string } | undefined;
+  if (rule?.authorImage) {
+    const url = pickImageUrlFromSelector(doc, rule.authorImage, pageUrl);
+    if (url) {
+      authorImage = (await fetchAuthorImage(url, pageUrl).catch(() => null)) ?? undefined;
+    }
+  }
+
+  // Favicon is only fetched when we don't already have an author image —
+  // saves a wasted HTTP round-trip on WeChat (and any other rule that
+  // sets `authorImage`).
+  const favicon = authorImage
+    ? undefined
+    : ((await fetchBestFavicon(doc, pageUrl).catch(() => null)) ?? undefined);
+
+  return generateCoverSvg({ title, author, siteName, authorImage, favicon });
+}
+
+/** Walk the rule's `authorImage` selector list and return the first usable
+ *  `src` or `data-src` URL, resolved against the page URL. */
+function pickImageUrlFromSelector(doc: Document, selector: string, pageUrl: string): string | null {
+  let els: NodeListOf<Element>;
+  try {
+    els = doc.querySelectorAll(selector);
+  } catch {
+    return null;
+  }
+  for (const el of Array.from(els)) {
+    const raw =
+      el.getAttribute('src') ||
+      el.getAttribute('data-src') ||
+      el.getAttribute('data-original') ||
+      el.getAttribute('href');
+    if (!raw) continue;
+    try {
+      return new URL(raw, pageUrl).toString();
+    } catch {
+      // unparseable href — try the next element
+    }
+  }
+  return null;
+}
+
+function hostnameFallback(pageUrl: string): string {
+  try {
+    return new URL(pageUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
 /** Pull `<title>` / first `<h1>` out of a full HTML document. */
 function extractHtmlTitle(html: string, fallback: string): string {
   try {
@@ -248,6 +367,120 @@ function baseName(fileName: string | undefined, fallback: string): string {
 }
 
 /**
+ * Convert a single web page (rendered HTML + URL) into a self-contained
+ * EPUB — Readability extraction, per-site rule fast-paths, inlined images,
+ * cover, headings-as-TOC. Shared between every "self-contained page clip"
+ * caller:
+ *
+ *   - The Tauri desktop / mobile `/send` URL field (Tauri-only path).
+ *   - The browser extension's service worker (`extensions/send-to-readest`).
+ *   - Future: any other channel that captures the rendered DOM and wants
+ *     the same EPUB out the other side.
+ *
+ * Centralising it here is the only way to guarantee that the same URL
+ * produces byte-identical EPUBs across desktop, mobile, and extension —
+ * which is what the import-time hash dedup relies on.
+ *
+ * Only valid from a CORS-free caller (Tauri webview or browser-extension
+ * service worker with broad `host_permissions`). A plain web page hitting
+ * this would fail on the image fetches.
+ */
+export async function convertPageToEpub(html: string, url: string): Promise<ConvertedBook> {
+  console.log('[clip/page] input', {
+    url,
+    html_bytes: html.length,
+  });
+
+  // Fast path: per-site rule. Skips Readability entirely on sites we know
+  // it mis-scores. Falls through if the rule's content selector matches
+  // nothing or the extracted text is below the quality floor.
+  const rule = findSiteRule(url);
+  if (rule) {
+    const ruleResult = extractWithSiteRule(html, rule);
+    const ruleText = ruleResult ? stripTags(ruleResult.content) : '';
+    console.log('[clip/page] site rule', {
+      name: rule.name,
+      matched: !!ruleResult,
+      text_chars: ruleText.length,
+      title: ruleResult?.title || null,
+    });
+    if (ruleResult && ruleText.length >= 400) {
+      const title = ruleResult.title || extractHtmlTitle(html, url);
+      const byline = ruleResult.byline || '';
+      const bundle = await bundleAssets(ruleResult.content, url);
+      const cover = await buildArticleCover(html, url, title, byline, rule);
+      return htmlToBook(
+        composeArticleContent(title, byline, bundle.html),
+        title,
+        byline,
+        url,
+        bundle.images,
+        cover,
+      );
+    }
+  }
+
+  let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
+  try {
+    const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
+    parsed = new Readability(doc).parse();
+  } catch (err) {
+    console.warn('[clip/page] readability threw', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw new ConversionError(`Could not extract article: ${String(err)}`, 'parse_failed');
+  }
+  if (!parsed?.content) {
+    console.warn('[clip/page] readability returned no content');
+    throw new ConversionError('No readable article found at the URL', 'parse_failed');
+  }
+  let articleHtml = parsed.content;
+  let contentText = stripTags(articleHtml);
+  console.log('[clip/page] readability', {
+    title: parsed.title || null,
+    byline: parsed.byline || null,
+    content_chars: articleHtml.length,
+    text_chars: contentText.length,
+  });
+  // Readability sometimes scores the wrong container on sites with custom
+  // markup (e.g. an article body wrapped in a non-semantic div revealed
+  // by JS). When the extracted text is tiny but the page HTML is
+  // substantial, try a known-selector fallback before giving up.
+  const QUALITY_FLOOR = 400;
+  if (contentText.length < QUALITY_FLOOR && html.length > 50_000) {
+    const fallback = extractArticleFallback(html, QUALITY_FLOOR);
+    if (fallback) {
+      articleHtml = fallback;
+      contentText = stripTags(articleHtml);
+      console.log('[clip/page] fallback selector picked up the article', {
+        text_chars: contentText.length,
+      });
+    }
+  }
+  // Bot-detection screens, paywall stubs and "please enable JavaScript"
+  // pages all slip past Readability AND the selector fallback with a
+  // tiny scrap of text. Refuse to import them — never save a junk EPUB.
+  if (contentText.length < QUALITY_FLOOR) {
+    throw new ConversionError(
+      'Could not read this page — it looks like a verification screen or a login wall. Open it in a browser first.',
+      'parse_failed',
+    );
+  }
+  const title = parsed.title?.trim() || extractHtmlTitle(html, url);
+  const byline = parsed.byline?.trim() || '';
+  const bundle = await bundleAssets(articleHtml, url);
+  const cover = await buildArticleCover(html, url, title, byline, rule);
+  return htmlToBook(
+    composeArticleContent(title, byline, bundle.html),
+    title,
+    byline,
+    url,
+    bundle.images,
+    cover,
+  );
+}
+
+/**
  * Convert a document Readest cannot open natively into an EPUB. Runs entirely
  * client-side (browser or Tauri webview) — meant to be called inside a Web
  * Worker so the heavy parsing never blocks the UI thread.
@@ -255,6 +488,7 @@ function baseName(fileName: string | undefined, fallback: string): string {
 export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook> {
   switch (input.kind) {
     case 'txt': {
+      const { TxtToEpubConverter } = await import('@/utils/txt');
       const result = await new TxtToEpubConverter().convert({ file: input.file });
       return { file: result.file, title: result.bookTitle, author: '' };
     }
@@ -264,17 +498,19 @@ export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook>
       }
       let html: string;
       try {
+        const mammoth = (await import('mammoth')).default;
         const result = await mammoth.convertToHtml({ arrayBuffer: input.bytes });
         html = result.value;
       } catch (err) {
         throw new ConversionError(`Could not parse .docx: ${String(err)}`, 'parse_failed');
       }
-      return htmlToBook(html, baseName(input.fileName, 'Document'), '');
+      // Local files have no URL — hash their content for the identifier.
+      return htmlToBook(html, baseName(input.fileName, 'Document'), '', html);
     }
     case 'html': {
       const raw = new TextDecoder('utf-8').decode(input.bytes);
       const title = extractHtmlTitle(raw, baseName(input.fileName, 'Document'));
-      return htmlToBook(raw, title, '');
+      return htmlToBook(raw, title, '', raw);
     }
     case 'rtf': {
       const rtf = new TextDecoder('utf-8').decode(input.bytes);
@@ -286,7 +522,7 @@ export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook>
         .split(/\n+/)
         .map((line) => `<p>${line.replace(/[<>&]/g, ' ').trim()}</p>`)
         .join('');
-      return htmlToBook(html, baseName(input.fileName, 'Document'), '');
+      return htmlToBook(html, baseName(input.fileName, 'Document'), '', html);
     }
     case 'article': {
       let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
@@ -301,98 +537,24 @@ export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook>
       }
       const title = parsed.title?.trim() || extractHtmlTitle(input.html, input.url);
       const byline = parsed.byline?.trim() || '';
-      return htmlToBook(composeArticleContent(title, byline, parsed.content), title, byline);
-    }
-    case 'page': {
-      // Same as `article`, but fetch every referenced image and inline it so
-      // the EPUB is fully offline-readable. Only valid from a CORS-free
-      // caller (Tauri webview or extension content script).
-      console.log('[clip/page] input', {
-        url: input.url,
-        html_bytes: input.html.length,
-      });
-
-      // Fast path: per-site rule. Skips Readability entirely on sites we
-      // know it mis-scores. Falls through if the rule's content selector
-      // matches nothing or the extracted text is below the floor.
-      const rule = findSiteRule(input.url);
-      if (rule) {
-        const ruleResult = extractWithSiteRule(input.html, rule);
-        const ruleText = ruleResult ? stripTags(ruleResult.content) : '';
-        console.log('[clip/page] site rule', {
-          name: rule.name,
-          matched: !!ruleResult,
-          text_chars: ruleText.length,
-          title: ruleResult?.title || null,
-        });
-        if (ruleResult && ruleText.length >= 400) {
-          const title = ruleResult.title || extractHtmlTitle(input.html, input.url);
-          const byline = ruleResult.byline || '';
-          const bundle = await bundleAssets(ruleResult.content, input.url);
-          return htmlToBook(
-            composeArticleContent(title, byline, bundle.html),
-            title,
-            byline,
-            bundle.images,
-          );
-        }
-      }
-
-      let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
-      try {
-        const doc = new DOMParser().parseFromString(sanitizeForParsing(input.html), 'text/html');
-        parsed = new Readability(doc).parse();
-      } catch (err) {
-        console.warn('[clip/page] readability threw', {
-          error: err instanceof Error ? err.message : String(err),
-        });
-        throw new ConversionError(`Could not extract article: ${String(err)}`, 'parse_failed');
-      }
-      if (!parsed?.content) {
-        console.warn('[clip/page] readability returned no content');
-        throw new ConversionError('No readable article found at the URL', 'parse_failed');
-      }
-      let articleHtml = parsed.content;
-      let contentText = stripTags(articleHtml);
-      console.log('[clip/page] readability', {
-        title: parsed.title || null,
-        byline: parsed.byline || null,
-        content_chars: articleHtml.length,
-        text_chars: contentText.length,
-      });
-      // Readability sometimes scores the wrong container on sites with custom
-      // markup (e.g. an article body wrapped in a non-semantic div revealed
-      // by JS). When the extracted text is tiny but the page HTML is
-      // substantial, try a known-selector fallback before giving up.
-      const QUALITY_FLOOR = 400;
-      if (contentText.length < QUALITY_FLOOR && input.html.length > 50_000) {
-        const fallback = extractArticleFallback(input.html, QUALITY_FLOOR);
-        if (fallback) {
-          articleHtml = fallback;
-          contentText = stripTags(articleHtml);
-          console.log('[clip/page] fallback selector picked up the article', {
-            text_chars: contentText.length,
-          });
-        }
-      }
-      // Bot-detection screens, paywall stubs and "please enable JavaScript"
-      // pages all slip past Readability AND the selector fallback with a
-      // tiny scrap of text. Refuse to import them — never save a junk EPUB.
-      if (contentText.length < QUALITY_FLOOR) {
-        throw new ConversionError(
-          'Could not read this page — it looks like a verification screen or a login wall. Open it in a browser first, or wait for the upcoming browser extension.',
-          'parse_failed',
-        );
-      }
-      const title = parsed.title?.trim() || extractHtmlTitle(input.html, input.url);
-      const byline = parsed.byline?.trim() || '';
-      const bundle = await bundleAssets(articleHtml, input.url);
-      return htmlToBook(
-        composeArticleContent(title, byline, bundle.html),
+      const cover = await buildArticleCover(
+        input.html,
+        input.url,
         title,
         byline,
-        bundle.images,
+        findSiteRule(input.url),
       );
+      return htmlToBook(
+        composeArticleContent(title, byline, parsed.content),
+        title,
+        byline,
+        input.url,
+        [],
+        cover,
+      );
+    }
+    case 'page': {
+      return convertPageToEpub(input.html, input.url);
     }
     default: {
       throw new ConversionError(

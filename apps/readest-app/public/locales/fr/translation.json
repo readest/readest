@@ -1549,5 +1549,8 @@
   "Saving to Readest": "Enregistrement dans Readest",
   "Loading article…": "Chargement de l'article…",
   "Capturing article…": "Capture de l'article…",
-  "Saved to Readest": "Enregistré dans Readest"
+  "Saved to Readest": "Enregistré dans Readest",
+  "Apply to every occurrence in the book": "Appliquer à chaque occurrence dans le livre",
+  "Saving article from share…": "Enregistrement de l’article partagé…",
+  "Saved “{{title}}” to your library.": "« {{title}} » a été enregistré dans votre bibliothèque."
 }

@@ -1549,5 +1549,8 @@
   "Saving to Readest": "Se salvează în Readest",
   "Loading article…": "Se încarcă articolul…",
   "Capturing article…": "Se capturează articolul…",
-  "Saved to Readest": "Salvat în Readest"
+  "Saved to Readest": "Salvat în Readest",
+  "Apply to every occurrence in the book": "Aplică la fiecare apariție din carte",
+  "Saving article from share…": "Se salvează articolul partajat…",
+  "Saved “{{title}}” to your library.": "„{{title}}” a fost salvat în biblioteca ta."
 }

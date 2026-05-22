@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest-এ সংরক্ষণ করা হচ্ছে",
   "Loading article…": "নিবন্ধ লোড হচ্ছে…",
   "Capturing article…": "নিবন্ধ ক্যাপচার করা হচ্ছে…",
-  "Saved to Readest": "Readest-এ সংরক্ষিত"
+  "Saved to Readest": "Readest-এ সংরক্ষিত",
+  "Apply to every occurrence in the book": "বইয়ের প্রতিটি উপস্থিতিতে প্রয়োগ করুন",
+  "Saving article from share…": "শেয়ার থেকে নিবন্ধ সংরক্ষণ করা হচ্ছে…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" আপনার লাইব্রেরিতে সংরক্ষিত হয়েছে।"
 }

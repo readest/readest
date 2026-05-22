@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest-இல் சேமிக்கப்படுகிறது",
   "Loading article…": "கட்டுரை ஏற்றப்படுகிறது…",
   "Capturing article…": "கட்டுரை பெறப்படுகிறது…",
-  "Saved to Readest": "Readest-இல் சேமிக்கப்பட்டது"
+  "Saved to Readest": "Readest-இல் சேமிக்கப்பட்டது",
+  "Apply to every occurrence in the book": "புத்தகத்தில் ஒவ்வொரு நிகழ்வுக்கும் பயன்படுத்து",
+  "Saving article from share…": "பகிர்விலிருந்து கட்டுரையை சேமிக்கிறது…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" உங்கள் நூலகத்தில் சேமிக்கப்பட்டது."
 }

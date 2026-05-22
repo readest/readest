@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Αποθήκευση στο Readest",
   "Loading article…": "Φόρτωση άρθρου…",
   "Capturing article…": "Λήψη άρθρου…",
-  "Saved to Readest": "Αποθηκεύτηκε στο Readest"
+  "Saved to Readest": "Αποθηκεύτηκε στο Readest",
+  "Apply to every occurrence in the book": "Εφαρμογή σε κάθε εμφάνιση στο βιβλίο",
+  "Saving article from share…": "Αποθήκευση άρθρου από κοινοποίηση…",
+  "Saved “{{title}}” to your library.": "Το «{{title}}» αποθηκεύτηκε στη βιβλιοθήκη σας."
 }

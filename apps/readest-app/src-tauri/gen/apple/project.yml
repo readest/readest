@@ -120,6 +120,11 @@ targets:
   ShareExtension:
     type: app-extension
     platform: iOS
+    # The Share Extension uses iOS-system-localized bar button items
+    # (`barButtonSystemItem: .cancel` / `.save`) plus a JS-supplied
+    # "Default" group name (passed through the App Group), so the target
+    # carries no per-locale `.strings` files — no `.lproj` directories
+    # to wire up.
     sources:
       - path: ShareExtension
     info:

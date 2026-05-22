@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Mentés a Readestbe",
   "Loading article…": "Cikk betöltése…",
   "Capturing article…": "Cikk rögzítése…",
-  "Saved to Readest": "Mentve a Readestbe"
+  "Saved to Readest": "Mentve a Readestbe",
+  "Apply to every occurrence in the book": "Alkalmazás a könyv minden előfordulására",
+  "Saving article from share…": "Megosztott cikk mentése…",
+  "Saved “{{title}}” to your library.": "A(z) „{{title}}” mentve a könyvtáradba."
 }

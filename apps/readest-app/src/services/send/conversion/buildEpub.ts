@@ -41,11 +41,17 @@ pre { white-space: pre-wrap; background: #f5f5f5; padding: 0.6em 0.8em; border-r
  * `@zip.js/zip.js` assembly pattern with `TxtToEpubConverter` — mimetype first
  * and uncompressed, `container.xml`, `content.opf`, `toc.ncx`, zeroed
  * timestamps.
+ *
+ * When `coverImage` is supplied the OPF gets a `<meta name="cover"
+ * content="cover-image"/>` plus a `<item id="cover-image" ...>` in the
+ * manifest. foliate-js detects covers via that meta tag (see
+ * `packages/foliate-js/epub.js`), so EPUB 2.0 style is enough.
  */
 export async function buildEpub(
   chapters: EpubChapter[],
   metadata: EpubBuildMetadata,
   images: EpubImage[] = [],
+  coverImage?: EpubImage,
 ): Promise<Blob> {
   if (chapters.length === 0) {
     throw new Error('buildEpub: no chapters');
@@ -112,6 +118,14 @@ export async function buildEpub(
     );
   }
 
+  if (coverImage) {
+    await zipWriter.add(
+      `OEBPS/${coverImage.path}`,
+      new Uint8ArrayReader(new Uint8Array(coverImage.bytes)),
+      zipWriteOptions,
+    );
+  }
+
   for (let i = 0; i < chapters.length; i++) {
     const chapter = chapters[i]!;
     const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -138,7 +152,17 @@ export async function buildEpub(
         `<item id="img${i + 1}" href="OEBPS/${escapeXml(image.path)}" media-type="${escapeXml(image.mime)}"/>`,
     )
     .join('\n    ');
+  const coverManifest = coverImage
+    ? `<item id="cover-image" href="OEBPS/${escapeXml(coverImage.path)}" media-type="${escapeXml(coverImage.mime)}"/>`
+    : '';
+  const coverMeta = coverImage ? `<meta name="cover" content="cover-image"/>` : '';
   const spine = chapters.map((_, i) => `<itemref idref="chap${i + 1}"/>`).join('\n    ');
+
+  // Only include manifest lines that have content — empty lines would leave
+  // stray blank entries in the OPF and trip strict parsers.
+  const manifestLines = [manifest, imageManifest, coverManifest]
+    .filter((line) => line.length > 0)
+    .join('\n    ');
 
   const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="2.0">
@@ -147,10 +171,10 @@ export async function buildEpub(
     <dc:language>${escapeXml(language)}</dc:language>
     <dc:creator>${escapeXml(author)}</dc:creator>
     <dc:identifier id="book-id">${escapeXml(identifier)}</dc:identifier>
+    ${coverMeta}
   </metadata>
   <manifest>
-    ${manifest}
-    ${imageManifest}
+    ${manifestLines}
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item id="css" href="style.css" media-type="text/css"/>
   </manifest>

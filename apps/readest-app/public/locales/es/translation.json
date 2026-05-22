@@ -1549,5 +1549,8 @@
   "Saving to Readest": "Guardando en Readest",
   "Loading article…": "Cargando artículo…",
   "Capturing article…": "Capturando artículo…",
-  "Saved to Readest": "Guardado en Readest"
+  "Saved to Readest": "Guardado en Readest",
+  "Apply to every occurrence in the book": "Aplicar a cada aparición en el libro",
+  "Saving article from share…": "Guardando artículo compartido…",
+  "Saved “{{title}}” to your library.": "«{{title}}» guardado en tu biblioteca."
 }

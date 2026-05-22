@@ -1577,5 +1577,8 @@
   "Saving to Readest": "Збереження в Readest",
   "Loading article…": "Завантаження статті…",
   "Capturing article…": "Захоплення статті…",
-  "Saved to Readest": "Збережено в Readest"
+  "Saved to Readest": "Збережено в Readest",
+  "Apply to every occurrence in the book": "Застосувати до кожного входження в книзі",
+  "Saving article from share…": "Збереження поширеної статті…",
+  "Saved “{{title}}” to your library.": "«{{title}}» збережено у вашій бібліотеці."
 }

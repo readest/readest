@@ -1493,5 +1493,8 @@
   "Saving to Readest": "กำลังบันทึกลงใน Readest",
   "Loading article…": "กำลังโหลดบทความ…",
   "Capturing article…": "กำลังจับภาพบทความ…",
-  "Saved to Readest": "บันทึกลงใน Readest แล้ว"
+  "Saved to Readest": "บันทึกลงใน Readest แล้ว",
+  "Apply to every occurrence in the book": "ใช้กับทุกครั้งที่ปรากฏในหนังสือ",
+  "Saving article from share…": "กำลังบันทึกบทความจากการแชร์…",
+  "Saved “{{title}}” to your library.": "บันทึก \"{{title}}\" ลงในคลังของคุณแล้ว"
 }

@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest में सहेजा जा रहा है",
   "Loading article…": "लेख लोड हो रहा है…",
   "Capturing article…": "लेख कैप्चर हो रहा है…",
-  "Saved to Readest": "Readest में सहेजा गया"
+  "Saved to Readest": "Readest में सहेजा गया",
+  "Apply to every occurrence in the book": "किताब में हर बार लागू करें",
+  "Saving article from share…": "साझा किया गया लेख सहेजा जा रहा है…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" आपकी लाइब्रेरी में सहेजा गया।"
 }

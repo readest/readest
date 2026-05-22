@@ -25,6 +25,12 @@ export interface SiteRule {
   title?: string;
   /** Override Readability's byline. */
   byline?: string;
+  /** CSS selector for an `<img>` (or element with a usable `src`) that
+   *  represents the author / public-account avatar. Used by the cover
+   *  generator as a circular avatar — visually richer than a site-wide
+   *  favicon. Best-effort: when the selector misses or the fetch fails,
+   *  the cover falls back to the favicon. */
+  authorImage?: string;
   /** Selectors to remove from the content before bundling (e.g. "open in
    *  app" CTAs, QR codes, share buttons). */
   strip?: string[];
@@ -41,6 +47,8 @@ const RULES: SiteRule[] = [
     content: '#js_content',
     title: '#activity-name, h1.rich_media_title',
     byline: '#js_name, .rich_media_meta_nickname',
+    authorImage:
+      '.profile_avatar img, .rich_media_meta_nickname_avatar img, .weui_media_avatar img, img.identity_icon, .wx_follow_avatar img',
     strip: [
       // Inline QR codes (PC + mobile variants)
       '.qr_code_pc',

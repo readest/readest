@@ -1577,5 +1577,8 @@
   "Saving to Readest": "Shranjevanje v Readest",
   "Loading article…": "Nalaganje članka…",
   "Capturing article…": "Zajemanje članka…",
-  "Saved to Readest": "Shranjeno v Readest"
+  "Saved to Readest": "Shranjeno v Readest",
+  "Apply to every occurrence in the book": "Uporabi pri vseh pojavitvah v knjigi",
+  "Saving article from share…": "Shranjevanje članka iz skupne rabe…",
+  "Saved “{{title}}” to your library.": "»{{title}}« je shranjen v vašo knjižnico."
 }

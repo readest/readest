@@ -1493,5 +1493,8 @@
   "Saving to Readest": "Readest に保存中",
   "Loading article…": "記事を読み込み中…",
   "Capturing article…": "記事を取得中…",
-  "Saved to Readest": "Readest に保存しました"
+  "Saved to Readest": "Readest に保存しました",
+  "Apply to every occurrence in the book": "本の中のすべての出現箇所に適用",
+  "Saving article from share…": "共有された記事を保存中…",
+  "Saved “{{title}}” to your library.": "「{{title}}」をライブラリに保存しました。"
 }

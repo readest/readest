@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Sparar till Readest",
   "Loading article…": "Laddar artikel…",
   "Capturing article…": "Fångar artikel…",
-  "Saved to Readest": "Sparad till Readest"
+  "Saved to Readest": "Sparad till Readest",
+  "Apply to every occurrence in the book": "Tillämpa på varje förekomst i boken",
+  "Saving article from share…": "Sparar delad artikel…",
+  "Saved “{{title}}” to your library.": "”{{title}}” har sparats i ditt bibliotek."
 }

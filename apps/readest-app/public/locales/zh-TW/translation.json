@@ -1493,5 +1493,8 @@
   "Saving to Readest": "正在儲存到 Readest",
   "Loading article…": "正在載入文章…",
   "Capturing article…": "正在擷取文章…",
-  "Saved to Readest": "已儲存到 Readest"
+  "Saved to Readest": "已儲存到 Readest",
+  "Apply to every occurrence in the book": "套用至本書中所有出現的位置",
+  "Saving article from share…": "正在儲存分享的文章…",
+  "Saved “{{title}}” to your library.": "已將「{{title}}」儲存至您的書庫。"
 }

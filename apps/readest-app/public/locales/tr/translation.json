@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest'e kaydediliyor",
   "Loading article…": "Makale yükleniyor…",
   "Capturing article…": "Makale yakalanıyor…",
-  "Saved to Readest": "Readest'e kaydedildi"
+  "Saved to Readest": "Readest'e kaydedildi",
+  "Apply to every occurrence in the book": "Kitaptaki her geçişe uygula",
+  "Saving article from share…": "Paylaşılan makale kaydediliyor…",
+  "Saved “{{title}}” to your library.": "“{{title}}” kitaplığınıza kaydedildi."
 }

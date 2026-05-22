@@ -1521,5 +1521,8 @@
   "Saving to Readest": "Readest වෙත සුරකියි",
   "Loading article…": "ලිපිය පූරණය වෙමින්…",
   "Capturing article…": "ලිපිය ලබා ගනියි…",
-  "Saved to Readest": "Readest හි සුරැකිණි"
+  "Saved to Readest": "Readest හි සුරැකිණි",
+  "Apply to every occurrence in the book": "පොතේ සෑම සිදුවීමකටම යොදන්න",
+  "Saving article from share…": "බෙදාගැනීමෙන් ලිපිය සුරකිමින්…",
+  "Saved “{{title}}” to your library.": "\"{{title}}\" ඔබේ පුස්තකාලයට සුරැකිණි."
 }
