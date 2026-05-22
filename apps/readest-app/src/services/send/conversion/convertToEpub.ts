@@ -149,7 +149,8 @@ async function htmlToBook(
     images,
     coverImage,
   );
-  const file = new File([blob], `${safeFileName(title)}.epub`, {
+  const fileBytes = new Uint8Array(await blob.arrayBuffer());
+  const file = new File([fileBytes], `${safeFileName(title)}.epub`, {
     type: 'application/epub+zip',
   });
   return { file, title, author };

@@ -8,8 +8,7 @@
  *     _('Send to Readest')
  *     _('Sent — {count} images could not be fetched.', { count: 3 })
  *
- * Translation tables live at `src/i18n/<locale>.json` (locale = short
- * code from `chrome.i18n.getUILanguage()`). The English bundle is
+ * Translation tables live at `src/locales/<locale>.json`. The English bundle is
  * literally `{}` — fall-through to the key. Non-English bundles are
  * `{ "<english source>": "<translation>" }`.
  *
@@ -45,6 +44,20 @@ function loadBundle(raw: unknown): Messages {
 const bundles: Record<string, Messages> = Object.fromEntries(
   Object.entries(rawBundles).map(([code, raw]) => [code, loadBundle(raw)]),
 );
+const bundleCodeByLower = new Map(Object.keys(bundles).map((code) => [code.toLowerCase(), code]));
+
+function resolveBundleCode(uiLocale: string): string {
+  const normalized = uiLocale.replace(/_/g, '-');
+  const exact = bundleCodeByLower.get(normalized.toLowerCase());
+  if (exact) return exact;
+
+  const language = normalized.split('-')[0]?.toLowerCase();
+  if (language) {
+    const base = bundleCodeByLower.get(language);
+    if (base) return base;
+  }
+  return 'en';
+}
 
 function pickLocale(): string {
   // `chrome` is undeclared (not just undefined) outside extension
@@ -52,8 +65,7 @@ function pickLocale(): string {
   // (vitest, ad-hoc imports, etc).
   const c = (globalThis as { chrome?: typeof chrome }).chrome;
   const ui = c?.i18n?.getUILanguage?.() ?? 'en';
-  const short = ui.toLowerCase().split('-')[0] ?? 'en';
-  return bundles[short] ? short : 'en';
+  return resolveBundleCode(ui);
 }
 
 const active: Messages = bundles[pickLocale()] ?? bundles['en'] ?? {};

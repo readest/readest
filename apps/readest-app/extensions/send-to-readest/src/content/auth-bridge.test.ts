@@ -16,6 +16,7 @@ let chromeMock: ChromeMock;
 let addEventListenerSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
+  vi.useFakeTimers();
   chromeMock = installChromeMock();
   localStorage.clear();
   addEventListenerSpy = vi.spyOn(window, 'addEventListener');
@@ -23,6 +24,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
   addEventListenerSpy.mockRestore();
   uninstallChromeMock();
   localStorage.clear();
@@ -99,6 +102,25 @@ describe('auth-bridge — token extraction', () => {
     await import('./auth-bridge');
     const calls = addEventListenerSpy.mock.calls.filter((c) => c[0] === 'storage');
     expect(calls.length).toBe(1);
+  });
+
+  test('polls for same-page token writes that do not fire a storage event', async () => {
+    await import('./auth-bridge');
+    chromeMock.storage.local.set.mockClear();
+    chromeMock.storage.local.remove.mockClear();
+
+    localStorage.setItem(
+      'sb-projectref-auth-token',
+      JSON.stringify({ access_token: 'same-page-token' }),
+    );
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(chromeMock.storage.local.set).toHaveBeenCalledTimes(1);
+    expect(
+      (chromeMock.storage.local.set.mock.calls[0]![0] as Record<string, unknown>)[
+        'readestAccessToken'
+      ],
+    ).toBe('same-page-token');
   });
 
   test('storage event with a non-sb key is ignored', async () => {

@@ -154,7 +154,7 @@ function hex(bytes: Uint8Array, max = 16): string {
 }
 
 async function sha256(bytes: ArrayBuffer): Promise<Uint8Array> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes));
   return new Uint8Array(digest);
 }
 

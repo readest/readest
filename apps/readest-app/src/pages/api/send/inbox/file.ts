@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { validateUserAndToken } from '@/utils/access';
-import { putObject } from '@/utils/object';
+import { deleteObject, putObject } from '@/utils/object';
 import { parseSubjectTag } from '@/services/send/sendAddress';
 import {
   SEND_INBOX_BUCKET,
@@ -164,7 +164,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .from('send_inbox')
     .update({ payload_key: payloadKey })
     .eq('id', row.id);
-  if (updateError) return res.status(500).json({ error: updateError.message });
+  if (updateError) {
+    await supabase.from('send_inbox').delete().eq('id', row.id);
+    try {
+      await deleteObject(payloadKey, SEND_INBOX_BUCKET);
+    } catch (err) {
+      console.warn('Inbox file payload cleanup failed:', err);
+    }
+    return res.status(500).json({ error: updateError.message });
+  }
 
   return res.status(200).json({ id: row.id });
 }

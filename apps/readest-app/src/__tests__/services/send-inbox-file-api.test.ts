@@ -17,8 +17,10 @@ vi.mock('@/utils/cors', () => ({
 }));
 
 const putObjectMock = vi.fn();
+const deleteObjectMock = vi.fn();
 vi.mock('@/utils/object', () => ({
   putObject: (...args: unknown[]) => putObjectMock(...args),
+  deleteObject: (...args: unknown[]) => deleteObjectMock(...args),
 }));
 
 const insertMock = vi.fn();
@@ -115,6 +117,7 @@ const VALID_HEADERS = {
 beforeEach(() => {
   validateUserMock.mockReset().mockResolvedValue({ user: validUser });
   putObjectMock.mockReset().mockResolvedValue(undefined);
+  deleteObjectMock.mockReset().mockResolvedValue(undefined);
   countMock.mockReset().mockResolvedValue({ count: 0, error: null });
   insertMock.mockReset().mockResolvedValue({ data: { id: 'inbox-1' }, error: null });
   updateMock.mockReset().mockResolvedValue({ error: null });
@@ -222,5 +225,20 @@ describe('POST /api/send/inbox/file', () => {
 
     expect(res._status).toBe(500);
     expect(deleteMock).toHaveBeenCalledTimes(1);
+    expect(deleteObjectMock).not.toHaveBeenCalled();
+  });
+
+  test('rolls back the inbox row and stored payload when payload_key update fails', async () => {
+    updateMock.mockResolvedValueOnce({ error: { message: 'update failed' } });
+    const req = makeReq({ ...VALID_HEADERS, body: Buffer.from('PK\x03\x04') });
+    const res = makeRes();
+    await handler(req, res as unknown as NextApiResponse);
+
+    expect(res._status).toBe(500);
+    expect(deleteMock).toHaveBeenCalledTimes(1);
+    expect(deleteObjectMock).toHaveBeenCalledWith(
+      'inbox/user-123/inbox-1/clip.epub',
+      expect.any(String),
+    );
   });
 });

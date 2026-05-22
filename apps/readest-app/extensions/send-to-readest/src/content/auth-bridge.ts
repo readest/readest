@@ -12,6 +12,9 @@ interface SupabaseAuthValue {
   access_token?: string;
 }
 
+const TOKEN_SYNC_INTERVAL_MS = 5_000;
+let lastSyncedToken: string | null | undefined;
+
 function findAccessToken(): string | null {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -32,6 +35,9 @@ function findAccessToken(): string | null {
 
 function syncToken(): void {
   const token = findAccessToken();
+  if (token === lastSyncedToken) return;
+  lastSyncedToken = token;
+
   if (token) {
     chrome.storage.local.set({
       readestAccessToken: token,
@@ -46,11 +52,19 @@ function syncToken(): void {
 
 syncToken();
 
-// Refresh on storage changes too — Supabase rotates the access token a few
-// times an hour. Polling localStorage isn't free, but a `storage` event
-// listener fires only when the value actually changes.
+// Refresh periodically because the browser `storage` event only fires in
+// other same-origin documents, not in the SPA document that performed the
+// Supabase localStorage write. Deduping above keeps this cheap and avoids
+// rewriting extension storage when the token has not changed.
+setInterval(syncToken, TOKEN_SYNC_INTERVAL_MS);
+
+// Still listen for cross-tab updates so a second Readest tab can refresh this
+// content script without waiting for the next poll.
 window.addEventListener('storage', (event) => {
   if (event.key && /^sb-.*-auth-token$/.test(event.key)) {
     syncToken();
   }
 });
+
+window.addEventListener('focus', syncToken);
+window.addEventListener('pageshow', syncToken);

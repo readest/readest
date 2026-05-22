@@ -41,6 +41,9 @@ export interface ChromeMock {
     onConnect: { addListener: Mock };
     lastError: chrome.runtime.LastError | undefined;
   };
+  i18n: {
+    getUILanguage: Mock;
+  };
 }
 
 /** Reset all spies and seed a fresh `storage.local` and `storage.session`. */
@@ -99,6 +102,9 @@ export function installChromeMock(): ChromeMock {
       onMessage: { addListener: vi.fn() },
       onConnect: { addListener: vi.fn() },
       lastError: undefined,
+    },
+    i18n: {
+      getUILanguage: vi.fn(() => 'en'),
     },
   };
 
