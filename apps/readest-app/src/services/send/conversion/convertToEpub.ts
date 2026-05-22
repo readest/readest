@@ -11,7 +11,7 @@ import { buildEpub } from './buildEpub';
 import { bundleAssets } from './assetBundler';
 import { generateCoverSvg } from './coverGenerator';
 import { fetchAuthorImage, fetchBestFavicon } from './faviconFetcher';
-import { findSiteRule, type SiteRule } from './siteRules';
+import { findSiteRule, META_FALLBACK, type SiteRule } from './siteRules';
 import { extractHeadings } from './toc';
 import { ConversionError } from './types';
 import type { ConvertibleMime, ConvertedBook, EpubChapter, EpubImage, TocEntry } from './types';
@@ -180,12 +180,18 @@ function extractWithSiteRule(rawHtml: string, rule: SiteRule): RuleExtracted | n
       }
     }
   }
+  // Rule selectors first, OpenGraph / Twitter Card meta tags second.
+  // The meta-tag layer is what saves us when the site ships a frontend
+  // redesign and our CSS hooks stop matching — every reputable publisher
+  // keeps these tags stable for crawlers.
   const ruleTitle = rule.title ? (doc.querySelector(rule.title)?.textContent?.trim() ?? '') : '';
   const ruleByline = rule.byline ? (doc.querySelector(rule.byline)?.textContent?.trim() ?? '') : '';
+  const title = ruleTitle || pickMetaContent(doc, META_FALLBACK.title) || '';
+  const byline = ruleByline || pickMetaContent(doc, META_FALLBACK.byline) || '';
   return {
     content: contentEl.innerHTML,
-    title: ruleTitle || undefined,
-    byline: ruleByline || undefined,
+    title: title || undefined,
+    byline: byline || undefined,
   };
 }
 
@@ -241,6 +247,40 @@ function extractArticleFallback(rawHtml: string, minTextChars: number): string |
  * hostname stripped of the leading `www.` so e.g. `https://nytimes.com/foo`
  * yields "nytimes.com".
  */
+/**
+ * Walk a list of meta-tag selectors and return the first non-empty
+ * `content` attribute. Used as the universal safety net when a per-site
+ * rule's selector missed (site re-skinned and our CSS hooks no longer
+ * match) — see `META_FALLBACK` in `siteRules.ts` for the canonical
+ * lists per field.
+ */
+function pickMetaContent(doc: Document, selectors: readonly string[]): string | null {
+  for (const sel of selectors) {
+    const value = doc.querySelector(sel)?.getAttribute('content')?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+/**
+ * Variant of `pickMetaContent` that resolves the picked URL against the
+ * page URL — meta `og:image` values are often root-relative. Returns
+ * null if nothing matched or the URL was unparseable.
+ */
+function resolveMetaImage(
+  doc: Document,
+  selectors: readonly string[],
+  pageUrl: string,
+): string | null {
+  const raw = pickMetaContent(doc, selectors);
+  if (!raw) return null;
+  try {
+    return new URL(raw, pageUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
 function extractSiteName(doc: Document, pageUrl: string): string {
   const metaSelectors = [
     'meta[property="og:site_name"]',
@@ -283,14 +323,26 @@ async function buildArticleCover(
   const siteName = extractSiteName(doc, pageUrl);
 
   // Prefer an author profile image (richer than a site-wide favicon).
-  // When the site rule exposes an `authorImage` selector, resolve the URL
-  // and fetch it. Falls through to the favicon on any failure.
+  // Three layers, in order of richness:
+  //   1. The site rule's `authorImage` selector — handcrafted, e.g. the
+  //      WeChat account avatar or the X profile picture.
+  //   2. OpenGraph / Twitter Card `og:image` — every publisher sets this
+  //      for link unfurlers. Works when no rule matched, AND when the
+  //      rule's selector missed because the site reshuffled its DOM.
+  //   3. Favicon (handled below).
+  // Site-rule miss is silent — `pickImageUrlFromSelector` returns null,
+  // we fall through to the meta layer.
   let authorImage: { bytes: ArrayBuffer; mime: string } | undefined;
-  if (rule?.authorImage) {
-    const url = pickImageUrlFromSelector(doc, rule.authorImage, pageUrl);
-    if (url) {
-      authorImage = (await fetchAuthorImage(url, pageUrl).catch(() => null)) ?? undefined;
-    }
+  const ruleImageUrl = rule?.authorImage
+    ? pickImageUrlFromSelector(doc, rule.authorImage, pageUrl)
+    : null;
+  const metaImageUrl = ruleImageUrl
+    ? null
+    : resolveMetaImage(doc, META_FALLBACK.authorImage, pageUrl);
+  const candidateImageUrl = ruleImageUrl || metaImageUrl;
+  if (candidateImageUrl) {
+    authorImage =
+      (await fetchAuthorImage(candidateImageUrl, pageUrl).catch(() => null)) ?? undefined;
   }
 
   // Favicon is only fetched when we don't already have an author image —
@@ -336,10 +388,13 @@ function hostnameFallback(pageUrl: string): string {
   }
 }
 
-/** Pull `<title>` / first `<h1>` out of a full HTML document. */
+/** Pull a title from the document, in declining order of trust:
+ *  OpenGraph / Twitter Card title → `<title>` → first `<h1>` → fallback. */
 function extractHtmlTitle(html: string, fallback: string): string {
   try {
     const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
+    const meta = pickMetaContent(doc, META_FALLBACK.title);
+    if (meta) return meta;
     const t = doc.querySelector('title')?.textContent?.trim();
     if (t) return t;
     const h1 = doc.querySelector('h1')?.textContent?.trim();
@@ -466,8 +521,23 @@ export async function convertPageToEpub(html: string, url: string): Promise<Conv
       'parse_failed',
     );
   }
-  const title = parsed.title?.trim() || extractHtmlTitle(html, url);
-  const byline = parsed.byline?.trim() || '';
+  // Readability gives us content reliably but byline misses on sites with
+  // non-standard author markup (most SPAs, anything class-mangled). Meta
+  // tags fill the gap — see `META_FALLBACK` in siteRules.ts.
+  let metaDoc: Document | null = null;
+  try {
+    metaDoc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
+  } catch {
+    /* meta fallback unavailable; keep going with what Readability gave us */
+  }
+  const title =
+    parsed.title?.trim() ||
+    (metaDoc ? pickMetaContent(metaDoc, META_FALLBACK.title) : null) ||
+    extractHtmlTitle(html, url);
+  const byline =
+    parsed.byline?.trim() ||
+    (metaDoc ? pickMetaContent(metaDoc, META_FALLBACK.byline) : null) ||
+    '';
   const bundle = await bundleAssets(articleHtml, url);
   const cover = await buildArticleCover(html, url, title, byline, rule);
   return htmlToBook(
