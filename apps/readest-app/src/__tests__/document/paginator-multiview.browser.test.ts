@@ -200,15 +200,27 @@ describe('Paginator multi-view architecture (browser)', () => {
     });
   });
 
-  describe('Accessibility: non-primary views are hidden from AT', () => {
+  describe('Accessibility: off-screen pre-loaded views are hidden from AT', () => {
     const getViewWrappers = (el: Renderer) => {
       const container = el.shadowRoot?.getElementById('container');
       return container ? (Array.from(container.children) as HTMLElement[]) : [];
     };
     const wrapperContainsIframeForIndex = (wrapper: HTMLElement, doc: Document) =>
       wrapper.querySelector('iframe')?.contentDocument === doc;
+    // Visible non-primary views (e.g. the right column in a dual-page spread
+    // belonging to a different section than the left column) must stay
+    // interactive and exposed to assistive tech. Only views whose bounding
+    // rect lies fully outside the visible container area are aria-hidden.
+    // See readest/readest#4243 and #4259.
+    const isOffScreen = (wrapper: HTMLElement, el: Renderer) => {
+      const container = el.shadowRoot?.getElementById('container');
+      if (!container) return false;
+      const c = container.getBoundingClientRect();
+      const w = wrapper.getBoundingClientRect();
+      return !(w.right > c.left && w.left < c.right && w.bottom > c.top && w.top < c.bottom);
+    };
 
-    it('should mark non-primary view wrappers inert + aria-hidden', async () => {
+    it('keeps the primary view interactive and never sets inert', async () => {
       const firstLinear = book.sections!.findIndex((s) => s.linear !== 'no');
       await setupAt(firstLinear);
       await waitForViews(paginator, 2);
@@ -226,15 +238,24 @@ describe('Paginator multi-view architecture (browser)', () => {
       expect(primaryWrapper!.hasAttribute('inert')).toBe(false);
       expect(primaryWrapper!.getAttribute('aria-hidden')).not.toBe('true');
 
+      for (const w of wrappers) {
+        // No wrapper should ever carry `inert` — it would block link clicks
+        // and selection in any visible column.
+        expect(w.hasAttribute('inert')).toBe(false);
+      }
+
       for (const np of nonPrimary) {
         const wrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, np.doc));
         expect(wrapper).toBeDefined();
-        expect(wrapper!.hasAttribute('inert')).toBe(true);
-        expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+        if (isOffScreen(wrapper!, paginator)) {
+          expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+        } else {
+          expect(wrapper!.getAttribute('aria-hidden')).not.toBe('true');
+        }
       }
     });
 
-    it('should move inert + aria-hidden when the primary section changes', async () => {
+    it('updates aria-hidden when the primary section changes', async () => {
       const linearSections = book
         .sections!.map((s, i) => ({ s, i }))
         .filter(({ s }) => s.linear !== 'no');
@@ -259,12 +280,19 @@ describe('Paginator multi-view architecture (browser)', () => {
       expect(primaryWrapper!.hasAttribute('inert')).toBe(false);
       expect(primaryWrapper!.getAttribute('aria-hidden')).not.toBe('true');
 
+      for (const w of wrappers) {
+        expect(w.hasAttribute('inert')).toBe(false);
+      }
+
       const nonPrimary = contents.filter((c) => c.index !== second);
       for (const np of nonPrimary) {
         const wrapper = wrappers.find((w) => wrapperContainsIframeForIndex(w, np.doc));
         expect(wrapper).toBeDefined();
-        expect(wrapper!.hasAttribute('inert')).toBe(true);
-        expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+        if (isOffScreen(wrapper!, paginator)) {
+          expect(wrapper!.getAttribute('aria-hidden')).toBe('true');
+        } else {
+          expect(wrapper!.getAttribute('aria-hidden')).not.toBe('true');
+        }
       }
     });
   });
