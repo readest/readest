@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 import { WebDAVSyncLogEntry, WebDAVSyncLogStatus } from '@/types/settings';
+import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { BoxedList, SettingsRow } from '../primitives';
 
 /**
@@ -18,17 +19,15 @@ import { BoxedList, SettingsRow } from '../primitives';
  *    about "the log" as a whole and how to clear it.
  *
  * Presentational: all persistence happens in the parent
- * (`appendSyncLogEntry` / `handleClearSyncLog`). We accept the
- * translation function `t` rather than calling `useTranslation` here so
- * the parent stays the single source of locale truth for the page.
+ * (`appendSyncLogEntry` / `handleClearSyncLog`).
  */
 export interface SyncHistoryPanelProps {
   entries: WebDAVSyncLogEntry[];
   onClear: () => void | Promise<void>;
-  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t }) => {
+const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear }) => {
+  const _ = useTranslation();
   // Only one entry expanded at a time keeps the panel scannable on
   // mobile — multiple open rows can quickly push the disconnect button
   // off-screen. Set to null when no row is expanded.
@@ -39,9 +38,9 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
   return (
     <BoxedList>
       <SettingsRow
-        label={t('Sync History')}
-        description={t(
-          "Manual syncs and cleanups — automatic syncs while reading aren't logged here.",
+        label={_('Sync History')}
+        description={_(
+          "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.",
         )}
       >
         {hasEntries ? (
@@ -49,13 +48,13 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
             type='button'
             onClick={() => onClear()}
             className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
-            title={t('Clear Sync History')}
-            aria-label={t('Clear Sync History')}
+            title={_('Clear Sync History')}
+            aria-label={_('Clear Sync History')}
           >
-            {t('Clear')}
+            {_('Clear')}
           </button>
         ) : (
-          <span className='text-base-content/50 text-xs'>{t('No manual syncs yet')}</span>
+          <span className='text-base-content/50 text-xs'>{_('No manual syncs yet')}</span>
         )}
       </SettingsRow>
       {hasEntries && (
@@ -70,12 +69,12 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
                   className='group flex w-full items-center gap-3 text-left'
                   aria-expanded={isExpanded}
                 >
-                  <SyncStatusBadge status={entry.status} t={t} />
-                  {entry.kind === 'cleanup' && <SyncKindBadge t={t} />}
+                  <SyncStatusBadge status={entry.status} />
+                  {entry.kind === 'cleanup' && <SyncKindBadge />}
                   <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-                    <span className='text-sm'>{formatSyncSummaryLine(entry, t)}</span>
+                    <span className='text-sm'>{formatSyncSummaryLine(entry, _)}</span>
                     <span className='text-base-content/60 text-[0.75em]'>
-                      {formatSyncTimestamp(entry.startedAt, entry.finishedAt, t)}
+                      {formatSyncTimestamp(entry.startedAt, entry.finishedAt, _)}
                     </span>
                   </div>
                   <span
@@ -88,7 +87,7 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
                     ›
                   </span>
                 </button>
-                {isExpanded && <SyncHistoryDetails entry={entry} t={t} />}
+                {isExpanded && <SyncHistoryDetails entry={entry} />}
               </li>
             );
           })}
@@ -103,14 +102,12 @@ const SyncHistoryPanel: React.FC<SyncHistoryPanelProps> = ({ entries, onClear, t
  * Tailwind utilities (success / warning / error) so the badge respects
  * the user's theme (eink, dark, light) without per-mode overrides.
  */
-const SyncStatusBadge: React.FC<{ status: WebDAVSyncLogStatus; t: SyncHistoryPanelProps['t'] }> = ({
-  status,
-  t,
-}) => {
+const SyncStatusBadge: React.FC<{ status: WebDAVSyncLogStatus }> = ({ status }) => {
+  const _ = useTranslation();
   const map: Record<WebDAVSyncLogStatus, { label: string; className: string }> = {
-    success: { label: t('OK'), className: 'bg-success/15 text-success' },
-    partial: { label: t('Partial'), className: 'bg-warning/15 text-warning' },
-    failure: { label: t('Failed'), className: 'bg-error/15 text-error' },
+    success: { label: _('OK'), className: 'bg-success/15 text-success' },
+    partial: { label: _('Partial'), className: 'bg-warning/15 text-warning' },
+    failure: { label: _('Failed'), className: 'bg-error/15 text-error' },
   };
   const { label, className } = map[status];
   return (
@@ -134,7 +131,8 @@ const SyncStatusBadge: React.FC<{ status: WebDAVSyncLogStatus; t: SyncHistoryPan
  * its own status badge (success / partial / failed) right next to
  * it; piling more colour on would just shout.
  */
-const SyncKindBadge: React.FC<{ t: SyncHistoryPanelProps['t'] }> = ({ t }) => {
+const SyncKindBadge: React.FC = () => {
+  const _ = useTranslation();
   return (
     <span
       className={clsx(
@@ -142,7 +140,7 @@ const SyncKindBadge: React.FC<{ t: SyncHistoryPanelProps['t'] }> = ({ t }) => {
         'bg-info/15 text-info',
       )}
     >
-      {t('Cleanup')}
+      {_('Cleanup')}
     </span>
   );
 };
@@ -153,13 +151,10 @@ const SyncKindBadge: React.FC<{ t: SyncHistoryPanelProps['t'] }> = ({ t }) => {
  * reusing the toast's `entry.summary`) so the text in the log stays
  * compact even when the original toast was multi-line.
  */
-const formatSyncSummaryLine = (
-  entry: WebDAVSyncLogEntry,
-  t: SyncHistoryPanelProps['t'],
-): string => {
+const formatSyncSummaryLine = (entry: WebDAVSyncLogEntry, _: TranslationFunc): string => {
   if (entry.status === 'failure') {
     return (
-      entry.errorMessage || (entry.kind === 'cleanup' ? t('Cleanup failed') : t('Sync failed'))
+      entry.errorMessage || (entry.kind === 'cleanup' ? _('Cleanup failed') : _('Sync failed'))
     );
   }
   if (entry.kind === 'cleanup') {
@@ -170,38 +165,34 @@ const formatSyncSummaryLine = (
     // and watching every clause come up zero.
     const parts: string[] = [];
     if ((entry.booksDeleted ?? 0) > 0) {
-      parts.push(t('{{n}} deleted', { n: entry.booksDeleted ?? 0 }));
+      parts.push(_('{{n}} deleted', { n: entry.booksDeleted ?? 0 }));
     }
     if (entry.failures > 0) {
-      parts.push(t('{{n}} failed', { n: entry.failures }));
+      parts.push(_('{{n}} failed', { n: entry.failures }));
     }
-    return parts.length > 0 ? parts.join(' · ') : t('Nothing deleted');
+    return parts.length > 0 ? parts.join(' · ') : _('Nothing deleted');
   }
   const parts: string[] = [];
   if (entry.booksDownloaded > 0) {
-    parts.push(t('{{n}} downloaded', { n: entry.booksDownloaded }));
+    parts.push(_('{{n}} downloaded', { n: entry.booksDownloaded }));
   }
   if (entry.filesUploaded > 0) {
-    parts.push(t('{{n}} uploaded', { n: entry.filesUploaded }));
+    parts.push(_('{{n}} uploaded', { n: entry.filesUploaded }));
   }
   if (entry.configsUploaded > 0 || entry.configsDownloaded > 0) {
-    parts.push(t('{{n}} progress', { n: entry.configsUploaded + entry.configsDownloaded }));
+    parts.push(_('{{n}} progress', { n: entry.configsUploaded + entry.configsDownloaded }));
   }
   if (entry.failures > 0) {
-    parts.push(t('{{n}} failed', { n: entry.failures }));
+    parts.push(_('{{n}} failed', { n: entry.failures }));
   }
-  return parts.length > 0 ? parts.join(' · ') : t('Up to date');
+  return parts.length > 0 ? parts.join(' · ') : _('Up to date');
 };
 
 /**
  * "Mar 18, 14:32 · 4.2 s" — short locale-aware timestamp plus a
  * duration so users can spot abnormally slow runs at a glance.
  */
-const formatSyncTimestamp = (
-  startedAt: number,
-  finishedAt: number,
-  t: SyncHistoryPanelProps['t'],
-): string => {
+const formatSyncTimestamp = (startedAt: number, finishedAt: number, _: TranslationFunc): string => {
   const when = new Date(startedAt).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -210,7 +201,7 @@ const formatSyncTimestamp = (
   });
   const durMs = Math.max(0, finishedAt - startedAt);
   const dur = durMs >= 1000 ? `${(durMs / 1000).toFixed(1)} s` : `${durMs} ms`;
-  return t('{{when}} · {{dur}}', { when, dur });
+  return _('{{when}} · {{dur}}', { when, dur });
 };
 
 /**
@@ -222,8 +213,8 @@ const formatSyncTimestamp = (
  */
 const SyncHistoryDetails: React.FC<{
   entry: WebDAVSyncLogEntry;
-  t: SyncHistoryPanelProps['t'];
-}> = ({ entry, t }) => {
+}> = ({ entry }) => {
+  const _ = useTranslation();
   // Counters are grouped semantically so the user can scan them at a
   // glance instead of treating eight numbers as a flat blob:
   //   - "activity": work performed during this run
@@ -235,21 +226,21 @@ const SyncHistoryDetails: React.FC<{
   // single grid which read as one block.
   const groups: { label: string; value: number }[][] = [
     [
-      { label: t('Books downloaded'), value: entry.booksDownloaded },
-      { label: t('Files uploaded'), value: entry.filesUploaded },
-      { label: t('Configs uploaded'), value: entry.configsUploaded },
-      { label: t('Configs downloaded'), value: entry.configsDownloaded },
-      { label: t('Covers uploaded'), value: entry.coversUploaded },
+      { label: _('Books downloaded'), value: entry.booksDownloaded },
+      { label: _('Files uploaded'), value: entry.filesUploaded },
+      { label: _('Configs uploaded'), value: entry.configsUploaded },
+      { label: _('Configs downloaded'), value: entry.configsDownloaded },
+      { label: _('Covers uploaded'), value: entry.coversUploaded },
       // Cleanup-specific counter. Suppressed by the zero-filter on
       // sync entries (which always set this to zero/undefined), so
       // it only shows up on cleanup runs without polluting the
       // common sync detail view.
-      { label: t('Books deleted'), value: entry.booksDeleted ?? 0 },
+      { label: _('Books deleted'), value: entry.booksDeleted ?? 0 },
     ],
-    [{ label: t('Files in sync'), value: entry.filesAlreadyInSync }],
+    [{ label: _('Files in sync'), value: entry.filesAlreadyInSync }],
     [
-      { label: t('Failures'), value: entry.failures },
-      { label: t('Total books'), value: entry.totalBooks },
+      { label: _('Failures'), value: entry.failures },
+      { label: _('Total books'), value: entry.totalBooks },
     ],
   ]
     // Suppress zero-only groups entirely so we don't render an empty
@@ -320,13 +311,13 @@ const SyncHistoryDetails: React.FC<{
       )}
       {entry.errorMessage && (
         <div className='text-error/90 break-words text-xs'>
-          <span className='text-base-content/60 mr-1'>{t('Error:')}</span>
+          <span className='text-base-content/60 mr-1'>{_('Error:')}</span>
           {entry.errorMessage}
         </div>
       )}
       {entry.failedBooks && entry.failedBooks.length > 0 && (
         <div className='flex flex-col gap-1'>
-          <span className='text-base-content/60 text-xs'>{t('Failed books')}</span>
+          <span className='text-base-content/60 text-xs'>{_('Failed books')}</span>
           <ul className='flex flex-col gap-1 text-xs'>
             {entry.failedBooks.map((f) => (
               <li key={f.hash} className='border-base-200 break-words rounded border px-2 py-1.5'>

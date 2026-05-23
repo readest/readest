@@ -69,6 +69,7 @@ export interface Contributor {
 export interface Collection {
   name: string;
   position?: string;
+  total?: string;
 }
 
 const formatLanguageMap = (x: string | LanguageMap, defaultLang = false): string => {

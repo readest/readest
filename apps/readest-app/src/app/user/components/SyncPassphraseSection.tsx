@@ -85,7 +85,7 @@ export function SyncPassphraseSection() {
     try {
       await cryptoSession.forget();
       await refreshStatus();
-      setMessage(_('Sync passphrase forgotten — all encrypted fields cleared'));
+      setMessage(_('Sync passphrase forgotten. All encrypted fields cleared.'));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
     } finally {

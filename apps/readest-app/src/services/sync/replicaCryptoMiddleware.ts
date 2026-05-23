@@ -228,7 +228,7 @@ export const decryptRowFields = async (
   if (failedFieldCount > 0 && lastFailureCode !== null) {
     let message: string;
     if (lastFailureCode === 'DECRYPT' || lastFailureCode === 'INTEGRITY') {
-      message = _('Wrong sync passphrase — synced credentials could not be decrypted');
+      message = _('Wrong sync passphrase. Synced credentials could not be decrypted.');
     } else if (lastFailureCode === 'SALT_NOT_FOUND') {
       message = _(
         'Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…',

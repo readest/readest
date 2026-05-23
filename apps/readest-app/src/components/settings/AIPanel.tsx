@@ -489,7 +489,7 @@ const AIPanel: React.FC = () => {
               {customModelStatus === 'valid' && customModelPricing && (
                 <span className='text-success flex items-center gap-1 text-sm'>
                   <PiCheckCircle />
-                  {_('Model available')} — ${customModelPricing.input}/M in, $
+                  {_('Model available')} · ${customModelPricing.input}/M in, $
                   {customModelPricing.output}/M out
                 </span>
               )}

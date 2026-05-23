@@ -15,8 +15,10 @@ import {
   buildRequestUrl,
   checkConnection,
   normalizeRootPath,
+  WebDAVConnectResult,
   WebDAVRequestError,
 } from '@/services/webdav/WebDAVClient';
+import { type TranslationFunc } from '@/hooks/useTranslation';
 import { syncLibrary } from '@/services/webdav/WebDAVSync';
 import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
@@ -40,6 +42,54 @@ import WebDAVBrowsePane from './WebDAVBrowsePane';
 interface WebDAVFormProps {
   onBack: () => void;
 }
+
+/**
+ * Translate a connection-probe failure into a user-facing string.
+ *
+ * Each branch must be a literal `_('...')` call so the i18next-scanner
+ * picks the keys up — that's why this is a switch on `result.code`
+ * rather than the previous `_(result.message || 'Connection error')`
+ * pattern, which the scanner couldn't see into.
+ */
+const formatConnectError = (_: TranslationFunc, result: WebDAVConnectResult): string => {
+  switch (result.code) {
+    case 'SERVER_URL_REQUIRED':
+      return _('Server URL is required');
+    case 'AUTH_FAILED':
+      return _('Authentication failed');
+    case 'ROOT_NOT_FOUND':
+      return _('Root directory not found');
+    case 'UNEXPECTED_STATUS':
+      return _('Unexpected server response (status {{status}})', {
+        status: result.status ?? 0,
+      });
+    case 'NETWORK':
+    default:
+      return _('Network error');
+  }
+};
+
+/**
+ * Translate a sync-time error into a user-facing string. WebDAVRequestError
+ * carries a `code` that lets us map to a specific message without ever
+ * showing the raw English `e.message` to the user.
+ */
+const formatSyncError = (_: TranslationFunc, e: unknown): string => {
+  if (e instanceof WebDAVRequestError) {
+    switch (e.code) {
+      case 'AUTH_FAILED':
+        return _('WebDAV authentication failed. Reconnect in Settings.');
+      case 'NOT_FOUND':
+        return _('Remote resource not found');
+      case 'NETWORK':
+        return _('Network error');
+    }
+    if (typeof e.status === 'number') {
+      return _('Sync failed (status {{status}})', { status: e.status });
+    }
+  }
+  return _('Sync failed.');
+};
 
 /**
  * WebDAV integration form. Two modes share the same panel:
@@ -98,7 +148,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     if (!result.success) {
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: `${_('Failed to connect')}: ${_(result.message || 'Connection error')}`,
+        message: `${_('Failed to connect')}: ${formatConnectError(_, result)}`,
       });
       setIsConnecting(false);
       return;
@@ -234,7 +284,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       await persistWebdav({ deviceId });
     }
 
-    beginSync(_('Syncing 0 / {{total}}', { total: eligibleBooks.length }));
+    beginSync(_('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }));
 
     // Captured before the run begins so we can attribute startedAt
     // accurately even when the run fails in the catch block (the
@@ -391,7 +441,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
           updateProgress(
-            _('{{action}} {{n}} / {{total}} — {{title}}', {
+            _('{{action}} {{n}} / {{total}} · {{title}}', {
               action: actionStr,
               n: index + 1,
               total,
@@ -411,7 +461,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         parts.push(_('downloaded {{n}} book(s)', { n: result.booksDownloaded }));
       }
       if (result.configsDownloaded > 0) {
-        parts.push(_('pulled {{n}} progress entr(ies)', { n: result.configsDownloaded }));
+        parts.push(_('pulled progress for {{n}} book(s)', { n: result.configsDownloaded }));
       }
       if (result.configsUploaded > 0) {
         parts.push(_('pushed {{n}} config(s)', { n: result.configsUploaded }));
@@ -484,10 +534,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       };
       await appendSyncLogEntry(entry);
     } catch (e) {
-      const message =
-        e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED'
-          ? _('WebDAV authentication failed. Reconnect in Settings.')
-          : _('Sync failed: {{error}}', { error: (e as Error).message ?? String(e) });
+      const message = formatSyncError(_, e);
       eventDispatcher.dispatch('toast', { type: 'error', message });
       // Persist a "failure" entry so the user can show what went wrong
       // without rummaging through the dev console. We don't have a
@@ -542,10 +589,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
             <SettingsSwitchRow
               label={_('Upload Book Files')}
               description={_(
-                'This toggle only controls ' +
-                  'whether this device contributes the books. ' +
-                  'Reading progress and annotations are always synced both ways, and books ' +
-                  'already on the server are always downloaded.',
+                'Only affects uploading book files. Reading progress and downloads always sync.',
               )}
               checked={stored.syncBooks ?? false}
               onChange={handleToggleSyncBooks}
@@ -600,9 +644,9 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
               runs with full counters and per-book failures. We render
               even when the log is empty so users can find where it
               lives before their first run. */}
-          <SyncHistoryPanel entries={stored.syncLog ?? []} onClear={handleClearSyncLog} t={_} />
+          <SyncHistoryPanel entries={stored.syncLog ?? []} onClear={handleClearSyncLog} />
 
-          <WebDAVBrowsePane settings={stored} t={_} onAppendSyncLogEntry={appendSyncLogEntry} />
+          <WebDAVBrowsePane settings={stored} onAppendSyncLogEntry={appendSyncLogEntry} />
 
           <div className='flex justify-end'>
             <button

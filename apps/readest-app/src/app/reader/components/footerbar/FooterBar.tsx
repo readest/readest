@@ -5,10 +5,11 @@ import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
-import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
+import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
 import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
@@ -46,7 +47,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
 
   const progressInfo = useMemo(
-    () => (bookFormat === 'PDF' ? section : pageinfo),
+    () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? section : pageinfo),
     [bookFormat, section, pageinfo],
   );
 

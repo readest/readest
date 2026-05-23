@@ -12,6 +12,7 @@ import {
 } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -44,21 +45,17 @@ import {
  * Live browser for the WebDAV root the user connected to.
  *
  * Owns its own current path, listing and per-entry download status;
- * the parent supplies `settings` and `t`. Doubles as the GC surface
- * for remote orphans via cleanup mode.
+ * the parent supplies `settings`. Doubles as the GC surface for remote
+ * orphans via cleanup mode.
  */
 export interface WebDAVBrowsePaneProps {
   settings: WebDAVSettings;
-  t: (key: string, params?: Record<string, string | number>) => string;
   /** Persist a cleanup run into the parent's sync log when supplied. */
   onAppendSyncLogEntry?: (entry: WebDAVSyncLogEntry) => Promise<void> | void;
 }
 
-const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
-  settings,
-  t,
-  onAppendSyncLogEntry,
-}) => {
+const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onAppendSyncLogEntry }) => {
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { user } = useAuth();
   const { settings: globalSettings } = useSettingsStore();
@@ -187,8 +184,8 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
     const appService = await envConfig.getAppService();
     if (!appService) return;
     const confirmed = await appService.ask(
-      t(
-        'Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone — the bytes on the server will be permanently gone.',
+      _(
+        'Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.',
         { n: targets.length },
       ),
     );
@@ -253,27 +250,30 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
     if (authFailed) {
       toastType = 'error';
       status = 'failure';
-      message = t('WebDAV authentication failed. Reconnect in Settings.');
+      message = _('WebDAV authentication failed. Reconnect in Settings.');
       errorMessage = message;
     } else if (failed.length === 0) {
       toastType = 'info';
       status = 'success';
-      message = t('Deleted {{n}} book(s) from server.', { n: succeeded });
+      message = _('Deleted {{n}} book(s) from server.', { n: succeeded });
     } else if (succeeded > 0) {
       toastType = 'warning';
       status = 'partial';
-      message = t('Deleted {{ok}} of {{total}}; {{n}} failed (e.g. "{{first}}").', {
-        ok: succeeded,
-        total: targets.length,
-        n: failed.length,
-        first: failed[0]!.title,
-      });
+      message = _(
+        'Deleted {{ok}} of {{total}} book(s) from server; {{n}} failed (first: "{{first}}").',
+        {
+          ok: succeeded,
+          total: targets.length,
+          n: failed.length,
+          first: failed[0]?.title ?? '',
+        },
+      );
     } else {
       toastType = 'warning';
       status = 'failure';
-      message = t('Failed to delete {{n}} book(s) (e.g. "{{first}}").', {
+      message = _('Couldn\'t delete any of {{n}} book(s) from server (first: "{{first}}").', {
         n: failed.length,
-        first: failed[0]!.title,
+        first: failed[0]?.title ?? '',
       });
     }
 
@@ -363,7 +363,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
       } catch (e) {
         if (!cancelled) {
           setEntries([]);
-          setLoadError((e as Error).message || t('Failed to load directory'));
+          setLoadError((e as Error).message || _('Failed to load directory'));
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -413,7 +413,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
     if (!isTauriAppPlatform()) {
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: t('File download is only supported on the desktop and mobile apps.'),
+        message: _('File download is only supported on the desktop and mobile apps.'),
       });
       return;
     }
@@ -459,7 +459,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
       setDownloadStatus((prev) => ({ ...prev, [entry.path]: 'done' }));
       eventDispatcher.dispatch('toast', {
         type: 'info',
-        message: t('Downloaded "{{title}}" to your library.', {
+        message: _('Downloaded "{{title}}" to your library.', {
           title: imported.title || entry.name,
         }),
       });
@@ -468,9 +468,9 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
       setDownloadStatus((prev) => ({ ...prev, [entry.path]: 'error' }));
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: t('Failed to download "{{name}}": {{error}}', {
+        message: _('Failed to download "{{name}}": {{error}}', {
           name: entry.name,
-          error: (e as Error).message ?? String(e),
+          error: e instanceof Error ? e.message : String(e),
         }),
       });
     }
@@ -489,14 +489,14 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
               'btn btn-ghost btn-sm h-8 min-h-8 gap-1 px-2',
               (currentPath === savedRoot || cleanupMode) && 'opacity-40',
             )}
-            title={t('Up')}
-            aria-label={t('Up')}
+            title={_('Up')}
+            aria-label={_('Up')}
           >
             <MdArrowBack className='h-4 w-4' />
           </button>
           <span className='truncate text-sm' title={currentPath}>
             {cleanupMode
-              ? t('Cleanup · {{count}} book(s)', { count: displayedEntries.length })
+              ? _('Cleanup · {{count}} book(s)', { count: displayedEntries.length })
               : currentPath}
           </span>
         </div>
@@ -509,8 +509,8 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
               // unmount the progress affordance mid-delete.
               disabled={isDeleting}
               className={clsx('btn btn-ghost btn-sm h-8 min-h-8 px-2', isDeleting && 'opacity-40')}
-              title={t('Exit cleanup')}
-              aria-label={t('Exit cleanup')}
+              title={_('Exit cleanup')}
+              aria-label={_('Exit cleanup')}
             >
               <MdClose className='h-4 w-4' />
             </button>
@@ -519,8 +519,8 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
               type='button'
               onClick={handleEnterCleanup}
               className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
-              title={t('Cleanup')}
-              aria-label={t('Cleanup')}
+              title={_('Cleanup')}
+              aria-label={_('Cleanup')}
             >
               <MdDeleteSweep className='h-4 w-4' />
             </button>
@@ -531,8 +531,8 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
             // Refresh during a delete would race with the per-item splice.
             disabled={isDeleting}
             className={clsx('btn btn-ghost btn-sm h-8 min-h-8 px-2', isDeleting && 'opacity-40')}
-            title={t('Refresh')}
-            aria-label={t('Refresh')}
+            title={_('Refresh')}
+            aria-label={_('Refresh')}
           >
             <MdRefresh className='h-4 w-4' />
           </button>
@@ -548,7 +548,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
           <div className='text-error px-4 py-6 text-center text-sm'>{loadError}</div>
         ) : displayedEntries.length === 0 ? (
           <div className='text-base-content/60 px-4 py-6 text-center text-sm'>
-            {cleanupMode ? t('All clear · no books') : t('Empty directory')}
+            {cleanupMode ? _('All clear · no books') : _('Empty directory')}
           </div>
         ) : (
           <ul className='divide-base-200 divide-y'>
@@ -576,7 +576,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
               // navigate (or toggle in cleanup mode).
               const rowClickable = entry.isDirectory;
               const rowTitle = isLocallyDeleted
-                ? t('Deleted locally · still on server')
+                ? _('Deleted locally · still on server')
                 : undefined;
               return (
                 <li key={entry.path}>
@@ -627,7 +627,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
                           // bubbling into a row-level double-toggle.
                           onClick={(e) => e.stopPropagation()}
                           onChange={() => toggleRowSelected(entry.path)}
-                          aria-label={t('Select')}
+                          aria-label={_('Select')}
                         />
                       </span>
                     ) : (
@@ -702,17 +702,17 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
                         )}
                         title={
                           dlState === 'done'
-                            ? t('Already downloaded in this session')
+                            ? _('Already downloaded in this session')
                             : dlState === 'downloading'
-                              ? t('Downloading…')
-                              : t('Download to library')
+                              ? _('Downloading…')
+                              : _('Download to library')
                         }
                         aria-label={
                           dlState === 'done'
-                            ? t('Already downloaded in this session')
+                            ? _('Already downloaded in this session')
                             : dlState === 'downloading'
-                              ? t('Downloading…')
-                              : t('Download to library')
+                              ? _('Downloading…')
+                              : _('Download to library')
                         }
                       >
                         {dlState === 'downloading' ? (
@@ -756,11 +756,11 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
                 )}
               >
                 {displayedEntries.length > 0 && selected.size === displayedEntries.length
-                  ? t('Deselect all')
-                  : t('Select all')}
+                  ? _('Deselect all')
+                  : _('Select all')}
               </button>
               <span className='text-base-content/60 truncate text-xs'>
-                {t('{{n}} selected', { n: selected.size })}
+                {_('{{n}} selected', { n: selected.size })}
               </span>
             </div>
             {/* Bottom row: action. The per-entry download button
@@ -782,7 +782,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({
                 <span
                   className={clsx('loading loading-spinner loading-xs', !isDeleting && 'invisible')}
                 />
-                {t('Delete from server')}
+                {_('Delete from server')}
               </button>
             </div>
           </div>

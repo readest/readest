@@ -39,9 +39,18 @@ export interface WebDAVConfig {
   password: string;
 }
 
+export type WebDAVConnectErrorCode =
+  | 'SERVER_URL_REQUIRED'
+  | 'AUTH_FAILED'
+  | 'ROOT_NOT_FOUND'
+  | 'UNEXPECTED_STATUS'
+  | 'NETWORK';
+
 export interface WebDAVConnectResult {
   success: boolean;
-  /** Translation-friendly short message describing the failure, when any. */
+  /** Discriminator for callers to render a localized message. */
+  code?: WebDAVConnectErrorCode;
+  /** English log/debug detail (e.g. raw network exception). UI must not show this. */
   message?: string;
   /** HTTP status surfaced from the server, if the request reached it. */
   status?: number;
@@ -244,7 +253,7 @@ export const checkConnection = async (
   rootPath: string,
 ): Promise<WebDAVConnectResult> => {
   if (!config.serverUrl) {
-    return { success: false, message: 'Server URL is required' };
+    return { success: false, code: 'SERVER_URL_REQUIRED' };
   }
   const url = buildUrl(config.serverUrl, rootPath);
   const fetchFn = getFetch();
@@ -262,18 +271,16 @@ export const checkConnection = async (
       return { success: true, status: response.status };
     }
     if (response.status === 401 || response.status === 403) {
-      return { success: false, status: response.status, message: 'Authentication failed' };
+      return { success: false, status: response.status, code: 'AUTH_FAILED' };
     }
     if (response.status === 404) {
-      return { success: false, status: response.status, message: 'Root directory not found' };
+      return { success: false, status: response.status, code: 'ROOT_NOT_FOUND' };
     }
-    return {
-      success: false,
-      status: response.status,
-      message: `Unexpected server response (${response.status})`,
-    };
+    return { success: false, status: response.status, code: 'UNEXPECTED_STATUS' };
   } catch (e) {
-    return { success: false, message: (e as Error).message || 'Network error' };
+    // Keep the raw exception message in `message` for the dev console;
+    // the UI uses `code` to render a localized string.
+    return { success: false, code: 'NETWORK', message: (e as Error).message };
   }
 };
 

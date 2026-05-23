@@ -195,7 +195,7 @@ export default function SendPage() {
           </div>
           <p className='text-base-content/70 text-xs leading-relaxed'>
             {_(
-              'Install the Readest browser extension to send the article you are reading to your library — it clips the page from your browser so paywalled and login-only sites still work.',
+              'Install the Readest browser extension to send the article you are reading to your library. It clips the page from your browser so paywalled and login-only sites still work.',
             )}
           </p>
         </section>
@@ -216,7 +216,7 @@ export default function SendPage() {
                 <span className='truncate text-sm'>{item.label}</span>
                 <span className='text-base-content/60 text-xs'>
                   {item.status === 'done'
-                    ? _('Added to your library — it will sync to your other devices.')
+                    ? _('Added to your library. It will sync to your other devices.')
                     : item.status === 'error'
                       ? item.detail
                       : _('Working…')}

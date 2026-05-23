@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
-import { Insets } from '@/types/misc';
+import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -55,26 +55,47 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const pagesLeft = bookData?.isFixedLayout
-    ? 1
+    ? pageInfo
+      ? Math.max(pageInfo.total - pageInfo.current, 1)
+      : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
-  const showPagesLeft = total > 0 || bookData?.isFixedLayout;
+  const showPagesLeft = pagesLeft > 0 && (total > 0 || !!bookData?.isFixedLayout);
+  // Fixed-layout formats (CBZ, PDF) have no chapter structure — every page is
+  // its own section — so the remaining count is the whole book, not a chapter.
+  const remainingInBook = !!bookData?.isFixedLayout;
   const timeLeftStr = showPagesLeft
-    ? _('{{time}} min left in chapter', {
-        time: formatNumber(
-          Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
-          localize,
-          lang,
-        ),
-      })
+    ? remainingInBook
+      ? _('{{time}} min left in book', {
+          time: formatNumber(
+            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            localize,
+            lang,
+          ),
+        })
+      : _('{{time}} min left in chapter', {
+          time: formatNumber(
+            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            localize,
+            lang,
+          ),
+        })
     : '';
   const pagesLeftStr = showPagesLeft
     ? localize
-      ? _('{{number}} pages left in chapter', {
-          number: formatNumber(pagesLeft, localize, lang),
-        })
-      : _('{{count}} pages left in chapter', {
-          count: pagesLeft,
-        })
+      ? remainingInBook
+        ? _('{{number}} pages left in book', {
+            number: formatNumber(pagesLeft, localize, lang),
+          })
+        : _('{{number}} pages left in chapter', {
+            number: formatNumber(pagesLeft, localize, lang),
+          })
+      : remainingInBook
+        ? _('{{count}} pages left in book', {
+            count: pagesLeft,
+          })
+        : _('{{count}} pages left in chapter', {
+            count: pagesLeft,
+          })
     : '';
 
   const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
@@ -225,12 +246,27 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               ) : viewSettings.showRemainingPages && showPagesLeft ? (
                 <span className='text-start'>
                   {localize ? (
-                    <Trans
-                      i18nKey='{{number}} pages left in chapter'
-                      values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                    >
-                      <span className='pages-left-number'>{'{{number}}'}</span>
-                      <span className='pages-left-label'>{' pages left in chapter'}</span>
+                    remainingInBook ? (
+                      <Trans
+                        i18nKey='{{number}} pages left in book'
+                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                      >
+                        <span className='pages-left-number'>{'{{number}}'}</span>
+                        <span className='pages-left-label'>{' pages left in book'}</span>
+                      </Trans>
+                    ) : (
+                      <Trans
+                        i18nKey='{{number}} pages left in chapter'
+                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                      >
+                        <span className='pages-left-number'>{'{{number}}'}</span>
+                        <span className='pages-left-label'>{' pages left in chapter'}</span>
+                      </Trans>
+                    )
+                  ) : remainingInBook ? (
+                    <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
+                      <span className='pages-left-number'>{'{{count}}'}</span>
+                      <span className='pages-left-label'>{' pages left in book'}</span>
                     </Trans>
                   ) : (
                     <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
