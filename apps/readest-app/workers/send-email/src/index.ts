@@ -67,6 +67,26 @@ export default {
     // exposes no verdict header, and the `From` header is already trustworthy
     // by the time we see it. The approved-sender allowlist below is the gate.
 
+    // 2a. Plan gate. Email-in is a paid feature (Plus / Pro / Lifetime).
+    // We bounce — not silently drop — so a paid user who downgraded knows
+    // their books aren't coming through and where to go. Mirror of the
+    // server-API + client-UI gate; same plan-tier set as `EMAIL_IN_PLANS`
+    // in `src/utils/access.ts`.
+    const { data: planRow } = await supabase
+      .from('plans')
+      .select('plan')
+      .eq('id', userId)
+      .maybeSingle();
+    const userPlan = ((planRow?.plan as string | undefined) || 'free').toLowerCase();
+    if (!['plus', 'pro', 'purchase'].includes(userPlan)) {
+      message.setReject(
+        'Send-to-Readest email-in requires the Plus, Pro, or Lifetime plan. ' +
+          'Open the Readest app to upgrade, or clip articles for free with the ' +
+          'in-app Send button, the mobile Share menu, or the browser extension.',
+      );
+      return;
+    }
+
     // 3. Size guard (Cloudflare's own ceiling is ~25-30 MB).
     const maxBytes = Number(env.MAX_MESSAGE_BYTES) || 26_214_400;
     if (message.rawSize > maxBytes) {

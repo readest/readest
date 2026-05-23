@@ -1,7 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import { validateUserAndToken } from '@/utils/access';
+import {
+  EMAIL_IN_PLANS,
+  getUserProfilePlan,
+  isEmailInPlan,
+  validateUserAndToken,
+} from '@/utils/access';
 import {
   generateSendAddress,
   buildSendAddress,
@@ -27,9 +32,22 @@ const fullAddress = (localPart: string) => `${localPart}@${SEND_EMAIL_DOMAIN}`;
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
-  const { user } = await validateUserAndToken(req.headers['authorization']);
-  if (!user) {
+  const { user, token } = await validateUserAndToken(req.headers['authorization']);
+  if (!user || !token) {
     return res.status(403).json({ error: 'Not authenticated' });
+  }
+
+  // Email-in is a paid feature. The client renders a friendly upgrade
+  // card on receiving this response, so the structured body (code +
+  // requiredPlans) matters — UI keys off it.
+  const plan = getUserProfilePlan(token);
+  if (!isEmailInPlan(plan)) {
+    return res.status(403).json({
+      error: 'Email-in is available on the Plus, Pro, and Lifetime plans',
+      code: 'plan_required',
+      plan,
+      requiredPlans: EMAIL_IN_PLANS,
+    });
   }
 
   const supabase = createSupabaseAdminClient();

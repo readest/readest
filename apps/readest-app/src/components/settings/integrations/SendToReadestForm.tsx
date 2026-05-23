@@ -7,8 +7,10 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchWithAuth } from '@/utils/fetch';
 import { getAPIBaseUrl } from '@/services/environment';
 import { isInboxDrainEnabled, setInboxDrainEnabled } from '@/services/send/devicePrefs';
-import { navigateToLogin } from '@/utils/nav';
+import { getAccessToken, getUserProfilePlan, isEmailInPlan } from '@/utils/access';
+import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
+import type { UserPlan } from '@/types/quota';
 import type { DBSendAllowedSender, DBSendInboxItem } from '@/types/sendRecords';
 import SubPageHeader from '../SubPageHeader';
 import { BoxedList, SectionTitle, SettingLabel, SettingsSwitchRow } from '../primitives';
@@ -45,6 +47,11 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [drainEnabled, setDrainEnabled] = useState(() => isInboxDrainEnabled());
+  // `null` while we're still reading the JWT; lets the loading skeleton
+  // stay up rather than briefly flashing the upgrade card for a paid user
+  // on a slow client.
+  const [userPlan, setUserPlan] = useState<UserPlan | null>(null);
+  const canUseEmailIn = userPlan !== null && isEmailInPlan(userPlan);
   // Editing affordances stay collapsed once configured, keeping the panel
   // minimal; the refresh / plus icons reveal the input rows.
   const [editingAddress, setEditingAddress] = useState(false);
@@ -61,6 +68,15 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
 
   const load = useCallback(async () => {
     try {
+      // Resolve the user's plan first — free users get the upgrade card and
+      // we skip the address / senders calls entirely (they'd 403 anyway).
+      const token = await getAccessToken();
+      const plan: UserPlan = token ? getUserProfilePlan(token) : 'free';
+      setUserPlan(plan);
+      if (!isEmailInPlan(plan)) {
+        setLoading(false);
+        return;
+      }
       const [addrRes, sendersRes, inboxRes] = await Promise.all([
         fetchWithAuth(`${apiBase}/send/address`, { method: 'GET' }),
         fetchWithAuth(`${apiBase}/send/senders`, { method: 'GET' }),
@@ -206,6 +222,34 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
               <div className={`skeleton w-full rounded-xl ${section.card}`} />
             </div>
           ))}
+        </div>
+      ) : !canUseEmailIn ? (
+        // Free-tier gate. One card, one CTA, plus a callout for the free
+        // clip channels so the panel doesn't read as pure paywall.
+        <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+          <div className='flex flex-col items-center gap-3 px-6 py-8 text-center'>
+            <span className='bg-base-200 text-base-content/70 flex h-14 w-14 items-center justify-center rounded-full'>
+              <RiSendPlaneLine className='h-6 w-6' />
+            </span>
+            <h3 className='text-base font-semibold'>{_('Email books straight to your library')}</h3>
+            <p className='text-base-content/70 max-w-sm text-sm leading-relaxed'>
+              {_(
+                'Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.',
+              )}
+            </p>
+            <button
+              type='button'
+              className='btn btn-contrast btn-sm mt-1'
+              onClick={() => navigateToProfile(router)}
+            >
+              {_('View plans')}
+            </button>
+            <p className='text-base-content/55 mt-2 max-w-sm text-xs leading-relaxed'>
+              {_(
+                'You can still clip articles for free with the in-app Send button, the mobile Share menu, or the browser extension.',
+              )}
+            </p>
+          </div>
         </div>
       ) : (
         <div className='space-y-6'>

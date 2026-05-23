@@ -30,6 +30,21 @@ export const getUserProfilePlan = (token: string): UserPlan => {
   return plan;
 };
 
+/**
+ * Plans that include the "Send to Readest via email" feature: Plus,
+ * Pro, and Lifetime (`purchase`). Free users see an upgrade card on
+ * the client and get a 403 from the server endpoints that allocate /
+ * rotate the address, plus a bounce from the inbound email Worker.
+ *
+ * Other Send channels (in-app `/send` page, mobile share-sheet, browser
+ * extension) stay open to free users — the gate is the personal email
+ * inbox only.
+ */
+export const EMAIL_IN_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+
+export const isEmailInPlan = (plan: UserPlan): boolean =>
+  (EMAIL_IN_PLANS as readonly UserPlan[]).includes(plan);
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {
