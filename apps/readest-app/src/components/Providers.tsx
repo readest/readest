@@ -10,6 +10,7 @@ import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useCustomTextureStore } from '@/store/customTextureStore';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 import { useDefaultIconSize } from '@/hooks/useResponsiveSize';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
@@ -68,6 +69,16 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       appService.loadSettings().then((settings) => {
         const globalViewSettings = settings.globalViewSettings;
         applyUILanguage(globalViewSettings.uiLanguage);
+        // Seed the customTextureStore with the disk-loaded textures (preserving
+        // their saved ids) so the boot-time applyBackgroundTexture below can
+        // resolve a custom textureId. Without this, the store is empty until
+        // ColorPanel or the replica-pull seed runs — and the in-hook addTexture
+        // fallback re-derives the id from name, which mismatches whenever the
+        // saved id wasn't computed from the current name (legacy imports,
+        // cross-device sync, name-based id collisions).
+        if (settings.customTextures?.length) {
+          useCustomTextureStore.getState().setTextures(settings.customTextures);
+        }
         applyBackgroundTexture(envConfig, globalViewSettings);
         if (globalViewSettings.isEink) {
           applyEinkMode(true);
