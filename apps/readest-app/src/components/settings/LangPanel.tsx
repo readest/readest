@@ -12,6 +12,7 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { ConvertChineseVariant } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
@@ -49,6 +50,15 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
+
+  // Android Back / Esc: when the Manage Dictionaries sub-page is open,
+  // intercept and step back to the language list instead of letting
+  // <Dialog>'s listener close the whole Settings dialog. See the matching
+  // comment in FontPanel.tsx for the LIFO-dispatch reasoning.
+  useKeyDownActions({
+    enabled: showCustomDictionaries,
+    onCancel: () => setShowCustomDictionaries(false),
+  });
 
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
   // activeSettingsItemId to `'settings.language.dictionaries.manage'` to

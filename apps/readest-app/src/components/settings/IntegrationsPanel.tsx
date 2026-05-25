@@ -14,6 +14,7 @@ import {
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useWebDAVSyncStore } from '@/store/webdavSyncStore';
@@ -56,6 +57,20 @@ const IntegrationsPanel: React.FC = () => {
   const isWebDAVSyncing = useWebDAVSyncStore((s) => s.isSyncing);
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+
+  // Android Back / Esc: when any integrations sub-page (KOSync, WebDAV,
+  // Readwise, Hardcover, OPDS, Send-to-Readest) is open, intercept and
+  // step back to the integrations list instead of letting <Dialog>'s
+  // listener close the whole Settings dialog. The hook registers its
+  // sync `native-key-down` listener *after* <Dialog>'s, and
+  // `dispatchSync` walks listeners LIFO — so this one claims Back first
+  // when enabled and `return true` consumes the event. When subPage is
+  // null the hook is disabled and Back falls through to close the dialog
+  // as before.
+  useKeyDownActions({
+    enabled: subPage !== null,
+    onCancel: () => setSubPage(null),
+  });
 
   const toggleDiscordPresence = () => {
     const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;

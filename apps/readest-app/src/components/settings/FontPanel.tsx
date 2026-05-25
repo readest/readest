@@ -25,6 +25,7 @@ import { getSysFontsList } from '@/utils/bridge';
 import { isCJKStr } from '@/utils/lang';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { BoxedList, NavigationRow, SettingLabel, SettingsRow } from './primitives';
@@ -170,6 +171,19 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const handleBackToMain = () => {
     setFontPanelView('main-fonts');
   };
+
+  // Android Back / Esc: when the Custom Fonts sub-page is open, intercept
+  // and step back to main-fonts instead of letting <Dialog>'s own listener
+  // close the entire Settings dialog. This works because
+  // `useKeyDownActions` registers its sync `native-key-down` listener
+  // *after* <Dialog>'s, and `dispatchSync` walks listeners LIFO — so when
+  // enabled this hook claims the Back press first and `return true`
+  // consumes it; when disabled (sub-page closed) Back falls through to
+  // <Dialog> and closes the dialog as before.
+  useKeyDownActions({
+    enabled: fontPanelView === 'custom-fonts',
+    onCancel: handleBackToMain,
+  });
 
   useEffect(() => {
     onRegisterReset(handleReset);
