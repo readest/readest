@@ -12,6 +12,8 @@ import {
 } from '@/services/ai/providers/OpenRouterProvider';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
+import { exportReedyMetricsBundle } from '@/services/reedy/instrumentation';
+import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow, SettingsSwitchRow } from './primitives';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -67,12 +69,13 @@ const getModelOptions = (): ModelOption[] => [
 
 const AIPanel: React.FC = () => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
 
   const aiSettings: AISettings = settings?.aiSettings ?? DEFAULT_AI_SETTINGS;
 
   const [enabled, setEnabled] = useState(aiSettings.enabled);
+  const [reedyEnabled, setReedyEnabled] = useState(aiSettings.reedy?.enabled ?? false);
   const [provider, setProvider] = useState<AIProviderName>(aiSettings.provider);
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaBaseUrl);
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaModel);
@@ -735,6 +738,65 @@ const AIPanel: React.FC = () => {
           </div>
         </BoxedList>
       )}
+
+      <BoxedList
+        title={_('Reedy Retrieval (Beta)')}
+        className={disabledSection}
+        description={
+          isTauriAppPlatform()
+            ? _(
+                'Uses Turso vector search + CFI-anchored citations. The model decides when to look up passages instead of getting them stuffed into the system prompt.',
+              )
+            : _('Reedy is desktop-only in this beta. Use the Readest desktop app to try it.')
+        }
+      >
+        <SettingsSwitchRow
+          label={_('Use Reedy retrieval')}
+          description={_(
+            'When on, indexing and chat go through Reedy. When off, the legacy IndexedDB pipeline is used.',
+          )}
+          checked={reedyEnabled}
+          disabled={!enabled || !isTauriAppPlatform()}
+          onChange={() => {
+            const next = !reedyEnabled;
+            setReedyEnabled(next);
+            saveAiSetting('reedy', { enabled: next });
+          }}
+        />
+        <div className='flex min-h-14 items-center justify-between gap-3 ps-4 pe-4'>
+          <div className='flex min-w-0 flex-col gap-0.5'>
+            <SettingLabel>{_('Send Reedy feedback')}</SettingLabel>
+            <span className='text-base-content/60 text-xs'>
+              {_(
+                'Download the last 90 days of Reedy events as a JSON bundle (local-only by default). Paste into a GitHub issue or feedback form.',
+              )}
+            </span>
+          </div>
+          <button
+            className='btn btn-outline btn-sm'
+            disabled={!enabled || !isTauriAppPlatform() || !appService}
+            onClick={async () => {
+              if (!appService) return;
+              try {
+                const bundle = await exportReedyMetricsBundle(appService);
+                const blob = new Blob([bundle], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `reedy-feedback-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } catch (err) {
+                console.error('[Reedy] feedback export failed', err);
+              }
+            }}
+          >
+            {_('Download')}
+          </button>
+        </div>
+      </BoxedList>
 
       <BoxedList title={_('Connection')} className={disabledSection}>
         <div className='flex min-h-14 items-center justify-between gap-3 pe-4'>
