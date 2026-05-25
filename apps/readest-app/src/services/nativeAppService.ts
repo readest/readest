@@ -492,9 +492,18 @@ export class NativeAppService extends BaseAppService {
     }
     if (this.isIOSApp) {
       this.isOnlineCatalogsAccessible = this.distChannel !== 'appstore';
-      const res = await getStorefrontRegionCode();
-      if (res.regionCode) {
-        this.storefrontRegionCode = res.regionCode;
+      try {
+        const res = await getStorefrontRegionCode();
+        if (res?.regionCode) {
+          this.storefrontRegionCode = res.regionCode;
+        }
+      } catch (err) {
+        // Storefront.current is nil on simulators without a signed-in
+        // App Store account, and may also fail on real devices with no
+        // StoreKit configuration. Treat as "unknown region" — we leave
+        // storefrontRegionCode as null and let downstream features that
+        // depend on region degrade gracefully.
+        console.warn('[nativeAppService] getStorefrontRegionCode failed:', err);
       }
     }
     await this.prepareBooksDir();
