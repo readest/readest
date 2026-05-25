@@ -521,6 +521,13 @@ class NativeBridgePlugin: Plugin {
     } else {
       Logger.error("NativeBridgePlugin: Failed to get shared application")
     }
+
+    // Re-acquire security-scoped access for every external library
+    // folder the user registered in a previous session. Done here in
+    // `load` so the WebView can issue fs reads against those paths as
+    // soon as the JS layer comes up. See `FolderBookmarkStore`
+    // for the why and how.
+    FolderBookmarkStore.restoreAllPersisted()
   }
 
   @objc func appWillEnterForeground() {
@@ -1398,8 +1405,10 @@ class NativeBridgePlugin: Plugin {
         // Drop our strong reference once the picker resolves so the
         // delegate (and thus the closure capture chain) can deallocate.
         // The security-scoped URL resource stays open via
-        // `FolderPickerDelegate`'s own retain on the URL until the app
-        // terminates — see the class doc comment for v2 plans.
+        // `FolderBookmarkStore.persist`, which retains the URL
+        // for the rest of the process and writes a bookmark to
+        // UserDefaults so the next launch can re-acquire access
+        // without prompting the user again.
         self?.folderPickerDelegate = nil
       }
       self.folderPickerDelegate = delegate
@@ -1407,6 +1416,131 @@ class NativeBridgePlugin: Plugin {
 
       presenter.present(picker, animated: true)
     }
+  }
+}
+
+/// Persistent store for security-scoped folder bookmarks.
+///
+/// `UIDocumentPickerViewController(forOpeningContentTypes: [.folder])`
+/// hands us a security-scoped URL whose access right is granted only to
+/// the running process. To read the same folder on the *next* launch
+/// (without making the user re-pick it every time) we have to:
+///
+///   1. Right after the pick, call `URL.bookmarkData(.withSecurityScope)`
+///      and stash the bytes in `UserDefaults` keyed by the POSIX path.
+///   2. On every app launch, walk every persisted bookmark, resolve it
+///      back into a URL, and call `startAccessingSecurityScopedResource()`.
+///      Hold the URL alive for the entire process so subsequent
+///      Foundation / POSIX reads against `url.path` succeed.
+///
+/// The TS-visible `path` is unchanged across launches, so the rest of
+/// the app doesn't need to know about bookmarks — they're an iOS
+/// sandbox plumbing detail that lives entirely on the Swift side.
+///
+/// `isStale` recovery: when the source moves (user renamed, system
+/// migrated) `URL(resolvingBookmarkData:..., bookmarkDataIsStale:)`
+/// sets `isStale=true` and the new URL still works. We re-encode and
+/// rewrite. If the bookmark can't be resolved at all (file deleted,
+/// provider gone), we drop the entry — the user will need to re-pick.
+enum FolderBookmarkStore {
+  /// UserDefaults key prefix; the actual key is "<prefix><path>".
+  /// Using the path verbatim keeps debugging straightforward (you can
+  /// see the registered folders in `defaults read`), and UserDefaults
+  /// keys can contain any valid string.
+  private static let keyPrefix = "readest.folderBookmark."
+
+  /// Every URL we've successfully `startAccessingSecurityScopedResource`-ed
+  /// during this process, indexed by the POSIX path the JS layer uses.
+  /// Held forever (until process exit) — calling `stop` would kill any
+  /// subsequent fs read against the path.
+  private static var liveAccess: [String: URL] = [:]
+
+  /// Persist a bookmark for `url` so it can be resolved on next launch,
+  /// and pre-warm `liveAccess` for the current session.
+  static func persist(url: URL) {
+    let path = url.path
+    do {
+      let data = try url.bookmarkData(
+        options: .minimalBookmark,
+        includingResourceValuesForKeys: nil,
+        relativeTo: nil)
+      UserDefaults.standard.set(data, forKey: keyPrefix + path)
+      liveAccess[path] = url
+      logger.log(
+        "FolderBookmarkStore: persisted bookmark for \(path, privacy: .public)")
+    } catch {
+      Logger.error(
+        "FolderBookmarkStore: failed to encode bookmark for \(path): \(error)")
+    }
+  }
+
+  /// Resolve every stored bookmark and start accessing its security-
+  /// scoped resource. Called once from `NativeBridgePlugin.load(webview:)`
+  /// so all previously-registered folders are reachable before
+  /// the WebView begins issuing fs reads.
+  static func restoreAllPersisted() {
+    let defaults = UserDefaults.standard
+    let allKeys = defaults.dictionaryRepresentation().keys.filter {
+      $0.hasPrefix(keyPrefix)
+    }
+    var restored = 0
+    var dropped = 0
+    for key in allKeys {
+      guard let data = defaults.data(forKey: key) else { continue }
+      let storedPath = String(key.dropFirst(keyPrefix.count))
+      var isStale = false
+      do {
+        let url = try URL(
+          resolvingBookmarkData: data,
+          options: [],
+          relativeTo: nil,
+          bookmarkDataIsStale: &isStale)
+        let started = url.startAccessingSecurityScopedResource()
+        if started {
+          liveAccess[url.path] = url
+          restored += 1
+        } else {
+          // The OS denied access (e.g. file provider revoked). Don't
+          // delete the entry — the user may reauthorize the provider
+          // in Settings; we'll pick it up on the next launch.
+          Logger.error(
+            "FolderBookmarkStore: startAccessing denied for \(storedPath)")
+        }
+        if isStale {
+          // Re-encode against the resolved URL so the next launch
+          // doesn't have to walk the stale path again.
+          if let fresh = try? url.bookmarkData(
+            options: .minimalBookmark,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil)
+          {
+            defaults.set(fresh, forKey: key)
+          }
+        }
+      } catch {
+        // Bookmark is unrecoverable — folder gone, provider uninstalled,
+        // disk reformatted. Drop it from UserDefaults so the next launch
+        // doesn't re-attempt it.
+        defaults.removeObject(forKey: key)
+        dropped += 1
+        Logger.error(
+          "FolderBookmarkStore: dropped unresolvable bookmark for \(storedPath): \(error)")
+      }
+    }
+    logger.log(
+      "FolderBookmarkStore: restored \(restored, privacy: .public) folder(s), dropped \(dropped, privacy: .public)"
+    )
+  }
+
+  /// Stop accessing and forget the bookmark for `path`. Used when the
+  /// JS layer removes a folder from `settings.externalLibraryFolders`.
+  /// Currently unused — the v1 UI doesn't expose folder removal — but
+  /// kept here so the cleanup contract is obvious from one place.
+  static func forget(path: String) {
+    if let url = liveAccess.removeValue(forKey: path) {
+      url.stopAccessingSecurityScopedResource()
+    }
+    UserDefaults.standard.removeObject(forKey: keyPrefix + path)
   }
 }
 
@@ -1424,15 +1558,12 @@ class NativeBridgePlugin: Plugin {
 ///      and then run `onComplete`, which clears the plugin's strong
 ///      reference. We deallocate at that point.
 ///   4. The chosen URL retains its security-scoped access for the
-///      remainder of the process via `urlsToKeepAlive`.
+///      remainder of the process via `FolderBookmarkStore`,
+///      and is also persisted to UserDefaults so the next launch can
+///      re-acquire access without prompting the user again.
 private final class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
   private let invoke: Invoke
   private let onComplete: () -> Void
-  /// Hold security-scoped URLs alive for the rest of the app's lifetime
-  /// — calling `stopAccessingSecurityScopedResource()` on these would
-  /// invalidate any subsequent fs read against the path. v2 should
-  /// replace this with persistent bookmarks resolved on app launch.
-  private static var urlsToKeepAlive: [URL] = []
 
   init(invoke: Invoke, onComplete: @escaping () -> Void) {
     self.invoke = invoke
@@ -1457,8 +1588,11 @@ private final class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
     // than failing here pre-emptively.
     let started = url.startAccessingSecurityScopedResource()
     if started {
-      // Retain so the resource stays accessible after we return.
-      FolderPickerDelegate.urlsToKeepAlive.append(url)
+      // Persist a security-scoped bookmark so the same path is
+      // reachable on the next launch, without forcing the user to
+      // re-pick it. The store also retains the URL so the resource
+      // stays accessible for the remainder of this process.
+      FolderBookmarkStore.persist(url: url)
     }
 
     let result: [String: Any] = [
