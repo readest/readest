@@ -11,6 +11,9 @@
 .test-sandbox-node/
 .vitest-attachments/
 
+# benchmarks — personal local perf history; share via PR/issue copy-paste
+bench/results.jsonl
+
 # next.js
 /.next/
 /out/

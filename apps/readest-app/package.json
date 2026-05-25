@@ -30,6 +30,7 @@
     "test:pr:web": "dotenv -e .env -e .env.test.local -- vitest run --maxWorkers=4 && pnpm test:browser && pnpm test:extension && pnpm build-browser-ext",
     "test:pr:tauri": "bash scripts/test-tauri.sh",
     "test:all": "pnpm test -- --watch=false && pnpm test:browser && bash scripts/test-tauri.sh",
+    "bench": "node --experimental-strip-types --no-warnings bench/index.ts",
     "test:e2e": "wdio run wdio.conf.ts",
     "test:e2e:web": "playwright test",
     "test:e2e:web:headed": "playwright test --headed --workers=1 --trace on",
