@@ -121,6 +121,14 @@ const LAST_IMPORT_FOLDER_FORMATS_KEY = 'readest:lastImportFolderFormats';
  * Stored as a stringified non-negative integer.
  */
 const LAST_IMPORT_FOLDER_MIN_SIZE_KEY = 'readest:lastImportFolderMinSizeKB';
+/**
+ * Key used to persist the last "Read books in place" toggle value
+ * (`'1'` or `'0'`). Restored as the dialog's initial toggle state.
+ * The toggle only matters for fresh, not-yet-registered folders —
+ * once a folder is registered as an external library folder, the
+ * dialog forces the toggle ON regardless of this value.
+ */
+const LAST_IMPORT_FOLDER_READ_IN_PLACE_KEY = 'readest:lastImportFolderReadInPlace';
 
 const LibraryPageWithSearchParams = () => {
   const searchParams = useSearchParams();
@@ -184,6 +192,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     initialFolderMode: 'keep' | 'flatten';
     initialSelectedGroupIds?: string[];
     initialMinSizeKB?: number;
+    initialReadInPlace?: boolean;
   } | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
@@ -649,6 +658,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const successfulImports: string[] = [];
 
+    // Readest's own Books/ prefix is resolved once at app init and persisted
+    // in `settings.localBooksDir`. We hand it to `ingestFile` so the in-place
+    // decision can exclude files that already live inside our managed hash
+    // store WITHOUT misclassifying user-owned folders that happen to be
+    // named "Books" (e.g. Baidu Netdisk's default `Books/` directory
+    // directly under the user's library root).
+    const appBooksPrefix: string | null =
+      useSettingsStore.getState().settings.localBooksDir || null;
+
     const processFile = async (selectedFile: SelectedFile): Promise<Book | null> => {
       const file = selectedFile.file || selectedFile.path;
       if (!file) return null;
@@ -671,6 +689,16 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           resolvedGroupName = getDirPath(path).replace(rootPath, '').replace(/^\//, '');
           resolvedGroupId = getGroupId(resolvedGroupName);
         }
+        // Read settings from the store at call-time rather than the
+        // component closure. `runFolderImport` may have just registered
+        // the picked directory as an external library folder via
+        // `setSettings(...)`, but React state updates don't mutate the
+        // already-captured `settings` reference until the next render —
+        // by the time we get here, the closure still holds the *old*
+        // settings, so `shouldImportInPlace` would see an empty
+        // `externalLibraryFolders` and incorrectly fall back to copy
+        // mode. Pulling the latest snapshot from zustand fixes this.
+        const liveSettings = useSettingsStore.getState().settings;
         const book = await ingestFile(
           {
             file,
@@ -679,7 +707,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             groupId: resolvedGroupId,
             groupName: resolvedGroupName,
           },
-          { appService, settings, isLoggedIn: !!user },
+          { appService, settings: liveSettings, isLoggedIn: !!user, appBooksPrefix },
         );
         if (!book) return null;
         successfulImports.push(book.title);
@@ -956,6 +984,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         selectedGroupIds: [],
         minSizeKB: 0,
         flatten: false,
+        // URL ingress / drag-drop don't go through the dialog and so
+        // can't set this. Default to the legacy "copy" behaviour;
+        // already-registered external roots will still be detected
+        // by `runFolderImport` itself via the prefix check, so books
+        // under a registered folder are imported in-place either way.
+        readInPlace: false,
       });
       return;
     }
@@ -968,6 +1002,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const storedMode = ls?.getItem(LAST_IMPORT_FOLDER_MODE_KEY);
     const storedFormats = ls?.getItem(LAST_IMPORT_FOLDER_FORMATS_KEY);
     const storedMinSize = ls?.getItem(LAST_IMPORT_FOLDER_MIN_SIZE_KEY);
+    const storedReadInPlace = ls?.getItem(LAST_IMPORT_FOLDER_READ_IN_PLACE_KEY);
     const parsedFormats = storedFormats
       ? storedFormats
           .split(',')
@@ -986,6 +1021,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         parsedMinSize !== undefined && Number.isFinite(parsedMinSize) && parsedMinSize >= 0
           ? parsedMinSize
           : undefined,
+      initialReadInPlace: storedReadInPlace === '1',
     });
   };
 
@@ -1066,6 +1102,57 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   /**
+   * Normalize a path the same way `shouldImportInPlace` does so the
+   * predicate / store helpers below stay consistent with the ingest
+   * layer's own path-prefix matching. Trailing separators and Windows
+   * backslashes are normalized; nothing else is touched.
+   */
+  const normalizeRoot = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '');
+
+  /**
+   * `true` when `directory` is already in
+   * `settings.externalLibraryFolders` after path normalization. Hands
+   * over to the ImportFromFolderDialog so it can render the "Read in
+   * place" toggle as ON-and-locked when the user re-imports from a
+   * folder they've already registered. The match is exact-string
+   * (after normalization) — sub-paths of a registered folder are NOT
+   * considered registered roots themselves, only the registered root
+   * is.
+   */
+  const isRegisteredExternalRoot = (directory: string): boolean => {
+    const target = normalizeRoot(directory);
+    if (!target) return false;
+    const roots = settings.externalLibraryFolders ?? [];
+    return roots.some((r) => normalizeRoot(r) === target);
+  };
+
+  /**
+   * Add `directory` to `settings.externalLibraryFolders` (and persist
+   * settings) so the ingest layer's `shouldImportInPlace` will pick
+   * up subsequent imports from the same folder automatically. No-op
+   * when the folder is already registered. Errors are swallowed
+   * because the import flow can still succeed in copy mode even if
+   * registration fails — we just won't get the in-place behaviour
+   * next launch.
+   */
+  const registerExternalLibraryFolder = async (directory: string): Promise<void> => {
+    const target = normalizeRoot(directory);
+    if (!target) return;
+    const existing = settings.externalLibraryFolders ?? [];
+    if (existing.some((r) => normalizeRoot(r) === target)) {
+      return;
+    }
+    const next = [...existing, directory];
+    const nextSettings = { ...settings, externalLibraryFolders: next };
+    setSettings(nextSettings);
+    try {
+      await saveSettings(envConfig, nextSettings);
+    } catch (e) {
+      console.error('Failed to persist externalLibraryFolders update:', e);
+    }
+  };
+
+  /**
    * Recursively scan {@link result.directory}, keep files matching one
    * of {@link result.extensions} that are at least
    * {@link result.minSizeKB} KB, and feed them through {@link importBooks}.
@@ -1100,6 +1187,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // Catch that here so they get the same clear guidance instead of
     // a fs_scope error from readDirectory below.
     if (!validatePickedDirectory(result.directory)) return;
+
+    // The user can opt the chosen folder into "in place" via the
+    // dialog toggle; the same effect happens automatically when the
+    // folder is already a registered external library folder (the
+    // ingest layer's `shouldImportInPlace` does a path-prefix match
+    // against `settings.externalLibraryFolders`). Register here so the
+    // bookkeeping survives across launches and so subsequent imports
+    // from the same folder don't have to re-trigger the toggle.
+    if (result.readInPlace) {
+      await registerExternalLibraryFolder(result.directory);
+    }
+
     // Re-grant scopes for the directory before scanning. This matters
     // when `result.directory` came from somewhere the dialog plugin
     // didn't authorise — typically the persisted "last import folder"
@@ -1361,6 +1460,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           initialFolderMode={importFromFolderState.initialFolderMode}
           initialSelectedGroupIds={importFromFolderState.initialSelectedGroupIds}
           initialMinSizeKB={importFromFolderState.initialMinSizeKB}
+          initialReadInPlace={importFromFolderState.initialReadInPlace}
+          isRegisteredExternalRoot={isRegisteredExternalRoot}
           onPickDirectory={pickImportDirectory}
           onCancel={() => setImportFromFolderState(null)}
           onConfirm={(result) => {
@@ -1386,6 +1487,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               window.localStorage.setItem(
                 LAST_IMPORT_FOLDER_MIN_SIZE_KEY,
                 String(result.minSizeKB),
+              );
+              window.localStorage.setItem(
+                LAST_IMPORT_FOLDER_READ_IN_PLACE_KEY,
+                result.readInPlace ? '1' : '0',
               );
             }
             void runFolderImport(result);

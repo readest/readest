@@ -57,6 +57,18 @@ export interface ImportFromFolderResult {
    * directly into the library root without creating any groups.
    */
   flatten: boolean;
+  /**
+   * When `true`, register the directory as an external library folder
+   * (`settings.externalLibraryFolders`) and import its books in place
+   * — Readest will read each file straight from its original location
+   * instead of copying it into Books/<hash>/. Sidecars (cover, config,
+   * notes) still live in Readest's data dir, so deleting the local
+   * copy of a book on Readest's side will physically remove the
+   * source file under the registered folder. Defaults to `false`,
+   * which keeps the legacy "copy into Readest" behaviour and leaves
+   * the registered folder list untouched.
+   */
+  readInPlace: boolean;
 }
 
 interface ImportFromFolderDialogProps {
@@ -80,6 +92,22 @@ interface ImportFromFolderDialogProps {
    * Defaults to 20 KB when omitted.
    */
   initialMinSizeKB?: number;
+  /**
+   * Initial value for the "Read in place" toggle. Persisted by the
+   * caller so users who picked in-place last time don't need to flip
+   * the switch again. Defaults to `false`.
+   */
+  initialReadInPlace?: boolean;
+  /**
+   * Predicate the dialog uses to decide whether the currently-displayed
+   * folder is already registered as an external library folder. When
+   * `true`, the "Read in place" toggle is forced ON and locked, with a
+   * note explaining that imports from this folder are always in-place
+   * (until the user removes it from Settings, which v1 doesn't expose).
+   * Implementations should match by exact string after the same path
+   * normalization the importer uses.
+   */
+  isRegisteredExternalRoot?: (directory: string) => boolean;
   /**
    * Pop the platform's native folder picker and return the chosen path,
    * or `undefined` when the user cancels. Required because folder
@@ -110,6 +138,8 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   initialFolderMode = 'keep',
   initialSelectedGroupIds,
   initialMinSizeKB,
+  initialReadInPlace = false,
+  isRegisteredExternalRoot,
   onPickDirectory,
   onCancel,
   onConfirm,
@@ -138,7 +168,17 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   // root regardless of where it lived on disk. The caller seeds this
   // from localStorage so the user's last choice is restored.
   const [folderMode, setFolderMode] = useState<'keep' | 'flatten'>(initialFolderMode);
+  // "Read in place" toggle. When the directory is already registered
+  // as an external library folder we force this ON and hide the
+  // toggle's interactive surface — see {@link readInPlaceLocked}
+  // below — because imports from a registered folder are always
+  // in-place by design (the importer's `shouldImportInPlace` check is
+  // path-prefix based and ignores any per-import opt-out).
+  const [readInPlace, setReadInPlace] = useState<boolean>(initialReadInPlace);
   const [picking, setPicking] = useState(false);
+
+  const readInPlaceLocked = !!directory && (isRegisteredExternalRoot?.(directory) ?? false);
+  const effectiveReadInPlace = readInPlaceLocked || readInPlace;
 
   // Enter to confirm, Escape / Android Back to cancel. We must wire
   // `onCancel` even though <Dialog> also listens for Back, because
@@ -200,6 +240,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
       selectedGroupIds: selectedIds,
       minSizeKB: safeMinSizeKB,
       flatten: folderMode === 'flatten',
+      readInPlace: effectiveReadInPlace,
     });
   };
 
@@ -304,6 +345,42 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
             />
             <span className='text-base-content/70 select-none pe-2 text-xs'>{_('KB')}</span>
           </div>
+        </div>
+
+        {/* Read-in-place toggle. When OFF (default), each book is
+            copied into Books/<hash>/ as before. When ON, the chosen
+            folder is registered in `settings.externalLibraryFolders`
+            and the importer keeps each book at its original path —
+            no copy. See `runFolderImport` and `shouldImportInPlace`
+            in ingestService for the downstream effects (cloud sync,
+            symmetric local delete). */}
+        <div className='flex flex-col gap-1.5'>
+          <label
+            className={clsx(
+              'flex items-start gap-2 rounded-md px-1 py-1 text-sm',
+              readInPlaceLocked ? 'cursor-default' : 'cursor-pointer hover:bg-base-200/50',
+            )}
+          >
+            <input
+              type='checkbox'
+              className='checkbox checkbox-sm mt-0.5'
+              checked={effectiveReadInPlace}
+              disabled={readInPlaceLocked}
+              onChange={(e) => setReadInPlace(e.target.checked)}
+            />
+            <span className='select-none'>
+              <span className='block'>{_('Read books in place')}</span>
+              <span className='text-base-content/60 block text-xs'>
+                {readInPlaceLocked
+                  ? _(
+                      'This folder is registered as an external library — books here are always read in place.',
+                    )
+                  : _(
+                      'Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).',
+                    )}
+              </span>
+            </span>
+          </label>
         </div>
 
         {/* Folder-structure mode — radios let the user choose between

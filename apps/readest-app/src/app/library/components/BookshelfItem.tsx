@@ -159,16 +159,36 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     async (book: Book) => {
       if (isSelectMode) {
         toggleSelection(book.hash);
-      } else {
-        const available = await makeBookAvailable(book);
-        if (!available) return;
-        if (appService?.hasWindow && settings.openBookInNewWindow) {
-          showReaderWindow(appService, [book.hash]);
-        } else {
-          setTimeout(() => {
-            navigateToReader(router, [book.hash]);
-          }, 0);
+        return;
+      }
+      // In-place books point at a file outside Books/<hash>/ that the user
+      // (or another app) may have moved, renamed, or deleted between sessions.
+      // Probe the source before navigating: if it's gone, drop the stale
+      // library record instead of opening the reader only to fail inside
+      // loadBookContent and bounce back with a toast. We restrict this to
+      // purely-local in-place books — cloud-synced books (`uploadedAt`) still
+      // go through `makeBookAvailable`'s on-demand download path below, and
+      // hash-copy books (no `filePath`) shouldn't lose their Books/<hash>/
+      // file under normal use, so we don't second-guess those here.
+      if (book.filePath && !book.uploadedAt && !book.deletedAt) {
+        const available = await appService?.isBookAvailable(book);
+        if (!available) {
+          eventDispatcher.dispatch('toast', {
+            message: 'Book file no longer exists; removed from library.',
+            type: 'info',
+          });
+          eventDispatcher.dispatch('delete-books', { ids: [book.hash] });
+          return;
         }
+      }
+      const available = await makeBookAvailable(book);
+      if (!available) return;
+      if (appService?.hasWindow && settings.openBookInNewWindow) {
+        showReaderWindow(appService, [book.hash]);
+      } else {
+        setTimeout(() => {
+          navigateToReader(router, [book.hash]);
+        }, 0);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
