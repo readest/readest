@@ -17,6 +17,8 @@ export interface RetrievedChunk {
   cfi: string;
   /** End CFI, useful for highlighting or future tool operations. */
   endCfi: string;
+  /** EPUB section index (0-based), used by the Sources dropdown's fallback label. */
+  sectionIndex: number;
   chapterTitle: string | null;
   text: string;
   positionIndex: number;
@@ -107,6 +109,7 @@ export class BookRetriever {
       bookHash: s.bookHash,
       cfi: s.startCfi,
       endCfi: s.endCfi,
+      sectionIndex: s.sectionIndex,
       chapterTitle: s.chapterTitle,
       text: s.text,
       positionIndex: s.positionIndex,

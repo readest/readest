@@ -71,6 +71,31 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         ON reedy_book_chunks USING fts (text) WITH (tokenizer = 'ngram');
       `,
     },
+    {
+      // MVP measurement (plan §M1.9). Local-only by default — no network
+      // egress; the user can manually export a 90-day JSON bundle from
+      // settings to share. `app_version` + `schema_version` are captured
+      // per row so future bundle replay still parses cleanly after we
+      // evolve the event shape.
+      name: '2026052602_reedy_metrics',
+      sql: `
+        CREATE TABLE IF NOT EXISTS reedy_metrics (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ts INTEGER NOT NULL,
+          event TEXT NOT NULL,
+          book_hash TEXT,
+          session_id TEXT,
+          turn_id TEXT,
+          message_id TEXT,
+          app_version TEXT NOT NULL,
+          schema_version INTEGER NOT NULL,
+          payload TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_metrics_ts ON reedy_metrics (ts DESC);
+        CREATE INDEX IF NOT EXISTS idx_metrics_session ON reedy_metrics (session_id, ts DESC);
+      `,
+    },
   ],
 };
 

@@ -37,4 +37,5 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   spoilerProtection: true,
   maxContextChunks: 10,
   indexingMode: 'on-demand',
+  reedy: { enabled: false },
 };

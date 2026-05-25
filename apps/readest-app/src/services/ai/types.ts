@@ -37,6 +37,15 @@ export interface AISettings {
   spoilerProtection: boolean;
   maxContextChunks: number;
   indexingMode: 'on-demand' | 'background';
+
+  /**
+   * Reedy MVP retrieval (Turso vector + Tantivy FTS + CFI citations).
+   * MVP is desktop-only — the runtime gate in `selectBackend()` enforces
+   * isTauri() regardless of this flag. UI in M1.8 disables the toggle on web.
+   */
+  reedy?: {
+    enabled: boolean;
+  };
 }
 
 export interface TextChunk {

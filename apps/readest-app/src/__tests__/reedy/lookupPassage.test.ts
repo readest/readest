@@ -23,6 +23,7 @@ function passage(id: string, text: string, position = 0): RetrieverResult['passa
     bookHash: 'bk1',
     cfi: `epubcfi(/6/2!/4/${position * 2 + 2})`,
     endCfi: `epubcfi(/6/2!/4/${position * 2 + 4})`,
+    sectionIndex: 0,
     chapterTitle: 'Ch1',
     text,
     positionIndex: position,
