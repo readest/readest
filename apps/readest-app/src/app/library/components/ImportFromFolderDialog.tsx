@@ -140,13 +140,22 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   const [folderMode, setFolderMode] = useState<'keep' | 'flatten'>(initialFolderMode);
   const [picking, setPicking] = useState(false);
 
-  // Enter to confirm. Escape is handled by <Dialog> via onClose.
+  // Enter to confirm, Escape / Android Back to cancel. We must wire
+  // `onCancel` even though <Dialog> also listens for Back, because
+  // `useKeyDownActions` registers its own `native-key-down` listener that
+  // returns `true` (consuming the event) on every Back keypress — if we
+  // leave `onCancel` undefined the handler swallows Back without doing
+  // anything, and the Dialog's own listener never gets a chance to run.
   useKeyDownActions({
     onConfirm: () => {
       // Block the Enter shortcut while a folder pick is in flight so
       // we don't dispatch a confirm with a stale directory.
       if (picking) return;
       handleConfirm();
+    },
+    onCancel: () => {
+      if (picking) return;
+      onCancel();
     },
   });
 
