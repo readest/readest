@@ -139,29 +139,53 @@ export async function indexBook(
           : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
     aiLogger.embedding.start(embeddingModelName, allChunks.length);
 
-    const texts = allChunks.map((c) => c.text);
-    try {
-      const { embeddings } = await withRetryAndTimeout(
-        () =>
-          embedMany({
-            model: provider.getEmbeddingModel(),
-            values: texts,
-          }),
-        AI_TIMEOUTS.EMBEDDING_BATCH,
-        AI_RETRY_CONFIGS.EMBEDDING,
-      );
+    // Embed in small batches so the UI gets real progress and so we don't
+    // hit per-request input limits on most providers. Ollama in particular
+    // has very small effective batch sizes.
+    const EMBED_BATCH_SIZE = settings.provider === 'ollama' ? 16 : 64;
+    let embeddingDim = 0;
+    let totalEmbedded = 0;
 
-      for (let i = 0; i < allChunks.length; i++) {
-        allChunks[i]!.embedding = embeddings[i];
-        state.chunksProcessed = i + 1;
-        state.progress = Math.round(((i + 1) / allChunks.length) * 100);
+    for (let batchStart = 0; batchStart < allChunks.length; batchStart += EMBED_BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + EMBED_BATCH_SIZE, allChunks.length);
+      const batchChunks = allChunks.slice(batchStart, batchEnd);
+      const batchTexts = batchChunks.map((c) => c.text);
+
+      try {
+        const { embeddings } = await withRetryAndTimeout(
+          () =>
+            embedMany({
+              model: provider.getEmbeddingModel(),
+              values: batchTexts,
+            }),
+          AI_TIMEOUTS.EMBEDDING_BATCH,
+          AI_RETRY_CONFIGS.EMBEDDING,
+        );
+
+        for (let i = 0; i < batchChunks.length; i++) {
+          batchChunks[i]!.embedding = embeddings[i];
+        }
+        totalEmbedded += batchChunks.length;
+        embeddingDim = embeddings[0]?.length || embeddingDim;
+        state.chunksProcessed = totalEmbedded;
+        state.progress = Math.round((totalEmbedded / allChunks.length) * 100);
+        onProgress?.({
+          current: totalEmbedded,
+          total: allChunks.length,
+          phase: 'embedding',
+        });
+      } catch (e) {
+        const msg = (e as Error).message || String(e);
+        aiLogger.embedding.error(`batch ${batchStart}-${batchEnd}`, msg);
+        // Surface a richer error so the UI can show where indexing died.
+        throw new Error(
+          `Embedding failed at chunk ${batchStart + 1}/${allChunks.length} ` +
+            `(model: ${embeddingModelName}): ${msg}`,
+        );
       }
-      onProgress?.({ current: allChunks.length, total: allChunks.length, phase: 'embedding' });
-      aiLogger.embedding.complete(embeddings.length, allChunks.length, embeddings[0]?.length || 0);
-    } catch (e) {
-      aiLogger.embedding.error('batch', (e as Error).message);
-      throw e;
     }
+
+    aiLogger.embedding.complete(totalEmbedded, allChunks.length, embeddingDim);
 
     onProgress?.({ current: 0, total: 2, phase: 'indexing' });
     aiLogger.store.saveChunks(bookHash, allChunks.length);

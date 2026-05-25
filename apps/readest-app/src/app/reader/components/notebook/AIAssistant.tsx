@@ -245,6 +245,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const [isIndexing, setIsIndexing] = useState(false);
   const [indexProgress, setIndexProgress] = useState<EmbeddingProgress | null>(null);
   const [indexed, setIndexed] = useState(false);
+  const [indexError, setIndexError] = useState<string | null>(null);
 
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
@@ -267,6 +268,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const handleIndex = useCallback(async () => {
     if (!bookData?.bookDoc || !aiSettings) return;
     setIsIndexing(true);
+    setIndexError(null);
     try {
       await indexBook(
         bookData.bookDoc as Parameters<typeof indexBook>[0],
@@ -276,7 +278,9 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       );
       setIndexed(true);
     } catch (e) {
-      aiLogger.rag.indexError(bookHash, (e as Error).message);
+      const msg = (e as Error).message || String(e);
+      aiLogger.rag.indexError(bookHash, msg);
+      setIndexError(msg);
     } finally {
       setIsIndexing(false);
       setIndexProgress(null);
@@ -320,9 +324,17 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
             {_('Enable AI search and chat for this book')}
           </p>
         </div>
+        {indexError && (
+          <div className='border-destructive/40 bg-destructive/10 text-destructive max-w-xs rounded-md border px-3 py-2 text-left text-xs'>
+            <p className='mb-0.5 font-medium'>{_('Indexing failed')}</p>
+            <p className='break-words font-mono text-[11px] leading-snug opacity-90'>
+              {indexError}
+            </p>
+          </div>
+        )}
         <Button onClick={handleIndex} size='sm' className='h-8 text-xs'>
           <BookOpenIcon className='mr-1.5 size-3.5' />
-          {_('Start Indexing')}
+          {indexError ? _('Retry Indexing') : _('Start Indexing')}
         </Button>
       </div>
     );
@@ -340,7 +352,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
               : _('Preparing...')}
           </p>
         </div>
-        <div className='bg-muted h-1.5 w-32 overflow-hidden rounded-full'>
+        <div className='bg-base-300 h-1.5 w-32 overflow-hidden rounded-full'>
           <div
             className='bg-primary h-full transition-all duration-300'
             style={{ width: `${progressPercent}%` }}

@@ -114,10 +114,15 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       if (hoveredBookKey) {
         setHoveredBookKey('');
         (document.activeElement as HTMLElement)?.blur();
+      } else if (getIsNotebookVisible() && !isNotebookPinned) {
+        // Close the notebook first since it visually sits on top of the
+        // sidebar. When the user navigated into the AI tab from the
+        // sidebar's chat-history list, the sidebar is still open behind
+        // the notebook — closing notebook first lands them back on that
+        // conversation list, and a second Back closes the sidebar.
+        setNotebookVisible(false);
       } else if (getIsSideBarVisible() && !isSideBarPinned) {
         setSideBarVisible(false);
-      } else if (getIsNotebookVisible() && !isNotebookPinned) {
-        setNotebookVisible(false);
       } else {
         eventDispatcher.dispatch('close-reader');
         router.back();

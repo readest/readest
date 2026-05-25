@@ -161,20 +161,23 @@ export const Thread: FC<ThreadProps> = ({
     <ThreadPrimitive.Root className='bg-base-100 relative flex h-full w-full flex-col items-stretch px-3'>
       <LoadingOverlay isVisible={showLoading} />
 
-      {!hasActiveConversation && (
-        <ThreadPrimitive.Empty>
-          <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
-            <div className='bg-base-content/10 mb-4 rounded-full p-3'>
-              <BookOpenIcon className='text-base-content size-6' />
-            </div>
-            <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
-            <p className='text-base-content/60 mb-4 text-xs'>
-              Get answers based on the book content
-            </p>
-            <Composer onClear={onClear} onResetIndex={onResetIndex} />
+      {/*
+        Empty-state fallback: shown when the thread has no messages yet.
+        We rely on assistant-ui's own ThreadPrimitive.Empty so it stays in sync
+        with the runtime (it disappears as soon as a message is sent), instead
+        of gating on our own `hasActiveConversation` (which only flips after
+        the conversation is persisted to the store).
+      */}
+      <ThreadPrimitive.Empty>
+        <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
+          <div className='bg-base-content/10 mb-4 rounded-full p-3'>
+            <BookOpenIcon className='text-base-content size-6' />
           </div>
-        </ThreadPrimitive.Empty>
-      )}
+          <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
+          <p className='text-base-content/60 mb-4 text-xs'>Get answers based on the book content</p>
+          <Composer onClear={onClear} onResetIndex={onResetIndex} />
+        </div>
+      </ThreadPrimitive.Empty>
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
         <div
