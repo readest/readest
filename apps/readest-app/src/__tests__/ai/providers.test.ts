@@ -24,8 +24,18 @@ vi.mock('ai-sdk-ollama', () => ({
   }),
 }));
 
+// mock @ai-sdk/openai-compatible so OpenRouterProvider can be constructed
+// without going over the network during unit tests.
+vi.mock('@ai-sdk/openai-compatible', () => ({
+  createOpenAICompatible: vi.fn(() => ({
+    chatModel: vi.fn(),
+    textEmbeddingModel: vi.fn(),
+  })),
+}));
+
 import { OllamaProvider } from '@/services/ai/providers/OllamaProvider';
 import { AIGatewayProvider } from '@/services/ai/providers/AIGatewayProvider';
+import { OpenRouterProvider } from '@/services/ai/providers/OpenRouterProvider';
 import { getAIProvider } from '@/services/ai/providers';
 import type { AISettings } from '@/services/ai/types';
 import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
@@ -161,6 +171,93 @@ describe('AIGatewayProvider', () => {
   });
 });
 
+describe('OpenRouterProvider', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('should throw if no API key', () => {
+    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, provider: 'openrouter' };
+    expect(() => new OpenRouterProvider(settings)).toThrow('OpenRouter API key required');
+  });
+
+  test('should create provider with API key and default base URL', () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-test',
+    };
+    const provider = new OpenRouterProvider(settings);
+
+    expect(provider.id).toBe('openrouter');
+    expect(provider.name).toBe('OpenRouter (Custom)');
+    expect(provider.requiresAuth).toBe(true);
+  });
+
+  test('isAvailable should return true if key exists', async () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-test',
+    };
+    const provider = new OpenRouterProvider(settings);
+
+    expect(await provider.isAvailable()).toBe(true);
+  });
+
+  test('healthCheck succeeds when /models responds OK', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-test',
+      openrouterBaseUrl: 'https://openrouter.ai/api/v1',
+    };
+    const provider = new OpenRouterProvider(settings);
+
+    expect(await provider.healthCheck()).toBe(true);
+    // verifies we hit `${baseUrl}/models` with the Authorization header
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://openrouter.ai/api/v1/models',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer sk-or-test' }),
+      }),
+    );
+  });
+
+  test('healthCheck returns false when /models fails', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 401 });
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-bad',
+    };
+    const provider = new OpenRouterProvider(settings);
+
+    expect(await provider.healthCheck()).toBe(false);
+  });
+
+  test('healthCheck strips trailing slashes from base URL', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-test',
+      openrouterBaseUrl: 'https://example.com/v1////',
+    };
+    const provider = new OpenRouterProvider(settings);
+
+    await provider.healthCheck();
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/v1/models', expect.any(Object));
+  });
+});
+
 describe('getAIProvider', () => {
   test('should return OllamaProvider for ollama', () => {
     const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, provider: 'ollama' };
@@ -179,6 +276,27 @@ describe('getAIProvider', () => {
     const provider = getAIProvider(settings);
 
     expect(provider.id).toBe('ai-gateway');
+  });
+
+  test('should return OpenRouterProvider for openrouter', () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+      openrouterApiKey: 'sk-or-test',
+    };
+    const provider = getAIProvider(settings);
+
+    expect(provider.id).toBe('openrouter');
+  });
+
+  test('getAIProvider throws when openrouter has no API key', () => {
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'openrouter',
+    };
+    expect(() => getAIProvider(settings)).toThrow('API key required for OpenRouter');
   });
 
   test('should throw for unknown provider', () => {

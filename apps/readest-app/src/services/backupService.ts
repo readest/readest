@@ -69,6 +69,7 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'readwise.accessToken',
   'hardcover.accessToken',
   'aiSettings.aiGatewayApiKey',
+  'aiSettings.openrouterApiKey',
 ] as const;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>

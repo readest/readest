@@ -1,6 +1,6 @@
 import type { LanguageModel, EmbeddingModel } from 'ai';
 
-export type AIProviderName = 'ollama' | 'ai-gateway';
+export type AIProviderName = 'ollama' | 'ai-gateway' | 'openrouter';
 
 export interface AIProvider {
   id: AIProviderName;
@@ -26,6 +26,13 @@ export interface AISettings {
   aiGatewayModel?: string;
   aiGatewayCustomModel?: string;
   aiGatewayEmbeddingModel?: string;
+
+  // OpenAI-compatible provider (OpenRouter, Together, Groq, vLLM, ...).
+  // Default base URL is OpenRouter's, but any compatible endpoint works.
+  openrouterApiKey?: string;
+  openrouterBaseUrl?: string;
+  openrouterModel?: string;
+  openrouterEmbeddingModel?: string;
 
   spoilerProtection: boolean;
   maxContextChunks: number;

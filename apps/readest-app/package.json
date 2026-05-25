@@ -84,6 +84,7 @@
     "worktree:rm": "pnpm exec tsx scripts/worktree-rm.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.48",
     "@ai-sdk/react": "^3.0.49",
     "@assistant-ui/react": "0.11.56",
     "@assistant-ui/react-ai-sdk": "1.1.21",

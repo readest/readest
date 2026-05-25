@@ -582,6 +582,24 @@ const aiPanelItems = [
     keywords: ['gateway', 'model', 'openai', 'gpt', 'claude'],
     section: 'AI Gateway',
   },
+  {
+    id: 'settings.ai.openrouterApiKey',
+    labelKey: _('OpenRouter API Key'),
+    keywords: ['openrouter', 'api', 'key', 'token', 'secret'],
+    section: 'OpenRouter',
+  },
+  {
+    id: 'settings.ai.openrouterBaseUrl',
+    labelKey: _('OpenRouter Base URL'),
+    keywords: ['openrouter', 'base', 'url', 'endpoint', 'openai', 'compatible'],
+    section: 'OpenRouter',
+  },
+  {
+    id: 'settings.ai.openrouterModel',
+    labelKey: _('OpenRouter Model'),
+    keywords: ['openrouter', 'model', 'claude', 'gpt', 'llama', 'deepseek'],
+    section: 'OpenRouter',
+  },
 ];
 
 // custom panel items
