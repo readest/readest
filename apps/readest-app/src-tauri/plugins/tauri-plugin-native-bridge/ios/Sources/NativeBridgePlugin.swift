@@ -7,6 +7,7 @@ import StoreKit
 import SwiftRs
 import Tauri
 import UIKit
+import UniformTypeIdentifiers
 import WebKit
 import os
 
@@ -1347,6 +1348,130 @@ class NativeBridgePlugin: Plugin {
       }
       presenter.present(controller, animated: true)
     }
+  }
+
+  /// Hold a strong reference to the active folder picker delegate so
+  /// it survives until the user dismisses the picker. `present`
+  /// only retains the controller; the delegate is `weak` from
+  /// `UIDocumentPickerViewController`'s side, so without our retain
+  /// it would deallocate immediately and the callbacks would never
+  /// fire.
+  private var folderPickerDelegate: FolderPickerDelegate?
+
+  /// Bridge for the native-bridge `select_directory` command on iOS.
+  /// Mirrors the Android implementation (ACTION_OPEN_DOCUMENT_TREE)
+  /// but uses `UIDocumentPickerViewController(forOpeningContentTypes:
+  /// [.folder])` — the same picker the system uses for "Files" → choose
+  /// folder. Users can navigate into On My iPhone / iCloud Drive /
+  /// any third-party file provider and pick a directory there.
+  ///
+  /// Caveats around iOS sandbox model (callers should be aware):
+  ///   * Resolving the returned path on a SUBSEQUENT app launch
+  ///     requires a security-scoped bookmark — for now we hold the
+  ///     security-scoped resource open for the lifetime of the app
+  ///     process so the current session works. v2 should persist a
+  ///     bookmark and resolve it on launch; until then a relaunch
+  ///     after picking a non-Documents folder may need the user to
+  ///     re-pick.
+  ///   * The returned `path` is `url.path` — a normal POSIX path.
+  ///     Combined with the resource being open, plain Foundation /
+  ///     stdlib fs reads work against it.
+  @objc public func select_directory(_ invoke: Invoke) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else {
+        invoke.reject("plugin deallocated")
+        return
+      }
+      guard let presenter = topmostViewController() else {
+        invoke.reject("Could not find a view controller to present from")
+        return
+      }
+
+      // `forOpeningContentTypes: [.folder]` tells the picker to surface
+      // folders as the selectable entries (you can't pick individual
+      // files in this mode). `asCopy: false` keeps it a reference into
+      // the original location instead of copying into our sandbox.
+      let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
+      picker.allowsMultipleSelection = false
+
+      let delegate = FolderPickerDelegate(invoke: invoke) { [weak self] in
+        // Drop our strong reference once the picker resolves so the
+        // delegate (and thus the closure capture chain) can deallocate.
+        // The security-scoped URL resource stays open via
+        // `FolderPickerDelegate`'s own retain on the URL until the app
+        // terminates — see the class doc comment for v2 plans.
+        self?.folderPickerDelegate = nil
+      }
+      self.folderPickerDelegate = delegate
+      picker.delegate = delegate
+
+      presenter.present(picker, animated: true)
+    }
+  }
+}
+
+/// Delegate for `select_directory`'s `UIDocumentPickerViewController`.
+/// We split this out into a dedicated class (rather than making
+/// `NativeBridgePlugin` itself the delegate) so multiple concurrent
+/// picker invocations would each hold their own state — currently we
+/// only allow one at a time, but the wiring is cleaner this way and
+/// `Invoke` is easier to capture by reference.
+///
+/// Lifecycle:
+///   1. Plugin retains us strongly via `folderPickerDelegate`.
+///   2. UIKit holds us as the picker's `delegate` (weak).
+///   3. When the user picks or cancels, we call back into `invoke`
+///      and then run `onComplete`, which clears the plugin's strong
+///      reference. We deallocate at that point.
+///   4. The chosen URL retains its security-scoped access for the
+///      remainder of the process via `urlsToKeepAlive`.
+private final class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
+  private let invoke: Invoke
+  private let onComplete: () -> Void
+  /// Hold security-scoped URLs alive for the rest of the app's lifetime
+  /// — calling `stopAccessingSecurityScopedResource()` on these would
+  /// invalidate any subsequent fs read against the path. v2 should
+  /// replace this with persistent bookmarks resolved on app launch.
+  private static var urlsToKeepAlive: [URL] = []
+
+  init(invoke: Invoke, onComplete: @escaping () -> Void) {
+    self.invoke = invoke
+    self.onComplete = onComplete
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    defer { onComplete() }
+    guard let url = urls.first else {
+      invoke.resolve(["cancelled": true])
+      return
+    }
+
+    // `startAccessingSecurityScopedResource` is required for any URL
+    // returned by the picker that lives outside our sandbox (which is
+    // the only interesting case — anything inside our sandbox we
+    // already have access to without it). Returns false when no scope
+    // is needed or the request was denied; in either case we still
+    // try to use the URL because (a) sandbox-internal paths work
+    // either way, (b) for denied requests `path` access will surface
+    // a normal "permission denied" later, which is a clearer error
+    // than failing here pre-emptively.
+    let started = url.startAccessingSecurityScopedResource()
+    if started {
+      // Retain so the resource stays accessible after we return.
+      FolderPickerDelegate.urlsToKeepAlive.append(url)
+    }
+
+    let result: [String: Any] = [
+      "cancelled": false,
+      "uri": url.absoluteString,
+      "path": url.path,
+    ]
+    invoke.resolve(result)
+  }
+
+  func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+    defer { onComplete() }
+    invoke.resolve(["cancelled": true])
   }
 }
 

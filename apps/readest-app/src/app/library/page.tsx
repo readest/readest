@@ -982,12 +982,72 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
    */
   const pickImportDirectory = async (): Promise<string | undefined> => {
     if (!appService) return undefined;
-    if (appService.isAndroidApp) {
-      if (!(await requestStoragePermission())) return undefined;
+    // Both mobile platforms now go through the native-bridge picker:
+    // Android dispatches ACTION_OPEN_DOCUMENT_TREE, iOS presents
+    // UIDocumentPickerViewController(forOpeningContentTypes: [.folder]).
+    // Tauri's bundled dialog plugin still rejects mobile folder picks
+    // with "FolderPickerNotImplemented", so the native-bridge route is
+    // the only working path on either OS.
+    let picked: string | undefined;
+    if (appService.isAndroidApp || appService.isIOSApp) {
+      // Android needs MANAGE_EXTERNAL_STORAGE for absolute-path reads;
+      // iOS doesn't have an equivalent gate (the OS picker is itself
+      // the permission grant), so the prompt is Android-only.
+      if (appService.isAndroidApp && !(await requestStoragePermission())) return undefined;
       const response = await selectDirectory();
-      return response.path || undefined;
+      picked = response.path || undefined;
+    } else {
+      picked = (await appService.selectDirectory?.('read')) || undefined;
     }
-    return (await appService.selectDirectory?.('read')) || undefined;
+    if (picked && !validatePickedDirectory(picked)) {
+      // Already toasted from inside the validator. Treat as "no
+      // selection" so the caller leaves the dialog's old folder
+      // value alone and the user can immediately try again.
+      return undefined;
+    }
+    return picked;
+  };
+
+  /**
+   * Sanity-check a path returned by the native folder picker before
+   * we commit to scanning it. iOS in particular hands back POSIX paths
+   * for "virtual" Files-app entries (the "On My iPhone" root, "Recents",
+   * etc.) where {@link readDirectory} will then fail with a Tauri
+   * fs_scope rejection. There's no way to disable those entries in the
+   * picker itself, so we accept the pick, detect the known-bad shapes,
+   * and show a clear toast asking the user to drill into a real
+   * subfolder. Returns true if the path looks usable.
+   */
+  const validatePickedDirectory = (path: string): boolean => {
+    if (!appService?.isIOSApp) return true;
+    // iOS Files exposes "On My iPhone" as a virtual aggregator over
+    // every app's `LSSupportsOpeningDocumentsInPlace` container. When
+    // the user picks that root, the picker hands us a path whose
+    // basename is exactly `File Provider Storage` (the placeholder
+    // directory inside our own App Group container that the system
+    // uses to materialise external file-provider contents on demand).
+    // POSIX reads against it return either nothing or EPERM, and the
+    // Tauri fs_scope refuses it outright because it's outside our
+    // allowed globs. Drilling into a concrete subfolder produces a
+    // normal, readable POSIX path, which is the path we want.
+    //
+    // These string anchors aren't localized — iOS keeps the on-disk
+    // path in English regardless of the device language, so the
+    // basename / segment match is stable.
+    const trimmed = path.replace(/\/+$/, '');
+    const basename = trimmed.split('/').pop() ?? '';
+    const isOnMyIPhoneRoot = basename === 'File Provider Storage';
+    if (isOnMyIPhoneRoot) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        timeout: 6000,
+        message: _(
+          'iOS doesn\'t allow importing the "On My iPhone" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.',
+        ),
+      });
+      return false;
+    }
+    return true;
   };
 
   /**
@@ -1017,6 +1077,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
    */
   const runFolderImport = async (result: ImportFromFolderResult) => {
     if (!appService || !result.directory) return;
+    // Last-chance sanity check. The dialog's own pickImportDirectory
+    // already validates fresh picks, but `result.directory` can also
+    // come from the persisted "last import folder" in localStorage —
+    // which may have been a bad path (e.g. user picked "On My iPhone"
+    // root last session, app remembered it, user just hits OK now).
+    // Catch that here so they get the same clear guidance instead of
+    // a fs_scope error from readDirectory below.
+    if (!validatePickedDirectory(result.directory)) return;
     // Re-grant scopes for the directory before scanning. This matters
     // when `result.directory` came from somewhere the dialog plugin
     // didn't authorise — typically the persisted "last import folder"
@@ -1027,7 +1095,38 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     await appService.allowPathsInScopes?.([result.directory], true);
     const exts = result.extensions.map((e) => e.toLowerCase());
     const minSizeBytes = Math.max(0, Math.floor(result.minSizeKB)) * 1024;
-    const files = await appService.readDirectory(result.directory, 'None');
+    let files;
+    try {
+      files = await appService.readDirectory(result.directory, 'None');
+    } catch (e) {
+      // readDirectory can reject for a few related reasons:
+      //   - iOS handed us a virtual / file-provider path that the OS
+      //     sandbox refuses to enumerate (the validator above catches
+      //     the common shapes, but not every file-provider variant);
+      //   - the path is outside Tauri's `fs_scope` and scope
+      //     extension didn't stick (e.g. an iCloud Drive entry whose
+      //     security-scoped resource the system declined to grant);
+      //   - the directory was deleted / permissions revoked between
+      //     pick and scan.
+      // Swallow the rejection (otherwise it bubbles up as an
+      // unhandledRejection through Next.js) and surface a friendly
+      // message that nudges the user to re-pick.
+      const detail = e instanceof Error ? e.message : String(e);
+      console.error('Folder import: readDirectory failed', detail);
+      const isIOS = !!appService.isIOSApp;
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        timeout: 6000,
+        message: isIOS
+          ? _(
+              'Couldn\'t read this folder. Some iOS locations (like the "On My iPhone" root or iCloud Drive top-level) can\'t be scanned — please pick a specific subfolder and try again.',
+            )
+          : _(
+              "Couldn't read this folder. Please pick the folder again, or choose a different location.",
+            ),
+      });
+      return;
+    }
     const filtered = files.filter((file) => {
       const ext = file.path.split('.').pop()?.toLowerCase() || '';
       if (!exts.includes(ext)) return false;

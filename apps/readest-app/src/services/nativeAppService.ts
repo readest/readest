@@ -550,6 +550,26 @@ export class NativeAppService extends BaseAppService {
   }
 
   async selectDirectory(): Promise<string> {
+    // On mobile, Tauri's dialog plugin rejects folder picks with
+    // "FolderPickerNotImplemented" — neither iOS nor Android ship a
+    // folder picker via that surface. Route through the native-bridge
+    // plugin instead, where each platform has a native implementation
+    // (Android: ACTION_OPEN_DOCUMENT_TREE, iOS:
+    // UIDocumentPickerViewController with `.folder`). The bridge
+    // returns `{ path, uri, cancelled }`; we surface the path string
+    // so the rest of the app can treat it like any local directory.
+    if (this.isIOSApp || this.isAndroidApp) {
+      const { selectDirectory } = await import('@/utils/bridge');
+      const result = await selectDirectory();
+      const path = result.path ?? '';
+      if (path) {
+        // Match the desktop branch — make sure both fs_scope and the
+        // asset-protocol scope can read from the chosen directory.
+        await this.allowPathsInScopes([path], true);
+      }
+      return path;
+    }
+
     const selected = await openDialog({
       directory: true,
       multiple: false,
