@@ -291,8 +291,18 @@ const getPageLayoutStyles = (
     position: absolute;
     inset: -10px;
   }
-  pre {
+
+  pre, code {
     white-space: pre-wrap !important;
+  }
+  pre {
+    max-width: calc(var(--available-width) * 1px);
+    max-height: calc(var(--available-height) * 1px);
+    scrollbar-width: none;
+    overflow: auto;
+  }
+  pre::-webkit-scrollbar {
+    display: none;
   }
 
   .epubtype-footnote,
