@@ -15,15 +15,26 @@ import {
   createGetReadingContextTool,
   createGetSelectionTool,
   createLookupPassageTool,
+  createSearchBookMemoryTool,
+  createSearchSessionMemoryTool,
+  createSearchUserMemoryTool,
+  createWriteBookMemoryTool,
+  createWriteUserMemoryTool,
   type ReadingContextSnapshot,
 } from '../tools/builtins';
 import {
   DEFAULT_POLICY,
+  createBookMemoryLayer,
   createPolicyLayer,
   createReadingLayer,
   createSkillLayer,
   createToolCatalogLayer,
+  createUserMemoryLayer,
+  type SkillInstructions,
 } from '../context';
+import { MemoryService } from '../memory/MemoryService';
+import { SkillRegistry } from '../skills/SkillRegistry';
+import type { Skill } from '../skills/types';
 import { useReedyStore } from '../store/reedyStore';
 import { useReedyTurn } from './useReedyTurn';
 import { AgentThread } from './AgentThread';
@@ -37,6 +48,8 @@ export interface ReedyAssistantProps {
   bookKey: string;
   aiSettings: AISettings;
   readingContext: ReadingContextSnapshot;
+  /** Stable id for the current user (used as the scope_key for user memory). */
+  userId?: string;
   /** Wired by the notebook to `getView(bookKey)?.goTo(cfi)` on click. */
   onNavigateToCfi?: (cfi: string) => void;
 }
@@ -56,26 +69,44 @@ export function ReedyAssistant({
   bookHash,
   aiSettings,
   readingContext,
+  userId = 'local',
   onNavigateToCfi,
 }: ReedyAssistantProps) {
   const models = useMemo(() => createReedyModels(aiSettings), [aiSettings]);
 
   // Lazily open reedy.db on first mount. The promise resolves once and
-  // we share the same ReedyDb + Indexer + Retriever for the lifetime of
-  // this component instance.
+  // we share the same ReedyDb + Indexer + Retriever + MemoryService +
+  // SkillRegistry for the lifetime of this component instance. The
+  // skill registry is seeded on first init() with the 3 builtins; on
+  // subsequent mounts the call is a no-op.
   const [reedy, setReedy] = useState<{
     db: ReedyDb;
     indexer: BookIndexer;
     retriever: BookRetriever;
+    memory: MemoryService;
+    skills: SkillRegistry;
   } | null>(null);
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
   useEffect(() => {
     let alive = true;
     void appService
       .openDatabase('reedy', 'reedy.db', 'Data', { experimental: ['index_method'] })
-      .then((svc) => {
+      .then(async (svc) => {
         if (!alive) return;
         const db = new ReedyDb(svc);
-        setReedy({ db, indexer: new BookIndexer(db), retriever: new BookRetriever(db) });
+        const skills = new SkillRegistry(svc);
+        await skills.init();
+        const memory = new MemoryService(db, models.embedding);
+        const enabledSkills = await skills.listEnabled();
+        if (!alive) return;
+        setReedy({
+          db,
+          indexer: new BookIndexer(db),
+          retriever: new BookRetriever(db),
+          memory,
+          skills,
+        });
+        setAvailableSkills(enabledSkills);
       })
       .catch((err) => {
         console.error('[Reedy] failed to open reedy.db', err);
@@ -83,7 +114,15 @@ export function ReedyAssistant({
     return () => {
       alive = false;
     };
-  }, [appService]);
+  }, [appService, models.embedding]);
+
+  // Active skill selection — null means no skill (the model gets the
+  // default Policy + Reading + ToolCatalog system prompt).
+  const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
+  const activeSkill = useMemo<Skill | null>(
+    () => availableSkills.find((s) => s.id === activeSkillId) ?? null,
+    [availableSkills, activeSkillId],
+  );
 
   // Snapshot the reading context in a ref so the tool factories don't
   // re-render the registry on every page turn.
@@ -92,7 +131,20 @@ export function ReedyAssistant({
     readingRef.current = readingContext;
   }, [readingContext]);
 
-  // Build the tool registry + runtime once per (reedy ready, model) pair.
+  // Active-skill state is read via a ref inside the SkillLayer's
+  // resolution so the runtime memo doesn't have to rebuild on every
+  // chip click. The layer captures the closure once; the closure peeks
+  // at the ref at prompt-build time.
+  const activeSkillRef = useRef<SkillInstructions | null>(null);
+  useEffect(() => {
+    activeSkillRef.current = activeSkill
+      ? { id: activeSkill.id, instructions: activeSkill.instructions }
+      : null;
+  }, [activeSkill]);
+
+  // Build the tool registry + runtime once per (reedy ready, model)
+  // pair. The userId and bookHash flow through the memory tool factories
+  // so each tool dispatches under the right scope_key.
   const runtime = useMemo(() => {
     if (!reedy) return null;
     const reg = new ToolRegistry();
@@ -113,16 +165,34 @@ export function ReedyAssistant({
         // the store via a closure here.
       }),
     );
+    // Memory tools (Phase 3.1) — bookHash scopes book memory; userId
+    // scopes user memory; sessionId mirrors the runtime's per-turn
+    // sessionId which we set to bookHash today (sessions are
+    // book-scoped in this build).
+    reg.register(createSearchBookMemoryTool({ service: reedy.memory, scopeKey: () => bookHash }));
+    reg.register(createWriteBookMemoryTool({ service: reedy.memory, scopeKey: () => bookHash }));
+    reg.register(createSearchUserMemoryTool({ service: reedy.memory, scopeKey: () => userId }));
+    reg.register(createWriteUserMemoryTool({ service: reedy.memory, scopeKey: () => userId }));
+    reg.register(
+      createSearchSessionMemoryTool({ service: reedy.memory, scopeKey: () => bookHash }),
+    );
 
     const layers = [
       createPolicyLayer(DEFAULT_POLICY),
-      createSkillLayer(null),
+      // Use a tiny wrapper so the SkillLayer resolves the *current*
+      // active skill each time the runtime rebuilds the prompt.
+      ((): ReturnType<typeof createSkillLayer> => {
+        const snapshot = activeSkillRef.current;
+        return createSkillLayer(snapshot);
+      })(),
       createReadingLayer(readingRef.current),
       createToolCatalogLayer(reg.list()),
+      createBookMemoryLayer(() => ''),
+      createUserMemoryLayer(() => ''),
     ];
 
     return new AgentRuntime({ model: models.chat, tools: reg, layers });
-  }, [reedy, models.chat, models.embedding, bookHash]);
+  }, [reedy, models.chat, models.embedding, bookHash, userId]);
 
   const messages = useReedyStore((s) => s.messages);
   const isRunning = useReedyStore((s) => s.isRunning);
@@ -192,9 +262,14 @@ export function ReedyAssistant({
   const handleSend = useCallback(
     (text: string) => {
       if (!runtime) return;
-      void send({ sessionId: bookHash, bookHash, userMessage: text });
+      void send({
+        sessionId: bookHash,
+        bookHash,
+        userMessage: text,
+        toolAllowlist: activeSkill?.toolAllowlist ?? null,
+      });
     },
-    [runtime, send, bookHash],
+    [runtime, send, bookHash, activeSkill],
   );
 
   if (!aiSettings.enabled) {
@@ -241,7 +316,18 @@ export function ReedyAssistant({
           }
         />
       </div>
-      <Composer isRunning={isRunning} onSend={handleSend} onAbort={abort} />
+      <Composer
+        isRunning={isRunning}
+        onSend={handleSend}
+        onAbort={abort}
+        skills={availableSkills.map((s) => ({
+          id: s.id,
+          name: s.name,
+          description: s.description,
+        }))}
+        activeSkillId={activeSkillId}
+        onSkillSelect={setActiveSkillId}
+      />
     </div>
   );
 }

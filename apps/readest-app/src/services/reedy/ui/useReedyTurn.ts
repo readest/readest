@@ -17,7 +17,13 @@ export function useReedyTurn(runtime: AgentRuntime | null) {
   const cancelRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    async (args: { sessionId: string; bookHash: string; userMessage: string }): Promise<void> => {
+    async (args: {
+      sessionId: string;
+      bookHash: string;
+      userMessage: string;
+      /** Optional per-turn tool-name allowlist (e.g. active skill's). */
+      toolAllowlist?: readonly string[] | null;
+    }): Promise<void> => {
       if (!runtime) return;
       // Cancel any in-flight turn before starting a new one so we never
       // have two AgentRuntime streams mutating the same active message.
@@ -33,6 +39,7 @@ export function useReedyTurn(runtime: AgentRuntime | null) {
         bookHash: args.bookHash,
         userMessage: args.userMessage,
         signal: controller.signal,
+        toolAllowlist: args.toolAllowlist ?? null,
       };
 
       // The first event the runtime yields is `turn_start` carrying the

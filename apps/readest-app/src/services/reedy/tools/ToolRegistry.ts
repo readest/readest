@@ -46,10 +46,20 @@ export class ToolRegistry {
    * Adapt every registered tool to the Vercel ToolSet shape. Each tool's
    * `execute` is wrapped per the policy above. The caller passes the
    * per-turn ToolContext once; every dispatch in that turn reuses it.
+   *
+   * When `options.allowlist` is provided, only tools whose name appears
+   * in the array are exposed to the model. The plan §5 has skills carry
+   * an optional `tool_allowlist`; the runtime computes the active
+   * skill's allowlist and forwards it here.
    */
-  toVercelToolSet(ctx: ToolContext): ToolSet {
+  toVercelToolSet(
+    ctx: ToolContext,
+    options: { allowlist?: readonly string[] | null } = {},
+  ): ToolSet {
+    const allowed = options.allowlist == null ? null : new Set(options.allowlist);
     const set: Record<string, unknown> = {};
     for (const t of this.tools.values()) {
+      if (allowed && !allowed.has(t.name)) continue;
       set[t.name] = vercelTool({
         description: t.description,
         inputSchema: t.inputSchema,

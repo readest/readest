@@ -359,4 +359,74 @@ describe('AgentRuntime — streamText arg wiring', () => {
     const call = streamTextMock.mock.calls[0]![0] as { tools?: unknown };
     expect(call.tools).toBeUndefined();
   });
+
+  it('honors toolAllowlist on the input — only allowlisted tools reach streamText', async () => {
+    streamTextMock.mockReturnValue({
+      fullStream: asyncIter([
+        { type: 'finish', finishReason: 'stop', totalUsage: { inputTokens: 0, outputTokens: 0 } },
+      ]),
+    });
+    const reg = new ToolRegistry();
+    for (const name of ['lookupPassage', 'getReadingContext', 'navigateToCfi']) {
+      reg.register({
+        name,
+        description: name,
+        permission: 'read',
+        parallelSafe: true,
+        inputSchema: z.object({}),
+        async run() {
+          return null;
+        },
+      });
+    }
+    const runtime = new AgentRuntime({
+      model: fakeModel(),
+      tools: reg,
+      layers: [createPolicyLayer('p')],
+    });
+    await drain(
+      runtime.runTurn({
+        sessionId: 's',
+        bookHash: 'b',
+        userMessage: 'q',
+        toolAllowlist: ['lookupPassage', 'getReadingContext'],
+      }),
+    );
+    const call = streamTextMock.mock.calls[0]![0] as { tools?: Record<string, unknown> };
+    expect(Object.keys(call.tools!).sort()).toEqual(['getReadingContext', 'lookupPassage']);
+  });
+
+  it('omits tools entirely when the allowlist matches zero registered tools', async () => {
+    streamTextMock.mockReturnValue({
+      fullStream: asyncIter([
+        { type: 'finish', finishReason: 'stop', totalUsage: { inputTokens: 0, outputTokens: 0 } },
+      ]),
+    });
+    const reg = new ToolRegistry();
+    reg.register({
+      name: 'lookupPassage',
+      description: 'find',
+      permission: 'read',
+      parallelSafe: true,
+      inputSchema: z.object({}),
+      async run() {
+        return null;
+      },
+    });
+    const runtime = new AgentRuntime({
+      model: fakeModel(),
+      tools: reg,
+      layers: [createPolicyLayer('p')],
+    });
+    await drain(
+      runtime.runTurn({
+        sessionId: 's',
+        bookHash: 'b',
+        userMessage: 'q',
+        toolAllowlist: ['nonExistentTool'],
+      }),
+    );
+    const call = streamTextMock.mock.calls[0]![0] as { tools?: unknown };
+    expect(call.tools).toBeUndefined();
+  });
 });

@@ -214,6 +214,30 @@ describe('ToolRegistry', () => {
       expect(Object.keys(set).sort()).toEqual(['a', 'b']);
       expect(typeof set['a']!.execute).toBe('function');
     });
+
+    it('with an allowlist, only the named tools appear in the set', () => {
+      reg.register(readTool('a'));
+      reg.register(readTool('b'));
+      reg.register(readTool('c'));
+      const set = reg.toVercelToolSet(ctxFor(), { allowlist: ['a', 'c'] }) as Record<
+        string,
+        unknown
+      >;
+      expect(Object.keys(set).sort()).toEqual(['a', 'c']);
+    });
+
+    it('allowlist=null behaves like no allowlist (all tools)', () => {
+      reg.register(readTool('a'));
+      reg.register(readTool('b'));
+      const set = reg.toVercelToolSet(ctxFor(), { allowlist: null }) as Record<string, unknown>;
+      expect(Object.keys(set).sort()).toEqual(['a', 'b']);
+    });
+
+    it('empty allowlist returns an empty set', () => {
+      reg.register(readTool('a'));
+      const set = reg.toVercelToolSet(ctxFor(), { allowlist: [] });
+      expect(Object.keys(set)).toEqual([]);
+    });
   });
 
   describe('unknown / runtime errors', () => {

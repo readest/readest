@@ -31,6 +31,13 @@ export interface RunTurnInput {
   assistantMessageId?: string;
   /** Caller signal — runtime composes with its own so tools see both. */
   signal?: AbortSignal;
+  /**
+   * Optional per-turn tool-name allowlist. When provided, only tools
+   * whose name appears here are exposed to the model. Used by the
+   * notebook to honor the active skill's `tool_allowlist`. Null or
+   * undefined means every registered tool is available.
+   */
+  toolAllowlist?: readonly string[] | null;
 }
 
 /**
@@ -140,8 +147,7 @@ export class AgentRuntime {
         model: this.opts.model.getLanguageModel(),
         system: ctx.system,
         messages,
-        tools:
-          this.opts.tools.list().length > 0 ? this.opts.tools.toVercelToolSet(toolCtx) : undefined,
+        tools: this.buildToolSet(toolCtx, input.toolAllowlist),
         stopWhen: stepCountIs(this.maxSteps),
         abortSignal: input.signal,
       });
@@ -245,6 +251,25 @@ export class AgentRuntime {
       finishReason: lastFinishReason,
       usage: lastUsage,
     });
+  }
+
+  /**
+   * Build the Vercel ToolSet for this turn, applying the per-turn
+   * allowlist (active skill's `tool_allowlist`) if one was supplied.
+   * Returns undefined when no tools end up exposed, so streamText skips
+   * tool-call wiring entirely instead of advertising an empty catalog.
+   */
+  private buildToolSet(
+    ctx: ToolContext,
+    allowlist: readonly string[] | null | undefined,
+  ): ReturnType<ToolRegistry['toVercelToolSet']> | undefined {
+    const all = this.opts.tools.list();
+    if (all.length === 0) return undefined;
+    if (allowlist == null) return this.opts.tools.toVercelToolSet(ctx);
+    const allowedNames = new Set(allowlist);
+    const overlap = all.filter((t) => allowedNames.has(t.name));
+    if (overlap.length === 0) return undefined;
+    return this.opts.tools.toVercelToolSet(ctx, { allowlist });
   }
 }
 
