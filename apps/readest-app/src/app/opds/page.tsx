@@ -48,6 +48,7 @@ import { SearchView } from './components/SearchView';
 import { Navigation } from './components/Navigation';
 import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
 import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
+import { findExistingBookForPublication } from './utils/findExistingBook';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -73,6 +74,10 @@ export default function BrowserPage() {
   const { appService } = useEnv();
   const { user } = useAuth();
   const { libraryLoaded } = useLibrary();
+  // Subscribe to library so the publication detail page can detect copies
+  // already imported (shown as "Open & Read" instead of "Download"), and
+  // re-evaluate whenever a download finishes or a book is removed.
+  const library = useLibraryStore((s) => s.library);
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { settings } = useSettingsStore();
   const [viewMode, setViewMode] = useState<ViewMode>('loading');
@@ -777,6 +782,15 @@ export default function BrowserPage() {
         ] || state.feed.publications?.[selectedPublication.itemIndex]
       : state.publication;
 
+  // Memoized so the PublicationView doesn't see a fresh "existingBook" object
+  // every render and resync its local state. Recomputes when the user picks a
+  // different publication or when the library actually mutates (download
+  // finishes, book deleted) — both cases we want the button label to track.
+  const existingBookForPublication = useMemo(
+    () => findExistingBookForPublication(publication, library),
+    [publication, library],
+  );
+
   return (
     <div
       className={clsx(
@@ -841,6 +855,7 @@ export default function BrowserPage() {
           <PublicationView
             publication={publication}
             baseURL={state.baseURL}
+            existingBook={existingBookForPublication}
             onDownload={handleDownload}
             onStream={handleStream}
             resolveURL={resolveURL}
