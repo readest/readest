@@ -33,6 +33,8 @@ import {
   type SkillInstructions,
 } from '../context';
 import { MemoryService } from '../memory/MemoryService';
+import { MemoryConsolidator } from '../memory/MemoryConsolidator';
+import { sliceSinceLastId } from '../memory/consolidatorCursor';
 import { SkillRegistry } from '../skills/SkillRegistry';
 import type { Skill } from '../skills/types';
 import { useReedyStore } from '../store/reedyStore';
@@ -142,6 +144,31 @@ export function ReedyAssistant({
       : null;
   }, [activeSkill]);
 
+  // Live memory snapshots fed into BookMemoryLayer / UserMemoryLayer.
+  // Refs (not state) because the prompt builder reads them synchronously
+  // at runTurn time and we don't want every memory refresh to invalidate
+  // the runtime memo. refreshMemorySnapshots() is called on initial
+  // load, after each successful consolidate(), and whenever a memory
+  // write tool fires.
+  const bookMemorySnapshotRef = useRef('');
+  const userMemorySnapshotRef = useRef('');
+  const refreshMemorySnapshots = useCallback(async () => {
+    if (!reedy) return;
+    try {
+      const [book, user] = await Promise.all([
+        reedy.memory.list('book', bookHash, 10),
+        reedy.memory.list('user', userId, 10),
+      ]);
+      bookMemorySnapshotRef.current = book.map((m) => `- [${m.key}] ${m.summary}`).join('\n');
+      userMemorySnapshotRef.current = user.map((m) => `- [${m.key}] ${m.summary}`).join('\n');
+    } catch (err) {
+      console.warn('[Reedy] memory snapshot refresh failed', err);
+    }
+  }, [reedy, bookHash, userId]);
+  useEffect(() => {
+    void refreshMemorySnapshots();
+  }, [refreshMemorySnapshots]);
+
   // Build the tool registry + runtime once per (reedy ready, model)
   // pair. The userId and bookHash flow through the memory tool factories
   // so each tool dispatches under the right scope_key.
@@ -187,8 +214,8 @@ export function ReedyAssistant({
       })(),
       createReadingLayer(readingRef.current),
       createToolCatalogLayer(reg.list()),
-      createBookMemoryLayer(() => ''),
-      createUserMemoryLayer(() => ''),
+      createBookMemoryLayer(() => bookMemorySnapshotRef.current),
+      createUserMemoryLayer(() => userMemorySnapshotRef.current),
     ];
 
     return new AgentRuntime({ model: models.chat, tools: reg, layers });
@@ -198,6 +225,40 @@ export function ReedyAssistant({
   const isRunning = useReedyStore((s) => s.isRunning);
   const resetStore = useReedyStore((s) => s.reset);
   const { send, abort } = useReedyTurn(runtime);
+
+  // MemoryConsolidator (Phase 3.2) — distills the last ~3 turns into 1-3
+  // durable memories on turn-finish. Fire-and-forget; failures are
+  // surfaced via console.warn so they don't block the chat. We track
+  // the last message id we've consolidated through so subsequent turns
+  // only feed the new tail to the model.
+  const consolidator = useMemo(() => {
+    if (!reedy) return null;
+    return new MemoryConsolidator({
+      model: models.chat,
+      memory: reedy.memory,
+      bookHash,
+      userId,
+      onError: (err) => console.warn('[Reedy] consolidate', err),
+    });
+  }, [reedy, models.chat, bookHash, userId]);
+  const lastConsolidatedIdRef = useRef<string | null>(null);
+  const wasRunningRef = useRef(false);
+  useEffect(() => {
+    const justFinished = wasRunningRef.current && !isRunning;
+    wasRunningRef.current = isRunning;
+    if (!justFinished || !consolidator || messages.length === 0) return;
+
+    // Pull the tail since the last consolidation. The consolidator's
+    // own threshold (default 6 messages) decides whether to actually
+    // call the model.
+    const tail = sliceSinceLastId(messages, lastConsolidatedIdRef.current);
+    if (tail.length === 0) return;
+    const lastId = messages[messages.length - 1]!.id;
+    void consolidator.consolidate(tail).then(async (written) => {
+      lastConsolidatedIdRef.current = lastId;
+      if (written.length > 0) await refreshMemorySnapshots();
+    });
+  }, [isRunning, messages, consolidator, refreshMemorySnapshots]);
 
   // Indexing state — tracked locally to avoid layering yet another store.
   const [indexingPhase, setIndexingPhase] = useState<IndexingPhase>('idle');
