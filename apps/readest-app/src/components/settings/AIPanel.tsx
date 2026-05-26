@@ -523,7 +523,7 @@ const AIPanel: React.FC = () => {
           )}
           className={disabledSection}
         >
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <div className='flex w-full items-center justify-between'>
               <SettingLabel>{_('API Key')}</SettingLabel>
               <a
@@ -544,7 +544,7 @@ const AIPanel: React.FC = () => {
               disabled={!enabled}
             />
           </div>
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <SettingLabel>{_('Model')}</SettingLabel>
             <select
               className='select select-bordered select-sm bg-base-100 text-base-content w-full'
@@ -562,7 +562,7 @@ const AIPanel: React.FC = () => {
           </div>
 
           {selectedModel === CUSTOM_MODEL_VALUE && (
-            <div className='flex flex-col gap-2 px-4 py-3'>
+            <div className='flex flex-col gap-2 pe-4 py-3'>
               <SettingLabel>{_('Custom Model ID')}</SettingLabel>
               <div className='flex w-full gap-2'>
                 <input
@@ -613,7 +613,7 @@ const AIPanel: React.FC = () => {
           className={disabledSection}
         >
           {/* API key */}
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <div className='flex w-full items-center justify-between'>
               <SettingLabel>{_('API Key')}</SettingLabel>
               <a
@@ -637,7 +637,7 @@ const AIPanel: React.FC = () => {
           </div>
 
           {/* Base URL + refresh */}
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <div className='flex w-full items-center justify-between'>
               <SettingLabel>{_('Base URL')}</SettingLabel>
               <button
@@ -665,7 +665,7 @@ const AIPanel: React.FC = () => {
           </div>
 
           {/* Model picker — populated from the endpoint's /models */}
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <SettingLabel>{_('LLM Model')}</SettingLabel>
             {openrouterModels.length > 0 ? (
               <select
@@ -707,7 +707,7 @@ const AIPanel: React.FC = () => {
               selects share one list and the user picks the right one.
               Falls back to free text when the list isn't loaded yet, so
               the user can still type a known ID before refreshing. */}
-          <div className='flex flex-col gap-2 px-4 py-3'>
+          <div className='flex flex-col gap-2 pe-4 py-3'>
             <SettingLabel>{_('Embedding Model')}</SettingLabel>
             {openrouterModels.length > 0 ? (
               <select
@@ -755,9 +755,6 @@ const AIPanel: React.FC = () => {
       >
         <SettingsSwitchRow
           label={_('Use Reedy retrieval')}
-          description={_(
-            'When on, indexing and chat go through Reedy. When off, the legacy IndexedDB pipeline is used.',
-          )}
           checked={reedyEnabled}
           disabled={!enabled || !isTauriAppPlatform()}
           onChange={() => {
@@ -771,9 +768,6 @@ const AIPanel: React.FC = () => {
         />
         <SettingsSwitchRow
           label={_('Use agent runtime (experimental)')}
-          description={_(
-            'When on, the notebook AI tab uses the new custom agent runtime + thread UI. When off, the Phase 1B MVP path (legacy assistant-ui Thread) is used.',
-          )}
           checked={reedyAgentRuntime}
           disabled={!enabled || !reedyEnabled || !isTauriAppPlatform()}
           onChange={() => {
@@ -785,14 +779,9 @@ const AIPanel: React.FC = () => {
             });
           }}
         />
-        <div className='flex min-h-14 items-center justify-between gap-3 ps-4 pe-4'>
+        <div className='flex min-h-14 items-center justify-between gap-3 pe-4'>
           <div className='flex min-w-0 flex-col gap-0.5'>
             <SettingLabel>{_('Send Reedy feedback')}</SettingLabel>
-            <span className='text-base-content/60 text-xs'>
-              {_(
-                'Download the last 90 days of Reedy events as a JSON bundle (local-only by default). Paste into a GitHub issue or feedback form.',
-              )}
-            </span>
           </div>
           <button
             className='btn btn-outline btn-sm'
