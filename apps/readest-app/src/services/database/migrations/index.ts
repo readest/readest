@@ -121,6 +121,25 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         ON reedy_memory (scope, scope_key, updated_at DESC);
       `,
     },
+    {
+      // Skill catalog for the agent runtime (Phase 5.1). Built-in skills
+      // are seeded on first SkillRegistry boot; user-defined skills
+      // (post-MVP) live in the same table with builtin=0. tool_allowlist
+      // is a JSON-encoded string array applied by the runtime when
+      // building the per-turn ToolSet.
+      name: '2026052604_reedy_skills',
+      sql: `
+        CREATE TABLE IF NOT EXISTS reedy_skills (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          instructions TEXT NOT NULL,
+          tool_allowlist TEXT,
+          builtin INTEGER NOT NULL DEFAULT 1,
+          enabled INTEGER NOT NULL DEFAULT 1
+        );
+      `,
+    },
   ],
 };
 
