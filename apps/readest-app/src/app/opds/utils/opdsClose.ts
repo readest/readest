@@ -50,5 +50,16 @@ export const closeOPDSBrowser = (
     navigateToLibrary(router, '', undefined, true);
     return;
   }
-  navigateToLibrary(router, 'opds=true', {}, true);
+  // Restore the user's last library state (group filter, sort, etc.) while
+  // also forcing `opds=true` so the standalone OPDS dialog re-opens on
+  // library mount. We can't just pass `'opds=true'` + navBack=true here —
+  // `navigateToLibrary` overwrites queryParams with `lastLibraryParams`
+  // when navBack is set, which would drop the `opds=true` we need to
+  // re-open the catalog list dialog. Merge the two ourselves and pass the
+  // result with navBack=false so it survives.
+  const lastLibraryParams =
+    typeof window !== 'undefined' ? (sessionStorage.getItem('lastLibraryParams') ?? '') : '';
+  const merged = new URLSearchParams(lastLibraryParams);
+  merged.set('opds', 'true');
+  navigateToLibrary(router, merged.toString(), {});
 };

@@ -13,6 +13,7 @@ import { downloadFile } from '@/libs/storage';
 import { Toast } from '@/components/Toast';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { transferManager } from '@/services/transferManager';
@@ -46,7 +47,7 @@ import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
 import { Navigation } from './components/Navigation';
 import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
-import { stashOPDSReturnTarget } from './utils/opdsClose';
+import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -91,6 +92,21 @@ export default function BrowserPage() {
   const searchParams = useSearchParams();
   const catalogUrl = searchParams?.get('url') || '';
   const catalogId = searchParams?.get('id') || '';
+  // Captured once at mount so the restore effect targets exactly the
+  // detail the URL described when /opds first loaded — typically after a
+  // Reader → webview-back. Subsequent in-page navigation can mutate the
+  // `pub` query param via handleBack/handlePublicationSelect without
+  // re-triggering restoration.
+  const initialPubMarkerRef = useRef<string | null>(searchParams?.get('pub') ?? null);
+  const didRestorePubRef = useRef(false);
+  // Remembers the (url,id) pair that the mount-load effect has already
+  // kicked off a fetch for. Without this, any unrelated change to the
+  // `settings` zustand store re-runs the effect, re-fetches the same
+  // feed, resets viewMode to 'feed', and clobbers a publication detail
+  // that the restore effect just brought back. Tracking the pair lets us
+  // ignore those spurious re-runs while still honoring genuine URL/id
+  // changes (e.g. an in-page navigation that mutates `catalogUrl`).
+  const lastLoadedKeyRef = useRef<string | null>(null);
   const usernameRef = useRef<string | null | undefined>(undefined);
   const passwordRef = useRef<string | null | undefined>(undefined);
   const customHeadersRef = useRef<Record<string, string>>({});
@@ -327,6 +343,14 @@ export default function BrowserPage() {
   useEffect(() => {
     const url = catalogUrl;
     if (url && !isNavigatingHistoryRef.current) {
+      const loadKey = `${catalogId}::${url}`;
+      // Skip if this effect re-fires for an unrelated `settings` change
+      // (zustand re-renders propagate here through the dep array). The
+      // first run for a given (id,url) is the only one that should issue
+      // a fetch and reset viewMode.
+      if (lastLoadedKeyRef.current === loadKey) {
+        return;
+      }
       const catalog = settings.opdsCatalogs?.find((cat) => cat.id === catalogId);
       const { username, password } = catalog || {};
       if (username || password) {
@@ -338,6 +362,7 @@ export default function BrowserPage() {
       }
       customHeadersRef.current = normalizeOPDSCustomHeaders(catalog?.customHeaders);
       if (libraryLoaded) {
+        lastLoadedKeyRef.current = loadKey;
         loadOPDS(url);
       }
     } else if (isNavigatingHistoryRef.current) {
@@ -589,6 +614,17 @@ export default function BrowserPage() {
 
       const newURL = new URL(window.location.href);
       newURL.searchParams.set('url', entry.url);
+      // Strip the publication marker when stepping back to a non-publication
+      // view, otherwise a later remount (from Reader → webview back) would
+      // think we should restore a stale detail view that no longer matches.
+      if (!entry.selectedPublication) {
+        newURL.searchParams.delete('pub');
+      } else {
+        newURL.searchParams.set(
+          'pub',
+          `${entry.selectedPublication.groupIndex}:${entry.selectedPublication.itemIndex}`,
+        );
+      }
       window.history.replaceState({}, '', newURL.toString());
     }
   }, [history, historyIndex]);
@@ -607,33 +643,132 @@ export default function BrowserPage() {
 
       const newURL = new URL(window.location.href);
       newURL.searchParams.set('url', entry.url);
+      // Keep the URL pub marker in sync with the entry we're forwarding to,
+      // mirroring handleBack so mount-restore stays correct.
+      if (!entry.selectedPublication) {
+        newURL.searchParams.delete('pub');
+      } else {
+        newURL.searchParams.set(
+          'pub',
+          `${entry.selectedPublication.groupIndex}:${entry.selectedPublication.itemIndex}`,
+        );
+      }
       window.history.replaceState({}, '', newURL.toString());
     }
   }, [history, historyIndex]);
 
-  const handlePublicationSelect = useCallback((groupIndex: number, itemIndex: number) => {
-    setSelectedPublication({ groupIndex, itemIndex });
-    setViewMode('publication');
+  const handlePublicationSelect = useCallback(
+    (groupIndex: number, itemIndex: number, options: { skipUrlPush?: boolean } = {}) => {
+      setSelectedPublication({ groupIndex, itemIndex });
+      setViewMode('publication');
 
-    // Add this publication view to history
-    setHistory((prev) => {
-      const currentEntry = prev[historyIndexRef.current];
-      if (!currentEntry) return prev;
+      // Add this publication view to history
+      setHistory((prev) => {
+        const currentEntry = prev[historyIndexRef.current];
+        if (!currentEntry) return prev;
 
-      const newEntry: HistoryEntry = {
-        url: currentEntry.url,
-        state: currentEntry.state,
-        viewMode: 'publication',
-        selectedPublication: { groupIndex, itemIndex },
-      };
+        const newEntry: HistoryEntry = {
+          url: currentEntry.url,
+          state: currentEntry.state,
+          viewMode: 'publication',
+          selectedPublication: { groupIndex, itemIndex },
+        };
 
-      return [...prev.slice(0, historyIndexRef.current + 1), newEntry];
-    });
-    setHistoryIndex((prev) => prev + 1);
-  }, []);
+        return [...prev.slice(0, historyIndexRef.current + 1), newEntry];
+      });
+      setHistoryIndex((prev) => prev + 1);
+
+      // Reflect the open publication in the browser URL so a later
+      // router.push('/reader') leaves a recoverable entry behind us in the
+      // webview history. When Android Back returns here from the reader,
+      // /opds remounts with `pub=<gi>:<ii>` and the mount-restore effect
+      // below puts us straight back on the detail view instead of dropping
+      // the user on the bare feed list. Skip when called from the restore
+      // path itself (URL already carries the param) to avoid stacking a
+      // duplicate history entry.
+      if (!options.skipUrlPush) {
+        const newURL = new URL(window.location.href);
+        newURL.searchParams.set('pub', `${groupIndex}:${itemIndex}`);
+        window.history.pushState({}, '', newURL.toString());
+      }
+    },
+    [],
+  );
+
+  // Mount-time restore: when /opds remounts with `?pub=<gi>:<ii>` in the
+  // URL (typically because the user pressed Android Back inside the Reader
+  // they had launched from a publication detail), wait for the feed to
+  // finish loading then jump straight back to that detail view. Without
+  // this, the user would be dropped on the book list and lose their place,
+  // and the back-key hook would treat the catalog root as already at the
+  // bottom of in-page history.
+  useEffect(() => {
+    if (didRestorePubRef.current) return;
+    if (!initialPubMarkerRef.current) return;
+    if (viewMode !== 'feed' || !state.feed) return;
+
+    const [giStr, iiStr] = initialPubMarkerRef.current.split(':');
+    const groupIndex = Number(giStr);
+    const itemIndex = Number(iiStr);
+    if (Number.isNaN(groupIndex) || Number.isNaN(itemIndex)) {
+      didRestorePubRef.current = true;
+      return;
+    }
+
+    const pub =
+      state.feed.groups?.[groupIndex]?.publications?.[itemIndex] ||
+      state.feed.publications?.[itemIndex];
+    if (!pub) {
+      // Feed shape no longer matches the stale marker — drop the URL flag
+      // so subsequent in-page navigation doesn't keep trying to restore.
+      didRestorePubRef.current = true;
+      const cleaned = new URL(window.location.href);
+      cleaned.searchParams.delete('pub');
+      window.history.replaceState({}, '', cleaned.toString());
+      return;
+    }
+
+    didRestorePubRef.current = true;
+    handlePublicationSelect(groupIndex, itemIndex, { skipUrlPush: true });
+  }, [viewMode, state.feed, handlePublicationSelect]);
 
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < history.length - 1;
+
+  // Android Back / Esc inside the OPDS browser: step back through the
+  // browser's own in-page history first (drilled into a sub-feed, opened a
+  // publication detail, ran a search). Only when we're already at the root
+  // of *this* catalog (no internal history to pop) do we close the browser
+  // and return to /library — with `?opds=true` so the standalone OPDS
+  // catalogs dialog re-opens, matching where the user came from.
+  //
+  // Without this hook, Android Back falls through to the webview's default
+  // history-back, which racing with React's unmount of /library makes the
+  // OPDS catalogs dialog disappear before /library re-mounts, so the user
+  // perceives two Back presses to dismiss "the whole OPDS page". The
+  // CatalogDialog rendered on /library also acquires its own
+  // `native-key-down` listener while mounted, and once /opds takes over
+  // there's nothing here to consume Back in its place — this hook fills
+  // that gap.
+  //
+  // `useKeyDownActions` registers `handleKeyDown` once with a stale
+  // `onCancel` closure (its useEffect deps don't include onCancel), so we
+  // route through a ref that always points at the latest handler. Without
+  // this indirection the hook would forever see the first render's
+  // `canGoBack=false` and skip straight to closing the browser even after
+  // the user drilled into a sub-feed.
+  const backOrCloseRef = useRef<() => void>(() => {});
+  backOrCloseRef.current = () => {
+    if (historyIndexRef.current > 0) {
+      handleBack();
+    } else {
+      stashOPDSReturnTarget(searchParams);
+      closeOPDSBrowser(router, searchParams);
+    }
+  };
+  useKeyDownActions({
+    onCancel: () => backOrCloseRef.current(),
+  });
 
   const publication =
     selectedPublication && state.feed
