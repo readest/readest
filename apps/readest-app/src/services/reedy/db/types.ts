@@ -45,3 +45,49 @@ export interface ScoredChunk extends ChunkRow {
   vectorRank: number | null;
   ftsRank: number | null;
 }
+
+// ---------------------------------------------------------------------------
+// Memory (Phase 3.1)
+// ---------------------------------------------------------------------------
+
+export type MemoryScope = 'user' | 'book' | 'session';
+
+export interface MemoryRow {
+  id: string;
+  scope: MemoryScope;
+  scopeKey: string;
+  key: string;
+  summary: string;
+  sourceMessageId: string | null;
+  updatedAt: number;
+}
+
+export interface MemoryWriteArgs {
+  scope: MemoryScope;
+  scopeKey: string;
+  key: string;
+  summary: string;
+  sourceMessageId?: string | null;
+  /** Optional embedding for the summary — caller embeds + supplies. */
+  embedding?: number[] | null;
+}
+
+export interface MemorySearchArgs {
+  scope: MemoryScope;
+  scopeKey: string;
+  /** When provided, ranks via vector cosine + recency boost. When omitted, recency only. */
+  queryEmbedding?: number[];
+  limit: number;
+  /**
+   * Weight for the recency component when both vector + recency are
+   * active. 0 = pure vector, 1 = pure recency. Default 0.1.
+   */
+  recencyWeight?: number;
+}
+
+export interface ScoredMemoryRow extends MemoryRow {
+  /** Fused score for the search; lower = more relevant (distance-based). */
+  score: number;
+  /** Distance from queryEmbedding when vector search ran. null otherwise. */
+  vectorDistance: number | null;
+}

@@ -1,8 +1,8 @@
 /**
- * Phase 2.4 built-in tools — each factory takes its dependencies as an
- * argument so callers (AgentRuntime, tests) wire whatever read/write/
- * navigate surfaces they have. Memory tools (families 3, 4, 5) ship after
- * Phase 3.
+ * Built-in tools the agent runtime registers. Each factory takes its
+ * dependencies as an argument so callers (AgentRuntime, tests) wire
+ * whatever read/write/navigate surfaces they have. Memory families ship
+ * alongside Phase 3.1's MemoryService.
  */
 export { createGetReadingContextTool } from './getReadingContext';
 export { createGetSelectionTool } from './getSelection';
@@ -16,6 +16,19 @@ export { createCreateHighlightTool } from './createHighlight';
 export type { CreateHighlightResult } from './createHighlight';
 export { createCreateNoteTool } from './createNote';
 export type { CreateNoteResult } from './createNote';
+export {
+  createSearchUserMemoryTool,
+  createWriteUserMemoryTool,
+  createSearchBookMemoryTool,
+  createWriteBookMemoryTool,
+  createSearchSessionMemoryTool,
+} from './memoryTools';
+export type {
+  SearchMemoryResult,
+  SearchMemoryToolDeps,
+  WriteMemoryResult,
+  WriteMemoryToolDeps,
+} from './memoryTools';
 export type {
   AnnotationServices,
   CitationData,

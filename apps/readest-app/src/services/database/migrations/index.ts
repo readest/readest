@@ -96,6 +96,31 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         CREATE INDEX IF NOT EXISTS idx_metrics_session ON reedy_metrics (session_id, ts DESC);
       `,
     },
+    {
+      // Memory store for the agent runtime (Phase 3.1). One table, three
+      // scopes: user / book / session. UNIQUE(scope, scope_key, key)
+      // gives us upsert semantics — writing the same key twice replaces
+      // the prior summary. Embeddings live in a sibling table created
+      // lazily by MemoryService (same single-model-lock pattern as
+      // reedy_book_chunk_embeddings) so the vector32 dim matches the
+      // active embedding model.
+      name: '2026052603_reedy_memory',
+      sql: `
+        CREATE TABLE IF NOT EXISTS reedy_memory (
+          id TEXT PRIMARY KEY,
+          scope TEXT NOT NULL,
+          scope_key TEXT NOT NULL,
+          key TEXT NOT NULL,
+          summary TEXT NOT NULL,
+          source_message_id TEXT,
+          updated_at INTEGER NOT NULL,
+          UNIQUE(scope, scope_key, key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_memory_scope
+        ON reedy_memory (scope, scope_key, updated_at DESC);
+      `,
+    },
   ],
 };
 

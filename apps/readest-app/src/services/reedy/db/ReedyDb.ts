@@ -1,5 +1,16 @@
 import type { DatabaseService } from '@/types/database';
-import type { BookMeta, ChunkRow, EmbeddingRow, IndexingStatus, ScoredChunk } from './types';
+import type {
+  BookMeta,
+  ChunkRow,
+  EmbeddingRow,
+  IndexingStatus,
+  MemoryRow,
+  MemoryScope,
+  MemorySearchArgs,
+  MemoryWriteArgs,
+  ScoredChunk,
+  ScoredMemoryRow,
+} from './types';
 
 /**
  * Typed wrapper around a Turso DatabaseService opened against reedy.db.
@@ -246,11 +257,211 @@ export class ReedyDb {
   async wipeAllData(): Promise<void> {
     await this.enqueue(async () => {
       await this.db.execute('DELETE FROM reedy_book_meta');
-      // Drop embeddings table so a future ensureEmbeddingsTable(newDim) is free
-      // to recreate it with a different vector32 width.
+      // Drop embeddings tables so a future ensure*EmbeddingsTable(newDim)
+      // is free to recreate them with a different vector32 width.
       await this.db.execute('DROP TABLE IF EXISTS reedy_book_chunk_embeddings');
+      await this.db.execute('DROP TABLE IF EXISTS reedy_memory_embeddings');
       await this.db.execute('DELETE FROM reedy_book_chunks');
+      await this.db.execute('DELETE FROM reedy_memory');
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // memory (Phase 3.1)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Lazy-create reedy_memory_embeddings the same way the chunk embeddings
+   * table is created — vector32(<dim>) lives on a sibling row keyed on
+   * memory_id, with ON DELETE CASCADE so deleting a memory row also drops
+   * its vector. Same dim-mismatch contract as ensureEmbeddingsTable.
+   */
+  async ensureMemoryEmbeddingsTable(dim: number): Promise<void> {
+    if (!Number.isInteger(dim) || dim <= 0) {
+      throw new Error(`ensureMemoryEmbeddingsTable: dim must be a positive integer, got ${dim}`);
+    }
+    await this.enqueue(async () => {
+      const existing = await this.db.select<{ sql: string | null }>(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='reedy_memory_embeddings'",
+      );
+      if (existing.length === 0) {
+        await this.db.batch([
+          `CREATE TABLE reedy_memory_embeddings (
+             memory_id TEXT PRIMARY KEY REFERENCES reedy_memory(id) ON DELETE CASCADE,
+             embedding vector32(${dim})
+           )`,
+        ]);
+        return;
+      }
+      const m = existing[0]!.sql?.match(/vector32\s*\(\s*(\d+)\s*\)/i);
+      const existingDim = m ? parseInt(m[1]!, 10) : NaN;
+      if (existingDim !== dim) {
+        throw new Error(
+          `ensureMemoryEmbeddingsTable: dim mismatch — existing table is vector32(${existingDim}), requested vector32(${dim}). ` +
+            `Switching embedding models requires wipeAllData() first.`,
+        );
+      }
+    });
+  }
+
+  /**
+   * Upsert one memory row by (scope, scope_key, key). Re-writing the same
+   * key replaces the prior summary and bumps updated_at. When
+   * `args.embedding` is provided, the matching reedy_memory_embeddings row
+   * is also upserted — caller must have called ensureMemoryEmbeddingsTable
+   * with the same dim already.
+   */
+  async upsertMemory(args: MemoryWriteArgs): Promise<MemoryRow> {
+    const id = await this.upsertMemoryRow(args);
+    if (args.embedding != null) {
+      if (args.embedding.length === 0) {
+        throw new Error('upsertMemory: empty embedding array');
+      }
+      await this.upsertMemoryEmbedding(id, args.embedding);
+    }
+    const row = await this.getMemoryById(id);
+    if (!row) throw new Error(`upsertMemory: row vanished after write (id=${id})`);
+    return row;
+  }
+
+  private async upsertMemoryRow(args: MemoryWriteArgs): Promise<string> {
+    const now = Date.now();
+    return this.enqueue(async () => {
+      const existing = await this.db.select<{ id: string }>(
+        'SELECT id FROM reedy_memory WHERE scope = ? AND scope_key = ? AND key = ?',
+        [args.scope, args.scopeKey, args.key],
+      );
+      if (existing[0]) {
+        const id = existing[0].id;
+        await this.db.execute(
+          `UPDATE reedy_memory SET summary = ?, source_message_id = ?, updated_at = ?
+             WHERE id = ?`,
+          [args.summary, args.sourceMessageId ?? null, now, id],
+        );
+        return id;
+      }
+      const id = randomMemoryId();
+      await this.db.execute(
+        `INSERT INTO reedy_memory (id, scope, scope_key, key, summary, source_message_id, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, args.scope, args.scopeKey, args.key, args.summary, args.sourceMessageId ?? null, now],
+      );
+      return id;
+    });
+  }
+
+  private async upsertMemoryEmbedding(memoryId: string, embedding: number[]): Promise<void> {
+    await this.enqueue(() =>
+      this.db.batch([
+        `INSERT INTO reedy_memory_embeddings (memory_id, embedding)
+           VALUES (${sqlQuote(memoryId)}, vector32(${sqlQuote(serializeVector(embedding))}))
+         ON CONFLICT(memory_id) DO UPDATE SET embedding = excluded.embedding`,
+      ]),
+    );
+  }
+
+  async getMemory(scope: MemoryScope, scopeKey: string, key: string): Promise<MemoryRow | null> {
+    const rows = await this.db.select<MemoryRowSql>(
+      'SELECT * FROM reedy_memory WHERE scope = ? AND scope_key = ? AND key = ?',
+      [scope, scopeKey, key],
+    );
+    return rows[0] ? toMemoryRow(rows[0]) : null;
+  }
+
+  async deleteMemory(scope: MemoryScope, scopeKey: string, key: string): Promise<boolean> {
+    return this.enqueue(async () => {
+      const matched = await this.db.select<{ id: string }>(
+        'SELECT id FROM reedy_memory WHERE scope = ? AND scope_key = ? AND key = ?',
+        [scope, scopeKey, key],
+      );
+      if (matched.length === 0) return false;
+      const id = matched[0]!.id;
+      // We can't rely on PRAGMA foreign_keys = ON in callers' connections,
+      // so explicitly drop the embedding row first when the table exists.
+      const hasEmbTable = await this.db.select<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='reedy_memory_embeddings'",
+      );
+      if (hasEmbTable.length > 0) {
+        await this.db.execute('DELETE FROM reedy_memory_embeddings WHERE memory_id = ?', [id]);
+      }
+      await this.db.execute('DELETE FROM reedy_memory WHERE id = ?', [id]);
+      return true;
+    });
+  }
+
+  async listMemories(scope: MemoryScope, scopeKey: string, limit: number): Promise<MemoryRow[]> {
+    if (limit <= 0) return [];
+    const rows = await this.db.select<MemoryRowSql>(
+      `SELECT * FROM reedy_memory
+        WHERE scope = ? AND scope_key = ?
+        ORDER BY updated_at DESC
+        LIMIT ?`,
+      [scope, scopeKey, limit],
+    );
+    return rows.map(toMemoryRow);
+  }
+
+  /**
+   * Hybrid memory search — vector cosine + recency. When the caller
+   * provides a queryEmbedding, score = vectorDistance + recencyWeight *
+   * normalizedAge; otherwise rows are returned by recency only. Both
+   * components are positive distance-like terms so a lower score wins.
+   */
+  async searchMemories(args: MemorySearchArgs): Promise<ScoredMemoryRow[]> {
+    const limit = Math.max(0, args.limit);
+    if (limit === 0) return [];
+    const recencyWeight = args.recencyWeight ?? 0.1;
+    const now = Date.now();
+
+    if (args.queryEmbedding && args.queryEmbedding.length > 0) {
+      // Pull a slightly wider pool than `limit` so the JS-side fusion has
+      // candidates to work with even if the top-K-by-distance and
+      // top-K-by-recency disagree.
+      const fetchK = Math.max(limit, limit * 3);
+      const rows = await this.db.select<MemoryRowSql & { vector_distance: number }>(
+        `SELECT m.*, vector_distance_cos(e.embedding, vector32(?)) AS vector_distance
+           FROM reedy_memory m
+           JOIN reedy_memory_embeddings e ON e.memory_id = m.id
+          WHERE m.scope = ? AND m.scope_key = ?
+          ORDER BY vector_distance ASC
+          LIMIT ?`,
+        [serializeVector(args.queryEmbedding), args.scope, args.scopeKey, fetchK],
+      );
+      const maxAge = Math.max(1, ...rows.map((r) => Math.max(0, now - r.updated_at)));
+      const scored = rows.map((r) => {
+        const distance = Number.isFinite(r.vector_distance) ? r.vector_distance : 1;
+        const ageNorm = (now - r.updated_at) / maxAge; // 0 = newest, 1 = oldest in pool
+        return {
+          ...toMemoryRow(r),
+          score: distance + recencyWeight * ageNorm,
+          vectorDistance: distance,
+        } as ScoredMemoryRow;
+      });
+      return scored.sort((a, b) => a.score - b.score).slice(0, limit);
+    }
+
+    const rows = await this.db.select<MemoryRowSql>(
+      `SELECT * FROM reedy_memory
+        WHERE scope = ? AND scope_key = ?
+        ORDER BY updated_at DESC
+        LIMIT ?`,
+      [args.scope, args.scopeKey, limit],
+    );
+    return rows.map(
+      (r): ScoredMemoryRow => ({
+        ...toMemoryRow(r),
+        // Recency-only score: 0 for the newest, growing with age.
+        score: Math.max(0, (now - r.updated_at) / 1000),
+        vectorDistance: null,
+      }),
+    );
+  }
+
+  private async getMemoryById(id: string): Promise<MemoryRow | null> {
+    const rows = await this.db.select<MemoryRowSql>('SELECT * FROM reedy_memory WHERE id = ?', [
+      id,
+    ]);
+    return rows[0] ? toMemoryRow(rows[0]) : null;
   }
 
   // ---------------------------------------------------------------------------
@@ -402,4 +613,36 @@ function sqlQuote(s: string): string {
 
 function sqlQuoteNullable(s: string | null): string {
   return s === null ? 'NULL' : sqlQuote(s);
+}
+
+// ---------------------------------------------------------------------------
+// memory helpers
+// ---------------------------------------------------------------------------
+
+interface MemoryRowSql {
+  id: string;
+  scope: string;
+  scope_key: string;
+  key: string;
+  summary: string;
+  source_message_id: string | null;
+  updated_at: number;
+  [key: string]: unknown;
+}
+
+function toMemoryRow(row: MemoryRowSql): MemoryRow {
+  return {
+    id: row.id,
+    scope: row.scope as MemoryScope,
+    scopeKey: row.scope_key,
+    key: row.key,
+    summary: row.summary,
+    sourceMessageId: row.source_message_id,
+    updatedAt: row.updated_at,
+  };
+}
+
+function randomMemoryId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return `mem-${crypto.randomUUID()}`;
+  return `mem-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
