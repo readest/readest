@@ -182,6 +182,7 @@
     "react-dom": "19.2.5",
     "react-i18next": "^15.2.0",
     "react-icons": "^5.4.0",
+    "react-markdown": "^10.1.0",
     "react-responsive": "^10.0.0",
     "react-virtuoso": "^4.17.0",
     "react-window": "^1.8.11",
@@ -194,6 +195,7 @@
     "tauri-plugin-device-info-api": "^1.0.1",
     "tinycolor2": "^1.6.0",
     "uuid": "^14.0.0",
+    "virtua": "^0.49.1",
     "ws": "^8.18.3",
     "zod": "^4.0.8",
     "zustand": "5.0.10"

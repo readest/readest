@@ -76,6 +76,9 @@ const AIPanel: React.FC = () => {
 
   const [enabled, setEnabled] = useState(aiSettings.enabled);
   const [reedyEnabled, setReedyEnabled] = useState(aiSettings.reedy?.enabled ?? false);
+  const [reedyAgentRuntime, setReedyAgentRuntime] = useState(
+    (aiSettings.reedy?.runtime ?? 'mvp') === 'agent',
+  );
   const [provider, setProvider] = useState<AIProviderName>(aiSettings.provider);
   const [ollamaUrl, setOllamaUrl] = useState(aiSettings.ollamaBaseUrl);
   const [ollamaModel, setOllamaModel] = useState(aiSettings.ollamaModel);
@@ -760,7 +763,26 @@ const AIPanel: React.FC = () => {
           onChange={() => {
             const next = !reedyEnabled;
             setReedyEnabled(next);
-            saveAiSetting('reedy', { enabled: next });
+            saveAiSetting('reedy', {
+              enabled: next,
+              runtime: reedyAgentRuntime ? 'agent' : 'mvp',
+            });
+          }}
+        />
+        <SettingsSwitchRow
+          label={_('Use agent runtime (experimental)')}
+          description={_(
+            'When on, the notebook AI tab uses the new custom agent runtime + thread UI. When off, the Phase 1B MVP path (legacy assistant-ui Thread) is used.',
+          )}
+          checked={reedyAgentRuntime}
+          disabled={!enabled || !reedyEnabled || !isTauriAppPlatform()}
+          onChange={() => {
+            const next = !reedyAgentRuntime;
+            setReedyAgentRuntime(next);
+            saveAiSetting('reedy', {
+              enabled: reedyEnabled,
+              runtime: next ? 'agent' : 'mvp',
+            });
           }}
         />
         <div className='flex min-h-14 items-center justify-between gap-3 ps-4 pe-4'>

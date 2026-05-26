@@ -28,6 +28,8 @@ import type { RetrievedChunk } from '@/services/reedy/retrieval/BookRetriever';
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
 import type { AppService } from '@/types/system';
+import { ReedyAssistant } from '@/services/reedy/ui/ReedyAssistant';
+import type { ReadingContextSnapshot } from '@/services/reedy/tools/builtins/types';
 
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
@@ -276,7 +278,34 @@ const ThreadWrapper = ({
   );
 };
 
+/**
+ * Phase 4.3 router. Switches between the legacy / Reedy-MVP path
+ * (LegacyAIAssistant) and the Phase 4 agent-runtime path
+ * (ReedyAgentAssistantBridge) based on aiSettings.reedy.runtime.
+ *
+ * The split is at component boundary rather than inside one component
+ * so hooks always run in stable order on whichever path is rendered.
+ */
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {
+  const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const { getBookData } = useBookDataStore();
+  const bookData = getBookData(bookKey);
+
+  const reedyRuntime = settings?.aiSettings?.reedy?.runtime ?? 'mvp';
+  const useAgentRuntime =
+    settings?.aiSettings?.enabled === true &&
+    settings?.aiSettings?.reedy?.enabled === true &&
+    reedyRuntime === 'agent' &&
+    !!appService &&
+    isTauriAppPlatform() &&
+    !!bookData?.bookDoc;
+
+  if (useAgentRuntime) return <ReedyAgentAssistantBridge bookKey={bookKey} />;
+  return <LegacyAIAssistant bookKey={bookKey} />;
+};
+
+const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -432,6 +461,57 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       setCurrentTurnId={setCurrentTurnId}
       onSourceClick={handleSourceClick}
       onResetIndex={handleResetIndex}
+    />
+  );
+};
+
+/**
+ * Bridge from the notebook AI tab into the Phase 4 ReedyAssistant.
+ *
+ * Kept separate from AIAssistant so legacy props/state don't leak in
+ * and we don't pay the cost of constructing the agent runtime when the
+ * user is on the MVP path. The flag check in AIAssistant guarantees this
+ * only renders when aiSettings.reedy.runtime === 'agent'.
+ */
+const ReedyAgentAssistantBridge = ({ bookKey }: AIAssistantProps) => {
+  const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const { getBookData } = useBookDataStore();
+  const { getProgress, getView } = useReaderStore();
+  const bookData = getBookData(bookKey);
+  const progress = getProgress(bookKey);
+
+  const bookHash = bookKey.split('-')[0] || '';
+  const aiSettings = settings?.aiSettings;
+
+  const readingContext = useMemo<ReadingContextSnapshot>(
+    () => ({
+      cfi: progress?.location ?? null,
+      sectionIndex: progress?.section?.current ?? 0,
+      chapterTitle: progress?.sectionLabel ?? null,
+      pageNumber: progress?.pageinfo?.current ?? 0,
+    }),
+    [progress],
+  );
+
+  const handleNavigate = useCallback(
+    (cfi: string) => {
+      getView(bookKey)?.goTo(cfi);
+    },
+    [bookKey, getView],
+  );
+
+  if (!aiSettings || !appService || !bookData?.bookDoc) return null;
+
+  return (
+    <ReedyAssistant
+      appService={appService as AppService}
+      bookDoc={bookData.bookDoc}
+      bookHash={bookHash}
+      bookKey={bookKey}
+      aiSettings={aiSettings}
+      readingContext={readingContext}
+      onNavigateToCfi={handleNavigate}
     />
   );
 };

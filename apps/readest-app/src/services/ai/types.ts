@@ -45,6 +45,14 @@ export interface AISettings {
    */
   reedy?: {
     enabled: boolean;
+    /**
+     * 'mvp' (default) keeps the Phase 1B path: lookupPassage tool wired
+     * through @assistant-ui/react's adapter. 'agent' switches the
+     * notebook AI tab to the Phase 4 ReedyAssistant (custom AgentRuntime
+     * + thread UI). Requires `reedy.enabled && isTauri() &&
+     * runtime === 'agent'` to engage.
+     */
+    runtime?: 'mvp' | 'agent';
   };
 }
 
