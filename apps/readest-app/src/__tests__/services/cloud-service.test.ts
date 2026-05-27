@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { deleteBook } from '@/services/cloudService';
+import { deleteBook, uploadBook } from '@/services/cloudService';
 import { Book, BookFormat } from '@/types/book';
-import { FileSystem } from '@/types/system';
+import { BaseDir, FileSystem } from '@/types/system';
 
 // Mock external dependencies
 vi.mock('@/utils/book', () => ({
@@ -127,6 +127,22 @@ describe('cloudService', () => {
         expect(mockFs.removeFile).toHaveBeenCalledTimes(1);
         expect(mockFs.removeFile).toHaveBeenCalledWith(`${book.hash}/${book.title}.epub`, 'Books');
       });
+
+      test('removes the managed copy when filePath is stale', async () => {
+        const book = createMockBook({ filePath: '/Users/me/Library/missing.epub' });
+        const managedPath = `${book.hash}/${book.title}.epub`;
+        vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+          return base === 'Books' && path === managedPath;
+        });
+
+        await deleteBook(mockFs, book, 'local');
+
+        expect(mockFs.removeFile).toHaveBeenCalledWith(managedPath, 'Books');
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith(
+          '/Users/me/Library/missing.epub',
+          'None',
+        );
+      });
     });
 
     describe('both delete action', () => {
@@ -211,21 +227,30 @@ describe('cloudService', () => {
     // normal book). The cloud upload path is shared, so cross-device sync
     // can still pull the book back.
     describe('in-place (book.filePath set)', () => {
+      const mockInPlaceExists = (book: Book, coverExists = true) => {
+        vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+          if (base === 'None' && path === book.filePath) return true;
+          if (base === 'Books' && path === `${book.hash}/cover.png`) return coverExists;
+          return false;
+        });
+      };
+
       test('local action removes the user-controlled source file', async () => {
         const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
+        mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'local');
 
         // The source file is read from base 'None' (absolute path), not Books/.
         expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
       });
 
-      test('local action does not probe Books/<hash>/<title>.epub', async () => {
+      test('local action does not remove Books/<hash>/<title>.epub', async () => {
         const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
+        mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'local');
 
-        // The hash-copy path lives only on a normal book; for an in-place book
-        // there's nothing there, so we shouldn't even check.
-        expect(mockFs.exists).not.toHaveBeenCalledWith(`${book.hash}/${book.title}.epub`, 'Books');
+        // The hash-copy path lives only on a normal book; for an in-place book,
+        // the resolver can probe it, but deletion must target the external source.
         expect(mockFs.removeFile).not.toHaveBeenCalledWith(
           `${book.hash}/${book.title}.epub`,
           'Books',
@@ -237,6 +262,7 @@ describe('cloudService', () => {
           filePath: '/Users/me/Library/sample.epub',
           downloadedAt: 12345,
         });
+        mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'local');
         expect(book.downloadedAt).toBeNull();
       });
@@ -260,6 +286,7 @@ describe('cloudService', () => {
           filePath: '/Users/me/Library/sample.epub',
           downloadedAt: 12345,
         });
+        mockInPlaceExists(book);
 
         // Must not throw, and must still flip the metadata bit so the UI
         // reflects the user's delete intent.
@@ -272,6 +299,7 @@ describe('cloudService', () => {
           filePath: '/Users/me/Library/sample.epub',
           uploadedAt: null,
         });
+        mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'both');
 
         // Source file under user-controlled path:
@@ -291,12 +319,60 @@ describe('cloudService', () => {
           downloadedAt: 2000,
           coverDownloadedAt: 3000,
         });
+        mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'both');
 
         expect(book.deletedAt).toBeGreaterThan(0);
         expect(book.downloadedAt).toBeNull();
         expect(book.coverDownloadedAt).toBeNull();
       });
+    });
+  });
+
+  describe('uploadBook', () => {
+    test('uses an existing managed copy before a stale filePath', async () => {
+      const book = createMockBook({ filePath: '/Users/me/Library/missing.epub' });
+      const managedPath = `${book.hash}/${book.title}.epub`;
+      const coverPath = `${book.hash}/cover.png`;
+      vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+        return base === 'Books' && path === managedPath;
+      });
+      const resolveFilePath = vi.fn(async (path: string, base: BaseDir) => `${base}:${path}`);
+
+      await uploadBook(mockFs, resolveFilePath, book);
+
+      expect(mockFs.exists).toHaveBeenCalledWith(managedPath, 'Books');
+      expect(mockFs.exists).not.toHaveBeenCalledWith('/Users/me/Library/missing.epub', 'None');
+      expect(mockFs.openFile).toHaveBeenCalledWith(
+        managedPath,
+        'Books',
+        expect.stringContaining(`${book.hash}/${book.hash}.epub`),
+      );
+      expect(mockFs.openFile).not.toHaveBeenCalledWith(
+        '/Users/me/Library/missing.epub',
+        'None',
+        expect.any(String),
+      );
+      expect(mockFs.exists).toHaveBeenCalledWith(coverPath, 'Books');
+    });
+
+    test('does not mark a book uploaded when only the cover exists', async () => {
+      const book = createMockBook({ uploadedAt: null, downloadedAt: null });
+      const managedPath = `${book.hash}/${book.title}.epub`;
+      const coverPath = `${book.hash}/cover.png`;
+      vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+        return base === 'Books' && path === coverPath;
+      });
+      const resolveFilePath = vi.fn(async (path: string, base: BaseDir) => `${base}:${path}`);
+
+      await expect(uploadBook(mockFs, resolveFilePath, book)).rejects.toThrow(
+        'Book file not uploaded',
+      );
+
+      const { uploadFile } = await import('@/libs/storage');
+      expect(uploadFile).not.toHaveBeenCalled();
+      expect(book.uploadedAt).toBeNull();
+      expect(mockFs.exists).toHaveBeenCalledWith(managedPath, 'Books');
     });
   });
 });

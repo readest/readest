@@ -174,7 +174,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         const available = await appService?.isBookAvailable(book);
         if (!available) {
           eventDispatcher.dispatch('toast', {
-            message: 'Book file no longer exists; removed from library.',
+            message: _(
+              'Book file no longer exists. Confirm deletion to remove it from the library.',
+            ),
             type: 'info',
           });
           eventDispatcher.dispatch('delete-books', { ids: [book.hash] });

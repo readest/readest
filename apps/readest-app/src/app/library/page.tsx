@@ -1138,12 +1138,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const registerExternalLibraryFolder = async (directory: string): Promise<void> => {
     const target = normalizeRoot(directory);
     if (!target) return;
-    const existing = settings.externalLibraryFolders ?? [];
+    const liveSettings = useSettingsStore.getState().settings;
+    const existing = liveSettings.externalLibraryFolders ?? [];
     if (existing.some((r) => normalizeRoot(r) === target)) {
       return;
     }
     const next = [...existing, directory];
-    const nextSettings = { ...settings, externalLibraryFolders: next };
+    const nextSettings = { ...liveSettings, externalLibraryFolders: next };
     setSettings(nextSettings);
     try {
       await saveSettings(envConfig, nextSettings);
