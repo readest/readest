@@ -10,10 +10,55 @@ interface Metadata {
   identifier: string;
 }
 
+// Pull a title and (optionally) an author out of a TXT filename. Recognized
+// patterns center on Chinese conventions where books are named with the title
+// in 《》 and an author tacked on, e.g. 《书名》作者：张三.txt, 《书名》[张三].txt,
+// 《书名》张三.txt. Falls back to the base filename as the title when no
+// 《》 are present.
+export const extractTxtFilenameMetadata = (
+  filename: string,
+): { title: string; author?: string } => {
+  const base = getBaseFilename(filename);
+  const cjkMatch = base.match(/《([^》]+)》(.*)/);
+  if (!cjkMatch) {
+    return { title: base };
+  }
+  const title = cjkMatch[1]!.trim();
+  const rest = (cjkMatch[2] ?? '').trim();
+  const author = parseAuthorFragment(rest);
+  return author ? { title, author } : { title };
+};
+
+const parseAuthorFragment = (text: string): string => {
+  if (!text) return '';
+  // 作者：X / 作者:X / 作者 X — labeled author wins
+  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
+  if (labeled) return stripWrappingPunctuation(labeled[1]!);
+  // [X] (X) 【X】 （X）［X］ — bracketed author
+  const bracketed = text.match(/[[(（【［]\s*([^\])）】］]+?)\s*[\])）】］]/);
+  if (bracketed) return stripWrappingPunctuation(bracketed[1]!);
+  // bare token — strip any leading separator like " - " / "·" / "-"
+  return stripWrappingPunctuation(text);
+};
+
+const stripWrappingPunctuation = (text: string): string => {
+  const trimmed = text.trim();
+  try {
+    return trimmed.replace(/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/gu, '');
+  } catch {
+    return trimmed;
+  }
+};
+
 interface Chapter {
   title: string;
   content: string;
   isVolume: boolean;
+  // True when the title came from a detected chapter heading. Chapters whose
+  // content was not found under a heading (paragraph fallback, or stray text
+  // split off by the segment regex) are merged into the preceding detected
+  // chapter instead of becoming bogus TOC entries. See issue #4063.
+  detected?: boolean;
 }
 
 interface Txt2EpubOptions {
@@ -73,18 +118,19 @@ export class TxtToEpubConverter {
     const decoder = new TextDecoder(runtimeEncoding);
     const txtContent = decoder.decode(fileContent).trim();
 
-    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
+    const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
+    const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
 
     const fileHeader = txtContent.slice(0, 1024);
     const authorMatch =
       fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
       fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
-    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : '';
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || providedAuthor || '';
+    const author = matchedAuthor || filenameMeta.author || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
@@ -126,7 +172,8 @@ export class TxtToEpubConverter {
     const runtimeEncoding = this.resolveSupportedEncoding(detectedEncoding);
     // console.log(`Detected encoding: ${detectedEncoding}, runtime encoding: ${runtimeEncoding}`);
 
-    const bookTitle = this.extractBookTitle(getBaseFilename(txtFile.name));
+    const filenameMeta = extractTxtFilenameMetadata(txtFile.name);
+    const bookTitle = filenameMeta.title;
     const fileName = `${bookTitle}.epub`;
     const fileHeader = await this.readHeaderTextFromFile(
       txtFile,
@@ -137,7 +184,7 @@ export class TxtToEpubConverter {
 
     const { author, language } = this.extractAuthorAndLanguage(
       fileHeader,
-      providedAuthor,
+      filenameMeta.author ?? providedAuthor,
       providedLanguage,
     );
     // console.log(`Detected language: ${language}`);
@@ -200,10 +247,28 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
 
     return chapters;
+  }
+
+  /**
+   * Append a segment's chapters to the running list. The segment regex also
+   * splits on dash dividers, which authors frequently use as in-chapter scene
+   * breaks; the content after such a divider has no heading of its own. When a
+   * heading-less chapter follows a detected chapter, merge its content into
+   * that chapter instead of emitting a separate (bogus) TOC entry. See #4063.
+   */
+  private appendSegmentChapters(chapters: Chapter[], segmentChapters: Chapter[]): void {
+    for (const chapter of segmentChapters) {
+      const previous = chapters[chapters.length - 1];
+      if (!chapter.detected && previous?.detected) {
+        previous.content += chapter.content.replace(/^<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/, '');
+      } else {
+        chapters.push(chapter);
+      }
+    }
   }
 
   private probeChapterCount(
@@ -244,7 +309,7 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
     return chapters;
   }
@@ -503,7 +568,7 @@ export class TxtToEpubConverter {
         const formattedSegment = this.formatSegment(chunks.join('\n'));
         const title = `${chapterOffset + chapters.length + 1}`;
         const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-        chapters.push({ title, content, isVolume: false });
+        chapters.push({ title, content, isVolume: false, detected: false });
       }
       return chapters;
     }
@@ -526,6 +591,7 @@ export class TxtToEpubConverter {
         title: escapeXml(title),
         content: `${headTitle}<p>${formattedSegment}</p>`,
         isVolume,
+        detected: true,
       });
     }
 
@@ -540,6 +606,7 @@ export class TxtToEpubConverter {
         title: escapeXml(segmentTitle),
         content: `<h3></h3><p>${formattedSegment}</p>`,
         isVolume: false,
+        detected: false,
       });
     }
 
@@ -634,8 +701,8 @@ export class TxtToEpubConverter {
           String.raw`(?:^|\n)\s*` +
             '(' +
             [
-              String.raw`第[ 　零〇一二三四五六七八九十0-9][ 　零〇一二三四五六七八九十百千万0-9]*(?:[章卷节回讲篇封本册部话])(?:[：:、 　\(\)0-9]*[^\n-]{0,24})(?!\S)`,
-              String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记)(?:[：: 　][^\n-]{0,24})?(?!\S)`,
+              String.raw`第[ 　零〇一二三四五六七八九十0-9][ 　零〇一二三四五六七八九十百千万0-9]*(?:[章卷节回讲篇封本册部话])(?:[：:、 　\(\)0-9]*[^\n-]{0,36})(?!\S)`,
+              String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记|番外篇|番外|外传)(?:[：: 　][^\n-]{0,36})?(?!\S)`,
               String.raw`chapter[\s.]*[0-9]+(?:[：:. 　]+[^\n-]{0,50})?(?!\S)`,
             ].join('|') +
             ')',
@@ -647,7 +714,7 @@ export class TxtToEpubConverter {
           String.raw`(?:^|\n)\s*` +
             '(' +
             [
-              String.raw`[一二三四五六七八九十][零〇一二三四五六七八九十百千万]?[：:、 　][^\n-]{0,24}(?=\n|$)`,
+              String.raw`[一二三四五六七八九十][零〇一二三四五六七八九十百千万]?[：:、 　][^\n-]{0,36}(?=\n|$)`,
               String.raw`[0-9]+[^\n]{0,16}(?=\n|$)`,
             ].join('|') +
             ')',
@@ -929,11 +996,6 @@ export class TxtToEpubConverter {
     }
 
     return 'utf-8';
-  }
-
-  private extractBookTitle(filename: string): string {
-    const match = filename.match(/《([^》]+)》/);
-    return match ? match[1]! : filename.split('.')[0]!;
   }
 
   private assertStrictUtf8Sample(sample: Uint8Array): void {

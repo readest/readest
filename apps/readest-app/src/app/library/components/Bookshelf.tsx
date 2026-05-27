@@ -36,6 +36,7 @@ import {
   createWithinGroupSorter,
   ensureLibraryGroupByType,
   ensureLibrarySortByType,
+  expandBookshelfSelection,
   getBookSortValue,
   getGroupSortValue,
   compareSortValues,
@@ -48,6 +49,8 @@ import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
+import ShareBookDialog from './ShareBookDialog';
+import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import SetStatusAlert from './SetStatusAlert';
 
@@ -357,16 +360,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
+  // `bookIdsToDelete` always holds book hashes by the time we get here —
+  // group ids are expanded into their constituent hashes at intake (see
+  // `deleteSelectedBooks` and `handleDeleteBooksIntent`), so a top-level
+  // folder is now resolved against the rendered group's `books` rollup,
+  // which already includes nested sub-folder books.
   const getBooksToDelete = () => {
-    const booksToDelete: Book[] = [];
-    bookIdsToDelete.forEach((id) => {
-      for (const book of filteredBooks.filter((book) => book.hash === id || book.groupId === id)) {
-        if (book && !book.deletedAt) {
-          booksToDelete.push(book);
-        }
-      }
-    });
-    return booksToDelete;
+    const wanted = new Set(bookIdsToDelete);
+    return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
   const confirmDelete = async () => {
@@ -388,7 +389,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const deleteSelectedBooks = () => {
-    setBookIdsToDelete(getSelectedBooks());
+    // Expand any group ids in the selection into the book hashes they
+    // visually represent — `generateBookshelfItems` rolls nested-folder
+    // books into the parent group, and we want every one of them queued
+    // for deletion, not just the books whose own `groupId` happens to
+    // match the top-level group's id.
+    setBookIdsToDelete(expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems));
     setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };
@@ -461,6 +467,31 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       eventDispatcher.off('delete-books', handleDeleteBooksIntent);
     };
   }, []);
+
+  const { user } = useAuth();
+  const [shareDialogBook, setShareDialogBook] = useState<Book | null>(null);
+
+  useEffect(() => {
+    const handleShareIntent = (event: CustomEvent) => {
+      const book = (event.detail as { book?: Book } | undefined)?.book;
+      if (!book) return;
+      if (!user) {
+        // Logged-out users can't share their own files; route through the
+        // login flow instead. The /auth route preserves a return path.
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Sign in to share books'),
+          timeout: 2500,
+        });
+        return;
+      }
+      setShareDialogBook(book);
+    };
+    eventDispatcher.on('show-share-dialog', handleShareIntent);
+    return () => {
+      eventDispatcher.off('show-share-dialog', handleShareIntent);
+    };
+  }, [user, _]);
 
   // OverlayScrollbars + Virtuoso integration: Virtuoso manages its own
   // scroller; OverlayScrollbars wraps it for overlay scrollbar rendering.
@@ -698,6 +729,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onUpdateStatus={updateBooksStatus}
         />
       )}
+      <ShareBookDialog
+        isOpen={!!shareDialogBook}
+        book={shareDialogBook}
+        onClose={() => setShareDialogBook(null)}
+      />
     </div>
   );
 };

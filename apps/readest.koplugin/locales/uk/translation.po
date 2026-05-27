@@ -1,0 +1,438 @@
+# Ukrainian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Ukrainian\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Підтримує синхронізацію пристроїв KOReader і Readest."
+
+msgid "Library view"
+msgstr "Перегляд бібліотеки"
+
+msgid "View"
+msgstr "Вигляд"
+
+msgid "Grid"
+msgstr "Сітка"
+
+msgid "List"
+msgstr "Список"
+
+msgid "Group by"
+msgstr "Групувати за"
+
+msgid "Authors"
+msgstr "Автори"
+
+msgid "Books"
+msgstr "Книги"
+
+msgid "Groups"
+msgstr "Групи"
+
+msgid "Series"
+msgstr "Серії"
+
+msgid "Sort by"
+msgstr "Сортувати за"
+
+msgid "Date Read"
+msgstr "Дата прочитання"
+
+msgid "Date Added"
+msgstr "Дата додавання"
+
+msgid "Title"
+msgstr "Назва"
+
+msgid "Author"
+msgstr "Автор"
+
+msgid "Descending"
+msgstr "За спаданням"
+
+msgid "Ascending"
+msgstr "За зростанням"
+
+msgid "Actions"
+msgstr "Дії"
+
+msgid "Rescan library"
+msgstr "Пересканувати бібліотеку"
+
+msgid "Download folder…"
+msgstr "Тека завантажень…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "Виберіть теку для завантажених книг"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "Увійдіть у Readest, щоб відкрити бібліотеку"
+
+msgid "Library"
+msgstr "Бібліотека"
+
+msgid "Readest Library"
+msgstr "Бібліотека Readest"
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Clear"
+msgstr "Очистити"
+
+msgid "Search"
+msgstr "Пошук"
+
+msgid "Search library"
+msgstr "Пошук у бібліотеці"
+
+msgid "Search title or author"
+msgstr "Пошук за назвою або автором"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "Для повного відображення бібліотеки потрібен плагін Cover Browser. Використовується звичайний список."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "Файл переміщено або видалено. Пересканувати бібліотеку?"
+
+msgid "Download this book from Readest?"
+msgstr "Завантажити цю книгу з Readest?"
+
+msgid "Download"
+msgstr "Завантажити"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Спочатку встановіть домашню теку у файловому менеджері, щоб увімкнути завантаження."
+
+msgid "Downloading…"
+msgstr "Завантаження…"
+
+msgid "Cloud copy unavailable."
+msgstr "Копія в хмарі недоступна."
+
+msgid "Download failed."
+msgstr "Не вдалося завантажити."
+
+msgid "No cover available on Readest."
+msgstr "Обкладинка недоступна в Readest."
+
+msgid "Cover download failed."
+msgstr "Не вдалося завантажити обкладинку."
+
+msgid "Could not delete the file."
+msgstr "Не вдалося видалити файл."
+
+msgid "Removing from cloud…"
+msgstr "Видалення з хмари…"
+
+msgid "Cloud removal failed."
+msgstr "Не вдалося видалити з хмари."
+
+msgid "Remove from Cloud & Device"
+msgstr "Видалити з хмари та пристрою"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Видалити цю книгу з хмари та пристрою?"
+
+msgid "Remove"
+msgstr "Видалити"
+
+msgid "Remove from Cloud Only"
+msgstr "Видалити лише з хмари"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Видалити цю книгу лише з хмари?"
+
+msgid "Remove from Device Only"
+msgstr "Видалити лише з пристрою"
+
+msgid "Remove the local copy of this book?"
+msgstr "Видалити локальну копію цієї книги?"
+
+msgid "Upload to Cloud"
+msgstr "Завантажити в хмару"
+
+msgid "Uploading…"
+msgstr "Завантаження…"
+
+msgid "Storage quota exceeded."
+msgstr "Перевищено квоту сховища."
+
+msgid "Upload failed."
+msgstr "Не вдалося відправити."
+
+msgid "Download Book"
+msgstr "Завантажити книгу"
+
+msgid "Download Cover"
+msgstr "Завантажити обкладинку"
+
+msgid "Download All"
+msgstr "Завантажити все"
+
+msgid "Open Readest Library"
+msgstr "Відкрити бібліотеку Readest"
+
+msgid "Push Readest book library"
+msgstr "Надіслати бібліотеку Readest"
+
+msgid "Pull Readest book library"
+msgstr "Отримати бібліотеку Readest"
+
+msgid "Set auto progress sync"
+msgstr "Налаштувати автосинхронізацію прогресу"
+
+msgid "on"
+msgstr "увімк."
+
+msgid "off"
+msgstr "вимк."
+
+msgid "Toggle auto readest sync"
+msgstr "Перемкнути автосинхронізацію Readest"
+
+msgid "Push readest progress from this device"
+msgstr "Надіслати прогрес Readest з цього пристрою"
+
+msgid "Pull readest progress from other devices"
+msgstr "Отримати прогрес Readest з інших пристроїв"
+
+msgid "Push readest annotations from this device"
+msgstr "Надіслати нотатки Readest з цього пристрою"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Отримати нотатки Readest з інших пристроїв"
+
+msgid "Add to Readest"
+msgstr "Додати до Readest"
+
+msgid "Sign in to Readest first."
+msgstr "Спочатку увійдіть у Readest."
+
+msgid "File not found."
+msgstr "Файл не знайдено."
+
+msgid "Unsupported book format."
+msgstr "Непідтримуваний формат книги."
+
+msgid "Hashing book…"
+msgstr "Обчислення хешу книги…"
+
+msgid "Could not read file."
+msgstr "Не вдалося прочитати файл."
+
+msgid "Already in your Readest library:"
+msgstr "Уже у вашій бібліотеці Readest:"
+
+msgid "Added to Readest:"
+msgstr "Додано до Readest:"
+
+msgid "Log in Readest Account"
+msgstr "Увійти до облікового запису Readest"
+
+msgid "Log out as %1"
+msgstr "Вийти з %1"
+
+msgid "Auto sync"
+msgstr "Автосинхронізація"
+
+msgid "Readest library"
+msgstr "Бібліотека Readest"
+
+msgid "Push books now"
+msgstr "Надіслати книги зараз"
+
+msgid "Pull books now"
+msgstr "Отримати книги зараз"
+
+msgid "Push reading progress now"
+msgstr "Надіслати прогрес читання зараз"
+
+msgid "Pull reading progress now"
+msgstr "Отримати прогрес читання зараз"
+
+msgid "Push annotations now"
+msgstr "Надіслати нотатки зараз"
+
+msgid "Pull annotations now"
+msgstr "Отримати нотатки зараз"
+
+msgid "Full sync all annotations"
+msgstr "Повна синхронізація всіх нотаток"
+
+msgid "Sync info"
+msgstr "Відомості про синхронізацію"
+
+msgid "Check for update (v%1)"
+msgstr "Перевірити оновлення (v%1)"
+
+msgid "Check for update"
+msgstr "Перевірити оновлення"
+
+msgid "Please login first"
+msgstr "Спочатку увійдіть"
+
+msgid "Please configure Readest settings first"
+msgstr "Спочатку налаштуйте параметри Readest"
+
+msgid "No book is open"
+msgstr "Жодну книгу не відкрито"
+
+msgid "(none)"
+msgstr "(немає)"
+
+msgid "Never synced"
+msgstr "Ще не синхронізовано"
+
+msgid "Book Fingerprint"
+msgstr "Відбиток книги"
+
+msgid "Identifiers"
+msgstr "Ідентифікатори"
+
+msgid "Last Synced"
+msgstr "Остання синхронізація"
+
+msgid "Sync Info"
+msgstr "Відомості про синхронізацію"
+
+msgid "Library not initialized"
+msgstr "Бібліотека не ініціалізована"
+
+msgid "Books synced"
+msgstr "Книги синхронізовано"
+
+msgid "Books sync failed"
+msgstr "Не вдалося синхронізувати книги"
+
+msgid "Checking for update…"
+msgstr "Перевірка оновлень…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Не вдалося перевірити оновлення. Спробуйте пізніше."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Доступна нова версія: v%1 (поточна: v%2).\n\nОновити зараз?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Доступна нова версія: v%1.\n\nОновити зараз?"
+
+msgid "Update"
+msgstr "Оновити"
+
+msgid "You are up to date (v%1)."
+msgstr "У вас актуальна версія (v%1)."
+
+msgid "Downloading update…"
+msgstr "Завантаження оновлення…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Не вдалося завантажити оновлення. Спробуйте пізніше."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Плагін Readest оновлено до v%1.\n\nПерезапустіть KOReader, щоб застосувати оновлення."
+
+msgid "Restart now"
+msgstr "Перезапустити зараз"
+
+msgid "Later"
+msgstr "Пізніше"
+
+msgid "Failed to install update: %1"
+msgstr "Не вдалося встановити оновлення: %1"
+
+msgid "unknown error"
+msgstr "невідома помилка"
+
+msgid "No annotations to push"
+msgstr "Немає нотаток для надсилання"
+
+msgid "Pushing annotations..."
+msgstr "Надсилання нотаток…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "Надіслано нотаток: %1"
+
+msgid "Failed to push annotations"
+msgstr "Не вдалося надіслати нотатки"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Синхронізація нотаток не підтримується для PDF-документів"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Повна синхронізація: отримання всіх нотаток…"
+
+msgid "Pulling annotations..."
+msgstr "Отримання нотаток…"
+
+msgid "Authentication failed, please login again"
+msgstr "Помилка автентифікації, увійдіть знову"
+
+msgid "Failed to pull annotations"
+msgstr "Не вдалося отримати нотатки"
+
+msgid "No new annotations found"
+msgstr "Нових нотаток не знайдено"
+
+msgid "%1 annotations pulled"
+msgstr "Отримано нотаток: %1"
+
+msgid "Login"
+msgstr "Увійти"
+
+msgid "Please enter both email and password"
+msgstr "Введіть електронну пошту та пароль"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Спочатку налаштуйте URL Supabase і ключ API"
+
+msgid "Logging in..."
+msgstr "Вхід…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Ви увійшли до Readest"
+
+msgid "Login failed: %1"
+msgstr "Не вдалося увійти: %1"
+
+msgid "Logged out from Readest"
+msgstr "Вихід із Readest виконано"
+
+msgid "Cannot identify the current book"
+msgstr "Не вдалося визначити поточну книгу"
+
+msgid "Progress has been synchronized."
+msgstr "Прогрес синхронізовано."
+
+msgid "Pushing reading progress..."
+msgstr "Надсилання прогресу читання…"
+
+msgid "Reading progress pushed successfully"
+msgstr "Прогрес читання надіслано"
+
+msgid "Failed to push reading progress"
+msgstr "Не вдалося надіслати прогрес читання"
+
+msgid "Pulling reading progress..."
+msgstr "Отримання прогресу читання…"
+
+msgid "Failed to pull reading progress"
+msgstr "Не вдалося отримати прогрес читання"
+
+msgid "Reading progress synchronized"
+msgstr "Прогрес читання синхронізовано"
+
+msgid "No saved reading progress found for this book"
+msgstr "Збережений прогрес читання для цієї книги не знайдено"

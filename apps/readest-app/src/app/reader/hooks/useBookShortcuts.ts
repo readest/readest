@@ -12,7 +12,6 @@ import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { viewPagination } from './usePagination';
-import { getStyles } from '@/utils/style';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -56,6 +55,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
       getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
     }
+    return true;
   };
 
   const switchSideBar = () => {
@@ -210,12 +210,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const view = getView(sideBarBookKey);
     const bookData = getBookData(sideBarBookKey);
     const viewSettings = getViewSettings(sideBarBookKey)!;
-    viewSettings!.zoomLevel = zoomLevel;
-    setViewSettings(sideBarBookKey, viewSettings!);
     if (bookData?.isFixedLayout) {
       view?.renderer.setAttribute('scale-factor', zoomLevel);
-    } else {
-      view?.renderer.setStyles?.(getStyles(viewSettings!));
+      viewSettings!.zoomLevel = zoomLevel;
+      setViewSettings(sideBarBookKey, viewSettings!);
     }
   };
 

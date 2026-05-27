@@ -1,5 +1,5 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
-import { OPDSLink } from '@/types/opds';
+import { OPDSBaseLink } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
 
@@ -68,7 +68,21 @@ export const parseMediaType = (str?: string) => {
   };
 };
 
-export const isSearchLink = (link: OPDSLink): boolean => {
+/**
+ * Detect whether an OPDS response body is XML rather than JSON.
+ *
+ * Some OPDS servers (e.g. the Hungarian MEK catalog, issue #4181) return XML
+ * feeds with leading whitespace/newlines before the root element — sometimes
+ * without an `<?xml ?>` declaration — and a wrong `text/html` Content-Type. A
+ * naive `text.startsWith('<')` check then misfires and the body is handed to
+ * JSON.parse, producing "Unexpected token '<' ... is not valid JSON".
+ *
+ * Trimming leading whitespace (which also strips a UTF-8 BOM) before the
+ * check makes detection robust regardless of Content-Type.
+ */
+export const looksLikeXMLContent = (text: string): boolean => text.trimStart().startsWith('<');
+
+export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
   return rels.includes('search') && (link.type === MIME.OPENSEARCH || link.type === MIME.ATOM);
 };
@@ -131,7 +145,7 @@ export const validateOPDSURL = async (
     const text = await res.text();
 
     // Check if it's XML-based OPDS
-    if (text.startsWith('<')) {
+    if (looksLikeXMLContent(text)) {
       const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
       const {
         documentElement: { localName },

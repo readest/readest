@@ -61,7 +61,13 @@ vi.mock('@/services/environment', async (importOriginal) => {
         : {}), // keep all real default fields
       API_BASE: 'http://localhost',
       ENABLE_TRANSLATOR: false,
-      getAppService: vi.fn().mockResolvedValue(null),
+      // EnvProvider's mount effect calls appService.loadSettings() to seed
+      // replica sync. Stubbing with loadSettings returning {} (no
+      // replicaDeviceId) makes init early-exit cleanly. Returning null
+      // would crash on `service.loadSettings()` and spam stderr.
+      getAppService: vi.fn().mockResolvedValue({
+        loadSettings: vi.fn().mockResolvedValue({}),
+      }),
     },
   };
 });

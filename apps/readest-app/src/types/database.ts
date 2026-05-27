@@ -1,4 +1,4 @@
-export type { DatabaseOpts } from '@tursodatabase/database-common';
+export type { DatabaseOpts } from '@readest/turso-database-common';
 
 export interface DatabaseExecResult {
   rowsAffected: number;

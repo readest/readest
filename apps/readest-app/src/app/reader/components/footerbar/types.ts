@@ -1,9 +1,9 @@
-import { PageInfo } from '@/types/book';
+import type { BookFormat, PageInfo } from '@/types/book';
 import { Insets } from '@/types/misc';
 
 export interface FooterBarProps {
   bookKey: string;
-  bookFormat: string;
+  bookFormat: BookFormat;
   section?: PageInfo;
   pageinfo?: PageInfo;
   isHoveredAnim: boolean;

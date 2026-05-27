@@ -2,6 +2,7 @@ import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
 import { isSyncableBookNote } from '@/services/inlineInsight/annotations';
+import { buildAnnotationWebUrl } from '@/utils/deeplink';
 
 const READEST_TO_READWISE_COLOR: Record<HighlightColor, string> = {
   red: 'pink',
@@ -18,12 +19,23 @@ export class ReadwiseClient {
     this.config = config;
   }
 
+  /**
+   * Resolve the API base URL. An advanced custom override (self-hosted,
+   * Readwise-compatible receiver) wins when set; trailing slashes are
+   * trimmed so `${baseUrl}${endpoint}` joins cleanly. Falls back to the
+   * official endpoint when unset or blank.
+   */
+  private get baseUrl(): string {
+    const custom = this.config.baseUrl?.trim();
+    return (custom || READWISE_API_BASE_URL).replace(/\/+$/, '');
+  }
+
   private async request(
     endpoint: string,
     options: { method?: 'GET' | 'POST'; body?: string } = {},
   ): Promise<Response> {
     const { method = 'GET', body } = options;
-    return fetch(`${READWISE_API_BASE_URL}${endpoint}`, {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method,
       headers: {
         Authorization: `Token ${this.config.accessToken}`,
@@ -63,7 +75,11 @@ export class ReadwiseClient {
       location: note.page,
       location_type: 'page',
       highlighted_at: new Date(note.createdAt).toISOString(),
-      highlight_url: `readest://annotation/${book.hash}/${note.id}`,
+      highlight_url: buildAnnotationWebUrl({
+        bookHash: book.hash,
+        noteId: note.id,
+        cfi: note.cfi,
+      }),
       color: note.color ? (READEST_TO_READWISE_COLOR[note.color] ?? 'yellow') : 'yellow',
     }));
 

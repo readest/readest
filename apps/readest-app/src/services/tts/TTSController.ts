@@ -195,7 +195,23 @@ export class TTSController extends EventTarget {
       textWalker,
       createRejectFilter({
         tags: ['rt', 'canvas', 'br'],
-        classes: ['annotationLayer'],
+        // Footnotes/endnotes are hidden in the rendered page (see the
+        // `.epubtype-footnote`/`aside[epub|type]` rules in getPageLayoutStyles);
+        // skip them in TTS too, including for background sections whose
+        // documents are loaded without those styles.
+        classes: [
+          'annotationLayer',
+          'epubtype-footnote',
+          'duokan-footnote-content',
+          'duokan-footnote-item',
+        ],
+        attributeTokens: [
+          {
+            tag: 'aside',
+            attribute: 'epub:type',
+            tokens: ['footnote', 'endnote', 'note', 'rearnote'],
+          },
+        ],
         contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
       }),
       this.#getHighlighter(),
@@ -558,6 +574,16 @@ export class TTSController extends EventTarget {
   }
 
   error(e: unknown) {
+    // AbortError is expected during normal stop/restart cycles (rate change,
+    // forward/backward, voice change) — on iOS especially, the in-flight
+    // audio.play() promise rejects with AbortError after audio.src is reset,
+    // and that rejection can leak through one of the .catch chains. Letting it
+    // flip state to 'stopped' desyncs the state machine: handleSetRate's
+    // `state === 'playing'` check then falls through to a no-op, and #speak's
+    // auto-forward gate skips advancing to the next paragraph.
+    if (e instanceof Error && (e.name === 'AbortError' || e.message === 'Aborted')) {
+      return;
+    }
     console.error(e);
     this.state = 'stopped';
   }

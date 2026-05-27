@@ -20,10 +20,16 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
-import { navigateToLibrary } from '@/utils/nav';
+import {
+  closeReaderWindowOrGoToLibrary,
+  ensureMainLibraryWindow,
+  navigateToLibrary,
+} from '@/utils/nav';
 import { clearDiscordPresence } from '@/utils/discord';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookDetailModal } from '@/components/metadata';
+import ShareBookDialog from '@/app/library/components/ShareBookDialog';
+import { useAuth } from '@/context/AuthContext';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
@@ -46,6 +52,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const [shareDialogState, setShareDialogState] = useState<{
+    book: Book;
+    cfi: string | null;
+  } | null>(null);
+  const { user } = useAuth();
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
   const [errorLoading, setErrorLoading] = useState(false);
@@ -74,7 +85,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           setErrorLoading(true);
           eventDispatcher.dispatch('toast', {
             message: _('Unable to open book'),
-            callback: () => navigateBackToLibrary(),
+            callback: async () => {
+              const service = await envConfig.getAppService();
+              await closeReaderWindowOrGoToLibrary(service, router);
+            },
             timeout: 2000,
             type: 'error',
           });
@@ -96,6 +110,29 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       eventDispatcher.offSync('show-book-details', handleShowBookDetails);
     };
   }, []);
+
+  useEffect(() => {
+    const handleShareIntent = (event: CustomEvent) => {
+      const detail = event.detail as { book: Book; cfi?: string | null } | undefined;
+      if (!detail?.book) return;
+      if (!user) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Sign in to share books'),
+          timeout: 2500,
+        });
+        return;
+      }
+      setShareDialogState({
+        book: detail.book,
+        cfi: detail.cfi ?? null,
+      });
+    };
+    eventDispatcher.on('show-share-dialog', handleShareIntent);
+    return () => {
+      eventDispatcher.off('show-share-dialog', handleShareIntent);
+    };
+  }, [user, _]);
 
   useEffect(() => {
     if (bookKeys && bookKeys.length > 0) {
@@ -171,13 +208,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     await saveSettings(envConfig, settings);
   }, 200);
 
-  const handleCloseBooksToLibrary = () => {
+  const handleCloseBooksToLibrary = async () => {
     handleCloseBooks();
     if (isTauriAppPlatform()) {
       const currentWindow = getCurrentWindow();
       if (currentWindow.label === 'main') {
         navigateBackToLibrary();
       } else {
+        if (appService) {
+          await ensureMainLibraryWindow(appService);
+        }
         currentWindow.close();
       }
     } else {
@@ -239,6 +279,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           onClose={() => setShowDetailsBook(null)}
         />
       )}
+      <ShareBookDialog
+        isOpen={!!shareDialogState}
+        book={shareDialogState?.book ?? null}
+        cfi={shareDialogState?.cfi ?? null}
+        onClose={() => setShareDialogState(null)}
+      />
     </div>
   );
 };

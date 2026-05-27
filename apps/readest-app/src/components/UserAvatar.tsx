@@ -9,6 +9,15 @@ interface UserAvatarProps {
   DefaultIcon: IconType;
   className?: string;
   borderClassName?: string;
+  /**
+   * When true, the root box stretches via h-full/w-full instead of getting
+   * the explicit `size` pinned via inline style. Use this when a parent
+   * constrains the avatar with its own (responsive) classes — otherwise the
+   * inline style overrides the parent box and the avatar can overflow on
+   * smaller breakpoints. `size` is still used as the intrinsic dimension
+   * for next/image and the fallback icon.
+   */
+  fillContainer?: boolean;
 }
 
 const getStorageKey = (url: string) => {
@@ -21,6 +30,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   className,
   borderClassName,
   DefaultIcon,
+  fillContainer,
 }) => {
   const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(() => {
     if (!url) return null;
@@ -64,7 +74,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <div
       className='relative flex h-full w-full items-center justify-center rounded-full'
-      style={{ width: size, height: size }}
+      style={fillContainer ? undefined : { width: size, height: size }}
     >
       {url ? (
         <div>

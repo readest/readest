@@ -13,6 +13,45 @@ export const isCJKLang = (lang: string | null | undefined): boolean => {
   return ['zh', 'ja', 'ko', 'zho', 'jpn', 'kor'].includes(normalizedLang);
 };
 
+/**
+ * Languages whose primary script has no uppercase/lowercase distinction.
+ * Matters for UI rules that lean on the `uppercase` CSS property for visual
+ * emphasis — those rules are no-ops here, so callers usually pair this with
+ * an alternate weight/size treatment (e.g. bigger font-size in section
+ * headers). Covers CJK, Arabic-script (Arabic, Persian), Hebrew, the major
+ * Indic scripts (Devanagari, Bengali, Tamil, Sinhala), Thai, and Tibetan.
+ */
+export const isCaselessLang = (lang: string | null | undefined): boolean => {
+  if (!lang) return false;
+  const normalizedLang = normalizedLangCode(lang);
+  return [
+    'zh',
+    'ja',
+    'ko', // CJK
+    'ar',
+    'fa', // Arabic script
+    'he', // Hebrew
+    'hi',
+    'bn',
+    'ta',
+    'si', // Indic scripts
+    'th', // Thai
+    'bo', // Tibetan
+    'zho',
+    'jpn',
+    'kor',
+    'ara',
+    'fas', // ISO-639-3 aliases
+    'heb',
+    'hin',
+    'ben',
+    'tam',
+    'sin',
+    'tha',
+    'bod',
+  ].includes(normalizedLang);
+};
+
 const ZH_SCRIPTS_MAPPING: Record<string, string> = {
   zh: 'zh-Hans',
   'zh-cn': 'zh-Hans',

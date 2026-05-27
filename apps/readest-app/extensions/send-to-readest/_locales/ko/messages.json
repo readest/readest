@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Readest로 보내기",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "웹페이지를 Readest 라이브러리에 저장합니다",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Readest로 보내기",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

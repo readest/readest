@@ -1,0 +1,438 @@
+# German translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "Hält deine KOReader- und Readest-Geräte synchron."
+
+msgid "Library view"
+msgstr "Bibliotheksansicht"
+
+msgid "View"
+msgstr "Ansicht"
+
+msgid "Grid"
+msgstr "Raster"
+
+msgid "List"
+msgstr "Liste"
+
+msgid "Group by"
+msgstr "Gruppieren nach"
+
+msgid "Authors"
+msgstr "Autoren"
+
+msgid "Books"
+msgstr "Bücher"
+
+msgid "Groups"
+msgstr "Gruppen"
+
+msgid "Series"
+msgstr "Reihen"
+
+msgid "Sort by"
+msgstr "Sortieren nach"
+
+msgid "Date Read"
+msgstr "Lesedatum"
+
+msgid "Date Added"
+msgstr "Hinzugefügt am"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Descending"
+msgstr "Absteigend"
+
+msgid "Ascending"
+msgstr "Aufsteigend"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Rescan library"
+msgstr "Bibliothek erneut einlesen"
+
+msgid "Download folder…"
+msgstr "Download-Ordner …"
+
+msgid "Pick a folder for downloaded books"
+msgstr "Ordner für heruntergeladene Bücher wählen"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "Bei Readest anmelden, um die Bibliothek zu öffnen"
+
+msgid "Library"
+msgstr "Bibliothek"
+
+msgid "Readest Library"
+msgstr "Readest-Bibliothek"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Clear"
+msgstr "Löschen"
+
+msgid "Search"
+msgstr "Suchen"
+
+msgid "Search library"
+msgstr "Bibliothek durchsuchen"
+
+msgid "Search title or author"
+msgstr "Titel oder Autor suchen"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "Cover-Browser-Plugin für vollständige Bibliotheksdarstellung erforderlich. Es wird auf eine einfache Liste zurückgegriffen."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "Datei verschoben oder gelöscht. Bibliothek erneut einlesen?"
+
+msgid "Download this book from Readest?"
+msgstr "Dieses Buch von Readest herunterladen?"
+
+msgid "Download"
+msgstr "Herunterladen"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Lege zuerst den Start-Ordner im Dateimanager fest, um Downloads zu aktivieren."
+
+msgid "Downloading…"
+msgstr "Wird heruntergeladen …"
+
+msgid "Cloud copy unavailable."
+msgstr "Cloud-Kopie nicht verfügbar."
+
+msgid "Download failed."
+msgstr "Download fehlgeschlagen."
+
+msgid "No cover available on Readest."
+msgstr "Kein Cover auf Readest verfügbar."
+
+msgid "Cover download failed."
+msgstr "Cover-Download fehlgeschlagen."
+
+msgid "Could not delete the file."
+msgstr "Datei konnte nicht gelöscht werden."
+
+msgid "Removing from cloud…"
+msgstr "Wird aus der Cloud entfernt …"
+
+msgid "Cloud removal failed."
+msgstr "Entfernen aus der Cloud fehlgeschlagen."
+
+msgid "Remove from Cloud & Device"
+msgstr "Aus Cloud und Gerät entfernen"
+
+msgid "Remove this book from cloud and device?"
+msgstr "Dieses Buch aus Cloud und Gerät entfernen?"
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Remove from Cloud Only"
+msgstr "Nur aus Cloud entfernen"
+
+msgid "Remove this book from the cloud only?"
+msgstr "Dieses Buch nur aus der Cloud entfernen?"
+
+msgid "Remove from Device Only"
+msgstr "Nur vom Gerät entfernen"
+
+msgid "Remove the local copy of this book?"
+msgstr "Lokale Kopie dieses Buchs entfernen?"
+
+msgid "Upload to Cloud"
+msgstr "In die Cloud hochladen"
+
+msgid "Uploading…"
+msgstr "Wird hochgeladen …"
+
+msgid "Storage quota exceeded."
+msgstr "Speicherkontingent überschritten."
+
+msgid "Upload failed."
+msgstr "Upload fehlgeschlagen."
+
+msgid "Download Book"
+msgstr "Buch herunterladen"
+
+msgid "Download Cover"
+msgstr "Cover herunterladen"
+
+msgid "Download All"
+msgstr "Alle herunterladen"
+
+msgid "Open Readest Library"
+msgstr "Readest-Bibliothek öffnen"
+
+msgid "Push Readest book library"
+msgstr "Readest-Bibliothek senden"
+
+msgid "Pull Readest book library"
+msgstr "Readest-Bibliothek abrufen"
+
+msgid "Set auto progress sync"
+msgstr "Automatischen Fortschritts-Sync einstellen"
+
+msgid "on"
+msgstr "an"
+
+msgid "off"
+msgstr "aus"
+
+msgid "Toggle auto readest sync"
+msgstr "Automatischen Readest-Sync umschalten"
+
+msgid "Push readest progress from this device"
+msgstr "Readest-Fortschritt von diesem Gerät senden"
+
+msgid "Pull readest progress from other devices"
+msgstr "Readest-Fortschritt von anderen Geräten abrufen"
+
+msgid "Push readest annotations from this device"
+msgstr "Readest-Anmerkungen von diesem Gerät senden"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Readest-Anmerkungen von anderen Geräten abrufen"
+
+msgid "Add to Readest"
+msgstr "Zu Readest hinzufügen"
+
+msgid "Sign in to Readest first."
+msgstr "Zuerst bei Readest anmelden."
+
+msgid "File not found."
+msgstr "Datei nicht gefunden."
+
+msgid "Unsupported book format."
+msgstr "Buchformat nicht unterstützt."
+
+msgid "Hashing book…"
+msgstr "Buch wird gehasht …"
+
+msgid "Could not read file."
+msgstr "Datei konnte nicht gelesen werden."
+
+msgid "Already in your Readest library:"
+msgstr "Bereits in deiner Readest-Bibliothek:"
+
+msgid "Added to Readest:"
+msgstr "Zu Readest hinzugefügt:"
+
+msgid "Log in Readest Account"
+msgstr "Beim Readest-Konto anmelden"
+
+msgid "Log out as %1"
+msgstr "Abmelden als %1"
+
+msgid "Auto sync"
+msgstr "Automatische Synchronisierung"
+
+msgid "Readest library"
+msgstr "Readest-Bibliothek"
+
+msgid "Push books now"
+msgstr "Bücher jetzt senden"
+
+msgid "Pull books now"
+msgstr "Bücher jetzt abrufen"
+
+msgid "Push reading progress now"
+msgstr "Lesefortschritt jetzt senden"
+
+msgid "Pull reading progress now"
+msgstr "Lesefortschritt jetzt abrufen"
+
+msgid "Push annotations now"
+msgstr "Anmerkungen jetzt senden"
+
+msgid "Pull annotations now"
+msgstr "Anmerkungen jetzt abrufen"
+
+msgid "Full sync all annotations"
+msgstr "Alle Anmerkungen vollständig synchronisieren"
+
+msgid "Sync info"
+msgstr "Sync-Info"
+
+msgid "Check for update (v%1)"
+msgstr "Nach Aktualisierungen suchen (v%1)"
+
+msgid "Check for update"
+msgstr "Nach Aktualisierungen suchen"
+
+msgid "Please login first"
+msgstr "Bitte zuerst anmelden"
+
+msgid "Please configure Readest settings first"
+msgstr "Bitte zuerst die Readest-Einstellungen konfigurieren"
+
+msgid "No book is open"
+msgstr "Kein Buch geöffnet"
+
+msgid "(none)"
+msgstr "(keine)"
+
+msgid "Never synced"
+msgstr "Noch nie synchronisiert"
+
+msgid "Book Fingerprint"
+msgstr "Buch-Fingerabdruck"
+
+msgid "Identifiers"
+msgstr "Bezeichner"
+
+msgid "Last Synced"
+msgstr "Zuletzt synchronisiert"
+
+msgid "Sync Info"
+msgstr "Sync-Info"
+
+msgid "Library not initialized"
+msgstr "Bibliothek nicht initialisiert"
+
+msgid "Books synced"
+msgstr "Bücher synchronisiert"
+
+msgid "Books sync failed"
+msgstr "Bücher-Synchronisierung fehlgeschlagen"
+
+msgid "Checking for update…"
+msgstr "Suche nach Aktualisierungen …"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "Suche nach Aktualisierungen fehlgeschlagen. Bitte später erneut versuchen."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "Eine neue Version ist verfügbar: v%1 (aktuell: v%2).\n\nJetzt aktualisieren?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "Eine neue Version ist verfügbar: v%1.\n\nJetzt aktualisieren?"
+
+msgid "Update"
+msgstr "Aktualisieren"
+
+msgid "You are up to date (v%1)."
+msgstr "Du verwendest die aktuelle Version (v%1)."
+
+msgid "Downloading update…"
+msgstr "Aktualisierung wird heruntergeladen …"
+
+msgid "Failed to download update. Please try again later."
+msgstr "Aktualisierung konnte nicht heruntergeladen werden. Bitte später erneut versuchen."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest-Plugin auf v%1 aktualisiert.\n\nBitte KOReader neu starten, um die Aktualisierung anzuwenden."
+
+msgid "Restart now"
+msgstr "Jetzt neu starten"
+
+msgid "Later"
+msgstr "Später"
+
+msgid "Failed to install update: %1"
+msgstr "Aktualisierung konnte nicht installiert werden: %1"
+
+msgid "unknown error"
+msgstr "Unbekannter Fehler"
+
+msgid "No annotations to push"
+msgstr "Keine Anmerkungen zum Senden"
+
+msgid "Pushing annotations..."
+msgstr "Anmerkungen werden gesendet …"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1 Anmerkungen erfolgreich gesendet"
+
+msgid "Failed to push annotations"
+msgstr "Senden der Anmerkungen fehlgeschlagen"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "Die Synchronisierung von Anmerkungen wird für PDF-Dokumente nicht unterstützt"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "Vollständige Synchronisierung: alle Anmerkungen werden abgerufen …"
+
+msgid "Pulling annotations..."
+msgstr "Anmerkungen werden abgerufen …"
+
+msgid "Authentication failed, please login again"
+msgstr "Authentifizierung fehlgeschlagen, bitte erneut anmelden"
+
+msgid "Failed to pull annotations"
+msgstr "Abrufen der Anmerkungen fehlgeschlagen"
+
+msgid "No new annotations found"
+msgstr "Keine neuen Anmerkungen gefunden"
+
+msgid "%1 annotations pulled"
+msgstr "%1 Anmerkungen abgerufen"
+
+msgid "Login"
+msgstr "Anmelden"
+
+msgid "Please enter both email and password"
+msgstr "Bitte E-Mail und Passwort eingeben"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "Bitte zuerst Supabase-URL und API-Schlüssel konfigurieren"
+
+msgid "Logging in..."
+msgstr "Anmeldung läuft …"
+
+msgid "Successfully logged in to Readest"
+msgstr "Erfolgreich bei Readest angemeldet"
+
+msgid "Login failed: %1"
+msgstr "Anmeldung fehlgeschlagen: %1"
+
+msgid "Logged out from Readest"
+msgstr "Von Readest abgemeldet"
+
+msgid "Cannot identify the current book"
+msgstr "Aktuelles Buch kann nicht identifiziert werden"
+
+msgid "Progress has been synchronized."
+msgstr "Fortschritt wurde synchronisiert."
+
+msgid "Pushing reading progress..."
+msgstr "Lesefortschritt wird gesendet …"
+
+msgid "Reading progress pushed successfully"
+msgstr "Lesefortschritt erfolgreich gesendet"
+
+msgid "Failed to push reading progress"
+msgstr "Senden des Lesefortschritts fehlgeschlagen"
+
+msgid "Pulling reading progress..."
+msgstr "Lesefortschritt wird abgerufen …"
+
+msgid "Failed to pull reading progress"
+msgstr "Abrufen des Lesefortschritts fehlgeschlagen"
+
+msgid "Reading progress synchronized"
+msgstr "Lesefortschritt synchronisiert"
+
+msgid "No saved reading progress found for this book"
+msgstr "Kein gespeicherter Lesefortschritt für dieses Buch gefunden"

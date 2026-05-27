@@ -60,6 +60,15 @@ export interface ImportBookOptions {
   overwrite?: boolean;
   /** Whether the import is transient (not stored long-term). Defaults to false. */
   transient?: boolean;
+  /**
+   * If true, do NOT copy the source file into Books/<hash>/. Instead, persist
+   * an absolute filePath on the Book and let isBookAvailable / loadBookContent
+   * fall back to it. The caller is responsible for verifying the source is
+   * already inside the user's chosen library root (customRootDir) so that the
+   * file remains stable across launches. Sidecar files (cover.png, config.json,
+   * nav.json) are still written to Books/<hash>/ as usual. Defaults to false.
+   */
+  inPlace?: boolean;
   /** Pre-built lookup index for O(1) dedup during batch imports. */
   lookupIndex?: BookLookupIndex;
 }
@@ -134,6 +143,14 @@ export interface BookNote {
     answer: string;
     context: string;
   };
+  /**
+   * If true, this annotation should be applied to every occurrence of `text`
+   * within the same section (chapter/spine item), in addition to the original
+   * range identified by `cfi`. Defaults to false / undefined (single-range).
+   * Only meaningful for annotations that have a `text` value; ignored for
+   * bookmarks and excerpts, and for fixed-layout formats (e.g. PDF).
+   */
+  global?: boolean;
 
   createdAt: number;
   updatedAt: number;
@@ -257,8 +274,6 @@ export interface ViewConfig {
   showCurrentBatteryStatus: boolean;
   showBatteryPercentage: boolean;
   tapToToggleFooter: boolean;
-  showBarsOnScroll: boolean;
-  showMarginsOnScroll: boolean;
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction';
   progressInfoMode: ProgressBarMode;
@@ -347,8 +362,7 @@ export interface ViewSettingsConfig {
 }
 
 export interface ViewSettings
-  extends
-    BookLayout,
+  extends BookLayout,
     BookStyle,
     BookFont,
     BookLanguage,
@@ -403,7 +417,10 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export const BOOK_CONFIG_SCHEMA_VERSION = 1;
+
 export interface BookConfig {
+  schemaVersion?: number;
   bookHash?: string;
   metaHash?: string;
   progress?: [number, number]; // [current pagenum, total pagenum], 1-based page number
@@ -419,9 +436,6 @@ export interface BookConfig {
   lastPushedAtConfig?: number;
   lastPushedAtNotes?: number;
   foliateImportedAt?: number;
-
-  // Per-book switch for hardcover exports in reader menu.
-  hardcoverSyncEnabled?: boolean;
 
   updatedAt: number;
 }

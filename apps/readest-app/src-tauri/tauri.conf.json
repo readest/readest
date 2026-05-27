@@ -158,7 +158,10 @@
       ]
     },
     "deep-link": {
-      "mobile": [{ "host": "web.readest.com" }],
+      "mobile": [
+        { "scheme": ["https"], "host": "web.readest.com", "appLink": true },
+        { "scheme": ["readest"], "appLink": false }
+      ],
       "desktop": {
         "schemes": ["readest"]
       }
@@ -169,6 +172,10 @@
         "https://download.readest.com/releases/latest.json",
         "https://github.com/readest/readest/releases/latest/download/latest.json"
       ]
+    },
+    "webview-upgrade": {
+      "minUpgradeMajor": 121,
+      "minSupportedMajor": 92
     }
   }
 }

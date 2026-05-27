@@ -10,6 +10,8 @@ import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
+import { getLocalProgressPreview, getProgressPercentage } from './kosyncPreview';
+import { getRemoteFraction, isXPointerProgress } from './kosyncProgress';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
@@ -101,22 +103,42 @@ export const useKOSync = (bookKey: string) => {
     if (FIXED_LAYOUT_FORMATS.has(book.format)) {
       const pageToGo = parseInt(remote.progress!, 10);
       if (isNaN(pageToGo)) return;
-      view?.select(pageToGo - 1);
+      view.select(pageToGo - 1);
     } else {
-      if (!remote.progress?.startsWith('/body')) return;
-      try {
-        const content = view?.renderer
-          .getContents()
-          .find((x) => x.index === view?.renderer.primaryIndex);
-        const koProgress = remote.progress;
-        const cfi = await getCFIFromXPointer(koProgress, content?.doc, content?.index, bookDoc);
-        view?.goTo(cfi);
-      } catch (error) {
-        console.error('Failed to convert XPointer to CFI', error);
-        return;
+      let navigated = false;
+      // KOReader stores positions as CREngine XPointers; convert and jump
+      // precisely when we have one.
+      if (isXPointerProgress(remote.progress)) {
+        try {
+          const content = view.renderer
+            .getContents()
+            .find((x) => x.index === view.renderer.primaryIndex);
+          const cfi = await getCFIFromXPointer(
+            remote.progress!,
+            content?.doc,
+            content?.index,
+            bookDoc,
+          );
+          view.goTo(cfi);
+          navigated = true;
+        } catch (error) {
+          console.error('Failed to convert XPointer to CFI', error);
+        }
+      }
+      // Other KOSync-compatible servers (e.g. Kavita) report progress in
+      // formats Readest can't resolve positionally — approximate with the
+      // reported percentage so "use remote" still moves the reader.
+      if (!navigated) {
+        const remoteFraction = getRemoteFraction(remote);
+        if (remoteFraction === undefined) return;
+        view.goToFraction(remoteFraction);
       }
     }
-    eventDispatcher.dispatch('toast', { message: _('Reading Progress Synced'), type: 'info' });
+    eventDispatcher.dispatch('toast', {
+      message: _('Reading Progress Synced'),
+      type: 'info',
+      timeout: 2000,
+    });
   };
 
   const promptedSync = async (
@@ -125,26 +147,17 @@ export const useKOSync = (bookKey: string) => {
     local: BookProgress,
     remote: KoSyncProgress,
   ) => {
-    let localPreview = '';
     let remotePreview = '';
     const remotePercentage = remote.percentage || 0;
     const conflictProgressDiffThreshold = 0.0001;
     let showConflictDetails = false;
+    const isFixedLayout = FIXED_LAYOUT_FORMATS.has(book.format);
 
-    if (FIXED_LAYOUT_FORMATS.has(book.format)) {
+    const localPreview = getLocalProgressPreview(local, isFixedLayout, _);
+    const localPercentage = getProgressPercentage(isFixedLayout ? local.section : local.pageinfo);
+
+    if (isFixedLayout) {
       const localPageInfo = local.section;
-      const localPercentage =
-        localPageInfo && localPageInfo.total > 0
-          ? (localPageInfo.current + 1) / localPageInfo.total
-          : 0;
-      localPreview = localPageInfo
-        ? _('Page {{page}} of {{total}} ({{percentage}}%)', {
-            page: localPageInfo.current + 1,
-            total: localPageInfo.total,
-            percentage: Math.round(localPercentage * 100),
-          })
-        : _('Current position');
-
       const remotePage = parseInt(remote.progress!, 10);
       if (!isNaN(remotePage) && remotePercentage > 0) {
         const localTotalPages = localPageInfo?.total ?? 0;
@@ -172,13 +185,6 @@ export const useKOSync = (bookKey: string) => {
         });
       }
     } else {
-      const localPageInfo = local.pageinfo;
-      const localPercentage =
-        localPageInfo && localPageInfo.total > 0
-          ? (localPageInfo.current + 1) / localPageInfo.total
-          : 0;
-      localPreview = `${local.sectionLabel} (${Math.round(localPercentage * 100)}%)`;
-
       remotePreview = _('Approximately {{percentage}}%', {
         percentage: Math.round(remotePercentage * 100),
       });
@@ -308,12 +314,15 @@ export const useKOSync = (bookKey: string) => {
   // Push: auto-push progress when progress changes with a debounce
   useEffect(() => {
     if (syncState === 'synced' && progress) {
+      // Skip auto-pushes while previewing a deep-link target. Manual pushes
+      // via the 'push-kosync' event are still respected (explicit user intent).
+      if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       const { strategy, enabled } = settings.kosync;
       if (strategy !== 'receive' && enabled) {
         syncRefs.current.pushProgress();
       }
     }
-  }, [progress, syncState, settings.kosync]);
+  }, [progress, syncState, settings.kosync, bookKey]);
 
   useWindowActiveChanged((isActive) => {
     const { pushProgress, pullProgress } = syncRefs.current;
@@ -340,7 +349,8 @@ export const useKOSync = (bookKey: string) => {
     const book = conflictDetails?.book;
     const bookDoc = conflictDetails?.bookDoc;
 
-    if (!book || !bookDoc || !remote || !remote.progress || !view) return;
+    if (!book || !bookDoc || !remote || !view) return;
+    if (!remote.progress && getRemoteFraction(remote) === undefined) return;
 
     applyRemoteProgress(book, bookDoc, remote);
     setSyncState('synced');

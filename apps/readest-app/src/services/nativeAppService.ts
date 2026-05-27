@@ -47,6 +47,7 @@ import { SchemaType } from '@/services/database/migrate';
 import {
   DATA_SUBDIR,
   LOCAL_BOOKS_SUBDIR,
+  LOCAL_DICTIONARIES_SUBDIR,
   LOCAL_FONTS_SUBDIR,
   LOCAL_IMAGES_SUBDIR,
   SETTINGS_FILENAME,
@@ -92,7 +93,7 @@ const getPathResolver = ({
   const getCustomBasePrefixSync = isCustomBaseDir
     ? (baseDir: BaseDir) => {
         return () => {
-          const dataDirs = ['Settings', 'Data', 'Books', 'Fonts', 'Images'];
+          const dataDirs = ['Settings', 'Data', 'Books', 'Fonts', 'Images', 'Dictionaries'];
           const leafDir = dataDirs.includes(baseDir) ? '' : baseDir;
           return leafDir ? `${customRootDir}/${leafDir}` : customRootDir!;
         };
@@ -162,6 +163,15 @@ const getPathResolver = ({
           fp: customBasePrefixSync
             ? `${customBasePrefixSync()}/${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`
             : `${LOCAL_IMAGES_SUBDIR}${path ? `/${path}` : ''}`,
+          base,
+        };
+      case 'Dictionaries':
+        return {
+          baseDir: customBaseDir ?? BaseDirectory.AppData,
+          basePrefix: customBasePrefix || appDataDir,
+          fp: customBasePrefixSync
+            ? `${customBasePrefixSync()}/${LOCAL_DICTIONARIES_SUBDIR}${path ? `/${path}` : ''}`
+            : `${LOCAL_DICTIONARIES_SUBDIR}${path ? `/${path}` : ''}`,
           base,
         };
       case 'None':
@@ -249,16 +259,16 @@ export const nativeFileSystem: FileSystem = {
       }
     }
   },
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir) {
+  async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
     try {
-      if (!(await this.exists(getDirPath(dstPath), base))) {
-        await this.createDir(getDirPath(dstPath), base, true);
+      if (!(await this.exists(getDirPath(dstPath), dstBase))) {
+        await this.createDir(getDirPath(dstPath), dstBase, true);
       }
     } catch (error) {
       console.log('Failed to create directory for copying file:', error);
     }
     if (isContentURI(srcPath)) {
-      const prefix = await this.getPrefix(base);
+      const prefix = await this.getPrefix(dstBase);
       if (!prefix) {
         throw new Error('Invalid base directory');
       }
@@ -271,8 +281,12 @@ export const nativeFileSystem: FileSystem = {
         throw new Error('Failed to copy file');
       }
     } else {
-      const { fp, baseDir } = this.resolvePath(dstPath, base);
-      await copyFile(srcPath, fp, baseDir ? { toPathBaseDir: baseDir } : undefined);
+      const { fp: srcFp, baseDir: srcBaseDir } = this.resolvePath(srcPath, srcBase);
+      const { fp: dstFp, baseDir: dstBaseDir } = this.resolvePath(dstPath, dstBase);
+      const opts: { fromPathBaseDir?: number; toPathBaseDir?: number } = {};
+      if (srcBaseDir) opts.fromPathBaseDir = srcBaseDir;
+      if (dstBaseDir) opts.toPathBaseDir = dstBaseDir;
+      await copyFile(srcFp, dstFp, Object.keys(opts).length > 0 ? opts : undefined);
     }
   },
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
@@ -478,9 +492,18 @@ export class NativeAppService extends BaseAppService {
     }
     if (this.isIOSApp) {
       this.isOnlineCatalogsAccessible = this.distChannel !== 'appstore';
-      const res = await getStorefrontRegionCode();
-      if (res.regionCode) {
-        this.storefrontRegionCode = res.regionCode;
+      try {
+        const res = await getStorefrontRegionCode();
+        if (res?.regionCode) {
+          this.storefrontRegionCode = res.regionCode;
+        }
+      } catch (err) {
+        // Storefront.current is nil on simulators without a signed-in
+        // App Store account, and may also fail on real devices with no
+        // StoreKit configuration. Treat as "unknown region" — we leave
+        // storefrontRegionCode as null and let downstream features that
+        // depend on region degrade gracefully.
+        console.warn('[nativeAppService] getStorefrontRegionCode failed:', err);
       }
     }
     await this.prepareBooksDir();
@@ -527,11 +550,39 @@ export class NativeAppService extends BaseAppService {
   }
 
   async selectDirectory(): Promise<string> {
+    // On mobile, Tauri's dialog plugin rejects folder picks with
+    // "FolderPickerNotImplemented" — neither iOS nor Android ship a
+    // folder picker via that surface. Route through the native-bridge
+    // plugin instead, where each platform has a native implementation
+    // (Android: ACTION_OPEN_DOCUMENT_TREE, iOS:
+    // UIDocumentPickerViewController with `.folder`). The bridge
+    // returns `{ path, uri, cancelled }`; we surface the path string
+    // so the rest of the app can treat it like any local directory.
+    if (this.isIOSApp || this.isAndroidApp) {
+      const { selectDirectory } = await import('@/utils/bridge');
+      const result = await selectDirectory();
+      const path = result.path ?? '';
+      if (path) {
+        // Match the desktop branch — make sure both fs_scope and the
+        // asset-protocol scope can read from the chosen directory.
+        await this.allowPathsInScopes([path], true);
+      }
+      return path;
+    }
+
     const selected = await openDialog({
       directory: true,
       multiple: false,
       recursive: true,
     });
+    if (selected) {
+      // Tauri's dialog plugin only auto-grants fs_scope; the asset
+      // protocol scope still needs an explicit allow before
+      // RemoteFile / convertFileSrc-based reads can succeed against
+      // arbitrary user paths. Persisted-scope plugin makes this
+      // sticky across restarts.
+      await this.allowPathsInScopes([selected as string], true);
+    }
     return selected as string;
   }
 
@@ -541,32 +592,76 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     const files = Array.isArray(selected) ? selected : selected ? [selected] : [];
-    return OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    const decoded = OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    if (decoded.length > 0) {
+      // See the note in selectDirectory above.
+      await this.allowPathsInScopes(decoded, false);
+    }
+    return decoded;
+  }
+
+  /**
+   * Best-effort: ask the Rust side to extend `fs_scope` and
+   * `asset_protocol_scope` to cover the given paths. Errors are logged
+   * and swallowed because the import path can still succeed via the
+   * NativeFile fallback even when scope extension fails.
+   */
+  async allowPathsInScopes(paths: string[], isDirectory: boolean): Promise<void> {
+    try {
+      await invoke('allow_paths_in_scopes', { paths, isDirectory });
+    } catch (e) {
+      console.warn('allow_paths_in_scopes failed:', e);
+    }
   }
 
   async saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      if (this.isIOSApp && options?.filePath) {
-        await shareFile(options.filePath, {
-          mimeType: options?.mimeType || 'application/octet-stream',
-        });
-      } else {
-        const filePath = await saveDialog({
-          defaultPath: filename,
-          filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
-        });
-        if (!filePath) return false;
-
-        if (typeof content === 'string') {
-          await writeTextFile(filePath, content);
-        } else {
-          await writeFile(filePath, new Uint8Array(content));
+      // Linux desktop has no system share sheet; always fall through to saveDialog.
+      const wantShare = !this.isLinuxApp && (this.isIOSApp || options?.share);
+      if (wantShare) {
+        let shareablePath = options?.filePath;
+        if (!shareablePath) {
+          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          if (typeof content === 'string') {
+            await writeTextFile(shareablePath, content);
+          } else {
+            await writeFile(shareablePath, new Uint8Array(content));
+          }
         }
+        try {
+          await shareFile(shareablePath, {
+            mimeType: options?.mimeType || 'application/octet-stream',
+            // Anchor the macOS NSSharingServicePicker / iPad popover to
+            // the trigger button. Without this, the picker pops at the
+            // WebView's top-left corner.
+            ...(options?.sharePosition ? { position: options.sharePosition } : {}),
+          });
+          return true;
+        } catch (error) {
+          console.error('shareFile failed; falling back to saveDialog:', error);
+        }
+      }
+
+      const filePath = await saveDialog({
+        defaultPath: filename,
+        filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+      });
+      if (!filePath) return false;
+
+      if (typeof content === 'string') {
+        await writeTextFile(filePath, content);
+      } else {
+        await writeFile(filePath, new Uint8Array(content));
       }
       return true;
     } catch (error) {
@@ -599,10 +694,20 @@ export class NativeAppService extends BaseAppService {
     const rootPath = await this.resolveFilePath('..', 'Data');
     const newDir = await this.fs.getPrefix('Images');
     const oldDir = await join(rootPath, 'Images', 'Readest', 'Images');
+    const dirToDelete = await join(rootPath, 'Images', 'Readest');
+
+    // Skip silently on fresh installs that never had the legacy layout.
+    // copyFiles / deleteDir would otherwise throw `os error 2` when the
+    // old directory does not exist, which is harmless but noisy.
+    if (!(await this.fs.exists(oldDir, 'None'))) {
+      console.log('Migration 20251029: legacy Images/Readest/Images not found, skipping.');
+      return;
+    }
 
     await copyFiles(this, oldDir, newDir);
 
-    const dirToDelete = await join(rootPath, 'Images', 'Readest');
-    await this.deleteDir(dirToDelete, 'None', true);
+    if (await this.fs.exists(dirToDelete, 'None')) {
+      await this.deleteDir(dirToDelete, 'None', true);
+    }
   }
 }

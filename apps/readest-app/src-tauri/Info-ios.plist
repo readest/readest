@@ -2,7 +2,57 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+      <string>en</string>
+      <string>ar</string>
+      <string>bn</string>
+      <string>bo</string>
+      <string>de</string>
+      <string>el</string>
+      <string>es</string>
+      <string>fa</string>
+      <string>fr</string>
+      <string>he</string>
+      <string>hi</string>
+      <string>hu</string>
+      <string>id</string>
+      <string>it</string>
+      <string>ja</string>
+      <string>ko</string>
+      <string>ms</string>
+      <string>nl</string>
+      <string>pl</string>
+      <string>pt-PT</string>
+      <string>pt-BR</string>
+      <string>ro</string>
+      <string>ru</string>
+      <string>si</string>
+      <string>sl</string>
+      <string>sv</string>
+      <string>ta</string>
+      <string>th</string>
+      <string>tr</string>
+      <string>uk</string>
+      <string>uz</string>
+      <string>vi</string>
+      <string>zh-Hans</string>
+      <string>zh-Hant</string>
+    </array>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>com.bilingify.readest</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>readest</string>
+        </array>
+      </dict>
+    </array>
   </dict>
 </plist>

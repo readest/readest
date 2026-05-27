@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
 import { RsvpState, RSVPController } from '@/services/rsvp';
+import { containsCJK } from '@/services/rsvp/utils';
 import { useThemeStore } from '@/store/themeStore';
 import { TOCItem } from '@/libs/document';
 import {
@@ -26,6 +27,36 @@ interface FlatChapter {
   level: number;
 }
 
+interface ContextWordProps {
+  text: string;
+  wordIndex: number;
+  isCurrent: boolean;
+  currentRef?: React.Ref<HTMLSpanElement>;
+  orpColor?: string;
+}
+
+const ContextWord = React.memo(function ContextWord({
+  text,
+  wordIndex,
+  isCurrent,
+  currentRef,
+  orpColor,
+}: ContextWordProps) {
+  return (
+    <span
+      ref={currentRef}
+      data-rsvp-word-button=''
+      data-rsvp-word-index={wordIndex}
+      role={isCurrent ? undefined : 'button'}
+      tabIndex={isCurrent ? undefined : 0}
+      className={isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'}
+      style={isCurrent && orpColor ? { color: orpColor } : undefined}
+    >
+      {text}{' '}
+    </span>
+  );
+});
+
 // Display settings
 const FONT_SIZE_OPTIONS = [1.25, 1.5, 1.875, 2.25, 3, 3.75, 4.25, 5, 6, 8];
 const DEFAULT_FONT_SIZE_INDEX = 4;
@@ -33,20 +64,14 @@ const ORP_COLOR_OPTIONS = ['', '#EF4444', '#3B82F6', '#22C55E', '#F97316', '#A85
 const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
 const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
 const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
+const STORAGE_KEY_HIGHLIGHT_WORD = 'readest_rsvp_cjk_highlight_word';
 
-// Context window: render only a sliding window of words around the current index.
-// Why: full-chapter rendering can be thousands of spans, and iOS WebKit's layout cost
-// for getBoundingClientRect (used by auto-scroll) scales with DOM size, which throttles
-// the word-advance interval well below the configured WPM.
-const CONTEXT_WINDOW_SIZE = 500;
-const CONTEXT_WINDOW_SLIDE_THRESHOLD = 100;
-
-const computeContextWindow = (total: number, currentIndex: number) => {
-  if (total <= CONTEXT_WINDOW_SIZE) return { start: 0, end: total };
-  const half = Math.floor(CONTEXT_WINDOW_SIZE / 2);
-  const start = Math.max(0, Math.min(total - CONTEXT_WINDOW_SIZE, currentIndex - half));
-  return { start, end: start + CONTEXT_WINDOW_SIZE };
-};
+// Context panel windowing — long sections (e.g. AZW3 chapters with 40k+ words)
+// would otherwise render tens of thousands of <span> elements and freeze the UI
+// for many seconds on each section load.
+const CONTEXT_CHUNK_SIZE = 50;
+const CONTEXT_WINDOW_BEFORE = 200;
+const CONTEXT_WINDOW_AFTER = 1000;
 
 interface RSVPOverlayProps {
   gridInsets: Insets;
@@ -107,11 +132,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
     return 0;
   });
-  const [contextWindow, setContextWindow] = useState(() =>
-    computeContextWindow(state.words.length, state.currentIndex),
-  );
+  const [highlightWholeWord, setHighlightWholeWord] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_HIGHLIGHT_WORD) === '1';
+    } catch {
+      return false;
+    }
+  });
   const contextWordRef = useRef<HTMLSpanElement>(null);
-  const contextPanelRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -220,6 +248,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
   const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
   const wordAfter = currentWord ? currentWord.text.substring(currentWord.orpIndex + 1) : '';
+  const isCJKWord = currentWord ? containsCJK(currentWord.text) : false;
+  const wordLetterSpacing = undefined;
+  const wordSideOffset = isCJKWord ? '0.45em' : '0.3em';
 
   // Time remaining calculation
   const getTimeRemaining = useCallback((): string | null => {
@@ -241,48 +272,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Stable word list that only changes when contextWindow changes
-  const contextWords = useMemo(
-    () => state.words.slice(contextWindow.start, contextWindow.end),
-    [state.words, contextWindow],
-  );
-
-  // Slide/reset the context window as currentIndex moves or the chapter changes.
+  // Auto-scroll: keep highlighted word in view
   useEffect(() => {
-    const total = state.words.length;
-    const cur = state.currentIndex;
-    setContextWindow((prev) => {
-      if (total <= CONTEXT_WINDOW_SIZE) {
-        if (prev.start === 0 && prev.end === total) return prev;
-        return { start: 0, end: total };
-      }
-      const currentSize = prev.end - prev.start;
-      const outOfBounds = cur < prev.start || cur >= prev.end;
-      const nearStartEdge = prev.start > 0 && cur < prev.start + CONTEXT_WINDOW_SLIDE_THRESHOLD;
-      const nearEndEdge = prev.end < total && cur >= prev.end - CONTEXT_WINDOW_SLIDE_THRESHOLD;
-      const sizeMismatch = currentSize !== CONTEXT_WINDOW_SIZE || prev.end > total;
-      if (!outOfBounds && !nearStartEdge && !nearEndEdge && !sizeMismatch) return prev;
-      return computeContextWindow(total, cur);
-    });
-  }, [state.currentIndex, state.words]);
-
-  // Auto-scroll: keep highlighted word away from top/bottom edges
-  useEffect(() => {
-    const panel = contextPanelRef.current;
-    const word = contextWordRef.current;
-    if (contextCollapsed || !panel || !word) return;
-
-    const panelRect = panel.getBoundingClientRect();
-    const wordRect = word.getBoundingClientRect();
-    const margin = panelRect.height * 0.15;
-    const topLine = panelRect.top + margin;
-
-    if (wordRect.top < topLine) {
-      panel.scrollTop -= topLine - wordRect.top;
-    } else if (wordRect.bottom > panelRect.bottom - margin) {
-      panel.scrollTop += wordRect.top - topLine;
-    }
-  }, [state.currentIndex, contextCollapsed, contextWindow]);
+    if (contextCollapsed) return;
+    contextWordRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }, [state.currentIndex, contextCollapsed]);
 
   useEffect(() => {
     if (!showChapterDropdown) return;
@@ -328,6 +322,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, []);
 
+  const updateHighlightWholeWord = useCallback((value: boolean) => {
+    setHighlightWholeWord(value);
+    try {
+      localStorage.setItem(STORAGE_KEY_HIGHLIGHT_WORD, value ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Chapter helpers
   const getCurrentChapterLabel = useCallback((): string => {
     if (!effectiveChapterHref) return _('Select Chapter');
@@ -364,6 +367,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const handleTouchEnd = (event: React.TouchEvent) => {
     if (event.changedTouches.length !== 1) return;
 
+    // Touches starting on the header or footer controls (progress bar, buttons,
+    // dropdowns) own their own gestures — never let a horizontal drag here be
+    // hijacked as a speed-change swipe, or a tap as a region tap.
+    const target = event.target as HTMLElement;
+    if (target.closest('.rsvp-controls') || target.closest('.rsvp-header')) {
+      return;
+    }
+
     const touch = event.changedTouches[0]!;
     const deltaX = touch.clientX - touchStartX.current;
     const deltaY = touch.clientY - touchStartY.current;
@@ -379,11 +390,6 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
 
     if (Math.abs(deltaX) < TAP_THRESHOLD && Math.abs(deltaY) < TAP_THRESHOLD && duration < 300) {
-      const target = event.target as HTMLElement;
-      if (target.closest('.rsvp-controls') || target.closest('.rsvp-header')) {
-        return;
-      }
-
       const screenWidth = window.innerWidth;
       const tapX = touch.clientX;
 
@@ -397,12 +403,53 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   };
 
-  const handleWordClick = (wordIndex: number) => {
-    const wasPlaying = state.playing;
-    if (wasPlaying) controller.pause();
-    controller.seekToIndex(wordIndex);
-    if (wasPlaying) setTimeout(() => controller.resume(), 50);
-  };
+  const handleWordClick = useCallback(
+    (wordIndex: number) => {
+      const wasPlaying = state.playing;
+      if (wasPlaying) controller.pause();
+      controller.seekToIndex(wordIndex);
+      if (wasPlaying) setTimeout(() => controller.resume(), 50);
+    },
+    [state.playing, controller],
+  );
+
+  const handleContextClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-rsvp-word-index]');
+      if (!target) return;
+      if (target.getAttribute('role') !== 'button') return;
+      const idx = parseInt(target.getAttribute('data-rsvp-word-index') || '', 10);
+      if (Number.isNaN(idx)) return;
+      handleWordClick(idx);
+    },
+    [handleWordClick],
+  );
+
+  const handleContextKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-rsvp-word-index]');
+      if (!target) return;
+      if (target.getAttribute('role') !== 'button') return;
+      const idx = parseInt(target.getAttribute('data-rsvp-word-index') || '', 10);
+      if (Number.isNaN(idx)) return;
+      event.preventDefault();
+      handleWordClick(idx);
+    },
+    [handleWordClick],
+  );
+
+  const contextWindow = useMemo(() => {
+    const len = state.words.length;
+    if (len === 0) return { start: 0, end: 0 };
+    const chunkStart = Math.floor(state.currentIndex / CONTEXT_CHUNK_SIZE) * CONTEXT_CHUNK_SIZE;
+    const start = Math.max(0, chunkStart - CONTEXT_WINDOW_BEFORE);
+    const end = Math.min(len, chunkStart + CONTEXT_CHUNK_SIZE + CONTEXT_WINDOW_AFTER);
+    return { start, end };
+  }, [state.currentIndex, state.words.length]);
+
+  const hasMoreBefore = contextWindow.start > 0;
+  const hasMoreAfter = contextWindow.end < state.words.length;
 
   const getProgressBarPercentage = (clientX: number, target: HTMLElement): number => {
     const rect = target.getBoundingClientRect();
@@ -428,7 +475,12 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     if (!isDraggingProgressBar.current) return;
     isDraggingProgressBar.current = false;
     setIsProgressBarDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    // pointercancel can fire after the browser has already released the
+    // capture itself (e.g. multitouch, app backgrounding), so calling
+    // releasePointerCapture unconditionally would throw NotFoundError.
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     if (wasPlayingBeforeDrag.current) setTimeout(() => controller.resume(), 50);
   };
 
@@ -604,38 +656,32 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         </button>
         {!contextCollapsed && (
           <div
-            ref={contextPanelRef}
             className='max-h-[20vh] overflow-y-auto px-3 pb-3 md:px-4 md:pb-4'
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
           >
-            <div className='text-left text-base leading-relaxed md:text-lg'>
-              {contextWords.map((w, i) => {
+            <div
+              data-testid='rsvp-context-panel'
+              className='text-left text-base leading-relaxed md:text-lg'
+              onClick={handleContextClick}
+              onKeyDown={handleContextKeyDown}
+            >
+              {hasMoreBefore && <span className='opacity-30'>… </span>}
+              {state.words.slice(contextWindow.start, contextWindow.end).map((w, i) => {
                 const wordIndex = contextWindow.start + i;
                 const isCurrent = wordIndex === state.currentIndex;
                 return (
-                  <span
+                  <ContextWord
                     key={wordIndex}
-                    ref={isCurrent ? contextWordRef : undefined}
-                    role={isCurrent ? undefined : 'button'}
-                    tabIndex={isCurrent ? undefined : 0}
-                    className={
-                      isCurrent ? undefined : 'cursor-pointer opacity-70 hover:opacity-100'
-                    }
-                    style={isCurrent ? { color: effectiveOrpColor } : undefined}
-                    onClick={isCurrent ? undefined : () => handleWordClick(wordIndex)}
-                    onKeyDown={
-                      isCurrent
-                        ? undefined
-                        : (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') handleWordClick(wordIndex);
-                          }
-                    }
-                  >
-                    {w.text}{' '}
-                  </span>
+                    text={w.text}
+                    wordIndex={wordIndex}
+                    isCurrent={isCurrent}
+                    currentRef={isCurrent ? contextWordRef : undefined}
+                    orpColor={isCurrent ? effectiveOrpColor : undefined}
+                  />
                 );
               })}
+              {hasMoreAfter && <span className='opacity-30'>…</span>}
             </div>
           </div>
         )}
@@ -665,23 +711,40 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               {/* Word display */}
               <div
                 className='rsvp-word relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-2 font-mono font-medium leading-none tracking-wide sm:min-h-20 sm:px-4 sm:py-4'
-                style={{ fontSize: `${currentFontSize}rem` }}
+                style={{ fontSize: `${currentFontSize}rem`, letterSpacing: wordLetterSpacing }}
               >
                 {currentWord ? (
-                  <>
-                    <span className='rsvp-word-before absolute right-[calc(50%+0.3em)] text-right opacity-60'>
-                      {wordBefore}
-                    </span>
+                  isCJKWord && highlightWholeWord ? (
+                    // Whole-word mode: center the full CJK word and color every
+                    // character, instead of anchoring a single focus character.
                     <span
-                      className='rsvp-word-orp relative z-10 font-bold'
+                      className='rsvp-word-whole relative z-10 font-bold'
                       style={{ color: effectiveOrpColor }}
                     >
-                      {orpChar}
+                      {currentWord.text}
                     </span>
-                    <span className='rsvp-word-after absolute left-[calc(50%+0.3em)] text-left opacity-60'>
-                      {wordAfter}
-                    </span>
-                  </>
+                  ) : (
+                    <>
+                      <span
+                        className='rsvp-word-before absolute text-right opacity-60'
+                        style={{ right: `calc(50% + ${wordSideOffset})` }}
+                      >
+                        {wordBefore}
+                      </span>
+                      <span
+                        className='rsvp-word-orp relative z-10 font-bold'
+                        style={{ color: effectiveOrpColor }}
+                      >
+                        {orpChar}
+                      </span>
+                      <span
+                        className='rsvp-word-after absolute text-left opacity-60'
+                        style={{ left: `calc(50% + ${wordSideOffset})` }}
+                      >
+                        {wordAfter}
+                      </span>
+                    </>
+                  )
                 ) : (
                   <span className='italic opacity-30'>{_('Ready')}</span>
                 )}
@@ -721,6 +784,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             aria-valuemin={0}
             aria-valuemax={100}
             className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
+            // touch-action: none keeps mobile browsers from claiming the
+            // gesture for scroll/pan, which would fire pointercancel and
+            // break the drag-to-seek pointer capture mid-gesture.
+            style={{ touchAction: 'none' }}
             onPointerDown={handleProgressBarPointerDown}
             onPointerMove={handleProgressBarPointerMove}
             onPointerUp={handleProgressBarPointerUp}
@@ -867,6 +934,34 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 onChange={(e) => controller.setSplitHyphens(e.target.checked)}
               />
             </div>
+
+            {/* CJK character mode — split CJK text per-character */}
+            {state.hasCJK && (
+              <div className='config-item gap-2'>
+                <span className='opacity-50'>{_('Character Mode')}</span>
+                <input
+                  type='checkbox'
+                  data-testid='rsvp-char-mode-toggle'
+                  className='toggle'
+                  checked={state.cjkCharMode}
+                  onChange={(e) => controller.setCjkCharMode(e.target.checked)}
+                />
+              </div>
+            )}
+
+            {/* CJK whole-word highlight — color and center the full word */}
+            {state.hasCJK && (
+              <div className='config-item gap-2'>
+                <span className='opacity-50'>{_('Highlight Word')}</span>
+                <input
+                  type='checkbox'
+                  data-testid='rsvp-highlight-word-toggle'
+                  className='toggle'
+                  checked={highlightWholeWord}
+                  onChange={(e) => updateHighlightWholeWord(e.target.checked)}
+                />
+              </div>
+            )}
 
             {/* ORP color */}
             <div className='flex items-center gap-1.5'>

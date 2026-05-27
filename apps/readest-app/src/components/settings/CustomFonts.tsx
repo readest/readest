@@ -10,6 +10,8 @@ import { useCustomFontStore } from '@/store/customFontStore';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { saveViewSettings } from '@/helpers/settings';
 import { CustomFont, mountCustomFont } from '@/styles/fonts';
+import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
+import { Tips } from './primitives';
 
 interface CustomFontsProps {
   bookKey: string;
@@ -58,11 +60,15 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           style: fontInfo.style,
           weight: fontInfo.weight,
           variable: fontInfo.variable,
+          contentId: fontInfo.contentId,
+          bundleDir: fontInfo.bundleDir,
+          byteSize: fontInfo.byteSize,
         });
         console.log('Added custom font:', customFont);
         if (customFont && !customFont.error) {
           const loadedFont = await loadFont(envConfig, customFont.id);
           mountCustomFont(document, loadedFont);
+          if (appService) void queueReplicaBinaryUpload('font', customFont, appService);
         }
       }
       saveCustomFonts(envConfig);
@@ -150,21 +156,33 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
       </div>
 
       <div className='grid grid-cols-2 gap-4'>
-        <div className='card border-primary/50 hover:border-primary/75 group h-12 border-2 transition-colors'>
-          <button
-            className='card-body flex cursor-pointer items-center justify-center p-2 text-center'
-            onClick={handleImportFont}
+        {/* Import Font — quiet outlined card matching the surrounding font
+            family cards' visual weight (border-base-200 bg, hover lifts to
+            base-200). Replaces the old loud `border-primary/50 text-primary`
+            CTA styling. eink-bordered keeps the boundary visible in eink. */}
+        <button
+          type='button'
+          onClick={handleImportFont}
+          className={clsx(
+            'bg-base-100 eink-bordered group flex h-12 items-center justify-center gap-2 rounded-2xl',
+            'border-base-200 hover:border-base-300 hover:bg-base-300/40 border',
+            'text-base-content text-sm font-medium',
+            'transition-colors duration-150',
+            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          )}
+        >
+          <span
+            className={clsx(
+              'flex h-5 w-5 items-center justify-center rounded-full',
+              'bg-base-200 text-base-content/60',
+              'transition-colors duration-150',
+              'group-hover:bg-base-content group-hover:text-base-100',
+            )}
           >
-            <div className='flex items-center gap-2'>
-              <div className='flex items-center justify-center'>
-                <MdAdd className='text-primary/85 group-hover:text-primary h-6 w-6' />
-              </div>
-              <div className='text-primary/85 group-hover:text-primary line-clamp-1 font-medium'>
-                {_('Import Font')}
-              </div>
-            </div>
-          </button>
-        </div>
+            <MdAdd className='h-3.5 w-3.5' />
+          </span>
+          <span className='line-clamp-1'>{_('Import Font')}</span>
+        </button>
 
         {availableFamilies.map((family) => (
           <div
@@ -174,7 +192,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
               'card h-12 border shadow-sm',
               currentFontFamily === family.name
                 ? 'border-primary/50 bg-primary/50'
-                : `border-base-200 bg-base-200 ${isDeleteMode ? '' : 'cursor-pointer'}`,
+                : `border-base-200 bg-base-100 ${isDeleteMode ? '' : 'cursor-pointer'}`,
             )}
             onClick={!isDeleteMode ? () => handleSelectFamily(family) : undefined}
             title={family.fonts.map((f) => f.name).join('\n')}
@@ -203,15 +221,10 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         ))}
       </div>
 
-      <div className='bg-base-200/30 my-8 rounded-lg p-4'>
-        <div className='text-base-content/70 text-sm sm:text-xs'>
-          <div className='mb-1 indent-2 font-medium'>{_('Tips')}:</div>
-          <ul className='list-outside list-disc space-y-1 ps-2'>
-            <li>{_('Supported font formats: .ttf, .otf, .woff, .woff2')}</li>
-            <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
-          </ul>
-        </div>
-      </div>
+      <Tips className='mt-6'>
+        <li>{_('Supported font formats: .ttf, .otf, .woff, .woff2')}</li>
+        <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
+      </Tips>
     </div>
   );
 };

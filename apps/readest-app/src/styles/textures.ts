@@ -8,6 +8,33 @@ export interface BackgroundTexture {
   url?: string;
   animated?: boolean;
 
+  /**
+   * Cross-device content hash. Set on imports new enough to participate
+   * in replica sync (`partialMD5 + byteSize + filename`). Legacy textures
+   * (created before replica sync) leave this undefined and never publish
+   * — re-import to enable cloud sync.
+   */
+  contentId?: string;
+  /**
+   * Per-texture directory name relative to the `Images` base. New imports
+   * land at `<bundleDir>/<filename>`; legacy imports keep their flat
+   * `<filename>` path with bundleDir undefined.
+   */
+  bundleDir?: string;
+  /** File size in bytes — used by the replica manifest, optional for legacy. */
+  byteSize?: number;
+  /**
+   * On a remote-pulled placeholder, set to true until the binary download
+   * lands. The transfer-complete handler clears it via the texture store's
+   * markAvailable hook.
+   */
+  unavailable?: boolean;
+  /**
+   * Reincarnation token — opaque value that revives a tombstoned remote
+   * row. Mirrors the font / dictionary mechanism.
+   */
+  reincarnation?: string;
+
   downloadedAt?: number;
   deletedAt?: number;
 
@@ -42,9 +69,18 @@ export function getTextureId(name: string): string {
   return md5Fingerprint(name);
 }
 
-export function createCustomTexture(path: string): CustomTexture {
-  const name = getTextureName(path);
+export function createCustomTexture(
+  path: string,
+  options?: Partial<Omit<CustomTexture, 'id' | 'path'>>,
+): CustomTexture {
+  const name = options?.name || getTextureName(path);
+  // Spread options first so replica-sync fields (contentId, bundleDir,
+  // byteSize) flow through from the import path. Mirrors the
+  // createCustomFont fix — without the spread, addTexture silently
+  // drops those fields and publishFontUpsert / replica binary upload
+  // both no-op on missing contentId.
   return {
+    ...options,
     id: getTextureId(name),
     name,
     path,

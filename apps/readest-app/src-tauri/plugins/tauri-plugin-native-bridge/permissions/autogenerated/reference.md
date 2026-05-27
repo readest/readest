@@ -25,6 +25,7 @@ Default permissions for the plugin
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
 - `allow-open-external-url`
+- `allow-show-lookup-popover`
 - `allow-select-directory`
 - `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
@@ -34,6 +35,10 @@ Default permissions for the plugin
 - `allow-request-permissions`
 - `allow-checkPermissions`
 - `allow-requestPermissions`
+- `allow-set-sync-passphrase`
+- `allow-get-sync-passphrase`
+- `allow-clear-sync-passphrase`
+- `allow-is-sync-keychain-available`
 
 ## Permission Table
 
@@ -170,6 +175,58 @@ Enables the check_permissions command without any pre-configured scope.
 <td>
 
 Denies the check_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-clear-sync-passphrase`
+
+</td>
+<td>
+
+Enables the clear_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-clear-sync-passphrase`
+
+</td>
+<td>
+
+Denies the clear_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-clip-url`
+
+</td>
+<td>
+
+Enables the clip_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-clip-url`
+
+</td>
+<td>
+
+Denies the clip_url command without any pre-configured scope.
 
 </td>
 </tr>
@@ -326,6 +383,32 @@ Enables the get_storefront_region_code command without any pre-configured scope.
 <td>
 
 Denies the get_storefront_region_code command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-sync-passphrase`
+
+</td>
+<td>
+
+Enables the get_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-sync-passphrase`
+
+</td>
+<td>
+
+Denies the get_sync_passphrase command without any pre-configured scope.
 
 </td>
 </tr>
@@ -560,6 +643,32 @@ Enables the intercept_keys command without any pre-configured scope.
 <td>
 
 Denies the intercept_keys command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-is-sync-keychain-available`
+
+</td>
+<td>
+
+Enables the is_sync_keychain_available command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-is-sync-keychain-available`
+
+</td>
+<td>
+
+Denies the is_sync_keychain_available command without any pre-configured scope.
 
 </td>
 </tr>
@@ -827,6 +936,32 @@ Denies the set_screen_brightness command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-set-sync-passphrase`
+
+</td>
+<td>
+
+Enables the set_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-set-sync-passphrase`
+
+</td>
+<td>
+
+Denies the set_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-set-system-ui-visibility`
 
 </td>
@@ -846,6 +981,32 @@ Enables the set_system_ui_visibility command without any pre-configured scope.
 <td>
 
 Denies the set_system_ui_visibility command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-show-lookup-popover`
+
+</td>
+<td>
+
+Enables the show_lookup_popover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-show-lookup-popover`
+
+</td>
+<td>
+
+Denies the show_lookup_popover command without any pre-configured scope.
 
 </td>
 </tr>

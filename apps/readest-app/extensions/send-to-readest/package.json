@@ -1,0 +1,28 @@
+{
+  "name": "@readest/send-to-readest-extension",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Browser extension that clips the current web page into the user's Readest library as a self-contained EPUB.",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --watch --mode development",
+    "clean": "rimraf dist",
+    "i18n:extract": "node scripts/extract-i18n.mjs",
+    "i18n:check": "node scripts/extract-i18n.mjs --check"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@zip.js/zip.js": "^2.8.16",
+    "dompurify": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "@types/dompurify": "^3.0.5",
+    "copy-webpack-plugin": "^14.0.0",
+    "rimraf": "^6.0.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4"
+  }
+}

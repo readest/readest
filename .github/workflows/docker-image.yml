@@ -1,0 +1,191 @@
+name: Publish Docker image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+concurrency:
+  group: publish-docker-image-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    env:
+      BUILD_ARGS: |
+        NEXT_PUBLIC_APP_PLATFORM=web
+    steps:
+      - name: Prepare platform pair
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta (for labels)
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/readest
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production-stage
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ env.BUILD_ARGS }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache-${{ env.PLATFORM_PAIR }}
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/readest:buildcache-${{ env.PLATFORM_PAIR }},mode=max
+          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/readest,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect Docker Hub credentials
+        id: dockerhub
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract image metadata (GHCR only)
+        id: meta-ghcr
+        if: steps.dockerhub.outputs.enabled != 'true'
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/readest
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+            type=sha,prefix=sha-
+
+      - name: Extract image metadata (GHCR + Docker Hub)
+        id: meta-all
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/readest
+            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/readest
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+            type=sha,prefix=sha-
+
+      - name: Create manifest list and push (GHCR only)
+        if: steps.dockerhub.outputs.enabled != 'true'
+        working-directory: /tmp/digests
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta-ghcr.outputs.json }}
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'ghcr.io/${{ github.repository_owner }}/readest@sha256:%s ' *)
+
+      - name: Create manifest list and push (GHCR + Docker Hub)
+        if: steps.dockerhub.outputs.enabled == 'true'
+        working-directory: /tmp/digests
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta-all.outputs.json }}
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'ghcr.io/${{ github.repository_owner }}/readest@sha256:%s ' *)
+
+      - name: Published image summary
+        run: |
+          echo "## Published Images" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tags:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.dockerhub.outputs.enabled }}" == "true" ]; then
+            echo "${{ steps.meta-all.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "${{ steps.meta-ghcr.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

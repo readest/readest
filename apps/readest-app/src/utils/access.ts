@@ -4,6 +4,7 @@ import { UserPlan } from '@/types/quota';
 import { DEFAULT_DAILY_TRANSLATION_QUOTA, DEFAULT_STORAGE_QUOTA } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/utils';
+import { getRuntimeConfig } from '@/services/runtimeConfig';
 
 interface Token {
   plan: UserPlan;
@@ -29,6 +30,21 @@ export const getUserProfilePlan = (token: string): UserPlan => {
   return plan;
 };
 
+/**
+ * Plans that include the "Send to Readest via email" feature: Plus,
+ * Pro, and Lifetime (`purchase`). Free users see an upgrade card on
+ * the client and get a 403 from the server endpoints that allocate /
+ * rotate the address, plus a bounce from the inbound email Worker.
+ *
+ * Other Send channels (in-app `/send` page, mobile share-sheet, browser
+ * extension) stay open to free users — the gate is the personal email
+ * inbox only.
+ */
+export const EMAIL_IN_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+
+export const isEmailInPlan = (plan: UserPlan): boolean =>
+  (EMAIL_IN_PLANS as readonly UserPlan[]).includes(plan);
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {
@@ -36,7 +52,9 @@ export const getStoragePlanData = (token: string) => {
   const plan = data['plan'] || 'free';
   const usage = data['storage_usage_bytes'] || 0;
   const purchasedQuota = data['storage_purchased_bytes'] || 0;
-  const fixedQuota = parseInt(process.env['NEXT_PUBLIC_STORAGE_FIXED_QUOTA'] || '0');
+  const runtimeConfig = getRuntimeConfig();
+  const fixedQuota =
+    runtimeConfig?.storageFixedQuota ?? parseInt(process.env['STORAGE_FIXED_QUOTA'] ?? '0');
   const planQuota = fixedQuota || DEFAULT_STORAGE_QUOTA[plan] || DEFAULT_STORAGE_QUOTA['free'];
   const quota = planQuota + purchasedQuota;
 
@@ -48,7 +66,9 @@ export const getStoragePlanData = (token: string) => {
 };
 
 export const getTranslationQuota = (plan: UserPlan): number => {
-  const fixedQuota = parseInt(process.env['NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA'] || '0');
+  const runtimeConfig = getRuntimeConfig();
+  const fixedQuota =
+    runtimeConfig?.translationFixedQuota ?? parseInt(process.env['TRANSLATION_FIXED_QUOTA'] ?? '0');
   return (
     fixedQuota || DEFAULT_DAILY_TRANSLATION_QUOTA[plan] || DEFAULT_DAILY_TRANSLATION_QUOTA['free']
   );

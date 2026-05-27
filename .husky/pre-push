@@ -1,2 +1,3 @@
+pnpm -C apps/readest-app format:check
 pnpm -C apps/readest-app lint
 pnpm -C apps/readest-app test

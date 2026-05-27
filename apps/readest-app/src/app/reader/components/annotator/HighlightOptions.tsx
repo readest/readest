@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
+import { MdLibraryAddCheck } from 'react-icons/md';
 import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -33,6 +34,9 @@ interface HighlightOptionsProps {
   triangleDir: 'up' | 'down' | 'left' | 'right';
   selectedStyle: HighlightStyle;
   selectedColor: HighlightColor;
+  globalToggleAvailable?: boolean;
+  globalToggleActive?: boolean;
+  onToggleGlobal?: () => void;
   onHandleHighlight: (update: boolean) => void;
 }
 
@@ -47,6 +51,9 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   triangleDir,
   selectedStyle: _selectedStyle,
   selectedColor: _selectedColor,
+  globalToggleAvailable = false,
+  globalToggleActive = false,
+  onToggleGlobal,
   onHandleHighlight,
 }) => {
   const _ = useTranslation();
@@ -243,6 +250,25 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           </button>
         ))}
       </div>
+
+      {globalToggleAvailable && (
+        <button
+          type='button'
+          aria-label={_('Apply to every occurrence in the book')}
+          aria-pressed={globalToggleActive}
+          title={_('Apply to every occurrence in the book')}
+          onClick={() => onToggleGlobal?.()}
+          className={clsx(
+            'not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0 transition-colors',
+            globalToggleActive
+              ? 'not-eink:text-blue-400'
+              : 'not-eink:text-gray-400 hover:not-eink:text-gray-200',
+          )}
+          style={{ width: size28, height: size28, minHeight: size28 }}
+        >
+          <MdLibraryAddCheck size={size16} />
+        </button>
+      )}
 
       <div
         ref={colorStripRef}

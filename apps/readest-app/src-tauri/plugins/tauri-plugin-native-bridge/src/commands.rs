@@ -166,6 +166,19 @@ pub(crate) async fn open_external_url<R: Runtime>(
     app.native_bridge().open_external_url(payload)
 }
 
+/// See [`ShowLookupPopoverRequest`] in `models.rs` for platform-by-
+/// platform behavior. The mobile bridge dispatches into the iOS /
+/// Android plugin; desktop returns `UnsupportedPlatformError` and the
+/// TS layer keeps the macOS-specific path going through the
+/// top-level `show_lookup_popover` Tauri command (AppKit HUD).
+#[command]
+pub(crate) async fn show_lookup_popover<R: Runtime>(
+    app: AppHandle<R>,
+    payload: ShowLookupPopoverRequest,
+) -> Result<ShowLookupPopoverResponse> {
+    app.native_bridge().show_lookup_popover(payload)
+}
+
 #[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
@@ -198,4 +211,33 @@ pub(crate) async fn request_manage_storage_permission<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<RequestManageStoragePermissionResponse> {
     app.native_bridge().request_manage_storage_permission()
+}
+
+#[command]
+pub(crate) async fn set_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetSyncPassphraseRequest,
+) -> Result<SyncPassphraseResponse> {
+    app.native_bridge().set_sync_passphrase(payload)
+}
+
+#[command]
+pub(crate) async fn get_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetSyncPassphraseResponse> {
+    app.native_bridge().get_sync_passphrase()
+}
+
+#[command]
+pub(crate) async fn clear_sync_passphrase<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<SyncPassphraseResponse> {
+    app.native_bridge().clear_sync_passphrase()
+}
+
+#[command]
+pub(crate) async fn is_sync_keychain_available<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<SyncKeychainAvailableResponse> {
+    app.native_bridge().is_sync_keychain_available()
 }

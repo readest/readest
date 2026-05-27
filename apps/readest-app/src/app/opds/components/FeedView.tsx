@@ -4,7 +4,7 @@ import { useMemo, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { IoChevronBack, IoChevronForward, IoFilter } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
-import { OPDSFeed, OPDSLink } from '@/types/opds';
+import { OPDSFeed, OPDSGenericLink } from '@/types/opds';
 import { PublicationCard } from './PublicationCard';
 import { NavigationCard } from './NavigationCard';
 import { groupByArray } from '../utils/opdsUtils';
@@ -40,7 +40,7 @@ export function FeedView({
 
   const hasFacets = feed.facets && feed.facets.length > 0;
 
-  const handlePaginationClick = (links?: OPDSLink[]) => {
+  const handlePaginationClick = (links?: OPDSGenericLink[]) => {
     if (links && links.length > 0) {
       const url = resolveURL(links[0]?.href || '', baseURL);
       onNavigate(url);
@@ -94,8 +94,8 @@ export function FeedView({
                     )}
                     <ul className='space-y-1'>
                       {facet.links.map((link, linkIndex: number) => {
-                        const isActive = link.rel === 'self' || link.rel?.includes('self');
-                        const href = resolveURL(link.href, baseURL);
+                        const isActive = link.rel?.includes('self');
+                        const href = resolveURL(link.href || '', baseURL);
                         return (
                           <li key={linkIndex}>
                             <button

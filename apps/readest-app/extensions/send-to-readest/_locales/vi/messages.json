@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Gửi đến Readest",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "Lưu trang web vào thư viện Readest của bạn",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Gửi đến Readest",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

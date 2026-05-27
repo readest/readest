@@ -6,9 +6,39 @@ import type { Rect, Position } from '@/utils/sel';
 // constrainPointWithinRect is also non-exported but exercised through getPosition.
 
 // For getPopupPosition we can test directly.
-import { getPopupPosition } from '@/utils/sel';
+import { getPopupPosition, isPointInRect } from '@/utils/sel';
 
 describe('sel utilities', () => {
+  describe('isPointInRect', () => {
+    const rect: Rect = { left: 100, top: 50, right: 300, bottom: 200 };
+
+    it('returns true for a point strictly inside the rect', () => {
+      expect(isPointInRect({ x: 200, y: 100 }, rect)).toBe(true);
+    });
+
+    it('treats edges as outside with the default 1px padding', () => {
+      expect(isPointInRect({ x: 100, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 300, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 50 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 200 }, rect)).toBe(false);
+    });
+
+    it('returns true on edges when padding is 0', () => {
+      expect(isPointInRect({ x: 100, y: 50 }, rect, 0)).toBe(true);
+      expect(isPointInRect({ x: 300, y: 200 }, rect, 0)).toBe(true);
+    });
+
+    it('returns false when x is outside', () => {
+      expect(isPointInRect({ x: 99, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 301, y: 100 }, rect)).toBe(false);
+    });
+
+    it('returns false when y is outside', () => {
+      expect(isPointInRect({ x: 200, y: 49 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 201 }, rect)).toBe(false);
+    });
+  });
+
   describe('getPopupPosition', () => {
     const boundingRect: Rect = { top: 0, right: 800, bottom: 600, left: 0 };
 
@@ -337,6 +367,43 @@ describe('sel utilities', () => {
 
       const text = getTextFromRange(range);
       expect(text).toBe('First nested deep end');
+
+      document.body.removeChild(container);
+    });
+
+    it('should insert a newline for <br> between adjacent text spans (PDF line wrap)', async () => {
+      const { getTextFromRange } = await import('@/utils/sel');
+      // Mirrors how pdf.js renders the text layer: each text run is its
+      // own <span>, and line endings are <br role="presentation">.
+      const container = document.createElement('div');
+      container.className = 'textLayer';
+      container.innerHTML =
+        '<span role="presentation">last word of line 1</span>' +
+        '<br role="presentation">' +
+        '<span role="presentation">first word of line 2</span>';
+      document.body.appendChild(container);
+
+      const range = document.createRange();
+      range.selectNodeContents(container);
+
+      const text = getTextFromRange(range);
+      // Without separating the spans the text becomes
+      // "last word of line 1first word of line 2" — words are glued.
+      expect(text).toBe('last word of line 1\nfirst word of line 2');
+
+      document.body.removeChild(container);
+    });
+
+    it('should insert a newline for explicit <br> in HTML content', async () => {
+      const { getTextFromRange } = await import('@/utils/sel');
+      const container = document.createElement('div');
+      container.innerHTML = 'first<br>second<br>third';
+      document.body.appendChild(container);
+
+      const range = document.createRange();
+      range.selectNodeContents(container);
+
+      expect(getTextFromRange(range)).toBe('first\nsecond\nthird');
 
       document.body.removeChild(container);
     });

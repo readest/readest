@@ -86,7 +86,7 @@ Recommended Visual Studio Code plugins for development:
 
 - JavaScript and TypeScript Nightly (ms-vscode.vscode-typescript-next)
 - VS Code ESLint extension (dbaeumer.vscode-eslint)
-- Prettier - Code formatter (esbenp.prettier-vscode)
+- Biome - Code formatter and linter (biomejs.biome)
 - rust-analyzer (rust-lang.rust-analyzer) (for Tauri development only)
 
 ### When you're done

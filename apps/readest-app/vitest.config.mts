@@ -11,6 +11,13 @@ export default defineConfig({
       // source files.  foliate-js/pdf.js lives outside that scope, so Vite
       // needs an explicit alias to find the vendored pdfjs build.
       '@pdfjs': path.resolve(__dirname, 'public/vendor/pdfjs'),
+      // `js-mdict` is consumed via tsconfig paths from `packages/js-mdict/src/`.
+      // Its sources `import 'fflate'` directly — without an alias, vite's
+      // import-analysis walks up from the redirected file location and fails
+      // to find fflate (it's installed only in this app's node_modules).
+      // Pin all `fflate` resolutions to the app's copy to keep js-mdict
+      // self-contained at the source-tree level.
+      fflate: path.resolve(__dirname, 'node_modules/fflate'),
     },
   },
   test: {
@@ -20,6 +27,8 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/.claude/**',
+      // Playwright web e2e specs — run via `pnpm test:e2e:web`, not vitest.
+      '**/e2e/**',
       '**/*.browser.test.ts',
       '**/*.browser.test.tsx',
       '**/*.tauri.test.ts',

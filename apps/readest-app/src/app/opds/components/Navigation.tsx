@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { IoChevronBack, IoChevronForward, IoHome } from 'react-icons/io5';
@@ -10,9 +10,9 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useSettingsStore } from '@/store/settingsStore';
-import { navigateToLibrary } from '@/utils/nav';
 import { debounce } from '@/utils/debounce';
 import WindowButtons from '@/components/WindowButtons';
+import { closeOPDSBrowser } from '../utils/opdsClose';
 
 interface NavigationProps {
   searchTerm?: string;
@@ -37,13 +37,15 @@ export function Navigation({
 }: NavigationProps) {
   const _ = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const viewSettings = settings.globalViewSettings;
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const { isTrafficLightVisible } = useTrafficLight();
+  const { isTrafficLightVisible } = useTrafficLight(headerRef);
 
   useEffect(() => {
     setSearchQuery(searchTerm || '');
@@ -56,8 +58,8 @@ export function Navigation({
   }, [hasSearch]);
 
   const handleGoLibrary = useCallback(() => {
-    navigateToLibrary(router, 'opds=true', {}, true);
-  }, [router]);
+    closeOPDSBrowser(router, searchParams);
+  }, [router, searchParams]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedUpdateQueryParam = useCallback(
@@ -77,6 +79,7 @@ export function Navigation({
 
   return (
     <header
+      ref={headerRef}
       className={clsx(
         'navbar min-h-0 px-2',
         'flex h-[48px] w-full items-center',
@@ -87,7 +90,7 @@ export function Navigation({
         <div className='flex gap-1'>
           {onBack && (
             <button
-              className='btn btn-ghost btn-sm px-1 disabled:bg-transparent'
+              className='btn btn-ghost btn-sm px-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-40'
               onClick={onBack}
               disabled={!canGoBack}
               title={_('Back')}
@@ -97,7 +100,7 @@ export function Navigation({
           )}
           {onForward && (
             <button
-              className='btn btn-ghost btn-sm px-1 disabled:bg-transparent'
+              className='btn btn-ghost btn-sm px-1 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-40'
               onClick={onForward}
               disabled={!canGoForward}
               title={_('Forward')}

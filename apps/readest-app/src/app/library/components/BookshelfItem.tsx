@@ -159,16 +159,38 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     async (book: Book) => {
       if (isSelectMode) {
         toggleSelection(book.hash);
-      } else {
-        const available = await makeBookAvailable(book);
-        if (!available) return;
-        if (appService?.hasWindow && settings.openBookInNewWindow) {
-          showReaderWindow(appService, [book.hash]);
-        } else {
-          setTimeout(() => {
-            navigateToReader(router, [book.hash]);
-          }, 0);
+        return;
+      }
+      // In-place books point at a file outside Books/<hash>/ that the user
+      // (or another app) may have moved, renamed, or deleted between sessions.
+      // Probe the source before navigating: if it's gone, drop the stale
+      // library record instead of opening the reader only to fail inside
+      // loadBookContent and bounce back with a toast. We restrict this to
+      // purely-local in-place books — cloud-synced books (`uploadedAt`) still
+      // go through `makeBookAvailable`'s on-demand download path below, and
+      // hash-copy books (no `filePath`) shouldn't lose their Books/<hash>/
+      // file under normal use, so we don't second-guess those here.
+      if (book.filePath && !book.uploadedAt && !book.deletedAt) {
+        const available = await appService?.isBookAvailable(book);
+        if (!available) {
+          eventDispatcher.dispatch('toast', {
+            message: _(
+              'Book file no longer exists. Confirm deletion to remove it from the library.',
+            ),
+            type: 'info',
+          });
+          eventDispatcher.dispatch('delete-books', { ids: [book.hash] });
+          return;
         }
+      }
+      const available = await makeBookAvailable(book);
+      if (!available) return;
+      if (appService?.hasWindow && settings.openBookInNewWindow) {
+        showReaderWindow(appService, [book.hash]);
+      } else {
+        setTimeout(() => {
+          navigateToReader(router, [book.hash]);
+        }, 0);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -252,6 +274,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         handleBookUpload(book);
       },
     });
+    const shareBookMenuItem = await MenuItem.new({
+      text: _('Share Book'),
+      action: async () => {
+        // Bookshelf.tsx hosts the dialog; we dispatch and let it route
+        // unauthenticated users into the login flow first.
+        eventDispatcher.dispatch('show-share-dialog', { book });
+      },
+    });
     const deleteBookMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
@@ -277,6 +307,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
     if (!book.uploadedAt && book.downloadedAt) {
       menu.append(uploadBookMenuItem);
+    }
+    // Share is offered for any local-or-uploaded book; the dialog will trigger
+    // an upload first if the book hasn't been pushed yet.
+    if (book.downloadedAt || book.uploadedAt) {
+      menu.append(shareBookMenuItem);
     }
     menu.append(deleteBookMenuItem);
     menu.popup();
@@ -304,7 +339,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const deleteGroupMenuItem = await MenuItem.new({
       text: _('Delete'),
       action: async () => {
-        eventDispatcher.dispatch('delete-books', { ids: [group.id] });
+        // Dispatch the constituent book hashes — `group.books` is the
+        // rendered rollup and already includes books from nested sub-
+        // folders, so the deletion path doesn't need to re-derive what
+        // belongs to the group from the id alone.
+        const ids = group.books.filter((book) => !book.deletedAt).map((book) => book.hash);
+        eventDispatcher.dispatch('delete-books', { ids });
       },
     });
     const menu = await Menu.new();

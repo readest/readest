@@ -1,13 +1,14 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
-import { Insets } from '@/types/misc';
+import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
+import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import type { ProgressBarMode } from '@/types/book.ts';
 import StatusInfo from './StatusInfo.tsx';
@@ -36,7 +37,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const { section, pageinfo } = progress || {};
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
-  const isScrolled = viewSettings.scrolled;
   const isVertical = viewSettings.vertical;
   const isEink = viewSettings.isEink;
   const { progressStyle: readingProgressStyle } = viewSettings;
@@ -55,26 +55,47 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const pagesLeft = bookData?.isFixedLayout
-    ? 1
+    ? pageInfo
+      ? Math.max(pageInfo.total - pageInfo.current, 1)
+      : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
-  const showPagesLeft = total > 0 || bookData?.isFixedLayout;
+  const showPagesLeft = pagesLeft > 0 && (total > 0 || !!bookData?.isFixedLayout);
+  // Fixed-layout formats (CBZ, PDF) have no chapter structure — every page is
+  // its own section — so the remaining count is the whole book, not a chapter.
+  const remainingInBook = !!bookData?.isFixedLayout;
   const timeLeftStr = showPagesLeft
-    ? _('{{time}} min left in chapter', {
-        time: formatNumber(
-          Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
-          localize,
-          lang,
-        ),
-      })
+    ? remainingInBook
+      ? _('{{time}} min left in book', {
+          time: formatNumber(
+            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            localize,
+            lang,
+          ),
+        })
+      : _('{{time}} min left in chapter', {
+          time: formatNumber(
+            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            localize,
+            lang,
+          ),
+        })
     : '';
   const pagesLeftStr = showPagesLeft
     ? localize
-      ? _('{{number}} pages left in chapter', {
-          number: formatNumber(pagesLeft, localize, lang),
-        })
-      : _('{{count}} pages left in chapter', {
-          count: pagesLeft,
-        })
+      ? remainingInBook
+        ? _('{{number}} pages left in book', {
+            number: formatNumber(pagesLeft, localize, lang),
+          })
+        : _('{{number}} pages left in chapter', {
+            number: formatNumber(pagesLeft, localize, lang),
+          })
+      : remainingInBook
+        ? _('{{count}} pages left in book', {
+            count: pagesLeft,
+          })
+        : _('{{count}} pages left in chapter', {
+            count: pagesLeft,
+          })
     : '';
 
   const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
@@ -145,6 +166,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressBarMode]);
 
+  // Self-heal a stuck "none" (or partial) mode left over from a prior
+  // tap-to-toggle session. Without this, dismissing the footer via tap
+  // and then disabling the toggle in settings would leave the footer
+  // permanently hidden — the user's only way back to a visible footer
+  // would be to re-enable the toggle and tap through the cycle.
+  useEffect(() => {
+    if (!viewSettings.tapToToggleFooter && progressBarMode !== 'all') {
+      setProgressBarMode('all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings.tapToToggleFooter]);
+
   const isMobile = appService?.isMobile || window.innerWidth < 640;
   const showStatusInfo =
     (progressBarMode === 'all' ||
@@ -160,10 +193,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
-        isScrolled && !isVertical && 'bg-base-100',
         isMobile ? 'pointer-events-auto' : 'pointer-events-none',
       )}
-      onClick={() => cycleProgressInfoModes()}
+      onClick={() => {
+        if (eventDispatcher.dispatchSync('iframe-single-click')) return;
+        cycleProgressInfoModes();
+      }}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {
@@ -195,10 +230,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     >
       <div
         aria-hidden='true'
-        className={clsx(
-          'flex items-center justify-between',
-          isVertical ? 'h-full' : 'h-[52px] w-full',
-        )}
+        className={clsx('flex items-center justify-between', isVertical ? 'h-full' : 'w-full')}
+        style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
         {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
           hasRemainingInfo && (
@@ -213,12 +246,27 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               ) : viewSettings.showRemainingPages && showPagesLeft ? (
                 <span className='text-start'>
                   {localize ? (
-                    <Trans
-                      i18nKey='{{number}} pages left in chapter'
-                      values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                    >
-                      <span className='pages-left-number'>{'{{number}}'}</span>
-                      <span className='pages-left-label'>{' pages left in chapter'}</span>
+                    remainingInBook ? (
+                      <Trans
+                        i18nKey='{{number}} pages left in book'
+                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                      >
+                        <span className='pages-left-number'>{'{{number}}'}</span>
+                        <span className='pages-left-label'>{' pages left in book'}</span>
+                      </Trans>
+                    ) : (
+                      <Trans
+                        i18nKey='{{number}} pages left in chapter'
+                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                      >
+                        <span className='pages-left-number'>{'{{number}}'}</span>
+                        <span className='pages-left-label'>{' pages left in chapter'}</span>
+                      </Trans>
+                    )
+                  ) : remainingInBook ? (
+                    <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
+                      <span className='pages-left-number'>{'{{count}}'}</span>
+                      <span className='pages-left-label'>{' pages left in book'}</span>
                     </Trans>
                   ) : (
                     <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>

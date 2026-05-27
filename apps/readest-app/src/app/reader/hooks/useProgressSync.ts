@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,7 +19,7 @@ export const useProgressSync = (bookKey: string) => {
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getProgress, setHoveredBookKey } = useReaderStore();
   const { settings } = useSettingsStore();
-  const { syncedConfigs, syncConfigs } = useSync(bookKey);
+  const { syncedConfigs, syncConfigs, syncBooks } = useSync(bookKey);
   const { user } = useAuth();
   const progress = getProgress(bookKey);
 
@@ -36,6 +37,18 @@ export const useProgressSync = (bookKey: string) => {
     );
     delete compressedConfig.booknotes;
     await syncConfigs([compressedConfig], bookHash, metaHash, 'push');
+
+    // Also push the corresponding `books` row. The library sync lane
+    // (useBooksSync) only runs while the library page is mounted, so while a
+    // reader stays open the server's `books` record is never re-pushed and
+    // other devices' library pull-to-refresh keeps showing stale progress
+    // (issue #4198). useProgressAutoSave has already merged config.progress
+    // into the in-memory library Book via saveConfig, so we just forward
+    // that book through the books lane.
+    const libraryBook = useLibraryStore.getState().library.find((b) => b.hash === bookHash);
+    if (libraryBook && !libraryBook.deletedAt) {
+      await syncBooks([libraryBook], 'push');
+    }
   };
 
   const pullConfig = async (bookKey: string) => {
@@ -50,6 +63,9 @@ export const useProgressSync = (bookKey: string) => {
     if (!configPulled.current) {
       pullConfig(bookKey);
     } else {
+      // Skip pushes while previewing a deep-link target — the position in
+      // memory reflects the annotation, not what the user is actually reading.
+      if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       const config = getConfig(bookKey);
       const view = getView(bookKey);
       const book = getBookData(bookKey)?.book;
@@ -151,7 +167,12 @@ export const useProgressSync = (bookKey: string) => {
       }
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
-          if (view) {
+          // While previewing a deep-link target, do NOT yank the view to the
+          // remote position — the user came here to look at a specific
+          // annotation. The local config still gets updated above; the next
+          // open will resolve to the synced position normally.
+          const isPreview = useReaderStore.getState().getViewState(bookKey)?.previewMode;
+          if (view && !isPreview) {
             view.goTo(remoteCFILocation);
             setHoveredBookKey(null);
             eventDispatcher.dispatch('hint', {

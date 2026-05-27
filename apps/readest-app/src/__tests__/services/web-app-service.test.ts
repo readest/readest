@@ -242,6 +242,213 @@ describe('WebAppService', () => {
       const result = await service.saveFile('book.epub', 'content');
       expect(result).toBe(false);
     });
+
+    test('uses navigator.share when share option is set and supported', async () => {
+      const shareSpy = vi.fn().mockResolvedValue(undefined);
+      const canShareSpy = vi.fn().mockReturnValue(true);
+      const originalShare = (navigator as unknown as { share?: unknown }).share;
+      const originalCanShare = (navigator as unknown as { canShare?: unknown }).canShare;
+      Object.defineProperty(navigator, 'share', {
+        value: shareSpy,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(navigator, 'canShare', {
+        value: canShareSpy,
+        configurable: true,
+        writable: true,
+      });
+      const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+
+      const result = await service.saveFile('annotations.md', '# notes', {
+        mimeType: 'text/markdown',
+        share: true,
+      });
+
+      expect(result).toBe(true);
+      expect(shareSpy).toHaveBeenCalledTimes(1);
+      const shareData = shareSpy.mock.calls[0]![0] as { files: File[]; title?: string };
+      expect(shareData.files).toHaveLength(1);
+      expect(shareData.files[0]!.name).toBe('annotations.md');
+      expect(shareData.files[0]!.type).toBe('text/markdown');
+      expect(createObjectURLSpy).not.toHaveBeenCalled();
+
+      if (originalShare === undefined) {
+        delete (navigator as unknown as { share?: unknown }).share;
+      } else {
+        Object.defineProperty(navigator, 'share', {
+          value: originalShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (originalCanShare === undefined) {
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+      } else {
+        Object.defineProperty(navigator, 'canShare', {
+          value: originalCanShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
+
+    test('falls through to download when share=true but canShare rejects', async () => {
+      const shareSpy = vi.fn();
+      const canShareSpy = vi.fn().mockReturnValue(false);
+      const originalShare = (navigator as unknown as { share?: unknown }).share;
+      const originalCanShare = (navigator as unknown as { canShare?: unknown }).canShare;
+      Object.defineProperty(navigator, 'share', {
+        value: shareSpy,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(navigator, 'canShare', {
+        value: canShareSpy,
+        configurable: true,
+        writable: true,
+      });
+
+      const clickSpy = vi.fn();
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        (node as HTMLAnchorElement).click = clickSpy;
+        return node;
+      });
+      vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+      const result = await service.saveFile('annotations.md', '# notes', {
+        mimeType: 'text/markdown',
+        share: true,
+      });
+
+      expect(result).toBe(true);
+      expect(shareSpy).not.toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+
+      if (originalShare === undefined) {
+        delete (navigator as unknown as { share?: unknown }).share;
+      } else {
+        Object.defineProperty(navigator, 'share', {
+          value: originalShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (originalCanShare === undefined) {
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+      } else {
+        Object.defineProperty(navigator, 'canShare', {
+          value: originalCanShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
+
+    test('returns true without falling back when user dismisses share sheet', async () => {
+      const dismissError = new DOMException('share canceled', 'AbortError');
+      const shareSpy = vi.fn().mockRejectedValue(dismissError);
+      const canShareSpy = vi.fn().mockReturnValue(true);
+      const originalShare = (navigator as unknown as { share?: unknown }).share;
+      const originalCanShare = (navigator as unknown as { canShare?: unknown }).canShare;
+      Object.defineProperty(navigator, 'share', {
+        value: shareSpy,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(navigator, 'canShare', {
+        value: canShareSpy,
+        configurable: true,
+        writable: true,
+      });
+      const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+
+      const result = await service.saveFile('annotations.md', '# notes', {
+        mimeType: 'text/markdown',
+        share: true,
+      });
+
+      expect(result).toBe(true);
+      expect(shareSpy).toHaveBeenCalledTimes(1);
+      expect(createObjectURLSpy).not.toHaveBeenCalled();
+
+      if (originalShare === undefined) {
+        delete (navigator as unknown as { share?: unknown }).share;
+      } else {
+        Object.defineProperty(navigator, 'share', {
+          value: originalShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (originalCanShare === undefined) {
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+      } else {
+        Object.defineProperty(navigator, 'canShare', {
+          value: originalCanShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
+
+    test('falls back to download when navigator.share rejects with non-AbortError', async () => {
+      // Chrome desktop sometimes reports canShare={files}=true but then rejects
+      // navigator.share with NotAllowedError; without a fallback nothing happens.
+      const shareSpy = vi
+        .fn()
+        .mockRejectedValue(new DOMException('Permission denied', 'NotAllowedError'));
+      const canShareSpy = vi.fn().mockReturnValue(true);
+      const originalShare = (navigator as unknown as { share?: unknown }).share;
+      const originalCanShare = (navigator as unknown as { canShare?: unknown }).canShare;
+      Object.defineProperty(navigator, 'share', {
+        value: shareSpy,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(navigator, 'canShare', {
+        value: canShareSpy,
+        configurable: true,
+        writable: true,
+      });
+
+      const clickSpy = vi.fn();
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+        (node as HTMLAnchorElement).click = clickSpy;
+        return node;
+      });
+      vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+      const result = await service.saveFile('annotations.md', '# notes', {
+        mimeType: 'text/markdown',
+        share: true,
+      });
+
+      expect(result).toBe(true);
+      expect(shareSpy).toHaveBeenCalledTimes(1);
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+
+      if (originalShare === undefined) {
+        delete (navigator as unknown as { share?: unknown }).share;
+      } else {
+        Object.defineProperty(navigator, 'share', {
+          value: originalShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+      if (originalCanShare === undefined) {
+        delete (navigator as unknown as { canShare?: unknown }).canShare;
+      } else {
+        Object.defineProperty(navigator, 'canShare', {
+          value: originalCanShare,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
   });
 
   describe('fs.resolvePath basePrefix', () => {

@@ -5,19 +5,19 @@ import { NativeTouchEventType } from '@/types/system';
 
 declare global {
   interface Window {
-    onNativeKeyDown?: (keyName: string) => void;
+    onNativeKeyDown?: (keyName: string, keyCode?: number) => void;
     onNativeTouch?: (event: NativeTouchEventType) => void;
   }
 }
 
-const handleNativeKeyDown = (keyName: string) => {
-  if (keyName === 'VolumeUp' || keyName === 'VolumeDown') {
-    return eventDispatcher.dispatch('native-key-down', { keyName });
-  }
+const handleNativeKeyDown = (keyName: string, keyCode?: number) => {
+  // Back is handled synchronously so dialogs can consume it before it
+  // bubbles; every other key (volume, media, learn-mode captures) is
+  // dispatched asynchronously through the same channel.
   if (keyName === 'Back') {
-    return eventDispatcher.dispatchSync('native-key-down', { keyName });
+    return eventDispatcher.dispatchSync('native-key-down', { keyName, keyCode });
   }
-  return false;
+  return eventDispatcher.dispatch('native-key-down', { keyName, keyCode });
 };
 
 type DeviceControlState = {
@@ -31,6 +31,11 @@ type DeviceControlState = {
   releaseVolumeKeyInterception: () => void;
   acquireBackKeyInterception: () => void;
   releaseBackKeyInterception: () => void;
+  pageTurnerKeysIntercepted: boolean;
+  pageTurnerKeysInterceptionCount: number;
+  acquirePageTurnerKeyInterception: () => void;
+  releasePageTurnerKeyInterception: () => void;
+  setKeyLearnMode: (enabled: boolean) => void;
   listenToNativeTouchEvents: () => void;
 };
 
@@ -39,6 +44,8 @@ export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
   backKeyIntercepted: false,
   volumeKeysInterceptionCount: 0,
   backKeyInterceptionCount: 0,
+  pageTurnerKeysIntercepted: false,
+  pageTurnerKeysInterceptionCount: 0,
 
   acquireVolumeKeyInterception: () => {
     const { volumeKeysInterceptionCount } = get();
@@ -78,6 +85,33 @@ export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
     } else {
       set({ backKeyInterceptionCount: backKeyInterceptionCount - 1 });
     }
+  },
+
+  acquirePageTurnerKeyInterception: () => {
+    const { pageTurnerKeysInterceptionCount } = get();
+    if (pageTurnerKeysInterceptionCount == 0) {
+      window.onNativeKeyDown = handleNativeKeyDown;
+      interceptKeys({ pageTurnerKeys: true });
+      set({ pageTurnerKeysIntercepted: true });
+    }
+    set({ pageTurnerKeysInterceptionCount: pageTurnerKeysInterceptionCount + 1 });
+  },
+
+  releasePageTurnerKeyInterception: () => {
+    const { pageTurnerKeysInterceptionCount } = get();
+    if (pageTurnerKeysInterceptionCount <= 1) {
+      interceptKeys({ pageTurnerKeys: false });
+      set({ pageTurnerKeysIntercepted: false, pageTurnerKeysInterceptionCount: 0 });
+    } else {
+      set({ pageTurnerKeysInterceptionCount: pageTurnerKeysInterceptionCount - 1 });
+    }
+  },
+
+  // Learn mode is a stateless UI toggle (used while capturing a binding),
+  // not reference-counted like the acquire/release interception actions.
+  setKeyLearnMode: (enabled: boolean) => {
+    window.onNativeKeyDown = handleNativeKeyDown;
+    interceptKeys({ learnMode: enabled });
   },
 
   listenToNativeTouchEvents: () => {

@@ -5,10 +5,11 @@ import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
-import { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
+import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
 import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
@@ -46,7 +47,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
 
   const progressInfo = useMemo(
-    () => (bookFormat === 'PDF' ? section : pageinfo),
+    () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? section : pageinfo),
     [bookFormat, section, pageinfo],
   );
 
@@ -219,7 +220,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
     !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
-    'border-base-300/50 border-t',
+    'not-eink:border-base-300/50 eink:border-base-content border-t',
     'transition-[opacity,transform] duration-300',
     forceMobileLayout || window.innerWidth < 640 ? 'fixed' : 'absolute',
     appService?.hasRoundedWindow && 'rounded-window-bottom-right',

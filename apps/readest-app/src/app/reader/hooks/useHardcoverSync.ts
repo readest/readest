@@ -40,13 +40,6 @@ export const useHardcoverSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return;
-    if (!config.hardcoverSyncEnabled) {
-      eventDispatcher.dispatch('toast', {
-        message: _('Enable Hardcover sync for this book first.'),
-        type: 'info',
-      });
-      return;
-    }
 
     const eligibleNotes = (config.booknotes ?? []).filter((note: BookNote) =>
       isSyncableBookNote(note),
@@ -99,13 +92,6 @@ export const useHardcoverSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return;
-    if (!config.hardcoverSyncEnabled) {
-      eventDispatcher.dispatch('toast', {
-        message: _('Enable Hardcover sync for this book first.'),
-        type: 'info',
-      });
-      return;
-    }
 
     const client = await getClient();
     if (!client) {

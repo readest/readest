@@ -3,6 +3,10 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 // Shared mock control: tests can override createBehavior to change how create() behaves
 let createBehavior: () => Promise<undefined> = () => Promise.resolve(undefined);
 
+// Shared mock control for createAudioUrl() and parsed SSML marks
+let createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
+let parsedMarks: Array<{ name: string; text: string; language: string }> = [];
+
 // --- Mocks ---
 
 vi.mock('@/libs/edgeTTS', () => {
@@ -16,14 +20,14 @@ vi.mock('@/libs/edgeTTS', () => {
     EdgeSpeechTTS: class MockEdgeSpeechTTS {
       static voices = voices;
       create = vi.fn().mockImplementation(() => createBehavior());
-      createAudioUrl = vi.fn().mockResolvedValue('blob:mock-url');
+      createAudioUrl = vi.fn().mockImplementation(() => createAudioUrlBehavior());
     },
     EDGE_TTS_PROTOCOL: 'wss',
   };
 });
 
 vi.mock('@/utils/ssml', () => ({
-  parseSSMLMarks: vi.fn(() => ({ marks: [] })),
+  parseSSMLMarks: vi.fn(() => ({ marks: parsedMarks })),
 }));
 
 vi.mock('@/utils/misc', () => ({
@@ -53,6 +57,8 @@ describe('EdgeTTSClient', () => {
 
   beforeEach(() => {
     createBehavior = () => Promise.resolve(undefined);
+    createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
+    parsedMarks = [];
     client = new EdgeTTSClient();
   });
 
@@ -359,6 +365,63 @@ describe('EdgeTTSClient', () => {
       expect(client.initialized).toBe(true);
       const voices = await client.getAllVoices();
       expect(voices.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('speak preload retry', () => {
+    const consumePreload = async (c: EdgeTTSClient, signal: AbortSignal) => {
+      for await (const _ of c.speak('<ssml/>', signal, true)) {
+        void _;
+      }
+    };
+
+    test('retries createAudioUrl up to 3 times when preload fails', async () => {
+      await client.init();
+      parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
+      createAudioUrlBehavior = vi.fn(() => Promise.reject(new Error('network error')));
+
+      await consumePreload(client, new AbortController().signal);
+
+      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(3);
+    });
+
+    test('does not retry when the first preload attempt succeeds', async () => {
+      await client.init();
+      parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
+
+      await consumePreload(client, new AbortController().signal);
+
+      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(1);
+    });
+
+    test('stops retrying once an attempt succeeds', async () => {
+      await client.init();
+      parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
+      let calls = 0;
+      createAudioUrlBehavior = vi.fn(() => {
+        calls++;
+        return calls < 2
+          ? Promise.reject(new Error('network error'))
+          : Promise.resolve('blob:mock-url');
+      });
+
+      await consumePreload(client, new AbortController().signal);
+
+      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(2);
+    });
+
+    test('stops retrying once the signal is aborted', async () => {
+      await client.init();
+      parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
+      const controller = new AbortController();
+      createAudioUrlBehavior = vi.fn(() => {
+        controller.abort();
+        return Promise.reject(new Error('network error'));
+      });
+
+      await consumePreload(client, controller.signal);
+
+      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -1,0 +1,438 @@
+# Bengali translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Bengali\n"
+"Language: bn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "আপনার KOReader ও Readest ডিভাইসগুলিকে সিঙ্কে রাখে।"
+
+msgid "Library view"
+msgstr "লাইব্রেরি ভিউ"
+
+msgid "View"
+msgstr "ভিউ"
+
+msgid "Grid"
+msgstr "গ্রিড"
+
+msgid "List"
+msgstr "তালিকা"
+
+msgid "Group by"
+msgstr "গ্রুপ করুন"
+
+msgid "Authors"
+msgstr "লেখকগণ"
+
+msgid "Books"
+msgstr "বই"
+
+msgid "Groups"
+msgstr "গ্রুপ"
+
+msgid "Series"
+msgstr "সিরিজ"
+
+msgid "Sort by"
+msgstr "সাজান"
+
+msgid "Date Read"
+msgstr "পড়ার তারিখ"
+
+msgid "Date Added"
+msgstr "যোগ করার তারিখ"
+
+msgid "Title"
+msgstr "শিরোনাম"
+
+msgid "Author"
+msgstr "লেখক"
+
+msgid "Descending"
+msgstr "অবরোহী"
+
+msgid "Ascending"
+msgstr "আরোহী"
+
+msgid "Actions"
+msgstr "ক্রিয়াসমূহ"
+
+msgid "Rescan library"
+msgstr "লাইব্রেরি পুনরায় স্ক্যান করুন"
+
+msgid "Download folder…"
+msgstr "ডাউনলোড ফোল্ডার…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "ডাউনলোড করা বইয়ের জন্য একটি ফোল্ডার বেছে নিন"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "লাইব্রেরি খুলতে Readest-এ সাইন ইন করুন"
+
+msgid "Library"
+msgstr "লাইব্রেরি"
+
+msgid "Readest Library"
+msgstr "Readest লাইব্রেরি"
+
+msgid "Cancel"
+msgstr "বাতিল"
+
+msgid "Clear"
+msgstr "মুছে ফেলুন"
+
+msgid "Search"
+msgstr "অনুসন্ধান"
+
+msgid "Search library"
+msgstr "লাইব্রেরিতে অনুসন্ধান করুন"
+
+msgid "Search title or author"
+msgstr "শিরোনাম বা লেখক অনুসন্ধান করুন"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "সম্পূর্ণ লাইব্রেরি রেন্ডারিংয়ের জন্য Cover Browser প্লাগইন প্রয়োজন। সাধারণ তালিকায় ফিরে যাচ্ছে।"
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "ফাইল সরানো বা মুছে ফেলা হয়েছে। লাইব্রেরি পুনরায় স্ক্যান করবেন?"
+
+msgid "Download this book from Readest?"
+msgstr "এই বইটি Readest থেকে ডাউনলোড করবেন?"
+
+msgid "Download"
+msgstr "ডাউনলোড"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ডাউনলোড সক্ষম করতে প্রথমে ফাইল ম্যানেজারে হোম ফোল্ডার সেট করুন।"
+
+msgid "Downloading…"
+msgstr "ডাউনলোড হচ্ছে…"
+
+msgid "Cloud copy unavailable."
+msgstr "ক্লাউড কপি অনুপলব্ধ।"
+
+msgid "Download failed."
+msgstr "ডাউনলোড ব্যর্থ।"
+
+msgid "No cover available on Readest."
+msgstr "Readest-এ কোনো প্রচ্ছদ উপলব্ধ নেই।"
+
+msgid "Cover download failed."
+msgstr "প্রচ্ছদ ডাউনলোড ব্যর্থ।"
+
+msgid "Could not delete the file."
+msgstr "ফাইলটি মুছে ফেলা যায়নি।"
+
+msgid "Removing from cloud…"
+msgstr "ক্লাউড থেকে সরানো হচ্ছে…"
+
+msgid "Cloud removal failed."
+msgstr "ক্লাউড থেকে সরানো ব্যর্থ।"
+
+msgid "Remove from Cloud & Device"
+msgstr "ক্লাউড ও ডিভাইস থেকে সরান"
+
+msgid "Remove this book from cloud and device?"
+msgstr "এই বইটি ক্লাউড ও ডিভাইস থেকে সরাবেন?"
+
+msgid "Remove"
+msgstr "সরান"
+
+msgid "Remove from Cloud Only"
+msgstr "শুধু ক্লাউড থেকে সরান"
+
+msgid "Remove this book from the cloud only?"
+msgstr "এই বইটি শুধু ক্লাউড থেকে সরাবেন?"
+
+msgid "Remove from Device Only"
+msgstr "শুধু ডিভাইস থেকে সরান"
+
+msgid "Remove the local copy of this book?"
+msgstr "এই বইটির স্থানীয় কপি সরাবেন?"
+
+msgid "Upload to Cloud"
+msgstr "ক্লাউডে আপলোড করুন"
+
+msgid "Uploading…"
+msgstr "আপলোড হচ্ছে…"
+
+msgid "Storage quota exceeded."
+msgstr "স্টোরেজ কোটা অতিক্রান্ত।"
+
+msgid "Upload failed."
+msgstr "আপলোড ব্যর্থ।"
+
+msgid "Download Book"
+msgstr "বই ডাউনলোড"
+
+msgid "Download Cover"
+msgstr "প্রচ্ছদ ডাউনলোড"
+
+msgid "Download All"
+msgstr "সব ডাউনলোড"
+
+msgid "Open Readest Library"
+msgstr "Readest লাইব্রেরি খুলুন"
+
+msgid "Push Readest book library"
+msgstr "Readest বই লাইব্রেরি পুশ করুন"
+
+msgid "Pull Readest book library"
+msgstr "Readest বই লাইব্রেরি পুল করুন"
+
+msgid "Set auto progress sync"
+msgstr "স্বয়ংক্রিয় অগ্রগতি সিঙ্ক সেট করুন"
+
+msgid "on"
+msgstr "চালু"
+
+msgid "off"
+msgstr "বন্ধ"
+
+msgid "Toggle auto readest sync"
+msgstr "স্বয়ংক্রিয় Readest সিঙ্ক টগল করুন"
+
+msgid "Push readest progress from this device"
+msgstr "এই ডিভাইস থেকে Readest অগ্রগতি পাঠান"
+
+msgid "Pull readest progress from other devices"
+msgstr "অন্যান্য ডিভাইস থেকে Readest অগ্রগতি আনুন"
+
+msgid "Push readest annotations from this device"
+msgstr "এই ডিভাইস থেকে Readest টীকা পাঠান"
+
+msgid "Pull readest annotations from other devices"
+msgstr "অন্যান্য ডিভাইস থেকে Readest টীকা আনুন"
+
+msgid "Add to Readest"
+msgstr "Readest-এ যোগ করুন"
+
+msgid "Sign in to Readest first."
+msgstr "প্রথমে Readest-এ সাইন ইন করুন।"
+
+msgid "File not found."
+msgstr "ফাইল পাওয়া যায়নি।"
+
+msgid "Unsupported book format."
+msgstr "অসমর্থিত বই ফর্ম্যাট।"
+
+msgid "Hashing book…"
+msgstr "বইয়ের হ্যাশ গণনা হচ্ছে…"
+
+msgid "Could not read file."
+msgstr "ফাইলটি পড়া যায়নি।"
+
+msgid "Already in your Readest library:"
+msgstr "ইতিমধ্যেই আপনার Readest লাইব্রেরিতে:"
+
+msgid "Added to Readest:"
+msgstr "Readest-এ যোগ করা হয়েছে:"
+
+msgid "Log in Readest Account"
+msgstr "Readest অ্যাকাউন্টে লগ ইন করুন"
+
+msgid "Log out as %1"
+msgstr "%1 হিসেবে লগ আউট করুন"
+
+msgid "Auto sync"
+msgstr "অটো সিঙ্ক"
+
+msgid "Readest library"
+msgstr "Readest লাইব্রেরি"
+
+msgid "Push books now"
+msgstr "এখনই বই পুশ করুন"
+
+msgid "Pull books now"
+msgstr "এখনই বই পুল করুন"
+
+msgid "Push reading progress now"
+msgstr "এখন পড়ার অগ্রগতি পাঠান"
+
+msgid "Pull reading progress now"
+msgstr "এখন পড়ার অগ্রগতি আনুন"
+
+msgid "Push annotations now"
+msgstr "এখন টীকা পাঠান"
+
+msgid "Pull annotations now"
+msgstr "এখন টীকা আনুন"
+
+msgid "Full sync all annotations"
+msgstr "সকল টীকার পূর্ণ সিঙ্ক"
+
+msgid "Sync info"
+msgstr "সিঙ্ক তথ্য"
+
+msgid "Check for update (v%1)"
+msgstr "আপডেট পরীক্ষা করুন (v%1)"
+
+msgid "Check for update"
+msgstr "আপডেট পরীক্ষা করুন"
+
+msgid "Please login first"
+msgstr "অনুগ্রহ করে প্রথমে লগ ইন করুন"
+
+msgid "Please configure Readest settings first"
+msgstr "অনুগ্রহ করে প্রথমে Readest সেটিংস কনফিগার করুন"
+
+msgid "No book is open"
+msgstr "কোনো বই খোলা নেই"
+
+msgid "(none)"
+msgstr "(কোনোটি না)"
+
+msgid "Never synced"
+msgstr "কখনও সিঙ্ক করা হয়নি"
+
+msgid "Book Fingerprint"
+msgstr "বইয়ের ফিঙ্গারপ্রিন্ট"
+
+msgid "Identifiers"
+msgstr "শনাক্তকারী"
+
+msgid "Last Synced"
+msgstr "শেষ সিঙ্ক"
+
+msgid "Sync Info"
+msgstr "সিঙ্ক তথ্য"
+
+msgid "Library not initialized"
+msgstr "লাইব্রেরি প্রারম্ভ করা হয়নি"
+
+msgid "Books synced"
+msgstr "বইগুলি সিঙ্ক হয়েছে"
+
+msgid "Books sync failed"
+msgstr "বই সিঙ্ক ব্যর্থ"
+
+msgid "Checking for update…"
+msgstr "আপডেট পরীক্ষা করা হচ্ছে…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "আপডেট পরীক্ষা ব্যর্থ। অনুগ্রহ করে পরে আবার চেষ্টা করুন।"
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "নতুন সংস্করণ পাওয়া যাচ্ছে: v%1 (বর্তমান: v%2)।\n\nএখনই আপডেট করবেন?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "নতুন সংস্করণ পাওয়া যাচ্ছে: v%1।\n\nএখনই আপডেট করবেন?"
+
+msgid "Update"
+msgstr "আপডেট"
+
+msgid "You are up to date (v%1)."
+msgstr "আপনি হালনাগাদ আছেন (v%1)।"
+
+msgid "Downloading update…"
+msgstr "আপডেট ডাউনলোড হচ্ছে…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "আপডেট ডাউনলোড ব্যর্থ। অনুগ্রহ করে পরে আবার চেষ্টা করুন।"
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest প্লাগইন v%1-এ আপডেট করা হয়েছে।\n\nআপডেট প্রয়োগ করতে KOReader পুনরায় চালু করুন।"
+
+msgid "Restart now"
+msgstr "এখনই পুনরায় চালু করুন"
+
+msgid "Later"
+msgstr "পরে"
+
+msgid "Failed to install update: %1"
+msgstr "আপডেট ইনস্টল ব্যর্থ: %1"
+
+msgid "unknown error"
+msgstr "অজানা ত্রুটি"
+
+msgid "No annotations to push"
+msgstr "পাঠানোর কোনো টীকা নেই"
+
+msgid "Pushing annotations..."
+msgstr "টীকা পাঠানো হচ্ছে…"
+
+msgid "%1 annotations pushed successfully"
+msgstr "%1টি টীকা সফলভাবে পাঠানো হয়েছে"
+
+msgid "Failed to push annotations"
+msgstr "টীকা পাঠানো ব্যর্থ"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF নথির জন্য টীকা সিঙ্ক সমর্থিত নয়"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "পূর্ণ সিঙ্ক: সকল টীকা আনা হচ্ছে…"
+
+msgid "Pulling annotations..."
+msgstr "টীকা আনা হচ্ছে…"
+
+msgid "Authentication failed, please login again"
+msgstr "প্রমাণীকরণ ব্যর্থ, অনুগ্রহ করে আবার লগ ইন করুন"
+
+msgid "Failed to pull annotations"
+msgstr "টীকা আনা ব্যর্থ"
+
+msgid "No new annotations found"
+msgstr "নতুন কোনো টীকা পাওয়া যায়নি"
+
+msgid "%1 annotations pulled"
+msgstr "%1টি টীকা আনা হয়েছে"
+
+msgid "Login"
+msgstr "লগ ইন"
+
+msgid "Please enter both email and password"
+msgstr "অনুগ্রহ করে ইমেল এবং পাসওয়ার্ড উভয়ই লিখুন"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "অনুগ্রহ করে প্রথমে Supabase URL এবং API কী কনফিগার করুন"
+
+msgid "Logging in..."
+msgstr "লগ ইন করা হচ্ছে…"
+
+msgid "Successfully logged in to Readest"
+msgstr "Readest-এ সফলভাবে লগ ইন করা হয়েছে"
+
+msgid "Login failed: %1"
+msgstr "লগ ইন ব্যর্থ: %1"
+
+msgid "Logged out from Readest"
+msgstr "Readest থেকে লগ আউট হয়েছে"
+
+msgid "Cannot identify the current book"
+msgstr "বর্তমান বই শনাক্ত করা যাচ্ছে না"
+
+msgid "Progress has been synchronized."
+msgstr "অগ্রগতি সিঙ্ক হয়েছে।"
+
+msgid "Pushing reading progress..."
+msgstr "পড়ার অগ্রগতি পাঠানো হচ্ছে…"
+
+msgid "Reading progress pushed successfully"
+msgstr "পড়ার অগ্রগতি সফলভাবে পাঠানো হয়েছে"
+
+msgid "Failed to push reading progress"
+msgstr "পড়ার অগ্রগতি পাঠানো ব্যর্থ"
+
+msgid "Pulling reading progress..."
+msgstr "পড়ার অগ্রগতি আনা হচ্ছে…"
+
+msgid "Failed to pull reading progress"
+msgstr "পড়ার অগ্রগতি আনা ব্যর্থ"
+
+msgid "Reading progress synchronized"
+msgstr "পড়ার অগ্রগতি সিঙ্ক হয়েছে"
+
+msgid "No saved reading progress found for this book"
+msgstr "এই বইয়ের জন্য সংরক্ষিত পড়ার অগ্রগতি পাওয়া যায়নি"

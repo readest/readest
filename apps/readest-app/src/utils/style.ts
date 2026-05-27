@@ -182,6 +182,9 @@ const getColorStyles = (
     hr.background-img {
       mix-blend-mode: multiply;
     }
+    p[width][height] > img:only-child {
+      mix-blend-mode: multiply;
+    }
     /* inline images */
     *:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
@@ -196,6 +199,10 @@ const getColorStyles = (
     table:has(> colgroup) {
       table-layout: fixed;
     }
+    td, th {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
     /* code */
     body.theme-dark code {
       ${isDarkMode ? `color: ${fg}cc;` : ''}
@@ -206,8 +213,8 @@ const getColorStyles = (
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     blockquote, table * {
-      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -284,8 +291,18 @@ const getPageLayoutStyles = (
     position: absolute;
     inset: -10px;
   }
-  pre {
+
+  pre, code {
     white-space: pre-wrap !important;
+  }
+  pre {
+    max-width: calc(var(--available-width) * 1px);
+    max-height: calc(var(--available-height) * 1px);
+    scrollbar-width: none;
+    overflow: auto;
+  }
+  pre::-webkit-scrollbar {
+    display: none;
   }
 
   .epubtype-footnote,
@@ -304,6 +321,14 @@ const getPageLayoutStyles = (
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
+  }
+
+  .duokan-image-gallery-cell {
+    height: calc(var(--available-height) * 1px);
+  }
+
+  .duokan-image-gallery-cell img {
+    height: 90%;
   }
 
   div:has(> img, > svg) {
@@ -344,6 +369,11 @@ const getPageLayoutStyles = (
     position: relative;
     width: auto;
     height: auto;
+  }
+  /* some mobi */
+  p[width][height] > img:only-child { 
+    width: unset !important;
+    height: unset !important;
   }
 
   /* page break */
@@ -456,6 +486,9 @@ const getParagraphLayoutStyles = (
     ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
   }
+  p > font:only-child { 
+    display: flow-root; 
+  }
 
   :lang(zh), :lang(ja), :lang(ko) {
     widows: 1;
@@ -527,6 +560,35 @@ export const getFootnoteStyles = () => `
   }
 `;
 
+/**
+ * Baseline stylesheet injected into every dictionary card's shadow root
+ * (alongside any loose `.css` files imported with the bundle and any
+ * `<link rel="stylesheet">` references resolved from the MDD).
+ *
+ * The seam exists so app-wide rules can be added in one place without
+ * touching the provider code. Currently it ships:
+ */
+export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
+  void fg;
+  return `
+    a:empty {
+      background-color: transparent;
+      mix-blend-mode: multiply;
+    }
+    a img {
+      mix-blend-mode: multiply;
+    }
+    div[data-dict-kind="mdict"] .entry_name {
+      font-size: 1.2em;
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+    }
+    div[data-dict-kind="mdict"] .juan_drop {
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+    }
+  `;
+};
+
 const getTranslationStyles = (showSource: boolean) => `
   .translation-source {
   }
@@ -543,6 +605,44 @@ const getTranslationStyles = (showSource: boolean) => `
     display: block !important;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+`;
+
+const getWarichuStyles = () => `
+  /* Warichu (割注/夹注) — double-line inline annotation */
+  .warichu-pending {
+    display: inline;
+    font-size: 0.5em;
+    line-height: 1.1;
+  }
+  .warichu-chunk {
+    display: inline-block;
+    line-height: 1.1;
+    font-size: 0.5em;
+    text-indent: 0;
+    vertical-align: middle !important;
+    width: 1lh !important;
+    text-align: center !important;
+  }
+  .warichu-chunk .warichu-line {
+    display: inline;
+  }
+  .warichu-open,
+  .warichu-close {
+    display: inline;
+    font-size: 0.5em;
+    vertical-align: middle;
+    line-height: 1.1;
+  }
+`;
+
+const getRubyStyles = () => `
+  rt {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  rp {
+    display: none !important;
   }
 `;
 
@@ -641,8 +741,10 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.isEink,
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
+  const warichuStyles = getWarichuStyles();
+  const rubyStyles = getRubyStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${userStylesheet}`;
+  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {
@@ -740,15 +842,15 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
       }
       if (directions.includes('left') && directions.includes('right')) {
         block = block
-          .replace(/}$/, ' width: calc(var(--available-width) * 1px) !important; }')
-          .replace(/}$/, ' min-width: calc(var(--available-width) * 1px) !important; }')
-          .replace(/}$/, ' max-width: calc(var(--available-width) * 1px) !important; }');
+          .replace(/}$/, ' width: calc(var(--full-width) * 1px) !important; }')
+          .replace(/}$/, ' min-width: calc(var(--full-width) * 1px) !important; }')
+          .replace(/}$/, ' max-width: calc(var(--full-width) * 1px) !important; }');
       }
       if (directions.includes('top') && directions.includes('bottom')) {
         block = block
-          .replace(/}$/, ' height: calc(var(--available-height) * 1px) !important; }')
-          .replace(/}$/, ' min-height: calc(var(--available-height) * 1px) !important; }')
-          .replace(/}$/, ' max-height: calc(var(--available-height) * 1px) !important; }');
+          .replace(/}$/, ' height: calc(var(--full-height) * 1px) !important; }')
+          .replace(/}$/, ' min-height: calc(var(--full-height) * 1px) !important; }')
+          .replace(/}$/, ' max-height: calc(var(--full-height) * 1px) !important; }');
       }
     }
     return selector + block;

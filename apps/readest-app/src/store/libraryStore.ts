@@ -148,7 +148,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   ) => {
     if (!books?.length) return;
 
-    const { library, refreshGroups } = get();
+    // Hardening: if a caller (e.g. /send, the inbox drainer) hits us before
+    // `setLibrary` has populated the store, merging against the empty
+    // in-memory array would persist `books` as the *entire* library and
+    // clobber whatever is on disk. Load the real library first.
+    let { library } = get();
+    const { libraryLoaded, refreshGroups } = get();
+    if (!libraryLoaded) {
+      const appService = await envConfig.getAppService();
+      library = await appService.loadLibraryBooks();
+      set({
+        library,
+        libraryLoaded: true,
+        hashIndex: buildHashIndex(library),
+        visibleLibrary: library.filter((b) => !b.deletedAt),
+      });
+    }
 
     const newLibrary = Array.from(new Map([...library, ...books].map((b) => [b.hash, b])).values());
     set({

@@ -222,6 +222,36 @@ pub struct OpenExternalUrlResponse {
     pub error: Option<String>,
 }
 
+/// Hand a word off to the platform's native dictionary surface.
+///
+/// On iOS this presents `UIReferenceLibraryViewController` modally
+/// (the same UI Apple uses for `Look Up` in UIKit text views). On
+/// Android it dispatches `ACTION_PROCESS_TEXT` so any installed
+/// dictionary app (ColorDict, GoldenDict, 欧路, etc.) can handle the
+/// word; we don't bind to a specific package so users can stick with
+/// their preferred dictionary. Desktop platforms return
+/// `UnsupportedPlatformError` — macOS goes through a separate native
+/// command in `src/macos/system_dictionary.rs` that uses the AppKit
+/// HUD surface, which doesn't exist on iOS/Android.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShowLookupPopoverRequest {
+    pub word: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShowLookupPopoverResponse {
+    pub success: bool,
+    /// `unavailable` is set on Android when no app responded to the
+    /// `ACTION_PROCESS_TEXT` intent (i.e. the user has no dictionary
+    /// installed). The TS layer can surface a "no dictionary app"
+    /// hint without us having to push a localized string from
+    /// native code.
+    pub unavailable: Option<bool>,
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectDirectoryResponse {
@@ -235,5 +265,75 @@ pub struct SelectDirectoryResponse {
 #[serde(rename_all = "camelCase")]
 pub struct GetStorefrontRegionCodeResponse {
     pub region_code: Option<String>,
+    pub error: Option<String>,
+}
+
+// ── Sync passphrase keychain ────────────────────────────────────────────
+//
+// Persist the sync passphrase across app launches via the OS keychain
+// so native users don't re-enter it every session. The replica-sync
+// CryptoSession (TS side) reads/writes via these commands; web users
+// keep using the in-memory ephemeral store.
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetSyncPassphraseRequest {
+    pub passphrase: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncPassphraseResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSyncPassphraseResponse {
+    /// Present iff a passphrase is stored. Absent (and `error: None`)
+    /// means "no entry on this device" — caller should prompt.
+    pub passphrase: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Args for the mobile URL-clip flow. Mirrors the public `ClipOptions`
+/// struct in `clip_url.rs` so the JS caller can pass the same payload
+/// to both desktop and mobile without branching. The native side honors
+/// `background`/`foreground` for the overlay backdrop and `windowTitle`/
+/// `overlayTitle`/`loadingStatus`/`capturingStatus`/`savedTitle` for the
+/// chrome and progress labels.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClipUrlRequest {
+    pub url: String,
+    #[serde(default)]
+    pub window_title: Option<String>,
+    #[serde(default)]
+    pub overlay_title: Option<String>,
+    #[serde(default)]
+    pub loading_status: Option<String>,
+    #[serde(default)]
+    pub capturing_status: Option<String>,
+    #[serde(default)]
+    pub saved_title: Option<String>,
+    #[serde(default)]
+    pub background: Option<String>,
+    #[serde(default)]
+    pub foreground: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClipUrlResponse {
+    /// Rendered `document.documentElement.outerHTML` captured from the
+    /// hidden WKWebView / WebView once load+settle completed.
+    pub html: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncKeychainAvailableResponse {
+    pub available: bool,
     pub error: Option<String>,
 }

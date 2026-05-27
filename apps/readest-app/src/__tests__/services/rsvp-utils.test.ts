@@ -240,6 +240,43 @@ describe('rsvp/utils', () => {
       const words = splitTextIntoWords('你好 世界');
       expect(words.length).toBeGreaterThan(0);
     });
+
+    test('splits on em-dash without surrounding spaces', () => {
+      expect(splitTextIntoWords('alpha—beta')).toEqual(['alpha—', 'beta']);
+    });
+
+    test('splits on en-dash without surrounding spaces', () => {
+      expect(splitTextIntoWords('alpha–beta')).toEqual(['alpha–', 'beta']);
+    });
+
+    test('attaches em-dash with surrounding spaces to preceding word', () => {
+      expect(splitTextIntoWords('alpha — beta')).toEqual(['alpha', '—', 'beta']);
+    });
+
+    test('splits multiple em-dashes in a single token', () => {
+      expect(splitTextIntoWords('one—two—three')).toEqual(['one—', 'two—', 'three']);
+    });
+
+    test('splits sentence with em-dash inside compound word', () => {
+      expect(splitTextIntoWords('It was the best—of all possible—worlds.')).toEqual([
+        'It',
+        'was',
+        'the',
+        'best—',
+        'of',
+        'all',
+        'possible—',
+        'worlds.',
+      ]);
+    });
+
+    test('preserves trailing em-dash attached to its word', () => {
+      expect(splitTextIntoWords('cliffhanger—')).toEqual(['cliffhanger—']);
+    });
+
+    test('preserves leading em-dash as its own token', () => {
+      expect(splitTextIntoWords('—continued')).toEqual(['—', 'continued']);
+    });
   });
 
   describe('getHyphenParts', () => {
@@ -285,6 +322,48 @@ describe('rsvp/utils', () => {
 
     test('returns ellipsis-only unchanged', () => {
       expect(getHyphenParts('...')).toEqual(['...']);
+    });
+  });
+
+  describe('CJK character mode', () => {
+    test('segmentCJKText splits CJK text per-character when cjkCharMode is true', () => {
+      expect(segmentCJKText('你好世界', undefined, true)).toEqual(['你', '好', '世', '界']);
+    });
+
+    test('segmentCJKText attaches CJK punctuation to the preceding character in char mode', () => {
+      expect(segmentCJKText('你好。世界！', undefined, true)).toEqual(['你', '好。', '世', '界！']);
+    });
+
+    test('segmentCJKText keeps leading punctuation as its own token in char mode', () => {
+      expect(segmentCJKText('。你好', undefined, true)).toEqual(['。', '你', '好']);
+    });
+
+    test('segmentCJKText returns empty array for empty text in char mode', () => {
+      expect(segmentCJKText('', undefined, true)).toEqual([]);
+    });
+
+    test('splitTextIntoWords splits CJK per-character in char mode', () => {
+      expect(splitTextIntoWords('我喜欢阅读', undefined, true)).toEqual([
+        '我',
+        '喜',
+        '欢',
+        '阅',
+        '读',
+      ]);
+    });
+
+    test('splitTextIntoWords leaves Latin words intact in char mode', () => {
+      expect(splitTextIntoWords('Hello 你好 World', undefined, true)).toEqual([
+        'Hello',
+        '你',
+        '好',
+        'World',
+      ]);
+    });
+
+    test('splitTextIntoWords groups CJK characters when char mode is off', () => {
+      // Default segmentation should group multi-character words like 喜欢 / 阅读.
+      expect(splitTextIntoWords('我喜欢阅读').length).toBeLessThan(5);
     });
   });
 });

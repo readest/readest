@@ -75,6 +75,128 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   };
 };
 
+export const isPointInRect = (point: Point, rect: Rect, padding: number = 1): boolean => {
+  return (
+    point.x >= rect.left + padding &&
+    point.x <= rect.right - padding &&
+    point.y >= rect.top + padding &&
+    point.y <= rect.bottom - padding
+  );
+};
+
+/**
+ * Resolve the bounding rect of a {@link Range} in the OUTER webview's
+ * viewport coordinate system (CSS pixels, top-down).
+ *
+ * Foliate renders book pages inside an iframe with a CSS transform
+ * (its column-pagination layout uses non-identity `matrix(...)` to
+ * shift columns). A naive `range.getBoundingClientRect()` returns
+ * coordinates in the iframe's local viewport, which won't line up
+ * with anything outside the iframe. This helper applies the iframe's
+ * transform scale and offset, mirroring the math in {@link getPosition}.
+ *
+ * Returns `null` when the range is detached (no iframe ancestor) or
+ * has no client rects (collapsed / off-screen).
+ */
+export const getRangeRectInWebview = (range: Range): Rect | null => {
+  const rect = range.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return null;
+  const frameElement = getIframeElement(range);
+  // No iframe ancestor — range lives directly in the host document
+  // (e.g. fixed-layout PDF). Pass through the rect as-is.
+  if (!frameElement) {
+    return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+  }
+  const transform = getComputedStyle(frameElement).transform;
+  const match = transform.match(/matrix\((.+)\)/);
+  const [sx, , , sy] = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x)) ?? [];
+  const scaleX = Number.isFinite(sx) ? sx! : 1;
+  const scaleY = Number.isFinite(sy) ? sy! : 1;
+  const frame = frameElement.getBoundingClientRect();
+  return {
+    top: scaleY * rect.top + frame.top,
+    bottom: scaleY * rect.bottom + frame.top,
+    left: scaleX * rect.left + frame.left,
+    right: scaleX * rect.right + frame.left,
+  };
+};
+
+/**
+ * Sample the visual style (font size / family / color) of the text
+ * underneath a {@link Range}. Used by the macOS system-dictionary
+ * bridge so the inline HUD label matches the original paragraph's
+ * typography — `-[NSView showDefinitionForAttributedString:atPoint:]`
+ * re-draws the word using whatever attributes we hand in, and a plain
+ * unattributed string falls back to AppKit's small system font.
+ *
+ * The font-size is scaled by the iframe's vertical transform so the
+ * value is in **outer webview** CSS pixels (matching what AppKit
+ * receives via the contentView, which itself reports its bounds in
+ * CSS pixels on standard Tauri/macOS).
+ *
+ * Returns `null` when the range has no element parent we can sample.
+ */
+export interface RangeTextStyle {
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+}
+
+export const getRangeTextStyleInWebview = (range: Range): RangeTextStyle | null => {
+  const node: Node | null =
+    range.startContainer.nodeType === Node.ELEMENT_NODE
+      ? range.startContainer
+      : range.startContainer.parentElement;
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return null;
+  const element = node as Element;
+  const style = element.ownerDocument?.defaultView?.getComputedStyle(element);
+  if (!style) return null;
+
+  const frameElement = getIframeElement(range);
+  let scaleY = 1;
+  if (frameElement) {
+    const transform = getComputedStyle(frameElement).transform;
+    const match = transform.match(/matrix\((.+)\)/);
+    const parts = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x));
+    const sy = parts?.[3];
+    if (Number.isFinite(sy)) scaleY = sy!;
+  }
+
+  // Cross-check the declared font-size against the range's actual
+  // visual height. In typical EPUB layout the inline box is roughly
+  // `font-size × line-height` tall (≈1.2× by default), so a declared
+  // font-size noticeably *larger* than the rendered height means the
+  // value isn't a real CSS pixel measurement we can hand to NSFont —
+  // pdf.js's text layer is the canonical offender: each glyph span
+  // can carry an intrinsic `font-size` that reflects the document's
+  // unit-em size before `transform: scale(...)` shrinks it back to
+  // page-coordinate pixels, leaving `getComputedStyle(...).fontSize`
+  // many times bigger than the on-screen glyph. Without compensation
+  // the macOS HUD lays out a giant attributed string and the yellow
+  // highlight rectangle behind it engulfs neighbouring paragraphs.
+  //
+  // Fix: when the declared size exceeds the inline box height by
+  // more than 30 %, treat the inline box height as the source of
+  // truth and back out a plausible font-size. 0.85 is the typical
+  // ratio of cap-height-ish font-size to a 1.2 line-height box; it
+  // matches normal EPUB body text (the common case) within a few
+  // percent and converges PDF text layers onto something AppKit can
+  // render at a sensible scale. Below the threshold (the common
+  // EPUB case) we leave the declared value alone.
+  const declaredFontSize = (parseFloat(style.fontSize) || 0) * scaleY;
+  let fontSize = declaredFontSize;
+  const renderedHeight = range.getBoundingClientRect().height;
+  if (renderedHeight > 0 && declaredFontSize > renderedHeight * 1.3) {
+    fontSize = renderedHeight * 0.85;
+  }
+
+  return {
+    fontSize,
+    fontFamily: style.fontFamily,
+    color: style.color,
+  };
+};
+
 export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
   if (selection.rangeCount === 0) return false;
   const range = selection.getRangeAt(0);
@@ -271,21 +393,33 @@ export const snapRangeToWords = (range: Range): void => {
 export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {
   const clonedRange = range.cloneRange();
   const fragment = clonedRange.cloneContents();
-  const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => {
-      const parent = node.parentElement;
-      if (rejectTags.includes(parent?.tagName.toLowerCase() || '')) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
+  const walker = document.createTreeWalker(
+    fragment,
+    NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (rejectTags.includes(parent?.tagName.toLowerCase() || '')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
     },
-  });
+  );
 
+  // pdf.js inserts <br role="presentation"> between text spans at line endings
+  // (see TextLayer#appendText in pdfjs). Without this, multi-line PDF
+  // selections collapse adjacent line-final and line-initial words into a
+  // single token (e.g. "lastfirst"). Treat <br> as a newline, matching how
+  // Selection.toString() handles line breaks in the browser.
   let text = '';
-  let node: Text | null;
-
-  while ((node = walker.nextNode() as Text | null)) {
-    text += node.nodeValue ?? '';
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += (node as Text).nodeValue ?? '';
+    } else if ((node as Element).tagName === 'BR') {
+      text += '\n';
+    }
   }
 
   return text;

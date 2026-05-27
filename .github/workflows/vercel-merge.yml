@@ -4,20 +4,20 @@ on:
     branches:
       - main
 permissions:
-  contents: write
-  deployments: write
-  pull-requests: write
+  contents: read
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'true'
-      - uses: amondnet/vercel-action@v25
+      - uses: amondnet/vercel-action@de09aeac2ace6599ec9b11ef87558759a496bac4 # v42
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-comment: false
           vercel-args: '--prod'
           vercel-org-id: ${{ secrets.ORG_ID}}
           vercel-project-id: ${{ secrets.PROJECT_ID}}
