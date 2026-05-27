@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useEffect, useState } from 'react';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
@@ -49,6 +50,18 @@ const BookItem: React.FC<BookItemProps> = ({
   const { settings } = useSettingsStore();
   const iconSize15 = useResponsiveSize(15);
 
+  const [coverAspect, setCoverAspect] = useState<number | null>(null);
+  useEffect(() => {
+    setCoverAspect(null);
+  }, [book.hash, book.metadata?.coverImageUrl, book.coverImageUrl]);
+
+  const CELL_ASPECT_RATIO = 28 / 41;
+  const fitCoverInGrid = mode === 'grid' && coverFit === 'fit' && coverAspect !== null;
+  const shouldShrinkWidth = fitCoverInGrid && coverAspect! < CELL_ASPECT_RATIO;
+  const widthStyle = shouldShrinkWidth
+    ? { width: `${(coverAspect! / CELL_ASPECT_RATIO) * 100}%` }
+    : undefined;
+
   return (
     <div
       role='none'
@@ -59,15 +72,18 @@ const BookItem: React.FC<BookItemProps> = ({
         mode === 'list' ? 'library-list-item' : 'library-grid-item',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
+      style={widthStyle}
       onClick={(e) => e.stopPropagation()}
     >
       <div
         className={clsx(
-          'bookitem-main relative flex aspect-[28/41] justify-center overflow-hidden rounded',
+          'bookitem-main relative flex justify-center overflow-hidden rounded',
+          !fitCoverInGrid && 'aspect-[28/41]',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
+        style={fitCoverInGrid ? { aspectRatio: coverAspect! } : undefined}
       >
         <BookCover
           mode={mode}
@@ -75,6 +91,7 @@ const BookItem: React.FC<BookItemProps> = ({
           coverFit={coverFit}
           showSpine={false}
           imageClassName='rounded shadow-md'
+          onAspectRatioChange={setCoverAspect}
         />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
