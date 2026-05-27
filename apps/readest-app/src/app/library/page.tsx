@@ -178,7 +178,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   );
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  // Seed from the library store: if we already have books in memory (the
+  // common reader → library return path), treat the page as loaded
+  // immediately. This prevents `showBookshelf` from briefly being false on
+  // remount, which used to flash a placeholder before `initLibrary` finished.
+  const [libraryLoaded, setLibraryLoaded] = useState(() => libraryBooks.length > 0);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
@@ -530,7 +534,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     };
 
-    const loadingTimeout = setTimeout(() => setLoading(true), 500);
+    const hasCachedLibrary = libraryBooks.length > 0;
+    const loadingTimeout = hasCachedLibrary ? null : setTimeout(() => setLoading(true), 500);
     const initLibrary = async () => {
       const appService = await envConfig.getAppService();
       const settings = await appService.loadSettings();
@@ -552,7 +557,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
 
       // Reuse the library from the store when we return from the reader
-      const library = libraryBooks.length > 0 ? libraryBooks : await appService.loadLibraryBooks();
+      const library = hasCachedLibrary ? libraryBooks : await appService.loadLibraryBooks();
       let opened = false;
       if (checkOpenWithBooks) {
         opened = await handleOpenWithBooks(appService, library);
@@ -563,7 +568,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
       setCheckLastOpenBooks(opened);
 
-      setLibrary(library);
+      // Skip the redundant setLibrary on the cached path: the store already
+      // contains the same array reference, and a no-op set would still
+      // trigger refreshGroups (O(n) MD5) and a full Bookshelf re-render.
+      // The cold path or the openWith / openLast path may have produced a
+      // different `library` reference (intent-imported books) — only then
+      // do we commit it.
+      if (!hasCachedLibrary || library !== libraryBooks) {
+        setLibrary(library);
+      }
       setLibraryLoaded(true);
       if (loadingTimeout) clearTimeout(loadingTimeout);
       setLoading(false);
