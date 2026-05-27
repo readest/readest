@@ -155,7 +155,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     settings.globalReadSettings.highlightStyles[selectedStyle],
   );
   const androidTouchEndRef = useRef(false);
-  const showingInlineInsightAnnotationRef = useRef(false);
   // Holds a quick action that fired while the user is still touching the screen
   // (Android long-press selects text via selectionchange before touchend). The
   // pending action runs on touchend so popups don't open under an active touch.
@@ -524,21 +523,16 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       range,
       page: annotation.page || progress.page,
     };
-    if (!isNote && isInlineInsightAnnotation(annotation)) {
-      showingInlineInsightAnnotationRef.current = true;
+    if (isNote) {
+      setShowAnnotationNotes(true);
+      setHighlightOptionsVisible(false);
+      setEditingAnnotation(null);
+    } else if (isInlineInsightAnnotation(annotation)) {
       setShowAnnotPopup(false);
       setShowAnnotationNotes(false);
       setEditingAnnotation(null);
       setInlineInsightSnapshot(annotation.inlineInsight ?? null);
       setShowInlineInsightPopup(true);
-      setSelection(selection);
-      handleUpToPopup();
-      return;
-    }
-    if (isNote) {
-      setShowAnnotationNotes(true);
-      setHighlightOptionsVisible(false);
-      setEditingAnnotation(null);
     } else {
       setShowAnnotPopup(false);
       setEditingAnnotation(null);
@@ -697,11 +691,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setTranslatorPopupPosition(transPopupPos);
       setProofreadPopupPosition(proofreadPopupPos);
       setTrianglePosition(triangPos);
-
-      if (showingInlineInsightAnnotationRef.current) {
-        showingInlineInsightAnnotationRef.current = false;
-        return;
-      }
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
