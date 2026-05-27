@@ -58,8 +58,11 @@ const BookItem: React.FC<BookItemProps> = ({
   const CELL_ASPECT_RATIO = 28 / 41;
   const fitCoverInGrid = mode === 'grid' && coverFit === 'fit' && coverAspect !== null;
   const shouldShrinkWidth = fitCoverInGrid && coverAspect! < CELL_ASPECT_RATIO;
-  const widthStyle = shouldShrinkWidth
-    ? { width: `${(coverAspect! / CELL_ASPECT_RATIO) * 100}%` }
+  const bookitemMainStyle = fitCoverInGrid
+    ? {
+        aspectRatio: coverAspect!,
+        ...(shouldShrinkWidth ? { width: `${(coverAspect! / CELL_ASPECT_RATIO) * 100}%` } : {}),
+      }
     : undefined;
 
   return (
@@ -72,7 +75,6 @@ const BookItem: React.FC<BookItemProps> = ({
         mode === 'list' ? 'library-list-item' : 'library-grid-item',
         appService?.hasContextMenu ? 'cursor-pointer' : '',
       )}
-      style={widthStyle}
       onClick={(e) => e.stopPropagation()}
     >
       <div
@@ -83,7 +85,7 @@ const BookItem: React.FC<BookItemProps> = ({
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
-        style={fitCoverInGrid ? { aspectRatio: coverAspect! } : undefined}
+        style={bookitemMainStyle}
       >
         <BookCover
           mode={mode}
