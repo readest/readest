@@ -323,6 +323,14 @@ const getPageLayoutStyles = (
     display: none;
   }
 
+  .duokan-image-gallery-cell {
+    height: calc(var(--available-height) * 1px);
+  }
+
+  .duokan-image-gallery-cell img {
+    height: 90%;
+  }
+
   div:has(> img, > svg) {
     max-width: 100% !important;
   }

@@ -553,7 +553,6 @@ describe('services/constants', () => {
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.fullJustification).toBe(false);
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.animated).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.defaultFont).toBe('string');
-      expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.marginBottomPx).toBe('number');
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.disableDoubleClick).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.spreadMode).toBe('string');
     });

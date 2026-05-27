@@ -290,7 +290,6 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
   animated: true,
   defaultFont: 'Sans-serif',
-  marginBottomPx: 16,
   disableDoubleClick: true,
   spreadMode: 'none',
 };
