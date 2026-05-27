@@ -77,6 +77,17 @@ Project-related agent context lives under `.agents/`, which is a symlink to `.cl
 
 Rules are in `.agents/rules/`: test-first, typescript, verification.
 
+### Implementation Scope
+
+For every coding task, write the minimum code that solves the requested problem.
+
+- Do not add features beyond what was asked.
+- Do not add abstractions for single-use code.
+- Do not add flexibility or configurability unless requested.
+- Do not add error handling for impossible scenarios.
+- If a solution is much longer than necessary, simplify it before finishing.
+- Before shipping, ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
 ### i18n
 
 See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `stubTranslation` usage in non-React modules, and extraction workflow.
@@ -99,4 +110,3 @@ Every new UI widget must look right under `[data-eink='true']`. E-ink screens ha
 - **Don't rely on color/shadow alone for hierarchy.** Two same-tone buttons differ only by hover on color themes, and hover doesn't exist on e-ink touchscreens. Pair a borderless ghost (cancel) with a solid CTA (submit) so eink can invert one without flattening the difference.
 
 When in doubt, toggle E-ink in Settings → Misc and check. The rules in `globals.css` cover most cases automatically, but composite components (custom buttons, layered cards) often need `eink-bordered` on the right element to stay legible.
-
