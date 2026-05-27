@@ -129,7 +129,39 @@ export class DocumentLoader {
     // EPUB writers emit malformed bytes (e.g., PK\x03\x02) on the first entry.
     // The archive is still readable via the central directory, so don't gate on
     // the 4th byte. PK\x03 alone is enough to identify a local file header.
-    return arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03;
+    if (arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03) {
+      return true;
+    }
+    // Some files have their first few bytes corrupted (e.g. Baidu Netdisk
+    // mangles the leading PK\x03\x04 into garbage on certain epubs). The zip
+    // format is officially located by walking the End-of-Central-Directory
+    // record at the *tail* of the file -- everything before it is allowed to
+    // be arbitrary data (self-extracting executables rely on this). So when
+    // the magic bytes look wrong, fall back to searching for the EOCD
+    // signature (PK\x05\x06) in the last 64 KiB of the file. If found, the
+    // file is still a usable zip and we should let zip.js try to read it.
+    return await this.hasEOCD();
+  }
+
+  private async hasEOCD(): Promise<boolean> {
+    // EOCD record is at least 22 bytes (sig + 16 + comment length); the
+    // trailing comment can be up to 64 KiB, so search the last 64 KiB + 22.
+    const maxEOCDSearch = 1024 * 64 + 22;
+    const sliceSize = Math.min(maxEOCDSearch, this.file.size);
+    if (sliceSize < 22) return false;
+    const tail = await this.file.slice(this.file.size - sliceSize, this.file.size).arrayBuffer();
+    const bytes = new Uint8Array(tail);
+    for (let i = bytes.length - 22; i >= 0; i--) {
+      if (
+        bytes[i] === 0x50 &&
+        bytes[i + 1] === 0x4b &&
+        bytes[i + 2] === 0x05 &&
+        bytes[i + 3] === 0x06
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private async isPDF(): Promise<boolean> {
