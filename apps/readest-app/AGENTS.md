@@ -65,9 +65,17 @@ pnpm worktree:new feat/my-feature   # New branch from origin/main
 pnpm worktree:new 3837              # Checkout PR #3837 with push access to fork
 ```
 
+## Agent Workspace
+
+Project-related agent context lives under `.agents/`, which is a symlink to `.claude/`. Treat `.agents/` as the canonical path when looking for or updating local agent material:
+
+- `.agents/memory/` — persistent project memory and recurring context
+- `.agents/plans/` — active or archived implementation plans
+- `.agents/rules/` — project rules for test-first work, TypeScript, verification, and related workflows
+
 ## Project Rules
 
-Rules are in `.claude/rules/`: test-first, typescript, verification.
+Rules are in `.agents/rules/`: test-first, typescript, verification.
 
 ### i18n
 
@@ -92,20 +100,3 @@ Every new UI widget must look right under `[data-eink='true']`. E-ink screens ha
 
 When in doubt, toggle E-ink in Settings → Misc and check. The rules in `globals.css` cover most cases automatically, but composite components (custom buttons, layered cards) often need `eink-bordered` on the right element to stay legible.
 
-Available gstack skills:
-
-- `/plan-ceo-review` — CEO/founder-mode plan review
-- `/plan-eng-review` — Eng manager-mode plan review
-- `/plan-design-review` — Designer's eye review of a live site
-- `/design-consultation` — Design system consultation
-- `/review` — Pre-landing PR review
-- `/ship` — Ship workflow (merge, test, review, bump, PR)
-- `/browse` — Fast headless browser for QA and site interaction
-- `/qa` — QA test and fix bugs
-- `/qa-only` — QA report only (no fixes)
-- `/qa-design-review` — Designer's eye QA with fixes
-- `/setup-browser-cookies` — Import cookies for authenticated testing
-- `/retro` — Weekly engineering retrospective
-- `/document-release` — Post-ship documentation update
-
-If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.
