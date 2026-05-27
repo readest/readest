@@ -7,7 +7,12 @@ vi.mock('@/services/transferManager', () => ({
   },
 }));
 
+vi.mock('@/utils/access', () => ({
+  getAccessToken: vi.fn().mockResolvedValue('mock-token'),
+}));
+
 import { transferManager } from '@/services/transferManager';
+import { getAccessToken } from '@/utils/access';
 import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
@@ -16,6 +21,7 @@ import type { AppService } from '@/types/system';
 
 const mockIsReady = transferManager.isReady as ReturnType<typeof vi.fn>;
 const mockQueueReplicaUpload = transferManager.queueReplicaUpload as ReturnType<typeof vi.fn>;
+const mockGetAccessToken = getAccessToken as ReturnType<typeof vi.fn>;
 
 const makeFakeAppService = (sizes: Record<string, number>) => ({
   openFile: vi.fn(async (path: string) => ({
@@ -37,6 +43,7 @@ const baseDict = (overrides: Partial<ImportedDictionary> = {}): ImportedDictiona
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGetAccessToken.mockResolvedValue('mock-token');
   clearReplicaAdapters();
   registerReplicaAdapter(dictionaryAdapter);
 });
@@ -60,6 +67,15 @@ describe('queueDictionaryBinaryUpload', () => {
 
   test('no-ops when TransferManager is not initialized', async () => {
     mockIsReady.mockReturnValue(false);
+    const fakeAppService = makeFakeAppService({}) as unknown as AppService;
+    const result = await queueDictionaryBinaryUpload(baseDict(), fakeAppService);
+    expect(result).toBe(null);
+    expect(mockQueueReplicaUpload).not.toHaveBeenCalled();
+  });
+
+  test('no-ops when user is not authenticated', async () => {
+    mockIsReady.mockReturnValue(true);
+    mockGetAccessToken.mockResolvedValue(null);
     const fakeAppService = makeFakeAppService({}) as unknown as AppService;
     const result = await queueDictionaryBinaryUpload(baseDict(), fakeAppService);
     expect(result).toBe(null);

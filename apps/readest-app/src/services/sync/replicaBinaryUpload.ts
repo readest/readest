@@ -1,5 +1,6 @@
 import { transferManager } from '@/services/transferManager';
 import { getReplicaAdapter } from './replicaRegistry';
+import { getAccessToken } from '@/utils/access';
 import type { AppService, BaseDir } from '@/types/system';
 import type { ReplicaTransferFile } from '@/store/transferStore';
 import type { ClosableFile } from '@/utils/file';
@@ -55,6 +56,7 @@ export const queueReplicaBinaryUpload = async <T extends ReplicaBinaryRecord>(
   appService: AppService,
 ): Promise<string | null> => {
   if (!record.contentId) return null;
+  if (!(await getAccessToken())) return null;
   if (!transferManager.isReady()) return null;
 
   const adapter = getReplicaAdapter<T>(kind);
