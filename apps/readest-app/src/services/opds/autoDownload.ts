@@ -13,6 +13,7 @@ import {
   saveSubscriptionState,
   pruneKnownEntryIds,
 } from './subscriptionState';
+import { upsertOPDSSourceMapping } from './sourceMap';
 import { isRetryEligible, DOWNLOAD_CONCURRENCY, MAX_RETRY_ATTEMPTS } from './types';
 import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from './types';
 
@@ -86,6 +87,15 @@ async function downloadAndImport(
 
   const book = await appService.importBook(dstFilePath, books);
   if (!book) throw new Error(`importBook returned null for ${item.title}`);
+  try {
+    await upsertOPDSSourceMapping(appService, {
+      catalogId: catalog.contentId || catalog.id,
+      sourceUrl: url,
+      bookHash: book.hash,
+    });
+  } catch (error) {
+    console.error('OPDS sync: failed to update source map:', error);
+  }
   console.log(`[OPDS] imported "${item.title}"`);
   return book;
 }

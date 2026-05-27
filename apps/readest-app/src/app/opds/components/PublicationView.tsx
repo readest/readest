@@ -112,8 +112,8 @@ export function PublicationView({
     return (linksByRel.get(REL.STREAM) || []) as OPDSStreamLink[];
   }, [linksByRel]);
 
-  const handleActionButton = async (href: string, type?: string) => {
-    if (downloadedBook) {
+  const handleActionButton = async (href: string, type?: string, forceDownload = false) => {
+    if (downloadedBook && !forceDownload) {
       navigateToReader(router, [downloadedBook.hash]);
       return;
     }
@@ -202,32 +202,47 @@ export function PublicationView({
 
                 return (
                   <div key={rel} className='flex gap-1'>
-                    {validLinks.length === 1 || downloadedBook ? (
+                    {downloadedBook ? (
+                      <>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            handleActionButton(validLinks[0]!.href!, validLinks[0]!.type)
+                          }
+                          disabled={downloading}
+                          className='btn btn-primary btn-success min-w-20 rounded-3xl'
+                        >
+                          {_('Open & Read')}
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            handleActionButton(validLinks[0]!.href!, validLinks[0]!.type, true)
+                          }
+                          disabled={downloading}
+                          className='btn btn-primary min-w-20 rounded-3xl'
+                        >
+                          {_('Download Again')}
+                        </button>
+                      </>
+                    ) : validLinks.length === 1 ? (
                       <button
                         type='button'
                         onClick={() =>
                           handleActionButton(validLinks[0]!.href!, validLinks[0]!.type)
                         }
                         disabled={downloading}
-                        className={clsx(
-                          'btn btn-primary min-w-20 rounded-3xl',
-                          downloadedBook && 'btn-success',
-                        )}
+                        className='btn btn-primary min-w-20 rounded-3xl'
                       >
-                        {downloadedBook ? _('Open & Read') : getAcquisitionLabel(rel)}
+                        {getAcquisitionLabel(rel)}
                       </button>
                     ) : (
                       <Dropdown
                         label={_('Download')}
                         className='dropdown-bottom dropdown-center flex justify-center'
-                        buttonClassName={clsx(
-                          'btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary',
-                          downloadedBook && 'btn-success',
-                        )}
+                        buttonClassName='btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary'
                         disabled={downloading}
-                        toggleButton={
-                          <div>{downloadedBook ? _('Open') : getAcquisitionLabel(rel)}</div>
-                        }
+                        toggleButton={<div>{getAcquisitionLabel(rel)}</div>}
                       >
                         <div
                           className={clsx(

@@ -13,6 +13,19 @@ import { MigrationEntry, SchemaType } from '../migrate';
  *   2. Add a new key here with its migration array.
  */
 const migrations: Record<SchemaType, MigrationEntry[]> = {
+  opds: [
+    {
+      name: '2026052701_opds_source_mappings',
+      sql: `
+        CREATE TABLE IF NOT EXISTS opds_source_mappings (
+          catalog_id TEXT NOT NULL,
+          source_url TEXT NOT NULL,
+          book_hash TEXT NOT NULL,
+          PRIMARY KEY (catalog_id, source_url)
+        );
+      `,
+    },
+  ],
   'hardcover-sync': [
     {
       name: '2026032901_hardcover_note_mappings',

@@ -23,7 +23,7 @@ import { useLibrary } from '@/hooks/useLibrary';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { getFileExtFromMimeType } from '@/libs/document';
-import { OPDSFeed, OPDSPublication, OPDSSearch } from '@/types/opds';
+import { OPDSFeed, OPDSPublication, OPDSSearch, REL } from '@/types/opds';
 import {
   getFileExtFromPath,
   isSearchLink,
@@ -41,7 +41,9 @@ import {
 } from './utils/opdsReq';
 import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
+import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
 import { buildPseStreamFileName } from '@/services/opds/pseStream';
+import type { Book } from '@/types/book';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
@@ -97,6 +99,8 @@ export default function BrowserPage() {
   const searchParams = useSearchParams();
   const catalogUrl = searchParams?.get('url') || '';
   const catalogId = searchParams?.get('id') || '';
+  const catalog = settings.opdsCatalogs?.find((catalog) => catalog.id === catalogId);
+  const catalogSourceId = catalog?.contentId || catalogId || catalogUrl;
   // Captured once at mount so the restore effect targets exactly the
   // detail the URL described when /opds first loaded — typically after a
   // Reader → webview-back. Subsequent in-page navigation can mutate the
@@ -448,6 +452,13 @@ export default function BrowserPage() {
     [_, state, handleNavigate, addToHistory],
   );
 
+  const publication =
+    selectedPublication && state.feed
+      ? state.feed.groups?.[selectedPublication.groupIndex]?.publications?.[
+          selectedPublication.itemIndex
+        ] || state.feed.publications?.[selectedPublication.itemIndex]
+      : state.publication;
+
   const handleDownload = useCallback(
     async (
       href: string,
@@ -515,6 +526,17 @@ export default function BrowserPage() {
           const { library, setLibrary } = useLibraryStore.getState();
           try {
             const book = await appService.importBook(dstFilePath, library);
+            if (book && catalogSourceId) {
+              try {
+                await upsertOPDSSourceMapping(appService, {
+                  catalogId: catalogSourceId,
+                  sourceUrl: url,
+                  bookHash: book.hash,
+                });
+              } catch (sourceMapError) {
+                console.error('OPDS: failed to update source map:', sourceMapError);
+              }
+            }
             if (user && book && !book.uploadedAt && settings.autoUpload) {
               setTimeout(() => {
                 transferManager.queueUpload(book);
@@ -533,8 +555,7 @@ export default function BrowserPage() {
         throw e;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, state.baseURL, appService, libraryLoaded],
+    [user, state.baseURL, appService, libraryLoaded, settings.autoUpload, catalogSourceId],
   );
 
   const handleStream = useCallback(
@@ -775,21 +796,37 @@ export default function BrowserPage() {
     onCancel: () => backOrCloseRef.current(),
   });
 
-  const publication =
-    selectedPublication && state.feed
-      ? state.feed.groups?.[selectedPublication.groupIndex]?.publications?.[
-          selectedPublication.itemIndex
-        ] || state.feed.publications?.[selectedPublication.itemIndex]
-      : state.publication;
+  const [existingBookForPublication, setExistingBookForPublication] = useState<Book | null>(null);
 
-  // Memoized so the PublicationView doesn't see a fresh "existingBook" object
-  // every render and resync its local state. Recomputes when the user picks a
-  // different publication or when the library actually mutates (download
-  // finishes, book deleted) — both cases we want the button label to track.
-  const existingBookForPublication = useMemo(
-    () => findExistingBookForPublication(publication, library),
-    [publication, library],
-  );
+  useEffect(() => {
+    let cancelled = false;
+
+    const metadataMatch = libraryLoaded
+      ? findExistingBookForPublication(publication, library)
+      : null;
+    setExistingBookForPublication(metadataMatch);
+
+    const sourceUrls =
+      publication?.links
+        .filter((link) => {
+          const rels = Array.isArray(link.rel) ? link.rel : [link.rel ?? ''];
+          return link.href && rels.some((rel) => rel.startsWith(REL.ACQ));
+        })
+        .map((link) => resolveURL(link.href!, state.baseURL)) ?? [];
+
+    if (libraryLoaded && appService && catalogSourceId && sourceUrls.length > 0) {
+      void findBookByOPDSSources(appService, {
+        catalogId: catalogSourceId,
+        sourceUrls,
+        library,
+      }).then((book) => {
+        if (!cancelled && book) setExistingBookForPublication(book);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [appService, catalogSourceId, publication, state.baseURL, library, libraryLoaded]);
 
   return (
     <div
