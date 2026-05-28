@@ -82,6 +82,7 @@ import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import LibraryEmptyState from './components/LibraryEmptyState';
 import GroupHeader from './components/GroupHeader';
+import FailedImportsDialog, { FailedImport } from './components/FailedImportsDialog';
 import ImportFromFolderDialog, {
   ImportFromFolderResult,
 } from './components/ImportFromFolderDialog';
@@ -187,6 +188,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
+  const [failedImportsModal, setFailedImportsModal] = useState<FailedImport[] | null>(null);
   // "Import from folder" dialog state. Held as a small object rather
   // than a boolean because we need a default starting directory to seed
   // the path field, and we want the dialog to remain mounted long
@@ -755,14 +757,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
     pushLibrary();
 
-    if (failedImports.length > 0) {
-      const filenames = failedImports.map((f) => f.filename);
-      const errorMessage = failedImports.find((f) => f.errorMessage)?.errorMessage || '';
-
+    if (failedImports.length > 1) {
+      setFailedImportsModal(failedImports);
+    } else if (failedImports.length === 1) {
+      const { filename, errorMessage } = failedImports[0]!;
       eventDispatcher.dispatch('toast', {
         message:
           _('Failed to import book(s): {{filenames}}', {
-            filenames: listFormater(false).format(filenames),
+            filenames: listFormater(false).format([filename]),
           }) + (errorMessage ? `\n${errorMessage}` : ''),
         timeout: 5000,
         type: 'error',
@@ -1468,6 +1470,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {failedImportsModal && (
+        <FailedImportsDialog
+          failedImports={failedImportsModal}
+          onClose={() => setFailedImportsModal(null)}
+        />
+      )}
       {importFromFolderState && (
         <ImportFromFolderDialog
           initialDirectory={importFromFolderState.initialDirectory}
