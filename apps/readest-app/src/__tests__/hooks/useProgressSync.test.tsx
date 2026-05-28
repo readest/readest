@@ -31,7 +31,11 @@ const h = vi.hoisted(() => {
     user: { id: 'u1' },
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
-    state: { syncedConfigs: [] as unknown[] | null },
+    state: {
+      syncedConfigs: [] as unknown[] | null,
+      progress: { location: 'cfi-loc' } as { location: string } | null,
+    },
+    eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
   };
 });
 
@@ -65,7 +69,7 @@ vi.mock('@/store/readerStore', () => ({
       renderer: { getContents: () => [], primaryIndex: 0 },
       goTo: vi.fn(),
     }),
-    getProgress: () => ({ location: 'cfi-loc' }),
+    getProgress: () => h.state.progress,
     setHoveredBookKey: vi.fn(),
     getViewState: () => ({ previewMode: false }),
   }),
@@ -92,6 +96,25 @@ vi.mock('@/libs/document', () => ({
   CFI: { compare: () => 0 },
 }));
 
+vi.mock('@/utils/event', () => ({
+  eventDispatcher: {
+    on: (name: string, fn: (e: CustomEvent) => void) => {
+      const set = h.eventListeners.get(name) ?? new Set();
+      set.add(fn);
+      h.eventListeners.set(name, set);
+    },
+    off: (name: string, fn: (e: CustomEvent) => void) => {
+      h.eventListeners.get(name)?.delete(fn);
+    },
+    dispatch: (name: string, detail: unknown) => {
+      const listeners = h.eventListeners.get(name);
+      if (!listeners) return;
+      const event = new CustomEvent(name, { detail });
+      for (const fn of [...listeners]) fn(event);
+    },
+  },
+}));
+
 import { useProgressSync } from '@/app/reader/hooks/useProgressSync';
 import { SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 
@@ -107,6 +130,8 @@ beforeEach(() => {
   h.syncConfigsMock.mockClear();
   h.syncBooksMock.mockClear();
   h.state.syncedConfigs = [];
+  h.state.progress = { location: 'cfi-loc' };
+  h.eventListeners.clear();
 });
 
 afterEach(() => {
@@ -114,14 +139,109 @@ afterEach(() => {
   cleanup();
 });
 
+const flushMicrotasks = async () => {
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+};
+
+const advance = async (ms: number) => {
+  await act(async () => {
+    vi.advanceTimersByTime(ms);
+    await flushMicrotasks();
+  });
+};
+
+const pullCallCount = () =>
+  h.syncConfigsMock.mock.calls.filter((c) => (c as unknown[])[3] === 'pull').length;
+const pushCallCount = () =>
+  h.syncConfigsMock.mock.calls.filter((c) => (c as unknown[])[3] === 'push').length;
+
 describe('useProgressSync', () => {
-  test('auto-sync push also pushes the books row so other devices see fresh progress', async () => {
+  test('auto-sync push only hits the configs lane; the server piggybacks books.progress', async () => {
+    // Issue #4198 used to be fixed by a second syncBooks call from the
+    // reader so that other devices' library pull-to-refresh would see fresh
+    // progress while a reader stayed open. The /api/sync POST handler now
+    // updates books.progress + books.updated_at off the same configs push,
+    // so the reader-side syncBooks round-trip is gone.
     renderHook(() => useProgressSync('h1-view1'));
     await flushAutoSync();
 
-    // configs lane still pushed
     expect(h.syncConfigsMock).toHaveBeenCalledWith(expect.any(Array), 'h1', 'm1', 'push');
-    // books lane also pushed with the in-memory library Book
-    expect(h.syncBooksMock).toHaveBeenCalledWith([h.libraryBook], 'push');
+    expect(h.syncBooksMock).not.toHaveBeenCalled();
+  });
+
+  test('retries the first pull on failure with backoff, then releases the gate', async () => {
+    // Pull failure is simulated by a mock that resolves without ever flipping
+    // h.state.syncedConfigs to a non-null array — the same observable state
+    // as a real pullChanges that threw and skipped setSyncResult. Without
+    // retries the configs sync would be stuck on this single failed attempt
+    // for the whole reader session (handleAutoSync only re-arms on
+    // progress.location changes), so the user's progress never reaches the
+    // server until they reopen the book.
+    h.state.syncedConfigs = null;
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+
+    // Initial attempt fires from the [progress] effect on mount.
+    await advance(0);
+    expect(pullCallCount()).toBe(1);
+
+    // First backoff = 1500ms.
+    await advance(1500);
+    expect(pullCallCount()).toBe(2);
+
+    // Second backoff = 4000ms.
+    await advance(4000);
+    expect(pullCallCount()).toBe(3);
+
+    // Third backoff = 10000ms.
+    await advance(10000);
+    expect(pullCallCount()).toBe(4);
+
+    // Gate released after exhausted retries — a subsequent location change
+    // takes the push branch instead of queueing another pull. Simulate the
+    // user paginating: mutate the shared progress state and force a render
+    // so the [progress?.location] effect re-arms handleAutoSync.
+    h.state.progress = { location: 'cfi-loc-next' };
+    rerender();
+    await advance(SYNC_PROGRESS_INTERVAL_SEC * 1000 + 100);
+    expect(pushCallCount()).toBeGreaterThanOrEqual(1);
+  });
+
+  test('a successful pull cancels the pending retry chain', async () => {
+    // Render with the default mock (syncedConfigs = [], which the [syncedConfigs]
+    // effect treats as a successful empty pull → configPulled flips on mount).
+    renderHook(() => useProgressSync('h1-view1'));
+
+    await advance(0);
+    const initialPulls = pullCallCount();
+
+    // Wait past every retry window — nothing should fire because the gate
+    // is already open and the retry timer was cancelled.
+    await advance(20000);
+    expect(pullCallCount()).toBe(initialPulls);
+  });
+
+  test('sync-book-progress event resets and re-runs the pull chain', async () => {
+    h.state.syncedConfigs = null;
+    renderHook(() => useProgressSync('h1-view1'));
+
+    await advance(0);
+    // Let one backoff fire, then user invokes a manual refresh.
+    await advance(1500);
+    const callsBeforeRefresh = pullCallCount();
+    expect(callsBeforeRefresh).toBe(2);
+
+    act(() => {
+      const listeners = h.eventListeners.get('sync-book-progress');
+      listeners?.forEach((fn) =>
+        fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+      );
+    });
+    await flushMicrotasks();
+    // The refresh issues a fresh pull immediately.
+    expect(pullCallCount()).toBe(callsBeforeRefresh + 1);
+
+    // And the retry chain restarts from delay[0].
+    await advance(1500);
+    expect(pullCallCount()).toBe(callsBeforeRefresh + 2);
   });
 });

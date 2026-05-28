@@ -3,7 +3,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,41 +13,50 @@ import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 
+// Backoff schedule for the first-pull retry on book open. After these
+// attempts the gate releases unconditionally so the user's progress can
+// still sync out even if the server keeps timing out (high Android network
+// concurrency, captive portal, transient 5xx). Total window ≈ 15.5s.
+const PULL_RETRY_DELAYS_MS = [1500, 4000, 10000];
+
 export const useProgressSync = (bookKey: string) => {
   const _ = useTranslation();
   const { getConfig, setConfig, getBookData } = useBookDataStore();
   const { getView, getProgress, setHoveredBookKey } = useReaderStore();
   const { settings } = useSettingsStore();
-  const { syncedConfigs, syncConfigs, syncBooks } = useSync(bookKey);
+  const { syncedConfigs, syncConfigs } = useSync(bookKey);
   const { user } = useAuth();
   const progress = getProgress(bookKey);
 
   const configPulled = useRef(false);
   const hasPulledConfigOnce = useRef(false);
+  const pullAttempt = useRef(0);
+  const pullInFlight = useRef(false);
+  const pullRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingPullRetry = () => {
+    if (pullRetryTimer.current !== null) {
+      clearTimeout(pullRetryTimer.current);
+      pullRetryTimer.current = null;
+    }
+  };
 
   const pushConfig = async (bookKey: string, config: BookConfig | null) => {
     const book = getBookData(bookKey)?.book;
     if (!config || !book || !user) return;
-    const bookHash = bookKey.split('-')[0]!;
+    const bookHash = book.hash;
     const metaHash = book.metaHash;
     const newConfig = { ...config, bookHash, metaHash };
     const compressedConfig = JSON.parse(
       serializeConfig(newConfig, settings.globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG),
     );
     delete compressedConfig.booknotes;
+    // The /api/sync POST handler piggybacks books.progress + books.updated_at
+    // off this configs push (saves the separate syncBooks round-trip that
+    // used to keep the library record fresh while a reader stayed open —
+    // see issue #4198). useBooksSync still seeds new books rows when the
+    // user is on the library page.
     await syncConfigs([compressedConfig], bookHash, metaHash, 'push');
-
-    // Also push the corresponding `books` row. The library sync lane
-    // (useBooksSync) only runs while the library page is mounted, so while a
-    // reader stays open the server's `books` record is never re-pushed and
-    // other devices' library pull-to-refresh keeps showing stale progress
-    // (issue #4198). useProgressAutoSave has already merged config.progress
-    // into the in-memory library Book via saveConfig, so we just forward
-    // that book through the books lane.
-    const libraryBook = useLibraryStore.getState().library.find((b) => b.hash === bookHash);
-    if (libraryBook && !libraryBook.deletedAt) {
-      await syncBooks([libraryBook], 'push');
-    }
   };
 
   const pullConfig = async (bookKey: string) => {
@@ -59,9 +67,43 @@ export const useProgressSync = (bookKey: string) => {
     await syncConfigs([], bookHash, metaHash, 'pull');
   };
 
+  // Drives the pull on book open. A successful pull is signalled by the
+  // [syncedConfigs] effect below flipping `configPulled.current` to true and
+  // clearing the retry state — so this function just kicks off the next
+  // pull and (re)schedules a retry. If the gate is still closed after
+  // PULL_RETRY_DELAYS_MS is exhausted, release it unconditionally so the
+  // user's auto-push isn't blocked by a server outage. Re-entry while a
+  // pull is in flight or a retry timer is pending is a no-op.
+  const pullWithRetry = useCallback(async () => {
+    if (configPulled.current) return;
+    if (pullInFlight.current) return;
+    if (pullRetryTimer.current !== null) return;
+    pullInFlight.current = true;
+    try {
+      await pullConfig(bookKey);
+    } finally {
+      pullInFlight.current = false;
+    }
+    if (configPulled.current) return;
+    if (pullAttempt.current >= PULL_RETRY_DELAYS_MS.length) {
+      // Best-effort release. The server-side last-writer-wins compare still
+      // protects the cross-device case (a stale local push with an older
+      // updated_at will lose to a fresher server record).
+      configPulled.current = true;
+      return;
+    }
+    const delay = PULL_RETRY_DELAYS_MS[pullAttempt.current]!;
+    pullAttempt.current += 1;
+    pullRetryTimer.current = setTimeout(() => {
+      pullRetryTimer.current = null;
+      if (!configPulled.current) pullWithRetry();
+    }, delay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
+
   const syncConfig = async () => {
     if (!configPulled.current) {
-      pullConfig(bookKey);
+      pullWithRetry();
     } else {
       // Skip pushes while previewing a deep-link target — the position in
       // memory reflects the annotation, not what the user is actually reading.
@@ -90,8 +132,13 @@ export const useProgressSync = (bookKey: string) => {
   const handleSyncBookProgress = async (event: CustomEvent) => {
     const { bookKey: syncBookKey } = event.detail;
     if (syncBookKey === bookKey) {
+      // Manual pull-to-refresh: tear down any prior retry chain so the new
+      // attempt starts fresh, rather than being short-circuited by the
+      // "retry already pending" guard in pullWithRetry.
       configPulled.current = false;
-      await pullConfig(bookKey);
+      pullAttempt.current = 0;
+      clearPendingPullRetry();
+      await pullWithRetry();
     }
   };
 
@@ -119,13 +166,19 @@ export const useProgressSync = (bookKey: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress?.location]);
 
-  // Pull: pull progress once when the book is opened
+  // Pull: pull progress once when the book is opened, with retry on failure
   useEffect(() => {
     if (!progress || hasPulledConfigOnce.current) return;
     hasPulledConfigOnce.current = true;
-    pullConfig(bookKey);
+    pullWithRetry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress]);
+
+  // Clean up any pending retry timer on unmount so it doesn't fire after the
+  // reader has been torn down.
+  useEffect(() => {
+    return () => clearPendingPullRetry();
+  }, []);
 
   const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
     const config = getConfig(bookKey);
@@ -189,6 +242,10 @@ export const useProgressSync = (bookKey: string) => {
   useEffect(() => {
     if (!configPulled.current && syncedConfigs) {
       configPulled.current = true;
+      // Pull succeeded — cancel any in-flight retry chain and reset the
+      // attempt counter so a future sync-book-progress event starts clean.
+      pullAttempt.current = 0;
+      clearPendingPullRetry();
       applyRemoteProgress(syncedConfigs).catch((error) => {
         console.error('Failed to apply remote progress', error);
       });
