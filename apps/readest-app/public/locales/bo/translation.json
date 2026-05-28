@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "ཚིག་མཛོད་གསར་པ་ནང་འདྲེན་མ་བྱུང་།",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "དཔེ་ཆ་དཔེ་མཛོད་དུ་ཕབ་ལེན་མི་བྱེད་པར་ཁོ་ཚོའི་ཐོག་མའི་ཡིག་སྣོད་ནས་ཀློག་པ། སྒྲིག་ཆས་ས་ཆ་ཉར་ཚགས་བྱེད་པ། སྔོན་ཆད་སྤྲིན་གྱི་རང་འགུལ་སྦྱར་འཇུག་གནས་སྟངས་ཡོད་ན་འདས་ལྡན་པ་ཡིན།",
   "This folder is an external library. Books here are always read in place.": "ཡིག་སྣོད་འདི་ནི་ཕྱི་ཕྱོགས་ཀྱི་དཔེ་མཛོད་ཡིན། འདིར་ཡོད་པའི་དཔེ་ཆ་རྣམས་རྟག་ཏུ་རང་གི་ས་གནས་སུ་ཀློག་པ་ཡིན།",
-  "Swipe to Paginate": "མཆོངས་གཤིབ་ཀྱིས་ཤོག་ངོས་སྒྱུར་བ།"
+  "Swipe to Paginate": "མཆོངས་གཤིབ་ཀྱིས་ཤོག་ངོས་སྒྱུར་བ།",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest བཀོལ་སྤྱོད་ཇི་ལྟར་བྱས་པ་རྟོགས་ཤིང་ལེགས་སྒྱུར་གྱི་ཆེད་དུ་མིང་མེད་སྤྱོད་སྦྱོར་གྱི་གནས་ཚུལ་མཉམ་སྤྱོད་གནང་རོགས།",
+  "Anonymous, aggregated feature usage": "མིང་མེད་པའི་སྤྱི་སྡོམ་ནུས་པའི་སྤྱོད་སྦྱོར།",
+  "No personal information": "མི་སྒེར་གྱི་ཆ་འཕྲིན་མེད།",
+  "No book content or reading data": "དཔེ་ཆའི་ནང་དོན་ནམ་ཀློག་པའི་གནས་ཚུལ་མེད།",
+  "Share anonymous data": "མིང་མེད་གནས་ཚུལ་མཉམ་སྤྱོད།",
+  "Not now": "ད་ལྟ་མིན།",
+  "You can change this anytime in Settings.": "ཁྱེད་ཀྱིས་འདི་སྒྲིག་འགོད་ནང་དུས་ནམ་ཡང་བཟོ་བཅོས་གནང་ཆོག།"
 }

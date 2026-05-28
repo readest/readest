@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Δεν εισήχθησαν νέα λεξικά",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Διαβάστε βιβλία από τους αρχικούς τους φακέλους αντί να τα αντιγράφετε στη βιβλιοθήκη. Εξοικονομεί χώρο στο δίσκο· η αυτόματη μεταφόρτωση στο cloud εξακολουθεί να λειτουργεί εάν είναι ενεργοποιημένη.",
   "This folder is an external library. Books here are always read in place.": "Αυτός ο φάκελος είναι εξωτερική βιβλιοθήκη. Τα βιβλία εδώ διαβάζονται πάντα στη θέση τους.",
-  "Swipe to Paginate": "Σύρετε για Σελιδοποίηση"
+  "Swipe to Paginate": "Σύρετε για Σελιδοποίηση",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Μοιραστείτε ανώνυμα δεδομένα χρήσης για να καταλάβουμε πώς χρησιμοποιείται το Readest και να το βελτιώσουμε.",
+  "Anonymous, aggregated feature usage": "Ανώνυμη, συγκεντρωτική χρήση λειτουργιών",
+  "No personal information": "Καμία προσωπική πληροφορία",
+  "No book content or reading data": "Κανένα περιεχόμενο βιβλίου ή δεδομένα ανάγνωσης",
+  "Share anonymous data": "Κοινοποίηση ανώνυμων δεδομένων",
+  "Not now": "Όχι τώρα",
+  "You can change this anytime in Settings.": "Μπορείτε να το αλλάξετε ανά πάσα στιγμή από τις Ρυθμίσεις."
 }

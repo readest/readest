@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Er zijn geen nieuwe woordenboeken geïmporteerd",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lees boeken vanuit hun oorspronkelijke mappen in plaats van ze naar de bibliotheek te kopiëren. Bespaart schijfruimte; automatische uploads naar de cloud blijven werken als ze ingeschakeld zijn.",
   "This folder is an external library. Books here are always read in place.": "Deze map is een externe bibliotheek. De boeken hier worden altijd op hun oorspronkelijke locatie gelezen.",
-  "Swipe to Paginate": "Vegen om door te bladeren"
+  "Swipe to Paginate": "Vegen om door te bladeren",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Deel anonieme gebruiksgegevens zodat we kunnen begrijpen hoe Readest wordt gebruikt en het kunnen verbeteren.",
+  "Anonymous, aggregated feature usage": "Anoniem, geaggregeerd functiegebruik",
+  "No personal information": "Geen persoonlijke informatie",
+  "No book content or reading data": "Geen boekinhoud of leesgegevens",
+  "Share anonymous data": "Anonieme gegevens delen",
+  "Not now": "Niet nu",
+  "You can change this anytime in Settings.": "Je kunt dit op elk moment wijzigen in Instellingen."
 }

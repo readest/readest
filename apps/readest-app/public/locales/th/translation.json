@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "ไม่มีพจนานุกรมใหม่ถูกนำเข้า",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "อ่านหนังสือจากโฟลเดอร์ต้นฉบับโดยตรงแทนการคัดลอกเข้าคลังหนังสือ ช่วยประหยัดพื้นที่ดิสก์ การอัปโหลดอัตโนมัติไปยังคลาวด์ยังคงทำงานหากเปิดใช้งานอยู่",
   "This folder is an external library. Books here are always read in place.": "โฟลเดอร์นี้เป็นคลังหนังสือภายนอก หนังสือในนี้จะถูกเปิดอ่านจากตำแหน่งเดิมเสมอ",
-  "Swipe to Paginate": "ปัดเพื่อเปลี่ยนหน้า"
+  "Swipe to Paginate": "ปัดเพื่อเปลี่ยนหน้า",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "แชร์ข้อมูลการใช้งานแบบไม่ระบุตัวตนเพื่อให้เราเข้าใจว่ามีการใช้ Readest อย่างไรและปรับปรุงให้ดียิ่งขึ้น",
+  "Anonymous, aggregated feature usage": "การใช้คุณสมบัติแบบไม่ระบุตัวตนและรวมข้อมูล",
+  "No personal information": "ไม่มีข้อมูลส่วนบุคคล",
+  "No book content or reading data": "ไม่มีเนื้อหาหนังสือหรือข้อมูลการอ่าน",
+  "Share anonymous data": "แชร์ข้อมูลแบบไม่ระบุตัวตน",
+  "Not now": "ไม่ใช่ตอนนี้",
+  "You can change this anytime in Settings.": "คุณสามารถเปลี่ยนแปลงสิ่งนี้ได้ทุกเมื่อในการตั้งค่า"
 }

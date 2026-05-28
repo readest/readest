@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "新しい辞書は読み込まれませんでした",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "ライブラリにコピーせず、元のフォルダから直接書籍を読み込みます。ディスク容量を節約でき、自動アップロードが有効ならクラウド同期も引き続き機能します。",
   "This folder is an external library. Books here are always read in place.": "このフォルダは外部ライブラリです。ここの書籍は常に元の場所から読み込まれます。",
-  "Swipe to Paginate": "スワイプでページ送り"
+  "Swipe to Paginate": "スワイプでページ送り",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readestがどのように使われているかを把握し、改善するために匿名の使用データを共有してください。",
+  "Anonymous, aggregated feature usage": "匿名で集計された機能の使用状況",
+  "No personal information": "個人情報は含まれません",
+  "No book content or reading data": "書籍の内容や読書データは含まれません",
+  "Share anonymous data": "匿名データを共有",
+  "Not now": "後で",
+  "You can change this anytime in Settings.": "この設定はいつでも設定画面から変更できます。"
 }

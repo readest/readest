@@ -1678,5 +1678,12 @@
   "No new dictionaries were imported": "Nenhum dicionário novo foi importado",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lê os livros a partir das pastas originais em vez de os copiar para a biblioteca. Poupa espaço em disco; o envio automático para a nuvem continua a funcionar se estiver ativado.",
   "This folder is an external library. Books here are always read in place.": "Esta pasta é uma biblioteca externa. Os livros aqui são sempre lidos no local original.",
-  "Swipe to Paginate": "Deslizar para Mudar de Página"
+  "Swipe to Paginate": "Deslizar para Mudar de Página",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Partilhe dados de utilização anónimos para podermos perceber como o Readest é utilizado e melhorá-lo.",
+  "Anonymous, aggregated feature usage": "Utilização de funcionalidades anónima e agregada",
+  "No personal information": "Sem informações pessoais",
+  "No book content or reading data": "Sem conteúdo de livros ou dados de leitura",
+  "Share anonymous data": "Partilhar dados anónimos",
+  "Not now": "Agora não",
+  "You can change this anytime in Settings.": "Pode alterar isto a qualquer momento nas Definições."
 }

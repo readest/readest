@@ -1771,5 +1771,12 @@
   "No new dictionaries were imported": "لم يتم استيراد أي قواميس جديدة",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "اقرأ الكتب من مجلداتها الأصلية بدلاً من نسخها إلى المكتبة. يوفر مساحة على القرص؛ ولا يزال الرفع التلقائي إلى السحابة يعمل إذا كان مفعلاً.",
   "This folder is an external library. Books here are always read in place.": "هذا المجلد هو مكتبة خارجية. تُقرأ الكتب هنا دائمًا من مكانها.",
-  "Swipe to Paginate": "اسحب لتصفح الصفحات"
+  "Swipe to Paginate": "اسحب لتصفح الصفحات",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "شارك بيانات الاستخدام المجهولة لنفهم كيف يُستخدم Readest ونحسّنه.",
+  "Anonymous, aggregated feature usage": "استخدام مجهول ومجمَّع للميزات",
+  "No personal information": "بدون معلومات شخصية",
+  "No book content or reading data": "بدون محتوى كتب أو بيانات قراءة",
+  "Share anonymous data": "مشاركة بيانات مجهولة",
+  "Not now": "ليس الآن",
+  "You can change this anytime in Settings.": "يمكنك تغيير هذا في أي وقت من الإعدادات."
 }

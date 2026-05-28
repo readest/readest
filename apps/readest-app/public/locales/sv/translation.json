@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Inga nya ordböcker importerades",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Läs böcker direkt från deras ursprungsmappar i stället för att kopiera dem till biblioteket. Sparar diskutrymme; automatisk uppladdning till molnet fungerar fortfarande om den är aktiverad.",
   "This folder is an external library. Books here are always read in place.": "Den här mappen är ett externt bibliotek. Böckerna här läses alltid från sin ursprungsplats.",
-  "Swipe to Paginate": "Svep för att Bläddra"
+  "Swipe to Paginate": "Svep för att Bläddra",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Dela anonyma användningsdata så att vi kan förstå hur Readest används och göra det bättre.",
+  "Anonymous, aggregated feature usage": "Anonym, aggregerad funktionsanvändning",
+  "No personal information": "Ingen personlig information",
+  "No book content or reading data": "Inget bokinnehåll eller läsdata",
+  "Share anonymous data": "Dela anonyma data",
+  "Not now": "Inte nu",
+  "You can change this anytime in Settings.": "Du kan ändra detta när som helst i Inställningar."
 }

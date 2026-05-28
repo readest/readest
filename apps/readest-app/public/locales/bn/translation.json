@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "কোনো নতুন অভিধান আমদানি করা হয়নি",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "বইগুলিকে লাইব্রেরিতে অনুলিপি করার পরিবর্তে তাদের মূল ফোল্ডার থেকে পড়ুন। ডিস্ক স্পেস সঞ্চয় করে; সক্ষম থাকলে ক্লাউড স্বয়ংক্রিয়-আপলোড এখনও কাজ করে।",
   "This folder is an external library. Books here are always read in place.": "এই ফোল্ডারটি একটি বহিরাগত লাইব্রেরি। এখানে বইগুলি সর্বদা মূল স্থানে পড়া হয়।",
-  "Swipe to Paginate": "পৃষ্ঠা পরিবর্তনে সোয়াইপ করুন"
+  "Swipe to Paginate": "পৃষ্ঠা পরিবর্তনে সোয়াইপ করুন",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "বেনামি ব্যবহারের ডেটা শেয়ার করুন যাতে আমরা বুঝতে পারি Readest কীভাবে ব্যবহৃত হয় এবং এটি উন্নত করতে পারি।",
+  "Anonymous, aggregated feature usage": "বেনামি, সমষ্টিগত ফিচার ব্যবহার",
+  "No personal information": "কোনো ব্যক্তিগত তথ্য নেই",
+  "No book content or reading data": "কোনো বইয়ের বিষয়বস্তু বা পড়ার ডেটা নেই",
+  "Share anonymous data": "বেনামি ডেটা শেয়ার করুন",
+  "Not now": "এখন নয়",
+  "You can change this anytime in Settings.": "আপনি যেকোনো সময় সেটিংসে এটি পরিবর্তন করতে পারেন।"
 }

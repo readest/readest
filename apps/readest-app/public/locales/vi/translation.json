@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "Không có từ điển mới nào được nhập",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Đọc sách trực tiếp từ thư mục gốc thay vì sao chép vào thư viện. Tiết kiệm dung lượng đĩa; tự động tải lên đám mây vẫn hoạt động nếu được bật.",
   "This folder is an external library. Books here are always read in place.": "Thư mục này là thư viện ngoài. Sách trong đây luôn được đọc tại vị trí gốc.",
-  "Swipe to Paginate": "Vuốt để Sang Trang"
+  "Swipe to Paginate": "Vuốt để Sang Trang",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Chia sẻ dữ liệu sử dụng ẩn danh để chúng tôi có thể hiểu cách Readest được sử dụng và cải thiện nó.",
+  "Anonymous, aggregated feature usage": "Sử dụng tính năng ẩn danh và tổng hợp",
+  "No personal information": "Không có thông tin cá nhân",
+  "No book content or reading data": "Không có nội dung sách hoặc dữ liệu đọc",
+  "Share anonymous data": "Chia sẻ dữ liệu ẩn danh",
+  "Not now": "Để sau",
+  "You can change this anytime in Settings.": "Bạn có thể thay đổi tùy chọn này bất cứ lúc nào trong Cài đặt."
 }

@@ -1709,5 +1709,12 @@
   "No new dictionaries were imported": "Novi slovarji niso bili uvoženi",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Berite knjige iz njihovih izvirnih map, namesto da bi jih kopirali v knjižnico. Prihrani prostor na disku; samodejno nalaganje v oblak še naprej deluje, če je omogočeno.",
   "This folder is an external library. Books here are always read in place.": "Ta mapa je zunanja knjižnica. Knjige v njej se vedno berejo na izvirnem mestu.",
-  "Swipe to Paginate": "Drsanje za listanje"
+  "Swipe to Paginate": "Drsanje za listanje",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Delite anonimne podatke o uporabi, da bomo razumeli, kako se Readest uporablja, in ga lahko izboljšali.",
+  "Anonymous, aggregated feature usage": "Anonimna, združena uporaba funkcij",
+  "No personal information": "Brez osebnih podatkov",
+  "No book content or reading data": "Brez vsebine knjig ali bralnih podatkov",
+  "Share anonymous data": "Deli anonimne podatke",
+  "Not now": "Ne zdaj",
+  "You can change this anytime in Settings.": "To lahko kadar koli spremenite v Nastavitvah."
 }

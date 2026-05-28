@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "هیچ فرهنگ لغت جدیدی وارد نشد",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "کتاب‌ها را به جای کپی‌کردن در کتابخانه، از پوشه‌های اصلی‌شان بخوانید. در فضای دیسک صرفه‌جویی می‌کند؛ بارگذاری خودکار ابری در صورت فعال بودن همچنان کار می‌کند.",
   "This folder is an external library. Books here are always read in place.": "این پوشه یک کتابخانه‌ی بیرونی است. کتاب‌های این پوشه همیشه از همان مکان خوانده می‌شوند.",
-  "Swipe to Paginate": "کشیدن برای ورق زدن"
+  "Swipe to Paginate": "کشیدن برای ورق زدن",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "داده‌های استفاده ناشناس را به اشتراک بگذارید تا بفهمیم Readest چگونه استفاده می‌شود و آن را بهبود دهیم.",
+  "Anonymous, aggregated feature usage": "استفاده ناشناس و کلی از ویژگی‌ها",
+  "No personal information": "بدون اطلاعات شخصی",
+  "No book content or reading data": "بدون محتوای کتاب یا داده‌های مطالعه",
+  "Share anonymous data": "اشتراک داده ناشناس",
+  "Not now": "اکنون نه",
+  "You can change this anytime in Settings.": "می‌توانید این تنظیم را هر زمان از تنظیمات تغییر دهید."
 }

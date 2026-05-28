@@ -1678,5 +1678,12 @@
   "No new dictionaries were imported": "Nu au fost importate dicționare noi",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Citește cărțile din folderele lor originale în loc să le copieze în bibliotecă. Economisește spațiu pe disc; încărcarea automată în cloud funcționează în continuare dacă este activată.",
   "This folder is an external library. Books here are always read in place.": "Acest folder este o bibliotecă externă. Cărțile de aici sunt întotdeauna citite din locația originală.",
-  "Swipe to Paginate": "Glisare pentru a Schimba Pagina"
+  "Swipe to Paginate": "Glisare pentru a Schimba Pagina",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Partajează date anonime de utilizare pentru a ne ajuta să înțelegem cum este folosit Readest și să-l îmbunătățim.",
+  "Anonymous, aggregated feature usage": "Utilizare anonimă și agregată a funcțiilor",
+  "No personal information": "Fără informații personale",
+  "No book content or reading data": "Fără conținut din cărți sau date despre citire",
+  "Share anonymous data": "Partajează date anonime",
+  "Not now": "Nu acum",
+  "You can change this anytime in Settings.": "Poți modifica această opțiune oricând din Setări."
 }

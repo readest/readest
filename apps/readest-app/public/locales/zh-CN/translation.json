@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "未导入任何新词典",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "直接从图书的原始文件夹读取,无需复制到书库。可节省磁盘空间;若启用了自动上传,云端同步仍正常工作。",
   "This folder is an external library. Books here are always read in place.": "此文件夹是外部书库,其中的图书始终在原位置读取。",
-  "Swipe to Paginate": "滑动翻页"
+  "Swipe to Paginate": "滑动翻页",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "分享匿名使用数据，帮助我们了解 Readest 的使用情况并加以改进。",
+  "Anonymous, aggregated feature usage": "匿名、聚合的功能使用数据",
+  "No personal information": "不包含个人信息",
+  "No book content or reading data": "不包含书籍内容或阅读数据",
+  "Share anonymous data": "分享匿名数据",
+  "Not now": "暂不",
+  "You can change this anytime in Settings.": "您可以随时在“设置”中更改此选项。"
 }

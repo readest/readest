@@ -1709,5 +1709,12 @@
   "No new dictionaries were imported": "Нові словники не імпортовано",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Читайте книги з їхніх початкових тек, замість копіювання до бібліотеки. Заощаджує місце на диску; автозавантаження до хмари продовжує працювати, якщо ввімкнено.",
   "This folder is an external library. Books here are always read in place.": "Ця тека — зовнішня бібліотека. Книги в ній завжди читаються з початкового розташування.",
-  "Swipe to Paginate": "Гортання для перегортання"
+  "Swipe to Paginate": "Гортання для перегортання",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Поділіться анонімними даними використання, щоб ми могли зрозуміти, як використовується Readest, і покращити його.",
+  "Anonymous, aggregated feature usage": "Анонімне, агреговане використання функцій",
+  "No personal information": "Жодної особистої інформації",
+  "No book content or reading data": "Жодного вмісту книг чи даних читання",
+  "Share anonymous data": "Поділитися анонімними даними",
+  "Not now": "Не зараз",
+  "You can change this anytime in Settings.": "Ви можете змінити це будь-коли в Налаштуваннях."
 }

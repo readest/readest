@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Yeni sözlük içe aktarılmadı",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Kitapları kitaplığa kopyalamak yerine orijinal klasörlerinden okuyun. Disk alanından tasarruf sağlar; etkinleştirilmişse bulut otomatik yüklemesi yine de çalışır.",
   "This folder is an external library. Books here are always read in place.": "Bu klasör harici bir kitaplıktır. İçindeki kitaplar her zaman bulundukları yerden okunur.",
-  "Swipe to Paginate": "Sayfa Çevirmek için Kaydır"
+  "Swipe to Paginate": "Sayfa Çevirmek için Kaydır",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest'in nasıl kullanıldığını anlayıp geliştirebilmemiz için anonim kullanım verilerini paylaşın.",
+  "Anonymous, aggregated feature usage": "Anonim, toplu özellik kullanımı",
+  "No personal information": "Kişisel bilgi yok",
+  "No book content or reading data": "Kitap içeriği veya okuma verisi yok",
+  "Share anonymous data": "Anonim veri paylaş",
+  "Not now": "Şimdi değil",
+  "You can change this anytime in Settings.": "Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz."
 }

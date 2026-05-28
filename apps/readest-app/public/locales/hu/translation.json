@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Nem importáltunk új szótárakat",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Olvassa a könyveket az eredeti mappáikból, ahelyett, hogy a könyvtárba másolná őket. Lemezterületet takarít meg; a felhő automatikus feltöltése továbbra is működik, ha engedélyezve van.",
   "This folder is an external library. Books here are always read in place.": "Ez a mappa egy külső könyvtár. Az itt található könyvek mindig a saját helyükön nyílnak meg.",
-  "Swipe to Paginate": "Lapozás húzással"
+  "Swipe to Paginate": "Lapozás húzással",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Oszd meg az anonim használati adatokat, hogy megérthessük, hogyan használják a Readestet, és továbbfejleszthessük.",
+  "Anonymous, aggregated feature usage": "Anonim, összesített funkcióhasználat",
+  "No personal information": "Nincs személyes információ",
+  "No book content or reading data": "Nincs könyvtartalom vagy olvasási adat",
+  "Share anonymous data": "Anonim adatok megosztása",
+  "Not now": "Most nem",
+  "You can change this anytime in Settings.": "Ezt bármikor megváltoztathatod a Beállításokban."
 }

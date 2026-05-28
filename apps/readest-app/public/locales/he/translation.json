@@ -1678,5 +1678,12 @@
   "No new dictionaries were imported": "לא יובאו מילונים חדשים",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "קריאת ספרים מתיקיותיהם המקוריות במקום העתקתם לספרייה. חוסך מקום בדיסק; העלאה אוטומטית לענן עדיין פועלת אם היא מופעלת.",
   "This folder is an external library. Books here are always read in place.": "תיקייה זו היא ספרייה חיצונית. הספרים בה נקראים תמיד ממיקומם המקורי.",
-  "Swipe to Paginate": "החלקה להחלפת עמוד"
+  "Swipe to Paginate": "החלקה להחלפת עמוד",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "שתפו נתוני שימוש אנונימיים כדי שנוכל להבין כיצד נעשה שימוש ב‑Readest ולשפר אותו.",
+  "Anonymous, aggregated feature usage": "שימוש בתכונות באופן אנונימי ומצרפי",
+  "No personal information": "ללא מידע אישי",
+  "No book content or reading data": "ללא תוכן ספרים או נתוני קריאה",
+  "Share anonymous data": "שתף נתונים אנונימיים",
+  "Not now": "לא עכשיו",
+  "You can change this anytime in Settings.": "אפשר לשנות זאת בכל עת בהגדרות."
 }

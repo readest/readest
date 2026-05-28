@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "නව ශබ්දකෝෂ ආයාත කර නැත",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "පොත් පුස්තකාලයට පිටපත් කරනවාට වඩා ඒවායේ මුල් ෆෝල්ඩරවලින් කියවන්න. තැටි ඉඩ ඉතිරි කරයි; සක්‍රිය නම් වලාකුළු ස්වයංක්‍රීය උඩුගත කිරීම තවමත් ක්‍රියා කරයි.",
   "This folder is an external library. Books here are always read in place.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයකි. මෙහි ඇති පොත් සැමවිටම ඔවුන්ගේ මුල් ස්ථානයේ සිට කියවනු ලැබේ.",
-  "Swipe to Paginate": "පිටු මාරුවට ස්වයිප් කරන්න"
+  "Swipe to Paginate": "පිටු මාරුවට ස්වයිප් කරන්න",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest භාවිතය වටහාගෙන එය වඩාත් යහපත් කිරීමට අපට හැකි වන පරිදි අනාමික භාවිත දත්ත බෙදාගන්න.",
+  "Anonymous, aggregated feature usage": "අනාමික, ඒකරාශී වූ විශේෂාංග භාවිතය",
+  "No personal information": "පුද්ගලික තොරතුරු නැත",
+  "No book content or reading data": "පොත් අන්තර්ගතය හෝ කියවීමේ දත්ත නැත",
+  "Share anonymous data": "අනාමික දත්ත බෙදාගන්න",
+  "Not now": "දැන් නොවේ",
+  "You can change this anytime in Settings.": "ඔබට මෙය ඕනෑම විටක සැකසුම් තුළ වෙනස් කළ හැකිය."
 }

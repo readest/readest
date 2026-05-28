@@ -1616,5 +1616,12 @@
   "No new dictionaries were imported": "Tidak ada kamus baru yang diimpor",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Baca buku dari folder aslinya alih-alih menyalinnya ke perpustakaan. Menghemat ruang disk; unggah otomatis ke awan tetap berfungsi jika diaktifkan.",
   "This folder is an external library. Books here are always read in place.": "Folder ini adalah pustaka eksternal. Buku di sini selalu dibaca di tempat aslinya.",
-  "Swipe to Paginate": "Geser untuk Pindah Halaman"
+  "Swipe to Paginate": "Geser untuk Pindah Halaman",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Bagikan data penggunaan anonim agar kami dapat memahami bagaimana Readest digunakan dan meningkatkannya.",
+  "Anonymous, aggregated feature usage": "Penggunaan fitur anonim dan agregat",
+  "No personal information": "Tidak ada informasi pribadi",
+  "No book content or reading data": "Tidak ada konten buku atau data baca",
+  "Share anonymous data": "Bagikan data anonim",
+  "Not now": "Nanti saja",
+  "You can change this anytime in Settings.": "Anda dapat mengubahnya kapan saja di Pengaturan."
 }

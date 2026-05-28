@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "Yangi lug‘atlar import qilinmadi",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Kitoblarni kutubxonaga ko‘chirish o‘rniga ularning asl papkalaridan o‘qing. Disk joyini tejaydi; yoqilgan bo‘lsa, bulutga avtomatik yuklash hamon ishlaydi.",
   "This folder is an external library. Books here are always read in place.": "Bu papka tashqi kutubxonadir. Bu yerdagi kitoblar har doim o‘z joyidan o‘qiladi.",
-  "Swipe to Paginate": "Sahifani aylantirish uchun suring"
+  "Swipe to Paginate": "Sahifani aylantirish uchun suring",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest qanday ishlatilishini tushunish va uni yaxshilash uchun anonim foydalanish maʼlumotlarini ulashing.",
+  "Anonymous, aggregated feature usage": "Anonim, jamlangan funksiya foydalanishi",
+  "No personal information": "Shaxsiy maʼlumotlar yoʻq",
+  "No book content or reading data": "Kitob mazmuni yoki oʻqish maʼlumotlari yoʻq",
+  "Share anonymous data": "Anonim maʼlumotlarni ulashish",
+  "Not now": "Hozir emas",
+  "You can change this anytime in Settings.": "Buni xohlagan vaqtda Sozlamalarda oʻzgartirishingiz mumkin."
 }

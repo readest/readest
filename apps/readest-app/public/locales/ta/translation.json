@@ -1647,5 +1647,12 @@
   "No new dictionaries were imported": "புதிய அகராதிகள் எதுவும் இறக்குமதி செய்யப்படவில்லை",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "புத்தகங்களை நூலகத்திற்கு நகலெடுக்காமல், அவற்றின் அசல் கோப்புறைகளில் இருந்தே வாசிக்கவும். வட்டக் கொள்ளளவை சேமிக்கும்; இயக்கப்பட்டிருந்தால் கிளவுட் தானியங்கு பதிவேற்றம் இன்னும் வேலை செய்யும்.",
   "This folder is an external library. Books here are always read in place.": "இந்த கோப்புறை ஒரு வெளிப்புற நூலகம். இங்குள்ள புத்தகங்கள் எப்போதும் அவற்றின் அசல் இடத்திலேயே வாசிக்கப்படும்.",
-  "Swipe to Paginate": "பக்கம் மாற்ற ஸ்வைப் செய்யவும்"
+  "Swipe to Paginate": "பக்கம் மாற்ற ஸ்வைப் செய்யவும்",
+  "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest எவ்வாறு பயன்படுத்தப்படுகிறது என்பதைப் புரிந்து கொள்ளவும் அதை மேம்படுத்தவும் அநாமதேய பயன்பாட்டுத் தரவைப் பகிரவும்.",
+  "Anonymous, aggregated feature usage": "அநாமதேய, தொகுக்கப்பட்ட அம்சப் பயன்பாடு",
+  "No personal information": "தனிப்பட்ட தகவல்கள் இல்லை",
+  "No book content or reading data": "புத்தக உள்ளடக்கம் அல்லது வாசிப்புத் தரவு இல்லை",
+  "Share anonymous data": "அநாமதேய தரவைப் பகிர்",
+  "Not now": "இப்போது வேண்டாம்",
+  "You can change this anytime in Settings.": "அமைப்புகளில் எப்போது வேண்டுமானாலும் இதை மாற்றலாம்."
 }
