@@ -123,6 +123,13 @@ const devHmrPatchScript = `(${patchTauriHmrWebSocket.toString()})(${JSON.stringi
   process.env['TAURI_DEV_HOST'],
 )});`;
 
+// `/runtime-config.js` is a dynamic route handler that only exists in the
+// web/Docker build. The Tauri build is statically exported (`output:
+// 'export'`), so the file isn't emitted — the request would return the SPA
+// fallback HTML and crash with `Unexpected token '<'`. All runtime-config
+// consumers fall back to `NEXT_PUBLIC_*` envs baked at build time on Tauri.
+const shouldInjectRuntimeConfig = process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -130,7 +137,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}
     >
       <head>
-        <Script src='/runtime-config.js' strategy='beforeInteractive' />
+        {shouldInjectRuntimeConfig ? (
+          <Script src='/runtime-config.js' strategy='beforeInteractive' />
+        ) : null}
         {shouldInjectDevHmrPatch ? (
           <script dangerouslySetInnerHTML={{ __html: devHmrPatchScript }} />
         ) : null}
