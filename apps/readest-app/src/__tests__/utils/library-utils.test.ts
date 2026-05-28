@@ -7,7 +7,10 @@ import {
   getGroupSortValue,
   createBookSorter,
   ensureLibrarySortByType,
+  ensureLibrarySecondarySortByType,
   ensureLibraryGroupByType,
+  resolveEffectivePrimarySort,
+  resolveEffectiveSecondarySort,
   findGroupById,
   getGroupDisplayName,
   expandBookshelfSelection,
@@ -1112,5 +1115,181 @@ describe('buildGroupNameUpdatedAt', () => {
     const groups = [{ name: 'Old' }, { name: 'Newest' }, { name: 'Newer' }];
     groups.sort((a, b) => (map.get(b.name) ?? 0) - (map.get(a.name) ?? 0));
     expect(groups.map((g) => g.name)).toEqual(['Newest', 'Newer', 'Old']);
+  });
+});
+
+describe('secondary sort - createBookSorter tiebreaker', () => {
+  it('uses secondary key as tiebreaker when primary keys are equal', () => {
+    const books = [
+      createMockBook({ hash: 'a', title: 'Zebra', author: 'Same Author' }),
+      createMockBook({ hash: 'b', title: 'Apple', author: 'Same Author' }),
+    ];
+    const sorter = createBookSorter(LibrarySortByType.Author, 'en', LibrarySortByType.Title);
+    const sorted = [...books].sort(sorter);
+    expect(sorted[0]!.title).toBe('Apple');
+    expect(sorted[1]!.title).toBe('Zebra');
+  });
+
+  it('falls back to default when primary differs (secondary not used)', () => {
+    const books = [
+      createMockBook({ hash: 'a', title: 'Zebra', author: 'B Author' }),
+      createMockBook({ hash: 'b', title: 'Apple', author: 'A Author' }),
+    ];
+    const sorter = createBookSorter(LibrarySortByType.Author, 'en', LibrarySortByType.Title);
+    const sorted = [...books].sort(sorter);
+    expect(sorted[0]!.author).toBe('A Author');
+    expect(sorted[1]!.author).toBe('B Author');
+  });
+
+  it('ignores secondary when set to none', () => {
+    const books = [
+      createMockBook({ hash: 'a', title: 'Zebra', author: 'Same' }),
+      createMockBook({ hash: 'b', title: 'Apple', author: 'Same' }),
+    ];
+    const sorter = createBookSorter(LibrarySortByType.Author, 'en', 'none');
+    const sorted = [...books].sort(sorter);
+    // Stable: both equal, original order preserved
+    expect(sorted[0]!.hash).toBe('a');
+    expect(sorted[1]!.hash).toBe('b');
+  });
+});
+
+describe('secondary sort - createWithinGroupSorter (drilled-in group)', () => {
+  it('inside an author group, sorts by series index when secondary is series', () => {
+    const books = [
+      createMockBook({
+        hash: '1',
+        title: 'Zebra Book',
+        metadata: { series: 'Series A', seriesIndex: 3 },
+      }),
+      createMockBook({
+        hash: '2',
+        title: 'Apple Book',
+        metadata: { series: 'Series A', seriesIndex: 1 },
+      }),
+      createMockBook({
+        hash: '3',
+        title: 'Mango Book',
+        metadata: { series: 'Series A', seriesIndex: 2 },
+      }),
+    ];
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Title,
+      'en',
+      true,
+      LibrarySortByType.Series,
+    );
+    const sorted = [...books].sort(sorter);
+    expect(sorted.map((b) => b.metadata?.seriesIndex)).toEqual([1, 2, 3]);
+  });
+
+  it('falls back to primary when secondary ties (same series index)', () => {
+    const books = [
+      createMockBook({
+        hash: '1',
+        title: 'Zebra',
+        metadata: { seriesIndex: 1 },
+      }),
+      createMockBook({
+        hash: '2',
+        title: 'Apple',
+        metadata: { seriesIndex: 1 },
+      }),
+    ];
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Title,
+      'en',
+      true,
+      LibrarySortByType.Series,
+    );
+    const sorted = [...books].sort(sorter);
+    expect(sorted[0]!.title).toBe('Apple');
+    expect(sorted[1]!.title).toBe('Zebra');
+  });
+
+  it('without secondary, keeps existing primary behavior in author group', () => {
+    const books = [
+      createMockBook({ hash: '1', title: 'Zebra' }),
+      createMockBook({ hash: '2', title: 'Apple' }),
+    ];
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Title,
+      'en',
+      true,
+      'none',
+    );
+    const sorted = [...books].sort(sorter);
+    expect(sorted[0]!.title).toBe('Apple');
+    expect(sorted[1]!.title).toBe('Zebra');
+  });
+});
+
+describe('resolveEffectiveSecondarySort smart defaults', () => {
+  it('returns explicit secondary when not none', () => {
+    expect(resolveEffectiveSecondarySort(LibrarySortByType.Title, LibraryGroupByType.Author)).toBe(
+      LibrarySortByType.Title,
+    );
+  });
+
+  it('defaults to series when groupBy=Author and stored=none', () => {
+    expect(resolveEffectiveSecondarySort('none', LibraryGroupByType.Author)).toBe(
+      LibrarySortByType.Series,
+    );
+  });
+
+  it('stays none for groupBy=Series (series-index handles ordering)', () => {
+    expect(resolveEffectiveSecondarySort('none', LibraryGroupByType.Series)).toBe('none');
+  });
+
+  it('stays none for groupBy=None/Group', () => {
+    expect(resolveEffectiveSecondarySort('none', LibraryGroupByType.None)).toBe('none');
+    expect(resolveEffectiveSecondarySort('none', LibraryGroupByType.Group)).toBe('none');
+  });
+});
+
+describe('resolveEffectivePrimarySort smart defaults', () => {
+  it('returns stored when isAuto=false, regardless of groupBy', () => {
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Updated, LibraryGroupByType.Series, false),
+    ).toBe(LibrarySortByType.Updated);
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Title, LibraryGroupByType.Author, false),
+    ).toBe(LibrarySortByType.Title);
+  });
+
+  it('defaults to Series when isAuto=true and groupBy=Series', () => {
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Updated, LibraryGroupByType.Series, true),
+    ).toBe(LibrarySortByType.Series);
+  });
+
+  it('returns stored for non-series groupBy when isAuto=true', () => {
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Updated, LibraryGroupByType.Author, true),
+    ).toBe(LibrarySortByType.Updated);
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Updated, LibraryGroupByType.Group, true),
+    ).toBe(LibrarySortByType.Updated);
+    expect(
+      resolveEffectivePrimarySort(LibrarySortByType.Updated, LibraryGroupByType.None, true),
+    ).toBe(LibrarySortByType.Updated);
+  });
+});
+
+describe('ensureLibrarySecondarySortByType', () => {
+  it('accepts none', () => {
+    expect(ensureLibrarySecondarySortByType('none', 'none')).toBe('none');
+  });
+  it('accepts any valid LibrarySortByType', () => {
+    expect(ensureLibrarySecondarySortByType('series', 'none')).toBe(LibrarySortByType.Series);
+  });
+  it('falls back when invalid', () => {
+    expect(ensureLibrarySecondarySortByType('bogus', LibrarySortByType.Title)).toBe(
+      LibrarySortByType.Title,
+    );
+    expect(ensureLibrarySecondarySortByType(null, 'none')).toBe('none');
   });
 });

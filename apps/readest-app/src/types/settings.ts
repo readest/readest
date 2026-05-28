@@ -22,6 +22,15 @@ export const LibrarySortByType = {
 
 export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibrarySortByType];
 
+/**
+ * Secondary sort key. Same options as the primary sort key plus `'none'` which
+ * disables the secondary sort. When set to `'none'` and a smart default applies
+ * (e.g. groupBy=Author -> series), the resolver in `libraryUtils` substitutes
+ * the implicit default at sort time without persisting it. See
+ * `resolveEffectiveSecondarySort`.
+ */
+export type LibrarySecondarySortByType = LibrarySortByType | 'none';
+
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export const LibraryGroupByType = {
@@ -288,6 +297,15 @@ export interface SystemSettings {
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
+  /**
+   * Whether the primary sort uses a smart default derived from `libraryGroupBy`.
+   * When `true` and grouping by Series, the effective primary sort becomes
+   * Series at sort time (the stored `librarySortBy` is left unchanged so users
+   * who later turn auto off keep their previous explicit pick). Flipped to
+   * `false` the moment the user picks any primary sort in the menu.
+   */
+  librarySortByAuto: boolean;
+  librarySortBy2: LibrarySecondarySortByType;
   libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
