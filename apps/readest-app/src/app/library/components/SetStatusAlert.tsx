@@ -65,8 +65,7 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
           <button
             className={clsx(
               'absolute right-0 flex items-center justify-center',
-              'rounded-full p-1.5 transition-colors',
-              'hover:bg-base-content/10',
+              'rounded-full p-1.5 transition-colors text-base-content/70 hover:text-base-content',
               'sm:hidden',
             )}
             onClick={onCancel}

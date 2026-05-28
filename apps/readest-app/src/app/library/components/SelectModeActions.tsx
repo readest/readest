@@ -53,7 +53,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           'not-eink:bg-base-300 eink:bg-base-100 eink:border eink:border-base-content',
           'mx-auto w-fit max-w-[calc(100vw-1rem)] rounded-lg p-4',
           'flex items-center justify-center gap-x-6',
-          'max-sm:grid max-sm:grid-cols-3 max-sm:gap-x-6 max-sm:gap-y-3',
+          'max-[500px]:grid max-[500px]:grid-cols-4 max-[500px]:gap-x-6 max-[500px]:gap-y-3',
         )}
       >
         <button
@@ -100,6 +100,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           onClick={onDelete}
           className={clsx(
             'flex flex-col items-center justify-center gap-1',
+            'max-[500px]:col-start-2',
             !hasSelection && 'btn-disabled opacity-50',
           )}
         >

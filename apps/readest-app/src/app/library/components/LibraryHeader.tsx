@@ -193,7 +193,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 sm:w-[80px]'
               aria-label={isSelectAll ? _('Deselect') : _('Select All')}
             >
-              <span className='font-sans text-base font-normal sm:text-sm'>
+              <span className='font-sans text-base font-normal sm:text-sm whitespace-nowrap truncate'>
                 {isSelectAll ? _('Deselect') : _('Select All')}
               </span>
             </button>
