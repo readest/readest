@@ -210,14 +210,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         </button>
 
         {importingFont && (
-          <div
-            className={clsx(
-              'card h-12 border shadow-sm',
-              typeof importingFont === 'object'
-                ? 'border-base-200 bg-base-100'
-                : 'border-base-200 bg-base-100',
-            )}
-          >
+          <div className='card border-base-200 bg-base-100 h-12 border shadow-sm'>
             <div className='card-body flex items-center justify-center p-2'>
               {typeof importingFont === 'object' ? (
                 <div

@@ -1438,8 +1438,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       )}
       {importingMrexpt && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30'>
-          <div className='flex flex-col items-center gap-3 rounded-2xl bg-base-100 px-8 py-6 shadow-2xl'>
-            <svg className='h-8 w-8 animate-spin text-primary' viewBox='0 0 24 24' fill='none'>
+          <div className='modal-box bg-base-100 flex flex-col items-center gap-3 px-8 py-6 shadow-2xl'>
+            <svg className='text-primary h-8 w-8 animate-spin' viewBox='0 0 24 24' fill='none'>
               <circle
                 className='opacity-25'
                 cx='12'
