@@ -38,6 +38,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  // null = idle, true = importing (spinner), { family } = done importing (show font name).
+  // The card stays mounted throughout — only its content changes.
+  const [importingFont, setImportingFont] = useState<true | { family: string } | null>(null);
 
   const { selectFiles } = useFileSelector(appService, _);
 
@@ -50,28 +53,42 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const handleImportFont = () => {
     selectFiles({ type: 'fonts', multiple: true }).then(async (result) => {
       if (result.error || result.files.length === 0) return;
-      for (const selectedFile of result.files) {
-        const fontInfo = await appService?.importFont(selectedFile.path || selectedFile.file);
-        if (!fontInfo) continue;
+      setImportingFont(true);
+      try {
+        for (const selectedFile of result.files) {
+          const fontInfo = await appService?.importFont(selectedFile.path || selectedFile.file);
+          if (!fontInfo) continue;
 
-        const customFont = addFont(fontInfo.path, {
-          name: fontInfo.name,
-          family: fontInfo.family,
-          style: fontInfo.style,
-          weight: fontInfo.weight,
-          variable: fontInfo.variable,
-          contentId: fontInfo.contentId,
-          bundleDir: fontInfo.bundleDir,
-          byteSize: fontInfo.byteSize,
-        });
-        console.log('Added custom font:', customFont);
-        if (customFont && !customFont.error) {
-          const loadedFont = await loadFont(envConfig, customFont.id);
-          mountCustomFont(document, loadedFont);
-          if (appService) void queueReplicaBinaryUpload('font', customFont, appService);
+          // Replace the spinner with the resolved font family name in-place,
+          // so the card stays at the same grid position without layout jump.
+          setImportingFont({ family: fontInfo.family });
+
+          const customFont = addFont(fontInfo.path, {
+            name: fontInfo.name,
+            family: fontInfo.family,
+            style: fontInfo.style,
+            weight: fontInfo.weight,
+            variable: fontInfo.variable,
+            contentId: fontInfo.contentId,
+            bundleDir: fontInfo.bundleDir,
+            byteSize: fontInfo.byteSize,
+          });
+          console.log('Added custom font:', customFont);
+          if (customFont && !customFont.error) {
+            const loadedFont = await loadFont(envConfig, customFont.id);
+            mountCustomFont(document, loadedFont);
+            if (appService) void queueReplicaBinaryUpload('font', customFont, appService);
+          }
         }
+        saveCustomFonts(envConfig);
+      } finally {
+        // Keep the card visible — it now shows the font family name.
+        // availableFamilies will pick it up on next render and the
+        // importingFont card naturally becomes a regular font card.
+        // We clear importingFont after a tick so availableFamilies
+        // has a chance to include the new font first.
+        setTimeout(() => setImportingFont(null), 0);
       }
-      saveCustomFonts(envConfig);
     });
   };
 
@@ -122,7 +139,15 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     .filter((font) => !font.deletedAt)
     .sort((a, b) => (b.downloadedAt || 0) - (a.downloadedAt || 0));
 
-  const availableFamilies = getAvailableFamilies(availableFonts);
+  // Exclude the font that's currently shown by the importingFont card so
+  // we don't render two cards for the same font family.
+  const importingFamily =
+    importingFont && typeof importingFont === 'object' ? importingFont.family : null;
+  const visibleFonts = importingFamily
+    ? availableFonts.filter((f) => (f.family || f.name) !== importingFamily)
+    : availableFonts;
+
+  const availableFamilies = getAvailableFamilies(visibleFonts);
 
   return (
     <div className='w-full'>
@@ -183,6 +208,47 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
           </span>
           <span className='line-clamp-1'>{_('Import Font')}</span>
         </button>
+
+        {importingFont && (
+          <div
+            className={clsx(
+              'card h-12 border shadow-sm',
+              typeof importingFont === 'object'
+                ? 'border-base-200 bg-base-100'
+                : 'border-base-200 bg-base-100',
+            )}
+          >
+            <div className='card-body flex items-center justify-center p-2'>
+              {typeof importingFont === 'object' ? (
+                <div
+                  style={{ fontFamily: `"${importingFont.family}", sans-serif`, fontWeight: 400 }}
+                  className='text-base-content line-clamp-1 break-all'
+                >
+                  {importingFont.family}
+                </div>
+              ) : (
+                <div className='flex items-center gap-2 text-sm text-base-content/60'>
+                  <svg className='h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'>
+                    <circle
+                      className='opacity-25'
+                      cx='12'
+                      cy='12'
+                      r='10'
+                      stroke='currentColor'
+                      strokeWidth='4'
+                    />
+                    <path
+                      className='opacity-75'
+                      fill='currentColor'
+                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
+                    />
+                  </svg>
+                  <span>{_('Importing...')}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {availableFamilies.map((family) => (
           <div

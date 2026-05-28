@@ -7,6 +7,7 @@ import { findTocItemBS } from '@/services/nav';
 import { findNearestCfi } from '@/utils/cfi';
 import { TOCItem } from '@/libs/document';
 import { BooknoteGroup, BookNoteType } from '@/types/book';
+import { useTranslation } from '@/hooks/useTranslation';
 import BooknoteItem from './BooknoteItem';
 
 const BooknoteView: React.FC<{
@@ -14,6 +15,7 @@ const BooknoteView: React.FC<{
   bookKey: string;
   toc: TOCItem[];
 }> = ({ type, bookKey, toc }) => {
+  const _ = useTranslation();
   const { getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
   const { setActiveBooknoteType, setBooknoteResults } = useSidebarStore();
@@ -61,24 +63,32 @@ const BooknoteView: React.FC<{
 
   return (
     <div className='rounded pt-2'>
-      <ul role='tree' className='px-2'>
-        {sortedGroups.map((group) => (
-          <li key={group.href} className='p-2'>
-            <h3 className='content font-size-base line-clamp-1 font-normal'>{group.label}</h3>
-            <ul>
-              {group.booknotes.map((item, index) => (
-                <BooknoteItem
-                  key={`${index}-${item.cfi}`}
-                  bookKey={bookKey}
-                  item={item}
-                  isNearest={item.cfi === nearestCfi}
-                  onClick={handleBrowseBookNotes}
-                />
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
+      {sortedGroups.length === 0 ? (
+        <div className='flex h-32 items-center justify-center text-gray-500'>
+          <p className='font-size-sm text-center'>
+            {type === 'annotation' ? _('No annotation yet') : _('No bookmark yet')}
+          </p>
+        </div>
+      ) : (
+        <ul role='tree' className='px-2'>
+          {sortedGroups.map((group) => (
+            <li key={group.href} className='p-2'>
+              <h3 className='content font-size-base line-clamp-1 font-normal'>{group.label}</h3>
+              <ul>
+                {group.booknotes.map((item, index) => (
+                  <BooknoteItem
+                    key={`${index}-${item.cfi}`}
+                    bookKey={bookKey}
+                    item={item}
+                    isNearest={item.cfi === nearestCfi}
+                    onClick={handleBrowseBookNotes}
+                  />
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

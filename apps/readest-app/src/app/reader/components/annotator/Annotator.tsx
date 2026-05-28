@@ -125,6 +125,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [importingMrexpt, setImportingMrexpt] = useState(false);
   // "Clear Annotations" confirm dialog. Hosted here (and not in BookMenu)
   // because the menu unmounts the moment the user picks the entry, which
   // would otherwise tear down the dialog state immediately.
@@ -1049,68 +1050,73 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       return;
     }
 
-    let conversion;
+    setImportingMrexpt(true);
     try {
-      conversion = await convertMrexptEntriesToBookNotes(entries, bookDoc, {
-        highlightStyle: settings.globalReadSettings.highlightStyle,
-        highlightColor:
-          settings.globalReadSettings.highlightStyles[settings.globalReadSettings.highlightStyle],
-      });
-    } catch (e) {
-      console.warn('Failed to convert mrexpt entries:', e);
-      eventDispatcher.dispatch('toast', {
-        type: 'warning',
-        message: _('Failed to import annotations.'),
-        timeout: 3000,
-      });
-      return;
-    }
+      let conversion;
+      try {
+        conversion = await convertMrexptEntriesToBookNotes(entries, bookDoc, {
+          highlightStyle: settings.globalReadSettings.highlightStyle,
+          highlightColor:
+            settings.globalReadSettings.highlightStyles[settings.globalReadSettings.highlightStyle],
+        });
+      } catch (e) {
+        console.warn('Failed to convert mrexpt entries:', e);
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Failed to import annotations.'),
+          timeout: 3000,
+        });
+        return;
+      }
 
-    if (conversion.notes.length === 0) {
+      if (conversion.notes.length === 0) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('No annotations could be located in this book.'),
+          timeout: 2500,
+        });
+        return;
+      }
+
+      // Merge into the current book config, deduplicating by note id and
+      // preferring the latest updatedAt for any conflicting entries.
+      const config = getConfig(bookKey)!;
+      const { merged, applied, added, updated } = mergeImportedBookNotes(
+        config.booknotes ?? [],
+        conversion.notes,
+      );
+      const updatedConfig = updateBooknotes(bookKey, merged);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+
+      // Apply imported (or resurrected) annotations to all live views so
+      // they appear immediately. We only re-draw the notes that actually
+      // changed in this round, otherwise duplicate addAnnotation calls
+      // can confuse the overlay layer.
+      const views = getViewsById(bookKey.split('-')[0]!);
+      for (const note of applied) {
+        try {
+          views.forEach((v) => v?.addAnnotation(note));
+        } catch (err) {
+          console.warn('Failed to add imported annotation', { note, err });
+        }
+      }
+
+      // A single result toast: the count if anything changed, otherwise a
+      // plain "nothing new" hint for a repeated import of the same file.
+      const imported = added + updated;
       eventDispatcher.dispatch('toast', {
         type: 'info',
-        message: _('No annotations could be located in this book.'),
+        message:
+          imported > 0
+            ? _('Imported {{count}} annotations', { count: imported })
+            : _('No new annotations to import'),
         timeout: 2500,
       });
-      return;
+    } finally {
+      setImportingMrexpt(false);
     }
-
-    // Merge into the current book config, deduplicating by note id and
-    // preferring the latest updatedAt for any conflicting entries.
-    const config = getConfig(bookKey)!;
-    const { merged, applied, added, updated } = mergeImportedBookNotes(
-      config.booknotes ?? [],
-      conversion.notes,
-    );
-    const updatedConfig = updateBooknotes(bookKey, merged);
-    if (updatedConfig) {
-      saveConfig(envConfig, bookKey, updatedConfig, settings);
-    }
-
-    // Apply imported (or resurrected) annotations to all live views so
-    // they appear immediately. We only re-draw the notes that actually
-    // changed in this round, otherwise duplicate addAnnotation calls
-    // can confuse the overlay layer.
-    const views = getViewsById(bookKey.split('-')[0]!);
-    for (const note of applied) {
-      try {
-        views.forEach((v) => v?.addAnnotation(note));
-      } catch (err) {
-        console.warn('Failed to add imported annotation', { note, err });
-      }
-    }
-
-    // A single result toast: the count if anything changed, otherwise a
-    // plain "nothing new" hint for a repeated import of the same file.
-    const imported = added + updated;
-    eventDispatcher.dispatch('toast', {
-      type: 'info',
-      message:
-        imported > 0
-          ? _('Imported {{count}} annotations', { count: imported })
-          : _('No new annotations to import'),
-      timeout: 2500,
-    });
   };
 
   const handleExportMarkdown = async (event: CustomEvent) => {
@@ -1429,6 +1435,28 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             }}
           />
         </ModalPortal>
+      )}
+      {importingMrexpt && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30'>
+          <div className='flex flex-col items-center gap-3 rounded-2xl bg-base-100 px-8 py-6 shadow-2xl'>
+            <svg className='h-8 w-8 animate-spin text-primary' viewBox='0 0 24 24' fill='none'>
+              <circle
+                className='opacity-25'
+                cx='12'
+                cy='12'
+                r='10'
+                stroke='currentColor'
+                strokeWidth='4'
+              />
+              <path
+                className='opacity-75'
+                fill='currentColor'
+                d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'
+              />
+            </svg>
+            <p className='font-size-sm text-base-content'>{_('Importing annotations...')}</p>
+          </div>
+        </div>
       )}
     </div>
   );

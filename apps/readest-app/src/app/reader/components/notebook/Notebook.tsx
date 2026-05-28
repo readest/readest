@@ -430,6 +430,14 @@ const Notebook: React.FC = ({}) => {
                 <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
               ))}
             </ul>
+            {!notebookNewAnnotation &&
+              !notebookEditAnnotation &&
+              !isSearchBarVisible &&
+              !hasAnyNotes && (
+                <div className='flex h-32 items-center justify-center text-gray-500'>
+                  <p className='font-size-sm text-center'>{_('No note yet')}</p>
+                </div>
+              )}
           </div>
         )}
         <div

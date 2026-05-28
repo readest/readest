@@ -309,7 +309,14 @@ export const convertMrexptEntriesToBookNotes = async (
     }
   };
 
+  // Yield to the event loop every N entries so the UI spinner stays alive
+  // during large imports. Without this, the synchronous DOM operations
+  // inside loadSectionDoc / findWordRange starve the renderer.
+  const YIELD_EVERY = 5;
   for (let i = 0; i < unique.length; i++) {
+    if (i > 0 && i % YIELD_EVERY === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     const entry = unique[i]!;
     const createdAt = entry.timestamp || now + i;
 
