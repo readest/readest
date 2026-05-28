@@ -15,7 +15,6 @@ export const DEFAULT_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'annotate',
   'search',
   'dictionary',
-  'wikipedia',
   'translate',
   'tts',
   'proofread',
