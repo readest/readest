@@ -16,8 +16,10 @@ import { getAccessToken } from '@/utils/access';
 import { queueDictionaryBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import { clearReplicaAdapters, registerReplicaAdapter } from '@/services/sync/replicaRegistry';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { AppService } from '@/types/system';
+import type { SystemSettings } from '@/types/settings';
 
 const mockIsReady = transferManager.isReady as ReturnType<typeof vi.fn>;
 const mockQueueReplicaUpload = transferManager.queueReplicaUpload as ReturnType<typeof vi.fn>;
@@ -171,5 +173,30 @@ describe('queueDictionaryBinaryUpload', () => {
     };
     await queueDictionaryBinaryUpload(baseDict(), fakeAppService as unknown as AppService);
     expect(close).toHaveBeenCalled();
+  });
+
+  test('no-ops when the dictionary sync category is disabled in Manage Sync', async () => {
+    // Sister-side gate to `publishReplicaUpsert`: when the user has turned
+    // dictionary sync off, the bundle binaries must also stay on the
+    // device. Otherwise the (potentially hundreds-of-MB) upload still
+    // fires even though the metadata row never publishes.
+    const prevSettings = useSettingsStore.getState().settings;
+    useSettingsStore.setState({
+      settings: {
+        ...(prevSettings ?? ({} as SystemSettings)),
+        syncCategories: { ...(prevSettings?.syncCategories ?? {}), dictionary: false },
+      } as SystemSettings,
+    });
+    try {
+      mockIsReady.mockReturnValue(true);
+      const fakeAppService = makeFakeAppService({
+        'bundle-dir/webster.mdx': 1_000_000,
+      }) as unknown as AppService;
+      const result = await queueDictionaryBinaryUpload(baseDict(), fakeAppService);
+      expect(result).toBe(null);
+      expect(mockQueueReplicaUpload).not.toHaveBeenCalled();
+    } finally {
+      useSettingsStore.setState({ settings: prevSettings });
+    }
   });
 });
