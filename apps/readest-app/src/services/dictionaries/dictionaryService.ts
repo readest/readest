@@ -25,9 +25,6 @@ import {
   shouldMintReincarnationForLiveReimport,
 } from './dictionaryDedup';
 
-/** GZIP magic bytes — used to detect DictZip-compressed `.dict` files. */
-const GZIP_MAGIC = [0x1f, 0x8b, 0x08];
-
 interface SourceFile {
   /** Filename including extension, e.g. `oald7.idx`. */
   name: string;
@@ -195,12 +192,6 @@ function parseIfo(text: string): Record<string, string> {
   return out;
 }
 
-/** Detect the GZIP magic at the start of a Blob. */
-async function isGzip(file: File): Promise<boolean> {
-  const head = new Uint8Array(await file.slice(0, 3).arrayBuffer());
-  return head[0] === GZIP_MAGIC[0] && head[1] === GZIP_MAGIC[1] && head[2] === GZIP_MAGIC[2];
-}
-
 async function writeBundleFile(
   fs: FileSystem,
   bundleDir: string,
@@ -265,25 +256,23 @@ async function importStarDictBundle(
   const name = ifo['bookname'] || group.stem;
   const lang = ifo['lang'] || ifo['idxoffsetlang'] || undefined;
 
-  // v1 scope: only DictZip-compressed `.dict.dz` and single-type sametypesequence ∈ {m, h, x, t}.
-  // Bundles outside this surface as `unsupported` so the popup hides them
-  // and the settings UI shows a clear reason; the import itself still succeeds.
+  // Supported runtime surface: DictZip-compressed `.dict.dz` *or* raw `.dict`
+  // (the body is opened via `loadDictBody`, which probes the gzip header and
+  // falls through to a passthrough buffer for raw files). Restriction is on
+  // the entry shape: single-type `sametypesequence` ∈ {m, h, x, t}. Bundles
+  // outside this surface as `unsupported` so the popup hides them and the
+  // settings UI shows a clear reason; the import itself still succeeds.
   let unsupported = false;
   let unsupportedReason: string | undefined;
-  if (!(await isGzip(dictFile))) {
+  const seq = ifo['sametypesequence'];
+  if (!seq || seq.length !== 1) {
     unsupported = true;
-    unsupportedReason = 'Raw .dict files are not supported in v1; please use .dict.dz format.';
-  } else {
-    const seq = ifo['sametypesequence'];
-    if (!seq || seq.length !== 1) {
-      unsupported = true;
-      unsupportedReason = seq
-        ? `Multi-type sametypesequence "${seq}" is not supported in v1.`
-        : 'StarDict bundles without sametypesequence are not supported in v1.';
-    } else if (!'mhxt'.includes(seq)) {
-      unsupported = true;
-      unsupportedReason = `StarDict entry type "${seq}" is not supported in v1.`;
-    }
+    unsupportedReason = seq
+      ? `Multi-type sametypesequence "${seq}" is not supported in v1.`
+      : 'StarDict bundles without sametypesequence are not supported in v1.';
+  } else if (!'mhxt'.includes(seq)) {
+    unsupported = true;
+    unsupportedReason = `StarDict entry type "${seq}" is not supported in v1.`;
   }
 
   // Stardict primary = .ifo (small text; partialMD5 is effectively full-hash).
@@ -312,6 +301,54 @@ async function importStarDictBundle(
   };
 }
 
+/**
+ * Read just the XML header from an MDX/MDD file and pull out the fields we
+ * need at import time (Title, Encoding, Encrypted bitmap). Avoids triggering
+ * the multi-second full-init path inside `js-mdict`.
+ *
+ * MDX layout (V2):
+ *   bytes [0..4)         — big-endian uint32 N: byte length of the UTF-16 LE
+ *                          encoded XML header
+ *   bytes [4..4+N)       — UTF-16 LE XML string (ends with \x00\x00)
+ *   bytes [4+N..8+N)     — adler32 checksum (ignored here)
+ */
+async function readMdxHeader(file: File): Promise<{
+  Title?: string;
+  Encoding?: string;
+  encrypt: number;
+}> {
+  const sizeBuf = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+  if (sizeBuf.length < 4) {
+    throw new Error('MDX header truncated');
+  }
+  const dv = new DataView(sizeBuf.buffer);
+  const headerByteSize = dv.getUint32(0, false); // big-endian
+  // Sanity-check: real MDX headers are typically a few hundred bytes to a few
+  // kilobytes. 1 MB is already absurd — likely a corrupt or non-MDX file.
+  if (headerByteSize === 0 || headerByteSize > 1024 * 1024) {
+    throw new Error(`MDX header size out of range: ${headerByteSize}`);
+  }
+  const xmlBuf = await file.slice(4, 4 + headerByteSize).arrayBuffer();
+  const xml = new TextDecoder('utf-16le').decode(xmlBuf).replace(/ +$/, '');
+  const attrs: Record<string, string> = {};
+  for (const m of xml.matchAll(/(\w+)="((?:.|\r|\n)*?)"/g)) {
+    attrs[m[1]!] = m[2]!;
+  }
+  let encrypt = 0;
+  const encVal = attrs['Encrypted'];
+  if (!encVal || encVal === '' || encVal === 'No') encrypt = 0;
+  else if (encVal === 'Yes') encrypt = 1;
+  else {
+    const n = parseInt(encVal, 10);
+    encrypt = Number.isFinite(n) ? n : 0;
+  }
+  return {
+    Title: attrs['Title'],
+    Encoding: attrs['Encoding'],
+    encrypt,
+  };
+}
+
 async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<ImportedDictionary> {
   const bundleDir = await createBundleDir(fs);
   const mdxFile = await readSource(fs, group.mdx.source);
@@ -326,28 +363,29 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
     await writeBundleFile(fs, bundleDir, group.css[i]!.name, cssFiles[i]!);
   }
 
-  // Parse the MDX header via the forked js-mdict (browser-friendly path).
-  // Loaded lazily so users without MDict imports never pull in the parser.
+  // Read only the small XML header at the start of the file. We need
+  // Title / Encoding / Encrypted — all live in the header. The full
+  // `MDX.create()` factory would additionally decompress every key block
+  // and sort millions of keys (~17s on a 250 MB MDX), which we don't need
+  // here. The runtime provider still uses MDX.create() lazily on first
+  // lookup, so init cost is paid once at usage time, not at import time.
   let name = group.stem;
   let lang: string | undefined;
   let unsupported = false;
   let unsupportedReason: string | undefined;
   try {
-    const { MDX } = await import('js-mdict');
-    const mdx = await MDX.create(mdxFile);
-    const header = mdx.header as Record<string, unknown>;
-    if (typeof header['Title'] === 'string' && (header['Title'] as string).trim()) {
-      name = (header['Title'] as string).trim();
+    const header = await readMdxHeader(mdxFile);
+    if (header.Title && header.Title.trim()) {
+      name = header.Title.trim();
     }
-    if (typeof header['Encoding'] === 'string') {
-      lang = (header['Encoding'] as string).toLowerCase();
+    if (header.Encoding) {
+      lang = header.Encoding.toLowerCase();
     }
-    // `meta.encrypt` is a bitmap: 0x01 = record block encrypted (needs a
-    // user-supplied passcode/regcode — js-mdict doesn't implement that path),
-    // 0x02 = key info block encrypted (handled transparently via the
-    // ripemd128-based `mdxDecrypt`, no passcode needed). Only bit 0 is
-    // genuinely unsupported.
-    if ((mdx.meta.encrypt & 1) !== 0) {
+    // `encrypt` is a bitmap: 0x01 = record block encrypted (needs a
+    // user-supplied passcode/regcode — not supported), 0x02 = key info
+    // block encrypted (handled transparently by the runtime provider via
+    // ripemd128, no passcode needed). Only bit 0 is genuinely unsupported.
+    if ((header.encrypt & 1) !== 0) {
       unsupported = true;
       unsupportedReason =
         'This MDX is registered to a specific user (record-block encryption); passcode-protected dictionaries are not supported.';
@@ -355,12 +393,8 @@ async function importMdictBundle(fs: FileSystem, group: MDictGroup): Promise<Imp
   } catch (err) {
     const message = (err as Error).message ?? String(err);
     unsupported = true;
-    if (/encrypted file|user identification/i.test(message)) {
-      unsupportedReason =
-        'This MDX is registered to a specific user (record-block encryption); passcode-protected dictionaries are not supported.';
-    } else {
-      unsupportedReason = `Failed to parse MDX header: ${message}`;
-    }
+    unsupportedReason = `Failed to parse MDX header: ${message}`;
+    console.warn(`MDX import: failed to parse "${group.mdx.name}": ${message}`, err);
   }
 
   // MDict primary = .mdx (the body file).
@@ -400,8 +434,6 @@ async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<Impor
   // index lists it; the body lives in the dict. We do this best-effort: any
   // failure falls back to the stem.
   let name = group.stem;
-  let unsupported = false;
-  let unsupportedReason: string | undefined;
   try {
     const indexText = await indexFile.text();
     // Find the "00databaseshort\t<offset>\t<size>" line.
@@ -436,14 +468,8 @@ async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<Impor
   } catch {
     // Best-effort label; the bundle is still importable.
   }
-  if (!(await isGzip(dictFile))) {
-    // Plain `.dict` is technically supported by the reader, but we keep
-    // v1 scope identical to StarDict for consistency.
-    unsupported = true;
-    unsupportedReason = 'Raw .dict files are not supported in v1; please use .dict.dz format.';
-  }
-
-  // DICT primary = .dict (or .dict.dz) — the gzipped body file.
+  // DICT primary = .dict (or .dict.dz). The runtime body loader probes the
+  // gzip header and falls through to a passthrough buffer for raw files.
   const dictFilenames = [group.dict.name, group.index.name];
   const contentId = await computeDictionaryContentId(dictFile, dictFilenames);
 
@@ -458,8 +484,6 @@ async function importDictBundle(fs: FileSystem, group: DictGroup): Promise<Impor
       dict: group.dict.name,
     },
     addedAt: Date.now(),
-    unsupported: unsupported || undefined,
-    unsupportedReason,
   };
 }
 

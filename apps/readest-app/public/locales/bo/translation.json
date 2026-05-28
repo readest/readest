@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "Reedy ལ་བསམ་ཚུལ་གཏོང་",
   "OpenRouter API Key": "OpenRouter API ལྡེ་མིག",
   "OpenRouter Base URL": "OpenRouter རྩ་བའི་ URL",
-  "OpenRouter Model": "OpenRouter དཔེ་གཟུགས"
+  "OpenRouter Model": "OpenRouter དཔེ་གཟུགས",
+  "Disable System Dictionary first to change this.": "འདི་བརྗེ་བཅོས་བྱེད་པར་ཐོག་མར་མ་ལག་ཚིག་མཛོད་སྤོ་ཟུར།",
+  "App service is not available": "ཉེར་སྤྱོད་ཞབས་ཞུ་ཐོབ་མི་ཐུབ།",
+  "Unsupported dictionary: {{reason}}": "རྒྱབ་སྐྱོར་མེད་པའི་ཚིག་མཛོད། {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "ཚིག་མཛོད་ {{count}} ལ་རྒྱབ་སྐྱོར་མེད་ཅིང་སྤོ་ཟུར་བྱས་ཡོད།",
+  "No new dictionaries were imported": "ཚིག་མཛོད་གསར་པ་ནང་འདྲེན་མ་བྱུང་།"
 }

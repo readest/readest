@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "傳送 Reedy 意見回饋",
   "OpenRouter API Key": "OpenRouter API 金鑰",
   "OpenRouter Base URL": "OpenRouter 基礎 URL",
-  "OpenRouter Model": "OpenRouter 模型"
+  "OpenRouter Model": "OpenRouter 模型",
+  "Disable System Dictionary first to change this.": "請先停用系統字典以變更此項。",
+  "App service is not available": "應用程式服務無法使用",
+  "Unsupported dictionary: {{reason}}": "不支援的字典：{{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} 個字典不受支援,已停用",
+  "No new dictionaries were imported": "未匯入任何新字典"
 }

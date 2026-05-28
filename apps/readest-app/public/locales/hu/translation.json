@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy visszajelzés küldése",
   "OpenRouter API Key": "OpenRouter API-kulcs",
   "OpenRouter Base URL": "OpenRouter alap URL",
-  "OpenRouter Model": "OpenRouter modell"
+  "OpenRouter Model": "OpenRouter modell",
+  "Disable System Dictionary first to change this.": "Először tiltsa le a rendszerszótárt a módosításhoz.",
+  "App service is not available": "Az alkalmazás szolgáltatása nem érhető el",
+  "Unsupported dictionary: {{reason}}": "Nem támogatott szótár: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} szótár nem támogatott, és le van tiltva",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} szótár nem támogatott, és le van tiltva",
+  "No new dictionaries were imported": "Nem importáltunk új szótárakat"
 }

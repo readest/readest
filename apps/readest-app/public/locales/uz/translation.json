@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy haqida fikr yuborish",
   "OpenRouter API Key": "OpenRouter API kaliti",
   "OpenRouter Base URL": "OpenRouter asosiy URL",
-  "OpenRouter Model": "OpenRouter modeli"
+  "OpenRouter Model": "OpenRouter modeli",
+  "Disable System Dictionary first to change this.": "Buni o‘zgartirish uchun avval Tizim lug‘atini o‘chiring.",
+  "App service is not available": "Ilova xizmati mavjud emas",
+  "Unsupported dictionary: {{reason}}": "Qo‘llab-quvvatlanmaydigan lug‘at: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} ta lug‘at qo‘llab-quvvatlanmaydi va o‘chirilgan",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} ta lug‘at qo‘llab-quvvatlanmaydi va o‘chirilgan",
+  "No new dictionaries were imported": "Yangi lug‘atlar import qilinmadi"
 }

@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Skicka Reedy-feedback",
   "OpenRouter API Key": "OpenRouter-API-nyckel",
   "OpenRouter Base URL": "OpenRouter-bas-URL",
-  "OpenRouter Model": "OpenRouter-modell"
+  "OpenRouter Model": "OpenRouter-modell",
+  "Disable System Dictionary first to change this.": "Inaktivera Systemordbok först för att ändra detta.",
+  "App service is not available": "App-tjänsten är inte tillgänglig",
+  "Unsupported dictionary: {{reason}}": "Ordbok stöds inte: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} ordbok stöds inte och är inaktiverad",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} ordböcker stöds inte och är inaktiverade",
+  "No new dictionaries were imported": "Inga nya ordböcker importerades"
 }

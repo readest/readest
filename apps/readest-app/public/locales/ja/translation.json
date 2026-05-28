@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "Reedy のフィードバックを送信",
   "OpenRouter API Key": "OpenRouter API キー",
   "OpenRouter Base URL": "OpenRouter ベース URL",
-  "OpenRouter Model": "OpenRouter モデル"
+  "OpenRouter Model": "OpenRouter モデル",
+  "Disable System Dictionary first to change this.": "変更するにはまずシステム辞書を無効にしてください。",
+  "App service is not available": "アプリサービスは利用できません",
+  "Unsupported dictionary: {{reason}}": "非対応の辞書：{{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} 件の辞書が非対応のため無効になっています",
+  "No new dictionaries were imported": "新しい辞書は読み込まれませんでした"
 }

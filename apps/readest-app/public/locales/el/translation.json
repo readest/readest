@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Αποστολή σχολίων Reedy",
   "OpenRouter API Key": "Κλειδί API OpenRouter",
   "OpenRouter Base URL": "Βασικό URL OpenRouter",
-  "OpenRouter Model": "Μοντέλο OpenRouter"
+  "OpenRouter Model": "Μοντέλο OpenRouter",
+  "Disable System Dictionary first to change this.": "Απενεργοποιήστε πρώτα το Λεξικό Συστήματος για να το αλλάξετε.",
+  "App service is not available": "Η υπηρεσία εφαρμογής δεν είναι διαθέσιμη",
+  "Unsupported dictionary: {{reason}}": "Μη υποστηριζόμενο λεξικό: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} λεξικό δεν υποστηρίζεται και είναι απενεργοποιημένο",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} λεξικά δεν υποστηρίζονται και είναι απενεργοποιημένα",
+  "No new dictionaries were imported": "Δεν εισήχθησαν νέα λεξικά"
 }

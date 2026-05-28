@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy கருத்தை அனுப்பு",
   "OpenRouter API Key": "OpenRouter API விசை",
   "OpenRouter Base URL": "OpenRouter அடிப்படை URL",
-  "OpenRouter Model": "OpenRouter மாதிரி"
+  "OpenRouter Model": "OpenRouter மாதிரி",
+  "Disable System Dictionary first to change this.": "இதை மாற்ற, முதலில் கணினி அகராதியை முடக்கவும்.",
+  "App service is not available": "ஆப் சேவை கிடைக்கவில்லை",
+  "Unsupported dictionary: {{reason}}": "ஆதரிக்கப்படாத அகராதி: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} அகராதி ஆதரிக்கப்படவில்லை மற்றும் முடக்கப்பட்டுள்ளது",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} அகராதிகள் ஆதரிக்கப்படவில்லை மற்றும் முடக்கப்பட்டுள்ளன",
+  "No new dictionaries were imported": "புதிய அகராதிகள் எதுவும் இறக்குமதி செய்யப்படவில்லை"
 }

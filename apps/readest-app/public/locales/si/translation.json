@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy ප්‍රතිපෝෂණ යවන්න",
   "OpenRouter API Key": "OpenRouter API යතුර",
   "OpenRouter Base URL": "OpenRouter මූල URL",
-  "OpenRouter Model": "OpenRouter ආකෘතිය"
+  "OpenRouter Model": "OpenRouter ආකෘතිය",
+  "Disable System Dictionary first to change this.": "මෙය වෙනස් කිරීමට පළමුව පද්ධති ශබ්දකෝෂය අක්‍රිය කරන්න.",
+  "App service is not available": "යෙදුම් සේවාව ලබා ගත නොහැක",
+  "Unsupported dictionary: {{reason}}": "සහාය නොදක්වන ශබ්දකෝෂය: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "ශබ්දකෝෂ {{count}}ක් සහාය නොදක්වන අතර අක්‍රිය කර ඇත",
+  "{{count}} dictionary is unsupported and disabled_other": "ශබ්දකෝෂ {{count}}ක් සහාය නොදක්වන අතර අක්‍රිය කර ඇත",
+  "No new dictionaries were imported": "නව ශබ්දකෝෂ ආයාත කර නැත"
 }

@@ -321,8 +321,12 @@ export const createMdictProvider = ({
     if (!initPromise) {
       initPromise = (async () => {
         const { MDX, MDD } = (await import('js-mdict')) as {
-          MDX: { create(file: Blob): Promise<MDXInstance> };
-          MDD: { create(file: Blob): Promise<MDDInstance> };
+          MDX: {
+            create(file: Blob, options?: { lazy?: boolean }): Promise<MDXInstance>;
+          };
+          MDD: {
+            create(file: Blob, options?: { lazy?: boolean }): Promise<MDDInstance>;
+          };
         };
 
         if (!dict.files.mdx) {
@@ -331,7 +335,10 @@ export const createMdictProvider = ({
         const mdxFile = await fs.openFile(`${dict.bundleDir}/${dict.files.mdx}`, 'Dictionaries');
         let mdxInst: MDXInstance;
         try {
-          mdxInst = await MDX.create(mdxFile);
+          // Lazy mode: skip the upfront decompress-every-key-block + sort
+          // that costs ~80 s on a 250 MB MDX. Lookups decode only the
+          // relevant key block on demand (~tens of ms each).
+          mdxInst = await MDX.create(mdxFile, { lazy: true });
         } catch (err) {
           const message = (err as Error).message ?? String(err);
           if (/encrypted file|user identification/i.test(message)) {
@@ -361,7 +368,7 @@ export const createMdictProvider = ({
         for (const name of mddNames) {
           try {
             const mddFile = await fs.openFile(`${dict.bundleDir}/${name}`, 'Dictionaries');
-            mddInsts.push(await MDD.create(mddFile));
+            mddInsts.push(await MDD.create(mddFile, { lazy: true }));
           } catch (err) {
             console.warn('Failed to open MDD resource bundle', name, err);
           }

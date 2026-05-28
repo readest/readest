@@ -103,6 +103,10 @@ const builtinLabel = (id: string, _: (key: string) => string): string => {
 interface SortableRowProps {
   row: ProviderRow;
   enabled: boolean;
+  /** True when System Dictionary is on and this row is a non-system provider.
+   * The toggle reflects the persisted enabled flag (so the user sees what
+   * will come back when System is turned off) but is rendered read-only. */
+  lockedBySystem: boolean;
   isDeleteMode: boolean;
   isEditMode: boolean;
   onToggle: (id: string, next: boolean) => void;
@@ -115,6 +119,7 @@ interface SortableRowProps {
 const SortableRow: React.FC<SortableRowProps> = ({
   row,
   enabled,
+  lockedBySystem,
   isDeleteMode,
   isEditMode,
   onToggle,
@@ -183,11 +188,15 @@ const SortableRow: React.FC<SortableRowProps> = ({
 
       <input
         type='checkbox'
-        className='toggle toggle-sm shrink-0'
+        className={clsx(
+          'toggle toggle-sm shrink-0',
+          lockedBySystem && 'cursor-not-allowed opacity-60',
+        )}
         checked={enabled}
         onChange={() => onToggle(row.id, !enabled)}
-        disabled={row.disabled}
+        disabled={row.disabled || lockedBySystem}
         aria-label={enabled ? _('Disable') : _('Enable')}
+        title={lockedBySystem ? _('Disable System Dictionary first to change this.') : undefined}
       />
 
       {/* Edit pencil — parity with the trailing delete X, but for the
@@ -247,6 +256,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     removeWebSearch,
     saveCustomDictionaries,
     loadCustomDictionaries,
+    markAvailableByContentId,
   } = useCustomDictionaryStore();
 
   useEffect(() => {
@@ -453,18 +463,41 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     setImporting(true);
     try {
       const result = await selectFiles({ type: 'dictionaries', multiple: true });
-      if (result.error || result.files.length === 0) return;
+      if (result.error) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to import dictionary: {{message}}', { message: result.error }),
+          timeout: 4000,
+        });
+        return;
+      }
+      // User cancelled the picker — staying silent is the right call here.
+      if (result.files.length === 0) return;
       const importResult = await appService?.importDictionaries(result.files, dictionaries);
-      if (!importResult) return;
+      if (!importResult) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to import dictionary: {{message}}', {
+            message: _('App service is not available'),
+          }),
+          timeout: 4000,
+        });
+        return;
+      }
       let added = 0;
       for (const dict of importResult.imported) {
         addDictionary(dict);
+        // The freshly imported bundle exists on disk now; clear any lingering
+        // `unavailable` flag on an in-memory entry with the same contentId
+        // (e.g. when a prior import lost its bundle dir for any reason).
+        if (dict.contentId) markAvailableByContentId(dict.contentId);
         if (appService) void queueDictionaryBinaryUpload(dict, appService);
         added += 1;
       }
       let replaced = 0;
       for (const { oldIds, newDict } of importResult.replacements) {
         replaceDictionaries(oldIds, newDict);
+        if (newDict.contentId) markAvailableByContentId(newDict.contentId);
         if (appService) void queueDictionaryBinaryUpload(newDict, appService);
         // Invalidate any cached provider instances for the replaced ids so
         // their next lookup picks up the new bundle's files.
@@ -488,6 +521,26 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           timeout: 2500,
         });
       }
+      // Bundles that landed in the library but are marked unsupported (e.g.
+      // record-block-encrypted MDX, raw .dict without DictZip). They show
+      // disabled in the list — surface the first reason so the user knows
+      // their "imported" toast doesn't mean it's usable.
+      const unsupportedDicts = [
+        ...importResult.imported,
+        ...importResult.replacements.map((r) => r.newDict),
+      ].filter((d) => d.unsupported);
+      if (unsupportedDicts.length > 0) {
+        const firstReason = unsupportedDicts.find((d) => d.unsupportedReason)?.unsupportedReason;
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: firstReason
+            ? _('Unsupported dictionary: {{reason}}', { reason: firstReason })
+            : _('{{count}} dictionary is unsupported and disabled', {
+                count: unsupportedDicts.length,
+              }),
+          timeout: 5000,
+        });
+      }
       if (importResult.orphanFiles.length > 0) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',
@@ -495,6 +548,13 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             names: importResult.orphanFiles.join(', '),
           }),
           timeout: 4000,
+        });
+      }
+      if (added === 0 && replaced === 0 && importResult.orphanFiles.length === 0) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('No new dictionaries were imported'),
+          timeout: 2500,
         });
       }
     } catch (err) {
@@ -652,6 +712,15 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
                   key={row.id}
                   row={row}
                   enabled={settings.providerEnabled[row.id] !== false}
+                  // System-dictionary handoff is exclusive at lookup time, so
+                  // while it's on the other providers' toggles only express a
+                  // "what to restore when System is off" choice. Render them
+                  // read-only so the user can't accidentally clear that
+                  // restoration state.
+                  lockedBySystem={
+                    settings.providerEnabled[BUILTIN_PROVIDER_IDS.systemDictionary] === true &&
+                    row.id !== BUILTIN_PROVIDER_IDS.systemDictionary
+                  }
                   isDeleteMode={isDeleteMode}
                   isEditMode={isEditMode}
                   onToggle={handleToggle}

@@ -1760,5 +1760,15 @@
   "Send Reedy feedback": "إرسال ملاحظات Reedy",
   "OpenRouter API Key": "مفتاح OpenRouter API",
   "OpenRouter Base URL": "رابط OpenRouter الأساسي",
-  "OpenRouter Model": "نموذج OpenRouter"
+  "OpenRouter Model": "نموذج OpenRouter",
+  "Disable System Dictionary first to change this.": "قم بتعطيل قاموس النظام أولاً لتغيير هذا.",
+  "App service is not available": "خدمة التطبيق غير متوفرة",
+  "Unsupported dictionary: {{reason}}": "قاموس غير مدعوم: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_zero": "لا توجد قواميس غير مدعومة ومعطلة",
+  "{{count}} dictionary is unsupported and disabled_one": "قاموس واحد غير مدعوم ومعطل",
+  "{{count}} dictionary is unsupported and disabled_two": "قاموسان غير مدعومين ومعطلان",
+  "{{count}} dictionary is unsupported and disabled_few": "{{count}} قواميس غير مدعومة ومعطلة",
+  "{{count}} dictionary is unsupported and disabled_many": "{{count}} قاموساً غير مدعوماً ومعطلاً",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} قاموس غير مدعوم ومعطل",
+  "No new dictionaries were imported": "لم يتم استيراد أي قواميس جديدة"
 }

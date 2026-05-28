@@ -110,6 +110,10 @@ export class NativeFile extends File implements ClosableFile {
     return this.#lastModified;
   }
 
+  getNativeLocation(): { path: string; baseDir: BaseDirectory | null } {
+    return { path: this.#fp, baseDir: this.#baseDir };
+  }
+
   async stat() {
     return this.#handle?.stat();
   }

@@ -411,35 +411,16 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
 
   setEnabled: (id, enabled) => {
     set((state) => {
-      const SYSTEM_ID = BUILTIN_PROVIDER_IDS.systemDictionary;
-      // Exclusivity: enabling the system-dictionary entry disables all
-      // other providers, and enabling any non-system provider disables
-      // the system entry. The settings UI relies on this so the lookup
-      // path either ALWAYS opens the in-app popup or NEVER does — no
-      // mixed states. Disabling never cascades (toggling system off
-      // doesn't auto-enable the others; the user picks).
-      const isSystem = id === SYSTEM_ID;
-      const next: Record<string, boolean> = { ...state.settings.providerEnabled };
-      if (enabled) {
-        if (isSystem) {
-          // Turn off everything else.
-          for (const key of Object.keys(next)) {
-            if (key !== SYSTEM_ID) next[key] = false;
-          }
-          // Cover ids that may live in providerOrder without an
-          // explicit `false` entry (built-in defaults seed `true`).
-          for (const orderedId of state.settings.providerOrder) {
-            if (orderedId !== SYSTEM_ID) next[orderedId] = false;
-          }
-          next[SYSTEM_ID] = true;
-        } else {
-          // Enabling a non-system provider implicitly turns off system.
-          next[SYSTEM_ID] = false;
-          next[id] = true;
-        }
-      } else {
-        next[id] = false;
-      }
+      // System-dictionary exclusivity is enforced at LOOKUP time:
+      // `isSystemDictionaryEnabled` short-circuits to the OS handoff before
+      // any in-app provider runs. Persisting each provider's enabled state
+      // independently lets the user toggle System on/off without losing
+      // their preferred set of in-app providers — every flag is restored
+      // verbatim the moment System is turned back off.
+      const next: Record<string, boolean> = {
+        ...state.settings.providerEnabled,
+        [id]: enabled,
+      };
       return {
         settings: { ...state.settings, providerEnabled: next },
       };

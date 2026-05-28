@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy ফিডব্যাক পাঠান",
   "OpenRouter API Key": "OpenRouter API কী",
   "OpenRouter Base URL": "OpenRouter বেস URL",
-  "OpenRouter Model": "OpenRouter মডেল"
+  "OpenRouter Model": "OpenRouter মডেল",
+  "Disable System Dictionary first to change this.": "এটি পরিবর্তন করতে প্রথমে সিস্টেম অভিধান নিষ্ক্রিয় করুন।",
+  "App service is not available": "অ্যাপ পরিষেবা উপলব্ধ নয়",
+  "Unsupported dictionary: {{reason}}": "অসমর্থিত অভিধান: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}}টি অভিধান অসমর্থিত এবং নিষ্ক্রিয়",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}}টি অভিধান অসমর্থিত এবং নিষ্ক্রিয়",
+  "No new dictionaries were imported": "কোনো নতুন অভিধান আমদানি করা হয়নি"
 }

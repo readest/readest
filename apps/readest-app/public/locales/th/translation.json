@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "ส่งความคิดเห็นเกี่ยวกับ Reedy",
   "OpenRouter API Key": "คีย์ API OpenRouter",
   "OpenRouter Base URL": "URL พื้นฐาน OpenRouter",
-  "OpenRouter Model": "โมเดล OpenRouter"
+  "OpenRouter Model": "โมเดล OpenRouter",
+  "Disable System Dictionary first to change this.": "ปิดใช้งานพจนานุกรมระบบก่อนเพื่อเปลี่ยนการตั้งค่านี้",
+  "App service is not available": "บริการแอปไม่พร้อมใช้งาน",
+  "Unsupported dictionary: {{reason}}": "พจนานุกรมที่ไม่รองรับ: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "พจนานุกรม {{count}} รายการไม่รองรับและถูกปิดใช้งาน",
+  "No new dictionaries were imported": "ไม่มีพจนานุกรมใหม่ถูกนำเข้า"
 }

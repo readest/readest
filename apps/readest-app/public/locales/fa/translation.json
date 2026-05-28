@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "ارسال بازخورد Reedy",
   "OpenRouter API Key": "کلید API OpenRouter",
   "OpenRouter Base URL": "نشانی پایه OpenRouter",
-  "OpenRouter Model": "مدل OpenRouter"
+  "OpenRouter Model": "مدل OpenRouter",
+  "Disable System Dictionary first to change this.": "ابتدا فرهنگ لغت سیستم را غیرفعال کنید تا این را تغییر دهید.",
+  "App service is not available": "سرویس برنامه در دسترس نیست",
+  "Unsupported dictionary: {{reason}}": "فرهنگ لغت پشتیبانی‌نشده: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} فرهنگ لغت پشتیبانی نمی‌شود و غیرفعال است",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} فرهنگ لغت پشتیبانی نمی‌شوند و غیرفعال‌اند",
+  "No new dictionaries were imported": "هیچ فرهنگ لغت جدیدی وارد نشد"
 }

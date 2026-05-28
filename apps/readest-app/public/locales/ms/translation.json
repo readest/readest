@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "Hantar maklum balas Reedy",
   "OpenRouter API Key": "Kunci API OpenRouter",
   "OpenRouter Base URL": "URL Asas OpenRouter",
-  "OpenRouter Model": "Model OpenRouter"
+  "OpenRouter Model": "Model OpenRouter",
+  "Disable System Dictionary first to change this.": "Lumpuhkan Kamus Sistem dahulu untuk mengubahnya.",
+  "App service is not available": "Perkhidmatan aplikasi tidak tersedia",
+  "Unsupported dictionary: {{reason}}": "Kamus tidak disokong: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} kamus tidak disokong dan dilumpuhkan",
+  "No new dictionaries were imported": "Tiada kamus baharu diimport"
 }

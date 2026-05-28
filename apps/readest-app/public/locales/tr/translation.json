@@ -1640,5 +1640,11 @@
   "Send Reedy feedback": "Reedy geri bildirimi gönder",
   "OpenRouter API Key": "OpenRouter API Anahtarı",
   "OpenRouter Base URL": "OpenRouter Temel URL",
-  "OpenRouter Model": "OpenRouter Modeli"
+  "OpenRouter Model": "OpenRouter Modeli",
+  "Disable System Dictionary first to change this.": "Bunu değiştirmek için önce Sistem Sözlüğü’nü devre dışı bırakın.",
+  "App service is not available": "Uygulama hizmeti kullanılamıyor",
+  "Unsupported dictionary: {{reason}}": "Desteklenmeyen sözlük: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} sözlük desteklenmiyor ve devre dışı bırakıldı",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} sözlük desteklenmiyor ve devre dışı bırakıldı",
+  "No new dictionaries were imported": "Yeni sözlük içe aktarılmadı"
 }

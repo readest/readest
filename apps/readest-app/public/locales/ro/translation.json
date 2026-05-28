@@ -1670,5 +1670,12 @@
   "Send Reedy feedback": "Trimite feedback Reedy",
   "OpenRouter API Key": "Cheie API OpenRouter",
   "OpenRouter Base URL": "URL de bază OpenRouter",
-  "OpenRouter Model": "Model OpenRouter"
+  "OpenRouter Model": "Model OpenRouter",
+  "Disable System Dictionary first to change this.": "Dezactivați mai întâi Dicționarul de sistem pentru a modifica această opțiune.",
+  "App service is not available": "Serviciul aplicației nu este disponibil",
+  "Unsupported dictionary: {{reason}}": "Dicționar nesuportat: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} dicționar nu este acceptat și este dezactivat",
+  "{{count}} dictionary is unsupported and disabled_few": "{{count}} dicționare nu sunt acceptate și sunt dezactivate",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} de dicționare nu sunt acceptate și sunt dezactivate",
+  "No new dictionaries were imported": "Nu au fost importate dicționare noi"
 }

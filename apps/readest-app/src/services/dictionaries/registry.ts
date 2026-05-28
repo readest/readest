@@ -20,6 +20,7 @@ import type {
   WebSearchEntry,
 } from './types';
 import { BUILTIN_PROVIDER_IDS } from './types';
+import { isSystemDictionarySupported } from './systemDictionary';
 import { wiktionaryProvider } from './providers/wiktionaryProvider';
 import { wikipediaProvider } from './providers/wikipediaProvider';
 import { createStarDictProvider, type DictionaryFileOpener } from './providers/starDictProvider';
@@ -156,8 +157,16 @@ export const getEnabledProviders = ({
  * of `getEnabledProviders` (which filters the sentinel out so no empty
  * tab appears) so callers don't need to look at order/list shape to
  * make the dispatch decision.
+ *
+ * Gated by platform support: `providerEnabled` is whole-field synced
+ * across devices, so a flag set on (say) macOS would otherwise reach a
+ * Windows device that has no handoff implementation, leaving the
+ * annotator with no way to look up a word. Short-circuiting here keeps
+ * the setting durable on the device where it makes sense while making
+ * it a no-op everywhere else.
  */
 export const isSystemDictionaryEnabled = (settings: DictionarySettings): boolean => {
+  if (!isSystemDictionarySupported()) return false;
   return settings.providerEnabled[BUILTIN_PROVIDER_IDS.systemDictionary] === true;
 };
 

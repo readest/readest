@@ -1670,5 +1670,12 @@
   "Send Reedy feedback": "שלח משוב Reedy",
   "OpenRouter API Key": "מפתח API של OpenRouter",
   "OpenRouter Base URL": "כתובת בסיס OpenRouter",
-  "OpenRouter Model": "מודל OpenRouter"
+  "OpenRouter Model": "מודל OpenRouter",
+  "Disable System Dictionary first to change this.": "השבת תחילה את מילון המערכת כדי לשנות זאת.",
+  "App service is not available": "שירות האפליקציה אינו זמין",
+  "Unsupported dictionary: {{reason}}": "מילון לא נתמך: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} מילון אינו נתמך ומושבת",
+  "{{count}} dictionary is unsupported and disabled_two": "{{count}} מילונים אינם נתמכים ומושבתים",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} מילונים אינם נתמכים ומושבתים",
+  "No new dictionaries were imported": "לא יובאו מילונים חדשים"
 }

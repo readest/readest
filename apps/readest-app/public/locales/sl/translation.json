@@ -1700,5 +1700,13 @@
   "Send Reedy feedback": "Pošlji povratne informacije Reedy",
   "OpenRouter API Key": "API-ključ OpenRouter",
   "OpenRouter Base URL": "Osnovni URL OpenRouter",
-  "OpenRouter Model": "Model OpenRouter"
+  "OpenRouter Model": "Model OpenRouter",
+  "Disable System Dictionary first to change this.": "Najprej onemogočite sistemski slovar, da to spremenite.",
+  "App service is not available": "Storitev aplikacije ni na voljo",
+  "Unsupported dictionary: {{reason}}": "Nepodprt slovar: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} slovar ni podprt in je onemogočen",
+  "{{count}} dictionary is unsupported and disabled_two": "{{count}} slovarja nista podprta in sta onemogočena",
+  "{{count}} dictionary is unsupported and disabled_few": "{{count}} slovarji niso podprti in so onemogočeni",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} slovarjev ni podprtih in so onemogočeni",
+  "No new dictionaries were imported": "Novi slovarji niso bili uvoženi"
 }

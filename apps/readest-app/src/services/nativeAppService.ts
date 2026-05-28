@@ -307,6 +307,22 @@ export const nativeFileSystem: FileSystem = {
     if (typeof content === 'string') {
       return writeTextFile(fp, content, baseDir ? { baseDir } : undefined);
     } else if (content instanceof File) {
+      // Fast path for NativeFile inputs (e.g. user-picked source on import):
+      // do a native filesystem copy at the Rust side rather than pumping
+      // ~1 MB chunks through the Tauri IPC bridge. On Android the stream
+      // path costs ~400 ms per IPC round-trip, which puts a 250 MB file
+      // at ~100 s; the native copy is bound by disk throughput instead.
+      try {
+        if (content instanceof NativeFile) {
+          const src = content.getNativeLocation();
+          const opts: { fromPathBaseDir?: number; toPathBaseDir?: number } = {};
+          if (src.baseDir != null) opts.fromPathBaseDir = src.baseDir;
+          if (baseDir) opts.toPathBaseDir = baseDir;
+          return await copyFile(src.path, fp, Object.keys(opts).length > 0 ? opts : undefined);
+        }
+      } catch (error) {
+        console.warn('Native copy failed, falling back to stream copy:', error);
+      }
       const writeOptions = {
         write: true,
         create: true,

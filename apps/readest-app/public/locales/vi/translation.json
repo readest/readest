@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "Gửi phản hồi Reedy",
   "OpenRouter API Key": "Khóa API OpenRouter",
   "OpenRouter Base URL": "URL cơ sở OpenRouter",
-  "OpenRouter Model": "Mô hình OpenRouter"
+  "OpenRouter Model": "Mô hình OpenRouter",
+  "Disable System Dictionary first to change this.": "Tắt Từ điển hệ thống trước để thay đổi điều này.",
+  "App service is not available": "Dịch vụ ứng dụng không khả dụng",
+  "Unsupported dictionary: {{reason}}": "Từ điển không được hỗ trợ: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} từ điển không được hỗ trợ và đã bị vô hiệu hóa",
+  "No new dictionaries were imported": "Không có từ điển mới nào được nhập"
 }

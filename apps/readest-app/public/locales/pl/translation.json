@@ -1700,5 +1700,13 @@
   "Send Reedy feedback": "Wyślij opinię o Reedy",
   "OpenRouter API Key": "Klucz API OpenRouter",
   "OpenRouter Base URL": "Bazowy URL OpenRouter",
-  "OpenRouter Model": "Model OpenRouter"
+  "OpenRouter Model": "Model OpenRouter",
+  "Disable System Dictionary first to change this.": "Najpierw wyłącz Słownik systemowy, aby to zmienić.",
+  "App service is not available": "Usługa aplikacji jest niedostępna",
+  "Unsupported dictionary: {{reason}}": "Nieobsługiwany słownik: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} słownik jest nieobsługiwany i wyłączony",
+  "{{count}} dictionary is unsupported and disabled_few": "{{count}} słowniki są nieobsługiwane i wyłączone",
+  "{{count}} dictionary is unsupported and disabled_many": "{{count}} słowników jest nieobsługiwanych i wyłączonych",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} słowników jest nieobsługiwanych i wyłączonych",
+  "No new dictionaries were imported": "Nie zaimportowano żadnych nowych słowników"
 }

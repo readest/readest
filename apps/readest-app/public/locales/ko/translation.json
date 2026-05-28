@@ -1610,5 +1610,10 @@
   "Send Reedy feedback": "Reedy 피드백 보내기",
   "OpenRouter API Key": "OpenRouter API 키",
   "OpenRouter Base URL": "OpenRouter 기본 URL",
-  "OpenRouter Model": "OpenRouter 모델"
+  "OpenRouter Model": "OpenRouter 모델",
+  "Disable System Dictionary first to change this.": "변경하려면 먼저 시스템 사전을 비활성화하세요.",
+  "App service is not available": "앱 서비스를 사용할 수 없습니다",
+  "Unsupported dictionary: {{reason}}": "지원되지 않는 사전: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}}개의 사전이 지원되지 않아 비활성화되었습니다",
+  "No new dictionaries were imported": "가져온 새 사전이 없습니다"
 }

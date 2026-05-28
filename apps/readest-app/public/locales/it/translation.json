@@ -1670,5 +1670,12 @@
   "Send Reedy feedback": "Invia feedback Reedy",
   "OpenRouter API Key": "Chiave API OpenRouter",
   "OpenRouter Base URL": "URL di base OpenRouter",
-  "OpenRouter Model": "Modello OpenRouter"
+  "OpenRouter Model": "Modello OpenRouter",
+  "Disable System Dictionary first to change this.": "Disattiva prima il Dizionario di Sistema per modificare questa opzione.",
+  "App service is not available": "Il servizio dell’app non è disponibile",
+  "Unsupported dictionary: {{reason}}": "Dizionario non supportato: {{reason}}",
+  "{{count}} dictionary is unsupported and disabled_one": "{{count}} dizionario non è supportato ed è disattivato",
+  "{{count}} dictionary is unsupported and disabled_many": "{{count}} dizionari non sono supportati e sono disattivati",
+  "{{count}} dictionary is unsupported and disabled_other": "{{count}} dizionari non sono supportati e sono disattivati",
+  "No new dictionaries were imported": "Nessun nuovo dizionario importato"
 }
