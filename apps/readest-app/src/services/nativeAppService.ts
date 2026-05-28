@@ -444,6 +444,7 @@ export class NativeAppService extends BaseAppService {
   override isIOSApp = OS_TYPE === 'ios';
   override isMacOSApp = OS_TYPE === 'macos';
   override isLinuxApp = OS_TYPE === 'linux';
+  override isWindowsApp = OS_TYPE === 'windows';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
   override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
   override isAppImage = Boolean(window.__READEST_IS_APPIMAGE);
@@ -642,8 +643,12 @@ export class NativeAppService extends BaseAppService {
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      // Linux desktop has no system share sheet; always fall through to saveDialog.
-      const wantShare = !this.isLinuxApp && (this.isIOSApp || options?.share);
+      // Linux desktop has no system share sheet; Windows WebView2's native
+      // share UI (via tauri-plugin-sharekit) blocks the main thread waiting
+      // on complete/cancel callbacks that may never fire when the user
+      // dismisses the picker, freezing the app (issue #4343). Both fall
+      // through to saveDialog instead.
+      const wantShare = !this.isLinuxApp && !this.isWindowsApp && (this.isIOSApp || options?.share);
       if (wantShare) {
         let shareablePath = options?.filePath;
         if (!shareablePath) {
