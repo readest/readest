@@ -81,6 +81,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
               alt={book.title}
               fill={true}
               loading='lazy'
+              draggable={false}
               className={clsx('cover-image crop-cover-img object-cover', imageClassName)}
               onLoad={handleImageLoad}
               onError={handleImageError}
@@ -104,6 +105,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
                 height={0}
                 sizes='100vw'
                 loading='lazy'
+                draggable={false}
                 className={clsx(
                   'cover-image fit-cover-img h-auto max-h-full w-auto max-w-full shadow-md',
                   imageClassName,

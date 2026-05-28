@@ -423,6 +423,13 @@ foliate-fxl {
   touch-action: manipulation;
 }
 
+.no-context-menu img,
+.no-context-menu a {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 .book-spine {
   background-image:
     linear-gradient(
