@@ -189,8 +189,12 @@ export const useTextSelector = (
 
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
-      if (!selectionPosition.current) {
-        selectionPosition.current = view?.renderer?.start || null;
+      if (selectionPosition.current === null) {
+        // Save the absolute container scroll, not `renderer.start` — the
+        // latter is section-relative, so restoring it as `containerPosition`
+        // snaps multi-section paginated views back to the first rendered
+        // section (#873-related Android regression).
+        selectionPosition.current = view?.renderer?.containerPosition ?? null;
       }
       makeSelection(sel, index, false);
     } else {
@@ -206,8 +210,7 @@ export const useTextSelector = (
     const viewSettings = getViewSettings(bookKey);
     if (viewSettings?.scrolled) return;
 
-    if (isTextSelected.current && view?.renderer?.containerPosition && selectionPosition.current) {
-      console.warn('Keep container position', selectionPosition.current);
+    if (isTextSelected.current && view?.renderer && selectionPosition.current !== null) {
       view.renderer.containerPosition = selectionPosition.current;
     }
   };
