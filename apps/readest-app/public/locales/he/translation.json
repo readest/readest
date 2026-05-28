@@ -1647,8 +1647,6 @@
   "Sync failed.": "הסנכרון נכשל.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "קובץ הספר אינו קיים יותר. אשר את המחיקה כדי להסיר אותו מהספרייה.",
   "Read books in place": "קרא ספרים במקומם",
-  "This folder is registered as an external library — books here are always read in place.": "תיקייה זו רשומה כספרייה חיצונית — ספרים כאן נקראים תמיד במקומם.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "שמור את הספרים במקומם. אל תעתיק שום ספר לספרייה כדי לחסוך מקום. קבצי ספרים עדיין יסונכרנו לענן אם ההעלאה האוטומטית מופעלת. שימושי לספריות המנוהלות על ידי אפליקציה אחרת (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS אינו מאפשר ייבוא של שורש \"ב-iPhone שלי\". פתח אותו ובחר תת-תיקייה ספציפית (לדוגמה Readest, Downloads), ונסה שוב.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "לא ניתן לקרוא תיקייה זו. מיקומים מסוימים ב-iOS (כמו שורש \"ב-iPhone שלי\" או הרמה העליונה של iCloud Drive) אינם ניתנים לסריקה — אנא בחר תת-תיקייה ספציפית ונסה שוב.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "לא ניתן לקרוא תיקייה זו. אנא בחר את התיקייה שוב, או בחר מיקום אחר.",
@@ -1677,5 +1675,8 @@
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} מילון אינו נתמך ומושבת",
   "{{count}} dictionary is unsupported and disabled_two": "{{count}} מילונים אינם נתמכים ומושבתים",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} מילונים אינם נתמכים ומושבתים",
-  "No new dictionaries were imported": "לא יובאו מילונים חדשים"
+  "No new dictionaries were imported": "לא יובאו מילונים חדשים",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "קריאת ספרים מתיקיותיהם המקוריות במקום העתקתם לספרייה. חוסך מקום בדיסק; העלאה אוטומטית לענן עדיין פועלת אם היא מופעלת.",
+  "This folder is an external library. Books here are always read in place.": "תיקייה זו היא ספרייה חיצונית. הספרים בה נקראים תמיד ממיקומם המקורי.",
+  "Swipe to Paginate": "החלקה להחלפת עמוד"
 }

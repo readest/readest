@@ -1617,8 +1617,6 @@
   "Sync failed.": "Ο συγχρονισμός απέτυχε.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Το αρχείο του βιβλίου δεν υπάρχει πλέον. Επιβεβαιώστε τη διαγραφή για να το αφαιρέσετε από τη βιβλιοθήκη.",
   "Read books in place": "Ανάγνωση βιβλίων στη θέση τους",
-  "This folder is registered as an external library — books here are always read in place.": "Αυτός ο φάκελος είναι καταχωρημένος ως εξωτερική βιβλιοθήκη — τα βιβλία εδώ διαβάζονται πάντα στη θέση τους.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Διατηρήστε τα βιβλία εκεί που βρίσκονται. Μην αντιγράφετε κανένα βιβλίο στη βιβλιοθήκη για εξοικονόμηση χώρου. Τα αρχεία βιβλίων συγχρονίζονται στο cloud αν είναι ενεργοποιημένη η αυτόματη μεταφόρτωση. Χρήσιμο για βιβλιοθήκες που διαχειρίζεται άλλη εφαρμογή (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "Το iOS δεν επιτρέπει την εισαγωγή της ρίζας «Στο iPhone μου». Ανοίξτε την και επιλέξτε έναν συγκεκριμένο υποφάκελο (π.χ. Readest, Downloads), και δοκιμάστε ξανά.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Αδύνατη η ανάγνωση αυτού του φακέλου. Ορισμένες τοποθεσίες iOS (όπως η ρίζα «Στο iPhone μου» ή το ανώτατο επίπεδο του iCloud Drive) δεν μπορούν να σαρωθούν — επιλέξτε έναν συγκεκριμένο υποφάκελο και δοκιμάστε ξανά.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Αδύνατη η ανάγνωση αυτού του φακέλου. Επιλέξτε ξανά τον φάκελο ή διαλέξτε διαφορετική τοποθεσία.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Μη υποστηριζόμενο λεξικό: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} λεξικό δεν υποστηρίζεται και είναι απενεργοποιημένο",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} λεξικά δεν υποστηρίζονται και είναι απενεργοποιημένα",
-  "No new dictionaries were imported": "Δεν εισήχθησαν νέα λεξικά"
+  "No new dictionaries were imported": "Δεν εισήχθησαν νέα λεξικά",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Διαβάστε βιβλία από τους αρχικούς τους φακέλους αντί να τα αντιγράφετε στη βιβλιοθήκη. Εξοικονομεί χώρο στο δίσκο· η αυτόματη μεταφόρτωση στο cloud εξακολουθεί να λειτουργεί εάν είναι ενεργοποιημένη.",
+  "This folder is an external library. Books here are always read in place.": "Αυτός ο φάκελος είναι εξωτερική βιβλιοθήκη. Τα βιβλία εδώ διαβάζονται πάντα στη θέση τους.",
+  "Swipe to Paginate": "Σύρετε για Σελιδοποίηση"
 }

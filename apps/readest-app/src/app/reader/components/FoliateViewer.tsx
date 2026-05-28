@@ -571,6 +571,11 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
+      if (viewSettings.disableSwipe) {
+        view.renderer.setAttribute('no-swipe', '');
+      } else {
+        view.renderer.removeAttribute('no-swipe');
+      }
       if (appService?.isAndroidApp) {
         if (eink) {
           view.renderer.setAttribute('eink', '');

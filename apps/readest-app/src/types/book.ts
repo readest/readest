@@ -177,6 +177,7 @@ export interface BookLayout {
   scrolled: boolean;
   noContinuousScroll: boolean;
   disableClick: boolean;
+  disableSwipe: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;

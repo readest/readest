@@ -1617,8 +1617,6 @@
   "Sync failed.": "ஒத்திசைவு தோல்வி.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "புத்தக கோப்பு இனி இல்லை. நூலகத்திலிருந்து அதை அகற்ற நீக்குதலை உறுதிப்படுத்தவும்.",
   "Read books in place": "புத்தகங்களை அவற்றின் இடத்திலேயே வாசிக்கவும்",
-  "This folder is registered as an external library — books here are always read in place.": "இந்த கோப்புறை வெளி நூலகமாக பதிவு செய்யப்பட்டுள்ளது — இங்குள்ள புத்தகங்கள் எப்போதும் அவற்றின் இடத்திலேயே வாசிக்கப்படும்.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "புத்தகங்களை அவற்றின் இடத்திலேயே வைக்கவும். இடத்தை மிச்சப்படுத்த நூலகத்திற்கு எந்த புத்தகத்தையும் நகலெடுக்க வேண்டாம். தானியக்க பதிவேற்றம் இயக்கப்பட்டிருந்தால் புத்தக கோப்புகள் இன்னும் கிளவுட்டுடன் ஒத்திசைக்கப்படும். வேறு பயன்பாட்டால் (Duokan, Calibre, Moon+ Reader) நிர்வகிக்கப்படும் நூலகங்களுக்கு பயனுள்ளது.",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS \"On My iPhone\" மூலத்தை இறக்குமதி செய்ய அனுமதிக்காது. அதைத் திறந்து குறிப்பிட்ட துணை-கோப்புறையை (எ.கா. Readest, Downloads) தேர்ந்தெடுத்து, மீண்டும் முயற்சிக்கவும்.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "இந்தக் கோப்புறையை வாசிக்க முடியவில்லை. சில iOS இடங்கள் (எ.கா. \"On My iPhone\" மூலம் அல்லது iCloud Drive இன் மிக மேல் நிலை) ஸ்கேன் செய்ய முடியாது — தயவுசெய்து குறிப்பிட்ட துணை-கோப்புறையைத் தேர்ந்தெடுத்து மீண்டும் முயற்சிக்கவும்.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "இந்தக் கோப்புறையை வாசிக்க முடியவில்லை. தயவுசெய்து கோப்புறையை மீண்டும் தேர்ந்தெடுக்கவும் அல்லது வேறு இடத்தைத் தேர்ந்தெடுக்கவும்.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "ஆதரிக்கப்படாத அகராதி: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} அகராதி ஆதரிக்கப்படவில்லை மற்றும் முடக்கப்பட்டுள்ளது",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} அகராதிகள் ஆதரிக்கப்படவில்லை மற்றும் முடக்கப்பட்டுள்ளன",
-  "No new dictionaries were imported": "புதிய அகராதிகள் எதுவும் இறக்குமதி செய்யப்படவில்லை"
+  "No new dictionaries were imported": "புதிய அகராதிகள் எதுவும் இறக்குமதி செய்யப்படவில்லை",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "புத்தகங்களை நூலகத்திற்கு நகலெடுக்காமல், அவற்றின் அசல் கோப்புறைகளில் இருந்தே வாசிக்கவும். வட்டக் கொள்ளளவை சேமிக்கும்; இயக்கப்பட்டிருந்தால் கிளவுட் தானியங்கு பதிவேற்றம் இன்னும் வேலை செய்யும்.",
+  "This folder is an external library. Books here are always read in place.": "இந்த கோப்புறை ஒரு வெளிப்புற நூலகம். இங்குள்ள புத்தகங்கள் எப்போதும் அவற்றின் அசல் இடத்திலேயே வாசிக்கப்படும்.",
+  "Swipe to Paginate": "பக்கம் மாற்ற ஸ்வைப் செய்யவும்"
 }

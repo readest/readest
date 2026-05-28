@@ -1677,8 +1677,6 @@
   "Sync failed.": "Синхронизация не удалась.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Файл книги больше не существует. Подтвердите удаление, чтобы убрать её из библиотеки.",
   "Read books in place": "Читать книги по месту",
-  "This folder is registered as an external library — books here are always read in place.": "Эта папка зарегистрирована как внешняя библиотека — книги здесь всегда читаются по месту.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Оставляйте книги там, где они находятся. Не копируйте книги в библиотеку, чтобы экономить место. Файлы книг по-прежнему синхронизируются с облаком, если включена автозагрузка. Полезно для библиотек, которыми управляет другое приложение (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS не позволяет импортировать корень «На моём iPhone». Откройте его и выберите конкретную подпапку (например, Readest, Downloads), затем повторите попытку.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Не удалось прочитать эту папку. Некоторые местоположения iOS (например, корень «На моём iPhone» или верхний уровень iCloud Drive) сканировать нельзя — выберите конкретную подпапку и попробуйте снова.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Не удалось прочитать эту папку. Выберите папку заново или укажите другое местоположение.",
@@ -1708,5 +1706,8 @@
   "{{count}} dictionary is unsupported and disabled_few": "{{count}} словаря не поддерживаются и отключены",
   "{{count}} dictionary is unsupported and disabled_many": "{{count}} словарей не поддерживаются и отключены",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} словарей не поддерживаются и отключены",
-  "No new dictionaries were imported": "Новые словари не были импортированы"
+  "No new dictionaries were imported": "Новые словари не были импортированы",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Читать книги из их исходных папок вместо копирования в библиотеку. Экономит место на диске; автозагрузка в облако по-прежнему работает, если включена.",
+  "This folder is an external library. Books here are always read in place.": "Эта папка — внешняя библиотека. Книги в ней всегда открываются по исходному пути.",
+  "Swipe to Paginate": "Смахивание для перелистывания"
 }

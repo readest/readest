@@ -394,6 +394,7 @@ export const usePagination = (
       const bookData = getBookData(bookKey);
       const viewSettings = getViewSettings(bookKey);
       if (!bookData?.isFixedLayout || viewSettings?.scrolled) return false;
+      if (viewSettings?.disableSwipe) return false;
       if (isPanningView(viewRef.current, viewSettings)) return false;
 
       const { deltaX, deltaY, deltaT } = detail;

@@ -1587,8 +1587,6 @@
   "Sync failed.": "동기화에 실패했습니다.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "도서 파일이 더 이상 존재하지 않습니다. 라이브러리에서 제거하려면 삭제를 확인하세요.",
   "Read books in place": "원래 위치에서 도서 읽기",
-  "This folder is registered as an external library — books here are always read in place.": "이 폴더는 외부 라이브러리로 등록되어 있습니다 — 이곳의 도서는 항상 원래 위치에서 읽힙니다.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "도서를 원래 위치에 그대로 둡니다. 공간 절약을 위해 라이브러리에는 도서를 복사하지 않습니다. 자동 업로드가 활성화되어 있으면 도서 파일은 클라우드와 계속 동기화됩니다. 다른 앱 (Duokan, Calibre, Moon+ Reader) 으로 관리하는 라이브러리에 유용합니다.",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS에서는 \"내 iPhone\" 루트를 가져올 수 없습니다. 해당 항목을 열어 특정 하위 폴더 (예: Readest, Downloads) 를 선택한 후 다시 시도하세요.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "이 폴더를 읽을 수 없습니다. 일부 iOS 위치 (예: \"내 iPhone\" 루트 또는 iCloud Drive 최상위) 는 스캔할 수 없습니다 — 특정 하위 폴더를 선택한 후 다시 시도해 주세요.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "이 폴더를 읽을 수 없습니다. 폴더를 다시 선택하거나 다른 위치를 선택해 주세요.",
@@ -1615,5 +1613,8 @@
   "App service is not available": "앱 서비스를 사용할 수 없습니다",
   "Unsupported dictionary: {{reason}}": "지원되지 않는 사전: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}}개의 사전이 지원되지 않아 비활성화되었습니다",
-  "No new dictionaries were imported": "가져온 새 사전이 없습니다"
+  "No new dictionaries were imported": "가져온 새 사전이 없습니다",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "도서를 라이브러리에 복사하지 않고 원래 폴더에서 직접 읽어옵니다. 디스크 공간을 절약하며, 자동 업로드가 켜져 있으면 클라우드 동기화도 그대로 작동합니다.",
+  "This folder is an external library. Books here are always read in place.": "이 폴더는 외부 라이브러리입니다. 여기 도서는 항상 원래 위치에서 읽힙니다.",
+  "Swipe to Paginate": "스와이프로 페이지 넘기기"
 }

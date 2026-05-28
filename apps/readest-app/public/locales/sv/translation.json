@@ -1617,8 +1617,6 @@
   "Sync failed.": "Synkroniseringen misslyckades.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Bokfilen finns inte längre. Bekräfta borttagningen för att ta bort den från biblioteket.",
   "Read books in place": "Läs böcker på plats",
-  "This folder is registered as an external library — books here are always read in place.": "Den här mappen är registrerad som ett externt bibliotek — böckerna här läses alltid på plats.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Behåll böckerna där de är. Kopiera inga böcker till biblioteket för att spara utrymme. Bokfiler synkroniseras fortfarande till molnet om automatisk uppladdning är aktiverad. Användbart för bibliotek som hanteras av en annan app (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS tillåter inte import av roten ”På min iPhone”. Öppna den och välj en specifik undermapp (t.ex. Readest, Downloads), och försök igen.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Det gick inte att läsa den här mappen. Vissa iOS-platser (som roten ”På min iPhone” eller den översta nivån i iCloud Drive) kan inte skannas — välj en specifik undermapp och försök igen.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Det gick inte att läsa den här mappen. Välj mappen igen eller välj en annan plats.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Ordbok stöds inte: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} ordbok stöds inte och är inaktiverad",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} ordböcker stöds inte och är inaktiverade",
-  "No new dictionaries were imported": "Inga nya ordböcker importerades"
+  "No new dictionaries were imported": "Inga nya ordböcker importerades",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Läs böcker direkt från deras ursprungsmappar i stället för att kopiera dem till biblioteket. Sparar diskutrymme; automatisk uppladdning till molnet fungerar fortfarande om den är aktiverad.",
+  "This folder is an external library. Books here are always read in place.": "Den här mappen är ett externt bibliotek. Böckerna här läses alltid från sin ursprungsplats.",
+  "Swipe to Paginate": "Svep för att Bläddra"
 }

@@ -235,6 +235,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   scrolled: false,
   noContinuousScroll: false,
   disableClick: false,
+  disableSwipe: false,
   fullscreenClickArea: false,
   swapClickArea: false,
   disableDoubleClick: false,

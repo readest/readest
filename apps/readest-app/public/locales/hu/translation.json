@@ -1617,8 +1617,6 @@
   "Sync failed.": "A szinkronizálás sikertelen.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "A könyvfájl már nem létezik. Erősítsd meg a törlést a könyvtárból való eltávolításhoz.",
   "Read books in place": "Könyvek olvasása a helyükön",
-  "This folder is registered as an external library — books here are always read in place.": "Ez a mappa külső könyvtárként van regisztrálva — az itt lévő könyveket mindig a helyükön olvassuk.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Hagyd a könyveket ott, ahol vannak. Helymegtakarítás érdekében ne másolj egyetlen könyvet sem a könyvtárba. A könyvfájlok továbbra is szinkronizálódnak a felhőbe, ha az automatikus feltöltés be van kapcsolva. Hasznos olyan könyvtárakhoz, amelyeket más alkalmazás kezel (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "Az iOS nem teszi lehetővé az „iPhone-omon\" gyökér importálását. Nyisd meg, és válassz egy konkrét almappát (pl. Readest, Downloads), majd próbáld újra.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Nem sikerült olvasni ezt a mappát. Egyes iOS helyek (mint az „iPhone-omon\" gyökér vagy az iCloud Drive legfelső szintje) nem szkennelhetők — kérlek, válassz egy konkrét almappát, és próbáld újra.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Nem sikerült olvasni ezt a mappát. Kérlek, válaszd ki újra a mappát, vagy válassz másik helyet.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Nem támogatott szótár: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} szótár nem támogatott, és le van tiltva",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} szótár nem támogatott, és le van tiltva",
-  "No new dictionaries were imported": "Nem importáltunk új szótárakat"
+  "No new dictionaries were imported": "Nem importáltunk új szótárakat",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Olvassa a könyveket az eredeti mappáikból, ahelyett, hogy a könyvtárba másolná őket. Lemezterületet takarít meg; a felhő automatikus feltöltése továbbra is működik, ha engedélyezve van.",
+  "This folder is an external library. Books here are always read in place.": "Ez a mappa egy külső könyvtár. Az itt található könyvek mindig a saját helyükön nyílnak meg.",
+  "Swipe to Paginate": "Lapozás húzással"
 }

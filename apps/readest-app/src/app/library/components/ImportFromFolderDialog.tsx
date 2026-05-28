@@ -372,11 +372,9 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
               <span className='block'>{_('Read books in place')}</span>
               <span className='text-base-content/60 block text-xs'>
                 {readInPlaceLocked
-                  ? _(
-                      'This folder is registered as an external library — books here are always read in place.',
-                    )
+                  ? _('This folder is an external library. Books here are always read in place.')
                   : _(
-                      'Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).',
+                      'Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.',
                     )}
               </span>
             </span>

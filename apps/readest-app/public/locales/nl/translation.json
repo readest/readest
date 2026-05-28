@@ -1617,8 +1617,6 @@
   "Sync failed.": "Synchronisatie mislukt.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Het boekbestand bestaat niet meer. Bevestig verwijdering om het uit de bibliotheek te halen.",
   "Read books in place": "Boeken op hun plek lezen",
-  "This folder is registered as an external library — books here are always read in place.": "Deze map is geregistreerd als externe bibliotheek — boeken hier worden altijd op hun plek gelezen.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Laat de boeken staan waar ze zijn. Kopieer geen boeken naar de bibliotheek om ruimte te besparen. Boekbestanden synchroniseren nog steeds naar de cloud als automatisch uploaden is ingeschakeld. Handig voor bibliotheken die door een andere app worden beheerd (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS staat het importeren van de root „Op mijn iPhone\" niet toe. Open deze en kies een specifieke submap (bijv. Readest, Downloads), en probeer het opnieuw.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Kan deze map niet lezen. Sommige iOS-locaties (zoals de root „Op mijn iPhone\" of het hoogste niveau van iCloud Drive) kunnen niet worden gescand — kies een specifieke submap en probeer het opnieuw.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Kan deze map niet lezen. Kies de map opnieuw of selecteer een andere locatie.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Niet-ondersteund woordenboek: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} woordenboek wordt niet ondersteund en is uitgeschakeld",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} woordenboeken worden niet ondersteund en zijn uitgeschakeld",
-  "No new dictionaries were imported": "Er zijn geen nieuwe woordenboeken geïmporteerd"
+  "No new dictionaries were imported": "Er zijn geen nieuwe woordenboeken geïmporteerd",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lees boeken vanuit hun oorspronkelijke mappen in plaats van ze naar de bibliotheek te kopiëren. Bespaart schijfruimte; automatische uploads naar de cloud blijven werken als ze ingeschakeld zijn.",
+  "This folder is an external library. Books here are always read in place.": "Deze map is een externe bibliotheek. De boeken hier worden altijd op hun oorspronkelijke locatie gelezen.",
+  "Swipe to Paginate": "Vegen om door te bladeren"
 }

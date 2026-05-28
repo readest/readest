@@ -1617,8 +1617,6 @@
   "Sync failed.": "सिंक विफल हुआ।",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "पुस्तक फ़ाइल अब मौजूद नहीं है। लाइब्रेरी से हटाने के लिए हटाने की पुष्टि करें।",
   "Read books in place": "पुस्तकें वहीं पढ़ें जहाँ हैं",
-  "This folder is registered as an external library — books here are always read in place.": "यह फ़ोल्डर बाहरी लाइब्रेरी के रूप में पंजीकृत है — यहाँ की पुस्तकें हमेशा वहीं पढ़ी जाती हैं।",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "पुस्तकों को वहीं रखें जहाँ वे हैं। जगह बचाने के लिए कोई भी पुस्तक लाइब्रेरी में कॉपी न करें। यदि स्वतः अपलोड सक्षम है तो पुस्तक फ़ाइलें क्लाउड में सिंक होती रहेंगी। किसी अन्य ऐप (Duokan, Calibre, Moon+ Reader) द्वारा प्रबंधित लाइब्रेरी के लिए उपयोगी।",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS \"On My iPhone\" रूट को आयात करने की अनुमति नहीं देता। इसे खोलें और एक विशिष्ट सब-फ़ोल्डर (जैसे Readest, Downloads) चुनें, फिर पुनः प्रयास करें।",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "इस फ़ोल्डर को नहीं पढ़ा जा सका। कुछ iOS स्थान (जैसे \"On My iPhone\" रूट या iCloud Drive का शीर्ष-स्तर) स्कैन नहीं किए जा सकते — कृपया एक विशिष्ट सब-फ़ोल्डर चुनें और पुनः प्रयास करें।",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "इस फ़ोल्डर को नहीं पढ़ा जा सका। कृपया फ़ोल्डर पुनः चुनें या कोई अन्य स्थान चुनें।",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "असमर्थित शब्दकोश: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} शब्दकोश असमर्थित और अक्षम है",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} शब्दकोश असमर्थित और अक्षम हैं",
-  "No new dictionaries were imported": "कोई नया शब्दकोश आयात नहीं किया गया"
+  "No new dictionaries were imported": "कोई नया शब्दकोश आयात नहीं किया गया",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "पुस्तकों को लाइब्रेरी में कॉपी करने के बजाय उनके मूल फ़ोल्डर से पढ़ें। डिस्क स्थान बचाता है; क्लाउड ऑटो-अपलोड सक्षम होने पर भी काम करता है।",
+  "This folder is an external library. Books here are always read in place.": "यह फ़ोल्डर एक बाहरी लाइब्रेरी है। यहाँ की पुस्तकें हमेशा अपने मूल स्थान पर ही पढ़ी जाती हैं।",
+  "Swipe to Paginate": "पन्ना बदलने के लिए स्वाइप करें"
 }

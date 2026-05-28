@@ -1587,8 +1587,6 @@
   "Sync failed.": "Đồng bộ thất bại.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Tệp sách không còn tồn tại. Xác nhận xóa để gỡ nó khỏi thư viện.",
   "Read books in place": "Đọc sách tại chỗ",
-  "This folder is registered as an external library — books here are always read in place.": "Thư mục này được đăng ký là thư viện ngoài — sách tại đây luôn được đọc tại chỗ.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Giữ sách ở nguyên vị trí. Không sao chép sách nào vào thư viện để tiết kiệm dung lượng. Các tệp sách vẫn được đồng bộ lên đám mây nếu bật tự động tải lên. Hữu ích cho thư viện được quản lý bởi ứng dụng khác (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS không cho phép nhập gốc \"Trên iPhone của tôi\". Hãy mở nó và chọn một thư mục con cụ thể (ví dụ Readest, Downloads), rồi thử lại.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Không thể đọc thư mục này. Một số vị trí iOS (như gốc \"Trên iPhone của tôi\" hoặc cấp cao nhất của iCloud Drive) không thể quét — vui lòng chọn một thư mục con cụ thể rồi thử lại.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Không thể đọc thư mục này. Vui lòng chọn thư mục lại, hoặc chọn vị trí khác.",
@@ -1615,5 +1613,8 @@
   "App service is not available": "Dịch vụ ứng dụng không khả dụng",
   "Unsupported dictionary: {{reason}}": "Từ điển không được hỗ trợ: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} từ điển không được hỗ trợ và đã bị vô hiệu hóa",
-  "No new dictionaries were imported": "Không có từ điển mới nào được nhập"
+  "No new dictionaries were imported": "Không có từ điển mới nào được nhập",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Đọc sách trực tiếp từ thư mục gốc thay vì sao chép vào thư viện. Tiết kiệm dung lượng đĩa; tự động tải lên đám mây vẫn hoạt động nếu được bật.",
+  "This folder is an external library. Books here are always read in place.": "Thư mục này là thư viện ngoài. Sách trong đây luôn được đọc tại vị trí gốc.",
+  "Swipe to Paginate": "Vuốt để Sang Trang"
 }

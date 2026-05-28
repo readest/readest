@@ -1737,8 +1737,6 @@
   "Sync failed.": "فشلت المزامنة.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "لم يعد ملف الكتاب موجودًا. أكّد الحذف لإزالته من المكتبة.",
   "Read books in place": "قراءة الكتب في مكانها",
-  "This folder is registered as an external library — books here are always read in place.": "هذا المجلد مسجَّل كمكتبة خارجية — تُقرأ الكتب هنا في مكانها دائمًا.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "أبقِ الكتب في مكانها. لا تنسخ أي كتاب إلى المكتبة لتوفير المساحة. تتم مزامنة ملفات الكتب مع السحابة إذا كان الرفع التلقائي مفعَّلًا. مفيد للمكتبات التي يديرها تطبيق آخر (Duokan، Calibre، Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "لا يسمح iOS باستيراد جذر \"على iPhone الخاص بي\". افتحه واختر مجلدًا فرعيًا محددًا (مثل Readest، Downloads)، ثم حاول مرة أخرى.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "تعذّر قراءة هذا المجلد. لا يمكن فحص بعض مواقع iOS (مثل جذر \"على iPhone الخاص بي\" أو المستوى الأعلى لـ iCloud Drive) — يرجى اختيار مجلد فرعي محدد والمحاولة مرة أخرى.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "تعذّر قراءة هذا المجلد. يرجى اختيار المجلد مرة أخرى، أو اختيار موقع مختلف.",
@@ -1770,5 +1768,8 @@
   "{{count}} dictionary is unsupported and disabled_few": "{{count}} قواميس غير مدعومة ومعطلة",
   "{{count}} dictionary is unsupported and disabled_many": "{{count}} قاموساً غير مدعوماً ومعطلاً",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} قاموس غير مدعوم ومعطل",
-  "No new dictionaries were imported": "لم يتم استيراد أي قواميس جديدة"
+  "No new dictionaries were imported": "لم يتم استيراد أي قواميس جديدة",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "اقرأ الكتب من مجلداتها الأصلية بدلاً من نسخها إلى المكتبة. يوفر مساحة على القرص؛ ولا يزال الرفع التلقائي إلى السحابة يعمل إذا كان مفعلاً.",
+  "This folder is an external library. Books here are always read in place.": "هذا المجلد هو مكتبة خارجية. تُقرأ الكتب هنا دائمًا من مكانها.",
+  "Swipe to Paginate": "اسحب لتصفح الصفحات"
 }

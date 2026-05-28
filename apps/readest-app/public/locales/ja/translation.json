@@ -1587,8 +1587,6 @@
   "Sync failed.": "同期に失敗しました。",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "書籍ファイルはもう存在しません。ライブラリから削除するには、削除を確定してください。",
   "Read books in place": "書籍をその場所のまま読む",
-  "This folder is registered as an external library — books here are always read in place.": "このフォルダは外部ライブラリとして登録されています — ここの書籍は常に元の場所で読まれます。",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "書籍をそのままの場所に保ちます。容量を節約するためライブラリには書籍をコピーしません。自動アップロードが有効ならクラウドへの同期は引き続き行われます。他のアプリ (Duokan、Calibre、Moon+ Reader) で管理しているライブラリに便利です。",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS では「この iPhone 内」のルートを取り込むことができません。それを開いて特定のサブフォルダ (例: Readest, Downloads) を選び、もう一度お試しください。",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "このフォルダを読み取れませんでした。一部の iOS の場所 (「この iPhone 内」のルートや iCloud Drive の最上位など) はスキャンできません — 特定のサブフォルダを選んでもう一度お試しください。",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "このフォルダを読み取れませんでした。フォルダを選び直すか、別の場所を選択してください。",
@@ -1615,5 +1613,8 @@
   "App service is not available": "アプリサービスは利用できません",
   "Unsupported dictionary: {{reason}}": "非対応の辞書：{{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} 件の辞書が非対応のため無効になっています",
-  "No new dictionaries were imported": "新しい辞書は読み込まれませんでした"
+  "No new dictionaries were imported": "新しい辞書は読み込まれませんでした",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "ライブラリにコピーせず、元のフォルダから直接書籍を読み込みます。ディスク容量を節約でき、自動アップロードが有効ならクラウド同期も引き続き機能します。",
+  "This folder is an external library. Books here are always read in place.": "このフォルダは外部ライブラリです。ここの書籍は常に元の場所から読み込まれます。",
+  "Swipe to Paginate": "スワイプでページ送り"
 }

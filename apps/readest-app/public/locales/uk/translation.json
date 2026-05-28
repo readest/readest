@@ -1677,8 +1677,6 @@
   "Sync failed.": "Синхронізація не вдалася.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Файл книги більше не існує. Підтвердьте видалення, щоб прибрати її з бібліотеки.",
   "Read books in place": "Читати книги на місці",
-  "This folder is registered as an external library — books here are always read in place.": "Цю теку зареєстровано як зовнішню бібліотеку — книги тут завжди читаються на місці.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Залишайте книги там, де вони є. Не копіюйте жодної книги до бібліотеки, щоб заощадити місце. Файли книг продовжують синхронізуватися з хмарою, якщо ввімкнено автозавантаження. Корисно для бібліотек, якими керує інший застосунок (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS не дозволяє імпортувати корінь «На моєму iPhone». Відкрийте її та оберіть конкретну підтеку (наприклад Readest, Downloads), а потім спробуйте ще раз.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Не вдалося прочитати цю теку. Деякі розташування iOS (як-от корінь «На моєму iPhone» або верхній рівень iCloud Drive) не можна сканувати — оберіть конкретну підтеку та спробуйте знову.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Не вдалося прочитати цю теку. Виберіть теку ще раз або оберіть інше розташування.",
@@ -1708,5 +1706,8 @@
   "{{count}} dictionary is unsupported and disabled_few": "{{count}} словники не підтримуються і вимкнено",
   "{{count}} dictionary is unsupported and disabled_many": "{{count}} словників не підтримуються і вимкнено",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} словників не підтримуються і вимкнено",
-  "No new dictionaries were imported": "Нові словники не імпортовано"
+  "No new dictionaries were imported": "Нові словники не імпортовано",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Читайте книги з їхніх початкових тек, замість копіювання до бібліотеки. Заощаджує місце на диску; автозавантаження до хмари продовжує працювати, якщо ввімкнено.",
+  "This folder is an external library. Books here are always read in place.": "Ця тека — зовнішня бібліотека. Книги в ній завжди читаються з початкового розташування.",
+  "Swipe to Paginate": "Гортання для перегортання"
 }

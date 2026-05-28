@@ -1587,8 +1587,6 @@
   "Sync failed.": "མཉམ་སྦྲེལ་མ་ཐུབ།",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "དཔེ་ཆའི་ཡིག་ཆ་མི་འདུག དཔེ་མཛོད་ནས་སུབ་པར་ངེས་པར་གཏན་འཁེལ་གནང་རོགས།",
   "Read books in place": "དཔེ་ཆ་ས་གནས་སུ་ཀློག",
-  "This folder is registered as an external library — books here are always read in place.": "ཡིག་སྣོད་འདི་ཕྱི་རོལ་གྱི་དཔེ་མཛོད་དུ་ཐོ་འགོད་བྱས་ཡོད — འདི་རུ་ཡོད་པའི་དཔེ་ཆ་རྣམས་རྟག་ཏུ་ས་གནས་སུ་ཀློག་གི་ཡོད།",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "དཔེ་ཆ་རྣམས་ས་གནས་སུ་བཞག དགོས་ངེས་མེད་པ་གོ་ས་ཉར་ཚགས་ཀྱི་ཆེད་དུ་དཔེ་མཛོད་དུ་ཕབ་ལེན་མི་བྱེད། རང་འགུལ་འཇུག་ཐུབ་ན་དཔེ་ཆའི་ཡིག་ཆ་སྤྲིན་ལ་མཐུན་སྦྱོར་བྱེད་ངེས། སྔོན་ཆད་མཉེན་ཆས་གཞན་གྱིས་སྐྱོང་བའི་དཔེ་མཛོད་ལ་ཕན་ཐོགས་ཆེ (Duokan, Calibre, Moon+ Reader)",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS ཀྱིས་ \"On My iPhone\" རྩ་བ་ནང་འདྲེན་བྱེད་པ་མི་ཆོག ཁ་ཕྱེ་ནས་ནང་ཡིག་སྣོད་གཏན་འཁེལ་ཅན་ཞིག་འདེམས་རོགས (དཔེར་ན Readest, Downloads) དེ་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་།",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "ཡིག་སྣོད་འདི་ཀློག་མ་ཐུབ། iOS ཀྱི་ས་གནས་ཁག་ཅིག (\"On My iPhone\" རྩ་བའམ་ iCloud Drive གི་མཐོ་རིམ་ལྟ་བུ) ཞིབ་འཇུག་མི་ཐུབ — ནང་ཡིག་སྣོད་གཏན་འཁེལ་ཅན་ཞིག་འདེམས་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "ཡིག་སྣོད་འདི་ཀློག་མ་ཐུབ། ཡང་བསྐྱར་ཡིག་སྣོད་འདེམས་པའམ་ས་གནས་གཞན་ཞིག་འདེམས་རོགས།",
@@ -1615,5 +1613,8 @@
   "App service is not available": "ཉེར་སྤྱོད་ཞབས་ཞུ་ཐོབ་མི་ཐུབ།",
   "Unsupported dictionary: {{reason}}": "རྒྱབ་སྐྱོར་མེད་པའི་ཚིག་མཛོད། {{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "ཚིག་མཛོད་ {{count}} ལ་རྒྱབ་སྐྱོར་མེད་ཅིང་སྤོ་ཟུར་བྱས་ཡོད།",
-  "No new dictionaries were imported": "ཚིག་མཛོད་གསར་པ་ནང་འདྲེན་མ་བྱུང་།"
+  "No new dictionaries were imported": "ཚིག་མཛོད་གསར་པ་ནང་འདྲེན་མ་བྱུང་།",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "དཔེ་ཆ་དཔེ་མཛོད་དུ་ཕབ་ལེན་མི་བྱེད་པར་ཁོ་ཚོའི་ཐོག་མའི་ཡིག་སྣོད་ནས་ཀློག་པ། སྒྲིག་ཆས་ས་ཆ་ཉར་ཚགས་བྱེད་པ། སྔོན་ཆད་སྤྲིན་གྱི་རང་འགུལ་སྦྱར་འཇུག་གནས་སྟངས་ཡོད་ན་འདས་ལྡན་པ་ཡིན།",
+  "This folder is an external library. Books here are always read in place.": "ཡིག་སྣོད་འདི་ནི་ཕྱི་ཕྱོགས་ཀྱི་དཔེ་མཛོད་ཡིན། འདིར་ཡོད་པའི་དཔེ་ཆ་རྣམས་རྟག་ཏུ་རང་གི་ས་གནས་སུ་ཀློག་པ་ཡིན།",
+  "Swipe to Paginate": "མཆོངས་གཤིབ་ཀྱིས་ཤོག་ངོས་སྒྱུར་བ།"
 }

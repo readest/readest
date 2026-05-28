@@ -1677,8 +1677,6 @@
   "Sync failed.": "Sinhronizacija ni uspela.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Datoteka knjige ne obstaja več. Potrdite izbris, da jo odstranite iz knjižnice.",
   "Read books in place": "Beri knjige na mestu",
-  "This folder is registered as an external library — books here are always read in place.": "Ta mapa je registrirana kot zunanja knjižnica — knjige tukaj se vedno berejo na mestu.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Pustite knjige tam, kjer so. Ne kopirajte nobene knjige v knjižnico, da prihranite prostor. Datoteke knjig se še vedno sinhronizirajo v oblak, če je samodejno nalaganje omogočeno. Uporabno za knjižnice, ki jih upravlja druga aplikacija (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS ne dovoljuje uvoza korena »V mojem iPhonu«. Odprite ga in izberite določeno podmapo (npr. Readest, Downloads), nato poskusite znova.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Te mape ni bilo mogoče prebrati. Nekaterih iOS lokacij (kot je koren »V mojem iPhonu« ali najvišja raven iCloud Drive) ni mogoče skenirati — izberite določeno podmapo in poskusite znova.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Te mape ni bilo mogoče prebrati. Izberite mapo znova ali izberite drugo lokacijo.",
@@ -1708,5 +1706,8 @@
   "{{count}} dictionary is unsupported and disabled_two": "{{count}} slovarja nista podprta in sta onemogočena",
   "{{count}} dictionary is unsupported and disabled_few": "{{count}} slovarji niso podprti in so onemogočeni",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} slovarjev ni podprtih in so onemogočeni",
-  "No new dictionaries were imported": "Novi slovarji niso bili uvoženi"
+  "No new dictionaries were imported": "Novi slovarji niso bili uvoženi",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Berite knjige iz njihovih izvirnih map, namesto da bi jih kopirali v knjižnico. Prihrani prostor na disku; samodejno nalaganje v oblak še naprej deluje, če je omogočeno.",
+  "This folder is an external library. Books here are always read in place.": "Ta mapa je zunanja knjižnica. Knjige v njej se vedno berejo na izvirnem mestu.",
+  "Swipe to Paginate": "Drsanje za listanje"
 }

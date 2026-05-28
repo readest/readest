@@ -1587,8 +1587,6 @@
   "Sync failed.": "Sinkronisasi gagal.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Berkas buku sudah tidak ada. Konfirmasi penghapusan untuk menghapusnya dari pustaka.",
   "Read books in place": "Baca buku di tempat",
-  "This folder is registered as an external library — books here are always read in place.": "Folder ini terdaftar sebagai pustaka eksternal — buku di sini selalu dibaca di tempat.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Biarkan buku tetap di tempatnya. Jangan menyalin buku apa pun ke pustaka untuk menghemat ruang. Berkas buku tetap disinkronkan ke cloud jika unggah otomatis diaktifkan. Berguna untuk pustaka yang dikelola oleh aplikasi lain (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS tidak mengizinkan impor root \"Di iPhone Saya\". Buka, lalu pilih subfolder tertentu (mis. Readest, Downloads), dan coba lagi.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Tidak dapat membaca folder ini. Beberapa lokasi iOS (seperti root \"Di iPhone Saya\" atau level teratas iCloud Drive) tidak dapat dipindai — silakan pilih subfolder tertentu lalu coba lagi.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Tidak dapat membaca folder ini. Silakan pilih folder lagi, atau pilih lokasi lain.",
@@ -1615,5 +1613,8 @@
   "App service is not available": "Layanan aplikasi tidak tersedia",
   "Unsupported dictionary: {{reason}}": "Kamus tidak didukung: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} kamus tidak didukung dan dinonaktifkan",
-  "No new dictionaries were imported": "Tidak ada kamus baru yang diimpor"
+  "No new dictionaries were imported": "Tidak ada kamus baru yang diimpor",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Baca buku dari folder aslinya alih-alih menyalinnya ke perpustakaan. Menghemat ruang disk; unggah otomatis ke awan tetap berfungsi jika diaktifkan.",
+  "This folder is an external library. Books here are always read in place.": "Folder ini adalah pustaka eksternal. Buku di sini selalu dibaca di tempat aslinya.",
+  "Swipe to Paginate": "Geser untuk Pindah Halaman"
 }

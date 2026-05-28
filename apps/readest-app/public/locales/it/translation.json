@@ -1647,8 +1647,6 @@
   "Sync failed.": "Sincronizzazione non riuscita.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Il file del libro non esiste più. Conferma l'eliminazione per rimuoverlo dalla libreria.",
   "Read books in place": "Leggi i libri in loco",
-  "This folder is registered as an external library — books here are always read in place.": "Questa cartella è registrata come libreria esterna — i libri qui vengono sempre letti in loco.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Lascia i libri dove sono. Non copiare alcun libro nella libreria per risparmiare spazio. I file dei libri vengono comunque sincronizzati sul cloud se il caricamento automatico è abilitato. Utile per librerie gestite da un'altra app (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS non consente di importare la radice «Sul mio iPhone». Aprila e scegli una sottocartella specifica (es. Readest, Downloads), quindi riprova.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Impossibile leggere questa cartella. Alcune posizioni iOS (come la radice «Sul mio iPhone» o il livello superiore di iCloud Drive) non possono essere scansionate — scegli una sottocartella specifica e riprova.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Impossibile leggere questa cartella. Seleziona di nuovo la cartella o scegli una posizione diversa.",
@@ -1677,5 +1675,8 @@
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} dizionario non è supportato ed è disattivato",
   "{{count}} dictionary is unsupported and disabled_many": "{{count}} dizionari non sono supportati e sono disattivati",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} dizionari non sono supportati e sono disattivati",
-  "No new dictionaries were imported": "Nessun nuovo dizionario importato"
+  "No new dictionaries were imported": "Nessun nuovo dizionario importato",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Legge i libri dalle loro cartelle originali invece di copiarli nella libreria. Risparmia spazio su disco; il caricamento automatico sul cloud continua a funzionare se attivato.",
+  "This folder is an external library. Books here are always read in place.": "Questa cartella è una libreria esterna. I libri vengono sempre letti dalla loro posizione originale.",
+  "Swipe to Paginate": "Scorri per Sfogliare"
 }

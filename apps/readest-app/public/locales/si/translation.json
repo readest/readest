@@ -1617,8 +1617,6 @@
   "Sync failed.": "සමමුහුර්තකරණය අසාර්ථකයි.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "පොත් ගොනුව තවදුරටත් නොපවතී. පුස්තකාලයෙන් ඉවත් කිරීමට මැකීම තහවුරු කරන්න.",
   "Read books in place": "පොත් එතැනම කියවන්න",
-  "This folder is registered as an external library — books here are always read in place.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයක් ලෙස ලියාපදිංචි කර ඇත — මෙහි ඇති පොත් සෑම විටම එතැනම කියවනු ලැබේ.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "පොත් ඇති තැනම තබන්න. ඉඩ ඉතිරි කිරීමට කිසිදු පොතක් පුස්තකාලයට පිටපත් නොකරන්න. ස්වයංක්‍රීය උඩුගත කිරීම සක්‍රීය නම් පොත් ගොනු තවමත් වලාකුළට සමමුහුර්ත වේ. වෙනත් යෙදුමක් (Duokan, Calibre, Moon+ Reader) මගින් කළමනාකරණය කරන පුස්තකාල සඳහා ප්‍රයෝජනවත්.",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS \"On My iPhone\" මූලය ආයාත කිරීමට ඉඩ නොදේ. එය විවෘත කර නිශ්චිත උප-ෆෝල්ඩරයක් (උදා. Readest, Downloads) තෝරාගෙන, නැවත උත්සාහ කරන්න.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "මෙම ෆෝල්ඩරය කියවිය නොහැකි විය. සමහර iOS ස්ථාන (\"On My iPhone\" මූලය හෝ iCloud Drive හි ඉහළම මට්ටම වැනි) පරිලෝකනය කළ නොහැක — කරුණාකර නිශ්චිත උප-ෆෝල්ඩරයක් තෝරා නැවත උත්සාහ කරන්න.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "මෙම ෆෝල්ඩරය කියවිය නොහැකි විය. කරුණාකර ෆෝල්ඩරය නැවත තෝරන්න, හෝ වෙනත් ස්ථානයක් තෝරන්න.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "සහාය නොදක්වන ශබ්දකෝෂය: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "ශබ්දකෝෂ {{count}}ක් සහාය නොදක්වන අතර අක්‍රිය කර ඇත",
   "{{count}} dictionary is unsupported and disabled_other": "ශබ්දකෝෂ {{count}}ක් සහාය නොදක්වන අතර අක්‍රිය කර ඇත",
-  "No new dictionaries were imported": "නව ශබ්දකෝෂ ආයාත කර නැත"
+  "No new dictionaries were imported": "නව ශබ්දකෝෂ ආයාත කර නැත",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "පොත් පුස්තකාලයට පිටපත් කරනවාට වඩා ඒවායේ මුල් ෆෝල්ඩරවලින් කියවන්න. තැටි ඉඩ ඉතිරි කරයි; සක්‍රිය නම් වලාකුළු ස්වයංක්‍රීය උඩුගත කිරීම තවමත් ක්‍රියා කරයි.",
+  "This folder is an external library. Books here are always read in place.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයකි. මෙහි ඇති පොත් සැමවිටම ඔවුන්ගේ මුල් ස්ථානයේ සිට කියවනු ලැබේ.",
+  "Swipe to Paginate": "පිටු මාරුවට ස්වයිප් කරන්න"
 }

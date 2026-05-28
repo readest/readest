@@ -1617,8 +1617,6 @@
   "Sync failed.": "Eşitleme başarısız.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Kitap dosyası artık mevcut değil. Kitaplıktan kaldırmak için silmeyi onaylayın.",
   "Read books in place": "Kitapları yerinde oku",
-  "This folder is registered as an external library — books here are always read in place.": "Bu klasör harici kitaplık olarak kaydedildi — buradaki kitaplar her zaman yerinde okunur.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Kitapları olduğu yerde bırakın. Yer kazanmak için kitaplığa hiçbir kitap kopyalamayın. Otomatik yükleme etkinse kitap dosyaları yine de buluta eşitlenir. Başka bir uygulamayla (Duokan, Calibre, Moon+ Reader) yönetilen kitaplıklar için kullanışlıdır.",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS, \"iPhone'umda\" kökünü içe aktarmaya izin vermez. Onu açıp belirli bir alt klasör (ör. Readest, Downloads) seçtikten sonra tekrar deneyin.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Bu klasör okunamadı. Bazı iOS konumları (\"iPhone'umda\" kökü veya iCloud Drive üst düzeyi gibi) taranamaz — lütfen belirli bir alt klasör seçip tekrar deneyin.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Bu klasör okunamadı. Lütfen klasörü yeniden seçin veya farklı bir konum seçin.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Desteklenmeyen sözlük: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} sözlük desteklenmiyor ve devre dışı bırakıldı",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} sözlük desteklenmiyor ve devre dışı bırakıldı",
-  "No new dictionaries were imported": "Yeni sözlük içe aktarılmadı"
+  "No new dictionaries were imported": "Yeni sözlük içe aktarılmadı",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Kitapları kitaplığa kopyalamak yerine orijinal klasörlerinden okuyun. Disk alanından tasarruf sağlar; etkinleştirilmişse bulut otomatik yüklemesi yine de çalışır.",
+  "This folder is an external library. Books here are always read in place.": "Bu klasör harici bir kitaplıktır. İçindeki kitaplar her zaman bulundukları yerden okunur.",
+  "Swipe to Paginate": "Sayfa Çevirmek için Kaydır"
 }

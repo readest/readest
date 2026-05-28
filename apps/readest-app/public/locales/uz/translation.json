@@ -1617,8 +1617,6 @@
   "Sync failed.": "Sinxronlash muvaffaqiyatsiz.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Kitob fayli endi mavjud emas. Kutubxonadan olib tashlash uchun o‘chirishni tasdiqlang.",
   "Read books in place": "Kitoblarni joyida o‘qish",
-  "This folder is registered as an external library — books here are always read in place.": "Bu papka tashqi kutubxona sifatida ro‘yxatdan o‘tkazilgan — bu yerdagi kitoblar har doim joyida o‘qiladi.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Kitoblarni o‘z joyida qoldiring. Joyni tejash uchun hech qaysi kitobni kutubxonaga ko‘chirmaslik. Avto-yuklash yoqilgan bo‘lsa, kitob fayllari hali ham bulutga sinxronlanadi. Boshqa ilova (Duokan, Calibre, Moon+ Reader) tomonidan boshqariladigan kutubxonalar uchun foydali.",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS \"On My iPhone\" ildizini import qilishga ruxsat bermaydi. Uni oching va aniq kichik papkani (masalan, Readest, Downloads) tanlang, so‘ng qayta urinib ko‘ring.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Ushbu papkani o‘qib bo‘lmadi. Ba’zi iOS joylari (\"On My iPhone\" ildizi yoki iCloud Drive yuqori darajasi kabi) skanerlab bo‘lmaydi — iltimos, aniq kichik papkani tanlang va qayta urinib ko‘ring.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Ushbu papkani o‘qib bo‘lmadi. Iltimos, papkani qayta tanlang yoki boshqa joyni tanlang.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "Qo‘llab-quvvatlanmaydigan lug‘at: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} ta lug‘at qo‘llab-quvvatlanmaydi va o‘chirilgan",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} ta lug‘at qo‘llab-quvvatlanmaydi va o‘chirilgan",
-  "No new dictionaries were imported": "Yangi lug‘atlar import qilinmadi"
+  "No new dictionaries were imported": "Yangi lug‘atlar import qilinmadi",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Kitoblarni kutubxonaga ko‘chirish o‘rniga ularning asl papkalaridan o‘qing. Disk joyini tejaydi; yoqilgan bo‘lsa, bulutga avtomatik yuklash hamon ishlaydi.",
+  "This folder is an external library. Books here are always read in place.": "Bu papka tashqi kutubxonadir. Bu yerdagi kitoblar har doim o‘z joyidan o‘qiladi.",
+  "Swipe to Paginate": "Sahifani aylantirish uchun suring"
 }

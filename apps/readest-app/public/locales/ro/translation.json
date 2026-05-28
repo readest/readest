@@ -1647,8 +1647,6 @@
   "Sync failed.": "Sincronizarea a eșuat.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "Fișierul cărții nu mai există. Confirmați ștergerea pentru a-l elimina din bibliotecă.",
   "Read books in place": "Citește cărțile la locul lor",
-  "This folder is registered as an external library — books here are always read in place.": "Acest dosar este înregistrat ca bibliotecă externă — cărțile de aici sunt întotdeauna citite la locul lor.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "Lăsați cărțile unde sunt. Nu copiați nicio carte în bibliotecă pentru a economisi spațiu. Fișierele cărților se sincronizează în continuare cu cloud-ul dacă încărcarea automată este activată. Util pentru bibliotecile gestionate de altă aplicație (Duokan, Calibre, Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS nu permite importul rădăcinii „Pe iPhone-ul meu\". Deschideți-o și alegeți un subdosar specific (de ex. Readest, Downloads), apoi încercați din nou.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "Nu s-a putut citi acest dosar. Unele locații iOS (cum ar fi rădăcina „Pe iPhone-ul meu\" sau nivelul superior al iCloud Drive) nu pot fi scanate — alegeți un subdosar specific și încercați din nou.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "Nu s-a putut citi acest dosar. Alegeți dosarul din nou sau selectați altă locație.",
@@ -1677,5 +1675,8 @@
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} dicționar nu este acceptat și este dezactivat",
   "{{count}} dictionary is unsupported and disabled_few": "{{count}} dicționare nu sunt acceptate și sunt dezactivate",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} de dicționare nu sunt acceptate și sunt dezactivate",
-  "No new dictionaries were imported": "Nu au fost importate dicționare noi"
+  "No new dictionaries were imported": "Nu au fost importate dicționare noi",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Citește cărțile din folderele lor originale în loc să le copieze în bibliotecă. Economisește spațiu pe disc; încărcarea automată în cloud funcționează în continuare dacă este activată.",
+  "This folder is an external library. Books here are always read in place.": "Acest folder este o bibliotecă externă. Cărțile de aici sunt întotdeauna citite din locația originală.",
+  "Swipe to Paginate": "Glisare pentru a Schimba Pagina"
 }

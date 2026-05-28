@@ -1617,8 +1617,6 @@
   "Sync failed.": "همگام‌سازی ناموفق بود.",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "فایل کتاب دیگر وجود ندارد. حذف را تأیید کنید تا از کتابخانه حذف شود.",
   "Read books in place": "خواندن کتاب‌ها در محل خود",
-  "This folder is registered as an external library — books here are always read in place.": "این پوشه به‌عنوان کتابخانه خارجی ثبت شده است — کتاب‌های اینجا همیشه در محل خود خوانده می‌شوند.",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "کتاب‌ها را در محل خود نگه دارید. برای صرفه‌جویی در فضا، هیچ کتابی را به کتابخانه کپی نکنید. اگر بارگذاری خودکار فعال باشد، فایل‌های کتاب همچنان با ابر همگام‌سازی می‌شوند. مفید برای کتابخانه‌هایی که توسط برنامه دیگری مدیریت می‌شوند (Duokan، Calibre، Moon+ Reader).",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS اجازه واردکردن ریشه «روی iPhone من» را نمی‌دهد. آن را باز کنید و یک زیرپوشه مشخص (مثلاً Readest، Downloads) انتخاب کنید و دوباره امتحان کنید.",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "خواندن این پوشه ممکن نشد. برخی مکان‌های iOS (مانند ریشه «روی iPhone من» یا سطح بالای iCloud Drive) قابل پویش نیستند — لطفاً یک زیرپوشه مشخص انتخاب کنید و دوباره امتحان کنید.",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "خواندن این پوشه ممکن نشد. لطفاً پوشه را دوباره انتخاب کنید یا مکان متفاوتی برگزینید.",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "فرهنگ لغت پشتیبانی‌نشده: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}} فرهنگ لغت پشتیبانی نمی‌شود و غیرفعال است",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} فرهنگ لغت پشتیبانی نمی‌شوند و غیرفعال‌اند",
-  "No new dictionaries were imported": "هیچ فرهنگ لغت جدیدی وارد نشد"
+  "No new dictionaries were imported": "هیچ فرهنگ لغت جدیدی وارد نشد",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "کتاب‌ها را به جای کپی‌کردن در کتابخانه، از پوشه‌های اصلی‌شان بخوانید. در فضای دیسک صرفه‌جویی می‌کند؛ بارگذاری خودکار ابری در صورت فعال بودن همچنان کار می‌کند.",
+  "This folder is an external library. Books here are always read in place.": "این پوشه یک کتابخانه‌ی بیرونی است. کتاب‌های این پوشه همیشه از همان مکان خوانده می‌شوند.",
+  "Swipe to Paginate": "کشیدن برای ورق زدن"
 }

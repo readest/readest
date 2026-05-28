@@ -1587,8 +1587,6 @@
   "Sync failed.": "ซิงค์ไม่สำเร็จ",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "ไฟล์หนังสือไม่มีอยู่อีกแล้ว ยืนยันการลบเพื่อนำออกจากห้องสมุด",
   "Read books in place": "อ่านหนังสือในที่ที่อยู่",
-  "This folder is registered as an external library — books here are always read in place.": "โฟลเดอร์นี้ลงทะเบียนเป็นห้องสมุดภายนอก — หนังสือที่นี่จะถูกอ่านในที่ที่อยู่เสมอ",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "เก็บหนังสือไว้ที่เดิม ไม่คัดลอกหนังสือใด ๆ ไปยังห้องสมุดเพื่อประหยัดพื้นที่ ไฟล์หนังสือยังคงซิงค์ไปยังคลาวด์หากเปิดอัปโหลดอัตโนมัติไว้ มีประโยชน์สำหรับห้องสมุดที่จัดการโดยแอปอื่น (Duokan, Calibre, Moon+ Reader)",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS ไม่อนุญาตให้นำเข้ารูท \"On My iPhone\" ให้เปิดและเลือกโฟลเดอร์ย่อยที่เฉพาะเจาะจง (เช่น Readest, Downloads) แล้วลองอีกครั้ง",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "อ่านโฟลเดอร์นี้ไม่ได้ บางตำแหน่งของ iOS (เช่นรูท \"On My iPhone\" หรือระดับบนสุดของ iCloud Drive) ไม่สามารถสแกนได้ — โปรดเลือกโฟลเดอร์ย่อยที่เฉพาะเจาะจงแล้วลองอีกครั้ง",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "อ่านโฟลเดอร์นี้ไม่ได้ โปรดเลือกโฟลเดอร์อีกครั้ง หรือเลือกตำแหน่งอื่น",
@@ -1615,5 +1613,8 @@
   "App service is not available": "บริการแอปไม่พร้อมใช้งาน",
   "Unsupported dictionary: {{reason}}": "พจนานุกรมที่ไม่รองรับ: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "พจนานุกรม {{count}} รายการไม่รองรับและถูกปิดใช้งาน",
-  "No new dictionaries were imported": "ไม่มีพจนานุกรมใหม่ถูกนำเข้า"
+  "No new dictionaries were imported": "ไม่มีพจนานุกรมใหม่ถูกนำเข้า",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "อ่านหนังสือจากโฟลเดอร์ต้นฉบับโดยตรงแทนการคัดลอกเข้าคลังหนังสือ ช่วยประหยัดพื้นที่ดิสก์ การอัปโหลดอัตโนมัติไปยังคลาวด์ยังคงทำงานหากเปิดใช้งานอยู่",
+  "This folder is an external library. Books here are always read in place.": "โฟลเดอร์นี้เป็นคลังหนังสือภายนอก หนังสือในนี้จะถูกเปิดอ่านจากตำแหน่งเดิมเสมอ",
+  "Swipe to Paginate": "ปัดเพื่อเปลี่ยนหน้า"
 }

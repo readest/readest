@@ -1587,8 +1587,6 @@
   "Sync failed.": "同步失敗。",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "圖書檔案已不存在。確認刪除以從書庫中移除。",
   "Read books in place": "原位閱讀圖書",
-  "This folder is registered as an external library — books here are always read in place.": "此資料夾已註冊為外部書庫 — 這裡的圖書始終在原位閱讀。",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "將圖書保留在原處。不複製任何圖書到書庫以節省空間。若已啟用自動上傳,圖書檔案仍會同步到雲端。適用於由其他應用程式(Duokan、Calibre、Moon+ Reader)管理的書庫。",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS 不允許匯入「我的 iPhone」根目錄。請開啟它並選擇具體的子資料夾(例如 Readest、Downloads),然後再試一次。",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "無法讀取此資料夾。部分 iOS 位置(例如「我的 iPhone」根目錄或 iCloud Drive 最上層)無法掃描 — 請選擇具體的子資料夾後再試一次。",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "無法讀取此資料夾。請重新選擇該資料夾,或選擇其他位置。",
@@ -1615,5 +1613,8 @@
   "App service is not available": "應用程式服務無法使用",
   "Unsupported dictionary: {{reason}}": "不支援的字典：{{reason}}",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} 個字典不受支援,已停用",
-  "No new dictionaries were imported": "未匯入任何新字典"
+  "No new dictionaries were imported": "未匯入任何新字典",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "直接從原始資料夾讀取書籍,不複製到書庫。可節省磁碟空間;若已啟用自動上傳,雲端同步仍正常運作。",
+  "This folder is an external library. Books here are always read in place.": "此資料夾是外部書庫,其中的書籍一律從原位置讀取。",
+  "Swipe to Paginate": "滑動翻頁"
 }

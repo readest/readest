@@ -1617,8 +1617,6 @@
   "Sync failed.": "সিঙ্ক ব্যর্থ।",
   "Book file no longer exists. Confirm deletion to remove it from the library.": "বইয়ের ফাইলটি আর নেই। লাইব্রেরি থেকে এটি সরাতে মুছে ফেলার বিষয়টি নিশ্চিত করুন।",
   "Read books in place": "বই যেখানে আছে সেখানেই পড়ুন",
-  "This folder is registered as an external library — books here are always read in place.": "এই ফোল্ডারটি একটি বাহ্যিক লাইব্রেরি হিসাবে নিবন্ধিত — এখানকার বইগুলি সবসময় যেখানে আছে সেখানেই পড়া হয়।",
-  "Keep books where they are. Copy no book into the library to save space. Book files still sync to cloud if auto-upload is enabled. Useful for libraries managed by another app (Duokan, Calibre, Moon+ Reader).": "বইগুলিকে যেখানে আছে সেখানেই রাখুন। স্থান সাশ্রয়ের জন্য কোনো বই লাইব্রেরিতে কপি করবেন না। স্বয়ংক্রিয় আপলোড সক্রিয় থাকলে বইয়ের ফাইলগুলি ক্লাউডে সিঙ্ক হবে। অন্য অ্যাপ (Duokan, Calibre, Moon+ Reader) দ্বারা পরিচালিত লাইব্রেরির জন্য উপকারী।",
   "iOS doesn't allow importing the \"On My iPhone\" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.": "iOS \"On My iPhone\" রুট আমদানি করতে দেয় না। এটি খুলুন এবং একটি নির্দিষ্ট সাবফোল্ডার (যেমন Readest, Downloads) নির্বাচন করুন, তারপর আবার চেষ্টা করুন।",
   "Couldn't read this folder. Some iOS locations (like the \"On My iPhone\" root or iCloud Drive top-level) can't be scanned — please pick a specific subfolder and try again.": "এই ফোল্ডারটি পড়া যায়নি। কিছু iOS অবস্থান (যেমন \"On My iPhone\" রুট বা iCloud Drive-এর শীর্ষ স্তর) স্ক্যান করা যায় না — অনুগ্রহ করে একটি নির্দিষ্ট সাবফোল্ডার নির্বাচন করে আবার চেষ্টা করুন।",
   "Couldn't read this folder. Please pick the folder again, or choose a different location.": "এই ফোল্ডারটি পড়া যায়নি। অনুগ্রহ করে আবার ফোল্ডারটি নির্বাচন করুন, অথবা একটি ভিন্ন অবস্থান নির্বাচন করুন।",
@@ -1646,5 +1644,8 @@
   "Unsupported dictionary: {{reason}}": "অসমর্থিত অভিধান: {{reason}}",
   "{{count}} dictionary is unsupported and disabled_one": "{{count}}টি অভিধান অসমর্থিত এবং নিষ্ক্রিয়",
   "{{count}} dictionary is unsupported and disabled_other": "{{count}}টি অভিধান অসমর্থিত এবং নিষ্ক্রিয়",
-  "No new dictionaries were imported": "কোনো নতুন অভিধান আমদানি করা হয়নি"
+  "No new dictionaries were imported": "কোনো নতুন অভিধান আমদানি করা হয়নি",
+  "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "বইগুলিকে লাইব্রেরিতে অনুলিপি করার পরিবর্তে তাদের মূল ফোল্ডার থেকে পড়ুন। ডিস্ক স্পেস সঞ্চয় করে; সক্ষম থাকলে ক্লাউড স্বয়ংক্রিয়-আপলোড এখনও কাজ করে।",
+  "This folder is an external library. Books here are always read in place.": "এই ফোল্ডারটি একটি বহিরাগত লাইব্রেরি। এখানে বইগুলি সর্বদা মূল স্থানে পড়া হয়।",
+  "Swipe to Paginate": "পৃষ্ঠা পরিবর্তনে সোয়াইপ করুন"
 }
