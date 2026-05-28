@@ -11,6 +11,7 @@ import {
   findGroupById,
   getGroupDisplayName,
   expandBookshelfSelection,
+  buildGroupNameUpdatedAt,
 } from '../../app/library/utils/libraryUtils';
 import { Book, BooksGroup } from '../../types/book';
 import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
@@ -1063,5 +1064,53 @@ describe('expandBookshelfSelection', () => {
     // it was a hash from another view), the helper leaves it alone rather
     // than silently dropping it.
     expect(expandBookshelfSelection(['ghost-hash'], [])).toEqual(['ghost-hash']);
+  });
+});
+
+describe('buildGroupNameUpdatedAt', () => {
+  it('takes the max updatedAt across books in each direct group', () => {
+    const books = [
+      createMockBook({ groupName: 'Fiction', updatedAt: 100 }),
+      createMockBook({ groupName: 'Fiction', updatedAt: 300 }),
+      createMockBook({ groupName: 'Fiction', updatedAt: 200 }),
+      createMockBook({ groupName: 'History', updatedAt: 50 }),
+    ];
+    const map = buildGroupNameUpdatedAt(books);
+    expect(map.get('Fiction')).toBe(300);
+    expect(map.get('History')).toBe(50);
+  });
+
+  it('propagates a descendant book up to all ancestor groups', () => {
+    const books = [
+      createMockBook({ groupName: 'Literature/Fiction/Sci-Fi', updatedAt: 500 }),
+      createMockBook({ groupName: 'Literature', updatedAt: 100 }),
+    ];
+    const map = buildGroupNameUpdatedAt(books);
+    expect(map.get('Literature/Fiction/Sci-Fi')).toBe(500);
+    expect(map.get('Literature/Fiction')).toBe(500);
+    expect(map.get('Literature')).toBe(500);
+  });
+
+  it('ignores books without groupName or updatedAt', () => {
+    const books = [
+      createMockBook({ groupName: undefined, updatedAt: 999 }),
+      createMockBook({ groupName: 'A', updatedAt: 0 }),
+      createMockBook({ groupName: 'A', updatedAt: 42 }),
+    ];
+    const map = buildGroupNameUpdatedAt(books);
+    expect(map.get('A')).toBe(42);
+    expect(map.size).toBe(1);
+  });
+
+  it('produces a desc-sort by group freshness when used as the sort key', () => {
+    const books = [
+      createMockBook({ groupName: 'Old', updatedAt: 1 }),
+      createMockBook({ groupName: 'Newer', updatedAt: 10 }),
+      createMockBook({ groupName: 'Newest', updatedAt: 100 }),
+    ];
+    const map = buildGroupNameUpdatedAt(books);
+    const groups = [{ name: 'Old' }, { name: 'Newest' }, { name: 'Newer' }];
+    groups.sort((a, b) => (map.get(b.name) ?? 0) - (map.get(a.name) ?? 0));
+    expect(groups.map((g) => g.name)).toEqual(['Newest', 'Newer', 'Old']);
   });
 });

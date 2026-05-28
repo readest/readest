@@ -159,6 +159,28 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
   }
 };
 
+/**
+ * Build a `groupName -> max(book.updatedAt)` map for all groups touched by
+ * the given books. Each book bumps both its direct group and every ancestor
+ * group along its path (e.g. a book in "Literature/Fiction" also bumps
+ * "Literature"), so parent groups don't sink just because their direct
+ * members are stale.
+ */
+export const buildGroupNameUpdatedAt = (books: Book[]): Map<string, number> => {
+  const map = new Map<string, number>();
+  for (const book of books) {
+    if (!book.groupName || !book.updatedAt) continue;
+    let path: string | undefined = book.groupName;
+    while (path) {
+      const prev = map.get(path) ?? 0;
+      if (book.updatedAt > prev) map.set(path, book.updatedAt);
+      const slash = path.lastIndexOf('/');
+      path = slash === -1 ? undefined : path.slice(0, slash);
+    }
+  }
+  return map;
+};
+
 export const getBreadcrumbs = (currentPath: string) => {
   if (!currentPath) return [];
   const segments = currentPath.split('/');

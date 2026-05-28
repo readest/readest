@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MdCheck, MdChevronRight, MdEdit } from 'react-icons/md';
 import { HiOutlineFolder, HiOutlineFolderAdd, HiOutlineFolderRemove } from 'react-icons/hi';
 import { IoMdArrowBack } from 'react-icons/io';
@@ -12,7 +12,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
-import { getBreadcrumbs } from '../utils/libraryUtils';
+import { buildGroupNameUpdatedAt, getBreadcrumbs } from '../utils/libraryUtils';
 
 interface GroupingModalProps {
   libraryBooks: Book[];
@@ -55,12 +55,16 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
 
   const allGroups = getGroups();
   const currentGroups = getGroupsByParent(currentPath);
+  const groupNameUpdatedAt = useMemo(() => buildGroupNameUpdatedAt(libraryBooks), [libraryBooks]);
+  const sortedCurrentGroups = [...currentGroups].sort(
+    (a, b) => (groupNameUpdatedAt.get(b.name) ?? 0) - (groupNameUpdatedAt.get(a.name) ?? 0),
+  );
   const currentGroupsList =
     newGroup &&
-    !currentGroups.some((g) => g.id === newGroup.id) &&
-    !currentGroups.some((g) => newGroup.name.startsWith(g.name))
-      ? [newGroup, ...currentGroups]
-      : currentGroups;
+    !sortedCurrentGroups.some((g) => g.id === newGroup.id) &&
+    !sortedCurrentGroups.some((g) => newGroup.name.startsWith(g.name))
+      ? [newGroup, ...sortedCurrentGroups]
+      : sortedCurrentGroups;
 
   const isSelectedBooksHasGroup =
     selectedBooks.some((hash) => !isMd5(hash)) ||
