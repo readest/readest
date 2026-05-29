@@ -1679,5 +1679,18 @@
   "No bookmark yet": "هنوز نشانکی وجود ندارد",
   "Importing...": "در حال وارد کردن...",
   "Swipe for Brightness": "کشیدن برای روشنایی",
-  "Slide along the left edge": "در امتداد لبه چپ بکشید"
+  "Slide along the left edge": "در امتداد لبه چپ بکشید",
+  "Failed to read cache": "خواندن حافظهٔ پنهان ناموفق بود",
+  "Failed to clear cache": "پاک کردن حافظهٔ پنهان ناموفق بود",
+  "Calculating cache size...": "در حال محاسبهٔ اندازهٔ حافظهٔ پنهان…",
+  "Cache cleared": "حافظهٔ پنهان پاک شد",
+  "{{count}} files_one": "{{count}} فایل",
+  "{{count}} files_other": "{{count}} فایل",
+  "Manage Cache": "مدیریت حافظهٔ پنهان",
+  "Deleting: {{file}}": "در حال حذف: {{file}}",
+  "Clearing cache...": "در حال پاک کردن حافظهٔ پنهان…",
+  "This will delete all cached files. This cannot be undone.": "این کار همهٔ فایل‌های ذخیره‌شده در حافظهٔ پنهان را حذف می‌کند. این عمل قابل بازگشت نیست.",
+  "Confirm Clear": "تأیید پاک کردن",
+  "Clearing...": "در حال پاک کردن…",
+  "Clear Cache": "پاک کردن حافظهٔ پنهان"
 }

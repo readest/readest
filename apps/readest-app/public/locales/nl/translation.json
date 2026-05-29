@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Nog geen bladwijzer",
   "Importing...": "Bezig met importeren...",
   "Swipe for Brightness": "Veeg voor helderheid",
-  "Slide along the left edge": "Veeg langs de linkerrand"
+  "Slide along the left edge": "Veeg langs de linkerrand",
+  "Failed to read cache": "Kan cache niet lezen",
+  "Failed to clear cache": "Kan cache niet wissen",
+  "Calculating cache size...": "Cachegrootte berekenen…",
+  "Cache cleared": "Cache gewist",
+  "{{count}} files_one": "{{count}} bestand",
+  "{{count}} files_other": "{{count}} bestanden",
+  "Manage Cache": "Cache beheren",
+  "Deleting: {{file}}": "Verwijderen: {{file}}",
+  "Clearing cache...": "Cache wissen…",
+  "This will delete all cached files. This cannot be undone.": "Hiermee worden alle gecachte bestanden verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Confirm Clear": "Wissen bevestigen",
+  "Clearing...": "Bezig met wissen…",
+  "Clear Cache": "Cache wissen"
 }

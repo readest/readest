@@ -1711,5 +1711,19 @@
   "No bookmark yet": "Niciun marcaj încă",
   "Importing...": "Se importă...",
   "Swipe for Brightness": "Glisează pentru luminozitate",
-  "Slide along the left edge": "Glisează de-a lungul marginii stângi"
+  "Slide along the left edge": "Glisează de-a lungul marginii stângi",
+  "Failed to read cache": "Citirea memoriei cache a eșuat",
+  "Failed to clear cache": "Golirea memoriei cache a eșuat",
+  "Calculating cache size...": "Se calculează dimensiunea memoriei cache…",
+  "Cache cleared": "Memoria cache a fost golită",
+  "{{count}} files_one": "{{count}} fișier",
+  "{{count}} files_few": "{{count}} fișiere",
+  "{{count}} files_other": "{{count}} de fișiere",
+  "Manage Cache": "Gestionează memoria cache",
+  "Deleting: {{file}}": "Se șterge: {{file}}",
+  "Clearing cache...": "Se golește memoria cache…",
+  "This will delete all cached files. This cannot be undone.": "Această acțiune va șterge toate fișierele din memoria cache. Acțiunea nu poate fi anulată.",
+  "Confirm Clear": "Confirmă golirea",
+  "Clearing...": "Se golește…",
+  "Clear Cache": "Golește memoria cache"
 }

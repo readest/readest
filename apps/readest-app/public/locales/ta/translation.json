@@ -1679,5 +1679,18 @@
   "No bookmark yet": "இன்னும் புக்மார்க் இல்லை",
   "Importing...": "இறக்குமதி செய்கிறது...",
   "Swipe for Brightness": "ஒளிர்வுக்கு ஸ்வைப் செய்யவும்",
-  "Slide along the left edge": "இடது விளிம்பில் இழுக்கவும்"
+  "Slide along the left edge": "இடது விளிம்பில் இழுக்கவும்",
+  "Failed to read cache": "தற்காலிக சேமிப்பைப் படிக்க முடியவில்லை",
+  "Failed to clear cache": "தற்காலிக சேமிப்பை அழிக்க முடியவில்லை",
+  "Calculating cache size...": "தற்காலிக சேமிப்பின் அளவு கணக்கிடப்படுகிறது…",
+  "Cache cleared": "தற்காலிக சேமிப்பு அழிக்கப்பட்டது",
+  "{{count}} files_one": "{{count}} கோப்பு",
+  "{{count}} files_other": "{{count}} கோப்புகள்",
+  "Manage Cache": "தற்காலிக சேமிப்பை நிர்வகி",
+  "Deleting: {{file}}": "நீக்கப்படுகிறது: {{file}}",
+  "Clearing cache...": "தற்காலிக சேமிப்பு அழிக்கப்படுகிறது…",
+  "This will delete all cached files. This cannot be undone.": "இது தற்காலிகச் சேமிப்பில் உள்ள அனைத்துக் கோப்புகளையும் நீக்கும். இதை மீட்டெடுக்க முடியாது.",
+  "Confirm Clear": "அழிப்பதை உறுதிப்படுத்து",
+  "Clearing...": "அழிக்கப்படுகிறது…",
+  "Clear Cache": "தற்காலிக சேமிப்பை அழி"
 }

@@ -10,6 +10,7 @@ import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
+import { setCacheManagerDialogVisible } from '@/app/library/components/CacheManagerWindow';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -190,6 +191,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const handleBackupRestore = () => {
     setIsDropdownOpen?.(false);
     setBackupDialogVisible(true);
+  };
+
+  const handleManageCache = () => {
+    setIsDropdownOpen?.(false);
+    setCacheManagerDialogVisible(true);
   };
 
   const handleRefreshMetadata = async () => {
@@ -426,6 +432,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             onClick={handleRefreshMetadata}
             disabled={isRefreshingMetadata}
           />
+          {appService?.isMobileApp && (
+            <MenuItem label={_('Manage Cache')} onClick={handleManageCache} />
+          )}
           {!isPinEnabled && (
             <MenuItem
               label={_('Set PIN…')}

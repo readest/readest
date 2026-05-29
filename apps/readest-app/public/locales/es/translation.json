@@ -1711,5 +1711,19 @@
   "No bookmark yet": "Aún no hay marcadores",
   "Importing...": "Importando...",
   "Swipe for Brightness": "Deslizar para el brillo",
-  "Slide along the left edge": "Desliza por el borde izquierdo"
+  "Slide along the left edge": "Desliza por el borde izquierdo",
+  "Failed to read cache": "No se pudo leer la caché",
+  "Failed to clear cache": "No se pudo borrar la caché",
+  "Calculating cache size...": "Calculando el tamaño de la caché…",
+  "Cache cleared": "Caché borrada",
+  "{{count}} files_one": "{{count}} archivo",
+  "{{count}} files_many": "{{count}} archivos",
+  "{{count}} files_other": "{{count}} archivos",
+  "Manage Cache": "Administrar caché",
+  "Deleting: {{file}}": "Eliminando: {{file}}",
+  "Clearing cache...": "Borrando caché…",
+  "This will delete all cached files. This cannot be undone.": "Esto eliminará todos los archivos en caché. Esta acción no se puede deshacer.",
+  "Confirm Clear": "Confirmar borrado",
+  "Clearing...": "Borrando…",
+  "Clear Cache": "Borrar caché"
 }

@@ -14,6 +14,8 @@
   "{{count}} pages left in book_other": "<0>{{count}}</0><1> pages left in book</1>",
   "Deleted {{count}} file(s)_one": "Deleted {{count}} file",
   "Deleted {{count}} file(s)_other": "Deleted {{count}} files",
+  "{{count}} files_one": "{{count}} file",
+  "{{count}} files_other": "{{count}} files",
   "Failed to delete {{count}} file(s)_one": "Failed to delete {{count}} file",
   "Failed to delete {{count}} file(s)_other": "Failed to delete {{count}} files",
   "Failed to import {{count}} books_one": "Failed to import {{count}} book",

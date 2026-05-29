@@ -1647,5 +1647,17 @@
   "No bookmark yet": "尚無書籤",
   "Importing...": "正在匯入...",
   "Swipe for Brightness": "滑動調整亮度",
-  "Slide along the left edge": "沿左側邊緣滑動"
+  "Slide along the left edge": "沿左側邊緣滑動",
+  "Failed to read cache": "讀取快取失敗",
+  "Failed to clear cache": "清除快取失敗",
+  "Calculating cache size...": "正在計算快取大小…",
+  "Cache cleared": "快取已清除",
+  "{{count}} files_other": "{{count}} 個檔案",
+  "Manage Cache": "管理快取",
+  "Deleting: {{file}}": "正在刪除：{{file}}",
+  "Clearing cache...": "正在清除快取…",
+  "This will delete all cached files. This cannot be undone.": "這將刪除所有快取檔案，此操作無法復原。",
+  "Confirm Clear": "確認清除",
+  "Clearing...": "正在清除…",
+  "Clear Cache": "清除快取"
 }

@@ -1647,5 +1647,17 @@
   "No bookmark yet": "ยังไม่มีบุ๊กมาร์ก",
   "Importing...": "กำลังนำเข้า...",
   "Swipe for Brightness": "ปัดเพื่อปรับความสว่าง",
-  "Slide along the left edge": "เลื่อนตามขอบด้านซ้าย"
+  "Slide along the left edge": "เลื่อนตามขอบด้านซ้าย",
+  "Failed to read cache": "อ่านแคชไม่สำเร็จ",
+  "Failed to clear cache": "ล้างแคชไม่สำเร็จ",
+  "Calculating cache size...": "กำลังคำนวณขนาดแคช…",
+  "Cache cleared": "ล้างแคชแล้ว",
+  "{{count}} files_other": "{{count}} ไฟล์",
+  "Manage Cache": "จัดการแคช",
+  "Deleting: {{file}}": "กำลังลบ: {{file}}",
+  "Clearing cache...": "กำลังล้างแคช…",
+  "This will delete all cached files. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมด ไม่สามารถยกเลิกได้",
+  "Confirm Clear": "ยืนยันการล้าง",
+  "Clearing...": "กำลังล้าง…",
+  "Clear Cache": "ล้างแคช"
 }

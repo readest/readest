@@ -1647,5 +1647,17 @@
   "No bookmark yet": "아직 북마크가 없습니다",
   "Importing...": "가져오는 중...",
   "Swipe for Brightness": "밝기 조절 스와이프",
-  "Slide along the left edge": "왼쪽 가장자리를 따라 슬라이드"
+  "Slide along the left edge": "왼쪽 가장자리를 따라 슬라이드",
+  "Failed to read cache": "캐시를 읽지 못했습니다",
+  "Failed to clear cache": "캐시를 지우지 못했습니다",
+  "Calculating cache size...": "캐시 크기 계산 중…",
+  "Cache cleared": "캐시가 지워졌습니다",
+  "{{count}} files_other": "파일 {{count}}개",
+  "Manage Cache": "캐시 관리",
+  "Deleting: {{file}}": "삭제 중: {{file}}",
+  "Clearing cache...": "캐시 지우는 중…",
+  "This will delete all cached files. This cannot be undone.": "캐시된 모든 파일을 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+  "Confirm Clear": "지우기 확인",
+  "Clearing...": "지우는 중…",
+  "Clear Cache": "캐시 지우기"
 }

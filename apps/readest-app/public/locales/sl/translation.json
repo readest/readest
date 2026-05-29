@@ -1743,5 +1743,20 @@
   "No bookmark yet": "Še ni zaznamka",
   "Importing...": "Uvažanje ...",
   "Swipe for Brightness": "Poteg za svetlost",
-  "Slide along the left edge": "Povlecite ob levem robu"
+  "Slide along the left edge": "Povlecite ob levem robu",
+  "Failed to read cache": "Predpomnilnika ni bilo mogoče prebrati",
+  "Failed to clear cache": "Predpomnilnika ni bilo mogoče počistiti",
+  "Calculating cache size...": "Računanje velikosti predpomnilnika…",
+  "Cache cleared": "Predpomnilnik počiščen",
+  "{{count}} files_one": "{{count}} datoteka",
+  "{{count}} files_two": "{{count}} datoteki",
+  "{{count}} files_few": "{{count}} datoteke",
+  "{{count}} files_other": "{{count}} datotek",
+  "Manage Cache": "Upravljanje predpomnilnika",
+  "Deleting: {{file}}": "Brisanje: {{file}}",
+  "Clearing cache...": "Čiščenje predpomnilnika…",
+  "This will delete all cached files. This cannot be undone.": "To bo izbrisalo vse predpomnjene datoteke. Tega dejanja ni mogoče razveljaviti.",
+  "Confirm Clear": "Potrdi čiščenje",
+  "Clearing...": "Čiščenje…",
+  "Clear Cache": "Počisti predpomnilnik"
 }

@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Δεν υπάρχει ακόμη σελιδοδείκτης",
   "Importing...": "Εισαγωγή...",
   "Swipe for Brightness": "Σάρωση για φωτεινότητα",
-  "Slide along the left edge": "Σύρετε κατά μήκος της αριστερής άκρης"
+  "Slide along the left edge": "Σύρετε κατά μήκος της αριστερής άκρης",
+  "Failed to read cache": "Αποτυχία ανάγνωσης της προσωρινής μνήμης",
+  "Failed to clear cache": "Αποτυχία εκκαθάρισης της προσωρινής μνήμης",
+  "Calculating cache size...": "Υπολογισμός μεγέθους προσωρινής μνήμης…",
+  "Cache cleared": "Η προσωρινή μνήμη εκκαθαρίστηκε",
+  "{{count}} files_one": "{{count}} αρχείο",
+  "{{count}} files_other": "{{count}} αρχεία",
+  "Manage Cache": "Διαχείριση προσωρινής μνήμης",
+  "Deleting: {{file}}": "Διαγραφή: {{file}}",
+  "Clearing cache...": "Εκκαθάριση προσωρινής μνήμης…",
+  "This will delete all cached files. This cannot be undone.": "Αυτό θα διαγράψει όλα τα προσωρινά αποθηκευμένα αρχεία. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
+  "Confirm Clear": "Επιβεβαίωση εκκαθάρισης",
+  "Clearing...": "Εκκαθάριση…",
+  "Clear Cache": "Εκκαθάριση προσωρινής μνήμης"
 }

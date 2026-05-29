@@ -1647,5 +1647,17 @@
   "No bookmark yet": "Belum ada tandabuku",
   "Importing...": "Mengimport...",
   "Swipe for Brightness": "Leret untuk kecerahan",
-  "Slide along the left edge": "Leret di sepanjang tepi kiri"
+  "Slide along the left edge": "Leret di sepanjang tepi kiri",
+  "Failed to read cache": "Gagal membaca cache",
+  "Failed to clear cache": "Gagal mengosongkan cache",
+  "Calculating cache size...": "Mengira saiz cache…",
+  "Cache cleared": "Cache dikosongkan",
+  "{{count}} files_other": "{{count}} fail",
+  "Manage Cache": "Urus Cache",
+  "Deleting: {{file}}": "Memadam: {{file}}",
+  "Clearing cache...": "Mengosongkan cache…",
+  "This will delete all cached files. This cannot be undone.": "Tindakan ini akan memadam semua fail cache. Tindakan ini tidak boleh diundurkan.",
+  "Confirm Clear": "Sahkan Pengosongan",
+  "Clearing...": "Mengosongkan…",
+  "Clear Cache": "Kosongkan Cache"
 }

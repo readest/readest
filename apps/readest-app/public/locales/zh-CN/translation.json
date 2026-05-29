@@ -1647,5 +1647,17 @@
   "No bookmark yet": "尚无书签",
   "Importing...": "正在导入...",
   "Swipe for Brightness": "滑动调节亮度",
-  "Slide along the left edge": "沿左侧边缘滑动"
+  "Slide along the left edge": "沿左侧边缘滑动",
+  "Failed to read cache": "读取缓存失败",
+  "Failed to clear cache": "清除缓存失败",
+  "Calculating cache size...": "正在计算缓存大小…",
+  "Cache cleared": "缓存已清除",
+  "{{count}} files_other": "{{count}} 个文件",
+  "Manage Cache": "管理缓存",
+  "Deleting: {{file}}": "正在删除：{{file}}",
+  "Clearing cache...": "正在清除缓存…",
+  "This will delete all cached files. This cannot be undone.": "这将删除所有缓存文件，此操作无法撤销。",
+  "Confirm Clear": "确认清除",
+  "Clearing...": "正在清除…",
+  "Clear Cache": "清除缓存"
 }

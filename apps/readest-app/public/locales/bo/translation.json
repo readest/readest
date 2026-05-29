@@ -1647,5 +1647,17 @@
   "No bookmark yet": "ད་དུང་དཔེ་རྟགས་མེད།",
   "Importing...": "ནང་འདྲེན་བྱེད་བཞིན་པ...",
   "Swipe for Brightness": "འོད་གདངས་ཆེད་འཐེན།",
-  "Slide along the left edge": "གཡོན་ངོས་ཟུར་ནས་འཐེན།"
+  "Slide along the left edge": "གཡོན་ངོས་ཟུར་ནས་འཐེན།",
+  "Failed to read cache": "གསོག་ཉར་ཀློག་མ་ཐུབ།",
+  "Failed to clear cache": "གསོག་ཉར་བསལ་མ་ཐུབ།",
+  "Calculating cache size...": "གསོག་ཉར་གྱི་ཆེ་ཆུང་རྩིས་བཞིན་པ།...",
+  "Cache cleared": "གསོག་ཉར་བསལ་ཟིན།",
+  "{{count}} files_other": "ཡིག་ཆ་ {{count}}",
+  "Manage Cache": "གསོག་ཉར་དོ་དམ།",
+  "Deleting: {{file}}": "བསུབ་བཞིན་པ། {{file}}",
+  "Clearing cache...": "གསོག་ཉར་བསལ་བཞིན་པ།...",
+  "This will delete all cached files. This cannot be undone.": "འདིས་གསོག་ཉར་གྱི་ཡིག་ཆ་ཚང་མ་བསུབ་ངེས་ཡིན། འདི་སྔར་བཞིན་བཟོ་མི་ཐུབ།",
+  "Confirm Clear": "བསལ་བ་གཏན་འཁེལ།",
+  "Clearing...": "བསལ་བཞིན་པ།...",
+  "Clear Cache": "གསོག་ཉར་བསལ་བ།"
 }

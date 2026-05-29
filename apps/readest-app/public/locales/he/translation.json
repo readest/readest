@@ -1711,5 +1711,19 @@
   "No bookmark yet": "אין סימניות עדיין",
   "Importing...": "מייבא...",
   "Swipe for Brightness": "החלקה לכוונון בהירות",
-  "Slide along the left edge": "החליקו לאורך הקצה השמאלי"
+  "Slide along the left edge": "החליקו לאורך הקצה השמאלי",
+  "Failed to read cache": "קריאת המטמון נכשלה",
+  "Failed to clear cache": "ניקוי המטמון נכשל",
+  "Calculating cache size...": "מחשב את גודל המטמון…",
+  "Cache cleared": "המטמון נוקה",
+  "{{count}} files_one": "קובץ אחד",
+  "{{count}} files_two": "{{count}} קבצים",
+  "{{count}} files_other": "{{count}} קבצים",
+  "Manage Cache": "ניהול מטמון",
+  "Deleting: {{file}}": "מוחק: {{file}}",
+  "Clearing cache...": "מנקה מטמון…",
+  "This will delete all cached files. This cannot be undone.": "פעולה זו תמחק את כל הקבצים השמורים במטמון. לא ניתן לבטל פעולה זו.",
+  "Confirm Clear": "אישור ניקוי",
+  "Clearing...": "מנקה…",
+  "Clear Cache": "נקה מטמון"
 }

@@ -1647,5 +1647,17 @@
   "No bookmark yet": "Belum ada penanda",
   "Importing...": "Mengimpor...",
   "Swipe for Brightness": "Geser untuk kecerahan",
-  "Slide along the left edge": "Geser di sepanjang tepi kiri"
+  "Slide along the left edge": "Geser di sepanjang tepi kiri",
+  "Failed to read cache": "Gagal membaca cache",
+  "Failed to clear cache": "Gagal membersihkan cache",
+  "Calculating cache size...": "Menghitung ukuran cache…",
+  "Cache cleared": "Cache dibersihkan",
+  "{{count}} files_other": "{{count}} file",
+  "Manage Cache": "Kelola Cache",
+  "Deleting: {{file}}": "Menghapus: {{file}}",
+  "Clearing cache...": "Membersihkan cache…",
+  "This will delete all cached files. This cannot be undone.": "Tindakan ini akan menghapus semua file cache. Tindakan ini tidak dapat dibatalkan.",
+  "Confirm Clear": "Konfirmasi Pembersihan",
+  "Clearing...": "Membersihkan…",
+  "Clear Cache": "Bersihkan Cache"
 }

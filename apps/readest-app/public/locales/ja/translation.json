@@ -1647,5 +1647,17 @@
   "No bookmark yet": "ブックマークはまだありません",
   "Importing...": "インポートしています...",
   "Swipe for Brightness": "スワイプで明るさ調整",
-  "Slide along the left edge": "左端をスライド"
+  "Slide along the left edge": "左端をスライド",
+  "Failed to read cache": "キャッシュの読み込みに失敗しました",
+  "Failed to clear cache": "キャッシュの削除に失敗しました",
+  "Calculating cache size...": "キャッシュサイズを計算中…",
+  "Cache cleared": "キャッシュを削除しました",
+  "{{count}} files_other": "{{count}} 件のファイル",
+  "Manage Cache": "キャッシュの管理",
+  "Deleting: {{file}}": "削除中: {{file}}",
+  "Clearing cache...": "キャッシュを削除中…",
+  "This will delete all cached files. This cannot be undone.": "すべてのキャッシュファイルを削除します。この操作は取り消せません。",
+  "Confirm Clear": "削除を確認",
+  "Clearing...": "削除中…",
+  "Clear Cache": "キャッシュを削除"
 }

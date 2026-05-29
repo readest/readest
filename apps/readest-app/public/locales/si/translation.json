@@ -1679,5 +1679,18 @@
   "No bookmark yet": "තවම පොත් සලකුණක් නැත",
   "Importing...": "ආයාත වෙමින්...",
   "Swipe for Brightness": "දීප්තිය සඳහා ස්වයිප් කරන්න",
-  "Slide along the left edge": "වම් කෙළවර දිගේ අදින්න"
+  "Slide along the left edge": "වම් කෙළවර දිගේ අදින්න",
+  "Failed to read cache": "හැඹිලිය කියවීමට අසමත් විය",
+  "Failed to clear cache": "හැඹිලිය හිස් කිරීමට අසමත් විය",
+  "Calculating cache size...": "හැඹිලි ප්‍රමාණය ගණනය කරමින්…",
+  "Cache cleared": "හැඹිලිය හිස් කරන ලදී",
+  "{{count}} files_one": "ගොනු {{count}}",
+  "{{count}} files_other": "ගොනු {{count}}",
+  "Manage Cache": "හැඹිලිය කළමනාකරණය",
+  "Deleting: {{file}}": "මකමින්: {{file}}",
+  "Clearing cache...": "හැඹිලිය හිස් කරමින්…",
+  "This will delete all cached files. This cannot be undone.": "මෙය සියලුම හැඹිලිගත ගොනු මකා දමයි. මෙය පෙරළිය නොහැක.",
+  "Confirm Clear": "හිස් කිරීම තහවුරු කරන්න",
+  "Clearing...": "හිස් කරමින්…",
+  "Clear Cache": "හැඹිලිය හිස් කරන්න"
 }

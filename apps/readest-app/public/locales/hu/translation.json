@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Még nincs könyvjelző",
   "Importing...": "Importálás...",
   "Swipe for Brightness": "Húzás a fényerőhöz",
-  "Slide along the left edge": "Húzza a bal szél mentén"
+  "Slide along the left edge": "Húzza a bal szél mentén",
+  "Failed to read cache": "Nem sikerült olvasni a gyorsítótárat",
+  "Failed to clear cache": "Nem sikerült törölni a gyorsítótárat",
+  "Calculating cache size...": "Gyorsítótár méretének kiszámítása…",
+  "Cache cleared": "Gyorsítótár törölve",
+  "{{count}} files_one": "{{count}} fájl",
+  "{{count}} files_other": "{{count}} fájl",
+  "Manage Cache": "Gyorsítótár kezelése",
+  "Deleting: {{file}}": "Törlés: {{file}}",
+  "Clearing cache...": "Gyorsítótár törlése…",
+  "This will delete all cached files. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt. A művelet nem vonható vissza.",
+  "Confirm Clear": "Törlés megerősítése",
+  "Clearing...": "Törlés…",
+  "Clear Cache": "Gyorsítótár törlése"
 }

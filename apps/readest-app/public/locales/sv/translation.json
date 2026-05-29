@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Inget bokmärke än",
   "Importing...": "Importerar...",
   "Swipe for Brightness": "Svep för ljusstyrka",
-  "Slide along the left edge": "Dra längs vänsterkanten"
+  "Slide along the left edge": "Dra längs vänsterkanten",
+  "Failed to read cache": "Det gick inte att läsa cachen",
+  "Failed to clear cache": "Det gick inte att rensa cachen",
+  "Calculating cache size...": "Beräknar cachestorlek…",
+  "Cache cleared": "Cachen rensad",
+  "{{count}} files_one": "{{count}} fil",
+  "{{count}} files_other": "{{count}} filer",
+  "Manage Cache": "Hantera cache",
+  "Deleting: {{file}}": "Tar bort: {{file}}",
+  "Clearing cache...": "Rensar cache…",
+  "This will delete all cached files. This cannot be undone.": "Detta tar bort alla cachade filer. Åtgärden kan inte ångras.",
+  "Confirm Clear": "Bekräfta rensning",
+  "Clearing...": "Rensar…",
+  "Clear Cache": "Rensa cache"
 }

@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Hali xatchoʻp yoʻq",
   "Importing...": "Import qilinmoqda...",
   "Swipe for Brightness": "Yorqinlik uchun suring",
-  "Slide along the left edge": "Chap chekka bo'ylab suring"
+  "Slide along the left edge": "Chap chekka bo'ylab suring",
+  "Failed to read cache": "Keshni o‘qib bo‘lmadi",
+  "Failed to clear cache": "Keshni tozalab bo‘lmadi",
+  "Calculating cache size...": "Kesh hajmi hisoblanmoqda…",
+  "Cache cleared": "Kesh tozalandi",
+  "{{count}} files_one": "{{count}} ta fayl",
+  "{{count}} files_other": "{{count}} ta fayl",
+  "Manage Cache": "Keshni boshqarish",
+  "Deleting: {{file}}": "O‘chirilmoqda: {{file}}",
+  "Clearing cache...": "Kesh tozalanmoqda…",
+  "This will delete all cached files. This cannot be undone.": "Bu barcha keshlangan fayllarni o‘chiradi. Buni qaytarib bo‘lmaydi.",
+  "Confirm Clear": "Tozalashni tasdiqlash",
+  "Clearing...": "Tozalanmoqda…",
+  "Clear Cache": "Keshni tozalash"
 }

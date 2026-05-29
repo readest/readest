@@ -1679,5 +1679,18 @@
   "No bookmark yet": "अभी तक कोई बुकमार्क नहीं",
   "Importing...": "आयात हो रहा है...",
   "Swipe for Brightness": "चमक के लिए स्वाइप करें",
-  "Slide along the left edge": "बाएँ किनारे पर स्लाइड करें"
+  "Slide along the left edge": "बाएँ किनारे पर स्लाइड करें",
+  "Failed to read cache": "कैश पढ़ने में विफल",
+  "Failed to clear cache": "कैश साफ़ करने में विफल",
+  "Calculating cache size...": "कैश का आकार परिकलित किया जा रहा है…",
+  "Cache cleared": "कैश साफ़ कर दिया गया",
+  "{{count}} files_one": "{{count}} फ़ाइल",
+  "{{count}} files_other": "{{count}} फ़ाइलें",
+  "Manage Cache": "कैश प्रबंधित करें",
+  "Deleting: {{file}}": "हटाया जा रहा है: {{file}}",
+  "Clearing cache...": "कैश साफ़ किया जा रहा है…",
+  "This will delete all cached files. This cannot be undone.": "इससे सभी कैश की गई फ़ाइलें हट जाएँगी. इसे पूर्ववत नहीं किया जा सकता.",
+  "Confirm Clear": "साफ़ करने की पुष्टि करें",
+  "Clearing...": "साफ़ किया जा रहा है…",
+  "Clear Cache": "कैश साफ़ करें"
 }

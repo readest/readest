@@ -1743,5 +1743,20 @@
   "No bookmark yet": "Поки немає закладок",
   "Importing...": "Імпорт...",
   "Swipe for Brightness": "Свайп для яскравості",
-  "Slide along the left edge": "Проведіть уздовж лівого краю"
+  "Slide along the left edge": "Проведіть уздовж лівого краю",
+  "Failed to read cache": "Не вдалося прочитати кеш",
+  "Failed to clear cache": "Не вдалося очистити кеш",
+  "Calculating cache size...": "Обчислення розміру кешу…",
+  "Cache cleared": "Кеш очищено",
+  "{{count}} files_one": "{{count}} файл",
+  "{{count}} files_few": "{{count}} файли",
+  "{{count}} files_many": "{{count}} файлів",
+  "{{count}} files_other": "{{count}} файлу",
+  "Manage Cache": "Керування кешем",
+  "Deleting: {{file}}": "Видалення: {{file}}",
+  "Clearing cache...": "Очищення кешу…",
+  "This will delete all cached files. This cannot be undone.": "Це видалить усі файли з кешу. Цю дію не можна скасувати.",
+  "Confirm Clear": "Підтвердити очищення",
+  "Clearing...": "Очищення…",
+  "Clear Cache": "Очистити кеш"
 }

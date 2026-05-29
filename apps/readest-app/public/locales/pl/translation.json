@@ -1743,5 +1743,20 @@
   "No bookmark yet": "Brak zakładek",
   "Importing...": "Importowanie...",
   "Swipe for Brightness": "Przesuń, aby zmienić jasność",
-  "Slide along the left edge": "Przesuń wzdłuż lewej krawędzi"
+  "Slide along the left edge": "Przesuń wzdłuż lewej krawędzi",
+  "Failed to read cache": "Nie udało się odczytać pamięci podręcznej",
+  "Failed to clear cache": "Nie udało się wyczyścić pamięci podręcznej",
+  "Calculating cache size...": "Obliczanie rozmiaru pamięci podręcznej…",
+  "Cache cleared": "Wyczyszczono pamięć podręczną",
+  "{{count}} files_one": "{{count}} plik",
+  "{{count}} files_few": "{{count}} pliki",
+  "{{count}} files_many": "{{count}} plików",
+  "{{count}} files_other": "{{count}} pliku",
+  "Manage Cache": "Zarządzaj pamięcią podręczną",
+  "Deleting: {{file}}": "Usuwanie: {{file}}",
+  "Clearing cache...": "Czyszczenie pamięci podręcznej…",
+  "This will delete all cached files. This cannot be undone.": "Spowoduje to usunięcie wszystkich plików z pamięci podręcznej. Tej operacji nie można cofnąć.",
+  "Confirm Clear": "Potwierdź czyszczenie",
+  "Clearing...": "Czyszczenie…",
+  "Clear Cache": "Wyczyść pamięć podręczną"
 }

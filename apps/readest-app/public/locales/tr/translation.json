@@ -1679,5 +1679,18 @@
   "No bookmark yet": "Henüz yer imi yok",
   "Importing...": "İçe aktarılıyor...",
   "Swipe for Brightness": "Parlaklık için kaydır",
-  "Slide along the left edge": "Sol kenar boyunca kaydır"
+  "Slide along the left edge": "Sol kenar boyunca kaydır",
+  "Failed to read cache": "Önbellek okunamadı",
+  "Failed to clear cache": "Önbellek temizlenemedi",
+  "Calculating cache size...": "Önbellek boyutu hesaplanıyor…",
+  "Cache cleared": "Önbellek temizlendi",
+  "{{count}} files_one": "{{count}} dosya",
+  "{{count}} files_other": "{{count}} dosya",
+  "Manage Cache": "Önbelleği Yönet",
+  "Deleting: {{file}}": "Siliniyor: {{file}}",
+  "Clearing cache...": "Önbellek temizleniyor…",
+  "This will delete all cached files. This cannot be undone.": "Bu, önbelleğe alınmış tüm dosyaları siler. Bu işlem geri alınamaz.",
+  "Confirm Clear": "Temizlemeyi Onayla",
+  "Clearing...": "Temizleniyor…",
+  "Clear Cache": "Önbelleği Temizle"
 }

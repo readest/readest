@@ -1647,5 +1647,17 @@
   "No bookmark yet": "Chưa có dấu trang",
   "Importing...": "Đang nhập...",
   "Swipe for Brightness": "Vuốt để chỉnh độ sáng",
-  "Slide along the left edge": "Vuốt dọc theo cạnh trái"
+  "Slide along the left edge": "Vuốt dọc theo cạnh trái",
+  "Failed to read cache": "Không thể đọc bộ nhớ đệm",
+  "Failed to clear cache": "Không thể xóa bộ nhớ đệm",
+  "Calculating cache size...": "Đang tính kích thước bộ nhớ đệm…",
+  "Cache cleared": "Đã xóa bộ nhớ đệm",
+  "{{count}} files_other": "{{count}} tệp",
+  "Manage Cache": "Quản lý bộ nhớ đệm",
+  "Deleting: {{file}}": "Đang xóa: {{file}}",
+  "Clearing cache...": "Đang xóa bộ nhớ đệm…",
+  "This will delete all cached files. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp trong bộ nhớ đệm. Không thể hoàn tác.",
+  "Confirm Clear": "Xác nhận xóa",
+  "Clearing...": "Đang xóa…",
+  "Clear Cache": "Xóa bộ nhớ đệm"
 }

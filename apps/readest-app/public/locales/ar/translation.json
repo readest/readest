@@ -1807,5 +1807,22 @@
   "No bookmark yet": "لا توجد إشارات مرجعية بعد",
   "Importing...": "جاري الاستيراد...",
   "Swipe for Brightness": "اسحب لضبط السطوع",
-  "Slide along the left edge": "اسحب على طول الحافة اليسرى"
+  "Slide along the left edge": "اسحب على طول الحافة اليسرى",
+  "Failed to read cache": "فشل قراءة ذاكرة التخزين المؤقت",
+  "Failed to clear cache": "فشل مسح ذاكرة التخزين المؤقت",
+  "Calculating cache size...": "جارٍ حساب حجم ذاكرة التخزين المؤقت…",
+  "Cache cleared": "تم مسح ذاكرة التخزين المؤقت",
+  "{{count}} files_zero": "{{count}} ملف",
+  "{{count}} files_one": "ملف واحد",
+  "{{count}} files_two": "ملفان",
+  "{{count}} files_few": "{{count}} ملفات",
+  "{{count}} files_many": "{{count}} ملفًا",
+  "{{count}} files_other": "{{count}} ملف",
+  "Manage Cache": "إدارة ذاكرة التخزين المؤقت",
+  "Deleting: {{file}}": "جارٍ الحذف: {{file}}",
+  "Clearing cache...": "جارٍ مسح ذاكرة التخزين المؤقت…",
+  "This will delete all cached files. This cannot be undone.": "سيؤدي هذا إلى حذف جميع الملفات المخزنة مؤقتًا. لا يمكن التراجع عن هذا الإجراء.",
+  "Confirm Clear": "تأكيد المسح",
+  "Clearing...": "جارٍ المسح…",
+  "Clear Cache": "مسح ذاكرة التخزين المؤقت"
 }

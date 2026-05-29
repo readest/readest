@@ -1711,5 +1711,19 @@
   "No bookmark yet": "Nessun segnalibro ancora",
   "Importing...": "Importazione...",
   "Swipe for Brightness": "Scorri per la luminosità",
-  "Slide along the left edge": "Scorri lungo il bordo sinistro"
+  "Slide along the left edge": "Scorri lungo il bordo sinistro",
+  "Failed to read cache": "Impossibile leggere la cache",
+  "Failed to clear cache": "Impossibile svuotare la cache",
+  "Calculating cache size...": "Calcolo della dimensione della cache…",
+  "Cache cleared": "Cache svuotata",
+  "{{count}} files_one": "{{count}} file",
+  "{{count}} files_many": "{{count}} file",
+  "{{count}} files_other": "{{count}} file",
+  "Manage Cache": "Gestisci cache",
+  "Deleting: {{file}}": "Eliminazione: {{file}}",
+  "Clearing cache...": "Svuotamento della cache…",
+  "This will delete all cached files. This cannot be undone.": "Questa operazione eliminerà tutti i file memorizzati nella cache. L’azione non può essere annullata.",
+  "Confirm Clear": "Conferma svuotamento",
+  "Clearing...": "Svuotamento…",
+  "Clear Cache": "Svuota cache"
 }

@@ -1743,5 +1743,20 @@
   "No bookmark yet": "Пока нет закладок",
   "Importing...": "Импорт...",
   "Swipe for Brightness": "Свайп для яркости",
-  "Slide along the left edge": "Проведите вдоль левого края"
+  "Slide along the left edge": "Проведите вдоль левого края",
+  "Failed to read cache": "Не удалось прочитать кэш",
+  "Failed to clear cache": "Не удалось очистить кэш",
+  "Calculating cache size...": "Вычисление размера кэша…",
+  "Cache cleared": "Кэш очищен",
+  "{{count}} files_one": "{{count}} файл",
+  "{{count}} files_few": "{{count}} файла",
+  "{{count}} files_many": "{{count}} файлов",
+  "{{count}} files_other": "{{count}} файла",
+  "Manage Cache": "Управление кэшем",
+  "Deleting: {{file}}": "Удаление: {{file}}",
+  "Clearing cache...": "Очистка кэша…",
+  "This will delete all cached files. This cannot be undone.": "Это удалит все файлы из кэша. Это действие нельзя отменить.",
+  "Confirm Clear": "Подтвердить очистку",
+  "Clearing...": "Очистка…",
+  "Clear Cache": "Очистить кэш"
 }

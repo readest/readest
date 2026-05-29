@@ -1711,5 +1711,19 @@
   "No bookmark yet": "Aucun signet pour le moment",
   "Importing...": "Importation...",
   "Swipe for Brightness": "Balayer pour la luminosité",
-  "Slide along the left edge": "Glissez le long du bord gauche"
+  "Slide along the left edge": "Glissez le long du bord gauche",
+  "Failed to read cache": "Échec de la lecture du cache",
+  "Failed to clear cache": "Échec du vidage du cache",
+  "Calculating cache size...": "Calcul de la taille du cache…",
+  "Cache cleared": "Cache vidé",
+  "{{count}} files_one": "{{count}} fichier",
+  "{{count}} files_many": "{{count}} fichiers",
+  "{{count}} files_other": "{{count}} fichiers",
+  "Manage Cache": "Gérer le cache",
+  "Deleting: {{file}}": "Suppression : {{file}}",
+  "Clearing cache...": "Vidage du cache…",
+  "This will delete all cached files. This cannot be undone.": "Cette action supprimera tous les fichiers mis en cache. Elle est irréversible.",
+  "Confirm Clear": "Confirmer le vidage",
+  "Clearing...": "Vidage…",
+  "Clear Cache": "Vider le cache"
 }
