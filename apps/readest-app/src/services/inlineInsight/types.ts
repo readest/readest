@@ -24,6 +24,7 @@ export interface InlineInsightSettings {
   apiKey: string;
   providerProfiles: Partial<Record<InlineInsightProvider, InlineInsightProviderProfile>>;
   maxContextChars: number;
+  searchTimeoutMs: number;
   targetLanguage: string;
   systemPrompt: string;
   questionDirections: string[];
@@ -39,6 +40,7 @@ export const DEFAULT_INLINE_INSIGHT_SETTINGS: InlineInsightSettings = {
   apiKey: '',
   providerProfiles: {},
   maxContextChars: 2000,
+  searchTimeoutMs: 1000,
   targetLanguage: '',
   systemPrompt: '',
   questionDirections: [],

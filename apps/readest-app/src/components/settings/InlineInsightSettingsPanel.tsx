@@ -31,6 +31,7 @@ function getLangOptions(langs: Record<string, string>, followLabel: string) {
 }
 
 const MAX_QUESTION_DIRECTIONS = 30;
+const QUESTION_DIRECTION_POOL_STORAGE_KEY = 'inline-insight-question-direction-pool';
 
 function addQuestionDirectionItem(current: string[], draft: string): string[] {
   const direction = draft.trim();
@@ -60,9 +61,18 @@ const InlineInsightSettingsPanel: React.FC = () => {
   const [apiHostInput, setApiHostInput] = useState(() =>
     getApiHostFromInlineInsightChatUrl(initialSettings.chatUrl),
   );
-  const [questionDirectionDraft, setQuestionDirectionDraft] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [questionDirectionInput, setQuestionDirectionInput] = useState('');
+  const [questionDirectionPool, setQuestionDirectionPool] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return initialSettings.questionDirections;
+    const saved = window.localStorage.getItem(QUESTION_DIRECTION_POOL_STORAGE_KEY);
+    const parsed = saved ? (JSON.parse(saved) as string[]) : [];
+    return Array.from(new Set([...parsed, ...initialSettings.questionDirections])).slice(
+      0,
+      MAX_QUESTION_DIRECTIONS,
+    );
+  });
 
   const hasMounted = useRef(false);
   const previousPromptRef = useRef(draft.systemPrompt);
@@ -150,6 +160,22 @@ const InlineInsightSettingsPanel: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.apiKey]);
 
+  useEffect(() => {
+    const merged = Array.from(
+      new Set([...questionDirectionPool, ...draft.questionDirections]),
+    ).slice(0, MAX_QUESTION_DIRECTIONS);
+    if (
+      merged.length !== questionDirectionPool.length ||
+      merged.some((item, idx) => item !== questionDirectionPool[idx])
+    ) {
+      setQuestionDirectionPool(merged);
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(QUESTION_DIRECTION_POOL_STORAGE_KEY, JSON.stringify(merged));
+    }
+  }, [draft.questionDirections, questionDirectionPool]);
+
   const updateDraft = useCallback((patch: Partial<InlineInsightSettings>) => {
     setDraft((current) => ({ ...current, ...patch }));
   }, []);
@@ -208,23 +234,38 @@ const InlineInsightSettingsPanel: React.FC = () => {
     [updateDraft],
   );
 
-  const addQuestionDirection = () => {
-    const nextQuestionDirections = addQuestionDirectionItem(
-      draft.questionDirections,
-      questionDirectionDraft,
-    );
-    if (nextQuestionDirections === draft.questionDirections) return;
-    setDraft((current) => ({
-      ...current,
-      questionDirections: nextQuestionDirections,
-    }));
-    setQuestionDirectionDraft('');
+  const toggleQuestionDirection = (direction: string) => {
+    setDraft((current) => {
+      const exists = current.questionDirections.includes(direction);
+      if (exists) {
+        return {
+          ...current,
+          questionDirections: current.questionDirections.filter((item) => item !== direction),
+        };
+      }
+      return {
+        ...current,
+        questionDirections: addQuestionDirectionItem(current.questionDirections, direction),
+      };
+    });
   };
 
-  const removeQuestionDirection = (index: number) => {
+  const addQuestionDirection = () => {
+    const item = questionDirectionInput.trim();
+    if (!item) return;
+    setQuestionDirectionPool((current) => addQuestionDirectionItem(current, item));
     setDraft((current) => ({
       ...current,
-      questionDirections: current.questionDirections.filter((_, i) => i !== index),
+      questionDirections: addQuestionDirectionItem(current.questionDirections, item),
+    }));
+    setQuestionDirectionInput('');
+  };
+
+  const removeQuestionDirection = (direction: string) => {
+    setQuestionDirectionPool((current) => current.filter((item) => item !== direction));
+    setDraft((current) => ({
+      ...current,
+      questionDirections: current.questionDirections.filter((item) => item !== direction),
     }));
   };
 
@@ -377,6 +418,22 @@ const InlineInsightSettingsPanel: React.FC = () => {
               />
             </div>
             <div className='config-item gap-3'>
+              <span className='line-clamp-2 min-w-10'>{_('Search Timeout (ms)')}</span>
+              <input
+                type='number'
+                className='input input-bordered input-sm ml-auto w-32 text-center'
+                value={draft.searchTimeoutMs}
+                min={100}
+                max={10000}
+                step={100}
+                onChange={(e) =>
+                  updateDraft({
+                    searchTimeoutMs: Math.max(100, Math.min(10000, Number(e.target.value) || 1000)),
+                  })
+                }
+              />
+            </div>
+            <div className='config-item gap-3'>
               <span className='line-clamp-2 min-w-10'>{_('Target Language')}</span>
               <Select
                 value={draft.targetLanguage}
@@ -408,52 +465,59 @@ const InlineInsightSettingsPanel: React.FC = () => {
                   {draft.questionDirections.length}/{MAX_QUESTION_DIRECTIONS}
                 </span>
               </div>
-              {draft.questionDirections.length > 0 && (
-                <div className='flex w-full flex-col gap-1'>
-                  {draft.questionDirections.map((direction, index) => (
-                    <div
-                      key={`${direction}-${index}`}
-                      className='bg-base-200 flex items-center gap-2 rounded p-1.5'
-                    >
-                      <span className='line-clamp-2 flex-1 text-xs'>{direction}</span>
-                      <button
-                        type='button'
-                        className='btn btn-ghost btn-xs'
-                        onClick={() => removeQuestionDirection(index)}
-                      >
-                        {_('Remove')}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className='flex w-full gap-2'>
+              <div className='flex w-full items-center gap-2'>
                 <input
                   type='text'
                   className='input input-bordered input-sm flex-1'
-                  value={questionDirectionDraft}
-                  placeholder={_('e.g. explain names, translate, historical background')}
-                  maxLength={120}
-                  onChange={(e) => setQuestionDirectionDraft(e.target.value)}
+                  value={questionDirectionInput}
+                  onChange={(e) => setQuestionDirectionInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addQuestionDirection();
                     }
                   }}
+                  placeholder={_('Add a question direction...')}
                 />
                 <button
                   type='button'
                   className='btn btn-outline btn-sm'
-                  disabled={
-                    !questionDirectionDraft.trim() ||
-                    draft.questionDirections.length >= MAX_QUESTION_DIRECTIONS
-                  }
                   onClick={addQuestionDirection}
                 >
                   {_('Add')}
                 </button>
               </div>
+              <div className='grid w-full grid-cols-1 gap-1.5 sm:grid-cols-2'>
+                {questionDirectionPool.map((direction) => (
+                  <label
+                    key={direction}
+                    className='bg-base-200 flex items-center gap-2 rounded p-2 text-xs'
+                  >
+                    <input
+                      type='checkbox'
+                      className='checkbox checkbox-sm'
+                      checked={draft.questionDirections.includes(direction)}
+                      onChange={() => toggleQuestionDirection(direction)}
+                    />
+                    <span className='line-clamp-2 flex-1'>{direction}</span>
+                    <button
+                      type='button'
+                      className='btn btn-ghost btn-xs'
+                      onClick={(e) => {
+                        e.preventDefault();
+                        removeQuestionDirection(direction);
+                      }}
+                    >
+                      {_('Remove')}
+                    </button>
+                  </label>
+                ))}
+              </div>
+              {questionDirectionPool.length === 0 && (
+                <span className='text-base-content/50 text-xs'>
+                  {_('Add custom directions, then toggle each item on/off.')}
+                </span>
+              )}
             </div>
             <div className='config-item'>
               <span>{_('Cache Responses')}</span>

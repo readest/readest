@@ -4,10 +4,14 @@ import { marked } from 'marked';
 import { PiCaretDown, PiCaretUp, PiChatCircle, PiPaperPlaneRight } from 'react-icons/pi';
 
 import Popup from '@/components/Popup';
+import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { Position, TextSelection } from '@/utils/sel';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getLocale } from '@/utils/misc';
+import { getIndexFromCfi } from '@/utils/cfi';
+import { createRejectFilter } from '@/utils/node';
 import { DEFAULT_INLINE_INSIGHT_SETTINGS } from '@/services/inlineInsight/types';
 import { extractContext } from '@/services/inlineInsight/contextExtractor';
 import { streamInlineInsight, streamInlineInsightFollowUp } from '@/services/inlineInsight/client';
@@ -15,8 +19,10 @@ import {
   parseInlineInsightSections,
   type InlineInsightItem,
 } from '@/services/inlineInsight/parser';
+import type { BookSearchConfig, BookSearchMatch, BookSearchResult } from '@/types/book';
 
 interface InlineInsightPopupProps {
+  bookKey: string;
   selection: TextSelection;
   position: Position;
   trianglePosition: Position;
@@ -129,6 +135,62 @@ interface FollowUpTurn {
   loading: boolean;
 }
 
+interface SearchContextHit {
+  cfi: string;
+  index: number | null;
+  excerpt: string;
+  query: string;
+}
+
+const MAX_SEARCH_CONTEXT_HITS = 6;
+const MAX_SEARCH_HITS_PER_QUERY = 20;
+const MAX_SECTION_SWEEP_STEPS = 120;
+
+const collapseWs = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+const formatExcerpt = (match: BookSearchMatch): string => {
+  const pre = collapseWs(match.excerpt.pre || '');
+  const mid = collapseWs(match.excerpt.match || '');
+  const post = collapseWs(match.excerpt.post || '');
+  return `${pre}${pre ? ' ' : ''}[${mid}]${post ? ` ${post}` : ''}`.trim();
+};
+
+const isCjkText = (text: string): boolean => /[\u3040-\u30ff\u3400-\u9fff]/.test(text);
+const CJK_SEARCH_CHAR_LIMIT = 10;
+const EN_SEARCH_WORD_LIMIT = 4;
+
+const shouldSearchBySelectionLength = (text: string): boolean => {
+  const raw = collapseWs(text);
+  if (!raw) return false;
+
+  if (isCjkText(raw)) {
+    const cjkChars = (raw.match(/[\u3040-\u30ff\u3400-\u9fff]/g) || []).length;
+    return cjkChars <= CJK_SEARCH_CHAR_LIMIT;
+  }
+
+  const words = raw
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+  return words.length <= EN_SEARCH_WORD_LIMIT;
+};
+
+const extractMatchesFromResult = (result: BookSearchResult): BookSearchMatch[] => {
+  return Array.isArray(result.subitems) ? result.subitems : [];
+};
+
+function* iterateBackwardSections(centerIndex: number | null): Generator<number | undefined> {
+  if (centerIndex === null || centerIndex < 0) {
+    yield undefined;
+    return;
+  }
+  for (let step = 0; step <= MAX_SECTION_SWEEP_STEPS; step += 1) {
+    const index = centerIndex - step;
+    if (index < 0) break;
+    yield index;
+  }
+}
+
 const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
   turns,
   question,
@@ -196,6 +258,7 @@ const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
 };
 
 const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
+  bookKey,
   selection,
   position,
   trianglePosition,
@@ -208,6 +271,8 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
 }) => {
   const _ = useTranslation();
   const { settings: _settings_store } = useSettingsStore();
+  const { getView } = useReaderStore();
+  const { getBookData } = useBookDataStore();
   const [loading, setLoading] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState('');
@@ -227,6 +292,111 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   const abortRef = useRef<AbortController | null>(null);
   const contextRef = useRef(initialContext);
 
+  const collectKeywordSearchContext = useCallback(async (): Promise<string> => {
+    const view = getView(bookKey);
+    if (!view?.search) return '';
+
+    const bookData = getBookData(bookKey);
+    const primaryLang = bookData?.book?.primaryLanguage || 'en';
+    const acceptNode = createRejectFilter({
+      tags: primaryLang.startsWith('ja') ? ['rt'] : [],
+    });
+
+    const searchConfig: BookSearchConfig = {
+      scope: 'section',
+      matchCase: false,
+      matchWholeWords: false,
+      matchDiacritics: false,
+    };
+
+    const targetIndex = selection.index ?? (selection.cfi ? getIndexFromCfi(selection.cfi) : null);
+    if (!shouldSearchBySelectionLength(selection.text)) {
+      return '';
+    }
+    const timeoutMs = Math.max(100, settings.searchTimeoutMs || 1000);
+    const startMs = Date.now();
+    const fullSelectionQuery = collapseWs(selection.text).slice(0, 120);
+    const queries = fullSelectionQuery ? [fullSelectionQuery] : [];
+    const byCfi = new Map<string, SearchContextHit>();
+
+    for (const query of queries) {
+      let collected = 0;
+      for (const sectionIndex of iterateBackwardSections(targetIndex)) {
+        if (Date.now() - startMs >= timeoutMs) break;
+        let generator: AsyncGenerator<any>;
+        try {
+          generator = await view.search({
+            ...searchConfig,
+            index: sectionIndex,
+            query,
+            acceptNode,
+          });
+        } catch {
+          // Out-of-range section index or transient view error. Keep sweeping.
+          continue;
+        }
+
+        for await (const resultAny of generator) {
+          const result = resultAny as any;
+          if (Date.now() - startMs >= timeoutMs) break;
+          if (typeof result === 'string') {
+            if (result === 'done') break;
+            continue;
+          }
+          if ('progress' in result && result.progress) continue;
+
+          const matches: BookSearchMatch[] =
+            'subitems' in result ? extractMatchesFromResult(result as BookSearchResult) : [result];
+          for (const match of matches) {
+            const cfi = match.cfi;
+            if (!cfi || byCfi.has(cfi)) continue;
+
+            byCfi.set(cfi, {
+              cfi,
+              index: getIndexFromCfi(cfi),
+              excerpt: formatExcerpt(match),
+              query,
+            });
+            collected += 1;
+            if (collected >= MAX_SEARCH_HITS_PER_QUERY) break;
+          }
+          if (collected >= MAX_SEARCH_HITS_PER_QUERY) break;
+        }
+        if (collected >= MAX_SEARCH_HITS_PER_QUERY) break;
+      }
+    }
+
+    if (byCfi.size === 0) return '';
+
+    const hits = [...byCfi.values()]
+      .sort((a, b) => {
+        if (targetIndex === null) return 0;
+        const da = a.index === null ? Number.MAX_SAFE_INTEGER : Math.abs(a.index - targetIndex);
+        const db = b.index === null ? Number.MAX_SAFE_INTEGER : Math.abs(b.index - targetIndex);
+        if (da !== db) return da - db;
+        return a.excerpt.length - b.excerpt.length;
+      })
+      .slice(0, MAX_SEARCH_CONTEXT_HITS);
+
+    const lines = hits.map((hit, i) => {
+      const proximity =
+        targetIndex === null || hit.index === null
+          ? ''
+          : ` (distance ${Math.abs(hit.index - targetIndex)})`;
+      return `${i + 1}. [${hit.query}]${proximity}: ${hit.excerpt}`;
+    });
+
+    return `\n\nRelated Passages (keyword search, nearest first):\n${lines.join('\n')}`;
+  }, [
+    bookKey,
+    getBookData,
+    getView,
+    selection.cfi,
+    selection.index,
+    selection.text,
+    settings.searchTimeoutMs,
+  ]);
+
   const callLLM = useCallback(async () => {
     if (!settings.enabled || !settings.model) return;
     if (initialAnswer) return;
@@ -237,7 +407,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     setError('');
     setAnswer('');
 
-    const context = extractContext(selection, settings.maxContextChars);
+    const localContext = extractContext(selection, settings.maxContextChars);
+    const keywordContext = await collectKeywordSearchContext();
+    const context = `${localContext}${keywordContext}`;
     contextRef.current = context;
 
     let responseText = '';
@@ -267,7 +439,15 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selection, settings, targetLanguage, _, initialAnswer, onAnswerReady]);
+  }, [
+    selection,
+    settings,
+    targetLanguage,
+    _,
+    initialAnswer,
+    onAnswerReady,
+    collectKeywordSearchContext,
+  ]);
 
   useEffect(() => {
     callLLM();

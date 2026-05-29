@@ -1480,6 +1480,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       )}
       {showInlineInsightPopup && trianglePosition && dictPopupPosition && selection && (
         <InlineInsightPopup
+          bookKey={bookKey}
           selection={selection}
           position={dictPopupPosition}
           trianglePosition={trianglePosition}
