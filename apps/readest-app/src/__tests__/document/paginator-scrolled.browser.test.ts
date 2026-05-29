@@ -197,11 +197,17 @@ describe('Paginator scrolled mode (browser)', () => {
       return null;
     };
 
-    // 1) Navigate to M so #display preloads F above it.
+    // 1) Navigate to M so #display preloads F above it. Assert the loaded set
+    //    the instant #display stabilizes: #display only pulls in the immediate
+    //    previous section (F), and the scroll-handler backward buffer stays
+    //    suppressed while #stabilizing. Everything below — up to the goTo(F)
+    //    that is meant to prepend F-1 — runs synchronously, so the eager
+    //    backward buffer can't pull F-1 in early and steal the measurement.
+    //    (Waiting for the fill to settle first is racy: once #stabilizing ends
+    //    the minPages backward buffer may pull F-1 in — readest/readest#4112.)
     const stabilized = waitForStabilized(paginator);
     await paginator.goTo({ index: M, anchor: 0 });
     await stabilized;
-    await waitForFillComplete(paginator);
 
     // F is loaded as the top view; F-1 has not been pulled in yet.
     const loadedIndices = () => paginator.getContents().map((c) => c.index);
@@ -251,12 +257,18 @@ describe('Paginator scrolled mode (browser)', () => {
     expect(F).toBeGreaterThan(0);
     const M = F + 1;
 
-    // Navigate to M (preloads F above it); F-1 is not loaded yet.
+    // Navigate to M (preloads F above it). Assert F-1 is not loaded the instant
+    // #display stabilizes — #display only pulls in the immediate previous
+    // section (F), and the scroll-handler backward buffer is suppressed while
+    // #stabilizing. Asserting after the fill settles is racy: once
+    // stabilization ends the eager minPages backward buffer may pull F-1 in
+    // (readest/readest#4112). It doing so later is fine — that is exactly what
+    // we want once we navigate back, below.
     const stabilized = waitForStabilized(paginator);
     await paginator.goTo({ index: M, anchor: 0 });
     await stabilized;
-    await waitForFillComplete(paginator);
     expect(paginator.getContents().map((c) => c.index)).not.toContain(F - 1);
+    await waitForFillComplete(paginator);
 
     // Navigate one section back to F. The previous section (F-1) must be
     // pre-loaded so the user can immediately scroll up into it.
