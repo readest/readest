@@ -8,6 +8,9 @@
 - [Platform Compat Fixes](platform-compat-fixes.md) - Android, iOS, Linux, macOS platform-specific bugs
 - [Annotator & Reader Fixes](annotator-reader-fixes.md) - Highlight, selection, accessibility bugs
 
+## Active Investigations
+- [Issue #4112 scroll-anchoring](issue-4112-scroll-anchoring.md) — scrolled-mode backward-nav drifts to n-1; scroll-anchoring suppressed at scrollTop 0 when prepending a section
+
 ## Critical Files (Most Bug-Prone)
 - `src/utils/style.ts` - Central EPUB CSS transformation hub (14+ bug fixes)
 - `packages/foliate-js/paginator.js` - Page layout, image sizing, backgrounds
