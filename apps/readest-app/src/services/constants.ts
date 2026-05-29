@@ -380,6 +380,10 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   includePageNumber: true,
   includeTimestamp: false,
   includeChapterSeparator: false,
+  // Default to the app deeplink in the native app and the universal web link on
+  // the web. Inlined platform check avoids a circular import with
+  // environment.ts, which imports from this module.
+  linkType: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'app' : 'web',
   noteSeparator: '\n\n',
   useCustomTemplate: false,
   customTemplate: '',

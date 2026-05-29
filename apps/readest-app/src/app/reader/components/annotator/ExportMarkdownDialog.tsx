@@ -8,7 +8,12 @@ import { BookNote, BooknoteGroup, NoteExportConfig } from '@/types/book';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
-import { buildAnnotationAppUrl, buildAnnotationWebUrl } from '@/utils/deeplink';
+import {
+  AnnotationLinkType,
+  buildAnnotationAppUrl,
+  buildAnnotationUrl,
+  buildAnnotationWebUrl,
+} from '@/utils/deeplink';
 import Dialog from '@/components/Dialog';
 
 interface ExportMarkdownDialogProps {
@@ -71,7 +76,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 {% if annotation.note %}
 **${_('Note:')}** {{ annotation.note }}
 {% endif %}
-*{% if annotation.appLink %}[${_('Page:')} {{ annotation.page }}]({{ annotation.appLink }}){% else %}${_('Page:')} {{ annotation.page }}{% endif %} · ${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
+*{% if annotation.link %}[${_('Page:')} {{ annotation.page }}]({{ annotation.link }}){% else %}${_('Page:')} {{ annotation.page }}{% endif %} · ${_('Time:')} {{ annotation.timestamp | date('%Y-%m-%d %H:%M') }}*
 {% endfor %}
 
 ---
@@ -79,13 +84,13 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 
   const [exportConfig, setExportConfig] = useState<NoteExportConfig>(() => {
     const noteExportConfig = viewSettings?.noteExportConfig || DEFAULT_NOTE_EXPORT_CONFIG;
-    if (!noteExportConfig.customTemplate) {
-      return {
-        ...noteExportConfig,
-        customTemplate: defaultTemplate,
-      };
-    }
-    return noteExportConfig;
+    return {
+      ...noteExportConfig,
+      // Configs persisted before link types existed fall back to the
+      // platform-aware default (app in the native app, web on the web).
+      linkType: noteExportConfig.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType,
+      customTemplate: noteExportConfig.customTemplate || defaultTemplate,
+    };
   });
 
   const [showSource, setShowSource] = useState(false);
@@ -133,7 +138,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             id: note.id,
             cfi: note.cfi,
             bookHash,
-            link: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
+            link: buildAnnotationUrl(
+              { bookHash, noteId: note.id, cfi: note.cfi },
+              exportConfig.linkType,
+            ),
             webLink: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
             appLink: buildAnnotationAppUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
             text: note.text || '',
@@ -201,11 +209,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
           if (exportConfig.includePageNumber && note.page) {
             const pageText = _('Page: {{number}}', { number: note.page });
             if (bookHash && note.id) {
-              const url = buildAnnotationWebUrl({
-                bookHash,
-                noteId: note.id,
-                cfi: note.cfi,
-              });
+              const url = buildAnnotationUrl(
+                { bookHash, noteId: note.id, cfi: note.cfi },
+                exportConfig.linkType,
+              );
               pageStr = `[${pageText}](${url})`;
             } else {
               pageStr = pageText;
@@ -389,6 +396,23 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <span className='text-sm'>{_('Note Date')}</span>
             </label>
           </div>
+
+          <div className='flex items-center justify-between gap-3'>
+            <span className='text-sm'>{_('Annotation Link')}</span>
+            <select
+              value={exportConfig.linkType}
+              onChange={(e) =>
+                setExportConfig((prev) => ({
+                  ...prev,
+                  linkType: e.target.value as AnnotationLinkType,
+                }))
+              }
+              className='select select-bordered select-sm eink-bordered'
+            >
+              <option value='app'>{_('App Link')}</option>
+              <option value='web'>{_('Web Link')}</option>
+            </select>
+          </div>
         </div>
 
         {/* Advanced Options */}
@@ -524,6 +548,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                         <li className='ml-8'>
                           <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
                           {_('Annotation time')}
+                        </li>
+                        <li className='ml-8'>
+                          <code className='bg-base-300 rounded px-1'>annotation.link</code> -{' '}
+                          {_('Annotation link (follows the selected Link Type)')}
                         </li>
                         <li className='ml-8'>
                           <code className='bg-base-300 rounded px-1'>annotation.appLink</code> -{' '}

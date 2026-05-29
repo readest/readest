@@ -1,6 +1,7 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
 import { TTSMediaMetadataMode } from '@/services/tts/types';
+import type { AnnotationLinkType } from '@/utils/deeplink';
 import { AnnotationToolType } from './annotator';
 
 export type BookFormat =
@@ -315,6 +316,7 @@ export interface NoteExportConfig {
   includePageNumber: boolean;
   includeTimestamp: boolean;
   includeChapterSeparator: boolean;
+  linkType: AnnotationLinkType;
   noteSeparator: string;
   useCustomTemplate: boolean;
   customTemplate: string;
