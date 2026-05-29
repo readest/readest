@@ -1645,5 +1645,7 @@
   "No note yet": "ད་དུང་ཟིན་བྲིས་མེད།",
   "No annotation yet": "ད་དུང་མཆན་འགྲེལ་མེད།",
   "No bookmark yet": "ད་དུང་དཔེ་རྟགས་མེད།",
-  "Importing...": "ནང་འདྲེན་བྱེད་བཞིན་པ..."
+  "Importing...": "ནང་འདྲེན་བྱེད་བཞིན་པ...",
+  "Swipe for Brightness": "འོད་གདངས་ཆེད་འཐེན།",
+  "Slide along the left edge": "གཡོན་ངོས་ཟུར་ནས་འཐེན།"
 }

@@ -125,11 +125,16 @@ export const useBrightnessGesture = (bookKey: string) => {
         if (selection && !selection.isCollapsed) return; // don't hijack selection
         const t = e.touches[0];
         if (!t) return;
-        const viewWidth = doc.documentElement.clientWidth;
-        viewHeightRef.current = doc.documentElement.clientHeight;
-        startXRef.current = t.clientX;
-        startYRef.current = t.clientY;
-        armedRef.current = isInLeftEdge(t.clientX, viewWidth);
+        // Use screenX/screenY, not clientX/clientY: in paginated mode foliate-js
+        // lays content out as side-by-side columns, so the iframe document is
+        // many screens wide and clientX is a document coordinate. screenX is the
+        // physical screen position, and this listener runs in the parent realm so
+        // `window` is the app viewport.
+        const viewWidth = window.innerWidth;
+        viewHeightRef.current = window.innerHeight;
+        startXRef.current = t.screenX;
+        startYRef.current = t.screenY;
+        armedRef.current = isInLeftEdge(t.screenX, viewWidth);
         startValueRef.current = seedRef.current;
       };
 
@@ -137,8 +142,8 @@ export const useBrightnessGesture = (bookKey: string) => {
         if (!armedRef.current) return;
         const t = e.touches[0];
         if (!t) return;
-        const dx = t.clientX - startXRef.current;
-        const dy = t.clientY - startYRef.current;
+        const dx = t.screenX - startXRef.current;
+        const dy = t.screenY - startYRef.current;
         // Reserve the strip in scrolled mode: stop native scroll from the first
         // move, so there is no scroll-then-freeze jump once brightness activates.
         if (latestRef.current.scrolled) e.preventDefault();

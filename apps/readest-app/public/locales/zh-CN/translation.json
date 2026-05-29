@@ -1645,5 +1645,7 @@
   "No note yet": "尚无笔记",
   "No annotation yet": "尚无标注",
   "No bookmark yet": "尚无书签",
-  "Importing...": "正在导入..."
+  "Importing...": "正在导入...",
+  "Swipe for Brightness": "滑动调节亮度",
+  "Slide along the left edge": "沿左侧边缘滑动"
 }

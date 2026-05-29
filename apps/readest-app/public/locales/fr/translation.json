@@ -1709,5 +1709,7 @@
   "No note yet": "Aucune note pour le moment",
   "No annotation yet": "Aucune annotation pour le moment",
   "No bookmark yet": "Aucun signet pour le moment",
-  "Importing...": "Importation..."
+  "Importing...": "Importation...",
+  "Swipe for Brightness": "Balayer pour la luminosité",
+  "Slide along the left edge": "Glissez le long du bord gauche"
 }

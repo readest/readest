@@ -104,10 +104,14 @@ fake paginator listener registered *first*, proving capture-phase suppression).
 
 ### `src/app/reader/utils/brightnessGesture.ts` (pure, unit-tested)
 
-- `isInLeftEdge(clientX: number, viewWidth: number, edgeRatio = 0.1): boolean`.
-  `clientX` and `viewWidth` are both in the **iframe document's** coordinate
-  space (`doc.documentElement.clientWidth`), so "left 10%" is of the rendered
-  content area, not the OS screen (the iframe is inset by reader margins).
+- `isInLeftEdge(x: number, viewWidth: number, edgeRatio = 0.1): boolean`.
+  **Use `screenX` + the parent `window.innerWidth`, NOT `clientX` /
+  `documentElement.clientWidth`.** In paginated mode foliate-js lays content out
+  as side-by-side columns, so the iframe document is many screens wide and
+  `clientX` is a document coordinate (a left-edge touch on a later page reports a
+  large `clientX`). `screenX` is the physical screen position; the listener runs
+  in the parent realm so `window.innerWidth` is the real app viewport. (Matches
+  how `useIframeEvents` / `usePagination` already do zone detection.)
 - `shouldActivate(deltaX: number, deltaY: number, threshold: number): boolean`
   — true when `|Δy| >= threshold && |Δy| > |Δx|`.
 - `computeBrightness(startPos: number, deltaY: number, viewHeight: number): number`

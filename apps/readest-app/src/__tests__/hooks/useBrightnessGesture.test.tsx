@@ -36,7 +36,7 @@ vi.mock('@/helpers/settings', () => ({ saveSysSettings: h.saveSysSettings }));
 import { useBrightnessGesture } from '@/app/reader/hooks/useBrightnessGesture';
 
 type Api = ReturnType<typeof useBrightnessGesture>;
-type TouchLike = { clientX: number; clientY: number };
+type TouchLike = { clientX: number; clientY: number; screenX: number; screenY: number };
 type FakeTouchEvent = Event & { touches: TouchLike[]; changedTouches: TouchLike[] };
 type SelectableDoc = { getSelection: () => { isCollapsed: boolean } | null };
 
@@ -54,8 +54,9 @@ const makeDoc = () => {
 
 const fireTouch = (target: EventTarget, type: string, x: number, y: number) => {
   const ev = new Event(type, { bubbles: true, cancelable: true }) as FakeTouchEvent;
-  ev.touches = [{ clientX: x, clientY: y }];
-  ev.changedTouches = [{ clientX: x, clientY: y }];
+  const touch = { clientX: x, clientY: y, screenX: x, screenY: y };
+  ev.touches = [touch];
+  ev.changedTouches = [touch];
   const preventDefault = vi.spyOn(ev, 'preventDefault');
   const stopImmediatePropagation = vi.spyOn(ev, 'stopImmediatePropagation');
   act(() => {

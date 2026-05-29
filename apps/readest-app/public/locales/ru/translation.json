@@ -1741,5 +1741,7 @@
   "No note yet": "Пока нет заметок",
   "No annotation yet": "Пока нет аннотаций",
   "No bookmark yet": "Пока нет закладок",
-  "Importing...": "Импорт..."
+  "Importing...": "Импорт...",
+  "Swipe for Brightness": "Свайп для яркости",
+  "Slide along the left edge": "Проведите вдоль левого края"
 }

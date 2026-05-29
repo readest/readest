@@ -1677,5 +1677,7 @@
   "No note yet": "Henüz not yok",
   "No annotation yet": "Henüz açıklama yok",
   "No bookmark yet": "Henüz yer imi yok",
-  "Importing...": "İçe aktarılıyor..."
+  "Importing...": "İçe aktarılıyor...",
+  "Swipe for Brightness": "Parlaklık için kaydır",
+  "Slide along the left edge": "Sol kenar boyunca kaydır"
 }

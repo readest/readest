@@ -1645,5 +1645,7 @@
   "No note yet": "아직 노트가 없습니다",
   "No annotation yet": "아직 주석이 없습니다",
   "No bookmark yet": "아직 북마크가 없습니다",
-  "Importing...": "가져오는 중..."
+  "Importing...": "가져오는 중...",
+  "Swipe for Brightness": "밝기 조절 스와이프",
+  "Slide along the left edge": "왼쪽 가장자리를 따라 슬라이드"
 }

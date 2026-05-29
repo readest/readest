@@ -1805,5 +1805,7 @@
   "No note yet": "لا توجد ملاحظات بعد",
   "No annotation yet": "لا توجد تعليقات بعد",
   "No bookmark yet": "لا توجد إشارات مرجعية بعد",
-  "Importing...": "جاري الاستيراد..."
+  "Importing...": "جاري الاستيراد...",
+  "Swipe for Brightness": "اسحب لضبط السطوع",
+  "Slide along the left edge": "اسحب على طول الحافة اليسرى"
 }

@@ -394,7 +394,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         {appService?.hasScreenBrightness && (
           <SettingsSwitchRow
             label={_('Swipe for Brightness')}
-            description={_('Slide up or down along the left edge to adjust brightness.')}
+            description={_('Slide along the left edge')}
             checked={swipeBrightnessGesture}
             onChange={() => setSwipeBrightnessGesture(!swipeBrightnessGesture)}
             data-setting-id='settings.control.swipeBrightnessGesture'

@@ -1645,5 +1645,7 @@
   "No note yet": "メモはまだありません",
   "No annotation yet": "注釈はまだありません",
   "No bookmark yet": "ブックマークはまだありません",
-  "Importing...": "インポートしています..."
+  "Importing...": "インポートしています...",
+  "Swipe for Brightness": "スワイプで明るさ調整",
+  "Slide along the left edge": "左端をスライド"
 }
