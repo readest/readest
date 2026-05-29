@@ -65,6 +65,7 @@ import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
+import ImportAnnotationsDialog from './ImportAnnotationsDialog';
 import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
 import { useFileSelector } from '@/hooks/useFileSelector';
@@ -125,6 +126,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [importingMrexpt, setImportingMrexpt] = useState(false);
   // "Clear Annotations" confirm dialog. Hosted here (and not in BookMenu)
   // because the menu unmounts the moment the user picks the entry, which
@@ -533,11 +535,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
     eventDispatcher.on('clear-annotations', handleClearAnnotations);
-    eventDispatcher.on('import-mrexpt', handleImportMrexpt);
+    eventDispatcher.on('import-annotations', handleImportAnnotations);
     return () => {
       eventDispatcher.off('export-annotations', handleExportMarkdown);
       eventDispatcher.off('clear-annotations', handleClearAnnotations);
-      eventDispatcher.off('import-mrexpt', handleImportMrexpt);
+      eventDispatcher.off('import-annotations', handleImportAnnotations);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -994,9 +996,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     [selection?.text],
   );
 
-  const handleImportMrexpt = async (event: CustomEvent) => {
+  const handleImportAnnotations = (event: CustomEvent) => {
     const { bookKey: importBookKey } = event.detail;
     if (bookKey !== importBookKey) return;
+    setShowImportDialog(true);
+  };
+
+  const importFromMoonReader = async () => {
+    setShowImportDialog(false);
 
     const { bookDoc } = bookData;
     if (!bookDoc) {
@@ -1419,6 +1426,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           booknoteGroups={exportData.booknoteGroups}
           onCancel={handleCancelExport}
           onExport={handleConfirmExport}
+        />
+      )}
+      {showImportDialog && (
+        <ImportAnnotationsDialog
+          isOpen={showImportDialog}
+          onClose={() => setShowImportDialog(false)}
+          onImportMoonReader={importFromMoonReader}
         />
       )}
       {clearAnnotationsCount > 0 && (

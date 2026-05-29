@@ -71,8 +71,8 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('export-annotations', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
-  const handleImportFromMoonReader = () => {
-    eventDispatcher.dispatch('import-mrexpt', { bookKey: sideBarBookKey });
+  const handleImportAnnotations = () => {
+    eventDispatcher.dispatch('import-annotations', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
   const handleToggleSortTOC = () => {
@@ -199,7 +199,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
-      <MenuItem label={_('Import from Moon+ Reader')} onClick={handleImportFromMoonReader} />
+      <MenuItem label={_('Import Annotations')} onClick={handleImportAnnotations} />
       <MenuItem
         label={_('Clear Annotations')}
         disabled={annotationsToClear === 0}
