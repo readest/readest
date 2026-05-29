@@ -16,6 +16,8 @@
   "Deleted {{count}} file(s)_other": "Deleted {{count}} files",
   "Failed to delete {{count}} file(s)_one": "Failed to delete {{count}} file",
   "Failed to delete {{count}} file(s)_other": "Failed to delete {{count}} files",
+  "Failed to import {{count}} books_one": "Failed to import {{count}} book",
+  "Failed to import {{count}} books_other": "Failed to import {{count}} books",
   "{{count}} selected_one": "{{count}} selected",
   "{{count}} selected_other": "{{count}} selected",
   "Are you sure to delete {{count}} selected file(s)?_one": "Are you sure to delete {{count}} selected file?",

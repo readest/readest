@@ -7,6 +7,8 @@ metadata:
   originSessionId: e0b11058-53ee-4554-a518-134f788823ee
 ---
 
+**RESOLVED** — merged in readest/readest#4349 (foliate-js fix + submodule bump + browser tests). Kept as reusable paginator scroll-mode knowledge.
+
 readest/readest#4112 — two scrolled-mode bugs, ONE root cause.
 
 **Root cause:** Browser scroll-anchoring (`overflow-anchor: auto`, paginator.js container) is **suppressed when scrollTop === 0**. The multiview paginator preloads the *previous* section by inserting its View element **above** the current one (`#loadAdjacentSection`, sorted insertion in `#createView`). When that prepend happens while `scrollTop === 0`, the inserted section pushes the current content down with no scroll compensation, so the viewport ends up showing the previous section.
