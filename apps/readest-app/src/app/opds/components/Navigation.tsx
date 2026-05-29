@@ -208,7 +208,7 @@ export function Navigation({
                     onAddCatalog && 'mt-1 pt-1 border-t border-base-200',
                   )}
                 >
-                  {feed!.facets!.map((facet, i) => (
+                  {feed?.facets?.map((facet, i) => (
                     <div key={i} className='mb-2 last:mb-0'>
                       {facet.metadata?.title && (
                         <div className='px-4 py-2 text-xs font-semibold opacity-50 uppercase tracking-wider'>

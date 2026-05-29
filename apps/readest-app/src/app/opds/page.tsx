@@ -82,7 +82,7 @@ export default function BrowserPage() {
   // already imported (shown as "Open & Read" instead of "Download"), and
   // re-evaluate whenever a download finishes or a book is removed.
   const library = useLibraryStore((s) => s.library);
-  const { safeAreaInsets } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { settings } = useSettingsStore();
   const [viewMode, setViewMode] = useState<ViewMode>('loading');
   const [state, setState] = useState<OPDSState>({
@@ -843,6 +843,16 @@ export default function BrowserPage() {
   const handleConfirmAddCatalog = useCallback(() => {
     if (!newCatalogName.trim()) return;
 
+    if (useCustomOPDSStore.getState().findByUrl(state.currentURL)) {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('Catalog already in My Catalogs'),
+        timeout: 2500,
+      });
+      setShowAddCatalog(false);
+      return;
+    }
+
     useCustomOPDSStore.getState().addCatalog({
       id: Date.now().toString(),
       name: newCatalogName.trim(),
@@ -868,7 +878,7 @@ export default function BrowserPage() {
     <div
       className={clsx(
         'bg-base-100 flex h-screen select-none flex-col',
-        appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
+        appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div
