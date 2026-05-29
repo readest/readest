@@ -77,6 +77,11 @@ const TOCView: React.FC<{
   // viewport-wrap scrollTop reset) flips userScrolledRef in that window it
   // would otherwise suppress the auto-scroll once progress finally arrives.
   const initialAutoScrollProcessedRef = useRef(false);
+  // Mirror the latest active item + flat list so the OverlayScrollbars
+  // `initialized` callback (created at mount but fired after a deferred,
+  // timing-dependent delay) can re-center on the *current* reading position.
+  const activeHrefRef = useRef<string | null>(null);
+  const flatItemsRef = useRef<FlatTOCItem[]>([]);
 
   // OverlayScrollbars + Virtuoso integration (same pattern as Bookshelf)
   const osRootRef = useRef<HTMLDivElement>(null);
@@ -89,7 +94,17 @@ const TOCView: React.FC<{
         const { viewport } = instance.elements();
         viewport.style.overflowX = 'var(--os-viewport-overflow-x)';
         viewport.style.overflowY = 'var(--os-viewport-overflow-y)';
-        const target = initialScrollTarget.index;
+        // OverlayScrollbars resets the wrapped viewport's scrollTop to 0 as it
+        // initializes. On a fresh refresh the auto-scroll to the reading
+        // position may already have run by now, so re-apply it here — using the
+        // *current* active item, since initialScrollTarget was captured at mount
+        // when progress was usually not yet available (index 0). Without this
+        // the TOC rewinds to the very top on ~1 in 10 refreshes, depending on
+        // whether this deferred init lands before or after the auto-scroll.
+        const activeIdx = activeHrefRef.current
+          ? flatItemsRef.current.findIndex((f) => f.item.href === activeHrefRef.current)
+          : -1;
+        const target = activeIdx > 0 ? activeIdx : initialScrollTarget.index;
         if (target > 0) {
           requestAnimationFrame(() => {
             virtuosoRef.current?.scrollToIndex({
@@ -147,6 +162,9 @@ const TOCView: React.FC<{
 
   const activeHref = progress?.sectionHref ?? null;
   const flatItems = useMemo(() => flattenTOC(toc, expandedItems), [toc, expandedItems]);
+  // Keep the refs read by the OverlayScrollbars `initialized` callback current.
+  activeHrefRef.current = activeHref;
+  flatItemsRef.current = flatItems;
 
   const handleToggleExpand = useCallback((item: TOCItem) => {
     const itemId = getItemIdentifier(item);
