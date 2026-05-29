@@ -48,6 +48,23 @@ function createMockView(primaryIndex: number, docs: Document[]): FoliateView {
 }
 
 describe('RSVPController', () => {
+  // start() schedules a countdown (setInterval) which then schedules the
+  // recurring word-advance (setTimeout). These tests assert synchronously and
+  // never stop the controller, so on the real clock those timers fire ~1.5s
+  // later — after the test file's jsdom env has been torn down — and throw an
+  // unhandled error from emitStateChange's dispatchEvent (a stale-realm
+  // CustomEvent), failing the whole run intermittently on CI. Fake only the
+  // timer functions so they can never fire on the real clock; useRealTimers in
+  // afterEach discards any still-pending fakes. Date/performance stay real, so
+  // the CFI/position assertions are unaffected.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('start()', () => {
     test('extracts words from primary spine document only', () => {
       const ch1Doc = makeDoc('Hello world');
