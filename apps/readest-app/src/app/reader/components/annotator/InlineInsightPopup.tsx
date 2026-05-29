@@ -323,7 +323,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
       let collected = 0;
       for (const sectionIndex of iterateBackwardSections(targetIndex)) {
         if (Date.now() - startMs >= timeoutMs) break;
-        let generator: AsyncGenerator<any>;
+        let generator: AsyncGenerator<BookSearchResult | string, void, void>;
         try {
           generator = await view.search({
             ...searchConfig,
@@ -336,8 +336,7 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
           continue;
         }
 
-        for await (const resultAny of generator) {
-          const result = resultAny as any;
+        for await (const result of generator) {
           if (Date.now() - startMs >= timeoutMs) break;
           if (typeof result === 'string') {
             if (result === 'done') break;
