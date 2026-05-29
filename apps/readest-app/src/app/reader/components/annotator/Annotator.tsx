@@ -528,6 +528,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setHighlightOptionsVisible(false);
       setEditingAnnotation(null);
     } else if (isInlineInsightAnnotation(annotation)) {
+      if (isTextSelected.current) return;
       setShowAnnotPopup(false);
       setShowAnnotationNotes(false);
       setEditingAnnotation(null);
