@@ -284,6 +284,7 @@ export interface SystemSettings {
   screenWakeLock: boolean;
   screenBrightness: number;
   autoScreenBrightness: boolean;
+  swipeBrightnessGesture: boolean;
   hardwarePageTurner: HardwarePageTurnerSettings;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;

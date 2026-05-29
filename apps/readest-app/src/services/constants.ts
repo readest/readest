@@ -109,6 +109,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   screenWakeLock: false,
   screenBrightness: -1, // -1~100, -1 for system default
   autoScreenBrightness: true,
+  swipeBrightnessGesture: true,
   hardwarePageTurner: {
     enabled: false,
     bindings: { pagePrev: null, pageNext: null, sectionPrev: null, sectionNext: null },

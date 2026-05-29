@@ -48,6 +48,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
+  const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
+    settings.swipeBrightnessGesture,
+  );
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
@@ -190,6 +193,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveSysSettings(envConfig, 'autoScreenBrightness', autoScreenBrightness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoScreenBrightness]);
+
+  useEffect(() => {
+    if (swipeBrightnessGesture === settings.swipeBrightnessGesture) return;
+    saveSysSettings(envConfig, 'swipeBrightnessGesture', swipeBrightnessGesture);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swipeBrightnessGesture]);
 
   useEffect(() => {
     if (screenWakeLock === settings.screenWakeLock) return;
@@ -380,6 +389,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             label={_('System Screen Brightness')}
             checked={autoScreenBrightness}
             onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
+          />
+        )}
+        {appService?.hasScreenBrightness && (
+          <SettingsSwitchRow
+            label={_('Swipe for Brightness')}
+            description={_('Slide up or down along the left edge to adjust brightness.')}
+            checked={swipeBrightnessGesture}
+            onChange={() => setSwipeBrightnessGesture(!swipeBrightnessGesture)}
+            data-setting-id='settings.control.swipeBrightnessGesture'
           />
         )}
         <SettingsSwitchRow
