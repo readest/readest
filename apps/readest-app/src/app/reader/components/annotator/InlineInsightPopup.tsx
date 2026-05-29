@@ -114,20 +114,25 @@ const FollowUpAnswer: React.FC<{ answer: string }> = ({ answer }) => {
 };
 
 interface InlineInsightFollowUpPanelProps {
+  turns: FollowUpTurn[];
   question: string;
-  answer: string;
   loading: boolean;
-  error: string;
   onQuestionChange: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   translate: ReturnType<typeof useTranslation>;
 }
 
+interface FollowUpTurn {
+  question: string;
+  answer: string;
+  error: string;
+  loading: boolean;
+}
+
 const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
+  turns,
   question,
-  answer,
   loading,
-  error,
   onQuestionChange,
   onSubmit,
   translate,
@@ -146,6 +151,31 @@ const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
           <span className='text-base-content/50 text-[10px]'>{translate('Thinking...')}</span>
         )}
       </div>
+      {turns.length > 0 && (
+        <div className='border-base-content/10 bg-base-300/55 max-h-36 overflow-y-auto rounded-md border px-2 py-1.5 text-xs leading-relaxed shadow-inner'>
+          <div className='space-y-2'>
+            {turns.map((turn, index) => (
+              <div key={`${turn.question}-${index}`} className='space-y-1'>
+                <p className='text-base-content/80'>
+                  <span className='font-semibold'>Q:</span> {turn.question}
+                </p>
+                <div className='text-base-content'>
+                  {turn.error ? (
+                    <p className='text-error'>{turn.error}</p>
+                  ) : turn.answer ? (
+                    <FollowUpAnswer answer={turn.answer} />
+                  ) : turn.loading ? (
+                    <div className='flex items-center gap-2'>
+                      <div className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
+                      {translate('Thinking...')}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className='flex items-center gap-1.5'>
         <input
           className='input input-bordered input-sm bg-base-100/60 focus:bg-base-100 h-8 min-h-0 flex-1 text-xs'
@@ -161,20 +191,6 @@ const InlineInsightFollowUpPanel: React.FC<InlineInsightFollowUpPanelProps> = ({
           <PiPaperPlaneRight className='size-4' />
         </button>
       </div>
-      {(loading || answer || error) && (
-        <div className='border-base-content/10 bg-base-300/55 max-h-32 overflow-y-auto rounded-md border px-2 py-1.5 text-xs leading-relaxed shadow-inner'>
-          {error ? (
-            <p className='text-error'>{error}</p>
-          ) : answer ? (
-            <FollowUpAnswer answer={answer} />
-          ) : (
-            <div className='flex items-center gap-2'>
-              <div className='border-primary size-3 animate-spin rounded-full border-2 border-t-transparent' />
-              {translate('Thinking...')}
-            </div>
-          )}
-        </div>
-      )}
     </form>
   );
 };
@@ -265,9 +281,8 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
   const followUpAbortRef = useRef<AbortController | null>(null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [followUpQuestion, setFollowUpQuestion] = useState('');
-  const [followUpAnswer, setFollowUpAnswer] = useState('');
+  const [followUpTurns, setFollowUpTurns] = useState<FollowUpTurn[]>([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
-  const [followUpError, setFollowUpError] = useState('');
 
   const handleFollowUpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -279,34 +294,61 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
 
     followUpAbortRef.current?.abort();
     followUpAbortRef.current = new AbortController();
-    setFollowUpAnswer('');
-    setFollowUpError('');
     setFollowUpLoading(true);
+    setFollowUpQuestion('');
+
+    const turnIndex = followUpTurns.length;
+    const historyBefore = followUpTurns;
+    setFollowUpTurns((prev) => [...prev, { question, answer: '', error: '', loading: true }]);
 
     const context = contextRef.current || extractContext(selection, settings.maxContextChars);
     // Reuse the initial context so follow-up questions stay anchored to the same passage
     // instead of drifting when the DOM selection changes.
     contextRef.current = context;
+    const previousAnswer = [
+      answer.trim(),
+      ...historyBefore
+        .filter((turn) => turn.question.trim() && (turn.answer.trim() || turn.error.trim()))
+        .map((turn) =>
+          turn.error.trim()
+            ? `Q: ${turn.question}\nA: [Error] ${turn.error}`
+            : `Q: ${turn.question}\nA: ${turn.answer}`,
+        ),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     try {
       for await (const chunk of streamInlineInsightFollowUp(
         question,
         selection.text,
         context,
-        answer,
+        previousAnswer,
         settings,
         targetLanguage,
         followUpAbortRef.current.signal,
       )) {
         if (chunk.type === 'content') {
-          setFollowUpAnswer((prev) => prev + chunk.text);
+          setFollowUpTurns((prev) =>
+            prev.map((turn, index) =>
+              index === turnIndex ? { ...turn, answer: turn.answer + chunk.text } : turn,
+            ),
+          );
         }
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        setFollowUpError((err as Error).message || _('Failed to get AI response'));
+        const message = (err as Error).message || _('Failed to get AI response');
+        setFollowUpTurns((prev) =>
+          prev.map((turn, index) =>
+            index === turnIndex ? { ...turn, error: message, loading: false } : turn,
+          ),
+        );
       }
     } finally {
+      setFollowUpTurns((prev) =>
+        prev.map((turn, index) => (index === turnIndex ? { ...turn, loading: false } : turn)),
+      );
       setFollowUpLoading(false);
     }
   };
@@ -384,10 +426,9 @@ const InlineInsightPopup: React.FC<InlineInsightPopupProps> = ({
           )}
           {followUpOpen && settings.enabled && settings.model && (
             <InlineInsightFollowUpPanel
+              turns={followUpTurns}
               question={followUpQuestion}
-              answer={followUpAnswer}
               loading={followUpLoading}
-              error={followUpError}
               onQuestionChange={setFollowUpQuestion}
               onSubmit={handleFollowUpSubmit}
               translate={_}
