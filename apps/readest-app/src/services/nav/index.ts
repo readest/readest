@@ -97,33 +97,51 @@ export const computeBookNav = async (bookDoc: BookDoc): Promise<BookNav> => {
   const groups = groupItemsBySection(bookDoc, allItems);
   const splitHref = (href: string) => bookDoc.splitTOCHref(href);
 
-  for (const [sectionId, { base, fragments }] of groups.entries()) {
-    const section = sectionMap.get(sectionId);
-    if (!section || fragments.length === 0) continue;
-    if (!section.loadText) continue;
+  // Process sections concurrently. Each section's work is independent: the
+  // only shared writes are into `sections` (keyed by sectionId, no
+  // collisions) and into the local `bookSections` later (after all promises
+  // resolve). Concurrency here lets the zip-text inflate calls overlap with
+  // each other and with the `parseFromString` of earlier sections — on iOS
+  // WebView this turns the previously-serial chapter loop into something
+  // bounded by the slowest single inflate + parse rather than their sum.
+  //
+  // We don't bound concurrency: a typical EPUB has ≲ 200 sections and the
+  // zip.js loader is happy to interleave them; if memory pressure ever
+  // matters we can drop in a small p-limit-style throttle.
+  const sectionResults = await Promise.all(
+    Array.from(groups.entries()).map(async ([sectionId, { base, fragments }]) => {
+      const section = sectionMap.get(sectionId);
+      if (!section || fragments.length === 0) return null;
+      if (!section.loadText) return null;
 
-    const content = await section.loadText();
-    if (!content) continue;
+      // Issue both the raw-text and DOM-parse loads concurrently. The
+      // makeZipLoader now dedupes in-flight loadText calls by name, so the
+      // two awaits below resolve from a single zip inflate per section
+      // instead of two.
+      const contentP = section.loadText();
+      const docP = section.createDocument().catch((e: unknown) => {
+        console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
+        return null;
+      });
+      const [content, doc] = await Promise.all([contentP, docP]);
+      if (!content) return null;
+      if (!doc) return null;
 
-    let doc: Document | null = null;
-    try {
-      doc = await section.createDocument();
-    } catch (e) {
-      console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
-    }
-    if (!doc) continue;
+      const sectionFragments = buildSectionFragments(
+        section,
+        fragments,
+        base,
+        content,
+        doc,
+        splitHref,
+      );
+      if (sectionFragments.length === 0) return null;
+      return [sectionId, { id: sectionId, fragments: sectionFragments }] as const;
+    }),
+  );
 
-    const sectionFragments = buildSectionFragments(
-      section,
-      fragments,
-      base,
-      content,
-      doc,
-      splitHref,
-    );
-    if (sectionFragments.length > 0) {
-      sections[sectionId] = { id: sectionId, fragments: sectionFragments };
-    }
+  for (const r of sectionResults) {
+    if (r) sections[r[0]] = r[1];
   }
 
   // Attach the freshly computed fragments to live sections so the bake can see

@@ -104,31 +104,52 @@ export const enrichTocFromNavElements = async (
 
   const sectionIdSet = new Set(sections.map((s) => s.id));
 
+  // Two-phase scan:
+  //   1) Concurrently `loadText` every section and quick-filter on
+  //      `content.includes('<nav')` — cheap (ASCII substring on the raw
+  //      HTML) and immediately discards 90%+ of chapters that have no
+  //      embedded nav. Concurrency lets the zip inflates overlap.
+  //   2) For survivors, concurrently `createDocument` + walk `<nav>`
+  //      elements. The makeZipLoader dedupes in-flight loadText calls by
+  //      name, so phase 2's `createDocument()` reuses phase 1's inflated
+  //      bytes when the two awaits overlap.
+  type Survivor = { section: (typeof sections)[number] };
+  const survivors: Survivor[] = [];
+  const phase1 = await Promise.all(
+    sections.map(async (section) => {
+      if (!section.loadText) return null;
+      try {
+        const content = await section.loadText();
+        if (!content || !content.includes('<nav')) return null;
+        return { section };
+      } catch {
+        return null;
+      }
+    }),
+  );
+  for (const s of phase1) if (s) survivors.push(s);
+
+  const phase2 = await Promise.all(
+    survivors.map(async ({ section }) => {
+      let doc: Document;
+      try {
+        doc = await section.createDocument();
+      } catch {
+        return null;
+      }
+      const navs = Array.from(doc.getElementsByTagName('nav'));
+      if (navs.length === 0) return null;
+      return { sectionId: section.id, navs };
+    }),
+  );
+
   const collected: ExtractedNavItem[] = [];
   const seenHref = new Set<string>();
-
-  for (const section of sections) {
-    if (!section.loadText) continue;
-    let content: string | null = null;
-    try {
-      content = await section.loadText();
-    } catch {
-      content = null;
-    }
-    if (!content || !content.includes('<nav')) continue;
-
-    let doc: Document;
-    try {
-      doc = await section.createDocument();
-    } catch {
-      continue;
-    }
-
-    const navs = Array.from(doc.getElementsByTagName('nav'));
-    if (navs.length === 0) continue;
-
+  for (const result of phase2) {
+    if (!result) continue;
+    const { sectionId, navs } = result;
     for (const navEl of navs) {
-      const extracted = extractTocFromNav(navEl, section.id);
+      const extracted = extractTocFromNav(navEl, sectionId);
       for (const item of extracted) {
         const sectionPart = hrefSection(item.href);
         if (!sectionPart || !sectionIdSet.has(sectionPart)) continue;
