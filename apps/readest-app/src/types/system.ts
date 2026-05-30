@@ -203,6 +203,7 @@ export interface AppService {
   loadBookNav(book: Book): Promise<BookNav | null>;
   saveBookNav(book: Book, nav: BookNav): Promise<void>;
   loadBookContent(book: Book): Promise<BookContent>;
+  resolveNativeBookFilePath(book: Book): Promise<string | null>;
   loadLibraryBooks(): Promise<Book[]>;
   saveLibraryBooks(books: Book[]): Promise<void>;
   getCoverImageUrl(book: Book): string;

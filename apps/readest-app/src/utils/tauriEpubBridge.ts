@@ -3,10 +3,14 @@
 // Forwards EPUB work to native commands and falls back transparently
 // to the foliate-js path on web / non-Tauri / parse error.
 //
-//   * tryNativeParseEpub — import-time metadata + cover + partialMD5
-//                          via `parse_epub_metadata`. Skips the
-//                          foliate-js full archive parse and the
-//                          second-pass partialMD5 over the file.
+//   * tryNativeParseEpub    — import-time metadata + cover + partialMD5
+//                             via `parse_epub_metadata`. Skips the
+//                             foliate-js full archive parse and the
+//                             second-pass partialMD5 over the file.
+//   * tryNativePrefetchEpub — open-time OPF + nav + ncx + entry-size
+//                             prefetch via `parse_epub_full`. Lets the
+//                             foliate-js zip loader serve those calls
+//                             from an in-memory cache.
 //
 // Avoids ferrying multi-MB blobs across the JS<->Rust IPC boundary
 // and is a no-op on the web platform.
@@ -24,6 +28,15 @@ const base64ToUint8Array = (b64: string): Uint8Array => {
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
   return out;
+};
+
+/**
+ * Decode a UTF-8 byte buffer (sent by Rust as either a number[] or a typed
+ * array, depending on Tauri's IPC serializer) into a string.
+ */
+const bytesArrayToString = (bytes: number[] | Uint8Array): string => {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  return new TextDecoder('utf-8').decode(u8);
 };
 
 // ─── parse_epub_metadata (import path) ───────────────────────────────
@@ -131,6 +144,94 @@ export const tryNativeParseEpub = async (
     };
   } catch (err) {
     console.warn('[tauriEpubBridge] native parse failed, falling back to JS:', err);
+    return null;
+  }
+};
+
+// ─── parse_epub_full (open hot-path prefetch) ────────────────────────
+
+interface RustParsedEpubFull {
+  partialMd5: string;
+  opfPath: string;
+  opfBytes: number[] | Uint8Array;
+  navPath?: string | null;
+  navBytes?: number[] | Uint8Array | null;
+  ncxPath?: string | null;
+  ncxBytes?: number[] | Uint8Array | null;
+  /**
+   * Map: zip entry name → uncompressed size in bytes. Sent over IPC as a
+   * plain object (`{ "OEBPS/x.html": 12345, ... }`) and rehydrated into a
+   * Map below for O(1) `getSize()` calls.
+   */
+  sizes: Record<string, number>;
+}
+
+export interface NativeEpubPrefetch {
+  /**
+   * Map of zip-path → text content. Populated for the OPF, EPUB3 nav doc,
+   * NCX (if present), and a synthetic META-INF/container.xml that points
+   * foliate-js at our OPF path. Anything not in the map falls through to
+   * the regular zip.js loadText path.
+   */
+  textCache: Map<string, string>;
+  /** Map of zip-path → uncompressed byte size, for foliate-js getSize(). */
+  sizes: Map<string, number>;
+  /** partialMD5 of the file, returned alongside the prefetch in case the
+   *  caller wants to reuse it (e.g. to set Book.hash without rehashing). */
+  partialMd5: string;
+}
+
+/**
+ * Build the minimal META-INF/container.xml that foliate-js's EPUB.init()
+ * looks at to find the OPF. We synthesize this from `opfPath` so the JS
+ * side never has to inflate the real container entry from the zip.
+ */
+const buildContainerXml = (opfPath: string): string =>
+  `<?xml version="1.0" encoding="UTF-8"?>` +
+  `<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">` +
+  `<rootfiles>` +
+  `<rootfile full-path="${opfPath}" media-type="application/oebps-package+xml"/>` +
+  `</rootfiles>` +
+  `</container>`;
+
+/**
+ * Try to prefetch OPF/nav/ncx + entry sizes for an EPUB via Rust.
+ *
+ * Returns null when the native path is unavailable (web platform, missing
+ * file path, non-EPUB extension, IPC error). The caller (DocumentLoader)
+ * then falls back to the original zip.js-only path with no behavioural
+ * change.
+ */
+export const tryNativePrefetchEpub = async (
+  filePath: string | undefined,
+): Promise<NativeEpubPrefetch | null> => {
+  if (!isEligibleEpubPath(filePath)) return null;
+  try {
+    const rust = await invoke<RustParsedEpubFull>('parse_epub_full', {
+      filePath,
+    });
+    if (!rust || !rust.opfPath || !rust.opfBytes) return null;
+
+    const textCache = new Map<string, string>();
+    // foliate-js reads container.xml first; serve a synthetic one so it
+    // skips the zip.js inflate.
+    textCache.set('META-INF/container.xml', buildContainerXml(rust.opfPath));
+    textCache.set(rust.opfPath, bytesArrayToString(rust.opfBytes));
+    if (rust.navPath && rust.navBytes) {
+      textCache.set(rust.navPath, bytesArrayToString(rust.navBytes));
+    }
+    if (rust.ncxPath && rust.ncxBytes) {
+      textCache.set(rust.ncxPath, bytesArrayToString(rust.ncxBytes));
+    }
+
+    const sizes = new Map<string, number>();
+    for (const [name, size] of Object.entries(rust.sizes || {})) {
+      sizes.set(name, size);
+    }
+
+    return { textCache, sizes, partialMd5: rust.partialMd5 };
+  } catch (err) {
+    console.warn('[tauriEpubBridge] native prefetch failed, falling back to JS:', err);
     return null;
   }
 };

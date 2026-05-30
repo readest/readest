@@ -556,6 +556,30 @@ export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookC
   return { book, file };
 }
 
+/**
+ * Best-effort resolution of an absolute, on-disk filesystem path for a book.
+ *
+ * Returns null when the book is not stored on disk (e.g. in-memory blob,
+ * remote URL) or the path cannot be resolved. The returned path is
+ * suitable for handing to native (Rust) commands that read the file
+ * directly via std::fs.
+ */
+export async function resolveNativeBookFilePath(
+  fs: FileSystem,
+  resolveFilePath: (path: string, base: BaseDir) => Promise<string>,
+  book: Book,
+): Promise<string | null> {
+  try {
+    const source = await resolveBookContentSource(fs, book);
+    if (source.kind !== 'managed' && source.kind !== 'external') return null;
+    const fp = await resolveFilePath(source.path, source.base);
+    if (!fp) return null;
+    return fp.startsWith('file://') ? decodeURI(fp.slice('file://'.length)) : fp;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadBookConfig(
   fs: FileSystem,
   book: Book,

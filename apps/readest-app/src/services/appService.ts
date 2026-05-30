@@ -389,6 +389,10 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.loadBookContent(this.fs, book);
   }
 
+  async resolveNativeBookFilePath(book: Book): Promise<string | null> {
+    return BookSvc.resolveNativeBookFilePath(this.fs, this.resolveFilePath.bind(this), book);
+  }
+
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
     return BookSvc.loadBookConfig(this.fs, book, settings);
   }

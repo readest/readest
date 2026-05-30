@@ -181,7 +181,15 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         } else {
           const content = (await appService.loadBookContent(book)) as BookContent;
           file = content.file;
-          const doc = await new DocumentLoader(file).open();
+          let nativeFilePath: string | null = null;
+          try {
+            nativeFilePath = await appService.resolveNativeBookFilePath(book);
+          } catch (err) {
+            console.warn('resolveNativeBookFilePath failed', err);
+          }
+          const doc = await new DocumentLoader(file, {
+            nativeFilePath: nativeFilePath ?? undefined,
+          }).open();
           bookDoc = doc.book;
         }
       }
