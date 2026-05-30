@@ -9,7 +9,7 @@ import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import { buildBookLookupIndex } from '@/services/bookService';
-import { navigateToLibrary, navigateToReader } from '@/utils/nav';
+import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
@@ -255,10 +255,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   usePullToRefresh(
     scrollRef,
     async () => {
+      if (!user) {
+        navigateToLogin(router);
+        return;
+      }
       await pullLibrary(false, true);
       checkOPDSSubscriptions(true);
     },
     async () => {
+      if (!user) {
+        navigateToLogin(router);
+        return;
+      }
       await pullLibrary(true, true);
       checkOPDSSubscriptions(true);
     },
