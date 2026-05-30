@@ -300,6 +300,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: false });
   };
 
+  const ttsHighlightSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-highlight-sentence', { bookKey: sideBarBookKey });
+  };
+
   const toggleBookmark = () => {
     if (!sideBarBookKey) return;
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
@@ -356,6 +361,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onTTSGoPreviousSentence: ttsGoPreviousSentence,
       onTTSGoNextParagraph: ttsGoNextParagraph,
       onTTSGoPreviousParagraph: ttsGoPreviousParagraph,
+      onTTSHighlightSentence: ttsHighlightSentence,
       onReloadPage: reloadPage,
       onCloseWindow: closeWindow,
       onQuitApp: quitApp,

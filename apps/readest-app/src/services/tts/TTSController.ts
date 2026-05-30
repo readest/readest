@@ -562,6 +562,19 @@ export class TTSController extends EventTarget {
     this.ttsTargetLang = lang;
   }
 
+  getSpokenSentence(): { cfi: string; text: string } | null {
+    const range = this.view.tts?.getLastRange();
+    if (!range || this.#ttsSectionIndex < 0) return null;
+    try {
+      const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+      const text = range.toString().trim();
+      if (!cfi || !text) return null;
+      return { cfi, text };
+    } catch {
+      return null;
+    }
+  }
+
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (mark && mark.name !== '-1') {

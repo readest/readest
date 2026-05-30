@@ -1,5 +1,6 @@
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
-import { BookNote, DEFAULT_HIGHLIGHT_COLORS, HighlightColor } from '@/types/book';
+import { BookNote, DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
+import { uniqueId } from '@/utils/misc';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point } from '@/utils/sel';
@@ -85,4 +86,39 @@ export function removeBookNoteOverlays(view: FoliateView | null, note: BookNote)
   if (note.note && note.note.trim().length > 0) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
   }
+}
+
+/**
+ * Build a persistent highlight BookNote for a TTS-spoken sentence, or return
+ * `null` when one already exists at the same CFI (idempotent — pressing the
+ * hotkey twice on the same sentence must not create a duplicate).
+ *
+ * `now` is injected so the result is deterministic for tests. A soft-deleted
+ * note (`deletedAt`) or a non-annotation note (e.g. a bookmark) at the same CFI
+ * does not block creation — it mirrors the live-annotation predicate used by
+ * the selection-based highlight path in Annotator.tsx.
+ */
+export function buildTTSSentenceHighlight(
+  annotations: BookNote[],
+  params: {
+    cfi: string;
+    text: string;
+    style: HighlightStyle;
+    color: HighlightColor;
+    page?: number;
+  },
+  now: number,
+): BookNote | null {
+  const exists = annotations.some(
+    (a) => a.cfi === params.cfi && a.type === 'annotation' && a.style && !a.deletedAt,
+  );
+  if (exists) return null;
+  return {
+    id: uniqueId(),
+    type: 'annotation',
+    note: '',
+    createdAt: now,
+    updatedAt: now,
+    ...params,
+  };
 }

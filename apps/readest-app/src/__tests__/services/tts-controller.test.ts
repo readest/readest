@@ -553,6 +553,57 @@ describe('TTSController', () => {
     });
   });
 
+  describe('getSpokenSentence', () => {
+    test('returns the trimmed text and cfi of the current sentence', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue({ toString: () => '  A spoken sentence.  ' }),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-current');
+
+      expect(controller.getSpokenSentence()).toEqual({
+        cfi: 'cfi-current',
+        text: 'A spoken sentence.',
+      });
+    });
+
+    test('returns null when TTS is inactive (no view.tts)', () => {
+      // No initViewTTS: view.tts is null and the section index is -1.
+      expect(controller.getSpokenSentence()).toBeNull();
+    });
+
+    test('returns null when there is no current range', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue(undefined),
+      } as unknown as FoliateView['tts'];
+
+      expect(controller.getSpokenSentence()).toBeNull();
+    });
+
+    test('returns null when getCFI throws', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue({ toString: () => 'x' }),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockImplementation(() => {
+        throw new Error('cfi failure');
+      });
+
+      expect(controller.getSpokenSentence()).toBeNull();
+    });
+
+    test('returns null when the sentence text is only whitespace', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue({ toString: () => '   ' }),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-current');
+
+      expect(controller.getSpokenSentence()).toBeNull();
+    });
+  });
+
   describe('shutdown', () => {
     test('stops playback and clears tts', async () => {
       const stopSpy = vi.spyOn(controller, 'stop').mockResolvedValue();

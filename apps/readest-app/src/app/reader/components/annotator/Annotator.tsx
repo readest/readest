@@ -47,7 +47,11 @@ import { getWordCount } from '@/utils/word';
 import { getIndexFromCfi, isCfiInLocation } from '@/utils/cfi';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
-import { getHighlightColorHex, removeBookNoteOverlays } from '../../utils/annotatorUtil';
+import {
+  buildTTSSentenceHighlight,
+  getHighlightColorHex,
+  removeBookNoteOverlays,
+} from '../../utils/annotatorUtil';
 import {
   expandAllRenderedSections,
   expandGlobalAnnotation,
@@ -536,10 +540,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
     eventDispatcher.on('clear-annotations', handleClearAnnotations);
     eventDispatcher.on('import-annotations', handleImportAnnotations);
+    eventDispatcher.on('create-tts-highlight', handleCreateTTSHighlight);
     return () => {
       eventDispatcher.off('export-annotations', handleExportMarkdown);
       eventDispatcher.off('clear-annotations', handleClearAnnotations);
       eventDispatcher.off('import-annotations', handleImportAnnotations);
+      eventDispatcher.off('create-tts-highlight', handleCreateTTSHighlight);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -837,6 +843,29 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
+  };
+
+  const handleCreateTTSHighlight = (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; cfi: string; text: string } | undefined;
+    if (!detail || detail.bookKey !== bookKey) return;
+    const { settings } = useSettingsStore.getState();
+    const style = settings.globalReadSettings.highlightStyle;
+    const color = settings.globalReadSettings.highlightStyles[style];
+    const { booknotes: annotations = [] } = getConfig(bookKey)!;
+    const page = getProgress(bookKey)?.page;
+    const annotation = buildTTSSentenceHighlight(
+      annotations,
+      { cfi: detail.cfi, text: detail.text, style, color, page },
+      Date.now(),
+    );
+    if (!annotation) return;
+    annotations.push(annotation);
+    const updatedConfig = updateBooknotes(bookKey, annotations);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
+    const views = getViewsById(bookKey.split('-')[0]!);
+    views.forEach((view) => view?.addAnnotation(annotation));
   };
 
   /**

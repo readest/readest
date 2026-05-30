@@ -80,6 +80,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }
   };
 
+  const handleTTSHighlightSentence = (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const sentence = ttsControllerRef.current?.getSpokenSentence();
+    if (!sentence) return;
+    eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...sentence });
+  };
+
   const handleTTSTogglePlay = async (event: CustomEvent) => {
     const detail = event.detail as { bookKey: string } | undefined;
     if (detail?.bookKey !== bookKey) return;
@@ -106,12 +114,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.on('tts-forward', handleTTSForward);
     eventDispatcher.on('tts-backward', handleTTSBackward);
     eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
+    eventDispatcher.on('tts-highlight-sentence', handleTTSHighlightSentence);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
       eventDispatcher.off('tts-stop', handleTTSStop);
       eventDispatcher.off('tts-forward', handleTTSForward);
       eventDispatcher.off('tts-backward', handleTTSBackward);
       eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
+      eventDispatcher.off('tts-highlight-sentence', handleTTSHighlightSentence);
       if (ttsControllerRef.current) {
         ttsControllerRef.current.shutdown();
         ttsControllerRef.current = null;
