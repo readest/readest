@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "වෙනත් කියවීමේ යෙදුමකින් නිර්යාත කළ ඉස්මතු කිරීම් සහ සටහන් ආයාත කරන්න.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader නිර්යාත ගොනුව (.mrexpt)",
-  "No note yet": "තවම සටහනක් නැත",
-  "No annotation yet": "තවම විවරණයක් නැත",
-  "No bookmark yet": "තවම පොත් සලකුණක් නැත",
   "Importing...": "ආයාත වෙමින්...",
   "Swipe for Brightness": "දීප්තිය සඳහා ස්වයිප් කරන්න",
   "Slide along the left edge": "වම් කෙළවර දිගේ අදින්න",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "මෙය සියලුම හැඹිලිගත ගොනු මකා දමයි. මෙය පෙරළිය නොහැක.",
   "Confirm Clear": "හිස් කිරීම තහවුරු කරන්න",
   "Clearing...": "හිස් කරමින්…",
-  "Clear Cache": "හැඹිලිය හිස් කරන්න"
+  "Clear Cache": "හැඹිලිය හිස් කරන්න",
+  "No Notes": "සටහන් නැත",
+  "Capture an idea as you read": "කියවන විට අදහසක් සටහන් කර ගන්න",
+  "No Annotations": "අනුසටහන් නැත",
+  "No Bookmarks": "පොත් සලකුණු නැත",
+  "Select some text to highlight": "ඉස්මතු කිරීමට පෙළක් තෝරන්න",
+  "Bookmark This Page": "මෙම පිටුව පොත් සලකුණක් කරන්න"
 }

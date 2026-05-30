@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Importálj egy másik olvasóalkalmazásból exportált kiemeléseket és jegyzeteket.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader exportfájl (.mrexpt)",
-  "No note yet": "Még nincs jegyzet",
-  "No annotation yet": "Még nincs jegyzet",
-  "No bookmark yet": "Még nincs könyvjelző",
   "Importing...": "Importálás...",
   "Swipe for Brightness": "Húzás a fényerőhöz",
   "Slide along the left edge": "Húzza a bal szél mentén",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt. A művelet nem vonható vissza.",
   "Confirm Clear": "Törlés megerősítése",
   "Clearing...": "Törlés…",
-  "Clear Cache": "Gyorsítótár törlése"
+  "Clear Cache": "Gyorsítótár törlése",
+  "No Notes": "Nincsenek jegyzetek",
+  "Capture an idea as you read": "Rögzíts egy ötletet olvasás közben",
+  "No Annotations": "Nincsenek megjegyzések",
+  "No Bookmarks": "Nincsenek könyvjelzők",
+  "Select some text to highlight": "Jelölj ki szöveget a kiemeléshez",
+  "Bookmark This Page": "Oldal hozzáadása a könyvjelzőkhöz"
 }

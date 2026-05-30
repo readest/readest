@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "Nhập các đánh dấu và ghi chú được xuất từ một ứng dụng đọc khác.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Tệp xuất Moon+ Reader (.mrexpt)",
-  "No note yet": "Chưa có ghi chú",
-  "No annotation yet": "Chưa có chú thích",
-  "No bookmark yet": "Chưa có dấu trang",
   "Importing...": "Đang nhập...",
   "Swipe for Brightness": "Vuốt để chỉnh độ sáng",
   "Slide along the left edge": "Vuốt dọc theo cạnh trái",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp trong bộ nhớ đệm. Không thể hoàn tác.",
   "Confirm Clear": "Xác nhận xóa",
   "Clearing...": "Đang xóa…",
-  "Clear Cache": "Xóa bộ nhớ đệm"
+  "Clear Cache": "Xóa bộ nhớ đệm",
+  "No Notes": "Không có ghi chú",
+  "Capture an idea as you read": "Ghi lại một ý tưởng khi bạn đọc",
+  "No Annotations": "Không có chú thích",
+  "No Bookmarks": "Không có dấu trang",
+  "Select some text to highlight": "Chọn một đoạn văn bản để tô sáng",
+  "Bookmark This Page": "Đánh dấu trang này"
 }

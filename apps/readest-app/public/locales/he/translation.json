@@ -1706,9 +1706,6 @@
   "Import highlights and notes exported from another reading app.": "ייבוא הדגשות והערות שיוצאו מאפליקציית קריאה אחרת.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "קובץ ייצוא של Moon+ Reader ‏(.mrexpt)",
-  "No note yet": "אין הערות עדיין",
-  "No annotation yet": "אין הערות עדיין",
-  "No bookmark yet": "אין סימניות עדיין",
   "Importing...": "מייבא...",
   "Swipe for Brightness": "החלקה לכוונון בהירות",
   "Slide along the left edge": "החליקו לאורך הקצה השמאלי",
@@ -1725,5 +1722,11 @@
   "This will delete all cached files. This cannot be undone.": "פעולה זו תמחק את כל הקבצים השמורים במטמון. לא ניתן לבטל פעולה זו.",
   "Confirm Clear": "אישור ניקוי",
   "Clearing...": "מנקה…",
-  "Clear Cache": "נקה מטמון"
+  "Clear Cache": "נקה מטמון",
+  "No Notes": "אין הערות",
+  "Capture an idea as you read": "תעדו רעיון תוך כדי קריאה",
+  "No Annotations": "אין הדגשות",
+  "No Bookmarks": "אין סימניות",
+  "Select some text to highlight": "בחרו טקסט להדגשה",
+  "Bookmark This Page": "הוסיפו דף זה לסימניות"
 }

@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Importera markeringar och anteckningar som exporterats från en annan läsapp.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader-exportfil (.mrexpt)",
-  "No note yet": "Ingen anteckning än",
-  "No annotation yet": "Ingen annotering än",
-  "No bookmark yet": "Inget bokmärke än",
   "Importing...": "Importerar...",
   "Swipe for Brightness": "Svep för ljusstyrka",
   "Slide along the left edge": "Dra längs vänsterkanten",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Detta tar bort alla cachade filer. Åtgärden kan inte ångras.",
   "Confirm Clear": "Bekräfta rensning",
   "Clearing...": "Rensar…",
-  "Clear Cache": "Rensa cache"
+  "Clear Cache": "Rensa cache",
+  "No Notes": "Inga anteckningar",
+  "Capture an idea as you read": "Fånga en idé medan du läser",
+  "No Annotations": "Inga kommentarer",
+  "No Bookmarks": "Inga bokmärken",
+  "Select some text to highlight": "Markera text att framhäva",
+  "Bookmark This Page": "Bokmärk den här sidan"
 }

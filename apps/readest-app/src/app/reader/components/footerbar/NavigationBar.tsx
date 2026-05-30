@@ -8,6 +8,7 @@ import { MdOutlineHeadphones as TTSIcon } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Button from '@/components/Button';
 import { Insets } from '@/types/misc';
@@ -31,6 +32,8 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getViewState } = useReaderStore();
+  const { isSideBarVisible, isSideBarPinned } = useSidebarStore();
+
   const viewState = getViewState(bookKey);
   const tocIconSize = useResponsiveSize(23);
   const fontIconSize = useResponsiveSize(18);
@@ -49,11 +52,13 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
           : navPadding,
       }}
     >
-      <Button
-        label={_('Table of Contents')}
-        icon={<TOCIcon size={tocIconSize} />}
-        onClick={() => onSetActionTab('toc')}
-      />
+      {isSideBarVisible && isSideBarPinned ? null : (
+        <Button
+          label={_('Table of Contents')}
+          icon={<TOCIcon size={tocIconSize} />}
+          onClick={() => onSetActionTab('toc')}
+        />
+      )}
       <Button
         label={_('Color')}
         icon={<ColorIcon className={clsx(actionTab === 'color' && 'text-blue-500')} />}

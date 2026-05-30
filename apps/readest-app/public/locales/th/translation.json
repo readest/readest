@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "นำเข้าไฮไลต์และบันทึกที่ส่งออกจากแอปอ่านหนังสืออื่น",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "ไฟล์ส่งออก Moon+ Reader (.mrexpt)",
-  "No note yet": "ยังไม่มีบันทึก",
-  "No annotation yet": "ยังไม่มีคำอธิบายประกอบ",
-  "No bookmark yet": "ยังไม่มีบุ๊กมาร์ก",
   "Importing...": "กำลังนำเข้า...",
   "Swipe for Brightness": "ปัดเพื่อปรับความสว่าง",
   "Slide along the left edge": "เลื่อนตามขอบด้านซ้าย",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมด ไม่สามารถยกเลิกได้",
   "Confirm Clear": "ยืนยันการล้าง",
   "Clearing...": "กำลังล้าง…",
-  "Clear Cache": "ล้างแคช"
+  "Clear Cache": "ล้างแคช",
+  "No Notes": "ไม่มีบันทึก",
+  "Capture an idea as you read": "จดบันทึกไอเดียขณะที่คุณอ่าน",
+  "No Annotations": "ไม่มีคำอธิบายประกอบ",
+  "No Bookmarks": "ไม่มีบุ๊กมาร์ก",
+  "Select some text to highlight": "เลือกข้อความเพื่อไฮไลต์",
+  "Bookmark This Page": "บุ๊กมาร์กหน้านี้"
 }

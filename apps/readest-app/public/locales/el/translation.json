@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Εισαγωγή επισημάνσεων και σημειώσεων που εξήχθησαν από άλλη εφαρμογή ανάγνωσης.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Αρχείο εξαγωγής Moon+ Reader (.mrexpt)",
-  "No note yet": "Δεν υπάρχει ακόμη σημείωση",
-  "No annotation yet": "Δεν υπάρχει ακόμη σχολιασμός",
-  "No bookmark yet": "Δεν υπάρχει ακόμη σελιδοδείκτης",
   "Importing...": "Εισαγωγή...",
   "Swipe for Brightness": "Σάρωση για φωτεινότητα",
   "Slide along the left edge": "Σύρετε κατά μήκος της αριστερής άκρης",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Αυτό θα διαγράψει όλα τα προσωρινά αποθηκευμένα αρχεία. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
   "Confirm Clear": "Επιβεβαίωση εκκαθάρισης",
   "Clearing...": "Εκκαθάριση…",
-  "Clear Cache": "Εκκαθάριση προσωρινής μνήμης"
+  "Clear Cache": "Εκκαθάριση προσωρινής μνήμης",
+  "No Notes": "Καμία σημείωση",
+  "Capture an idea as you read": "Καταγράψτε μια ιδέα καθώς διαβάζετε",
+  "No Annotations": "Κανένας σχολιασμός",
+  "No Bookmarks": "Κανένας σελιδοδείκτης",
+  "Select some text to highlight": "Επιλέξτε κείμενο για επισήμανση",
+  "Bookmark This Page": "Προσθήκη σελιδοδείκτη σε αυτή τη σελίδα"
 }

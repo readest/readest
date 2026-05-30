@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "மற்றொரு வாசிப்பு செயலியிலிருந்து ஏற்றுமதி செய்யப்பட்ட முத்திரைகள் மற்றும் குறிப்புகளை இறக்குமதி செய்யவும்.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader ஏற்றுமதி கோப்பு (.mrexpt)",
-  "No note yet": "இன்னும் குறிப்பு இல்லை",
-  "No annotation yet": "இன்னும் சிறுகுறிப்பு இல்லை",
-  "No bookmark yet": "இன்னும் புக்மார்க் இல்லை",
   "Importing...": "இறக்குமதி செய்கிறது...",
   "Swipe for Brightness": "ஒளிர்வுக்கு ஸ்வைப் செய்யவும்",
   "Slide along the left edge": "இடது விளிம்பில் இழுக்கவும்",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "இது தற்காலிகச் சேமிப்பில் உள்ள அனைத்துக் கோப்புகளையும் நீக்கும். இதை மீட்டெடுக்க முடியாது.",
   "Confirm Clear": "அழிப்பதை உறுதிப்படுத்து",
   "Clearing...": "அழிக்கப்படுகிறது…",
-  "Clear Cache": "தற்காலிக சேமிப்பை அழி"
+  "Clear Cache": "தற்காலிக சேமிப்பை அழி",
+  "No Notes": "குறிப்புகள் இல்லை",
+  "Capture an idea as you read": "படிக்கும்போது ஒரு கருத்தைக் குறித்து வையுங்கள்",
+  "No Annotations": "சிறுகுறிப்புகள் இல்லை",
+  "No Bookmarks": "புக்மார்க்குகள் இல்லை",
+  "Select some text to highlight": "சிறப்பிக்க உரையைத் தேர்ந்தெடுக்கவும்",
+  "Bookmark This Page": "இந்தப் பக்கத்தைப் புக்மார்க் செய்யவும்"
 }

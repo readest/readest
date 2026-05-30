@@ -21,7 +21,7 @@ const SidebarHeader: React.FC<{
   const _ = useTranslation();
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);
-  const iconSize14 = useResponsiveSize(14);
+  const iconSize15 = useResponsiveSize(15);
   const iconSize18 = useResponsiveSize(18);
   const iconSize22 = useResponsiveSize(22);
 
@@ -80,7 +80,7 @@ const SidebarHeader: React.FC<{
               isPinned ? 'bg-base-300' : 'bg-base-300/65',
             )}
           >
-            {isPinned ? <MdPushPin size={iconSize14} /> : <MdOutlinePushPin size={iconSize14} />}
+            {isPinned ? <MdPushPin size={iconSize15} /> : <MdOutlinePushPin size={iconSize15} />}
           </button>
         </div>
       </div>

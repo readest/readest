@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Başka bir okuma uygulamasından dışa aktarılan vurgu ve notları içe aktarın.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader dışa aktarma dosyası (.mrexpt)",
-  "No note yet": "Henüz not yok",
-  "No annotation yet": "Henüz açıklama yok",
-  "No bookmark yet": "Henüz yer imi yok",
   "Importing...": "İçe aktarılıyor...",
   "Swipe for Brightness": "Parlaklık için kaydır",
   "Slide along the left edge": "Sol kenar boyunca kaydır",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Bu, önbelleğe alınmış tüm dosyaları siler. Bu işlem geri alınamaz.",
   "Confirm Clear": "Temizlemeyi Onayla",
   "Clearing...": "Temizleniyor…",
-  "Clear Cache": "Önbelleği Temizle"
+  "Clear Cache": "Önbelleği Temizle",
+  "No Notes": "Not yok",
+  "Capture an idea as you read": "Okurken bir fikri not alın",
+  "No Annotations": "Açıklama yok",
+  "No Bookmarks": "Yer işareti yok",
+  "Select some text to highlight": "Vurgulamak için metin seçin",
+  "Bookmark This Page": "Bu Sayfayı Yer İşaretine Ekle"
 }

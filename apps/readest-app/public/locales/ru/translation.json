@@ -1738,9 +1738,6 @@
   "Import highlights and notes exported from another reading app.": "Импортируйте выделения и заметки, экспортированные из другого приложения для чтения.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Файл экспорта Moon+ Reader (.mrexpt)",
-  "No note yet": "Пока нет заметок",
-  "No annotation yet": "Пока нет аннотаций",
-  "No bookmark yet": "Пока нет закладок",
   "Importing...": "Импорт...",
   "Swipe for Brightness": "Свайп для яркости",
   "Slide along the left edge": "Проведите вдоль левого края",
@@ -1758,5 +1755,11 @@
   "This will delete all cached files. This cannot be undone.": "Это удалит все файлы из кэша. Это действие нельзя отменить.",
   "Confirm Clear": "Подтвердить очистку",
   "Clearing...": "Очистка…",
-  "Clear Cache": "Очистить кэш"
+  "Clear Cache": "Очистить кэш",
+  "No Notes": "Нет заметок",
+  "Capture an idea as you read": "Запишите мысль во время чтения",
+  "No Annotations": "Нет аннотаций",
+  "No Bookmarks": "Нет закладок",
+  "Select some text to highlight": "Выберите текст для выделения",
+  "Bookmark This Page": "Добавить эту страницу в закладки"
 }

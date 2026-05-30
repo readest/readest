@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Boshqa oʻqish ilovasidan eksport qilingan belgilashlar va eslatmalarni import qiling.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader eksport fayli (.mrexpt)",
-  "No note yet": "Hali eslatma yoʻq",
-  "No annotation yet": "Hali izoh yoʻq",
-  "No bookmark yet": "Hali xatchoʻp yoʻq",
   "Importing...": "Import qilinmoqda...",
   "Swipe for Brightness": "Yorqinlik uchun suring",
   "Slide along the left edge": "Chap chekka bo'ylab suring",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Bu barcha keshlangan fayllarni o‘chiradi. Buni qaytarib bo‘lmaydi.",
   "Confirm Clear": "Tozalashni tasdiqlash",
   "Clearing...": "Tozalanmoqda…",
-  "Clear Cache": "Keshni tozalash"
+  "Clear Cache": "Keshni tozalash",
+  "No Notes": "Eslatmalar yoʻq",
+  "Capture an idea as you read": "Oʻqish davomida fikrni yozib oling",
+  "No Annotations": "Izohlar yoʻq",
+  "No Bookmarks": "Xatchoʻplar yoʻq",
+  "Select some text to highlight": "Belgilash uchun matn tanlang",
+  "Bookmark This Page": "Bu sahifani xatchoʻpga qoʻshish"
 }

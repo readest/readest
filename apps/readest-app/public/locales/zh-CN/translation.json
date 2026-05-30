@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "导入从其他阅读应用导出的划线和笔记。",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader 导出文件 (.mrexpt)",
-  "No note yet": "尚无笔记",
-  "No annotation yet": "尚无标注",
-  "No bookmark yet": "尚无书签",
   "Importing...": "正在导入...",
   "Swipe for Brightness": "滑动调节亮度",
   "Slide along the left edge": "沿左侧边缘滑动",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "这将删除所有缓存文件，此操作无法撤销。",
   "Confirm Clear": "确认清除",
   "Clearing...": "正在清除…",
-  "Clear Cache": "清除缓存"
+  "Clear Cache": "清除缓存",
+  "No Notes": "暂无笔记",
+  "Capture an idea as you read": "阅读时记下灵感",
+  "No Annotations": "暂无注释",
+  "No Bookmarks": "暂无书签",
+  "Select some text to highlight": "选择文本以划线",
+  "Bookmark This Page": "为此页添加书签"
 }

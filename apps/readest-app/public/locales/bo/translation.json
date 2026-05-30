@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "ཀློག་འདོན་ཉེར་སྤྱོད་གཞན་ཞིག་ནས་ཕྱིར་འདོན་བྱས་པའི་གཙོ་གནད་དང་ཟིན་བྲིས་ནང་འདྲེན་བྱེད།",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader ཕྱིར་འདོན་ཡིག་ཆ (.mrexpt)",
-  "No note yet": "ད་དུང་ཟིན་བྲིས་མེད།",
-  "No annotation yet": "ད་དུང་མཆན་འགྲེལ་མེད།",
-  "No bookmark yet": "ད་དུང་དཔེ་རྟགས་མེད།",
   "Importing...": "ནང་འདྲེན་བྱེད་བཞིན་པ...",
   "Swipe for Brightness": "འོད་གདངས་ཆེད་འཐེན།",
   "Slide along the left edge": "གཡོན་ངོས་ཟུར་ནས་འཐེན།",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "འདིས་གསོག་ཉར་གྱི་ཡིག་ཆ་ཚང་མ་བསུབ་ངེས་ཡིན། འདི་སྔར་བཞིན་བཟོ་མི་ཐུབ།",
   "Confirm Clear": "བསལ་བ་གཏན་འཁེལ།",
   "Clearing...": "བསལ་བཞིན་པ།...",
-  "Clear Cache": "གསོག་ཉར་བསལ་བ།"
+  "Clear Cache": "གསོག་ཉར་བསལ་བ།",
+  "No Notes": "ཟིན་བྲིས་མེད།",
+  "Capture an idea as you read": "ཀློག་སྐབས་བསམ་ཚུལ་ཞིག་ཟིན་བྲིས་གྱིས།",
+  "No Annotations": "མཆན་མེད།",
+  "No Bookmarks": "དཔེ་རྟགས་མེད།",
+  "Select some text to highlight": "འོག་ཐིག་གཏོང་བར་ཡི་གེ་འདེམས་རོགས།",
+  "Bookmark This Page": "ཤོག་ངོས་འདིར་དཔེ་རྟགས་འགོད།"
 }

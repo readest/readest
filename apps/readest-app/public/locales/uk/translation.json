@@ -1738,9 +1738,6 @@
   "Import highlights and notes exported from another reading app.": "Імпортуйте виділення та нотатки, експортовані з іншого застосунку для читання.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Файл експорту Moon+ Reader (.mrexpt)",
-  "No note yet": "Поки немає нотаток",
-  "No annotation yet": "Поки немає анотацій",
-  "No bookmark yet": "Поки немає закладок",
   "Importing...": "Імпорт...",
   "Swipe for Brightness": "Свайп для яскравості",
   "Slide along the left edge": "Проведіть уздовж лівого краю",
@@ -1758,5 +1755,11 @@
   "This will delete all cached files. This cannot be undone.": "Це видалить усі файли з кешу. Цю дію не можна скасувати.",
   "Confirm Clear": "Підтвердити очищення",
   "Clearing...": "Очищення…",
-  "Clear Cache": "Очистити кеш"
+  "Clear Cache": "Очистити кеш",
+  "No Notes": "Немає нотаток",
+  "Capture an idea as you read": "Занотуйте ідею під час читання",
+  "No Annotations": "Немає анотацій",
+  "No Bookmarks": "Немає закладок",
+  "Select some text to highlight": "Виділіть текст для підсвічування",
+  "Bookmark This Page": "Додати цю сторінку до закладок"
 }

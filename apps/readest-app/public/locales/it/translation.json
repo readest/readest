@@ -1706,9 +1706,6 @@
   "Import highlights and notes exported from another reading app.": "Importa evidenziazioni e note esportate da un'altra app di lettura.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "File di esportazione Moon+ Reader (.mrexpt)",
-  "No note yet": "Nessuna nota ancora",
-  "No annotation yet": "Nessuna annotazione ancora",
-  "No bookmark yet": "Nessun segnalibro ancora",
   "Importing...": "Importazione...",
   "Swipe for Brightness": "Scorri per la luminosità",
   "Slide along the left edge": "Scorri lungo il bordo sinistro",
@@ -1725,5 +1722,11 @@
   "This will delete all cached files. This cannot be undone.": "Questa operazione eliminerà tutti i file memorizzati nella cache. L’azione non può essere annullata.",
   "Confirm Clear": "Conferma svuotamento",
   "Clearing...": "Svuotamento…",
-  "Clear Cache": "Svuota cache"
+  "Clear Cache": "Svuota cache",
+  "No Notes": "Nessuna nota",
+  "Capture an idea as you read": "Annota un'idea mentre leggi",
+  "No Annotations": "Nessuna annotazione",
+  "No Bookmarks": "Nessun segnalibro",
+  "Select some text to highlight": "Seleziona del testo da evidenziare",
+  "Bookmark This Page": "Aggiungi questa pagina ai segnalibri"
 }

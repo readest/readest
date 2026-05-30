@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "وارد کردن هایلایت‌ها و یادداشت‌های صادرشده از یک برنامه‌ی مطالعه‌ی دیگر.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "فایل خروجی Moon+ Reader ‏(.mrexpt)",
-  "No note yet": "هنوز یادداشتی وجود ندارد",
-  "No annotation yet": "هنوز یادداشتی وجود ندارد",
-  "No bookmark yet": "هنوز نشانکی وجود ندارد",
   "Importing...": "در حال وارد کردن...",
   "Swipe for Brightness": "کشیدن برای روشنایی",
   "Slide along the left edge": "در امتداد لبه چپ بکشید",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "این کار همهٔ فایل‌های ذخیره‌شده در حافظهٔ پنهان را حذف می‌کند. این عمل قابل بازگشت نیست.",
   "Confirm Clear": "تأیید پاک کردن",
   "Clearing...": "در حال پاک کردن…",
-  "Clear Cache": "پاک کردن حافظهٔ پنهان"
+  "Clear Cache": "پاک کردن حافظهٔ پنهان",
+  "No Notes": "هیچ یادداشتی نیست",
+  "Capture an idea as you read": "هنگام خواندن، ایده‌ای را ثبت کنید",
+  "No Annotations": "هیچ حاشیه‌نویسی‌ای نیست",
+  "No Bookmarks": "هیچ نشانکی نیست",
+  "Select some text to highlight": "برای هایلایت کردن، متنی را انتخاب کنید",
+  "Bookmark This Page": "افزودن این صفحه به نشانک‌ها"
 }

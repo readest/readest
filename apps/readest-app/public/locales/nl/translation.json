@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "Importeer markeringen en notities die uit een andere leesapp zijn geëxporteerd.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader-exportbestand (.mrexpt)",
-  "No note yet": "Nog geen notitie",
-  "No annotation yet": "Nog geen annotatie",
-  "No bookmark yet": "Nog geen bladwijzer",
   "Importing...": "Bezig met importeren...",
   "Swipe for Brightness": "Veeg voor helderheid",
   "Slide along the left edge": "Veeg langs de linkerrand",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "Hiermee worden alle gecachte bestanden verwijderd. Dit kan niet ongedaan worden gemaakt.",
   "Confirm Clear": "Wissen bevestigen",
   "Clearing...": "Bezig met wissen…",
-  "Clear Cache": "Cache wissen"
+  "Clear Cache": "Cache wissen",
+  "No Notes": "Geen notities",
+  "Capture an idea as you read": "Leg een idee vast tijdens het lezen",
+  "No Annotations": "Geen aantekeningen",
+  "No Bookmarks": "Geen bladwijzers",
+  "Select some text to highlight": "Selecteer tekst om te markeren",
+  "Bookmark This Page": "Deze pagina als bladwijzer toevoegen"
 }

@@ -256,9 +256,17 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             <span className='truncate text-sm text-gray-500 sm:text-xs'>{createdAtLabel}</span>
           </div>
           <div
-            className={clsx('flex items-center justify-end gap-3', isEditable && 'w-full')}
+            className={clsx('flex items-center justify-end gap-4', isEditable && 'w-full')}
             dir='ltr'
           >
+            <button
+              onClick={deleteNote.bind(null, item)}
+              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+              aria-label={_('Delete')}
+            >
+              <MdDelete size={size18} />
+            </button>
+
             {isEditable && (
               <button
                 onClick={item.type === 'bookmark' ? editBookmark : editNote.bind(null, item)}
@@ -268,14 +276,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
                 <MdEdit size={size18} />
               </button>
             )}
-
-            <button
-              onClick={deleteNote.bind(null, item)}
-              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
-              aria-label={_('Delete')}
-            >
-              <MdDelete size={size18} />
-            </button>
           </div>
         </div>
       </div>

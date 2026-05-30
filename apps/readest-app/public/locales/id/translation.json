@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "Impor sorotan dan catatan yang diekspor dari aplikasi baca lain.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "File ekspor Moon+ Reader (.mrexpt)",
-  "No note yet": "Belum ada catatan",
-  "No annotation yet": "Belum ada anotasi",
-  "No bookmark yet": "Belum ada penanda",
   "Importing...": "Mengimpor...",
   "Swipe for Brightness": "Geser untuk kecerahan",
   "Slide along the left edge": "Geser di sepanjang tepi kiri",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "Tindakan ini akan menghapus semua file cache. Tindakan ini tidak dapat dibatalkan.",
   "Confirm Clear": "Konfirmasi Pembersihan",
   "Clearing...": "Membersihkan…",
-  "Clear Cache": "Bersihkan Cache"
+  "Clear Cache": "Bersihkan Cache",
+  "No Notes": "Tidak ada catatan",
+  "Capture an idea as you read": "Tangkap ide saat Anda membaca",
+  "No Annotations": "Tidak ada anotasi",
+  "No Bookmarks": "Tidak ada penanda",
+  "Select some text to highlight": "Pilih teks untuk disorot",
+  "Bookmark This Page": "Tandai halaman ini"
 }

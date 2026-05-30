@@ -3,6 +3,8 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useOverlayScrollbars } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
 import * as CFI from 'foliate-js/epubcfi.js';
+import { PiNotePencil } from 'react-icons/pi';
+import { RiBookmark3Line, RiBookmarkLine } from 'react-icons/ri';
 
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -12,7 +14,9 @@ import { findNearestCfi } from '@/utils/cfi';
 import { TOCItem } from '@/libs/document';
 import { BookNote, BooknoteGroup, BookNoteType } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import BooknoteItem from './BooknoteItem';
+import EmptyState from '../EmptyState';
 
 type FlatBooknoteRow =
   | { kind: 'group-header'; key: string; group: BooknoteGroup }
@@ -216,12 +220,26 @@ const BooknoteView: React.FC<{
     <div ref={containerRef} className='booknote-list rounded pt-2' role='tree'>
       {isEmpty ? (
         <div
-          className='flex items-center justify-center text-gray-500'
+          className='flex items-center justify-center overflow-hidden'
           style={{ height: containerHeight }}
         >
-          <p className='font-size-sm text-center'>
-            {type === 'annotation' ? _('No annotation yet') : _('No bookmark yet')}
-          </p>
+          <EmptyState
+            Icon={type === 'annotation' ? PiNotePencil : RiBookmark3Line}
+            label={type === 'annotation' ? _('No Annotations') : _('No Bookmarks')}
+            hint={type === 'annotation' ? _('Select some text to highlight') : undefined}
+            action={
+              type === 'bookmark' ? (
+                <button
+                  type='button'
+                  className='btn btn-contrast h-9 min-h-0 max-w-full flex-nowrap gap-1.5 rounded-lg px-4 text-sm font-medium'
+                  onClick={() => eventDispatcher.dispatch('toggle-bookmark', { bookKey })}
+                >
+                  <RiBookmarkLine className='shrink-0 text-base' />
+                  <span className='min-w-0 truncate'>{_('Bookmark This Page')}</span>
+                </button>
+              ) : undefined
+            }
+          />
         </div>
       ) : (
         <div

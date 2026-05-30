@@ -1706,9 +1706,6 @@
   "Import highlights and notes exported from another reading app.": "Importă evidențieri și note exportate dintr-o altă aplicație de citire.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Fișier de export Moon+ Reader (.mrexpt)",
-  "No note yet": "Nicio notă încă",
-  "No annotation yet": "Nicio adnotare încă",
-  "No bookmark yet": "Niciun marcaj încă",
   "Importing...": "Se importă...",
   "Swipe for Brightness": "Glisează pentru luminozitate",
   "Slide along the left edge": "Glisează de-a lungul marginii stângi",
@@ -1725,5 +1722,11 @@
   "This will delete all cached files. This cannot be undone.": "Această acțiune va șterge toate fișierele din memoria cache. Acțiunea nu poate fi anulată.",
   "Confirm Clear": "Confirmă golirea",
   "Clearing...": "Se golește…",
-  "Clear Cache": "Golește memoria cache"
+  "Clear Cache": "Golește memoria cache",
+  "No Notes": "Nicio notă",
+  "Capture an idea as you read": "Notează o idee în timp ce citești",
+  "No Annotations": "Nicio adnotare",
+  "No Bookmarks": "Niciun marcaj",
+  "Select some text to highlight": "Selectează text pentru evidențiere",
+  "Bookmark This Page": "Adaugă această pagină la marcaje"
 }

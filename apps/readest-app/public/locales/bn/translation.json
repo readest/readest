@@ -1674,9 +1674,6 @@
   "Import highlights and notes exported from another reading app.": "অন্য একটি রিডিং অ্যাপ থেকে রপ্তানি করা হাইলাইট ও নোট আমদানি করুন।",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader রপ্তানি ফাইল (.mrexpt)",
-  "No note yet": "এখনও কোনো নোট নেই",
-  "No annotation yet": "এখনও কোনো টীকা নেই",
-  "No bookmark yet": "এখনও কোনো বুকমার্ক নেই",
   "Importing...": "আমদানি হচ্ছে...",
   "Swipe for Brightness": "উজ্জ্বলতার জন্য সোয়াইপ করুন",
   "Slide along the left edge": "বাম প্রান্ত বরাবর স্লাইড করুন",
@@ -1692,5 +1689,11 @@
   "This will delete all cached files. This cannot be undone.": "এটি সমস্ত ক্যাশ করা ফাইল মুছে ফেলবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Confirm Clear": "সাফ করা নিশ্চিত করুন",
   "Clearing...": "সাফ করা হচ্ছে…",
-  "Clear Cache": "ক্যাশ সাফ করুন"
+  "Clear Cache": "ক্যাশ সাফ করুন",
+  "No Notes": "কোনো নোট নেই",
+  "Capture an idea as you read": "পড়ার সময় একটি ভাবনা টুকে রাখুন",
+  "No Annotations": "কোনো টীকা নেই",
+  "No Bookmarks": "কোনো বুকমার্ক নেই",
+  "Select some text to highlight": "হাইলাইট করতে কিছু লেখা নির্বাচন করুন",
+  "Bookmark This Page": "এই পৃষ্ঠা বুকমার্ক করুন"
 }

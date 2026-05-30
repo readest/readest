@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { RiQuillPenLine } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -28,6 +29,7 @@ import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
+import EmptyState from '../EmptyState';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -248,6 +250,8 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const isNotesTabEmpty =
+    !notebookNewAnnotation && !notebookEditAnnotation && !isSearchBarVisible && !hasAnyNotes;
 
   return isNotebookVisible ? (
     <>
@@ -350,6 +354,14 @@ const Notebook: React.FC = ({}) => {
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
+        ) : isNotesTabEmpty ? (
+          <div className='flex flex-grow items-center justify-center overflow-y-auto px-3'>
+            <EmptyState
+              Icon={RiQuillPenLine}
+              label={_('No Notes')}
+              hint={_('Capture an idea as you read')}
+            />
+          </div>
         ) : (
           <div className='flex-grow overflow-y-auto px-3'>
             {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
@@ -433,14 +445,6 @@ const Notebook: React.FC = ({}) => {
                 <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
               ))}
             </ul>
-            {!notebookNewAnnotation &&
-              !notebookEditAnnotation &&
-              !isSearchBarVisible &&
-              !hasAnyNotes && (
-                <div className='flex h-32 items-center justify-center text-gray-500'>
-                  <p className='font-size-sm text-center'>{_('No note yet')}</p>
-                </div>
-              )}
           </div>
         )}
         <div

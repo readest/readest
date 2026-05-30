@@ -1642,9 +1642,6 @@
   "Import highlights and notes exported from another reading app.": "他の読書アプリからエクスポートしたハイライトとメモをインポートします。",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Moon+ Reader のエクスポートファイル (.mrexpt)",
-  "No note yet": "メモはまだありません",
-  "No annotation yet": "注釈はまだありません",
-  "No bookmark yet": "ブックマークはまだありません",
   "Importing...": "インポートしています...",
   "Swipe for Brightness": "スワイプで明るさ調整",
   "Slide along the left edge": "左端をスライド",
@@ -1659,5 +1656,11 @@
   "This will delete all cached files. This cannot be undone.": "すべてのキャッシュファイルを削除します。この操作は取り消せません。",
   "Confirm Clear": "削除を確認",
   "Clearing...": "削除中…",
-  "Clear Cache": "キャッシュを削除"
+  "Clear Cache": "キャッシュを削除",
+  "No Notes": "メモがありません",
+  "Capture an idea as you read": "読みながらアイデアを書き留めましょう",
+  "No Annotations": "注釈がありません",
+  "No Bookmarks": "ブックマークがありません",
+  "Select some text to highlight": "ハイライトするテキストを選択してください",
+  "Bookmark This Page": "このページをブックマーク"
 }

@@ -1738,9 +1738,6 @@
   "Import highlights and notes exported from another reading app.": "Uvozi označbe in opombe, izvožene iz druge bralne aplikacije.",
   "Moon+ Reader": "Moon+ Reader",
   "Moon+ Reader export file (.mrexpt)": "Izvozna datoteka Moon+ Reader (.mrexpt)",
-  "No note yet": "Še ni opombe",
-  "No annotation yet": "Še ni opombe",
-  "No bookmark yet": "Še ni zaznamka",
   "Importing...": "Uvažanje ...",
   "Swipe for Brightness": "Poteg za svetlost",
   "Slide along the left edge": "Povlecite ob levem robu",
@@ -1758,5 +1755,11 @@
   "This will delete all cached files. This cannot be undone.": "To bo izbrisalo vse predpomnjene datoteke. Tega dejanja ni mogoče razveljaviti.",
   "Confirm Clear": "Potrdi čiščenje",
   "Clearing...": "Čiščenje…",
-  "Clear Cache": "Počisti predpomnilnik"
+  "Clear Cache": "Počisti predpomnilnik",
+  "No Notes": "Ni zapiskov",
+  "Capture an idea as you read": "Zabeležite zamisel med branjem",
+  "No Annotations": "Ni opomb",
+  "No Bookmarks": "Ni zaznamkov",
+  "Select some text to highlight": "Izberite besedilo za označevanje",
+  "Bookmark This Page": "Dodaj to stran med zaznamke"
 }
