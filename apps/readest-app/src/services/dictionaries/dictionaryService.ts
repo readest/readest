@@ -114,13 +114,30 @@ function classify(source: SelectedFile): SourceFile {
 }
 
 /**
+ * True when `mddStem` is a numbered companion of the MDict bundle keyed by
+ * `bundleStem` — i.e. `bundleStem` followed by a separator (`Name-01`,
+ * `Name.1`, `Name 2`, …). A non-alphanumeric boundary is required so a
+ * different word can't match (`dict` must not claim `dictionary-words`). The
+ * exact-stem `Name.mdd` is already attached by the stem pass, so an exact
+ * match returns false here.
+ */
+function isCompanionMddStem(bundleStem: string, mddStem: string): boolean {
+  if (mddStem === bundleStem) return false;
+  if (!mddStem.startsWith(bundleStem)) return false;
+  const boundary = mddStem.charAt(bundleStem.length);
+  return boundary !== '' && !/[a-z0-9]/i.test(boundary);
+}
+
+/**
  * Group a flat list of selected files into StarDict and MDict bundles by
  * stem. Files that don't belong to any complete bundle land in `orphans`.
  *
  * Rules:
  *  - StarDict bundle = exactly one `.ifo` + one `.idx` + one `.dict` or
  *    `.dict.dz` (sharing a stem). `.syn` is optional.
- *  - MDict bundle = one `.mdx` + zero or more `.mdd` (sharing a stem).
+ *  - MDict bundle = one `.mdx` + zero or more `.mdd` whose stem starts with the
+ *    `.mdx` stem at a separator boundary (`Name.mdd`, `Name-01.mdd`,
+ *    `Name.1.mdd`); each `.mdd` attaches to the longest matching `.mdx`.
  *  - DICT (dictd) bundle = one `.index` + one `.dict` or `.dict.dz`
  *    (sharing a stem). Note: `.idx` (StarDict) and `.index` (DICT) differ
  *    only by spelling — the StarDict branch wins when both are present.
@@ -164,6 +181,26 @@ export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
     } else {
       orphans.push(...group);
     }
+  }
+
+  // Attach numbered companion MDDs. A single MDX often splits its resources
+  // across several MDD files sharing its filename prefix (e.g. images in one,
+  // scripts in another, audio in a third); the stem pass above only catches the
+  // exact-stem `Name.mdd`. Rescue the rest from `orphans`, attaching each to the
+  // MDict bundle whose stem is the longest matching prefix.
+  const mdictForMdd = bundles
+    .filter((b): b is MDictGroup => b.kind === 'mdict')
+    .sort((a, b) => b.stem.length - a.stem.length);
+  if (mdictForMdd.length > 0) {
+    const stillOrphaned: SourceFile[] = [];
+    for (const f of orphans) {
+      const target =
+        f.ext === 'mdd' ? mdictForMdd.find((b) => isCompanionMddStem(b.stem, f.stem)) : undefined;
+      if (target) target.mdd.push(f);
+      else stillOrphaned.push(f);
+    }
+    orphans.length = 0;
+    orphans.push(...stillOrphaned);
   }
 
   // Distribute all loose `.css` files across the MDict bundles in this
