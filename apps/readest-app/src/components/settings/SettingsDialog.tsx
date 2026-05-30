@@ -107,9 +107,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Language'),
     },
     {
-      tab: 'TTS',
-      icon: PiSpeakerHigh,
-      label: _('TTS'),
+      tab: 'Integrations',
+      icon: RiShareLine,
+      label: _('Integrations'),
     },
     {
       tab: 'AI',
@@ -118,9 +118,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       disabled: process.env.NODE_ENV === 'production',
     },
     {
-      tab: 'Integrations',
-      icon: RiShareLine,
-      label: _('Integrations'),
+      tab: 'TTS',
+      icon: PiSpeakerHigh,
+      label: _('TTS'),
     },
     {
       tab: 'Custom',

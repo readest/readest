@@ -289,6 +289,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
+  const lastSyncTime = Math.max(
+    settings.lastSyncedAtBooks || 0,
+    settings.lastSyncedAtConfigs || 0,
+    settings.lastSyncedAtNotes || 0,
+  );
+
   return (
     <Menu
       className={clsx(
@@ -332,9 +338,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             />
             <MenuItem
               label={
-                settings.lastSyncedAtBooks
+                lastSyncTime
                   ? _('Synced {{time}}', {
-                      time: dayjs(settings.lastSyncedAtBooks).fromNow(),
+                      time: dayjs(lastSyncTime).fromNow(),
                     })
                   : _('Never synced')
               }
