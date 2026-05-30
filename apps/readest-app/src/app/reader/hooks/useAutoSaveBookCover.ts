@@ -28,7 +28,7 @@ export const useBookCoverAutoSave = (bookKey: string) => {
               const builtinImagesPath = await appService.resolveFilePath('', 'Images');
               const useBuiltinDest = !savedCoverPath || savedCoverPath === builtinImagesPath;
 
-              const wroteFullCover = await tryWriteFullCoverFromEpub(
+              const wroteFullCover = await tryWriteFullCoverFromBook(
                 appService,
                 book,
                 lastCoverFilename,
@@ -82,12 +82,24 @@ interface RustRawCoverImage {
 }
 
 /**
- * Try to extract the full-resolution cover from an EPUB via the Rust
- * `extract_epub_cover_full` command and write it to the lock-screen target.
- * Returns true on success, false when the native path is unavailable or
- * the command failed (caller should fall back to the on-disk thumbnail).
+ * Try to extract the full-resolution cover from the original book file via
+ * the Rust native parsers and write it to the lock-screen target. Dispatches
+ * by `book.format`:
+ *
+ *   - EPUB  → `extract_epub_cover_full` (zip-extract the manifest cover-image
+ *             entry, raw bytes, no resize),
+ *   - MOBI / AZW / AZW3 → `extract_mobi_cover_full` (re-run the EXTH 201/202
+ *             cover lookup, raw image-record bytes, no resize).
+ *
+ * Other formats (PDF, FB2, CBZ, …) don't have a Rust full-cover extractor
+ * yet — we return `false` so the caller falls back to the on-disk thumbnail
+ * (which, for those formats, is the only artwork we have).
+ *
+ * Returns true on success, false when the native path is unavailable, the
+ * format isn't supported, or the command failed (caller falls back to the
+ * on-disk thumbnail).
  */
-async function tryWriteFullCoverFromEpub(
+async function tryWriteFullCoverFromBook(
   appService: ReturnType<typeof useEnv>['appService'],
   book: { format: string; hash: string; title: string; sourceTitle?: string },
   destFilename: string,
@@ -95,14 +107,15 @@ async function tryWriteFullCoverFromEpub(
 ): Promise<boolean> {
   if (!appService) return false;
   if (!isTauriAppPlatform()) return false;
-  if (book.format !== 'EPUB') return false;
+  const command = pickFullCoverCommand(book.format);
+  if (!command) return false;
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     const localPath = await appService.resolveFilePath(
       getLocalBookFilename(book as Parameters<typeof getLocalBookFilename>[0]),
       'Books',
     );
-    const raw = await invoke<RustRawCoverImage>('extract_epub_cover_full', {
+    const raw = await invoke<RustRawCoverImage>(command, {
       filePath: localPath,
     });
     const bytes = raw.bytes instanceof Uint8Array ? raw.bytes : new Uint8Array(raw.bytes);
@@ -121,5 +134,24 @@ async function tryWriteFullCoverFromEpub(
   } catch (err) {
     console.warn('[useAutoSaveBookCover] full-cover extract failed, falling back:', err);
     return false;
+  }
+}
+
+/**
+ * Map a `Book.format` to the matching Rust full-cover Tauri command, or
+ * `null` if no native extractor exists for the format. Kept as a small
+ * pure helper so the dispatch table stays in one place — adding a new
+ * format (e.g. PDF) only needs a one-line addition here.
+ */
+function pickFullCoverCommand(format: string): string | null {
+  switch (format) {
+    case 'EPUB':
+      return 'extract_epub_cover_full';
+    case 'MOBI':
+    case 'AZW3':
+    case 'AZW':
+      return 'extract_mobi_cover_full';
+    default:
+      return null;
   }
 }

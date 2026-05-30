@@ -87,6 +87,14 @@ percent-encoding = "2"
 # formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif"] }
 
+# Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
+# PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/
+# description/isbn/asin/subjects/language and the cover image, then
+# return them to JS so the importer skips the foliate-js MOBI parser
+# (which has to inflate the whole record stream up-front on the iOS
+# WebView). Pure-Rust crate, ships to every Tauri target.
+mobi = "0.8"
+
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"
 cocoa = "0.25"

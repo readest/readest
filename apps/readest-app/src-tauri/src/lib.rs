@@ -29,6 +29,8 @@ mod discord_rpc;
 mod epub_parser;
 #[cfg(target_os = "macos")]
 mod macos;
+mod mobi_parser;
+mod parser_common;
 mod transfer_file;
 #[cfg(desktop)]
 mod window_state;
@@ -272,6 +274,8 @@ pub fn run() {
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,
             epub_parser::parse_epub_full,
+            mobi_parser::parse_mobi_metadata,
+            mobi_parser::extract_mobi_cover_full,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]

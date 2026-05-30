@@ -16,34 +16,20 @@
 // only and never opened on the reader hot path.
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
-use image::{codecs::jpeg::JpegEncoder, imageops::FilterType, GenericImageView};
-use md5::{Digest, Md5};
 use percent_encoding::percent_decode;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use serde::Serialize;
 use std::borrow::Cow;
 use std::fs::File;
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 use std::path::Path;
 use zip::ZipArchive;
 
-/// Cover thumbnail target (Q2). Sized for the library grid (~250-300px @2x)
-/// and the reader-sidebar / detail-view rows (which are smaller still).
-/// Anything whose long edge is already at or below this stays untouched —
-/// no decode/re-encode, original bytes are kept verbatim. Anything larger
-/// is downscaled with [`COVER_RESIZE_FILTER`] and re-encoded as JPEG q85.
-const COVER_MAX_LONG_EDGE: u32 = 512;
-const COVER_JPEG_QUALITY: u8 = 85;
-
-/// Resampling filter used to downscale covers. We deliberately use
-/// `Triangle` (4-tap bilinear-ish) instead of `Lanczos3` (36-tap): at the
-/// 512px-thumbnail scale the visual difference is imperceptible, but
-/// Triangle is ~5-8x faster on a debug build (and ~3-5x faster on release)
-/// because it touches far fewer source pixels per output pixel. Cover
-/// thumbnails are displayed at <=300px in the UI, so any sharpening
-/// advantage Lanczos3 would have is moot.
-const COVER_RESIZE_FILTER: FilterType = FilterType::Triangle;
+// Cover constants + helpers + RawCoverImage type are shared with `mobi_parser`
+// via `parser_common`, so a single tweak (e.g. raising the thumbnail target)
+// applies to every native importer.
+use crate::parser_common::{compute_partial_md5, maybe_resize_cover, RawCoverImage};
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -164,15 +150,6 @@ fn extract_epub_cover_full_sync(file_path: &str) -> Result<RawCoverImage, String
         .map_err(|e| format!("read cover {cover_zip_path}: {e}"))?;
     let mime = guess_image_mime(&cover_zip_path).to_string();
     Ok(RawCoverImage { bytes, mime })
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RawCoverImage {
-    /// Raw image bytes (serde will encode this as a JS array; the JS side
-    /// converts it back to a Uint8Array before writing to disk).
-    pub bytes: Vec<u8>,
-    pub mime: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -454,49 +431,21 @@ fn locate_toc_sources(opf_bytes: &[u8]) -> Result<LocatedTocSources, String> {
     Ok(LocatedTocSources { nav_href, ncx_href })
 }
 
-/// Decode `bytes`, and:
-///   - if max(width, height) <= [`COVER_MAX_LONG_EDGE`], return the original
-///     bytes verbatim (no decode/re-encode round-trip — preserves quality
-///     and avoids needlessly re-compressing already-small covers, which
-///     was point 2 of the user's brief);
-///   - otherwise, resize so the long edge equals [`COVER_MAX_LONG_EDGE`]
-///     ([`COVER_RESIZE_FILTER`], aspect ratio preserved) and re-encode as
-///     JPEG at [`COVER_JPEG_QUALITY`].
-///
-/// On any decode/encode failure we fall back to the original bytes + the
-/// caller-provided MIME so a malformed (but viewable) cover still makes it
-/// to disk.
-fn maybe_resize_cover(bytes: Vec<u8>, hint_mime: &str) -> (Vec<u8>, String) {
-    // image::load_from_memory sniffs the format from the magic bytes, so it
-    // works regardless of what the manifest claims the MIME is (some EPUBs
-    // mislabel JPEGs as PNGs and vice-versa).
-    let img = match image::load_from_memory(&bytes) {
-        Ok(i) => i,
-        Err(_) => return (bytes, hint_mime.to_string()),
-    };
-    let (w, h) = img.dimensions();
-    if w.max(h) <= COVER_MAX_LONG_EDGE {
-        return (bytes, hint_mime.to_string());
-    }
-    let resized = img.resize(
-        COVER_MAX_LONG_EDGE,
-        COVER_MAX_LONG_EDGE,
-        COVER_RESIZE_FILTER,
-    );
-    let rgb = resized.to_rgb8();
-
-    let mut out = Vec::with_capacity(64 * 1024);
-    {
-        let mut encoder = JpegEncoder::new_with_quality(Cursor::new(&mut out), COVER_JPEG_QUALITY);
-        if encoder
-            .encode(rgb.as_raw(), rgb.width(), rgb.height(), image::ExtendedColorType::Rgb8)
-            .is_err()
-        {
-            return (bytes, hint_mime.to_string());
-        }
-    }
-    (out, "image/jpeg".to_string())
-}
+// `maybe_resize_cover` is now defined in `parser_common`; the description
+// below is retained here for navigation from EPUB-side call sites.
+//
+// Decode `bytes`, and:
+//   - if max(width, height) <= COVER_MAX_LONG_EDGE, return the original
+//     bytes verbatim (no decode/re-encode round-trip — preserves quality
+//     and avoids needlessly re-compressing already-small covers, which
+//     was point 2 of the user's brief);
+//   - otherwise, resize so the long edge equals COVER_MAX_LONG_EDGE
+//     (COVER_RESIZE_FILTER, aspect ratio preserved) and re-encode as
+//     JPEG at COVER_JPEG_QUALITY.
+//
+// On any decode/encode failure we fall back to the original bytes + the
+// caller-provided MIME so a malformed (but viewable) cover still makes it
+// to disk.
 
 // ---------------------------------------------------------------------------
 // partial_md5: matches utils/md5.ts::partialMD5
@@ -504,58 +453,10 @@ fn maybe_resize_cover(bytes: Vec<u8>, hint_mime: &str) -> (Vec<u8>, String) {
 //   for i in -1..=10:
 //     start = step << (2*i)  (clamped to file end - size)
 //     read 1024 bytes; feed into md5 incrementally
+//
+// (`compute_partial_md5` is now defined in `parser_common`; the comment
+// block above is retained here for navigation from EPUB-side call sites.)
 // ---------------------------------------------------------------------------
-fn compute_partial_md5(path: &Path) -> std::io::Result<String> {
-    // Mirrors the JS reference (utils/md5.ts::partialMD5):
-    //   step = 1024, size = 1024
-    //   for i in -1..=10:
-    //     start = min(file.size, step << (2*i))   // JS 32-bit shift
-    //     end   = min(start + size, file.size)
-    //     if start >= file.size: break
-    //     hash file[start..end]
-    //
-    // JS bit-shift operands are (n & 31), so 1024 << -2 actually means
-    // 1024 << 30, which is far larger than any reasonable file. That makes
-    // the very first iteration (i = -1) immediately break for files smaller
-    // than ~1 GiB, leaving the hasher empty -> md5 of "" = d41d8cd9...
-    // We must reproduce that behaviour bit-for-bit so existing on-disk
-    // hashes (Books/<hash>/...) keep matching.
-    const STEP: u32 = 1024;
-    const CHUNK: u64 = 1024;
-
-    let mut file = File::open(path)?;
-    let file_len = file.metadata()?.len();
-
-    let mut hasher = Md5::new();
-    let mut buf = vec![0u8; CHUNK as usize];
-
-    for i in -1i32..=10 {
-        // JS evaluates `step << (2*i)` as a 32-bit shift, where the operand is
-        // implicitly masked to its low 5 bits. So `1024 << -2` is the same as
-        // `1024 << 30`, which overflows i32 to 0 (the high bits are dropped).
-        // For i = 0..=4 the shift is 0..=8 and stays within i32; for i >= 5
-        // the result overflows to 0 again. We mirror that with wrapping_shl.
-        let shift_amount = ((2 * i) as u32) & 31;
-        let shifted = (STEP as i32).wrapping_shl(shift_amount);
-        // Negative i32 results coerce to 0 here. JS's Math.min would surface
-        // the negative value, but the subsequent `start >= file.size` check
-        // would skip the read; clamping to 0 gives the same observable
-        // hash for non-empty files while avoiding negative seek offsets.
-        let raw = shifted.max(0) as u64;
-        let start = std::cmp::min(file_len, raw);
-        if start >= file_len {
-            break;
-        }
-        let end = std::cmp::min(start + CHUNK, file_len);
-        let to_read = (end - start) as usize;
-        file.seek(SeekFrom::Start(start))?;
-        let slice = &mut buf[..to_read];
-        file.read_exact(slice)?;
-        hasher.update(&slice[..]);
-    }
-
-    Ok(format!("{:x}", hasher.finalize()))
-}
 
 fn read_zip_entry<R: Read + Seek>(zip: &mut ZipArchive<R>, path: &str) -> Result<Vec<u8>, String> {
     // Two-pass lookup, mirroring what epub-rs does (archive.rs) and what
@@ -1182,7 +1083,15 @@ struct OpenNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Pulled in here (rather than at module scope) because the production
+    // code now consumes the cover-resize / partial-md5 helpers through
+    // `parser_common`; the tests still need `image::*`, `Cursor`, `Md5`
+    // and friends to synthesise fixtures and cross-check the hash.
+    use crate::parser_common::COVER_MAX_LONG_EDGE;
+    use image::GenericImageView;
+    use md5::{Digest, Md5};
     use std::collections::HashMap;
+    use std::io::Cursor;
 
     #[test]
     fn parses_minimal_opf() {
