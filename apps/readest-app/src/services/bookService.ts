@@ -26,6 +26,7 @@ import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
+import { tryNativeParseEpub } from '@/utils/tauriEpubBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
@@ -251,6 +252,10 @@ export async function importBook(
     let format: BookFormat;
     let filename: string;
     let fileobj: File | undefined;
+    // When the Rust EPUB parser succeeds it gives us the partialMD5 for free,
+    // so we can short-circuit the JS hashing pass below.
+    let nativeHash: string | undefined;
+    let usedNativeParser = false;
 
     if (transient && typeof file !== 'string') {
       throw new Error('Transient import is only supported for file paths');
@@ -276,7 +281,22 @@ export async function importBook(
         if (!fileobj || fileobj.size === 0) {
           throw new Error('Invalid or empty book file');
         }
-        ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
+        // Q1 fast path: when running under Tauri with a real file path,
+        // ask Rust to read the OPF + cover + partialMD5 in one shot.
+        // This skips the foliate-js full-archive parse on the import hot
+        // path while leaving the reader runtime path untouched.
+        let nativeParsed: Awaited<ReturnType<typeof tryNativeParseEpub>> = null;
+        if (typeof file === 'string' && !/\.txt$/i.test(filename)) {
+          nativeParsed = await tryNativeParseEpub(file);
+        }
+        if (nativeParsed) {
+          loadedBook = nativeParsed.bookDoc;
+          format = 'EPUB' as BookFormat;
+          nativeHash = nativeParsed.partialMd5;
+          usedNativeParser = true;
+        } else {
+          ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
+        }
       }
       if (!loadedBook) {
         throw new Error('Unsupported or corrupted book file');
@@ -290,7 +310,11 @@ export async function importBook(
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
 
-    const hash = isPseStream ? md5(file as string) : await partialMD5(fileobj!);
+    const hash = isPseStream
+      ? md5(file as string)
+      : usedNativeParser
+        ? nativeHash!
+        : await partialMD5(fileobj!);
 
     const metaHash = getMetadataHash(loadedBook.metadata);
     let existingBook = lookupIndex
@@ -415,7 +439,8 @@ export async function importBook(
         } catch {}
       }
       if (cover) {
-        await fs.writeFile(getCoverFilename(book), 'Books', await cover.arrayBuffer());
+        const coverBytes = await cover.arrayBuffer();
+        await fs.writeFile(getCoverFilename(book), 'Books', coverBytes);
       }
     }
     // Never overwrite the config file only when it's not existed
