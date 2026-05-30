@@ -739,4 +739,48 @@ describe('epubcfi cfi-inert element filtering', () => {
       }
     });
   });
+
+  // A section whose <body> has no CFI-visible content — e.g. a full-page
+  // background-image section — ends up holding only the injected, cfi-inert
+  // accessibility skip-links (prepended by a11y.ts, so no whitespace text
+  // nodes between them). The paginator's visible-range walker can anchor the
+  // relocate range on such an inert node; `getChildNodes(body)` is then empty,
+  // which used to crash `fromRange` with "Cannot destructure property
+  // 'nodeType' of 'param' as it is undefined".
+  describe('range anchored on an inert-only body (background-image section)', () => {
+    const inertOnlyBody = () => {
+      const doc = XHTML(
+        `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>t</title></head><body id="body01"></body></html>`,
+      );
+      const body = doc.getElementById('body01')!;
+      // mirror a11y.ts: prepend cfi-inert skip-links into an otherwise empty body
+      for (const id of ['skip-next', 'skip-link']) {
+        const el = doc.createElement('div');
+        el.setAttribute('cfi-inert', '');
+        el.setAttribute('id', id);
+        body.prepend(el);
+      }
+      return doc;
+    };
+
+    it('does not throw for a collapsed range on the sole inert element', () => {
+      const doc = inertOnlyBody();
+      const inert = doc.getElementById('skip-link')!;
+      const range = doc.createRange();
+      range.setStart(inert, 0);
+      range.setEnd(inert, 0);
+      expect(() => CFI.fromRange(range)).not.toThrow();
+      expect(typeof CFI.fromRange(range)).toBe('string');
+    });
+
+    it('does not throw for a range spanning two inert siblings', () => {
+      const doc = inertOnlyBody();
+      const first = doc.getElementById('skip-link')!;
+      const last = doc.getElementById('skip-next')!;
+      const range = doc.createRange();
+      range.setStart(first, 0);
+      range.setEnd(last, 0);
+      expect(() => CFI.fromRange(range)).not.toThrow();
+    });
+  });
 });
