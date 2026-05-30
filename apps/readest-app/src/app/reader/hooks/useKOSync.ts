@@ -217,11 +217,6 @@ export const useKOSync = (bookKey: string) => {
     }
 
     if (showConflictDetails) {
-      console.log('Progress conflict detected', {
-        local: { percentage: localPercentage, preview: localPreview },
-        remote: { percentage: remoteComparePercentage, preview: remotePreview },
-        diff: Math.abs(localPercentage - remoteComparePercentage),
-      });
       setConflictDetails({
         book,
         bookDoc,
@@ -229,6 +224,7 @@ export const useKOSync = (bookKey: string) => {
         remote: { ...remote, preview: remotePreview },
       });
     }
+    return showConflictDetails;
   };
 
   const pushProgress = useMemo(
@@ -242,6 +238,7 @@ export const useKOSync = (bookKey: string) => {
         const progress = await generateKOProgress();
         if (!currentBook || !progress || !progress.koProgress) return;
 
+        console.log('[KOSync] Pushing progress');
         await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
       }, 5000),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -272,6 +269,7 @@ export const useKOSync = (bookKey: string) => {
         setSyncState('synced');
         return;
       }
+      console.log('[KOSync] Pulled remote progress', { bookKey, remoteProgress });
 
       const localTimestamp = bookData?.config?.updatedAt || book.updatedAt;
       const remoteTimestamp = remoteProgress.timestamp
@@ -282,8 +280,10 @@ export const useKOSync = (bookKey: string) => {
         applyRemoteProgress(book, bookDoc, remoteProgress);
         setSyncState('synced');
       } else if (strategy === 'prompt') {
-        promptedSync(book, bookDoc, progress, remoteProgress);
-        setSyncState('conflict');
+        // Only stay in the conflict state when there's an actual conflict to
+        // resolve; otherwise return to 'synced' so auto-push keeps working.
+        const hasConflict = await promptedSync(book, bookDoc, progress, remoteProgress);
+        setSyncState(hasConflict ? 'conflict' : 'synced');
       } else {
         setSyncState('synced');
       }
