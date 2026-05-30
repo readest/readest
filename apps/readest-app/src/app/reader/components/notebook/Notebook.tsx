@@ -17,6 +17,7 @@ import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
+import { getPanelTopInset } from '@/utils/insets';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
@@ -273,11 +274,13 @@ const Notebook: React.FC = ({}) => {
           width: isMobile ? '100%' : `${notebookWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
-          paddingTop: isFullHeightInMobile
-            ? systemUIVisible
-              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-              : `${safeAreaInsets?.top || 0}px`
-            : '0px',
+          paddingTop: `${getPanelTopInset({
+            isMobile,
+            isFullHeightInMobile,
+            systemUIVisible,
+            statusBarHeight,
+            safeAreaInsets,
+          })}px`,
         }}
       >
         <style jsx>{`
