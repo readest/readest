@@ -5,6 +5,9 @@ import { TranslationFunc } from '@/hooks/useTranslation';
 export const getProgressPercentage = (pageInfo?: PageInfo): number =>
   pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0;
 
+/** Formats a 0–1 progress fraction as a percentage string with 2 decimals. */
+export const formatProgressPercentage = (fraction: number): string => (fraction * 100).toFixed(2);
+
 /**
  * Human-readable summary of the local reading position shown in the KOReader
  * sync-conflict dialog.
@@ -20,7 +23,7 @@ export const getLocalProgressPreview = (
   _: TranslationFunc,
 ): string => {
   const pageInfo = isFixedLayout ? local.section : local.pageinfo;
-  const percentage = Math.round(getProgressPercentage(pageInfo) * 100);
+  const percentage = formatProgressPercentage(getProgressPercentage(pageInfo));
   const sectionLabel = local.sectionLabel?.trim();
 
   if (!isFixedLayout && sectionLabel) {

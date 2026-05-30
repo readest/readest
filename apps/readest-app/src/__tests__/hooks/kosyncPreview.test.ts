@@ -40,7 +40,7 @@ describe('getLocalProgressPreview', () => {
       sectionLabel: 'Chapter 3',
       pageinfo: { current: 49, total: 100 },
     });
-    expect(getLocalProgressPreview(progress, false, t)).toBe('Chapter 3 (50%)');
+    expect(getLocalProgressPreview(progress, false, t)).toBe('Chapter 3 (50.00%)');
   });
 
   it('falls back to page info when the section label is undefined', () => {
@@ -50,7 +50,7 @@ describe('getLocalProgressPreview', () => {
     });
     const result = getLocalProgressPreview(progress, false, t);
     expect(result).not.toContain('undefined');
-    expect(result).toBe('Page 1 of 100 (1%)');
+    expect(result).toBe('Page 1 of 100 (1.00%)');
   });
 
   it('falls back to page info when the section label is blank', () => {
@@ -60,7 +60,7 @@ describe('getLocalProgressPreview', () => {
     });
     const result = getLocalProgressPreview(progress, false, t);
     expect(result).not.toContain('undefined');
-    expect(result).toBe('Page 10 of 50 (20%)');
+    expect(result).toBe('Page 10 of 50 (20.00%)');
   });
 
   it('uses page info for fixed-layout books regardless of section label', () => {
@@ -68,6 +68,6 @@ describe('getLocalProgressPreview', () => {
       sectionLabel: 'ignored',
       section: { current: 4, total: 20 },
     });
-    expect(getLocalProgressPreview(progress, true, t)).toBe('Page 5 of 20 (25%)');
+    expect(getLocalProgressPreview(progress, true, t)).toBe('Page 5 of 20 (25.00%)');
   });
 });
