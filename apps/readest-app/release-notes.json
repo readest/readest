@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.11.2": {
+      "date": "2026-05-31",
+      "notes": [
+        "Send to Readest: Clip web pages and articles into your library via the system share sheet, or by emailing them in",
+        "Dictionary: Look up words with your device's built-in system dictionary on macOS, iOS, and Android, plus faster MDict and StarDict imports",
+        "Library: Import books from a folder with format and size filters, or read them in place from external folders without copying",
+        "Reading: The reading ruler now follows individual lines, you can swipe along the edge to adjust brightness on mobile, and customize hardware-button page turning",
+        "Annotations: Create global highlights that apply to every matching passage in a book",
+        "Text-to-Speech: Added a hotkey to highlight the sentence being read aloud, and made TTS more reliable",
+        "Fonts: Fixed custom fonts disappearing after restarting or reloading the app",
+        "iOS: Fixed the reader not updating when you switch between light and dark mode",
+        "Android: Fixed an issue where highlighting text could trigger unintended page turns",
+        "Fixes: Many improvements across PDFs, EPUBs, Sync, Scrolling, Highlighting"
+      ]
+    },
     "0.11.1": {
       "date": "2026-05-11",
       "notes": [
