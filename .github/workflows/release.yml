@@ -101,10 +101,10 @@ jobs:
           perl -i -pe "s/^}/    version = \"${version}\",\n}/" "${meta_file}"
 
           # Exclude dev-only artifacts from the published plugin zip:
-          #   scripts/  â€” i18n + build helpers
-          #   docs/     â€” design notes
-          #   spec/     â€” busted test suite
-          #   .busted   â€” busted runner config
+          #   scripts/  ¡ª i18n + build helpers
+          #   docs/     ¡ª design notes
+          #   spec/     ¡ª busted test suite
+          #   .busted   ¡ª busted runner config
           # Mirror these in apps/readest.koplugin/scripts/build-koplugin.mjs
           # for local builds.
           cd apps
@@ -242,10 +242,7 @@ jobs:
           git checkout .
 
           pushd src-tauri/gen/android
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
-          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
-          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
-          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+          
 
           popd
           version=${{ needs.get-release.outputs.release_version }}
@@ -262,8 +259,6 @@ jobs:
           echo "Uploading $arm64_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk --clobber
           echo "Uploading signatures to GitHub release"
-          pnpm tauri signer sign $universial_apk
-          pnpm tauri signer sign $arm64_apk
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
 
@@ -273,11 +268,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd apps/readest-app/
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+          curl -sL https://github.com/borwide/fork_readest/releases/latest/download/latest.json -o latest.json
 
           version=${{ needs.get-release.outputs.release_version }}
-          universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
-          arm64_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_arm64.apk"
+          universial_apk_url="https://github.com/borwide/fork_readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
+          arm64_apk_url="https://github.com/borwide/fork_readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_arm64.apk"
 
           universial_sig=$(cat Readest_${version}_universal.apk.sig)
           arm64_sig=$(cat Readest_${version}_arm64.apk.sig)
@@ -366,51 +361,4 @@ jobs:
           echo "Uploading $bin_file to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file --clobber
 
-          echo "Signing portable binary"
-          pushd apps/readest-app/
-          pnpm tauri signer sign "../../$bin_file"
-          popd
-          echo "Uploading signature to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
 
-      - name: download and update latest.json for Windows portable release
-        if: matrix.config.os == 'windows-latest'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
-
-          version=${{ needs.get-release.outputs.release_version }}
-          arch=${{ matrix.config.arch }}
-
-          if [ "$arch" = "x86_64" ]; then
-            bin_file="Readest_${version}_x64-portable.exe"
-            platform_key="windows-x86_64-portable"
-          elif [ "$arch" = "aarch64" ]; then
-            bin_file="Readest_${version}_arm64-portable.exe"
-            platform_key="windows-aarch64-portable"
-          else
-            echo "Unknown architecture: $arch"
-            exit 1
-          fi
-
-          portable_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/$bin_file"
-          portable_sig=$(cat $bin_file.sig)
-
-          jq --arg url "$portable_url" \
-              --arg sig "$portable_sig" \
-              --arg key "$platform_key" \
-              '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
-
-          echo "Uploading updated latest.json to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
-
-  upload-to-r2:
-    needs: [get-release, build-tauri]
-    permissions:
-      contents: read
-    uses: ./.github/workflows/upload-to-r2.yml
-    with:
-      tag: ${{ needs.get-release.outputs.release_tag }}
-    secrets: inherit
