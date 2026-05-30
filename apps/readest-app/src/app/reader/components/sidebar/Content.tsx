@@ -109,9 +109,11 @@ const SidebarContent: React.FC<{
       </div>
       <div
         className='flex-shrink-0'
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) / 2)',
-        }}
+        style={
+          {
+            // paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) / 2)',
+          }
+        }
       >
         <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>

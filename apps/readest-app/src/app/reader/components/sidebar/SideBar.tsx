@@ -8,6 +8,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
+import { getPanelTopInset } from '@/utils/insets';
 import { useEnv } from '@/context/EnvContext';
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import { usePanelResize } from '@/hooks/usePanelResize';
@@ -197,11 +198,13 @@ const SideBar = ({}) => {
           width: isMobile ? '100%' : `${sideBarWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_SIDEBAR_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isSideBarPinned ? 'relative' : 'absolute',
-          paddingTop: isFullHeightInMobile
-            ? systemUIVisible
-              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-              : `${safeAreaInsets?.top || 0}px`
-            : '0px',
+          paddingTop: `${getPanelTopInset({
+            isMobile,
+            isFullHeightInMobile,
+            systemUIVisible,
+            statusBarHeight,
+            safeAreaInsets,
+          })}px`,
         }}
       >
         <style jsx>{`

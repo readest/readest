@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { RiTranslateAi } from 'react-icons/ri';
+import { RiTranslate } from 'react-icons/ri';
 
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { saveViewSettings } from '@/helpers/settings';
 import { isTranslationAvailable } from '@/services/translators/utils';
 import Button from '@/components/Button';
@@ -15,6 +16,7 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   const { getBookData } = useBookDataStore();
   const { getViewSettings, setViewSettings, setHoveredBookKey } = useReaderStore();
 
+  const iconSize20 = useResponsiveSize(20);
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled!);
@@ -43,7 +45,10 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   return (
     <Button
       icon={
-        <RiTranslateAi className={translationEnabled ? 'text-blue-500' : 'text-base-content'} />
+        <RiTranslate
+          className={translationEnabled ? 'text-blue-500' : 'text-base-content'}
+          size={iconSize20}
+        />
       }
       aria-label={_('Toggle Translation')}
       disabled={!translationAvailable && !translationEnabled}

@@ -1,5 +1,11 @@
 import { BookMetadata, EXTS } from '@/libs/document';
-import { Book, BookConfig, BookProgress, WritingMode } from '@/types/book';
+import {
+  Book,
+  BOOK_CONFIG_SCHEMA_VERSION,
+  BookConfig,
+  BookProgress,
+  WritingMode,
+} from '@/types/book';
 import { SUPPORTED_LANGS } from '@/services/constants';
 import { getLocale, getUserLang, makeSafeFilename } from './misc';
 import { getStorageType } from './storage';
@@ -43,6 +49,7 @@ export const isBookFile = (filename: string) => {
 };
 
 export const INIT_BOOK_CONFIG: BookConfig = {
+  schemaVersion: BOOK_CONFIG_SCHEMA_VERSION,
   updatedAt: 0,
 };
 
@@ -62,6 +69,7 @@ export interface Contributor {
 export interface Collection {
   name: string;
   position?: string;
+  total?: string;
 }
 
 const formatLanguageMap = (x: string | LanguageMap, defaultLang = false): string => {
@@ -105,7 +113,7 @@ export const flattenContributors = (
       : formatLanguageMap(contributors?.name);
 };
 
-// prettier-ignore
+// biome-ignore format: keep the language codes compact on a single line
 const LASTNAME_AUTHOR_SORT_LANGS = [ 'ar', 'bo', 'de', 'en', 'es', 'fr', 'hi', 'it', 'nl', 'pl', 'pt', 'ru', 'th', 'tr', 'uk' ];
 
 const formatAuthorName = (name: string, lastNameFirst: boolean) => {

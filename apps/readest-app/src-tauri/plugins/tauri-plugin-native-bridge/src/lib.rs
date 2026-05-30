@@ -76,9 +76,14 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::set_screen_brightness,
             commands::get_external_sdcard_path,
             commands::open_external_url,
+            commands::show_lookup_popover,
             commands::select_directory,
             commands::get_storefront_region_code,
             commands::request_manage_storage_permission,
+            commands::set_sync_passphrase,
+            commands::get_sync_passphrase,
+            commands::clear_sync_passphrase,
+            commands::is_sync_keychain_available,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

@@ -1,9 +1,10 @@
 import { Book } from '@/types/book';
-import { AppService } from '@/types/system';
-import { useTransferStore, TransferItem } from '@/store/transferStore';
+import { AppService, BaseDir } from '@/types/system';
+import { useTransferStore, TransferItem, ReplicaTransferFile } from '@/store/transferStore';
 import { TranslationFunc } from '@/hooks/useTranslation';
-import { ProgressPayload } from '@/utils/transfer';
+import { ProgressHandler, ProgressPayload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
+import { getTransferMessages } from './transferMessages';
 
 const TRANSFER_QUEUE_KEY = 'readest_transfer_queue';
 const RETRY_DELAY_BASE_MS = 2000;
@@ -22,6 +23,10 @@ class TransferManager {
   private getLibrary: (() => Book[]) | null = null;
   private updateBook: ((book: Book) => Promise<void>) | null = null;
   private _: TranslationFunc | null = null;
+  private readyResolve: () => void = () => {};
+  private readyPromise: Promise<void> = new Promise<void>((resolve) => {
+    this.readyResolve = resolve;
+  });
 
   private constructor() {}
 
@@ -46,6 +51,7 @@ class TransferManager {
     this._ = translationFn;
     await this.loadPersistedQueue();
     this.isInitialized = true;
+    this.readyResolve();
 
     // Start processing queue
     this.processQueue();
@@ -53,6 +59,16 @@ class TransferManager {
 
   isReady(): boolean {
     return this.isInitialized && this.appService !== null;
+  }
+
+  /**
+   * Resolves once `initialize()` has completed. Lets callers that need
+   * to enqueue transfers (e.g., the boot-time replica pull) defer until
+   * the manager is wired up — the manager only inits after the library
+   * is loaded, which can lag well behind app boot.
+   */
+  waitUntilReady(): Promise<void> {
+    return this.readyPromise;
   }
 
   queueUpload(book: Book, priority: number = 10): string | null {
@@ -117,6 +133,86 @@ class TransferManager {
     return books
       .map((book) => this.queueUpload(book, priority))
       .filter((id): id is string => id !== null);
+  }
+
+  queueReplicaUpload(
+    replicaKind: string,
+    replicaId: string,
+    displayTitle: string,
+    files: ReplicaTransferFile[],
+    base: BaseDir,
+    opts: { priority?: number; isBackground?: boolean; reincarnation?: string } = {},
+  ): string | null {
+    if (!this.isReady()) {
+      console.warn('TransferManager not initialized');
+      return null;
+    }
+    const store = useTransferStore.getState();
+    const existing = store.getReplicaTransfer(replicaKind, replicaId, 'upload');
+    if (existing) return existing.id;
+
+    const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'upload', {
+      priority: opts.priority,
+      isBackground: opts.isBackground,
+      files,
+      base,
+      reincarnation: opts.reincarnation,
+    });
+    this.persistQueue();
+    this.processQueue();
+    return id;
+  }
+
+  queueReplicaDownload(
+    replicaKind: string,
+    replicaId: string,
+    displayTitle: string,
+    files: ReplicaTransferFile[],
+    base: BaseDir,
+    opts: { priority?: number; isBackground?: boolean } = {},
+  ): string | null {
+    if (!this.isReady()) {
+      console.warn('TransferManager not initialized');
+      return null;
+    }
+    const store = useTransferStore.getState();
+    const existing = store.getReplicaTransfer(replicaKind, replicaId, 'download');
+    if (existing) return existing.id;
+
+    const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'download', {
+      priority: opts.priority,
+      isBackground: opts.isBackground,
+      files,
+      base,
+    });
+    this.persistQueue();
+    this.processQueue();
+    return id;
+  }
+
+  queueReplicaDelete(
+    replicaKind: string,
+    replicaId: string,
+    displayTitle: string,
+    filenames: string[],
+    opts: { priority?: number; isBackground?: boolean } = {},
+  ): string | null {
+    if (!this.isReady()) {
+      console.warn('TransferManager not initialized');
+      return null;
+    }
+    const store = useTransferStore.getState();
+    const existing = store.getReplicaTransfer(replicaKind, replicaId, 'delete');
+    if (existing) return existing.id;
+
+    const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'delete', {
+      priority: opts.priority,
+      isBackground: opts.isBackground,
+      files: filenames.map((logical) => ({ logical, lfp: '', byteSize: 0 })),
+    });
+    this.persistQueue();
+    this.processQueue();
+    return id;
   }
 
   cancelTransfer(transferId: string): void {
@@ -230,39 +326,21 @@ class TransferManager {
     };
 
     try {
-      const library = this.getLibrary();
-      const book = library.find((b) => b.hash === transfer.bookHash);
-
-      if (!book) {
-        throw new Error(_('Book not found in library'));
-      }
-
-      if (transfer.type === 'upload') {
-        await this.appService.uploadBook(book, progressHandler);
-        book.uploadedAt = Date.now();
-        await this.updateBook(book);
-      } else if (transfer.type === 'download') {
-        await this.appService.downloadBook(book, false, false, progressHandler);
-        book.downloadedAt = Date.now();
-        await this.updateBook(book);
-      } else if (transfer.type === 'delete') {
-        await this.appService.deleteBook(book, 'cloud');
-        await this.updateBook(book);
+      if (transfer.kind === 'replica') {
+        await this.executeReplicaTransfer(transfer, progressHandler, abortController);
+      } else {
+        await this.executeBookTransfer(transfer, progressHandler, abortController);
       }
 
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
 
-      const successMessages = {
-        upload: _('Book uploaded: {{title}}', { title: transfer.bookTitle }),
-        download: _('Book downloaded: {{title}}', { title: transfer.bookTitle }),
-        delete: _('Deleted cloud backup of the book: {{title}}', { title: transfer.bookTitle }),
-      };
+      const messages = getTransferMessages(transfer, _);
 
       if (!transfer.isBackground) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 2000,
-          message: successMessages[transfer.type],
+          message: messages.success[transfer.type],
         });
       }
     } catch (error) {
@@ -300,13 +378,7 @@ class TransferManager {
             message: _('Insufficient storage quota'),
           });
         } else {
-          const errorMessages = {
-            upload: _('Failed to upload book: {{title}}', { title: transfer.bookTitle }),
-            download: _('Failed to download book: {{title}}', { title: transfer.bookTitle }),
-            delete: _('Failed to delete cloud backup of the book: {{title}}', {
-              title: transfer.bookTitle,
-            }),
-          };
+          const errorMessages = getTransferMessages(transfer, _).failure;
 
           eventDispatcher.dispatch('toast', {
             type: 'error',
@@ -325,6 +397,121 @@ class TransferManager {
 
       // Continue processing
       setTimeout(() => this.processQueue(), 100);
+    }
+  }
+
+  private async executeBookTransfer(
+    transfer: TransferItem,
+    progressHandler: (p: ProgressPayload) => void,
+    _abortController: AbortController,
+  ): Promise<void> {
+    const _ = this._!;
+    const library = this.getLibrary!();
+    const book = library.find((b) => b.hash === transfer.bookHash);
+
+    if (!book) {
+      throw new Error(_('Book not found in library'));
+    }
+
+    if (transfer.type === 'upload') {
+      await this.appService!.uploadBook(book, progressHandler);
+      book.uploadedAt = Date.now();
+      await this.updateBook!(book);
+    } else if (transfer.type === 'download') {
+      await this.appService!.downloadBook(book, false, false, progressHandler);
+      book.downloadedAt = Date.now();
+      await this.updateBook!(book);
+    } else if (transfer.type === 'delete') {
+      await this.appService!.deleteBook(book, 'cloud');
+      await this.updateBook!(book);
+    }
+  }
+
+  private async executeReplicaTransfer(
+    transfer: TransferItem,
+    progressHandler: (p: ProgressPayload) => void,
+    _abortController: AbortController,
+  ): Promise<void> {
+    const kind = transfer.replicaKind!;
+    const replicaId = transfer.replicaId!;
+    const files = transfer.replicaFiles ?? [];
+
+    if (transfer.type === 'delete') {
+      await this.appService!.deleteReplicaBundle(
+        kind,
+        replicaId,
+        files.map((f) => f.logical),
+      );
+      eventDispatcher.dispatch('replica-transfer-complete', {
+        kind,
+        replicaId,
+        type: 'delete',
+        filenames: files.map((f) => f.logical),
+      });
+      return;
+    }
+
+    if (files.length === 0) {
+      throw new Error(`replica ${transfer.type} requires replicaFiles on the transfer`);
+    }
+
+    const totalBytes = files.reduce((sum, f) => sum + f.byteSize, 0) || 1;
+    let bytesAlreadyDone = 0;
+    const fileProgressHandler =
+      (filenameSize: number): ProgressHandler =>
+      (p: ProgressPayload) => {
+        const fileFraction = p.total > 0 ? p.progress / p.total : 0;
+        const overallTransferred = bytesAlreadyDone + filenameSize * fileFraction;
+        progressHandler({
+          progress: overallTransferred,
+          total: totalBytes,
+          transferSpeed: p.transferSpeed,
+        });
+      };
+
+    if (transfer.type === 'upload') {
+      const base = transfer.replicaBase!;
+      for (const file of files) {
+        await this.appService!.uploadReplicaFile(
+          kind,
+          replicaId,
+          file.logical,
+          file.lfp,
+          base,
+          fileProgressHandler(file.byteSize),
+        );
+        bytesAlreadyDone += file.byteSize;
+      }
+      eventDispatcher.dispatch('replica-transfer-complete', {
+        kind,
+        replicaId,
+        reincarnation: transfer.replicaReincarnation,
+        type: 'upload',
+        files,
+      });
+      return;
+    }
+
+    if (transfer.type === 'download') {
+      const base = transfer.replicaBase!;
+      for (const file of files) {
+        await this.appService!.downloadReplicaFile(
+          kind,
+          replicaId,
+          file.logical,
+          file.lfp,
+          base,
+          fileProgressHandler(file.byteSize),
+        );
+        bytesAlreadyDone += file.byteSize;
+      }
+      eventDispatcher.dispatch('replica-transfer-complete', {
+        kind,
+        replicaId,
+        type: 'download',
+        files,
+      });
+      return;
     }
   }
 

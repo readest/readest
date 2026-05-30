@@ -6,6 +6,12 @@ export type AnnotationDeepLink = {
   cfi?: string;
 };
 
+/**
+ * Which form of annotation link markdown export embeds: the custom-scheme
+ * `readest://` app deeplink or the universal `https://` web link.
+ */
+export type AnnotationLinkType = 'app' | 'web';
+
 const ANNOTATION_PATH_PREFIX = '/o/book/';
 
 /**
@@ -27,6 +33,15 @@ export const buildAnnotationAppUrl = ({ bookHash, noteId, cfi }: AnnotationDeepL
   const base = `readest://book/${bookHash}/annotation/${noteId}`;
   return cfi ? `${base}?cfi=${encodeURIComponent(cfi)}` : base;
 };
+
+/**
+ * Build the annotation link for the requested {@link AnnotationLinkType}.
+ * `app` yields the custom-scheme deeplink; `web` yields the universal HTTPS form.
+ */
+export const buildAnnotationUrl = (
+  link: AnnotationDeepLink,
+  linkType: AnnotationLinkType,
+): string => (linkType === 'app' ? buildAnnotationAppUrl(link) : buildAnnotationWebUrl(link));
 
 /**
  * Parse an incoming readest:// or https://web.readest.com annotation URL.

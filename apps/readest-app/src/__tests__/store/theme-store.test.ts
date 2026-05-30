@@ -25,11 +25,13 @@ vi.mock('@/services/environment', () => ({
   isWebAppPlatform: vi.fn(() => false),
 }));
 
-import { useThemeStore, loadDataTheme } from '@/store/themeStore';
+import { useThemeStore, loadDataTheme, initSystemThemeListener } from '@/store/themeStore';
+import type { AppService } from '@/types/system';
 
 describe('themeStore', () => {
   beforeEach(() => {
     localStorage.clear();
+    delete window.onNativeColorSchemeChange;
     // Reset store to initial state
     useThemeStore.setState({
       themeMode: 'auto',
@@ -254,6 +256,36 @@ describe('themeStore', () => {
       document.documentElement.removeAttribute('data-theme');
       loadDataTheme();
       expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+  });
+
+  describe('initSystemThemeListener', () => {
+    const makeAppService = (overrides: Partial<AppService> = {}) =>
+      ({ isIOSApp: false, hasWindow: false, isLinuxApp: false, ...overrides }) as AppService;
+
+    test('registers window.onNativeColorSchemeChange on iOS', () => {
+      initSystemThemeListener(makeAppService({ isIOSApp: true }));
+      expect(typeof window.onNativeColorSchemeChange).toBe('function');
+    });
+
+    test('does not register the native callback on non-iOS platforms', () => {
+      initSystemThemeListener(makeAppService({ isIOSApp: false }));
+      expect(window.onNativeColorSchemeChange).toBeUndefined();
+    });
+
+    test('native color scheme change updates the theme store in auto mode', () => {
+      useThemeStore.setState({ themeMode: 'auto', systemIsDarkMode: false, isDarkMode: false });
+      initSystemThemeListener(makeAppService({ isIOSApp: true }));
+
+      window.onNativeColorSchemeChange!('dark');
+      expect(useThemeStore.getState().systemIsDarkMode).toBe(true);
+      expect(useThemeStore.getState().isDarkMode).toBe(true);
+      expect(localStorage.getItem('systemIsDarkMode')).toBe('true');
+
+      window.onNativeColorSchemeChange!('light');
+      expect(useThemeStore.getState().systemIsDarkMode).toBe(false);
+      expect(useThemeStore.getState().isDarkMode).toBe(false);
+      expect(localStorage.getItem('systemIsDarkMode')).toBe('false');
     });
   });
 

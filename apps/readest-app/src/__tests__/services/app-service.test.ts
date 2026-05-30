@@ -196,8 +196,8 @@ describe('BaseAppService', () => {
     });
 
     test('copyFile delegates to fs', async () => {
-      await service.copyFile('src.epub', 'dst.epub', 'Books');
-      expect(mockFs.copyFile).toHaveBeenCalledWith('src.epub', 'dst.epub', 'Books');
+      await service.copyFile('src.epub', 'None', 'dst.epub', 'Books');
+      expect(mockFs.copyFile).toHaveBeenCalledWith('src.epub', 'None', 'dst.epub', 'Books');
     });
 
     test('readFile delegates to fs', async () => {

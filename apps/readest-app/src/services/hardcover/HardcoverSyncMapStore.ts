@@ -10,7 +10,22 @@ type HardcoverSyncMapRow = {
 
 const DB_SCHEMA = 'hardcover-sync';
 const DB_PATH = 'hardcover-sync.db';
-const STORAGE_PREFIX = 'hardcover-note-mapping';
+// Legacy localStorage key prefix used on Web before this store moved to SQLite.
+// Kept only for one-time migration of existing entries into the database.
+const LEGACY_STORAGE_PREFIX = 'hardcover-note-mapping';
+
+const UPSERT_SQL = `
+  INSERT INTO hardcover_note_mappings
+    (book_hash, note_id, hardcover_journal_id, payload_hash, synced_at)
+   VALUES (?, ?, ?, ?, ?)
+   ON CONFLICT(book_hash, note_id)
+   DO UPDATE SET
+     hardcover_journal_id = excluded.hardcover_journal_id,
+     payload_hash = excluded.payload_hash,
+     synced_at = excluded.synced_at
+`;
+
+type OpenDb = Awaited<ReturnType<AppService['openDatabase']>>;
 
 export class HardcoverSyncMapStore {
   private appService: AppService;
@@ -22,15 +37,7 @@ export class HardcoverSyncMapStore {
     this.appService = appService;
   }
 
-  private isWebStorageAvailable(): boolean {
-    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-  }
-
-  private getStorageKey(bookHash: string, noteId: string): string {
-    return `${STORAGE_PREFIX}:${bookHash}:${noteId}`;
-  }
-
-  private async withDb<T>(fn: (db: Awaited<ReturnType<AppService['openDatabase']>>) => Promise<T>) {
+  private async withDb<T>(fn: (db: OpenDb) => Promise<T>) {
     const db = await this.appService.openDatabase(DB_SCHEMA, DB_PATH, 'Data');
     try {
       return await fn(db);
@@ -39,31 +46,57 @@ export class HardcoverSyncMapStore {
     }
   }
 
+  private async upsertRow(db: OpenDb, row: HardcoverSyncMapRow): Promise<void> {
+    await db.execute(UPSERT_SQL, [
+      row.book_hash,
+      row.note_id,
+      row.hardcover_journal_id,
+      row.payload_hash,
+      row.synced_at,
+    ]);
+  }
+
+  // One-time migration: lift legacy localStorage entries for this book into
+  // the database, then remove them. Runs only when window.localStorage is
+  // available (i.e. on Web); a no-op on Tauri/native.
+  private async migrateLegacyForBook(db: OpenDb, bookHash: string): Promise<void> {
+    if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+      return;
+    }
+    const prefix = `${LEGACY_STORAGE_PREFIX}:${bookHash}:`;
+    const legacyKeys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        legacyKeys.push(key);
+      }
+    }
+    if (legacyKeys.length === 0) return;
+
+    for (const key of legacyKeys) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) {
+        window.localStorage.removeItem(key);
+        continue;
+      }
+      try {
+        const row = JSON.parse(raw) as HardcoverSyncMapRow;
+        await this.upsertRow(db, row);
+      } catch (error) {
+        console.error('Failed to migrate Hardcover mapping from localStorage:', error);
+      }
+      window.localStorage.removeItem(key);
+    }
+  }
+
   async loadForBook(bookHash: string): Promise<void> {
     this.loadedBookHash = bookHash;
     this.mappings.clear();
     this.modified = false;
 
-    if (this.isWebStorageAvailable()) {
-      try {
-        const prefix = `${STORAGE_PREFIX}:${bookHash}:`;
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key && key.startsWith(prefix)) {
-            const raw = window.localStorage.getItem(key);
-            if (raw) {
-              const row = JSON.parse(raw) as HardcoverSyncMapRow;
-              this.mappings.set(row.note_id, row);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to read Hardcover note mapping from localStorage:', error);
-      }
-      return;
-    }
-
     await this.withDb(async (db) => {
+      await this.migrateLegacyForBook(db, bookHash);
+
       const rows = await db.select<HardcoverSyncMapRow>(
         `SELECT book_hash, note_id, hardcover_journal_id, payload_hash, synced_at
          FROM hardcover_note_mappings
@@ -79,35 +112,9 @@ export class HardcoverSyncMapStore {
   async flush(): Promise<void> {
     if (!this.modified || !this.loadedBookHash) return;
 
-    if (this.isWebStorageAvailable()) {
-      try {
-        for (const row of this.mappings.values()) {
-          window.localStorage.setItem(
-            this.getStorageKey(row.book_hash, row.note_id),
-            JSON.stringify(row),
-          );
-        }
-        this.modified = false;
-      } catch (error) {
-        console.error('Failed to write Hardcover note mapping to localStorage:', error);
-      }
-      return;
-    }
-
     await this.withDb(async (db) => {
-      // Execute inserts sequentially but within a single DB connection
       for (const row of this.mappings.values()) {
-        await db.execute(
-          `INSERT INTO hardcover_note_mappings
-            (book_hash, note_id, hardcover_journal_id, payload_hash, synced_at)
-           VALUES (?, ?, ?, ?, ?)
-           ON CONFLICT(book_hash, note_id)
-           DO UPDATE SET
-             hardcover_journal_id = excluded.hardcover_journal_id,
-             payload_hash = excluded.payload_hash,
-             synced_at = excluded.synced_at`,
-          [row.book_hash, row.note_id, row.hardcover_journal_id, row.payload_hash, row.synced_at],
-        );
+        await this.upsertRow(db, row);
       }
     });
     this.modified = false;

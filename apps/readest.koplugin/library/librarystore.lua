@@ -108,6 +108,18 @@ local GROUP_WHITELIST = {
     group_name   = true,
 }
 
+-- A book is shown in the Library only when its file is actually reachable:
+-- either uploaded to Readest cloud (uploaded_at set, so the file + its cover
+-- can be downloaded) or present on this device (local_present = 1).
+--
+-- A bare cloud *record* with no uploaded file (cloud_present = 1 but
+-- uploaded_at NULL) has no cover and cannot be opened, so showing it is
+-- meaningless. This mirrors Readest, which only adds a synced book to the
+-- library when uploadedAt is set, and keeps locally-imported books that
+-- carry a downloadedAt — see useBooksSync.updateLibrary at
+-- apps/readest-app/src/app/library/hooks/useBooksSync.ts:136-139.
+local VISIBLE_BOOK_SQL = "(uploaded_at IS NOT NULL OR local_present = 1)"
+
 local M = {}
 M.__index = M
 
@@ -319,7 +331,7 @@ function M:listBooks(filters)
     local where = {
         "user_id = ?",
         "deleted_at IS NULL",
-        "(cloud_present = 1 OR local_present = 1)",
+        VISIBLE_BOOK_SQL,
     }
     local args = { self.user_id }
 
@@ -400,11 +412,11 @@ function M:getGroups(group_by)
                MAX(created_at) AS latest_created
         FROM books
         WHERE user_id = ? AND deleted_at IS NULL
-          AND (cloud_present = 1 OR local_present = 1)
+          AND %s
           AND %s IS NOT NULL AND %s != ''
         GROUP BY %s
         ORDER BY name ASC
-    ]], group_by, group_by, group_by, group_by)
+    ]], group_by, VISIBLE_BOOK_SQL, group_by, group_by, group_by)
 
     local stmt = self.db:prepare(sql)
     stmt:reset():bind1(1, self.user_id)
@@ -468,7 +480,7 @@ function M:listBookshelfGroups(group_by, parent_path)
     -- (one row per unique path), so a Lua-side bucket is cheap.
     -- Per-sort aggregates mirror getGroups so the merged-shelf sort can
     -- use a folder's "most recent child" timestamp under any sort_by.
-    local stmt = self.db:prepare([[
+    local stmt = self.db:prepare(string.format([[
         SELECT group_name,
                COUNT(*) AS cnt,
                MAX(updated_at) AS latest_updated,
@@ -476,10 +488,10 @@ function M:listBookshelfGroups(group_by, parent_path)
                MAX(created_at) AS latest_created
         FROM books
         WHERE user_id = ? AND deleted_at IS NULL
-          AND (cloud_present = 1 OR local_present = 1)
+          AND %s
           AND group_name IS NOT NULL AND group_name != ''
         GROUP BY group_name
-    ]])
+    ]], VISIBLE_BOOK_SQL))
     stmt:reset():bind1(1, self.user_id)
 
     local prefix = parent_path and (parent_path .. "/") or nil
@@ -585,11 +597,11 @@ function M:listBooksInGroup(group_by, group_value, limit, opts)
     local sql = string.format([[
         SELECT %s FROM books
         WHERE user_id = ? AND deleted_at IS NULL
-          AND (cloud_present = 1 OR local_present = 1)
+          AND %s
           AND %s
         ORDER BY %s %s, hash ASC
         LIMIT ?
-    ]], table.concat(BOOK_COLS, ", "), where_extra, sort_expr, sort_dir)
+    ]], table.concat(BOOK_COLS, ", "), VISIBLE_BOOK_SQL, where_extra, sort_expr, sort_dir)
     local stmt = self.db:prepare(sql)
     stmt:reset()
     for i, v in ipairs(args) do stmt:bind1(i, v) end

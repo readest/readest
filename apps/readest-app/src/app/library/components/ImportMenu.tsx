@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { MdRssFeed } from 'react-icons/md';
+import { MdLink, MdRssFeed } from 'react-icons/md';
 import { IoFileTray } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,6 +10,7 @@ interface ImportMenuProps {
   setIsDropdownOpen?: (open: boolean) => void;
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
+  onImportBookFromUrl?: () => void;
   onOpenCatalogManager: () => void;
 }
 
@@ -17,6 +18,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   setIsDropdownOpen,
   onImportBooksFromFiles,
   onImportBooksFromDirectory,
+  onImportBookFromUrl,
   onOpenCatalogManager,
 }) => {
   const _ = useTranslation();
@@ -29,6 +31,11 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
 
   const handleImportFromDirectory = () => {
     onImportBooksFromDirectory?.();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleImportFromUrl = () => {
+    onImportBookFromUrl?.();
     setIsDropdownOpen?.(false);
   };
 
@@ -52,6 +59,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
           label={_('From Directory')}
           Icon={<IoFileTray className='h-5 w-5' />}
           onClick={handleImportFromDirectory}
+        />
+      )}
+      {onImportBookFromUrl && (
+        <MenuItem
+          label={_('From Web URL')}
+          Icon={<MdLink className='h-5 w-5' />}
+          onClick={handleImportFromUrl}
         />
       )}
       <MenuItem

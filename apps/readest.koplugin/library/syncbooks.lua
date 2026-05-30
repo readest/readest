@@ -278,28 +278,41 @@ function M.pushChangedBooks(opts, cb)
 end
 
 -- ---------------------------------------------------------------------------
--- syncBooks(opts, mode, cb) — convenience wrapper for the bidirectional
--- sync the web does on auto-sync (useBooksSync.handleAutoSync). Modes:
+-- syncBooks(opts, mode, cb, before_push) — convenience wrapper for the
+-- bidirectional sync the web does on auto-sync (useBooksSync.handleAutoSync).
+-- Modes:
 --   "push" — pushChangedBooks only
 --   "pull" — pullBooks only (existing fetch)
---   "both" — push then pull (matches the web's syncBooks(..., 'both') call)
+--   "both" — pull then push (closes #4138)
 -- cb is invoked once after the LAST step completes; intermediate failures
--- are logged but do not abort (push failure shouldn't prevent pull).
+-- are logged but do not abort (pull failure shouldn't prevent push).
+--
+-- before_push (optional): callback invoked AFTER pull and BEFORE push in
+-- "both" / "push" modes. Callers use this to bump updated_at on the open
+-- book so its touched row gets included in the push delta — but crucially,
+-- AFTER pull has refreshed the local row with the cloud's uploaded_at /
+-- metadata / group_id. Doing the touch before pull (the original ordering)
+-- meant the push could send a row with those fields nil, and the server's
+-- transformBookToDB explicit-nulls uploaded_at and metadata for any field
+-- absent in the wire payload — wiping the cloud copy on every device.
+-- See apps/readest-app/src/utils/transform.ts:99,103.
 -- ---------------------------------------------------------------------------
-function M.syncBooks(opts, mode, cb)
+function M.syncBooks(opts, mode, cb, before_push)
     mode = mode or "both"
     if mode == "push" then
+        if before_push then before_push() end
         M.pushChangedBooks(opts, cb)
     elseif mode == "pull" then
         M.pullBooks(opts, cb)
     else  -- "both"
-        M.pushChangedBooks(opts, function(push_ok, push_msg)
-            M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+        M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+            if before_push then before_push() end
+            M.pushChangedBooks(opts, function(push_ok, push_msg)
                 if cb then
-                    cb(push_ok and pull_ok,
-                       string.format("push=%s/%s pull=%s/%s",
-                           tostring(push_ok), tostring(push_msg),
-                           tostring(pull_ok), tostring(pull_msg)),
+                    cb(pull_ok and push_ok,
+                       string.format("pull=%s/%s push=%s/%s",
+                           tostring(pull_ok), tostring(pull_msg),
+                           tostring(push_ok), tostring(push_msg)),
                        pull_status)
                 end
             end)
@@ -579,16 +592,32 @@ function M.downloadCover(book, opts, cb)
 
             local pid, parent_read_fd = FFIUtil.runInSubProcess(
                 function(_child_pid, child_write_fd)
-                    local socket     = require("socket")
-                    local http       = require("socket.http")
-                    local socketutil = require("socketutil")
-                    local ltn12      = require("ltn12")
-
+                    -- Runs in a forked child. Two hard rules, both to keep
+                    -- KOReader alive on Boox / Adreno devices (issue #4165):
+                    --
+                    --  1. No Lua error may escape this function. An uncaught
+                    --     error unwinds back to KOReader's android_main,
+                    --     which terminates the child through the libc exit()
+                    --     path — running __cxa_finalize.
+                    --  2. Terminate via _exit(), never exit(): __cxa_finalize
+                    --     runs the destructor of the GL driver inherited from
+                    --     the parent, which segfaults on Adreno and takes the
+                    --     whole app down with it.
+                    --
+                    -- A network failure in http.request is exactly the kind
+                    -- of error rule 1 guards against, so wrap the body.
                     local result
-                    local f, ferr = io.open(dst, "wb")
-                    if not f then
-                        result = "error:open:" .. tostring(ferr)
-                    else
+                    local ok, err = pcall(function()
+                        local socket     = require("socket")
+                        local http       = require("socket.http")
+                        local socketutil = require("socketutil")
+                        local ltn12      = require("ltn12")
+
+                        local f, ferr = io.open(dst, "wb")
+                        if not f then
+                            result = "error:open:" .. tostring(ferr)
+                            return
+                        end
                         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
                         local code = socket.skip(1, http.request{
                             url     = url,
@@ -603,8 +632,16 @@ function M.downloadCover(book, opts, cb)
                         else
                             result = "error:http:" .. tostring(code)
                         end
+                    end)
+                    if not ok then
+                        result = "error:exception:" .. tostring(err)
                     end
-                    FFIUtil.writeToFD(child_write_fd, result, true)
+                    pcall(FFIUtil.writeToFD, child_write_fd, result or "error:unknown", true)
+
+                    -- Hard exit, bypassing libc atexit handlers (rule 2).
+                    local ffi = require("ffi")
+                    pcall(ffi.cdef, "void _exit(int status);")
+                    ffi.C._exit(0)
                 end,
                 true)  -- with_pipe = true
 

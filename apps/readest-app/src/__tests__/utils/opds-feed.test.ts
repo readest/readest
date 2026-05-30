@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getFeed, getPublication } from 'foliate-js/opds.js';
-import type { OPDSFeed, OPDSPublication } from '@/types/opds';
+import { SYMBOL, type OPDSFeed, type OPDSPublication } from '@/types/opds';
 
 const MIME_XML = 'application/xml';
 
@@ -220,6 +220,33 @@ describe('OPDS feed parsing', () => {
 
       expect(pub.metadata.id).toBe('urn:shelf:issue:abc123');
       expect(pub.metadata.updated).toBe('2026-01-15T10:30:00.000Z');
+    });
+
+    // Regression test for https://github.com/readest/readest/issues/4156
+    // CWA (and other OPDS 1.x servers) place the book description in
+    // <entry><summary>. foliate-js attaches it under SYMBOL.CONTENT, so the
+    // SYMBOL exported from @/types/opds must be the same Symbol instance the
+    // parser writes — otherwise PublicationView reads undefined and the
+    // description disappears from the book details page.
+    it('should expose <summary> via SYMBOL.CONTENT for OPDS 1.x feeds', () => {
+      const opds1Feed = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>CWA Library</title>
+  <entry>
+    <title>A Book With A Summary</title>
+    <summary>A short blurb describing the book, set by the OPDS server in &lt;summary&gt;.</summary>
+    <link rel="http://opds-spec.org/acquisition"
+          href="book.epub" type="application/epub+zip"/>
+  </entry>
+</feed>`;
+      const doc = parseXML(opds1Feed);
+      const feed = getFeed(doc) as OPDSFeed;
+
+      expect(feed.publications).toHaveLength(1);
+      const metadata = feed.publications![0]!.metadata;
+      const content = metadata[SYMBOL.CONTENT];
+      expect(content).toBeDefined();
+      expect(content!.value).toContain('A short blurb describing the book');
     });
 
     it('should handle entries without id or updated gracefully', () => {

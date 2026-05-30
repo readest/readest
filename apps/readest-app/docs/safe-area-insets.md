@@ -31,6 +31,8 @@ style={{
 }}
 ```
 
+For top-anchored slide-in panels (sidebar, notebook), use `getPanelTopInset()` from `src/utils/insets.ts`. It clears the status bar on tablet/desktop and full-height mobile sheets, but stays flush for a partial-height mobile bottom sheet (which doesn't reach the top of the screen). Gating only on `isFullHeightInMobile` is wrong — a non-mobile panel is also top-anchored and would let the status bar obscure its toolbar.
+
 ### Bottom Inset Rules
 
 For UI elements anchored to the **bottom** of the screen (footer bars, controls, progress indicators), use `gridInsets.bottom * 0.33` as padding — a fraction of the full inset since bottom bars don't need as much clearance as the home indicator area:

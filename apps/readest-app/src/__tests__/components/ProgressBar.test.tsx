@@ -3,14 +3,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ProgressBar from '@/app/reader/components/ProgressBar';
 import { DEFAULT_VIEW_CONFIG } from '@/services/constants';
-import type { ViewSettings } from '@/types/book';
+import type { BookProgress, ViewSettings } from '@/types/book';
 
 const saveViewSettings = vi.fn();
 
 let currentViewSettings: ViewSettings;
+let currentProgress: BookProgress | null;
+let currentBookData: {
+  isFixedLayout: boolean;
+  bookDoc?: { metadata?: Record<string, unknown> };
+} | null;
+let currentRenderer: { page: number; pages: number };
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  useTranslation: () => (s: string, values?: Record<string, unknown>) =>
+    s
+      .replace('{{count}}', String(values?.['count'] ?? '{{count}}'))
+      .replace('{{number}}', String(values?.['number'] ?? '{{number}}'))
+      .replace('{{time}}', String(values?.['time'] ?? '{{time}}')),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -19,15 +29,15 @@ vi.mock('@/context/EnvContext', () => ({
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
-    getProgress: () => null,
+    getProgress: () => currentProgress,
     getViewSettings: () => currentViewSettings,
-    getView: () => ({ renderer: { page: 0, pages: 0 } }),
+    getView: () => ({ renderer: currentRenderer }),
   }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
-    getBookData: () => ({ isFixedLayout: false }),
+    getBookData: () => currentBookData,
   }),
 }));
 
@@ -63,7 +73,17 @@ afterEach(() => {
 
 beforeEach(() => {
   saveViewSettings.mockClear();
+  currentProgress = null;
+  currentBookData = { isFixedLayout: false };
+  currentRenderer = { page: 0, pages: 0 };
 });
+
+const makeProgress = (current: number, total: number): BookProgress =>
+  ({
+    section: { current, total },
+    pageinfo: { current, total },
+    timeinfo: { section: 0, total: 0 },
+  }) as BookProgress;
 
 describe('ProgressBar — tap-to-toggle disabled reverts hidden footer', () => {
   it("resets progressInfoMode to 'all' when the user disables tapToToggleFooter while mode was 'none'", () => {
@@ -119,5 +139,42 @@ describe('ProgressBar — tap-to-toggle disabled reverts hidden footer', () => {
     // Either no save or a save matching the existing 'all' value — never
     // a transition through some intermediate state.
     expect(persistCalls.every((args) => args[3] === 'all')).toBe(true);
+  });
+});
+
+describe('ProgressBar — fixed-layout remaining pages', () => {
+  it('says "in book" with section-derived count for fixed-layout books', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: false,
+      progressInfoMode: 'all',
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: true, bookDoc: { metadata: {} } };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '3 pages left in book',
+    );
+  });
+
+  it('says "in chapter" for reflowable books', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: false,
+      progressInfoMode: 'all',
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      'pages left in chapter',
+    );
   });
 });

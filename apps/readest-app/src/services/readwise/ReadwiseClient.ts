@@ -18,12 +18,23 @@ export class ReadwiseClient {
     this.config = config;
   }
 
+  /**
+   * Resolve the API base URL. An advanced custom override (self-hosted,
+   * Readwise-compatible receiver) wins when set; trailing slashes are
+   * trimmed so `${baseUrl}${endpoint}` joins cleanly. Falls back to the
+   * official endpoint when unset or blank.
+   */
+  private get baseUrl(): string {
+    const custom = this.config.baseUrl?.trim();
+    return (custom || READWISE_API_BASE_URL).replace(/\/+$/, '');
+  }
+
   private async request(
     endpoint: string,
     options: { method?: 'GET' | 'POST'; body?: string } = {},
   ): Promise<Response> {
     const { method = 'GET', body } = options;
-    return fetch(`${READWISE_API_BASE_URL}${endpoint}`, {
+    return fetch(`${this.baseUrl}${endpoint}`, {
       method,
       headers: {
         Authorization: `Token ${this.config.accessToken}`,

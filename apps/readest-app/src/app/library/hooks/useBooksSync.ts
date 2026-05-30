@@ -22,12 +22,24 @@ export const useBooksSync = () => {
   const getNewBooks = useCallback(() => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
-    const newBooks = library.filter(
-      (book) =>
-        !book.syncedAt ||
-        lastSyncedAtBooks < book.updatedAt ||
-        lastSyncedAtBooks < (book.deletedAt ?? 0),
-    );
+    const newBooks = library
+      .filter(
+        (book) =>
+          !book.syncedAt ||
+          lastSyncedAtBooks < book.updatedAt ||
+          lastSyncedAtBooks < (book.deletedAt ?? 0),
+      )
+      // book.filePath is a device-local absolute path used by the in-place
+      // import flow to point at a file outside Books/<hash>/. It is
+      // meaningless on any other device, so strip it before pushing to the
+      // cloud — peers always rehydrate via the hash-keyed copy that
+      // cloudService.downloadBook lands under Books/<hash>/. Keeping the
+      // source device's path in the cloud record would be dead data at
+      // best, and would become an active footgun if isBookAvailable ever
+      // got its branch order swapped (it currently checks Books/<hash>
+      // before falling back to filePath; flipping that order would make
+      // peers chase a non-existent path instead of downloading).
+      .map(({ filePath: _filePath, ...rest }): Book => rest);
     return {
       books: newBooks,
       lastSyncedAt: lastSyncedAtBooks,
@@ -37,18 +49,12 @@ export const useBooksSync = () => {
   const pullLibrary = useCallback(
     async (fullRefresh = false, verbose = false) => {
       if (!user) return;
-      if (isPullingRef.current) {
-        console.log('Pull already in progress, skipping...');
-        return;
-      }
+      if (isPullingRef.current) return;
       try {
         isPullingRef.current = true;
         const library = useLibraryStore.getState().library;
-        const syncedBooksCount = await syncBooks(
-          [],
-          'pull',
-          (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined,
-        );
+        const since = (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined;
+        const syncedBooksCount = await syncBooks([], 'pull', since);
         if (verbose) {
           eventDispatcher.dispatch('toast', {
             type: 'info',
@@ -65,10 +71,15 @@ export const useBooksSync = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     throttle(
-      () => {
+      async () => {
+        if (isPullingRef.current) return;
         const newBooks = getNewBooks();
-        if (newBooks.lastSyncedAt) {
-          syncBooks(newBooks.books, 'both');
+        if (!newBooks.lastSyncedAt) return;
+        isPullingRef.current = true;
+        try {
+          await syncBooks(newBooks.books, 'both');
+        } finally {
+          isPullingRef.current = false;
         }
       },
       SYNC_BOOKS_INTERVAL_SEC * 1000,
@@ -79,9 +90,7 @@ export const useBooksSync = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (isPullingRef.current) {
-      return;
-    }
+    if (isPullingRef.current) return;
     handleAutoSync();
   }, [user, library, handleAutoSync]);
 

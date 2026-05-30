@@ -233,4 +233,65 @@ export function vectorTests(getDb: () => DatabaseService) {
     );
     expect(rows[0]!.d).toBeCloseTo(5.0, 4);
   });
+
+  // ---------------------------------------------------------------------------
+  // Per-book brute-force kNN — the pattern Reedy retrieval uses.
+  //
+  // Turso (the rust rewrite this repo wraps via @tursodatabase/database +
+  // @readest/turso-database-wasm) has vector storage + distance functions
+  // but no native vector index module: `libsql_vector_idx`, `vector_top_k`,
+  // and `USING vector/hnsw/diskann/ivfflat` all parse-error on v0.6.0-pre.28.
+  // `libsql_vector_idx` is a libSQL (sqld) feature, a different fork.
+  //
+  // The portable, parameterizable alternative: `ORDER BY vector_distance_cos
+  // LIMIT k` with a `WHERE book_hash = ?` filter. O(n) per book, sub-ms for
+  // 400 chunks × 768 dim, acceptable to ~10k chunks per book on phones.
+  // ---------------------------------------------------------------------------
+
+  it('per-book kNN filters by book_hash and orders by cosine distance', async () => {
+    // Models the exact pattern BookRetriever.search will issue. Two books in
+    // one table; query the active book; assert zero cross-book bleed and
+    // correct nearest-first ordering. No DDL, no identifier interpolation;
+    // bookHash binds as a ? parameter.
+    const db = getDb();
+    await db.execute(
+      'CREATE TABLE book_chunks (id INTEGER PRIMARY KEY, book_hash TEXT NOT NULL, label TEXT, embedding BLOB)',
+    );
+    // book_b's chunks happen to be closer to the query than any book_a chunk —
+    // the WHERE filter must hide them entirely.
+    await db.execute(
+      "INSERT INTO book_chunks (book_hash, label, embedding) VALUES (?, ?, vector32('[0.95,0.05,0,0]'))",
+      ['book_a', 'A-near'],
+    );
+    await db.execute(
+      "INSERT INTO book_chunks (book_hash, label, embedding) VALUES (?, ?, vector32('[0.5,0.5,0,0]'))",
+      ['book_a', 'A-mid'],
+    );
+    await db.execute(
+      "INSERT INTO book_chunks (book_hash, label, embedding) VALUES (?, ?, vector32('[1,0,0,0]'))",
+      ['book_b', 'B-exact'],
+    );
+    await db.execute(
+      "INSERT INTO book_chunks (book_hash, label, embedding) VALUES (?, ?, vector32('[0.99,0.01,0,0]'))",
+      ['book_b', 'B-near'],
+    );
+
+    const rows = await db.select<{ label: string; book_hash: string; d: number }>(
+      `SELECT label, book_hash,
+              vector_distance_cos(embedding, vector32('[1,0,0,0]')) AS d
+         FROM book_chunks
+        WHERE book_hash = ?
+        ORDER BY d ASC
+        LIMIT 5`,
+      ['book_a'],
+    );
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r) => r.book_hash === 'book_a')).toBe(true);
+    expect(rows[0]!.label).toBe('A-near');
+    // monotonically non-decreasing distances within the result
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i]!.d).toBeGreaterThanOrEqual(rows[i - 1]!.d);
+    }
+  });
 }

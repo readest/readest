@@ -1,9 +1,32 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { useCustomFontStore } from '@/store/customFontStore';
+
+vi.mock('@/services/sync/replicaPublish', () => ({
+  publishReplicaDelete: vi.fn(),
+  publishReplicaUpsert: vi.fn(),
+}));
+vi.mock('@/utils/md5', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/md5')>('@/utils/md5');
+  return {
+    ...actual,
+    partialMD5: vi.fn(async () => 'partial-md5-stub'),
+  };
+});
+vi.mock('@/utils/misc', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/misc')>('@/utils/misc');
+  return {
+    ...actual,
+    uniqueId: vi.fn(() => 'fresh-bundle-1'),
+  };
+});
+
+import { useCustomFontStore, migrateLegacyFonts } from '@/store/customFontStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { CustomFont } from '@/styles/fonts';
 import { SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
+import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
+
+const mockPublishReplicaUpsert = vi.mocked(publishReplicaUpsert);
 
 function makeFont(overrides: Partial<CustomFont> & { id: string; name: string }): CustomFont {
   return {
@@ -384,6 +407,135 @@ describe('customFontStore', () => {
       expect(savedFonts![0]).not.toHaveProperty('blobUrl');
       expect(savedFonts![0]).not.toHaveProperty('loaded');
       expect(savedFonts![0]).not.toHaveProperty('error');
+    });
+  });
+
+  describe('migrateLegacyFonts', () => {
+    interface FakeAppService {
+      exists: ReturnType<typeof vi.fn>;
+      openFile: ReturnType<typeof vi.fn>;
+      createDir: ReturnType<typeof vi.fn>;
+      copyFile: ReturnType<typeof vi.fn>;
+      deleteFile: ReturnType<typeof vi.fn>;
+    }
+    const buildEnv = (svc: FakeAppService): EnvConfigType =>
+      ({ getAppService: vi.fn(async () => svc) }) as unknown as EnvConfigType;
+
+    const fakeService = (): FakeAppService => ({
+      exists: vi.fn(async () => true),
+      openFile: vi.fn(async () => new File([new Uint8Array(1024)], 'Roboto.ttf')),
+      createDir: vi.fn(async () => undefined),
+      copyFile: vi.fn(async () => undefined),
+      deleteFile: vi.fn(async () => undefined),
+    });
+
+    beforeEach(() => {
+      mockPublishReplicaUpsert.mockClear();
+      useSettingsStore.setState({
+        settings: {} as SystemSettings,
+        setSettings: vi.fn(),
+        saveSettings: vi.fn().mockResolvedValue(undefined),
+      });
+    });
+
+    test('rehashes a legacy flat-path font into the per-bundle layout', async () => {
+      useCustomFontStore.setState({
+        fonts: [
+          {
+            id: 'legacy-1',
+            name: 'Roboto',
+            path: 'Roboto.ttf',
+          },
+        ],
+        loading: false,
+      });
+      const svc = fakeService();
+      await migrateLegacyFonts(buildEnv(svc));
+
+      const after = useCustomFontStore.getState().fonts.find((f) => f.id === 'legacy-1')!;
+      expect(after.contentId).toBeDefined();
+      expect(after.bundleDir).toBe('fresh-bundle-1');
+      expect(after.path).toBe('fresh-bundle-1/Roboto.ttf');
+      expect(after.byteSize).toBe(1024);
+      expect(svc.copyFile).toHaveBeenCalledWith(
+        'Roboto.ttf',
+        'Fonts',
+        'fresh-bundle-1/Roboto.ttf',
+        'Fonts',
+      );
+      expect(svc.deleteFile).toHaveBeenCalledWith('Roboto.ttf', 'Fonts');
+    });
+
+    test('publishes each migrated font (replica upsert)', async () => {
+      useCustomFontStore.setState({
+        fonts: [{ id: 'legacy-2', name: 'Inter', path: 'Inter.ttf' }],
+        loading: false,
+      });
+      await migrateLegacyFonts(buildEnv(fakeService()));
+      expect(mockPublishReplicaUpsert).toHaveBeenCalledOnce();
+      expect(mockPublishReplicaUpsert.mock.calls[0]![0]).toBe('font');
+    });
+
+    test('skips fonts that already have a contentId (idempotent)', async () => {
+      useCustomFontStore.setState({
+        fonts: [
+          {
+            id: 'already-migrated',
+            name: 'Inter',
+            path: 'b/Inter.ttf',
+            contentId: 'pre-existing',
+            bundleDir: 'b',
+          },
+        ],
+        loading: false,
+      });
+      const svc = fakeService();
+      await migrateLegacyFonts(buildEnv(svc));
+      expect(svc.copyFile).not.toHaveBeenCalled();
+      expect(svc.deleteFile).not.toHaveBeenCalled();
+      expect(mockPublishReplicaUpsert).not.toHaveBeenCalled();
+    });
+
+    test('skips fonts whose on-disk file is missing (re-flags via loadCustomFonts later)', async () => {
+      useCustomFontStore.setState({
+        fonts: [{ id: 'gone', name: 'Lost', path: 'Lost.ttf' }],
+        loading: false,
+      });
+      const svc = fakeService();
+      svc.exists.mockResolvedValueOnce(false);
+      await migrateLegacyFonts(buildEnv(svc));
+      const after = useCustomFontStore.getState().fonts.find((f) => f.id === 'gone')!;
+      expect(after.contentId).toBeUndefined();
+      expect(svc.copyFile).not.toHaveBeenCalled();
+    });
+
+    test('skips deleted fonts', async () => {
+      useCustomFontStore.setState({
+        fonts: [{ id: 'tombstoned', name: 'X', path: 'X.ttf', deletedAt: 100 }],
+        loading: false,
+      });
+      const svc = fakeService();
+      await migrateLegacyFonts(buildEnv(svc));
+      expect(svc.copyFile).not.toHaveBeenCalled();
+    });
+
+    test('per-font failure is isolated; other fonts still migrate', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      useCustomFontStore.setState({
+        fonts: [
+          { id: 'a', name: 'A', path: 'A.ttf' },
+          { id: 'b', name: 'B', path: 'B.ttf' },
+        ],
+        loading: false,
+      });
+      const svc = fakeService();
+      svc.copyFile.mockRejectedValueOnce(new Error('disk full'));
+      await migrateLegacyFonts(buildEnv(svc));
+      const fonts = useCustomFontStore.getState().fonts;
+      const aFont = fonts.find((f) => f.id === 'a')!;
+      const bFont = fonts.find((f) => f.id === 'b')!;
+      expect(aFont.contentId).toBeUndefined();
+      expect(bFont.contentId).toBeDefined();
     });
   });
 });

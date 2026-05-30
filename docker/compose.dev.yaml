@@ -1,0 +1,24 @@
+# Overlay on top of compose.yaml.
+# Usage (from the docker/ directory):
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build -d
+services:
+  client:
+    build:
+      context: ..
+      target: development-stage
+      args:
+        NEXT_PUBLIC_APP_PLATFORM: web
+    environment:
+      # Required so pnpm does not abort when purging node_modules without a TTY
+      CI: "true"
+    # Mount the source code for hot reload.
+    # Anonymous volumes shadow pre-built dirs inside the image so the
+    # container's installed deps and vendor assets are used instead of
+    # what's on the host.
+    volumes:
+      - ../:/app
+      - /app/node_modules
+      - /app/apps/readest-app/node_modules
+      - /app/apps/readest-app/public/vendor
+      - /app/apps/readest-app/.next
+      - /app/packages/foliate-js/node_modules

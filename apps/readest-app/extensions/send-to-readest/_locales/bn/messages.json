@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Readest-এ পাঠান",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "ওয়েব পৃষ্ঠাগুলিকে আপনার Readest লাইব্রেরিতে সংরক্ষণ করুন",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Readest-এ পাঠান",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

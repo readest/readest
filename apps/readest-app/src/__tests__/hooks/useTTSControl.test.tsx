@@ -35,6 +35,7 @@ const mockView = {
   getCFI: vi.fn().mockReturnValue('cfi'),
   deselect: vi.fn(),
   resolveNavigation: vi.fn(),
+  goTo: vi.fn(),
   history: { back: vi.fn(), forward: vi.fn() },
   tts: {
     from: vi.fn().mockReturnValue('<speak>hello</speak>'),
@@ -239,5 +240,72 @@ describe('useTTSControl concurrent tts-speak events', () => {
       while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
       await Promise.all([p1, p2]);
     });
+  });
+});
+
+describe('useTTSControl handleHighlightMark cross-section navigation', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockView.renderer.scrollToAnchor.mockClear();
+    mockView.renderer.goTo.mockClear();
+    mockView.goTo.mockClear();
+    mockView.resolveCFI.mockReset();
+    mockViewSettings.ttsLocation = null;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const setupAndCaptureHighlightHandler = async () => {
+    render(<Harness />);
+
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+
+    // Let the listener-registration useEffect run.
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+
+    const controller = ttsControllerInstances[0] as {
+      addEventListener: { mock: { calls: [string, (e: Event) => void][] } };
+    };
+    const calls = controller.addEventListener.mock.calls;
+    const entry = calls.find(([name]) => name === 'tts-highlight-mark');
+    if (!entry) throw new Error('tts-highlight-mark listener was not registered');
+    return entry[1];
+  };
+
+  it('navigates to the cfi via view.goTo when TTS crosses into a new section', async () => {
+    const handler = await setupAndCaptureHighlightHandler();
+
+    // primaryIndex is 0 (current view section). Make the TTS cfi resolve to section 1.
+    mockView.resolveCFI.mockReturnValue({ index: 1, anchor: () => new Range() });
+
+    await act(async () => {
+      handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/8!/4/2)' } }));
+    });
+
+    expect(mockView.goTo).toHaveBeenCalledWith('epubcfi(/6/8!/4/2)');
+    expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+  });
+
+  it('keeps in-section behaviour: scrolls via renderer without navigating', async () => {
+    const handler = await setupAndCaptureHighlightHandler();
+
+    mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+
+    await act(async () => {
+      handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+    });
+
+    expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+    expect(mockView.goTo).not.toHaveBeenCalled();
   });
 });

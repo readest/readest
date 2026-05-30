@@ -167,6 +167,7 @@ describe('libraryStore', () => {
 
   describe('updateBooks', () => {
     test('persists by default', async () => {
+      useLibraryStore.getState().setLibrary([]);
       const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
       const envConfig = makeEnvConfig({ saveLibraryBooks });
 
@@ -175,7 +176,40 @@ describe('libraryStore', () => {
       expect(saveLibraryBooks).toHaveBeenCalledTimes(1);
     });
 
+    test('loads the library from disk first when not yet loaded — never clobbers', async () => {
+      // Reproduces the /send page bug: a caller adds a book without having
+      // loaded the library, and the merge runs against an empty in-memory
+      // copy. updateBooks must self-protect by loading from disk first.
+      const existing = [makeBook({ hash: 'old1' }), makeBook({ hash: 'old2' })];
+      const loadLibraryBooks = vi.fn().mockResolvedValue(existing);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ loadLibraryBooks, saveLibraryBooks });
+
+      // Store starts empty + libraryLoaded:false (the dangerous state).
+      await useLibraryStore.getState().updateBooks(envConfig, [makeBook({ hash: 'new1' })]);
+
+      expect(loadLibraryBooks).toHaveBeenCalledTimes(1);
+      const saved = saveLibraryBooks.mock.calls[0]?.[0];
+      expect(saved.map((b: Book) => b.hash).sort()).toEqual(['new1', 'old1', 'old2']);
+      const state = useLibraryStore.getState();
+      expect(state.library).toHaveLength(3);
+      expect(state.libraryLoaded).toBe(true);
+    });
+
+    test('does not re-load when the library is already loaded', async () => {
+      useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
+      const loadLibraryBooks = vi.fn().mockResolvedValue([]);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ loadLibraryBooks, saveLibraryBooks });
+
+      await useLibraryStore.getState().updateBooks(envConfig, [makeBook({ hash: 'b' })]);
+
+      expect(loadLibraryBooks).not.toHaveBeenCalled();
+      expect(useLibraryStore.getState().library).toHaveLength(2);
+    });
+
     test('skips persistence when skipSave: true', async () => {
+      useLibraryStore.getState().setLibrary([]);
       const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
       const envConfig = makeEnvConfig({ saveLibraryBooks });
 
@@ -187,6 +221,7 @@ describe('libraryStore', () => {
     });
 
     test('still updates store state when skipSave: true', async () => {
+      useLibraryStore.getState().setLibrary([]);
       const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
       const envConfig = makeEnvConfig({ saveLibraryBooks });
 

@@ -28,6 +28,27 @@ const getSeries = (book: BookDoc): Collection | undefined => {
   return Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
 };
 
+const makeCbzFixture = async ({
+  comicInfo,
+  comicInfoPath = 'ComicInfo.xml',
+  imageCount,
+}: {
+  comicInfo?: string;
+  comicInfoPath?: string;
+  imageCount: number;
+}): Promise<File> => {
+  const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
+  const writer = new ZipWriter(new BlobWriter('application/vnd.comicbook+zip'));
+  for (let i = 0; i < imageCount; i++) {
+    await writer.add(`${i}.png`, new TextReader(`image-${i}`));
+  }
+  if (comicInfo) {
+    await writer.add(comicInfoPath, new TextReader(comicInfo));
+  }
+  const blob = await writer.close();
+  return new File([blob], 'page-count.cbz', { type: 'application/vnd.comicbook+zip' });
+};
+
 describe('Calibre series metadata', () => {
   describe('PDF (XMP calibre:series)', () => {
     let book: BookDoc;
@@ -72,6 +93,46 @@ describe('Calibre series metadata', () => {
 
     it('preserves the title', () => {
       expect(book.metadata.title).toBe('CBZ Metadata');
+    });
+
+    it('extracts displayable ComicInfo.xml schema fields from nested archives', async () => {
+      const file = await makeCbzFixture({
+        imageCount: 3,
+        comicInfoPath: 'metadata/ComicInfo.xml',
+        comicInfo: `<?xml version="1.0" encoding="utf-8"?>
+<ComicInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Title>Example Title</Title>
+  <Series>Example Series</Series>
+  <Volume>1</Volume>
+  <Number>1</Number>
+  <Count>5</Count>
+  <Summary>Example Summary</Summary>
+  <Writer>Example Author</Writer>
+  <Genre>Example Genre</Genre>
+  <Year>2025</Year>
+  <Month>12</Month>
+  <Web>https://www.google.com/</Web>
+  <Manga>Yes</Manga>
+  <LanguageISO>en</LanguageISO>
+  <Translator>Example Translator</Translator>
+  <PageCount>20</PageCount>
+</ComicInfo>`,
+      });
+      const loader = new DocumentLoader(file);
+      const result = await loader.open();
+
+      expect(result.book.metadata).toMatchObject({
+        title: 'Example Title',
+        author: 'Example Author',
+        language: 'en',
+        description: 'Example Summary',
+        publisher: undefined,
+        published: '2025-12',
+        identifier: 'https://www.google.com/',
+        subject: ['Example Genre'],
+      });
+      const series = getSeries(result.book);
+      expect(series).toMatchObject({ name: 'Example Series', position: '1', total: '5' });
     });
   });
 });

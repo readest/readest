@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Readest වෙත යවන්න",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "වෙබ් පිටු ඔබේ Readest පුස්තකාලයට සුරකින්න",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Readest වෙත යවන්න",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

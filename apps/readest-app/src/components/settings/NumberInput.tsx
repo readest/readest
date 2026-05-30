@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 import { useTranslation } from '@/hooks/useTranslation';
+import { SettingLabel } from './primitives';
 
 interface NumberInputProps {
   className?: string;
@@ -64,8 +65,11 @@ const NumberInput: React.FC<NumberInputProps> = ({
   };
 
   return (
-    <div className={clsx('config-item', className)} data-setting-id={settingId}>
-      <span className='text-base-content line-clamp-2'>{label}</span>
+    <div
+      className={clsx('flex h-14 items-center justify-between pe-4', className)}
+      data-setting-id={settingId}
+    >
+      <SettingLabel>{label}</SettingLabel>
       {iconSize && <span style={{ minWidth: `${iconSize}px` }} />}
       <div className='text-base-content flex items-center gap-2'>
         <form onSubmit={handleSubmit}>

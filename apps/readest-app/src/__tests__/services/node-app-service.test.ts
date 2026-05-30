@@ -40,7 +40,7 @@ describe('NodeAppService', () => {
   it('should copy files from absolute path', async () => {
     const srcPath = path.join(tmpDir, 'source.txt');
     await fsp.writeFile(srcPath, 'copy me');
-    await service.copyFile(srcPath, 'copied.txt', 'Data');
+    await service.copyFile(srcPath, 'None', 'copied.txt', 'Data');
     const content = await service.readFile('copied.txt', 'Data', 'text');
     expect(content).toBe('copy me');
   });

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDownloadSignedUrl } from '@/utils/object';
-import { rejectionToHttp, resolveActiveShare } from '@/libs/share-server';
+import { rejectionToHttp, resolveActiveShare } from '@/libs/shareServer';
 import { SHARE_PRESIGN_TTL_SECONDS } from '@/services/constants';
 
 interface RouteParams {

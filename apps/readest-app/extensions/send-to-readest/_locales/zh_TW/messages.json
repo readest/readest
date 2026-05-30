@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "傳送至 Readest",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "將網頁儲存至您的 Readest 書庫",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "傳送至 Readest",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

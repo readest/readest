@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { VirtuosoGrid } from 'react-virtuoso';
-import { IoChevronBack, IoChevronForward, IoFilter } from 'react-icons/io5';
+import { IoAdd, IoChevronBack, IoChevronForward, IoFilter } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSFeed, OPDSGenericLink } from '@/types/opds';
 import { PublicationCard } from './PublicationCard';
@@ -17,6 +17,7 @@ interface FeedViewProps {
   onPublicationSelect: (groupIndex: number, itemIndex: number) => void;
   onGenerateCachedImageUrl: (url: string) => Promise<string>;
   isOPDSCatalog: (type?: string) => boolean;
+  onAddCatalog?: () => void;
 }
 
 const gridClassName = 'grid grid-cols-3 gap-4 px-4 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
@@ -30,6 +31,7 @@ export function FeedView({
   onNavigate,
   onPublicationSelect,
   onGenerateCachedImageUrl,
+  onAddCatalog,
 }: FeedViewProps) {
   const _ = useTranslation();
   const linksByRel = useMemo(() => groupByArray(feed.links, (link) => link.rel), [feed.links]);
@@ -80,9 +82,20 @@ export function FeedView({
         {hasFacets && (
           <aside className='hidden w-64 flex-shrink-0 overflow-y-auto lg:block'>
             <div className='px-4'>
+              {onAddCatalog && (
+                <div className='mb-4'>
+                  <button
+                    onClick={onAddCatalog}
+                    className='btn btn-primary btn-sm w-full flex items-center justify-center gap-2'
+                  >
+                    <IoAdd className='h-4 w-4' />
+                    {_('Add to My Catalogs')}
+                  </button>
+                </div>
+              )}
               <div className='mb-4 flex items-center gap-2'>
                 <IoFilter className='h-5 w-5' />
-                <h2 className='text-lg font-semibold'>Filters</h2>
+                <h2 className='text-lg font-semibold'>{_('Filters')}</h2>
               </div>
               <div className='space-y-6'>
                 {feed.facets?.map((facet, index: number) => (

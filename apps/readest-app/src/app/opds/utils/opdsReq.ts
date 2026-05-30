@@ -331,14 +331,23 @@ export const fetchWithAuth = async (
   const finalPassword = password || urlPassword;
   const normalizedCustomHeaders = normalizeOPDSCustomHeaders(customHeaders);
 
+  // Send Basic auth preemptively when credentials are available. Servers that
+  // allow anonymous access (e.g. Calibre-Web) return 200 without a challenge,
+  // so the user keeps seeing guest content unless the auth header is included
+  // on the first request. Digest auth can't be sent preemptively (it needs the
+  // server's nonce), so Digest servers still fall through to the retry below.
+  const preemptiveAuth =
+    finalUsername && finalPassword ? createBasicAuth(finalUsername, finalPassword) : null;
+
   const fetchURL = useProxy
-    ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders)
+    ? getProxiedURL(cleanUrl, preemptiveAuth || '', false, normalizedCustomHeaders)
     : cleanUrl;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
     ...(!useProxy ? normalizedCustomHeaders : {}),
     ...(options.headers as Record<string, string>),
+    ...(preemptiveAuth && !useProxy ? { Authorization: preemptiveAuth } : {}),
   };
 
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
@@ -368,7 +377,9 @@ export const fetchWithAuth = async (
         authHeader = createBasicAuth(finalUsername, finalPassword);
       }
 
-      if (authHeader) {
+      // Skip the retry when it would just repeat the preemptive Basic header
+      // we already sent (the credentials are simply wrong in that case).
+      if (authHeader && authHeader !== preemptiveAuth) {
         const finalUrl = useProxy
           ? getProxiedURL(cleanUrl, authHeader, false, normalizedCustomHeaders)
           : fetchURL;

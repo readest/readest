@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
-import { hashShareToken, isValidShareToken } from '@/libs/share-server';
+import { hashShareToken, isValidShareToken } from '@/libs/shareServer';
 
 interface RouteParams {
   params: Promise<{ token: string }>;

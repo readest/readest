@@ -7,6 +7,8 @@ interface FileRecord {
   file_key: string;
   file_size: number;
   book_hash: string | null;
+  replica_kind: string | null;
+  replica_id: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -51,7 +53,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let query = supabase
       .from('files')
-      .select('file_key, file_size, book_hash, created_at, updated_at', { count: 'exact' })
+      .select('file_key, file_size, book_hash, replica_kind, replica_id, created_at, updated_at', {
+        count: 'exact',
+      })
       .eq('user_id', user.id)
       .is('deleted_at', null);
 
@@ -81,31 +85,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const total = count || 0;
     const totalPages = Math.ceil(total / pageSize);
 
-    // Get all book_hashes from the paginated results
+    // Pull every file that shares a group with the paginated results so
+    // groups (book or replica) appear complete in the UI — covers, mdds,
+    // etc. that wouldn't match a search filter still ride along.
+    // IMPORTANT: We don't apply the search filter here.
     const bookHashes = Array.from(
       new Set((files || []).map((f) => f.book_hash).filter((hash): hash is string => !!hash)),
     );
-
-    // Fetch all files with the same book_hashes to ensure complete book groups
-    // IMPORTANT: We don't apply the search filter here. This ensures that ALL files
-    // for matched books are included (e.g., cover.png files), even if they don't
-    // match the search term. This is crucial for proper book grouping and selection.
+    const replicaIds = Array.from(
+      new Set((files || []).map((f) => f.replica_id).filter((id): id is string => !!id)),
+    );
     let allRelatedFiles = files || [];
-    if (bookHashes.length > 0) {
-      const relatedQuery = supabase
-        .from('files')
-        .select('file_key, file_size, book_hash, created_at, updated_at')
-        .eq('user_id', user.id)
-        .is('deleted_at', null)
-        .in('book_hash', bookHashes);
+    if (bookHashes.length > 0 || replicaIds.length > 0) {
+      const baseQuery = () =>
+        supabase
+          .from('files')
+          .select(
+            'file_key, file_size, book_hash, replica_kind, replica_id, created_at, updated_at',
+          )
+          .eq('user_id', user.id)
+          .is('deleted_at', null);
 
-      const { data: relatedFiles, error: relatedError } = await relatedQuery;
-
-      if (!relatedError && relatedFiles) {
-        const fileMap = new Map(allRelatedFiles.map((f) => [f.file_key, f]));
-        relatedFiles.forEach((f) => fileMap.set(f.file_key, f));
-        allRelatedFiles = Array.from(fileMap.values());
+      const fileMap = new Map(allRelatedFiles.map((f) => [f.file_key, f]));
+      if (bookHashes.length > 0) {
+        const { data, error } = await baseQuery().in('book_hash', bookHashes);
+        if (!error && data) data.forEach((f) => fileMap.set(f.file_key, f));
       }
+      if (replicaIds.length > 0) {
+        const { data, error } = await baseQuery().in('replica_id', replicaIds);
+        if (!error && data) data.forEach((f) => fileMap.set(f.file_key, f));
+      }
+      allRelatedFiles = Array.from(fileMap.values());
     }
 
     const response: ListFilesResponse = {

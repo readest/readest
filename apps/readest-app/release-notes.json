@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.11.1": {
+      "date": "2026-05-11",
+      "notes": [
+        "Dictionaries: You can now import your own StarDict and MDict dictionaries",
+        "Sync: Your custom dictionaries, custom fonts, background textures and OPDS catalogs now sync across devices",
+        "KOReader Sync: Browse your full Readest Library from inside KOReader, with improved sync diagnostics",
+        "OPDS: Stream books over OPDS-PSE and optionally auto-download new titles from feeds",
+        "Sharing: Create share links for books, jump directly to book via deep links in exported annotations",
+        "Library: Added an optional 4-digit PIN lock at app launch to keep your library private",
+        "Library: You can now drag entire folders to import books",
+        "Reading: Added support for inline CJK ruby annotations (warichu/Gezhu), improved footnote detection",
+        "Speed Reading: Reading position now resumes correctly across devices and inside long sections",
+        "Fixes: Many fixes across PDFs, MOBIs, EPUBs, TTS, scrolling, and accessibility"
+      ]
+    },
     "0.10.6": {
       "date": "2026-04-13",
       "notes": [

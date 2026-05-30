@@ -1,0 +1,29 @@
+Readest E2E Sample
+
+Chapter One
+
+This is a synthetic plain-text book used by the Readest web end-to-end
+test suite. It exists only so that import and reading flows have a small,
+deterministic file to exercise. It is not a real publication.
+
+The text below is intentionally repetitive filler. Its only purpose is to
+give the paginator enough content to lay out across more than one page so
+that page-turning can be exercised by the tests.
+
+Chapter Two
+
+A reader opens a book, and the words arrange themselves into pages. Each
+page is a small window onto a longer whole. Turn forward and the window
+slides ahead; turn back and it returns to where it was.
+
+Lorem ipsum has long served as placeholder prose, but plain repetition
+serves a test suite just as well. Sentences accumulate, paragraphs follow,
+and soon there is enough material for the layout engine to work with.
+
+Chapter Three
+
+The end of a sample book is much like its beginning: a few lines of text,
+arranged for no one in particular, standing in for the real thing. When
+the test completes, this book is discarded and forgotten.
+
+The End

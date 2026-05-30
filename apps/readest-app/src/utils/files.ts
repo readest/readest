@@ -12,7 +12,7 @@ export const copyFiles = async (appService: AppService, srcDir: string, dstDir: 
     const file = filesToCopy[i]!;
     const srcPath = `${srcDir}/${file.path}`;
     const destPath = `${dstDir}/${file.path}`;
-    await appService.copyFile(srcPath, destPath, 'None');
+    await appService.copyFile(srcPath, 'None', destPath, 'None');
   }
 
   const filesCopied = await appService.readDirectory(dstDir, 'None');

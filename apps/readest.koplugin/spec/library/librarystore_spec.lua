@@ -11,7 +11,16 @@ local T_MID    = 1750000000000  -- 2025-06-15
 local T_RECENT = 1770000000000  -- 2026-02-01
 
 -- Minimal book row factory; tests override fields they care about.
+--
+-- The store only shows a book whose file is reachable: uploaded to cloud
+-- (uploaded_at set) or present locally (local_present = 1). A real
+-- cloud-present book always has its file uploaded — that's what makes it
+-- downloadable — so the factory keeps cloud_present and uploaded_at
+-- consistent: cloud_present = 1 implies an uploaded_at unless the test
+-- pins one. To model a *phantom* cloud record (the book row exists but
+-- the file was never uploaded), pass uploaded_at = false.
 local function book(over)
+    over = over or {}
     local row = {
         hash             = "h" .. tostring(math.random(2 ^ 31)),
         meta_hash        = nil,
@@ -36,7 +45,12 @@ local function book(over)
         updated_at       = T_OLD,
         deleted_at       = nil,
     }
-    if over then for k, v in pairs(over) do row[k] = v end end
+    for k, v in pairs(over) do row[k] = v end
+    if row.uploaded_at == false then
+        row.uploaded_at = nil  -- explicit phantom: cloud record, no file
+    elseif row.cloud_present == 1 and row.uploaded_at == nil then
+        row.uploaded_at = row.updated_at or T_OLD
+    end
     return row
 end
 
@@ -317,6 +331,35 @@ describe("LibraryStore", function()
             for _, r in ipairs(rows) do assert.is_not.equal("Ghost", r.title) end
         end)
 
+        it("hides a phantom cloud record — cloud_present=1 but file never uploaded", function()
+            -- A book row synced from cloud whose file was never uploaded
+            -- (uploaded_at NULL) has no cover and cannot be opened. It is
+            -- not local either, so it must not appear in the Library.
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+            }))
+            local rows = store:listBooks({})
+            assert.are.equal(3, #rows)
+            for _, r in ipairs(rows) do assert.is_not.equal("Phantom", r.title) end
+        end)
+
+        it("shows a phantom cloud record once its file is present locally", function()
+            -- Same row as above, but the local scanner found the file.
+            -- local_present = 1 makes the book openable, so it shows.
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 1,
+            }))
+            local rows = store:listBooks({})
+            assert.are.equal(4, #rows)
+            local found = false
+            for _, r in ipairs(rows) do
+                if r.title == "Phantom" then found = true end
+            end
+            assert.is_true(found)
+        end)
+
         it("filters by case-insensitive substring search across title and author", function()
             local r1 = store:listBooks({ search = "asimov" })
             assert.are.equal(1, #r1)
@@ -408,6 +451,20 @@ describe("LibraryStore", function()
         end)
 
         it("group by group_name skips rows with null group_name", function()
+            local groups = store:getGroups("group_name")
+            assert.are.equal(1, #groups)
+            assert.are.equal("Sci-Fi", groups[1].name)
+            assert.are.equal(2, groups[1].count)
+        end)
+
+        it("excludes phantom cloud records from group counts", function()
+            -- A phantom row (cloud record, no uploaded file, not local) in
+            -- the Sci-Fi group must not inflate the group's book count.
+            store:upsertBook(book({
+                hash = "g-phantom", title = "GP", author = "Anon",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+                group_name = "Sci-Fi", updated_at = T_RECENT,
+            }))
             local groups = store:getGroups("group_name")
             assert.are.equal(1, #groups)
             assert.are.equal("Sci-Fi", groups[1].name)

@@ -1,0 +1,46 @@
+diff --git a/dist/index.js b/dist/index.js
+index 7e0992f6ac16a2cdcd11f449e6941fac52df1be5..c5c66aa6b55651a76c247005d981596fd65fa2d5 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1528,8 +1528,9 @@ function stringifyRegExpWithFlags(regex, refs) {
+     }
+     if (flags.m) {
+       if (source[i] === "^") {
+-        pattern += `(^|(?<=[\r
+-]))`;
++        // Changed from lookbehind (?<=[\r\n]) to support older iOS Safari (before 16.4)
++        pattern += `(^|[\r
++])`;
+         continue;
+       } else if (source[i] === "$") {
+         pattern += `($|(?=[\r
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 1cccf8e34ba5107a5b3d015dd03b69296b389c82..28d3f09ee2517e4ec0ee0f0b0ef1dbaffebef252 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1439,8 +1439,9 @@ function stringifyRegExpWithFlags(regex, refs) {
+     }
+     if (flags.m) {
+       if (source[i] === "^") {
+-        pattern += `(^|(?<=[\r
+-]))`;
++        // Changed from lookbehind (?<=[\r\n]) to support older iOS Safari (before 16.4)
++        pattern += `(^|[\r
++])`;
+         continue;
+       } else if (source[i] === "$") {
+         pattern += `($|(?=[\r
+diff --git a/src/to-json-schema/zod3-to-json-schema/parsers/string.ts b/src/to-json-schema/zod3-to-json-schema/parsers/string.ts
+index ef799980b9b6acc81b9fabffd50ed2549e0412f4..dd487f136b75dd8fd84ea10fba717e415a0b7bc9 100644
+--- a/src/to-json-schema/zod3-to-json-schema/parsers/string.ts
++++ b/src/to-json-schema/zod3-to-json-schema/parsers/string.ts
+@@ -388,7 +388,8 @@ function stringifyRegExpWithFlags(regex: RegExp, refs: Refs): string {
+ 
+     if (flags.m) {
+       if (source[i] === '^') {
+-        pattern += `(^|(?<=[\r\n]))`;
++        // Changed from lookbehind (?<=[\r\n]) to support older iOS Safari (before 16.4)
++        pattern += `(^|[\r\n])`;
+         continue;
+       } else if (source[i] === '$') {
+         pattern += `($|(?=[\r\n]))`;

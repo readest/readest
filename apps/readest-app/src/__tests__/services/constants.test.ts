@@ -243,6 +243,24 @@ describe('services/constants', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.screenBrightness!).toBeLessThanOrEqual(100);
     });
 
+    it('seeds syncCategories with every SyncCategory key, all enabled', () => {
+      const cats = DEFAULT_SYSTEM_SETTINGS.syncCategories!;
+      expect(cats).toEqual({
+        book: true,
+        progress: true,
+        note: true,
+        dictionary: true,
+        font: true,
+        texture: true,
+        opds_catalog: true,
+        settings: true,
+      });
+    });
+
+    it('seeds lastSyncedAtReplicas as an empty record', () => {
+      expect(DEFAULT_SYSTEM_SETTINGS.lastSyncedAtReplicas).toEqual({});
+    });
+
     it('has library settings', () => {
       expect(DEFAULT_SYSTEM_SETTINGS.libraryViewMode).toBe('grid');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.librarySortBy).toBe('string');
@@ -274,6 +292,16 @@ describe('services/constants', () => {
     it('lastOpenBooks is an empty array', () => {
       expect(Array.isArray(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks)).toBe(true);
       expect(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks!.length).toBe(0);
+    });
+
+    it('has a disabled hardwarePageTurner with empty bindings', () => {
+      const hw = DEFAULT_SYSTEM_SETTINGS.hardwarePageTurner!;
+      expect(hw).toBeDefined();
+      expect(hw.enabled).toBe(false);
+      expect(hw.bindings.pagePrev).toBeNull();
+      expect(hw.bindings.pageNext).toBeNull();
+      expect(hw.bindings.sectionPrev).toBeNull();
+      expect(hw.bindings.sectionNext).toBeNull();
     });
   });
 
@@ -525,7 +553,6 @@ describe('services/constants', () => {
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.fullJustification).toBe(false);
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.animated).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.defaultFont).toBe('string');
-      expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.marginBottomPx).toBe('number');
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.disableDoubleClick).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.spreadMode).toBe('string');
     });
@@ -568,7 +595,6 @@ describe('services/constants', () => {
     it('has boolean display flags', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showHeader).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showBarsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingTime).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingPages).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showProgressInfo).toBe('boolean');
@@ -577,7 +603,6 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showBatteryPercentage).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.use24HourClock).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.tapToToggleFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showMarginsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showPaginationButtons).toBe('boolean');
     });
 

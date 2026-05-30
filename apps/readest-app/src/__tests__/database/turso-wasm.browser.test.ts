@@ -7,7 +7,7 @@ import { vectorTests } from './suites/vector-tests';
 import { migrationTests } from './suites/migration-tests';
 
 /**
- * Browser-based integration tests for WebDatabaseService using @tursodatabase/database-wasm.
+ * Browser-based integration tests for WebDatabaseService using @readest/turso-database-wasm.
  * These run in real headless Chromium via @vitest/browser + Playwright, providing
  * Web Workers, SharedArrayBuffer, and OPFS support required by the WASM module.
  */

@@ -13,6 +13,7 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getProgress: () => null,
+    getView: () => ({ renderer: { columnCount: 1 } }),
   }),
 }));
 
@@ -116,7 +117,10 @@ describe('ReadingRuler', () => {
       const ruler = container.querySelector('.ruler') as HTMLDivElement;
       const overlays = container.querySelectorAll('.bg-base-100');
 
-      expect(ruler.style.top).toBe('37.8%');
+      // With no progress range available the handler falls back to fixed
+      // stepping; the fallback band size is base + 2*padding = 48 + 2*7 = 62,
+      // so a 1000px viewport steps from 33% to (330 + 62) / 1000 = 39.2%.
+      expect(parseFloat(ruler.style.top)).toBeCloseTo(39.2, 5);
       expect(ruler.style.transition).toContain('top 0.6s');
       expect(overlays[0]?.getAttribute('style')).toContain('transition: height 0.6s');
       expect(overlays[1]?.getAttribute('style')).toContain('transition: height 0.6s');
@@ -124,7 +128,7 @@ describe('ReadingRuler', () => {
         {},
         'book-1',
         'readingRulerPosition',
-        37.8,
+        expect.closeTo(39.2),
         false,
         false,
       );
@@ -165,7 +169,7 @@ describe('ReadingRuler', () => {
         isVertical={false}
         rtl={false}
         lines={2}
-        position={97.6}
+        position={96.9}
         opacity={0.5}
         color='transparent'
         bookFormat='EPUB'
@@ -174,6 +178,8 @@ describe('ReadingRuler', () => {
       />,
     );
 
+    // 96.9% is the clamp max for the fallback band of 62px in a 1000px viewport
+    // (100 - (62 / 2 / 1000) * 100), so a forward step cannot advance further.
     const consumed = eventDispatcher.dispatchSync('reading-ruler-move', {
       bookKey: 'book-1',
       direction: 'forward',

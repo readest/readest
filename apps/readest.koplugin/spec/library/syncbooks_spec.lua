@@ -250,4 +250,89 @@ describe("library.syncbooks", function()
             assert.are.equal("README (1)", out)
         end)
     end)
+
+    -- =====================================================================
+    -- syncBooks(opts, mode, cb, before_push) — bidirectional orchestration.
+    --
+    -- The order matters: pull must run BEFORE push in "both" mode so the
+    -- local row has fresh cloud-side fields (uploaded_at, metadata, etc.)
+    -- before we touch + push it. Otherwise the push would send a row with
+    -- those fields nil, and the server's transformBookToDB explicit-nulls
+    -- them on the cloud — wiping out group/upload state on every device
+    -- that pulls afterward. Regression guard for issue #4138.
+    -- =====================================================================
+    describe("syncBooks", function()
+        -- Stub the network-touching halves so we can record call order and
+        -- assert it without standing up Spore + a fake server.
+        local function with_stubs(fn)
+            local original_pull  = syncbooks.pullBooks
+            local original_push  = syncbooks.pushChangedBooks
+            local calls = {}
+            syncbooks.pullBooks = function(_opts, cb)
+                table.insert(calls, "pull")
+                if cb then cb(true, 0) end
+            end
+            syncbooks.pushChangedBooks = function(_opts, cb)
+                table.insert(calls, "push")
+                if cb then cb(true, 0) end
+            end
+            local ok, err = pcall(fn, calls)
+            syncbooks.pullBooks         = original_pull
+            syncbooks.pushChangedBooks  = original_push
+            if not ok then error(err) end
+        end
+
+        it("runs pull before push in 'both' mode", function()
+            with_stubs(function(calls)
+                local before_push_at
+                syncbooks.syncBooks({}, "both",
+                    function() end,
+                    function() before_push_at = #calls end)
+                assert.are.same({ "pull", "push" }, calls)
+                -- before_push runs AFTER pull and BEFORE push — i.e. with
+                -- exactly one call ("pull") recorded so far.
+                assert.are.equal(1, before_push_at)
+            end)
+        end)
+
+        it("invokes before_push between pull and push in 'both' mode", function()
+            with_stubs(function(calls)
+                local before_push_called = 0
+                syncbooks.syncBooks({}, "both",
+                    function() end,
+                    function() before_push_called = before_push_called + 1 end)
+                assert.are.equal(1, before_push_called)
+            end)
+        end)
+
+        it("invokes before_push and then push in 'push' mode", function()
+            with_stubs(function(calls)
+                local before_push_at
+                syncbooks.syncBooks({}, "push",
+                    function() end,
+                    function() before_push_at = #calls end)
+                assert.are.same({ "push" }, calls)
+                assert.are.equal(0, before_push_at)
+            end)
+        end)
+
+        it("skips before_push in 'pull' mode (no push happens)", function()
+            with_stubs(function(calls)
+                local before_push_called = 0
+                syncbooks.syncBooks({}, "pull",
+                    function() end,
+                    function() before_push_called = before_push_called + 1 end)
+                assert.are.same({ "pull" }, calls)
+                assert.are.equal(0, before_push_called)
+            end)
+        end)
+
+        it("tolerates a missing before_push callback", function()
+            with_stubs(function(calls)
+                -- No before_push passed; orchestration should still work.
+                syncbooks.syncBooks({}, "both", function() end)
+                assert.are.same({ "pull", "push" }, calls)
+            end)
+        end)
+    end)
 end)

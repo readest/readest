@@ -42,6 +42,7 @@ export abstract class BaseAppService implements AppService {
   isAppDataSandbox = false;
   isAndroidApp = false;
   isIOSApp = false;
+  isWindowsApp = false;
   isMobileApp = false;
   isPortableApp = false;
   isDesktopApp = false;
@@ -77,7 +78,12 @@ export abstract class BaseAppService implements AppService {
   abstract saveFile(
     filename: string,
     content: string | ArrayBuffer,
-    options?: { filePath?: string; mimeType?: string },
+    options?: {
+      filePath?: string;
+      mimeType?: string;
+      share?: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ): Promise<boolean>;
   abstract ask(message: string): Promise<boolean>;
   abstract openDatabase(
@@ -121,8 +127,13 @@ export abstract class BaseAppService implements AppService {
     return await this.fs.openFile(path, base);
   }
 
-  async copyFile(srcPath: string, dstPath: string, base: BaseDir): Promise<void> {
-    return await this.fs.copyFile(srcPath, dstPath, base);
+  async copyFile(
+    srcPath: string,
+    srcBase: BaseDir,
+    dstPath: string,
+    dstBase: BaseDir,
+  ): Promise<void> {
+    return await this.fs.copyFile(srcPath, srcBase, dstPath, dstBase);
   }
 
   async readFile(path: string, base: BaseDir, mode: 'text' | 'binary') {
@@ -231,8 +242,11 @@ export abstract class BaseAppService implements AppService {
     return ImageSvc.deleteImage(this.fs, texture);
   }
 
-  async importDictionaries(files: SelectedFile[]): Promise<DictSvc.ImportDictionariesResult> {
-    return DictSvc.importDictionaries(this.fs, files);
+  async importDictionaries(
+    files: SelectedFile[],
+    existingDictionaries: ImportedDictionary[] = [],
+  ): Promise<DictSvc.ImportDictionariesResult> {
+    return DictSvc.importDictionaries(this.fs, files, existingDictionaries);
   }
 
   async deleteDictionary(dict: ImportedDictionary): Promise<void> {
@@ -273,6 +287,51 @@ export abstract class BaseAppService implements AppService {
       hash,
       temp,
     );
+  }
+
+  async uploadReplicaFile(
+    kind: string,
+    replicaId: string,
+    filename: string,
+    lfp: string,
+    base: BaseDir,
+    onProgress: ProgressHandler,
+  ) {
+    return CloudSvc.uploadReplicaFileToCloud(this.fs, this.resolveFilePath.bind(this), {
+      kind,
+      replicaId,
+      filename,
+      lfp,
+      base,
+      onProgress,
+    });
+  }
+
+  async downloadReplicaFile(
+    kind: string,
+    replicaId: string,
+    filename: string,
+    lfp: string,
+    base: BaseDir,
+    onProgress?: ProgressHandler,
+  ) {
+    // Resolve the relative `<bundleDir>/<filename>` lfp against the
+    // replica's base dir before downloading. Mirrors how upload uses
+    // `resolveFilePath(opts.lfp, opts.base)`. Without this, the writer
+    // lands the bytes at the literal lfp (no base prefix) so subsequent
+    // openFile(lfp, base) calls fail with "File not found".
+    const dst = await this.resolveFilePath(lfp, base);
+    return CloudSvc.downloadReplicaFileFromCloud(this, {
+      kind,
+      replicaId,
+      filename,
+      dst,
+      onProgress,
+    });
+  }
+
+  async deleteReplicaBundle(kind: string, replicaId: string, filenames: string[]) {
+    return CloudSvc.deleteReplicaBundleFromCloud(kind, replicaId, filenames);
   }
 
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {

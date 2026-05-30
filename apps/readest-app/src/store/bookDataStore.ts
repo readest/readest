@@ -86,18 +86,23 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     // progress and timestamps. We do NOT mutate the existing book object or
     // the existing library array — Zustand subscribers see fresh references
     // and the visibleLibrary cache stays in sync via setLibrary's full update.
+    const now = Date.now();
     const original = library[idx]!;
     const updatedBook: Book = {
       ...original,
       progress: config.progress,
-      updatedAt: Date.now(),
-      downloadedAt: original.downloadedAt || Date.now(),
+      updatedAt: now,
+      downloadedAt: original.downloadedAt || now,
     };
     const newLibrary = [updatedBook, ...library.slice(0, idx), ...library.slice(idx + 1)];
     setLibrary(newLibrary);
 
-    config.updatedAt = Date.now();
-    await appService.saveBookConfig(updatedBook, config, settings);
+    // Refresh updatedAt immutably via the store rather than mutating the
+    // caller-provided object. This notifies Zustand subscribers and works
+    // regardless of whether the caller passed the shared store config.
+    get().setConfig(bookKey, { updatedAt: now });
+    const configToSave = { ...config, updatedAt: now };
+    await appService.saveBookConfig(updatedBook, configToSave, settings);
     await appService.saveLibraryBooks(useLibraryStore.getState().library);
   },
   updateBooknotes: (key: string, booknotes: BookNote[]) => {

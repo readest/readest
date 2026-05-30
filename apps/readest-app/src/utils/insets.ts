@@ -21,3 +21,30 @@ export const getViewInsets = (viewSettings: ViewSettings) => {
     left: showFooter && isVertical ? fullMarginLeftPx : compactMarginLeftPx,
   } as Insets;
 };
+
+/**
+ * Top padding (px) for a slide-in panel (sidebar / notebook) so its toolbar
+ * clears the device status bar, mirroring the reader header.
+ *
+ * A partial-height mobile bottom sheet doesn't reach the top of the screen, so
+ * it needs no padding. Every other case (full-height mobile sheet, or a
+ * tablet/desktop panel anchored to the top) clears the safe-area inset, growing
+ * to the status bar height when the system UI is visible.
+ */
+export const getPanelTopInset = ({
+  isMobile,
+  isFullHeightInMobile,
+  systemUIVisible,
+  statusBarHeight,
+  safeAreaInsets,
+}: {
+  isMobile: boolean;
+  isFullHeightInMobile: boolean;
+  systemUIVisible: boolean;
+  statusBarHeight: number;
+  safeAreaInsets: Insets | null;
+}): number => {
+  if (isMobile && !isFullHeightInMobile) return 0;
+  const top = safeAreaInsets?.top || 0;
+  return systemUIVisible ? Math.max(top, statusBarHeight) : top;
+};

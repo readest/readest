@@ -1,0 +1,10 @@
+services:
+  client:
+    build:
+      context: ..
+      target: production-stage
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: http://${HOST_IP}:${KONG_HTTP_PORT:-8000}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+        NEXT_PUBLIC_APP_PLATFORM: web
+        NEXT_PUBLIC_API_BASE_URL: http://${HOST_IP}:3000

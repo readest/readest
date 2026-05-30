@@ -48,10 +48,10 @@ vi.mock('tauri-plugin-turso', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Mock: @tursodatabase/database-wasm
+// Mock: @readest/turso-database-wasm
 // ---------------------------------------------------------------------------
 
-vi.mock('@tursodatabase/database-wasm', () => {
+vi.mock('@readest/turso-database-wasm/webpack', () => {
   const rows = new Map<string, DatabaseRow[]>();
 
   const mockDb = {
@@ -164,7 +164,7 @@ describe('WebDatabaseService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mod = await import('@tursodatabase/database-wasm');
+    const mod = await import('@readest/turso-database-wasm/webpack');
     (mod as unknown as { __rows: Map<string, DatabaseRow[]> }).__rows.clear();
 
     const { WebDatabaseService } = await import('@/services/database/webDatabaseService');
@@ -196,7 +196,7 @@ describe('WebDatabaseService', () => {
 
   it('batch() wraps in BEGIN/COMMIT transaction', async () => {
     await db.batch(['CREATE TABLE t (id INTEGER)', 'INSERT INTO t VALUES (1)']);
-    const mod = await import('@tursodatabase/database-wasm');
+    const mod = await import('@readest/turso-database-wasm/webpack');
     const mockDb = (mod as unknown as { __mockDb: { exec: ReturnType<typeof vi.fn> } }).__mockDb;
     expect(mockDb.exec).toHaveBeenCalledWith('BEGIN');
     expect(mockDb.exec).toHaveBeenCalledWith('CREATE TABLE t (id INTEGER)');
@@ -205,7 +205,7 @@ describe('WebDatabaseService', () => {
   });
 
   it('batch() rolls back on error', async () => {
-    const mod = await import('@tursodatabase/database-wasm');
+    const mod = await import('@readest/turso-database-wasm/webpack');
     const mockDb = (mod as unknown as { __mockDb: { exec: ReturnType<typeof vi.fn> } }).__mockDb;
     let callCount = 0;
     mockDb.exec.mockImplementation((_sql: string) => {
@@ -220,7 +220,7 @@ describe('WebDatabaseService', () => {
 
   it('close() delegates to underlying db.close()', async () => {
     await db.close();
-    const mod = await import('@tursodatabase/database-wasm');
+    const mod = await import('@readest/turso-database-wasm/webpack');
     const mockDb = (mod as unknown as { __mockDb: { close: ReturnType<typeof vi.fn> } }).__mockDb;
     expect(mockDb.close).toHaveBeenCalled();
   });

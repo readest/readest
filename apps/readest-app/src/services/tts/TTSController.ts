@@ -195,7 +195,23 @@ export class TTSController extends EventTarget {
       textWalker,
       createRejectFilter({
         tags: ['rt', 'canvas', 'br'],
-        classes: ['annotationLayer'],
+        // Footnotes/endnotes are hidden in the rendered page (see the
+        // `.epubtype-footnote`/`aside[epub|type]` rules in getPageLayoutStyles);
+        // skip them in TTS too, including for background sections whose
+        // documents are loaded without those styles.
+        classes: [
+          'annotationLayer',
+          'epubtype-footnote',
+          'duokan-footnote-content',
+          'duokan-footnote-item',
+        ],
+        attributeTokens: [
+          {
+            tag: 'aside',
+            attribute: 'epub:type',
+            tokens: ['footnote', 'endnote', 'note', 'rearnote'],
+          },
+        ],
         contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
       }),
       this.#getHighlighter(),

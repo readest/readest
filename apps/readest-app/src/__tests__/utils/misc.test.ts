@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 import { makeSafeFilename } from '../../utils/misc';
 
@@ -51,6 +52,11 @@ describe('makeSafeFilename', () => {
       expect(makeSafeFilename('COM9')).toBe('COM9_');
       expect(makeSafeFilename('LPT1')).toBe('LPT1_');
       expect(makeSafeFilename('LPT9')).toBe('LPT9_');
+    });
+
+    it('should handle reserved names after trimming whitespace', () => {
+      expect(makeSafeFilename(' CON ')).toBe('CON_');
+      expect(makeSafeFilename(' prn ')).toBe('prn_');
     });
 
     it('should not affect reserved names with extensions', () => {
@@ -373,6 +379,22 @@ describe('makeSafeFilename', () => {
       const url = 'https://example.com/book.pdf';
       const result = makeSafeFilename(url);
       expect(result).toBe('https___example.com_book.pdf');
+    });
+  });
+
+  describe('Property checks', () => {
+    it('should keep sanitized filenames bounded, safe, trimmed, and stable', () => {
+      fc.assert(
+        fc.property(fc.string({ maxLength: 1000 }), (filename) => {
+          const result = makeSafeFilename(filename);
+
+          expect(new TextEncoder().encode(result).length).toBeLessThanOrEqual(250);
+          expect(result).not.toMatch(/[<>:%#"\/\\|?*\x00-\x1F]/);
+          expect(result).toBe(result.trim());
+          expect(makeSafeFilename(result)).toBe(result);
+        }),
+        { numRuns: 200 },
+      );
     });
   });
 });

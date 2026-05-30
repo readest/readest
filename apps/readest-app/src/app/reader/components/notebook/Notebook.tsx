@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { RiQuillPenLine } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -17,6 +18,7 @@ import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
+import { getPanelTopInset } from '@/utils/insets';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
@@ -27,6 +29,7 @@ import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
+import EmptyState from '../EmptyState';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -247,6 +250,8 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const isNotesTabEmpty =
+    !notebookNewAnnotation && !notebookEditAnnotation && !isSearchBarVisible && !hasAnyNotes;
 
   return isNotebookVisible ? (
     <>
@@ -273,11 +278,13 @@ const Notebook: React.FC = ({}) => {
           width: isMobile ? '100%' : `${notebookWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
-          paddingTop: isFullHeightInMobile
-            ? systemUIVisible
-              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-              : `${safeAreaInsets?.top || 0}px`
-            : '0px',
+          paddingTop: `${getPanelTopInset({
+            isMobile,
+            isFullHeightInMobile,
+            systemUIVisible,
+            statusBarHeight,
+            safeAreaInsets,
+          })}px`,
         }}
       >
         <style jsx>{`
@@ -346,6 +353,14 @@ const Notebook: React.FC = ({}) => {
         {notebookActiveTab === 'ai' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
+          </div>
+        ) : isNotesTabEmpty ? (
+          <div className='flex flex-grow items-center justify-center overflow-y-auto px-3'>
+            <EmptyState
+              Icon={RiQuillPenLine}
+              label={_('No Notes')}
+              hint={_('Capture an idea as you read')}
+            />
           </div>
         ) : (
           <div className='flex-grow overflow-y-auto px-3'>

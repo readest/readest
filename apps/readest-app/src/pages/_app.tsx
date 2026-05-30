@@ -9,6 +9,11 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
+        {/*
+         * `interactive-widget=resizes-content` is appended client-side
+         * on Android only (Providers.tsx) so other browsers don't
+         * warn about the unrecognized key on every page load.
+         */}
         <meta
           name='viewport'
           content='minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover'

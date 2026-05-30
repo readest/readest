@@ -3,6 +3,7 @@ import { MdOutlineLightMode, MdOutlineDarkMode } from 'react-icons/md';
 import { TbSunMoon } from 'react-icons/tb';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
+import { SettingLabel } from '../primitives';
 
 interface ThemeModeSelectorProps {
   themeMode: 'auto' | 'light' | 'dark';
@@ -37,8 +38,8 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({ themeMode, onThem
   };
 
   return (
-    <div className='flex items-center justify-between'>
-      <h2 className='font-medium'>{_('Theme Mode')}</h2>
+    <div className='flex items-center justify-between px-4'>
+      <SettingLabel>{_('Theme Mode')}</SettingLabel>
       <div className='flex gap-4'>
         <button
           title={_('Auto Mode')}

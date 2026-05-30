@@ -19,7 +19,7 @@ interface TursoDatabase {
 /**
  * DatabaseService implementation backed by @tursodatabase/database (Node.js native).
  * Uses the same turso engine and API surface as the browser-based
- * @tursodatabase/database-wasm used by WebDatabaseService.
+ * @readest/turso-database-wasm used by WebDatabaseService.
  */
 export class NodeDatabaseService implements DatabaseService {
   private db: TursoDatabase;

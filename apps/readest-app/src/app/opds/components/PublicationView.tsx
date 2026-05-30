@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
@@ -20,6 +20,15 @@ import MenuItem from '@/components/MenuItem';
 interface PublicationViewProps {
   publication: OPDSPublication;
   baseURL: string;
+  /**
+   * Book in the user's library that already corresponds to this publication,
+   * if any. When provided, the acquisition button skips Download and goes
+   * straight to "Open & Read" — matching the post-download UX even after the
+   * component remounts (e.g. returning from the reader, or switching
+   * publications inside the same OPDS browser session). null/undefined means
+   * "no copy in library, show the normal acquisition button".
+   */
+  existingBook?: Book | null;
   resolveURL: (url: string, base: string) => string;
   onDownload: (
     href: string,
@@ -33,6 +42,7 @@ interface PublicationViewProps {
 export function PublicationView({
   publication,
   baseURL,
+  existingBook,
   resolveURL,
   onDownload,
   onStream,
@@ -41,8 +51,29 @@ export function PublicationView({
   const _ = useTranslation();
   const router = useRouter();
   const [downloading, setDownloading] = useState(false);
-  const [downloadedBook, setDownloadedBook] = useState<Book | null>(null);
+  // Seeded from existingBook so users who reopen a publication they've already
+  // downloaded see "Open & Read" immediately, without having to re-download.
+  // When existingBook later changes (parent switches to a different
+  // publication, or the library finishes loading after this mounts) the
+  // effect below resyncs.
+  const [downloadedBook, setDownloadedBook] = useState<Book | null>(existingBook ?? null);
   const [progress, setProgress] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Only resync from the parent-provided existingBook; don't blow away a
+    // book set locally by a successful handleActionButton download just
+    // because the parent re-rendered without recomputing existingBook yet.
+    if (existingBook && existingBook.hash !== downloadedBook?.hash) {
+      setDownloadedBook(existingBook);
+    } else if (!existingBook && downloadedBook && !downloading) {
+      // existingBook went from set to null — happens when the parent rebuilds
+      // the publication (new feed loaded). Drop the stale state so the next
+      // publication starts from "Download" instead of inheriting the prior
+      // book's "Open & Read".
+      setDownloadedBook(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingBook]);
 
   const linksByRel = useMemo(
     () => groupByArray(publication.links, (link) => link.rel),
@@ -81,8 +112,8 @@ export function PublicationView({
     return (linksByRel.get(REL.STREAM) || []) as OPDSStreamLink[];
   }, [linksByRel]);
 
-  const handleActionButton = async (href: string, type?: string) => {
-    if (downloadedBook) {
+  const handleActionButton = async (href: string, type?: string, forceDownload = false) => {
+    if (downloadedBook && !forceDownload) {
       navigateToReader(router, [downloadedBook.hash]);
       return;
     }
@@ -171,32 +202,47 @@ export function PublicationView({
 
                 return (
                   <div key={rel} className='flex gap-1'>
-                    {validLinks.length === 1 || downloadedBook ? (
+                    {downloadedBook ? (
+                      <>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            handleActionButton(validLinks[0]!.href!, validLinks[0]!.type)
+                          }
+                          disabled={downloading}
+                          className='btn btn-primary btn-success min-w-20 rounded-3xl'
+                        >
+                          {_('Open & Read')}
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            handleActionButton(validLinks[0]!.href!, validLinks[0]!.type, true)
+                          }
+                          disabled={downloading}
+                          className='btn btn-primary min-w-20 rounded-3xl'
+                        >
+                          {_('Download Again')}
+                        </button>
+                      </>
+                    ) : validLinks.length === 1 ? (
                       <button
                         type='button'
                         onClick={() =>
                           handleActionButton(validLinks[0]!.href!, validLinks[0]!.type)
                         }
                         disabled={downloading}
-                        className={clsx(
-                          'btn btn-primary min-w-20 rounded-3xl',
-                          downloadedBook && 'btn-success',
-                        )}
+                        className='btn btn-primary min-w-20 rounded-3xl'
                       >
-                        {downloadedBook ? _('Open & Read') : getAcquisitionLabel(rel)}
+                        {getAcquisitionLabel(rel)}
                       </button>
                     ) : (
                       <Dropdown
                         label={_('Download')}
                         className='dropdown-bottom dropdown-center flex justify-center'
-                        buttonClassName={clsx(
-                          'btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary',
-                          downloadedBook && 'btn-success',
-                        )}
+                        buttonClassName='btn btn-primary min-w-20 rounded-3xl p-0 bg-primary hover:bg-primary'
                         disabled={downloading}
-                        toggleButton={
-                          <div>{downloadedBook ? _('Open') : getAcquisitionLabel(rel)}</div>
-                        }
+                        toggleButton={<div>{getAcquisitionLabel(rel)}</div>}
                       >
                         <div
                           className={clsx(

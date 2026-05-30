@@ -10,7 +10,7 @@ import { migrationTests } from './suites/migration-tests';
  * Integration tests using a real in-memory SQLite database via @tursodatabase/database.
  * These complement the mock-based tests in mock.test.ts by exercising
  * actual SQL execution through the DatabaseService interface using the same
- * turso engine that powers the browser-based @tursodatabase/database-wasm.
+ * turso engine that powers the browser-based @readest/turso-database-wasm.
  */
 describe('NodeDatabaseService (real in-memory SQLite)', () => {
   let db: DatabaseService;

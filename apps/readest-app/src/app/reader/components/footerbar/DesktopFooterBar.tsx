@@ -8,7 +8,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatProgress } from '@/utils/progress';
-import { FooterBarChildProps } from './types';
+import type { FooterBarChildProps } from './types';
 import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
 

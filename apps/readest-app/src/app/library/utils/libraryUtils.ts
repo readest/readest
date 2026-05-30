@@ -1,5 +1,9 @@
 import { Book, BooksGroup } from '@/types/book';
-import { LibraryGroupByType, LibrarySortByType } from '@/types/settings';
+import {
+  LibraryGroupByType,
+  LibrarySecondarySortByType,
+  LibrarySortByType,
+} from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 
@@ -21,6 +25,65 @@ export const ensureLibrarySortByType = (
     return value as LibrarySortByType;
   }
   return fallback;
+};
+
+/**
+ * Safely cast a query parameter to LibrarySecondarySortByType with fallback.
+ * Accepts any valid primary sort type plus the literal 'none'.
+ */
+export const ensureLibrarySecondarySortByType = (
+  value: string | null | undefined,
+  fallback: LibrarySecondarySortByType,
+): LibrarySecondarySortByType => {
+  if (value === 'none') return 'none';
+  if (value && VALID_SORT_TYPES.includes(value as LibrarySortByType)) {
+    return value as LibrarySortByType;
+  }
+  return fallback;
+};
+
+/**
+ * Resolve the *effective* primary sort key, applying smart defaults derived
+ * from the current `groupBy`. The stored `librarySortBy` is left unchanged;
+ * this only substitutes a sensible implicit default when the user is still on
+ * auto, so grouping by Series lands an alphabetical-by-series-name listing
+ * without any extra clicks.
+ *
+ * - !isAuto                              -> use stored as-is
+ * - groupBy=Series and isAuto            -> Series
+ * - everything else                      -> stored
+ */
+export const resolveEffectivePrimarySort = (
+  stored: LibrarySortByType,
+  groupBy: LibraryGroupByType,
+  isAuto: boolean,
+): LibrarySortByType => {
+  if (!isAuto) return stored;
+  if (groupBy === LibraryGroupByType.Series) return LibrarySortByType.Series;
+  return stored;
+};
+
+/**
+ * Resolve the *effective* secondary sort key, applying smart defaults derived
+ * from the current `groupBy`. The stored secondary stays whatever the user
+ * picked; this only substitutes 'none' with a sensible implicit default so
+ * users get useful behavior out of the box (e.g. drilling into an Author
+ * group lands a series-ordered list without any extra clicks).
+ *
+ * - explicit secondary (any non-'none')  -> use as-is
+ * - groupBy=Author and stored='none'     -> Series
+ * - everything else                      -> 'none'
+ *
+ * groupBy=Series doesn't default to anything because `createWithinGroupSorter`
+ * already orders by `seriesIndex` for series groups.
+ */
+export const resolveEffectiveSecondarySort = (
+  secondary: LibrarySecondarySortByType,
+  groupBy: LibraryGroupByType,
+): LibrarySecondarySortByType => {
+  if (secondary !== 'none') return secondary;
+  if (groupBy === LibraryGroupByType.Author) return LibrarySortByType.Series;
+  return 'none';
 };
 
 /**
@@ -59,6 +122,32 @@ export const getGroupDisplayName = (
   return group?.displayName || group?.name;
 };
 
+/**
+ * Expand a list of selection ids (book hashes or group ids from the rendered
+ * bookshelf) into the unique book hashes those ids represent.
+ *
+ * Group ids resolve to every (non-soft-deleted) book in the group's visible
+ * rollup — `generateBookshelfItems` already folds nested-folder books into
+ * their top-level group, so the rendered `BooksGroup.books` is the source of
+ * truth. Standalone book hashes (and any unknown ids) pass through unchanged,
+ * letting callers like the bookshelf delete flow collect the right set up
+ * front instead of re-deriving it later.
+ */
+export const expandBookshelfSelection = (ids: string[], items: (Book | BooksGroup)[]): string[] => {
+  const hashes = new Set<string>();
+  for (const id of ids) {
+    const group = findGroupById(items, id);
+    if (group) {
+      for (const book of group.books) {
+        if (!book.deletedAt) hashes.add(book.hash);
+      }
+    } else {
+      hashes.add(id);
+    }
+  }
+  return [...hashes];
+};
+
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
@@ -89,16 +178,18 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   );
 };
 
-export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book, b: Book) => {
+const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
   switch (sortBy) {
-    case LibrarySortByType.Title:
+    case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
       const bTitle = formatTitle(b.title);
       return aTitle.localeCompare(bTitle, uiLanguage || navigator.language);
-    case LibrarySortByType.Author:
+    }
+    case LibrarySortByType.Author: {
       const aAuthors = formatAuthors(a.author, a?.primaryLanguage || 'en', true);
       const bAuthors = formatAuthors(b.author, b?.primaryLanguage || 'en', true);
       return aAuthors.localeCompare(bAuthors, uiLanguage || navigator.language);
+    }
     case LibrarySortByType.Updated:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
     case LibrarySortByType.Created:
@@ -107,7 +198,7 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
     case LibrarySortByType.Series:
       return (a.metadata?.seriesIndex || 0) - (b.metadata?.seriesIndex || 0);
-    case LibrarySortByType.Published:
+    case LibrarySortByType.Published: {
       const aPublished = a.metadata?.published || '0001-01-01';
       const bPublished = b.metadata?.published || '0001-01-01';
 
@@ -128,9 +219,45 @@ export const createBookSorter = (sortBy: string, uiLanguage: string) => (a: Book
       if (isNaN(bDate)) return -1;
 
       return aDate - bDate;
+    }
     default:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
   }
+};
+
+/**
+ * @param secondarySortBy - Optional tiebreaker key applied when the primary
+ *   comparison returns 0. Pass `'none'` (or omit) to disable. Series-index ties
+ *   on a Series secondary fall through to the underlying primary tie.
+ */
+export const createBookSorter =
+  (sortBy: string, uiLanguage: string, secondarySortBy: LibrarySecondarySortByType = 'none') =>
+  (a: Book, b: Book): number => {
+    const primary = compareBookByKey(a, b, sortBy, uiLanguage);
+    if (primary !== 0 || secondarySortBy === 'none') return primary;
+    return compareBookByKey(a, b, secondarySortBy, uiLanguage);
+  };
+
+/**
+ * Build a `groupName -> max(book.updatedAt)` map for all groups touched by
+ * the given books. Each book bumps both its direct group and every ancestor
+ * group along its path (e.g. a book in "Literature/Fiction" also bumps
+ * "Literature"), so parent groups don't sink just because their direct
+ * members are stale.
+ */
+export const buildGroupNameUpdatedAt = (books: Book[]): Map<string, number> => {
+  const map = new Map<string, number>();
+  for (const book of books) {
+    if (!book.groupName || !book.updatedAt) continue;
+    let path: string | undefined = book.groupName;
+    while (path) {
+      const prev = map.get(path) ?? 0;
+      if (book.updatedAt > prev) map.set(path, book.updatedAt);
+      const slash = path.lastIndexOf('/');
+      path = slash === -1 ? undefined : path.slice(0, slash);
+    }
+  }
+  return map;
 };
 
 export const getBreadcrumbs = (currentPath: string) => {
@@ -271,10 +398,14 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 /**
  * Create a sorter for books within a group.
  * For series groups: sort by seriesIndex first (always ascending), then by global sort for items without index.
- * For author groups: follow global sort setting.
- * @param sortAscending - When true (default), sort direction is ascending. Series index is always
- *   ascending regardless of this flag; the flag only affects the fallback sort for books without
- *   series index and non-series groupings.
+ * For other groupings: when a secondary key is supplied, sort by secondary key first (always ascending),
+ *   with the primary global sort as tiebreaker. Without secondary, follow global sort setting.
+ * @param sortAscending - When true (default), sort direction is ascending. Series index and the
+ *   secondary key are always ascending regardless of this flag; the flag affects the fallback /
+ *   primary tiebreaker only.
+ * @param secondarySortBy - When non-'none', acts as the *primary* within-group ordering for
+ *   non-series groupings (matches the user's mental model: "group by author, then sort by series"
+ *   should land series order inside each author).
  */
 export const createWithinGroupSorter =
   (
@@ -282,6 +413,7 @@ export const createWithinGroupSorter =
     sortBy: LibrarySortByType,
     uiLanguage: string,
     sortAscending: boolean = true,
+    secondarySortBy: LibrarySecondarySortByType = 'none',
   ) =>
   (a: Book, b: Book): number => {
     const sortDirection = sortAscending ? 1 : -1;
@@ -303,7 +435,14 @@ export const createWithinGroupSorter =
       return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
     }
 
-    // For author and other groupings, use global sort with direction
+    // For author and other non-series groupings: when a secondary key is provided,
+    // use it as the within-group primary order with the global key as tiebreaker.
+    if (secondarySortBy !== 'none') {
+      const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage);
+      if (bySecondary !== 0) return bySecondary;
+      return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
+    }
+
     return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
   };
 

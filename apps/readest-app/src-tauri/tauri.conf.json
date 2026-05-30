@@ -171,6 +171,10 @@
       "endpoints": [
         "https://github.com/borwide/fork_readest/releases/latest/download/latest.json"
       ]
+    },
+    "webview-upgrade": {
+      "minUpgradeMajor": 121,
+      "minSupportedMajor": 92
     }
   }
 }

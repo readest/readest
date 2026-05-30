@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { rejectionToHttp, resolveActiveShare } from '@/libs/share-server';
+import { rejectionToHttp, resolveActiveShare } from '@/libs/shareServer';
 
 interface RouteParams {
   params: Promise<{ token: string }>;

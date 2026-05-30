@@ -248,6 +248,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           book.metadata.series = book.metadata.series ?? formatTitle(series.name);
           book.metadata.seriesIndex =
             book.metadata.seriesIndex ?? parseFloat(series.position || '0');
+          book.metadata.seriesTotal =
+            book.metadata.seriesTotal ?? (series.total ? parseInt(series.total, 10) : undefined);
         }
       }
       // TODO: uncomment this when we can ensure metaHash is correctly generated for all books

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mergeBookConfigs, mergeBookMetadata } from '@/services/backupService';
+import {
+  mergeBookConfigs,
+  mergeBookMetadata,
+  reviveRestoredBooks,
+  type RevivedBook,
+} from '@/services/backupService';
 import { Book, BookConfig, BookNote } from '@/types/book';
 
 function makeBook(overrides: Partial<Book> = {}): Book {
@@ -179,5 +184,103 @@ describe('mergeBookMetadata', () => {
     const backup = makeBook({ updatedAt: 1000, title: 'Backup Title' });
     const result = mergeBookMetadata(current, backup);
     expect(result.title).toBe('Current Title');
+  });
+});
+
+describe('reviveRestoredBooks', () => {
+  // A fixed "now" well past every fixture timestamp keeps assertions deterministic.
+  const NOW = 1_000_000_000_000;
+
+  /** Pair a freshly-merged live record with its backup metadata. */
+  function makeRevived(
+    bookOverrides: Partial<Book> = {},
+    backupOverrides: Partial<Book> = {},
+  ): RevivedBook {
+    return {
+      book: makeBook({ deletedAt: null, downloadedAt: null, ...bookOverrides }),
+      backup: makeBook(backupOverrides),
+    };
+  }
+
+  it('does nothing for an empty list', () => {
+    expect(() => reviveRestoredBooks([], NOW)).not.toThrow();
+  });
+
+  it('preserves the relative updatedAt order of revived books', () => {
+    const revived = [
+      makeRevived({ hash: 'a', updatedAt: 100 }),
+      makeRevived({ hash: 'b', updatedAt: 300 }),
+      makeRevived({ hash: 'c', updatedAt: 200 }),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    const byHash = (h: string) => revived.find((r) => r.book.hash === h)!.book.updatedAt;
+    // Original ascending order a < c < b must still hold.
+    expect(byHash('a')).toBeLessThan(byHash('c'));
+    expect(byHash('c')).toBeLessThan(byHash('b'));
+  });
+
+  it('bumps every book strictly above its original (and cloud) timestamp', () => {
+    const revived = [
+      makeRevived({ hash: 'a', updatedAt: 100 }),
+      makeRevived({ hash: 'b', updatedAt: 300 }),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[0]!.book.updatedAt).toBeGreaterThan(100);
+    expect(revived[1]!.book.updatedAt).toBeGreaterThan(300);
+  });
+
+  it('maps the newest revived book to exactly now', () => {
+    const revived = [
+      makeRevived({ hash: 'a', updatedAt: 100 }),
+      makeRevived({ hash: 'b', updatedAt: 300 }),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    expect(Math.max(revived[0]!.book.updatedAt, revived[1]!.book.updatedAt)).toBe(NOW);
+  });
+
+  it('keeps the exact gap between books (single uniform offset)', () => {
+    const revived = [
+      makeRevived({ hash: 'a', updatedAt: 1000 }),
+      makeRevived({ hash: 'b', updatedAt: 1500 }),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[1]!.book.updatedAt - revived[0]!.book.updatedAt).toBe(500);
+  });
+
+  it('still bumps by at least 1 when a book has a future timestamp', () => {
+    const future = NOW + 5000;
+    const revived = [makeRevived({ hash: 'a', updatedAt: future })];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[0]!.book.updatedAt).toBe(future + 1);
+  });
+
+  it('clears syncedAt so the next push re-uploads the book', () => {
+    const revived = [makeRevived({ hash: 'a', updatedAt: 100, syncedAt: 999 })];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[0]!.book.syncedAt).toBeNull();
+  });
+
+  it('restores download state from the backup record', () => {
+    const revived = [
+      makeRevived(
+        { hash: 'a', updatedAt: 100, downloadedAt: null, coverDownloadedAt: null },
+        { downloadedAt: 555, coverDownloadedAt: 666 },
+      ),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[0]!.book.downloadedAt).toBe(555);
+    expect(revived[0]!.book.coverDownloadedAt).toBe(666);
+  });
+
+  it('falls back to now when the backup record has no download state', () => {
+    const revived = [
+      makeRevived(
+        { hash: 'a', updatedAt: 100, downloadedAt: null, coverDownloadedAt: null },
+        { downloadedAt: null, coverDownloadedAt: null },
+      ),
+    ];
+    reviveRestoredBooks(revived, NOW);
+    expect(revived[0]!.book.downloadedAt).toBe(NOW);
+    expect(revived[0]!.book.coverDownloadedAt).toBe(NOW);
   });
 });

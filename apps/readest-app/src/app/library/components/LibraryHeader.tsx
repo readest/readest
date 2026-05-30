@@ -28,6 +28,7 @@ interface LibraryHeaderProps {
   onPullLibrary: () => void;
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
+  onImportBookFromUrl?: () => void;
   onOpenCatalogManager: () => void;
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
@@ -40,6 +41,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onPullLibrary,
   onImportBooksFromFiles,
   onImportBooksFromDirectory,
+  onImportBookFromUrl,
   onOpenCatalogManager,
   onToggleSelectMode,
   onSelectAll,
@@ -51,10 +53,10 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
-  const { isTrafficLightVisible } = useTrafficLight();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
   const headerRef = useRef<HTMLDivElement>(null);
+  const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const iconSize18 = useResponsiveSize(18);
   const { safeAreaInsets: insets } = useThemeStore();
 
@@ -96,16 +98,14 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     <div
       ref={headerRef}
       className={clsx(
-        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[48px]',
+        'titlebar z-10 flex h-[52px] w-full items-center py-2 pr-4 sm:h-[44px]',
         windowButtonVisible ? 'sm:pr-4' : 'sm:pr-6',
         isTrafficLightVisible ? 'pl-16' : 'pl-0 sm:pl-2',
       )}
       style={{
         marginTop: appService?.hasSafeAreaInset
           ? `max(${insets.top}px, ${systemUIVisible ? statusBarHeight : 0}px)`
-          : appService?.hasTrafficLight
-            ? '-2px'
-            : '0px',
+          : '0px',
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
@@ -161,6 +161,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               <ImportMenu
                 onImportBooksFromFiles={onImportBooksFromFiles}
                 onImportBooksFromDirectory={onImportBooksFromDirectory}
+                onImportBookFromUrl={onImportBookFromUrl}
                 onOpenCatalogManager={onOpenCatalogManager}
               />
             </Dropdown>
@@ -192,7 +193,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               className='btn btn-ghost text-base-content/85 h-8 min-h-8 w-[72px] p-0 sm:w-[80px]'
               aria-label={isSelectAll ? _('Deselect') : _('Select All')}
             >
-              <span className='font-sans text-base font-normal sm:text-sm'>
+              <span className='font-sans text-base font-normal sm:text-sm whitespace-nowrap truncate'>
                 {isSelectAll ? _('Deselect') : _('Select All')}
               </span>
             </button>

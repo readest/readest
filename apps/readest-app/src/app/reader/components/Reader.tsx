@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
+import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { eventDispatcher } from '@/utils/event';
 import { interceptWindowOpen } from '@/utils/open';
 import { mountAdditionalFonts } from '@/styles/fonts';
@@ -24,9 +25,6 @@ import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
-import { KOSyncSettingsWindow } from './KOSyncSettings';
-import { ReadwiseSettingsWindow } from './ReadwiseSettings';
-import { HardcoverSettingsWindow } from './HardcoverSettings';
 import { ProofreadRulesManager } from './ProofreadRules';
 import { Toast } from '@/components/Toast';
 import { getLocale } from '@/utils/misc';
@@ -73,6 +71,12 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
   useScreenWakeLock(settings.screenWakeLock);
   useTransferQueue(libraryLoaded, 5000);
+  // Reader needs dictionaries for word-lookup, fonts for rendering, and
+  // textures for the page background. Mounted here (not in the app-
+  // router page wrapper) so the web pages-router entry at
+  // `pages/reader/[ids].tsx` also gets the pull. Module-scoped dedup
+  // means navigating between library and reader doesn't re-pull.
+  useReplicaPull({ kinds: ['dictionary', 'font', 'texture'] });
 
   useEffect(() => {
     mountAdditionalFonts(document);
@@ -176,9 +180,6 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
         <AboutWindow />
         <KeyboardShortcutsHelp />
         <UpdaterWindow />
-        <KOSyncSettingsWindow />
-        <ReadwiseSettingsWindow />
-        <HardcoverSettingsWindow />
         <ProofreadRulesManager />
         <Toast />
       </Suspense>

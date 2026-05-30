@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-show-lookup-popover"
+description = "Enables the show_lookup_popover command without any pre-configured scope."
+commands.allow = ["show_lookup_popover"]
+
+[[permission]]
+identifier = "deny-show-lookup-popover"
+description = "Denies the show_lookup_popover command without any pre-configured scope."
+commands.deny = ["show_lookup_popover"]

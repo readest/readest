@@ -85,18 +85,24 @@ const StorageManager = () => {
     loadStats();
   }, [loadFiles, loadStats]);
 
-  // Group files by book_hash
+  // Group files by their natural row identity:
+  //   - book_hash for book uploads
+  //   - replica_kind:replica_id for replica binaries (each dictionary,
+  //     font, etc. clusters under its own row)
+  //   - 'no-group' as a final catch-all
+  const groupKeyFor = (file: FileRecord): string => {
+    if (file.book_hash) return file.book_hash;
+    if (file.replica_id) return `replica:${file.replica_kind ?? '?'}:${file.replica_id}`;
+    return 'no-group';
+  };
+
   const groupedFiles = React.useMemo(() => {
     const groups = new Map<string, FileRecord[]>();
-
     files.forEach((file) => {
-      const bookHash = file.book_hash || 'no-book';
-      if (!groups.has(bookHash)) {
-        groups.set(bookHash, []);
-      }
-      groups.get(bookHash)!.push(file);
+      const key = groupKeyFor(file);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(file);
     });
-
     return groups;
   }, [files]);
 
@@ -109,9 +115,19 @@ const StorageManager = () => {
     return getFileName(file.file_key).toLowerCase() === 'cover.png';
   };
 
-  // Get main book file (first non-cover file)
-  const getMainBookFile = (bookFiles: FileRecord[]): FileRecord | null => {
-    return bookFiles.find((f) => !isCoverFile(f)) || bookFiles[0] || null;
+  // Pick the file whose name labels the group:
+  //   - book groups: first non-cover file (existing behavior).
+  //   - replica groups: the largest file. The primary binary
+  //     (dictionary .mdx, font .ttf, etc.) dominates the bundle by
+  //     size, so labelling by it surfaces the natural identifier
+  //     rather than a tiny sidecar like dacihai.css.
+  const getMainBookFile = (groupFiles: FileRecord[]): FileRecord | null => {
+    if (groupFiles.length === 0) return null;
+    const isReplicaGroup = !groupFiles[0]!.book_hash && !!groupFiles[0]!.replica_id;
+    if (isReplicaGroup) {
+      return groupFiles.reduce((a, b) => (b.file_size > a.file_size ? b : a));
+    }
+    return groupFiles.find((f) => !isCoverFile(f)) || groupFiles[0] || null;
   };
 
   // Get all files for a book including covers

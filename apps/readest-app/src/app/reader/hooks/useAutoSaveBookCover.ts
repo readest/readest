@@ -27,10 +27,11 @@ export const useBookCoverAutoSave = (bookKey: string) => {
               const lastCoverFilename = 'last-book-cover.png';
               const builtinImagesPath = await appService.resolveFilePath('', 'Images');
               if (!savedCoverPath || savedCoverPath === builtinImagesPath) {
-                await appService.copyFile(coverPath, lastCoverFilename, 'Images');
+                await appService.copyFile(coverPath, 'None', lastCoverFilename, 'Images');
               } else {
                 await appService.copyFile(
                   coverPath,
+                  'None',
                   `${savedCoverPath}/${lastCoverFilename}`,
                   'None',
                 );

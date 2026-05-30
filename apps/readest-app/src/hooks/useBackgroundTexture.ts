@@ -19,7 +19,17 @@ export const useBackgroundTexture = () => {
       const customTexture = settings.customTextures?.find((t) => t.id === textureId);
 
       if (customTexture) {
-        useCustomTextureStore.getState().addTexture(customTexture.path);
+        // Carry replica-sync metadata (contentId / bundleDir / byteSize)
+        // through addTexture so the boot-time "ensure selected texture
+        // is in the store" path doesn't drop them and silently un-
+        // publish a remote-pulled record.
+        useCustomTextureStore.getState().addTexture(customTexture.path, {
+          name: customTexture.name,
+          contentId: customTexture.contentId,
+          bundleDir: customTexture.bundleDir,
+          byteSize: customTexture.byteSize,
+          animated: customTexture.animated,
+        });
       }
 
       useCustomTextureStore.getState().applyTexture(envConfig, textureId);

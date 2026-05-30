@@ -22,6 +22,16 @@ export interface DictionaryLookupContext {
    * cross-link navigation can ignore it.
    */
   onNavigate?(word: string): void;
+  /**
+   * Theme hint forwarded by the shell. Providers that inject styles into a
+   * shadow root (MDict) use this to pick blend modes / overrides that match
+   * the current app theme. Optional — defaults to light treatment.
+   */
+  isDarkMode?: boolean;
+  /** Theme background color (e.g. `#ffffff`). Forwarded into shadow-scoped CSS. */
+  bg?: string;
+  /** Theme foreground color (e.g. `#1a1a1a`). Forwarded into shadow-scoped CSS. */
+  fg?: string;
 }
 
 export type DictionaryLookupOutcome =
@@ -51,6 +61,26 @@ export interface ImportedDictionary {
   kind: 'stardict' | 'mdict' | 'dict' | 'slob';
   /** Display name, derived from `.ifo` `bookname`, `.mdx` `Title`, slob `label`, or DICT `00databaseshort`. */
   name: string;
+  /**
+   * Stable cross-device content-hash id derived from
+   * `partialMD5(primary) + byteSize + sortedFilenames`. Used as the
+   * `replica_id` for cross-device sync (see services/sync/adapters/dictionary.ts).
+   * Optional for legacy imports written before this field existed; the
+   * sync wiring treats absent contentId as "needs rehash before sync".
+   */
+  contentId?: string;
+  /**
+   * Reincarnation token (uuid) minted when the user re-imports a file
+   * whose contentId matches a previously tombstoned replica row. Per
+   * remove-wins semantics, a tombstone never disappears at the merge
+   * level — clients interpret `reincarnation != null` as "alive again"
+   * (the original tombstone stays as history). Set only on the
+   * re-import after a delete. Also minted on explicit same-content live
+   * re-import when the local cache has no token, because another device
+   * may have tombstoned the server row while this device still sees the
+   * entry as live.
+   */
+  reincarnation?: string;
   /** Subdirectory under `'Dictionaries'` containing this bundle's files. */
   bundleDir: string;
   /** Filenames inside `bundleDir`. The exact set varies by `kind`. */
@@ -71,6 +101,13 @@ export interface ImportedDictionary {
     // MDict bundle.
     mdx?: string;
     mdd?: string[];
+    /**
+     * Loose `.css` files imported alongside the `.mdx`/`.mdd` (matched by
+     * stem at import time). Applied as scoped stylesheets inside the card's
+     * shadow root at lookup time, in addition to any `<link
+     * rel="stylesheet">` references resolved from the MDD bundle.
+     */
+    css?: string[];
     // DICT (dictd) bundle. `dict` above doubles as the body filename
     // (`name.dict` or `name.dict.dz`); `index` is the dictd `.index` file.
     index?: string;
@@ -139,6 +176,17 @@ export interface DictionarySettings {
 export const BUILTIN_PROVIDER_IDS = {
   wiktionary: 'builtin:wiktionary',
   wikipedia: 'builtin:wikipedia',
+  /**
+   * "Sentinel" id for the OS-native dictionary (macOS Dictionary.app via the
+   * `dict://` URL scheme; iOS `UIReferenceLibraryViewController`; Android
+   * `ACTION_PROCESS_TEXT`). The provider has no `lookup`-time UI: when this
+   * is the only enabled provider, the annotator's "Dictionary" button skips
+   * the in-app popup entirely and hands the selection to the OS. The
+   * settings UI enforces single-select between this id and any other
+   * provider so the popup either always opens (no system) or never opens
+   * (system only).
+   */
+  systemDictionary: 'builtin:system',
 } as const;
 
 export type BuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[keyof typeof BUILTIN_PROVIDER_IDS];

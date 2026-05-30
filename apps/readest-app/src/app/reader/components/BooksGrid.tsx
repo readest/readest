@@ -104,10 +104,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           bottom: gridInsets.bottom + viewInsets.bottom,
           left: gridInsets.left + viewInsets.left,
         };
-        const scrolled = viewSettings.scrolled;
-        const showBarsOnScroll = viewSettings.showBarsOnScroll;
-        const showHeader = viewSettings.showHeader && (scrolled ? showBarsOnScroll : true);
-        const showFooter = viewSettings.showFooter && (scrolled ? showBarsOnScroll : true);
+        const showHeader = viewSettings.showHeader;
+        const showFooter = viewSettings.showFooter;
 
         return (
           <div

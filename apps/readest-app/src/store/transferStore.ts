@@ -1,12 +1,26 @@
 import { create } from 'zustand';
+import type { BaseDir } from '@/types/system';
 
 export type TransferType = 'upload' | 'download' | 'delete';
 export type TransferStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
+export type TransferKind = 'book' | 'replica';
+
+export interface ReplicaTransferFile {
+  logical: string;
+  lfp: string;
+  byteSize: number;
+}
 
 export interface TransferItem {
   id: string;
+  kind: TransferKind;
   bookHash: string;
   bookTitle: string;
+  replicaKind?: string;
+  replicaId?: string;
+  replicaReincarnation?: string;
+  replicaFiles?: ReplicaTransferFile[];
+  replicaBase?: BaseDir;
   type: TransferType;
   status: TransferStatus;
   progress: number; // 0-100 percentage
@@ -41,6 +55,19 @@ interface TransferState {
     priority?: number,
     isBackground?: boolean,
   ) => string;
+  addReplicaTransfer: (
+    replicaKind: string,
+    replicaId: string,
+    displayTitle: string,
+    type: TransferType,
+    opts?: {
+      priority?: number;
+      isBackground?: boolean;
+      files?: ReplicaTransferFile[];
+      base?: BaseDir;
+      reincarnation?: string;
+    },
+  ) => string;
   removeTransfer: (transferId: string) => void;
   updateTransferProgress: (
     transferId: string,
@@ -66,6 +93,11 @@ interface TransferState {
   getFailedTransfers: () => TransferItem[];
   getCompletedTransfers: () => TransferItem[];
   getTransferByBookHash: (bookHash: string, type: TransferType) => TransferItem | undefined;
+  getReplicaTransfer: (
+    replicaKind: string,
+    replicaId: string,
+    type: TransferType,
+  ) => TransferItem | undefined;
   getQueueStats: () => {
     pending: number;
     active: number;
@@ -98,6 +130,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     const id = generateTransferId();
     const transfer: TransferItem = {
       id,
+      kind: 'book',
       bookHash,
       bookTitle,
       type,
@@ -111,6 +144,38 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       createdAt: Date.now(),
       priority,
       isBackground,
+    };
+
+    set((state) => ({
+      transfers: { ...state.transfers, [id]: transfer },
+    }));
+
+    return id;
+  },
+
+  addReplicaTransfer: (replicaKind, replicaId, displayTitle, type, opts = {}) => {
+    const id = generateTransferId();
+    const transfer: TransferItem = {
+      id,
+      kind: 'replica',
+      bookHash: '',
+      bookTitle: displayTitle,
+      replicaKind,
+      replicaId,
+      replicaReincarnation: opts.reincarnation,
+      replicaFiles: opts.files,
+      replicaBase: opts.base,
+      type,
+      status: 'pending',
+      progress: 0,
+      totalBytes: opts.files?.reduce((sum, f) => sum + f.byteSize, 0) ?? 0,
+      transferredBytes: 0,
+      transferSpeed: 0,
+      retryCount: 0,
+      maxRetries: 3,
+      createdAt: Date.now(),
+      priority: opts.priority ?? 10,
+      isBackground: opts.isBackground ?? false,
     };
 
     set((state) => ({
@@ -261,7 +326,21 @@ export const useTransferStore = create<TransferState>((set, get) => ({
   getTransferByBookHash: (bookHash, type) => {
     return Object.values(get().transfers).find(
       (t) =>
-        t.bookHash === bookHash && t.type === type && ['pending', 'in_progress'].includes(t.status),
+        t.kind === 'book' &&
+        t.bookHash === bookHash &&
+        t.type === type &&
+        ['pending', 'in_progress'].includes(t.status),
+    );
+  },
+
+  getReplicaTransfer: (replicaKind, replicaId, type) => {
+    return Object.values(get().transfers).find(
+      (t) =>
+        t.kind === 'replica' &&
+        t.replicaKind === replicaKind &&
+        t.replicaId === replicaId &&
+        t.type === type &&
+        ['pending', 'in_progress'].includes(t.status),
     );
   },
 
@@ -279,19 +358,20 @@ export const useTransferStore = create<TransferState>((set, get) => ({
   setActiveCount: (count) => set({ activeCount: count }),
 
   restoreTransfers: (transfers, isQueuePaused) => {
-    // Reset in_progress transfers to pending when restoring
+    // Legacy rows persisted before the kind discriminator default to 'book'.
     const restoredTransfers: Record<string, TransferItem> = {};
     Object.entries(transfers).forEach(([id, transfer]) => {
-      if (transfer.status === 'in_progress') {
+      const withKind: TransferItem = { ...transfer, kind: transfer.kind ?? 'book' };
+      if (withKind.status === 'in_progress') {
         restoredTransfers[id] = {
-          ...transfer,
+          ...withKind,
           status: 'pending',
           progress: 0,
           transferredBytes: 0,
           transferSpeed: 0,
         };
       } else {
-        restoredTransfers[id] = transfer;
+        restoredTransfers[id] = withKind;
       }
     });
     set({ transfers: restoredTransfers, isQueuePaused });

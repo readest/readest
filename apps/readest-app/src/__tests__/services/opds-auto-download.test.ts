@@ -30,6 +30,10 @@ vi.mock('@/services/opds/feedChecker', () => ({
   checkFeedForNewItems: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('@/services/opds/sourceMap', () => ({
+  upsertOPDSSourceMapping: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/services/opds/subscriptionState', () => ({
   loadSubscriptionState: vi.fn().mockResolvedValue({
     catalogId: 'cat-1',
@@ -50,6 +54,7 @@ vi.mock('@/services/opds/subscriptionState', () => ({
 import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
+import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
 import { downloadFile } from '@/libs/storage';
 
 const createMockAppService = () =>
@@ -126,6 +131,11 @@ describe('OPDS auto-download orchestrator', () => {
     const savedState = vi.mocked(saveSubscriptionState).mock.calls[0]![1] as OPDSSubscriptionState;
     expect(savedState.knownEntryIds).toContain('urn:shelf:1');
     expect(savedState.lastCheckedAt).toBeGreaterThan(0);
+    expect(upsertOPDSSourceMapping).toHaveBeenCalledWith(appService, {
+      catalogId: 'cat-1',
+      sourceUrl: 'https://shelf.example.com/dl/1.epub',
+      bookHash: 'abc123',
+    });
   });
 
   it('handles import failure by adding to failedEntries', async () => {

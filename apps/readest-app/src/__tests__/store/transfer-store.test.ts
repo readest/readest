@@ -349,6 +349,7 @@ describe('transferStore', () => {
       const transfers: Record<string, TransferItem> = {
         t1: {
           id: 't1',
+          kind: 'book',
           bookHash: 'h1',
           bookTitle: 'B1',
           type: 'upload',
@@ -366,6 +367,7 @@ describe('transferStore', () => {
         },
         t2: {
           id: 't2',
+          kind: 'book',
           bookHash: 'h2',
           bookTitle: 'B2',
           type: 'download',
@@ -427,6 +429,135 @@ describe('transferStore', () => {
     test('sets activeCount', () => {
       useTransferStore.getState().setActiveCount(5);
       expect(useTransferStore.getState().activeCount).toBe(5);
+    });
+  });
+
+  // ── kind discriminator ───────────────────────────────────────────
+  describe('replica transfers', () => {
+    test('addTransfer defaults kind to "book"', () => {
+      const id = useTransferStore.getState().addTransfer('h1', 'B1', 'upload');
+      expect(useTransferStore.getState().transfers[id]!.kind).toBe('book');
+    });
+
+    test('addReplicaTransfer creates a kind="replica" item with replicaKind/replicaId', () => {
+      const id = useTransferStore
+        .getState()
+        .addReplicaTransfer('dictionary', 'dict-content-hash', 'Webster', 'upload');
+      const t = useTransferStore.getState().transfers[id]!;
+      expect(t.kind).toBe('replica');
+      expect(t.replicaKind).toBe('dictionary');
+      expect(t.replicaId).toBe('dict-content-hash');
+      expect(t.bookTitle).toBe('Webster');
+      expect(t.bookHash).toBe('');
+      expect(t.type).toBe('upload');
+      expect(t.status).toBe('pending');
+    });
+
+    test('addReplicaTransfer accepts custom priority and isBackground', () => {
+      const id = useTransferStore
+        .getState()
+        .addReplicaTransfer('dictionary', 'd1', 'D1', 'download', {
+          priority: 1,
+          isBackground: true,
+        });
+      const t = useTransferStore.getState().transfers[id]!;
+      expect(t.priority).toBe(1);
+      expect(t.isBackground).toBe(true);
+    });
+
+    test('addReplicaTransfer stores replicaFiles + replicaBase + computes totalBytes', () => {
+      const id = useTransferStore
+        .getState()
+        .addReplicaTransfer('dictionary', 'd1', 'Webster', 'upload', {
+          files: [
+            { logical: 'webster.mdx', lfp: 'd1/webster.mdx', byteSize: 1000 },
+            { logical: 'webster.mdd', lfp: 'd1/webster.mdd', byteSize: 2500 },
+          ],
+          base: 'Dictionaries',
+        });
+      const t = useTransferStore.getState().transfers[id]!;
+      expect(t.replicaFiles).toHaveLength(2);
+      expect(t.replicaBase).toBe('Dictionaries');
+      expect(t.totalBytes).toBe(3500);
+    });
+
+    test('getReplicaTransfer finds replica items by (replicaKind, replicaId, type)', () => {
+      const id = useTransferStore.getState().addReplicaTransfer('dictionary', 'd1', 'D1', 'upload');
+      const found = useTransferStore.getState().getReplicaTransfer('dictionary', 'd1', 'upload');
+      expect(found?.id).toBe(id);
+    });
+
+    test('getReplicaTransfer returns undefined for completed/failed transfers', () => {
+      const id = useTransferStore.getState().addReplicaTransfer('dictionary', 'd1', 'D1', 'upload');
+      useTransferStore.getState().setTransferStatus(id, 'completed');
+      expect(
+        useTransferStore.getState().getReplicaTransfer('dictionary', 'd1', 'upload'),
+      ).toBeUndefined();
+    });
+
+    test('getReplicaTransfer ignores book transfers', () => {
+      useTransferStore.getState().addTransfer('book-hash', 'Book', 'upload');
+      expect(
+        useTransferStore.getState().getReplicaTransfer('dictionary', 'book-hash', 'upload'),
+      ).toBeUndefined();
+    });
+
+    test('getTransferByBookHash ignores replica transfers (defensive against bookHash="" collisions)', () => {
+      useTransferStore.getState().addReplicaTransfer('dictionary', 'd1', 'D1', 'upload');
+      expect(useTransferStore.getState().getTransferByBookHash('', 'upload')).toBeUndefined();
+    });
+
+    test('different replicaKinds with same replicaId are distinct', () => {
+      const idA = useTransferStore
+        .getState()
+        .addReplicaTransfer('dictionary', 'shared-hash', 'Dict', 'upload');
+      const idB = useTransferStore
+        .getState()
+        .addReplicaTransfer('font', 'shared-hash', 'Font', 'upload');
+      expect(idA).not.toBe(idB);
+      expect(
+        useTransferStore.getState().getReplicaTransfer('dictionary', 'shared-hash', 'upload')!.id,
+      ).toBe(idA);
+      expect(
+        useTransferStore.getState().getReplicaTransfer('font', 'shared-hash', 'upload')!.id,
+      ).toBe(idB);
+    });
+
+    test('clearAll removes book and replica transfers alike', () => {
+      useTransferStore.getState().addTransfer('h1', 'B1', 'upload');
+      useTransferStore.getState().addReplicaTransfer('dictionary', 'd1', 'D1', 'upload');
+      useTransferStore.getState().clearAll();
+      expect(Object.keys(useTransferStore.getState().transfers)).toHaveLength(0);
+    });
+
+    test('getQueueStats counts both book and replica transfers', () => {
+      useTransferStore.getState().addTransfer('h1', 'B1', 'upload');
+      useTransferStore.getState().addReplicaTransfer('dictionary', 'd1', 'D1', 'upload');
+      expect(useTransferStore.getState().getQueueStats().total).toBe(2);
+      expect(useTransferStore.getState().getQueueStats().pending).toBe(2);
+    });
+
+    test('restoreTransfers fills kind="book" for legacy persisted rows missing the field', () => {
+      const legacy = {
+        legacy1: {
+          id: 'legacy1',
+          bookHash: 'h',
+          bookTitle: 'Old',
+          type: 'upload',
+          status: 'pending',
+          progress: 0,
+          totalBytes: 0,
+          transferredBytes: 0,
+          transferSpeed: 0,
+          retryCount: 0,
+          maxRetries: 3,
+          createdAt: 1,
+          priority: 10,
+          isBackground: false,
+        } as unknown as TransferItem,
+      };
+      useTransferStore.getState().restoreTransfers(legacy, false);
+      expect(useTransferStore.getState().transfers['legacy1']!.kind).toBe('book');
     });
   });
 });

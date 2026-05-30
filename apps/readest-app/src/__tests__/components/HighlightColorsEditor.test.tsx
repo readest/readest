@@ -80,15 +80,17 @@ describe('HighlightColorsEditor — user color SketchPicker stability', () => {
   it('keeps the SketchPicker mounted when the user-color hex updates (so drag is not interrupted)', () => {
     render(<Harness initialUserColors={[{ hex: '#aabbcc' }]} />);
 
-    // The user color row's ColorInput renders a text input with the hex.
-    // Find it (the predefined palette also renders inputs; the user row's
-    // input is last in the document because it's rendered after the defaults).
-    const hexInputs = screen.getAllByDisplayValue(/^#/);
-    const userHexInput = hexInputs[hexInputs.length - 1]!;
-    expect(userHexInput).toHaveProperty('value', '#aabbcc');
+    // ColorInput swatchOnly renders a circular button per color, all with
+    // aria-label "Edit color". Default palette is rendered first, then the
+    // "add new" swatch in the Custom Colors header (aria-label "Add custom
+    // color"), then the existing user colors. Find the last "Edit color"
+    // button — that's the user color we care about.
+    const editColorButtons = screen.getAllByLabelText('Edit color');
+    const userSwatch = editColorButtons[editColorButtons.length - 1]! as HTMLButtonElement;
+    expect(userSwatch.style.backgroundColor).toBe('rgb(170, 187, 204)');
 
     // Open the SketchPicker for this user color.
-    fireEvent.click(userHexInput);
+    fireEvent.click(userSwatch);
 
     const picker = screen.getByTestId('mock-sketch-picker');
     const initialMountId = picker.getAttribute('data-mount-id');

@@ -14,6 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useCustomTextureStore } from '@/store/customTextureStore';
+import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
 import { saveViewSettings } from '@/helpers/settings';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
@@ -21,6 +22,8 @@ import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
+import clsx from 'clsx';
+import { SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -249,10 +252,15 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
         const textureInfo = await appService?.importImage(selectedFile.path || selectedFile.file);
         if (!textureInfo) continue;
 
-        const customTexture = addTexture(textureInfo.path);
-        console.log('Added custom texture:', customTexture);
+        const customTexture = addTexture(textureInfo.path, {
+          name: textureInfo.name,
+          contentId: textureInfo.contentId,
+          bundleDir: textureInfo.bundleDir,
+          byteSize: textureInfo.byteSize,
+        });
         if (customTexture && !customTexture.error) {
           await loadTexture(envConfig, customTexture.id);
+          if (appService) void queueReplicaBinaryUpload('texture', customTexture, appService);
         }
       }
       saveCustomTextures(envConfig);
@@ -312,11 +320,15 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             data-setting-id='settings.color.themeMode'
           />
 
-          <div
+          <label
             data-setting-id='settings.color.invertImageInDarkMode'
-            className='flex items-center justify-between'
+            className={clsx(
+              'flex items-center justify-between px-4',
+              !isDarkMode && 'cursor-not-allowed opacity-50',
+              isDarkMode && 'cursor-pointer',
+            )}
           >
-            <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
+            <SettingLabel>{_('Invert Image In Dark Mode')}</SettingLabel>
             <input
               type='checkbox'
               className='toggle'
@@ -324,20 +336,20 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
               disabled={!isDarkMode}
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
             />
-          </div>
+          </label>
 
-          <div
+          <label
             data-setting-id='settings.color.overrideBookColor'
-            className='flex items-center justify-between'
+            className='flex cursor-pointer items-center justify-between px-4'
           >
-            <h2 className='font-medium'>{_('Override Book Color')}</h2>
+            <SettingLabel>{_('Override Book Color')}</SettingLabel>
             <input
               type='checkbox'
               className='toggle'
               checked={overrideColor}
               onChange={() => setOverrideColor(!overrideColor)}
             />
-          </div>
+          </label>
 
           <ThemeColorSelector
             themes={themes.concat(customThemes)}

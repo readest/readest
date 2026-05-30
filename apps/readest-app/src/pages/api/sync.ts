@@ -310,6 +310,60 @@ export async function POST(req: NextRequest) {
     if (configsResult?.error) throw new Error(configsResult.error);
     if (notesResult?.error) throw new Error(notesResult.error);
 
+    // Piggyback the per-book reading progress from the configs push onto the
+    // matching `books` row. Other devices' library pull-to-refresh reads
+    // books.progress + books.updated_at, so without this the row would stay
+    // stale until the user navigates back to the library and useBooksSync
+    // re-pushes. The .lt('updated_at') predicate keeps last-writer-wins —
+    // a concurrent newer books push is never downgraded — and a missing
+    // row is a silent no-op (useBooksSync will insert it later).
+    type BookProgressUpdate = {
+      book_hash: string;
+      progress: [number, number];
+      updated_at: string;
+    };
+    const bookProgressUpdates: BookProgressUpdate[] = [];
+    for (const rec of (configsResult.data ?? []) as unknown as DBBookConfig[]) {
+      if (!rec.book_hash || !rec.updated_at || rec.progress == null) continue;
+      let parsed: unknown;
+      try {
+        parsed = typeof rec.progress === 'string' ? JSON.parse(rec.progress) : rec.progress;
+      } catch {
+        continue;
+      }
+      if (
+        !Array.isArray(parsed) ||
+        parsed.length !== 2 ||
+        typeof parsed[0] !== 'number' ||
+        typeof parsed[1] !== 'number'
+      ) {
+        continue;
+      }
+      bookProgressUpdates.push({
+        book_hash: rec.book_hash,
+        progress: [parsed[0], parsed[1]],
+        updated_at: rec.updated_at,
+      });
+    }
+
+    if (bookProgressUpdates.length > 0) {
+      await Promise.all(
+        bookProgressUpdates.map(async (u) => {
+          const { error } = await supabase
+            .from('books')
+            .update({ progress: u.progress, updated_at: u.updated_at })
+            .eq('user_id', user.id)
+            .eq('book_hash', u.book_hash)
+            .lt('updated_at', u.updated_at);
+          if (error) {
+            // Best-effort: never fail the configs push because of this side
+            // effect — useBooksSync will reconcile the row later.
+            console.warn('books.progress piggyback failed for', u.book_hash, error.message);
+          }
+        }),
+      );
+    }
+
     return NextResponse.json(
       {
         books: booksResult?.data || [],

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
-import { useDeviceControlStore } from '@/store/deviceStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -12,8 +11,9 @@ import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
+import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import NumberInput from './NumberInput';
-import Select from '../Select';
+import PageTurnerSettings from './PageTurnerSettings';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -22,7 +22,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const { getBookData } = useBookDataStore();
   const { settings } = useSettingsStore();
   const { applyEinkMode } = useEinkMode();
-  const { acquireVolumeKeyInterception, releaseVolumeKeyInterception } = useDeviceControlStore();
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
@@ -30,11 +29,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [noContinuousScroll, setNoContinuousScroll] = useState(viewSettings.noContinuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
-  const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
+  const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
@@ -49,10 +48,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
+  const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
+    settings.swipeBrightnessGesture,
+  );
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
 
   const resetToDefaults = useResetViewSettings();
+  const pageTurnerResetRef = useRef<() => void>(() => {});
 
   const handleReset = () => {
     resetToDefaults({
@@ -60,9 +63,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       noContinuousScroll: setNoContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
-      volumeKeysToFlip: setVolumeKeysToFlip,
       showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
+      disableSwipe: setIsDisableSwipe,
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
       isEink: setIsEink,
@@ -72,6 +75,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
       copyToNotebook: setCopyToNotebook,
     });
+    pageTurnerResetRef.current();
   };
 
   useEffect(() => {
@@ -114,18 +118,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [scrollingOverlap]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'volumeKeysToFlip', volumeKeysToFlip, false, false);
-    if (appService?.isMobileApp) {
-      if (volumeKeysToFlip) {
-        acquireVolumeKeyInterception();
-      } else {
-        releaseVolumeKeyInterception();
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [volumeKeysToFlip]);
-
-  useEffect(() => {
     saveViewSettings(
       envConfig,
       bookKey,
@@ -141,6 +133,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'disableClick', isDisableClick, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'disableSwipe', isDisableSwipe, false, false);
+    // The renderer reads `no-swipe` at touchmove/touchend time, so we have to
+    // push the attribute through immediately rather than waiting for the next
+    // recreateViewer pass.
+    if (isDisableSwipe) {
+      getView(bookKey)?.renderer.setAttribute('no-swipe', '');
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('no-swipe');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDisableSwipe]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableDoubleClick', isDisableDoubleClick, false, false);
@@ -188,6 +193,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveSysSettings(envConfig, 'autoScreenBrightness', autoScreenBrightness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoScreenBrightness]);
+
+  useEffect(() => {
+    if (swipeBrightnessGesture === settings.swipeBrightnessGesture) return;
+    saveSysSettings(envConfig, 'swipeBrightnessGesture', swipeBrightnessGesture);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swipeBrightnessGesture]);
 
   useEffect(() => {
     if (screenWakeLock === settings.screenWakeLock) return;
@@ -241,254 +252,171 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   return (
     <div className='my-4 w-full space-y-6'>
-      <div className='w-full' data-setting-id='settings.control.scrolledMode'>
-        <h2 className='mb-2 font-medium'>{_('Scroll')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Scrolled Mode')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={isScrolledMode}
-                disabled={bookData?.isFixedLayout}
-                onChange={() => setScrolledMode(!isScrolledMode)}
-              />
-            </div>
-            <div
-              className='config-item'
-              data-setting-id='settings.control.scroll.noContinuousScroll'
-            >
-              <span className=''>{_('Single Section Scroll')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={noContinuousScroll}
-                disabled={!viewSettings.scrolled}
-                onChange={() => setNoContinuousScroll(!noContinuousScroll)}
-              />
-            </div>
-            <NumberInput
-              label={_('Overlap Pixels')}
-              value={scrollingOverlap}
-              onChange={setScrollingOverlap}
-              disabled={!viewSettings.scrolled}
-              min={0}
-              max={200}
-              step={10}
-              data-setting-id='settings.control.overlapPixels'
-            />
-            <div className='config-item' data-setting-id='settings.control.scroll.hideScrollbar'>
-              <span className=''>{_('Hide Scrollbar')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={hideScrollbar}
-                disabled={!viewSettings.scrolled}
-                onChange={() => setHideScrollbar(!hideScrollbar)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Scroll')} data-setting-id='settings.control.scrolledMode'>
+        <SettingsSwitchRow
+          label={_('Scrolled Mode')}
+          checked={isScrolledMode}
+          disabled={bookData?.isFixedLayout}
+          onChange={() => setScrolledMode(!isScrolledMode)}
+        />
+        <SettingsSwitchRow
+          label={_('Single Section Scroll')}
+          checked={noContinuousScroll}
+          disabled={!viewSettings.scrolled}
+          onChange={() => setNoContinuousScroll(!noContinuousScroll)}
+          data-setting-id='settings.control.scroll.noContinuousScroll'
+        />
+        <NumberInput
+          label={_('Overlap Pixels')}
+          value={scrollingOverlap}
+          onChange={setScrollingOverlap}
+          disabled={!viewSettings.scrolled}
+          min={0}
+          max={200}
+          step={10}
+          data-setting-id='settings.control.overlapPixels'
+        />
+        <SettingsSwitchRow
+          label={_('Hide Scrollbar')}
+          checked={hideScrollbar}
+          disabled={!viewSettings.scrolled}
+          onChange={() => setHideScrollbar(!hideScrollbar)}
+          data-setting-id='settings.control.scroll.hideScrollbar'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.control.clickToPaginate'>
-        <h2 className='mb-2 font-medium'>{_('Pagination')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200'>
-            <div className='config-item'>
-              <span className=''>
-                {appService?.isMobileApp ? _('Tap to Paginate') : _('Click to Paginate')}
-              </span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={!isDisableClick}
-                onChange={() => setIsDisableClick(!isDisableClick)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.clickBothSides'>
-              <span className=''>
-                {appService?.isMobileApp ? _('Tap Both Sides') : _('Click Both Sides')}
-              </span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={fullscreenClickArea}
-                disabled={isDisableClick}
-                onChange={() => setFullscreenClickArea(!fullscreenClickArea)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.swapClickSides'>
-              <span className=''>
-                {appService?.isMobileApp ? _('Swap Tap Sides') : _('Swap Click Sides')}
-              </span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={swapClickArea}
-                disabled={isDisableClick || fullscreenClickArea}
-                onChange={() => setSwapClickArea(!swapClickArea)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.disableDoubleClick'>
-              <span className=''>
-                {appService?.isMobileApp ? _('Disable Double Tap') : _('Disable Double Click')}
-              </span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={isDisableDoubleClick}
-                onChange={() => setIsDisableDoubleClick(!isDisableDoubleClick)}
-              />
-            </div>
-            {appService?.isMobileApp && (
-              <div className='config-item'>
-                <span className=''>{_('Volume Keys for Page Flip')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={volumeKeysToFlip}
-                  onChange={() => setVolumeKeysToFlip(!volumeKeysToFlip)}
-                />
-              </div>
-            )}
-            <div className='config-item' data-setting-id='settings.control.showPaginationButtons'>
-              <span className=''>{_('Show Page Navigation Buttons')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showPaginationButtons}
-                onChange={() => setShowPaginationButtons(!showPaginationButtons)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Pagination')} data-setting-id='settings.control.clickToPaginate'>
+        <SettingsSwitchRow
+          label={appService?.isMobileApp ? _('Tap to Paginate') : _('Click to Paginate')}
+          checked={!isDisableClick}
+          onChange={() => setIsDisableClick(!isDisableClick)}
+        />
+        <SettingsSwitchRow
+          label={_('Swipe to Paginate')}
+          checked={!isDisableSwipe}
+          onChange={() => setIsDisableSwipe(!isDisableSwipe)}
+          data-setting-id='settings.control.swipeToPaginate'
+        />
+        <SettingsSwitchRow
+          label={appService?.isMobileApp ? _('Tap Both Sides') : _('Click Both Sides')}
+          checked={fullscreenClickArea}
+          disabled={isDisableClick}
+          onChange={() => setFullscreenClickArea(!fullscreenClickArea)}
+          data-setting-id='settings.control.clickBothSides'
+        />
+        <SettingsSwitchRow
+          label={appService?.isMobileApp ? _('Swap Tap Sides') : _('Swap Click Sides')}
+          checked={swapClickArea}
+          disabled={isDisableClick || fullscreenClickArea}
+          onChange={() => setSwapClickArea(!swapClickArea)}
+          data-setting-id='settings.control.swapClickSides'
+        />
+        <SettingsSwitchRow
+          label={appService?.isMobileApp ? _('Disable Double Tap') : _('Disable Double Click')}
+          checked={isDisableDoubleClick}
+          onChange={() => setIsDisableDoubleClick(!isDisableDoubleClick)}
+          data-setting-id='settings.control.disableDoubleClick'
+        />
+        <SettingsSwitchRow
+          label={_('Show Page Navigation Buttons')}
+          checked={showPaginationButtons}
+          onChange={() => setShowPaginationButtons(!showPaginationButtons)}
+          data-setting-id='settings.control.showPaginationButtons'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.control.enableQuickActions'>
-        <h2 className='mb-2 font-medium'>{_('Annotation Tools')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Enable Quick Actions')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={enableAnnotationQuickActions}
-                onChange={() => setEnableAnnotationQuickActions(!enableAnnotationQuickActions)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.quickAction'>
-              <span className=''>{_('Quick Action')}</span>
-              <Select
-                value={annotationQuickAction || ''}
-                onChange={handleSelectAnnotationQuickAction}
-                options={getQuickActionOptions()}
-                disabled={!enableAnnotationQuickActions}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.control.copyToNotebook'>
-              <span className=''>{_('Copy to Notebook')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={copyToNotebook}
-                onChange={() => setCopyToNotebook(!copyToNotebook)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageTurnerSettings
+        bookKey={bookKey}
+        onRegisterReset={(fn) => {
+          pageTurnerResetRef.current = fn;
+        }}
+      />
 
-      <div className='w-full' data-setting-id='settings.control.pagingAnimation'>
-        <h2 className='mb-2 font-medium'>{_('Animation')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Paging Animation')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={animated}
-                onChange={() => setAnimated(!animated)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList
+        title={_('Annotation Tools')}
+        data-setting-id='settings.control.enableQuickActions'
+      >
+        <SettingsSwitchRow
+          label={_('Enable Quick Actions')}
+          checked={enableAnnotationQuickActions}
+          onChange={() => setEnableAnnotationQuickActions(!enableAnnotationQuickActions)}
+        />
+        <SettingsRow label={_('Quick Action')} data-setting-id='settings.control.quickAction'>
+          <SettingsSelect
+            value={annotationQuickAction || ''}
+            onChange={handleSelectAnnotationQuickAction}
+            ariaLabel={_('Quick Action')}
+            options={getQuickActionOptions()}
+            disabled={!enableAnnotationQuickActions}
+          />
+        </SettingsRow>
+        <SettingsSwitchRow
+          label={_('Copy to Notebook')}
+          checked={copyToNotebook}
+          onChange={() => setCopyToNotebook(!copyToNotebook)}
+          data-setting-id='settings.control.copyToNotebook'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.control.device'>
-        <h2 className='mb-2 font-medium'>{_('Device')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-              <div className='config-item' data-setting-id='settings.control.einkMode'>
-                <span className=''>{_('E-Ink Mode')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={isEink}
-                  onChange={() => setIsEink(!isEink)}
-                />
-              </div>
-            )}
-            {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-              <div className='config-item' data-setting-id='settings.control.colorEinkMode'>
-                <span className=''>{_('Color E-Ink Mode')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  disabled={!isEink}
-                  checked={isColorEink}
-                  onChange={() => setIsColorEink(!isColorEink)}
-                />
-              </div>
-            )}
-            {appService?.isMobileApp && (
-              <div className='config-item'>
-                <span className=''>{_('System Screen Brightness')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={autoScreenBrightness}
-                  onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
-                />
-              </div>
-            )}
-            <div className='config-item' data-setting-id='settings.control.screenWakeLock'>
-              <span className=''>{_('Keep Screen Awake')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={screenWakeLock}
-                onChange={() => setScreenWakeLock(!screenWakeLock)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Animation')} data-setting-id='settings.control.pagingAnimation'>
+        <SettingsSwitchRow
+          label={_('Paging Animation')}
+          checked={animated}
+          onChange={() => setAnimated(!animated)}
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.control.allowJavascript'>
-        <h2 className='mb-2 font-medium'>{_('Security')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item !h-16'>
-              <div className='flex flex-col gap-1'>
-                <span className=''>{_('Allow JavaScript')}</span>
-                <span className='text-xs'>{_('Enable only if you trust the file.')}</span>
-              </div>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={allowScript}
-                disabled={bookData?.book?.format !== 'EPUB'}
-                onChange={() => setAllowScript(!allowScript)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Device')} data-setting-id='settings.control.device'>
+        {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
+          <SettingsSwitchRow
+            label={_('E-Ink Mode')}
+            checked={isEink}
+            onChange={() => setIsEink(!isEink)}
+            data-setting-id='settings.control.einkMode'
+          />
+        )}
+        {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
+          <SettingsSwitchRow
+            label={_('Color E-Ink Mode')}
+            checked={isColorEink}
+            disabled={!isEink}
+            onChange={() => setIsColorEink(!isColorEink)}
+            data-setting-id='settings.control.colorEinkMode'
+          />
+        )}
+        {appService?.isMobileApp && (
+          <SettingsSwitchRow
+            label={_('System Screen Brightness')}
+            checked={autoScreenBrightness}
+            onChange={() => setAutoScreenBrightness(!autoScreenBrightness)}
+          />
+        )}
+        {appService?.hasScreenBrightness && (
+          <SettingsSwitchRow
+            label={_('Swipe for Brightness')}
+            description={_('Slide along the left edge')}
+            checked={swipeBrightnessGesture}
+            onChange={() => setSwipeBrightnessGesture(!swipeBrightnessGesture)}
+            data-setting-id='settings.control.swipeBrightnessGesture'
+          />
+        )}
+        <SettingsSwitchRow
+          label={_('Keep Screen Awake')}
+          checked={screenWakeLock}
+          onChange={() => setScreenWakeLock(!screenWakeLock)}
+          data-setting-id='settings.control.screenWakeLock'
+        />
+      </BoxedList>
+
+      <BoxedList title={_('Security')} data-setting-id='settings.control.allowJavascript'>
+        <SettingsSwitchRow
+          label={_('Allow JavaScript')}
+          description={_('Enable only if you trust the file.')}
+          checked={allowScript}
+          disabled={bookData?.book?.format !== 'EPUB'}
+          onChange={() => setAllowScript(!allowScript)}
+        />
+      </BoxedList>
     </div>
   );
 };

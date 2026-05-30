@@ -1,13 +1,14 @@
 import React from 'react';
 import { CODE_LANGUAGES, CodeLanguage } from '@/utils/highlightjs';
 import { useTranslation } from '@/hooks/useTranslation';
-import Select from '@/components/Select';
+import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from '../primitives';
 
 interface CodeHighlightingSettingsProps {
   codeHighlighting: boolean;
   codeLanguage: string;
   onToggle: (enabled: boolean) => void;
   onLanguageChange: (language: CodeLanguage) => void;
+  'data-setting-id'?: string;
 }
 
 const CodeHighlightingSettings: React.FC<CodeHighlightingSettingsProps> = ({
@@ -15,39 +16,30 @@ const CodeHighlightingSettings: React.FC<CodeHighlightingSettingsProps> = ({
   codeLanguage,
   onToggle,
   onLanguageChange,
+  'data-setting-id': dataSettingId,
 }) => {
   const _ = useTranslation();
 
   return (
-    <div className='w-full'>
-      <h2 className='mb-2 font-medium'>{_('Code Highlighting')}</h2>
-      <div className='card border-base-200 bg-base-100 border shadow'>
-        <div className='divide-base-200'>
-          <div className='config-item'>
-            <span>{_('Enable Highlighting')}</span>
-            <input
-              type='checkbox'
-              className='toggle'
-              checked={codeHighlighting}
-              onChange={() => onToggle(!codeHighlighting)}
-            />
-          </div>
-
-          <div className='config-item'>
-            <span>{_('Code Language')}</span>
-            <Select
-              value={codeLanguage}
-              onChange={(event) => onLanguageChange(event.target.value as CodeLanguage)}
-              options={CODE_LANGUAGES.map((lang) => ({
-                value: lang,
-                label: lang === 'auto-detect' ? _('Auto') : lang,
-              }))}
-              disabled={!codeHighlighting}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    <BoxedList title={_('Code Highlighting')} data-setting-id={dataSettingId}>
+      <SettingsSwitchRow
+        label={_('Enable Highlighting')}
+        checked={codeHighlighting}
+        onChange={() => onToggle(!codeHighlighting)}
+      />
+      <SettingsRow label={_('Code Language')}>
+        <SettingsSelect
+          value={codeLanguage}
+          onChange={(event) => onLanguageChange(event.target.value as CodeLanguage)}
+          ariaLabel={_('Code Language')}
+          disabled={!codeHighlighting}
+          options={CODE_LANGUAGES.map((lang) => ({
+            value: lang,
+            label: lang === 'auto-detect' ? _('Auto') : lang,
+          }))}
+        />
+      </SettingsRow>
+    </BoxedList>
   );
 };
 

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+    "types": ["chrome"],
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/services/environment": ["./src/stubs/environment.ts"],
+      "@tauri-apps/plugin-http": ["./src/stubs/tauri-http.ts"],
+      "@/services/*": ["../../src/services/*"],
+      "@/utils/*": ["../../src/utils/*"],
+      "@/types/*": ["../../src/types/*"],
+      "@/libs/*": ["../../src/libs/*"],
+      "@/*": ["../../src/*"]
+    }
+  },
+  "include": ["src/**/*", "../../src/services/send/conversion/**/*", "../../src/utils/zip.ts"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+}

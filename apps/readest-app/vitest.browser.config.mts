@@ -33,9 +33,9 @@ export default defineConfig({
     ],
     exclude: [
       '@pdfjs/pdf.min.mjs',
-      '@tursodatabase/database-wasm',
-      '@tursodatabase/database-wasm-common',
-      '@tursodatabase/database-common',
+      '@readest/turso-database-wasm',
+      '@readest/turso-database-wasm-common',
+      '@readest/turso-database-common',
     ],
   },
   server: {
@@ -52,6 +52,7 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
+      screenshotFailures: false,
       provider: playwright({
         contextOptions: {
           viewport: { width: 1920, height: 1080 },

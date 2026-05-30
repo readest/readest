@@ -83,6 +83,46 @@ describe('handleA11yNavigation', () => {
     expect(document.body.lastElementChild).toBe(skipLink);
   });
 
+  test('next-section skip link is absolutely positioned at its static position', () => {
+    handleA11yNavigation(createMockView(), document, makeOptions());
+
+    const skipLink = document.getElementById(NEXT_SECTION_ID);
+    expect(skipLink).not.toBeNull();
+    // position:absolute removes it from flow so its own box cannot trigger an
+    // extra column break; left/top:auto keep it at its static position.
+    expect(skipLink!.style.position).toBe('absolute');
+    expect(skipLink!.style.left).toBe('auto');
+    expect(skipLink!.style.top).toBe('auto');
+  });
+
+  test('next-section skip link nests inside the deepest last content element', () => {
+    const section = document.createElement('section');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'kuchie';
+    wrapper.appendChild(document.createElement('img'));
+    section.appendChild(wrapper);
+    document.body.appendChild(section);
+
+    handleA11yNavigation(createMockView(), document, makeOptions());
+
+    const skipLink = document.getElementById(NEXT_SECTION_ID);
+    expect(skipLink).not.toBeNull();
+    // nested inside the final content block (after the void <img>), not a
+    // trailing sibling of <body>, so a `column-break-after` on that block
+    // cannot push the link into a blank column.
+    expect(skipLink!.parentElement).toBe(wrapper);
+
+    section.remove();
+  });
+
+  test('next-section skip link falls back to <body> when there is no content element', () => {
+    handleA11yNavigation(createMockView(), document, makeOptions());
+
+    const skipLink = document.getElementById(NEXT_SECTION_ID);
+    expect(skipLink).not.toBeNull();
+    expect(skipLink!.parentElement).toBe(document.body);
+  });
+
   test('last-pos skip link click calls skipToLastPosCallback', () => {
     const options = makeOptions();
     handleA11yNavigation(createMockView(), document, options);

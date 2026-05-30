@@ -36,9 +36,13 @@ import {
   createWithinGroupSorter,
   ensureLibraryGroupByType,
   ensureLibrarySortByType,
+  ensureLibrarySecondarySortByType,
+  expandBookshelfSelection,
   getBookSortValue,
   getGroupSortValue,
   compareSortValues,
+  resolveEffectivePrimarySort,
+  resolveEffectiveSecondarySort,
 } from '../utils/libraryUtils';
 import { eventDispatcher } from '@/utils/event';
 
@@ -154,9 +158,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const groupId = searchParams?.get('group') || '';
   const queryTerm = searchParams?.get('q') || null;
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
-  const sortBy = ensureLibrarySortByType(searchParams?.get('sort'), settings.librarySortBy);
+  const storedSortBy = ensureLibrarySortByType(searchParams?.get('sort'), settings.librarySortBy);
   const sortOrder = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
   const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
+  const sortByAuto = settings.librarySortByAuto ?? true;
+  const sortBy = resolveEffectivePrimarySort(storedSortBy, groupBy, sortByAuto);
+  const sortBy2Raw = ensureLibrarySecondarySortByType(
+    searchParams?.get('sort2'),
+    settings.librarySortBy2 ?? 'none',
+  );
+  const sortBy2 = resolveEffectiveSecondarySort(sortBy2Raw, groupBy);
   const coverFit = searchParams?.get('cover') || settings.libraryCoverFit;
 
   const [loading, setLoading] = useState(false);
@@ -259,14 +270,20 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     // Sort books within each group
     // For series groups, series index is always ascending; sort direction applies to fallback only
     const sortAscending = sortOrder === 'asc';
-    const withinGroupSorter = createWithinGroupSorter(groupBy, sortBy, uiLanguage, sortAscending);
+    const withinGroupSorter = createWithinGroupSorter(
+      groupBy,
+      sortBy,
+      uiLanguage,
+      sortAscending,
+      sortBy2,
+    );
     groups.forEach((group) => {
       group.books.sort(withinGroupSorter);
     });
 
     // Sort ungrouped books - use within-group sorter if we're inside a group
     // (for series, this ensures books are sorted by series index)
-    const bookSorter = createBookSorter(sortBy, uiLanguage);
+    const bookSorter = createBookSorter(sortBy, uiLanguage, sortBy2);
     if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
       ungroupedBooks.sort(withinGroupSorter);
       // When inside a group, books are already sorted correctly — return directly
@@ -308,7 +325,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     });
 
     return allItems;
-  }, [sortOrder, sortBy, groupBy, groupId, uiLanguage, currentBookshelfItems]);
+  }, [sortOrder, sortBy, sortBy2, groupBy, groupId, uiLanguage, currentBookshelfItems]);
 
   useEffect(() => {
     if (isImportingBook.current) return;
@@ -359,16 +376,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
+  // `bookIdsToDelete` always holds book hashes by the time we get here —
+  // group ids are expanded into their constituent hashes at intake (see
+  // `deleteSelectedBooks` and `handleDeleteBooksIntent`), so a top-level
+  // folder is now resolved against the rendered group's `books` rollup,
+  // which already includes nested sub-folder books.
   const getBooksToDelete = () => {
-    const booksToDelete: Book[] = [];
-    bookIdsToDelete.forEach((id) => {
-      for (const book of filteredBooks.filter((book) => book.hash === id || book.groupId === id)) {
-        if (book && !book.deletedAt) {
-          booksToDelete.push(book);
-        }
-      }
-    });
-    return booksToDelete;
+    const wanted = new Set(bookIdsToDelete);
+    return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
   const confirmDelete = async () => {
@@ -390,7 +405,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   };
 
   const deleteSelectedBooks = () => {
-    setBookIdsToDelete(getSelectedBooks());
+    // Expand any group ids in the selection into the book hashes they
+    // visually represent — `generateBookshelfItems` rolls nested-folder
+    // books into the parent group, and we want every one of them queued
+    // for deletion, not just the books whose own `groupId` happens to
+    // match the top-level group's id.
+    setBookIdsToDelete(expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems));
     setShowSelectModeActions(false);
     setShowDeleteAlert(true);
   };

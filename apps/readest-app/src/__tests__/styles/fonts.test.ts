@@ -293,6 +293,22 @@ describe('createCustomFont', () => {
     expect(font.variable).toBeUndefined();
   });
 
+  it('should preserve replica sync fields (contentId, bundleDir, byteSize) from options', () => {
+    // Manual font import passes contentId / bundleDir / byteSize through
+    // addFont → createCustomFont. If createCustomFont drops them, the
+    // store's publishFontUpsert short-circuits on `!font.contentId` and
+    // the replica row never publishes — the binary upload also no-ops
+    // for the same reason. Lock these fields in.
+    const font = createCustomFont('/fonts/Roboto.ttf', {
+      contentId: 'content-hash-abc',
+      bundleDir: 'bundle-1',
+      byteSize: 4096,
+    });
+    expect(font.contentId).toBe('content-hash-abc');
+    expect(font.bundleDir).toBe('bundle-1');
+    expect(font.byteSize).toBe(4096);
+  });
+
   it('should handle woff2 path', () => {
     const font = createCustomFont('/fonts/OpenSans.woff2');
     expect(font.name).toBe('OpenSans');

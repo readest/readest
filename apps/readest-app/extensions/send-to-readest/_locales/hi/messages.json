@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Readest पर भेजें",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "वेब पृष्ठों को आपकी Readest लाइब्रेरी में सहेजें",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Readest पर भेजें",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

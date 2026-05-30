@@ -62,6 +62,29 @@ export class EdgeTTSClient implements TTSClient {
     return { lang, text, voice: voiceId, rate: 1.0, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
+  // Edge TTS websocket requests fail intermittently; retry the preload a few times
+  // before giving up so a single transient failure doesn't stall playback.
+  #createAudioUrlWithRetry = async (
+    payload: EdgeTTSPayload,
+    signal: AbortSignal,
+    maxAttempts = 3,
+  ): Promise<string | undefined> => {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (signal.aborted) return undefined;
+      try {
+        return await this.#edgeTTS?.createAudioUrl(payload);
+      } catch (err) {
+        lastError = err;
+        console.warn(`Edge TTS preload attempt ${attempt}/${maxAttempts} failed`, err);
+        if (attempt < maxAttempts && !signal.aborted) {
+          await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+        }
+      }
+    }
+    throw lastError;
+  };
+
   getVoiceIdFromLang = async (lang: string) => {
     const preferredVoiceId = TTSUtils.getPreferredVoice(this.name, lang);
     const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
@@ -85,11 +108,14 @@ export class EdgeTTSClient implements TTSClient {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#currentVoiceId = voiceId;
-        await this.#edgeTTS
-          ?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId))
-          .catch((err) => {
-            console.warn('Error preloading mark', i, err);
-          });
+        try {
+          await this.#createAudioUrlWithRetry(
+            this.getPayload(voiceLang, mark.text, voiceId),
+            signal,
+          );
+        } catch (err) {
+          console.warn('Error preloading mark', i, err);
+        }
       }
       if (marks.length > maxImmediate) {
         (async () => {
@@ -99,7 +125,10 @@ export class EdgeTTSClient implements TTSClient {
               if (signal.aborted) break;
               const { language: voiceLang } = mark;
               const voiceId = await this.getVoiceIdFromLang(voiceLang);
-              await this.#edgeTTS?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId));
+              await this.#createAudioUrlWithRetry(
+                this.getPayload(voiceLang, mark.text, voiceId),
+                signal,
+              );
             } catch (err) {
               console.warn('Error preloading mark (bg)', i, err);
             }

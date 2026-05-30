@@ -1,4 +1,4 @@
-local _ = require("i18n")
+local _ = require("readest_i18n")
 return {
     name = "readest",
     fullname = _("Readest"),

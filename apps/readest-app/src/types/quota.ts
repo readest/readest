@@ -13,6 +13,7 @@ export type QuotaType = {
   used: number;
   total: number;
   unit: string;
+  resetAt?: number;
 };
 
 export type QuotaFeature = 'storage' | 'translation' | 'tokens' | 'customization' | 'generic';

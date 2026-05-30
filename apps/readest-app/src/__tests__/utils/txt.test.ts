@@ -76,23 +76,38 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
   });
 
   describe('第N[卷节回讲篇封本册部话] variants', () => {
-    it.each(['卷', '节', '回', '讲', '篇', '封', '本', '册', '部', '话'])(
-      'should match 第一%s',
-      (suffix) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      '卷',
+      '节',
+      '回',
+      '讲',
+      '篇',
+      '封',
+      '本',
+      '册',
+      '部',
+      '话',
+    ])('should match 第一%s', (suffix) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
+    });
   });
 
   describe('Chinese preface keywords', () => {
-    it.each(['楔子', '前言', '简介', '引言', '序言', '序章', '总论', '概论', '后记'])(
-      'should match %s',
-      (keyword) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      '楔子',
+      '前言',
+      '简介',
+      '引言',
+      '序言',
+      '序章',
+      '总论',
+      '概论',
+      '后记',
+    ])('should match %s', (keyword) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
     it('should match 前言 with title', () => {
       const regex = getFirstRegex('zh');
@@ -106,13 +121,15 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
   });
 
   describe('"chapter" keyword in Chinese context', () => {
-    it.each(['Chapter 1', 'CHAPTER 10', 'chapter.5', 'chapter 2: The Beginning'])(
-      'should match "%s" (case-insensitive)',
-      (heading) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n${heading}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Chapter 1',
+      'CHAPTER 10',
+      'chapter.5',
+      'chapter 2: The Beginning',
+    ])('should match "%s" (case-insensitive)', (heading) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
   });
 
   describe('番外 (bonus) prefix variants', () => {
@@ -167,13 +184,16 @@ describe('createChapterRegexps — Chinese (zh) second regex', () => {
 // ---------------------------------------------------------------------------
 describe('createChapterRegexps — English (en) regex matching', () => {
   describe('Chapter keyword', () => {
-    it.each(['Chapter 1', 'Chapter 12', 'Chapter 999', 'CHAPTER 5', 'chapter 3'])(
-      'should match "%s"',
-      (heading) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${heading}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Chapter 1',
+      'Chapter 12',
+      'Chapter 999',
+      'CHAPTER 5',
+      'chapter 3',
+    ])('should match "%s"', (heading) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
 
     it('should match "Chapter 1: Title" with title', () => {
       const regex = getFirstRegex('en');
@@ -187,21 +207,30 @@ describe('createChapterRegexps — English (en) regex matching', () => {
   });
 
   describe('Roman numeral chapters', () => {
-    it.each(['V', 'X', 'L', 'C', 'D', 'M'])(
-      'should match single Roman numeral "Chapter %s"',
-      (numeral) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'V',
+      'X',
+      'L',
+      'C',
+      'D',
+      'M',
+    ])('should match single Roman numeral "Chapter %s"', (numeral) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
+    });
 
-    it.each(['II', 'III', 'IV', 'VII', 'XII', 'XIV', 'XLII'])(
-      'should match multi-char Roman numeral "Chapter %s"',
-      (numeral) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'II',
+      'III',
+      'IV',
+      'VII',
+      'XII',
+      'XIV',
+      'XLII',
+    ])('should match multi-char Roman numeral "Chapter %s"', (numeral) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
+    });
 
     it('should not match single "I" as Roman numeral (not in allowed set)', () => {
       const regex = getFirstRegex('en');
@@ -223,31 +252,39 @@ describe('createChapterRegexps — English (en) regex matching', () => {
       expect(regex.test(`\n${keyword} 1\n`)).toBe(true);
     });
 
-    it.each(['Part', 'Section', 'Book', 'Volume', 'Act'])(
-      'should match "%s 3: A New Beginning" with title',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword} 3: A New Beginning\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Part',
+      'Section',
+      'Book',
+      'Volume',
+      'Act',
+    ])('should match "%s 3: A New Beginning" with title', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword} 3: A New Beginning\n`)).toBe(true);
+    });
   });
 
   describe('preface keywords', () => {
-    it.each(['Prologue', 'Epilogue', 'Introduction', 'Foreword', 'Preface', 'Afterword'])(
-      'should match "%s"',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Prologue',
+      'Epilogue',
+      'Introduction',
+      'Foreword',
+      'Preface',
+      'Afterword',
+    ])('should match "%s"', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
-    it.each(['PROLOGUE', 'prologue', 'Prologue'])(
-      'should match "%s" case-insensitively',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'PROLOGUE',
+      'prologue',
+      'Prologue',
+    ])('should match "%s" case-insensitively', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
     it('should match "Prologue: The Beginning"', () => {
       const regex = getFirstRegex('en');

@@ -23,6 +23,12 @@
 - **CompressionStream** (#3255): Also broken on iOS 15.x; zip.js has its own native API disable
 - **zip.js native API** (#3170): Disable native `CompressionStream`/`DecompressionStream` on iOS 15.x
 
+### iPad reports a desktop UA → never branch native dispatch on `getOSPlatform()`
+- `getOSPlatform()` (utils/misc) is **user-agent based**, and iPadOS sends a desktop "Macintosh" UA → it returns `'macos'` on iPad. Any native-OS dispatch keyed on it misroutes iPad to the macOS path.
+- Symptom seen: system dictionary on iPad threw `"Command show_lookup_popover not found"` — the macOS-only Rust command (`src-tauri/src/macos/system_dictionary.rs`); iOS only registers the plugin command `plugin:native-bridge|show_lookup_popover`.
+- **Rule:** for OS-specific native dispatch/capability, use `appService.isIOSApp / isMacOSApp / isAndroidApp` (derived from the Tauri OS plugin `type()` → `OS_TYPE` in `nativeAppService.ts`), NOT `getOSPlatform()`. The misc.ts comment says this explicitly.
+- Sync, non-React modules: `getInitializedAppService()` (environment.ts) returns the cached singleton synchronously (null pre-init). Used by `systemDictionary.ts` for `isSystemDictionarySupported()` (sync) + `invokeSystemDictionary()` (async).
+
 ### iOS-Specific Code
 - `src-tauri/plugins/tauri-plugin-native-bridge/ios/Sources/NativeBridgePlugin.swift`
 - Slider CSS: `-webkit-appearance: none; appearance: none` in globals.css

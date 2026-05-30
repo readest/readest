@@ -7,8 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { TTSMediaMetadataMode } from '@/services/tts/types';
+import { BoxedList, SettingsRow, SettingsSelect } from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
-import Select from '../Select';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -88,27 +88,20 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
         data-setting-id='settings.tts.ttsHighlightStyle'
       />
 
-      <div className='w-full' data-setting-id='settings.tts.mediaMetadata'>
-        <h2 className='mb-2 font-medium'>{_('Media Info')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item !h-16'>
-              <div className='flex flex-col gap-1'>
-                <span>{_('Update Frequency')}</span>
-              </div>
-              <Select
-                value={ttsMediaMetadata}
-                onChange={handleMediaMetadataChange}
-                options={[
-                  { value: 'sentence', label: _('Every Sentence') },
-                  { value: 'paragraph', label: _('Every Paragraph') },
-                  { value: 'chapter', label: _('Every Chapter') },
-                ]}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Media Info')} data-setting-id='settings.tts.mediaMetadata'>
+        <SettingsRow label={_('Update Frequency')}>
+          <SettingsSelect
+            value={ttsMediaMetadata}
+            onChange={handleMediaMetadataChange}
+            ariaLabel={_('Update Frequency')}
+            options={[
+              { value: 'sentence', label: _('Every Sentence') },
+              { value: 'paragraph', label: _('Every Paragraph') },
+              { value: 'chapter', label: _('Every Chapter') },
+            ]}
+          />
+        </SettingsRow>
+      </BoxedList>
     </div>
   );
 };

@@ -1,10 +1,15 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 
 // We need to import the singleton, but also be able to test a fresh instance.
 // The module exports a singleton `eventDispatcher`. Since the class is not
 // exported, we test through the singleton and reset between tests.
 
-import { eventDispatcher } from '@/utils/event';
+import {
+  eventDispatcher,
+  markSettled,
+  onSettled,
+  __resetSettledEventsForTests,
+} from '@/utils/event';
 
 describe('EventDispatcher', () => {
   // -----------------------------------------------------------------------
@@ -197,5 +202,91 @@ describe('EventDispatcher', () => {
       eventDispatcher.off('shared-name', asyncFn);
       eventDispatcher.offSync('shared-name', syncFn);
     });
+  });
+});
+
+describe('settled events (markSettled / onSettled)', () => {
+  afterEach(() => {
+    __resetSettledEventsForTests();
+  });
+
+  it('fires listeners that subscribed BEFORE settling', async () => {
+    const fn = vi.fn();
+    onSettled('boot', fn);
+    expect(fn).not.toHaveBeenCalled();
+    await markSettled('boot', { ready: true });
+    expect(fn).toHaveBeenCalledOnce();
+    expect(fn).toHaveBeenCalledWith({ ready: true });
+  });
+
+  it('replays synchronously for listeners that subscribe AFTER settling', async () => {
+    await markSettled('boot', { ready: true });
+    const fn = vi.fn();
+    onSettled('boot', fn);
+    expect(fn).toHaveBeenCalledOnce();
+    expect(fn).toHaveBeenCalledWith({ ready: true });
+  });
+
+  it('fires multiple listeners; each fires exactly once', async () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    onSettled('boot', a);
+    onSettled('boot', b);
+    await markSettled('boot');
+    expect(a).toHaveBeenCalledOnce();
+    expect(b).toHaveBeenCalledOnce();
+    // Idempotent: a second markSettled is a no-op.
+    await markSettled('boot');
+    expect(a).toHaveBeenCalledOnce();
+    expect(b).toHaveBeenCalledOnce();
+  });
+
+  it('auto-unsubscribes after fire — repeated dispatches do NOT re-fire', async () => {
+    const fn = vi.fn();
+    onSettled('boot', fn);
+    await markSettled('boot');
+    expect(fn).toHaveBeenCalledOnce();
+    // The bare eventDispatcher would normally fire again on re-dispatch;
+    // settled-event listeners must not.
+    await eventDispatcher.dispatch('boot', { stale: true });
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('returned unsubscribe cancels a pre-settle subscription', async () => {
+    const fn = vi.fn();
+    const unsub = onSettled('boot', fn);
+    unsub();
+    await markSettled('boot');
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('returned unsubscribe is a no-op for late (already-replayed) subscribers', async () => {
+    await markSettled('boot');
+    const fn = vi.fn();
+    const unsub = onSettled('boot', fn);
+    expect(fn).toHaveBeenCalledOnce();
+    expect(() => unsub()).not.toThrow();
+  });
+
+  it('preserves typed payload through onSettled<T>', async () => {
+    interface BootPayload {
+      version: number;
+    }
+    let captured: BootPayload | null = null;
+    onSettled<BootPayload>('typed-boot', (p) => {
+      captured = p;
+    });
+    await markSettled('typed-boot', { version: 7 });
+    expect(captured).toEqual({ version: 7 });
+  });
+
+  it('different event names are independent', async () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    onSettled('a', a);
+    onSettled('b', b);
+    await markSettled('a');
+    expect(a).toHaveBeenCalledOnce();
+    expect(b).not.toHaveBeenCalled();
   });
 });

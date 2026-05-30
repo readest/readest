@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_app_name__",
+  "version": "0.2.0",
+  "description": "__MSG_app_description__",
+  "default_locale": "en",
+  "permissions": ["activeTab", "scripting", "storage", "offscreen"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "__MSG_action_title__",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png",
+      "256": "icons/icon-256.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png",
+    "256": "icons/icon-256.png"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.readest.com/*",
+        "https://*.readest.com/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["content/auth-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

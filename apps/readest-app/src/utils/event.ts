@@ -61,3 +61,57 @@ class EventDispatcher {
 }
 
 export const eventDispatcher = new EventDispatcher();
+
+// ─── Settled events (one-shot, replay-on-subscribe) ────────────────────
+//
+// `markSettled` records that a one-shot event has fired and dispatches
+// it to currently-subscribed listeners. Subsequent calls with the same
+// name are no-ops — the event has already settled.
+//
+// `onSettled` subscribes a listener that fires exactly once: synchronously
+// if the event has already settled (replay), otherwise on the next
+// markSettled. The listener auto-unsubscribes after firing. Returns an
+// unsubscribe function that cancels the subscription if the event hasn't
+// settled yet.
+//
+// Use case: boot-readiness signals like "replica-sync-ready" or
+// "transferManager-ready" where late subscribers must still observe
+// that the milestone happened. The plain eventDispatcher fires-and-
+// forgets, so a listener that subscribes after dispatch misses it
+// forever.
+
+const settledEvents = new Map<string, unknown>();
+
+export const markSettled = async (name: string, detail?: unknown): Promise<void> => {
+  if (settledEvents.has(name)) return;
+  settledEvents.set(name, detail);
+  await eventDispatcher.dispatch(name, detail);
+};
+
+export const onSettled = <T = unknown>(
+  name: string,
+  listener: (detail: T) => void,
+): (() => void) => {
+  if (settledEvents.has(name)) {
+    listener(settledEvents.get(name) as T);
+    return () => {};
+  }
+  let invoked = false;
+  const wrapped = (event: CustomEvent) => {
+    if (invoked) return;
+    invoked = true;
+    eventDispatcher.off(name, wrapped);
+    listener(event.detail as T);
+  };
+  eventDispatcher.on(name, wrapped);
+  return () => {
+    if (!invoked) {
+      eventDispatcher.off(name, wrapped);
+    }
+  };
+};
+
+/** Test seam — clear the settled-events registry between specs. */
+export const __resetSettledEventsForTests = (): void => {
+  settledEvents.clear();
+};

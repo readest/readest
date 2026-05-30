@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { READEST_WEB_BASE_URL, SHARE_BASE_URL } from '@/services/constants';
-import { resolveActiveShare } from '@/libs/share-server';
+import { resolveActiveShare } from '@/libs/shareServer';
 import ShareLanding from './ShareLanding';
 
 // Server-rendered metadata for chat unfurls. Lives on the page (not the

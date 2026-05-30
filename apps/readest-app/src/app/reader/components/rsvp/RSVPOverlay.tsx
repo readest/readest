@@ -64,6 +64,7 @@ const ORP_COLOR_OPTIONS = ['', '#EF4444', '#3B82F6', '#22C55E', '#F97316', '#A85
 const STORAGE_KEY_FONT_SIZE = 'readest_rsvp_fontsize';
 const STORAGE_KEY_ORP_COLOR = 'readest_rsvp_orp_color';
 const STORAGE_KEY_CONTEXT = 'readest_rsvp_context';
+const STORAGE_KEY_HIGHLIGHT_WORD = 'readest_rsvp_cjk_highlight_word';
 
 // Context panel windowing — long sections (e.g. AZW3 chapters with 40k+ words)
 // would otherwise render tens of thousands of <span> elements and freeze the UI
@@ -130,6 +131,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       /* ignore */
     }
     return 0;
+  });
+  const [highlightWholeWord, setHighlightWholeWord] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_HIGHLIGHT_WORD) === '1';
+    } catch {
+      return false;
+    }
   });
   const contextWordRef = useRef<HTMLSpanElement>(null);
   const touchStartX = useRef(0);
@@ -309,6 +317,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     setOrpColorIndex(idx);
     try {
       localStorage.setItem(STORAGE_KEY_ORP_COLOR, String(idx));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const updateHighlightWholeWord = useCallback((value: boolean) => {
+    setHighlightWholeWord(value);
+    try {
+      localStorage.setItem(STORAGE_KEY_HIGHLIGHT_WORD, value ? '1' : '0');
     } catch {
       /* ignore */
     }
@@ -697,26 +714,37 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 style={{ fontSize: `${currentFontSize}rem`, letterSpacing: wordLetterSpacing }}
               >
                 {currentWord ? (
-                  <>
+                  isCJKWord && highlightWholeWord ? (
+                    // Whole-word mode: center the full CJK word and color every
+                    // character, instead of anchoring a single focus character.
                     <span
-                      className='rsvp-word-before absolute text-right opacity-60'
-                      style={{ right: `calc(50% + ${wordSideOffset})` }}
-                    >
-                      {wordBefore}
-                    </span>
-                    <span
-                      className='rsvp-word-orp relative z-10 font-bold'
+                      className='rsvp-word-whole relative z-10 font-bold'
                       style={{ color: effectiveOrpColor }}
                     >
-                      {orpChar}
+                      {currentWord.text}
                     </span>
-                    <span
-                      className='rsvp-word-after absolute text-left opacity-60'
-                      style={{ left: `calc(50% + ${wordSideOffset})` }}
-                    >
-                      {wordAfter}
-                    </span>
-                  </>
+                  ) : (
+                    <>
+                      <span
+                        className='rsvp-word-before absolute text-right opacity-60'
+                        style={{ right: `calc(50% + ${wordSideOffset})` }}
+                      >
+                        {wordBefore}
+                      </span>
+                      <span
+                        className='rsvp-word-orp relative z-10 font-bold'
+                        style={{ color: effectiveOrpColor }}
+                      >
+                        {orpChar}
+                      </span>
+                      <span
+                        className='rsvp-word-after absolute text-left opacity-60'
+                        style={{ left: `calc(50% + ${wordSideOffset})` }}
+                      >
+                        {wordAfter}
+                      </span>
+                    </>
+                  )
                 ) : (
                   <span className='italic opacity-30'>{_('Ready')}</span>
                 )}
@@ -906,6 +934,34 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 onChange={(e) => controller.setSplitHyphens(e.target.checked)}
               />
             </div>
+
+            {/* CJK character mode — split CJK text per-character */}
+            {state.hasCJK && (
+              <div className='config-item gap-2'>
+                <span className='opacity-50'>{_('Character Mode')}</span>
+                <input
+                  type='checkbox'
+                  data-testid='rsvp-char-mode-toggle'
+                  className='toggle'
+                  checked={state.cjkCharMode}
+                  onChange={(e) => controller.setCjkCharMode(e.target.checked)}
+                />
+              </div>
+            )}
+
+            {/* CJK whole-word highlight — color and center the full word */}
+            {state.hasCJK && (
+              <div className='config-item gap-2'>
+                <span className='opacity-50'>{_('Highlight Word')}</span>
+                <input
+                  type='checkbox'
+                  data-testid='rsvp-highlight-word-toggle'
+                  className='toggle'
+                  checked={highlightWholeWord}
+                  onChange={(e) => updateHighlightWholeWord(e.target.checked)}
+                />
+              </div>
+            )}
 
             {/* ORP color */}
             <div className='flex items-center gap-1.5'>
