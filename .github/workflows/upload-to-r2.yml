@@ -14,7 +14,8 @@ on:
         required: true
         type: string
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   upload-to-r2:
