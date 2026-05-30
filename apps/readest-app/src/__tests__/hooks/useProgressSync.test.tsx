@@ -31,6 +31,9 @@ const h = vi.hoisted(() => {
     user: { id: 'u1' },
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
+    setConfigMock: vi.fn(),
+    cfiCompareMock: vi.fn((_a: string, _b: string) => 0),
+    view: { renderer: { getContents: () => [], primaryIndex: 0 }, goTo: vi.fn() },
     state: {
       syncedConfigs: [] as unknown[] | null,
       progress: { location: 'cfi-loc' } as { location: string } | null,
@@ -58,17 +61,14 @@ vi.mock('@/hooks/useTranslation', () => ({
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
     getConfig: () => h.config,
-    setConfig: vi.fn(),
+    setConfig: h.setConfigMock,
     getBookData: () => ({ book: h.book }),
   }),
 }));
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: h.makeStore({
-    getView: () => ({
-      renderer: { getContents: () => [], primaryIndex: 0 },
-      goTo: vi.fn(),
-    }),
+    getView: () => h.view,
     getProgress: () => h.state.progress,
     setHoveredBookKey: vi.fn(),
     getViewState: () => ({ previewMode: false }),
@@ -93,7 +93,7 @@ vi.mock('@/utils/xcfi', () => ({
 }));
 
 vi.mock('@/libs/document', () => ({
-  CFI: { compare: () => 0 },
+  CFI: { compare: (a: string, b: string) => h.cfiCompareMock(a, b) },
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -129,6 +129,10 @@ beforeEach(() => {
   vi.useFakeTimers();
   h.syncConfigsMock.mockClear();
   h.syncBooksMock.mockClear();
+  h.setConfigMock.mockClear();
+  h.view.goTo.mockClear();
+  h.cfiCompareMock.mockReset();
+  h.cfiCompareMock.mockReturnValue(0);
   h.state.syncedConfigs = [];
   h.state.progress = { location: 'cfi-loc' };
   h.eventListeners.clear();
@@ -218,6 +222,34 @@ describe('useProgressSync', () => {
     // is already open and the retry timer was cancelled.
     await advance(20000);
     expect(pullCallCount()).toBe(initialPulls);
+  });
+
+  test('discards a malformed synced location instead of navigating to it', async () => {
+    // An empty-start range CFI left by the cfi-inert skip-link bug. compare()
+    // returns -1 so it would "win" and drive a goTo if it were not discarded.
+    h.cfiCompareMock.mockReturnValue(-1);
+    h.state.syncedConfigs = [
+      { bookHash: 'h1', metaHash: 'm1', location: 'epubcfi(/6/24!/4,,/20/1:58)', updatedAt: 3000 },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    // Not navigated to, and not persisted into the local config (the local
+    // 'cfi-loc' is kept instead of the malformed remote value).
+    expect(h.view.goTo).not.toHaveBeenCalled();
+    const persisted = h.setConfigMock.mock.calls.at(-1)?.[1] as { location?: string } | undefined;
+    expect(persisted?.location).toBe('cfi-loc');
+  });
+
+  test('navigates to a well-formed newer synced location', async () => {
+    h.cfiCompareMock.mockReturnValue(-1);
+    h.state.syncedConfigs = [
+      { bookHash: 'h1', metaHash: 'm1', location: 'epubcfi(/6/24!/4/20/1:58)', updatedAt: 3000 },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.view.goTo).toHaveBeenCalledWith('epubcfi(/6/24!/4/20/1:58)');
   });
 
   test('sync-book-progress event resets and re-runs the pull chain', async () => {

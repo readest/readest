@@ -12,6 +12,7 @@ import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
+import { isMalformedLocationCfi } from '@/utils/cfi';
 
 // Backoff schedule for the first-pull retry on book open. After these
 // attempts the gate releases unconditionally so the user's progress can
@@ -187,10 +188,18 @@ export const useProgressSync = (bookKey: string) => {
 
     const bookHash = bookKey.split('-')[0]!;
     const metaHash = book.metaHash;
-    const syncedConfig = syncedConfigs.filter(
+    let syncedConfig = syncedConfigs.filter(
       (c) => c.bookHash === bookHash || c.metaHash === metaHash,
     )[0];
     if (syncedConfig) {
+      // Discard a malformed synced location (an empty-start/end range CFI left by
+      // the cfi-inert skip-link bug, e.g. `epubcfi(/6/24!/4,,/20/1:58)`) so it
+      // can't move the reader or be persisted — it resolves to a section-spanning
+      // range and jumps to the wrong end of the section. A valid xpointer below
+      // can still recover the real position.
+      if (syncedConfig.location && isMalformedLocationCfi(syncedConfig.location)) {
+        syncedConfig = { ...syncedConfig, location: undefined };
+      }
       const configCFI = config?.location;
       let remoteCFILocation = syncedConfig.location;
       const xpointer = syncedConfig.xpointer;

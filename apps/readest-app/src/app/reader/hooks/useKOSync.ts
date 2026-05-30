@@ -10,6 +10,7 @@ import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
+import { isMalformedLocationCfi } from '@/utils/cfi';
 import {
   formatProgressPercentage,
   getLocalProgressPreview,
@@ -74,26 +75,34 @@ export const useKOSync = (bookKey: string) => {
       const config = getConfig(bookKey);
       const cfi = progress.location;
       if (!view || !cfi) return null;
-      try {
-        const koContents = view.renderer.getContents();
-        const koPrimaryIdx = view.renderer.primaryIndex;
-        const content = koContents.find((x) => x.index === koPrimaryIdx) ?? koContents[0];
-        // progress.location may be a CFI in a different spine section than the
-        // currently-rendered primary view (#primaryIndex can lag behind the
-        // viewport while scrolling). Resolve against the CFI's own section
-        // rather than forcing the primary view's document, which throws on a
-        // spine-index mismatch.
-        const xpointerResult = await getXPointerFromCFI(
-          cfi,
-          content?.doc,
-          content?.index,
-          bookData.bookDoc ?? undefined,
-        );
-        koProgress = xpointerResult.xpointer;
-        setConfig(bookKey, { xpointer: koProgress });
-      } catch (error) {
-        console.error('Failed to convert CFI to XPointer', error);
+      if (isMalformedLocationCfi(cfi)) {
+        // A malformed empty-start/end CFI (cfi-inert skip-link bug) resolves to
+        // the wrong end of the section. Don't derive an XPointer from it — once
+        // pushed as an XPointer the "malformed" signal is lost and other devices
+        // can't discard it. Reuse the last known-good XPointer instead.
         if (config?.xpointer) koProgress = config.xpointer;
+      } else {
+        try {
+          const koContents = view.renderer.getContents();
+          const koPrimaryIdx = view.renderer.primaryIndex;
+          const content = koContents.find((x) => x.index === koPrimaryIdx) ?? koContents[0];
+          // progress.location may be a CFI in a different spine section than the
+          // currently-rendered primary view (#primaryIndex can lag behind the
+          // viewport while scrolling). Resolve against the CFI's own section
+          // rather than forcing the primary view's document, which throws on a
+          // spine-index mismatch.
+          const xpointerResult = await getXPointerFromCFI(
+            cfi,
+            content?.doc,
+            content?.index,
+            bookData.bookDoc ?? undefined,
+          );
+          koProgress = xpointerResult.xpointer;
+          setConfig(bookKey, { xpointer: koProgress });
+        } catch (error) {
+          console.error('Failed to convert CFI to XPointer', error);
+          if (config?.xpointer) koProgress = config.xpointer;
+        }
       }
 
       const page = progress.pageinfo?.current ?? 0;

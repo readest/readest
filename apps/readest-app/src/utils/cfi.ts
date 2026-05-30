@@ -51,6 +51,29 @@ export function findNearestCfi(
   return sortedCfis[lo - 1]!;
 }
 
+/**
+ * Detect a degenerate range CFI whose start or end path is empty — e.g.
+ * `epubcfi(/6/24!/4,,/20/1:58)`. These were produced by the cfi-inert skip-link
+ * bug (fixed in foliate 569cc06): the visible-range start/end anchored on an
+ * injected a11y skip-link, foliate dropped that inert step, and the range
+ * silently collapsed to the section boundary. Such a CFI resolves to a
+ * section-spanning range that navigates to the wrong end of the section, so a
+ * synced/saved location matching this shape should be discarded rather than
+ * trusted. Well-formed point and range CFIs return false.
+ */
+export function isMalformedLocationCfi(cfi: string): boolean {
+  try {
+    const parts = CFI.parse(cfi);
+    if (!parts.parent) return false;
+    const isEmptyPath = (segment: unknown): boolean =>
+      Array.isArray(segment) &&
+      segment.every((group) => Array.isArray(group) && group.length === 0);
+    return isEmptyPath(parts.start) || isEmptyPath(parts.end);
+  } catch {
+    return false;
+  }
+}
+
 export function getIndexFromCfi(cfi: string): number | null {
   try {
     const parts = CFI.parse(cfi);

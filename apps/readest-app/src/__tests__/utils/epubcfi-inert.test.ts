@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as CFI from 'foliate-js/epubcfi.js';
+import { isMalformedLocationCfi } from '@/utils/cfi';
 
 const XHTML = (str: string) => new DOMParser().parseFromString(str, 'application/xhtml+xml');
 
@@ -781,6 +782,63 @@ describe('epubcfi cfi-inert element filtering', () => {
       range.setStart(first, 0);
       range.setEnd(last, 0);
       expect(() => CFI.fromRange(range)).not.toThrow();
+    });
+  });
+
+  // The invalid synced-progress CFI `epubcfi(/6/24!/4,,/20/1:58)` (an empty-start
+  // range) comes from the same skip-link. During the window where epubcfi.js
+  // skipped cfi-inert (c558766) but the paginator's visible-range walker did not
+  // yet (before 569cc06), the relocate range's START could anchor on the
+  // skip-link. fromRange asks for the skip-link's index, getChildNodes filters it
+  // out, findIndex returns -1, the `.filter(x => x.index !== -1)` drops the step,
+  // and the start collapses to the body boundary -> empty start `/4,,`.
+  describe('empty-start range CFI from a skip-link-anchored visible range', () => {
+    // body: [skip-link(cfi-inert), p×9, last]; with cfi-inert filtered the 10
+    // real element children sit at /2../20, so /20 == the section's last block.
+    const page = () =>
+      XHTML(`<html xmlns="http://www.w3.org/1999/xhtml">
+        <head><title>t</title></head>
+        <body>
+          <div cfi-inert="" id="skip-link" tabindex="0">Skip to reading position</div>
+          <p>First</p><p>Second</p><p>Third</p><p>Fourth</p>
+          <p id="para05">xxx<em>yyy</em>0123456789</p>
+          <p>Sixth</p><p>Seventh</p>
+          <img id="svgimg" src="foo.svg" alt="an image"/>
+          <p>Ninth</p>
+          <p id="last">0123456789012345678901234567890123456789012345678901234567890123456789</p>
+        </body>
+      </html>`);
+
+    it('generates an empty-start (`,,`) CFI when the range start anchors on the skip-link', () => {
+      const doc = page();
+      const range = doc.createRange();
+      range.setStart(doc.getElementById('skip-link')!, 0);
+      range.setEnd(doc.getElementById('last')!.firstChild!, 58);
+      expect(CFI.fromRange(range)).toBe('epubcfi(/4,,/20[last]/1:58)');
+    });
+
+    it('resolves the empty-start CFI to a range from the section start to the last element', () => {
+      const doc = page();
+      const range = CFI.toRange(doc, CFI.parse('/4,,/20[last]/1:58'));
+      expect(range).not.toBeNull();
+      // Start collapses to the body boundary (section start); the end reaches the
+      // last element (section end) -> a reader jumps to the wrong end of the section.
+      expect(range!.startContainer).toBe(doc.body);
+      expect(range!.startOffset).toBe(0);
+      expect(range!.endContainer).toBe(doc.getElementById('last')!.firstChild);
+      expect(range!.endOffset).toBe(58);
+    });
+
+    it('the FIX (foliate 569cc06): a range anchored on the first real element has a non-empty start', () => {
+      const doc = page();
+      const range = doc.createRange();
+      range.setStart(doc.querySelector('p')!.firstChild!, 0);
+      range.setEnd(doc.getElementById('last')!.firstChild!, 58);
+      expect(CFI.fromRange(range)).not.toContain(',,');
+    });
+
+    it('isMalformedLocationCfi flags the already-synced empty-start CFI so it is discarded', () => {
+      expect(isMalformedLocationCfi('epubcfi(/6/24!/4,,/20/1:58)')).toBe(true);
     });
   });
 });

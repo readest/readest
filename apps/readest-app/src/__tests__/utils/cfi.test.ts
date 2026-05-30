@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isCfiInLocation, findNearestCfi } from '@/utils/cfi';
+import { isCfiInLocation, findNearestCfi, isMalformedLocationCfi } from '@/utils/cfi';
 
 describe('isCfiInLocation', () => {
   it('should return true when cfi path starts with location path', () => {
@@ -63,5 +63,27 @@ describe('findNearestCfi', () => {
   it('should return null for null/undefined location', () => {
     expect(findNearestCfi(sortedCfis, null)).toBeNull();
     expect(findNearestCfi(sortedCfis, undefined)).toBeNull();
+  });
+});
+
+describe('isMalformedLocationCfi', () => {
+  it('flags an empty-start range CFI', () => {
+    // Produced by the cfi-inert skip-link bug: the visible-range start anchored
+    // on the injected a11y skip-link, foliate dropped that inert step, and the
+    // range start went empty (the `,,`). Resolving it spans the whole section
+    // and jumps to the wrong end, so the location must be discarded.
+    expect(isMalformedLocationCfi('epubcfi(/6/24!/4,,/20/1:58)')).toBe(true);
+  });
+
+  it('flags an empty-end range CFI', () => {
+    expect(isMalformedLocationCfi('epubcfi(/6/24!/4,/18/1:0,)')).toBe(true);
+  });
+
+  it('does not flag a well-formed range CFI', () => {
+    expect(isMalformedLocationCfi('epubcfi(/6/6!/4/4/54,/1:4,/1:15)')).toBe(false);
+  });
+
+  it('does not flag a point CFI', () => {
+    expect(isMalformedLocationCfi('epubcfi(/6/24!/4/20/1:58)')).toBe(false);
   });
 });
