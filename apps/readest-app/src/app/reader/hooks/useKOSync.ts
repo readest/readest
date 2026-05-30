@@ -9,7 +9,7 @@ import { Book, BookProgress, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { getCFIFromXPointer, XCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 import { getLocalProgressPreview, getProgressPercentage } from './kosyncPreview';
 import { getRemoteFraction, isXPointerProgress } from './kosyncProgress';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
@@ -53,7 +53,7 @@ export const useKOSync = (bookKey: string) => {
     setKOSyncClient(client);
   }, [settings]);
 
-  const generateKOProgress = useCallback(() => {
+  const generateKOProgress = useCallback(async () => {
     const progress = getProgress(bookKey);
     const bookData = getBookData(bookKey);
     if (!progress || !bookData) return null;
@@ -74,17 +74,22 @@ export const useKOSync = (bookKey: string) => {
         const koContents = view.renderer.getContents();
         const koPrimaryIdx = view.renderer.primaryIndex;
         const content = koContents.find((x) => x.index === koPrimaryIdx) ?? koContents[0];
-        if (content) {
-          const { doc, index: spineIndex } = content;
-          const converter = new XCFI(doc, spineIndex || 0);
-          const xpointerResult = converter.cfiToXPointer(cfi);
-          koProgress = xpointerResult.xpointer;
-          setConfig(bookKey, { xpointer: koProgress });
-        } else if (config?.xpointer) {
-          koProgress = config.xpointer;
-        }
+        // progress.location may be a CFI in a different spine section than the
+        // currently-rendered primary view (#primaryIndex can lag behind the
+        // viewport while scrolling). Resolve against the CFI's own section
+        // rather than forcing the primary view's document, which throws on a
+        // spine-index mismatch.
+        const xpointerResult = await getXPointerFromCFI(
+          cfi,
+          content?.doc,
+          content?.index,
+          bookData.bookDoc ?? undefined,
+        );
+        koProgress = xpointerResult.xpointer;
+        setConfig(bookKey, { xpointer: koProgress });
       } catch (error) {
         console.error('Failed to convert CFI to XPointer', error);
+        if (config?.xpointer) koProgress = config.xpointer;
       }
 
       const page = progress.pageinfo?.current ?? 0;
@@ -210,7 +215,7 @@ export const useKOSync = (bookKey: string) => {
         if (['receive', 'disable'].includes(settings.kosync.strategy)) return;
 
         const currentBook = getBookData(bookKey)?.book;
-        const progress = generateKOProgress();
+        const progress = await generateKOProgress();
         if (!currentBook || !progress || !progress.koProgress) return;
 
         await kosyncClient.updateProgress(currentBook, progress.koProgress, progress.percentage);
