@@ -28,7 +28,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { eventDispatcher } from '@/utils/event';
-import { evictProvider } from '@/services/dictionaries/registry';
+import { evictProvider, isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import {
   isSystemDictionaryAvailable,
@@ -448,6 +448,14 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const rows = buildRows();
   const hasDeletable = rows.some((r) => r.imported || (r.kind === 'web' && !r.builtinWeb));
 
+  // System-dictionary handoff is exclusive at lookup time — but only on
+  // platforms where it's actually supported. `providerEnabled` is whole-field
+  // synced across devices, so the flag can arrive (true) on web / Linux /
+  // Windows where there's no handoff; there it's a no-op and must NOT lock the
+  // other providers' toggles. `isSystemDictionaryEnabled` applies the same
+  // platform gate the annotator uses, so the lock matches real lookup behavior.
+  const systemDictionaryActive = isSystemDictionaryEnabled(settings);
+
   // dnd-kit sensors. PointerSensor with a small distance gate avoids
   // hijacking simple clicks on the drag handle. TouchSensor with a delay
   // matches mobile UX (long-press to drag). Keyboard support gives drag
@@ -718,8 +726,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
                   // read-only so the user can't accidentally clear that
                   // restoration state.
                   lockedBySystem={
-                    settings.providerEnabled[BUILTIN_PROVIDER_IDS.systemDictionary] === true &&
-                    row.id !== BUILTIN_PROVIDER_IDS.systemDictionary
+                    systemDictionaryActive && row.id !== BUILTIN_PROVIDER_IDS.systemDictionary
                   }
                   isDeleteMode={isDeleteMode}
                   isEditMode={isEditMode}
