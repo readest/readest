@@ -30,9 +30,30 @@
  */
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { isTauriAppPlatform } from '@/services/environment';
-import { getOSPlatform } from '@/utils/misc';
+import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import type { Rect } from '@/utils/sel';
+
+/**
+ * Real native OS for the handoff, taken from the app service's capability
+ * flags rather than the user agent.
+ *
+ * `getOSPlatform()` (utils/misc) is UA-based, and iPadOS sends a desktop
+ * "Macintosh" user agent — so it reports iPad as 'macos'. Dispatching on that
+ * would route the handoff to the macOS-only `show_lookup_popover` Rust command
+ * that iOS never registers, yielding "Command show_lookup_popover not found"
+ * on iPad. The app service's `is*App` flags derive from the Tauri OS plugin
+ * (see `nativeAppService`), so `isIOSApp` is correctly true on iPad. Returns
+ * 'unknown' before the service is initialized or on web (where the flags are
+ * all false), which the callers treat as "unsupported".
+ */
+const getSystemDictionaryOS = (): 'macos' | 'ios' | 'android' | 'unknown' => {
+  const appService = getInitializedAppService();
+  if (!appService) return 'unknown';
+  if (appService.isMacOSApp) return 'macos';
+  if (appService.isIOSApp) return 'ios';
+  if (appService.isAndroidApp) return 'android';
+  return 'unknown';
+};
 
 /**
  * Optional positional hint for the lookup HUD (macOS only). When
@@ -72,8 +93,7 @@ export interface SystemDictionaryAnchorStyle {
  * popup tab list on unsupported hosts.
  */
 export const isSystemDictionarySupported = (): boolean => {
-  if (!isTauriAppPlatform()) return false;
-  const os = typeof navigator !== 'undefined' ? getOSPlatform() : 'unknown';
+  const os = getSystemDictionaryOS();
   return os === 'macos' || os === 'ios' || os === 'android';
 };
 
@@ -115,7 +135,7 @@ export const invokeSystemDictionary = async (
   if (!trimmed) return false;
   if (!isTauriAppPlatform()) return false;
 
-  const os = getOSPlatform();
+  const os = getSystemDictionaryOS();
   try {
     if (os === 'macos') {
       // Calls the Rust `show_lookup_popover` command in

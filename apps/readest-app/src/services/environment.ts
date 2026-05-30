@@ -69,4 +69,13 @@ const environmentConfig: EnvConfigType = {
   },
 };
 
+/**
+ * Synchronously returns the app service if it has already been created by
+ * {@link environmentConfig.getAppService}; null before first init. The async
+ * getter is preferred everywhere — use this only from synchronous code paths
+ * that run well after startup (e.g. capability checks during reader render),
+ * where the singleton is guaranteed to exist.
+ */
+export const getInitializedAppService = (): AppService | null => nativeAppService ?? webAppService;
+
 export default environmentConfig;
