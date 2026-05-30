@@ -273,7 +273,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd apps/readest-app/
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+          # Use -f so curl fails on HTTP errors instead of writing the 404 body
+          # ("Not Found") into latest.json and clobbering the release asset with
+          # invalid JSON, which then breaks tauri-action's updater merge on every
+          # subsequent build.
+          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
+            exit 1
+          fi
+          if ! jq empty latest.json 2>/dev/null; then
+            echo "::error::Existing latest.json is not valid JSON; aborting."
+            exit 1
+          fi
 
           version=${{ needs.get-release.outputs.release_version }}
           universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
@@ -379,7 +390,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+          # Use -f so curl fails on HTTP errors instead of writing the 404 body
+          # ("Not Found") into latest.json and clobbering the release asset with
+          # invalid JSON, which then breaks tauri-action's updater merge on every
+          # subsequent build.
+          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
+            exit 1
+          fi
+          if ! jq empty latest.json 2>/dev/null; then
+            echo "::error::Existing latest.json is not valid JSON; aborting."
+            exit 1
+          fi
 
           version=${{ needs.get-release.outputs.release_version }}
           arch=${{ matrix.config.arch }}
