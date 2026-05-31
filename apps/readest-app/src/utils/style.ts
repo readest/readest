@@ -193,10 +193,6 @@ const getColorStyles = (
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
-    table {
-      overflow: auto;
-      display: table !important;
-    }
     table:has(> colgroup) {
       table-layout: fixed;
     }
@@ -295,6 +291,20 @@ const getPageLayoutStyles = (
 
   pre, code {
     white-space: pre-wrap !important;
+  }
+  .readest-table-scroll {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    /* Let the browser handle horizontal pans on the table; paginated swipe uses capture-phase JS when needed. */
+    touch-action: pan-x pan-y;
+  }
+  .readest-table-scroll > table {
+    display: table !important;
+    width: max-content;
+    max-width: none;
   }
   pre {
     max-width: calc(var(--available-width) * 1px);
@@ -1031,53 +1041,102 @@ export const applyImageStyle = (document: Document) => {
   });
 };
 
+export const TABLE_SCROLL_CLASS = 'readest-table-scroll';
+
+const TABLE_TOUCH_SCROLL_FLAG = 'data-readest-table-touch-scroll';
+
+/** Horizontal swipe on a wide table should scroll the table, not turn the page (paginated mode). */
+export const shouldTableScrollConsumeTouch = (
+  wrapper: HTMLElement,
+  dx: number,
+  dy: number,
+): boolean => {
+  if (wrapper.scrollWidth <= wrapper.clientWidth) return false;
+  if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return false;
+
+  const atStart = wrapper.scrollLeft <= 1;
+  const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 1;
+
+  // Finger moves left (dx < 0) reveals content to the right; finger moves right reveals left.
+  if (dx < 0 && !atEnd) return true;
+  if (dx > 0 && !atStart) return true;
+  return false;
+};
+
+/**
+ * Capture-phase touch routing so foliate's paginator does not steal horizontal swipes
+ * over wide tables on mobile. Attached once per iframe document.
+ */
+export const applyTableTouchScroll = (document: Document) => {
+  const root = document.documentElement;
+  if (root.getAttribute(TABLE_TOUCH_SCROLL_FLAG) === 'true') return;
+  root.setAttribute(TABLE_TOUCH_SCROLL_FLAG, 'true');
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let activeWrapper: HTMLElement | null = null;
+
+  const findWrapper = (target: EventTarget | null): HTMLElement | null => {
+    if (!(target instanceof Element)) return null;
+    return target.closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
+  };
+
+  const onTouchStart = (e: TouchEvent) => {
+    activeWrapper = findWrapper(e.target);
+    if (!activeWrapper) return;
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    touchStartX = touch.screenX;
+    touchStartY = touch.screenY;
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    if (!activeWrapper) return;
+    if (!activeWrapper.contains(e.target as Node)) return;
+
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+
+    const dx = touch.screenX - touchStartX;
+    const dy = touch.screenY - touchStartY;
+    if (!shouldTableScrollConsumeTouch(activeWrapper, dx, dy)) return;
+
+    e.stopImmediatePropagation();
+  };
+
+  const onTouchEnd = () => {
+    activeWrapper = null;
+  };
+
+  const opts = { capture: true, passive: false } as const;
+  document.addEventListener('touchstart', onTouchStart, opts);
+  document.addEventListener('touchmove', onTouchMove, opts);
+  document.addEventListener('touchend', onTouchEnd, opts);
+  document.addEventListener('touchcancel', onTouchEnd, opts);
+};
+
+/** Wrap wide tables so they scroll horizontally instead of overflowing the page. */
 export const applyTableStyle = (document: Document) => {
   document.querySelectorAll('table').forEach((table) => {
     const parent = table.parentNode;
     if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
 
-    // Calculate total width from td elements with width attribute or inline style
-    let totalTableWidth = 0;
-    const rows = table.querySelectorAll('tr');
-
-    // Check all rows and use the widest one
-    for (const row of rows) {
-      const cells = row.querySelectorAll('td, th');
-      let rowWidth = 0;
-
-      cells.forEach((cell) => {
-        const cellElement = cell as HTMLElement;
-
-        const widthAttr = cellElement.getAttribute('width');
-        const styleWidth = cellElement.style.width;
-        const widthStr = widthAttr || styleWidth;
-
-        if (widthStr) {
-          const widthValue = parseFloat(widthStr);
-          const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
-
-          if (widthUnit === 'px' || !widthUnit) {
-            rowWidth += widthValue;
-          }
-        }
-      });
-
-      if (rowWidth > totalTableWidth) {
-        totalTableWidth = rowWidth;
-      }
+    if (
+      parent instanceof HTMLElement &&
+      parent.classList.contains(TABLE_SCROLL_CLASS) &&
+      parent.querySelector(':scope > table') === table
+    ) {
+      table.style.removeProperty('transform');
+      table.style.removeProperty('transform-origin');
+      return;
     }
 
-    const parentWidth = window.getComputedStyle(parent as Element).width;
-    const parentContainerWidth = parseFloat(parentWidth) || 0;
-    if (totalTableWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
-      table.style.transformOrigin = 'left top';
-      table.style.transform = `scale(${scale})`;
-    } else if (parentContainerWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${parentContainerWidth}))`;
-      table.style.transformOrigin = 'center top';
-      table.style.transform = `scale(${scale})`;
-    }
+    const wrapper = document.createElement('div');
+    wrapper.className = TABLE_SCROLL_CLASS;
+    parent.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+    table.style.removeProperty('transform');
+    table.style.removeProperty('transform-origin');
   });
 };
 

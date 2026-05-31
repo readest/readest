@@ -27,6 +27,9 @@ import {
   applyImageStyle,
   keepTextAlignment,
   applyTableStyle,
+  applyTableTouchScroll,
+  shouldTableScrollConsumeTouch,
+  TABLE_SCROLL_CLASS,
 } from '@/utils/style';
 import {
   DEFAULT_BOOK_FONT,
@@ -549,7 +552,7 @@ describe('applyTableStyle', () => {
     document.body.innerHTML = '';
   });
 
-  it('applies scale transform to a table with td width attributes', () => {
+  it('wraps a table in a horizontal scroll container', () => {
     document.body.innerHTML = `
       <div>
         <table>
@@ -562,98 +565,87 @@ describe('applyTableStyle', () => {
     `;
     applyTableStyle(document);
     const table = document.querySelector('table')!;
-    // totalTableWidth = 100 + 200 = 300
-    expect(table.style.transform).toContain('scale(');
-    expect(table.style.transform).toContain('300');
-    expect(table.style.transformOrigin).toBe('left top');
+    const wrapper = table.parentElement;
+    expect(wrapper?.classList.contains(TABLE_SCROLL_CLASS)).toBe(true);
+    expect(table.style.transform).toBe('');
   });
 
-  it('applies scale transform using px width from td elements', () => {
+  it('wraps multiple tables independently', () => {
     document.body.innerHTML = `
       <div>
-        <table>
-          <tr>
-            <td width="150px">Cell 1</td>
-            <td width="250px">Cell 2</td>
-          </tr>
-        </table>
+        <table id="t1"><tr><td>A</td></tr></table>
+        <table id="t2"><tr><td>B</td></tr></table>
       </div>
     `;
     applyTableStyle(document);
-    const table = document.querySelector('table')!;
-    // totalTableWidth = 150 + 250 = 400
-    expect(table.style.transform).toContain('400');
+    const wrappers = document.querySelectorAll(`.${TABLE_SCROLL_CLASS}`);
+    expect(wrappers).toHaveLength(2);
   });
 
-  it('uses the widest row when multiple rows exist', () => {
+  it('does not double-wrap when applyTableStyle runs twice', () => {
     document.body.innerHTML = `
       <div>
-        <table>
-          <tr>
-            <td width="100">A</td>
-            <td width="100">B</td>
-          </tr>
-          <tr>
-            <td width="200">C</td>
-            <td width="300">D</td>
-          </tr>
-        </table>
+        <table><tr><td>Cell</td></tr></table>
       </div>
     `;
     applyTableStyle(document);
-    const table = document.querySelector('table')!;
-    // Second row: 200 + 300 = 500
-    expect(table.style.transform).toContain('500');
-  });
-
-  it('applies center-top origin when no cell widths are specified', () => {
-    document.body.innerHTML = `
-      <div style="width: 600px;">
-        <table>
-          <tr>
-            <td>Cell 1</td>
-            <td>Cell 2</td>
-          </tr>
-        </table>
-      </div>
-    `;
     applyTableStyle(document);
-    const table = document.querySelector('table')!;
-    // No cell widths => totalTableWidth = 0
-    // jsdom getComputedStyle may return parentWidth as "" or "0px" so transform may not be set
-    // But if parentContainerWidth > 0 it would use center top
-    // In jsdom getComputedStyle returns "" for inline styles on div so parentContainerWidth = 0
-    // Neither branch applies; verify no crash
-    expect(table).toBeTruthy();
+    expect(document.querySelectorAll(`.${TABLE_SCROLL_CLASS}`)).toHaveLength(1);
   });
 
-  it('handles tables with inline style width on td', () => {
-    document.body.innerHTML = `
-      <div>
-        <table>
-          <tr>
-            <td style="width: 120px;">Cell 1</td>
-            <td style="width: 180px;">Cell 2</td>
-          </tr>
-        </table>
-      </div>
-    `;
-    applyTableStyle(document);
-    const table = document.querySelector('table')!;
-    // totalTableWidth = 120 + 180 = 300
-    expect(table.style.transform).toContain('300');
-  });
-
-  it('does not crash on a table without parent element', () => {
-    // Table at root level inside body
+  it('does not crash on a table whose parent is body', () => {
     document.body.innerHTML = `
       <table>
         <tr><td width="100">A</td></tr>
       </table>
     `;
-    // body is the parent, which is an Element, so it proceeds
     applyTableStyle(document);
     const table = document.querySelector('table')!;
-    expect(table.style.transform).toContain('100');
+    expect(table.parentElement?.classList.contains(TABLE_SCROLL_CLASS)).toBe(true);
+  });
+});
+
+describe('shouldTableScrollConsumeTouch', () => {
+  it('returns false when the table is not wider than its container', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 100, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 100, configurable: true });
+    expect(shouldTableScrollConsumeTouch(wrapper, -40, 0)).toBe(false);
+  });
+
+  it('consumes a horizontal swipe when more content is available to the right', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 0, configurable: true });
+    expect(shouldTableScrollConsumeTouch(wrapper, -40, 0)).toBe(true);
+  });
+
+  it('does not consume when at the right edge and swiping left', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 200, configurable: true });
+    expect(shouldTableScrollConsumeTouch(wrapper, -40, 0)).toBe(false);
+  });
+
+  it('ignores mostly vertical movement', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 0, configurable: true });
+    expect(shouldTableScrollConsumeTouch(wrapper, -5, -40)).toBe(false);
+  });
+});
+
+describe('applyTableTouchScroll', () => {
+  it('attaches capture-phase listeners once per document', () => {
+    const addSpy = vi.spyOn(document, 'addEventListener');
+    applyTableTouchScroll(document);
+    applyTableTouchScroll(document);
+    const touchMoves = addSpy.mock.calls.filter(([type]) => type === 'touchmove');
+    expect(touchMoves).toHaveLength(1);
+    expect(touchMoves[0]?.[2]).toEqual({ capture: true, passive: false });
+    addSpy.mockRestore();
   });
 });

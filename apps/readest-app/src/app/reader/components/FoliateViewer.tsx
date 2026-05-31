@@ -32,6 +32,7 @@ import {
   applyScrollbarStyle,
   applyScrollModeClass,
   applyTableStyle,
+  applyTableTouchScroll,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -263,6 +264,7 @@ const FoliateViewer: React.FC<{
 
       applyImageStyle(detail.doc);
       applyTableStyle(detail.doc);
+      applyTableTouchScroll(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
