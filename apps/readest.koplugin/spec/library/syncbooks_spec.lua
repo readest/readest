@@ -252,6 +252,81 @@ describe("library.syncbooks", function()
     end)
 
     -- =====================================================================
+    -- extractLocalCover(file_path, dst_png) — render a book's embedded cover
+    -- to dst_png as PNG via coverbrowser's BookInfo:getCoverImage so
+    -- uploadBook can ship a cover for books that originated on this device
+    -- (issue #4374), not just ones previously downloaded from the cloud.
+    -- The blitbuffer/document work is live-KOReader-only, so we inject a fake
+    -- BookInfo via package.loaded and assert the success/failure wiring.
+    -- =====================================================================
+    describe("extractLocalCover", function()
+        local BI_KEY = "apps/filemanager/filemanagerbookinfo"
+        local saved_bookinfo
+
+        before_each(function()
+            saved_bookinfo = package.loaded[BI_KEY]
+        end)
+        after_each(function()
+            package.loaded[BI_KEY] = saved_bookinfo
+        end)
+
+        it("writes the cover as PNG and returns true when the book has a cover", function()
+            local wrote, freed
+            local fake_bb = {
+                writeToFile = function(_self, path, fmt)
+                    wrote = { path = path, fmt = fmt }
+                    return true
+                end,
+                free = function() freed = true end,
+            }
+            package.loaded[BI_KEY] = {
+                getCoverImage = function(_self, document, file)
+                    -- Called with a nil document + the book's path so BookInfo
+                    -- opens the file itself (matches calibre.koplugin's usage).
+                    assert.is_nil(document)
+                    assert.are.equal("/books/foo.epub", file)
+                    return fake_bb
+                end,
+            }
+
+            local ok = syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png")
+
+            assert.is_true(ok)
+            assert.are.equal("/cache/abc.png", wrote.path)
+            assert.are.equal("png", wrote.fmt)
+            assert.is_true(freed, "the cover blitbuffer must be freed")
+        end)
+
+        it("returns false when the book has no extractable cover", function()
+            package.loaded[BI_KEY] = {
+                getCoverImage = function() return nil end,
+            }
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false when the PNG write fails", function()
+            package.loaded[BI_KEY] = {
+                getCoverImage = function()
+                    return { writeToFile = function() return false end, free = function() end }
+                end,
+            }
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false when coverbrowser's BookInfo isn't available", function()
+            -- Neither package.loaded nor package.path resolves the module in
+            -- the test env, so require() errors and the pcall guard kicks in.
+            package.loaded[BI_KEY] = nil
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false for missing arguments", function()
+            assert.is_false(syncbooks.extractLocalCover(nil, "/cache/abc.png"))
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", nil))
+        end)
+    end)
+
+    -- =====================================================================
     -- syncBooks(opts, mode, cb, before_push) — bidirectional orchestration.
     --
     -- The order matters: pull must run BEFORE push in "both" mode so the
