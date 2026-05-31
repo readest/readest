@@ -558,7 +558,7 @@ const FoliateViewer: React.FC<{
       const width = viewWidth - insets.left - insets.right;
       const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
-      view.renderer.setStyles?.(getStyles(viewSettings));
+      view.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       applyTranslationStyle(viewSettings);
 
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
@@ -685,7 +685,7 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const renderer = viewRef.current.renderer;
       const viewSettings = getViewSettings(bookKey)!;
-      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+      viewRef.current.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       const docs = viewRef.current.renderer.getContents();
       docs.forEach(({ doc }) => {
         if (bookDoc.rendition?.layout === 'pre-paginated') {

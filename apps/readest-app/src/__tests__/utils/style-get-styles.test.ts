@@ -9,6 +9,7 @@ vi.mock('@/utils/misc', async (importOriginal) => {
 });
 
 import { getStyles, ThemeCode } from '@/utils/style';
+import { CustomFont } from '@/styles/fonts';
 import { ViewSettings } from '@/types/book';
 import {
   DEFAULT_BOOK_FONT,
@@ -717,5 +718,65 @@ describe('getStyles integration', () => {
     const css = getStyles(vs);
     expect(css).toBeTruthy();
     expect(css).toContain('--theme-bg-color');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// custom @font-face inlining
+// ---------------------------------------------------------------------------
+
+/** Build a loaded CustomFont (blob URL in memory) for testing. */
+function makeCustomFont(overrides: Partial<CustomFont> = {}): CustomFont {
+  return {
+    id: 'my-test-font',
+    name: 'My Test Font',
+    path: '/fonts/my-test-font.ttf',
+    blobUrl: 'blob:http://localhost/my-test-font',
+    ...overrides,
+  };
+}
+
+describe('custom @font-face inlining (via getStyles)', () => {
+  const theme = makeThemeCode();
+
+  it('inlines an @font-face rule for each loaded custom font', () => {
+    const vs = makeViewSettings();
+    const css = getStyles(vs, theme, [makeCustomFont()]);
+    expect(css).toContain('@font-face');
+    expect(css).toContain('font-family: "My Test Font"');
+    expect(css).toContain('blob:http://localhost/my-test-font');
+  });
+
+  it('inlines the @font-face rules ahead of the rest of the stylesheet', () => {
+    const vs = makeViewSettings();
+    const css = getStyles(vs, theme, [makeCustomFont()]);
+    // Paginator writes this CSS into the iframe before its first paint,
+    // so the custom @font-face must precede the font-family declarations
+    // that reference it (layout styles begin with `@namespace epub`).
+    expect(css.indexOf('@font-face')).toBeLessThan(css.indexOf('@namespace epub'));
+  });
+
+  it('emits one @font-face per loaded font', () => {
+    const vs = makeViewSettings();
+    const fonts = [
+      makeCustomFont({ id: 'font-a', name: 'Font A', blobUrl: 'blob:http://localhost/a' }),
+      makeCustomFont({ id: 'font-b', name: 'Font B', blobUrl: 'blob:http://localhost/b' }),
+    ];
+    const css = getStyles(vs, theme, fonts);
+    expect(css.split('@font-face').length - 1).toBe(2);
+    expect(css).toContain('font-family: "Font A"');
+    expect(css).toContain('font-family: "Font B"');
+  });
+
+  it('skips fonts that have no blob URL', () => {
+    const vs = makeViewSettings();
+    const css = getStyles(vs, theme, [makeCustomFont({ blobUrl: undefined })]);
+    expect(css).not.toContain('font-family: "My Test Font"');
+  });
+
+  it('emits no custom @font-face when no fonts are passed', () => {
+    const vs = makeViewSettings();
+    const css = getStyles(vs, theme);
+    expect(css).not.toContain('font-family: "My Test Font"');
   });
 });

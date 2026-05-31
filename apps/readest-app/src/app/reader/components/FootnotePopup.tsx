@@ -150,7 +150,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const backgroundColor = getComputedStyle(popupContainer).backgroundColor;
         popupTheme.bg = backgroundColor;
       }
-      const mainStyles = getStyles(viewSettings, popupTheme);
+      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts());
       const footnoteStyles = getFootnoteStyles();
       renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };

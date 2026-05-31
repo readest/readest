@@ -14,8 +14,7 @@ import {
   generateLightPalette,
   generateDarkPalette,
 } from '@/styles/themes';
-import { createFontCSS } from '@/styles/fonts';
-import { useCustomFontStore } from '@/store/customFontStore';
+import { createFontCSS, CustomFont } from '@/styles/fonts';
 import { getOSPlatform } from './misc';
 
 const getFontStyles = (
@@ -693,7 +692,11 @@ export const getThemeCode = () => {
   } as ThemeCode;
 };
 
-export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => {
+export const getStyles = (
+  viewSettings: ViewSettings,
+  themeCode?: ThemeCode,
+  customFonts: CustomFont[] = [],
+) => {
   if (!themeCode) {
     themeCode = getThemeCode();
   }
@@ -735,14 +738,14 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
   );
-  // Inline `@font-face` rules for all loaded user custom fonts so they
-  // ship to the iframe synchronously with the rest of the stylesheet.
-  // Paginator injects this CSS into the iframe `<style>` before the
-  // 'load' event fires, so the first paint already resolves the
-  // configured font instead of falling back to serif/sans-serif and
-  // visibly swapping a moment later. Blob URLs are already in memory,
-  // so no network round-trip happens here.
-  const customFontFaces = getCustomFontFaces();
+  // Inline `@font-face` rules for the caller-supplied custom fonts so
+  // they ship to the iframe synchronously with the rest of the
+  // stylesheet. Paginator injects this CSS into the iframe `<style>`
+  // before the 'load' event fires, so the first paint already resolves
+  // the configured font instead of falling back to serif/sans-serif and
+  // visibly swapping a moment later. Blob URLs are already in memory, so
+  // no network round-trip happens here.
+  const customFontFaces = getCustomFontFaces(customFonts);
   const colorStyles = getColorStyles(
     viewSettings.overrideColor!,
     viewSettings.invertImgColorInDark!,
@@ -757,29 +760,23 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   return `${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
 
-// Build a CSS chunk of `@font-face` rules for every loaded user custom
-// font that has a blob URL ready. Used by getStyles so paginator can
-// inject the rules into the iframe before its first paint. Bare-defensive
-// against missing blobUrls — createFontCSS throws if blobUrl is unset,
-// and a single bad font shouldn't break the whole stylesheet.
-const getCustomFontFaces = (): string => {
-  if (typeof window === 'undefined') return '';
-  try {
-    const fonts = useCustomFontStore.getState().getLoadedFonts();
-    return fonts
-      .filter((font) => !!font.blobUrl)
-      .map((font) => {
-        try {
-          return createFontCSS(font);
-        } catch {
-          return '';
-        }
-      })
-      .join('\n');
-  } catch {
-    return '';
-  }
-};
+// Build a CSS chunk of `@font-face` rules for the given user custom
+// fonts. The caller (a reader component) owns the font store and passes
+// in the loaded fonts, keeping this util free of store dependencies.
+// Fonts without a blob URL are skipped; createFontCSS throws when the
+// blob URL is unset, so the inner try/catch keeps a single bad font from
+// breaking the whole stylesheet.
+const getCustomFontFaces = (fonts: CustomFont[]): string =>
+  fonts
+    .filter((font) => !!font.blobUrl)
+    .map((font) => {
+      try {
+        return createFontCSS(font);
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {
   const styleId = 'translation-style';
