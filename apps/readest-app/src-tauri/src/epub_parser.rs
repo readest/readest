@@ -884,7 +884,13 @@ fn handle_meta(attrs: &[(Vec<u8>, Vec<u8>)], text: &str, opf: &mut Opf) {
                         opf.metadata.description = Some(value);
                     }
                 }
-                "date" | "modified" => {
+                // Only `dc:date` / `dcterms:date` is the publication date.
+                // `dcterms:modified` is the package last-modified timestamp —
+                // foliate-js surfaces it as a separate `modified` field and
+                // leaves `published` empty, so mapping it here would diverge
+                // from the JS parser and show a bogus publication date for
+                // EPUB3 books that only carry the mandatory `dcterms:modified`.
+                "date" => {
                     if opf.metadata.published.is_none() {
                         opf.metadata.published = Some(value);
                     }
@@ -1141,6 +1147,41 @@ mod tests {
         assert_eq!(opf.cover_id.as_deref(), Some("cover-img"));
         assert!(opf.manifest.contains_key("cover-img"));
         assert!(opf.manifest.contains_key("ch1"));
+    }
+
+    // `dcterms:modified` is the package last-modified timestamp, not the
+    // publication date. foliate-js surfaces it as a separate `modified` field
+    // and leaves `published` empty; mapping it into `published` would diverge
+    // from the JS parser and show a bogus "Published" date for EPUB3 books
+    // that only carry the mandatory `dcterms:modified` meta.
+    #[test]
+    fn dcterms_modified_does_not_populate_published() {
+        let xml = br#"<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Modified Only</dc:title>
+    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
+  </metadata>
+  <manifest/>
+</package>"#;
+        let opf = parse_opf(xml).expect("opf parses");
+        assert_eq!(opf.metadata.published, None);
+    }
+
+    // A real `<dc:date>` still maps to `published`, matching foliate-js.
+    #[test]
+    fn dc_date_populates_published() {
+        let xml = br#"<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Dated</dc:title>
+    <dc:date>1897</dc:date>
+    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
+  </metadata>
+  <manifest/>
+</package>"#;
+        let opf = parse_opf(xml).expect("opf parses");
+        assert_eq!(opf.metadata.published.as_deref(), Some("1897"));
     }
 
     #[test]
