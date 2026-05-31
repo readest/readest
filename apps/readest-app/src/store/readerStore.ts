@@ -52,6 +52,7 @@ interface ViewState {
     view settings for primary view are saved to book config which is persisted to config file
     omitting settings that are not changed from global settings */
   viewSettings: ViewSettings | null;
+  viewTimeStamp: number | null;
 }
 
 interface ReaderStore {
@@ -154,6 +155,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           gridInsets: null,
           previewMode: false,
           viewSettings: null,
+          viewTimeStamp: Date.now(),
         },
       },
     }));
@@ -286,6 +288,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             gridInsets: null,
             previewMode: false,
             viewSettings: { ...globalViewSettings, ...configViewSettings },
+            viewTimeStamp: Date.now(),
           },
         },
       }));
@@ -310,6 +313,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             gridInsets: null,
             previewMode: false,
             viewSettings: null,
+            viewTimeStamp: null,
           },
         },
       }));
@@ -362,7 +366,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const id = key.split('-')[0]!;
       const bookData = useBookDataStore.getState().booksData[id];
       const viewState = state.viewStates[key];
-      if (!viewState || !bookData) return state;
+      if (!viewState || !bookData || !viewState.viewTimeStamp) return state;
 
       const pageInfo = bookData.isFixedLayout ? section : pageinfo;
       const progress: [number, number] = [pageInfo.current + 1, pageInfo.total];
@@ -379,7 +383,14 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
           newReadingStatus = 'finished';
         }
-        updateBookProgress(id, progress, newReadingStatus);
+        // Calculate read time delta
+        const timeDeltaMs = Date.now() - viewState.viewTimeStamp;
+        let totalReadTimeMs = existingBook?.totalReadTime || 0;
+        if (timeDeltaMs > 0 && timeDeltaMs < 900000) {
+          // cap valid time delta to 15 minutes
+          totalReadTimeMs += timeDeltaMs;
+        }
+        updateBookProgress(id, progress, newReadingStatus, totalReadTimeMs);
       }
 
       const oldConfig = bookData.config;
@@ -416,6 +427,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               range,
               page: pageInfo.current + 1,
             } as BookProgress,
+            viewTimeStamp: Date.now(),
           },
         },
       };

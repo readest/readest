@@ -8,6 +8,7 @@ import {
   MdSaveAlt,
   MdExpandMore,
   MdExpandLess,
+  MdOutlineRefresh,
 } from 'react-icons/md';
 
 import { Book } from '@/types/book';
@@ -19,6 +20,7 @@ import {
   formatAuthors,
   formatDate,
   formatBytes,
+  formatReadTime,
   formatLanguage,
   formatPublisher,
   formatTitle,
@@ -39,6 +41,7 @@ interface BookDetailViewProps {
   onDownload?: () => void;
   onUpload?: () => void;
   onExport?: () => void;
+  onResetReadTime?: () => void;
 }
 
 const BookDetailView: React.FC<BookDetailViewProps> = ({
@@ -52,6 +55,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDownload,
   onUpload,
   onExport,
+  onResetReadTime,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -149,6 +153,9 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdSaveAlt className='fill-base-content' />
               </button>
             )}
+            <button onClick={onResetReadTime} title={_('Reset read time')}>
+              <MdOutlineRefresh className='fill-base-content' />
+            </button>
           </div>
         </div>
       </div>
@@ -289,6 +296,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               ></p>
             </div>
           )}
+        </div>
+        <div>
+          <span className='font-bold'>{_('Read Time')}</span>
+          <p className='text-neutral-content prose prose-sm max-w-full text-sm'>
+            {formatReadTime(book.totalReadTime) || _('Never')}
+          </p>
         </div>
       </div>
     </div>

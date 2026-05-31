@@ -27,6 +27,7 @@ interface BookDetailModalProps {
   handleBookDeleteCloudBackup?: (book: Book) => void;
   handleBookDeleteLocalCopy?: (book: Book) => void;
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
+  handleBookReadTimeReset?: (book: Book) => void;
 }
 
 interface DeleteConfig {
@@ -45,6 +46,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookDeleteCloudBackup,
   handleBookDeleteLocalCopy,
   handleBookMetadataUpdate,
+  handleBookReadTimeReset,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -185,6 +187,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }, 0);
   };
 
+  const handleReadTimeReset = () => {
+    if (handleBookReadTimeReset) {
+      handleBookReadTimeReset(book);
+    }
+  };
+
   const currentDeleteConfig = activeDeleteAction ? deleteConfigs[activeDeleteAction] : null;
 
   return (
@@ -232,6 +240,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
                 onExport={handleBookExport}
+                onResetReadTime={handleBookReadTimeReset ? handleReadTimeReset : undefined}
               />
             )}
           </div>

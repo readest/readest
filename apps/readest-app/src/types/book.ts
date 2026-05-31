@@ -104,6 +104,7 @@ export interface Book {
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  totalReadTime?: number; // total read time in milliseconds
   readingStatus?: ReadingStatus;
   primaryLanguage?: string;
 

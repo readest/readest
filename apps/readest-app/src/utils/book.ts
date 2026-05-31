@@ -216,6 +216,17 @@ export const formatBytes = (bytes?: number | null, locale = 'en-US') => {
   return formatter.format(value);
 };
 
+export const formatReadTime = (time: number | undefined) => {
+  if (!time) return;
+  const hour = Math.floor(time / 3600000);
+  const minute = Math.floor((time % 3600000) / 60000);
+  const second = Math.floor((time % 60000) / 1000);
+  if (hour > 0) {
+    return `${hour} hour ${minute} minute`;
+  }
+  return `${minute} minute ${second} second`;
+};
+
 export const getCurrentPage = (book: Book, progress: BookProgress) => {
   const bookFormat = book.format;
   const { section, pageinfo } = progress;

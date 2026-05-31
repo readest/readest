@@ -342,6 +342,7 @@ export async function importBook(
       deletedAt: transient ? Date.now() : null,
       downloadedAt: Date.now(),
       updatedAt: Date.now(),
+      totalReadTime: existingBook ? existingBook.totalReadTime : 0,
     };
     // update series info from metadata
     if (book.metadata?.belongsTo?.series) {
@@ -366,6 +367,7 @@ export async function importBook(
       existingBook.metadata = book.metadata;
       existingBook.uploadedAt = null;
       existingBook.downloadedAt = Date.now();
+      existingBook.totalReadTime = existingBook.totalReadTime ?? 0;
     } else if (existingBook) {
       // Same file hash: preserve user edits
       existingBook.format = book.format;
@@ -376,6 +378,7 @@ export async function importBook(
       existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
       existingBook.metadata = book.metadata;
       existingBook.downloadedAt = Date.now();
+      existingBook.totalReadTime = existingBook.totalReadTime ?? 0;
     }
 
     if (!(await fs.exists(getDir(book), 'Books'))) {
