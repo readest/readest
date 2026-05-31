@@ -659,7 +659,7 @@ importers:
         specifier: ^15.9.0
         version: 15.15.0
       pdfjs-dist:
-        specifier: ^5.4.530
+        specifier: ^5.7.284
         version: 5.7.284
       rollup:
         specifier: '>=4.59.0'
