@@ -571,6 +571,22 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).not.toMatch(/body\.pbg\s*\{[^}]*background-color:[^}]*!important/);
   });
 
+  it('overrides inline white backgrounds in dark mode when overrideColor is false', () => {
+    const vs = makeViewSettings({ overrideColor: false });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    expect(css).toContain('background-color: #1a1a1a !important');
+    expect(css).toContain('background-color: #fff"]');
+    expect(css).toContain('body.theme-dark');
+  });
+
+  it('does not add inline white background overrides in light mode', () => {
+    const vs = makeViewSettings({ overrideColor: false });
+    const theme = makeThemeCode({ isDarkMode: false });
+    const css = getStyles(vs, theme);
+    expect(css).not.toContain('background-color: #fff"]');
+  });
+
   it('applies dark mode link color lightblue when overrideColor is false', () => {
     const vs = makeViewSettings({ overrideColor: false });
     const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
