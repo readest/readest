@@ -140,6 +140,10 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
+  inlineInsight?: {
+    answer: string;
+    context: string;
+  };
   /**
    * If true, this annotation should be applied to every occurrence of `text`
    * within the same section (chapter/spine item), in addition to the original
@@ -326,6 +330,7 @@ export interface NoteExportConfig {
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
+  annotationToolbarButtons: AnnotationToolType[];
   copyToNotebook: boolean;
   noteExportConfig: NoteExportConfig;
 }

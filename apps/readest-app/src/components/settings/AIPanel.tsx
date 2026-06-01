@@ -12,6 +12,7 @@ import {
 } from '@/services/ai/providers/OpenRouterProvider';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
+import InlineInsightSettingsPanel from './InlineInsightSettingsPanel';
 import { exportReedyMetricsBundle } from '@/services/reedy/instrumentation';
 import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow, SettingsSwitchRow } from './primitives';
@@ -834,6 +835,8 @@ const AIPanel: React.FC = () => {
           </div>
         </div>
       </BoxedList>
+
+      <InlineInsightSettingsPanel />
     </div>
   );
 };

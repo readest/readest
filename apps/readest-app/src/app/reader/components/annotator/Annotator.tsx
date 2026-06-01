@@ -60,6 +60,15 @@ import {
   sourceCfiFromSyntheticValue,
 } from '../../utils/globalAnnotations';
 import { annotationToolButtons } from './AnnotationTools';
+import { DEFAULT_ANNOTATION_TOOL_TYPES } from '@/types/annotator';
+import {
+  INLINE_INSIGHT_UNDERLINE_COLOR,
+  InlineInsightSnapshot,
+  isInlineInsightAnnotation,
+  isRegularTextAnnotation,
+  isUserBookNote,
+  upsertInlineInsightAnnotation,
+} from '@/services/inlineInsight/annotations';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
@@ -67,6 +76,7 @@ import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
+import InlineInsightPopup from './InlineInsightPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
 import ImportAnnotationsDialog from './ImportAnnotationsDialog';
@@ -119,6 +129,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
+  const [showInlineInsightPopup, setShowInlineInsightPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -140,6 +151,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     booknotes: BookNote[];
     booknoteGroups: { [href: string]: BooknoteGroup };
   } | null>(null);
+  const [inlineInsightSnapshot, setInlineInsightSnapshot] = useState<InlineInsightSnapshot | null>(
+    null,
+  );
 
   const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>(
     settings.globalReadSettings.highlightStyle,
@@ -154,7 +168,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const deferredQuickActionRef = useRef(createDeferredActionState());
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup ||
+    showDictionaryPopup ||
+    showDeepLPopup ||
+    showProofreadPopup ||
+    showInlineInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -169,7 +187,21 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
-  const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
+  const enabledAnnotationToolTypes = viewSettings.annotationToolbarButtons?.length
+    ? viewSettings.annotationToolbarButtons
+    : DEFAULT_ANNOTATION_TOOL_TYPES;
+  const enabledAnnotationToolTypeSet = useMemo(
+    () => new Set(enabledAnnotationToolTypes),
+    [enabledAnnotationToolTypes],
+  );
+  const visibleAnnotationToolButtons = useMemo(
+    () => annotationToolButtons.filter((button) => enabledAnnotationToolTypeSet.has(button.type)),
+    [enabledAnnotationToolTypeSet],
+  );
+  const annotPopupWidth = Math.min(
+    useResponsiveSize(Math.max(visibleAnnotationToolButtons.length, 1) * 36),
+    maxWidth,
+  );
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -258,6 +290,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
+      setShowInlineInsightPopup(false);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -425,8 +458,12 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
     const detail = (event as CustomEvent).detail;
     const { draw, annotation, doc, range } = detail;
-    const { style, color } = annotation as BookNote;
-    const hexColor = getHighlightColorHex(settings, color);
+    const bookNote = annotation as BookNote;
+    const { style, color } = bookNote;
+    const isInlineInsight = isInlineInsightAnnotation(bookNote);
+    const hexColor = isInlineInsight
+      ? INLINE_INSIGHT_UNDERLINE_COLOR
+      : getHighlightColorHex(settings, color);
     const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
     const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     if (annotation.note) {
@@ -456,6 +493,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       draw(Overlayer[style as keyof typeof Overlayer], {
         writingMode,
         color: isBwEink ? einkFgColor : hexColor,
+        width: isInlineInsight ? 1 : undefined,
         padding,
       });
     }
@@ -496,6 +534,13 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setShowAnnotationNotes(true);
       setHighlightOptionsVisible(false);
       setEditingAnnotation(null);
+    } else if (isInlineInsightAnnotation(annotation)) {
+      if (isTextSelected.current) return;
+      setShowAnnotPopup(false);
+      setShowAnnotationNotes(false);
+      setEditingAnnotation(null);
+      setInlineInsightSnapshot(annotation.inlineInsight ?? null);
+      setShowInlineInsightPopup(true);
     } else {
       setShowAnnotPopup(false);
       setEditingAnnotation(null);
@@ -801,11 +846,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       updatedAt: Date.now(),
     };
     const existingIndex = annotations.findIndex(
-      (annotation) =>
-        annotation.cfi === cfi &&
-        annotation.type === 'annotation' &&
-        annotation.style &&
-        !annotation.deletedAt,
+      (annotation) => annotation.cfi === cfi && isRegularTextAnnotation(annotation),
     );
     const views = getViewsById(bookKey.split('-')[0]!);
     if (existingIndex !== -1) {
@@ -987,6 +1028,52 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
+  const handleInlineInsight = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setInlineInsightSnapshot(null);
+    setShowInlineInsightPopup(true);
+  };
+
+  const handleInlineInsightAnswerReady = useCallback(
+    (responseAnswer: string, context: string) => {
+      if (!selection || !selection.text) return;
+      const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
+      if (!cfi) return;
+
+      const { booknotes: annotations = [] } = config;
+      const { annotation, previousAnnotation, updatedAnnotations } = upsertInlineInsightAnnotation(
+        annotations,
+        selection,
+        cfi,
+        {
+          answer: responseAnswer,
+          context,
+        },
+      );
+      const views = getViewsById(bookKey.split('-')[0]!);
+      if (previousAnnotation) {
+        views.forEach((view) => view?.addAnnotation(previousAnnotation, true));
+      }
+      views.forEach((view) => view?.addAnnotation(annotation));
+      const updatedConfig = updateBooknotes(bookKey, updatedAnnotations);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    },
+    [
+      bookKey,
+      config,
+      envConfig,
+      getViewsById,
+      saveConfig,
+      selection,
+      settings,
+      updateBooknotes,
+      view,
+    ],
+  );
+
   const handleStartEditAnnotation = useCallback(() => {
     setShowAnnotPopup(false);
   }, []);
@@ -1164,7 +1251,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
     const config = getConfig(bookKey)!;
     const { booknotes: allNotes = [] } = config;
-    const booknotes = allNotes.filter((note) => !note.deletedAt);
+    const booknotes = allNotes.filter((note) => !note.deletedAt && isUserBookNote(note));
     if (booknotes.length === 0) {
       eventDispatcher.dispatch('toast', {
         type: 'info',
@@ -1300,7 +1387,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     !!selection?.text &&
     selection.text.trim().length > 0;
   const globalToggleActive = !!currentAnnotation?.global;
-  const toolButtons = annotationToolButtons.map(({ type, label, Icon }) => {
+  const toolButtons = visibleAnnotationToolButtons.map(({ type, label, Icon }) => {
     switch (type) {
       case 'copy':
         return { tooltipText: _(label), Icon, onClick: handleCopy };
@@ -1339,6 +1426,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
+      case 'inlineinsight':
+        return { tooltipText: _(label), Icon, onClick: handleInlineInsight };
       default:
         return { tooltipText: '', Icon, onClick: () => {} };
     }
@@ -1429,6 +1518,20 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             handleDismissPopupAndSelection();
             setProofreadRulesVisibility(true);
           }}
+        />
+      )}
+      {showInlineInsightPopup && trianglePosition && dictPopupPosition && selection && (
+        <InlineInsightPopup
+          bookKey={bookKey}
+          selection={selection}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
+          initialAnswer={inlineInsightSnapshot?.answer}
+          initialContext={inlineInsightSnapshot?.context}
+          onAnswerReady={handleInlineInsightAnswerReady}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
       {editingAnnotation && editingAnnotation.color && selection && (

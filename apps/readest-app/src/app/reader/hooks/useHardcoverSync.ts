@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
 import { BookNote } from '@/types/book';
+import { isSyncableBookNote } from '@/services/inlineInsight/annotations';
 
 export const useHardcoverSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -40,9 +41,8 @@ export const useHardcoverSync = (bookKey: string) => {
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return;
 
-    const eligibleNotes = (config.booknotes ?? []).filter(
-      (note: BookNote) =>
-        (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
+    const eligibleNotes = (config.booknotes ?? []).filter((note: BookNote) =>
+      isSyncableBookNote(note),
     );
 
     if (eligibleNotes.length === 0) {

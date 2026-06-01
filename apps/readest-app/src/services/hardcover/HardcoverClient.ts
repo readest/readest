@@ -1,4 +1,5 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
+import { isSyncableBookNote } from '@/services/inlineInsight/annotations';
 import { getContentMd5 } from '@/utils/misc';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -611,9 +612,7 @@ export class HardcoverClient {
       throw new Error('Unable to resolve this book in Hardcover');
     }
 
-    const rawNotes = (config.booknotes ?? []).filter(
-      (note) => (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
-    );
+    const rawNotes = (config.booknotes ?? []).filter(isSyncableBookNote);
 
     // Readest can keep both an excerpt (quote) and an annotation (quote + note)
     // for the same highlight. We normalize EPUB CFI range offsets so the same

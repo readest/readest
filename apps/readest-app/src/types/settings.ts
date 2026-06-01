@@ -4,6 +4,7 @@ import { CustomTexture } from '@/styles/textures';
 import { HighlightColor, HighlightStyle, UserHighlightColor, ViewSettings } from './book';
 import { OPDSCatalog } from './opds';
 import type { AISettings } from '@/services/ai/types';
+import type { InlineInsightSettings } from '@/services/inlineInsight/types';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
 
@@ -340,6 +341,7 @@ export interface SystemSettings {
   webdav: WebDAVSettings;
 
   aiSettings: AISettings;
+  inlineInsightSettings: InlineInsightSettings;
   /**
    * Per-device id used as the deviceId portion of every HLC this device
    * mints. Lazy-generated on first sync init via uuidv4 (mirrors
@@ -360,7 +362,6 @@ export interface SystemSettings {
    * replica sync. Future replica kinds add new SyncCategory members.
    */
   syncCategories?: Partial<Record<SyncCategory, boolean>>;
-
   // Global read settings that apply to the reader page
   globalReadSettings: ReadSettings;
   // Global view settings that apply to all books, and can be overridden by book-specific view settings

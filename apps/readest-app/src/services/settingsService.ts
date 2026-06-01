@@ -24,6 +24,7 @@ import {
   DEFAULT_VIEW_SETTINGS_CONFIG,
 } from './constants';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import { DEFAULT_INLINE_INSIGHT_SETTINGS } from './inlineInsight/types';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
 
@@ -144,6 +145,10 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   settings.aiSettings = {
     ...DEFAULT_AI_SETTINGS,
     ...settings.aiSettings,
+  };
+  settings.inlineInsightSettings = {
+    ...DEFAULT_INLINE_INSIGHT_SETTINGS,
+    ...settings.inlineInsightSettings,
   };
 
   settings.localBooksDir = await ctx.fs.getPrefix('Books');

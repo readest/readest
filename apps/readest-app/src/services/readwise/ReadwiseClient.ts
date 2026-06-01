@@ -1,6 +1,7 @@
 import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
+import { isSyncableBookNote } from '@/services/inlineInsight/annotations';
 import { buildAnnotationWebUrl } from '@/utils/deeplink';
 
 const READEST_TO_READWISE_COLOR: Record<HighlightColor, string> = {
@@ -57,9 +58,7 @@ export class ReadwiseClient {
     notes: BookNote[],
     book: Book,
   ): Promise<{ success: boolean; message?: string; isNetworkError?: boolean }> {
-    const syncable = notes.filter(
-      (n) => (n.type === 'annotation' || n.type === 'excerpt') && !n.deletedAt && n.text,
-    );
+    const syncable = notes.filter((n) => isSyncableBookNote(n) && n.text);
     if (syncable.length === 0) return { success: true };
 
     const isPublicUrl = (url?: string | null) =>

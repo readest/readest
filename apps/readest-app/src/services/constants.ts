@@ -27,9 +27,11 @@ import {
   WebDAVSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
+import { DEFAULT_ANNOTATION_TOOL_TYPES } from '@/types/annotator';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import { DEFAULT_INLINE_INSIGHT_SETTINGS } from './inlineInsight/types';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -149,6 +151,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
+  inlineInsightSettings: DEFAULT_INLINE_INSIGHT_SETTINGS,
 
   lastSyncedAtBooks: 0,
   lastSyncedAtConfigs: 0,
@@ -394,6 +397,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   enableAnnotationQuickActions: true,
   annotationQuickAction: null,
+  annotationToolbarButtons: DEFAULT_ANNOTATION_TOOL_TYPES,
   copyToNotebook: false,
   noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,
 };
