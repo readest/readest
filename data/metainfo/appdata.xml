@@ -59,6 +59,16 @@
 
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+
   <releases>
     <release version="0.11.2" date="2026-05-31">
       <description>
