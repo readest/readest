@@ -295,16 +295,24 @@ const getPageLayoutStyles = (
   .readest-table-scroll {
     display: block;
     max-width: 100%;
+    /* Scrolling is the default so a table wider than the column is never clipped.
+       A table that can wrap to fit doesn't overflow, so no scrollbar shows.
+       applyTableStyle adds .readest-table-scroll-fit (via a ResizeObserver) to
+       clip the few px of min-content slop some layout tables have, suppressing a
+       spurious scrollbar once layout has settled. */
     overflow-x: auto;
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     /* Let the browser handle horizontal pans on the table; paginated swipe uses capture-phase JS when needed. */
     touch-action: pan-x pan-y;
   }
+  .readest-table-scroll-fit {
+    overflow-x: clip;
+    touch-action: auto;
+  }
   .readest-table-scroll > table {
     display: table !important;
-    width: max-content;
-    max-width: none;
+    max-width: 100%;
   }
   pre {
     max-width: calc(var(--available-width) * 1px);
@@ -1042,6 +1050,11 @@ export const applyImageStyle = (document: Document) => {
 };
 
 export const TABLE_SCROLL_CLASS = 'readest-table-scroll';
+// Added to a wrapper whose table fits the column within tolerance, so the wrapper
+// clips instead of showing a scrollbar. Wide tables stay scrollable (no class).
+const TABLE_SCROLL_FIT_CLASS = 'readest-table-scroll-fit';
+// Ignore tiny overflows (borders, image rounding) so they don't show a scrollbar.
+const TABLE_SCROLL_TOLERANCE_PX = 4;
 
 const TABLE_TOUCH_SCROLL_FLAG = 'data-readest-table-touch-scroll';
 
@@ -1093,9 +1106,11 @@ export const applyTableTouchScroll = (document: Document) => {
   const findWrapper = (target: EventTarget | null): HTMLElement | null => {
     // This module runs in the top-window realm, but `target` originates from
     // the iframe's realm, so `target instanceof Element` is always false here.
-    // Duck-type on `closest` instead so the lookup works across realms.
+    // Duck-type on `closest` instead so the lookup works across realms. Skip
+    // wrappers that fit (they clip, not scroll) so only scrollable tables route.
     if (!target || !('closest' in target)) return null;
-    return (target as Element).closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
+    const wrapper = (target as Element).closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
+    return wrapper && !wrapper.classList.contains(TABLE_SCROLL_FIT_CLASS) ? wrapper : null;
   };
 
   const onTouchStart = (e: TouchEvent) => {
@@ -1146,7 +1161,23 @@ export const applyTableTouchScroll = (document: Document) => {
   document.addEventListener('wheel', onWheel, { capture: true, passive: true });
 };
 
-/** Wrap wide tables so they scroll horizontally instead of overflowing the page. */
+/**
+ * Toggle the fit class: a wrapper whose table overflows by no more than the
+ * tolerance is treated as fitting (clip the slop, no scrollbar); a genuinely
+ * wider table keeps scrolling. Re-runs on resize so the decision is correct once
+ * layout has settled (the column width isn't reliable at section-load time).
+ */
+const updateTableFit = (wrapper: HTMLElement) => {
+  const fits = wrapper.scrollWidth - wrapper.clientWidth <= TABLE_SCROLL_TOLERANCE_PX;
+  wrapper.classList.toggle(TABLE_SCROLL_FIT_CLASS, fits);
+};
+
+/**
+ * Wrap each table so a table wider than its column scrolls horizontally instead
+ * of overflowing the page. Tables that wrap to fit show no scrollbar; a
+ * ResizeObserver suppresses the scrollbar for tables that overflow only within
+ * tolerance, re-evaluating as the column width settles.
+ */
 export const applyTableStyle = (document: Document) => {
   document.querySelectorAll('table').forEach((table) => {
     const parent = table.parentNode;
@@ -1168,6 +1199,13 @@ export const applyTableStyle = (document: Document) => {
     wrapper.appendChild(table);
     table.style.removeProperty('transform');
     table.style.removeProperty('transform-origin');
+
+    updateTableFit(wrapper);
+    const win = document.defaultView;
+    if (win?.ResizeObserver) {
+      const observer = new win.ResizeObserver(() => updateTableFit(wrapper));
+      observer.observe(wrapper);
+    }
   });
 };
 
