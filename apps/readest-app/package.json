@@ -124,6 +124,7 @@
     "@supabase/supabase-js": "^2.76.1",
     "@tauri-apps/api": "2.10.1",
     "@tauri-apps/plugin-cli": "^2.4.1",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.0",
     "@tauri-apps/plugin-deep-link": "^2.4.7",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
