@@ -427,6 +427,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
   };
 
+  // Tag the rendered DOM with the book/group identity so feature code
+  // (e.g. the Send action's macOS share-popover anchor) can locate the
+  // exact bookshelf cell the user is acting on without threading refs
+  // through every parent. Books carry their content-hash; groups carry
+  // their full group name.
+  const itemDataAttrs =
+    'format' in item ? { 'data-book-hash': item.hash } : { 'data-group-name': item.name };
+
   return (
     <div className={clsx(mode === 'grid' ? 'h-full' : 'sm:hover:bg-base-300/50 px-4 sm:px-6')}>
       <div
@@ -445,6 +453,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           transition: 'transform 0.2s',
         }}
         onKeyDown={handleKeyDown}
+        {...itemDataAttrs}
         {...handlers}
       >
         <div className='flex h-full flex-col justify-end'>
