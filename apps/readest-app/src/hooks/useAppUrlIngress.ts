@@ -17,6 +17,15 @@ interface OpenFilesPayload {
 
 interface SharedIntentPayload {
   urls: string[];
+  /**
+   * Android-only. Distinguishes "Open with Readest" (`VIEW` — the user
+   * tapped a file in their file browser and chose Readest) from "Send to
+   * Readest" (`SEND` / `SEND_MULTIPLE` — share-sheet capture). We forward
+   * it on the `app-incoming-url` event so consumers can pick the right
+   * import strategy: VIEW should open the file directly without writing
+   * it to the library, SEND should ingest it like a sync capture.
+   */
+  action?: 'VIEW' | 'SEND';
 }
 
 /**
@@ -53,10 +62,10 @@ export function useAppUrlIngress() {
     if (listened.current) return;
     listened.current = true;
 
-    const dispatch = (urls: string[]) => {
+    const dispatch = (urls: string[], action?: 'VIEW' | 'SEND') => {
       if (!urls.length) return;
-      console.log('App incoming URL:', urls);
-      eventDispatcher.dispatch('app-incoming-url', { urls });
+      console.log('App incoming URL:', urls, 'action:', action);
+      eventDispatcher.dispatch('app-incoming-url', { urls, action });
     };
 
     const unlistenSingleInstance = getCurrentWindow().listen<SingleInstancePayload>(
@@ -83,7 +92,7 @@ export function useAppUrlIngress() {
         'native-bridge',
         'shared-intent',
         (payload) => {
-          if (payload.urls?.length) dispatch(payload.urls);
+          if (payload.urls?.length) dispatch(payload.urls, payload.action);
         },
       );
     }
