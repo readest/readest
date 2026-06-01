@@ -29,6 +29,7 @@ import {
   applyTableStyle,
   applyTableTouchScroll,
   shouldTableScrollConsumeTouch,
+  shouldTableScrollConsumeWheel,
   TABLE_SCROLL_CLASS,
 } from '@/utils/style';
 import {
@@ -638,14 +639,60 @@ describe('shouldTableScrollConsumeTouch', () => {
   });
 });
 
+describe('shouldTableScrollConsumeWheel', () => {
+  it('returns false when the table is not wider than its container', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 100, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 100, configurable: true });
+    expect(shouldTableScrollConsumeWheel(wrapper, 40, 0)).toBe(false);
+  });
+
+  it('consumes a horizontal wheel when more content is available to the right', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 0, configurable: true });
+    expect(shouldTableScrollConsumeWheel(wrapper, 40, 0)).toBe(true);
+  });
+
+  it('still consumes at the right edge so it never chains to a page turn', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    // scrolled fully to the right edge
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 200, configurable: true });
+    expect(shouldTableScrollConsumeWheel(wrapper, 40, 0)).toBe(true);
+  });
+
+  it('still consumes at the left edge so it never chains to a page turn', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 0, configurable: true });
+    expect(shouldTableScrollConsumeWheel(wrapper, -40, 0)).toBe(true);
+  });
+
+  it('ignores mostly vertical wheel movement', () => {
+    const wrapper = document.createElement('div');
+    Object.defineProperty(wrapper, 'scrollWidth', { value: 400, configurable: true });
+    Object.defineProperty(wrapper, 'clientWidth', { value: 200, configurable: true });
+    Object.defineProperty(wrapper, 'scrollLeft', { value: 0, configurable: true });
+    expect(shouldTableScrollConsumeWheel(wrapper, 5, 40)).toBe(false);
+  });
+});
+
 describe('applyTableTouchScroll', () => {
-  it('attaches capture-phase listeners once per document', () => {
+  it('attaches capture-phase touch and wheel listeners once per document', () => {
+    document.documentElement.removeAttribute('data-readest-table-touch-scroll');
     const addSpy = vi.spyOn(document, 'addEventListener');
     applyTableTouchScroll(document);
     applyTableTouchScroll(document);
     const touchMoves = addSpy.mock.calls.filter(([type]) => type === 'touchmove');
     expect(touchMoves).toHaveLength(1);
     expect(touchMoves[0]?.[2]).toEqual({ capture: true, passive: false });
+    const wheels = addSpy.mock.calls.filter(([type]) => type === 'wheel');
+    expect(wheels).toHaveLength(1);
+    expect(wheels[0]?.[2]).toEqual({ capture: true, passive: true });
     addSpy.mockRestore();
   });
 });

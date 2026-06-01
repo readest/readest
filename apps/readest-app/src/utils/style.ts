@@ -1063,9 +1063,23 @@ export const shouldTableScrollConsumeTouch = (
   return false;
 };
 
+/** Horizontal wheel/trackpad over a wide table should scroll the table, not turn the page. */
+export const shouldTableScrollConsumeWheel = (
+  wrapper: HTMLElement,
+  deltaX: number,
+  deltaY: number,
+): boolean => {
+  if (wrapper.scrollWidth <= wrapper.clientWidth) return false;
+  // A horizontal wheel belongs to the table. Consume it regardless of scroll
+  // position: at the edge a wheel gesture (incl. trackpad momentum) must not
+  // chain into a page turn — the table owns the whole horizontal gesture.
+  return Math.abs(deltaX) > Math.abs(deltaY);
+};
+
 /**
- * Capture-phase touch routing so foliate's paginator does not steal horizontal swipes
- * over wide tables on mobile. Attached once per iframe document.
+ * Capture-phase touch + wheel routing so foliate's paginator and readest's wheel
+ * pagination do not steal horizontal scrolls over wide tables. Attached once per
+ * iframe document.
  */
 export const applyTableTouchScroll = (document: Document) => {
   const root = document.documentElement;
@@ -1077,8 +1091,11 @@ export const applyTableTouchScroll = (document: Document) => {
   let activeWrapper: HTMLElement | null = null;
 
   const findWrapper = (target: EventTarget | null): HTMLElement | null => {
-    if (!(target instanceof Element)) return null;
-    return target.closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
+    // This module runs in the top-window realm, but `target` originates from
+    // the iframe's realm, so `target instanceof Element` is always false here.
+    // Duck-type on `closest` instead so the lookup works across realms.
+    if (!target || !('closest' in target)) return null;
+    return (target as Element).closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
   };
 
   const onTouchStart = (e: TouchEvent) => {
@@ -1108,11 +1125,25 @@ export const applyTableTouchScroll = (document: Document) => {
     activeWrapper = null;
   };
 
+  // Trackpad / mouse wheel over a wide table generates wheel events (not touch).
+  // foliate has no wheel handler, but readest forwards iframe wheel events to
+  // pagination (see handleWheel -> 'iframe-wheel'), so a horizontal wheel over
+  // a scrollable table would both scroll the table and turn the page.
+  const onWheel = (e: WheelEvent) => {
+    const wrapper = findWrapper(e.target);
+    if (!wrapper) return;
+    if (!shouldTableScrollConsumeWheel(wrapper, e.deltaX, e.deltaY)) return;
+    // Native overflow scrolling of the table still happens (no preventDefault);
+    // we only stop pagination from also acting on this wheel.
+    e.stopImmediatePropagation();
+  };
+
   const opts = { capture: true, passive: false } as const;
   document.addEventListener('touchstart', onTouchStart, opts);
   document.addEventListener('touchmove', onTouchMove, opts);
   document.addEventListener('touchend', onTouchEnd, opts);
   document.addEventListener('touchcancel', onTouchEnd, opts);
+  document.addEventListener('wheel', onWheel, { capture: true, passive: true });
 };
 
 /** Wrap wide tables so they scroll horizontally instead of overflowing the page. */
