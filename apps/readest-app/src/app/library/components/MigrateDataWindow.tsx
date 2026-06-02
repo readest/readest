@@ -448,7 +448,7 @@ export const MigrateDataWindow = () => {
           <div className='flex gap-3 pt-2'>
             {migrationStatus === 'completed' ? (
               <>
-                <button className='btn btn-outline flex-1' onClick={handleClose}>
+                <button className='btn btn-ghost flex-1' onClick={handleClose}>
                   {_('Close')}
                 </button>
                 <button className='btn btn-primary flex-1' onClick={handleRestartApp}>
@@ -458,7 +458,7 @@ export const MigrateDataWindow = () => {
             ) : (
               <>
                 <button
-                  className='btn btn-outline flex-1'
+                  className='btn btn-ghost flex-1'
                   onClick={handleClose}
                   disabled={migrationStatus === 'migrating'}
                 >
