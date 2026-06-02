@@ -34,6 +34,7 @@ import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
 import Menu from '@/components/Menu';
 import { type AppLockDialogMode, useAppLockStore } from '@/store/appLockStore';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 interface SettingsMenuProps {
   onPullLibrary: (fullRefresh?: boolean, verbose?: boolean) => void;
@@ -303,7 +304,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
-      {user ? (
+      {!LOCAL_ONLY_MODE && user ? (
         <MenuItem
           label={
             userDisplayName
@@ -361,15 +362,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>
-      ) : (
+      ) : !LOCAL_ONLY_MODE ? (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
-      )}
+      ) : null}
 
-      <MenuItem
-        label={_('Auto Upload Books to Cloud')}
-        toggled={isAutoUpload}
-        onClick={toggleAutoUploadBooks}
-      />
+      {!LOCAL_ONLY_MODE && (
+        <MenuItem
+          label={_('Auto Upload Books to Cloud')}
+          toggled={isAutoUpload}
+          onClick={toggleAutoUploadBooks}
+        />
+      )}
 
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
@@ -431,7 +434,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           {appService?.canCustomizeRootDir && (
             <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
           )}
-          {user && <MenuItem label={_('Data Sync')} onClick={handleManageSync} />}
+          {!LOCAL_ONLY_MODE && user && (
+            <MenuItem label={_('Data Sync')} onClick={handleManageSync} />
+          )}
           <MenuItem
             label={_('Refresh Metadata')}
             description={refreshMetadataProgress}
@@ -466,7 +471,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         </ul>
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {user && userProfilePlan === 'free' && (
+      {!LOCAL_ONLY_MODE && user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

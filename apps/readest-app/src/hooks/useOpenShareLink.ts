@@ -11,6 +11,7 @@ import { ShareApiError, confirmDownload, importShare } from '@/libs/share';
 import { ensureSharedBookLocal } from '@/libs/shareImport';
 import { parseShareDeepLink, type ShareDeepLink } from '@/utils/share';
 import { useTranslation } from './useTranslation';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 // Module-scoped flag matches the useOpenAnnotationLink pattern. Tauri's
 // getCurrent() keeps returning the launch URL for the entire app session, so
@@ -41,6 +42,7 @@ let coldStartConsumed = false;
  *     a logged-out import has nowhere to land.
  */
 export function useOpenShareLink() {
+  if (LOCAL_ONLY_MODE) return;
   const _ = useTranslation();
   const router = useRouter();
   const { appService } = useEnv();

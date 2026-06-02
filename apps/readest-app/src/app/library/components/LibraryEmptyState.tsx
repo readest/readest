@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { navigateToLogin } from '@/utils/nav';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 interface LibraryEmptyStateProps {
   onImport: () => void;
@@ -41,7 +42,7 @@ const LibraryEmptyState: React.FC<LibraryEmptyStateProps> = ({ onImport }) => {
           </button>
           {/* TODO: add a 'Browse free catalogs' secondary action that opens the
               OPDS dialog (handleShowOPDSDialog) once we settle on placement. */}
-          {!user && (
+          {!LOCAL_ONLY_MODE && !user && (
             <button
               type='button'
               className={clsx(

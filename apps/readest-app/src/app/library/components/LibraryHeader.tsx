@@ -29,7 +29,7 @@ interface LibraryHeaderProps {
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
   onImportBookFromUrl?: () => void;
-  onOpenCatalogManager: () => void;
+  onOpenCatalogManager?: () => void;
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;

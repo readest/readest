@@ -3,8 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/hooks/useTheme';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 export default function AuthErrorPage() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const router = useRouter();
   useTheme({ systemUIVisible: false });
 

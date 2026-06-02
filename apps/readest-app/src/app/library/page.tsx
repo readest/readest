@@ -98,6 +98,7 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 /**
  * Key used to persist the last directory the user imported books from.
@@ -176,7 +177,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // FoliateViewer hydration never runs without a book open.
   useCustomFonts();
   const [showCatalogManager, setShowCatalogManager] = useState(
-    searchParams?.get('opds') === 'true',
+    !LOCAL_ONLY_MODE && searchParams?.get('opds') === 'true',
   );
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -255,6 +256,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   usePullToRefresh(
     scrollRef,
     async () => {
+      if (LOCAL_ONLY_MODE) return;
       if (!user) {
         navigateToLogin(router);
         return;
@@ -263,6 +265,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       checkOPDSSubscriptions(true);
     },
     async () => {
+      if (LOCAL_ONLY_MODE) return;
       if (!user) {
         navigateToLogin(router);
         return;
@@ -460,7 +463,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               file,
               books: libraryBooks,
               transient: temp,
-              forceUpload: !!appService.isMobile && !!user,
+              forceUpload: !LOCAL_ONLY_MODE && !!appService.isMobile && !!user,
             },
             { appService, settings, isLoggedIn: !!user },
           );
@@ -802,6 +805,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleBookUpload = useCallback(
     async (book: Book, _syncBooks = true) => {
+      if (LOCAL_ONLY_MODE) return false;
       // Use transfer queue for uploads - priority 1 for manual uploads (higher priority)
       const transferId = transferManager.queueUpload(book, 1);
       if (transferId) {
@@ -822,6 +826,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleBookDownload = useCallback(
     async (book: Book, downloadOptions: { redownload?: boolean; queued?: boolean } = {}) => {
+      if (LOCAL_ONLY_MODE) return false;
       const { redownload = false, queued = false } = downloadOptions;
       if (redownload || !queued) {
         try {
@@ -1353,8 +1358,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
-          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
-          onOpenCatalogManager={handleShowOPDSDialog}
+          onImportBookFromUrl={
+            !LOCAL_ONLY_MODE && isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined
+          }
+          onOpenCatalogManager={LOCAL_ONLY_MODE ? undefined : handleShowOPDSDialog}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
@@ -1437,8 +1444,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 isSelectNone={isSelectNone}
                 onScrollerRef={handleScrollerRef}
                 handleImportBooks={handleImportBooksFromFiles}
-                handleBookUpload={handleBookUpload}
-                handleBookDownload={handleBookDownload}
+                handleBookUpload={LOCAL_ONLY_MODE ? undefined : handleBookUpload}
+                handleBookDownload={LOCAL_ONLY_MODE ? undefined : handleBookDownload}
                 handleBookDelete={handleBookDelete('both')}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
@@ -1459,10 +1466,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           isOpen={!!showDetailsBook}
           book={showDetailsBook}
           onClose={() => setShowDetailsBook(null)}
-          handleBookUpload={handleBookUpload}
-          handleBookDownload={handleBookDownload}
+          handleBookUpload={LOCAL_ONLY_MODE ? undefined : handleBookUpload}
+          handleBookDownload={LOCAL_ONLY_MODE ? undefined : handleBookDownload}
           handleBookDelete={handleBookDelete('both')}
-          handleBookDeleteCloudBackup={handleBookDelete('cloud')}
+          handleBookDeleteCloudBackup={LOCAL_ONLY_MODE ? undefined : handleBookDelete('cloud')}
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
@@ -1479,7 +1486,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <BackupWindow onPullLibrary={pullLibrary} />
       <CacheManagerWindow />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
-      {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {!LOCAL_ONLY_MODE && showCatalogManager && (
+        <CatalogDialog onClose={handleDismissOPDSDialog} />
+      )}
       {failedImportsModal && (
         <FailedImportsDialog
           failedImports={failedImportsModal}

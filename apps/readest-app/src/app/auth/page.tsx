@@ -27,6 +27,8 @@ import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 type OAuthProvider = 'google' | 'apple' | 'azure' | 'github' | 'discord';
 
@@ -62,6 +64,8 @@ const ProviderLogin: React.FC<ProviderLoginProp> = ({ provider, handleSignIn, Ic
 };
 
 export default function AuthPage() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const _ = useTranslation();
   const router = useRouter();
   const { login } = useAuth();

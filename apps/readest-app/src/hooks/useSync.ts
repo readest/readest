@@ -13,6 +13,7 @@ import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
 import { navigateToLogin } from '@/utils/nav';
 import { useReaderStore } from '@/store/readerStore';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 const transformsFromDB = {
   books: transformBookFromDB,
@@ -104,6 +105,7 @@ export function useSync(bookKey?: string) {
     bookId?: string,
     metaHash?: string,
   ) => {
+    if (LOCAL_ONLY_MODE) return 0;
     setSyncing(true);
     setSyncError(null);
 
@@ -162,6 +164,7 @@ export function useSync(bookKey?: string) {
   };
 
   const pushChanges = async (payload: SyncData): Promise<boolean> => {
+    if (LOCAL_ONLY_MODE) return false;
     setSyncing(true);
     setSyncError(null);
 
@@ -184,6 +187,7 @@ export function useSync(bookKey?: string) {
 
   const syncBooks = useCallback(
     async (books?: Book[], op: SyncOp = 'both', since?: number) => {
+      if (LOCAL_ONLY_MODE) return;
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('book')) return;
       if ((op === 'push' || op === 'both') && books?.length) {
@@ -205,6 +209,7 @@ export function useSync(bookKey?: string) {
 
   const syncConfigs = useCallback(
     async (bookConfigs?: BookConfig[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
+      if (LOCAL_ONLY_MODE) return;
       if (!bookId && !lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('progress')) return;
       if ((op === 'push' || op === 'both') && bookConfigs?.length) {
@@ -230,6 +235,7 @@ export function useSync(bookKey?: string) {
 
   const syncNotes = useCallback(
     async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
+      if (LOCAL_ONLY_MODE) return;
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('note')) return;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {

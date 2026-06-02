@@ -4,8 +4,12 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { handleAuthCallback } from '@/helpers/auth';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 export default function AuthCallback() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const router = useRouter();
   const { login } = useAuth();
 

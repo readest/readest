@@ -9,6 +9,7 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -48,6 +49,7 @@ export const useBooksSync = () => {
 
   const pullLibrary = useCallback(
     async (fullRefresh = false, verbose = false) => {
+      if (LOCAL_ONLY_MODE) return;
       if (!user) return;
       if (isPullingRef.current) return;
       try {
@@ -95,6 +97,7 @@ export const useBooksSync = () => {
   }, [user, library, handleAutoSync]);
 
   const pushLibrary = useCallback(async () => {
+    if (LOCAL_ONLY_MODE) return;
     if (!user) return;
     const newBooks = getNewBooks();
     if (newBooks.lastSyncedAt) {

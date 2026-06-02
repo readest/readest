@@ -15,6 +15,8 @@ import {
 } from '@/services/send/conversion/conversionWorker';
 import { getClipOptions } from '@/services/send/clipOptions';
 import { invoke } from '@tauri-apps/api/core';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 type ItemStatus = 'working' | 'done' | 'error';
 
@@ -31,6 +33,8 @@ interface SendItem {
  * an article URL and it lands in the cloud library, syncing to every device.
  */
 export default function SendPage() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();

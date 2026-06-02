@@ -8,8 +8,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { Auth } from '@supabase/auth-ui-react';
 import { supabase } from '@/utils/supabase';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 export default function ResetPasswordPage() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const _ = useTranslation();
   const router = useRouter();
   const { login } = useAuth();

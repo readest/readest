@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { READEST_WEB_BASE_URL, SHARE_BASE_URL } from '@/services/constants';
 import { resolveActiveShare } from '@/libs/shareServer';
 import ShareLanding from './ShareLanding';
+import LocalOnlyRouteGuard from '@/components/LocalOnlyRouteGuard';
 
 // Server-rendered metadata for chat unfurls. Lives on the page (not the
 // layout) because Next only passes `searchParams` to page-level
@@ -81,8 +82,10 @@ export default function Page() {
   // Client child uses useSearchParams, which Next 16 requires to be wrapped
   // in Suspense. Mirrors src/app/o/page.tsx.
   return (
-    <Suspense fallback={null}>
-      <ShareLanding />
-    </Suspense>
+    <LocalOnlyRouteGuard>
+      <Suspense fallback={null}>
+        <ShareLanding />
+      </Suspense>
+    </LocalOnlyRouteGuard>
   );
 }

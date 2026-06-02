@@ -18,12 +18,15 @@ import { ClosableFile } from '@/utils/file';
 import { ProgressHandler } from '@/utils/transfer';
 import { CLOUD_BOOKS_SUBDIR, CLOUD_REPLICAS_SUBDIR } from './constants';
 import { isBookFileContentSource, resolveBookContentSource } from './bookContent';
+import { assertCloudFeatureEnabled, LOCAL_ONLY_MODE } from './featureFlags';
 
 export async function deleteBook(
   fs: FileSystem,
   book: Book,
   deleteAction: DeleteAction,
 ): Promise<void> {
+  if (LOCAL_ONLY_MODE && deleteAction === 'cloud') return;
+  if (LOCAL_ONLY_MODE && deleteAction === 'both') deleteAction = 'local';
   if (deleteAction === 'local' || deleteAction === 'both') {
     const source = await resolveBookContentSource(fs, book);
     if (source.kind === 'external') {
@@ -77,6 +80,7 @@ export async function uploadFileToCloud(
   hash: string,
   temp: boolean = false,
 ): Promise<string | undefined> {
+  assertCloudFeatureEnabled();
   console.log('Uploading file:', lfp, 'to', cfp);
   const file = await fs.openFile(lfp, base, cfp);
   const localFullpath = await resolveFilePath(lfp, base);
@@ -103,6 +107,7 @@ export async function uploadReplicaFileToCloud(
     onProgress: ProgressHandler;
   },
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   const cfp = `${CLOUD_REPLICAS_SUBDIR}/${opts.kind}/${opts.replicaId}/${opts.filename}`;
   console.log('Uploading replica file:', opts.lfp, 'to', cfp);
   const file = await fs.openFile(opts.lfp, opts.base, opts.filename);
@@ -129,6 +134,7 @@ export async function downloadReplicaFileFromCloud(
     onProgress?: ProgressHandler;
   },
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   const cfp = replicaCloudKey(opts.kind, opts.replicaId, opts.filename);
   await downloadFile({
     appService,
@@ -143,6 +149,7 @@ export async function deleteReplicaBundleFromCloud(
   replicaId: string,
   filenames: string[],
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   for (const filename of filenames) {
     const cfp = replicaCloudKey(kind, replicaId, filename);
     try {
@@ -159,6 +166,7 @@ export async function uploadBook(
   book: Book,
   onProgress?: ProgressHandler,
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   const completedFiles = { count: 0 };
   const coverExist = await fs.exists(getCoverFilename(book), 'Books');
 
@@ -213,6 +221,7 @@ export async function downloadCloudFile(
   cfp: string,
   onProgress: ProgressHandler,
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   console.log('Downloading file:', cfp, 'to', lfp);
   const dstPath = `${localBooksDir}/${lfp}`;
   await downloadFile({ appService, cfp, dst: dstPath, onProgress });
@@ -224,6 +233,7 @@ export async function downloadBookCovers(
   localBooksDir: string,
   books: Book[],
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   const booksLfps = new Map(
     books.map((book) => {
       const lfp = getCoverFilename(book);
@@ -268,6 +278,7 @@ export async function downloadBook(
   redownload: boolean = false,
   onProgress?: ProgressHandler,
 ): Promise<void> {
+  assertCloudFeatureEnabled();
   let bookDownloaded = false;
   let bookCoverDownloaded = false;
   const completedFiles = { count: 0 };

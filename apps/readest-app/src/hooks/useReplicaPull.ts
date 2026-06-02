@@ -46,6 +46,7 @@ import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SystemSettings } from '@/types/settings';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 export type ReplicaKind = 'dictionary' | 'font' | 'texture' | 'opds_catalog' | 'settings';
 
@@ -532,6 +533,7 @@ export const useReplicaPull = ({
   kinds,
   delayMs = REPLICA_PULL_DEFAULT_DELAY_MS,
 }: UseReplicaPullOpts): void => {
+  if (LOCAL_ONLY_MODE) return;
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   // Stable cache key so the effect doesn't re-run when the caller

@@ -39,6 +39,7 @@ import { upgradeToKeychainIfAvailable } from '@/libs/crypto/passphrase';
 import { cryptoSession } from '@/libs/crypto/session';
 import { useAppLockStore } from '@/store/appLockStore';
 import { initSettingsSync } from '@/services/sync/replicaSettingsSync';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 // One-time, on first launch after this feature ships, decide how to handle
 // PostHog telemetry for the current install:
@@ -179,7 +180,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         // local defaults to the server with a fresh HLC — overwriting
         // the cross-device authoritative values another device set.
         // Idempotent — safe to call on remount.
-        initSettingsSync(settings);
+        if (!LOCAL_ONLY_MODE) {
+          initSettingsSync(settings);
+        }
       });
     }
   }, [
@@ -197,6 +200,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   // the saved passphrase. Failures are silent — the gate prompts on
   // first encrypted-field operation if we couldn't restore.
   useEffect(() => {
+    if (LOCAL_ONLY_MODE) return;
     void (async () => {
       await upgradeToKeychainIfAvailable();
       await cryptoSession.tryRestoreFromStore();
@@ -219,32 +223,30 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
   // lock store decide whether to lock.
   const showAppLockScreen = isLockInitialized && !isUnlocked;
   const appShellHidden = !isLockInitialized || !isUnlocked;
+  const appShell = (
+    <DropdownProvider>
+      <CommandPaletteProvider>
+        <div aria-hidden={appShellHidden} style={appShellHidden ? { display: 'none' } : undefined}>
+          {children}
+          <CommandPalette />
+          <AtmosphereOverlay />
+          <PassphrasePrompt />
+        </div>
+        <AppLockDialog />
+        <TelemetryConsentDialog
+          open={showTelemetryConsent}
+          onClose={() => setShowTelemetryConsent(false)}
+        />
+        {showAppLockScreen && <AppLockScreen />}
+      </CommandPaletteProvider>
+    </DropdownProvider>
+  );
 
   return (
     <CSPostHogProvider>
       <AuthProvider>
         <IconContext.Provider value={{ size: `${iconSize}px` }}>
-          <SyncProvider>
-            <DropdownProvider>
-              <CommandPaletteProvider>
-                <div
-                  aria-hidden={appShellHidden}
-                  style={appShellHidden ? { display: 'none' } : undefined}
-                >
-                  {children}
-                  <CommandPalette />
-                  <AtmosphereOverlay />
-                  <PassphrasePrompt />
-                </div>
-                <AppLockDialog />
-                <TelemetryConsentDialog
-                  open={showTelemetryConsent}
-                  onClose={() => setShowTelemetryConsent(false)}
-                />
-                {showAppLockScreen && <AppLockScreen />}
-              </CommandPaletteProvider>
-            </DropdownProvider>
-          </SyncProvider>
+          {LOCAL_ONLY_MODE ? appShell : <SyncProvider>{appShell}</SyncProvider>}
         </IconContext.Provider>
       </AuthProvider>
     </CSPostHogProvider>

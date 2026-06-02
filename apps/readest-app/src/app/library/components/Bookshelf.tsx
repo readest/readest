@@ -56,6 +56,7 @@ import ShareBookDialog from './ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import SetStatusAlert from './SetStatusAlert';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -64,11 +65,11 @@ interface BookshelfProps {
   isSelectNone: boolean;
   onScrollerRef: (el: HTMLDivElement | null) => void;
   handleImportBooks: () => void;
-  handleBookDownload: (
+  handleBookDownload?: (
     book: Book,
     options?: { redownload?: boolean; queued?: boolean },
   ) => Promise<boolean>;
-  handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookUpload?: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
@@ -745,11 +746,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onUpdateStatus={updateBooksStatus}
         />
       )}
-      <ShareBookDialog
-        isOpen={!!shareDialogBook}
-        book={shareDialogBook}
-        onClose={() => setShareDialogBook(null)}
-      />
+      {!LOCAL_ONLY_MODE && (
+        <ShareBookDialog
+          isOpen={!!shareDialogBook}
+          book={shareDialogBook}
+          onClose={() => setShareDialogBook(null)}
+        />
+      )}
     </div>
   );
 };

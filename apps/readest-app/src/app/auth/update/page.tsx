@@ -5,8 +5,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { supabase } from '@/utils/supabase';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
+import LocalOnlyRedirect from '@/components/LocalOnlyRedirect';
 
 export default function UpdateEmailPage() {
+  if (LOCAL_ONLY_MODE) return <LocalOnlyRedirect />;
+
   const _ = useTranslation();
   const router = useRouter();
   const { user } = useAuth();

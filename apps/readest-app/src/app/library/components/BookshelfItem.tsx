@@ -4,6 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
@@ -91,11 +92,11 @@ interface BookshelfItemProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSelection: (hash: string) => void;
   handleGroupBooks: () => void;
-  handleBookDownload: (
+  handleBookDownload?: (
     book: Book,
     options?: { redownload?: boolean; queued?: boolean },
   ) => Promise<boolean>;
-  handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookUpload?: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
@@ -144,7 +145,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       let available = false;
       const loadingTimeout = setTimeout(() => setLoading(true), 200);
       try {
-        available = await handleBookDownload(book, { queued: false });
+        available = (await handleBookDownload?.(book, { queued: false })) ?? false;
         await updateBook(envConfig, book);
       } finally {
         if (loadingTimeout) clearTimeout(loadingTimeout);
@@ -265,13 +266,13 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     const downloadBookMenuItem = await MenuItem.new({
       text: _('Download Book'),
       action: async () => {
-        handleBookDownload(book, { queued: true });
+        handleBookDownload?.(book, { queued: true });
       },
     });
     const uploadBookMenuItem = await MenuItem.new({
       text: _('Upload Book'),
       action: async () => {
-        handleBookUpload(book);
+        handleBookUpload?.(book);
       },
     });
     const shareBookMenuItem = await MenuItem.new({
@@ -302,15 +303,15 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
     menu.append(showBookDetailsMenuItem);
     menu.append(showBookInFinderMenuItem);
-    if (book.uploadedAt && !book.downloadedAt) {
+    if (!LOCAL_ONLY_MODE && book.uploadedAt && !book.downloadedAt && handleBookDownload) {
       menu.append(downloadBookMenuItem);
     }
-    if (!book.uploadedAt && book.downloadedAt) {
+    if (!LOCAL_ONLY_MODE && !book.uploadedAt && book.downloadedAt && handleBookUpload) {
       menu.append(uploadBookMenuItem);
     }
     // Share is offered for any local-or-uploaded book; the dialog will trigger
     // an upload first if the book hasn't been pushed yet.
-    if (book.downloadedAt || book.uploadedAt) {
+    if (!LOCAL_ONLY_MODE && (book.downloadedAt || book.uploadedAt)) {
       menu.append(shareBookMenuItem);
     }
     menu.append(deleteBookMenuItem);

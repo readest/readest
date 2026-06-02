@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import LocalOnlyRouteGuard from '@/components/LocalOnlyRouteGuard';
 
 export const metadata: Metadata = {
   title: 'Account & Sign In',
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <LocalOnlyRouteGuard>{children}</LocalOnlyRouteGuard>;
 }

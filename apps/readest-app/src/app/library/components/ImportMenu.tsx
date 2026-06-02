@@ -11,7 +11,7 @@ interface ImportMenuProps {
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
   onImportBookFromUrl?: () => void;
-  onOpenCatalogManager: () => void;
+  onOpenCatalogManager?: () => void;
 }
 
 const ImportMenu: React.FC<ImportMenuProps> = ({
@@ -40,7 +40,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   };
 
   const handleOpenCatalogManager = () => {
-    onOpenCatalogManager();
+    onOpenCatalogManager?.();
     setIsDropdownOpen?.(false);
   };
 
@@ -68,11 +68,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
           onClick={handleImportFromUrl}
         />
       )}
-      <MenuItem
-        label={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
-        Icon={<MdRssFeed className='h-5 w-5' />}
-        onClick={handleOpenCatalogManager}
-      />
+      {onOpenCatalogManager && (
+        <MenuItem
+          label={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
+          Icon={<MdRssFeed className='h-5 w-5' />}
+          onClick={handleOpenCatalogManager}
+        />
+      )}
     </Menu>
   );
 };

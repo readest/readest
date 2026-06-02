@@ -9,6 +9,7 @@ import { TbSunMoon } from 'react-icons/tb';
 import { MdRefresh } from 'react-icons/md';
 import { IconType } from 'react-icons';
 import { stubTranslation as _ } from '@/utils/misc';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 export type CommandCategory = 'settings' | 'actions' | 'navigation';
 
@@ -798,12 +799,14 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     }),
   );
 
-  items.push(
-    createActionItem({
-      id: 'action.autoUpload',
-      action: options.toggleAutoUpload,
-    }),
-  );
+  if (!LOCAL_ONLY_MODE) {
+    items.push(
+      createActionItem({
+        id: 'action.autoUpload',
+        action: options.toggleAutoUpload,
+      }),
+    );
+  }
 
   items.push(
     createActionItem({

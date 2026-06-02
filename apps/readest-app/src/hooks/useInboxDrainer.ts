@@ -14,6 +14,7 @@ import {
   convertFileIfNeeded,
 } from '@/services/send/conversion/conversionWorker';
 import type { DBSendInboxItem } from '@/types/sendRecords';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 const DRAIN_INTERVAL_MS = 60_000;
 const DEVICE_ID_KEY = 'readest-send-device-id';
@@ -38,6 +39,7 @@ function getDeviceId(): string {
  * CPU-bound conversion that must stay off the throttled cover-sync path.
  */
 export function useInboxDrainer(): void {
+  if (LOCAL_ONLY_MODE) return;
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings } = useSettingsStore();

@@ -28,6 +28,7 @@ import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
+import { LOCAL_ONLY_MODE } from '@/services/featureFlags';
 
 type SubPage = 'kosync' | 'webdav' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
@@ -57,6 +58,21 @@ const IntegrationsPanel: React.FC = () => {
   const isWebDAVSyncing = useWebDAVSyncStore((s) => s.isSyncing);
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+
+  if (LOCAL_ONLY_MODE) {
+    return (
+      <div className='my-4 w-full space-y-6'>
+        <div className='w-full px-4'>
+          <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
+          <p className='text-base-content/70 text-sm leading-relaxed'>
+            {_(
+              'Readest Local keeps account, sync, cloud storage, sharing, and send-to-device features disabled.',
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Android Back / Esc: when any integrations sub-page (KOSync, WebDAV,
   // Readwise, Hardcover, OPDS, Send-to-Readest) is open, intercept and
