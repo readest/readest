@@ -43,24 +43,27 @@ describe('computeBackgroundSegments', () => {
     expect(segments).toEqual([{ start: 0, size: 430, bg: 'rgb(0, 0, 0)' }]);
   });
 
-  it('stretches a centered page into the full-bleed gutters (inset > 0)', () => {
-    // Desktop-style: container is inset 50px inside a 430px background.
+  it('keeps a centered page inside its content area (inset > 0)', () => {
+    // Desktop-style: container is inset 50px inside a 430px background. The page
+    // background stays inside its column [50, 380] — it must NOT bleed into the
+    // outer margin gutters, so the page stays centered (readest#4394).
     const views = [{ size: 330, bg: 'rgb(0, 0, 0)' }];
     const segments = computeBackgroundSegments(views, 0, 430, 50, 330);
-    // Extends out to both background edges so the page is full-bleed.
-    expect(segments).toEqual([{ start: 0, size: 430, bg: 'rgb(0, 0, 0)' }]);
+    expect(segments).toEqual([{ start: 50, size: 330, bg: 'rgb(0, 0, 0)' }]);
   });
 
-  it('gives each section its own full-bleed half in a two-up spread', () => {
+  it('keeps each section inside its own column in a two-up spread', () => {
     const views = [
       { size: 215, bg: 'rgb(255, 0, 0)' },
       { size: 215, bg: 'rgb(0, 0, 255)' },
     ];
     // bg 500 wide, container 430 inset 35 → seam at 35 + 215 = 250.
     const segments = computeBackgroundSegments(views, 0, 500, 35, 430);
+    // Each page fills its column up to the seam; neither bleeds into its outer
+    // gutter ([0, 35] and [465, 500] stay as symmetric margins).
     expect(segments).toEqual([
-      { start: 0, size: 250, bg: 'rgb(255, 0, 0)' }, // left page bleeds into left gutter
-      { start: 250, size: 250, bg: 'rgb(0, 0, 255)' }, // right page bleeds into right gutter
+      { start: 35, size: 215, bg: 'rgb(255, 0, 0)' },
+      { start: 250, size: 215, bg: 'rgb(0, 0, 255)' },
     ]);
   });
 
@@ -73,6 +76,35 @@ describe('computeBackgroundSegments', () => {
     // Scrolled to the middle view.
     const segments = computeBackgroundSegments(views, 430, 430, 0, 430);
     expect(segments).toEqual([{ start: 0, size: 430, bg: 'rgb(1, 1, 1)' }]);
+  });
+
+  // Regression test for readest/readest#4394. Backgrounds used to bleed into the
+  // outer margin gutter on the side they touched, so a mixed two-up spread — a
+  // transparent cover (no segment) beside a body-coloured title page — filled
+  // the right gutter with colour while the left gutter stayed the plain margin.
+  // The spread then looked shifted off-centre (badly so on wide screens, where
+  // each gutter is ~250px). Each page now stays inside its own column.
+  it('keeps symmetric margins when only the right page of a two-up spread is colored', () => {
+    const views = [
+      { size: 215, bg: '' }, // left page — transparent cover image, no segment
+      { size: 215, bg: 'rgb(255, 228, 63)' }, // right page — yellow title
+    ];
+    // bg 500 wide, container 430 inset 35 → seam at 35 + 215 = 250.
+    const segments = computeBackgroundSegments(views, 0, 500, 35, 430);
+    // The yellow page stops at the content edge (465); it must NOT bleed into
+    // the right gutter [465, 500] while the transparent left gutter shows white.
+    expect(segments).toEqual([{ start: 250, size: 215, bg: 'rgb(255, 228, 63)' }]);
+  });
+
+  it('keeps symmetric margins when only the left page of a two-up spread is colored', () => {
+    const views = [
+      { size: 215, bg: 'rgb(255, 228, 63)' }, // left page — yellow
+      { size: 215, bg: '' }, // right page — transparent, no segment
+    ];
+    const segments = computeBackgroundSegments(views, 0, 500, 35, 430);
+    // The yellow page starts at the content edge (35); it must NOT bleed into
+    // the left gutter [0, 35] while the transparent right gutter shows white.
+    expect(segments).toEqual([{ start: 35, size: 215, bg: 'rgb(255, 228, 63)' }]);
   });
 });
 
