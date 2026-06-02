@@ -639,6 +639,33 @@ describe('getColorStyles branches (via getStyles)', () => {
     );
   });
 
+  it('does not tint table descendants in dark mode when overrideColor is false (#4419)', () => {
+    const vs = makeViewSettings({ overrideColor: false });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    // When the user has NOT enabled color override, the `blockquote, table *`
+    // rule must not paint a tinted background on table descendants. Otherwise
+    // plain tables — and the invisible spacer cells some books use for vertical
+    // layout — render with a color different from the page background, and the
+    // spacing between words appears to change in dark mode. Regression from
+    // #4055; the #4028 zebra-row legibility case is now handled by the
+    // light-background rewriters from #4392. See issue #4419.
+    const match = css.match(/blockquote,\s*table\s*\*\s*\{([^}]*)\}/);
+    expect(match).not.toBeNull();
+    expect(match![1]).not.toContain('color-mix');
+  });
+
+  it('still tints blockquotes in dark mode when overrideColor is false', () => {
+    const vs = makeViewSettings({ overrideColor: false });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    // The standalone `blockquote` rule keeps its dark-mode tint regardless of
+    // overrideColor — only the shared `table *` part is gated.
+    expect(css).toMatch(
+      /blockquote\s*\{[^}]*background:\s*color-mix\(in srgb,\s*#1a1a1a\s*80%,\s*#000\)/,
+    );
+  });
+
   it('makes svg/img backgrounds transparent when overrideColor is true', () => {
     const vs = makeViewSettings({ overrideColor: true });
     const theme = makeThemeCode();
