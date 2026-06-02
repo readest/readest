@@ -32,6 +32,7 @@ export class TTSController extends EventTarget {
   #nossmlCnt: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
+  #currentSpeakSSML: string | undefined;
 
   #ttsSectionIndex: number = -1;
 
@@ -338,7 +339,9 @@ export class TTSController extends EventTarget {
           resolve();
         });
 
-        ssml = await this.#preprocessSSML(await ssml);
+        ssml = await ssml;
+        this.#currentSpeakSSML = ssml;
+        ssml = await this.#preprocessSSML(ssml);
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
@@ -510,9 +513,19 @@ export class TTSController extends EventTarget {
   }
 
   async setRate(rate: number) {
-    this.state = 'setrate-paused';
+    const shouldRestartNativeSpeech =
+      this.state === 'playing' &&
+      this.ttsClient.name === 'native-tts' &&
+      Boolean(this.#currentSpeakSSML);
+    const restartSSML = this.#currentSpeakSSML;
+
     this.ttsRate = rate;
     await this.ttsClient.setRate(this.ttsRate);
+
+    if (shouldRestartNativeSpeech && restartSSML) {
+      await this.stop();
+      this.#speak(restartSSML).catch((e) => this.error(e));
+    }
   }
 
   async getVoices(lang: string) {
