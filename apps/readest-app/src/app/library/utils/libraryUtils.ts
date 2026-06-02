@@ -583,3 +583,41 @@ export const createGroupSorter =
 
     return 0;
   };
+
+export type BookContextMenuItemId =
+  | 'select'
+  | 'group'
+  | 'markFinished'
+  | 'markUnread'
+  | 'clearStatus'
+  | 'showDetails'
+  | 'showInFinder'
+  | 'download'
+  | 'upload'
+  | 'share'
+  | 'delete';
+
+/**
+ * Resolve the ordered list of context-menu item ids for a book from its state.
+ *
+ * The native menu MUST be built from this list in a single `Menu.new({ items })`
+ * call. Appending items one at a time with un-awaited `Menu.append()` promises
+ * races on the Tauri IPC boundary, so the items land in a non-deterministic
+ * order and the menu appears to shuffle on every open (issue #4389).
+ */
+export const getBookContextMenuItemIds = (book: Book): BookContextMenuItemId[] => {
+  const ids: BookContextMenuItemId[] = ['select', 'group'];
+  ids.push(book.readingStatus === 'finished' ? 'markUnread' : 'markFinished');
+  // "Clear Status" is offered only when the book has an explicit status set.
+  if (book.readingStatus === 'finished' || book.readingStatus === 'unread') {
+    ids.push('clearStatus');
+  }
+  ids.push('showDetails', 'showInFinder');
+  if (book.uploadedAt && !book.downloadedAt) ids.push('download');
+  if (!book.uploadedAt && book.downloadedAt) ids.push('upload');
+  // Share is offered for any local-or-uploaded book; the dialog uploads first
+  // if the book hasn't been pushed yet.
+  if (book.downloadedAt || book.uploadedAt) ids.push('share');
+  ids.push('delete');
+  return ids;
+};
