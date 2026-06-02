@@ -96,6 +96,17 @@ const BooknoteView: React.FC<{
     return findNearestCfi(allSorted, progress?.location);
   }, [progress?.location, sortedGroups]);
 
+  // Index of the nearest note in the flattened list (-1 when none). Memoized so
+  // the scroll effect and the OverlayScrollbars `initialized` callback share a
+  // single source of truth.
+  const nearestIndex = useMemo(
+    () =>
+      nearestCfi
+        ? flatItems.findIndex((row) => row.kind === 'note' && row.item.cfi === nearestCfi)
+        : -1,
+    [nearestCfi, flatItems],
+  );
+
   const handleBrowseBookNotes = useCallback(() => {
     if (filteredNotes.length === 0) return;
     const sorted = [...filteredNotes].sort((a, b) => CFI.compare(a.cfi, b.cfi));
@@ -111,6 +122,27 @@ const BooknoteView: React.FC<{
   const [containerHeight, setContainerHeight] = useState(400);
   const lastScrolledCfiRef = useRef<string | null>(null);
 
+  // Mirror the nearest index so the OverlayScrollbars `initialized` callback —
+  // created at mount but fired after a deferred, timing-dependent init — reads
+  // the current target instead of its stale mount-time closure.
+  const nearestIndexRef = useRef(nearestIndex);
+  nearestIndexRef.current = nearestIndex;
+
+  // Center index of the currently visible window, kept fresh by Virtuoso's
+  // rangeChanged. Lets the scroll effect jump instantly for far moves and
+  // animate only short ones (mirrors TOCView).
+  const visibleCenterRef = useRef(0);
+
+  // When the reading position is already known at open time (the common case of
+  // switching to the panel while reading), mount Virtuoso *natively* centered on
+  // the nearest note via initialTopMostItemIndex. A scrollToIndex against a
+  // freshly mounted, unmeasured list no-ops (smooth) or wedges it, so the scroll
+  // effect skips that first jump and lets initialTopMostItemIndex handle it; the
+  // OverlayScrollbars `initialized` re-apply restores it after the deferred init
+  // resets scrollTop (mirrors TOCView).
+  const [initialTopIndex] = useState(() => nearestIndex);
+  const initialScrollHandledRef = useRef(initialTopIndex > 0);
+
   const [initialize, osInstance] = useOverlayScrollbars({
     defer: true,
     options: { scrollbars: { autoHide: 'scroll' } },
@@ -119,6 +151,22 @@ const BooknoteView: React.FC<{
         const { viewport } = instance.elements();
         viewport.style.overflowX = 'var(--os-viewport-overflow-x)';
         viewport.style.overflowY = 'var(--os-viewport-overflow-y)';
+        // OverlayScrollbars resets the wrapped viewport's scrollTop to 0 as it
+        // initializes (deferred), clobbering the mount-time auto-scroll and
+        // stranding the list at the top. Re-apply it to the *current* nearest
+        // note — read via ref since this is the mount-time closure. The first
+        // rAF lets the reset settle; the second re-asserts once the freshly
+        // mounted rows are measured (a lone scrollToIndex to a far, unmeasured
+        // row otherwise lands short).
+        const reapply = () => {
+          const index = nearestIndexRef.current;
+          if (index < 0) return;
+          virtuosoRef.current?.scrollToIndex({ index, align: 'center', behavior: 'auto' });
+        };
+        requestAnimationFrame(() => {
+          reapply();
+          requestAnimationFrame(reapply);
+        });
       },
     },
   });
@@ -169,18 +217,35 @@ const BooknoteView: React.FC<{
   // per-item useScrollToItem (which forced 1000 layout reads) with a single
   // virtuosoRef.scrollToIndex call.
   useEffect(() => {
-    if (!nearestCfi || !flatItems.length) return;
+    if (nearestIndex < 0) return;
     if (nearestCfi === lastScrolledCfiRef.current) return;
-    const idx = flatItems.findIndex((row) => row.kind === 'note' && row.item.cfi === nearestCfi);
-    if (idx < 0) return;
-    const isEink = document.documentElement.getAttribute('data-eink') === 'true';
-    virtuosoRef.current?.scrollToIndex({
-      index: idx,
-      align: 'center',
-      behavior: isEink ? 'auto' : 'smooth',
-    });
     lastScrolledCfiRef.current = nearestCfi;
-  }, [nearestCfi, flatItems]);
+    // initialTopMostItemIndex already centered the mount position; a
+    // scrollToIndex that races Virtuoso's first render no-ops or wedges it, so
+    // skip this one and let the `initialized` re-apply restore it if needed.
+    if (initialScrollHandledRef.current) {
+      initialScrollHandledRef.current = false;
+      return;
+    }
+    const isEink = document.documentElement.getAttribute('data-eink') === 'true';
+    // Jump instantly for far moves (and on eink, which ghosts during a smooth
+    // animation) to avoid blanking the virtualized list mid-animation; keep
+    // smooth only for short, in-session progress updates (mirrors TOCView). A
+    // far instant jump can land short until the target rows are measured, so
+    // re-assert once on the next frame.
+    const distance = Math.abs(nearestIndex - visibleCenterRef.current);
+    const behavior = isEink || distance > 16 ? 'auto' : 'smooth';
+    virtuosoRef.current?.scrollToIndex({ index: nearestIndex, align: 'center', behavior });
+    if (behavior === 'auto') {
+      requestAnimationFrame(() => {
+        virtuosoRef.current?.scrollToIndex({
+          index: nearestIndex,
+          align: 'center',
+          behavior: 'auto',
+        });
+      });
+    }
+  }, [nearestCfi, nearestIndex]);
 
   const renderItem = useCallback(
     (index: number) => {
@@ -250,6 +315,12 @@ const BooknoteView: React.FC<{
           <Virtuoso
             ref={virtuosoRef}
             scrollerRef={handleScrollerRef}
+            initialTopMostItemIndex={
+              initialTopIndex > 0 ? { index: initialTopIndex, align: 'center' } : 0
+            }
+            rangeChanged={({ startIndex, endIndex }) => {
+              visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
+            }}
             style={{ height: containerHeight }}
             totalCount={flatItems.length}
             computeItemKey={(index) => flatItems[index]?.key ?? index}
