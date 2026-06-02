@@ -1662,5 +1662,9 @@
   "No Annotations": "མཆན་མེད།",
   "No Bookmarks": "དཔེ་རྟགས་མེད།",
   "Select some text to highlight": "འོག་ཐིག་གཏོང་བར་ཡི་གེ་འདེམས་རོགས།",
-  "Bookmark This Page": "ཤོག་ངོས་འདིར་དཔེ་རྟགས་འགོད།"
+  "Bookmark This Page": "ཤོག་ངོས་འདིར་དཔེ་རྟགས་འགོད།",
+  "Book file is not available locally": "དེབ་ཀྱི་ཡིག་ཆ་དེ་ས་གནས་སུ་མི་འདུག",
+  "Failed to send book": "དེབ་སྐུར་གཏོང་མ་ཐུབ།",
+  "Send": "སྐུར་གཏོང་།",
+  "Highlight Current Sentence": "ད་ལྟའི་ཚིག་གྲུབ་ལ་འོག་ཐིག་གཏོང་།"
 }

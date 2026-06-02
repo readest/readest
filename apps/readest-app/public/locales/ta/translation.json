@@ -1695,5 +1695,9 @@
   "No Annotations": "சிறுகுறிப்புகள் இல்லை",
   "No Bookmarks": "புக்மார்க்குகள் இல்லை",
   "Select some text to highlight": "சிறப்பிக்க உரையைத் தேர்ந்தெடுக்கவும்",
-  "Bookmark This Page": "இந்தப் பக்கத்தைப் புக்மார்க் செய்யவும்"
+  "Bookmark This Page": "இந்தப் பக்கத்தைப் புக்மார்க் செய்யவும்",
+  "Book file is not available locally": "புத்தக கோப்பு உள்ளூரில் கிடைக்கவில்லை",
+  "Failed to send book": "புத்தகத்தை அனுப்ப முடியவில்லை",
+  "Send": "அனுப்பு",
+  "Highlight Current Sentence": "தற்போதைய வாக்கியத்தை தனிப்படுத்து"
 }

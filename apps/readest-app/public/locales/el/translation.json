@@ -1695,5 +1695,9 @@
   "No Annotations": "Κανένας σχολιασμός",
   "No Bookmarks": "Κανένας σελιδοδείκτης",
   "Select some text to highlight": "Επιλέξτε κείμενο για επισήμανση",
-  "Bookmark This Page": "Προσθήκη σελιδοδείκτη σε αυτή τη σελίδα"
+  "Bookmark This Page": "Προσθήκη σελιδοδείκτη σε αυτή τη σελίδα",
+  "Book file is not available locally": "Το αρχείο του βιβλίου δεν είναι διαθέσιμο τοπικά",
+  "Failed to send book": "Αποτυχία αποστολής βιβλίου",
+  "Send": "Αποστολή",
+  "Highlight Current Sentence": "Επισήμανση τρέχουσας πρότασης"
 }

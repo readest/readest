@@ -1761,5 +1761,9 @@
   "No Annotations": "Brak adnotacji",
   "No Bookmarks": "Brak zakładek",
   "Select some text to highlight": "Wybierz tekst do podświetlenia",
-  "Bookmark This Page": "Dodaj tę stronę do zakładek"
+  "Bookmark This Page": "Dodaj tę stronę do zakładek",
+  "Book file is not available locally": "Plik książki nie jest dostępny lokalnie",
+  "Failed to send book": "Nie udało się wysłać książki",
+  "Send": "Wyślij",
+  "Highlight Current Sentence": "Podświetl bieżące zdanie"
 }

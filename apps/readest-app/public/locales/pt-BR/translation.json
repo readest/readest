@@ -1728,5 +1728,9 @@
   "No Annotations": "Nenhuma anotação",
   "No Bookmarks": "Nenhum marcador",
   "Select some text to highlight": "Selecione um texto para destacar",
-  "Bookmark This Page": "Adicionar esta página aos marcadores"
+  "Bookmark This Page": "Adicionar esta página aos marcadores",
+  "Book file is not available locally": "O arquivo do livro não está disponível localmente",
+  "Failed to send book": "Falha ao enviar o livro",
+  "Send": "Enviar",
+  "Highlight Current Sentence": "Destacar a frase atual"
 }

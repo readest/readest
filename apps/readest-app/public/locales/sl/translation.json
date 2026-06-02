@@ -1761,5 +1761,9 @@
   "No Annotations": "Ni opomb",
   "No Bookmarks": "Ni zaznamkov",
   "Select some text to highlight": "Izberite besedilo za označevanje",
-  "Bookmark This Page": "Dodaj to stran med zaznamke"
+  "Bookmark This Page": "Dodaj to stran med zaznamke",
+  "Book file is not available locally": "Datoteka knjige ni na voljo lokalno",
+  "Failed to send book": "Pošiljanje knjige ni uspelo",
+  "Send": "Pošlji",
+  "Highlight Current Sentence": "Označi trenutni stavek"
 }

@@ -12,9 +12,11 @@
 - [Issue #4112 scroll-anchoring](issue-4112-scroll-anchoring.md) — RESOLVED (PR #4349). Scroll-anchoring suppressed at scrollTop 0 when prepending a section in scrolled mode; fix patterns (prepend compensation, eager backward preload, no-blank nav) + test & dev-server gotchas
 - [Reading ruler line/column-aware](reading-ruler-line-aware.md) — ruler snaps to real lines; multi-column band spans one column; Range.getClientRects() returns tall block boxes that must be dropped; iframe frame-offset mapping; synthetic-key throttling
 - [TOC expand + auto-scroll](toc-expand-and-autoscroll.md) — #4059 collapse-by-default policy in `tocTree.ts`; pinned-sidebar mounts before progress → dynamic expansion breaks scroll-to-current via (1) spurious onScroll clearing pending and (2) Virtuoso scrollToIndex landing short after row growth (re-assert on rAF)
+- [BooknoteView auto-scroll (#4352)](booknote-view-autoscroll-4352.md) — virtualizing the annotation/bookmark list dropped auto-scroll-to-nearest; two paths (reload: OverlayScrollbars resets scrollTop → re-apply in `initialized` via ref; tab-switch: synchronous scrollToIndex on fresh-mounted list wedges Virtuoso → use `initialTopMostItemIndex` + skip-gate). Mirrors TOCView. Includes dev-server/Fast-Refresh/screenshot-vs-DOM verification gotchas
 - [Swipe page-turn bg flash](paginator-swipe-bg-flash.md) — white↔black flash on swipe+animation only; `#background` was static screen-space and didn't track content during drag/snap; fix = sliding per-view full-bleed segments (`computeBackgroundSegments`) rebuilt on scroll + per-rAF synced to the view transform during snap
 - [Duokan fullscreen cover hidden in scroll mode](duokan-fullscreen-cover-scroll.md) — #4379 `data-duokan-page-fullscreen` cover pinned `position:absolute height:100%` collapses against auto-height scroll container; gate fullscreen on `this.#column` + reset stale absolute props on toggle (`setImageSize` in paginator.js)
 - [Paginated texture occlusion](paginated-texture-occlusion-4399.md) — #4399 host `.foliate-viewer::before` texture absent in paginated (shown in scrolled); opaque `#background` container (`= fallbackBg`) from the swipe-flash fix occludes it; shared `textureAwareBackground` helper + `hasTexture ? '' : fallbackBg` container
+- [Background overflows column (#4394, PR #4429)](paginator-gutter-bleed-asymmetry-4394.md) — paginated page bg stretched into the outer `--_outer-min` gutter → mixed cover/title 2-up spread shifted off-centre (~250px at 1920px). KEEP the grid (`--_outer-min` keeps margins symmetric); fix = clamp `computeBackgroundSegments` to `[containerStart,containerEnd]` (Math.max/Math.min) so bg stays in its column. 2 wrong tries first (bleed-gating, "page shouldn't be yellow"); foliate submodule needs dev-server RESTART to pick up edits
 
 ## Critical Files (Most Bug-Prone)
 - `src/utils/style.ts` - Central EPUB CSS transformation hub (14+ bug fixes)
@@ -49,6 +51,15 @@
 ## Patterns
 - [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) — useOverlayScrollbars hook integration for overlay scrollbars on mobile webviews
 - [Design system → DESIGN.md](feedback_design_system_doc.md) — codify recurring UI/UX rules in `apps/readest-app/DESIGN.md`; never `pl/pr/ml/mr/text-left/text-right` (RTL); §5 boxed list anatomy has uniform `min-h-14` rows and chromeless controls
+
+## Reader UI Fixes
+- [Android image callout freeze](android-image-callout-freeze.md) — long-press `<img>` fires WebView native callout that collides with app touch handlers → whole-app freeze; `-webkit-touch-callout: none` doesn't inherit so put `.no-context-menu` on an ancestor of the image (`.no-context-menu img` rule in globals.css); seen on book covers (#4345) + image preview/zoom (#4420, `ImageViewer.tsx`)
+- [ProgressBar focus-ring line (#4397)](progressbar-focus-ring-4397.md) — decorative `.progressinfo` footer was `tabIndex={-1}` → Android long-press focused it → stray content-width focus-ring line at the bottom every page; fix = drop tabIndex (role='presentation' must not be focusable); ffmpeg-the-video debugging + live-browser `:focus-visible` confirmation
+- [Table dark-mode tint regression (#4419)](table-dark-mode-tint-4419.md) — `blockquote, table *` color-mix tint in `getColorStyles` must stay gated on `overrideColor` (gate added #2377, removed #4055, re-broke → #4419); safe now that #4392 light-bg rewriters handle #4028 zebra legibility; SAME rule paints vertical-TOC `.space`/▉ spacer cells (▉ U+2589 = blank glyph, contours=0) → "spacing changes" symptom; both fixed by the gate
+
+## Library Fixes
+- [Tauri menu append race (#4389)](tauri-menu-append-race-4389.md) — un-awaited `Menu.append()` (async IPC) in `BookshelfItem.tsx` → context-menu items shuffle order every open (native only, invisible in jsdom); fix = single `await Menu.new({ items })` of ordered `MenuItemOptions`; order/inclusion extracted to pure `getBookContextMenuItemIds` for unit testing
+- [TXT author recognition (#4390)](txt-author-recognition-4390.md) — 【】-titled Chinese web-novels show author missing/garbage; they're TXT→EPUB (title==full filename is the tell, check `txt.ts` not foliate-js); `extractTxtFilenameMetadata` only handled 《》 + greedy header capture grabbed metadata blobs; fix = `parseLabeledAuthor` for any filename + `isPlausibleAuthorName` guard
 
 ## Architecture Notes
 - foliate-js is a git submodule at `packages/foliate-js/`

@@ -1662,5 +1662,9 @@
   "No Annotations": "주석 없음",
   "No Bookmarks": "북마크 없음",
   "Select some text to highlight": "하이라이트할 텍스트를 선택하세요",
-  "Bookmark This Page": "이 페이지 북마크"
+  "Bookmark This Page": "이 페이지 북마크",
+  "Book file is not available locally": "책 파일을 로컬에서 사용할 수 없습니다",
+  "Failed to send book": "책 보내기에 실패했습니다",
+  "Send": "보내기",
+  "Highlight Current Sentence": "현재 문장 강조"
 }

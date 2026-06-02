@@ -1662,5 +1662,9 @@
   "No Annotations": "暂无注释",
   "No Bookmarks": "暂无书签",
   "Select some text to highlight": "选择文本以划线",
-  "Bookmark This Page": "为此页添加书签"
+  "Bookmark This Page": "为此页添加书签",
+  "Book file is not available locally": "本地没有该图书文件",
+  "Failed to send book": "发送图书失败",
+  "Send": "发送",
+  "Highlight Current Sentence": "高亮当前句子"
 }

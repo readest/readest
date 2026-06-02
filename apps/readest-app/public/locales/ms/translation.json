@@ -1662,5 +1662,9 @@
   "No Annotations": "Tiada anotasi",
   "No Bookmarks": "Tiada penanda buku",
   "Select some text to highlight": "Pilih teks untuk ditonjolkan",
-  "Bookmark This Page": "Tanda halaman ini"
+  "Bookmark This Page": "Tanda halaman ini",
+  "Book file is not available locally": "Fail buku tidak tersedia secara setempat",
+  "Failed to send book": "Gagal menghantar buku",
+  "Send": "Hantar",
+  "Highlight Current Sentence": "Serlahkan ayat semasa"
 }

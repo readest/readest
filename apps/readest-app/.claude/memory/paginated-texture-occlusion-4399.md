@@ -7,6 +7,9 @@ metadata:
   originSessionId: 1bd8a73e-f279-4ed8-9562-98e96d9723d5
 ---
 
+RESOLVED — merged. foliate-js `142bf11` (on main) + readest pointer bump/test
+(`fix(reader): show background texture in paginated mode (#4399)`).
+
 #4399: a background texture (Settings → Color → texture, e.g. Leaves) shows in
 **scrolled** mode but is **absent in paginated** mode. The texture is NOT in the
 iframe — it's mounted on the HOST as `.foliate-viewer::before` (`src/styles/textures.ts`,

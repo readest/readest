@@ -1695,5 +1695,9 @@
   "No Annotations": "Geen aantekeningen",
   "No Bookmarks": "Geen bladwijzers",
   "Select some text to highlight": "Selecteer tekst om te markeren",
-  "Bookmark This Page": "Deze pagina als bladwijzer toevoegen"
+  "Bookmark This Page": "Deze pagina als bladwijzer toevoegen",
+  "Book file is not available locally": "Boekbestand is niet lokaal beschikbaar",
+  "Failed to send book": "Verzenden van boek mislukt",
+  "Send": "Verzenden",
+  "Highlight Current Sentence": "Huidige zin markeren"
 }
