@@ -16,6 +16,7 @@ import {
 } from '@/styles/themes';
 import { createFontCSS, CustomFont } from '@/styles/fonts';
 import { getOSPlatform } from './misc';
+import { SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
 
 const getFontStyles = (
   serif: string,
@@ -338,39 +339,31 @@ const getPageLayoutStyles = (
     inset: -10px;
   }
 
-  pre, code {
-    white-space: pre-wrap !important;
-  }
-  .readest-table-scroll {
+  .${SCROLL_WRAPPER_CLASS} {
     display: block;
+    overflow: auto;
     max-width: 100%;
-    /* Scrolling is the default so a table wider than the column is never clipped.
-       A table that can wrap to fit doesn't overflow, so no scrollbar shows.
-       applyTableStyle adds .readest-table-scroll-fit (via a ResizeObserver) to
-       clip the few px of min-content slop some layout tables have, suppressing a
-       spurious scrollbar once layout has settled. */
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    /* Let the browser handle horizontal pans on the table; paginated swipe uses capture-phase JS when needed. */
     touch-action: pan-x pan-y;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
   }
-  .readest-table-scroll-fit {
-    overflow-x: clip;
-    touch-action: auto;
+  .${SCROLL_WRAPPER_FIT_CLASS} {
+    overflow: visible;
   }
-  .readest-table-scroll > table {
+  .${SCROLL_WRAPPER_CLASS} > table {
     display: table !important;
     max-width: 100%;
   }
-  pre {
-    max-width: calc(var(--available-width) * 1px);
-    max-height: calc(var(--available-height) * 1px);
+  pre, code, math {
+    white-space: pre-wrap !important;
     scrollbar-width: none;
+  }
+  math {
     overflow: auto;
   }
-  pre::-webkit-scrollbar {
-    display: none;
+  table, math {
+    max-width: calc(var(--available-width) * 1px);
+    max-height: calc(var(--available-height) * 1px);
   }
 
   .epubtype-footnote,
@@ -405,6 +398,10 @@ const getPageLayoutStyles = (
 
   body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
     max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  figure.code {
+    overflow: unset !important;
   }
 
   /* some epubs set insane inline-block for p */
@@ -1110,166 +1107,6 @@ export const applyImageStyle = (document: Document) => {
     const computedStyle = window.getComputedStyle(hr);
     if (computedStyle.backgroundImage && computedStyle.backgroundImage !== 'none') {
       hr.classList.add('background-img');
-    }
-  });
-};
-
-export const TABLE_SCROLL_CLASS = 'readest-table-scroll';
-// Added to a wrapper whose table fits the column within tolerance, so the wrapper
-// clips instead of showing a scrollbar. Wide tables stay scrollable (no class).
-const TABLE_SCROLL_FIT_CLASS = 'readest-table-scroll-fit';
-// Ignore tiny overflows (borders, image rounding) so they don't show a scrollbar.
-const TABLE_SCROLL_TOLERANCE_PX = 4;
-
-const TABLE_TOUCH_SCROLL_FLAG = 'data-readest-table-touch-scroll';
-
-/** Horizontal swipe on a wide table should scroll the table, not turn the page (paginated mode). */
-export const shouldTableScrollConsumeTouch = (
-  wrapper: HTMLElement,
-  dx: number,
-  dy: number,
-): boolean => {
-  if (wrapper.scrollWidth <= wrapper.clientWidth) return false;
-  if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return false;
-
-  const atStart = wrapper.scrollLeft <= 1;
-  const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 1;
-
-  // Finger moves left (dx < 0) reveals content to the right; finger moves right reveals left.
-  if (dx < 0 && !atEnd) return true;
-  if (dx > 0 && !atStart) return true;
-  return false;
-};
-
-/** Horizontal wheel/trackpad over a wide table should scroll the table, not turn the page. */
-export const shouldTableScrollConsumeWheel = (
-  wrapper: HTMLElement,
-  deltaX: number,
-  deltaY: number,
-): boolean => {
-  if (wrapper.scrollWidth <= wrapper.clientWidth) return false;
-  // A horizontal wheel belongs to the table. Consume it regardless of scroll
-  // position: at the edge a wheel gesture (incl. trackpad momentum) must not
-  // chain into a page turn — the table owns the whole horizontal gesture.
-  return Math.abs(deltaX) > Math.abs(deltaY);
-};
-
-/**
- * Capture-phase touch + wheel routing so foliate's paginator and readest's wheel
- * pagination do not steal horizontal scrolls over wide tables. Attached once per
- * iframe document.
- */
-export const applyTableTouchScroll = (document: Document) => {
-  const root = document.documentElement;
-  if (root.getAttribute(TABLE_TOUCH_SCROLL_FLAG) === 'true') return;
-  root.setAttribute(TABLE_TOUCH_SCROLL_FLAG, 'true');
-
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let activeWrapper: HTMLElement | null = null;
-
-  const findWrapper = (target: EventTarget | null): HTMLElement | null => {
-    // This module runs in the top-window realm, but `target` originates from
-    // the iframe's realm, so `target instanceof Element` is always false here.
-    // Duck-type on `closest` instead so the lookup works across realms. Skip
-    // wrappers that fit (they clip, not scroll) so only scrollable tables route.
-    if (!target || !('closest' in target)) return null;
-    const wrapper = (target as Element).closest(`.${TABLE_SCROLL_CLASS}`) as HTMLElement | null;
-    return wrapper && !wrapper.classList.contains(TABLE_SCROLL_FIT_CLASS) ? wrapper : null;
-  };
-
-  const onTouchStart = (e: TouchEvent) => {
-    activeWrapper = findWrapper(e.target);
-    if (!activeWrapper) return;
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-    touchStartX = touch.screenX;
-    touchStartY = touch.screenY;
-  };
-
-  const onTouchMove = (e: TouchEvent) => {
-    if (!activeWrapper) return;
-    if (!activeWrapper.contains(e.target as Node)) return;
-
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-
-    const dx = touch.screenX - touchStartX;
-    const dy = touch.screenY - touchStartY;
-    if (!shouldTableScrollConsumeTouch(activeWrapper, dx, dy)) return;
-
-    e.stopImmediatePropagation();
-  };
-
-  const onTouchEnd = () => {
-    activeWrapper = null;
-  };
-
-  // Trackpad / mouse wheel over a wide table generates wheel events (not touch).
-  // foliate has no wheel handler, but readest forwards iframe wheel events to
-  // pagination (see handleWheel -> 'iframe-wheel'), so a horizontal wheel over
-  // a scrollable table would both scroll the table and turn the page.
-  const onWheel = (e: WheelEvent) => {
-    const wrapper = findWrapper(e.target);
-    if (!wrapper) return;
-    if (!shouldTableScrollConsumeWheel(wrapper, e.deltaX, e.deltaY)) return;
-    // Native overflow scrolling of the table still happens (no preventDefault);
-    // we only stop pagination from also acting on this wheel.
-    e.stopImmediatePropagation();
-  };
-
-  const opts = { capture: true, passive: false } as const;
-  document.addEventListener('touchstart', onTouchStart, opts);
-  document.addEventListener('touchmove', onTouchMove, opts);
-  document.addEventListener('touchend', onTouchEnd, opts);
-  document.addEventListener('touchcancel', onTouchEnd, opts);
-  document.addEventListener('wheel', onWheel, { capture: true, passive: true });
-};
-
-/**
- * Toggle the fit class: a wrapper whose table overflows by no more than the
- * tolerance is treated as fitting (clip the slop, no scrollbar); a genuinely
- * wider table keeps scrolling. Re-runs on resize so the decision is correct once
- * layout has settled (the column width isn't reliable at section-load time).
- */
-const updateTableFit = (wrapper: HTMLElement) => {
-  const fits = wrapper.scrollWidth - wrapper.clientWidth <= TABLE_SCROLL_TOLERANCE_PX;
-  wrapper.classList.toggle(TABLE_SCROLL_FIT_CLASS, fits);
-};
-
-/**
- * Wrap each table so a table wider than its column scrolls horizontally instead
- * of overflowing the page. Tables that wrap to fit show no scrollbar; a
- * ResizeObserver suppresses the scrollbar for tables that overflow only within
- * tolerance, re-evaluating as the column width settles.
- */
-export const applyTableStyle = (document: Document) => {
-  document.querySelectorAll('table').forEach((table) => {
-    const parent = table.parentNode;
-    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
-
-    if (
-      parent instanceof HTMLElement &&
-      parent.classList.contains(TABLE_SCROLL_CLASS) &&
-      parent.querySelector(':scope > table') === table
-    ) {
-      table.style.removeProperty('transform');
-      table.style.removeProperty('transform-origin');
-      return;
-    }
-
-    const wrapper = document.createElement('div');
-    wrapper.className = TABLE_SCROLL_CLASS;
-    parent.insertBefore(wrapper, table);
-    wrapper.appendChild(table);
-    table.style.removeProperty('transform');
-    table.style.removeProperty('transform-origin');
-
-    updateTableFit(wrapper);
-    const win = document.defaultView;
-    if (win?.ResizeObserver) {
-      const observer = new win.ResizeObserver(() => updateTableFit(wrapper));
-      observer.observe(wrapper);
     }
   });
 };

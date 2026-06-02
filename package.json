@@ -12,6 +12,8 @@
     "prepare": "husky",
     "fmt:check": "pnpm --filter @readest/readest-app fmt:check",
     "clippy:check": "pnpm --filter @readest/readest-app clippy:check",
+    "worktree:new": "pnpm --filter @readest/readest-app worktree:new",
+    "worktree:rm": "pnpm --filter @readest/readest-app worktree:rm",
     "format": "biome format --write .",
     "format:check": "biome format ."
   },

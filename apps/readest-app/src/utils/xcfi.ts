@@ -293,10 +293,11 @@ export class XCFI {
         throw new Error(`Invalid XPointer segment: ${segment}`);
       }
 
-      // Find child elements with matching tag name, skipping cfi-inert elements
-      const children = Array.from(current.children).filter(
-        (child) =>
-          !XCFI.isCfiInert(child) && child.tagName.toLowerCase() === tagName?.toLowerCase(),
+      // Find child elements with matching tag name. effectiveChildren drops
+      // cfi-inert nodes and hoists cfi-skip wrappers, so a layout-only wrapper
+      // doesn't shift indices relative to KOReader's wrapper-less DOM.
+      const children = this.effectiveChildren(current).filter(
+        (child) => child.tagName.toLowerCase() === tagName?.toLowerCase(),
       );
 
       if (index >= children.length) {
@@ -415,6 +416,39 @@ export class XCFI {
   }
 
   /**
+   * A cfi-skip element (e.g. the layout-only scroll wrapper applyScrollableStyle
+   * adds around a table/equation) must be transparent to XPointer paths: KOReader's
+   * CREngine DOM has no such wrapper, so its children must keep the indices they'd
+   * have without it. Unlike cfi-inert (drops the node AND its subtree), cfi-skip
+   * hoists the node's children into its parent. Must match epubcfi.js's cfi-skip
+   * handling so CFI ↔ XPointer round-trips through the same logical structure.
+   */
+  private static isCfiSkip(element: Element): boolean {
+    return element.hasAttribute('cfi-skip');
+  }
+
+  /** Nearest ancestor-or-self element that is not a cfi-skip wrapper. */
+  private static skipTransparentParent(element: Element): Element {
+    let el: Element = element;
+    while (XCFI.isCfiSkip(el) && el.parentElement) el = el.parentElement;
+    return el;
+  }
+
+  /**
+   * Element children of `parent` as XPointer sees them: cfi-inert nodes removed and
+   * cfi-skip wrappers spliced out (their own children hoisted in place, recursively).
+   */
+  private effectiveChildren(parent: Element): Element[] {
+    const result: Element[] = [];
+    for (const child of Array.from(parent.children)) {
+      if (XCFI.isCfiInert(child)) continue;
+      if (XCFI.isCfiSkip(child)) result.push(...this.effectiveChildren(child));
+      else result.push(child);
+    }
+    return result;
+  }
+
+  /**
    * Build XPointer path from DOM element
    */
   private buildXPointerPath(targetElement: Element): string {
@@ -423,15 +457,23 @@ export class XCFI {
 
     // Build path from target back to root
     while (current && current !== this.document.documentElement) {
+      // A cfi-skip wrapper contributes no path segment: it is hoisted away, so
+      // just continue from its parent (matches KOReader's wrapper-less DOM).
+      if (XCFI.isCfiSkip(current)) {
+        current = current.parentElement;
+        continue;
+      }
       const parent: Element | null = current.parentElement;
       if (!parent) break;
 
       const tagName = current.tagName.toLowerCase();
-      // Count preceding siblings with same tag name, skipping cfi-inert elements
+      // Count preceding siblings with the same tag name among the effective
+      // (cfi-inert removed, cfi-skip hoisted) children of the nearest non-skip
+      // ancestor, so a layout-only wrapper doesn't shift the index.
+      const siblings = this.effectiveChildren(XCFI.skipTransparentParent(parent));
       let siblingIndex = 0;
       let totalSameTagSiblings = 0;
-      for (const sibling of Array.from(parent.children)) {
-        if (XCFI.isCfiInert(sibling)) continue;
+      for (const sibling of siblings) {
         if (sibling.tagName.toLowerCase() === tagName) {
           if (sibling === current) {
             siblingIndex = totalSameTagSiblings;

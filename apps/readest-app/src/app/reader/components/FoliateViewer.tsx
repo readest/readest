@@ -31,8 +31,6 @@ import {
   applyImageStyle,
   applyScrollbarStyle,
   applyScrollModeClass,
-  applyTableStyle,
-  applyTableTouchScroll,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -40,6 +38,7 @@ import {
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
+import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
@@ -263,7 +262,7 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
-      applyTableStyle(detail.doc);
+      applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);

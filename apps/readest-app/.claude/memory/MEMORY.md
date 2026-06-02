@@ -27,8 +27,14 @@
 - [KOSync CFI spine resolution](kosync-cfi-spine-resolution.md) — convert via the CFI's own spine (`getXPointerFromCFI`/`getCFIFromXPointer`), never `new XCFI(primaryDoc, primaryIndex)`; primaryIndex lags during scroll → spine-mismatch throw
 - [Empty-start CFI sync bug](empty-start-cfi-sync.md) — `epubcfi(/6/24!/4,,/20/1:58)` (empty-start range) from the cfi-inert skip-link transitional window; jumps to wrong section end; `isMalformedLocationCfi` → discard the synced value in `useProgressSync` (NOT the local open path); foliate fix doesn't repair already-synced values
 
+## Testing
+- [Tauri Rust↔JS parser parity tests](tauri-parser-parity-tests.md) — #4369 native Rust EPUB/MOBI parser; how to cross-check vs foliate-js in the `.tauri.test.ts` WebView suite (CWD disk path for Rust, Vite URL for JS, normalizer-based compare, cover presence-only, desc whitespace-collapse); the `dcterms:modified`→`published` divergence fix
+
 ## Build & Vendoring
 - [pdfjs vendor wasm decoders](pdfjs-vendor-wasm-decoders.md) — scanned PDFs blank in CI build only (0.11.2 regression); pdfjs 5.7.x moved JBIG2 to `jbig2.wasm`, `copy-pdfjs-wasm` allow-list dropped it; `cpx` no-errors on empty glob; local stale `public/vendor` (gitignored, not refreshed by `tauri build`) masked it; fix = copy `wasm/*`
+
+## Platform Compat
+- [Window-state sanitizer (#4398)](window-state-sanitize-4398.md) — Windows launch crash (WebView2 0x80070057) from invalid `.window-state.json` (`-32000` minimized sentinel / `0×0`); our plugin already has upstream #253 fix so bad files are stale; defense-in-depth `window-state-sanitizer` plugin registered BEFORE window-state (plugin init = registration order); coord threshold `-16000` (~halfway to the -32000 sentinel; real desktops sit a few thousand px off origin) keeps multi-monitor negatives
 
 ## Feature Notes
 - [Manage Cache + iOS container layout](manage-cache-ios-layout.md) — `'Cache'` base = `Library/Caches/<bundle>` only (not all of Caches); iOS `Documents/Inbox` cleared too; WebKit cache + tmp out of reach; never touch App Support
@@ -36,6 +42,7 @@
 - [Cloudflare Workers WebSocket](cloudflare-workers-websocket.md) — use fetch() Upgrade pattern (not `ws` npm); CF delivers binary frames as Blob (must serialize async decodes)
 - [Share-a-Book Feature (in progress)](share-feature.md) — locked decisions for the /s/{token} share-link feature; plan at ~/.claude/plans/ok-we-will-learn-cosmic-acorn.md
 - [readest.koplugin i18n](koplugin-i18n.md) — gettext loader at `apps/readest.koplugin/i18n.lua`, `.po` catalog at `locales/<i18next-code>/translation.po`, extract/apply scripts in `scripts/`
+- [koplugin cover upload](koplugin-cover-upload.md) — #4374 uploadBook only shipped cached cloud covers; local-origin books uploaded blank. Fix = `extractLocalCover` via `FileManagerBookInfo:getCoverImage(nil, file)` → `writeToFile(path,"png")`. KOReader checkout at `/Users/chrox/dev/koreader`
 
 ## Patterns
 - [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) — useOverlayScrollbars hook integration for overlay scrollbars on mobile webviews
@@ -50,6 +57,7 @@
 - Safe area insets flow: Native plugin -> useSafeAreaInsets hook -> component styles
 - Dropdown menus use `DropdownContext` (not blur-based) for screen reader compat
 - [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) — to suppress reader gestures from the app, use `{capture:true}`; the paginator registers bubble-phase doc listeners first (during `view.open()`)
+- [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) — app-bundle code (style.ts, iframeEventHandlers.ts) runs in top realm; `iframeEl instanceof Element` is ALWAYS false → guards silently drop all iframe elements (passes jsdom, dead in app). Duck-type `'closest' in target` instead. Bit PR #4391's touch routing + applyTableStyle dedupe
 
 ## Workflow
 - [Test file filter](feedback_test_file_filter.md) — use `pnpm test <path>` without `--` to run a single file

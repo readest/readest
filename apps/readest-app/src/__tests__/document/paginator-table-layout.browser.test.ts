@@ -3,7 +3,8 @@ import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import type { ViewSettings } from '@/types/book';
 import type { Renderer } from '@/types/view';
-import { applyTableStyle, getStyles, TABLE_SCROLL_CLASS } from '@/utils/style';
+import { getStyles } from '@/utils/style';
+import { applyScrollableStyle, SCROLL_WRAPPER_CLASS } from '@/utils/scrollable';
 import {
   DEFAULT_BOOK_FONT,
   DEFAULT_BOOK_LAYOUT,
@@ -29,8 +30,7 @@ const WIDE_EPUB_URL = new URL('../fixtures/data/sample-table-wide.epub', import.
 
 // Spine indices of sample-table-layout.epub whose sections contain <table>.
 const TABLE_SECTION_INDICES = [2, 3, 4, 9, 10];
-const TABLE_SCROLL_FIT_CLASS = 'readest-table-scroll-fit';
-// Same tolerance applyTableStyle uses to ignore sub-pixel / border slop.
+// Ignore sub-pixel / border slop when deciding whether a table really overflows.
 const TOLERANCE_PX = 4;
 
 const loadEPUB = async (url: string, name: string) => {
@@ -137,9 +137,9 @@ describe('Paginator table layout', () => {
       const doc = getSectionDoc(paginator, index);
       expect(doc, `section ${index} doc`).toBeTruthy();
       paginator.setStyles?.(getStyles(makeViewSettings(), undefined, []));
-      applyTableStyle(doc!);
+      applyScrollableStyle(doc!);
 
-      for (const wrapper of doc!.querySelectorAll<HTMLElement>(`.${TABLE_SCROLL_CLASS}`)) {
+      for (const wrapper of doc!.querySelectorAll<HTMLElement>(`.${SCROLL_WRAPPER_CLASS}`)) {
         expect(showsScrollbar(wrapper), `section ${index}: layout table shows a scrollbar`).toBe(
           false,
         );
@@ -161,9 +161,9 @@ describe('Paginator table layout', () => {
     const doc = getSectionDoc(paginator, 0);
     expect(doc, 'wide section doc').toBeTruthy();
     paginator.setStyles?.(getStyles(makeViewSettings(), undefined, []));
-    applyTableStyle(doc!);
+    applyScrollableStyle(doc!);
 
-    const wrapper = doc!.querySelector<HTMLElement>(`.${TABLE_SCROLL_CLASS}`)!;
+    const wrapper = doc!.querySelector<HTMLElement>(`.${SCROLL_WRAPPER_CLASS}`)!;
     expect(wrapper, 'wide-table wrapper').toBeTruthy();
     const table = wrapper.querySelector(':scope > table') as HTMLElement;
 
@@ -179,16 +179,12 @@ describe('Paginator table layout', () => {
     // column to fit content, so we reproduce the column constraint explicitly.)
     wrapper.style.width = '250px';
     wrapper.style.maxWidth = '250px';
-    // The ResizeObserver re-evaluates fit on the resize.
+    // The wrapper is statically overflow-x:auto, so an over-wide table scrolls.
     await poll(() => overflow(wrapper) > TOLERANCE_PX);
 
     expect(overflow(wrapper), 'wide table should overflow its constrained column').toBeGreaterThan(
       TOLERANCE_PX,
     );
-    expect(
-      wrapper.classList.contains(TABLE_SCROLL_FIT_CLASS),
-      'wide table must not be marked fit',
-    ).toBe(false);
     expect(['auto', 'scroll'], 'wide table overflow-x').toContain(overflowX(wrapper));
     expect(isClipped(wrapper), 'wide table is clipped instead of scrolling').toBe(false);
   }, 60000);
