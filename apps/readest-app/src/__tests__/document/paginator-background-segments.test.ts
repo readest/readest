@@ -13,7 +13,7 @@
 // See readest/readest swipe background flash.
 import { describe, expect, it } from 'vitest';
 
-import { computeBackgroundSegments } from 'foliate-js/paginator.js';
+import { computeBackgroundSegments, textureAwareBackground } from 'foliate-js/paginator.js';
 
 describe('computeBackgroundSegments', () => {
   it('splits the background at the content seam mid-swipe (incoming page keeps its own colour)', () => {
@@ -73,5 +73,37 @@ describe('computeBackgroundSegments', () => {
     // Scrolled to the middle view.
     const segments = computeBackgroundSegments(views, 430, 430, 0, 430);
     expect(segments).toEqual([{ start: 0, size: 430, bg: 'rgb(1, 1, 1)' }]);
+  });
+});
+
+// Regression test for readest/readest#4399: a background texture mounted on the
+// reader container (`.foliate-viewer::before`) shows in scrolled mode but is
+// absent in paginated mode. The texture is occluded when the paginator paints an
+// opaque fill over a page whose own background is transparent. Both modes must
+// drop the fill for transparent pages while a texture is active so the texture
+// shows through; pages that force their own opaque colour keep painting.
+describe('textureAwareBackground', () => {
+  it('drops a transparent page background when a texture is active (texture shows through)', () => {
+    expect(textureAwareBackground('rgba(0, 0, 0, 0)', true)).toBe('');
+    expect(textureAwareBackground('transparent', true)).toBe('');
+    expect(textureAwareBackground('', true)).toBe('');
+    // The real value captured from the iframe html computed `background`.
+    expect(
+      textureAwareBackground(
+        'rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box',
+        true,
+      ),
+    ).toBe('');
+  });
+
+  it('keeps an opaque page background even when a texture is active', () => {
+    expect(textureAwareBackground('rgb(0, 0, 0)', true)).toBe('rgb(0, 0, 0)');
+    expect(textureAwareBackground('rgb(255, 255, 255)', true)).toBe('rgb(255, 255, 255)');
+  });
+
+  it('never drops a background when no texture is active (no regression)', () => {
+    expect(textureAwareBackground('rgba(0, 0, 0, 0)', false)).toBe('rgba(0, 0, 0, 0)');
+    expect(textureAwareBackground('rgb(0, 0, 0)', false)).toBe('rgb(0, 0, 0)');
+    expect(textureAwareBackground('', false)).toBe('');
   });
 });
