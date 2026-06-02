@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { CustomTexture } from '@/styles/textures';
 import { SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
+import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
 
 // Mock textures module - we need createCustomTexture, and the mount/unmount functions
 vi.mock('@/styles/textures', async (importOriginal) => {
@@ -14,6 +15,15 @@ vi.mock('@/styles/textures', async (importOriginal) => {
     unmountBackgroundTexture: vi.fn(),
   };
 });
+
+// Replica-publish helpers fan out to the network — stub them so tests stay
+// hermetic. We assert the reincarnation token reaches the upsert via a spy.
+vi.mock('@/services/sync/replicaPublish', () => ({
+  publishReplicaUpsert: vi.fn(),
+  publishReplicaDelete: vi.fn(),
+}));
+
+const mockPublishReplicaUpsert = vi.mocked(publishReplicaUpsert);
 
 function makeTexture(
   overrides: Partial<CustomTexture> & { id: string; name: string },
@@ -99,6 +109,65 @@ describe('customTextureStore', () => {
       useCustomTextureStore.getState().addTexture('/images/wood.png');
       const updated = useCustomTextureStore.getState().textures[0]!;
       expect(updated.deletedAt).toBeUndefined();
+    });
+
+    // ── reincarnation on re-import (same latent bug as issue #4410) ──
+    // A deleted texture writes a server-side tombstone; under CRDT
+    // remove-wins a plain re-import can't revive it, so the next pull
+    // re-applies the delete. Re-import must mint a reincarnation token.
+
+    test('re-import after a local delete mints + publishes a reincarnation token', () => {
+      useCustomTextureStore.getState().addTexture('/images/wood.png', { contentId: 'cid-1' });
+      useCustomTextureStore
+        .getState()
+        .removeTexture(useCustomTextureStore.getState().textures[0]!.id);
+      mockPublishReplicaUpsert.mockClear();
+
+      const revived = useCustomTextureStore.getState().addTexture('/images/wood.png', {
+        contentId: 'cid-1',
+      });
+
+      expect(revived.deletedAt).toBeUndefined();
+      expect(revived.reincarnation).toBeTruthy();
+      expect(mockPublishReplicaUpsert).toHaveBeenCalledTimes(1);
+      const call = mockPublishReplicaUpsert.mock.calls[0]!;
+      expect(call[0]).toBe('texture');
+      expect(call[2]).toBe('cid-1');
+      expect(call[3]).toBe(revived.reincarnation);
+    });
+
+    test('re-import of a still-live texture with the same contentId mints a token (stale-local race)', () => {
+      useCustomTextureStore.getState().addTexture('/images/wood.png', { contentId: 'cid-1' });
+      expect(useCustomTextureStore.getState().textures[0]!.reincarnation).toBeUndefined();
+
+      const reimported = useCustomTextureStore.getState().addTexture('/images/wood.png', {
+        contentId: 'cid-1',
+      });
+      expect(reimported.deletedAt).toBeUndefined();
+      expect(reimported.reincarnation).toBeTruthy();
+    });
+
+    test('re-import preserves an existing reincarnation token instead of churning a new one', () => {
+      useCustomTextureStore.getState().addTexture('/images/wood.png', { contentId: 'cid-1' });
+      useCustomTextureStore
+        .getState()
+        .removeTexture(useCustomTextureStore.getState().textures[0]!.id);
+      const firstToken = useCustomTextureStore
+        .getState()
+        .addTexture('/images/wood.png', { contentId: 'cid-1' }).reincarnation;
+      expect(firstToken).toBeTruthy();
+
+      const secondToken = useCustomTextureStore
+        .getState()
+        .addTexture('/images/wood.png', { contentId: 'cid-1' }).reincarnation;
+      expect(secondToken).toBe(firstToken);
+    });
+
+    test('brand-new import does not mint a reincarnation token', () => {
+      const fresh = useCustomTextureStore.getState().addTexture('/images/brand-new.png', {
+        contentId: 'cid-new',
+      });
+      expect(fresh.reincarnation).toBeUndefined();
     });
   });
 

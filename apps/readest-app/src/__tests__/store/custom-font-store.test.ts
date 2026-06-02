@@ -118,6 +118,66 @@ describe('customFontStore', () => {
       const restored = useCustomFontStore.getState().fonts[0]!;
       expect(restored.deletedAt).toBeUndefined();
     });
+
+    // ── reincarnation on re-import (issue #4410) ───────────────────
+    // Deleting a font writes a server-side tombstone. Under CRDT
+    // remove-wins a plain re-upload can't revive it, so the next pull
+    // re-applies the delete and the font silently disappears while
+    // logged into cloud sync. Re-import must mint a reincarnation token.
+
+    test('re-import after a local delete mints + publishes a reincarnation token', () => {
+      useCustomFontStore.getState().addFont('/fonts/MyFont.ttf', { contentId: 'cid-1' });
+      useCustomFontStore.getState().removeFont(useCustomFontStore.getState().fonts[0]!.id);
+      mockPublishReplicaUpsert.mockClear();
+
+      const revived = useCustomFontStore.getState().addFont('/fonts/MyFont.ttf', {
+        contentId: 'cid-1',
+      });
+
+      expect(revived.deletedAt).toBeUndefined();
+      expect(revived.reincarnation).toBeTruthy();
+      expect(mockPublishReplicaUpsert).toHaveBeenCalledTimes(1);
+      const call = mockPublishReplicaUpsert.mock.calls[0]!;
+      expect(call[0]).toBe('font');
+      expect(call[2]).toBe('cid-1');
+      // 4th arg is the reincarnation token handed to publishReplicaUpsert.
+      expect(call[3]).toBe(revived.reincarnation);
+    });
+
+    test('re-import of a still-live font with the same contentId mints a token (stale-local race)', () => {
+      // Another device may have tombstoned the row while this device still
+      // has the font live. Minting on live re-import lets the upsert win
+      // remove-wins on every device's next pull. Mirrors dictionaryService.
+      useCustomFontStore.getState().addFont('/fonts/MyFont.ttf', { contentId: 'cid-1' });
+      expect(useCustomFontStore.getState().fonts[0]!.reincarnation).toBeUndefined();
+
+      const reimported = useCustomFontStore.getState().addFont('/fonts/MyFont.ttf', {
+        contentId: 'cid-1',
+      });
+      expect(reimported.deletedAt).toBeUndefined();
+      expect(reimported.reincarnation).toBeTruthy();
+    });
+
+    test('re-import preserves an existing reincarnation token instead of churning a new one', () => {
+      useCustomFontStore.getState().addFont('/fonts/MyFont.ttf', { contentId: 'cid-1' });
+      useCustomFontStore.getState().removeFont(useCustomFontStore.getState().fonts[0]!.id);
+      const firstToken = useCustomFontStore
+        .getState()
+        .addFont('/fonts/MyFont.ttf', { contentId: 'cid-1' }).reincarnation;
+      expect(firstToken).toBeTruthy();
+
+      const secondToken = useCustomFontStore
+        .getState()
+        .addFont('/fonts/MyFont.ttf', { contentId: 'cid-1' }).reincarnation;
+      expect(secondToken).toBe(firstToken);
+    });
+
+    test('brand-new import does not mint a reincarnation token', () => {
+      const fresh = useCustomFontStore.getState().addFont('/fonts/Brand-New.ttf', {
+        contentId: 'cid-new',
+      });
+      expect(fresh.reincarnation).toBeUndefined();
+    });
   });
 
   // ── removeFont ─────────────────────────────────────────────────
