@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { invoke } from './tauri-invoke';
 import { DocumentLoader } from '@/libs/document';
-import type { BookDoc, TOCItem, SectionItem, BookMetadata } from '@/libs/document';
+import type { BookDoc, TOCItem, SectionItem } from '@/libs/document';
 import { computeBookNav, type BookNav } from '@/services/nav';
 import { partialMD5 } from '@/utils/md5';
-import {
-  formatAuthors,
-  formatDescription,
-  formatPublisher,
-  formatTitle,
-  getPrimaryLanguage,
-} from '@/utils/book';
+import { formatAuthors, formatTitle, getPrimaryLanguage } from '@/utils/book';
 
 /**
  * Cross-language parity tests for the native Rust EPUB parser (PR #4369).
@@ -43,25 +37,16 @@ const diskPath = (name: string) => `${CWD}/src/__tests__/fixtures/data/${name}`;
 const fixtureUrl = (name: string) => new URL(`../fixtures/data/${name}`, import.meta.url).href;
 
 // ─── Rust IPC return shapes (serde camelCase) ────────────────────────
-interface RustMetadata {
-  title?: string | null;
-  authors?: string[] | null;
-  language?: string | null;
-  identifier?: string | null;
-  isbn?: string | null;
-  publisher?: string | null;
-  published?: string | null;
-  description?: string | null;
-  subject?: string[] | null;
-  seriesName?: string | null;
-  seriesIndex?: number | null;
-}
+//
+// `parse_epub_metadata` deliberately does NOT carry OPF metadata —
+// foliate-js owns that on both platforms. Rust contributes only the
+// partialMD5 hash and the pre-resized cover bytes.
 interface RustParsedEpubMetadata {
   partialMd5: string;
-  metadata: RustMetadata;
-  coverBase64?: string | null;
+  cover?: number[] | Uint8Array | null;
   coverMime?: string | null;
-  coverZipPath?: string | null;
+  opfPath: string;
+  opfBytes: number[] | Uint8Array;
 }
 interface RustParsedEpubFull {
   partialMd5: string;
@@ -85,33 +70,13 @@ const openEpub = async (file: File, nativeFilePath?: string): Promise<BookDoc> =
 };
 
 /**
- * User-visible author string. Rust returns `string[]`, foliate returns a
- * `string | Contributor | array`; running both through the app's own
- * `formatAuthors` normalizes list/sortAs handling so we compare the value the
- * user actually sees rather than the raw parser shape.
+ * User-visible author string, used by Block 3 (foliate-vs-foliate parity)
+ * to confirm the native prefetch doesn't perturb metadata extraction.
  */
 const jsAuthor = (book: BookDoc): string => {
   const a = book.metadata.author;
   return a == null ? '' : formatAuthors(a, book.metadata.language);
 };
-const rustAuthor = (m: RustMetadata, lang: string | string[] | undefined): string =>
-  m.authors?.length ? formatAuthors(m.authors, lang) : '';
-
-const toStringArray = (s: BookMetadata['subject'] | string[] | null | undefined): string[] => {
-  if (!s) return [];
-  const arr = Array.isArray(s) ? s : [s];
-  return arr
-    .map((v) => (typeof v === 'string' ? v : String(v?.name ?? '')))
-    .filter(Boolean)
-    .sort();
-};
-
-// foliate normalizes internal whitespace in descriptions (e.g. a source
-// newline becomes a space); Rust preserves the raw text. Both strip tags via
-// formatDescription — collapse runs of whitespace so we compare the words,
-// not the publisher's line wrapping.
-const normDesc = (d: string | undefined): string =>
-  formatDescription(d).replace(/\s+/g, ' ').trim();
 
 const tocBrief = (items: TOCItem[] | undefined): unknown =>
   (items ?? []).map((i) => ({
@@ -135,10 +100,29 @@ const navFragmentMap = (
     ]),
   );
 
-// ─── 1. Import-path metadata parity (parse_epub_metadata vs foliate-js) ──
-describe('parse_epub_metadata parity with foliate-js', () => {
+// ─── 1. Import-path: Rust contributes partialMD5 + cover + OPF bytes ─────
+//
+// `parse_epub_metadata` deliberately does not extract OPF metadata —
+// foliate-js's `parseEpubMetadataFromXML` does that on the JS side,
+// against the very `opfBytes` Rust hands over. The invariants we
+// assert here are the four contributions Rust still makes:
+//   1. partialMD5 byte-equal to the JS reference (the on-disk
+//      Books/<hash>/ layout depends on byte-exact parity);
+//   2. cover presence matches what foliate's `EPUB.getCover()` would
+//      surface (Rust downscales/re-encodes, so bytes differ by
+//      design — only presence is a parity signal);
+//   3. `opfPath` resolves to a real OPF document — `opfBytes`
+//      decode to a `<package>`-rooted XML;
+//   4. running foliate-js's exported `parseEpubMetadataFromXML` on
+//      those bytes produces the same user-visible metadata fields
+//      (title / author / language / identifier / published) as
+//      driving `DocumentLoader.open()` against the same File. This
+//      is the parity that protects the import-path BookDoc against
+//      drift from the reader-path BookDoc, since the importer
+//      consumes only the foliate-derived metadata + the Rust cover.
+describe('parse_epub_metadata: partialMD5 + cover + OPF parity', () => {
   for (const name of EPUB_FIXTURES) {
-    it(`extracts the same metadata as foliate-js: ${name}`, async () => {
+    it(`Rust mechanical work + JS-side OPF metadata parity: ${name}`, async () => {
       const buf = await fetchBytes(name);
       const file = makeFile(buf, name);
 
@@ -147,29 +131,39 @@ describe('parse_epub_metadata parity with foliate-js', () => {
       })) as RustParsedEpubMetadata;
       const js = await openEpub(file);
 
-      // partialMD5 — the on-disk Books/<hash>/ layout depends on byte-exact
-      // parity here; a divergence would silently re-import every book.
+      // 1. partialMD5 byte-equal to the JS reference.
       expect(rust.partialMd5).toBe(await partialMD5(file));
 
-      expect(formatTitle(rust.metadata.title ?? '')).toBe(formatTitle(js.metadata.title));
-      expect(rustAuthor(rust.metadata, rust.metadata.language ?? undefined)).toBe(jsAuthor(js));
-      expect(getPrimaryLanguage(rust.metadata.language ?? undefined)).toBe(
-        getPrimaryLanguage(js.metadata.language),
-      );
-      expect(rust.metadata.identifier ?? null).toBe(js.metadata.identifier ?? null);
-      expect(formatPublisher(rust.metadata.publisher ?? '')).toBe(
-        formatPublisher(js.metadata.publisher ?? ''),
-      );
-      expect(rust.metadata.published ?? '').toBe(js.metadata.published ?? '');
-      expect(toStringArray(rust.metadata.subject)).toEqual(toStringArray(js.metadata.subject));
-      expect(normDesc(rust.metadata.description ?? undefined)).toBe(
-        normDesc(js.metadata.description),
-      );
-
-      // Cover presence parity (Rust downscales/re-encodes, so bytes differ by
-      // design — only the presence of a cover is a parity signal).
+      // 2. Cover presence parity.
       const jsHasCover = (await js.getCover()) != null;
-      expect(rust.coverBase64 != null).toBe(jsHasCover);
+      const rustHasCover =
+        rust.cover != null &&
+        (rust.cover instanceof Uint8Array ? rust.cover.byteLength : rust.cover.length) > 0;
+      expect(rustHasCover).toBe(jsHasCover);
+
+      // 3. OPF bytes decode to a real package document.
+      expect(rust.opfPath).toBeTruthy();
+      const opfXml = new TextDecoder('utf-8').decode(
+        rust.opfBytes instanceof Uint8Array ? rust.opfBytes : new Uint8Array(rust.opfBytes),
+      );
+      expect(opfXml).toContain('<package');
+
+      // 4. Running foliate-js's standalone OPF metadata extractor on
+      //    those bytes yields the same user-visible metadata fields
+      //    as the full DocumentLoader path. This is what the importer
+      //    actually consumes via `tryNativeParseEpub`.
+      const epubModule = (await import('foliate-js/epub.js')) as unknown as {
+        parseEpubMetadataFromXML: (xml: string) => { metadata: BookDoc['metadata'] };
+      };
+      const standalone = epubModule.parseEpubMetadataFromXML(opfXml);
+      const fields = (m: BookDoc['metadata']) => ({
+        title: formatTitle(m.title),
+        author: m.author == null ? '' : formatAuthors(m.author, m.language),
+        language: getPrimaryLanguage(m.language),
+        identifier: m.identifier ?? null,
+        published: m.published ?? '',
+      });
+      expect(fields(standalone.metadata)).toEqual(fields(js.metadata));
     });
   }
 });

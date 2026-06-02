@@ -1,21 +1,45 @@
 // Native EPUB import path (Q1).
 //
-// Mirrors the JS-side parsing performed by foliate-js + DocumentLoader.open()
-// on the import hot path:
+// Scope after PR review: this command no longer extracts OPF metadata
+// (title / author / identifier / language / refines chains / ONIX5 …).
+// That graph-shaped XML processing belongs to foliate-js, which the JS
+// bridge runs against the same OPF bytes that `parse_epub_full` already
+// pre-fetches on the import path. Re-implementing it in Rust would
+// silently diverge from the primary platform parser.
+//
+// What `parse_epub_metadata` still does on the import hot path:
 //   - compute partialMD5 over the file (matches utils/md5.ts::partialMD5)
 //   - read META-INF/container.xml -> rootfile (.opf)
-//   - parse OPF metadata (title, authors, language, identifier, isbn,
-//     publisher, published, description, subjects, calibre series/index)
-//   - locate the cover image entry (manifest properties="cover-image" first,
-//     then meta name="cover" -> manifest item id, then heuristic name match)
-//   - return cover bytes as a base64 data URL so the JS side can persist it
-//     through the existing Books/<hash>/cover.<ext> path
+//   - mini-parse the OPF *only* for cover resolution: collect manifest
+//     items (id/href/media-type/properties) and the legacy
+//     `<meta name="cover" content="...">` id. We deliberately do NOT
+//     read any text content under `<metadata>` — title/author/etc. are
+//     foliate's job.
+//   - locate the cover image entry (manifest properties="cover-image"
+//     first, then meta name="cover" -> manifest item id, then heuristic
+//     name match)
+//   - downscale the cover via the shared `maybe_resize_cover` helper
+//     and return the raw bytes so the JS side can persist them through
+//     the existing Books/<hash>/cover.<ext> path. Cover decode/resize
+//     stays here because the `image` crate is materially faster than
+//     the `createImageBitmap` + canvas round-trip on Android mid-tier
+//     devices, and bulk imports actually exercise that.
+//   - return the OPF zip path + raw bytes alongside the cover, so the
+//     JS bridge can build a one-entry prefetch (synthetic container.xml
+//     + OPF) and inject it into `DocumentLoader.open()`. Without this
+//     piggy-back the import path would either (a) re-open the zip from
+//     `parse_epub_full` to populate the prefetch, doing zip+md5+OPF
+//     work twice, or (b) skip the prefetch and let foliate-js inflate
+//     the OPF through zip.js. (a) was wasteful, (b) is correct but
+//     wastes the OPF bytes we already have in hand. nav/ncx/sizes are
+//     deliberately *not* returned here — foliate's `EPUB.init()` only
+//     touches them for TOC/spine which the importer never reads, and
+//     paying for them is an open-path concern (`parse_epub_full`).
 //
 // Returned to JS via the parse_epub_metadata Tauri command. The JS side
-// continues to drive sectioned reading at runtime, so this module is import-
-// only and never opened on the reader hot path.
+// continues to drive sectioned reading at runtime, so this module is
+// import-only and never opened on the reader hot path.
 
-use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use percent_encoding::percent_decode;
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -31,38 +55,36 @@ use zip::ZipArchive;
 // applies to every native importer.
 use crate::parser_common::{compute_partial_md5, maybe_resize_cover, RawCoverImage};
 
-#[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParsedMetadata {
-    pub title: Option<String>,
-    pub authors: Vec<String>,
-    pub language: Option<String>,
-    pub identifier: Option<String>,
-    pub isbn: Option<String>,
-    pub publisher: Option<String>,
-    pub published: Option<String>,
-    pub description: Option<String>,
-    pub subject: Vec<String>,
-    pub series_name: Option<String>,
-    pub series_index: Option<f64>,
-}
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParsedEpubMetadata {
     pub partial_md5: String,
-    pub metadata: ParsedMetadata,
-    /// base64 (no data: prefix); JS adds `data:<mime>;base64,` itself.
-    pub cover_base64: Option<String>,
+    /// Pre-resized cover image bytes (after `maybe_resize_cover`), or
+    /// `None` when the EPUB has no cover.
+    pub cover: Option<Vec<u8>>,
+    /// MIME of `cover` after the (optional) re-encode. Always paired
+    /// with `cover` (both `Some` or both `None`). The JS side needs
+    /// this to detect `image/svg+xml` on the `getCover()` blob and
+    /// route through `svg2png` before the cover hits disk —
+    /// `Books/<hash>/cover.<ext>` is otherwise a raw byte write that
+    /// would skip that conversion and degrade SVG-only covers in the
+    /// reader.
     pub cover_mime: Option<String>,
-    /// Internal path within the epub zip; useful for diagnostics only.
-    pub cover_zip_path: Option<String>,
+    /// OPF zip path (e.g. "OEBPS/content.opf"). Always populated.
+    /// Forwarded to the JS bridge so it can build a synthetic
+    /// META-INF/container.xml that points foliate-js at this path
+    /// and serve the OPF bytes from an in-memory cache.
+    pub opf_path: String,
+    /// Raw OPF bytes. Always populated — we already read these for
+    /// cover resolution, so propagating them is essentially free and
+    /// lets the importer skip a zip.js inflate of the OPF.
+    pub opf_bytes: Vec<u8>,
 }
 
 #[tauri::command]
 pub async fn parse_epub_metadata(file_path: String) -> Result<ParsedEpubMetadata, String> {
     // The body is CPU+IO bound: zip central-directory parse, OPF parse,
-    // cover decode/resize/encode, base64. We must NOT run that on the Tauri
+    // cover decode/resize/encode. We must NOT run that on the Tauri
     // async runtime worker (the IPC dispatch thread), because then four
     // concurrent JS `invoke()`s queue up serially on a single worker.
     // Offload to the blocking pool, where they truly run in parallel.
@@ -86,37 +108,41 @@ fn parse_epub_metadata_sync(file_path: &str) -> Result<ParsedEpubMetadata, Strin
 
     let opf_bytes =
         read_zip_entry(&mut zip, &opf_path).map_err(|e| format!("read opf {opf_path}: {e}"))?;
-    let opf = parse_opf(&opf_bytes).map_err(|e| format!("parse opf: {e}"))?;
+    // Mini-parse the OPF for cover resolution only: we need the manifest
+    // (id → href/media-type/properties) and the legacy
+    // `<meta name="cover">` id. Metadata extraction is intentionally not
+    // done here — foliate-js is the single source of truth for OPF
+    // metadata across platforms, and it parses the same `opf_bytes` that
+    // `parse_epub_full` returns on the import hot path.
+    let cover_inputs =
+        parse_opf_cover_inputs(&opf_bytes).map_err(|e| format!("parse opf cover inputs: {e}"))?;
 
-    let metadata = opf.metadata;
-
-    let cover_zip_path = resolve_cover_path(&opf.manifest, &opf.cover_id, &opf_path);
+    let cover_zip_path =
+        resolve_cover_path(&cover_inputs.manifest, &cover_inputs.cover_id, &opf_path);
 
     // Inline resize on the import hot path: at our target size (long edge
     // <= 512px, Triangle filter, JPEG q85) a release build keeps per-book
     // overhead well within budget, and avoiding a second on-disk pass keeps
     // the library grid sharp the moment import finishes. spawn_blocking
     // above already gives the 4 concurrent JS workers true parallelism.
-    let (cover_base64, cover_mime) = if let Some(cover_path) = cover_zip_path.as_deref() {
-        match read_zip_entry(&mut zip, cover_path) {
+    let (cover, cover_mime) = match cover_zip_path.as_deref() {
+        Some(cover_path) => match read_zip_entry(&mut zip, cover_path) {
             Ok(bytes) => {
                 let mime_hint = guess_image_mime(cover_path);
                 let (out_bytes, out_mime) = maybe_resize_cover(bytes, mime_hint);
-                let b64 = B64.encode(&out_bytes);
-                (Some(b64), Some(out_mime))
+                (Some(out_bytes), Some(out_mime))
             }
             Err(_) => (None, None),
-        }
-    } else {
-        (None, None)
+        },
+        None => (None, None),
     };
 
     Ok(ParsedEpubMetadata {
         partial_md5,
-        metadata,
-        cover_base64,
+        cover,
         cover_mime,
-        cover_zip_path,
+        opf_path,
+        opf_bytes,
     })
 }
 
@@ -143,9 +169,11 @@ fn extract_epub_cover_full_sync(file_path: &str) -> Result<RawCoverImage, String
     let opf_path = read_rootfile_path(&mut zip).map_err(|e| format!("container.xml: {e}"))?;
     let opf_bytes =
         read_zip_entry(&mut zip, &opf_path).map_err(|e| format!("read opf {opf_path}: {e}"))?;
-    let opf = parse_opf(&opf_bytes).map_err(|e| format!("parse opf: {e}"))?;
-    let cover_zip_path = resolve_cover_path(&opf.manifest, &opf.cover_id, &opf_path)
-        .ok_or_else(|| "no cover image in epub".to_string())?;
+    let cover_inputs =
+        parse_opf_cover_inputs(&opf_bytes).map_err(|e| format!("parse opf cover inputs: {e}"))?;
+    let cover_zip_path =
+        resolve_cover_path(&cover_inputs.manifest, &cover_inputs.cover_id, &opf_path)
+            .ok_or_else(|| "no cover image in epub".to_string())?;
     let bytes = read_zip_entry(&mut zip, &cover_zip_path)
         .map_err(|e| format!("read cover {cover_zip_path}: {e}"))?;
     let mime = guess_image_mime(&cover_zip_path).to_string();
@@ -515,7 +543,16 @@ fn read_rootfile_path<R: Read + Seek>(zip: &mut ZipArchive<R>) -> Result<String,
 }
 
 // ---------------------------------------------------------------------------
-// OPF parsing
+// OPF parsing — *cover-only* slice
+//
+// We deliberately do NOT walk `<metadata>` text content here. The full
+// set of OPF metadata semantics (refines chains, marc-relator role
+// bucketing, language maps, EPUB3 `belongs-to-collection`, ONIX5
+// codelists, …) belongs to foliate-js, which the JS bridge invokes on
+// the OPF bytes pre-fetched by `parse_epub_full`. The Rust side only
+// walks the `<manifest>` (so it can pick a cover entry) and the legacy
+// `<meta name="cover" content="..."/>` shorthand; everything else is
+// ignored by design.
 // ---------------------------------------------------------------------------
 #[derive(Debug, Default)]
 struct ManifestItem {
@@ -524,103 +561,92 @@ struct ManifestItem {
     properties: String,
 }
 
-/// A top-level `<meta property="..." id="...">value</meta>` element from the
-/// EPUB3 metadata block. We collect these alongside their refines so that
-/// `belongs-to-collection` series can be resolved after the full OPF has
-/// been streamed.
+/// Subset of the OPF that's relevant to cover resolution. Populated by
+/// `parse_opf_cover_inputs` and consumed by `resolve_cover_path`.
 #[derive(Debug, Default)]
-struct TopMeta {
-    property: String,
-    value: String,
-    /// The `id` attribute on this element, if present. Other meta elements
-    /// may target it via `refines="#id"`.
-    id: Option<String>,
-}
-
-#[derive(Debug, Default)]
-struct Opf {
-    metadata: ParsedMetadata,
-    /// id -> item
+struct OpfCoverInputs {
+    /// id → manifest item. Needed for the `<meta name="cover" content="id">`
+    /// legacy shorthand and for the `properties="cover-image"` lookup.
     manifest: std::collections::HashMap<String, ManifestItem>,
-    /// id of cover image as declared by <meta name="cover" content="..."/>
+    /// Value of the legacy `<meta name="cover" content="...">` element, if
+    /// present. EPUB2 publishers used this to point at the cover manifest
+    /// item by id.
     cover_id: Option<String>,
-    /// EPUB3 top-level <meta property=... id=...> elements (used for
-    /// `belongs-to-collection`).
-    top_metas: Vec<TopMeta>,
-    /// EPUB3 refines chain: target id -> [(property, value), ...].
-    /// Populated from <meta refines="#id" property="...">value</meta>.
-    refines: std::collections::HashMap<String, Vec<(String, String)>>,
 }
 
-fn parse_opf(bytes: &[u8]) -> Result<Opf, String> {
+/// Streaming pass over the OPF that picks out only the bits needed for
+/// cover resolution. Skips `<metadata>` text content entirely (we don't
+/// want partial / divergent metadata leaking into the import path).
+fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
     let normalized = strip_xml_bom(bytes);
     let mut reader = Reader::from_reader(normalized.as_ref());
     reader.config_mut().trim_text(true);
-    let mut opf = Opf::default();
+    let mut out = OpfCoverInputs::default();
     let mut buf = Vec::new();
 
-    let mut stack: Vec<OpenNode> = Vec::new();
     let mut in_metadata = false;
     let mut in_manifest = false;
+
+    let process_manifest_item =
+        |attrs: &[(Vec<u8>, Vec<u8>)],
+         manifest: &mut std::collections::HashMap<String, ManifestItem>| {
+            let mut id = String::new();
+            let mut item = ManifestItem::default();
+            for (k, v) in attrs {
+                match k.as_slice() {
+                    b"id" => id = String::from_utf8_lossy(v).into_owned(),
+                    b"href" => item.href = String::from_utf8_lossy(v).into_owned(),
+                    b"media-type" => item.media_type = String::from_utf8_lossy(v).into_owned(),
+                    b"properties" => item.properties = String::from_utf8_lossy(v).into_owned(),
+                    _ => {}
+                }
+            }
+            if !id.is_empty() {
+                manifest.insert(id, item);
+            }
+        };
+
+    let process_meta_cover = |attrs: &[(Vec<u8>, Vec<u8>)], cover_id: &mut Option<String>| {
+        // Only the legacy OPF2 `<meta name="cover" content="<id>"/>` form is
+        // relevant — EPUB3 `<meta property=...>` carries metadata like
+        // dcterms:* that we leave to foliate-js.
+        let mut name = None::<&[u8]>;
+        let mut content = None::<&[u8]>;
+        for (k, v) in attrs {
+            match k.as_slice() {
+                b"name" => name = Some(v.as_slice()),
+                b"content" => content = Some(v.as_slice()),
+                _ => {}
+            }
+        }
+        if let (Some(n), Some(c)) = (name, content) {
+            if n.eq_ignore_ascii_case(b"cover") && cover_id.is_none() && !c.is_empty() {
+                *cover_id = Some(String::from_utf8_lossy(c).into_owned());
+            }
+        }
+    };
 
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {
-                let name_owned = local_name(e.name().as_ref()).to_vec();
-                if name_owned == b"metadata" {
+                let name = local_name(e.name().as_ref()).to_vec();
+                if name == b"metadata" {
                     in_metadata = true;
-                } else if name_owned == b"manifest" {
+                } else if name == b"manifest" {
                     in_manifest = true;
                 }
-                let mut open = OpenNode {
-                    name: name_owned,
-                    text: String::new(),
-                    attrs: Vec::new(),
-                };
-                for attr in e.attributes().flatten() {
-                    open.attrs
-                        .push((attr.key.as_ref().to_vec(), attr.value.into_owned()));
-                }
-                stack.push(open);
             }
             Ok(Event::Empty(e)) => {
-                let name_owned = local_name(e.name().as_ref()).to_vec();
-                let mut attrs: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
-                for attr in e.attributes().flatten() {
-                    attrs.push((attr.key.as_ref().to_vec(), attr.value.into_owned()));
-                }
-                if in_manifest && name_owned == b"item" {
-                    let mut id = String::new();
-                    let mut item = ManifestItem::default();
-                    for (k, v) in &attrs {
-                        match k.as_slice() {
-                            b"id" => id = String::from_utf8_lossy(v).into_owned(),
-                            b"href" => item.href = String::from_utf8_lossy(v).into_owned(),
-                            b"media-type" => {
-                                item.media_type = String::from_utf8_lossy(v).into_owned()
-                            }
-                            b"properties" => {
-                                item.properties = String::from_utf8_lossy(v).into_owned()
-                            }
-                            _ => {}
-                        }
-                    }
-                    if !id.is_empty() {
-                        opf.manifest.insert(id, item);
-                    }
-                }
-                if in_metadata && name_owned == b"meta" {
-                    // Self-closing <meta /> only carries the legacy
-                    // name/content pair (EPUB3 property metas always wrap a
-                    // text node). Handle it inline.
-                    handle_meta(&attrs, "", &mut opf);
-                }
-            }
-            Ok(Event::Text(t)) => {
-                if let Some(top) = stack.last_mut() {
-                    if let Ok(s) = t.unescape() {
-                        top.text.push_str(&s);
-                    }
+                let name = local_name(e.name().as_ref()).to_vec();
+                let attrs: Vec<(Vec<u8>, Vec<u8>)> = e
+                    .attributes()
+                    .flatten()
+                    .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
+                    .collect();
+                if in_manifest && name == b"item" {
+                    process_manifest_item(&attrs, &mut out.manifest);
+                } else if in_metadata && name == b"meta" {
+                    process_meta_cover(&attrs, &mut out.cover_id);
                 }
             }
             Ok(Event::End(e)) => {
@@ -630,17 +656,6 @@ fn parse_opf(bytes: &[u8]) -> Result<Opf, String> {
                 } else if name == b"manifest" {
                     in_manifest = false;
                 }
-                if let Some(open) = stack.pop() {
-                    if in_metadata || name == b"metadata" {
-                        absorb_metadata_element(&open, &mut opf.metadata);
-                    }
-                    if name == b"meta" {
-                        // Start+text+End form. Pass the captured text along
-                        // so EPUB3 `<meta property=...>VAL</meta>` and
-                        // refines chains work too.
-                        handle_meta(&open.attrs, &open.text, &mut opf);
-                    }
-                }
             }
             Ok(Event::Eof) => break,
             Err(e) => return Err(format!("xml: {e}")),
@@ -649,260 +664,7 @@ fn parse_opf(bytes: &[u8]) -> Result<Opf, String> {
         buf.clear();
     }
 
-    apply_epub3_collection(&mut opf);
-
-    Ok(opf)
-}
-
-/// Walk the EPUB3 `belongs-to-collection` graph and lift a `series` entry
-/// into `metadata.series_name` / `metadata.series_index`. Schema (EPUB3.2):
-///
-///   <meta property="belongs-to-collection" id="c01">My Series</meta>
-///   <meta refines="#c01" property="collection-type">series</meta>
-///   <meta refines="#c01" property="group-position">3</meta>
-///
-/// We only adopt the value when no calibre legacy entry already filled it
-/// in (calibre wins by virtue of running first in `handle_meta`), so that
-/// hand-crafted EPUBs without a `<meta name="calibre:series">` still get
-/// proper series display.
-fn apply_epub3_collection(opf: &mut Opf) {
-    if opf.metadata.series_name.is_some() && opf.metadata.series_index.is_some() {
-        return;
-    }
-    for top in &opf.top_metas {
-        if top.property != "belongs-to-collection" {
-            continue;
-        }
-        let id = match &top.id {
-            Some(s) if !s.is_empty() => s,
-            _ => continue,
-        };
-        let refines = match opf.refines.get(id) {
-            Some(v) => v,
-            None => continue,
-        };
-        // We only care about series-typed collections; sets, etc. are
-        // intentionally ignored to match the JS importer's expectations.
-        let is_series = refines
-            .iter()
-            .any(|(p, v)| p == "collection-type" && v.eq_ignore_ascii_case("series"));
-        if !is_series {
-            continue;
-        }
-        if opf.metadata.series_name.is_none() && !top.value.is_empty() {
-            opf.metadata.series_name = Some(top.value.clone());
-        }
-        if opf.metadata.series_index.is_none() {
-            if let Some((_, v)) = refines.iter().find(|(p, _)| p == "group-position") {
-                if let Ok(f) = v.parse::<f64>() {
-                    opf.metadata.series_index = Some(f);
-                }
-            }
-        }
-        // Stop at the first matching series collection — multi-series
-        // EPUBs are rare and the JS-side metadata only stores one.
-        break;
-    }
-}
-
-fn absorb_metadata_element(open: &OpenNode, m: &mut ParsedMetadata) {
-    let name = open.name.as_slice();
-    let text = open.text.trim().to_string();
-    match name {
-        b"title" => {
-            if m.title.is_none() && !text.is_empty() {
-                m.title = Some(text);
-            }
-        }
-        b"creator" => {
-            if !text.is_empty() {
-                m.authors.push(text);
-            }
-        }
-        b"language" => {
-            if m.language.is_none() && !text.is_empty() {
-                m.language = Some(text);
-            }
-        }
-        b"identifier" => {
-            // Detect ISBN via opf:scheme attribute.
-            let mut is_isbn = false;
-            for (k, v) in &open.attrs {
-                let kk = k.as_slice();
-                if (kk == b"scheme" || ends_with(kk, b":scheme"))
-                    && v.as_slice().eq_ignore_ascii_case(b"ISBN")
-                {
-                    is_isbn = true;
-                }
-            }
-            if !text.is_empty() {
-                if is_isbn && m.isbn.is_none() {
-                    m.isbn = Some(text.clone());
-                }
-                if m.identifier.is_none() {
-                    m.identifier = Some(text);
-                }
-            }
-        }
-        b"publisher" => {
-            if m.publisher.is_none() && !text.is_empty() {
-                m.publisher = Some(text);
-            }
-        }
-        b"date" => {
-            if m.published.is_none() && !text.is_empty() {
-                m.published = Some(text);
-            }
-        }
-        b"description" => {
-            if m.description.is_none() && !text.is_empty() {
-                m.description = Some(text);
-            }
-        }
-        b"subject" if !text.is_empty() => {
-            m.subject.push(text);
-        }
-        _ => {}
-    }
-}
-
-/// Process a `<meta>` element inside `<metadata>`. Two distinct schemas
-/// exist; we accept both:
-///
-/// 1. **OPF2 legacy** — `<meta name="cover" content="cover-id"/>` and the
-///    calibre-private `name="calibre:series"` / `name="calibre:series_index"`
-///    pairs. The text body is empty.
-///
-/// 2. **EPUB3 properties** — `<meta property="dcterms:foo" id="bar"
-///    refines="#target">value</meta>`. `text` carries the value. Three
-///    sub-cases:
-///       - `refines="#id"` → record into `opf.refines[id]` for later
-///         resolution (`belongs-to-collection`, `creator role`, etc.).
-///       - no `refines`, but `id` present → `top_metas`. Used by
-///         `apply_epub3_collection`.
-///       - bare `<meta property="dcterms:..."/>` with neither id nor
-///         refines: only relevant if it duplicates a missing `dc:*`
-///         element; we lift `dcterms:title` / `dcterms:creator` etc. as
-///         a last-resort fallback.
-fn handle_meta(attrs: &[(Vec<u8>, Vec<u8>)], text: &str, opf: &mut Opf) {
-    let mut name = None::<&[u8]>;
-    let mut content = None::<&[u8]>;
-    let mut property = None::<&[u8]>;
-    let mut refines = None::<&[u8]>;
-    let mut id = None::<&[u8]>;
-    for (k, v) in attrs {
-        match k.as_slice() {
-            b"name" => name = Some(v.as_slice()),
-            b"content" => content = Some(v.as_slice()),
-            b"property" => property = Some(v.as_slice()),
-            b"refines" => refines = Some(v.as_slice()),
-            b"id" => id = Some(v.as_slice()),
-            _ => {}
-        }
-    }
-
-    // Path 1: legacy <meta name=... content=...> pair.
-    if let (Some(n), Some(c)) = (name, content) {
-        let nl = ascii_lower(n);
-        let cs = String::from_utf8_lossy(c).into_owned();
-        match nl.as_slice() {
-            b"cover" => {
-                if opf.cover_id.is_none() {
-                    opf.cover_id = Some(cs);
-                }
-            }
-            b"calibre:series" => {
-                if opf.metadata.series_name.is_none() {
-                    opf.metadata.series_name = Some(cs);
-                }
-            }
-            b"calibre:series_index" if opf.metadata.series_index.is_none() => {
-                if let Ok(f) = cs.parse::<f64>() {
-                    opf.metadata.series_index = Some(f);
-                }
-            }
-            _ => {}
-        }
-    }
-
-    // Path 2: EPUB3 property meta. The text body is the value.
-    if let Some(p) = property {
-        let prop = String::from_utf8_lossy(p).into_owned();
-        let value = text.trim().to_string();
-
-        if let Some(target) = refines {
-            // Strip leading `#` per spec.
-            let raw = String::from_utf8_lossy(target);
-            let target_id = raw.strip_prefix('#').unwrap_or(&raw).to_string();
-            if !target_id.is_empty() {
-                opf.refines
-                    .entry(target_id)
-                    .or_default()
-                    .push((prop, value));
-            }
-            return;
-        }
-
-        // Top-level property meta. Stash for `apply_epub3_collection` if it
-        // has an id, otherwise treat as a fallback metadata source.
-        if id.is_some() && !value.is_empty() {
-            let id_str = id
-                .map(|b| String::from_utf8_lossy(b).into_owned())
-                .filter(|s| !s.is_empty());
-            opf.top_metas.push(TopMeta {
-                property: prop.clone(),
-                value: value.clone(),
-                id: id_str,
-            });
-        }
-
-        // Last-resort fallback: a `<meta property="dcterms:title">` etc.
-        // when the publisher omitted the regular `<dc:title>` element. We
-        // never overwrite a value that's already populated.
-        if !value.is_empty() {
-            // Allow either bare `dcterms:title` or `title` on the property.
-            let local = prop.rsplit(':').next().unwrap_or(&prop);
-            match local {
-                "title" => {
-                    if opf.metadata.title.is_none() {
-                        opf.metadata.title = Some(value);
-                    }
-                }
-                "creator" => opf.metadata.authors.push(value),
-                "language" => {
-                    if opf.metadata.language.is_none() {
-                        opf.metadata.language = Some(value);
-                    }
-                }
-                "publisher" => {
-                    if opf.metadata.publisher.is_none() {
-                        opf.metadata.publisher = Some(value);
-                    }
-                }
-                "description" => {
-                    if opf.metadata.description.is_none() {
-                        opf.metadata.description = Some(value);
-                    }
-                }
-                // Only `dc:date` / `dcterms:date` is the publication date.
-                // `dcterms:modified` is the package last-modified timestamp —
-                // foliate-js surfaces it as a separate `modified` field and
-                // leaves `published` empty, so mapping it here would diverge
-                // from the JS parser and show a bogus publication date for
-                // EPUB3 books that only carry the mandatory `dcterms:modified`.
-                "date" => {
-                    if opf.metadata.published.is_none() {
-                        opf.metadata.published = Some(value);
-                    }
-                }
-                "subject" => opf.metadata.subject.push(value),
-                "identifier" if opf.metadata.identifier.is_none() => {
-                    opf.metadata.identifier = Some(value);
-                }
-                _ => {}
-            }
-        }
-    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
@@ -1072,20 +834,6 @@ fn local_name_eq(qname: &[u8], local: &[u8]) -> bool {
     local_name(qname) == local
 }
 
-fn ends_with(haystack: &[u8], needle: &[u8]) -> bool {
-    haystack.len() >= needle.len() && &haystack[haystack.len() - needle.len()..] == needle
-}
-
-fn ascii_lower(b: &[u8]) -> Vec<u8> {
-    b.iter().map(|c| c.to_ascii_lowercase()).collect()
-}
-
-struct OpenNode {
-    name: Vec<u8>,
-    text: String,
-    attrs: Vec<(Vec<u8>, Vec<u8>)>,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1100,88 +848,59 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn parses_minimal_opf() {
+    fn parse_opf_cover_inputs_extracts_manifest_and_legacy_cover_id() {
+        // Cover-only invariants: the mini-parser pulls out the manifest
+        // items (with id/href/media-type/properties) and the OPF2 legacy
+        // `<meta name="cover" content="...">` shorthand. Everything else
+        // under `<metadata>` (title/author/dates/calibre:* etc.) is left
+        // entirely to foliate-js on the JS side.
         let xml = br#"<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
     <dc:title>The Great Gatsby</dc:title>
     <dc:creator>F. Scott Fitzgerald</dc:creator>
-    <dc:creator>Ghost Writer</dc:creator>
-    <dc:language>en</dc:language>
-    <dc:identifier opf:scheme="ISBN">9780743273565</dc:identifier>
-    <dc:publisher>Scribner</dc:publisher>
-    <dc:date>1925-04-10</dc:date>
-    <dc:description>A novel.</dc:description>
-    <dc:subject>Fiction</dc:subject>
-    <dc:subject>Classics</dc:subject>
     <meta name="cover" content="cover-img"/>
-    <meta name="calibre:series" content="Jazz Age"/>
-    <meta name="calibre:series_index" content="1.5"/>
+    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
   </metadata>
   <manifest>
     <item id="cover-img" href="images/cover.jpg" media-type="image/jpeg"/>
     <item id="ch1" href="text/ch1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
   </manifest>
 </package>"#;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.title.as_deref(), Some("The Great Gatsby"));
-        assert_eq!(
-            opf.metadata.authors,
-            vec![
-                "F. Scott Fitzgerald".to_string(),
-                "Ghost Writer".to_string()
-            ]
-        );
-        assert_eq!(opf.metadata.language.as_deref(), Some("en"));
-        assert_eq!(opf.metadata.identifier.as_deref(), Some("9780743273565"));
-        assert_eq!(opf.metadata.isbn.as_deref(), Some("9780743273565"));
-        assert_eq!(opf.metadata.publisher.as_deref(), Some("Scribner"));
-        assert_eq!(opf.metadata.published.as_deref(), Some("1925-04-10"));
-        assert_eq!(opf.metadata.description.as_deref(), Some("A novel."));
-        assert_eq!(
-            opf.metadata.subject,
-            vec!["Fiction".to_string(), "Classics".to_string()]
-        );
-        assert_eq!(opf.metadata.series_name.as_deref(), Some("Jazz Age"));
-        assert_eq!(opf.metadata.series_index, Some(1.5));
-        assert_eq!(opf.cover_id.as_deref(), Some("cover-img"));
-        assert!(opf.manifest.contains_key("cover-img"));
-        assert!(opf.manifest.contains_key("ch1"));
+        let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
+        assert_eq!(inputs.cover_id.as_deref(), Some("cover-img"));
+        assert_eq!(inputs.manifest.len(), 3);
+        let cover = inputs.manifest.get("cover-img").expect("cover entry");
+        assert_eq!(cover.href, "images/cover.jpg");
+        assert_eq!(cover.media_type, "image/jpeg");
+        assert!(cover.properties.is_empty());
+        let nav = inputs.manifest.get("nav").expect("nav entry");
+        assert_eq!(nav.properties, "nav");
     }
 
-    // `dcterms:modified` is the package last-modified timestamp, not the
-    // publication date. foliate-js surfaces it as a separate `modified` field
-    // and leaves `published` empty; mapping it into `published` would diverge
-    // from the JS parser and show a bogus "Published" date for EPUB3 books
-    // that only carry the mandatory `dcterms:modified` meta.
     #[test]
-    fn dcterms_modified_does_not_populate_published() {
-        let xml = br#"<?xml version="1.0"?>
+    fn parse_opf_cover_inputs_ignores_metadata_text_content() {
+        // Smoke test: rich `<metadata>` content (refines chains, EPUB3
+        // property meta, calibre legacy entries) must not throw and must
+        // produce no spurious cover_id when there's no `name="cover"`.
+        let xml = br##"<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>Modified Only</dc:title>
-    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
+    <dc:title id="t">Book</dc:title>
+    <meta refines="#t" property="title-type">main</meta>
+    <meta property="belongs-to-collection" id="c1">My Series</meta>
+    <meta refines="#c1" property="collection-type">series</meta>
+    <meta refines="#c1" property="group-position">3</meta>
+    <meta name="calibre:series" content="My Series"/>
   </metadata>
-  <manifest/>
-</package>"#;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.published, None);
-    }
-
-    // A real `<dc:date>` still maps to `published`, matching foliate-js.
-    #[test]
-    fn dc_date_populates_published() {
-        let xml = br#"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>Dated</dc:title>
-    <dc:date>1897</dc:date>
-    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
-  </metadata>
-  <manifest/>
-</package>"#;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.published.as_deref(), Some("1897"));
+  <manifest>
+    <item id="ch1" href="text/ch1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+</package>"##;
+        let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
+        assert!(inputs.cover_id.is_none());
+        assert_eq!(inputs.manifest.len(), 1);
     }
 
     #[test]
@@ -1445,104 +1164,6 @@ mod tests {
     }
 
     #[test]
-    fn parses_epub3_belongs_to_collection_series() {
-        // EPUB3 schema: top-level meta carries the series name with id="c01",
-        // refines chain provides collection-type=series + group-position=2.
-        // (Use ## delimiter because the XML body contains `"#` from
-        //  `refines="#c01"`, which would otherwise close a single-`#` raw
-        //  string early.)
-        let xml = br##"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>Book Two</dc:title>
-    <meta property="belongs-to-collection" id="c01">Foundation Saga</meta>
-    <meta refines="#c01" property="collection-type">series</meta>
-    <meta refines="#c01" property="group-position">2</meta>
-  </metadata>
-  <manifest><item id="x" href="x.xhtml" media-type="application/xhtml+xml"/></manifest>
-</package>"##;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.series_name.as_deref(), Some("Foundation Saga"));
-        assert_eq!(opf.metadata.series_index, Some(2.0));
-    }
-
-    #[test]
-    fn calibre_legacy_series_wins_over_epub3_collection() {
-        // When both <meta name="calibre:series"> and the EPUB3
-        // belongs-to-collection chain are present, calibre wins (it runs
-        // first inside `handle_meta`, which mirrors what the JS importer
-        // assumes from real-world calibre exports).
-        let xml = br##"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>T</dc:title>
-    <meta name="calibre:series" content="Calibre Series"/>
-    <meta name="calibre:series_index" content="3"/>
-    <meta property="belongs-to-collection" id="c01">EPUB3 Series</meta>
-    <meta refines="#c01" property="collection-type">series</meta>
-    <meta refines="#c01" property="group-position">99</meta>
-  </metadata>
-  <manifest/>
-</package>"##;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.series_name.as_deref(), Some("Calibre Series"));
-        assert_eq!(opf.metadata.series_index, Some(3.0));
-    }
-
-    #[test]
-    fn epub3_collection_set_type_is_ignored() {
-        // Only collection-type="series" should adopt the value into
-        // metadata.series_*. Sets and other types are intentionally skipped
-        // so that an "Omnibus Set" doesn't masquerade as a series.
-        let xml = br##"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>T</dc:title>
-    <meta property="belongs-to-collection" id="c01">Boxed Set</meta>
-    <meta refines="#c01" property="collection-type">set</meta>
-  </metadata>
-  <manifest/>
-</package>"##;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.series_name, None);
-        assert_eq!(opf.metadata.series_index, None);
-    }
-
-    #[test]
-    fn dcterms_property_meta_is_used_as_fallback() {
-        // Some EPUB3 publishers omit <dc:title> entirely and rely on
-        // <meta property="dcterms:title">. Verify we lift it as a fallback
-        // when no dc:* element provided the value.
-        let xml = br#"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <meta property="dcterms:title">Fallback Title</meta>
-    <meta property="dcterms:language">fr</meta>
-  </metadata>
-  <manifest/>
-</package>"#;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.title.as_deref(), Some("Fallback Title"));
-        assert_eq!(opf.metadata.language.as_deref(), Some("fr"));
-    }
-
-    #[test]
-    fn dc_title_wins_over_dcterms_property_meta() {
-        // When both forms exist, the canonical <dc:title> wins. The
-        // dcterms property meta is only a fallback for missing fields.
-        let xml = br#"<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>Real Title</dc:title>
-    <meta property="dcterms:title">Other Title</meta>
-  </metadata>
-  <manifest/>
-</package>"#;
-        let opf = parse_opf(xml).expect("opf parses");
-        assert_eq!(opf.metadata.title.as_deref(), Some("Real Title"));
-    }
-
-    #[test]
     fn strip_xml_bom_handles_utf8_bom() {
         let mut bytes = vec![0xEF, 0xBB, 0xBF];
         bytes.extend_from_slice(b"<root/>");
@@ -1582,24 +1203,27 @@ mod tests {
     }
 
     #[test]
-    fn parse_opf_tolerates_utf8_bom() {
+    fn parse_opf_cover_inputs_tolerates_utf8_bom() {
         // Real-world EPUBs from some Windows toolchains ship the OPF with a
         // UTF-8 BOM; without strip_xml_bom quick-xml emits a stray Text
-        // event before the prolog and downstream metadata extraction
-        // mis-attributes elements. Smoke test: parse must succeed and
-        // recover dc:title.
+        // event before the prolog and downstream parsing fails. Smoke
+        // test: parse must succeed and recover the manifest cover entry.
         let mut bytes = vec![0xEF, 0xBB, 0xBF];
         bytes.extend_from_slice(
             br#"<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>BOM Book</dc:title>
+    <meta name="cover" content="cv"/>
   </metadata>
-  <manifest/>
+  <manifest>
+    <item id="cv" href="cover.jpg" media-type="image/jpeg"/>
+  </manifest>
 </package>"#,
         );
-        let opf = parse_opf(&bytes).expect("opf parses through BOM");
-        assert_eq!(opf.metadata.title.as_deref(), Some("BOM Book"));
+        let inputs = parse_opf_cover_inputs(&bytes).expect("opf parses through BOM");
+        assert_eq!(inputs.cover_id.as_deref(), Some("cv"));
+        assert!(inputs.manifest.contains_key("cv"));
     }
 
     #[test]

@@ -101,7 +101,21 @@ interface RustRawCoverImage {
  */
 async function tryWriteFullCoverFromBook(
   appService: ReturnType<typeof useEnv>['appService'],
-  book: { format: string; hash: string; title: string; sourceTitle?: string },
+  book: {
+    format: string;
+    hash: string;
+    title: string;
+    sourceTitle?: string;
+    /**
+     * For in-place imports the book bytes live outside `Books/<hash>/` —
+     * we keep the user-supplied path on the Book record and must resolve
+     * against it (with base `None`) rather than the synthetic
+     * `Books/<hash>/<title>.<ext>` path `getLocalBookFilename` builds.
+     * Mirrors the same in-place handling in `useWebDAVSync.pushBookFileNow`
+     * and `cloudService.uploadBook`.
+     */
+    filePath?: string;
+  },
   destFilename: string,
   externalDestDir: string | null,
 ): Promise<boolean> {
@@ -111,10 +125,18 @@ async function tryWriteFullCoverFromBook(
   if (!command) return false;
   try {
     const { invoke } = await import('@tauri-apps/api/core');
-    const localPath = await appService.resolveFilePath(
-      getLocalBookFilename(book as Parameters<typeof getLocalBookFilename>[0]),
-      'Books',
-    );
+    // In-place books point at a file the user owns elsewhere (Downloads,
+    // an external SD card, …) — resolve against (filePath, 'None'). Hash-
+    // copy books live under Books/<hash>/ with a name derived from their
+    // metadata title; fall back to `getLocalBookFilename` for those. Same
+    // base-dir dispatch as the sync push paths so behaviour stays uniform
+    // across in-place / hash-copy imports.
+    const localPath = book.filePath
+      ? await appService.resolveFilePath(book.filePath, 'None')
+      : await appService.resolveFilePath(
+          getLocalBookFilename(book as Parameters<typeof getLocalBookFilename>[0]),
+          'Books',
+        );
     const raw = await invoke<RustRawCoverImage>(command, {
       filePath: localPath,
     });

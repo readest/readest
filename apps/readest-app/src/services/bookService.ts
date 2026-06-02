@@ -27,7 +27,7 @@ import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
 import { tryNativeParseEpub } from '@/utils/tauriEpubBridge';
-import { tryNativeParseMobi, inferMobiFormat } from '@/utils/tauriMobiBridge';
+import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
@@ -282,14 +282,23 @@ export async function importBook(
         if (!fileobj || fileobj.size === 0) {
           throw new Error('Invalid or empty book file');
         }
-        // Q1 fast path: when running under Tauri with a real file path,
-        // ask Rust to read the metadata + cover + partialMD5 in one shot.
-        // This skips the foliate-js full-archive parse on the import hot
-        // path while leaving the reader runtime path untouched.
+        // Q1 fast path: when running under Tauri with a real file
+        // path, let Rust contribute the mechanical parts of the
+        // import work — partialMD5 over the file, the downscaled
+        // cover, and (for EPUB) the raw OPF bytes. Metadata
+        // extraction itself runs through foliate-js so the import
+        // path produces the same `Book.metadata` shape the reader
+        // path does (`refines` chains / ONIX5 / language maps / EPUB
+        // `belongs-to-collection` for EPUB; PalmDB UID identifier
+        // for MOBI), without any `DocumentLoader.open()` overhead —
+        // the importer never reads sections / toc / fixed-layout
+        // detection, so spending CPU on a zip central-directory
+        // scan, nav/ncx inflate, or PDB record-table walk would be
+        // pure waste here.
         //
-        // We try EPUB first (the most common case), then MOBI/AZW/AZW3/PRC.
-        // Both bridges are no-ops on web / non-eligible paths, so the cost
-        // when neither matches is just two cheap regex tests.
+        // Both bridges are no-ops on web / non-eligible paths, so
+        // the cost when neither matches is just two cheap regex
+        // tests.
         let nativeBookDoc: BookDoc | undefined;
         let nativeFormat: BookFormat | undefined;
         if (typeof file === 'string' && !/\.txt$/i.test(filename)) {
@@ -299,14 +308,10 @@ export async function importBook(
             nativeFormat = 'EPUB' as BookFormat;
             nativeHash = nativeEpub.partialMd5;
           } else {
-            const nativeMobi = await tryNativeParseMobi(file);
+            const nativeMobi = await tryNativeParseMobi(file, fileobj);
             if (nativeMobi) {
               nativeBookDoc = nativeMobi.bookDoc;
-              // The MOBI/AZW/AZW3 distinction comes from the file
-              // extension (the Rust parser only knows KF7 vs KF8); we
-              // honour it so the on-disk Book.format matches what the
-              // user dragged in.
-              nativeFormat = inferMobiFormat(file);
+              nativeFormat = nativeMobi.format;
               nativeHash = nativeMobi.partialMd5;
             }
           }
