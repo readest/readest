@@ -633,7 +633,7 @@ export class NativeAppService extends BaseAppService {
 
   async saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -655,7 +655,7 @@ export class NativeAppService extends BaseAppService {
           shareablePath = await this.resolveFilePath(filename, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
-          } else {
+          } else if (content) {
             await writeFile(shareablePath, new Uint8Array(content));
           }
         }
@@ -688,7 +688,7 @@ export class NativeAppService extends BaseAppService {
 
       if (typeof content === 'string') {
         await writeTextFile(filePath, content);
-      } else {
+      } else if (content) {
         await writeFile(filePath, new Uint8Array(content));
       }
       return true;

@@ -517,10 +517,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       // whole epub/pdf into memory just to have saveFile write it back
       // to disk.
       const absoluteFilePath = await appService.resolveFilePath(path, base);
-      // saveFile's binary branch wants an ArrayBuffer; with `filePath`
-      // set the content arg is ignored on the native share path, but
-      // we still pass an empty buffer so the type-checker is happy.
-      await appService.saveFile(shareFilename, new ArrayBuffer(0), {
+      // `null` content: there's nothing to write — the file already lives at
+      // `filePath`, which the native share path reads directly.
+      await appService.saveFile(shareFilename, null, {
         share: true,
         mimeType,
         filePath: absoluteFilePath,

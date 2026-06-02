@@ -77,7 +77,7 @@ export abstract class BaseAppService implements AppService {
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
   abstract saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;

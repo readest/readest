@@ -107,4 +107,25 @@ describe('NativeAppService.saveFile share gating', () => {
     expect(shareFileMock).not.toHaveBeenCalled();
     expect(saveDialogMock).toHaveBeenCalledTimes(1);
   });
+
+  // The book "Send" flow hands an already-on-disk file straight to the share
+  // sheet via `filePath` and passes `null` content so nothing gets re-buffered
+  // into memory. The file at `filePath` must be shared verbatim without any
+  // write happening first.
+  test('shares the file at filePath without buffering when content is null', async () => {
+    const service = await loadServiceWithOS('macos');
+    await service.saveFile('book.epub', null, {
+      share: true,
+      mimeType: 'application/epub+zip',
+      filePath: '/abs/path/book.epub',
+    });
+    expect(shareFileMock).toHaveBeenCalledTimes(1);
+    expect(shareFileMock).toHaveBeenCalledWith(
+      '/abs/path/book.epub',
+      expect.objectContaining({ mimeType: 'application/epub+zip' }),
+    );
+    expect(writeFileMock).not.toHaveBeenCalled();
+    expect(writeTextFileMock).not.toHaveBeenCalled();
+    expect(saveDialogMock).not.toHaveBeenCalled();
+  });
 });
