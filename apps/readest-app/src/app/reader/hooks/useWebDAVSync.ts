@@ -96,6 +96,14 @@ export const useWebDAVSync = (bookKey: string) => {
    * a metadata-only operation handled elsewhere.
    */
   const fileSyncedRef = useRef(false);
+  /**
+   * Per-instance lock for the cover uploader. Same shape as
+   * `fileSyncedRef` but tracked separately because covers are gated
+   * differently than book files: cover sync runs whenever we're allowed
+   * to push at all (independent of `syncBooks`), so they need their own
+   * "already done in this hook lifetime" bit.
+   */
+  const coverSyncedRef = useRef(false);
 
   // The deviceId is generated lazily on first push so users who never
   // enable WebDAV don't carry it around.
@@ -273,20 +281,6 @@ export const useWebDAVSync = (bookKey: string) => {
       if (result.uploaded) {
         await updateLastSyncedAt(Date.now());
       }
-      // Cover ride-along — best-effort, failures don't unwind the
-      // syncedRef lock or surface a toast. Same HEAD short-circuit as
-      // the book file, so steady-state cost is one HEAD per session.
-      try {
-        await pushBookCover(settings.webdav!, book.hash, async () => {
-          const fp = getCoverFilename(book);
-          if (!(await appService.exists(fp, 'Books'))) return null;
-          const file = await appService.openFile(fp, 'Books');
-          const bytes = await file.arrayBuffer();
-          return { bytes, size: bytes.byteLength };
-        });
-      } catch (e) {
-        console.warn('WD book cover push failed', e);
-      }
     } catch (e) {
       // Reset the lock on failure so a manual Sync now or a subsequent
       // open retries — otherwise a transient hiccup would mark this
@@ -302,6 +296,50 @@ export const useWebDAVSync = (bookKey: string) => {
       }
     }
   }, [allowPush, settings.webdav, getBookData, bookKey, appService, updateLastSyncedAt, _]);
+
+  /**
+   * Push the local cover image to the remote, independent of
+   * `syncBooks`. Covers are part of the book's metadata: at ~30–60 KB
+   * each (after the import-time downscale) the bandwidth cost is
+   * negligible, but the receiving device cannot regenerate them when
+   * `syncBooks=false` (it has no book bytes to extract from), so a
+   * user who only opts into progress + notes still needs the covers
+   * ride-along to see proper bookshelf art.
+   *
+   * Failures are best-effort warnings: a missing local cover (TXT/MD
+   * imports without metadata, etc.) silently no-ops, and a network
+   * blip is logged but doesn't surface a toast.
+   */
+  const pushBookCoverNow = useCallback(async () => {
+    if (!allowPush) return;
+    if (coverSyncedRef.current) return;
+    coverSyncedRef.current = true;
+
+    const book = getBookData(bookKey)?.book;
+    if (!book || !appService) return;
+
+    try {
+      await pushBookCover(settings.webdav!, book.hash, async () => {
+        const fp = getCoverFilename(book);
+        if (!(await appService.exists(fp, 'Books'))) return null;
+        const file = await appService.openFile(fp, 'Books');
+        const bytes = await file.arrayBuffer();
+        return { bytes, size: bytes.byteLength };
+      });
+    } catch (e) {
+      // Reset the lock so a manual "Sync now" or a subsequent open
+      // can retry, mirroring `pushBookFileNow`'s recovery model.
+      coverSyncedRef.current = false;
+      if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('WebDAV authentication failed. Reconnect in Settings.'),
+        });
+      } else {
+        console.warn('WD book cover push failed', e);
+      }
+    }
+  }, [allowPush, settings.webdav, getBookData, bookKey, appService, _]);
 
   /**
    * Pull, merge, and persist. Uses the same per-config / per-note merge
@@ -398,10 +436,10 @@ export const useWebDAVSync = (bookKey: string) => {
   // Stash the latest pull/push callbacks in a ref so the event-bridge
   // useEffect below doesn't have to re-bind on every render. Pattern
   // taken from useKOSync.
-  const syncRefs = useRef({ pushNow, pullNow, pushBookFileNow });
+  const syncRefs = useRef({ pushNow, pullNow, pushBookFileNow, pushBookCoverNow });
   useEffect(() => {
-    syncRefs.current = { pushNow, pullNow, pushBookFileNow };
-  }, [pushNow, pullNow, pushBookFileNow]);
+    syncRefs.current = { pushNow, pullNow, pushBookFileNow, pushBookCoverNow };
+  }, [pushNow, pullNow, pushBookFileNow, pushBookCoverNow]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedPush = useCallback(
@@ -450,10 +488,13 @@ export const useWebDAVSync = (bookKey: string) => {
         dirtyRef.current = true;
         await syncRefs.current.pushNow();
       }
-      // Run the file-binary upload last so the lighter config sync is
-      // already mirrored before we start moving megabytes. The HEAD probe
-      // inside makes this near-free for already-synced books.
-      await syncRefs.current.pushBookFileNow();
+      // Cover sync is independent of `syncBooks`: even users who keep
+      // book bytes off the wire still want their shelf art mirrored.
+      // Run it in parallel with the file upload — they hit different
+      // remote paths and the cover is tiny, so there's no reason to
+      // serialize them. The HEAD probe inside each makes the steady
+      // state near-free for already-mirrored books.
+      await Promise.all([syncRefs.current.pushBookCoverNow(), syncRefs.current.pushBookFileNow()]);
     })();
   }, [isReady, progress?.location]);
 
@@ -497,12 +538,16 @@ export const useWebDAVSync = (bookKey: string) => {
     const handlePush = (event: CustomEvent) => {
       if (event.detail?.bookKey && event.detail.bookKey !== bookKey) return;
       // User-triggered push is unconditional — flip dirty so the flush
-      // actually does something, and re-run the book-file upload check
-      // so a freshly-toggled "Sync Book Files" picks up the binary.
+      // actually does something, and re-run the book-file + cover
+      // upload checks so a freshly-toggled "Sync Book Files" picks up
+      // the binary, and any cover that wasn't on the wire yet (e.g.
+      // hit a transient failure earlier in the session) gets retried.
       dirtyRef.current = true;
       fileSyncedRef.current = false;
+      coverSyncedRef.current = false;
       debouncedPush.flush();
       syncRefs.current.pushBookFileNow();
+      syncRefs.current.pushBookCoverNow();
     };
     const handlePull = (event: CustomEvent) => {
       if (event.detail?.bookKey && event.detail.bookKey !== bookKey) return;
