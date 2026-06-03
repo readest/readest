@@ -59,7 +59,33 @@
 
   <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
 
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+
   <releases>
+    <release version="0.11.4" date="2026-06-03">
+      <description>
+        <ul>
+          <li>Library: You can now send a book file directly from the bookshelf selection popup</li>
+          <li>Reading: Wide tables now scroll sideways, and oversized images or code blocks scroll in place instead of accidentally turning the page</li>
+          <li>Reading: Fixed page backgrounds, textures, and full-page cover images that didn't display correctly in paginated and scrolled modes</li>
+          <li>Reading: Fixed bright table and note backgrounds that didn't match the page in dark mode</li>
+          <li>Reading: Fixed the reading ruler drifting while scrolling and a stray line at the bottom of the page</li>
+          <li>Fonts: Fixed custom fonts disappearing after re-importing, and they now apply correctly inside books</li>
+          <li>PDF: Fixed scanned PDFs not displaying in installed app builds</li>
+          <li>Annotations: The annotation list now scrolls back to your nearest highlight, and exporting to Readwise works again on desktop</li>
+          <li>Android: Fixed a freeze when long-pressing images, plus issues with copying text and opening books directly from other apps</li>
+          <li>Fixes: Kept the book menu order stable, synced KOReader book covers, and fixed a Windows launch crash</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.2" date="2026-05-31">
       <description>
         <ul>
@@ -205,26 +231,6 @@
           <li>Text-to-Speech: Added navigation controls to return to the current reading position</li>
           <li>Linux: Added an in-app updater for AppImage builds</li>
           <li>E-ink: Improved color support for color E-ink devices to display richer highlights</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.98" date="2026-01-21">
-      <description>
-        <ul>
-          <li>Bookshelf: Added the ability to export original book files directly from the book details dialog</li>
-          <li>Bookshelf: Added a new sorting option to organize books by publish date</li>
-          <li>Bookshelf: Improved performance for large library with faster and more stable imports</li>
-          <li>OPDS: Improved download reliability by correctly detecting filenames for PDF and CBZ files</li>
-          <li>Proofreading: Added support for whole-word replacement to make text corrections more precise</li>
-          <li>Notes: Added the ability to export notes using a customizable template</li>
-          <li>PDF: Added support for panning within PDF documents for easier navigation</li>
-          <li>PDF: Improved performance by pre-rendering the next page for smoother page transitions</li>
-          <li>Text-to-Speech: Added support for word replacement to improve pronunciation during playback</li>
-          <li>Text-to-Speech: Fixed an issue where playback speed settings were not applied correctly on Linux</li>
-          <li>E-ink: Improved reading stability by preventing unwanted scrolling when animations are disabled or on e-ink devices</li>
-          <li>Discord: Added Discord Rich Presence to display your current reading status on Desktop platforms</li>
-          <li>Android: Fixed an issue that could cause occasional crashes during app startup</li>
-          <li>Fonts: Improved web font loading for faster and more stable text rendering</li>
         </ul>
       </description>
     </release>

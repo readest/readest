@@ -87,11 +87,31 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
     const font = createCustomFont(path, options);
     const existingFont = get().fonts.find((f) => f.id === font.id);
     if (existingFont) {
+      // Re-import of an existing font. Under CRDT remove-wins, a plain
+      // upsert can't revive a server-side tombstone — the next pull would
+      // re-apply the delete and the font silently disappears while logged
+      // into cloud sync (issue #4410). Mint a reincarnation token so the
+      // row surfaces as alive on every device's next pull. Covers both
+      // re-import after a local delete and re-import while the entry is
+      // still live but another device tombstoned the row (the token is
+      // inert when there's no tombstone). Preserve any existing token
+      // instead of churning a new one on each import. Mirrors
+      // dictionaryService's reincarnation logic.
+      const shouldMintReincarnation =
+        !!font.contentId &&
+        !existingFont.reincarnation &&
+        (!!existingFont.deletedAt || existingFont.contentId === font.contentId);
+      const reincarnation =
+        font.reincarnation ??
+        (shouldMintReincarnation
+          ? Math.random().toString(36).slice(2)
+          : existingFont.reincarnation);
       get().updateFont(font.id, {
         ...font,
         path: font.path,
         downloadedAt: Date.now(),
         deletedAt: undefined,
+        reincarnation,
         loaded: false,
         blobUrl: undefined,
         error: undefined,

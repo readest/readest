@@ -177,6 +177,9 @@ importers:
       '@tauri-apps/plugin-cli':
         specifier: ^2.4.1
         version: 2.4.1
+      '@tauri-apps/plugin-clipboard-manager':
+        specifier: ^2.3.0
+        version: 2.3.2
       '@tauri-apps/plugin-deep-link':
         specifier: ^2.4.7
         version: 2.4.9
@@ -659,7 +662,7 @@ importers:
         specifier: ^15.9.0
         version: 15.15.0
       pdfjs-dist:
-        specifier: ^5.4.530
+        specifier: ^5.7.284
         version: 5.7.284
       rollup:
         specifier: '>=4.59.0'
@@ -3587,6 +3590,9 @@ packages:
 
   '@tauri-apps/plugin-cli@2.4.1':
     resolution: {integrity: sha512-8JXofQFI5cmiGolh1PlU4hzE2YJgrgB1lyaztyBYiiMCy13luVxBXaXChYPeqMkUo46J1UadxvYdjRjj0E8zaw==}
+
+  '@tauri-apps/plugin-clipboard-manager@2.3.2':
+    resolution: {integrity: sha512-CUlb5Hqi2oZbcZf4VUyUH53XWPPdtpw43EUpCza5HWZJwxEoDowFzNUDt1tRUXA8Uq+XPn17Ysfptip33sG4eQ==}
 
   '@tauri-apps/plugin-deep-link@2.4.9':
     resolution: {integrity: sha512-u0SKOUHnJ1wqeqXsDFq2+kASCBj9xxbG0g9XZWPy9SOmU4wXtp6b/wiYpm6oH6/5fBTQsLqnLhIvqLBRpgHJlA==}
@@ -12067,6 +12073,10 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.10.1
 
   '@tauri-apps/plugin-cli@2.4.1':
+    dependencies:
+      '@tauri-apps/api': 2.10.1
+
+  '@tauri-apps/plugin-clipboard-manager@2.3.2':
     dependencies:
       '@tauri-apps/api': 2.10.1
 

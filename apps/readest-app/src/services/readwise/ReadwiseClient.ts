@@ -1,7 +1,9 @@
 import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
+import { isTauriAppPlatform } from '@/services/environment';
 import { buildAnnotationWebUrl } from '@/utils/deeplink';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
 const READEST_TO_READWISE_COLOR: Record<HighlightColor, string> = {
   red: 'pink',
@@ -34,7 +36,8 @@ export class ReadwiseClient {
     options: { method?: 'GET' | 'POST'; body?: string } = {},
   ): Promise<Response> {
     const { method = 'GET', body } = options;
-    return fetch(`${this.baseUrl}${endpoint}`, {
+    const fetchFn = isTauriAppPlatform() ? tauriFetch : globalThis.fetch;
+    return fetchFn(`${this.baseUrl}${endpoint}`, {
       method,
       headers: {
         Authorization: `Token ${this.config.accessToken}`,

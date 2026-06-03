@@ -1662,5 +1662,9 @@
   "No Annotations": "Tidak ada anotasi",
   "No Bookmarks": "Tidak ada penanda",
   "Select some text to highlight": "Pilih teks untuk disorot",
-  "Bookmark This Page": "Tandai halaman ini"
+  "Bookmark This Page": "Tandai halaman ini",
+  "Book file is not available locally": "Berkas buku tidak tersedia secara lokal",
+  "Failed to send book": "Gagal mengirim buku",
+  "Send": "Kirim",
+  "Highlight Current Sentence": "Sorot kalimat saat ini"
 }

@@ -1827,5 +1827,9 @@
   "No Annotations": "لا توجد تعليقات توضيحية",
   "No Bookmarks": "لا توجد إشارات مرجعية",
   "Select some text to highlight": "حدّد نصًا لتمييزه",
-  "Bookmark This Page": "أضف إشارة مرجعية لهذه الصفحة"
+  "Bookmark This Page": "أضف إشارة مرجعية لهذه الصفحة",
+  "Book file is not available locally": "ملف الكتاب غير متوفر محليًا",
+  "Failed to send book": "فشل إرسال الكتاب",
+  "Send": "إرسال",
+  "Highlight Current Sentence": "تمييز الجملة الحالية"
 }

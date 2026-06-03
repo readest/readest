@@ -1695,5 +1695,9 @@
   "No Annotations": "कोई टिप्पणी नहीं",
   "No Bookmarks": "कोई बुकमार्क नहीं",
   "Select some text to highlight": "हाइलाइट करने के लिए कुछ टेक्स्ट चुनें",
-  "Bookmark This Page": "इस पृष्ठ को बुकमार्क करें"
+  "Bookmark This Page": "इस पृष्ठ को बुकमार्क करें",
+  "Book file is not available locally": "पुस्तक फ़ाइल स्थानीय रूप से उपलब्ध नहीं है",
+  "Failed to send book": "पुस्तक भेजने में विफल",
+  "Send": "भेजें",
+  "Highlight Current Sentence": "वर्तमान वाक्य को हाइलाइट करें"
 }

@@ -21,7 +21,13 @@ export const extractTxtFilenameMetadata = (
   const base = getBaseFilename(filename);
   const cjkMatch = base.match(/《([^》]+)》(.*)/);
   if (!cjkMatch) {
-    return { title: base };
+    // No 《》 wrapper: keep the whole filename as the title (web-novel files use
+    // 【】 brackets for the title and tack the author on, e.g.
+    // 【书名】1-129 作者：起落.txt). Only the labeled "作者：X" form is safe to pull
+    // here — a bracketed/bare fallback would mistake a leading 【title】 for the
+    // author. See issue #4390.
+    const author = parseLabeledAuthor(base);
+    return author ? { title: base, author } : { title: base };
   }
   const title = cjkMatch[1]!.trim();
   const rest = (cjkMatch[2] ?? '').trim();
@@ -29,11 +35,17 @@ export const extractTxtFilenameMetadata = (
   return author ? { title, author } : { title };
 };
 
+// 作者：X / 作者:X / 作者 X — a labeled author. Returns '' when absent.
+const parseLabeledAuthor = (text: string): string => {
+  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
+  return labeled ? stripWrappingPunctuation(labeled[1]!) : '';
+};
+
 const parseAuthorFragment = (text: string): string => {
   if (!text) return '';
   // 作者：X / 作者:X / 作者 X — labeled author wins
-  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
-  if (labeled) return stripWrappingPunctuation(labeled[1]!);
+  const labeled = parseLabeledAuthor(text);
+  if (labeled) return labeled;
   // [X] (X) 【X】 （X）［X］ — bracketed author
   const bracketed = text.match(/[[(（【［]\s*([^\])）】］]+?)\s*[\])）】］]/);
   if (bracketed) return stripWrappingPunctuation(bracketed[1]!);
@@ -49,6 +61,15 @@ const stripWrappingPunctuation = (text: string): string => {
     return trimmed;
   }
 };
+
+// A header line like "作者：X" is meant to yield a short personal/pen name. Some
+// web-novel TXT files instead carry a metadata blob there (e.g.
+// "作者：2024/08/01发表于：是否首发：是 字数1023150字…") that the greedy capture would
+// otherwise surface as the author. Reject values that look like such a blob —
+// an embedded field separator (a second colon), a long digit run, or excessive
+// length — so callers fall back to the filename's labeled author. See #4390.
+const isPlausibleAuthorName = (name: string): boolean =>
+  name.length > 0 && name.length <= 20 && !/[:：]/.test(name) && !/\d{4,}/.test(name);
 
 interface Chapter {
   title: string;
@@ -130,7 +151,8 @@ export class TxtToEpubConverter {
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || filenameMeta.author || providedAuthor || '';
+    const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
+    const author = headerAuthor || filenameMeta.author || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
@@ -523,11 +545,12 @@ export class TxtToEpubConverter {
     const authorMatch =
       fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
       fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
-    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : '';
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || providedAuthor || '';
+    const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
+    const author = headerAuthor || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     return { author, language };
   }

@@ -1662,5 +1662,9 @@
   "No Annotations": "尚無註解",
   "No Bookmarks": "尚無書籤",
   "Select some text to highlight": "選取文字以劃線",
-  "Bookmark This Page": "將此頁加入書籤"
+  "Bookmark This Page": "將此頁加入書籤",
+  "Book file is not available locally": "本機沒有此書籍檔案",
+  "Failed to send book": "傳送書籍失敗",
+  "Send": "傳送",
+  "Highlight Current Sentence": "醒目標示目前句子"
 }

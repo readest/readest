@@ -1662,5 +1662,9 @@
   "No Annotations": "ไม่มีคำอธิบายประกอบ",
   "No Bookmarks": "ไม่มีบุ๊กมาร์ก",
   "Select some text to highlight": "เลือกข้อความเพื่อไฮไลต์",
-  "Bookmark This Page": "บุ๊กมาร์กหน้านี้"
+  "Bookmark This Page": "บุ๊กมาร์กหน้านี้",
+  "Book file is not available locally": "ไม่มีไฟล์หนังสือในเครื่อง",
+  "Failed to send book": "ส่งหนังสือไม่สำเร็จ",
+  "Send": "ส่ง",
+  "Highlight Current Sentence": "ไฮไลต์ประโยคปัจจุบัน"
 }

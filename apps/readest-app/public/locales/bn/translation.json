@@ -1695,5 +1695,9 @@
   "No Annotations": "কোনো টীকা নেই",
   "No Bookmarks": "কোনো বুকমার্ক নেই",
   "Select some text to highlight": "হাইলাইট করতে কিছু লেখা নির্বাচন করুন",
-  "Bookmark This Page": "এই পৃষ্ঠা বুকমার্ক করুন"
+  "Bookmark This Page": "এই পৃষ্ঠা বুকমার্ক করুন",
+  "Book file is not available locally": "বইয়ের ফাইলটি স্থানীয়ভাবে উপলব্ধ নয়",
+  "Failed to send book": "বই পাঠাতে ব্যর্থ হয়েছে",
+  "Send": "পাঠান",
+  "Highlight Current Sentence": "বর্তমান বাক্য হাইলাইট করুন"
 }

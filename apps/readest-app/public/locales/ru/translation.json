@@ -1761,5 +1761,9 @@
   "No Annotations": "Нет аннотаций",
   "No Bookmarks": "Нет закладок",
   "Select some text to highlight": "Выберите текст для выделения",
-  "Bookmark This Page": "Добавить эту страницу в закладки"
+  "Bookmark This Page": "Добавить эту страницу в закладки",
+  "Book file is not available locally": "Файл книги недоступен локально",
+  "Failed to send book": "Не удалось отправить книгу",
+  "Send": "Отправить",
+  "Highlight Current Sentence": "Выделять текущее предложение"
 }

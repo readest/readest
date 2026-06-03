@@ -1662,5 +1662,9 @@
   "No Annotations": "Không có chú thích",
   "No Bookmarks": "Không có dấu trang",
   "Select some text to highlight": "Chọn một đoạn văn bản để tô sáng",
-  "Bookmark This Page": "Đánh dấu trang này"
+  "Bookmark This Page": "Đánh dấu trang này",
+  "Book file is not available locally": "Tệp sách không có sẵn trên thiết bị",
+  "Failed to send book": "Gửi sách thất bại",
+  "Send": "Gửi",
+  "Highlight Current Sentence": "Tô sáng câu hiện tại"
 }

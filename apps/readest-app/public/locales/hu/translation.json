@@ -1695,5 +1695,9 @@
   "No Annotations": "Nincsenek megjegyzések",
   "No Bookmarks": "Nincsenek könyvjelzők",
   "Select some text to highlight": "Jelölj ki szöveget a kiemeléshez",
-  "Bookmark This Page": "Oldal hozzáadása a könyvjelzőkhöz"
+  "Bookmark This Page": "Oldal hozzáadása a könyvjelzőkhöz",
+  "Book file is not available locally": "A könyvfájl nem érhető el helyileg",
+  "Failed to send book": "A könyv küldése sikertelen",
+  "Send": "Küldés",
+  "Highlight Current Sentence": "Aktuális mondat kiemelése"
 }

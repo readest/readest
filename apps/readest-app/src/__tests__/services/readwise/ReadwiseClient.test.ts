@@ -1,8 +1,18 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { ReadwiseClient } from '@/services/readwise/ReadwiseClient';
 import { READWISE_API_BASE_URL } from '@/services/constants';
+import { isTauriAppPlatform } from '@/services/environment';
 import type { ReadwiseSettings } from '@/types/settings';
 import type { Book, BookNote } from '@/types/book';
+
+vi.mock('@tauri-apps/plugin-http', () => ({
+  fetch: vi.fn(),
+}));
+
+vi.mock('@/services/environment', () => ({
+  isTauriAppPlatform: vi.fn(() => false),
+}));
 
 const makeSettings = (overrides: Partial<ReadwiseSettings> = {}): ReadwiseSettings => ({
   enabled: true,
@@ -37,6 +47,10 @@ describe('ReadwiseClient base URL', () => {
   beforeEach(() => {
     fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(tauriFetch)
+      .mockReset()
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -78,5 +92,21 @@ describe('ReadwiseClient base URL', () => {
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>)['Authorization']).toBe('Token test-token');
+  });
+
+  test('validateToken uses the Tauri HTTP transport in the desktop app', async () => {
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    const client = new ReadwiseClient(makeSettings({ baseUrl: 'https://example.com/api/v2' }));
+
+    await client.validateToken();
+
+    expect(tauriFetch).toHaveBeenCalledWith('https://example.com/api/v2/auth/', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Token test-token',
+      },
+      body: undefined,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

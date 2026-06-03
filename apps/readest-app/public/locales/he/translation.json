@@ -1728,5 +1728,9 @@
   "No Annotations": "אין הדגשות",
   "No Bookmarks": "אין סימניות",
   "Select some text to highlight": "בחרו טקסט להדגשה",
-  "Bookmark This Page": "הוסיפו דף זה לסימניות"
+  "Bookmark This Page": "הוסיפו דף זה לסימניות",
+  "Book file is not available locally": "קובץ הספר אינו זמין באופן מקומי",
+  "Failed to send book": "שליחת הספר נכשלה",
+  "Send": "שליחה",
+  "Highlight Current Sentence": "הדגשת המשפט הנוכחי"
 }

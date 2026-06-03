@@ -45,6 +45,9 @@ import {
   resolveEffectiveSecondarySort,
 } from '../utils/libraryUtils';
 import { eventDispatcher } from '@/utils/event';
+import { getLocalBookFilename } from '@/utils/book';
+import { MIMETYPES, EXTS } from '@/libs/document';
+import { makeSafeFilename } from '@/utils/misc';
 
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
 import Alert from '@/components/Alert';
@@ -425,6 +428,113 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     setShowStatusAlert(true);
   };
 
+  const sendSelectedBook = async () => {
+    // "Send" hands the actual book file (epub/pdf/...) to the OS share
+    // sheet (UIActivityViewController on iOS, Intent.ACTION_SEND on
+    // Android, NSSharingServicePicker on macOS) so the user can fire it
+    // off to Mail / Messages / WeChat / AirDrop / etc. Backed by
+    // tauri-plugin-sharekit via appService.saveFile({ share: true }).
+    //
+    // This is intentionally distinct from the per-item "Share Book"
+    // context menu, which uploads the book to the readest backend and
+    // generates a public link. "Send" is offline file egress; "Share
+    // Book" is remote collaboration. They share zero infra.
+    //
+    // Linux has no system share sheet, and Windows is intentionally
+    // disabled (issue #4343 — WebView2's native share UI blocks the main
+    // thread waiting on cancel/complete callbacks that may never fire).
+    // We hide the button entirely on those platforms (see sendEnabled
+    // in the JSX) so users don't see an action that can't be honoured.
+
+    const ids = getSelectedBooks();
+    if (ids.length !== 1) return;
+    const book = filteredBooks.find((b) => b.hash === ids[0]);
+    if (!book || !appService) return;
+
+    // Anchor the macOS share popover to the selected book's cover, not
+    // to the Send button — the user just tapped/clicked the book, so
+    // their visual focus is on the cover. We look the cover up via the
+    // `data-book-hash` attribute that BookshelfItem stamps on its root
+    // div. The rect must be captured *before* setShowSelectModeActions
+    // tears the popup down (the bookshelf itself stays mounted, but we
+    // still want to grab it up front to keep the share-call site
+    // simple). preferredEdge='bottom' maps to NSMinYEdge, which in
+    // WKWebView's flipped coord space is the rect's top edge, so the
+    // popover renders above the cover (and only auto-flips below when
+    // there's no room above). On iOS / Android the share sheet is modal
+    // and ignores sharePosition, so this work is harmless there.
+    const coverEl = document.querySelector<HTMLElement>(`[data-book-hash="${book.hash}"]`);
+    const anchorRect = coverEl?.getBoundingClientRect();
+    const sharePosition = anchorRect
+      ? {
+          x: anchorRect.left + anchorRect.width / 2,
+          y: anchorRect.top + anchorRect.height / 2,
+          preferredEdge: 'bottom' as const,
+        }
+      : undefined;
+
+    setShowSelectModeActions(false);
+    handleSetSelectMode(false);
+
+    try {
+      // Resolve the file the same way bookContent.resolveBookContentSource
+      // does, but via the public AppService surface (the underlying `fs`
+      // is protected): managed copy under Books/<hash>/ first, then the
+      // device-local in-place import path. Cloud-only books or remote
+      // URL books can't be shared without first downloading them.
+      const managedPath = getLocalBookFilename(book);
+      let path: string;
+      let base: 'Books' | 'None';
+      if (await appService.exists(managedPath, 'Books')) {
+        path = managedPath;
+        base = 'Books';
+      } else if (book.filePath && (await appService.exists(book.filePath, 'None'))) {
+        path = book.filePath;
+        base = 'None';
+      } else {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Book file is not available locally'),
+          timeout: 2500,
+        });
+        return;
+      }
+      const ext = EXTS[book.format] ?? 'bin';
+      const mimeType = MIMETYPES[book.format]?.[0] ?? 'application/octet-stream';
+      const baseName = makeSafeFilename(book.sourceTitle || book.title || book.hash);
+      const shareFilename = `${baseName}.${ext}`;
+
+      // Native (Tauri) only — the Share button is hidden on web because
+      // browsers can't surface a real "share to <app>" sheet for an
+      // arbitrary local file. Hand the already-on-disk file straight to
+      // the OS share sheet via `options.filePath`. Without it,
+      // saveFile() falls back to writing a temp copy under
+      // BaseDirectory.Temp, which on Android resolves to
+      // /data/local/tmp/ — the app sandbox has no write permission
+      // there and the call fails with EACCES ("failed to open file at
+      // path: /data/local/tmp/...epub Permission denied (os error
+      // 13)"). Passing the absolute path also avoids re-buffering the
+      // whole epub/pdf into memory just to have saveFile write it back
+      // to disk.
+      const absoluteFilePath = await appService.resolveFilePath(path, base);
+      // `null` content: there's nothing to write — the file already lives at
+      // `filePath`, which the native share path reads directly.
+      await appService.saveFile(shareFilename, null, {
+        share: true,
+        mimeType,
+        filePath: absoluteFilePath,
+        sharePosition,
+      });
+    } catch (err) {
+      console.error('Failed to send book file:', err);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to send book'),
+        timeout: 2500,
+      });
+    }
+  };
+
   const updateBooksStatus = async (status: ReadingStatus | undefined) => {
     const selectedIds = getSelectedBooks();
     const booksToUpdate: Book[] = [];
@@ -688,10 +798,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         <SelectModeActions
           selectedBooks={selectedBooks}
           safeAreaBottom={safeAreaInsets?.bottom || 0}
+          // Native send targets: iOS, Android, macOS — route through
+          // tauri-plugin-sharekit (UIActivityViewController /
+          // Intent.ACTION_SEND / NSSharingServicePicker). Linux has no
+          // system share sheet, Windows WebView2 share UI is disabled
+          // upstream (issue #4343 — deadlocks the main thread), and web
+          // browsers don't expose a real "send file to <app>" sheet, so
+          // the button is hidden on those platforms.
+          sendEnabled={
+            !!appService &&
+            (appService.isIOSApp || appService.isAndroidApp || appService.isMacOSApp)
+          }
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
           onDetails={openBookDetails}
           onStatus={showStatusSelection}
+          onSend={sendSelectedBook}
           onDelete={deleteSelectedBooks}
           onCancel={() => handleSetSelectMode(false)}
         />

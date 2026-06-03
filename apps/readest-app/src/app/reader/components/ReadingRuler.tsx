@@ -176,6 +176,12 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   // In scrolled mode, set when a tap advances past the view edge and scrolls the
   // view; the next relocate realigns the band to the start/end of the new view.
   const pendingScrollAlignRef = useRef<'forward' | 'backward' | null>(null);
+  // In scrolled mode the band is fixed to the screen: it is snapped into place on
+  // the initial mount (and after a viewport-dimension change), but never re-snapped
+  // on a plain scroll relocate — that made it creep down the page (issue #4386).
+  // Snapping while scrolled is driven by clicks (the reading-ruler-move handler).
+  const scrolledPlacedRef = useRef(false);
+  const scrolledPlacedDimensionRef = useRef(0);
 
   const supportsLineSnap = !FIXED_LAYOUT_FORMATS.has(bookFormat);
   const columnCount = getView(bookKey)?.renderer?.columnCount ?? 1;
@@ -333,12 +339,32 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
             pending === 'forward'
               ? snapReadingRulerToLines(-Infinity, -Infinity, lines, 'forward', derivBoxes)
               : snapReadingRulerToLines(Infinity, Infinity, lines, 'backward', derivBoxes);
-          if (block) applyBlock(block.start, block.end, dimension, true);
+          if (block) {
+            applyBlock(block.start, block.end, dimension, true);
+            scrolledPlacedRef.current = true;
+            scrolledPlacedDimensionRef.current = dimension;
+          }
         } else if (!pageChanged) {
-          const block =
-            snapReadingRulerToLines(anchor, anchor, lines, 'forward', derivBoxes) ??
-            snapReadingRulerToLines(Infinity, Infinity, lines, 'backward', derivBoxes);
-          if (block) applyBlock(block.start, block.end, dimension, false);
+          // In scrolled mode, only snap the band on the initial mount or after the
+          // viewport dimension changes (resize/relayout). A plain scroll fires a
+          // relocate without changing the dimension; re-snapping then would walk
+          // the band down the page as the reader scrolls (issue #4386).
+          const alreadyPlaced =
+            scrolled &&
+            scrolledPlacedRef.current &&
+            scrolledPlacedDimensionRef.current === dimension;
+          if (!alreadyPlaced) {
+            const block =
+              snapReadingRulerToLines(anchor, anchor, lines, 'forward', derivBoxes) ??
+              snapReadingRulerToLines(Infinity, Infinity, lines, 'backward', derivBoxes);
+            if (block) {
+              applyBlock(block.start, block.end, dimension, false);
+              if (scrolled) {
+                scrolledPlacedRef.current = true;
+                scrolledPlacedDimensionRef.current = dimension;
+              }
+            }
+          }
         }
       }
     } catch {

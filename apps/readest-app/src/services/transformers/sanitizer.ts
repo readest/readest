@@ -33,6 +33,7 @@ export const sanitizerTransformer: Transformer = {
           'data-wr-footernote', // custom attribute for weread footnotes
           'zy-footnote', // custom attribute for zhangyue footnotes
           'cfi-inert', // custom attribute to mark nodes as inert for CFI processing
+          'cfi-skip', // custom attribute to mark nodes to be skipped in CFI processing
         ];
         return (
           attrWhitelist.includes(attributeName) ||

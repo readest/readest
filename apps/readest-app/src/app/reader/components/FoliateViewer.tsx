@@ -31,7 +31,6 @@ import {
   applyImageStyle,
   applyScrollbarStyle,
   applyScrollModeClass,
-  applyTableStyle,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -39,6 +38,7 @@ import {
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
+import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
@@ -262,7 +262,8 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
-      applyTableStyle(detail.doc);
+      applyScrollableStyle(detail.doc);
+      applyTableTouchScroll(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -558,7 +559,7 @@ const FoliateViewer: React.FC<{
       const width = viewWidth - insets.left - insets.right;
       const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
-      view.renderer.setStyles?.(getStyles(viewSettings));
+      view.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       applyTranslationStyle(viewSettings);
 
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
@@ -685,7 +686,7 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const renderer = viewRef.current.renderer;
       const viewSettings = getViewSettings(bookKey)!;
-      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+      viewRef.current.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       const docs = viewRef.current.renderer.getContents();
       docs.forEach(({ doc }) => {
         if (bookDoc.rendition?.layout === 'pre-paginated') {

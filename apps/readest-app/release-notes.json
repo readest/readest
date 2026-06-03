@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.11.4": {
+      "date": "2026-06-03",
+      "notes": [
+        "Library: You can now send a book file directly from the bookshelf selection popup",
+        "Reading: Wide tables now scroll sideways, and oversized images or code blocks scroll in place instead of accidentally turning the page",
+        "Reading: Fixed page backgrounds, textures, and full-page cover images that didn't display correctly in paginated and scrolled modes",
+        "Reading: Fixed bright table and note backgrounds that didn't match the page in dark mode",
+        "Reading: Fixed the reading ruler drifting while scrolling and a stray line at the bottom of the page",
+        "Fonts: Fixed custom fonts disappearing after re-importing, and they now apply correctly inside books",
+        "PDF: Fixed scanned PDFs not displaying in installed app builds",
+        "Annotations: The annotation list now scrolls back to your nearest highlight, and exporting to Readwise works again on desktop",
+        "Android: Fixed a freeze when long-pressing images, plus issues with copying text and opening books directly from other apps",
+        "Fixes: Kept the book menu order stable, synced KOReader book covers, and fixed a Windows launch crash"
+      ]
+    },
     "0.11.2": {
       "date": "2026-05-31",
       "notes": [

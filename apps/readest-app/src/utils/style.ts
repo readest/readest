@@ -14,7 +14,9 @@ import {
   generateLightPalette,
   generateDarkPalette,
 } from '@/styles/themes';
+import { createFontCSS, CustomFont } from '@/styles/fonts';
 import { getOSPlatform } from './misc';
+import { SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
 
 const getFontStyles = (
   serif: string,
@@ -107,6 +109,54 @@ const getFontStyles = (
   return fontStyles;
 };
 
+/** True for #fff, #f5f5f5, rgb(255,…), etc. Used when rewriting EPUB CSS in dark mode. */
+const isLightCssColor = (value: string): boolean => {
+  const v = value.trim().toLowerCase();
+  if (v === 'white') return true;
+  const hex = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const h = hex[1]!;
+    const expand =
+      h.length === 3
+        ? h
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : h;
+    const r = parseInt(expand.slice(0, 2), 16);
+    const g = parseInt(expand.slice(2, 4), 16);
+    const b = parseInt(expand.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.85;
+  }
+  const rgb = v.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (rgb?.[1] != null && rgb[2] != null && rgb[3] != null) {
+    const r = parseInt(rgb[1], 10);
+    const g = parseInt(rgb[2], 10);
+    const b = parseInt(rgb[3], 10);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.85;
+  }
+  return false;
+};
+
+const getDarkModeLightBackgroundOverrides = (bg: string) => `
+    /* Callout boxes often use inline white/light backgrounds while html/body set dark fg. */
+    *[style*="background-color: #fff"], *[style*="background-color:#fff"],
+    *[style*="background-color: #ffffff"], *[style*="background-color:#ffffff"],
+    *[style*="background-color: white"], *[style*="background-color:white"],
+    *[style*="background: #fff"], *[style*="background:#fff"],
+    *[style*="background: #ffffff"], *[style*="background:#ffffff"],
+    *[style*="background: white"], *[style*="background:white"],
+    *[style*="background-color: rgb(255"], *[style*="background-color:rgb(255"],
+    *[style*="background: rgb(255"], *[style*="background:rgb(255"] {
+      background-color: ${bg} !important;
+    }
+    body.theme-dark {
+      background-color: ${bg} !important;
+    }
+`;
+
 const getEinkSelectionStyles = () => {
   return `
     ::selection {
@@ -192,10 +242,6 @@ const getColorStyles = (
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
     }
-    table {
-      overflow: auto;
-      display: table !important;
-    }
     table:has(> colgroup) {
       table-layout: fixed;
     }
@@ -212,9 +258,16 @@ const getColorStyles = (
     blockquote {
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
+    /* Only tint table descendants when the user has opted into color override.
+       By default, leave them transparent so a plain table (and the invisible
+       spacer cells some books use for vertical layout) keeps the page
+       background instead of a different shade. Illegible light/zebra table
+       backgrounds are handled separately by the dark-mode light-background
+       rewriters (getDarkModeLightBackgroundOverrides / transformStylesheet).
+       See #4419 (and #2377, which this gate originally fixed). */
     blockquote, table * {
-      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -225,6 +278,7 @@ const getColorStyles = (
     *[style*="color:#000"], *[style*="color:#000000"], *[style*="color:black"] {
       color: ${fg} !important;
     }
+    ${isDarkMode && !overrideColor ? getDarkModeLightBackgroundOverrides(bg) : ''}
     /* for the Gutenberg eBooks */
     #pg-header * {
       color: inherit !important;
@@ -292,17 +346,31 @@ const getPageLayoutStyles = (
     inset: -10px;
   }
 
-  pre, code {
-    white-space: pre-wrap !important;
+  .${SCROLL_WRAPPER_CLASS} {
+    display: block;
+    overflow: auto;
+    max-width: 100%;
+    touch-action: pan-x pan-y;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
   }
-  pre {
-    max-width: calc(var(--available-width) * 1px);
-    max-height: calc(var(--available-height) * 1px);
+  .${SCROLL_WRAPPER_FIT_CLASS} {
+    overflow: visible;
+  }
+  .${SCROLL_WRAPPER_CLASS} > table {
+    display: table !important;
+    max-width: 100%;
+  }
+  pre, code, math {
+    white-space: pre-wrap !important;
     scrollbar-width: none;
+  }
+  math {
     overflow: auto;
   }
-  pre::-webkit-scrollbar {
-    display: none;
+  table, math {
+    max-width: calc(var(--available-width) * 1px);
+    max-height: calc(var(--available-height) * 1px);
   }
 
   .epubtype-footnote,
@@ -337,6 +405,10 @@ const getPageLayoutStyles = (
 
   body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
     max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  figure.code {
+    overflow: unset !important;
   }
 
   /* some epubs set insane inline-block for p */
@@ -691,7 +763,11 @@ export const getThemeCode = () => {
   } as ThemeCode;
 };
 
-export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => {
+export const getStyles = (
+  viewSettings: ViewSettings,
+  themeCode?: ThemeCode,
+  customFonts: CustomFont[] = [],
+) => {
   if (!themeCode) {
     themeCode = getThemeCode();
   }
@@ -733,6 +809,14 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
   );
+  // Inline `@font-face` rules for the caller-supplied custom fonts so
+  // they ship to the iframe synchronously with the rest of the
+  // stylesheet. Paginator injects this CSS into the iframe `<style>`
+  // before the 'load' event fires, so the first paint already resolves
+  // the configured font instead of falling back to serif/sans-serif and
+  // visibly swapping a moment later. Blob URLs are already in memory, so
+  // no network round-trip happens here.
+  const customFontFaces = getCustomFontFaces(customFonts);
   const colorStyles = getColorStyles(
     viewSettings.overrideColor!,
     viewSettings.invertImgColorInDark!,
@@ -744,8 +828,26 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   const warichuStyles = getWarichuStyles();
   const rubyStyles = getRubyStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
+  return `${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
+
+// Build a CSS chunk of `@font-face` rules for the given user custom
+// fonts. The caller (a reader component) owns the font store and passes
+// in the loaded fonts, keeping this util free of store dependencies.
+// Fonts without a blob URL are skipped; createFontCSS throws when the
+// blob URL is unset, so the inner try/catch keeps a single bad font from
+// breaking the whole stylesheet.
+const getCustomFontFaces = (fonts: CustomFont[]): string =>
+  fonts
+    .filter((font) => !!font.blobUrl)
+    .map((font) => {
+      try {
+        return createFontCSS(font);
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {
   const styleId = 'translation-style';
@@ -926,6 +1028,22 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, '$1color: var(--theme-fg-color)');
+
+  const { isDarkMode, bg } = getThemeCode();
+  if (isDarkMode) {
+    css = css.replace(ruleRegex, (match, selector, block) => {
+      const rewritten = block.replace(
+        /background(-color)?\s*:\s*([^;!}]+)(\s*!important)?(?=\s*[;!}])/gi,
+        (decl: string, _prop: string, value: string, important?: string) => {
+          const raw = value.trim().split(/\s+/)[0] ?? '';
+          if (!isLightCssColor(raw)) return decl;
+          return `background-color: ${bg}${important ?? ''}`;
+        },
+      );
+      return rewritten === block ? match : selector + rewritten;
+    });
+  }
+
   return css;
 };
 
@@ -996,56 +1114,6 @@ export const applyImageStyle = (document: Document) => {
     const computedStyle = window.getComputedStyle(hr);
     if (computedStyle.backgroundImage && computedStyle.backgroundImage !== 'none') {
       hr.classList.add('background-img');
-    }
-  });
-};
-
-export const applyTableStyle = (document: Document) => {
-  document.querySelectorAll('table').forEach((table) => {
-    const parent = table.parentNode;
-    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
-
-    // Calculate total width from td elements with width attribute or inline style
-    let totalTableWidth = 0;
-    const rows = table.querySelectorAll('tr');
-
-    // Check all rows and use the widest one
-    for (const row of rows) {
-      const cells = row.querySelectorAll('td, th');
-      let rowWidth = 0;
-
-      cells.forEach((cell) => {
-        const cellElement = cell as HTMLElement;
-
-        const widthAttr = cellElement.getAttribute('width');
-        const styleWidth = cellElement.style.width;
-        const widthStr = widthAttr || styleWidth;
-
-        if (widthStr) {
-          const widthValue = parseFloat(widthStr);
-          const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
-
-          if (widthUnit === 'px' || !widthUnit) {
-            rowWidth += widthValue;
-          }
-        }
-      });
-
-      if (rowWidth > totalTableWidth) {
-        totalTableWidth = rowWidth;
-      }
-    }
-
-    const parentWidth = window.getComputedStyle(parent as Element).width;
-    const parentContainerWidth = parseFloat(parentWidth) || 0;
-    if (totalTableWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
-      table.style.transformOrigin = 'left top';
-      table.style.transform = `scale(${scale})`;
-    } else if (parentContainerWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${parentContainerWidth}))`;
-      table.style.transformOrigin = 'center top';
-      table.style.transform = `scale(${scale})`;
     }
   });
 };

@@ -159,28 +159,98 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     private fun handleIntent(intent: Intent?) {
-        val uri = intent?.data ?: return
-        Log.e("NativeBridgePlugin", "Received intent: $uri")
-        when {
-          uri.scheme == "readest" && uri.host == "auth-callback" -> {
-              val result = JSObject().apply {
-                  put("redirectUrl", uri.toString())
-              }
-              pendingInvoke?.resolve(result)
-              pendingInvoke = null
-          }
+        if (intent == null) return
+        Log.d("NativeBridgePlugin", "Received intent: action=${intent.action} data=${intent.data}")
 
-          intent.action == Intent.ACTION_VIEW -> {
-              try {
-                activity.contentResolver.takePersistableUriPermission(
-                      uri,
-                      Intent.FLAG_GRANT_READ_URI_PERMISSION
-                  )
-              } catch (e: SecurityException) {
-                Log.e("NativeBridgePlugin", "Failed to take persistable URI permission: ${e.message}")
-              }
-          }
+        // OAuth callback uses a custom scheme on intent.data and is handled
+        // separately from any user-shared content.
+        intent.data?.let { uri ->
+            if (uri.scheme == "readest" && uri.host == "auth-callback") {
+                val result = JSObject().apply {
+                    put("redirectUrl", uri.toString())
+                }
+                pendingInvoke?.resolve(result)
+                pendingInvoke = null
+                return
+            }
         }
+
+        when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                // "Open with Readest": the OS hands us a single content://
+                // (or file://) URI on `intent.data`. Take the persistable
+                // permission so we can read it through any subsequent app
+                // launch, then forward it to the JS side via the existing
+                // shared-intent channel — without this trigger, the URI
+                // silently dies in Kotlin and the user just sees the
+                // library splash with nothing happening.
+                val uri = intent.data ?: return
+                tryTakePersistableReadPermission(uri)
+                emitSharedIntent("VIEW", listOf(uri))
+            }
+
+            Intent.ACTION_SEND -> {
+                // System share-sheet → "Send to Readest" (single file).
+                // The URI lives on EXTRA_STREAM, not on intent.data, which
+                // is why the previous data-only handler never saw share
+                // captures at all.
+                val uri = getExtraStream(intent) ?: return
+                tryTakePersistableReadPermission(uri)
+                emitSharedIntent("SEND", listOf(uri))
+            }
+
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = getExtraStreamList(intent)
+                if (uris.isEmpty()) return
+                uris.forEach { tryTakePersistableReadPermission(it) }
+                emitSharedIntent("SEND", uris)
+            }
+        }
+    }
+
+    private fun tryTakePersistableReadPermission(uri: Uri) {
+        // Only content:// URIs support persistable permissions; file://
+        // URIs are accessible directly and would throw SecurityException
+        // here. Skip the call rather than swallow noisy logs.
+        if (uri.scheme != "content") return
+        try {
+            activity.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (e: SecurityException) {
+            Log.w("NativeBridgePlugin", "takePersistableUriPermission failed for $uri: ${e.message}")
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getExtraStream(intent: Intent): Uri? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun getExtraStreamList(intent: Intent): List<Uri> {
+        val list: ArrayList<Uri>? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+            } else {
+                intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+            }
+        return list ?: emptyList()
+    }
+
+    private fun emitSharedIntent(action: String, uris: List<Uri>) {
+        val payload = JSObject().apply {
+            put("action", action)
+            val arr = JSArray()
+            uris.forEach { arr.put(it.toString()) }
+            put("urls", arr)
+        }
+        triggerEvent("shared-intent", payload)
     }
 
     @Command

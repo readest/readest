@@ -1695,5 +1695,9 @@
   "No Annotations": "هیچ حاشیه‌نویسی‌ای نیست",
   "No Bookmarks": "هیچ نشانکی نیست",
   "Select some text to highlight": "برای هایلایت کردن، متنی را انتخاب کنید",
-  "Bookmark This Page": "افزودن این صفحه به نشانک‌ها"
+  "Bookmark This Page": "افزودن این صفحه به نشانک‌ها",
+  "Book file is not available locally": "فایل کتاب به صورت محلی در دسترس نیست",
+  "Failed to send book": "ارسال کتاب ناموفق بود",
+  "Send": "ارسال",
+  "Highlight Current Sentence": "برجسته‌سازی جملهٔ فعلی"
 }

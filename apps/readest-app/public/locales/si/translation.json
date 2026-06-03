@@ -1695,5 +1695,9 @@
   "No Annotations": "අනුසටහන් නැත",
   "No Bookmarks": "පොත් සලකුණු නැත",
   "Select some text to highlight": "ඉස්මතු කිරීමට පෙළක් තෝරන්න",
-  "Bookmark This Page": "මෙම පිටුව පොත් සලකුණක් කරන්න"
+  "Bookmark This Page": "මෙම පිටුව පොත් සලකුණක් කරන්න",
+  "Book file is not available locally": "පොත් ගොනුව දේශීයව ලබා ගත නොහැක",
+  "Failed to send book": "පොත යැවීමට අසමත් විය",
+  "Send": "යවන්න",
+  "Highlight Current Sentence": "වර්තමාන වාක්‍යය ඉස්මතු කරන්න"
 }

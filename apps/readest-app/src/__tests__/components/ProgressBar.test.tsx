@@ -178,3 +178,26 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
     );
   });
 });
+
+describe('ProgressBar — decorative footer is not focusable', () => {
+  it('does not make the progress info container focusable (no stray focus ring)', () => {
+    // The footer info is a decorative role="presentation" element. A negative
+    // tabindex made it focusable, so long-pressing it on Android focused the
+    // div and the WebView painted its default focus ring as a persistent line
+    // across the bottom of the page (issue #4397). A decorative element must
+    // not be focusable so it can never receive a focus ring.
+    currentViewSettings = {
+      ...baseSettings,
+      progressInfoMode: 'all',
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const progressInfo = container.querySelector('.progressinfo');
+    expect(progressInfo).not.toBeNull();
+    expect(progressInfo!.hasAttribute('tabindex')).toBe(false);
+  });
+});

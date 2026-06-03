@@ -1695,5 +1695,9 @@
   "No Annotations": "Inga kommentarer",
   "No Bookmarks": "Inga bokmärken",
   "Select some text to highlight": "Markera text att framhäva",
-  "Bookmark This Page": "Bokmärk den här sidan"
+  "Bookmark This Page": "Bokmärk den här sidan",
+  "Book file is not available locally": "Bokfilen är inte tillgänglig lokalt",
+  "Failed to send book": "Det gick inte att skicka boken",
+  "Send": "Skicka",
+  "Highlight Current Sentence": "Markera aktuell mening"
 }

@@ -1695,5 +1695,9 @@
   "No Annotations": "Açıklama yok",
   "No Bookmarks": "Yer işareti yok",
   "Select some text to highlight": "Vurgulamak için metin seçin",
-  "Bookmark This Page": "Bu Sayfayı Yer İşaretine Ekle"
+  "Bookmark This Page": "Bu Sayfayı Yer İşaretine Ekle",
+  "Book file is not available locally": "Kitap dosyası yerel olarak mevcut değil",
+  "Failed to send book": "Kitap gönderilemedi",
+  "Send": "Gönder",
+  "Highlight Current Sentence": "Geçerli cümleyi vurgula"
 }

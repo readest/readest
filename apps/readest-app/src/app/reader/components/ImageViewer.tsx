@@ -367,12 +367,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   if (!src) return null;
 
   return (
+    // `no-context-menu` suppresses the WebView's native long-press image
+    // callout (via the `.no-context-menu img` rule). On Android it otherwise
+    // collides with the pinch/pan handlers below and freezes the app.
     <div
       ref={containerRef}
       tabIndex={-1}
       role='button'
       aria-label={_('Image viewer')}
-      className='fixed inset-0 z-50 flex items-center justify-center outline-none'
+      className='no-context-menu fixed inset-0 z-50 flex items-center justify-center outline-none'
       onKeyDown={handleKeyDown}
       onWheel={handleWheel}
       onTouchMove={onTouchMove}

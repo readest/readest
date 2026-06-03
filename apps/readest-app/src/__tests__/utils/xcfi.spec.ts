@@ -530,4 +530,70 @@ describe('CFIToXPointerConverter', () => {
       expect(cfi).toMatch(/^epubcfi\(/);
     });
   });
+
+  // applyScrollableStyle wraps wide tables/equations in a cfi-skip <div>. KOReader's
+  // CREngine DOM has no such wrapper, so CFI ↔ XPointer must treat the wrapper as
+  // transparent: the same KOReader XPointer must map to the same CFI (and back) with
+  // or without the wrapper — otherwise KOSync positions would drift.
+  describe('cfi-skip wrapper is invisible to CFI <-> XPointer', () => {
+    // identical content; only difference is the wrapping cfi-skip div around the table
+    const inner = `<table><tbody><tr><td><p>Hello scrollable world</p></td></tr></tbody></table>`;
+    const html = (table: string) =>
+      `<html><body><p>Intro paragraph</p>${table}<p>Outro paragraph</p></body></html>`;
+    const baseDoc = () => new DOMParser().parseFromString(html(inner), 'text/html');
+    const wrappedDoc = () =>
+      new DOMParser().parseFromString(
+        html(`<div class="scroll-wrapper" cfi-skip="">${inner}</div>`),
+        'text/html',
+      );
+
+    // KOReader-style XPointers (no wrapper) — the wrapper-less DOM CREngine produces.
+    const cellText = '/body/DocFragment[1]/body/table/tbody/tr/td/p/text().5';
+    const tableElement = '/body/DocFragment[1]/body/table';
+    const afterTable = '/body/DocFragment[1]/body/p[2]/text().3';
+
+    it('maps a KOReader XPointer to the same CFI with and without the wrapper', () => {
+      const base = new XCFI(baseDoc(), 0);
+      const wrapped = new XCFI(wrappedDoc(), 0);
+      for (const xp of [cellText, tableElement, afterTable]) {
+        // The wrapper must not change the CFI the XPointer resolves to.
+        expect(wrapped.xPointerToCFI(xp), xp).toBe(base.xPointerToCFI(xp));
+      }
+    });
+
+    it('round-trips the table element XPointer back to itself through the wrapped doc', () => {
+      const wrapped = new XCFI(wrappedDoc(), 0);
+      const cfi = wrapped.xPointerToCFI(tableElement);
+      const built = wrapped.cfiToXPointer(cfi);
+      expect(built.xpointer).toBe(tableElement);
+      // The wrapper is a <div>; a transparent wrapper must not appear in the path.
+      expect(built.xpointer).not.toContain('/div');
+    });
+
+    it('round-trips a KOReader range (highlight) inside the table unchanged', () => {
+      // A highlight is a range; xPointerToCFI(pos0,pos1) -> cfiToXPointer pos0/pos1
+      // exercises rangePointToXPointer, the path real highlights use.
+      const pos0 = '/body/DocFragment[1]/body/table/tbody/tr/td/p/text().0';
+      const pos1 = '/body/DocFragment[1]/body/table/tbody/tr/td/p/text().5';
+      const base = new XCFI(baseDoc(), 0);
+      const wrapped = new XCFI(wrappedDoc(), 0);
+
+      const baseCfi = base.xPointerToCFI(pos0, pos1);
+      const wrappedCfi = wrapped.xPointerToCFI(pos0, pos1);
+      expect(wrappedCfi).toBe(baseCfi); // wrapper doesn't change the highlight CFI
+
+      const back = wrapped.cfiToXPointer(wrappedCfi);
+      expect(back.pos0).toBe(pos0);
+      expect(back.pos1).toBe(pos1);
+      expect(back.pos0).not.toContain('/div');
+      expect(back.pos1).not.toContain('/div');
+    });
+
+    it('builds the same CFI->XPointer for the table element with and without the wrapper', () => {
+      const base = new XCFI(baseDoc(), 0);
+      const wrapped = new XCFI(wrappedDoc(), 0);
+      const cfi = base.xPointerToCFI(tableElement);
+      expect(wrapped.cfiToXPointer(cfi).xpointer).toBe(base.cfiToXPointer(cfi).xpointer);
+    });
+  });
 });

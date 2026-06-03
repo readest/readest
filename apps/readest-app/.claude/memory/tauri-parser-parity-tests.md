@@ -1,0 +1,29 @@
+---
+name: tauri-parser-parity-tests
+description: "How to test the native Rust EPUB/MOBI parser against foliate-js in the Tauri WebView suite, plus the dcterms:modified→published parity gotcha"
+metadata: 
+  node_type: memory
+  type: reference
+  originSessionId: 90d14df3-59ce-438f-ae91-b72e9d2b6f99
+---
+
+PR #4369 added native Rust EPUB/MOBI parsers (`src-tauri/src/epub_parser.rs`, `mobi_parser.rs`, shared `parser_common.rs`) with foliate-js fallback. Parity between the two parsers is the key risk.
+
+**Cross-language parity test harness** (`src/__tests__/tauri/epub-parser-parity.tauri.test.ts`):
+- The `.tauri.test.ts` suite (run by `scripts/test-tauri.sh` / `pnpm test:tauri`, included only by `vitest.tauri.config.mts`) is the ONLY env where both parsers coexist: Rust via `invoke()` (`./tauri-invoke.ts`), foliate-js via `DocumentLoader`. Default `pnpm test` excludes `**/*.tauri.test.ts`.
+- Rust commands read an absolute on-disk path → build it from `process.env.CWD` (injected by the tauri config = readest-app dir): `${CWD}/src/__tests__/fixtures/data/<name>`. The JS side fetches the SAME file via a Vite URL: `new URL('../fixtures/data/<name>', import.meta.url).href` (same pattern as `paginator-stabilization.browser.test.ts`).
+- Compare via the app's own normalizers so you compare user-visible values, not raw parser shapes: `formatTitle`, `formatAuthors(authors, lang)` (Rust gives `string[]`, foliate gives `string|Contributor|array` — both through formatAuthors), `getPrimaryLanguage`, `formatPublisher`, `formatDescription`.
+- **Cover is presence-only**: Rust downscales/re-encodes the cover to a ~512px JPEG (`parser_common::maybe_resize_cover`), so bytes never match foliate's original — assert `(rust.coverBase64 != null) === ((await js.getCover()) != null)`.
+- **Description needs whitespace-collapse**: foliate collapses an internal source newline to a space; Rust preserves the raw `\n`. Compare `formatDescription(x).replace(/\s+/g,' ').trim()`.
+- Section `href` is undefined on foliate `SectionItem` — compare sections by `{id,size,linear}` only. `linear` can be `null`.
+- Strongest test = open the same EPUB twice through `DocumentLoader` (with `{nativeFilePath}` → Rust prefetch, and without → pure zip.js) and assert identical `metadata`, sections, `toc`, and `computeBookNav` output (toc tree + per-section fragment CFIs/sizes). This validates `parse_epub_full` prefetch + the parallelized TOC pipeline are behavior-preserving in one shot. `isTauriAppPlatform()` is true in the webview (`.env.tauri` sets `NEXT_PUBLIC_APP_PLATFORM=tauri`) so the prefetch fires.
+- No `.mobi`/`.azw3` fixture exists anywhere in the repo → MOBI parity is NOT covered by this harness; add a Kindle fixture to extend. Rust MOBI is covered by `mobi_parser`'s own unit tests.
+- Offline verification trick (no chromedriver/tauri-driver locally): dump foliate `book.metadata` via a temp node vitest test, dump Rust `parse_epub_metadata_sync`/`compute_partial_md5` via a temp `#[cfg(test)]` mod using `env!("CARGO_MANIFEST_DIR")/../src/__tests__/fixtures/data`, diff. Lets you lock every expected value before CI runs the WebView suite.
+
+**Running the `.tauri.test.ts` suite locally on macOS** (no chromedriver/tauri-driver needed — `tauri-plugin-webdriver` 0.2 embeds an axum WebDriver server with a `platform/macos.rs` WKWebView impl, default port 4445):
+- `pnpm test:tauri` runs `scripts/test-tauri.sh`: starts `next dev` on :3000, `tauri dev --features webdriver --no-watch`, waits for :4445/status, then `vitest --config vitest.tauri.config.mts`. Its cleanup does `lsof -ti :3000 | xargs kill` — so it KILLS whatever is on :3000 (e.g. another worktree's dev server). To avoid that, copy the script and shift `DEV_PORT`/`next dev -p`/`--config devUrl` to a free port (e.g. 3100). Run via `pnpm exec bash <script>` so npm bins (`dotenv`, `next`, `tauri`, `vitest`) resolve, not the Ruby `dotenv` gem.
+- **Single-instance blocker**: `tauri_plugin_single_instance` (lib.rs, keyed on bundle id `com.bilingify.readest`) is registered unconditionally for desktop and is NOT gated by the webdriver feature. If `/Applications/Readest.app` (or any Readest instance) is running, the test instance forwards to it and exits → "Tauri exited before WebDriver ready." Quit Readest.app before running. CI doesn't hit this (Linux, no Readest installed).
+- **`vitest.tauri.config.mts` needs an `optimizeDeps` block** mirroring `vitest.browser.config.mts` (include the CJS deps `js-md5`/`@zip.js/zip.js`/`franc-min`/`iso-639-*`/etc.; exclude `@pdfjs/pdf.min.mjs` + the turso wasm). Without it, esbuild's dep-scan can't resolve foliate-js's `import '@pdfjs/pdf.min.mjs'`, skips pre-bundling, and any tauri test that imports `@/libs/document` fails to load with "Importing a module script failed" on a cold `.vite` cache. (A warm cache from a prior run masks it.)
+- **Pre-existing failure, not parity-related**: `tauri-app-service.tauri.test.ts` has 13 failures on macOS — `forbidden path: …/src/__tests__/fixtures/data/sample-alice.epub … allow-open permission`. importBook's library-copy goes through the fs plugin (scoped), and `capabilities-extra/webdriver.json` doesn't grant the fixtures dir. Confirmed identical at base config (no regression from parity work). Parser parity tests avoid this: Rust `File::open` is unscoped, and the JS side fetches fixtures via a Vite URL. To fix separately, add the fixtures path to the webdriver capability scope.
+
+**Parity gotcha found + fixed**: Rust `handle_meta` mapped `dc:date` AND `dcterms:modified` → `published`. foliate keeps `dcterms:modified` as a separate `modified` field and leaves `published` empty. EPUB3 mandates `dcterms:modified`, so native-imported EPUB3 books with no `<dc:date>` got a bogus publication date. Fix: map only `"date"` (not `"modified"`) to published. Regression tests: `epub_parser::tests::{dcterms_modified_does_not_populate_published, dc_date_populates_published}`.

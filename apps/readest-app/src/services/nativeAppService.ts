@@ -633,7 +633,7 @@ export class NativeAppService extends BaseAppService {
 
   async saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -655,7 +655,7 @@ export class NativeAppService extends BaseAppService {
           shareablePath = await this.resolveFilePath(filename, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
-          } else {
+          } else if (content) {
             await writeFile(shareablePath, new Uint8Array(content));
           }
         }
@@ -667,10 +667,17 @@ export class NativeAppService extends BaseAppService {
             // WebView's top-left corner.
             ...(options?.sharePosition ? { position: options.sharePosition } : {}),
           });
-          return true;
         } catch (error) {
-          console.error('shareFile failed; falling back to saveDialog:', error);
+          // The plugin throws on user cancellation (e.g. dismissing the
+          // Android share sheet returns "Share cancelled"). That's not a
+          // failure — the user explicitly chose not to share, so we must
+          // NOT fall back to saveDialog and pop a "Save As..." prompt.
+          // Same goes for any other share error: the caller asked for a
+          // share sheet, fulfilled or not, the saveDialog flow is a
+          // completely different user intent.
+          console.warn('shareFile did not complete:', error);
         }
+        return true;
       }
 
       const filePath = await saveDialog({
@@ -681,7 +688,7 @@ export class NativeAppService extends BaseAppService {
 
       if (typeof content === 'string') {
         await writeTextFile(filePath, content);
-      } else {
+      } else if (content) {
         await writeFile(filePath, new Uint8Array(content));
       }
       return true;

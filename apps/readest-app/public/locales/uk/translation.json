@@ -1761,5 +1761,9 @@
   "No Annotations": "Немає анотацій",
   "No Bookmarks": "Немає закладок",
   "Select some text to highlight": "Виділіть текст для підсвічування",
-  "Bookmark This Page": "Додати цю сторінку до закладок"
+  "Bookmark This Page": "Додати цю сторінку до закладок",
+  "Book file is not available locally": "Файл книги недоступний локально",
+  "Failed to send book": "Не вдалося надіслати книгу",
+  "Send": "Надіслати",
+  "Highlight Current Sentence": "Виділяти поточне речення"
 }

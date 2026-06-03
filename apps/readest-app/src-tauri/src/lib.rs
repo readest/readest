@@ -29,6 +29,8 @@ mod discord_rpc;
 #[cfg(target_os = "macos")]
 mod macos;
 mod transfer_file;
+#[cfg(desktop)]
+mod window_state;
 #[cfg(target_os = "windows")]
 use tauri::webview::ScrollBarStyle;
 use tauri::{command, Emitter, WebviewUrl, WebviewWindowBuilder, Window};
@@ -288,6 +290,7 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_sharekit::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_device_info::init())
         .plugin(tauri_plugin_turso::init())
         .plugin(tauri_plugin_native_bridge::init())
@@ -316,6 +319,13 @@ pub fn run() {
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    // Strip invalid geometry from the saved window state before the
+    // window-state plugin loads it, so a bad `.window-state.json` (e.g. the
+    // Windows minimized `-32000` sentinel) can't crash WebView2 on launch.
+    // See https://github.com/readest/readest/issues/4398.
+    #[cfg(desktop)]
+    let builder = builder.plugin(window_state::init());
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());

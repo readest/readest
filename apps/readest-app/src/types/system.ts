@@ -128,9 +128,12 @@ export interface AppService {
    * the current session.
    */
   allowPathsInScopes?(paths: string[], isDirectory: boolean): Promise<void>;
+  // Pass `null` for `content` when `options.filePath` already points to the
+  // file on disk you want to save/share — the native share path reads it
+  // directly instead of buffering an in-memory copy.
   saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;

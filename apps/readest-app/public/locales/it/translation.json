@@ -1728,5 +1728,9 @@
   "No Annotations": "Nessuna annotazione",
   "No Bookmarks": "Nessun segnalibro",
   "Select some text to highlight": "Seleziona del testo da evidenziare",
-  "Bookmark This Page": "Aggiungi questa pagina ai segnalibri"
+  "Bookmark This Page": "Aggiungi questa pagina ai segnalibri",
+  "Book file is not available locally": "Il file del libro non è disponibile localmente",
+  "Failed to send book": "Invio del libro non riuscito",
+  "Send": "Invia",
+  "Highlight Current Sentence": "Evidenzia la frase corrente"
 }

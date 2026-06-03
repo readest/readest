@@ -1728,5 +1728,9 @@
   "No Annotations": "Nicio adnotare",
   "No Bookmarks": "Niciun marcaj",
   "Select some text to highlight": "Selectează text pentru evidențiere",
-  "Bookmark This Page": "Adaugă această pagină la marcaje"
+  "Bookmark This Page": "Adaugă această pagină la marcaje",
+  "Book file is not available locally": "Fișierul cărții nu este disponibil local",
+  "Failed to send book": "Trimiterea cărții a eșuat",
+  "Send": "Trimite",
+  "Highlight Current Sentence": "Evidențiază propoziția curentă"
 }

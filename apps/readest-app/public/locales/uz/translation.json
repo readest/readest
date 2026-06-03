@@ -1695,5 +1695,9 @@
   "No Annotations": "Izohlar yoʻq",
   "No Bookmarks": "Xatchoʻplar yoʻq",
   "Select some text to highlight": "Belgilash uchun matn tanlang",
-  "Bookmark This Page": "Bu sahifani xatchoʻpga qoʻshish"
+  "Bookmark This Page": "Bu sahifani xatchoʻpga qoʻshish",
+  "Book file is not available locally": "Kitob fayli mahalliy tarzda mavjud emas",
+  "Failed to send book": "Kitobni yuborib bo'lmadi",
+  "Send": "Yuborish",
+  "Highlight Current Sentence": "Joriy jumlani ajratib ko'rsatish"
 }
