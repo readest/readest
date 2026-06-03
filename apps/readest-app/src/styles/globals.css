@@ -604,6 +604,11 @@ input[type='range'].slider-input {
 
 [data-eink='true'] .dropdown-toggle {
   background-color: theme('colors.transparent') !important;
+  /* A toggle that also carries a fill class (e.g. btn-outline) gets its label
+     inverted to base-100 by the rule above; with the background neutralized to
+     transparent that leaves white-on-white. Keep the text base-content so the
+     label stays legible (issue #4435). */
+  color: theme('colors.base-content') !important;
 }
 
 [data-eink='true'] .opds-navigation .card {
