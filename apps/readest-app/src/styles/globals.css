@@ -530,6 +530,13 @@ input[type='range'].slider-input {
   background-color: theme('colors.base-content') !important;
 }
 
+/* Inverted chip for e-ink: base-content fill, base-100 content. Declared after
+   the substring matchers above so the content color wins the cascade. */
+[data-eink='true'] .eink-inverted {
+  background-color: theme('colors.base-content') !important;
+  color: theme('colors.base-100') !important;
+}
+
 [data-eink='true'] [class*='font-light'] {
   font-weight: normal !important;
 }

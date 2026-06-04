@@ -198,6 +198,8 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         >
           <span
             className={clsx(
+              // eink-inverted keeps the "+" legible on its dark badge (#4454).
+              'eink-inverted',
               'flex h-5 w-5 items-center justify-center rounded-full',
               'bg-base-200 text-base-content/60',
               'transition-colors duration-150',
@@ -250,7 +252,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             className={clsx(
               'card h-12 border shadow-sm',
               currentFontFamily === family.name
-                ? 'border-primary/50 bg-primary/50'
+                ? // eink-bordered: bg-primary/50 dodges the eink normalizer, so
+                  // without it the selected card is black-on-black (#4454).
+                  'border-primary/50 bg-primary/50 eink-bordered'
                 : `border-base-200 bg-base-100 ${isDeleteMode ? '' : 'cursor-pointer'}`,
             )}
             onClick={!isDeleteMode ? () => handleSelectFamily(family) : undefined}
