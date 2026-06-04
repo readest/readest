@@ -18,14 +18,11 @@ import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
-import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
-import { useKOSync } from '../hooks/useKOSync';
-import { useWebDAVSync } from '../hooks/useWebDAVSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -63,7 +60,6 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
-import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
@@ -74,7 +70,6 @@ import { getLocale } from '@/utils/misc';
 import { isFontType } from '@/utils/font';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
-import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
 
@@ -133,12 +128,8 @@ const FoliateViewer: React.FC<{
   }, [toastMessage]);
 
   useUICSS(bookKey);
-  useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
   useBookCoverAutoSave(bookKey);
-  const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
-  useWebDAVSync(bookKey);
-  useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -251,15 +242,7 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings);
-        const themeCode = getThemeCode();
-        if (bookData.book?.format === 'PDF' && themeCode && renderer) {
-          renderer.pageColors = viewSettings.applyThemeToPDF
-            ? {
-                background: themeCode.bg,
-                foreground: themeCode.fg,
-              }
-            : undefined;
-        }
+        getThemeCode();
       }
 
       applyImageStyle(detail.doc);
@@ -516,7 +499,7 @@ const FoliateViewer: React.FC<{
       }
 
       if (bookDoc.rendition?.layout === 'pre-paginated' && bookDoc.sections) {
-        bookDoc.rendition.spread = viewSettings.spreadMode;
+        bookDoc.rendition.spread = 'none';
         const coverSide = bookDoc.dir === 'rtl' ? 'right' : 'left';
         bookDoc.sections[0]!.pageSpread = viewSettings.keepCoverSpread ? '' : coverSide;
       }
@@ -566,7 +549,7 @@ const FoliateViewer: React.FC<{
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
       const animated = viewSettings.animated!;
       const eink = viewSettings.isEink!;
-      const maxColumnCount = viewSettings.maxColumnCount!;
+      const maxColumnCount = 1;
       const maxInlineSize = getMaxInlineSize(viewSettings);
       const maxBlockSize = viewSettings.maxBlockSize!;
       const screenOrientation = viewSettings.screenOrientation!;
@@ -593,7 +576,7 @@ const FoliateViewer: React.FC<{
       }
       if (bookDoc?.rendition?.layout === 'pre-paginated') {
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
-        view.renderer.setAttribute('spread', viewSettings.spreadMode);
+        view.renderer.setAttribute('spread', 'none');
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
@@ -685,7 +668,6 @@ const FoliateViewer: React.FC<{
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {
-      const renderer = viewRef.current.renderer;
       const viewSettings = getViewSettings(bookKey)!;
       viewRef.current.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       const docs = viewRef.current.renderer.getContents();
@@ -697,15 +679,6 @@ const FoliateViewer: React.FC<{
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
       });
-
-      if (bookData?.book?.format === 'PDF' && themeCode && renderer) {
-        renderer.pageColors = viewSettings.applyThemeToPDF
-          ? {
-              background: themeCode.bg,
-              foreground: themeCode.fg,
-            }
-          : undefined;
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -714,7 +687,6 @@ const FoliateViewer: React.FC<{
     viewSettings?.scrolled,
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,
-    viewSettings?.applyThemeToPDF,
     viewSettings?.hideScrollbar,
   ]);
 
@@ -809,14 +781,6 @@ const FoliateViewer: React.FC<{
         <div className='absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
           <Spinner loading={true} />
         </div>
-      )}
-      {syncState === 'conflict' && conflictDetails && (
-        <KOSyncConflictResolver
-          details={conflictDetails}
-          onResolveWithLocal={resolveWithLocal}
-          onResolveWithRemote={resolveWithRemote}
-          onClose={resolveWithLocal}
-        />
       )}
     </>
   );

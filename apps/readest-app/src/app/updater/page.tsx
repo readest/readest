@@ -1,26 +1,14 @@
 'use client';
 
-import { Suspense } from 'react';
-import { UpdaterContent } from '@/components/UpdaterWindow';
-import { useTheme } from '@/hooks/useTheme';
-import Spinner from '@/components/Spinner';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-const UpdaterPage = () => {
-  useTheme();
+export default function UpdaterPage() {
+  const router = useRouter();
 
-  return (
-    <Suspense
-      fallback={
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <Spinner loading />
-        </div>
-      }
-    >
-      <div className='bg-base-100 px-12 py-4'>
-        <UpdaterContent />
-      </div>
-    </Suspense>
-  );
-};
+  useEffect(() => {
+    router.replace('/library');
+  }, [router]);
 
-export default UpdaterPage;
+  return null;
+}

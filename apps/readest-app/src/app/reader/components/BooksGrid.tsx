@@ -26,11 +26,10 @@ import DoubleBorder from './DoubleBorder';
 
 interface BooksGridProps {
   bookKeys: string[];
-  onCloseBook: (bookKey: string) => void;
   onGoToLibrary: () => void;
 }
 
-const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibrary }) => {
+const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onGoToLibrary }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
@@ -124,7 +123,6 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
               bookTitle={book.title}
               isTopLeft={index === 0}
               isHoveredAnim={bookKeys.length > 2}
-              onCloseBook={onCloseBook}
               onGoToLibrary={onGoToLibrary}
               onDropdownOpenChange={(isOpen) => setDropdownOpenBook(isOpen ? bookKey : '')}
             />

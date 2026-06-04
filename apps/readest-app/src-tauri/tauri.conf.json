@@ -103,27 +103,6 @@
         "description": "AZW3 file",
         "mimeType": "application/vnd.amazon.mobi8-ebook",
         "role": "Viewer"
-      },
-      {
-        "name": "fb2",
-        "ext": ["fb2"],
-        "description": "FB2 file",
-        "mimeType": "application/x-fictionbook+xml",
-        "role": "Viewer"
-      },
-      {
-        "name": "cbz",
-        "ext": ["cbz"],
-        "description": "CBZ file",
-        "mimeType": "application/vnd.comicbook+zip",
-        "role": "Viewer"
-      },
-      {
-        "name": "pdf",
-        "ext": ["pdf"],
-        "description": "PDF file",
-        "mimeType": "application/pdf",
-        "role": "Viewer"
       }
     ],
     "createUpdaterArtifacts": true

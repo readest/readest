@@ -62,7 +62,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [compactMarginRightPx, setCompactMarginRightPx] = useState(
     viewSettings.compactMarginRightPx,
   );
-  const [maxColumnCount, setMaxColumnCount] = useState(viewSettings.maxColumnCount);
   const [maxInlineSize, setMaxInlineSize] = useState(viewSettings.maxInlineSize);
   const [maxBlockSize, setMaxBlockSize] = useState(viewSettings.maxBlockSize);
   const [writingMode, setWritingMode] = useState(viewSettings.writingMode);
@@ -107,7 +106,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       compactMarginLeftPx: setCompactMarginLeftPx,
       compactMarginRightPx: setCompactMarginRightPx,
       gapPercent: setGapPercent,
-      maxColumnCount: setMaxColumnCount,
       maxInlineSize: setMaxInlineSize,
       maxBlockSize: setMaxBlockSize,
       overrideLayout: setOverrideLayout,
@@ -262,15 +260,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gapPercent]);
-
-  useEffect(() => {
-    if (maxColumnCount === viewSettings.maxColumnCount) return;
-    saveViewSettings(envConfig, bookKey, 'maxColumnCount', maxColumnCount, false, false);
-    const newViewSettings = getViewSettings(bookKey)!;
-    view?.renderer.setAttribute('max-column-count', maxColumnCount);
-    view?.renderer.setAttribute('max-inline-size', `${getMaxInlineSize(newViewSettings)}px`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxColumnCount]);
 
   useEffect(() => {
     if (maxInlineSize === viewSettings.maxInlineSize) return;
@@ -632,14 +621,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           min={0}
           max={30}
           data-setting-id='settings.layout.pageGap'
-        />
-        <NumberInput
-          label={_('Maximum Number of Columns')}
-          value={maxColumnCount}
-          onChange={setMaxColumnCount}
-          min={1}
-          max={4}
-          data-setting-id='settings.layout.maxColumnCount'
         />
         <NumberInput
           label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}

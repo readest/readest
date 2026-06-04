@@ -23,8 +23,6 @@ import { mountAdditionalFonts } from '@/styles/fonts';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getSysFontsList, setSystemUIVisibility } from '@/utils/bridge';
 import { AboutWindow } from '@/components/AboutWindow';
-import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
-import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { ProofreadRulesManager } from './ProofreadRules';
 import { Toast } from '@/components/Toast';
 import { getLocale } from '@/utils/misc';
@@ -176,10 +174,8 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       )}
     >
       <Suspense fallback={<div className='full-height'></div>}>
-        <ReaderContent ids={ids} settings={settings} />
+        <ReaderContent ids={ids} />
         <AboutWindow />
-        <KeyboardShortcutsHelp />
-        <UpdaterWindow />
         <ProofreadRulesManager />
         <Toast />
       </Suspense>

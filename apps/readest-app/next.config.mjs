@@ -32,7 +32,7 @@ const nextConfig = {
     // between runs. Dev caching is on by default since Next 16.1; build
     // caching is opt-in (beta).
     turbopackFileSystemCacheForDev: true,
-    turbopackFileSystemCacheForBuild: true,
+    turbopackFileSystemCacheForBuild: false,
   },
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
@@ -62,13 +62,6 @@ const nextConfig = {
     },
   },
   transpilePackages: [
-    'ai',
-    'ai-sdk-ollama',
-    '@ai-sdk/react',
-    '@assistant-ui/react',
-    '@assistant-ui/react-ai-sdk',
-    '@assistant-ui/react-markdown',
-    'streamdown',
     ...(isDev
       ? []
       : [

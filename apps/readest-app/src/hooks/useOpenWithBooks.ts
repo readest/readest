@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAllWindows, getCurrentWindow } from '@tauri-apps/api/window';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
-import { navigateToLibrary, showLibraryWindow } from '@/utils/nav';
+import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 
 /**
@@ -27,13 +25,6 @@ export function useOpenWithBooks() {
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
 
-    const isFirstWindow = async () => {
-      const allWindows = await getAllWindows();
-      const currentWindow = getCurrentWindow();
-      const sortedWindows = allWindows.sort((a, b) => a.label.localeCompare(b.label));
-      return sortedWindows[0]?.label === currentWindow.label;
-    };
-
     const handle = async (urls: string[]) => {
       const filePaths: string[] = [];
       for (let url of urls) {
@@ -46,16 +37,9 @@ export function useOpenWithBooks() {
       }
       if (filePaths.length === 0) return;
 
-      const settings = useSettingsStore.getState().settings;
-      if (appService?.hasWindow && settings.openBookInNewWindow) {
-        if (await isFirstWindow()) {
-          showLibraryWindow(appService, filePaths);
-        }
-      } else {
-        window.OPEN_WITH_FILES = filePaths;
-        setCheckOpenWithBooks(true);
-        navigateToLibrary(router, `reload=${Date.now()}`);
-      }
+      window.OPEN_WITH_FILES = filePaths;
+      setCheckOpenWithBooks(true);
+      navigateToLibrary(router, `reload=${Date.now()}`);
     };
 
     const onIncoming = (event: CustomEvent) => {

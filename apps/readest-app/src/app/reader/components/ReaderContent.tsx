@@ -11,11 +11,9 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useTranslation } from '@/hooks/useTranslation';
-import { SystemSettings } from '@/types/settings';
-import { parseOpenWithFiles } from '@/helpers/openWith';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { UnlistenFn } from '@tauri-apps/api/event';
-import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
+import { tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { uniqueId } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
@@ -28,8 +26,6 @@ import {
 import { clearDiscordPresence } from '@/utils/discord';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookDetailModal } from '@/components/metadata';
-import ShareBookDialog from '@/app/library/components/ShareBookDialog';
-import { useAuth } from '@/context/AuthContext';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
@@ -39,12 +35,12 @@ import Notebook from './notebook/Notebook';
 import BooksGrid from './BooksGrid';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 
-const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
+const ReaderContent: React.FC<{ ids?: string }> = ({ ids }) => {
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
-  const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
+  const { bookKeys } = useBooksManager();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
   const { getConfig, getBookData, saveConfig } = useBookDataStore();
@@ -52,11 +48,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
-  const [shareDialogState, setShareDialogState] = useState<{
-    book: Book;
-    cfi: string | null;
-  } | null>(null);
-  const { user } = useAuth();
   const isInitiating = useRef(false);
   const [loading, setLoading] = useState(false);
   const [errorLoading, setErrorLoading] = useState(false);
@@ -110,29 +101,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       eventDispatcher.offSync('show-book-details', handleShowBookDetails);
     };
   }, []);
-
-  useEffect(() => {
-    const handleShareIntent = (event: CustomEvent) => {
-      const detail = event.detail as { book: Book; cfi?: string | null } | undefined;
-      if (!detail?.book) return;
-      if (!user) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          message: _('Sign in to share books'),
-          timeout: 2500,
-        });
-        return;
-      }
-      setShareDialogState({
-        book: detail.book,
-        cfi: detail.cfi ?? null,
-      });
-    };
-    eventDispatcher.on('show-share-dialog', handleShareIntent);
-    return () => {
-      eventDispatcher.off('show-share-dialog', handleShareIntent);
-    };
-  }, [user, _]);
 
   useEffect(() => {
     if (bookKeys && bookKeys.length > 0) {
@@ -197,11 +165,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateToLibrary(router, '', undefined, true);
   };
 
-  const saveSettingsAndGoToLibrary = () => {
-    saveSettings(envConfig, settings);
-    navigateBackToLibrary();
-  };
-
   const handleCloseBooks = throttle(async () => {
     const settings = useSettingsStore.getState().settings;
     await Promise.all(bookKeys.map(async (key) => await saveConfigAndCloseBook(key)));
@@ -225,28 +188,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     }
   };
 
-  const handleCloseBook = async (bookKey: string) => {
-    saveConfigAndCloseBook(bookKey);
-    if (sideBarBookKey === bookKey) {
-      setSideBarBookKey(getNextBookKey(sideBarBookKey));
-    }
-    dismissBook(bookKey);
-    if (bookKeys.filter((key) => key !== bookKey).length == 0) {
-      const openWithFiles = (await parseOpenWithFiles(appService)) || [];
-      if (appService?.hasWindow) {
-        if (openWithFiles.length > 0) {
-          tauriHandleOnCloseWindow(handleCloseBooks);
-          return await tauriHandleClose();
-        }
-        const currentWindow = getCurrentWindow();
-        if (currentWindow.label.startsWith('reader')) {
-          return await currentWindow.close();
-        }
-      }
-      saveSettingsAndGoToLibrary();
-    }
-  };
-
   if (!bookKeys || bookKeys.length === 0) return null;
   const bookData = getBookData(bookKeys[0]!);
   const viewSettings = getViewSettings(bookKeys[0]!);
@@ -265,11 +206,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   return (
     <div className='reader-content full-height flex'>
       <SideBar />
-      <BooksGrid
-        bookKeys={bookKeys}
-        onCloseBook={handleCloseBook}
-        onGoToLibrary={handleCloseBooksToLibrary}
-      />
+      <BooksGrid bookKeys={bookKeys} onGoToLibrary={handleCloseBooksToLibrary} />
       {isSettingsDialogOpen && <SettingsDialog bookKey={settingsDialogBookKey} />}
       <Notebook />
       {showDetailsBook && (
@@ -279,12 +216,6 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           onClose={() => setShowDetailsBook(null)}
         />
       )}
-      <ShareBookDialog
-        isOpen={!!shareDialogState}
-        book={shareDialogState?.book ?? null}
-        cfi={shareDialogState?.cfi ?? null}
-        onClose={() => setShareDialogState(null)}
-      />
     </div>
   );
 };

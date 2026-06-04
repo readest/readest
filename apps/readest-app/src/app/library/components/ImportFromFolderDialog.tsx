@@ -13,7 +13,7 @@ import Dialog from '@/components/Dialog';
  * label is what the user sees; `exts` is what the importer filters on.
  *
  * Keep order roughly aligned with the design mockup so the muscle memory
- * of users coming from the prior screenshot still works (EPUB and PDF
+ * of users coming from the prior screenshot still works (EPUB
  * first, common eBook formats in the middle, archives at the end).
  */
 export interface FormatGroup {
@@ -25,11 +25,8 @@ export interface FormatGroup {
 
 export const DEFAULT_FORMAT_GROUPS: FormatGroup[] = [
   { id: 'epub', label: 'EPUB', exts: ['epub'] },
-  { id: 'pdf', label: 'PDF', exts: ['pdf'] },
   { id: 'mobi', label: 'MOBI/AZW/AZW3', exts: ['mobi', 'azw', 'azw3'] },
-  { id: 'fb2', label: 'FB2', exts: ['fb2'] },
-  { id: 'cbz', label: 'CBZ/ZIP', exts: ['cbz', 'zip'] },
-  { id: 'txt', label: 'TXT', exts: ['txt'] },
+  { id: 'txt', label: 'TXT/MD', exts: ['txt', 'md'] },
 ];
 
 export interface ImportFromFolderResult {
@@ -82,7 +79,7 @@ interface ImportFromFolderDialogProps {
   initialFolderMode?: 'keep' | 'flatten';
   /**
    * Initial set of {@link FormatGroup.id}s to mark as checked. Persisted
-   * by the caller. Falls back to a sensible "EPUB + PDF" default when
+   * by the caller. Falls back to a sensible "EPUB" default when
    * omitted (or when the persisted set is empty, since no boxes ticked
    * would block the OK button immediately on dialog open).
    */
@@ -119,7 +116,7 @@ interface ImportFromFolderDialogProps {
   onConfirm: (result: ImportFromFolderResult) => void;
 }
 
-const DEFAULT_SELECTED_GROUP_IDS = ['epub', 'pdf'];
+const DEFAULT_SELECTED_GROUP_IDS = ['epub'];
 const DEFAULT_MIN_SIZE_KB = 20;
 
 /**
@@ -147,9 +144,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   const _ = useTranslation();
 
   const [directory, setDirectory] = useState(initialDirectory);
-  // EPUB + PDF default to selected; this matches the screenshot the
-  // feature was modelled on and reflects the two formats new users are
-  // overwhelmingly most likely to have on disk. A persisted empty set
+  // EPUB defaults to selected. A persisted empty set
   // is treated as "use defaults" so the OK button isn't disabled on
   // dialog open.
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(() => {
@@ -282,8 +277,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
           </button>
         </div>
 
-        {/* Format checkboxes — laid out as a 2-column grid so 6 entries
-            fit in three rows on phones without horizontal scrolling. */}
+        {/* Format checkboxes — laid out as a compact 2-column grid. */}
         <div className='flex flex-col gap-1.5'>
           <span className='text-base-content/70 text-xs'>{_('File Formats')}</span>
           <div className='grid grid-cols-2 gap-x-3 gap-y-2'>

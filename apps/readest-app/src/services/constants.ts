@@ -41,17 +41,7 @@ export const LOCAL_DICTIONARIES_SUBDIR = `${DATA_SUBDIR}/Dictionaries`;
 
 export const SETTINGS_FILENAME = 'settings.json';
 
-export const SUPPORTED_BOOK_EXTS = [
-  'epub',
-  'mobi',
-  'azw',
-  'azw3',
-  'fb2',
-  'zip',
-  'cbz',
-  'pdf',
-  'txt',
-];
+export const SUPPORTED_BOOK_EXTS = ['epub', 'mobi', 'azw', 'azw3', 'txt', 'md'];
 export const BOOK_ACCEPT_FORMATS = SUPPORTED_BOOK_EXTS.map((ext) => `.${ext}`).join(', ');
 export const BOOK_UNGROUPED_NAME = '';
 export const BOOK_UNGROUPED_ID = '';
@@ -102,7 +92,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
   alwaysOnTop: false,
-  openBookInNewWindow: true,
+  openBookInNewWindow: false,
   alwaysShowStatusBar: false,
   alwaysInForeground: false,
   autoCheckUpdates: true,
@@ -137,11 +127,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
   customDictionaries: [],
   dictionarySettings: {
-    providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
-    providerEnabled: {
-      'builtin:wiktionary': true,
-      'builtin:wikipedia': true,
-    },
+    providerOrder: [],
+    providerEnabled: {},
   },
 
   kosync: DEFAULT_KOSYNC_SETTINGS,
@@ -158,10 +145,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     book: true,
     progress: true,
     note: true,
-    dictionary: true,
     font: true,
     texture: true,
-    opds_catalog: true,
     settings: true,
   },
 };
@@ -193,7 +178,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   isNotebookPinned: false,
   notebookActiveTab: 'notes',
   autohideCursor: true,
-  translationProvider: 'deepl',
+  translationProvider: '',
   translateTargetLang: 'EN',
 
   customThemes: [],
@@ -243,7 +228,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   swapClickArea: false,
   disableDoubleClick: false,
   volumeKeysToFlip: false,
-  maxColumnCount: 2,
+  maxColumnCount: 1,
   maxInlineSize: getDefaultMaxInlineSize(),
   maxBlockSize: getDefaultMaxBlockSize(),
   writingMode: 'auto',
@@ -365,10 +350,10 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translationEnabled: false,
-  translationProvider: 'deepl',
+  translationProvider: '',
   translateTargetLang: '',
   showTranslateSource: true,
-  ttsReadAloudText: 'both',
+  ttsReadAloudText: 'source',
 };
 
 export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {

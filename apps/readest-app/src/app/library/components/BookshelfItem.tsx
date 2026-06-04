@@ -12,7 +12,7 @@ import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
-import { navigateToReader, showReaderWindow } from '@/utils/nav';
+import { navigateToReader } from '@/utils/nav';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -186,16 +186,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       }
       const available = await makeBookAvailable(book);
       if (!available) return;
-      if (appService?.hasWindow && settings.openBookInNewWindow) {
-        showReaderWindow(appService, [book.hash]);
-      } else {
-        setTimeout(() => {
-          navigateToReader(router, [book.hash]);
-        }, 0);
-      }
+      setTimeout(() => {
+        navigateToReader(router, [book.hash]);
+      }, 0);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSelectMode, settings.openBookInNewWindow, appService],
+    [isSelectMode],
   );
 
   const handleGroupClick = useCallback(

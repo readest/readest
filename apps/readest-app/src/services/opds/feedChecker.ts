@@ -104,10 +104,7 @@ function getFormatTier(link: ValidAcqLink): FormatTier {
   ) {
     return 2;
   }
-  if (MIMETYPES.PDF.includes(mediaType) || MIMETYPES.CBZ.includes(mediaType)) {
-    return 3;
-  }
-  return 4;
+  return 3;
 }
 
 /**
@@ -117,7 +114,7 @@ function getFormatTier(link: ValidAcqLink): FormatTier {
  *    indirect links — leaves entries we can fetch directly.
  * 2. Prefer open-access over plain acquisition.
  * 3. Within those, rank by format tier:
- *    Advanced EPUB / EPUB3 > EPUB > MOBI/AZW/AZW3 > PDF/CBZ > other.
+ *    Advanced EPUB / EPUB3 > EPUB > MOBI/AZW/AZW3 > other.
  *    Ties resolve by feed order.
  *
  * Returns undefined when no safe link exists — the entry is skipped.

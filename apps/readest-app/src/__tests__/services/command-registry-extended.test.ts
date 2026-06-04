@@ -176,11 +176,10 @@ describe('buildCommandRegistry', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('should include AI panel items in non-production', () => {
+  it('should not include AI panel items in local-only mode', () => {
     const items = buildCommandRegistry(createMockOptions());
-    const aiItems = items.filter((i) => i.panel === 'AI');
-    // In test environment (not production), AI items should be included
-    expect(aiItems.length).toBeGreaterThan(0);
+    const aiItems = items.filter((i) => (i.panel as string | undefined) === 'AI');
+    expect(aiItems.length).toBe(0);
   });
 
   it('should give each settings item keywords and section', () => {

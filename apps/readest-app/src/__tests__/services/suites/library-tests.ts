@@ -109,7 +109,7 @@ export function libraryTests(getService: () => AppService) {
         hash: 'full',
         title: 'Full Book',
         author: 'Full Author',
-        format: 'PDF',
+        format: 'MOBI',
         tags: ['fiction', 'sci-fi'],
         groupName: 'Series A',
         progress: [5, 100],
@@ -120,7 +120,7 @@ export function libraryTests(getService: () => AppService) {
 
       const loaded = await service.loadLibraryBooks();
       expect(loaded[0]!.hash).toBe('full');
-      expect(loaded[0]!.format).toBe('PDF');
+      expect(loaded[0]!.format).toBe('MOBI');
       expect(loaded[0]!.tags).toEqual(['fiction', 'sci-fi']);
       expect(loaded[0]!.groupName).toBe('Series A');
       expect(loaded[0]!.progress).toEqual([5, 100]);

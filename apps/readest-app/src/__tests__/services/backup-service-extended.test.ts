@@ -234,12 +234,12 @@ describe('mergeBookMetadata - extended', () => {
     const backup = makeBook({
       updatedAt: 3000,
       hash: 'hash1',
-      format: 'PDF',
+      format: 'MOBI',
       author: 'Author B',
     });
     const result = mergeBookMetadata(current, backup);
     // Backup has higher updatedAt, so its fields are base
-    expect(result.format).toBe('PDF');
+    expect(result.format).toBe('MOBI');
     expect(result.author).toBe('Author B');
   });
 

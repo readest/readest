@@ -1,14 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
-import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useCommandPalette } from '@/components/command-palette';
-import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
-import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { viewPagination } from './usePagination';
@@ -28,7 +24,6 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const { getBookData } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
-  const { open: openCommandPalette } = useCommandPalette();
   const lastParagraphToggleRef = useRef(0);
   const viewSettings = getViewSettings(sideBarBookKey ?? '');
   const fontSize = viewSettings?.defaultFontSize ?? 16;
@@ -182,24 +177,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     window.location.reload();
   };
 
-  const toggleFullscreen = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleToggleFullScreen();
-    }
-  };
+  const toggleFullscreen = async () => {};
 
-  const closeWindow = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleClose();
-    }
-  };
+  const closeWindow = async () => {};
 
-  const quitApp = async () => {
-    // on web platform use browser's default shortcut to close the tab
-    if (isTauriAppPlatform()) {
-      await tauriQuitApp();
-    }
-  };
+  const quitApp = async () => {};
 
   const showSearchBar = () => {
     setTimeout(() => {
@@ -382,8 +364,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onZoomIn: zoomIn,
       onZoomOut: zoomOut,
       onResetZoom: resetZoom,
-      onOpenCommandPalette: openCommandPalette,
-      onOpenShortcutsHelp: () => setShortcutsDialogVisible(true),
+      onOpenCommandPalette: () => {},
+      onOpenShortcutsHelp: () => {},
     },
     [sideBarBookKey, bookKeys],
   );

@@ -100,5 +100,5 @@ export const openPseStreamBook = async (
       author: data.author,
     } as BookMetadata,
   } as BookDoc;
-  return { book, format: 'CBZ' };
+  return { book, format: 'UNKNOWN' };
 };

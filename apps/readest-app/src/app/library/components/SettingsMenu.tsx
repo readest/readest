@@ -21,7 +21,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
-import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
@@ -56,7 +55,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
-  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
@@ -114,24 +112,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const cycleThemeMode = () => {
     const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
     setThemeMode(nextMode);
-  };
-
-  const handleFullScreen = () => {
-    tauriHandleToggleFullScreen();
-    setIsDropdownOpen?.(false);
-  };
-
-  const toggleOpenInNewWindow = () => {
-    saveSysSettings(envConfig, 'openBookInNewWindow', !settings.openBookInNewWindow);
-    setIsDropdownOpen?.(false);
-  };
-
-  const toggleAlwaysOnTop = () => {
-    const newValue = !settings.alwaysOnTop;
-    saveSysSettings(envConfig, 'alwaysOnTop', newValue);
-    setIsAlwaysOnTop(newValue);
-    tauriHandleSetAlwaysOnTop(newValue);
-    setIsDropdownOpen?.(false);
   };
 
   const toggleAlwaysShowStatusBar = () => {
@@ -394,18 +374,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           toggled={isAutoCheckUpdates}
           onClick={toggleAutoCheckUpdates}
         />
-      )}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      {appService?.hasWindow && (
-        <MenuItem
-          label={_('Open Book in New Window')}
-          toggled={settings.openBookInNewWindow}
-          onClick={toggleOpenInNewWindow}
-        />
-      )}
-      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
-      {appService?.hasWindow && (
-        <MenuItem label={_('Always on Top')} toggled={isAlwaysOnTop} onClick={toggleAlwaysOnTop} />
       )}
       {appService?.isMobileApp && (
         <MenuItem

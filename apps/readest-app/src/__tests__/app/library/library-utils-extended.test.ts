@@ -58,8 +58,8 @@ describe('createBookFilter', () => {
   });
 
   it('should match by format', () => {
-    const filter = createBookFilter('PDF');
-    const book = createMockBook({ format: 'PDF', title: 'Some Book' });
+    const filter = createBookFilter('MOBI');
+    const book = createMockBook({ format: 'MOBI', title: 'Some Book' });
     expect(filter(book)).toBe(true);
   });
 
@@ -171,8 +171,8 @@ describe('getBookSortValue', () => {
   });
 
   it('should return format string for Format sort', () => {
-    const book = createMockBook({ format: 'PDF' });
-    expect(getBookSortValue(book, LibrarySortByType.Format)).toBe('PDF');
+    const book = createMockBook({ format: 'MOBI' });
+    expect(getBookSortValue(book, LibrarySortByType.Format)).toBe('MOBI');
   });
 
   it('should return published date timestamp for Published sort', () => {
@@ -244,11 +244,11 @@ describe('createBookSorter - additional cases', () => {
   });
 
   it('should sort by format alphabetically', () => {
-    const books = [createMockBook({ format: 'PDF' }), createMockBook({ format: 'EPUB' })];
+    const books = [createMockBook({ format: 'MOBI' }), createMockBook({ format: 'EPUB' })];
     const sorter = createBookSorter(LibrarySortByType.Format, 'en');
     const sorted = [...books].sort(sorter);
     expect(sorted[0]!.format).toBe('EPUB');
-    expect(sorted[1]!.format).toBe('PDF');
+    expect(sorted[1]!.format).toBe('MOBI');
   });
 
   it('should sort by seriesIndex', () => {

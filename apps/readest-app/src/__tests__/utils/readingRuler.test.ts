@@ -5,7 +5,6 @@ import {
   calculateReadingRulerPadding,
   calculateReadingRulerSize,
   clampReadingRulerPosition,
-  FIXED_LAYOUT_READING_RULER_LINE_HEIGHT,
   filterVisibleLineBoxes,
   getReadingRulerMoveDirection,
   isReadingRulerMoveKey,
@@ -23,9 +22,9 @@ describe('readingRuler utils', () => {
           defaultFontSize: 16,
           lineHeight: 1.5,
         },
-        'PDF',
+        'EPUB',
       ),
-    ).toBe(3 * FIXED_LAYOUT_READING_RULER_LINE_HEIGHT);
+    ).toBe(3 * 16 * 1.5);
   });
 
   it('calculates reflowable ruler size from font size and line height', () => {
@@ -86,10 +85,7 @@ describe('readingRuler utils', () => {
   it('pads each side by 0.3 of a line height', () => {
     // round(16 * 1.5 * 0.3) = 7
     expect(calculateReadingRulerPadding({ defaultFontSize: 16, lineHeight: 1.5 }, 'EPUB')).toBe(7);
-    // fixed-layout: round(28 * 0.3) = 8
-    expect(calculateReadingRulerPadding({ defaultFontSize: 16, lineHeight: 1.5 }, 'PDF')).toBe(
-      Math.round(FIXED_LAYOUT_READING_RULER_LINE_HEIGHT * 0.3),
-    );
+    expect(calculateReadingRulerPadding({ defaultFontSize: 18, lineHeight: 1.5 }, 'EPUB')).toBe(8);
   });
 });
 

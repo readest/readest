@@ -1,10 +1,9 @@
 import clsx from 'clsx';
 import React from 'react';
-import { PiNotePencil, PiRobot } from 'react-icons/pi';
+import { PiNotePencil } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useSettingsStore } from '@/store/settingsStore';
 import { NotebookTab } from '@/store/notebookStore';
 
 interface NotebookTabNavigationProps {
@@ -18,17 +17,13 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { settings } = useSettingsStore();
-  const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai'] : [];
+  const tabs: NotebookTab[] = ['notes'];
 
   const getTabLabel = (tab: NotebookTab) => {
     switch (tab) {
       case 'notes':
         return _('Notes');
-      case 'ai':
-        return _('AI');
       default:
         return '';
     }
@@ -38,8 +33,6 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     switch (tab) {
       case 'notes':
         return <PiNotePencil className='mx-auto' size={20} />;
-      case 'ai':
-        return <PiRobot className='mx-auto' size={20} />;
       default:
         return null;
     }

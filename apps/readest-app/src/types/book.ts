@@ -4,17 +4,7 @@ import { TTSMediaMetadataMode } from '@/services/tts/types';
 import type { AnnotationLinkType } from '@/utils/deeplink';
 import { AnnotationToolType } from './annotator';
 
-export type BookFormat =
-  | 'EPUB'
-  | 'PDF'
-  | 'MOBI'
-  | 'AZW'
-  | 'AZW3'
-  | 'CBZ'
-  | 'FB2'
-  | 'FBZ'
-  | 'TXT'
-  | 'MD';
+export type BookFormat = 'EPUB' | 'MOBI' | 'AZW' | 'AZW3' | 'TXT' | 'MD' | 'UNKNOWN';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
 export type ReadingStatus = 'unread' | 'reading' | 'finished';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
@@ -33,7 +23,7 @@ export interface ParagraphModeConfig {
   enabled: boolean;
 }
 
-export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
+export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set();
 
 /**
  * Lookup tables built from a Book[] for O(1) hash and metaHash queries during

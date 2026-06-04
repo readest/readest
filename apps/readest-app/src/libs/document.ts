@@ -92,28 +92,22 @@ export interface BookDoc {
 
 export const EXTS: Record<BookFormat, string> = {
   EPUB: 'epub',
-  PDF: 'pdf',
   MOBI: 'mobi',
   AZW: 'azw',
   AZW3: 'azw3',
-  CBZ: 'cbz',
-  FB2: 'fb2',
-  FBZ: 'fbz',
   TXT: 'txt',
   MD: 'md',
+  UNKNOWN: '',
 };
 
 export const MIMETYPES: Record<BookFormat, string[]> = {
   EPUB: ['application/epub+zip'],
-  PDF: ['application/pdf'],
   MOBI: ['application/x-mobipocket-ebook'],
   AZW: ['application/vnd.amazon.ebook'],
   AZW3: ['application/vnd.amazon.mobi8-ebook', 'application/x-mobi8-ebook'],
-  CBZ: ['application/vnd.comicbook+zip', 'application/zip', 'application/x-cbz'],
-  FB2: ['application/x-fictionbook+xml', 'text/xml', 'application/xml'],
-  FBZ: ['application/x-zip-compressed-fb2', 'application/zip'],
   TXT: ['text/plain'],
   MD: ['text/markdown', 'text/x-markdown'],
+  UNKNOWN: [],
 };
 
 export class DocumentLoader {
@@ -234,13 +228,16 @@ export class DocumentLoader {
 
   private isCBZ(): boolean {
     return (
-      this.file.type === 'application/vnd.comicbook+zip' || this.file.name.endsWith(`.${EXTS.CBZ}`)
+      this.file.type === 'application/vnd.comicbook+zip' ||
+      this.file.type === 'application/x-cbz' ||
+      this.file.name.toLowerCase().endsWith('.cbz')
     );
   }
 
   private isFB2(): boolean {
     return (
-      this.file.type === 'application/x-fictionbook+xml' || this.file.name.endsWith(`.${EXTS.FB2}`)
+      this.file.type === 'application/x-fictionbook+xml' ||
+      this.file.name.toLowerCase().endsWith('.fb2')
     );
   }
 
@@ -249,7 +246,7 @@ export class DocumentLoader {
       this.file.type === 'application/x-zip-compressed-fb2' ||
       this.file.name.endsWith('.fb.zip') ||
       this.file.name.endsWith('.fb2.zip') ||
-      this.file.name.endsWith(`.${EXTS.FBZ}`)
+      this.file.name.toLowerCase().endsWith('.fbz')
     );
   }
 
@@ -260,29 +257,15 @@ export class DocumentLoader {
       throw new Error('File is empty');
     }
     try {
+      if (this.isCBZ() || this.isFB2() || this.isFBZ() || (await this.isPDF())) {
+        throw new Error('Unsupported book format');
+      }
       if (await this.isZip()) {
         const loader = await this.makeZipLoader();
-        const { entries } = loader;
 
-        if (this.isCBZ()) {
-          const { makeComicBook } = await import('foliate-js/comic-book.js');
-          book = await makeComicBook(loader, this.file);
-          format = 'CBZ';
-        } else if (this.isFBZ()) {
-          const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));
-          const blob = await loader.loadBlob((entry ?? entries[0]!).filename);
-          const { makeFB2 } = await import('foliate-js/fb2.js');
-          book = await makeFB2(blob);
-          format = 'FBZ';
-        } else {
-          const { EPUB } = await import('foliate-js/epub.js');
-          book = await new EPUB(loader).init();
-          format = 'EPUB';
-        }
-      } else if (await this.isPDF()) {
-        const { makePDF } = await import('foliate-js/pdf.js');
-        book = await makePDF(this.file);
-        format = 'PDF';
+        const { EPUB } = await import('foliate-js/epub.js');
+        book = await new EPUB(loader).init();
+        format = 'EPUB';
       } else if (await (await import('foliate-js/mobi.js')).isMOBI(this.file)) {
         const fflate = await import('foliate-js/vendor/fflate.js');
         const { MOBI } = await import('foliate-js/mobi.js');
@@ -298,10 +281,6 @@ export class DocumentLoader {
           default:
             format = 'MOBI';
         }
-      } else if (this.isFB2()) {
-        const { makeFB2 } = await import('foliate-js/fb2.js');
-        book = await makeFB2(this.file);
-        format = 'FB2';
       }
     } catch (e: unknown) {
       console.error('Failed to open document:', e);
@@ -310,7 +289,7 @@ export class DocumentLoader {
       }
       throw e;
     }
-    return { book, format } as { book: BookDoc; format: BookFormat };
+    return { book, format } as unknown as { book: BookDoc; format: BookFormat };
   }
 }
 

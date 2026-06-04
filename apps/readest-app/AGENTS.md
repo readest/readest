@@ -2,6 +2,8 @@
 
 Readest is a cross-platform ebook reader built as a **Next.js 16 + Tauri v2** hybrid app. It's part of a pnpm monorepo at `/apps/readest-app/`. The app runs on web (CloudFlare Workers), desktop (macOS/Windows/Linux via Tauri), and mobile (iOS/Android via Tauri).
 
+This local fork's purpose is to adapt the existing Readest app for local use by localizing the experience and simplifying the product surface. Prefer changes that make the app more usable in the local environment, reduce unnecessary upstream complexity, and keep the resulting build practical to test on local devices. Do not treat this fork as a general-purpose upstream feature branch unless the user explicitly asks for upstream-compatible work.
+
 ## Common Commands
 
 ```bash
@@ -30,6 +32,64 @@ pnpm format:check          # Check formatting without writing (Biome)
 pnpm fmt:check             # Check formatting Rust code (src-tauri)
 pnpm clippy:check          # Lint Rust code (src-tauri)
 ```
+
+### Windows Android APK Build Strategy
+
+When an agent needs to build an Android APK on this Windows workspace, use the known-good JDK 17 + Gradle 8.14.5 flow below. Prefer rebuilding the Tauri/Next frontend assets first so APKs include the latest React/Next changes.
+
+- Use JDK 17 for Android/Gradle work. Do not use the machine's JDK 25 for this project.
+- Add the local Cargo bin and Gradle 8.14.5 bin to `PATH`, and set `RUSTFLAGS` to use the Android stub libs before invoking the build.
+- The generated Android project under `src-tauri/gen/android` is intentionally patched with root Gradle files, `buildSrc`, AndroidX Gradle properties, strings, and launcher icon resources. If Tauri regeneration removes those files, restore the checked-in versions before building.
+- `next.config.mjs` should keep `experimental.turbopackFileSystemCacheForBuild` disabled. On this Windows workspace, enabling that beta cache has caused Next 16/Turbopack production builds to panic while processing CSS modules.
+- First rebuild the Tauri frontend assets:
+
+```powershell
+pnpm --filter @readest/readest-app build-tauri
+```
+
+- Then run Gradle directly for Android APK packaging:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot'
+$env:Path=$env:JAVA_HOME + '\bin;C:\Users\PC\.cargo\bin;I:\gradle-8.14.5-bin\gradle-8.14.5\bin;' + $env:Path
+$env:RUSTFLAGS='-L native=J:\script\Readest_mod\android-stub-libs'
+gradle.bat --project-dir J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android assembleUniversalDebug
+gradle.bat --project-dir J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android assembleUniversalRelease
+```
+
+The expected APKs are:
+
+```text
+J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\app\build\outputs\apk\universal\debug\app-universal-debug.apk
+J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk
+```
+
+Install it with:
+
+```powershell
+adb install -r J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\app\build\outputs\apk\universal\debug\app-universal-debug.apk
+```
+
+#### Local release signing
+
+Release signing is controlled by `src-tauri/gen/android/keystore.properties`. If that file exists, `app/build.gradle.kts` automatically applies the `signing` config to debug and release builds; release output should be `app-universal-release.apk`. If it is missing, Gradle will produce an unsigned release APK such as `app-universal-release-unsigned.apk`, which is not suitable for direct installation or distribution.
+
+This local workspace currently uses:
+
+```text
+J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\release-key.jks
+J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\keystore.properties
+```
+
+Do not delete or casually regenerate `release-key.jks`. Android treats the signing certificate as part of the app identity: future APKs must be signed with the same keystore to upgrade over an existing install of `com.bilingify.readest.local`. If the keystore is lost or replaced, users will usually need to uninstall the old app before installing the new one, which also risks local app data depending on device backup/settings.
+
+After building release, verify signing with:
+
+```powershell
+& "I:\Android\Sdk\build-tools\36.0.0\apksigner.bat" verify --verbose --print-certs "J:\script\Readest_mod\apps\readest-app\src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk"
+```
+
+Expected result includes `Verifies` and `Verified using v2 scheme ... true`.
 
 ### Source Layout
 

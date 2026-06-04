@@ -4,11 +4,10 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useCommandPalette } from '@/components/command-palette';
-import { RiFontSize, RiShareLine } from 'react-icons/ri';
+import { RiFontSize } from 'react-icons/ri';
 import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
-import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
+import { PiDotsThreeVerticalBold, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import {
@@ -18,20 +17,16 @@ import {
   MdChevronRight,
   MdClose,
 } from 'react-icons/md';
-import { FiSearch } from 'react-icons/fi';
 import { getDirFromUILanguage } from '@/utils/rtl';
-import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
 import ColorPanel from './ColorPanel';
-import IntegrationsPanel from './IntegrationsPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
 import DialogMenu from './DialogMenu';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
-import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
 
 export type SettingsPanelType =
@@ -41,8 +36,6 @@ export type SettingsPanelType =
   | 'Control'
   | 'TTS'
   | 'Language'
-  | 'AI'
-  | 'Integrations'
   | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
@@ -73,13 +66,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     requestedPanel,
     setRequestedPanel,
   } = useSettingsStore();
-  const { open: openCommandPalette } = useCommandPalette();
-
-  const handleOpenCommandPalette = () => {
-    openCommandPalette();
-    setSettingsDialogOpen(false);
-  };
-
   const tabConfig = [
     {
       tab: 'Font',
@@ -105,17 +91,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tab: 'Language',
       icon: RiTranslate,
       label: _('Language'),
-    },
-    {
-      tab: 'Integrations',
-      icon: RiShareLine,
-      label: _('Integrations'),
-    },
-    {
-      tab: 'AI',
-      icon: PiRobot,
-      label: _('AI Assistant'),
-      disabled: process.env.NODE_ENV === 'production',
     },
     {
       tab: 'TTS',
@@ -178,8 +153,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Control: null,
     TTS: null,
     Language: null,
-    AI: null,
-    Integrations: null,
     Custom: null,
   });
 
@@ -212,8 +185,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         control: 'Control',
         tts: 'TTS',
         language: 'Language',
-        ai: 'AI',
-        integrations: 'Integrations',
         custom: 'Custom',
       };
       const panelKey = parts[1]?.toLowerCase();
@@ -310,14 +281,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const windowControls = (
     <div className='flex h-full items-center justify-end gap-x-2'>
-      <button
-        onClick={handleOpenCommandPalette}
-        aria-label={_('Search Settings')}
-        title={`${_('Search Settings')} (${getCommandPaletteShortcut()})`}
-        className='btn btn-ghost flex h-8 min-h-8 w-8 items-center justify-center p-0'
-      >
-        <FiSearch />
-      </button>
       <Dropdown
         label={_('Settings Menu')}
         className='dropdown-bottom dropdown-end'
@@ -467,8 +430,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Language', fn)}
           />
         )}
-        {activePanel === 'AI' && <AIPanel />}
-        {activePanel === 'Integrations' && <IntegrationsPanel />}
         {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

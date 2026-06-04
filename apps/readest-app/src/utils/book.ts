@@ -216,16 +216,9 @@ export const formatBytes = (bytes?: number | null, locale = 'en-US') => {
   return formatter.format(value);
 };
 
-export const getCurrentPage = (book: Book, progress: BookProgress) => {
-  const bookFormat = book.format;
-  const { section, pageinfo } = progress;
-  return bookFormat === 'PDF'
-    ? section
-      ? section.current + 1
-      : 0
-    : pageinfo
-      ? pageinfo.current + 1
-      : 0;
+export const getCurrentPage = (_book: Book, progress: BookProgress) => {
+  const { pageinfo } = progress;
+  return pageinfo ? pageinfo.current + 1 : 0;
 };
 
 export const getBookDirFromWritingMode = (writingMode: WritingMode) => {

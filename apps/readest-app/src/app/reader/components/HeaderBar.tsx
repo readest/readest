@@ -7,7 +7,6 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -21,16 +20,12 @@ import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
-import ModalPortal from '@/components/ModalPortal';
-import WindowButtons from '@/components/WindowButtons';
 import QuickActionMenu from './annotator/QuickActionMenu';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
 import SettingsToggler from './SettingsToggler';
-import TranslationToggler from './TranslationToggler';
 import ViewMenu from './ViewMenu';
-import SyncInfoDialog from './SyncInfoDialog';
 
 interface HeaderBarProps {
   bookKey: string;
@@ -39,7 +34,6 @@ interface HeaderBarProps {
   isHoveredAnim: boolean;
   gridInsets: Insets;
   screenInsets: Insets;
-  onCloseBook: (bookKey: string) => void;
   onGoToLibrary: () => void;
   onDropdownOpenChange?: (isOpen: boolean) => void;
 }
@@ -51,7 +45,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   isHoveredAnim,
   gridInsets,
   screenInsets,
-  onCloseBook,
   onGoToLibrary,
   onDropdownOpenChange,
 }) => {
@@ -61,19 +54,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
-  const { bookKeys, hoveredBookKey } = useReaderStore();
+  const { hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData, getConfig } = useBookDataStore();
   const viewSettings = getViewSettings(bookKey);
-  const bookData = getBookData(bookKey);
-  const bookConfig = getConfig(bookKey);
-  const lastSyncedAt =
-    Math.max(bookConfig?.lastSyncedAtConfig || 0, bookConfig?.lastSyncedAtNotes || 0) || undefined;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
   const [headerWidth, setHeaderWidth] = useState(0);
   const view = getView(bookKey);
   const iconSize18 = useResponsiveSize(18);
@@ -221,7 +208,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               <VscLibrary size={iconSize18} className='fill-base-content' />
             </button>
             <BookmarkToggler bookKey={bookKey} />
-            <TranslationToggler bookKey={bookKey} />
           </div>
           {enableAnnotationQuickActions && (
             <Dropdown
@@ -291,33 +277,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             toggleButton={<MdOutlineMenu />}
             onToggle={handleToggleDropdown}
           >
-            <ViewMenu
-              bookKey={bookKey}
-              onShowMetaHashDialog={() => setIsMetaHashDialogOpen(true)}
-            />
+            <ViewMenu bookKey={bookKey} />
           </Dropdown>
-          {isMetaHashDialogOpen && (
-            <ModalPortal showOverlay={false}>
-              <SyncInfoDialog
-                isOpen={isMetaHashDialogOpen}
-                metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
-                storedMetaHash={bookData?.book?.metaHash}
-                lastSyncedAt={lastSyncedAt}
-                onClose={() => setIsMetaHashDialogOpen(false)}
-              />
-            </ModalPortal>
-          )}
-          <WindowButtons
-            className='window-buttons flex items-center'
-            headerRef={headerRef}
-            showMinimize={bookKeys.length == 1 && windowButtonVisible}
-            showMaximize={bookKeys.length == 1 && windowButtonVisible}
-            closeButtonLabel={_('Close Book')}
-            onClose={() => {
-              setHoveredBookKey(null);
-              onCloseBook(bookKey);
-            }}
-          />
         </div>
       </div>
     </div>

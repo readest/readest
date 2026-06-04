@@ -27,7 +27,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import {
   createBookFilter,
   createBookGroups,
@@ -360,12 +360,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const openSelectedBooks = () => {
     handleSetSelectMode(false);
-    if (appService?.hasWindow && settings.openBookInNewWindow) {
-      showReaderWindow(appService, getSelectedBooks());
-    } else {
-      setTimeout(() => setLoading(true), 200);
-      navigateToReader(router, getSelectedBooks());
-    }
+    setTimeout(() => setLoading(true), 200);
+    navigateToReader(router, getSelectedBooks());
   };
 
   const openBookDetails = () => {

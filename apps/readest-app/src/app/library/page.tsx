@@ -36,16 +36,12 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
-import { useInboxDrainer } from '@/hooks/useInboxDrainer';
-import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
-import { useOpenShareLink } from '@/hooks/useOpenShareLink';
-import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
 import { lockScreenOrientation, selectDirectory } from '@/utils/bridge';
@@ -61,14 +57,10 @@ import {
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
-import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import { BookDetailModal } from '@/components/metadata';
-import { UpdaterWindow } from '@/components/UpdaterWindow';
-import { CatalogDialog } from './components/OPDSDialog';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
-import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { Toast } from '@/components/Toast';
@@ -87,14 +79,9 @@ import FailedImportsDialog, { FailedImport } from './components/FailedImportsDia
 import ImportFromFolderDialog, {
   ImportFromFolderResult,
 } from './components/ImportFromFolderDialog';
-import ImportFromUrlDialog from './components/ImportFromUrlDialog';
-import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWorker';
-import { getClipOptions } from '@/services/send/clipOptions';
-import { invoke } from '@tauri-apps/api/core';
 import useShortcuts from '@/hooks/useShortcuts';
 import { useReplicaPull } from '@/hooks/useReplicaPull';
 import { useCustomFonts } from '@/hooks/useCustomFonts';
-import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
@@ -176,10 +163,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // library — the replica pull above is auth-gated and the reader's
   // FoliateViewer hydration never runs without a book open.
   useCustomFonts();
-  const [showCatalogManager, setShowCatalogManager] = useState(
-    !LOCAL_ONLY_MODE && searchParams?.get('opds') === 'true',
-  );
-  const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
   // common reader → library return path), treat the page as loaded
@@ -244,14 +227,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useAppUrlIngress();
   useOpenWithBooks();
   useOpenAnnotationLink();
-  useOpenShareLink();
-  useClipUrlIngress();
   useTransferQueue(libraryLoaded);
 
   const { pullLibrary, pushLibrary } = useBooksSync();
-  const { checkOPDSSubscriptions } = useOPDSSubscriptions();
-  useInboxDrainer();
-  const { isDragging } = useDragDropImport();
 
   usePullToRefresh(
     scrollRef,
@@ -262,7 +240,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         return;
       }
       await pullLibrary(false, true);
-      checkOPDSSubscriptions(true);
     },
     async () => {
       if (LOCAL_ONLY_MODE) return;
@@ -271,7 +248,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         return;
       }
       await pullLibrary(true, true);
-      checkOPDSSubscriptions(true);
     },
   );
   useScreenWakeLock(settings.screenWakeLock);
@@ -507,17 +483,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       return true;
     }
     return false;
-  };
-
-  const handleShowOPDSDialog = () => {
-    setShowCatalogManager(true);
-  };
-
-  const handleDismissOPDSDialog = () => {
-    setShowCatalogManager(false);
-    const params = new URLSearchParams(searchParams?.toString());
-    params.delete('opds');
-    navigateToLibrary(router, `${params.toString()}`);
   };
 
   useEffect(() => {
@@ -963,58 +928,25 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     });
   };
 
-  const handleImportBookFromUrl = async (url: string) => {
-    // Tauri-only. Routes through the Rust `clip_url` command which spawns
-    // a hidden Tauri webview, loads the URL with the real browser engine
-    // (correct TLS fingerprint, runs the page's JS, executes any
-    // Cloudflare challenge), then captures `document.documentElement
-    // .outerHTML` and returns it. End to end this is exactly the local-
-    // file path — no inbox, no upload-then-download, no server round-trip
-    // — `importBooks` is the same call drag-drop uses.
-    if (!isTauriAppPlatform()) return;
-    console.log('[clip] start', { url });
-    setIsSelectMode(false);
-    const t0 = performance.now();
-    const html = await invoke<string>('clip_url', { url, options: getClipOptions(_) });
-    console.log('[clip] fetched', {
-      bytes: html.length,
-      ms: Math.round(performance.now() - t0),
-    });
-    const t1 = performance.now();
-    const book = await convertToEpubWithWorker({ kind: 'page', html, url });
-    console.log('[clip] epub built', {
-      title: book.title,
-      author: book.author || undefined,
-      bytes: book.file.size,
-      ms: Math.round(performance.now() - t1),
-    });
-    const groupId = searchParams?.get('group') || '';
-    console.log('[clip] importing locally', { name: book.file.name, groupId: groupId || null });
-    await importBooks([{ file: book.file }], groupId);
-    console.log('[clip] done');
-  };
-
   const handleImportBooksFromDirectory = async (dirPath?: string) => {
     if (!appService || !isTauriAppPlatform()) return;
 
     setIsSelectMode(false);
 
-    // When a path is supplied (e.g. URL ingress / drag-drop replay) we
-    // honour the legacy "import everything" behaviour without opening
-    // the dialog. Manual menu invocations always go through the dialog
+    // When a path is supplied we honour the legacy "import everything"
+    // behaviour without opening the dialog. Manual menu invocations always go through the dialog
     // so users can pick formats and a size threshold before scanning.
     if (dirPath) {
       await runFolderImport({
         directory: dirPath,
         extensions: SUPPORTED_BOOK_EXTS.slice(),
-        // The non-dialog path is invoked by URL ingress / drag-drop
-        // replay, where the user never picked any filter — keep the
+        // The non-dialog path has no user-picked filters — keep the
         // synthetic values minimal and non-restrictive.
         selectedGroupIds: [],
         minSizeKB: 0,
         flatten: false,
-        // URL ingress / drag-drop don't go through the dialog and so
-        // can't set this. Default to the legacy "copy" behaviour;
+        // Direct path imports do not go through the dialog and so cannot set
+        // this. Default to the legacy "copy" behaviour;
         // already-registered external roots will still be detected
         // by `runFolderImport` itself via the prefix check, so books
         // under a registered folder are imported in-place either way.
@@ -1358,10 +1290,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
-          onImportBookFromUrl={
-            !LOCAL_ONLY_MODE && isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined
-          }
-          onOpenCatalogManager={LOCAL_ONLY_MODE ? undefined : handleShowOPDSDialog}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
@@ -1427,16 +1355,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col'>
             <div
               ref={containerRef}
-              className={clsx(
-                'scroll-container drop-zone flex min-h-0 flex-grow flex-col',
-                isDragging && 'drag-over',
-              )}
+              className='scroll-container flex min-h-0 flex-grow flex-col'
               style={{
                 paddingRight: `${insets.right}px`,
                 paddingLeft: `${insets.left}px`,
               }}
             >
-              <DropIndicator />
               <Bookshelf
                 libraryBooks={libraryBooks}
                 isSelectMode={isSelectMode}
@@ -1456,8 +1380,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             </div>
           </div>
         ) : (
-          <div className='hero drop-zone h-screen items-center justify-center'>
-            <DropIndicator />
+          <div className='hero h-screen items-center justify-center'>
             <LibraryEmptyState onImport={handleImportBooksFromFiles} />
           </div>
         ))}
@@ -1480,15 +1403,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         </ModalPortal>
       )}
       <AboutWindow />
-      <KeyboardShortcutsHelp />
-      <UpdaterWindow />
       <MigrateDataWindow />
       <BackupWindow onPullLibrary={pullLibrary} />
       <CacheManagerWindow />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
-      {!LOCAL_ONLY_MODE && showCatalogManager && (
-        <CatalogDialog onClose={handleDismissOPDSDialog} />
-      )}
       {failedImportsModal && (
         <FailedImportsDialog
           failedImports={failedImportsModal}
@@ -1538,11 +1456,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           }}
         />
       )}
-      <ImportFromUrlDialog
-        isOpen={showImportFromUrl}
-        onClose={() => setShowImportFromUrl(false)}
-        onSubmit={handleImportBookFromUrl}
-      />
       <Toast />
     </div>
   );
