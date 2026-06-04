@@ -23,6 +23,7 @@ import {
   LibrarySortByType,
   ReadSettings,
   ReadwiseSettings,
+  S3Settings,
   SystemSettings,
   WebDAVSettings,
 } from '@/types/settings';
@@ -60,7 +61,7 @@ export const SUPPORTED_IMAGE_EXTS = ['png', 'jpg', 'jpeg'];
 export const IMAGE_ACCEPT_FORMATS = SUPPORTED_IMAGE_EXTS.map((ext) => `.${ext}`).join(', ');
 
 export const DEFAULT_KOSYNC_SETTINGS = {
-  serverUrl: 'https://sync.koreader.rocks/', // https://kosync.ak-team.com:3042/
+  serverUrl: '', // https://kosync.ak-team.com:3042/
   username: '',
   userkey: '',
   deviceId: '',
@@ -97,6 +98,22 @@ export const DEFAULT_WEBDAV_SETTINGS = {
   deviceId: '',
   lastSyncedAt: 0,
 } as WebDAVSettings;
+
+export const DEFAULT_S3_SETTINGS = {
+  enabled: false,
+  endpoint: '',
+  region: '',
+  accessKeyId: '',
+  secretAccessKey: '',
+  bucketName: '',
+  rootPath: '/',
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as S3Settings;
 
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
@@ -148,6 +165,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
+  s3: DEFAULT_S3_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
