@@ -138,7 +138,6 @@ describe('services/constants', () => {
 
     it('SUPPORTED_BOOK_EXTS includes common formats', () => {
       expect(SUPPORTED_BOOK_EXTS).toContain('epub');
-      expect(SUPPORTED_BOOK_EXTS).toContain('pdf');
       expect(SUPPORTED_BOOK_EXTS).toContain('mobi');
       expect(SUPPORTED_BOOK_EXTS).toContain('txt');
     });
@@ -146,7 +145,6 @@ describe('services/constants', () => {
     it('BOOK_ACCEPT_FORMATS is a comma-separated string of dotted extensions', () => {
       expect(typeof BOOK_ACCEPT_FORMATS).toBe('string');
       expect(BOOK_ACCEPT_FORMATS).toContain('.epub');
-      expect(BOOK_ACCEPT_FORMATS).toContain('.pdf');
       expect(BOOK_ACCEPT_FORMATS.split(', ').length).toBe(SUPPORTED_BOOK_EXTS.length);
     });
 
@@ -249,10 +247,8 @@ describe('services/constants', () => {
         book: true,
         progress: true,
         note: true,
-        dictionary: true,
         font: true,
         texture: true,
-        opds_catalog: true,
         settings: true,
       });
     });

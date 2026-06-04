@@ -29,7 +29,6 @@ import {
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
-import { DEFAULT_AI_SETTINGS } from './ai/constants';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -87,6 +86,10 @@ export const DEFAULT_WEBDAV_SETTINGS = {
   deviceId: '',
   lastSyncedAt: 0,
 } as WebDAVSettings;
+
+export const DEFAULT_AI_SETTINGS = {
+  enabled: false,
+};
 
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,

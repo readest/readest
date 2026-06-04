@@ -9,7 +9,7 @@
 /// ## CLSID: {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 use std::cell::UnsafeCell;
 use std::ffi::c_void;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicIsize, AtomicU32, Ordering};
 
 use windows::core::{IUnknown, Interface, GUID, HRESULT, PCWSTR, PWSTR};
@@ -102,7 +102,7 @@ fn is_readest_default_for_extension(ext: &str) -> bool {
 }
 
 /// Check if Readest is the default app for a specific file path.
-fn is_readest_default_for_file(path: &PathBuf) -> bool {
+fn is_readest_default_for_file(path: &Path) -> bool {
     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
         let ext_with_dot = format!(".{}", ext.to_lowercase());
         return is_readest_default_for_extension(&ext_with_dot);

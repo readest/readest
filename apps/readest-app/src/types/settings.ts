@@ -3,7 +3,6 @@ import { CustomFont } from '@/styles/fonts';
 import { CustomTexture } from '@/styles/textures';
 import { HighlightColor, HighlightStyle, UserHighlightColor, ViewSettings } from './book';
 import { OPDSCatalog } from './opds';
-import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
 
@@ -258,6 +257,11 @@ export interface HardwarePageTurnerSettings {
     sectionPrev: KeyBinding | null;
     sectionNext: KeyBinding | null;
   };
+}
+
+export interface AISettings {
+  enabled?: boolean;
+  [key: string]: unknown;
 }
 
 export interface SystemSettings {

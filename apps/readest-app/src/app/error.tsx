@@ -1,6 +1,5 @@
 'use client';
 
-import posthog from 'posthog-js';
 import { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -22,9 +21,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [appService]);
 
   useEffect(() => {
-    posthog.captureException(error);
     handleGlobalError(error);
-  }, [appService, error]);
+  }, [error]);
 
   const handleGoHome = () => {
     window.location.href = '/library';
@@ -50,7 +48,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 
           <p className='text-base-content/70 mb-8 text-lg'>
             {_(
-              "Something went wrong. Don't worry, our team has been notified and we're working on a fix.",
+              "Something went wrong. Don't worry, your local library data is still on this device.",
             )}
           </p>
 

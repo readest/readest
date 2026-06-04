@@ -1,4 +1,3 @@
-import withSerwistInit from '@serwist/next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,11 +6,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = process.env['NODE_ENV'] === 'development';
 const appPlatform = process.env['NEXT_PUBLIC_APP_PLATFORM'];
-
-if (isDev) {
-  const { initOpenNextCloudflareForDev } = await import('@opennextjs/cloudflare');
-  initOpenNextCloudflareForDev();
-}
 
 const exportOutput = appPlatform !== 'web' && !isDev;
 
@@ -74,64 +68,10 @@ const nextConfig = {
           'marked',
         ]),
   ],
-  async rewrites() {
-    return [
-      {
-        source: '/reader/:ids',
-        destination: '/reader?ids=:ids',
-      },
-      {
-        source: '/o/book/:hash/annotation/:id',
-        destination: '/o?book=:hash&note=:id',
-      },
-      {
-        source: '/s/:token',
-        destination: '/s?token=:token',
-      },
-    ];
-  },
-  async headers() {
-    return [
-      {
-        source: '/.well-known/apple-app-site-association',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/json',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: isDev
-              ? 'public, max-age=0, must-revalidate'
-              : 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
 };
-
-const pwaDisabled = isDev || appPlatform !== 'web';
-
-const withPWA = pwaDisabled
-  ? (config) => config
-  : withSerwistInit({
-      swSrc: 'src/sw.ts',
-      swDest: 'public/sw.js',
-      cacheOnNavigation: true,
-      reloadOnOnline: true,
-      disable: false,
-      register: true,
-      scope: '/',
-    });
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
-export default withPWA(withAnalyzer(nextConfig));
+export default withAnalyzer(nextConfig);

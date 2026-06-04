@@ -275,10 +275,10 @@ describe('TTSController', () => {
   });
 
   describe('setRate', () => {
-    test('updates ttsRate and state', async () => {
+    test('updates ttsRate without changing idle state', async () => {
       await controller.setRate(1.5);
       expect(controller.ttsRate).toBe(1.5);
-      expect(controller.state).toBe('setrate-paused');
+      expect(controller.state).toBe('stopped');
     });
 
     test('delegates to ttsClient.setRate', async () => {

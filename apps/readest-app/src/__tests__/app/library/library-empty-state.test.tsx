@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 describe('LibraryEmptyState', () => {
-  it('renders title, desktop description, and both CTAs when logged out on desktop', () => {
+  it('renders title, desktop description, and import CTA when logged out on desktop', () => {
     useEnvMock.mockReturnValue({ appService: { isMobile: false } });
     useAuthMock.mockReturnValue({ user: null });
     render(<LibraryEmptyState onImport={vi.fn()} />);
@@ -45,7 +45,7 @@ describe('LibraryEmptyState', () => {
     expect(screen.getByRole('heading', { name: 'Start your library' })).toBeTruthy();
     expect(screen.getByText(/drop a book anywhere on this window/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Import Books' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sign in to sync your library' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Sign in to sync your library' })).toBeNull();
   });
 
   it('renders mobile description (no drag-drop language) when appService.isMobile', () => {
