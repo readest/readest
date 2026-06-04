@@ -127,6 +127,9 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const getCurrentTranslationProviderOption = () => {
     const value = translationProvider;
     const allProviders = getTranslationProviderOptions();
+    if (allProviders.length === 0) {
+      return { value: '', label: _('No Translation Service Available') };
+    }
     const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
     const currentProvider = availableTranslators.find((t) => t.name === value)
       ? value
@@ -335,6 +338,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onChange={handleSelectTranslationProvider}
             ariaLabel={_('Translation Service')}
             options={getTranslationProviderOptions()}
+            disabled={getTranslationProviderOptions().length === 0}
           />
         </SettingsRow>
         <SettingsRow label={_('Translate To')} data-setting-id='settings.language.targetLanguage'>

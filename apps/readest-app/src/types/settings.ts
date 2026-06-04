@@ -6,6 +6,7 @@ import { OPDSCatalog } from './opds';
 import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
+import type { CustomTTSConfig, CustomAIConfig } from '@/services/tts/types';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -92,6 +93,24 @@ export interface HardcoverSettings {
   enabled: boolean;
   accessToken: string;
   lastSyncedAt: number;
+}
+
+export interface S3Settings {
+  enabled: boolean;
+  endpoint: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucketName: string;
+  rootPath: string;
+  // Sync sub-toggles, same as WebDAV
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+  syncLog?: WebDAVSyncLogEntry[];
 }
 
 export interface WebDAVSettings {
@@ -260,6 +279,21 @@ export interface HardwarePageTurnerSettings {
   };
 }
 
+// 书架壁纸配置
+export interface LibraryWallpaperSettings {
+  enabled: boolean;
+  type: 'color' | 'image' | 'gradient';
+  color?: string;
+  imageUrl?: string;
+  gradient?: {
+    startColor: string;
+    endColor: string;
+    direction?: 'to-right' | 'to-left' | 'to-bottom' | 'to-top';
+  };
+  opacity: number;
+  blur: number;
+}
+
 export interface SystemSettings {
   version: number;
   migrationVersion: number;
@@ -338,8 +372,12 @@ export interface SystemSettings {
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
   webdav: WebDAVSettings;
+  s3: S3Settings;
 
   aiSettings: AISettings;
+  customTTS?: CustomTTSConfig;
+  customAI?: CustomAIConfig;
+  libraryWallpaper?: LibraryWallpaperSettings;
   /**
    * Per-device id used as the deviceId portion of every HLC this device
    * mints. Lazy-generated on first sync init via uuidv4 (mirrors

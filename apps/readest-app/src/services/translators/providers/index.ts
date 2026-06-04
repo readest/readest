@@ -1,8 +1,4 @@
 import { TranslationProvider } from '../types';
-import { deeplProvider } from './deepl';
-import { azureProvider } from './azure';
-import { googleProvider } from './google';
-import { yandexProvider } from './yandex';
 
 function createTranslator<T extends string>(
   name: T,
@@ -16,20 +12,11 @@ function createTranslator<T extends string>(
   return implementation as TranslationProvider & { name: T };
 }
 
-const deeplTranslator = createTranslator('deepl', deeplProvider);
-const azureTranslator = createTranslator('azure', azureProvider);
-const googleTranslator = createTranslator('google', googleProvider);
-const yandexTranslator = createTranslator('yandex', yandexProvider);
-
-const availableTranslators = [
-  deeplTranslator,
-  azureTranslator,
-  googleTranslator,
-  yandexTranslator,
+const availableTranslators: (TranslationProvider & { name: string })[] = [
   // Add more translators here
 ];
 
-export type TranslatorName = (typeof availableTranslators)[number]['name'];
+export type TranslatorName = string;
 
 export const getTranslator = (name: TranslatorName): TranslationProvider | undefined => {
   return availableTranslators.find((translator) => translator.name === name);

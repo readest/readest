@@ -7,9 +7,9 @@ import {
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
-  RiDiscordLine,
   RiSendPlaneLine,
   RiCloudLine,
+  RiHardDriveLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -26,10 +26,11 @@ import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
+import S3Form from './integrations/S3Form';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'webdav' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage = 'kosync' | 'webdav' | 's3' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -72,14 +73,6 @@ const IntegrationsPanel: React.FC = () => {
     onCancel: () => setSubPage(null),
   });
 
-  const toggleDiscordPresence = () => {
-    const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;
-    saveSysSettings(envConfig, 'discordRichPresenceEnabled', discordRichPresenceEnabled);
-    if (discordRichPresenceEnabled && !user) {
-      navigateToLogin(router);
-    }
-  };
-
   // Deep-link consumption: when a caller (e.g. OPDS browser close handler)
   // sets `requestedSubPage` in the store before opening the dialog, drill
   // straight into that sub-page on mount and clear the request so it doesn't
@@ -89,6 +82,7 @@ const IntegrationsPanel: React.FC = () => {
     if (
       requestedSubPage === 'kosync' ||
       requestedSubPage === 'webdav' ||
+      requestedSubPage === 's3' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
@@ -113,6 +107,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <WebDAVForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 's3')
+    return (
+      <div className='my-4 w-full'>
+        <S3Form onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'readwise')
@@ -161,6 +161,9 @@ const IntegrationsPanel: React.FC = () => {
         ? _('Connected as {{user}}', { user: settings.webdav.username })
         : _('Connected')
       : _('Not connected');
+  const s3Status = settings.s3?.enabled
+    ? _('Connected to {{bucket}}', { bucket: settings.s3.bucketName })
+    : _('Not connected');
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
 
@@ -188,6 +191,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('WebDAV')}
               status={webdavStatus}
               onClick={() => setSubPage('webdav')}
+            />
+            <IntegrationRow
+              icon={RiHardDriveLine}
+              title={_('S3 Storage')}
+              status={s3Status}
+              onClick={() => setSubPage('s3')}
             />
             <IntegrationRow
               icon={RiBookReadLine}
@@ -224,23 +233,6 @@ const IntegrationsPanel: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {appService?.isDesktopApp && (
-        <div className='w-full' data-setting-id='settings.integrations.discord'>
-          <SectionTitle className='mb-2'>{_('Discord')}</SectionTitle>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-            <div className='divide-base-200 divide-y'>
-              <IntegrationToggleRow
-                icon={RiDiscordLine}
-                title={_('Show on Discord')}
-                description={_("Display what I'm reading on Discord")}
-                checked={settings.discordRichPresenceEnabled}
-                onChange={toggleDiscordPresence}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

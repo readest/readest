@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
 import { useWebDAVSync } from '../hooks/useWebDAVSync';
+import { useS3Sync } from '../hooks/useS3Sync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -64,7 +65,6 @@ import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
-import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
@@ -120,12 +120,6 @@ const FoliateViewer: React.FC<{
 
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
 
-  useDiscordPresence(
-    bookData?.book || null,
-    !!viewState?.isPrimary,
-    settings.discordRichPresenceEnabled,
-  );
-
   useEffect(() => {
     const timer = setTimeout(() => setToastMessage(''), 2000);
     return () => clearTimeout(timer);
@@ -137,6 +131,7 @@ const FoliateViewer: React.FC<{
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
   useWebDAVSync(bookKey);
+  useS3Sync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {

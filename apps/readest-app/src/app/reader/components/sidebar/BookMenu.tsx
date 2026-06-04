@@ -106,6 +106,22 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const handlePullWebDAVSync = () => {
+    eventDispatcher.dispatch('pull-webdav-sync', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handlePushWebDAVSync = () => {
+    eventDispatcher.dispatch('push-webdav-sync', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handlePullS3Sync = () => {
+    eventDispatcher.dispatch('pull-s3-sync', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handlePushS3Sync = () => {
+    eventDispatcher.dispatch('push-s3-sync', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
   const handlePushReadwise = () => {
     eventDispatcher.dispatch('readwise-push-all', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
@@ -169,14 +185,32 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ) : (
           <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
         ))}
-      {(settings.kosync.enabled || settings.readwise.enabled || settings.hardcover.enabled) && (
-        <hr aria-hidden='true' className='border-base-200 my-1' />
-      )}
+      {(settings.kosync.enabled ||
+        settings.readwise.enabled ||
+        settings.hardcover.enabled ||
+        settings.webdav.enabled ||
+        settings.s3.enabled) && <hr aria-hidden='true' className='border-base-200 my-1' />}
       {settings.kosync.enabled && (
         <MenuItem label={_('KOReader Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync} />
             <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync} />
+          </ul>
+        </MenuItem>
+      )}
+      {settings.webdav.enabled && (
+        <MenuItem label={_('WebDAV Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Sync')} noIcon onClick={handlePushWebDAVSync} />
+            <MenuItem label={_('Pull Sync')} noIcon onClick={handlePullWebDAVSync} />
+          </ul>
+        </MenuItem>
+      )}
+      {settings.s3.enabled && (
+        <MenuItem label={_('S3 Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Sync')} noIcon onClick={handlePushS3Sync} />
+            <MenuItem label={_('Pull Sync')} noIcon onClick={handlePullS3Sync} />
           </ul>
         </MenuItem>
       )}
