@@ -1,0 +1,89 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  build-android:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: initialize git submodules
+        run: git submodule update --init --recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+
+      - name: setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: setup Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+
+      - name: install NDK
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: setup Rust stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: android-build-cargo
+
+      - name: create .env.local file for Next.js
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+          cp .env.local apps/readest-app/.env.local
+
+      - name: build universal APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+        run: |
+          cd apps/readest-app/
+          pnpm tauri android build
+
+          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
+          version=$(node -p "require('./package.json').version")
+          cp ${apk_path}/app-universal-release.apk Readest_${version}_universal.apk
+
+      - name: build ARM64 APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+        run: |
+          cd apps/readest-app/
+          pnpm tauri android build -t aarch64
+
+          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
+          version=$(node -p "require('./package.json').version")
+          cp ${apk_path}/app-universal-release.apk Readest_${version}_arm64.apk
+
+      - name: upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: readest-apks
+          path: apps/readest-app/*.apk
+          retention-days: 5
