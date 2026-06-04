@@ -152,10 +152,9 @@ export const useKOSync = (bookKey: string) => {
         view.goToFraction(remoteFraction);
       }
     }
-    eventDispatcher.dispatch('toast', {
+    eventDispatcher.dispatch('hint', {
+      bookKey,
       message: _('Reading Progress Synced'),
-      type: 'info',
-      timeout: 2000,
     });
   };
 
