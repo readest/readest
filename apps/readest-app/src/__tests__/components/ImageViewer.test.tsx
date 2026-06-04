@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 
 import ImageViewer from '@/app/reader/components/ImageViewer';
 
@@ -35,5 +35,47 @@ describe('ImageViewer', () => {
 
     const calloutSafeImage = container.querySelector('.no-context-menu img');
     expect(calloutSafeImage).toBeTruthy();
+  });
+
+  // Desktop-only flicker (#4451): the drag pan must keep tracking the pointer
+  // even after it leaves the (moving) image, mirroring how the touch path
+  // tracks on the full-screen container. Binding the move/up handlers to the
+  // <img> meant the pointer crossing the image boundary aborted/restarted the
+  // drag, producing the flicker. The drag now tracks on `window`.
+  const zoomIn = (img: Element) => {
+    // Double-click on a fresh viewer zooms to scale=2 so panning is enabled.
+    fireEvent.doubleClick(img);
+  };
+
+  it('keeps panning when the pointer leaves the image (tracks on window)', () => {
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    zoomIn(img);
+
+    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+    // Pointer moves while no longer over the image element — handled on window.
+    fireEvent.mouseMove(window, { clientX: 160, clientY: 130 });
+
+    // position = (60, 30); transform divides the translate by scale (2).
+    expect(img.style.transform).toContain('scale(2)');
+    expect(img.style.transform).toContain('translate(30px, 15px)');
+  });
+
+  it('disables the transform transition while dragging to avoid lag flicker', () => {
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    zoomIn(img);
+
+    expect(img.style.transition).not.toBe('none');
+
+    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+    expect(img.style.transition).toBe('none');
+
+    fireEvent.mouseUp(window);
+    expect(img.style.transition).not.toBe('none');
   });
 });
