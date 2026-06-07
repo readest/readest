@@ -185,10 +185,11 @@ export const useTextSelector = (
     // selectionchange for touch/pen input to pick up native text selections.
     const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
     const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
-    if (!isAndroid && !isTouchInput) return;
 
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
+      // On desktop with mouse, defer to pointerup for valid selections.
+      if (!isAndroid && !isTouchInput) return;
       if (selectionPosition.current === null) {
         // Save the absolute container scroll, not `renderer.start` — the
         // latter is section-relative, so restoring it as `containerPosition`
@@ -198,6 +199,12 @@ export const useTextSelector = (
       }
       makeSelection(sel, index, false);
     } else {
+      // Selection cleared (e.g. clicking outside the selection).
+      // Dismiss immediately on all platforms.
+      if (isTextSelected.current) {
+        handleDismissPopup();
+        isTextSelected.current = false;
+      }
       selectionPosition.current = null;
     }
   };
