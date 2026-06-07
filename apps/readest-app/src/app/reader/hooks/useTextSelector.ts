@@ -32,6 +32,10 @@ export const useTextSelector = (
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
+  const firstVisible = useRef<Node | null>(null);
+  const lastVisible = useRef<Node | null>(null); // for deciding whether selection is at edge of section
+  const enteredFirstOrLastSince = useRef<number | null>(null);
+  const AutoTurnInterval = 300; // ms
 
   const {
     isInstantAnnotationEnabled,
@@ -185,8 +189,28 @@ export const useTextSelector = (
     // selectionchange for touch/pen input to pick up native text selections.
     const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
     const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
-
     const sel = doc.getSelection() as Selection;
+    const focusNode = sel.focusNode as Node;
+    if (focusNode == lastVisible.current || focusNode == firstVisible.current) {
+      if (enteredFirstOrLastSince.current == null) {
+        enteredFirstOrLastSince.current = new Date().getTime();
+      } else if (
+        enteredFirstOrLastSince.current &&
+        new Date().getTime() - enteredFirstOrLastSince.current > AutoTurnInterval
+      ) {
+        console.log(new Date(enteredFirstOrLastSince.current), new Date());
+        if (focusNode == lastVisible.current) {
+          view?.next();
+        } else if (focusNode == firstVisible.current) {
+          view?.goLeft ? view.goLeft() : view?.goRight?.();
+        }
+        enteredFirstOrLastSince.current = null;
+      }
+    } else {
+      enteredFirstOrLastSince.current = null;
+    }
+
+    if (!isAndroid && !isTouchInput) return;
     if (isValidSelection(sel)) {
       // On desktop with mouse, defer to pointerup for valid selections.
       if (!isAndroid && !isTouchInput) return;
@@ -211,7 +235,6 @@ export const useTextSelector = (
   const handleScroll = () => {
     // Prevent the container from scrolling when text is selected in paginated mode
     // FIXME: this is a workaround for issue #873
-    // TODO: support text selection across pages
     if (osPlatform !== 'android' || !appService?.isAndroidApp) return;
 
     const viewSettings = getViewSettings(bookKey);
@@ -246,6 +269,12 @@ export const useTextSelector = (
       return false;
     }
     return;
+  };
+
+  const handleRelocate = (evt: CustomEvent<{ range: Range; index: number }>) => {
+    const { range } = evt.detail;
+    firstVisible.current = range.startContainer;
+    lastVisible.current = range.endContainer;
   };
 
   useEffect(() => {
@@ -289,5 +318,6 @@ export const useTextSelector = (
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
+    handleRelocate,
   };
 };

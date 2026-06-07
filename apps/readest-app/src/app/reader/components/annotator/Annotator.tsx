@@ -279,6 +279,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
+    handleRelocate,
   } = useTextSelector(
     bookKey,
     setSelection,
@@ -343,6 +344,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     detail.doc?.addEventListener('pointercancel', handlePointerCancel.bind(null, doc, index));
     detail.doc?.addEventListener('pointerup', handlePointerUp.bind(null, doc, index));
     detail.doc?.addEventListener('selectionchange', handleSelectionchange.bind(null, doc, index));
+    // `relocate` is a custom event with detail; wrap to satisfy DOM typings
+    view?.addEventListener('relocate', (evt: Event) =>
+      handleRelocate(evt as CustomEvent<{ range: Range; index: number }>),
+    );
 
     // For PDF selections, enable right-click context menu to directly open translator popup.
     if (bookData.isFixedLayout) {
