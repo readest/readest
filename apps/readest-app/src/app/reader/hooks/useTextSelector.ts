@@ -193,12 +193,11 @@ export const useTextSelector = (
     const focusNode = sel.focusNode as Node;
     if (focusNode == lastVisible.current || focusNode == firstVisible.current) {
       if (enteredFirstOrLastSince.current == null) {
-        enteredFirstOrLastSince.current = new Date().getTime();
+        enteredFirstOrLastSince.current = Date.now();
       } else if (
         enteredFirstOrLastSince.current &&
-        new Date().getTime() - enteredFirstOrLastSince.current > AutoTurnInterval
+        Date.now() - enteredFirstOrLastSince.current > AutoTurnInterval
       ) {
-        console.log(new Date(enteredFirstOrLastSince.current), new Date());
         if (focusNode == lastVisible.current) {
           view?.next();
         } else if (focusNode == firstVisible.current) {
