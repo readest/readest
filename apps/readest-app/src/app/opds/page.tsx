@@ -957,6 +957,7 @@ export default function BrowserPage() {
             onDownload={handleDownload}
             onStream={handleStream}
             resolveURL={resolveURL}
+            onNavigate={handleNavigate}
             onGenerateCachedImageUrl={handleGenerateCachedImageUrl}
           />
         )}

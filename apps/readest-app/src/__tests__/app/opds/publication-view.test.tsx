@@ -39,6 +39,27 @@ const publication: OPDSPublication = {
   images: [],
 };
 
+const linkedPublication: OPDSPublication = {
+  metadata: {
+    title: 'Linked Entry',
+    author: [
+      {
+        name: 'Tuttle',
+        links: [{ href: '/opds/search?author_id=52836', type: 'application/opds+json' }],
+      },
+    ],
+    subject: [
+      {
+        name: 'Horses -- Fiction',
+        links: [{ href: '/opds/subjects?id=164', type: 'application/opds+json' }],
+      },
+      { name: 'Plain Tag' },
+    ],
+  },
+  links: [],
+  images: [],
+};
+
 const existingBook: Book = {
   hash: 'existing-book',
   format: 'EPUB',
@@ -65,6 +86,7 @@ describe('PublicationView', () => {
           existingBook={existingBook}
           resolveURL={(href, base) => new URL(href, base).toString()}
           onDownload={onDownload}
+          onNavigate={vi.fn()}
           onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
         />
       </DropdownProvider>,
@@ -80,5 +102,65 @@ describe('PublicationView', () => {
       );
     });
     expect(navigateToReader).not.toHaveBeenCalled();
+  });
+
+  it('navigates when a tag with an OPDS link is clicked', () => {
+    const onNavigate = vi.fn();
+
+    render(
+      <DropdownProvider>
+        <PublicationView
+          publication={linkedPublication}
+          baseURL='https://gutenberg.example.com/opds'
+          resolveURL={(href, base) => new URL(href, base).toString()}
+          onDownload={vi.fn(async () => null)}
+          onNavigate={onNavigate}
+          onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+        />
+      </DropdownProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Horses -- Fiction/ }));
+    expect(onNavigate).toHaveBeenCalledWith('https://gutenberg.example.com/opds/subjects?id=164');
+  });
+
+  it('navigates when an author with an OPDS link is clicked', () => {
+    const onNavigate = vi.fn();
+
+    render(
+      <DropdownProvider>
+        <PublicationView
+          publication={linkedPublication}
+          baseURL='https://gutenberg.example.com/opds'
+          resolveURL={(href, base) => new URL(href, base).toString()}
+          onDownload={vi.fn(async () => null)}
+          onNavigate={onNavigate}
+          onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+        />
+      </DropdownProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tuttle' }));
+    expect(onNavigate).toHaveBeenCalledWith(
+      'https://gutenberg.example.com/opds/search?author_id=52836',
+    );
+  });
+
+  it('renders a tag without an OPDS link as plain, non-clickable text', () => {
+    render(
+      <DropdownProvider>
+        <PublicationView
+          publication={linkedPublication}
+          baseURL='https://gutenberg.example.com/opds'
+          resolveURL={(href, base) => new URL(href, base).toString()}
+          onDownload={vi.fn(async () => null)}
+          onNavigate={vi.fn()}
+          onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+        />
+      </DropdownProvider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Plain Tag' })).toBeNull();
+    expect(screen.getByText('Plain Tag')).toBeTruthy();
   });
 });
