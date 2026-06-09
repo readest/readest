@@ -128,6 +128,17 @@ export const parseOPDSXML = (text: string): Document => {
   return doc;
 };
 
+/**
+ * Return the first OPDS-navigable href from a links array (e.g. on an OPDS 2.0
+ * JSON author or subject). Only links whose `type` is an OPDS catalog type
+ * (per foliate-js `isOPDSCatalog`, e.g. `application/opds+json`) qualify, so a
+ * non-OPDS link such as an author's external homepage is ignored. Returns
+ * undefined when no such link exists.
+ */
+export const getOPDSNavLink = (
+  links?: Array<{ href?: string; type?: string }>,
+): string | undefined => links?.find((link) => link.href && isOPDSCatalog(link.type ?? ''))?.href;
+
 export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
   if (!rels.includes('search')) return false;

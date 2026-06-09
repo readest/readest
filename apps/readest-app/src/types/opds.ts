@@ -117,13 +117,14 @@ export interface OPDSBaseLink {
 
 interface OPDSPerson {
   name?: string;
-  links: Array<{ href: string }>;
+  links: Array<{ href: string; type?: string }>;
 }
 
 interface OPDSSubject {
   name?: string;
   code?: string;
   scheme?: string;
+  links?: Array<{ href: string; type?: string }>;
 }
 
 export interface OPDSContent {
