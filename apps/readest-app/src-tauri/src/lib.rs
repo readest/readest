@@ -415,8 +415,18 @@ pub fn run() {
             #[cfg(not(target_os = "linux"))]
             let is_appimage = false;
 
+            // Flatpak mounts the app directory read-only, so the bundled updater can
+            // download but never apply an update. Disable it and leave updates to the
+            // Flatpak runtime. Detect via FLATPAK_ID or the /.flatpak-info sandbox file.
             #[cfg(desktop)]
-            let updater_disabled = std::env::var("READEST_DISABLE_UPDATER").is_ok();
+            let updater_disabled = {
+                #[cfg(target_os = "linux")]
+                let is_flatpak = std::env::var("FLATPAK_ID").is_ok()
+                    || std::path::Path::new("/.flatpak-info").exists();
+                #[cfg(not(target_os = "linux"))]
+                let is_flatpak = false;
+                std::env::var("READEST_DISABLE_UPDATER").is_ok() || is_flatpak
+            };
             #[cfg(not(desktop))]
             let updater_disabled = false;
 
