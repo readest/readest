@@ -47,6 +47,7 @@ import {
   groupByArray,
   parseMediaType,
   isSearchLink,
+  expandOPDSSearchTemplate,
   resolveURL,
   getFileExtFromPath,
   looksLikeXMLContent,
@@ -241,6 +242,25 @@ describe('opdsUtils', () => {
       expect(isSearchLink(link)).toBe(false);
     });
 
+    it('should return true for a templated OPDS 2.0 JSON search link', () => {
+      const link: OPDSBaseLink = {
+        rel: 'search',
+        href: '/opds/search{?query}',
+        type: MIME.OPDS2,
+        templated: true,
+      };
+      expect(isSearchLink(link)).toBe(true);
+    });
+
+    it('should return false for an OPDS 2.0 JSON search link that is not templated', () => {
+      const link: OPDSBaseLink = {
+        rel: 'search',
+        href: '/opds/search',
+        type: MIME.OPDS2,
+      };
+      expect(isSearchLink(link)).toBe(false);
+    });
+
     it('should return false when rel is undefined', () => {
       const link: OPDSBaseLink = {
         href: '/search',
@@ -256,6 +276,38 @@ describe('opdsUtils', () => {
         type: MIME.ATOM,
       };
       expect(isSearchLink(link)).toBe(false);
+    });
+  });
+
+  describe('expandOPDSSearchTemplate', () => {
+    it('expands a {?query} template with the search term', () => {
+      expect(expandOPDSSearchTemplate('/opds/search{?query}', 'dune')).toBe(
+        '/opds/search?query=dune',
+      );
+    });
+
+    it('percent-encodes the search term', () => {
+      expect(expandOPDSSearchTemplate('/opds/search{?query}', 'harry potter')).toBe(
+        '/opds/search?query=harry%20potter',
+      );
+    });
+
+    it('fills a {?searchTerms} template variable', () => {
+      expect(expandOPDSSearchTemplate('/search{?searchTerms}', 'foo')).toBe(
+        '/search?searchTerms=foo',
+      );
+    });
+
+    it('fills only the primary text variable, omitting the rest', () => {
+      expect(expandOPDSSearchTemplate('/search{?query,lang}', 'foo')).toBe('/search?query=foo');
+    });
+
+    it('falls back to the only variable when none is a known query name', () => {
+      expect(expandOPDSSearchTemplate('/search{?keyword}', 'foo')).toBe('/search?keyword=foo');
+    });
+
+    it('returns the href unchanged when there are no template variables', () => {
+      expect(expandOPDSSearchTemplate('/search', 'foo')).toBe('/search');
     });
   });
 

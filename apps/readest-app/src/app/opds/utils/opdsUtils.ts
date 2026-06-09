@@ -1,4 +1,5 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
+import { replace as expandURITemplate, getVariables } from 'foliate-js/uri-template.js';
 import { OPDSBaseLink } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
@@ -26,6 +27,7 @@ export const MIME = {
   EPUB: 'application/epub+zip',
   PDF: 'application/pdf',
   OPENSEARCH: 'application/opensearchdescription+xml',
+  OPDS2: 'application/opds+json',
 };
 
 export const enum VALIDATION_ERROR {
@@ -128,7 +130,30 @@ export const parseOPDSXML = (text: string): Document => {
 
 export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
-  return rels.includes('search') && (link.type === MIME.OPENSEARCH || link.type === MIME.ATOM);
+  if (!rels.includes('search')) return false;
+  return (
+    link.type === MIME.OPENSEARCH ||
+    link.type === MIME.ATOM ||
+    // OPDS 2.0 JSON feeds expose search as a templated link whose href is an
+    // RFC 6570 URI template (e.g. `/search{?query}`).
+    (link.type === MIME.OPDS2 && !!link.templated)
+  );
+};
+
+// Template variable names that conventionally carry a free-text search query.
+const SEARCH_TERM_VARS = ['query', 'searchTerms', 'q'];
+
+/**
+ * Expand an OPDS 2.0 search link's RFC 6570 URI template with a single free-text
+ * query term. The term is placed into the template's primary text variable
+ * (`query`, `searchTerms`, or `q`; otherwise the first variable). Returns the
+ * href unchanged when it has no template variables.
+ */
+export const expandOPDSSearchTemplate = (templateHref: string, queryTerm: string): string => {
+  const variables = Array.from(getVariables(templateHref) as Set<string>);
+  const textVar = variables.find((name) => SEARCH_TERM_VARS.includes(name)) ?? variables[0];
+  if (!textVar) return templateHref;
+  return expandURITemplate(templateHref, new Map([[textVar, queryTerm]]));
 };
 
 export const resolveURL = (url: string, relativeTo: string): string => {
