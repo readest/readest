@@ -14,6 +14,7 @@ import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { CachedImage } from '@/components/CachedImage';
 import { groupByArray } from '../utils/opdsUtils';
+import { getOPDSDescriptionHtml } from '../utils/opdsContent';
 import Dropdown from '@/components/Dropdown';
 import MenuItem from '@/components/MenuItem';
 
@@ -164,6 +165,7 @@ export function PublicationView({
 
   const content = publication.metadata?.[SYMBOL.CONTENT] || publication.metadata?.content;
   const description = publication.metadata?.description;
+  const descriptionHtml = useMemo(() => getOPDSDescriptionHtml(content), [content]);
 
   return (
     <div className='flex w-full flex-col px-6 py-6'>
@@ -325,14 +327,10 @@ export function PublicationView({
 
       <div className='max-w-xl items-start space-y-6'>
         {/* Description */}
-        {(content || description) && (
+        {(descriptionHtml || description) && (
           <div className='prose prose-sm max-w-none'>
-            {content ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: typeof content === 'string' ? content : content.value,
-                }}
-              />
+            {descriptionHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
             ) : (
               <p>{description}</p>
             )}
