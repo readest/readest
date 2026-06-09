@@ -31,6 +31,7 @@ import {
   looksLikeXMLContent,
   MIME,
   parseMediaType,
+  parseOPDSXML,
   resolveURL,
 } from './utils/opdsUtils';
 import {
@@ -247,7 +248,7 @@ export default function BrowserPage() {
         const text = await res.text();
 
         if (looksLikeXMLContent(text)) {
-          const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
+          const doc = parseOPDSXML(text);
           const {
             documentElement: { localName },
           } = doc;

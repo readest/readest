@@ -82,6 +82,50 @@ export const parseMediaType = (str?: string) => {
  */
 export const looksLikeXMLContent = (text: string): boolean => text.trimStart().startsWith('<');
 
+/**
+ * Detect a DOMParser error document. Strict XML parsers (Firefox, and jsdom in
+ * tests) replace the whole document with a <parsererror> element on any
+ * well-formedness violation; Chrome is lenient and often parses on regardless.
+ */
+const hasXMLParseError = (doc: Document): boolean =>
+  doc.documentElement?.localName === 'parsererror' ||
+  doc.getElementsByTagName('parsererror').length > 0;
+
+/**
+ * Parse an OPDS/Atom XML string, tolerating "junk after the document element".
+ *
+ * Old OPDS servers (e.g. the Hungarian MEK catalog, issue #4479) emit a valid
+ * feed followed by trailing junk — a stray PHP warning, an extra tag, or text
+ * after </feed>. Chrome's XML parser ignores it, but Firefox's strict parser
+ * fails with "junk after document element" / "text data outside of root node"
+ * and replaces the whole document with a <parsererror>. Callers then see a
+ * non-feed root, treat the response as HTML, find no OPDS link, and silently
+ * navigate back.
+ *
+ * Recovery: on a parser error, re-parse the slice from the root element's start
+ * tag to its last matching end tag (dropping any leading prolog and trailing
+ * junk). If recovery still fails, the original error document is returned so
+ * callers fall through to their existing HTML/non-OPDS handling.
+ */
+export const parseOPDSXML = (text: string): Document => {
+  const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
+  if (!hasXMLParseError(doc)) return doc;
+
+  const rootMatch = text.match(/<([A-Za-z_][\w.:-]*)/);
+  const rootName = rootMatch?.[1];
+  if (rootMatch && rootName !== undefined) {
+    const startIdx = rootMatch.index ?? 0;
+    const closeTag = `</${rootName}>`;
+    const closeIdx = text.lastIndexOf(closeTag);
+    if (closeIdx > startIdx) {
+      const sliced = text.slice(startIdx, closeIdx + closeTag.length);
+      const retry = new DOMParser().parseFromString(sliced, MIME.XML as DOMParserSupportedType);
+      if (!hasXMLParseError(retry)) return retry;
+    }
+  }
+  return doc;
+};
+
 export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
   return rels.includes('search') && (link.type === MIME.OPENSEARCH || link.type === MIME.ATOM);
@@ -146,7 +190,7 @@ export const validateOPDSURL = async (
 
     // Check if it's XML-based OPDS
     if (looksLikeXMLContent(text)) {
-      const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
+      const doc = parseOPDSXML(text);
       const {
         documentElement: { localName },
       } = doc;

@@ -13,7 +13,12 @@ import { REL } from '@/types/opds';
 import { MIMETYPES } from '@/libs/document';
 import { isWebAppPlatform } from '@/services/environment';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
-import { resolveURL, parseMediaType } from '@/app/opds/utils/opdsUtils';
+import {
+  resolveURL,
+  parseMediaType,
+  looksLikeXMLContent,
+  parseOPDSXML,
+} from '@/app/opds/utils/opdsUtils';
 import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 import type { OPDSSubscriptionState, PendingItem } from './types';
 import { MAX_PAGES_PER_FEED } from './types';
@@ -28,8 +33,6 @@ const NEWNESS_TITLE_RE =
 // Href hints for catalogs that don't expose rel or human-readable titles.
 const NEWNESS_HREF_RE =
   /(?:sort_order=release_date|sort=(?:new|date|added|date_added|recent|release_date|release_date_desc)|\b(?:new[-_]?releases?|newest|recently[-_]?added|by[-_]?date)\b|\/new(?:[/?#]|$))/i;
-
-const MIME_XML = 'application/xml';
 
 // Acquisition rels safe for unattended download. Excludes buy / borrow /
 // subscribe / sample (need user action) and indirect (link points to a
@@ -224,8 +227,8 @@ async function fetchFeed(
   const responseURL = res.url;
   const text = await res.text();
 
-  if (text.startsWith('<')) {
-    const doc = new DOMParser().parseFromString(text, MIME_XML as DOMParserSupportedType);
+  if (looksLikeXMLContent(text)) {
+    const doc = parseOPDSXML(text);
     const { localName } = doc.documentElement;
 
     if (localName === 'feed') {

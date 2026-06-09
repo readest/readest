@@ -50,6 +50,7 @@ import {
   resolveURL,
   getFileExtFromPath,
   looksLikeXMLContent,
+  parseOPDSXML,
   MIME,
   validateOPDSURL,
 } from '@/app/opds/utils/opdsUtils';
@@ -395,6 +396,62 @@ describe('opdsUtils', () => {
     });
   });
 
+  // Regression for https://github.com/readest/readest/issues/4479
+  // The Hungarian MEK catalog (a PHP backend) emits a valid Atom feed followed
+  // by trailing junk after </feed>. Firefox's strict DOMParser replaces the
+  // whole document with a <parsererror> ("junk after document element"), while
+  // Chrome ignores it. jsdom matches Firefox, so these run in the test env.
+  describe('parseOPDSXML', () => {
+    const parserError = (doc: Document) =>
+      doc.documentElement?.localName === 'parsererror' ||
+      doc.getElementsByTagName('parsererror').length > 0;
+
+    it('parses a well-formed feed unchanged', () => {
+      const doc = parseOPDSXML('<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed>');
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers from text junk after the root element', () => {
+      const doc = parseOPDSXML(
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed>\nWarning: junk',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+      expect(doc.querySelector('title')?.textContent).toBe('x');
+    });
+
+    it('recovers from a stray tag after the root element', () => {
+      const doc = parseOPDSXML(
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed><br/>',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers from leading whitespace and trailing junk (the MEK shape)', () => {
+      const doc = parseOPDSXML(
+        '\n\n\n<feed xmlns="http://www.w3.org/2005/Atom"><title>MEK</title></feed>\n<br />extra',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers an entry document with trailing junk', () => {
+      const doc = parseOPDSXML(
+        '<entry xmlns="http://www.w3.org/2005/Atom"><title>book</title></entry> junk',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('entry');
+    });
+
+    it('returns the error document when recovery is impossible', () => {
+      // Unclosed root element — there is no trailing junk to strip.
+      const doc = parseOPDSXML('<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title>');
+      expect(parserError(doc)).toBe(true);
+    });
+  });
+
   describe('validateOPDSURL', () => {
     beforeEach(() => {
       mockFetchWithAuth.mockReset();
@@ -575,6 +632,22 @@ describe('opdsUtils', () => {
       } as Response);
 
       const result = await validateOPDSURL('https://bookserver.mek.oszk.hu/all/epub/0');
+      expect(result.isValid).toBe(true);
+      expect(result.data?.type).toBe('feed');
+    });
+
+    // Regression for https://github.com/readest/readest/issues/4479
+    it('should accept a feed with trailing junk after </feed> (Firefox strict parse)', async () => {
+      const xmlFeed = `\n\n<feed xmlns="http://www.w3.org/2005/Atom">\n  <title>MEK</title>\n</feed>\nWarning: stray PHP output`;
+
+      mockFetchWithAuth.mockResolvedValue({
+        ok: true,
+        url: 'https://bookserver.mek.oszk.hu/abc/teljes/C/0',
+        text: () => Promise.resolve(xmlFeed),
+        headers: new Headers({ 'Content-Type': 'text/html' }),
+      } as Response);
+
+      const result = await validateOPDSURL('https://bookserver.mek.oszk.hu/abc/teljes/C/0');
       expect(result.isValid).toBe(true);
       expect(result.data?.type).toBe('feed');
     });
