@@ -13,7 +13,9 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: {
       metadataSeriesCollapsed: true,
-      metadataOthersCollapsed: true,
+      // The "File Path" entry lives under the Metadata section; tests below
+      // depend on it being expanded by default so the row is in the DOM.
+      metadataOthersCollapsed: false,
       metadataDescriptionCollapsed: true,
     },
   }),
@@ -98,5 +100,26 @@ describe('BookDetailView delete dropdown layout', () => {
     // It should keep position: relative via the !relative override so it
     // anchors against the centered parent.
     expect(menu!.className).toContain('!relative');
+  });
+});
+
+describe('BookDetailView file path row', () => {
+  // book.filePath is only set for in-place imports (and OS-handed paths like
+  // Android "Open with Readest"). Hash-copy imports leave it undefined, so
+  // surfacing it lets users tell the two storage modes apart at a glance.
+  it('shows the actual file path when book.filePath is set', () => {
+    const filePath = '/Users/me/Library/Books/sample.epub';
+    const { getByText } = renderView({ book: makeBook({ filePath }) });
+
+    expect(getByText('File Path')).toBeTruthy();
+    const value = getByText(filePath);
+    expect(value).toBeTruthy();
+    // Long paths must remain hoverable for the full string.
+    expect(value.getAttribute('title')).toBe(filePath);
+  });
+
+  it('omits the file path row for hash-copy books (no filePath)', () => {
+    const { queryByText } = renderView({ book: makeBook() });
+    expect(queryByText('File Path')).toBeNull();
   });
 });

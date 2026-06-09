@@ -222,6 +222,21 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     {metadata?.identifier || _('Unknown')}
                   </p>
                 </div>
+                {/*
+                  Only books imported in-place (or files opened directly via the
+                  OS, e.g. Android "Open with Readest") keep a `filePath`; books
+                  copied into Books/<hash>/ have it left undefined. Surfacing the
+                  path lets the user verify which on-disk file the entry points at
+                  and tell apart in-place vs hash-copy imports at a glance.
+                */}
+                {book.filePath && (
+                  <div className='col-span-2 overflow-hidden sm:col-span-3'>
+                    <span className='font-bold'>{_('File Path')}</span>
+                    <p className='text-neutral-content text-sm break-all' title={book.filePath}>
+                      {book.filePath}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
