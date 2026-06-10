@@ -1831,5 +1831,6 @@
   "Book file is not available locally": "ملف الكتاب غير متوفر محليًا",
   "Failed to send book": "فشل إرسال الكتاب",
   "Send": "إرسال",
-  "Highlight Current Sentence": "تمييز الجملة الحالية"
+  "Highlight Current Sentence": "تمييز الجملة الحالية",
+  "File Path": "مسار الملف"
 }

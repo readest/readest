@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "বইয়ের ফাইলটি স্থানীয়ভাবে উপলব্ধ নয়",
   "Failed to send book": "বই পাঠাতে ব্যর্থ হয়েছে",
   "Send": "পাঠান",
-  "Highlight Current Sentence": "বর্তমান বাক্য হাইলাইট করুন"
+  "Highlight Current Sentence": "বর্তমান বাক্য হাইলাইট করুন",
+  "File Path": "ফাইলের পথ"
 }

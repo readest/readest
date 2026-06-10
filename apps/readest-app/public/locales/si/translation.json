@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "පොත් ගොනුව දේශීයව ලබා ගත නොහැක",
   "Failed to send book": "පොත යැවීමට අසමත් විය",
   "Send": "යවන්න",
-  "Highlight Current Sentence": "වර්තමාන වාක්‍යය ඉස්මතු කරන්න"
+  "Highlight Current Sentence": "වර්තමාන වාක්‍යය ඉස්මතු කරන්න",
+  "File Path": "ගොනු මාර්ගය"
 }

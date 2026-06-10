@@ -1666,5 +1666,6 @@
   "Book file is not available locally": "書籍ファイルがローカルに存在しません",
   "Failed to send book": "書籍の送信に失敗しました",
   "Send": "送信",
-  "Highlight Current Sentence": "現在の文をハイライト"
+  "Highlight Current Sentence": "現在の文をハイライト",
+  "File Path": "ファイルパス"
 }

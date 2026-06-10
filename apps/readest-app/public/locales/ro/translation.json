@@ -1732,5 +1732,6 @@
   "Book file is not available locally": "Fișierul cărții nu este disponibil local",
   "Failed to send book": "Trimiterea cărții a eșuat",
   "Send": "Trimite",
-  "Highlight Current Sentence": "Evidențiază propoziția curentă"
+  "Highlight Current Sentence": "Evidențiază propoziția curentă",
+  "File Path": "Calea fișierului"
 }

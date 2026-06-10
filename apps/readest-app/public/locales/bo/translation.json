@@ -1666,5 +1666,6 @@
   "Book file is not available locally": "དེབ་ཀྱི་ཡིག་ཆ་དེ་ས་གནས་སུ་མི་འདུག",
   "Failed to send book": "དེབ་སྐུར་གཏོང་མ་ཐུབ།",
   "Send": "སྐུར་གཏོང་།",
-  "Highlight Current Sentence": "ད་ལྟའི་ཚིག་གྲུབ་ལ་འོག་ཐིག་གཏོང་།"
+  "Highlight Current Sentence": "ད་ལྟའི་ཚིག་གྲུབ་ལ་འོག་ཐིག་གཏོང་།",
+  "File Path": "ཡིག་ཆའི་ལམ་ཐིག"
 }

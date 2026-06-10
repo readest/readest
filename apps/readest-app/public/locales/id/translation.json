@@ -1666,5 +1666,6 @@
   "Book file is not available locally": "Berkas buku tidak tersedia secara lokal",
   "Failed to send book": "Gagal mengirim buku",
   "Send": "Kirim",
-  "Highlight Current Sentence": "Sorot kalimat saat ini"
+  "Highlight Current Sentence": "Sorot kalimat saat ini",
+  "File Path": "Jalur File"
 }

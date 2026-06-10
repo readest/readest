@@ -1666,5 +1666,6 @@
   "Book file is not available locally": "本機沒有此書籍檔案",
   "Failed to send book": "傳送書籍失敗",
   "Send": "傳送",
-  "Highlight Current Sentence": "醒目標示目前句子"
+  "Highlight Current Sentence": "醒目標示目前句子",
+  "File Path": "檔案路徑"
 }

@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "Bokfilen är inte tillgänglig lokalt",
   "Failed to send book": "Det gick inte att skicka boken",
   "Send": "Skicka",
-  "Highlight Current Sentence": "Markera aktuell mening"
+  "Highlight Current Sentence": "Markera aktuell mening",
+  "File Path": "Filsökväg"
 }

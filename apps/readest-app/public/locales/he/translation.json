@@ -1732,5 +1732,6 @@
   "Book file is not available locally": "קובץ הספר אינו זמין באופן מקומי",
   "Failed to send book": "שליחת הספר נכשלה",
   "Send": "שליחה",
-  "Highlight Current Sentence": "הדגשת המשפט הנוכחי"
+  "Highlight Current Sentence": "הדגשת המשפט הנוכחי",
+  "File Path": "נתיב הקובץ"
 }

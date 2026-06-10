@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "Boekbestand is niet lokaal beschikbaar",
   "Failed to send book": "Verzenden van boek mislukt",
   "Send": "Verzenden",
-  "Highlight Current Sentence": "Huidige zin markeren"
+  "Highlight Current Sentence": "Huidige zin markeren",
+  "File Path": "Bestandspad"
 }

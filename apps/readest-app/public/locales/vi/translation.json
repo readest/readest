@@ -1666,5 +1666,6 @@
   "Book file is not available locally": "Tệp sách không có sẵn trên thiết bị",
   "Failed to send book": "Gửi sách thất bại",
   "Send": "Gửi",
-  "Highlight Current Sentence": "Tô sáng câu hiện tại"
+  "Highlight Current Sentence": "Tô sáng câu hiện tại",
+  "File Path": "Đường dẫn tệp"
 }

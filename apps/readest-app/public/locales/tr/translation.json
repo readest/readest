@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "Kitap dosyası yerel olarak mevcut değil",
   "Failed to send book": "Kitap gönderilemedi",
   "Send": "Gönder",
-  "Highlight Current Sentence": "Geçerli cümleyi vurgula"
+  "Highlight Current Sentence": "Geçerli cümleyi vurgula",
+  "File Path": "Dosya Yolu"
 }

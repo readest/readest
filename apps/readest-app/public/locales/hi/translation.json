@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "पुस्तक फ़ाइल स्थानीय रूप से उपलब्ध नहीं है",
   "Failed to send book": "पुस्तक भेजने में विफल",
   "Send": "भेजें",
-  "Highlight Current Sentence": "वर्तमान वाक्य को हाइलाइट करें"
+  "Highlight Current Sentence": "वर्तमान वाक्य को हाइलाइट करें",
+  "File Path": "फाइल पथ"
 }

@@ -1732,5 +1732,6 @@
   "Book file is not available locally": "O ficheiro do livro não está disponível localmente",
   "Failed to send book": "Falha ao enviar o livro",
   "Send": "Enviar",
-  "Highlight Current Sentence": "Destacar a frase atual"
+  "Highlight Current Sentence": "Destacar a frase atual",
+  "File Path": "Caminho do Arquivo"
 }

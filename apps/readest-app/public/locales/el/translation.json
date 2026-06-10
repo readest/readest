@@ -1699,5 +1699,6 @@
   "Book file is not available locally": "Το αρχείο του βιβλίου δεν είναι διαθέσιμο τοπικά",
   "Failed to send book": "Αποτυχία αποστολής βιβλίου",
   "Send": "Αποστολή",
-  "Highlight Current Sentence": "Επισήμανση τρέχουσας πρότασης"
+  "Highlight Current Sentence": "Επισήμανση τρέχουσας πρότασης",
+  "File Path": "Διαδρομή αρχείου"
 }

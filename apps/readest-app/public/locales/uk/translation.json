@@ -1765,5 +1765,6 @@
   "Book file is not available locally": "Файл книги недоступний локально",
   "Failed to send book": "Не вдалося надіслати книгу",
   "Send": "Надіслати",
-  "Highlight Current Sentence": "Виділяти поточне речення"
+  "Highlight Current Sentence": "Виділяти поточне речення",
+  "File Path": "Шлях до файлу"
 }

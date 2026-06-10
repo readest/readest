@@ -1765,5 +1765,6 @@
   "Book file is not available locally": "Datoteka knjige ni na voljo lokalno",
   "Failed to send book": "Pošiljanje knjige ni uspelo",
   "Send": "Pošlji",
-  "Highlight Current Sentence": "Označi trenutni stavek"
+  "Highlight Current Sentence": "Označi trenutni stavek",
+  "File Path": "Pot do datoteke"
 }
