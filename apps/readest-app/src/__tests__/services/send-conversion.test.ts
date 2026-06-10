@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { sanitizeHtml } from '@/services/send/conversion/sanitizeHtml';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { convertToEpub, isConvertible, mimeToKind } from '@/services/send/conversion/convertToEpub';
 import { ConversionError } from '@/services/send/conversion/types';
 

@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@/services/send/conversion/sanitizeHtml';
+import { sanitizeHtml } from '@/utils/sanitize';
 import type { OPDSContent } from '@/types/opds';
 
 /**

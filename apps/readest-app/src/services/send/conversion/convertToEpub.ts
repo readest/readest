@@ -6,7 +6,7 @@ import { detectLanguage } from '@/utils/lang';
 // browser extension imports `convertPageToEpub` and never reaches those
 // branches, so dynamic imports let webpack code-split them out of the
 // extension bundle entirely.
-import { sanitizeHtml, sanitizeForParsing } from './sanitizeHtml';
+import { sanitizeHtml, sanitizeForParsing } from '@/utils/sanitize';
 import { buildEpub } from './buildEpub';
 import { bundleAssets } from './assetBundler';
 import { generateCoverSvg } from './coverGenerator';
