@@ -42,6 +42,8 @@
 
 ## Feature Notes
 - [OPDS Firefox strict-XML parse (#4479)](opds-firefox-strict-xml-4479.md) — MEK feed has junk after `</feed>`; Firefox DOMParser → `<parsererror>` (silent back-nav), Chrome lenient; `parseOPDSXML` slices root start→last close tag; jsdom mirrors Firefox; wired into page.tsx + validateOPDSURL + feedChecker (latter also #4181 `looksLikeXMLContent` swap)
+- [OPDS 2.0 JSON search greyed out (#4502)](opds2-json-search-4502.md) — `isSearchLink` ignored templated `application/opds+json` links → `hasSearch` false → disabled navbar input; add `MIME.OPDS2`+`templated`, `expandOPDSSearchTemplate` (foliate `uri-template.js`), handleSearch OPDS2 branch. Gotcha: `resolveURL` mangles `{?query}` braces — expand template BEFORE resolving
+- [OPDS HTML description (#4503)](opds-html-description-4503.md) — detail-view descriptions showed raw `<p>`/`&quot;` tags; aggregator double-escapes `type="text"` summary + `PublicationView` dumped it into unsanitized `dangerouslySetInnerHTML`; fix = `getOPDSDescriptionHtml` (decode-one-level-iff-fully-escaped, then `sanitizeHtml`)
 - [Manage Cache + iOS container layout](manage-cache-ios-layout.md) — `'Cache'` base = `Library/Caches/<bundle>` only (not all of Caches); iOS `Documents/Inbox` cleared too; WebKit cache + tmp out of reach; never touch App Support
 - [D-pad Navigation](dpad-navigation.md) — Android TV remote / keyboard arrow navigation design, key files, and pitfalls
 - [Cloudflare Workers WebSocket](cloudflare-workers-websocket.md) — use fetch() Upgrade pattern (not `ws` npm); CF delivers binary frames as Blob (must serialize async decodes)
