@@ -243,6 +243,22 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         return list ?: emptyList()
     }
 
+    // shared-intent events emitted before the JS side has registered its
+    // listener via addPluginListener("native-bridge", "shared-intent", ...)
+    // would otherwise vanish — the upstream Plugin.trigger() drops events
+    // when the per-event listener list is empty. This is exactly what
+    // happens on cold launch via "Open with Readest": Android delivers the
+    // ACTION_VIEW intent to onCreate / onNewIntent (the WebView is already
+    // up but the JS app is mid-hydration), we emit it through triggerEvent
+    // immediately, and useAppUrlIngress's addPluginListener call lands a
+    // few hundred ms later — too late to receive the now-discarded event.
+    //
+    // To fix this we queue events whenever no listener is registered, then
+    // replay the queue when a registerListener call lands for this event
+    // (see overridden registerListener below).
+    private val pendingEvents: MutableMap<String, MutableList<JSObject>> = mutableMapOf()
+    private val pendingEventsLock = Any()
+
     private fun emitSharedIntent(action: String, uris: List<Uri>) {
         val payload = JSObject().apply {
             put("action", action)
@@ -250,7 +266,47 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             uris.forEach { arr.put(it.toString()) }
             put("urls", arr)
         }
-        triggerEvent("shared-intent", payload)
+        emitOrQueue("shared-intent", payload)
+    }
+
+    private fun emitOrQueue(eventName: String, payload: JSObject) {
+        if (hasListener(eventName)) {
+            triggerEvent(eventName, payload)
+        } else {
+            synchronized(pendingEventsLock) {
+                val list = pendingEvents.getOrPut(eventName) { mutableListOf() }
+                list.add(payload)
+            }
+            Log.d("NativeBridgePlugin", "Queued $eventName payload (no listener yet); pending size=${pendingEvents[eventName]?.size}")
+        }
+    }
+
+    override fun registerListener(invoke: Invoke) {
+        super.registerListener(invoke)
+        // After super.registerListener, the listener is now wired up.
+        // Drain any queued events for the same name so the JS side gets
+        // events that were emitted between native start and listener
+        // registration.
+        // The event name lives on the invoke args, not directly accessible
+        // post-resolve; instead, drain every queued bucket whose key has a
+        // listener now. Cheap because there's at most one or two events.
+        val toReplay = mutableListOf<Pair<String, JSObject>>()
+        synchronized(pendingEventsLock) {
+            val toRemove = mutableListOf<String>()
+            for ((event, list) in pendingEvents) {
+                if (hasListener(event)) {
+                    list.forEach { toReplay.add(event to it) }
+                    toRemove.add(event)
+                }
+            }
+            toRemove.forEach { pendingEvents.remove(it) }
+        }
+        if (toReplay.isNotEmpty()) {
+            Log.d("NativeBridgePlugin", "Replaying ${toReplay.size} queued event(s) after registerListener")
+            for ((event, payload) in toReplay) {
+                triggerEvent(event, payload)
+            }
+        }
     }
 
     @Command

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -55,12 +55,22 @@ interface SharedIntentPayload {
  */
 export function useAppUrlIngress() {
   const { appService } = useEnv();
-  const listened = useRef(false);
 
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
-    if (listened.current) return;
-    listened.current = true;
+    // Note: removed an old `listened.current` ref guard that tried to
+    // make this effect a one-shot. In React strict mode (dev) the effect
+    // mounts → cleans up → mounts again. With the guard, the second
+    // mount short-circuited (ref still true) and DID NOT re-register
+    // any listeners — but the previous cleanup had already
+    // `unregister()`ed the underlying native plugin listener
+    // (NativeBridgePlugin's listeners["shared-intent"] map). Net result:
+    // the app ended up with zero shared-intent listeners on the native
+    // side, so any "Open with Readest" intent that arrived AFTER cold
+    // start was silently dropped (event got queued by our pending-events
+    // workaround but, with no future register call, never replayed).
+    // Letting the effect re-run on every mount cycle keeps the JS-side
+    // and native-side listener bookkeeping in lockstep.
 
     const dispatch = (urls: string[], action?: 'VIEW' | 'SEND') => {
       if (!urls.length) return;
