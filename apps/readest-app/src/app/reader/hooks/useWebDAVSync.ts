@@ -5,6 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Book } from '@/types/book';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import {
@@ -19,6 +20,43 @@ import { tauriUpload } from '@/utils/transfer';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
+
+/**
+ * A "transient" book is one created by `appService.importBook(..., { transient: true })`
+ * — typically the Open-with VIEW intent path on Android/iOS, or the /send
+ * preview flow. Its bytes are NOT copied into Books/<hash>/; instead the
+ * Book carries an absolute `filePath` pointing at the original file URI,
+ * and `deletedAt` is set to the import timestamp so the entry is filtered
+ * out of the bookshelf on next library load (see `bookService.ts:392` and
+ * `bookService.ts:525-529`).
+ *
+ * Why this combination uniquely identifies transient imports:
+ *   - In-place imports (`inPlace: true`) also set `filePath`, but they keep
+ *     `deletedAt: null` because they're a first-class persistent entry.
+ *   - User-deleted books carry `deletedAt` but rarely carry `filePath`
+ *     (only when the user deletes a previously in-place-imported book —
+ *     which is also a state we don't want to push, so the false positive
+ *     is harmless either way).
+ *   - Brand-new transient imports are the *only* state where both fields
+ *     are populated together at creation time.
+ *
+ * Push/pull MUST be skipped for transient books for two reasons:
+ *   1. They're never supposed to land in the user's library (or anyone's
+ *      library on another device). Pushing config.json to
+ *      `Readest/books/<hash>/` creates a per-hash directory that the
+ *      next sync run on a sibling device picks up via the directory-
+ *      listing fallback in `syncLibrary` (treating it as an "orphan
+ *      remote book") and pulls back down — manifesting as a phantom
+ *      book showing up on every connected device.
+ *   2. A pull might fetch a real book's config that happens to share
+ *      this hash and clobber the transient session's progress with
+ *      unrelated state, since transient imports skip the in-library
+ *      progress UI and we never want their merge to "win".
+ */
+const isTransientBook = (book: Book | undefined): boolean => {
+  if (!book) return false;
+  return !!book.filePath && !!book.deletedAt;
+};
 
 /**
  * WebDAV per-book sync hook.
@@ -171,6 +209,9 @@ export const useWebDAVSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return;
+    // Transient books (Open-with previews, /send drafts) must never write
+    // to the WebDAV server — see `isTransientBook` for the full rationale.
+    if (isTransientBook(book)) return;
 
     try {
       const deviceId = ensureDeviceId();
@@ -213,10 +254,16 @@ export const useWebDAVSync = (bookKey: string) => {
     if (!allowPush) return;
     if (!(settings.webdav?.syncBooks ?? false)) return;
     if (fileSyncedRef.current) return;
-    fileSyncedRef.current = true;
 
     const book = getBookData(bookKey)?.book;
     if (!book || !appService) return;
+    // Transient previews never travel to the remote — same reasoning as
+    // pushNow above. Note we set `fileSyncedRef.current = true` only
+    // *after* the transient check so a later non-transient open of the
+    // same hash (e.g. user actually imports the book) still gets a
+    // fresh upload attempt.
+    if (isTransientBook(book)) return;
+    fileSyncedRef.current = true;
 
     try {
       const result = await pushBookFile(
@@ -313,10 +360,14 @@ export const useWebDAVSync = (bookKey: string) => {
   const pushBookCoverNow = useCallback(async () => {
     if (!allowPush) return;
     if (coverSyncedRef.current) return;
-    coverSyncedRef.current = true;
 
     const book = getBookData(bookKey)?.book;
     if (!book || !appService) return;
+    // Same transient guard as pushBookFileNow: keep the lock-flip below
+    // the transient check so a future real import of the same hash can
+    // still upload its cover.
+    if (isTransientBook(book)) return;
+    coverSyncedRef.current = true;
 
     try {
       await pushBookCover(settings.webdav!, book.hash, async () => {
@@ -360,6 +411,12 @@ export const useWebDAVSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return false;
+    // Transient previews are not real library entries — pulling a
+    // remote config for the same hash would clobber the preview
+    // session's in-memory progress with unrelated state from another
+    // device's real copy of the book. Skip the network round-trip
+    // entirely.
+    if (isTransientBook(book)) return false;
 
     try {
       const result = await pullBookConfig(settings.webdav!, book, config);
