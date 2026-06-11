@@ -3,7 +3,7 @@ import { BookNote, DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } fr
 import { uniqueId } from '@/utils/misc';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
-import { Point } from '@/utils/sel';
+import { Point, snapRangeToWords } from '@/utils/sel';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -63,6 +63,113 @@ export function toParentViewportPoint(doc: Document, x: number, y: number): Poin
   const frameElement = doc.defaultView?.frameElement;
   const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
   return { x: x + frameRect.left, y: y + frameRect.top };
+}
+
+export interface HandlePositions {
+  start: Point;
+  end: Point;
+}
+
+/**
+ * Window-coordinate positions for a pair of range-edit drag handles: the
+ * start handle anchors at the leading edge of the range's first line rect,
+ * the end handle at the trailing edge of its last one.
+ */
+export function getHandlePositionsFromRange(
+  bookKey: string,
+  range: Range,
+  isVertical: boolean,
+): HandlePositions | null {
+  const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
+  if (!gridFrame) return null;
+
+  const rects = Array.from(range.getClientRects());
+  if (rects.length === 0) return null;
+
+  const firstRect = rects[0]!;
+  const lastRect = rects[rects.length - 1]!;
+  const frameElement = range.commonAncestorContainer.ownerDocument?.defaultView?.frameElement;
+  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
+
+  return {
+    start: {
+      x: frameRect.left + (isVertical ? firstRect.right : firstRect.left),
+      y: frameRect.top + firstRect.top,
+    },
+    end: {
+      x: frameRect.left + (isVertical ? lastRect.left : lastRect.right),
+      y: frameRect.top + lastRect.bottom,
+    },
+  };
+}
+
+/**
+ * Build a word-snapped Range between two window-coordinate points by
+ * hit-testing every rendered section document. Returns the document and
+ * section index the range landed in, or `null` when neither point maps
+ * into the same document.
+ */
+export function buildRangeFromPoints(
+  view: FoliateView | null,
+  startPoint: Point,
+  endPoint: Point,
+): { range: Range; index: number; doc: Document } | null {
+  const contents = view?.renderer.getContents();
+  if (!contents || contents.length === 0) return null;
+
+  // the point is from viewport, need to adjust to each content's coordinate
+  const findPositionAtPoint = (doc: Document, x: number, y: number) => {
+    const frameElement = doc.defaultView?.frameElement;
+    const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
+    const adjustedX = x - frameRect.left;
+    const adjustedY = y - frameRect.top;
+
+    if (doc.caretPositionFromPoint) {
+      const pos = doc.caretPositionFromPoint(adjustedX, adjustedY);
+      if (pos) return { node: pos.offsetNode, offset: pos.offset };
+    }
+    if (doc.caretRangeFromPoint) {
+      const range = doc.caretRangeFromPoint(adjustedX, adjustedY);
+      if (range) return { node: range.startContainer, offset: range.startOffset };
+    }
+    return null;
+  };
+
+  for (const content of contents) {
+    const { doc, index } = content;
+    if (!doc) continue;
+
+    const startPos = findPositionAtPoint(doc, startPoint.x, startPoint.y);
+    const endPos = findPositionAtPoint(doc, endPoint.x, endPoint.y);
+    if (!startPos || !endPos) continue;
+
+    const range = doc.createRange();
+    try {
+      const positionComparison = startPos.node.compareDocumentPosition(endPos.node);
+      const needsSwap =
+        positionComparison & Node.DOCUMENT_POSITION_PRECEDING ||
+        (startPos.node === endPos.node && startPos.offset > endPos.offset);
+
+      if (needsSwap) {
+        range.setStart(endPos.node, endPos.offset);
+        range.setEnd(startPos.node, startPos.offset);
+      } else {
+        range.setStart(startPos.node, startPos.offset);
+        range.setEnd(endPos.node, endPos.offset);
+      }
+
+      if (range.collapsed) {
+        return null;
+      }
+
+      snapRangeToWords(range);
+    } catch (e) {
+      console.warn('Failed to create range:', e);
+      return null;
+    }
+    return { range, index: index ?? 0, doc };
+  }
+  return null;
 }
 
 /**

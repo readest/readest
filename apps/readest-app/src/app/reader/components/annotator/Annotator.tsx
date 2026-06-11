@@ -63,6 +63,7 @@ import {
 } from '../../utils/globalAnnotations';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
+import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
@@ -284,6 +285,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
+    applyProgrammaticSelection,
   } = useTextSelector(
     bookKey,
     contentInsets,
@@ -1440,6 +1442,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             handleDismissPopupAndSelection();
             setProofreadRulesVisibility(true);
           }}
+        />
+      )}
+      {!editingAnnotation && selection?.handlesSuppressed && selection.range && (
+        <SelectionRangeEditor
+          bookKey={bookKey}
+          isVertical={viewSettings.vertical}
+          selection={selection}
+          handleColor={selectedColor}
+          onRangeChange={applyProgrammaticSelection}
+          onStartDrag={handleStartEditAnnotation}
         />
       )}
       {editingAnnotation && editingAnnotation.color && selection && (
