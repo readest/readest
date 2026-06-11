@@ -44,6 +44,7 @@ vi.mock('@/store/readerStore', () => ({
       location: 'epubcfi(/6/8!/4/1:0)',
       sectionHref: `ch${primaryIndex}.xhtml`,
     }),
+    getViewSettings: () => null,
   }),
 }));
 

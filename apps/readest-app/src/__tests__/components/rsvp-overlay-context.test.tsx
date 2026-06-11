@@ -74,7 +74,7 @@ const buildController = (state: RsvpState) => {
   return controller;
 };
 
-const renderOverlay = (state: RsvpState) => {
+const renderOverlay = (state: RsvpState, fontFamily?: string) => {
   const controller = buildController(state);
   const result = render(
     <RSVPOverlay
@@ -82,6 +82,7 @@ const renderOverlay = (state: RsvpState) => {
       controller={controller as unknown as RSVPController}
       chapters={[]}
       currentChapterHref={null}
+      fontFamily={fontFamily}
       onClose={vi.fn()}
       onChapterSelect={vi.fn()}
       onRequestNextPage={vi.fn()}
@@ -139,6 +140,30 @@ describe('RSVPOverlay — context panel performance', () => {
     expect(current).not.toBeNull();
     // current word should not be a button (not clickable)
     expect(current!.getAttribute('role')).toBeNull();
+  });
+});
+
+describe('RSVPOverlay — reading font', () => {
+  afterEach(() => cleanup());
+
+  const wordState = () =>
+    buildState({ words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }], currentIndex: 0 });
+
+  test('applies the reader font family to the word display', () => {
+    const { container } = renderOverlay(wordState(), '"Bitter", "Source Han Serif CN", serif');
+    const word = container.querySelector('.rsvp-word') as HTMLElement;
+    expect(word).not.toBeNull();
+    expect(word.style.fontFamily).toContain('Bitter');
+    // With a reading font supplied, the word no longer uses the monospace fallback.
+    expect(word.classList.contains('font-mono')).toBe(false);
+  });
+
+  test('falls back to the monospace class when no font family is supplied', () => {
+    const { container } = renderOverlay(wordState());
+    const word = container.querySelector('.rsvp-word') as HTMLElement;
+    expect(word).not.toBeNull();
+    expect(word.classList.contains('font-mono')).toBe(true);
+    expect(word.style.fontFamily).toBe('');
   });
 });
 

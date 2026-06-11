@@ -13,6 +13,7 @@ import {
   buildRsvpExitConfigUpdate,
 } from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
+import { getBaseFontFamily } from '@/utils/style';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookNote, PageInfo } from '@/types/book';
@@ -114,7 +115,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getView, getProgress } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const { getBookData, getConfig, setConfig, saveConfig } = useBookDataStore();
   const { themeCode } = useThemeStore();
 
@@ -521,6 +522,12 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const chapters = bookData?.bookDoc?.toc || [];
   const currentChapterHref = rsvpChapterHrefRef.current ?? progress?.sectionHref ?? null;
 
+  // Mirror the reader's font face/family settings on the RSVP word. The overlay
+  // renders in the top document where the configured (and custom) fonts are
+  // already mounted, so the resolved family resolves the same typeface.
+  const viewSettings = getViewSettings(bookKey);
+  const fontFamily = viewSettings ? getBaseFontFamily(viewSettings) : undefined;
+
   // Use portal to render overlay at body level to avoid stacking context issues
   const portalContainer = typeof document !== 'undefined' ? document.body : null;
 
@@ -549,6 +556,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
             controller={controllerRef.current}
             chapters={chapters}
             currentChapterHref={currentChapterHref}
+            fontFamily={fontFamily}
             onClose={handleClose}
             onChapterSelect={handleChapterSelect}
             onRequestNextPage={handleRequestNextPage}

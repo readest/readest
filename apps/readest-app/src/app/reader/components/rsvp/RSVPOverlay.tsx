@@ -78,6 +78,12 @@ interface RSVPOverlayProps {
   controller: RSVPController;
   chapters: TOCItem[];
   currentChapterHref: string | null;
+  /**
+   * Resolved CSS font-family for the displayed word, mirroring the reader's
+   * font face/family settings. When undefined, the word keeps the monospace
+   * fallback. See getBaseFontFamily in utils/style.
+   */
+  fontFamily?: string;
   onClose: () => void;
   onChapterSelect: (href: string) => void;
   onRequestNextPage: () => void;
@@ -88,6 +94,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   controller,
   chapters,
   currentChapterHref,
+  fontFamily,
   onClose,
   onChapterSelect,
   onRequestNextPage,
@@ -710,8 +717,17 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
               {/* Word display */}
               <div
-                className='rsvp-word relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-2 font-mono font-medium leading-none tracking-wide sm:min-h-20 sm:px-4 sm:py-4'
-                style={{ fontSize: `${currentFontSize}rem`, letterSpacing: wordLetterSpacing }}
+                className={clsx(
+                  'rsvp-word relative flex min-h-16 w-full items-center justify-center whitespace-nowrap px-2 py-2 font-medium leading-none tracking-wide sm:min-h-20 sm:px-4 sm:py-4',
+                  // Fall back to a fixed-width font only when the reader has no
+                  // configured font face/family to apply.
+                  !fontFamily && 'font-mono',
+                )}
+                style={{
+                  fontSize: `${currentFontSize}rem`,
+                  letterSpacing: wordLetterSpacing,
+                  fontFamily,
+                }}
               >
                 {currentWord ? (
                   isCJKWord && highlightWholeWord ? (
