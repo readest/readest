@@ -790,13 +790,26 @@ describe('custom @font-face inlining (via getStyles)', () => {
     expect(css).toContain('blob:http://localhost/my-test-font');
   });
 
-  it('inlines the @font-face rules ahead of the rest of the stylesheet', () => {
+  it('keeps @namespace epub ahead of every @font-face rule (#4438)', () => {
     const vs = makeViewSettings();
     const css = getStyles(vs, theme, [makeCustomFont()]);
-    // Paginator writes this CSS into the iframe before its first paint,
-    // so the custom @font-face must precede the font-family declarations
-    // that reference it (layout styles begin with `@namespace epub`).
-    expect(css.indexOf('@font-face')).toBeLessThan(css.indexOf('@namespace epub'));
+    // A `@namespace` rule is only honored when it precedes all style and
+    // `@font-face` rules; a misplaced one is silently ignored, which drops
+    // the namespaced `aside[epub|type~="footnote"]` selector and reveals the
+    // footnote aside's border as a stray horizontal line (#4438). The custom
+    // `@font-face` rules must therefore come after the namespace declaration.
+    expect(css).toContain('@namespace epub');
+    expect(css).toContain('@font-face');
+    expect(css.indexOf('@namespace epub')).toBeLessThan(css.indexOf('@font-face'));
+  });
+
+  it('still inlines custom @font-face ahead of the font-family declarations', () => {
+    const vs = makeViewSettings();
+    const css = getStyles(vs, theme, [makeCustomFont()]);
+    // Paginator writes this CSS into the iframe before its first paint, so the
+    // custom `@font-face` rules should still precede the `--serif`/`--sans-serif`
+    // font lists that reference them.
+    expect(css.indexOf('@font-face')).toBeLessThan(css.indexOf('--serif:'));
   });
 
   it('emits one @font-face per loaded font', () => {
