@@ -96,11 +96,19 @@ const FoliateViewer: React.FC<{
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
-  const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
+  // Per-field selectors — see store/readerProgressStore.ts header for the
+  // "destructure-subscribes-the-whole-store" rationale.
+  const getView = useReaderStore((s) => s.getView);
+  const setFoliateView = useReaderStore((s) => s.setView);
+  const setViewInited = useReaderStore((s) => s.setViewInited);
+  const setProgress = useReaderStore((s) => s.setProgress);
   const setPreviewMode = useReaderStore((s) => s.setPreviewMode);
-  const { getViewState, getProgress, getViewSettings, setViewSettings } = useReaderStore();
-  const { getParallels } = useParallelViewStore();
-  const { getBookData } = useBookDataStore();
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const getParallels = useParallelViewStore((s) => s.getParallels);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
   const { registerBrightnessListeners, overlayVisible, overlayLevel } =
@@ -139,8 +147,37 @@ const FoliateViewer: React.FC<{
   useWebDAVSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
-  const progressRelocateHandler = (event: Event) => {
-    const detail = (event as CustomEvent).detail;
+  // Coalesce setProgress writes within a single animation frame.
+  //
+  // Why: foliate fires `relocate` multiple times during a swipe burst
+  // (one per snap step / intermediate stabilize). Each call ends up in
+  // `setProgress`, which writes to readerProgressStore + bookDataStore.
+  // Even after we split progress into its own store, running the writes
+  // back-to-back on the same frame is still wasted work — only the
+  // last detail in the burst is what the user sees on screen.
+  //
+  // Earlier this used requestIdleCallback to defer the commit further,
+  // but profiling on Android showed Fire Idle Callback ballooning to
+  // 2.0+ seconds of total time per ~28 s session: rIC backed up under
+  // sustained pressure and dumped the whole queue into the post-swipe
+  // pause, producing exactly the "feels sluggish right after I let go"
+  // jank we were trying to fix. rAF runs once per frame, gets scheduled
+  // by the browser's normal vsync loop, and doesn't accumulate when
+  // the page is busy — which is the behaviour we want here.
+  const pendingRelocateRef = useRef<CustomEvent | null>(null);
+  const relocateRafRef = useRef<number | null>(null);
+  const cancelRelocateScheduled = useCallback(() => {
+    const id = relocateRafRef.current;
+    if (id == null) return;
+    relocateRafRef.current = null;
+    cancelAnimationFrame(id);
+  }, []);
+  const commitRelocate = useCallback(() => {
+    relocateRafRef.current = null;
+    const event = pendingRelocateRef.current;
+    pendingRelocateRef.current = null;
+    if (!event) return;
+    const detail = event.detail;
     const atEnd = viewRef.current?.renderer.atEnd || false;
     const { current, next, total } = detail.location as PageInfo;
     const currentPage = atEnd && total > 0 ? total - 1 : current;
@@ -155,7 +192,33 @@ const FoliateViewer: React.FC<{
       detail.time,
       detail.range,
     );
+  }, [bookKey, setProgress]);
+
+  const progressRelocateHandler = (event: Event) => {
+    // Always stash the latest detail; if another rAF is already pending
+    // it'll pick this up and the intermediate states are skipped.
+    pendingRelocateRef.current = event as CustomEvent;
+    if (relocateRafRef.current != null) return;
+    relocateRafRef.current = requestAnimationFrame(commitRelocate);
   };
+
+  useEffect(() => {
+    // On unmount: flush any pending commit synchronously before tearing
+    // down — otherwise the last page-turn before the user closes the
+    // book could be lost. Then cancel the scheduled handle to be safe
+    // against double-fire.
+    return () => {
+      if (pendingRelocateRef.current) {
+        try {
+          commitRelocate();
+        } catch {
+          // Tearing down — last-effort save shouldn't crash the unmount
+        }
+      }
+      cancelRelocateScheduled();
+      pendingRelocateRef.current = null;
+    };
+  }, [cancelRelocateScheduled, commitRelocate]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
