@@ -292,9 +292,38 @@ export const getPosition = (
     ),
     dir: 'down',
   } as Position;
-  const startInView = pointIsInView(start.point);
-  const endInView = pointIsInView(end.point);
-  if (!startInView && !endInView) return { point: { x: 0, y: 0 } };
+  // Decide which selection end is on-screen by testing its UNCLAMPED line-rect
+  // midpoint against the READING FRAME (`rect`) — not the window. A cross-page
+  // selection's off-screen start maps to a negative/sidebar x that is still
+  // inside the window, so a window-based check would wrongly read it "in view"
+  // and pin the popup off the visible page (#1354).
+  const midX = (r: Rect) => (r.left + r.right) / 2;
+  const midY = (r: Rect) => (r.top + r.bottom) / 2;
+  const inFrame = (px: number, py: number) =>
+    px > rect.left && px < rect.right && py > rect.top && py < rect.bottom;
+  const startInView = inFrame(midX(first), midY(first));
+  const endInView = inFrame(midX(last), midY(last));
+  if (!startInView && !endInView) {
+    // Multi-page selection: both ends are off the visible page, but the middle
+    // may cross it. Anchor to the last on-screen line so the popup tracks the
+    // visible part of the selection.
+    const v = rects
+      .map((r) => frameRect(frame, r, sx, sy))
+      .filter((r) => inFrame(midX(r), midY(r)))
+      .at(-1);
+    if (v) {
+      return {
+        point: constrainPointWithinRect(
+          { x: midX(v) - rect.left, y: v.bottom - rect.top + 6 },
+          rect,
+          paddingPx,
+        ),
+        dir: 'down',
+      } as Position;
+    }
+    // Otherwise fall through and anchor to an end so the popup still shows
+    // (the constrained points are always within the frame, never {0,0}).
+  }
   if (!startInView) return end;
   if (!endInView) return start;
   return start.point.y > window.innerHeight - end.point.y ? start : end;

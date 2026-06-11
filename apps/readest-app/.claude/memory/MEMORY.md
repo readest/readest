@@ -33,12 +33,14 @@
 - [Custom fonts disappear on cloud sync (#4410)](custom-fonts-reincarnation-4410.md) — CRDT remove-wins: re-import-after-delete needs a `reincarnation` token or the pull re-applies the tombstone; `addFont`/`addTexture` minted none; fix mirrors dictionary (both cases) + OPDS token style; coverage matrix per kind
 
 ## Testing
+- [CDP Android WebView profiling](cdp-android-webview-profiling.md) — drive the on-device Readest WebView via adb+CDP to run JS probes/benchmarks inside the live app (no rebuild); gotchas: locked device freezes fetch (not invoke), visible:false throttles setTimeout, `__TAURI_INTERNALS__.convertFileSrc/invoke` always present, books in internal `/data/user/0/...`, fs `read{rid,len}` last-8-bytes=nread, `fs|close` not ACL-allowed, curl mishandles WebView HTTP framing
 - [Tauri Rust↔JS parser parity tests](tauri-parser-parity-tests.md) — #4369 native Rust EPUB/MOBI parser; how to cross-check vs foliate-js in the `.tauri.test.ts` WebView suite (CWD disk path for Rust, Vite URL for JS, normalizer-based compare, cover presence-only, desc whitespace-collapse); the `dcterms:modified`→`published` divergence fix
 
 ## Build & Vendoring
 - [pdfjs vendor wasm decoders](pdfjs-vendor-wasm-decoders.md) — scanned PDFs blank in CI build only (0.11.2 regression); pdfjs 5.7.x moved JBIG2 to `jbig2.wasm`, `copy-pdfjs-wasm` allow-list dropped it; `cpx` no-errors on empty glob; local stale `public/vendor` (gitignored, not refreshed by `tauri build`) masked it; fix = copy `wasm/*`
 
 ## Platform Compat
+- [Android NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md) — why NativeFile is slow (4-IPC/chunk + bridge serialization, tauri#9190); RemoteFile CANNOT replace it on Android (asset-protocol Range broken: start>0 → "Failed to fetch", start-0 capped at 1,024,000; plain no-Range fetch returns full file at 281 MB/s); measured 44/100/281 MB/s; speedups = handle-reuse (2.3×), whole-file asset loader (6.3×), or fix wry upstream. Verified live via CDP.
 - [Window-state sanitizer (#4398)](window-state-sanitize-4398.md) — Windows launch crash (WebView2 0x80070057) from invalid `.window-state.json` (`-32000` minimized sentinel / `0×0`); our plugin already has upstream #253 fix so bad files are stale; defense-in-depth `window-state-sanitizer` plugin registered BEFORE window-state (plugin init = registration order); coord threshold `-16000` (~halfway to the -32000 sentinel; real desktops sit a few thousand px off origin) keeps multi-monitor negatives
 
 ## Feature Notes

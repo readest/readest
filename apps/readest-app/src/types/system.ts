@@ -41,7 +41,7 @@ export type FileInfo = {
 };
 
 export type NativeTouchEventType = {
-  type: 'touchstart' | 'touchcancel' | 'touchend';
+  type: 'touchstart' | 'touchmove' | 'touchcancel' | 'touchend';
   pointerId: number;
   x: number;
   y: number;

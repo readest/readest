@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { BookNote } from '@/types/book';
+import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -8,8 +9,97 @@ import { eventDispatcher } from '@/utils/event';
 import { isPointerInsideSelection, Point, TextSelection } from '@/utils/sel';
 import { useInstantAnnotation } from './useInstantAnnotation';
 
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+// The selection focus must rest in a screen corner for this long before the
+// page auto-turns, so merely passing a corner mid-drag doesn't flip the page.
+const AUTO_TURN_DWELL_MS = 500;
+// The corner zone is a quarter-ellipse within this radius of the actual corner
+// (as a fraction of each axis). Kept tight so it is only the corner itself — a
+// larger/rectangular zone catches normal selections that end in the lower-right
+// of the page and turns the page unexpectedly.
+const AUTO_TURN_CORNER_FRACTION = 0.15;
+
+type Corner = 'br' | 'tl';
+
+// Which screen corner a point sits in: bottom-right turns forward, top-left
+// turns back. The zone is a quarter-ellipse of radius FRACTION around each
+// corner. Returns null when the point is in neither.
+const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => {
+  if (w <= 0 || h <= 0) return null;
+  const rx = w * AUTO_TURN_CORNER_FRACTION;
+  const ry = h * AUTO_TURN_CORNER_FRACTION;
+  const inEllipse = (dx: number, dy: number) => (dx / rx) ** 2 + (dy / ry) ** 2 <= 1;
+  if (inEllipse(w - x, h - y)) return 'br';
+  if (inEllipse(x, y)) return 'tl';
+  return null;
+};
+
+// Map a window-coordinate point to the corner of the reading area it sits in,
+// if any. Corners are measured against `area` (the visible text bounds in window
+// coordinates) so they land on the text, not the page margins or a sidebar.
+const cornerAt = (xWin: number, yWin: number, area: DOMRect | null): Corner | null => {
+  if (!area || area.width <= 0 || area.height <= 0) return null;
+  const x = xWin - area.left;
+  const y = yWin - area.top;
+  // Ignore a point outside the visible text (e.g. the selection caret jumping
+  // into the next, off-screen column while dragging at the edge).
+  if (x < 0 || x > area.width || y < 0 || y > area.height) return null;
+  return cornerOf(x, y, area.width, area.height);
+};
+
+// Window-coordinate position of the selection focus (caret), or null. The book
+// content lives in a (possibly very wide, multi-column) iframe translated by the
+// pagination offset, so map the caret from iframe space via the iframe element's
+// on-screen rect.
+const focusCaretWindowPos = (doc: Document, sel: Selection): { x: number; y: number } | null => {
+  const focusNode = sel.focusNode;
+  const win = doc.defaultView;
+  if (!focusNode || !win) return null;
+  let rect: DOMRect;
+  try {
+    const range = doc.createRange();
+    const offset =
+      focusNode.nodeType === Node.TEXT_NODE
+        ? Math.min(sel.focusOffset, (focusNode.textContent ?? '').length)
+        : sel.focusOffset;
+    range.setStart(focusNode, offset);
+    range.collapse(true);
+    rect = range.getBoundingClientRect();
+  } catch {
+    return null;
+  }
+  // An unmeasurable range (e.g. focus on an empty element) collapses to 0,0,0,0.
+  if (rect.top === 0 && rect.bottom === 0 && rect.left === 0 && rect.right === 0) return null;
+  const feRect = win.frameElement?.getBoundingClientRect();
+  return {
+    x: (rect.left + rect.right) / 2 + (feRect?.left ?? 0),
+    y: (rect.top + rect.bottom) / 2 + (feRect?.top ?? 0),
+  };
+};
+
+// The reading frame in window coordinates: the <foliate-view> element's rect
+// (a stable element, so it has a sensible page-sized width — unlike the visible
+// text range, whose box spans the whole multi-column iframe), inset by the page
+// content margins so the corner zone lands on the text area, not the margin.
+// Falls back to the reading container (gridcell).
+const getReadingAreaRect = (bookKey: string, insets: Insets = ZERO_INSETS): DOMRect | null => {
+  const cell = document.querySelector(`#gridcell-${bookKey}`);
+  if (!cell) return null;
+  const frame = cell.querySelector('foliate-view') ?? cell;
+  const r = frame.getBoundingClientRect();
+  if (r.width <= 0 || r.height <= 0) return null;
+  return new DOMRect(
+    r.left + insets.left,
+    r.top + insets.top,
+    Math.max(0, r.width - insets.left - insets.right),
+    Math.max(0, r.height - insets.top - insets.bottom),
+  );
+};
+
 export const useTextSelector = (
   bookKey: string,
+  contentInsets: Insets,
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>,
   setEditingAnnotation: React.Dispatch<React.SetStateAction<BookNote | null>>,
   setExternalDragPoint: React.Dispatch<React.SetStateAction<Point | null>>,
@@ -23,6 +113,10 @@ export const useTextSelector = (
   const bookData = getBookData(bookKey);
   const osPlatform = getOSPlatform();
 
+  // The reading frame inset by the page content margins, used to measure the
+  // auto-turn corners so they land on the text area, not the margin.
+  const readingAreaRect = (): DOMRect | null => getReadingAreaRect(bookKey, contentInsets);
+
   const isPopuped = useRef(false);
   const isUpToPopup = useRef(false);
   const isTextSelected = useRef(false);
@@ -32,10 +126,15 @@ export const useTextSelector = (
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
-  const firstVisible = useRef<Node | null>(null);
-  const lastVisible = useRef<Node | null>(null); // for deciding whether selection is at edge of section
-  const enteredFirstOrLastSince = useRef<number | null>(null);
-  const AutoTurnInterval = 300; // ms
+  const autoTurnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The corner an input signal is currently engaged in. Stays set after a turn so
+  // the dwell can't re-arm while held — a signal must leave the corner and return
+  // to turn another page.
+  const engagedCorner = useRef<Corner | null>(null);
+  const isAutoTurning = useRef(false);
+  // Latest pointer position in window coords (from pointermove or, on Android,
+  // native touchmove). One of the engagement signals alongside the caret.
+  const pointerPos = useRef<{ x: number; y: number } | null>(null);
 
   const {
     isInstantAnnotationEnabled,
@@ -102,6 +201,14 @@ export const useTextSelector = (
   };
 
   const handlePointerMove = (doc: Document, index: number, ev: PointerEvent) => {
+    // The listener lives on the book iframe's document, so ev.clientX/Y are in
+    // the (very wide, multi-column) iframe viewport. Map to window coordinates
+    // via the iframe element's on-screen rect, like the selection caret.
+    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
+    pointerPos.current = {
+      x: ev.clientX + (feRect?.left ?? 0),
+      y: ev.clientY + (feRect?.top ?? 0),
+    };
     if (isInstantAnnotating.current) {
       // In scroll mode, detect gesture direction before committing to annotation.
       // Cancel if the gesture is along the scroll axis (vertical for normal, horizontal
@@ -120,10 +227,50 @@ export const useTextSelector = (
       }
       ev.preventDefault();
       isInstantAnnotated.current = handleInstantAnnotationPointerMove(doc, index, ev);
+      return;
+    }
+
+    // Pointer-driven auto page-turn (#1354) for web/desktop/iOS, where the
+    // pointer is the reliable, stable signal at the corner. Android uses the
+    // caret in handleSelectionchange (no pointermove during a selection drag).
+    // Android uses native touchmove (handleNativeTouchMove) — the iframe
+    // pointermove doesn't fire there during a native selection drag.
+    const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
+    if (isAndroid) return;
+    const viewSettings = getViewSettings(bookKey);
+    const sel = doc.getSelection();
+    const valid = !!sel && isValidSelection(sel);
+    const corner = !viewSettings?.scrolled && valid ? pointerCornerNow() : null;
+    noteCorner(corner, doc);
+  };
+
+  // Android native touchmove — the pointer engagement signal during a native
+  // selection drag (the iframe pointermove doesn't fire there). The native x/y
+  // are physical device pixels relative to the window; convert to CSS px.
+  const handleNativeTouchMove = (x: number, y: number, doc: Document) => {
+    const dpr = window.devicePixelRatio || 1;
+    pointerPos.current = { x: x / dpr, y: y / dpr };
+    const viewSettings = getViewSettings(bookKey);
+    const sel = doc.getSelection();
+    const valid = !!sel && isValidSelection(sel);
+    const corner = !viewSettings?.scrolled && valid ? pointerCornerNow() : null;
+    noteCorner(corner, doc);
+  };
+
+  // Disengage and drop any pending corner page-turn (e.g. when the selection is
+  // cleared).
+  const cancelAutoTurn = () => {
+    engagedCorner.current = null;
+    if (autoTurnTimer.current) {
+      clearTimeout(autoTurnTimer.current);
+      autoTurnTimer.current = null;
     }
   };
 
   const handlePointerCancel = (_doc: Document, _index: number, ev: PointerEvent) => {
+    // NB: don't cancel the auto-turn here — on Android pointercancel fires mid
+    // edge-drag (browser takes over for scrolling), which is exactly when the
+    // user is dragging into the corner. Cancel only on a real release.
     if (isInstantAnnotating.current) {
       stopInstantAnnotating(ev);
       handleInstantAnnotationPointerCancel();
@@ -181,6 +328,68 @@ export const useTextSelector = (
   const handleTouchEnd = () => {
     isTouchStarted.current = false;
   };
+
+  // The corner the latest pointer (pointermove / native touchmove) position is in.
+  const pointerCornerNow = (): Corner | null => {
+    const p = pointerPos.current;
+    return p ? cornerAt(p.x, p.y, readingAreaRect()) : null;
+  };
+  // The corner the selection caret (focus) is in.
+  const caretCornerNow = (doc: Document): Corner | null => {
+    const sel = doc.getSelection();
+    if (!sel || !isValidSelection(sel)) return null;
+    const pos = focusCaretWindowPos(doc, sel);
+    return pos ? cornerAt(pos.x, pos.y, readingAreaRect()) : null;
+  };
+  // Whether any input signal (pointer/touch or caret) is currently in corner `c`.
+  const inCorner = (c: Corner, doc: Document): boolean =>
+    pointerCornerNow() === c || caretCornerNow(doc) === c;
+
+  // Once a signal has stayed inside a corner for AUTO_TURN_DWELL_MS, turn one page
+  // (#1354). One turn per engagement — a signal must leave the corner and return
+  // to turn again (engagedCorner stays set after a turn so the dwell can't re-arm
+  // while held).
+  const armDwell = (corner: Corner, doc: Document) => {
+    if (autoTurnTimer.current) return;
+    autoTurnTimer.current = setTimeout(() => {
+      autoTurnTimer.current = null;
+      const sel = doc.getSelection();
+      // Skip if the selection ended or every signal left the corner during the dwell.
+      if (isAutoTurning.current || !sel || !isValidSelection(sel) || !inCorner(corner, doc)) return;
+
+      // On Android an active selection pins the container scroll (issue #873 in
+      // handleScroll). A deliberate page-turn IS a container scroll, so it gets
+      // snapped straight back unless we suspend the pin for the turn and then
+      // re-anchor it to the page we land on.
+      isAutoTurning.current = true;
+      // Logical next()/prev() so RTL books turn the correct way.
+      const turning = corner === 'br' ? view?.next() : view?.prev();
+      Promise.resolve(turning).finally(() => {
+        selectionPosition.current = view?.renderer?.containerPosition ?? selectionPosition.current;
+        isAutoTurning.current = false;
+      });
+    }, AUTO_TURN_DWELL_MS);
+  };
+
+  // Feed a corner detected from an input signal (pointer/touch/caret) into the
+  // dwell state machine. Entering a corner arms the dwell; once no signal is in
+  // the engaged corner any more it disengages so a re-entry can turn again.
+  const noteCorner = (corner: Corner | null, doc: Document) => {
+    if (isAutoTurning.current) return;
+    if (corner) {
+      if (engagedCorner.current !== corner) {
+        engagedCorner.current = corner;
+        armDwell(corner, doc);
+      }
+    } else if (engagedCorner.current && !inCorner(engagedCorner.current, doc)) {
+      engagedCorner.current = null;
+      if (autoTurnTimer.current) {
+        clearTimeout(autoTurnTimer.current);
+        autoTurnTimer.current = null;
+      }
+    }
+  };
+
   const handleSelectionchange = (doc: Document, index: number) => {
     // Available on iOS, Android and Desktop, fired when the selection is changed.
     // On Android native app, this is the primary way to detect text selection.
@@ -190,23 +399,16 @@ export const useTextSelector = (
     const isAndroid = osPlatform === 'android' && appService?.isAndroidApp;
     const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
     const sel = doc.getSelection() as Selection;
-    const focusNode = sel.focusNode as Node;
-    if (focusNode == lastVisible.current || focusNode == firstVisible.current) {
-      if (enteredFirstOrLastSince.current == null) {
-        enteredFirstOrLastSince.current = Date.now();
-      } else if (
-        enteredFirstOrLastSince.current &&
-        Date.now() - enteredFirstOrLastSince.current > AutoTurnInterval
-      ) {
-        if (focusNode == lastVisible.current) {
-          view?.next();
-        } else if (focusNode == firstVisible.current) {
-          view?.goLeft ? view.goLeft() : view?.goRight?.();
-        }
-        enteredFirstOrLastSince.current = null;
-      }
+    const viewSettings = getViewSettings(bookKey);
+
+    // Auto page-turn (#1354): the selection caret is one of the engagement
+    // signals on every platform (and the only one on Android during a native
+    // selection drag, where pointer/touch-move don't fire). Feed it into the same
+    // dwell machine the pointer uses.
+    if (isValidSelection(sel)) {
+      noteCorner(!viewSettings?.scrolled ? caretCornerNow(doc) : null, doc);
     } else {
-      enteredFirstOrLastSince.current = null;
+      cancelAutoTurn();
     }
 
     if (!isAndroid && !isTouchInput) return;
@@ -239,6 +441,11 @@ export const useTextSelector = (
     const viewSettings = getViewSettings(bookKey);
     if (viewSettings?.scrolled) return;
 
+    // Don't fight a deliberate auto page-turn (#1354): without this the pin
+    // below snaps the container straight back to the selection-start page and
+    // the turn never sticks (the Android-only failure mode).
+    if (isAutoTurning.current) return;
+
     if (isTextSelected.current && view?.renderer && selectionPosition.current !== null) {
       view.renderer.containerPosition = selectionPosition.current;
     }
@@ -270,12 +477,6 @@ export const useTextSelector = (
     return;
   };
 
-  const handleRelocate = (evt: CustomEvent<{ range: Range; index: number }>) => {
-    const { range } = evt.detail;
-    firstVisible.current = range.startContainer;
-    lastVisible.current = range.endContainer;
-  };
-
   useEffect(() => {
     const handleSingleClick = (): boolean => {
       if (isUpToPopup.current) {
@@ -298,6 +499,7 @@ export const useTextSelector = (
     eventDispatcher.onSync('iframe-single-click', handleSingleClick);
     return () => {
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
+      if (autoTurnTimer.current) clearTimeout(autoTurnTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -311,12 +513,12 @@ export const useTextSelector = (
     handleTouchEnd,
     handlePointerDown,
     handlePointerMove,
+    handleNativeTouchMove,
     handlePointerCancel,
     handlePointerUp,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
-    handleRelocate,
   };
 };

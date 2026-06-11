@@ -29,6 +29,10 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
     private var keyLearnModeEnabled = false
+    // touchmove fires continuously; throttle its dispatch to ~10/s since each one
+    // is an evaluateJavascript round-trip into the WebView.
+    private val touchMoveThrottleMs = 100L
+    private var lastTouchMoveTime = 0L
 
     override fun onWebViewCreate(webView: WebView) {
         wv = webView
@@ -85,10 +89,19 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
             MotionEvent.ACTION_CANCEL -> "touchcancel"
             MotionEvent.ACTION_POINTER_DOWN -> "touchstart"
             MotionEvent.ACTION_POINTER_UP -> "touchend"
+            MotionEvent.ACTION_MOVE -> "touchmove"
             else -> null
         }
 
-        action?.let { eventType ->
+        // touchmove fires continuously; throttle its dispatch to ~10/s (each one
+        // is an evaluateJavascript round-trip). down/up/cancel always go through.
+        val throttledMove = action == "touchmove" &&
+            event.eventTime - lastTouchMoveTime < touchMoveThrottleMs
+        if (action == "touchmove" && !throttledMove) {
+            lastTouchMoveTime = event.eventTime
+        }
+
+        action?.takeIf { !throttledMove }?.let { eventType ->
             val pointerIndex = event.actionIndex
             val pointerId = event.getPointerId(pointerIndex)
             val x = event.getX(pointerIndex)

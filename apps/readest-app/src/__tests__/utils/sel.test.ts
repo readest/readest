@@ -236,6 +236,27 @@ describe('sel utilities', () => {
       expect(result.point).toBeDefined();
       expect(result.dir).toBeDefined();
     });
+
+    it('anchors to the on-screen end when the selection start is off-screen (cross-page)', async () => {
+      const { getPosition } = await import('@/utils/sel');
+      // A selection that spans a page boundary: its first line is on the
+      // previous page (off-screen, negative x); its last line is on the current
+      // page (visible). The popup must anchor to the visible (last) end.
+      const mockRange = {
+        getClientRects: () =>
+          [
+            { top: 400, right: -100, bottom: 420, left: -300 }, // previous page (off-screen)
+            { top: 200, right: 300, bottom: 220, left: 100 }, // current page (visible)
+          ] as unknown as DOMRectList,
+        commonAncestorContainer: document.createElement('div'),
+      } as unknown as Range;
+
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+      const result = getPosition(mockRange, rect, 10);
+      // 'down' = anchored below the visible last line, not the off-screen start.
+      expect(result.dir).toBe('down');
+      expect(result.point.x).toBeGreaterThan(0);
+    });
   });
 
   describe('isPointerInsideSelection', () => {
