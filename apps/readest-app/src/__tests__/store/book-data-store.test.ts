@@ -8,7 +8,7 @@ vi.mock('@/utils/md5', () => ({
   md5Fingerprint: (value: string) => `md5_${value}`,
 }));
 
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, flushPendingLibrarySave } from '@/store/bookDataStore';
 import type { BookData } from '@/store/bookDataStore';
 import type { BookConfig, BookNote, Book } from '@/types/book';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -379,7 +379,15 @@ describe('bookDataStore', () => {
 
       const stored = useLibraryStore.getState().getBookByHash('h1');
       expect(stored?.progress).toEqual([42, 100]);
+      // Per-book config still writes eagerly — it's small and the source
+      // of truth for reconstructing the shelf on next launch.
       expect(saveBookConfig).toHaveBeenCalledOnce();
+      // Library JSON write is throttled (see scheduleLibrarySave in
+      // bookDataStore) so a burst of saveConfig calls during reading
+      // doesn't fire IPC on every page turn. Force-flush here to
+      // observe the write actually happens.
+      expect(saveLibraryBooks).not.toHaveBeenCalled();
+      await flushPendingLibrarySave();
       expect(saveLibraryBooks).toHaveBeenCalledOnce();
     });
 

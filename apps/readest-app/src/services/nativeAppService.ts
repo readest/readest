@@ -71,6 +71,76 @@ const safeDecodePath = (input: string) => {
   }
 };
 
+/**
+ * In-process cache of directories we've already verified (or just created)
+ * in this app session.
+ *
+ * Why: `writeFile` / `copyFile` defensively call `fs.exists(dir)` before
+ * every write to make sure the parent directory exists. On the hot path
+ * for `saveBookConfig` (fires roughly once every 1.5s while the user is
+ * reading via `useProgressAutoSave`) the parent is always the same book
+ * directory that's been there since the book was opened — so the
+ * `exists` IPC is pure overhead.
+ *
+ * The cost shows up clearly in Chrome DevTools' Bottom-Up profile of a
+ * release Android build: the `A` (= `plugin:fs|exists`) branch following
+ * each `sendIpcMessage` accounts for ~50% of the IPC time during a
+ * reading session, doubling the per-save IPC cost.
+ *
+ * Cache semantics:
+ *   - Key = `${base}:${dirPath}` (BaseDir + normalized directory path).
+ *   - Membership = "this process has at some point seen the directory
+ *     exist". We do NOT track deletions performed outside the app, but
+ *     the directories that matter for the read-path (per-book config
+ *     dirs, library dir) are created by the app and only deleted via
+ *     `removeDir` / book removal, both of which clear the relevant
+ *     entries below.
+ *   - On a fresh app start the cache is empty, so the first write to a
+ *     directory still does the original `exists`+`createDir` dance —
+ *     this is a perf cache, not a correctness shortcut.
+ */
+const knownExistingDirs = new Set<string>();
+const dirCacheKey = (base: BaseDir, dir: string) => `${base}:${dir}`;
+const markDirKnown = (base: BaseDir, dir: string) => {
+  // Empty string is a valid path: it represents the BaseDir itself, which
+  // is the parent dir for root-level files like `settings.json`. We must
+  // cache it too, otherwise every root-level write would re-probe the
+  // BaseDir via `exists()`.
+  knownExistingDirs.add(dirCacheKey(base, dir));
+};
+const forgetDirKnown = (base: BaseDir, dir: string) => {
+  knownExistingDirs.delete(dirCacheKey(base, dir));
+};
+
+/**
+ * Helper used by `writeFile` / `copyFile`. If we already know this
+ * directory exists, returns immediately. Otherwise performs the normal
+ * `exists` IPC + `createDir` fallback and records the result in the
+ * cache so subsequent writes skip both round-trips.
+ *
+ * `dir` may be the empty string, which represents the BaseDir itself
+ * (i.e. when writing a root-level file like `settings.json` whose
+ * `getDirPath` is ""). On a fresh install the BaseDir may not exist
+ * yet — the underlying Tauri `exists("", base)` / `createDir("", base,
+ * recursive)` calls handle the empty path correctly by operating on
+ * the BaseDir itself, so we must NOT short-circuit on empty string.
+ */
+async function ensureDirExists(
+  self: {
+    exists: (path: string, base: BaseDir) => Promise<boolean>;
+    createDir: (path: string, base: BaseDir, recursive?: boolean) => Promise<void>;
+  },
+  dir: string,
+  base: BaseDir,
+): Promise<void> {
+  const key = dirCacheKey(base, dir);
+  if (knownExistingDirs.has(key)) return;
+  if (!(await self.exists(dir, base))) {
+    await self.createDir(dir, base, true);
+  }
+  knownExistingDirs.add(key);
+}
+
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
 // 1. If custom root dir is set, use it as base dir (baseDir = 0)
@@ -273,9 +343,10 @@ export const nativeFileSystem: FileSystem = {
   },
   async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
     try {
-      if (!(await this.exists(getDirPath(dstPath), dstBase))) {
-        await this.createDir(getDirPath(dstPath), dstBase, true);
-      }
+      // Uses the in-process dir cache (see `knownExistingDirs` above) so a
+      // burst of copies into the same destination dir doesn't fire an
+      // `exists` IPC per file.
+      await ensureDirExists(this, getDirPath(dstPath), dstBase);
     } catch (error) {
       console.log('Failed to create directory for copying file:', error);
     }
@@ -312,9 +383,13 @@ export const nativeFileSystem: FileSystem = {
     // NOTE: this could be very slow for large files and might block the UI thread
     // so do not use this for large files
     const { fp, baseDir } = this.resolvePath(path, base);
-    if (!(await this.exists(getDirPath(path), base))) {
-      await this.createDir(getDirPath(path), base, true);
-    }
+    // Skip the redundant `exists` IPC after the first write to this dir
+    // in the current session — `useProgressAutoSave` writes to the same
+    // per-book directory once every ~1.5s while the user is reading, so
+    // checking each time roughly doubles the IPC cost of saveBookConfig.
+    // See `knownExistingDirs` near the top of this file for the cache
+    // invariants.
+    await ensureDirExists(this, getDirPath(path), base);
 
     if (typeof content === 'string') {
       return writeTextFile(fp, content, baseDir ? { baseDir } : undefined);
@@ -354,11 +429,28 @@ export const nativeFileSystem: FileSystem = {
     const { fp, baseDir } = this.resolvePath(path, base);
 
     await mkdir(fp, { baseDir: baseDir ? baseDir : undefined, recursive });
+    // Now that the dir is on disk, record it so subsequent writes can
+    // skip the `exists` probe.
+    markDirKnown(base, path);
   },
   async removeDir(path: string, base: BaseDir, recursive = false) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
     await remove(fp, { baseDir: baseDir ? baseDir : undefined, recursive });
+    // The cached entry for this dir is now stale, and a recursive remove
+    // also tears down everything beneath it. Drop every cached entry that
+    // points at this dir or any of its descendants so the next write
+    // here goes through the slow `exists`+`createDir` path again.
+    const prefix = dirCacheKey(base, path);
+    forgetDirKnown(base, path);
+    if (recursive) {
+      // Iterate a snapshot — Set forbids mutation during iteration.
+      for (const key of Array.from(knownExistingDirs)) {
+        if (key === prefix || key.startsWith(prefix + '/')) {
+          knownExistingDirs.delete(key);
+        }
+      }
+    }
   },
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
