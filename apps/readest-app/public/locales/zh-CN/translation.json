@@ -1667,5 +1667,12 @@
   "Failed to send book": "发送图书失败",
   "Send": "发送",
   "Highlight Current Sentence": "高亮当前句子",
-  "File Path": "文件路径"
+  "File Path": "文件路径",
+  "Previous word": "上一个词",
+  "Previous word (,)": "上一个词 (,)",
+  "Next word": "下一个词",
+  "Next word (.)": "下一个词 (.)",
+  "Start Delay": "开始延迟",
+  "Off": "关闭",
+  "Look up": "查询"
 }

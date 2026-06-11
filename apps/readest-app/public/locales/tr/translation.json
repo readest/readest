@@ -1700,5 +1700,12 @@
   "Failed to send book": "Kitap gönderilemedi",
   "Send": "Gönder",
   "Highlight Current Sentence": "Geçerli cümleyi vurgula",
-  "File Path": "Dosya Yolu"
+  "File Path": "Dosya Yolu",
+  "Previous word": "Önceki kelime",
+  "Previous word (,)": "Önceki kelime (,)",
+  "Next word": "Sonraki kelime",
+  "Next word (.)": "Sonraki kelime (.)",
+  "Start Delay": "Başlangıç gecikmesi",
+  "Off": "Kapalı",
+  "Look up": "Ara"
 }

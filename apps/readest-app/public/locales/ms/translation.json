@@ -1667,5 +1667,12 @@
   "Failed to send book": "Gagal menghantar buku",
   "Send": "Hantar",
   "Highlight Current Sentence": "Serlahkan ayat semasa",
-  "File Path": "Laluan Fail"
+  "File Path": "Laluan Fail",
+  "Previous word": "Perkataan sebelumnya",
+  "Previous word (,)": "Perkataan sebelumnya (,)",
+  "Next word": "Perkataan seterusnya",
+  "Next word (.)": "Perkataan seterusnya (.)",
+  "Start Delay": "Lengah mula",
+  "Off": "Mati",
+  "Look up": "Cari"
 }

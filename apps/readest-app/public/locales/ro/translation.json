@@ -1733,5 +1733,12 @@
   "Failed to send book": "Trimiterea cărții a eșuat",
   "Send": "Trimite",
   "Highlight Current Sentence": "Evidențiază propoziția curentă",
-  "File Path": "Calea fișierului"
+  "File Path": "Calea fișierului",
+  "Previous word": "Cuvântul anterior",
+  "Previous word (,)": "Cuvântul anterior (,)",
+  "Next word": "Cuvântul următor",
+  "Next word (.)": "Cuvântul următor (.)",
+  "Start Delay": "Întârziere la pornire",
+  "Off": "Dezactivat",
+  "Look up": "Caută"
 }

@@ -1700,5 +1700,12 @@
   "Failed to send book": "A könyv küldése sikertelen",
   "Send": "Küldés",
   "Highlight Current Sentence": "Aktuális mondat kiemelése",
-  "File Path": "Fájl elérési útja"
+  "File Path": "Fájl elérési útja",
+  "Previous word": "Előző szó",
+  "Previous word (,)": "Előző szó (,)",
+  "Next word": "Következő szó",
+  "Next word (.)": "Következő szó (.)",
+  "Start Delay": "Indítási késleltetés",
+  "Off": "Ki",
+  "Look up": "Keresés"
 }

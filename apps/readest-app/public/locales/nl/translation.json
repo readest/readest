@@ -1700,5 +1700,12 @@
   "Failed to send book": "Verzenden van boek mislukt",
   "Send": "Verzenden",
   "Highlight Current Sentence": "Huidige zin markeren",
-  "File Path": "Bestandspad"
+  "File Path": "Bestandspad",
+  "Previous word": "Vorig woord",
+  "Previous word (,)": "Vorig woord (,)",
+  "Next word": "Volgend woord",
+  "Next word (.)": "Volgend woord (.)",
+  "Start Delay": "Startvertraging",
+  "Off": "Uit",
+  "Look up": "Opzoeken"
 }

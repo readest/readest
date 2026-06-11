@@ -1700,5 +1700,12 @@
   "Failed to send book": "ارسال کتاب ناموفق بود",
   "Send": "ارسال",
   "Highlight Current Sentence": "برجسته‌سازی جملهٔ فعلی",
-  "File Path": "مسیر فایل"
+  "File Path": "مسیر فایل",
+  "Previous word": "واژهٔ قبلی",
+  "Previous word (,)": "واژهٔ قبلی (,)",
+  "Next word": "واژهٔ بعدی",
+  "Next word (.)": "واژهٔ بعدی (.)",
+  "Start Delay": "تأخیر شروع",
+  "Off": "خاموش",
+  "Look up": "جستجو"
 }

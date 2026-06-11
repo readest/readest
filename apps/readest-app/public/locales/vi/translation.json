@@ -1667,5 +1667,12 @@
   "Failed to send book": "Gửi sách thất bại",
   "Send": "Gửi",
   "Highlight Current Sentence": "Tô sáng câu hiện tại",
-  "File Path": "Đường dẫn tệp"
+  "File Path": "Đường dẫn tệp",
+  "Previous word": "Từ trước",
+  "Previous word (,)": "Từ trước (,)",
+  "Next word": "Từ tiếp theo",
+  "Next word (.)": "Từ tiếp theo (.)",
+  "Start Delay": "Độ trễ bắt đầu",
+  "Off": "Tắt",
+  "Look up": "Tra cứu"
 }

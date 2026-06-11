@@ -1667,5 +1667,12 @@
   "Failed to send book": "傳送書籍失敗",
   "Send": "傳送",
   "Highlight Current Sentence": "醒目標示目前句子",
-  "File Path": "檔案路徑"
+  "File Path": "檔案路徑",
+  "Previous word": "上一個詞",
+  "Previous word (,)": "上一個詞 (,)",
+  "Next word": "下一個詞",
+  "Next word (.)": "下一個詞 (.)",
+  "Start Delay": "開始延遲",
+  "Off": "關閉",
+  "Look up": "查詢"
 }

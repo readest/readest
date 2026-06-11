@@ -322,6 +322,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     return true;
   };
 
+  const startRSVP = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('rsvp-start', { bookKey: sideBarBookKey });
+  };
+
   const handlePinchZoom = (event: CustomEvent) => {
     const zoomLevel = event.detail?.zoomLevel;
     if (zoomLevel != null) {
@@ -351,6 +356,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
       onToggleParagraphMode: toggleParagraphMode,
+      onStartRSVP: startRSVP,
       onToggleToolbar: toggleToolbar,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onShowSearchBar: showSearchBar,

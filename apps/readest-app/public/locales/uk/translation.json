@@ -1766,5 +1766,12 @@
   "Failed to send book": "Не вдалося надіслати книгу",
   "Send": "Надіслати",
   "Highlight Current Sentence": "Виділяти поточне речення",
-  "File Path": "Шлях до файлу"
+  "File Path": "Шлях до файлу",
+  "Previous word": "Попереднє слово",
+  "Previous word (,)": "Попереднє слово (,)",
+  "Next word": "Наступне слово",
+  "Next word (.)": "Наступне слово (.)",
+  "Start Delay": "Затримка старту",
+  "Off": "Вимк.",
+  "Look up": "Знайти"
 }

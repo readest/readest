@@ -1832,5 +1832,12 @@
   "Failed to send book": "فشل إرسال الكتاب",
   "Send": "إرسال",
   "Highlight Current Sentence": "تمييز الجملة الحالية",
-  "File Path": "مسار الملف"
+  "File Path": "مسار الملف",
+  "Previous word": "الكلمة السابقة",
+  "Previous word (,)": "الكلمة السابقة (,)",
+  "Next word": "الكلمة التالية",
+  "Next word (.)": "الكلمة التالية (.)",
+  "Start Delay": "تأخير البدء",
+  "Off": "إيقاف",
+  "Look up": "بحث"
 }

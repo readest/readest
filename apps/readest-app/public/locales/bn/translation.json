@@ -1700,5 +1700,12 @@
   "Failed to send book": "বই পাঠাতে ব্যর্থ হয়েছে",
   "Send": "পাঠান",
   "Highlight Current Sentence": "বর্তমান বাক্য হাইলাইট করুন",
-  "File Path": "ফাইলের পথ"
+  "File Path": "ফাইলের পথ",
+  "Previous word": "পূর্ববর্তী শব্দ",
+  "Previous word (,)": "পূর্ববর্তী শব্দ (,)",
+  "Next word": "পরবর্তী শব্দ",
+  "Next word (.)": "পরবর্তী শব্দ (.)",
+  "Start Delay": "শুরুর বিলম্ব",
+  "Off": "বন্ধ",
+  "Look up": "খুঁজুন"
 }

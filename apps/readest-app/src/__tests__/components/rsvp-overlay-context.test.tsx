@@ -23,6 +23,29 @@ vi.mock('@/store/themeStore', () => ({
   }),
 }));
 
+// Stub the dictionary popup/sheet so the overlay test does not pull in the
+// whole dictionary provider/registry stack — we only assert it opens with the
+// word. The overlay uses the sheet below `sm` and the popup otherwise.
+vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='rsvp-dict-sheet' data-word={word}>
+      <button aria-label='close-dict' onClick={onDismiss}>
+        x
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='rsvp-dict-popup' data-word={word}>
+      <button aria-label='close-dict' onClick={onDismiss}>
+        x
+      </button>
+    </div>
+  ),
+}));
+
 const buildState = (overrides: Partial<RsvpState> = {}): RsvpState => ({
   active: true,
   playing: false,
@@ -33,6 +56,7 @@ const buildState = (overrides: Partial<RsvpState> = {}): RsvpState => ({
   punctuationPauseMs: 100,
   splitHyphens: false,
   cjkCharMode: false,
+  startDelaySeconds: 3,
   hasCJK: false,
   progress: 0,
   ...overrides,
@@ -54,6 +78,8 @@ const buildController = (state: RsvpState) => {
     seekToPosition: vi.fn(),
     skipBackward: vi.fn(),
     skipForward: vi.fn(),
+    nextWord: vi.fn(),
+    prevWord: vi.fn(),
     pause: vi.fn(),
     resume: vi.fn(),
     togglePlayPause: vi.fn(),
@@ -63,8 +89,10 @@ const buildController = (state: RsvpState) => {
     setPunctuationPause: vi.fn(),
     setSplitHyphens: vi.fn(),
     setCjkCharMode: vi.fn(),
+    setStartDelay: vi.fn(),
     getWpmOptions: vi.fn(() => [100, 200, 300]),
     getPunctuationPauseOptions: vi.fn(() => [25, 50, 100]),
+    getStartDelayOptions: vi.fn(() => [0, 1, 2, 3]),
     addEventListener: vi.fn((type: string, listener: EventListener) => {
       if (!listeners.has(type)) listeners.set(type, []);
       listeners.get(type)!.push(listener);
@@ -312,5 +340,170 @@ describe('RSVPOverlay — CJK reading options', () => {
 
     expect(container.querySelector('.rsvp-word-orp')).not.toBeNull();
     expect(container.querySelector('.rsvp-word-whole')).toBeNull();
+  });
+});
+
+describe('RSVPOverlay — manual word stepping (#4476)', () => {
+  afterEach(() => cleanup());
+
+  const wordsState = () =>
+    buildState({
+      words: Array.from({ length: 10 }, (_, i) => ({
+        text: `w${i}`,
+        orpIndex: 0,
+        pauseMultiplier: 1,
+      })),
+      currentIndex: 5,
+      playing: true,
+    });
+
+  test('the next-word button calls controller.nextWord', () => {
+    const { container, controller } = renderOverlay(wordsState());
+    const button = container.querySelector('[aria-label="Next word"]') as HTMLElement;
+    expect(button).not.toBeNull();
+    fireEvent.click(button);
+    expect(controller.nextWord).toHaveBeenCalledTimes(1);
+  });
+
+  test('the previous-word button calls controller.prevWord', () => {
+    const { container, controller } = renderOverlay(wordsState());
+    const button = container.querySelector('[aria-label="Previous word"]') as HTMLElement;
+    expect(button).not.toBeNull();
+    fireEvent.click(button);
+    expect(controller.prevWord).toHaveBeenCalledTimes(1);
+  });
+
+  test('the "." key steps to the next word and "," to the previous word', () => {
+    const { controller } = renderOverlay(wordsState());
+    fireEvent.keyDown(document, { key: '.' });
+    expect(controller.nextWord).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document, { key: ',' });
+    expect(controller.prevWord).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RSVPOverlay — dictionary lookup (#4475)', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  const wordsState = () =>
+    buildState({
+      words: Array.from({ length: 10 }, (_, i) => ({
+        text: `w${i}`,
+        orpIndex: 0,
+        pauseMultiplier: 1,
+      })),
+      currentIndex: 5,
+      playing: true,
+    });
+
+  const mockSelection = (text: string, node: Node | null) => {
+    const rect = { left: 20, top: 30, right: 60, bottom: 44, width: 40, height: 14 };
+    const range = {
+      getBoundingClientRect: () => rect,
+      cloneRange() {
+        return range;
+      },
+    };
+    vi.spyOn(window, 'getSelection').mockReturnValue({
+      isCollapsed: text.length === 0,
+      anchorNode: node,
+      rangeCount: 1,
+      toString: () => text,
+      getRangeAt: () => range,
+      removeAllRanges: vi.fn(),
+    } as unknown as Selection);
+  };
+
+  test('the context panel is selectable', () => {
+    const { container } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    expect(panel.className).toContain('select-text');
+  });
+
+  test('selecting text in the context panel reveals a Look up action', () => {
+    const { container } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    expect(container.querySelector('[aria-label="Look up"]')).not.toBeNull();
+  });
+
+  test('tapping Look up pauses playback and opens the dictionary with the selected text', () => {
+    const { container, controller } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    fireEvent.click(container.querySelector('[aria-label="Look up"]') as HTMLElement);
+
+    expect(controller.pause).toHaveBeenCalled();
+    // jsdom's default viewport is desktop-sized, so the anchored popup is used.
+    const popup = container.querySelector('[data-testid="rsvp-dict-popup"]');
+    expect(popup).not.toBeNull();
+    expect(popup!.getAttribute('data-word')).toBe('serendipity');
+  });
+
+  test('clicking outside the popup dismisses it', () => {
+    const { container } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    fireEvent.click(container.querySelector('[aria-label="Look up"]') as HTMLElement);
+    expect(container.querySelector('[data-testid="rsvp-dict-popup"]')).not.toBeNull();
+
+    // The transparent full-screen catcher behind the popup dismisses on click.
+    fireEvent.click(container.querySelector('.overlay') as HTMLElement);
+    expect(container.querySelector('[data-testid="rsvp-dict-popup"]')).toBeNull();
+  });
+
+  test('uses the bottom sheet on small screens', () => {
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(420);
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(720);
+    const { container } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    fireEvent.click(container.querySelector('[aria-label="Look up"]') as HTMLElement);
+
+    expect(container.querySelector('[data-testid="rsvp-dict-sheet"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="rsvp-dict-popup"]')).toBeNull();
+  });
+
+  test('an active selection suppresses word-click seeking', () => {
+    const { container, controller } = renderOverlay(wordsState());
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('w3 w4', panel);
+    fireEvent.click(container.querySelector('[data-rsvp-word-index="3"]') as HTMLElement);
+    expect(controller.seekToIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('RSVPOverlay — start delay setting (#4478)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  const openSettings = (container: HTMLElement) => {
+    fireEvent.click(container.querySelector('[aria-label="Settings"]') as HTMLElement);
+  };
+
+  test('changing the Start Delay select calls controller.setStartDelay', () => {
+    const state = buildState({
+      words: [{ text: 'a', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      startDelaySeconds: 3,
+    });
+    const { container, controller } = renderOverlay(state);
+    openSettings(container);
+
+    const select = container.querySelector(
+      '[data-testid="rsvp-start-delay-select"]',
+    ) as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    fireEvent.change(select, { target: { value: '0' } });
+    expect(controller.setStartDelay).toHaveBeenCalledWith(0);
   });
 });

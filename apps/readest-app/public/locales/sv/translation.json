@@ -1700,5 +1700,12 @@
   "Failed to send book": "Det gick inte att skicka boken",
   "Send": "Skicka",
   "Highlight Current Sentence": "Markera aktuell mening",
-  "File Path": "Filsökväg"
+  "File Path": "Filsökväg",
+  "Previous word": "Föregående ord",
+  "Previous word (,)": "Föregående ord (,)",
+  "Next word": "Nästa ord",
+  "Next word (.)": "Nästa ord (.)",
+  "Start Delay": "Startfördröjning",
+  "Off": "Av",
+  "Look up": "Slå upp"
 }

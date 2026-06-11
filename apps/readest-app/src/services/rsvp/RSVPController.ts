@@ -12,11 +12,14 @@ const DEFAULT_PUNCTUATION_PAUSE_MS = 100;
 const PUNCTUATION_PAUSE_OPTIONS = [25, 50, 75, 100, 125, 150, 175, 200];
 const DEFAULT_SPLIT_HYPHENS = false;
 const DEFAULT_CJK_CHAR_MODE = false;
+const DEFAULT_START_DELAY_SECONDS = 3;
+const START_DELAY_OPTIONS = [0, 1, 2, 3];
 const STORAGE_KEY_PREFIX = 'readest_rsvp_wpm_';
 const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
 const SPLIT_HYPHENS_KEY = 'readest_rsvp_split_hyphens';
 const CJK_CHAR_MODE_KEY = 'readest_rsvp_cjk_char_mode';
+const START_DELAY_KEY = 'readest_rsvp_start_delay';
 
 // Section-only CFI (no '!') sorts before any word CFI in that section.
 const stripCfiPath = (cfi: string): string => cfi.replace(/!.*\)$/, ')');
@@ -37,6 +40,7 @@ export class RSVPController extends EventTarget {
     punctuationPauseMs: DEFAULT_PUNCTUATION_PAUSE_MS,
     splitHyphens: DEFAULT_SPLIT_HYPHENS,
     cjkCharMode: DEFAULT_CJK_CHAR_MODE,
+    startDelaySeconds: DEFAULT_START_DELAY_SECONDS,
     hasCJK: false,
     progress: 0,
   };
@@ -80,6 +84,10 @@ export class RSVPController extends EventTarget {
     const savedCjkCharMode = this.loadCjkCharModeFromStorage();
     if (savedCjkCharMode !== null) {
       this.state.cjkCharMode = savedCjkCharMode;
+    }
+    const savedStartDelay = this.loadStartDelayFromStorage();
+    if (savedStartDelay !== null) {
+      this.state.startDelaySeconds = savedStartDelay;
     }
   }
 
@@ -215,6 +223,34 @@ export class RSVPController extends EventTarget {
     try {
       const stored = localStorage.getItem(CJK_CHAR_MODE_KEY);
       if (stored !== null) return stored === '1';
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  getStartDelayOptions(): number[] {
+    return START_DELAY_OPTIONS;
+  }
+
+  setStartDelay(seconds: number): void {
+    if (!START_DELAY_OPTIONS.includes(seconds)) return;
+    this.state.startDelaySeconds = seconds;
+    try {
+      localStorage.setItem(START_DELAY_KEY, seconds.toString());
+    } catch {
+      /* ignore */
+    }
+    this.emitStateChange();
+  }
+
+  private loadStartDelayFromStorage(): number | null {
+    try {
+      const stored = localStorage.getItem(START_DELAY_KEY);
+      if (stored !== null) {
+        const parsed = parseInt(stored, 10);
+        if (START_DELAY_OPTIONS.includes(parsed)) return parsed;
+      }
     } catch {
       /* ignore */
     }
@@ -446,10 +482,19 @@ export class RSVPController extends EventTarget {
 
   private startCountdown(onComplete: () => void): void {
     this.clearCountdown();
-    let count = 3;
+
+    // A delay of 0 means instant start — skip the countdown entirely.
+    let count = this.state.startDelaySeconds;
+    if (count <= 0) {
+      onComplete();
+      return;
+    }
+
     this.countdown = count;
     this.emitCountdownChange();
 
+    // Tick at real one-second intervals so the displayed number matches the
+    // configured delay in seconds.
     this.countdownTimer = setInterval(() => {
       count--;
       if (count > 0) {
@@ -459,7 +504,7 @@ export class RSVPController extends EventTarget {
         this.clearCountdown();
         onComplete();
       }
-    }, 500);
+    }, 1000);
   }
 
   private clearCountdown(): void {
@@ -664,6 +709,26 @@ export class RSVPController extends EventTarget {
 
   skipBackward(count: number = 10): void {
     this.state.currentIndex = Math.max(0, this.state.currentIndex - count);
+    this.state.currentPartIndex = 0;
+    this.emitStateChange();
+  }
+
+  // Manual single-word stepping for self-paced reading (#4476). Pauses
+  // playback first so repeated presses advance exactly one word at a time;
+  // resume is left to the user.
+  nextWord(): void {
+    if (this.state.playing) this.pause();
+    this.state.currentIndex = Math.min(
+      Math.max(0, this.state.words.length - 1),
+      this.state.currentIndex + 1,
+    );
+    this.state.currentPartIndex = 0;
+    this.emitStateChange();
+  }
+
+  prevWord(): void {
+    if (this.state.playing) this.pause();
+    this.state.currentIndex = Math.max(0, this.state.currentIndex - 1);
     this.state.currentPartIndex = 0;
     this.emitStateChange();
   }

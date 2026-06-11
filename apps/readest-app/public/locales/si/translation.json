@@ -1700,5 +1700,12 @@
   "Failed to send book": "පොත යැවීමට අසමත් විය",
   "Send": "යවන්න",
   "Highlight Current Sentence": "වර්තමාන වාක්‍යය ඉස්මතු කරන්න",
-  "File Path": "ගොනු මාර්ගය"
+  "File Path": "ගොනු මාර්ගය",
+  "Previous word": "පෙර වචනය",
+  "Previous word (,)": "පෙර වචනය (,)",
+  "Next word": "ඊළඟ වචනය",
+  "Next word (.)": "ඊළඟ වචනය (.)",
+  "Start Delay": "ආරම්භක ප්‍රමාදය",
+  "Off": "අක්‍රිය",
+  "Look up": "සොයන්න"
 }

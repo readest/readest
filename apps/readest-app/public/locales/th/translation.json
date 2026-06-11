@@ -1667,5 +1667,12 @@
   "Failed to send book": "ส่งหนังสือไม่สำเร็จ",
   "Send": "ส่ง",
   "Highlight Current Sentence": "ไฮไลต์ประโยคปัจจุบัน",
-  "File Path": "เส้นทางไฟล์"
+  "File Path": "เส้นทางไฟล์",
+  "Previous word": "คำก่อนหน้า",
+  "Previous word (,)": "คำก่อนหน้า (,)",
+  "Next word": "คำถัดไป",
+  "Next word (.)": "คำถัดไป (.)",
+  "Start Delay": "หน่วงเวลาเริ่มต้น",
+  "Off": "ปิด",
+  "Look up": "ค้นหา"
 }

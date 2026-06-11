@@ -1667,5 +1667,12 @@
   "Failed to send book": "書籍の送信に失敗しました",
   "Send": "送信",
   "Highlight Current Sentence": "現在の文をハイライト",
-  "File Path": "ファイルパス"
+  "File Path": "ファイルパス",
+  "Previous word": "前の単語",
+  "Previous word (,)": "前の単語 (,)",
+  "Next word": "次の単語",
+  "Next word (.)": "次の単語 (.)",
+  "Start Delay": "開始遅延",
+  "Off": "オフ",
+  "Look up": "調べる"
 }

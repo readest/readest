@@ -1766,5 +1766,12 @@
   "Failed to send book": "Не удалось отправить книгу",
   "Send": "Отправить",
   "Highlight Current Sentence": "Выделять текущее предложение",
-  "File Path": "Путь к файлу"
+  "File Path": "Путь к файлу",
+  "Previous word": "Предыдущее слово",
+  "Previous word (,)": "Предыдущее слово (,)",
+  "Next word": "Следующее слово",
+  "Next word (.)": "Следующее слово (.)",
+  "Start Delay": "Задержка старта",
+  "Off": "Выкл.",
+  "Look up": "Найти"
 }

@@ -437,4 +437,98 @@ describe('RSVPController', () => {
       ]);
     });
   });
+
+  describe('start delay (#4478)', () => {
+    const START_DELAY_KEY = 'readest_rsvp_start_delay';
+
+    beforeEach(() => {
+      localStorage.removeItem(START_DELAY_KEY);
+    });
+
+    test('defaults to a 3 second delay', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+
+      expect(controller.currentState.startDelaySeconds).toBe(3);
+      expect(controller.getStartDelayOptions()).toEqual([0, 1, 2, 3]);
+    });
+
+    test('setStartDelay persists and is restored on construction', () => {
+      const view = createMockView(0, [makeDoc('one two')]);
+      const first = new RSVPController(view, 'test-book-abc123');
+      first.setStartDelay(1);
+      expect(first.currentState.startDelaySeconds).toBe(1);
+
+      const second = new RSVPController(view, 'test-book-abc123');
+      expect(second.currentState.startDelaySeconds).toBe(1);
+    });
+
+    test('counts down from N at one-second ticks before playing', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setStartDelay(3);
+      controller.start();
+
+      expect(controller.currentCountdown).toBe(3);
+      vi.advanceTimersByTime(1000);
+      expect(controller.currentCountdown).toBe(2);
+      vi.advanceTimersByTime(1000);
+      expect(controller.currentCountdown).toBe(1);
+      vi.advanceTimersByTime(1000);
+      expect(controller.currentCountdown).toBeNull();
+    });
+
+    test('a delay of 0 skips the countdown entirely and starts playing', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setStartDelay(0);
+      controller.start();
+
+      expect(controller.currentCountdown).toBeNull();
+      expect(controller.currentState.playing).toBe(true);
+    });
+  });
+
+  describe('nextWord / prevWord (#4476)', () => {
+    test('nextWord advances one word and pauses playback', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      expect(controller.currentState.currentIndex).toBe(0);
+      controller.nextWord();
+      expect(controller.currentState.currentIndex).toBe(1);
+      expect(controller.currentState.playing).toBe(false);
+    });
+
+    test('prevWord steps back one word', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      controller.nextWord();
+      controller.nextWord();
+      controller.prevWord();
+      expect(controller.currentState.currentIndex).toBe(1);
+    });
+
+    test('nextWord clamps at the last word', () => {
+      const view = createMockView(0, [makeDoc('one two')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      controller.nextWord();
+      controller.nextWord();
+      expect(controller.currentState.currentIndex).toBe(1);
+    });
+
+    test('prevWord clamps at the first word', () => {
+      const view = createMockView(0, [makeDoc('one two')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      controller.prevWord();
+      expect(controller.currentState.currentIndex).toBe(0);
+    });
+  });
 });

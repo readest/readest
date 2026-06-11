@@ -1667,5 +1667,12 @@
   "Failed to send book": "책 보내기에 실패했습니다",
   "Send": "보내기",
   "Highlight Current Sentence": "현재 문장 강조",
-  "File Path": "파일 경로"
+  "File Path": "파일 경로",
+  "Previous word": "이전 단어",
+  "Previous word (,)": "이전 단어 (,)",
+  "Next word": "다음 단어",
+  "Next word (.)": "다음 단어 (.)",
+  "Start Delay": "시작 지연",
+  "Off": "끄기",
+  "Look up": "찾기"
 }

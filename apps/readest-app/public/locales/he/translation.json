@@ -1733,5 +1733,12 @@
   "Failed to send book": "שליחת הספר נכשלה",
   "Send": "שליחה",
   "Highlight Current Sentence": "הדגשת המשפט הנוכחי",
-  "File Path": "נתיב הקובץ"
+  "File Path": "נתיב הקובץ",
+  "Previous word": "מילה קודמת",
+  "Previous word (,)": "מילה קודמת (,)",
+  "Next word": "מילה הבאה",
+  "Next word (.)": "מילה הבאה (.)",
+  "Start Delay": "השהיית התחלה",
+  "Off": "כבוי",
+  "Look up": "חיפוש"
 }

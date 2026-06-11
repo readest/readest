@@ -1700,5 +1700,12 @@
   "Failed to send book": "Kitobni yuborib bo'lmadi",
   "Send": "Yuborish",
   "Highlight Current Sentence": "Joriy jumlani ajratib ko'rsatish",
-  "File Path": "Fayl yo'li"
+  "File Path": "Fayl yo'li",
+  "Previous word": "Oldingi soʻz",
+  "Previous word (,)": "Oldingi soʻz (,)",
+  "Next word": "Keyingi soʻz",
+  "Next word (.)": "Keyingi soʻz (.)",
+  "Start Delay": "Boshlash kechikishi",
+  "Off": "Oʻchiq",
+  "Look up": "Qidirish"
 }

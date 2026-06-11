@@ -13,13 +13,19 @@ import {
   IoPause,
   IoPlaySkipBack,
   IoPlaySkipForward,
+  IoCaretBack,
+  IoCaretForward,
   IoRemove,
   IoAdd,
   IoChevronDown,
   IoSettingsSharp,
+  IoSearch,
 } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getPopupPosition, Position } from '@/utils/sel';
 import { Overlay } from '@/components/Overlay';
+import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
+import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
 
 interface FlatChapter {
   label: string;
@@ -73,6 +79,11 @@ const CONTEXT_CHUNK_SIZE = 50;
 const CONTEXT_WINDOW_BEFORE = 200;
 const CONTEXT_WINDOW_AFTER = 1000;
 
+// Dictionary lookup popup sizing (mirrors the reader's Annotator popup).
+const DICT_POPUP_PADDING = 10;
+const DICT_POPUP_MAX_WIDTH = 480;
+const DICT_POPUP_MAX_HEIGHT = 360;
+
 interface RSVPOverlayProps {
   gridInsets: Insets;
   controller: RSVPController;
@@ -84,9 +95,13 @@ interface RSVPOverlayProps {
    * fallback. See getBaseFontFamily in utils/style.
    */
   fontFamily?: string;
+  /** Book language, used to pick dictionary providers for context lookups. */
+  lang?: string;
   onClose: () => void;
   onChapterSelect: (href: string) => void;
   onRequestNextPage: () => void;
+  /** Opens the dictionary management settings from the lookup header gear. */
+  onManageDictionary?: () => void;
 }
 
 const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
@@ -95,9 +110,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   chapters,
   currentChapterHref,
   fontFamily,
+  lang,
   onClose,
   onChapterSelect,
   onRequestNextPage,
+  onManageDictionary,
 }) => {
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
@@ -147,6 +164,21 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   });
   const contextWordRef = useRef<HTMLSpanElement>(null);
+  const contextPanelRef = useRef<HTMLDivElement>(null);
+  // Dictionary lookup from a context-panel selection (#4475). `lookup` is the
+  // pending selection (drives the "Look up" pill); `dict` holds the resolved
+  // word + popup placement once the dictionary is open.
+  const [lookup, setLookup] = useState<{
+    text: string;
+    range: Range;
+    left: number;
+    top: number;
+  } | null>(null);
+  const [dict, setDict] = useState<{
+    word: string;
+    position: Position;
+    trianglePosition: Position;
+  } | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
@@ -201,6 +233,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
       if (!state.active) return;
+      // While the dictionary is open it owns the keyboard (e.g. Escape closes
+      // the dictionary, not the whole RSVP session).
+      if (dict) return;
 
       switch (event.key) {
         case ' ':
@@ -241,13 +276,23 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           event.stopPropagation();
           controller.decreaseSpeed();
           break;
+        case '.':
+          event.preventDefault();
+          event.stopPropagation();
+          controller.nextWord();
+          break;
+        case ',':
+          event.preventDefault();
+          event.stopPropagation();
+          controller.prevWord();
+          break;
       }
     };
 
     // Use capture phase to handle events before they reach dropdown/select elements
     document.addEventListener('keydown', handleKeyboard, { capture: true });
     return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
-  }, [state.active, controller, onClose]);
+  }, [state.active, controller, onClose, dict]);
 
   const effectiveChapterHref = currentChapterHref;
 
@@ -279,11 +324,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     }
   }, [state]);
 
-  // Auto-scroll: keep highlighted word in view
+  // Auto-scroll: keep highlighted word in view. Suppressed while the user is
+  // selecting text or has the dictionary open, so the panel does not yank the
+  // selection out from under them (#4475).
   useEffect(() => {
-    if (contextCollapsed) return;
+    if (contextCollapsed || lookup || dict) return;
     contextWordRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-  }, [state.currentIndex, contextCollapsed]);
+  }, [state.currentIndex, contextCollapsed, lookup, dict]);
 
   useEffect(() => {
     if (!showChapterDropdown) return;
@@ -422,6 +469,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
   const handleContextClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      // A drag that selects text also ends in a click; don't seek then, so the
+      // user can select words for dictionary lookup (#4475).
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed && selection.toString().trim()) return;
       const target = (event.target as HTMLElement).closest<HTMLElement>('[data-rsvp-word-index]');
       if (!target) return;
       if (target.getAttribute('role') !== 'button') return;
@@ -431,6 +482,68 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     },
     [handleWordClick],
   );
+
+  // Detect a selection inside the context panel and surface a "Look up" pill.
+  const handleContextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      setLookup(null);
+      return;
+    }
+    const text = selection.toString().trim();
+    const anchor = selection.anchorNode;
+    if (!text || !anchor || !contextPanelRef.current?.contains(anchor)) {
+      setLookup(null);
+      return;
+    }
+    // Clone the range so the placement survives the selection being collapsed
+    // when the user taps the "Look up" pill.
+    const range = selection.getRangeAt(0).cloneRange();
+    const rect = range.getBoundingClientRect();
+    const left = Math.min(window.innerWidth - 8, Math.max(8, rect.left + rect.width / 2));
+    setLookup({ text, range, left, top: rect.top });
+  }, []);
+
+  const openLookup = useCallback(() => {
+    if (!lookup) return;
+    if (state.playing) controller.pause();
+
+    // Anchor the popup to the selection: prefer below it, flip above when the
+    // lower half of the screen is too short. The whole-window rect keeps the
+    // popup clamped on-screen (the overlay root sits at the viewport origin).
+    const rect = lookup.range.getBoundingClientRect();
+    const windowRect = { top: 0, left: 0, right: window.innerWidth, bottom: window.innerHeight };
+    const popupWidth = Math.min(DICT_POPUP_MAX_WIDTH, window.innerWidth - 2 * DICT_POPUP_PADDING);
+    const popupHeight = Math.min(
+      DICT_POPUP_MAX_HEIGHT,
+      window.innerHeight - 2 * DICT_POPUP_PADDING,
+    );
+    const dir: Position['dir'] =
+      window.innerHeight - rect.bottom > popupHeight + DICT_POPUP_PADDING ? 'down' : 'up';
+    const trianglePosition: Position = {
+      point: { x: rect.left + rect.width / 2, y: dir === 'down' ? rect.bottom + 6 : rect.top - 12 },
+      dir,
+    };
+    const position = getPopupPosition(
+      trianglePosition,
+      windowRect,
+      popupWidth,
+      popupHeight,
+      DICT_POPUP_PADDING,
+    );
+
+    setDict({ word: lookup.text, position, trianglePosition });
+    setLookup(null);
+  }, [lookup, state.playing, controller]);
+
+  const closeLookup = useCallback(() => {
+    setDict(null);
+    try {
+      window.getSelection()?.removeAllRanges();
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const handleContextKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -668,10 +781,13 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             onTouchEnd={(e) => e.stopPropagation()}
           >
             <div
+              ref={contextPanelRef}
               data-testid='rsvp-context-panel'
-              className='text-left text-base leading-relaxed md:text-lg'
+              className='select-text text-left text-base leading-relaxed md:text-lg'
               onClick={handleContextClick}
               onKeyDown={handleContextKeyDown}
+              onMouseUp={handleContextSelection}
+              onTouchEnd={handleContextSelection}
             >
               {hasMoreBefore && <span className='opacity-30'>… </span>}
               {state.words.slice(contextWindow.start, contextWindow.end).map((w, i) => {
@@ -849,6 +965,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </button>
 
           <button
+            aria-label={_('Previous word')}
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.prevWord()}
+            title={_('Previous word (,)')}
+          >
+            <IoCaretBack className='h-4 w-4 md:h-5 md:w-5' />
+          </button>
+
+          <button
             aria-label={state.playing ? _('Pause') : _('Play')}
             className={clsx(
               'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
@@ -862,6 +987,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             ) : (
               <IoPlay className='h-7 w-7 md:h-8 md:w-8' />
             )}
+          </button>
+
+          <button
+            aria-label={_('Next word')}
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
+            onClick={() => controller.nextWord()}
+            title={_('Next word (.)')}
+          >
+            <IoCaretForward className='h-4 w-4 md:h-5 md:w-5' />
           </button>
 
           <button
@@ -911,6 +1045,24 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 {controller.getPunctuationPauseOptions().map((option) => (
                   <option key={option} value={option}>
                     {option}ms
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Pre-start countdown delay */}
+            <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
+              <span className='mr-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
+              <select
+                data-testid='rsvp-start-delay-select'
+                className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                style={{ color: 'inherit' }}
+                value={state.startDelaySeconds}
+                onChange={(e) => controller.setStartDelay(parseInt(e.target.value, 10))}
+              >
+                {controller.getStartDelayOptions().map((option) => (
+                  <option key={option} value={option}>
+                    {option === 0 ? _('Off') : `${option}s`}
                   </option>
                 ))}
               </select>
@@ -1001,6 +1153,57 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </div>
         )}
       </div>
+
+      {/* Dictionary lookup from a context selection (#4475) */}
+      {lookup && (
+        <button
+          aria-label={_('Look up')}
+          className='eink-bordered fixed z-[10001] flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold shadow-lg'
+          style={{
+            left: `${lookup.left}px`,
+            top: `${lookup.top}px`,
+            backgroundColor: accentColor,
+            color: bgColor,
+          }}
+          onClick={openLookup}
+        >
+          <IoSearch className='h-4 w-4' />
+          {_('Look up')}
+        </button>
+      )}
+      {dict &&
+        // Below `sm` (or short landscape) present a bottom sheet; otherwise an
+        // anchored popup — mirroring the reader's selection dictionary.
+        (window.innerWidth < 640 || window.innerHeight < 640 ? (
+          <DictionarySheet
+            word={dict.word}
+            lang={lang}
+            onDismiss={closeLookup}
+            onManage={onManageDictionary}
+          />
+        ) : (
+          // Transparent full-screen catcher so a click outside the popup
+          // dismisses it (the popup container sits above it at z-50).
+          <>
+            <Overlay onDismiss={closeLookup} />
+            <DictionaryPopup
+              word={dict.word}
+              lang={lang}
+              position={dict.position}
+              trianglePosition={dict.trianglePosition}
+              popupWidth={Math.min(
+                DICT_POPUP_MAX_WIDTH,
+                window.innerWidth - 2 * DICT_POPUP_PADDING,
+              )}
+              popupHeight={Math.min(
+                DICT_POPUP_MAX_HEIGHT,
+                window.innerHeight - 2 * DICT_POPUP_PADDING,
+              )}
+              onDismiss={closeLookup}
+              onManage={onManageDictionary}
+            />
+          </>
+        ))}
     </div>
   );
 };

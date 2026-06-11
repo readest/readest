@@ -1700,5 +1700,12 @@
   "Failed to send book": "புத்தகத்தை அனுப்ப முடியவில்லை",
   "Send": "அனுப்பு",
   "Highlight Current Sentence": "தற்போதைய வாக்கியத்தை தனிப்படுத்து",
-  "File Path": "கோப்பு பாதை"
+  "File Path": "கோப்பு பாதை",
+  "Previous word": "முந்தைய சொல்",
+  "Previous word (,)": "முந்தைய சொல் (,)",
+  "Next word": "அடுத்த சொல்",
+  "Next word (.)": "அடுத்த சொல் (.)",
+  "Start Delay": "தொடக்க தாமதம்",
+  "Off": "அணை",
+  "Look up": "தேடு"
 }

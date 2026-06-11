@@ -1766,5 +1766,12 @@
   "Failed to send book": "Pošiljanje knjige ni uspelo",
   "Send": "Pošlji",
   "Highlight Current Sentence": "Označi trenutni stavek",
-  "File Path": "Pot do datoteke"
+  "File Path": "Pot do datoteke",
+  "Previous word": "Prejšnja beseda",
+  "Previous word (,)": "Prejšnja beseda (,)",
+  "Next word": "Naslednja beseda",
+  "Next word (.)": "Naslednja beseda (.)",
+  "Start Delay": "Zakasnitev začetka",
+  "Off": "Izklopljeno",
+  "Look up": "Poišči"
 }

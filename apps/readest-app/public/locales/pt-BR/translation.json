@@ -1733,5 +1733,12 @@
   "Failed to send book": "Falha ao enviar o livro",
   "Send": "Enviar",
   "Highlight Current Sentence": "Destacar a frase atual",
-  "File Path": "Caminho do arquivo"
+  "File Path": "Caminho do arquivo",
+  "Previous word": "Palavra anterior",
+  "Previous word (,)": "Palavra anterior (,)",
+  "Next word": "Próxima palavra",
+  "Next word (.)": "Próxima palavra (.)",
+  "Start Delay": "Atraso de início",
+  "Off": "Desligado",
+  "Look up": "Pesquisar"
 }
