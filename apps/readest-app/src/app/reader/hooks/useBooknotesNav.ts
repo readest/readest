@@ -2,15 +2,16 @@ import { useCallback, useMemo } from 'react';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { isCfiInLocation } from '@/utils/cfi';
+import { createCfiLocationMatcher } from '@/utils/cfi';
 import { findTocItemBS } from '@/services/nav';
 import { BookNoteType } from '@/types/book';
 import { TOCItem } from '@/libs/document';
 
 export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
-  const { getView, getProgress } = useReaderStore();
-  const { getConfig } = useBookDataStore();
+  const getView = useReaderStore((s) => s.getView);
+  const getConfig = useBookDataStore((s) => s.getConfig);
   const {
     setSideBarVisible,
     getBooknotesNavState,
@@ -23,7 +24,9 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
   const booknotesNavState = getBooknotesNavState(bookKey);
   const { activeBooknoteType, booknoteResults, booknoteIndex } = booknotesNavState;
 
-  const progress = getProgress(bookKey);
+  // Reactive: re-derives current-page boundaries when the user turns
+  // the page. Reads from readerProgressStore only.
+  const progress = useBookProgress(bookKey);
   const currentLocation = progress?.location;
 
   // Get booknotes from config and filter by type
@@ -51,16 +54,21 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
     return tocItem?.label || '';
   }, [sortedBooknotes, booknoteIndex, toc]);
 
-  // Find booknotes on the current page
+  // Find booknotes on the current page.
+  // Uses a batched CFI matcher so the location is collapsed only once per
+  // page turn instead of once per booknote — see createCfiLocationMatcher
+  // in utils/cfi for the why (hot-path CFI parsing was 16%+ of self time
+  // in Android release-build profiles when annotations were dense).
   const currentPageResults = useMemo(() => {
     if (!sortedBooknotes.length || !currentLocation) return { firstIndex: -1, lastIndex: -1 };
 
+    const matches = createCfiLocationMatcher(currentLocation);
     let firstIndex = -1;
     let lastIndex = -1;
 
     for (let i = 0; i < sortedBooknotes.length; i++) {
       const note = sortedBooknotes[i];
-      if (note && isCfiInLocation(note.cfi, currentLocation)) {
+      if (note && matches(note.cfi)) {
         if (firstIndex === -1) firstIndex = i;
         lastIndex = i;
       }

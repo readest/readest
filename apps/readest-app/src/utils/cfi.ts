@@ -22,6 +22,56 @@ export function isCfiInLocation(cfi: string, location: string | null | undefined
 }
 
 /**
+ * Batch variant of {@link isCfiInLocation}. The standalone function calls
+ * `CFI.collapse(location)` twice on every invocation — that's two CFI
+ * parses plus the prefix dance in `unwrapCfi`. When the reader hooks
+ * (useBooknotesNav, useSearchNav) loop over hundreds of annotations or
+ * search hits per page turn, those redundant parses add up to a real
+ * fraction of main-thread time (visible as `c` and the anonymous
+ * `parse` callback in Bottom-Up profiles of the foliate `epubcfi.js`
+ * chunk).
+ *
+ * `createCfiLocationMatcher(location)` collapses the location once and
+ * returns a `matches(cfi)` predicate that reuses the cached bounds for
+ * every call. Use it whenever you're iterating a list of CFIs against
+ * the same `currentLocation`.
+ */
+export function createCfiLocationMatcher(
+  location: string | null | undefined,
+): (cfi: string) => boolean {
+  if (!location) return () => false;
+
+  // Pre-unwrap the location once for the cheap prefix match below.
+  const unwrappedLocation = unwrapCfi(location);
+
+  // Collapse once. If collapse throws on a malformed location the
+  // matcher degrades to the cheap equality / prefix branch only —
+  // matching the failure mode of the original isCfiInLocation, which
+  // would also bail via the catch block on a bad compare input.
+  let start: string | null = null;
+  let end: string | null = null;
+  try {
+    start = CFI.collapse(location);
+    end = CFI.collapse(location, true);
+  } catch (err) {
+    console.warn('Failed to collapse location for matcher', { location, error: err });
+  }
+
+  return (cfi: string): boolean => {
+    if (!cfi) return false;
+    if (cfi === location) return true;
+    if (unwrapCfi(cfi).startsWith(unwrappedLocation)) return true;
+    if (start === null || end === null) return false;
+    try {
+      return CFI.compare(cfi, start) >= 0 && CFI.compare(cfi, end) <= 0;
+    } catch (err) {
+      console.warn('Failed to compare CFIs', { cfi, location, error: err });
+      return false;
+    }
+  };
+}
+
+/**
  * Binary search a sorted CFI array to find the nearest CFI to a location.
  * Returns the CFI of the item just before or at the location.
  */
@@ -81,4 +131,35 @@ export function getIndexFromCfi(cfi: string): number | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Extract the EPUB CFI "spine prefix" — the portion that identifies the
+ * spine item (chapter / section) without descending into the in-document
+ * path.
+ *
+ * EPUB CFI form: `epubcfi(<spine-path>!<inside-path>)` or
+ * `epubcfi(<spine-path>)`. The spine path uniquely identifies which
+ * chapter the CFI lives in; everything past `!` is intra-chapter.
+ *
+ * Returns the unwrapped spine prefix (no `epubcfi(...)` wrapper) suitable
+ * for bucketing CFIs by chapter. Returns null for inputs that aren't
+ * recognisably a CFI — callers should use this as a hint and fall back
+ * to the full range matcher when the prefix is missing.
+ *
+ * Examples:
+ *   'epubcfi(/6/24!/4/2:5)' → '/6/24'
+ *   'epubcfi(/6/12)'        → '/6/12'
+ *   'not a cfi'             → null
+ *
+ * This is a pure string operation — no CFI.parse round-trip, so it's
+ * cheap enough to call once per booknote when bucketing.
+ */
+export function getCfiSpinePrefix(cfi: string | null | undefined): string | null {
+  if (!cfi) return null;
+  const match = cfi.match(/^epubcfi\((.+)\)$/);
+  if (!match) return null;
+  const inner = match[1]!;
+  const bang = inner.indexOf('!');
+  return bang === -1 ? inner : inner.slice(0, bang);
 }
