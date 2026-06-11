@@ -3,6 +3,7 @@ import { eventDispatcher } from '@/utils/event';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
+let isMouseDown = false;
 
 let keyboardState = {
   key: '',
@@ -87,6 +88,7 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
+  isMouseDown = true;
   longHoldTimeout = setTimeout(() => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);
@@ -109,6 +111,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleMouseup = (bookKey: string, event: MouseEvent) => {
+  isMouseDown = false;
   // we will handle mouse back and forward buttons ourselves
   if ([3, 4].includes(event.button)) {
     event.preventDefault();
@@ -206,6 +209,13 @@ export const handleClick = (
           element?.getAttribute('alt') ||
           '',
       });
+      return;
+    }
+
+    // if the mouse button is still held, a drag is in progress (e.g. a
+    // double-click-and-drag selection); sending a single click here would turn
+    // the page mid-selection (#4524).
+    if (isMouseDown) {
       return;
     }
 
