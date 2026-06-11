@@ -280,4 +280,96 @@ describe('paragraph mode', () => {
       expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
     });
   });
+
+  const renderVisibleOverlay = async (onClose: () => void) => {
+    const overlayBookKey = 'overlay-book';
+    const doc = createDoc('<p>Hello world</p>');
+    const paragraph = doc.querySelector('p')!;
+    const range = doc.createRange();
+    range.selectNodeContents(paragraph);
+
+    const { container } = render(
+      <ParagraphOverlay
+        bookKey={overlayBookKey}
+        dimOpacity={0.3}
+        viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: false } as never}
+        onClose={onClose}
+      />,
+    );
+
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-focus', {
+        bookKey: overlayBookKey,
+        range,
+        presentation: { dir: 'ltr', writingMode: 'horizontal-tb', vertical: false, rtl: false },
+      });
+    });
+
+    return { container, overlayBookKey };
+  };
+
+  const mockContentRect = (contentArea: HTMLElement) =>
+    vi.spyOn(contentArea, 'getBoundingClientRect').mockReturnValue({
+      width: 300,
+      height: 300,
+      top: 0,
+      left: 0,
+      right: 300,
+      bottom: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+  it('reveals the controls instead of exiting when the backdrop is tapped', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const onClose = vi.fn();
+    const { container, overlayBookKey } = await renderVisibleOverlay(onClose);
+
+    const dialog = await waitFor(() => {
+      const node = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(node).not.toBeNull();
+      return node!;
+    });
+    dispatchSpy.mockClear();
+
+    fireEvent.click(dialog);
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-show-controls', {
+      bookKey: overlayBookKey,
+    });
+  });
+
+  it('reveals the controls instead of exiting when the center zone is tapped', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const onClose = vi.fn();
+    const { container, overlayBookKey } = await renderVisibleOverlay(onClose);
+
+    const contentArea = container.querySelector('.relative.flex') as HTMLDivElement;
+    mockContentRect(contentArea);
+    dispatchSpy.mockClear();
+
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-show-controls', {
+      bookKey: overlayBookKey,
+    });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-prev', { bookKey: overlayBookKey });
+  });
+
+  it('still exits on a double-tap of the paragraph', async () => {
+    const onClose = vi.fn();
+    const { container } = await renderVisibleOverlay(onClose);
+
+    const contentArea = container.querySelector('.relative.flex') as HTMLDivElement;
+    mockContentRect(contentArea);
+
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

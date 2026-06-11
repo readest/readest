@@ -379,11 +379,17 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     [activePresentation, bookKey, layoutContext.vertical, viewSettings],
   );
 
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === containerRef.current) {
-      onCloseRef.current?.();
-    }
-  }, []);
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Tapping the empty area around the paragraph used to exit, which made it
+      // easy to leave paragraph mode by accident. Reveal the controls instead so
+      // exiting stays an explicit action (the bar's exit button or Escape).
+      if (e.target === containerRef.current) {
+        eventDispatcher.dispatch('paragraph-show-controls', { bookKey });
+      }
+    },
+    [bookKey],
+  );
 
   const lastTapTimeRef = useRef(0);
   const handleContentClick = useCallback(
@@ -423,6 +429,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         eventDispatcher.dispatch('paragraph-prev', { bookKey });
       } else if (action === 'next') {
         eventDispatcher.dispatch('paragraph-next', { bookKey });
+      } else {
+        // A tap in the neutral center zone reveals the controls so the exit
+        // button stays reachable on touch after the bar has auto-hidden.
+        eventDispatcher.dispatch('paragraph-show-controls', { bookKey });
       }
     },
     [activePresentation, bookKey, layoutContext.vertical, viewSettings],
