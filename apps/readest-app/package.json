@@ -41,6 +41,7 @@
     "tauri": "tauri",
     "fmt:check": "cargo fmt -p Readest --check",
     "clippy:check": "cargo clippy -p Readest --no-deps -- -D warnings",
+    "test:rust": "cargo test -p Readest --lib",
     "format": "pnpm -w format",
     "format:check": "pnpm -w format:check",
     "prepare-public-vendor": "mkdirp ./public/vendor/pdfjs ./public/vendor/simplecc ./public/vendor/jieba",

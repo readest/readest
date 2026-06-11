@@ -7,3 +7,4 @@ Before marking work complete, all applicable checks must pass:
 3. `pnpm test:lua` — busted unit tests for `apps/readest.koplugin/spec/` (only when koplugin Lua files changed; soft-skips when busted/luajit not installed)
 4. `pnpm fmt:check` — Rust format check (only when `src-tauri/` files changed)
 5. `pnpm clippy:check` — Rust lint (only when `src-tauri/` files changed)
+6. `pnpm test:rust` — Rust unit tests (`cargo test -p Readest --lib`; only when `src-tauri/` files changed); also run in the CI `rust_lint` job

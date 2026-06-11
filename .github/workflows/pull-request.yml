@@ -40,6 +40,9 @@ jobs:
       - name: Clippy Check
         working-directory: apps/readest-app/src-tauri
         run: cargo clippy -p Readest --no-deps -- -D warnings
+      - name: Unit tests
+        working-directory: apps/readest-app/src-tauri
+        run: cargo test -p Readest --lib
 
   build_web_app:
     runs-on: ubuntu-latest
