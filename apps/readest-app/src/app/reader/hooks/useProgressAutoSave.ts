@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, flushPendingLibrarySave } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { debounce } from '@/utils/debounce';
 
 export const useProgressAutoSave = (bookKey: string) => {
   const { envConfig } = useEnv();
-  const { getConfig, saveConfig } = useBookDataStore();
-  const { getProgress } = useReaderStore();
-  const progress = getProgress(bookKey);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  // Reactive subscription so the effect below fires the debounced save
+  // whenever this book's progress changes. Reads from readerProgressStore.
+  const progress = useBookProgress(bookKey);
 
   // Tracks the location we last persisted (or, before the first save, the
   // location loaded from disk at book open). We skip saveConfig when the
@@ -61,4 +64,18 @@ export const useProgressAutoSave = (bookKey: string) => {
     saveBookConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, bookKey]);
+
+  // On unmount (book closed / navigated away), flush any pending throttled
+  // library.json write so the shelf reflects this session's last read
+  // position next time it loads. The per-book config.json is already on
+  // disk from the eager save in `saveConfig`, so this only catches the
+  // library-level rollup.
+  useEffect(() => {
+    return () => {
+      flushPendingLibrarySave().catch(() => {
+        // Best-effort on teardown — failures fall through to next launch's
+        // reconstruction from per-book config.json files.
+      });
+    };
+  }, []);
 };

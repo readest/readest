@@ -13,6 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { aiLogger, createTauriAdapter } from '@/services/ai';
 import {
@@ -289,7 +290,7 @@ const ThreadWrapper = ({
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const bookData = getBookData(bookKey);
 
   const reedyRuntime = settings?.aiSettings?.reedy?.runtime ?? 'mvp';
@@ -309,10 +310,11 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
-  const { getProgress, getView } = useReaderStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
   const bookData = getBookData(bookKey);
-  const progress = getProgress(bookKey);
+  // Reactive: chat context follows the user's current reading position.
+  const progress = useBookProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isIndexing, setIsIndexing] = useState(false);
@@ -476,10 +478,12 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
 const ReedyAgentAssistantBridge = ({ bookKey }: AIAssistantProps) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
-  const { getProgress, getView } = useReaderStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
   const bookData = getBookData(bookKey);
-  const progress = getProgress(bookKey);
+  // Reactive: agent runtime needs the latest reading position to seed
+  // tool calls.
+  const progress = useBookProgress(bookKey);
 
   const bookHash = bookKey.split('-')[0] || '';
   const aiSettings = settings?.aiSettings;

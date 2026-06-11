@@ -77,15 +77,25 @@ vi.mock('@/store/readerStore', () => {
     setViewSettings: vi.fn(),
     setTTSEnabled: vi.fn(),
   };
-  const useReaderStore = () => store;
+  // Production code uses per-field selectors; mock must apply them.
+  const useReaderStore = <R,>(selector?: (s: typeof store) => R) =>
+    selector ? selector(store) : store;
   useReaderStore.getState = () => store;
   return { useReaderStore };
 });
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => mockBookData,
-  }),
+vi.mock('@/store/bookDataStore', () => {
+  const state = { getBookData: () => mockBookData };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
+
+// useTTSControl now reads progress reactively from readerProgressStore.
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => mockProgress,
+  getBookProgress: () => mockProgress,
 }));
 
 vi.mock('@/store/proofreadStore', () => ({

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { KOSyncClient, KoSyncProgress } from '@/services/sync/KOSyncClient';
@@ -38,8 +39,12 @@ export const useKOSync = (bookKey: string) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getProgress, getView } = useReaderStore();
-  const { getBookData, getConfig, setConfig } = useBookDataStore();
+  // Per-field selectors — methods are stable refs, so no subscription churn.
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getView = useReaderStore((s) => s.getView);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
 
   const [kosyncClient, setKOSyncClient] = useState<KOSyncClient | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('idle');
@@ -47,7 +52,9 @@ export const useKOSync = (bookKey: string) => {
   const [errorMessage] = useState<string | null>(null);
   const hasPulledOnce = useRef(false);
 
-  const progress = getProgress(bookKey);
+  // Reactive subscription: drives the auto-push effect and the initial
+  // pull-on-open effect below. Reads from readerProgressStore.
+  const progress = useBookProgress(bookKey);
 
   useEffect(() => {
     if (!settings.kosync.username || !settings.kosync.userkey) {

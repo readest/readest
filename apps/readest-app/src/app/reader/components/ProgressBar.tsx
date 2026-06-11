@@ -4,6 +4,7 @@ import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { formatNumber, formatProgress, getReferencePageInfo } from '@/utils/progress';
@@ -28,12 +29,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
-  const { getBookData } = useBookDataStore();
-  const { getProgress, getViewSettings, getView } = useReaderStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const getView = useReaderStore((s) => s.getView);
   const view = getView(bookKey);
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
-  const progress = getProgress(bookKey);
+  // Reactive: this is the on-screen footer that has to refresh on every
+  // page turn. Reads from readerProgressStore only.
+  const progress = useBookProgress(bookKey);
   const { section, pageinfo } = progress || {};
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { debounce } from '@/utils/debounce';
@@ -74,9 +75,16 @@ export const useWebDAVSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { getProgress, getViewsById, getView } = useReaderStore();
-  const { getConfig, setConfig, getBookData, saveConfig } = useBookDataStore();
-  const progress = getProgress(bookKey);
+  const getViewsById = useReaderStore((s) => s.getViewsById);
+  const getView = useReaderStore((s) => s.getView);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  // Reactive: triggers the auto-push effect on page turns. Imperative reads
+  // elsewhere in this hook still go through useReaderStore.getState() /
+  // getBookProgress() via callbacks where they are bound directly.
+  const progress = useBookProgress(bookKey);
 
   /**
    * `dirtyRef` flips to true on the first locally-driven change after a

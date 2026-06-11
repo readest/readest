@@ -15,13 +15,16 @@ let capturedInitialized:
 let mockProgress: { sectionHref: string; location: string } | null;
 
 // ---------- Mocks ----------
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+vi.mock('@/store/readerStore', () => {
+  const state = {
     getView: () => undefined,
     getViewSettings: () => ({ isEink: false }),
     getProgress: () => mockProgress,
-  }),
-}));
+  };
+  return {
+    useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
+  };
+});
 
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({ sideBarBookKey: 'book1', isSideBarVisible: true }),

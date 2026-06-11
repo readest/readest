@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -114,10 +115,17 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
 const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { settings, setSettingsDialogOpen, setSettingsDialogBookKey, setActiveSettingsItemId } =
-    useSettingsStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
-  const { getBookData, getConfig, setConfig, saveConfig } = useBookDataStore();
+  const settings = useSettingsStore((s) => s.settings);
+  const setSettingsDialogOpen = useSettingsStore((s) => s.setSettingsDialogOpen);
+  const setSettingsDialogBookKey = useSettingsStore((s) => s.setSettingsDialogBookKey);
+  const setActiveSettingsItemId = useSettingsStore((s) => s.setActiveSettingsItemId);
+  const getView = useReaderStore((s) => s.getView);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const { themeCode } = useThemeStore();
 
   const [isActive, setIsActive] = useState(false);
@@ -522,8 +530,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     await view.renderer.goTo({ index: rsvpSectionRef.current + 1 });
   }, [bookKey, getProgress, getView, removeRsvpHighlight]);
 
-  // Get current chapter info
-  const progress = getProgress(bookKey);
+  // Get current chapter info — reactive subscription so the RSVP overlay's
+  // chapter pointer follows page turns. Reads from readerProgressStore.
+  const progress = useBookProgress(bookKey);
   const bookData = getBookData(bookKey);
   const chapters = bookData?.bookDoc?.toc || [];
   const currentChapterHref = rsvpChapterHrefRef.current ?? progress?.sectionHref ?? null;

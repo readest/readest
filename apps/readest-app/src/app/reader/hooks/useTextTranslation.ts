@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FoliateView } from '@/types/view';
 import { UseTranslatorOptions } from '@/services/translators';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslator } from '@/hooks/useTranslator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -16,9 +17,13 @@ export function useTextTranslation(
   targetBlockClassName = 'translation-target-block',
 ) {
   const _ = useTranslation();
-  const { getViewSettings, getProgress, setIsLoading } = useReaderStore();
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setIsLoading = useReaderStore((s) => s.setIsLoading);
   const viewSettings = getViewSettings(bookKey);
-  const progress = getProgress(bookKey);
+  // Reactive: triggers translate-in-range on every page turn so the
+  // visible viewport's translations refresh. Reads from
+  // readerProgressStore only.
+  const progress = useBookProgress(bookKey);
 
   const enabled = useRef(viewSettings?.translationEnabled);
   const [provider, setProvider] = useState(viewSettings?.translationProvider);

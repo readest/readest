@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useProofreadStore } from '@/store/proofreadStore';
 import { TransformContext } from '@/services/transformers/types';
 import { proofreadTransformer } from '@/services/transformers/proofread';
@@ -30,9 +31,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const { appService } = useEnv();
   const { user } = useAuth();
   const { isDarkMode } = useThemeStore();
-  const { getBookData } = useBookDataStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
-  const { setViewSettings, setTTSEnabled } = useReaderStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const setTTSEnabled = useReaderStore((s) => s.setTTSEnabled);
   const { getMergedRules } = useProofreadStore();
 
   const [ttsLang, setTtsLang] = useState<string>('en');
@@ -265,8 +269,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
 
-  // Location tracking — re-highlight when progress changes
-  const progress = getProgress(bookKey);
+  // Location tracking — re-highlight when progress changes.
+  // Reactive subscription via readerProgressStore so the effect below
+  // re-runs on page turns without dragging in the whole readerStore.
+  const progress = useBookProgress(bookKey);
   useEffect(() => {
     const ttsController = ttsControllerRef.current;
     if (!ttsController) return;

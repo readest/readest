@@ -79,7 +79,6 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         loading: false,
         inited: false,
         error: null,
-        progress: null,
         ribbonVisible: false,
         ttsEnabled: false,
         syncing: false,

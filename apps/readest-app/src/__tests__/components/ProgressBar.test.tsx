@@ -27,19 +27,35 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { isMobile: false, hasSafeAreaInset: false } }),
 }));
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+// Production code uses per-field selectors; mock must apply them so each
+// `useReaderStore((s) => s.method)` call returns the method, not the whole
+// state object.
+vi.mock('@/store/readerStore', () => {
+  const state = {
     getProgress: () => currentProgress,
     getViewSettings: () => currentViewSettings,
     getView: () => ({ renderer: currentRenderer }),
-  }),
+  };
+  return {
+    useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
+  };
+});
+
+// ProgressBar now subscribes to progress via readerProgressStore so the
+// footer can re-render on page turns without dragging in the whole
+// readerStore. Tests must forward their mock state here too.
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => currentProgress,
+  getBookProgress: () => currentProgress,
 }));
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => currentBookData,
-  }),
-}));
+vi.mock('@/store/bookDataStore', () => {
+  const state = { getBookData: () => currentBookData };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
 
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: (...args: unknown[]) => saveViewSettings(...args),

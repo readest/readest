@@ -37,25 +37,32 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {} }),
 }));
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+vi.mock('@/store/readerStore', () => {
+  const state = {
     getView: () => mockView,
     getProgress: () => ({
       location: 'epubcfi(/6/8!/4/1:0)',
       sectionHref: `ch${primaryIndex}.xhtml`,
     }),
     getViewSettings: () => null,
-  }),
-}));
+  };
+  return {
+    useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
+  };
+});
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+vi.mock('@/store/bookDataStore', () => {
+  const state = {
     getBookData: () => ({ book: { format: 'EPUB' }, bookDoc: { toc: [] } }),
     getConfig: () => null,
     setConfig: vi.fn(),
     saveConfig: vi.fn(),
-  }),
-}));
+  };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: {} }),

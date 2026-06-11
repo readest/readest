@@ -2,11 +2,17 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
 const h = vi.hoisted(() => {
-  // Zustand-like store mock: callable selector returning `state`, plus `.getState()`.
+  // Zustand-like store mock. Supports both destructure form `store()`
+  // and selector form `store((s) => s.method)` since the production code
+  // now uses per-field selectors to avoid whole-store subscriptions.
   const makeStore = <T,>(state: T) => {
-    const fn = () => state;
+    const fn = <R,>(selector?: (s: T) => R) => (selector ? selector(state) : state) as R | T;
     (fn as unknown as { getState: () => T }).getState = () => state;
-    return fn as (() => T) & { getState: () => T };
+    return fn as {
+      (): T;
+      <R>(selector: (s: T) => R): R;
+      getState: () => T;
+    };
   };
 
   const book = {
@@ -73,6 +79,13 @@ vi.mock('@/store/readerStore', () => ({
     setHoveredBookKey: vi.fn(),
     getViewState: () => ({ previewMode: false }),
   }),
+}));
+
+// useProgressSync now reads progress reactively from readerProgressStore
+// (see store/readerProgressStore.ts for rationale).
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => h.state.progress,
+  getBookProgress: () => h.state.progress,
 }));
 
 vi.mock('@/store/settingsStore', () => ({

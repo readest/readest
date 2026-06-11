@@ -4,10 +4,16 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 type Progress = { location: string } | null;
 
 const h = vi.hoisted(() => {
+  // Zustand-like store mock. Supports both destructure form `store()`
+  // and selector form `store((s) => s.method)`.
   const makeStore = <T,>(state: T) => {
-    const fn = () => state;
+    const fn = <R,>(selector?: (s: T) => R) => (selector ? selector(state) : state) as R | T;
     (fn as unknown as { getState: () => T }).getState = () => state;
-    return fn as (() => T) & { getState: () => T };
+    return fn as {
+      (): T;
+      <R>(selector: (s: T) => R): R;
+      getState: () => T;
+    };
   };
 
   const state = {
@@ -32,6 +38,8 @@ vi.mock('@/store/bookDataStore', () => ({
     getConfig: () => h.state.config,
     saveConfig: h.saveConfigMock,
   }),
+  // Named export consumed by the hook for unmount-time best-effort flush.
+  flushPendingLibrarySave: vi.fn(async () => {}),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -39,6 +47,14 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => h.state.progress,
     getViewState: () => ({ previewMode: h.state.previewMode }),
   }),
+}));
+
+// Progress moved to its own store to keep high-frequency setProgress
+// writes from re-rendering the whole reader tree. The hook now reads via
+// useBookProgress, so the test's mock state needs to flow through here.
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => h.state.progress,
+  getBookProgress: () => h.state.progress,
 }));
 
 vi.mock('@/store/settingsStore', () => ({

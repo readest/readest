@@ -4,6 +4,7 @@ import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { serializeConfig } from '@/utils/serializer';
@@ -22,12 +23,22 @@ const PULL_RETRY_DELAYS_MS = [1500, 4000, 10000];
 
 export const useProgressSync = (bookKey: string) => {
   const _ = useTranslation();
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
-  const { getView, getProgress, setHoveredBookKey } = useReaderStore();
+  // Per-field selectors avoid subscribing this hook's host (FoliateViewer)
+  // to the WHOLE bookDataStore — saveConfig writes booksData on every
+  // throttled save and would otherwise re-render the entire reader subtree.
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
+  const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
   const { settings } = useSettingsStore();
   const { syncedConfigs, syncConfigs } = useSync(bookKey);
   const { user } = useAuth();
-  const progress = getProgress(bookKey);
+  // Reactive subscription on this book's progress so the effects below
+  // (auto-push debounce, initial pull) re-run when the user turns the
+  // page. Reads from readerProgressStore, not readerStore — see
+  // store/readerProgressStore.ts for why this split exists.
+  const progress = useBookProgress(bookKey);
 
   const configPulled = useRef(false);
   const hasPulledConfigOnce = useRef(false);
