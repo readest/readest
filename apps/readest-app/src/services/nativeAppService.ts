@@ -239,23 +239,35 @@ export const nativeFileSystem: FileSystem = {
       }
     } else if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-    } else {
-      if (OS_TYPE === 'android' || OS_TYPE === 'ios') {
-        // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
-        // see https://issues.chromium.org/issues/40739128
-        // On iOS, importing picker Inbox files should also use NativeFile to avoid fetch/HEAD issues.
+    } else if (OS_TYPE === 'android') {
+      // Android can't use the asset protocol for ranged reads — its WebView
+      // re-applies a `Range` header's offset to intercepted bodies and corrupts
+      // non-zero-start reads (Chromium 40739128). Instead route reads through
+      // the `rangefile` custom scheme, which carries the range in the URL query
+      // (no `Range` header) so the WebView delivers the bytes verbatim, still
+      // over the network stack rather than the slow Tauri IPC bridge.
+      // Falls back to NativeFile if the path is outside the asset scope.
+      try {
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
+        return await RemoteFile.fromNativePath(absolutePath, fname).open();
+      } catch {
         return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-      } else {
-        // NOTE: RemoteFile currently performs about 2× faster than NativeFile
-        // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
-        // Once the bug is resolved, we should switch back to using NativeFile.
-        try {
-          const prefix = await this.getPrefix(base);
-          const absolutePath = prefix ? await join(prefix, path) : path;
-          return await new RemoteFile(this.getURL(absolutePath), fname).open();
-        } catch {
-          return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-        }
+      }
+    } else if (OS_TYPE === 'ios') {
+      // On iOS, importing picker Inbox files should use NativeFile to avoid
+      // fetch/HEAD issues.
+      return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
+    } else {
+      // NOTE: RemoteFile currently performs about 2× faster than NativeFile
+      // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
+      // Once the bug is resolved, we should switch back to using NativeFile.
+      try {
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
+        return await new RemoteFile(this.getURL(absolutePath), fname).open();
+      } catch {
+        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       }
     }
   },
