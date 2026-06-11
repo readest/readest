@@ -276,4 +276,37 @@ describe('useProgressSync', () => {
     await advance(1500);
     expect(pullCallCount()).toBe(callsBeforeRefresh + 2);
   });
+
+  test('sync-book-progress flushes the pending cloud push on book close', async () => {
+    // Reproduces issue #4532: the reader is closed inside the 3s auto-sync
+    // debounce window, so the pending Readest cloud push would otherwise be
+    // dropped on unmount and never reach the cloud.
+    // Mount: the empty pull settles and opens the gate (configPulled = true).
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+    expect(pushCallCount()).toBe(0);
+
+    // User paginates to a new position — this arms the 3s auto-sync debounce.
+    h.state.progress = { location: 'cfi-loc-next' };
+    await act(async () => {
+      rerender();
+      await flushMicrotasks();
+    });
+    // The debounce has not fired yet, so nothing has been pushed.
+    expect(pushCallCount()).toBe(0);
+
+    // Closing the reader dispatches sync-book-progress within the debounce
+    // window — before the 3s timer would have fired.
+    await act(async () => {
+      const listeners = h.eventListeners.get('sync-book-progress');
+      listeners?.forEach((fn) =>
+        fn(new CustomEvent('sync-book-progress', { detail: { bookKey: 'h1-view1' } })),
+      );
+      await flushMicrotasks();
+    });
+
+    // The pending push is flushed immediately — Device A's last local position
+    // reaches the cloud before the reader tears down.
+    expect(pushCallCount()).toBeGreaterThanOrEqual(1);
+  });
 });
