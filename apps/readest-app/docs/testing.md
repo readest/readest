@@ -124,6 +124,15 @@ ANDROID_SERIAL=emulator-5554 pnpm test:android
   is on by default in the app).
 - **Serial only:** one device, one app — the config disables parallelism.
 
+### CI
+
+`.github/workflows/android-e2e.yml` runs the lane on an x86_64 emulator
+(ubuntu runner with KVM): it builds a **debug** APK for `x86_64` (no signing
+secrets needed), boots a cached AVD via `reactivecircus/android-emulator-runner`,
+installs the APK, and runs `pnpm test:android`. It is intentionally not
+PR-blocking — it runs nightly, on `workflow_dispatch`, or when a PR gets the
+`e2e-android` label.
+
 ## E2E Tests (WDIO)
 
 Full end-to-end tests using WebDriverIO, for UI-level testing against the running Tauri app. Same two-step workflow as Tauri integration tests.
