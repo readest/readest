@@ -1,4 +1,5 @@
 import { getUserLocale } from '@/utils/misc';
+import { isSameLang } from '@/utils/lang';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
 import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
@@ -320,14 +321,15 @@ export class EdgeTTSClient implements TTSClient {
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
-    const filteredVoices = voices.filter(
-      (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
-    );
+    // Match by primary language so the voice set stays the same across a book
+    // whose sections mix region variants (e.g. en-US front matter and en-GB
+    // body text); the requested locale's voices sort first. See #4033.
+    const filteredVoices = voices.filter((v) => isSameLang(v.lang, lang));
 
     const voicesGroup: TTSVoicesGroup = {
       id: 'edge-tts',
       name: 'Edge TTS',
-      voices: filteredVoices.sort(TTSUtils.sortVoicesFunc),
+      voices: filteredVoices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
       disabled: !this.initialized || filteredVoices.length === 0,
     };
 

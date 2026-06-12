@@ -34,12 +34,17 @@ vi.mock('@/utils/misc', () => ({
   getUserLocale: vi.fn((lang: string) => (lang === 'en' ? 'en-US' : lang)),
 }));
 
-vi.mock('@/services/tts/TTSUtils', () => ({
-  TTSUtils: {
-    getPreferredVoice: vi.fn(() => null),
-    sortVoicesFunc: (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id),
-  },
-}));
+vi.mock('@/services/tts/TTSUtils', async (importOriginal) => {
+  const { TTSUtils: ActualTTSUtils } =
+    await importOriginal<typeof import('@/services/tts/TTSUtils')>();
+  return {
+    TTSUtils: {
+      getPreferredVoice: vi.fn(() => null),
+      sortVoicesFunc: ActualTTSUtils.sortVoicesFunc,
+      sortVoicesPreferLocaleFunc: ActualTTSUtils.sortVoicesPreferLocaleFunc,
+    },
+  };
+});
 
 import { EdgeTTSClient } from '@/services/tts/EdgeTTSClient';
 import { TTSController } from '@/services/tts/TTSController';
@@ -305,11 +310,45 @@ describe('EdgeTTSClient', () => {
       expect(voiceIds).toContain('en-GB-SoniaNeural');
     });
 
-    test('returns sorted voices using TTSUtils.sortVoicesFunc', async () => {
+    test('returns sorted voices with user-locale voices first for "en"', async () => {
+      // getUserLocale is mocked to return en-US for 'en'
       const groups = await client.getVoices('en');
       const voiceIds = groups[0]!.voices.map((v) => v.id);
-      const sorted = [...voiceIds].sort();
-      expect(voiceIds).toEqual(sorted);
+      expect(voiceIds).toEqual(['en-US-AnaNeural', 'en-US-AriaNeural', 'en-GB-SoniaNeural']);
+    });
+
+    // #4033: the voice set must not change between parts of a single book that
+    // mix region variants of the same language (e.g. en-US front matter and
+    // en-GB body text in Standard Ebooks)
+    test('returns the same English voice set for any region variant', async () => {
+      const ids = async (lang: string) =>
+        (await client.getVoices(lang))[0]!.voices.map((v) => v.id).sort();
+      const us = await ids('en-US');
+      const gb = await ids('en-GB');
+      const en = await ids('en');
+      expect(gb).toEqual(us);
+      expect(en).toEqual(us);
+      expect(us).toEqual(['en-GB-SoniaNeural', 'en-US-AnaNeural', 'en-US-AriaNeural']);
+    });
+
+    test('lists voices of the requested locale first', async () => {
+      const gb = await client.getVoices('en-GB');
+      expect(gb[0]!.voices[0]!.id).toBe('en-GB-SoniaNeural');
+      const us = await client.getVoices('en-US');
+      expect(us[0]!.voices[0]!.id).toBe('en-US-AnaNeural');
+    });
+
+    test('does not include voices from other languages', async () => {
+      const fr = await client.getVoices('fr-FR');
+      expect(fr[0]!.voices.map((v) => v.id)).toEqual(['fr-FR-DeniseNeural']);
+      const en = await client.getVoices('en-US');
+      expect(en[0]!.voices.map((v) => v.id)).not.toContain('fr-FR-DeniseNeural');
+    });
+
+    test('getVoiceIdFromLang still resolves an exact-locale default voice', async () => {
+      expect(await client.getVoiceIdFromLang('en-GB')).toBe('en-GB-SoniaNeural');
+      // AnaNeural sorts first for en-US but is avoided as default
+      expect(await client.getVoiceIdFromLang('en-US')).toBe('en-US-AriaNeural');
     });
 
     test('marks group as disabled when not initialized', async () => {

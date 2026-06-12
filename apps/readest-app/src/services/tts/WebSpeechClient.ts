@@ -1,4 +1,5 @@
 import { getUserLocale } from '@/utils/misc';
+import { isSameLang } from '@/utils/lang';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
@@ -228,12 +229,11 @@ export class WebSpeechClient implements TTSClient {
     const isNotBlacklisted = (voice: SpeechSynthesisVoice) => {
       return WEB_SPEECH_BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
     };
+    // Match by primary language so the voice set stays the same across a book
+    // whose sections mix region variants (e.g. en-US front matter and en-GB
+    // body text); the requested locale's voices sort first. See #4033.
     const filteredVoices = this.#voices
-      .filter(
-        (voice) =>
-          voice.lang.startsWith(locale) ||
-          (lang === 'en' && ['en-US', 'en-GB'].includes(voice.lang)),
-      )
+      .filter((voice) => isSameLang(voice.lang, lang))
       .filter((voice) => isValidVoice(voice.voiceURI || ''))
       .filter(isNotBlacklisted);
     const seenIds = new Set<string>();
@@ -260,7 +260,7 @@ export class WebSpeechClient implements TTSClient {
     const voicesGroup: TTSVoicesGroup = {
       id: 'web-speech-api',
       name: 'Web TTS',
-      voices: voices.sort(TTSUtils.sortVoicesFunc),
+      voices: voices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
       disabled: !this.initialized || voices.length === 0,
     };
     return [voicesGroup];
