@@ -10,7 +10,7 @@ on:
   schedule:
     - cron: '30 19 * * *'
   pull_request:
-    types: [labeled]
+    types: [labeled, synchronize]
 
 concurrency:
   group: android-e2e-${{ github.ref }}
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   android-e2e:
-    if: github.event_name != 'pull_request' || github.event.label.name == 'e2e-android'
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-android')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -82,6 +82,13 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
         run: |
           cd apps/readest-app
+          # Only the customized files of gen/android are tracked — regenerate
+          # the gradle scaffolding, then restore the tracked customizations
+          # (same flow as the release workflow).
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
           # Debug build: signed with the debug keystore, no release secrets
           # needed (gradle only loads keystore.properties when it exists).
           pnpm tauri android build --debug --target x86_64
