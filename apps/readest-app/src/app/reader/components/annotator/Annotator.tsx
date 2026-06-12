@@ -5,7 +5,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
-import { NOTE_PREFIX } from '@/types/view';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
 import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
 import { useThemeStore } from '@/store/themeStore';
@@ -561,27 +561,141 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   }, []);
 
   useEffect(() => {
-    const updateBooknotesPage = async () => {
-      const config = getConfig(bookKey);
-      const view = getView(bookKey);
-      if (!config || !view) return;
-      const { booknotes: annotations = [] } = config;
-      annotations.sort((a, b) => {
-        return CFI.compare(a.cfi, b.cfi);
-      });
-      for (const annotation of annotations) {
-        if (annotation.deletedAt || annotation.page || !annotation.cfi) continue;
-        const progress = await view.getCFIProgress(annotation.cfi);
-        if (progress) {
-          annotation.page = progress.location.current + 1;
+    // Lazily back-fill `page` on every annotation that doesn't have one
+    // yet. Each call to view.getCFIProgress(cfi) synchronously
+    // decompresses the matching section's XHTML out of the EPUB zip and
+    // walks its text nodes (foliate-js progress.js #getCache), costing
+    // ~100-300ms per cold section on a release Android build. For users
+    // with many annotations spread across many chapters that's seconds
+    // of zip-IPC + main-thread work and the back-fill must NOT steal
+    // the open-book hot window. The `page` field only feeds the
+    // secondary "p NN ·" label in the sidebar BooknoteItem — strictly a
+    // nice-to-have.
+    //
+    // First attempt used requestIdleCallback. On Android Tauri the
+    // WebView's rIC fires aggressively while the main thread is still
+    // doing layout/style work for the freshly-opened book, so each tick
+    // ended up running a 100-300ms getCFIProgress in what was
+    // effectively the hot window — Bottom-Up profile showed 1.5s+ of
+    // sendIpcMessage -> readData -> loadDocument -> getCFIProgress under
+    // "Fire Idle Callback" still inside the open-book TBT window.
+    //
+    // Strategy now:
+    //  - Hard gate on the FIRST 'stabilized' renderer event (i.e. wait
+    //    until the open-book paint is fully settled).
+    //  - Then a 5s grace timer so the user's first page-turns and the
+    //    paginator's adjacent-section preload can finish.
+    //  - Then process annotations one-at-a-time with a 250ms gap
+    //    between each. Each getCFIProgress shows up as its own short
+    //    task with input-handling slots in between, instead of a chain
+    //    of back-to-back idle callbacks.
+    //  - Batch the saveConfig write at the end (one IPC instead of N).
+    //  - Skip entirely if there are no annotations missing a page.
+    const config = getConfig(bookKey);
+    const allAnnotations = config?.booknotes ?? [];
+    const pending = allAnnotations.filter((a) => !a.deletedAt && a.cfi && !a.page);
+    if (pending.length === 0) return;
+    pending.sort((a, b) => CFI.compare(a.cfi, b.cfi));
+
+    const GRACE_MS = 5000;
+    const TICK_GAP_MS = 250;
+
+    let cancelled = false;
+    let scheduledHandle: ReturnType<typeof setTimeout> | null = null;
+    let pendingStabilizedView: FoliateView | null = null;
+    let pendingStabilizedHandler: (() => void) | null = null;
+
+    const detachStabilized = () => {
+      if (pendingStabilizedView && pendingStabilizedHandler) {
+        try {
+          pendingStabilizedView.renderer?.removeEventListener(
+            'stabilized',
+            pendingStabilizedHandler,
+          );
+        } catch {
+          // ignore — renderer may be torn down already.
         }
       }
-      const updatedConfig = updateBooknotes(bookKey, annotations);
-      if (updatedConfig) {
-        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      pendingStabilizedView = null;
+      pendingStabilizedHandler = null;
+    };
+
+    let touched = false;
+    let i = 0;
+    const tick = async () => {
+      if (cancelled) return;
+      scheduledHandle = null;
+      const view = getView(bookKey);
+      if (!view) {
+        // View not ready yet — back off and try again.
+        scheduledHandle = setTimeout(tick, TICK_GAP_MS);
+        return;
+      }
+      const annotation = pending[i++];
+      if (annotation && !annotation.page) {
+        try {
+          const progress = await view.getCFIProgress(annotation.cfi);
+          if (!cancelled && progress) {
+            annotation.page = progress.location.current + 1;
+            touched = true;
+          }
+        } catch (err) {
+          console.warn('Failed to back-fill annotation page', err);
+        }
+      }
+      if (cancelled) return;
+      if (i < pending.length) {
+        scheduledHandle = setTimeout(tick, TICK_GAP_MS);
+      } else if (touched) {
+        const updatedConfig = updateBooknotes(bookKey, allAnnotations);
+        if (updatedConfig) {
+          saveConfig(envConfig, bookKey, updatedConfig, settings);
+        }
       }
     };
-    setTimeout(updateBooknotesPage, 3000);
+
+    const startGrace = () => {
+      if (cancelled) return;
+      scheduledHandle = setTimeout(tick, GRACE_MS);
+    };
+
+    // Wait for the renderer to fire its first 'stabilized' event before
+    // arming the grace timer. If the renderer is missing (e.g. fixed-
+    // layout PDF teardown path) or never stabilizes within 10s, fall
+    // back to a plain time-based start so the page back-fill still
+    // eventually runs.
+    const view = getView(bookKey);
+    const renderer = view?.renderer;
+    const FALLBACK_START_MS = 10000;
+    if (renderer && typeof renderer.addEventListener === 'function') {
+      const onStabilized = () => {
+        if (cancelled) return;
+        detachStabilized();
+        startGrace();
+      };
+      pendingStabilizedView = view!;
+      pendingStabilizedHandler = onStabilized;
+      renderer.addEventListener('stabilized', onStabilized, {
+        once: true,
+      } as AddEventListenerOptions);
+      // Safety net: if 'stabilized' never arrives (corner cases like
+      // an empty renderer) start the grace timer anyway after 10s.
+      scheduledHandle = setTimeout(() => {
+        if (cancelled) return;
+        detachStabilized();
+        startGrace();
+      }, FALLBACK_START_MS);
+    } else {
+      scheduledHandle = setTimeout(tick, GRACE_MS);
+    }
+
+    return () => {
+      cancelled = true;
+      detachStabilized();
+      if (scheduledHandle != null) {
+        clearTimeout(scheduledHandle);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
