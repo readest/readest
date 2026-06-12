@@ -300,8 +300,19 @@ jobs:
 
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: tauri-cargo
+          # cache-workspace-crates caches the path/workspace crates too: the
+          # vendored tauri fork (packages/tauri, packages/tauri-plugins, wired
+          # via [patch.crates-io]) and the local src-tauri/plugins/*. These are
+          # workspace members that rust-cache prunes by default, so the whole
+          # tauri stack — plus every crates.io plugin that depends on the
+          # patched `tauri` — rebuilt on every run. They change only
+          # sporadically (pinned submodules), so caching them is a big win.
+          # The key is bumped (-ws) so the old workspace-crate-less cache is
+          # invalidated and the next run repopulates it with the workspace
+          # crates included.
+          key: tauri-cargo-ws
           cache-all-crates: 'true'
+          cache-workspace-crates: 'true'
 
       - name: Cache apt packages
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
