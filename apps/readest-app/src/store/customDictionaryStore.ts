@@ -30,6 +30,7 @@ const BUILTIN_WEB_ORDER = [
   BUILTIN_WEB_SEARCH_IDS.google,
   BUILTIN_WEB_SEARCH_IDS.urban,
   BUILTIN_WEB_SEARCH_IDS.merriamWebster,
+  BUILTIN_WEB_SEARCH_IDS.goodreads,
 ];
 
 const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
@@ -49,6 +50,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     [BUILTIN_WEB_SEARCH_IDS.google]: false,
     [BUILTIN_WEB_SEARCH_IDS.urban]: false,
     [BUILTIN_WEB_SEARCH_IDS.merriamWebster]: false,
+    [BUILTIN_WEB_SEARCH_IDS.goodreads]: false,
   },
   webSearches: [],
 };

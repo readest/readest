@@ -9,6 +9,8 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, type MenuItemOptions } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
+import { openExternalUrl } from '@/utils/open';
+import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
@@ -269,6 +271,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         action: async () => {
           const folder = `${settings.localBooksDir}/${book.hash}`;
           revealItemInDir(folder);
+        },
+      },
+      searchGoodreads: {
+        text: _('Search on Goodreads'),
+        action: async () => {
+          openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)));
         },
       },
       download: {

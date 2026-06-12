@@ -201,6 +201,7 @@ export const BUILTIN_WEB_SEARCH_IDS = {
   google: 'web:builtin:google',
   urban: 'web:builtin:urban',
   merriamWebster: 'web:builtin:merriam-webster',
+  goodreads: 'web:builtin:goodreads',
 } as const;
 
 export type BuiltinWebSearchId =

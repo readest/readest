@@ -9,9 +9,12 @@ import {
   MdExpandMore,
   MdExpandLess,
 } from 'react-icons/md';
+import { FaGoodreads } from 'react-icons/fa';
 
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
+import { openExternalUrl } from '@/utils/open';
+import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
@@ -98,6 +101,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdOutlineEdit className='hover:fill-blue-500' />
               </button>
             )}
+            <button
+              onClick={() => openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))}
+              title={_('Search on Goodreads')}
+            >
+              <FaGoodreads className='fill-base-content' />
+            </button>
             {onDelete && (
               <Dropdown
                 label={_('Delete Book Options')}
