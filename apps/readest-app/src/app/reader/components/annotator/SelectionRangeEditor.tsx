@@ -1,16 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { HighlightColor } from '@/types/book';
-import { Point, TextSelection } from '@/utils/sel';
+import { Point, rangeFromAnchorToPoint, TextSelection } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import {
-  buildRangeFromPoints,
-  getHandlePositionsFromRange,
-  getHighlightColorHex,
-} from '../../utils/annotatorUtil';
+import { getHandlePositionsFromRange, getHighlightColorHex } from '../../utils/annotatorUtil';
 import MagnifierLoupe from './MagnifierLoupe';
 import { Handle } from './AnnotationRangeEditor';
 
@@ -39,8 +35,7 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
-  const { getView, getViewSettings } = useReaderStore();
-  const view = getView(bookKey);
+  const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
   const isEink = settings.globalViewSettings.isEink;
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
@@ -67,38 +62,60 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
     }
   }, [bookKey, selection, isVertical]);
 
-  const updateFromPoints = useCallback(
-    (startPoint: Point, endPoint: Point) => {
-      const built = buildRangeFromPoints(view, startPoint, endPoint);
+  // The non-dragged end is anchored as a DOM position captured at drag start.
+  // Anchoring it to its window coordinate instead would silently re-target it
+  // whenever the content shifts underneath — e.g. the corner-dwell auto page
+  // turn (#1354) mid-drag — losing the previous page's part of the selection.
+  const fixedAnchorRef = useRef<{ node: Node; offset: number } | null>(null);
+
+  const updateFromDraggedPoint = useCallback(
+    (point: Point) => {
+      const anchor = fixedAnchorRef.current;
+      if (!anchor) return;
+      const doc = anchor.node.ownerDocument;
+      const win = doc?.defaultView;
+      if (!doc || !win) return;
+      const feRect = win.frameElement?.getBoundingClientRect();
+      const built = rangeFromAnchorToPoint(
+        doc,
+        anchor.node,
+        anchor.offset,
+        point.x - (feRect?.left ?? 0),
+        point.y - (feRect?.top ?? 0),
+      );
       if (!built) return;
-      lastBuiltRef.current = { range: built.range, index: built.index };
-      onRangeChange(built.range, built.index, false);
+      lastBuiltRef.current = { range: built, index: selection.index };
+      onRangeChange(built, selection.index, false);
     },
-    [view, onRangeChange],
+    [selection.index, onRangeChange],
   );
 
   const handleStartDragStart = useCallback(() => {
+    const base = lastBuiltRef.current?.range ?? selection.range;
+    fixedAnchorRef.current = { node: base.endContainer, offset: base.endOffset };
     draggingRef.current = 'start';
     setDraggingHandle('start');
     setLoupePoint({ ...startRef.current });
     onStartDrag();
-  }, [onStartDrag]);
+  }, [selection, onStartDrag]);
 
   const handleEndDragStart = useCallback(() => {
+    const base = lastBuiltRef.current?.range ?? selection.range;
+    fixedAnchorRef.current = { node: base.startContainer, offset: base.startOffset };
     draggingRef.current = 'end';
     setDraggingHandle('end');
     setLoupePoint({ ...endRef.current });
     onStartDrag();
-  }, [onStartDrag]);
+  }, [selection, onStartDrag]);
 
   const handleStartDrag = useCallback(
     (point: Point) => {
       setCurrentStart(point);
       setLoupePoint(point);
       startRef.current = point;
-      updateFromPoints(point, endRef.current);
+      updateFromDraggedPoint(point);
     },
-    [updateFromPoints],
+    [updateFromDraggedPoint],
   );
 
   const handleEndDrag = useCallback(
@@ -106,9 +123,9 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
       setCurrentEnd(point);
       setLoupePoint(point);
       endRef.current = point;
-      updateFromPoints(startRef.current, point);
+      updateFromDraggedPoint(point);
     },
-    [updateFromPoints],
+    [updateFromDraggedPoint],
   );
 
   const handleDragEnd = useCallback(() => {
