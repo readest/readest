@@ -92,7 +92,12 @@ async function readSource(fs: FileSystem, source: SelectedFile): Promise<File> {
 }
 
 function classify(source: SelectedFile): SourceFile {
-  const rawName = source.file?.name ?? (source.path ? getFilename(source.path) : '');
+  // Prefer the resolved display name. For Tauri `content://` URIs the path may
+  // be an opaque SAF document id with no filename/extension (some Android
+  // devices, #4489); `source.name` carries the real DISPLAY_NAME resolved via
+  // the native content resolver. `getFilename(path)` is only a last-resort
+  // fallback for the rare case neither is set.
+  const rawName = source.file?.name ?? source.name ?? (source.path ? getFilename(source.path) : '');
   const name = rawName;
   const lower = name.toLowerCase();
   const lastDot = lower.lastIndexOf('.');
