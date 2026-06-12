@@ -56,14 +56,20 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
     <>
       <div
         className={clsx(
-          'notch-area absolute left-0 right-0 top-0 z-10',
-          isScrolled && !isVertical && 'bg-base-100',
+          // Spans the grid cell and clips down to the top inset strip so the
+          // texture ::before (.notch-masked, see styles/textures.ts) shares
+          // .foliate-viewer::before's paint box — background-size cover/contain
+          // resolves against the element box, so a strip-sized box would
+          // mis-tile at the seam (#4486). clip-path also clips hit-testing,
+          // keeping the click target the inset strip only.
+          'notch-area absolute inset-0 z-10',
+          isScrolled && !isVertical && 'notch-masked bg-base-100',
         )}
         role='none'
         tabIndex={-1}
         onClick={handleNotchClick}
         style={{
-          height: `${topInset}px`,
+          clipPath: `inset(0 0 calc(100% - ${topInset}px) 0)`,
         }}
       />
       <div

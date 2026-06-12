@@ -94,7 +94,7 @@ const createTextureCSS = (texture: BackgroundTexture) => {
     }
 
     body::before, .sidebar-container::before, .notebook-container::before,
-    .foliate-viewer::before {
+    .foliate-viewer::before, .notch-masked::before {
       content: "";
       position: absolute;
       top: 0;
