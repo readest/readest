@@ -1163,18 +1163,40 @@ export const applyImageStyle = (document: Document) => {
 };
 
 export const keepTextAlignment = (document: Document) => {
-  document.querySelectorAll('div, p, blockquote, dd').forEach((el) => {
-    const computedStyle = window.getComputedStyle(el);
-    if (computedStyle.textAlign === 'center') {
-      el.classList.add('aligned-center');
-    } else if (computedStyle.textAlign === 'left') {
-      el.classList.add('aligned-left');
-    } else if (computedStyle.textAlign === 'right') {
-      el.classList.add('aligned-right');
-    } else if (computedStyle.textAlign === 'justify') {
-      el.classList.add('aligned-justify');
-    }
-  });
+  // Why two-phase: the previous version read getComputedStyle and wrote
+  // classList.add inside the same forEach pass. classList.add invalidates
+  // the document's style cache (CSS selectors may target the class on
+  // descendants), so the next getComputedStyle() in the loop forced the
+  // browser to recompute style for the whole document. With ~hundreds of
+  // p/div/blockquote/dd elements per chapter (a typical Harry Potter
+  // section) that turned the loop into N x layout — visible on a release
+  // Android build as a 1210ms "Forced reflow" violation in the browser
+  // console and the dominant chunk of "Layout = 32.8% of TBT" in the
+  // open-book Performance trace.
+  //
+  // Two-phase read-then-write keeps the loop O(N) elements + 1 recalc
+  // instead of O(N) recalcs.
+  const win = document.defaultView ?? window;
+  const els = document.querySelectorAll('div, p, blockquote, dd');
+  const alignClasses = new Array<string | null>(els.length);
+  // Read pass: collect computed text-align for every element. The browser
+  // computes style once for the whole document on the first call, then
+  // every subsequent getComputedStyle in this pass reuses that result.
+  for (let i = 0; i < els.length; i++) {
+    const align = win.getComputedStyle(els[i]!).textAlign;
+    if (align === 'center') alignClasses[i] = 'aligned-center';
+    else if (align === 'left') alignClasses[i] = 'aligned-left';
+    else if (align === 'right') alignClasses[i] = 'aligned-right';
+    else if (align === 'justify') alignClasses[i] = 'aligned-justify';
+    else alignClasses[i] = null;
+  }
+  // Write pass: applies all classList changes in a single batch. Style
+  // invalidation happens once at the end, when the next layout-affecting
+  // operation forces a flush.
+  for (let i = 0; i < els.length; i++) {
+    const cls = alignClasses[i];
+    if (cls) els[i]!.classList.add(cls);
+  }
 };
 
 export const applyFixedlayoutStyles = (
