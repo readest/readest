@@ -6,7 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { formatNumber, formatProgress } from '@/utils/progress';
+import { formatNumber, formatProgress, getReferencePageInfo } from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
 import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
@@ -51,7 +51,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const lang = localStorage?.getItem('i18nextLng') || '';
   const localize = isVertical && lang.toLowerCase().startsWith('zh');
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
-  const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+  const referenceInfo =
+    readingProgressStyle === 'reference'
+      ? getReferencePageInfo({
+          pageList: bookData?.bookDoc?.pageList,
+          pageItem: progress?.pageItem,
+          fraction: pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0,
+          referencePageCount: viewSettings.referencePageCount,
+        })
+      : null;
+  const progressInfo = referenceInfo
+    ? `${referenceInfo.current}${isVertical ? ' · ' : ' / '}${referenceInfo.total}`
+    : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
   const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const pagesLeft = bookData?.isFixedLayout

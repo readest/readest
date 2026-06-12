@@ -84,6 +84,7 @@ export interface BookDoc {
   };
   dir: string;
   toc?: Array<TOCItem>;
+  pageList?: Array<TOCItem>;
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;

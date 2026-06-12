@@ -149,6 +149,7 @@ const FoliateViewer: React.FC<{
       bookKey,
       detail.cfi,
       detail.tocItem,
+      detail.pageItem,
       detail.section,
       pageInfo,
       detail.time,

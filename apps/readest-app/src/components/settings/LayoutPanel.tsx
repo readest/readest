@@ -85,6 +85,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   );
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
+  const [referencePageCount, setReferencePageCount] = useState(viewSettings.referencePageCount);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
 
   const resetToDefaults = useResetViewSettings();
@@ -389,6 +390,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'progressStyle', progressStyle, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressStyle]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'referencePageCount', referencePageCount, true, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referencePageCount]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'tapToToggleFooter', tapToToggleFooter, false, false);
@@ -718,10 +724,22 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
             options={[
               { value: 'fraction', label: _('Page Number') },
               { value: 'percentage', label: _('Percentage') },
+              { value: 'reference', label: _('Reference Pages') },
             ]}
             disabled={!showProgressInfo}
           />
         </SettingsRow>
+        {progressStyle === 'reference' && !bookData?.bookDoc?.pageList?.length && (
+          <NumberInput
+            label={_('Reference Page Count')}
+            value={referencePageCount}
+            onChange={setReferencePageCount}
+            disabled={!showProgressInfo}
+            min={0}
+            max={10000}
+            data-setting-id='settings.layout.referencePageCount'
+          />
+        )}
         <SettingsSwitchRow
           label={_('Show Current Time')}
           checked={showCurrentTime}
