@@ -89,27 +89,32 @@ const BookCellInner: React.FC<BookCellProps> = ({
   onGoToLibrary,
 }) => {
   // Per-field selectors — see store/readerProgressStore.ts header for the
-  // "destructure-subscribes-the-whole-store" rationale. Without these,
-  // every BookCell would re-render per page turn and defeat React.memo.
+  // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
-  const getViewState = useReaderStore((s) => s.getViewState);
-  const getViewSettings = useReaderStore((s) => s.getViewSettings);
 
-  // Per-cell reactive subscription. Only re-renders when THIS book's
-  // progress changes, which is the only piece of data we need from
-  // the progress store for the section / pageinfo / sectionLabel
-  // props passed down to SectionInfo and FooterBar below.
+  // Per-cell reactive subscriptions. This cell re-renders when THIS book's
+  // progress changes (page turns) OR its view state changes. Both are
+  // needed: viewState carries `viewSettings` and `ribbonVisible`, which
+  // gate the chrome this cell mounts (Show Header / Show Footer, Double
+  // Border, bookmark Ribbon). Those settings save with applyStyles=false
+  // and the ribbon toggle writes no progress, so without a viewState
+  // subscription the toggles wouldn't take effect until the next page turn.
+  //
+  // Subscribing to the per-book slice is safe now that progress lives in
+  // its own store: `viewStates[key]` only bumps on low-frequency events
+  // (settings toggles, ribbon, init, sync), never on the per-swipe
+  // relocate path — so this does NOT reintroduce the commit storm the
+  // progress-store split removed.
   const progress = useBookProgress(bookKey);
+  const viewState = useReaderStore((s) => s.viewStates[bookKey]);
+  const viewSettings = viewState?.viewSettings ?? null;
 
-  // Imperative reads via the action getters. The progress subscription
-  // above is what drives this cell's re-renders, so these always run
-  // after each relocate and pick up the latest config (whose progress
-  // and location fields were just written by setProgress).
+  // config / bookData are read imperatively: their relevant fields are
+  // written alongside progress (setProgress / saveConfig), so the
+  // subscriptions above already drive the re-render that picks them up.
   const bookData = getBookData(bookKey);
   const config = getConfig(bookKey);
-  const viewSettings = getViewSettings(bookKey);
-  const viewState = getViewState(bookKey);
   const { book, bookDoc } = bookData || {};
 
   // viewSettings drives both viewInsets and the inset-derived geometry.
