@@ -47,6 +47,7 @@
 - [Android Open-with intent flow (#4521)](android-open-with-intent-flow.md) — "Open with"/"Send to" pipeline: `NativeBridgePlugin.kt::handleIntent` → `shared-intent` → `useAppUrlIngress` → `useOpenWithBooks` (VIEW=transient→reader, SEND=library+upload). Telegram fails where file-manager works on TWO axes: cold-start delivery (fixed by #4527, on dev NOT released v0.11.4) + foreign-private-file read (Telegram FileProvider non-persistable grant vs shared-storage FUSE real-path). adb MediaStore VIEW repro tests pipeline but CANNOT reproduce the read axis (MANAGE_EXTERNAL_STORAGE bypasses grant)
 
 ## Feature Notes
+- [Reference Pages (#672+#4542, PR #4549)](reference-pages-672-4542.md) — 'reference' progressStyle from foliate `pageItem`/`book.pageList` (numeric-max total rule, roman-tail safe); per-book `referencePageCount` via skipGlobal save; verification EPUBs + dev-web synthetic drag-drop import trick; locale-tail rebase-conflict recipe (checkout --ours → re-extract → re-translate)
 - [OPDS Firefox strict-XML parse (#4479)](opds-firefox-strict-xml-4479.md) — MEK feed has junk after `</feed>`; Firefox DOMParser → `<parsererror>` (silent back-nav), Chrome lenient; `parseOPDSXML` slices root start→last close tag; jsdom mirrors Firefox; wired into page.tsx + validateOPDSURL + feedChecker (latter also #4181 `looksLikeXMLContent` swap)
 - [OPDS 2.0 JSON search greyed out (#4502)](opds2-json-search-4502.md) — `isSearchLink` ignored templated `application/opds+json` links → `hasSearch` false → disabled navbar input; add `MIME.OPDS2`+`templated`, `expandOPDSSearchTemplate` (foliate `uri-template.js`), handleSearch OPDS2 branch. Gotcha: `resolveURL` mangles `{?query}` braces — expand template BEFORE resolving
 - [OPDS HTML description (#4503)](opds-html-description-4503.md) — detail-view descriptions showed raw `<p>`/`&quot;` tags; aggregator double-escapes `type="text"` summary + `PublicationView` dumped it into unsanitized `dangerouslySetInnerHTML`; fix = `getOPDSDescriptionHtml` (decode-one-level-iff-fully-escaped, then `sanitizeHtml`)
@@ -74,6 +75,9 @@
 - [Tauri menu append race (#4389)](tauri-menu-append-race-4389.md) — un-awaited `Menu.append()` (async IPC) in `BookshelfItem.tsx` → context-menu items shuffle order every open (native only, invisible in jsdom); fix = single `await Menu.new({ items })` of ordered `MenuItemOptions`; order/inclusion extracted to pure `getBookContextMenuItemIds` for unit testing
 - [TXT author recognition (#4390)](txt-author-recognition-4390.md) — 【】-titled Chinese web-novels show author missing/garbage; they're TXT→EPUB (title==full filename is the tell, check `txt.ts` not foliate-js); `extractTxtFilenameMetadata` only handled 《》 + greedy header capture grabbed metadata blobs; fix = `parseLabeledAuthor` for any filename + `isPlausibleAuthorName` guard
 
+## Library Architecture
+- [Book action platform surfaces](book-actions-platform-surfaces.md) — library context menu is **Tauri-desktop-only** (`hasContextMenu` false on web + iOS/Android); cross-platform book actions go in `BookDetailView`'s icon row. #4543 Goodreads search added both surfaces + a built-in web-search provider for highlighted-text lookup
+
 ## Architecture Notes
 - foliate-js is a git submodule at `packages/foliate-js/`
 - Multiview paginator: loads adjacent sections in background, multiple View/Overlayer instances per book
@@ -96,3 +100,4 @@
 - [Never push on every change](feedback_dont_push_every_change.md) — hold pushes during active bug iteration; commit locally only until user confirms or work hits a clean done-state
 - [No test seams in production code](feedback_no_test_seams_in_prod.md) — production must never import or call `__reset*ForTests`; cross-module test resets belong in the test file's beforeEach/afterEach
 - [Dependabot transitive fixes](dependabot-pnpm-overrides.md) — pin patched min-version in `pnpm-workspace.yaml` `overrides:` (NOT package.json `pnpm.overrides`, which pnpm 9+ ignores); watch for existing too-low pins; alert#≠issue# so no `Closes #` (PR #4523)
+- [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) — package small PRs from a dirty dev tree via temp-index plumbing (no worktree); slow pre-push hook (~55s full suite) + SOCKS-proxy SSH → idle "Broken pipe", fixed with `ServerAliveInterval`; `--no-verify` safe once the hook already passed (always `git ls-remote` to confirm a push landed)

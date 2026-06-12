@@ -29,6 +29,7 @@
   <a href="#planned-features">Planned Features</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#downloads">Downloads</a> •
+  <a href="#documentation">Documentation</a> •
   <a href="#getting-started">Getting Started</a> •
   <a href="#troubleshooting">Troubleshooting</a> •
   <a href="#support">Support</a> •
@@ -113,6 +114,12 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 - Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
 - Linux users can also install [Readest on Flathub][link-flathub].
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
+
+## Documentation
+
+Guides, tutorials, and FAQs for installing and using Readest live in the official documentation:
+
+📖 **[https://readest.com/docs][link-docs]**
 
 ## Requirements
 
@@ -350,6 +357,7 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
 [link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
 [link-web-readest]: https://web.readest.com
+[link-docs]: https://readest.com/docs
 [link-gh-releases]: https://github.com/readest/readest/releases
 [link-gh-commits]: https://github.com/readest/readest/commits/main
 [link-gh-pulse]: https://github.com/readest/readest/pulse
