@@ -77,13 +77,13 @@ jobs:
         run: |
           pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
-      - name: install LuaJIT (for koplugin lint)
-        run: sudo apt-get update && sudo apt-get install -y luajit
-
       - name: run format check
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
 
+      # pnpm lint here is web-only (tsgo + biome). The koplugin syntax check
+      # (lint:lua) runs in the test_extensions job, which installs LuaJIT only
+      # when the koplugin sources changed.
       - name: run lint
         working-directory: apps/readest-app
         run: |
@@ -180,8 +180,8 @@ jobs:
         working-directory: apps/readest-app
         run: pnpm test:browser
 
-  # Browser-extension tests + build always run. The koplugin Lua tests (and
-  # the ~45s LuaJIT/busted install they need) only run when the koplugin
+  # Browser-extension tests + build always run. The koplugin lint + Lua tests
+  # (and the ~45s LuaJIT/busted install they need) only run when the koplugin
   # sources changed, so most PRs skip that cost entirely.
   test_extensions:
     runs-on: ubuntu-latest
@@ -232,11 +232,11 @@ jobs:
           path: /var/cache/apt/archives
           key: apt-test-koplugin-${{ runner.os }}
 
-      - name: install LuaJIT + busted (for koplugin tests)
+      - name: install LuaJIT + busted (for koplugin lint + tests)
         if: steps.changes.outputs.koplugin == 'true'
         run: |
           sudo apt-get update
-          # luajit  — pnpm test:lua
+          # luajit  — pnpm lint:lua + pnpm test:lua
           # luarocks/libsqlite3-dev — required to build lsqlite3complete
           sudo apt-get install -y luajit luarocks libsqlite3-dev
           # Install busted + the SQLite binding the LibraryStore specs use,
@@ -245,6 +245,11 @@ jobs:
           # scripts/test-koplugin.mjs) picks them up.
           sudo luarocks --lua-version=5.1 install busted
           sudo luarocks --lua-version=5.1 install lsqlite3complete
+
+      - name: lint koplugin
+        if: steps.changes.outputs.koplugin == 'true'
+        working-directory: apps/readest-app
+        run: pnpm lint:lua
 
       - name: run koplugin tests
         if: steps.changes.outputs.koplugin == 'true'

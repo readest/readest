@@ -19,7 +19,7 @@
     "dev-ios": "tauri ios build -- --features devtools && ideviceinstaller install src-tauri/gen/apple/build/arm64/Readest.ipa",
     "i18n:extract": "i18next-scanner --config i18next-scanner.config.cjs",
     "i18n:extract:ext": "pnpm --filter @readest/send-to-readest-extension i18n:extract",
-    "lint": "tsgo --noEmit && biome lint . && pnpm lint:lua",
+    "lint": "tsgo --noEmit && biome lint .",
     "lint:lua": "node ../readest.koplugin/scripts/lint-koplugin.mjs",
     "test:lua": "node ../readest.koplugin/scripts/test-koplugin.mjs",
     "test": "dotenv -e .env -e .env.test.local -- vitest",
