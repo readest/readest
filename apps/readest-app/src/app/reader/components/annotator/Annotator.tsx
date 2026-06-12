@@ -46,7 +46,7 @@ import {
 import { Insets } from '@/types/misc';
 import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
-import { getCfiSpinePrefix, getIndexFromCfi, createCfiLocationMatcher } from '@/utils/cfi';
+import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -55,6 +55,7 @@ import {
   getHighlightColorHex,
   removeBookNoteOverlays,
 } from '../../utils/annotatorUtil';
+import { buildAnnotationIndex, selectLocationAnnotations } from '../../utils/annotationIndex';
 import {
   expandAllRenderedSections,
   expandGlobalAnnotation,
@@ -814,50 +815,23 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // O(N) walks with O(K) where K is the number of annotations in the
   // currently-visible chapter (typically a handful).
   //
-  // We also split out `globals` (book-wide highlights) into their own
-  // pre-filtered array so we don't re-walk N items each turn just to
-  // find the same few global ones. Both buckets are recomputed only
-  // when `booknotes` itself changes (add/remove/edit highlight) —
-  // not on every page turn.
-  const annotationIndex = useMemo(() => {
-    const bySection = new Map<string, BookNote[]>();
-    const globals: BookNote[] = [];
-    const booknotes = config.booknotes ?? [];
-    for (const item of booknotes) {
-      if (item.deletedAt) continue;
-      if (item.type !== 'annotation') continue;
-      if (!item.style) continue;
-      if (item.global) {
-        globals.push(item);
-        continue;
-      }
-      const spine = getCfiSpinePrefix(item.cfi);
-      if (!spine) continue;
-      const bucket = bySection.get(spine);
-      if (bucket) bucket.push(item);
-      else bySection.set(spine, [item]);
-    }
-    return { bySection, globals };
-  }, [config.booknotes]);
+  // `globals` (book-wide highlights) are split into their own pre-filtered
+  // array so we don't re-walk N items each turn just to find the same few
+  // global ones. The index is recomputed only when `booknotes` itself
+  // changes (add/remove/edit) — not on every page turn.
+  const annotationIndex = useMemo(
+    () => buildAnnotationIndex(config.booknotes ?? []),
+    [config.booknotes],
+  );
 
   useEffect(() => {
     if (!progress) return;
     const { location } = progress;
-    const sectionKey = getCfiSpinePrefix(location);
-    const candidates = sectionKey ? (annotationIndex.bySection.get(sectionKey) ?? []) : [];
-
     // Single pass over the *current chapter's* candidates: classify each
     // one into the in-page annotations / notes lists. Using the bucket
     // keeps this fast even when the user has thousands of highlights
     // elsewhere in the book.
-    const matchesLocation = createCfiLocationMatcher(location);
-    const annotations: BookNote[] = [];
-    const notes: BookNote[] = [];
-    for (const item of candidates) {
-      if (!matchesLocation(item.cfi)) continue;
-      annotations.push(item);
-      if (item.note && item.note.trim().length > 0) notes.push(item);
-    }
+    const { annotations, notes } = selectLocationAnnotations(annotationIndex, location);
 
     try {
       Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
