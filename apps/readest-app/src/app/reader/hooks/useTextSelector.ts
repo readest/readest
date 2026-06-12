@@ -10,6 +10,7 @@ import {
   isHyphenHandleBugProneRange,
   isPointerInsideSelection,
   Point,
+  rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
   TextSelection,
 } from '@/utils/sel';
@@ -341,7 +342,23 @@ export const useTextSelector = (
     sanitizedGestureRef.current = true;
     let finalRange = sel.getRangeAt(0);
     if (initial.prone) {
-      const repaired = repairJumpedSelectionRange(sel, initial.node, initial.offset);
+      // The corrupted drag can leave EITHER selection end at the bogus bound
+      // (base re-anchor or extent overshoot). The trustworthy facts are the
+      // gesture-initial anchor and the finger position (pointerPos, reset at
+      // touchstart and fed by native touchmove): rebuild between those when
+      // the gesture moved; otherwise fall back to the anchor-jump repair.
+      const p = pointerPos.current;
+      const feRect = win.frameElement?.getBoundingClientRect();
+      const clamped = p
+        ? rangeFromAnchorToPoint(
+            doc,
+            initial.node,
+            initial.offset,
+            p.x - (feRect?.left ?? 0),
+            p.y - (feRect?.top ?? 0),
+          )
+        : null;
+      const repaired = clamped ?? repairJumpedSelectionRange(sel, initial.node, initial.offset);
       if (repaired) finalRange = repaired;
     }
     guardProgrammaticSelection();
@@ -426,6 +443,9 @@ export const useTextSelector = (
     isTouchStarted.current = true;
     gestureInitialRef.current = null;
     sanitizedGestureRef.current = false;
+    // Pointer positions are per-gesture: a stale point from a previous touch
+    // must not steer this gesture's selection repair. Touch moves re-feed it.
+    pointerPos.current = null;
   };
   const handleTouchMove = (ev: TouchEvent) => {
     if (isInstantAnnotating.current) {

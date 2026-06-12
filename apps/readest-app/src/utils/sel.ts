@@ -540,6 +540,57 @@ export const isHyphenHandleBugProneRange = (range: Range, vertical = false): boo
   return blockHasGeneratedHyphens(block, vertical);
 };
 
+// Rebuild a selection range between a known-good anchor and the caret at a
+// point (in `doc` viewport coordinates) — used to restore the range a
+// corrupted long-press drag was meant to produce: anchored at the
+// gesture-initial position, ending where the finger was. Snapped to word
+// boundaries like the native word-granularity drag.
+export const rangeFromAnchorToPoint = (
+  doc: Document,
+  anchorNode: Node,
+  anchorOffset: number,
+  x: number,
+  y: number,
+): Range | null => {
+  let pointNode: Node | null = null;
+  let pointOffset = 0;
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (pos) {
+      pointNode = pos.offsetNode;
+      pointOffset = pos.offset;
+    }
+  } else if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (range) {
+      pointNode = range.startContainer;
+      pointOffset = range.startOffset;
+    }
+  }
+  if (!pointNode) return null;
+  const range = doc.createRange();
+  try {
+    const anchorPoint = doc.createRange();
+    anchorPoint.setStart(anchorNode, anchorOffset);
+    anchorPoint.collapse(true);
+    const caretPoint = doc.createRange();
+    caretPoint.setStart(pointNode, pointOffset);
+    caretPoint.collapse(true);
+    if (anchorPoint.compareBoundaryPoints(Range.START_TO_START, caretPoint) <= 0) {
+      range.setStart(anchorNode, anchorOffset);
+      range.setEnd(pointNode, pointOffset);
+    } else {
+      range.setStart(pointNode, pointOffset);
+      range.setEnd(anchorNode, anchorOffset);
+    }
+  } catch {
+    return null;
+  }
+  if (range.collapsed) return null;
+  snapRangeToWords(range);
+  return range;
+};
+
 // During a long-press drag the bug re-anchors the selection base at the last
 // hyphen, dropping the word the gesture started on. If the gesture-initial
 // anchor fell out of the final range, rebuild [initial anchor → focus] (the

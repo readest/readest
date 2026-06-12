@@ -3,6 +3,7 @@ import {
   isRangeStartAtBlockStart,
   hasTrailingHyphenRectPattern,
   isHyphenHandleBugProneRange,
+  rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
 } from '@/utils/sel';
 
@@ -174,6 +175,50 @@ describe('repairJumpedSelectionRange', () => {
     // assert it does not throw and returns a range or null.
     const result = repairJumpedSelectionRange(sel, node, 53);
     if (result) expect(result.collapsed).toBe(false);
+  });
+});
+
+describe('rangeFromAnchorToPoint', () => {
+  const text = 'Since the mid-1990s, a group of economists have been saying just that.';
+
+  const setupCaretStub = (node: Text, offset: number) => {
+    const stub = () => ({ offsetNode: node, offset });
+    (document as unknown as Record<string, unknown>)['caretPositionFromPoint'] = stub;
+  };
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'caretPositionFromPoint');
+  });
+
+  it('builds a forward range from the anchor to the caret at the point', () => {
+    const p = makeParagraph(`<p>${text}</p>`);
+    const node = p.firstChild as Text;
+    setupCaretStub(node, 43);
+    const range = rangeFromAnchorToPoint(document, node, 0, 100, 50);
+    expect(range).not.toBeNull();
+    expect(range!.startOffset).toBe(0);
+    // Snapped to the word boundary containing offset 43 ("economists").
+    expect(range!.endOffset).toBeGreaterThanOrEqual(42);
+    expect(range!.toString().startsWith('Since')).toBe(true);
+  });
+
+  it('orders the range when the point precedes the anchor', () => {
+    const p = makeParagraph(`<p>${text}</p>`);
+    const node = p.firstChild as Text;
+    setupCaretStub(node, 10);
+    const range = rangeFromAnchorToPoint(document, node, 32, 5, 5);
+    expect(range).not.toBeNull();
+    expect(range!.startOffset).toBeLessThan(range!.endOffset);
+    expect(range!.endOffset).toBe(32);
+  });
+
+  it('returns null when the point resolves nowhere or collapses', () => {
+    const p = makeParagraph(`<p>${text}</p>`);
+    const node = p.firstChild as Text;
+    // jsdom has no caretPositionFromPoint/caretRangeFromPoint by default.
+    expect(rangeFromAnchorToPoint(document, node, 0, 10, 10)).toBeNull();
+    setupCaretStub(node, 0);
+    expect(rangeFromAnchorToPoint(document, node, 0, 10, 10)).toBeNull();
   });
 });
 
