@@ -123,8 +123,16 @@ jobs:
           path: apps/readest-app/playwright-report/
           retention-days: 7
 
+  # The jsdom unit suite is the slowest part of the PR checks, so it is split
+  # across two parallel shards (vitest --shard). The browser tests need
+  # Playwright and run only on shard 1; koplugin + browser-extension tests
+  # moved to the test_extensions job.
   test_web_app:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -144,13 +152,88 @@ jobs:
         run: |
           pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
+      # Playwright is only needed by the browser tests, which run on shard 1.
+      - name: cache playwright browsers
+        if: matrix.shard == 1
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: install playwright browsers
+        if: matrix.shard == 1
+        working-directory: apps/readest-app
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: run web unit tests (shard ${{ matrix.shard }}/2)
+        working-directory: apps/readest-app
+        run: pnpm test:pr:web:unit --shard=${{ matrix.shard }}/2
+
+      - name: run web browser tests
+        if: matrix.shard == 1
+        working-directory: apps/readest-app
+        run: pnpm test:browser
+
+  # Browser-extension tests + build always run. The koplugin Lua tests (and
+  # the ~45s LuaJIT/busted install they need) only run when the koplugin
+  # sources changed, so most PRs skip that cost entirely.
+  test_extensions:
+    runs-on: ubuntu-latest
+    # pull-requests: read lets dorny/paths-filter list a PR's changed files
+    # via the REST API (the top-level grant is contents: read only).
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: 'true'
+
+      - name: detect koplugin changes
+        id: changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        with:
+          filters: |
+            koplugin:
+              - 'apps/readest.koplugin/**'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+
+      - name: setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install Dependencies
+        working-directory: apps/readest-app
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
+
+      - name: run extension tests
+        working-directory: apps/readest-app
+        run: pnpm test:extension
+
+      - name: build browser extension
+        working-directory: apps/readest-app
+        run: pnpm build-browser-ext
+
       - name: cache apt packages
+        if: steps.changes.outputs.koplugin == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: /var/cache/apt/archives
-          key: apt-test-web-${{ runner.os }}
+          key: apt-test-koplugin-${{ runner.os }}
 
       - name: install LuaJIT + busted (for koplugin tests)
+        if: steps.changes.outputs.koplugin == 'true'
         run: |
           sudo apt-get update
           # luajit  — pnpm test:lua
@@ -163,27 +246,8 @@ jobs:
           sudo luarocks --lua-version=5.1 install busted
           sudo luarocks --lua-version=5.1 install lsqlite3complete
 
-      - name: cache playwright browsers
-        id: playwright-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: install playwright browsers
-        working-directory: apps/readest-app
-        run: |
-          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
-            npx playwright install-deps chromium
-          else
-            npx playwright install --with-deps chromium
-          fi
-
-      - name: run web tests
-        working-directory: apps/readest-app
-        run: pnpm test:pr:web
-
       - name: run koplugin tests
+        if: steps.changes.outputs.koplugin == 'true'
         working-directory: apps/readest-app
         run: pnpm test:lua
 
