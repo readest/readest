@@ -349,6 +349,14 @@ export const useTextSelector = (
     await new Promise<void>((resolve) =>
       win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
     );
+    // A competing gesture may have touched the selection while we waited —
+    // e.g. a tap collapses the old selection to a caret at the tapped point,
+    // which can also mutate `finalRange` in place. Re-asserting then would
+    // resurrect a stale (or collapsed) selection, so bail out instead.
+    if (sel.rangeCount > 0 || finalRange.collapsed) {
+      releaseProgrammaticSelection();
+      return;
+    }
     sel.addRange(finalRange);
     releaseProgrammaticSelection();
     await makeSelection(sel, index, false, true);
