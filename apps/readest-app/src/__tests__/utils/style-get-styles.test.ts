@@ -580,6 +580,24 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).toContain('body.theme-dark');
   });
 
+  it('keeps body.theme-dark transparent in dark mode so the host background texture is not occluded (#4446)', () => {
+    const vs = makeViewSettings({ overrideColor: false, backgroundTextureId: 'leaves' });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    expect(css).toMatch(/body\.theme-dark\s*\{\s*background-color: transparent !important;/);
+    expect(css).not.toMatch(/body\.theme-dark\s*\{\s*background-color: #1a1a1a !important/);
+    // #4392 inline light-callout overrides must keep forcing the theme bg
+    expect(css).toContain('background-color: #fff"]');
+    expect(css).toContain('background-color: #1a1a1a !important');
+  });
+
+  it('keeps body.theme-dark transparent even without a texture (docBackground is captured once per section load)', () => {
+    const vs = makeViewSettings({ overrideColor: false, backgroundTextureId: 'none' });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    expect(css).toMatch(/body\.theme-dark\s*\{\s*background-color: transparent !important;/);
+  });
+
   it('does not add inline white background overrides in light mode', () => {
     const vs = makeViewSettings({ overrideColor: false });
     const theme = makeThemeCode({ isDarkMode: false });

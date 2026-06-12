@@ -191,8 +191,14 @@ const getDarkModeLightBackgroundOverrides = (bg: string) => `
     *[style*="background: rgb(255"], *[style*="background:rgb(255"] {
       background-color: ${bg} !important;
     }
+    /* Force transparent, not the theme bg: the dark page fill already comes from
+       the paginator container / reader grid cell, while an opaque body paints over
+       the host background texture (#4446) — and foliate captures docBackground once
+       per section load, so the body must stay transparent regardless of texture
+       state. Book-forced light page backgrounds still get neutralized (#4392) since
+       the theme-dark fill shows through. */
     body.theme-dark {
-      background-color: ${bg} !important;
+      background-color: transparent !important;
     }
 `;
 
