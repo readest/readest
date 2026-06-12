@@ -107,7 +107,7 @@ jobs:
 
       - name: create AVD snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
           api-level: 34
           arch: x86_64
@@ -118,7 +118,7 @@ jobs:
           script: echo "AVD snapshot created"
 
       - name: run Android e2e lane
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
           api-level: 34
           arch: x86_64
