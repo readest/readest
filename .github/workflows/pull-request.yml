@@ -297,6 +297,10 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
         with:
           toolchain: stable
+          # Disable this action's built-in rust-cache so the explicit
+          # Swatinem/rust-cache below is the single cache (it's the one
+          # configured with cache-workspace-crates for the vendored tauri fork).
+          cache: false
 
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
