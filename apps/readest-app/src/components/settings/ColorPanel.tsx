@@ -380,7 +380,6 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             userHighlightColors={userHighlightColors}
             defaultHighlightLabels={defaultHighlightLabels}
             highlightOpacity={highlightOpacity}
-            isEink={viewSettings.isEink}
             onCustomHighlightColorsChange={handleCustomHighlightColorsChange}
             onUserHighlightColorsChange={handleUserHighlightColorsChange}
             onDefaultHighlightLabelsChange={handleDefaultHighlightLabelsChange}
