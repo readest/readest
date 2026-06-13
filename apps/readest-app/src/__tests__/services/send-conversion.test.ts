@@ -1,9 +1,21 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { convertToEpub, isConvertible, mimeToKind } from '@/services/send/conversion/convertToEpub';
 import { ConversionError } from '@/services/send/conversion/types';
 
 const encode = (s: string): ArrayBuffer => new TextEncoder().encode(s).buffer as ArrayBuffer;
+
+// The `article`/`page` conversion paths fetch a favicon + author image for the
+// synthetic cover. A unit test must not hit the real network: a live fetch to
+// the sample URLs can hang up to faviconFetcher's 6s timeout, which exceeds the
+// 5s test timeout and makes the suite intermittently fail. Fail fast instead so
+// the cover falls back to its initial-letter tile.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network disabled in tests')));
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('isConvertible / mimeToKind', () => {
   test('recognizes convertible MIME types', () => {
