@@ -6,4 +6,5 @@ export type AnnotationToolType =
   | 'dictionary'
   | 'translate'
   | 'tts'
-  | 'proofread';
+  | 'proofread'
+  | 'share';
