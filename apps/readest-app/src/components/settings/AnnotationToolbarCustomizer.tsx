@@ -342,7 +342,7 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
             <Zone
               id='toolbar'
               items={items.toolbar}
-              emptyHint={_('No tools — drag one here.')}
+              emptyHint={_('No tools, drag one here')}
               renderChip={renderToolbarChip}
             />
           </div>

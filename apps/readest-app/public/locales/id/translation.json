@@ -1685,9 +1685,9 @@
   "Customize Toolbar": "Sesuaikan Bilah Alat",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Seret alat di antara baris untuk menampilkan atau menyembunyikannya dan mengatur ulang bilah alat. Anda juga dapat mengetuk alat untuk memindahkannya.",
   "In toolbar": "Di bilah alat",
-  "No tools — drag one here.": "Tidak ada alat — seret satu ke sini.",
   "Available": "Tersedia",
   "All tools are in the toolbar.": "Semua alat ada di bilah alat.",
   "Add all": "Tambah semua",
-  "Clear all": "Hapus semua"
+  "Clear all": "Hapus semua",
+  "No tools, drag one here": "Tidak ada alat, seret satu ke sini"
 }

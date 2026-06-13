@@ -1784,9 +1784,9 @@
   "Customize Toolbar": "Налаштувати панель інструментів",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Перетягуйте інструменти між рядками, щоб показати чи приховати їх і змінити порядок на панелі інструментів. Також можна торкнутися інструмента, щоб перемістити його.",
   "In toolbar": "На панелі інструментів",
-  "No tools — drag one here.": "Немає інструментів — перетягніть один сюди.",
   "Available": "Доступні",
   "All tools are in the toolbar.": "Усі інструменти на панелі інструментів.",
   "Add all": "Додати все",
-  "Clear all": "Очистити все"
+  "Clear all": "Очистити все",
+  "No tools, drag one here": "Немає інструментів, перетягніть один сюди"
 }

@@ -1685,9 +1685,9 @@
   "Customize Toolbar": "ལག་ཆ་ཕྲ་མོའི་ཕྲེང་རང་སྒྲིག",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "ལག་ཆ་རྣམས་ཕྲེང་བར་འདྲུད་ནས་མངོན་པའམ་སྦས་ཐུབ་ལ་ལག་ཆའི་ཕྲེང་གི་གོ་རིམ་ཡང་བསྒྱུར་ཐུབ། ལག་ཆ་ཞིག་ལ་མནན་ནས་སྤོ་ཐུབ།",
   "In toolbar": "ལག་ཆའི་ཕྲེང་ནང་།",
-  "No tools — drag one here.": "ལག་ཆ་མེད། འདིར་གཅིག་འདྲུད་རོགས།",
   "Available": "ཐོབ་རུང་།",
   "All tools are in the toolbar.": "ལག་ཆ་ཡོངས་རྫོགས་ལག་ཆའི་ཕྲེང་ནང་ཡོད།",
   "Add all": "ཚང་མ་སྣོན་པ།",
-  "Clear all": "ཚང་མ་གཙང་སེལ།"
+  "Clear all": "ཚང་མ་གཙང་སེལ།",
+  "No tools, drag one here": "ལག་ཆ་མེད། འདིར་གཅིག་འདྲུད་རོགས།"
 }

@@ -1751,9 +1751,9 @@
   "Customize Toolbar": "Personalizza barra degli strumenti",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Trascina gli strumenti tra le righe per mostrarli o nasconderli e riordinare la barra degli strumenti. Puoi anche toccare uno strumento per spostarlo.",
   "In toolbar": "Nella barra degli strumenti",
-  "No tools — drag one here.": "Nessuno strumento — trascinane uno qui.",
   "Available": "Disponibili",
   "All tools are in the toolbar.": "Tutti gli strumenti sono nella barra degli strumenti.",
   "Add all": "Aggiungi tutto",
-  "Clear all": "Cancella tutto"
+  "Clear all": "Cancella tutto",
+  "No tools, drag one here": "Nessuno strumento, trascinane uno qui"
 }

@@ -1685,9 +1685,9 @@
   "Customize Toolbar": "도구 모음 사용자 지정",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "도구를 행 사이로 드래그하여 표시하거나 숨기고 도구 모음의 순서를 바꿉니다. 도구를 탭하여 옮길 수도 있습니다.",
   "In toolbar": "도구 모음에 있음",
-  "No tools — drag one here.": "도구가 없습니다 — 여기로 하나를 드래그하세요.",
   "Available": "사용 가능",
   "All tools are in the toolbar.": "모든 도구가 도구 모음에 있습니다.",
   "Add all": "모두 추가",
-  "Clear all": "모두 지우기"
+  "Clear all": "모두 지우기",
+  "No tools, drag one here": "도구가 없습니다, 여기로 하나를 드래그하세요"
 }

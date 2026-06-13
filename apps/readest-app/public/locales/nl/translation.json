@@ -1718,9 +1718,9 @@
   "Customize Toolbar": "Werkbalk aanpassen",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Sleep gereedschappen tussen de rijen om ze te tonen of te verbergen en de werkbalk te herschikken. Je kunt ook op een gereedschap tikken om het te verplaatsen.",
   "In toolbar": "Op de werkbalk",
-  "No tools — drag one here.": "Geen gereedschappen — sleep er een hierheen.",
   "Available": "Beschikbaar",
   "All tools are in the toolbar.": "Alle gereedschappen staan op de werkbalk.",
   "Add all": "Alles toevoegen",
-  "Clear all": "Alles wissen"
+  "Clear all": "Alles wissen",
+  "No tools, drag one here": "Geen gereedschappen, sleep er een hierheen"
 }

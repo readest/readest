@@ -1718,9 +1718,9 @@
   "Customize Toolbar": "سفارشی‌سازی نوار ابزار",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "ابزارها را بین ردیف‌ها بکشید تا آن‌ها را نمایش داده یا پنهان کنید و ترتیب نوار ابزار را تغییر دهید. همچنین می‌توانید برای جابه‌جایی یک ابزار روی آن ضربه بزنید.",
   "In toolbar": "در نوار ابزار",
-  "No tools — drag one here.": "هیچ ابزاری نیست — یکی را به اینجا بکشید.",
   "Available": "در دسترس",
   "All tools are in the toolbar.": "همهٔ ابزارها در نوار ابزار هستند.",
   "Add all": "افزودن همه",
-  "Clear all": "پاک کردن همه"
+  "Clear all": "پاک کردن همه",
+  "No tools, drag one here": "هیچ ابزاری نیست، یکی را به اینجا بکشید"
 }

@@ -1718,9 +1718,9 @@
   "Customize Toolbar": "Προσαρμογή γραμμής εργαλείων",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Σύρετε εργαλεία ανάμεσα στις σειρές για να τα εμφανίσετε ή να τα αποκρύψετε και να αναδιατάξετε τη γραμμή εργαλείων. Μπορείτε επίσης να πατήσετε ένα εργαλείο για να το μετακινήσετε.",
   "In toolbar": "Στη γραμμή εργαλείων",
-  "No tools — drag one here.": "Δεν υπάρχουν εργαλεία — σύρετε ένα εδώ.",
   "Available": "Διαθέσιμα",
   "All tools are in the toolbar.": "Όλα τα εργαλεία βρίσκονται στη γραμμή εργαλείων.",
   "Add all": "Προσθήκη όλων",
-  "Clear all": "Εκκαθάριση όλων"
+  "Clear all": "Εκκαθάριση όλων",
+  "No tools, drag one here": "Δεν υπάρχουν εργαλεία, σύρετε ένα εδώ"
 }

@@ -1784,9 +1784,9 @@
   "Customize Toolbar": "Dostosuj pasek narzędzi",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Przeciągaj narzędzia między wierszami, aby je pokazać lub ukryć i zmienić kolejność paska narzędzi. Możesz też dotknąć narzędzia, aby je przenieść.",
   "In toolbar": "Na pasku narzędzi",
-  "No tools — drag one here.": "Brak narzędzi — przeciągnij jedno tutaj.",
   "Available": "Dostępne",
   "All tools are in the toolbar.": "Wszystkie narzędzia są na pasku narzędzi.",
   "Add all": "Dodaj wszystkie",
-  "Clear all": "Wyczyść wszystkie"
+  "Clear all": "Wyczyść wszystkie",
+  "No tools, drag one here": "Brak narzędzi, przeciągnij jedno tutaj"
 }

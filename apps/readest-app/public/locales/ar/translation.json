@@ -1850,9 +1850,9 @@
   "Customize Toolbar": "تخصيص شريط الأدوات",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "اسحب الأدوات بين الصفوف لإظهارها أو إخفائها وإعادة ترتيب شريط الأدوات. يمكنك أيضًا النقر على أداة لنقلها.",
   "In toolbar": "في شريط الأدوات",
-  "No tools — drag one here.": "لا توجد أدوات — اسحب واحدة إلى هنا.",
   "Available": "متاحة",
   "All tools are in the toolbar.": "جميع الأدوات موجودة في شريط الأدوات.",
   "Add all": "إضافة الكل",
-  "Clear all": "مسح الكل"
+  "Clear all": "مسح الكل",
+  "No tools, drag one here": "لا توجد أدوات، اسحب واحدة إلى هنا"
 }

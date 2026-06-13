@@ -1751,9 +1751,9 @@
   "Customize Toolbar": "התאמת סרגל הכלים",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "גררו כלים בין השורות כדי להציג או להסתיר אותם ולסדר מחדש את סרגל הכלים. אפשר גם להקיש על כלי כדי להעביר אותו.",
   "In toolbar": "בסרגל הכלים",
-  "No tools — drag one here.": "אין כלים — גררו אחד לכאן.",
   "Available": "זמינים",
   "All tools are in the toolbar.": "כל הכלים נמצאים בסרגל הכלים.",
   "Add all": "הוסף הכול",
-  "Clear all": "נקה הכול"
+  "Clear all": "נקה הכול",
+  "No tools, drag one here": "אין כלים, גררו אחד לכאן"
 }

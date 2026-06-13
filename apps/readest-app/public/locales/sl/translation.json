@@ -1784,9 +1784,9 @@
   "Customize Toolbar": "Prilagodi orodno vrstico",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Povlecite orodja med vrsticami, da jih prikažete ali skrijete in prerazporedite orodno vrstico. Orodje lahko tudi tapnete, da ga premaknete.",
   "In toolbar": "V orodni vrstici",
-  "No tools — drag one here.": "Ni orodij — povlecite eno sem.",
   "Available": "Na voljo",
   "All tools are in the toolbar.": "Vsa orodja so v orodni vrstici.",
   "Add all": "Dodaj vse",
-  "Clear all": "Počisti vse"
+  "Clear all": "Počisti vse",
+  "No tools, drag one here": "Ni orodij, povlecite eno sem"
 }

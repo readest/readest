@@ -1718,9 +1718,9 @@
   "Customize Toolbar": "Werkzeugleiste anpassen",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Ziehe Werkzeuge zwischen den Zeilen, um sie ein- oder auszublenden und die Werkzeugleiste neu anzuordnen. Du kannst auch auf ein Werkzeug tippen, um es zu verschieben.",
   "In toolbar": "In der Werkzeugleiste",
-  "No tools — drag one here.": "Keine Werkzeuge — zieh eines hierher.",
   "Available": "Verfügbar",
   "All tools are in the toolbar.": "Alle Werkzeuge befinden sich in der Werkzeugleiste.",
   "Add all": "Alle hinzufügen",
-  "Clear all": "Alle entfernen"
+  "Clear all": "Alle entfernen",
+  "No tools, drag one here": "Keine Werkzeuge, zieh eines hierher"
 }

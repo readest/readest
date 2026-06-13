@@ -1718,9 +1718,9 @@
   "Customize Toolbar": "টুলবার কাস্টমাইজ করুন",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "সারিগুলোর মধ্যে টুল টেনে এনে সেগুলো দেখান বা লুকান এবং টুলবার পুনর্বিন্যাস করুন। আপনি কোনো টুল সরাতে সেটিতে ট্যাপও করতে পারেন।",
   "In toolbar": "টুলবারে",
-  "No tools — drag one here.": "কোনো টুল নেই — এখানে একটি টেনে আনুন।",
   "Available": "উপলব্ধ",
   "All tools are in the toolbar.": "সব টুল টুলবারে রয়েছে।",
   "Add all": "সব যোগ করুন",
-  "Clear all": "সব মুছুন"
+  "Clear all": "সব মুছুন",
+  "No tools, drag one here": "কোনো টুল নেই, এখানে একটি টেনে আনুন"
 }

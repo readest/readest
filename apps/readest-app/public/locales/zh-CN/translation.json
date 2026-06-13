@@ -1685,9 +1685,9 @@
   "Customize Toolbar": "自定义工具栏",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "在两行之间拖动工具即可显示或隐藏它们并重新排列工具栏。你也可以点按某个工具来移动它。",
   "In toolbar": "工具栏中",
-  "No tools — drag one here.": "没有工具——拖一个到这里。",
   "Available": "可用",
   "All tools are in the toolbar.": "所有工具都在工具栏中。",
   "Add all": "全部添加",
-  "Clear all": "全部清除"
+  "Clear all": "全部清除",
+  "No tools, drag one here": "没有工具，拖一个到这里"
 }
