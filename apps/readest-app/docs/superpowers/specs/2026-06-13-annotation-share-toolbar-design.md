@@ -84,10 +84,14 @@ order**.
   Wire it into the `toolButtons` `switch` (`case 'share'`) and the
   `handleQuickAction` `switch` (`case 'share'`).
 - **Capability gating (`canShare`)** — a boolean derived from
-  `appService?.isMobileApp || appService?.hasWindow ||
-  (typeof navigator !== 'undefined' && !!navigator.share)`. When `false`, Share is
-  omitted from both the live toolbar and the customizer (so we never show a "Share"
-  that silently just copies).
+  `appService?.isMobileApp || appService?.isMacOSApp ||
+  (typeof navigator !== 'undefined' && !!navigator.share)`. Windows/Linux desktop are
+  deliberately excluded: sharekit's native share is only functional on macOS + mobile,
+  and on Windows its share UI can freeze the app (issue #4343 — `nativeAppService`
+  already gates `shareFile` to macOS-only on desktop for the same reason). When
+  `false`, Share is omitted from both the live toolbar and the customizer (so we never
+  show a "Share" that silently just copies). `shareSelectedText` mirrors this: native
+  branch fires only on `isMobileApp || isMacOSApp`.
 
 ### 2. Data model
 
@@ -170,5 +174,4 @@ needs no manual entry (no plurals/proper nouns).
 ## Out-of-scope / deferred
 
 - Native Android `mimeType` refinements for Share (use the plugin default).
-- Surfacing Share on desktop Linux where only the clipboard fallback exists
-  (capability gating already hides it there).
+- Surfacing Share on Windows/Linux desktop (excluded by `canShare`; see gating above).
