@@ -191,7 +191,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const transPopupHeight = Math.min(265, maxHeight);
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
-  const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
+  const canShare = canShareText(appService);
+  // The toolbar is now customizable, so size the selection popup to the number
+  // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
+  // renders a sparse, full-width bar. Annotated selections keep the max width
+  // since they show the wider highlight options / notes instead of the buttons.
+  const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
+  const annotPopupToolSize = useResponsiveSize(44);
+  const visibleToolCount = getToolbarToolTypes(
+    viewSettings.annotationToolbarItems,
+    canShare,
+  ).length;
+  const annotPopupWidth = selection?.annotated
+    ? annotPopupMaxWidth
+    : Math.min(Math.max(visibleToolCount, 1) * annotPopupToolSize, annotPopupMaxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -929,8 +942,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setNotebookVisible(true);
     }
   };
-
-  const canShare = canShareText(appService);
 
   const handleShare = () => {
     if (!selection?.text) return;
