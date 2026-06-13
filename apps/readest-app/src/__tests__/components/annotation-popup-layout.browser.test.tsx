@@ -80,6 +80,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', () => ({
 
 import AnnotationPopup from '@/app/reader/components/annotator/AnnotationPopup';
 import { annotationToolButtons } from '@/app/reader/components/annotator/AnnotationTools';
+import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -96,11 +97,15 @@ const POPUP_Y = OPTIONS_OFFSET;
 const POPUP_X = 0;
 const WRAPPER_H = POPUP_Y + POPUP_H + 14; // +14 for triangle below
 
-const toolButtons = annotationToolButtons.map(({ label, Icon }) => ({
-  tooltipText: label,
-  Icon,
-  onClick: vi.fn(),
-}));
+// Render the default-enabled tools (Share is hidden by default; users add it
+// via Customize Toolbar), matching what the popup shows out of the box.
+const toolButtons = annotationToolButtons
+  .filter((button) => DEFAULT_ANNOTATION_TOOLBAR_ITEMS.includes(button.type))
+  .map(({ label, Icon }) => ({
+    tooltipText: label,
+    Icon,
+    onClick: vi.fn(),
+  }));
 
 // Browser-mode matcher types are unavailable to tsgo; cast once here.
 const expectElement = (locator: unknown) =>
