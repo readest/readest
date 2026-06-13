@@ -266,6 +266,10 @@ export class WebSpeechClient implements TTSClient {
     return [voicesGroup];
   }
 
+  supportsWordBoundaries(): boolean {
+    return false;
+  }
+
   getGranularities(): TTSGranularity[] {
     // currently only support sentence boundary and disable word boundary as changing voice
     // in the middle of speech is not possible for different granularities

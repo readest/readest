@@ -5,6 +5,13 @@ let createBehavior: () => Promise<undefined> = () => Promise.resolve(undefined);
 
 // Shared mock control for createAudioUrl() and parsed SSML marks
 let createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
+type MockAudioResult = {
+  url: string;
+  boundaries: Array<{ offset: number; duration: number; text: string }>;
+};
+let createAudioBehavior = vi.fn<() => Promise<MockAudioResult>>(() =>
+  Promise.resolve({ url: 'blob:mock-url', boundaries: [] }),
+);
 let parsedMarks: Array<{ name: string; text: string; language: string }> = [];
 
 // --- Mocks ---
@@ -21,6 +28,7 @@ vi.mock('@/libs/edgeTTS', () => {
       static voices = voices;
       create = vi.fn().mockImplementation(() => createBehavior());
       createAudioUrl = vi.fn().mockImplementation(() => createAudioUrlBehavior());
+      createAudio = vi.fn().mockImplementation(() => createAudioBehavior());
     },
     EDGE_TTS_PROTOCOL: 'wss',
   };
@@ -63,6 +71,9 @@ describe('EdgeTTSClient', () => {
   beforeEach(() => {
     createBehavior = () => Promise.resolve(undefined);
     createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
+    createAudioBehavior = vi.fn<() => Promise<MockAudioResult>>(() =>
+      Promise.resolve({ url: 'blob:mock-url', boundaries: [] }),
+    );
     parsedMarks = [];
     client = new EdgeTTSClient();
   });
@@ -218,6 +229,12 @@ describe('EdgeTTSClient', () => {
       client.setPrimaryLang('ja');
       client.setPrimaryLang('en');
       // No error thrown
+    });
+  });
+
+  describe('supportsWordBoundaries', () => {
+    test('returns true (Edge reports word-boundary timings)', () => {
+      expect(client.supportsWordBoundaries()).toBe(true);
     });
   });
 
@@ -477,6 +494,139 @@ describe('EdgeTTSClient', () => {
 
     test('stop resolves without error when no audio element exists', async () => {
       await expect(client.stop()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('word boundary tracking during playback', () => {
+    class MockAudio {
+      static instances: MockAudio[] = [];
+      src = '';
+      currentTime = 0;
+      preload = '';
+      playbackRate = 1;
+      onended: ((e?: Event) => void) | null = null;
+      onerror: ((e?: unknown) => void) | null = null;
+      constructor() {
+        MockAudio.instances.push(this);
+      }
+      setAttribute() {}
+      play() {
+        return Promise.resolve();
+      }
+      pause() {}
+    }
+
+    let rafCallbacks: Map<number, FrameRequestCallback>;
+    let rafId = 0;
+    const runRaf = () => {
+      const cbs = [...rafCallbacks.values()];
+      rafCallbacks.clear();
+      for (const cb of cbs) cb(0);
+    };
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    let mockController: {
+      dispatchSpeakMark: ReturnType<typeof vi.fn>;
+      prepareSpeakWords: ReturnType<typeof vi.fn>;
+      dispatchSpeakWord: ReturnType<typeof vi.fn>;
+    };
+
+    beforeEach(() => {
+      MockAudio.instances = [];
+      rafCallbacks = new Map();
+      vi.stubGlobal('Audio', MockAudio);
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+        rafCallbacks.set(++rafId, cb);
+        return rafId;
+      });
+      vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+        rafCallbacks.delete(id);
+      });
+      mockController = {
+        dispatchSpeakMark: vi.fn(),
+        prepareSpeakWords: vi.fn(),
+        dispatchSpeakWord: vi.fn(),
+      };
+      client = new EdgeTTSClient(mockController as unknown as TTSController);
+      parsedMarks = [{ name: '0', text: 'Hello brave world', language: 'en' }];
+      createAudioBehavior = vi.fn(() =>
+        Promise.resolve({
+          url: 'blob:mock-url',
+          boundaries: [
+            { offset: 1_000_000, duration: 4_000_000, text: 'Hello' },
+            { offset: 6_000_000, duration: 4_000_000, text: 'brave' },
+            { offset: 11_000_000, duration: 4_000_000, text: 'world' },
+          ],
+        }),
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    const startSpeak = async () => {
+      await client.init();
+      const it = client.speak('<ssml/>', new AbortController().signal);
+      const first = await it.next();
+      expect((first.value as { code: string }).code).toBe('boundary');
+      const resultPromise = it.next();
+      await flush();
+      const audio = MockAudio.instances.at(-1)!;
+      return { it, resultPromise, audio };
+    };
+
+    test('prepares speak words and dispatches word indexes as playback advances', async () => {
+      const { resultPromise, audio } = await startSpeak();
+
+      expect(mockController.prepareSpeakWords).toHaveBeenCalledWith(['Hello', 'brave', 'world']);
+
+      audio.currentTime = 0.11;
+      runRaf();
+      expect(mockController.dispatchSpeakWord).toHaveBeenCalledWith(0);
+
+      audio.currentTime = 0.65;
+      runRaf();
+      expect(mockController.dispatchSpeakWord).toHaveBeenLastCalledWith(1);
+
+      // Same word index is not re-dispatched on subsequent frames.
+      const callCount = mockController.dispatchSpeakWord.mock.calls.length;
+      runRaf();
+      expect(mockController.dispatchSpeakWord.mock.calls.length).toBe(callCount);
+
+      audio.onended?.();
+      const result = await resultPromise;
+      expect((result.value as { code: string }).code).toBe('end');
+    });
+
+    test('stops dispatching after the chunk ends', async () => {
+      const { resultPromise, audio } = await startSpeak();
+
+      audio.currentTime = 0.11;
+      runRaf();
+      const callCount = mockController.dispatchSpeakWord.mock.calls.length;
+
+      audio.onended?.();
+      await resultPromise;
+
+      audio.currentTime = 1.2;
+      runRaf();
+      expect(mockController.dispatchSpeakWord.mock.calls.length).toBe(callCount);
+    });
+
+    test('hands empty words to the controller and does not track when no boundaries', async () => {
+      createAudioBehavior = vi.fn(() => Promise.resolve({ url: 'blob:mock-url', boundaries: [] }));
+      const { resultPromise, audio } = await startSpeak();
+
+      // Empty words are still forwarded so the controller can draw the
+      // sentence-highlight fallback; no per-word tracking is started.
+      expect(mockController.prepareSpeakWords).toHaveBeenCalledWith([]);
+      audio.currentTime = 0.5;
+      runRaf();
+      expect(mockController.dispatchSpeakWord).not.toHaveBeenCalled();
+
+      audio.onended?.();
+      await resultPromise;
     });
   });
 });

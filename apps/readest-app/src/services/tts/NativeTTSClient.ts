@@ -296,6 +296,10 @@ export class NativeTTSClient implements TTSClient {
     this.#primaryLang = lang;
   }
 
+  supportsWordBoundaries(): boolean {
+    return false;
+  }
+
   getGranularities(): TTSGranularity[] {
     return ['sentence'];
   }

@@ -1,12 +1,13 @@
 import { getUserLocale } from '@/utils/misc';
 import { isSameLang } from '@/utils/lang';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
+import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL, TTSWordBoundary } from '@/libs/edgeTTS';
 import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { findBoundaryIndexAtTime } from './wordHighlight';
 
 export class EdgeTTSClient implements TTSClient {
   name = 'edge-tts';
@@ -27,6 +28,7 @@ export class EdgeTTSClient implements TTSClient {
   #pausedAt = 0;
   #startedAt = 0;
   #fadeCompensation: number | null = null;
+  #wordTrackingRafId: number | null = null;
 
   constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
@@ -161,9 +163,11 @@ export class EdgeTTSClient implements TTSClient {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#speakingLang = voiceLang;
-        const audioUrl = await this.#edgeTTS?.createAudioUrl(
+        const audioResult = await this.#edgeTTS?.createAudio(
           this.getPayload(voiceLang, mark.text, voiceId),
         );
+        const audioUrl = audioResult?.url;
+        const boundaries = audioResult?.boundaries ?? [];
         if (signal.aborted) {
           yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;
           break;
@@ -177,6 +181,7 @@ export class EdgeTTSClient implements TTSClient {
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
           const cleanUp = () => {
+            this.#stopWordTracking();
             audio.onended = null;
             audio.onerror = null;
             audio.src = '';
@@ -207,6 +212,7 @@ export class EdgeTTSClient implements TTSClient {
           };
           this.#isPlaying = true;
           audio.src = audioUrl || '';
+          this.#startWordTracking(audio, boundaries);
           if (!this.appService?.isLinuxApp) {
             audio.playbackRate = this.#rate;
           }
@@ -241,6 +247,39 @@ export class EdgeTTSClient implements TTSClient {
       }
     }
     await this.stopInternal();
+  }
+
+  // Follow playback time against the word-boundary metadata of the current
+  // chunk and tell the controller which word is being spoken so it can
+  // highlight it. Word offsets are in media time, so audio.playbackRate and
+  // pause/resume (including the resume rewind on iOS) are handled naturally
+  // by polling audio.currentTime.
+  #startWordTracking(audio: HTMLAudioElement, boundaries: TTSWordBoundary[]) {
+    this.#stopWordTracking();
+    const controller = this.controller;
+    if (!controller) return;
+    // Always hand the words to the controller — with boundaries it highlights
+    // word-by-word; with none it draws the sentence highlight that was
+    // suppressed at mark dispatch (see TTSController.prepareSpeakWords).
+    controller.prepareSpeakWords(boundaries.map((boundary) => boundary.text));
+    if (!boundaries.length) return;
+    let lastIndex = -1;
+    const tick = () => {
+      const index = findBoundaryIndexAtTime(boundaries, audio.currentTime);
+      if (index !== lastIndex && index >= 0) {
+        lastIndex = index;
+        controller.dispatchSpeakWord(index);
+      }
+      this.#wordTrackingRafId = requestAnimationFrame(tick);
+    };
+    this.#wordTrackingRafId = requestAnimationFrame(tick);
+  }
+
+  #stopWordTracking() {
+    if (this.#wordTrackingRafId !== null) {
+      cancelAnimationFrame(this.#wordTrackingRafId);
+      this.#wordTrackingRafId = null;
+    }
   }
 
   async pause() {
@@ -281,6 +320,7 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   private async stopInternal() {
+    this.#stopWordTracking();
     this.#isPlaying = false;
     this.#pausedAt = 0;
     this.#startedAt = 0;
@@ -338,6 +378,10 @@ export class EdgeTTSClient implements TTSClient {
 
   setPrimaryLang(lang: string) {
     this.#primaryLang = lang;
+  }
+
+  supportsWordBoundaries(): boolean {
+    return true;
   }
 
   getGranularities(): TTSGranularity[] {

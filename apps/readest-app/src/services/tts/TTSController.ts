@@ -10,6 +10,7 @@ import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { isValidLang } from '@/utils/lang';
+import { computeWordOffsets, getTextSubRange, TTSWordOffset } from './wordHighlight';
 
 type TTSState =
   | 'stopped'
@@ -34,6 +35,20 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
+
+  // Word-level highlight state for the currently spoken chunk. Armed by a
+  // successful dispatchSpeakMark, populated by prepareSpeakWords when a TTS
+  // client has word-boundary metadata for the chunk.
+  #speakWordsArmed = false;
+  #speakWordBaseRange: Range | null = null;
+  #speakWordOffsets: (TTSWordOffset | null)[] = [];
+  #speakWordRanges: (Range | null | undefined)[] = [];
+  #suppressMarkHighlight = false;
+  // True while the current chunk is highlighted word-by-word, with the most
+  // recently highlighted word range. Lets re-highlights (e.g. on page relocate)
+  // re-apply the word instead of redrawing the whole sentence over it.
+  #wordHighlightActive = false;
+  #lastSpeakWordRange: Range | null = null;
 
   state: TTSState = 'stopped';
   ttsLang: string = '';
@@ -111,6 +126,11 @@ export class TTSController extends EventTarget {
 
   #getHighlighter() {
     return (range: Range) => {
+      // Suppress the sentence highlight that foliate's setMark draws when the
+      // active client highlights word-by-word. The flag is only set around the
+      // synchronous setMark call, so word draws (dispatchSpeakWord) and paused
+      // navigation still highlight normally.
+      if (this.#suppressMarkHighlight) return;
       const content = this.#getPrimaryContent();
       if (!content) return;
       const { doc, index, overlayer } = content;
@@ -576,12 +596,108 @@ export class TTSController extends EventTarget {
   }
 
   dispatchSpeakMark(mark?: TTSMark) {
+    this.#resetSpeakWords();
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (mark && mark.name !== '-1') {
       try {
+        // When the active client highlights word-by-word, suppress the
+        // sentence highlight that setMark would otherwise draw, so the page
+        // doesn't flash the whole sentence before the first word. The fallback
+        // (no boundaries) is drawn later in prepareSpeakWords.
+        this.#suppressMarkHighlight = this.ttsClient.supportsWordBoundaries();
         const range = this.view.tts?.setMark(mark.name);
+        this.#suppressMarkHighlight = false;
+        this.#speakWordsArmed = !!range;
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+      } catch {
+        this.#suppressMarkHighlight = false;
+      }
+    }
+  }
+
+  #resetSpeakWords() {
+    this.#speakWordsArmed = false;
+    this.#speakWordBaseRange = null;
+    this.#speakWordOffsets = [];
+    this.#speakWordRanges = [];
+    this.#wordHighlightActive = false;
+    this.#lastSpeakWordRange = null;
+  }
+
+  // Re-apply the active highlight after the view relocates (page turn,
+  // re-render). In word mode this re-draws the current word so the sentence
+  // never reappears over it; otherwise it re-draws the sentence.
+  reapplyCurrentHighlight() {
+    if (this.#wordHighlightActive && this.#lastSpeakWordRange) {
+      this.#getHighlighter()(this.#lastSpeakWordRange.cloneRange());
+      return;
+    }
+    const range = this.view.tts?.getLastRange();
+    if (range) this.#getHighlighter()(range.cloneRange());
+  }
+
+  // CFI of the currently highlighted word during word-by-word playback. Used
+  // for the "in view" check that drives the back-to-TTS button: when a sentence
+  // spans a page break, the word can be on a different page than the sentence's
+  // ttsLocation, so the word position is the accurate reference. Returns null
+  // outside word mode, where the sentence-level ttsLocation is correct.
+  getCurrentHighlightCfi(): string | null {
+    if (!this.#wordHighlightActive || !this.#lastSpeakWordRange || this.#ttsSectionIndex < 0) {
+      return null;
+    }
+    try {
+      return this.view.getCFI(this.#ttsSectionIndex, this.#lastSpeakWordRange) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Word-level highlighting within the chunk of the last dispatched mark,
+  // driven by TTS clients that report word boundaries (Edge TTS). It only
+  // swaps the visual highlight from the sentence to the spoken word —
+  // ttsLocation, media-session metadata and mark navigation keep their
+  // sentence-level semantics.
+  prepareSpeakWords(words: string[]) {
+    if (!this.#speakWordsArmed) return;
+    const range = this.view.tts?.getLastRange();
+    if (!range) return;
+    this.#speakWordBaseRange = range;
+    this.#speakWordOffsets = computeWordOffsets(range.toString(), words);
+    this.#speakWordRanges = [];
+    if (words.length === 0) {
+      // No word boundaries for this chunk: the sentence highlight was
+      // suppressed at mark dispatch, so draw it now as the fallback.
+      this.#wordHighlightActive = false;
+      this.#getHighlighter()(range.cloneRange());
+    } else {
+      // Highlight the first word immediately so the suppressed sentence
+      // highlight never appears before playback reaches the first boundary.
+      this.#wordHighlightActive = true;
+      this.dispatchSpeakWord(0);
+    }
+  }
+
+  dispatchSpeakWord(index: number) {
+    const base = this.#speakWordBaseRange;
+    if (!base) return;
+    let range = this.#speakWordRanges[index];
+    if (range === undefined) {
+      const offset = this.#speakWordOffsets[index];
+      range = offset ? getTextSubRange(base, offset.start, offset.end) : null;
+      this.#speakWordRanges[index] = range;
+    }
+    if (range) {
+      this.#lastSpeakWordRange = range;
+      this.#getHighlighter()(range.cloneRange());
+      // Let the view follow the spoken word so it turns the page mid-sentence
+      // when the word crosses a page boundary, instead of waiting for the next
+      // sentence's mark.
+      try {
+        const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+        if (cfi) {
+          this.dispatchEvent(new CustomEvent('tts-highlight-word', { detail: { cfi } }));
+        }
       } catch {}
     }
   }

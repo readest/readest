@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
+import {
+  EdgeSpeechTTS,
+  EdgeTTSPayload,
+  serializeWordBoundaries,
+  WORD_BOUNDARIES_HEADER,
+} from '@/libs/edgeTTS';
 import { validateUserAndToken } from '@/utils/access';
 
 const getLangFromVoice = (voiceId: string): string => {
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
     };
 
     const tts = new EdgeSpeechTTS();
-    const response = await tts.create(payload);
+    const { response, boundaries } = await tts.createWithBoundaries(payload);
     const arrayBuffer = await response.arrayBuffer();
 
     return new NextResponse(arrayBuffer, {
@@ -77,6 +82,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'audio/mpeg',
         'Content-Length': arrayBuffer.byteLength.toString(),
+        [WORD_BOUNDARIES_HEADER]: serializeWordBoundaries(boundaries),
       },
     });
   } catch (error) {

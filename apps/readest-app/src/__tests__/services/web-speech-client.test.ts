@@ -64,4 +64,8 @@ describe('WebSpeechClient getVoices', () => {
     const en = await client.getVoices('en-US');
     expect(en[0]!.voices.map((v) => v.name)).not.toContain('Denise');
   });
+
+  test('does not support word boundaries (sentence highlight only)', () => {
+    expect(client.supportsWordBoundaries()).toBe(false);
+  });
 });

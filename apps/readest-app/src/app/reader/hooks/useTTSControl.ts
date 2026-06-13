@@ -258,13 +258,50 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       }
     };
 
+    // Word-level page following: turn the page as soon as the spoken word
+    // moves off the visible page, instead of waiting for the next sentence's
+    // mark. Only navigates when the word is outside the visible range, so
+    // on-page words don't trigger relocations.
+    const handleHighlightWord = (e: Event) => {
+      const { cfi } = (e as CustomEvent<{ cfi: string }>).detail;
+      const view = getView(bookKey);
+      if (!cfi || !view || !followingTTSLocationRef.current) return;
+
+      const hlContents = view.renderer.getContents();
+      const hlPrimaryIdx = view.renderer.primaryIndex;
+      const { doc, index: viewSectionIndex } = (hlContents.find((x) => x.index === hlPrimaryIdx) ??
+        hlContents[0]) as { doc: Document; index?: number };
+
+      const { anchor, index: ttsSectionIndex } = view.resolveCFI(cfi);
+      // Cross-section navigation is driven by the sentence-level mark handler.
+      if (viewSectionIndex !== ttsSectionIndex) return;
+      if (hlContents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) return;
+
+      const wordRange = anchor(doc);
+      const visibleRange = getProgress(bookKey)?.range as Range | undefined;
+      if (!wordRange || !visibleRange) return;
+
+      try {
+        const ahead = wordRange.compareBoundaryPoints(Range.END_TO_START, visibleRange) > 0;
+        const behind = wordRange.compareBoundaryPoints(Range.START_TO_END, visibleRange) < 0;
+        if (ahead || behind) {
+          view.renderer.scrollToAnchor?.(wordRange);
+        }
+      } catch {
+        // Ranges may briefly belong to different documents during a section
+        // change; the mark handler takes over in that case.
+      }
+    };
+
     ttsController.addEventListener('tts-need-auth', handleNeedAuth);
     ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
     ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
+    ttsController.addEventListener('tts-highlight-word', handleHighlightWord);
     return () => {
       ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
       ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
+      ttsController.removeEventListener('tts-highlight-word', handleHighlightWord);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
@@ -277,18 +314,22 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const ttsController = ttsControllerRef.current;
     if (!ttsController) return;
 
-    const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
     const ttsLocation = viewSettings?.ttsLocation;
     const { location } = progress || {};
     if (!location || !ttsLocation) return;
 
-    if (isCfiInLocation(ttsLocation, location)) {
+    // Check the actual highlighted position against the view. During
+    // word-by-word playback the word can sit on a different page than the
+    // sentence's ttsLocation (a sentence spanning a page break), so the word
+    // position is the correct reference — otherwise the back-to-TTS button
+    // wrongly appears after the view follows the word onto the next page.
+    const highlightCfi = ttsController.getCurrentHighlightCfi() ?? ttsLocation;
+    if (isCfiInLocation(highlightCfi, location)) {
       setShowBackToCurrentTTSLocation(false);
-      const range = view?.tts?.getLastRange() as Range | null;
-      if (range) {
-        view?.tts?.highlight(range);
-      }
+      // Word-aware re-apply: re-draws the current word during word-by-word
+      // playback instead of redrawing the whole sentence over it.
+      ttsController.reapplyCurrentHighlight();
     } else {
       const msSinceSectionChange = Date.now() - sectionChangingTimestampRef.current;
       if (msSinceSectionChange < 2000) return;
