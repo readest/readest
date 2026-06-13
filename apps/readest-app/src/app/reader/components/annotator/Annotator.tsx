@@ -48,6 +48,9 @@ import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
+import { shareSelectedText } from '@/utils/share';
+import { getToolbarToolTypes } from '@/utils/annotationToolbar';
+import { AnnotationToolType } from '@/types/annotator';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import {
@@ -738,6 +741,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         case 'tts':
           handleSpeakText(true);
           break;
+        case 'share':
+          handleShare();
+          break;
       }
     };
     // On Android, a long-press fires selectionchange (and this handler) while
@@ -922,6 +928,24 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!appService?.isMobile) {
       setNotebookVisible(true);
     }
+  };
+
+  const canShare =
+    !!appService?.isMobileApp ||
+    !!appService?.isMacOSApp ||
+    (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+
+  const handleShare = () => {
+    if (!selection?.text) return;
+    const position = trianglePosition
+      ? {
+          x: trianglePosition.point.x,
+          y: trianglePosition.point.y,
+          preferredEdge: 'bottom' as const,
+        }
+      : undefined;
+    void shareSelectedText(selection.text, position, appService);
+    handleDismissPopupAndSelection();
   };
 
   const handleHighlight = (update = false, highlightStyle?: HighlightStyle) => {
@@ -1446,7 +1470,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     !!selection?.text &&
     selection.text.trim().length > 0;
   const globalToggleActive = !!currentAnnotation?.global;
-  const toolButtons = annotationToolButtons.map(({ type, label, Icon }) => {
+  const buildToolButton = (type: AnnotationToolType) => {
+    const def = annotationToolButtons.find((button) => button.type === type);
+    if (!def) return null;
+    const { label, Icon } = def;
     switch (type) {
       case 'copy':
         return { tooltipText: _(label), Icon, onClick: handleCopy };
@@ -1457,27 +1484,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onClick: handleHighlight,
         };
       case 'annotate':
-        return {
-          tooltipText: _(label),
-          Icon,
-          onClick: handleAnnotate,
-        };
+        return { tooltipText: _(label), Icon, onClick: handleAnnotate };
       case 'search':
-        return {
-          tooltipText: _(label),
-          Icon,
-          onClick: handleSearch,
-        };
+        return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
-        return {
-          tooltipText: _(label),
-          Icon,
-          onClick: handleSpeakText,
-        };
+        return { tooltipText: _(label), Icon, onClick: handleSpeakText };
       case 'proofread':
         return {
           tooltipText: _(label),
@@ -1485,10 +1500,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
+      case 'share':
+        return { tooltipText: _(label), Icon, onClick: handleShare };
       default:
-        return { tooltipText: '', Icon, onClick: () => {} };
+        return null;
     }
-  });
+  };
+
+  const toolButtons = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare)
+    .map(buildToolButton)
+    .filter((button): button is NonNullable<typeof button> => button !== null);
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
