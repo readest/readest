@@ -22,6 +22,7 @@ import NumberInput from './NumberInput';
 import PageTurnerSettings from './PageTurnerSettings';
 import AnnotationToolbarCustomizer from './AnnotationToolbarCustomizer';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
+import { canShareText } from '@/utils/share';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -65,10 +66,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   const resetToDefaults = useResetViewSettings();
   const pageTurnerResetRef = useRef<() => void>(() => {});
-  const canShare =
-    !!appService?.isMobileApp ||
-    !!appService?.isMacOSApp ||
-    (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  const canShare = canShareText(appService);
 
   const handleReset = () => {
     resetToDefaults({

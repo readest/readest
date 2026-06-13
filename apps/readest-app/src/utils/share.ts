@@ -55,10 +55,18 @@ export interface SharePosition {
 interface ShareCapableService {
   isMobileApp?: boolean;
   isMacOSApp?: boolean;
-  isWindowsApp?: boolean;
-  isLinuxApp?: boolean;
-  hasWindow?: boolean;
 }
+
+/**
+ * Whether the selected text can be shared by ANY method on this platform —
+ * native sharekit (mobile/macOS) or the Web Share API. Used to gate the Share
+ * tool's visibility in the selection toolbar and its customizer. Kept next to
+ * `shareSelectedText` so the two stay in sync.
+ */
+export const canShareText = (appService?: ShareCapableService | null): boolean =>
+  !!appService?.isMobileApp ||
+  !!appService?.isMacOSApp ||
+  (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
 
 /**
  * Open the OS share sheet for `text`, with graceful fallbacks.

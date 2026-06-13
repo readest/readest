@@ -48,7 +48,7 @@ import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
-import { shareSelectedText } from '@/utils/share';
+import { canShareText, shareSelectedText } from '@/utils/share';
 import { getToolbarToolTypes } from '@/utils/annotationToolbar';
 import { AnnotationToolType } from '@/types/annotator';
 import { TransformContext } from '@/services/transformers/types';
@@ -930,10 +930,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  const canShare =
-    !!appService?.isMobileApp ||
-    !!appService?.isMacOSApp ||
-    (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  const canShare = canShareText(appService);
 
   const handleShare = () => {
     if (!selection?.text) return;

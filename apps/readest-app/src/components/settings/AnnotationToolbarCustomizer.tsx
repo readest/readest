@@ -27,6 +27,7 @@ import {
   removeToolFromToolbar,
   reorderToolbar,
 } from '@/utils/annotationToolbar';
+import { canShareText } from '@/utils/share';
 import SubPageHeader from './SubPageHeader';
 
 interface AnnotationToolbarCustomizerProps {
@@ -112,10 +113,16 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
   const { settings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
-  const canShare =
-    !!appService?.isMobileApp ||
-    !!appService?.isMacOSApp ||
-    (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  const canShare = canShareText(appService);
+
+  // `share` is hidden on platforms that can't share (Windows/Linux desktop).
+  // If the user enabled it on a share-capable device (e.g. their phone) and it
+  // synced here, we must not drop it just because the user edits the toolbar on
+  // this device — preserve it across persists so the capable device keeps it.
+  const savedHasShare = getToolbarToolTypes(viewSettings.annotationToolbarItems, true).includes(
+    'share',
+  );
+  const preserveHiddenShare = !canShare && savedHasShare;
 
   const [toolbar, setToolbar] = useState<AnnotationToolType[]>(() =>
     getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare),
@@ -130,7 +137,11 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
   );
 
   const persist = (nextToolbar: AnnotationToolType[]) => {
-    saveViewSettings(envConfig, bookKey, 'annotationToolbarItems', nextToolbar, false, true);
+    const toSave =
+      preserveHiddenShare && !nextToolbar.includes('share')
+        ? [...nextToolbar, 'share' as AnnotationToolType]
+        : nextToolbar;
+    saveViewSettings(envConfig, bookKey, 'annotationToolbarItems', toSave, false, true);
   };
 
   const containerOf = (id: string): 'toolbar' | 'available' | null => {
