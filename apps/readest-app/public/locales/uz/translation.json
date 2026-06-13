@@ -1715,12 +1715,12 @@
   "System Lookup App": "Tizim qidiruv ilovasi",
   "Share": "Ulashish",
   "Share text after selection": "Tanlovdan keyin matnni ulashish",
-  "Drag to reorder, tap to remove": "Tartibni oʻzgartirish uchun torting, olib tashlash uchun bosing",
-  "Drag to toolbar, tap to add": "Asboblar paneliga torting, qoʻshish uchun bosing",
   "Customize Toolbar": "Asboblar panelini moslashtirish",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Asboblarni qatorlar orasida tortib, ularni koʻrsating yoki yashiring va asboblar panelini qayta tartiblang. Asbobni koʻchirish uchun unga bosishingiz ham mumkin.",
   "In toolbar": "Asboblar panelida",
   "No tools — drag one here.": "Asboblar yoʻq — bittasini shu yerga torting.",
   "Available": "Mavjud",
-  "All tools are in the toolbar.": "Barcha asboblar asboblar panelida."
+  "All tools are in the toolbar.": "Barcha asboblar asboblar panelida.",
+  "Add all": "Hammasini qoʻshish",
+  "Clear all": "Hammasini tozalash"
 }

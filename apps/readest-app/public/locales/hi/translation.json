@@ -1715,12 +1715,12 @@
   "System Lookup App": "सिस्टम लुकअप ऐप",
   "Share": "साझा करें",
   "Share text after selection": "चयन के बाद टेक्स्ट साझा करें",
-  "Drag to reorder, tap to remove": "क्रम बदलने के लिए खींचें, हटाने के लिए टैप करें",
-  "Drag to toolbar, tap to add": "टूलबार में खींचें, जोड़ने के लिए टैप करें",
   "Customize Toolbar": "टूलबार अनुकूलित करें",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "टूल को पंक्तियों के बीच खींचकर उन्हें दिखाएँ या छिपाएँ और टूलबार का क्रम बदलें। आप किसी टूल को स्थानांतरित करने के लिए उस पर टैप भी कर सकते हैं।",
   "In toolbar": "टूलबार में",
   "No tools — drag one here.": "कोई टूल नहीं — यहाँ एक खींचें।",
   "Available": "उपलब्ध",
-  "All tools are in the toolbar.": "सभी टूल टूलबार में हैं।"
+  "All tools are in the toolbar.": "सभी टूल टूलबार में हैं।",
+  "Add all": "सभी जोड़ें",
+  "Clear all": "सभी साफ़ करें"
 }

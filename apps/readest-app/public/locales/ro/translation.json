@@ -1748,12 +1748,12 @@
   "System Lookup App": "Aplicație de căutare a sistemului",
   "Share": "Partajează",
   "Share text after selection": "Partajează textul după selectare",
-  "Drag to reorder, tap to remove": "Trage pentru a reordona, atinge pentru a elimina",
-  "Drag to toolbar, tap to add": "Trage în bara de instrumente, atinge pentru a adăuga",
   "Customize Toolbar": "Personalizează bara de instrumente",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Trage instrumentele între rânduri pentru a le afișa sau ascunde și pentru a reordona bara de instrumente. Poți de asemenea să atingi un instrument pentru a-l muta.",
   "In toolbar": "În bara de instrumente",
   "No tools — drag one here.": "Niciun instrument — trage unul aici.",
   "Available": "Disponibile",
-  "All tools are in the toolbar.": "Toate instrumentele sunt în bara de instrumente."
+  "All tools are in the toolbar.": "Toate instrumentele sunt în bara de instrumente.",
+  "Add all": "Adaugă tot",
+  "Clear all": "Șterge tot"
 }

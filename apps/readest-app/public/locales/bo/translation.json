@@ -1682,12 +1682,12 @@
   "System Lookup App": "རྒྱུད་ཁོངས་འཚོལ་བཤེར་ཉེར་སྤྱོད།",
   "Share": "མཉམ་སྤྱོད།",
   "Share text after selection": "འདེམ་པའི་རྗེས་སུ་ཡི་གེ་མཉམ་སྤྱོད་བྱེད།",
-  "Drag to reorder, tap to remove": "གོ་རིམ་བསྒྱུར་བར་འདྲུད། སུབ་པར་མནན།",
-  "Drag to toolbar, tap to add": "ལག་ཆ་ཕྲ་མོའི་ཕྲེང་ལ་འདྲུད། སྣོན་པར་མནན།",
   "Customize Toolbar": "ལག་ཆ་ཕྲ་མོའི་ཕྲེང་རང་སྒྲིག",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "ལག་ཆ་རྣམས་ཕྲེང་བར་འདྲུད་ནས་མངོན་པའམ་སྦས་ཐུབ་ལ་ལག་ཆའི་ཕྲེང་གི་གོ་རིམ་ཡང་བསྒྱུར་ཐུབ། ལག་ཆ་ཞིག་ལ་མནན་ནས་སྤོ་ཐུབ།",
   "In toolbar": "ལག་ཆའི་ཕྲེང་ནང་།",
   "No tools — drag one here.": "ལག་ཆ་མེད། འདིར་གཅིག་འདྲུད་རོགས།",
   "Available": "ཐོབ་རུང་།",
-  "All tools are in the toolbar.": "ལག་ཆ་ཡོངས་རྫོགས་ལག་ཆའི་ཕྲེང་ནང་ཡོད།"
+  "All tools are in the toolbar.": "ལག་ཆ་ཡོངས་རྫོགས་ལག་ཆའི་ཕྲེང་ནང་ཡོད།",
+  "Add all": "ཚང་མ་སྣོན་པ།",
+  "Clear all": "ཚང་མ་གཙང་སེལ།"
 }

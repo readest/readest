@@ -1715,12 +1715,12 @@
   "System Lookup App": "පද්ධති සෙවුම් යෙදුම",
   "Share": "බෙදාගන්න",
   "Share text after selection": "තේරීමෙන් පසු පෙළ බෙදාගන්න",
-  "Drag to reorder, tap to remove": "නැවත පිළිවෙළට ඇද දමන්න, ඉවත් කිරීමට තට්ටු කරන්න",
-  "Drag to toolbar, tap to add": "මෙවලම් තීරුවට ඇද දමන්න, එක් කිරීමට තට්ටු කරන්න",
   "Customize Toolbar": "මෙවලම් තීරුව අභිරුචිකරණය කරන්න",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "මෙවලම් පේළි අතර ඇද දමා ඒවා පෙන්වන්න හෝ සඟවන්න සහ මෙවලම් තීරුව නැවත පිළිවෙළට සකසන්න. මෙවලමක් ගෙනයාමට ඔබට එය මත තට්ටු කළ හැක.",
   "In toolbar": "මෙවලම් තීරුවේ",
   "No tools — drag one here.": "මෙවලම් නැත — මෙතැනට එකක් ඇද දමන්න.",
   "Available": "ලබා ගත හැකි",
-  "All tools are in the toolbar.": "සියලුම මෙවලම් මෙවලම් තීරුවේ ඇත."
+  "All tools are in the toolbar.": "සියලුම මෙවලම් මෙවලම් තීරුවේ ඇත.",
+  "Add all": "සියල්ල එක් කරන්න",
+  "Clear all": "සියල්ල හිස් කරන්න"
 }

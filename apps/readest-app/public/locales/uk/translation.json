@@ -1781,12 +1781,12 @@
   "System Lookup App": "Системний застосунок для пошуку",
   "Share": "Поділитися",
   "Share text after selection": "Поділитися текстом після виділення",
-  "Drag to reorder, tap to remove": "Перетягніть, щоб змінити порядок, торкніться, щоб вилучити",
-  "Drag to toolbar, tap to add": "Перетягніть на панель інструментів, торкніться, щоб додати",
   "Customize Toolbar": "Налаштувати панель інструментів",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Перетягуйте інструменти між рядками, щоб показати чи приховати їх і змінити порядок на панелі інструментів. Також можна торкнутися інструмента, щоб перемістити його.",
   "In toolbar": "На панелі інструментів",
   "No tools — drag one here.": "Немає інструментів — перетягніть один сюди.",
   "Available": "Доступні",
-  "All tools are in the toolbar.": "Усі інструменти на панелі інструментів."
+  "All tools are in the toolbar.": "Усі інструменти на панелі інструментів.",
+  "Add all": "Додати все",
+  "Clear all": "Очистити все"
 }

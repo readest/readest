@@ -1715,12 +1715,12 @@
   "System Lookup App": "கணினி தேடல் செயலி",
   "Share": "பகிர்",
   "Share text after selection": "தேர்வுக்குப் பிறகு உரையைப் பகிர்",
-  "Drag to reorder, tap to remove": "மறுவரிசைப்படுத்த இழுக்கவும், அகற்ற தட்டவும்",
-  "Drag to toolbar, tap to add": "கருவிப்பட்டிக்கு இழுக்கவும், சேர்க்க தட்டவும்",
   "Customize Toolbar": "கருவிப்பட்டியைத் தனிப்பயனாக்கு",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "கருவிகளை வரிசைகளுக்கு இடையே இழுத்து அவற்றைக் காட்டலாம் அல்லது மறைக்கலாம் மற்றும் கருவிப்பட்டியை மறுவரிசைப்படுத்தலாம். ஒரு கருவியை நகர்த்த அதைத் தட்டலாம்.",
   "In toolbar": "கருவிப்பட்டியில்",
   "No tools — drag one here.": "கருவிகள் இல்லை — ஒன்றை இங்கே இழுக்கவும்.",
   "Available": "கிடைக்கின்றன",
-  "All tools are in the toolbar.": "அனைத்து கருவிகளும் கருவிப்பட்டியில் உள்ளன."
+  "All tools are in the toolbar.": "அனைத்து கருவிகளும் கருவிப்பட்டியில் உள்ளன.",
+  "Add all": "அனைத்தையும் சேர்",
+  "Clear all": "அனைத்தையும் அழி"
 }

@@ -1682,12 +1682,12 @@
   "System Lookup App": "システム検索アプリ",
   "Share": "共有",
   "Share text after selection": "選択後にテキストを共有",
-  "Drag to reorder, tap to remove": "ドラッグして並べ替え、タップして削除",
-  "Drag to toolbar, tap to add": "ツールバーにドラッグ、タップして追加",
   "Customize Toolbar": "ツールバーをカスタマイズ",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "ツールを行間でドラッグして表示／非表示を切り替え、ツールバーを並べ替えます。ツールをタップして移動することもできます。",
   "In toolbar": "ツールバー内",
   "No tools — drag one here.": "ツールがありません — ここにドラッグしてください。",
   "Available": "利用可能",
-  "All tools are in the toolbar.": "すべてのツールがツールバーにあります。"
+  "All tools are in the toolbar.": "すべてのツールがツールバーにあります。",
+  "Add all": "すべて追加",
+  "Clear all": "すべてクリア"
 }

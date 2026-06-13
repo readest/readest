@@ -1682,12 +1682,12 @@
   "System Lookup App": "系統查詞應用程式",
   "Share": "分享",
   "Share text after selection": "選取後分享文字",
-  "Drag to reorder, tap to remove": "拖曳以重新排序，輕觸以移除",
-  "Drag to toolbar, tap to add": "拖曳至工具列，輕觸以新增",
   "Customize Toolbar": "自訂工具列",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "在兩列之間拖曳工具即可顯示或隱藏它們並重新排列工具列。你也可以輕觸某個工具來移動它。",
   "In toolbar": "工具列中",
   "No tools — drag one here.": "沒有工具——拖一個到這裡。",
   "Available": "可用",
-  "All tools are in the toolbar.": "所有工具都在工具列中。"
+  "All tools are in the toolbar.": "所有工具都在工具列中。",
+  "Add all": "全部新增",
+  "Clear all": "全部清除"
 }

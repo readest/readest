@@ -1748,12 +1748,12 @@
   "System Lookup App": "App de pesquisa do sistema",
   "Share": "Partilhar",
   "Share text after selection": "Partilhar texto após a seleção",
-  "Drag to reorder, tap to remove": "Arraste para reordenar, toque para remover",
-  "Drag to toolbar, tap to add": "Arraste para a barra de ferramentas, toque para adicionar",
   "Customize Toolbar": "Personalizar barra de ferramentas",
   "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Arraste as ferramentas entre as linhas para as mostrar ou ocultar e reordenar a barra de ferramentas. Também pode tocar numa ferramenta para a mover.",
   "In toolbar": "Na barra de ferramentas",
   "No tools — drag one here.": "Sem ferramentas — arraste uma para aqui.",
   "Available": "Disponíveis",
-  "All tools are in the toolbar.": "Todas as ferramentas estão na barra de ferramentas."
+  "All tools are in the toolbar.": "Todas as ferramentas estão na barra de ferramentas.",
+  "Add all": "Adicionar tudo",
+  "Clear all": "Limpar tudo"
 }
