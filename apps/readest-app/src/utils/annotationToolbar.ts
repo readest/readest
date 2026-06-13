@@ -87,7 +87,7 @@ export const reorderToolbar = (
   const to = visible.indexOf(toType);
   if (from < 0 || to < 0 || from === to) return visible;
   const next = [...visible];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
+  const spliced = next.splice(from, 1);
+  next.splice(to, 0, spliced[0]!);
   return next;
 };

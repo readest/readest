@@ -1559,27 +1559,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onDismiss={handleDismissPopupAndSelection}
         />
       )}
-      {showAnnotPopup && trianglePosition && annotPopupPosition && (
-        <AnnotationPopup
-          bookKey={bookKey}
-          dir={viewSettings.rtl ? 'rtl' : 'ltr'}
-          isVertical={viewSettings.vertical}
-          buttons={toolButtons}
-          notes={annotationNotes}
-          position={annotPopupPosition}
-          trianglePosition={trianglePosition}
-          highlightOptionsVisible={highlightOptionsVisible}
-          selectedStyle={selectedStyle}
-          selectedColor={selectedColor}
-          popupWidth={annotPopupWidth}
-          popupHeight={annotPopupHeight}
-          globalToggleAvailable={globalToggleAvailable}
-          globalToggleActive={globalToggleActive}
-          onToggleGlobal={handleToggleGlobal}
-          onHighlight={handleHighlight}
-          onDismiss={handleDismissPopupAndSelection}
-        />
-      )}
+      {showAnnotPopup &&
+        trianglePosition &&
+        annotPopupPosition &&
+        // With an empty toolbar, suppress the popup on a plain selection rather
+        // than showing an empty bar. Still allow it for editing an existing
+        // highlight (options) or viewing its notes.
+        (toolButtons.length > 0 || highlightOptionsVisible || annotationNotes.length > 0) && (
+          <AnnotationPopup
+            bookKey={bookKey}
+            dir={viewSettings.rtl ? 'rtl' : 'ltr'}
+            isVertical={viewSettings.vertical}
+            buttons={toolButtons}
+            notes={annotationNotes}
+            position={annotPopupPosition}
+            trianglePosition={trianglePosition}
+            highlightOptionsVisible={highlightOptionsVisible}
+            selectedStyle={selectedStyle}
+            selectedColor={selectedColor}
+            popupWidth={annotPopupWidth}
+            popupHeight={annotPopupHeight}
+            globalToggleAvailable={globalToggleAvailable}
+            globalToggleActive={globalToggleActive}
+            onToggleGlobal={handleToggleGlobal}
+            onHighlight={handleHighlight}
+            onDismiss={handleDismissPopupAndSelection}
+          />
+        )}
       {showProofreadPopup && trianglePosition && proofreadPopupPosition && selection && (
         <ProofreadPopup
           bookKey={bookKey}

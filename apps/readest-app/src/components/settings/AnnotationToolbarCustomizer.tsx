@@ -1,16 +1,21 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
   TouchSensor,
-  closestCenter,
+  closestCorners,
+  getFirstCollision,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 import { useEnv } from '@/context/EnvContext';
@@ -21,6 +26,7 @@ import { saveViewSettings } from '@/helpers/settings';
 import { AnnotationToolType } from '@/types/annotator';
 import { annotationToolButtons } from '@/app/reader/components/annotator/AnnotationTools';
 import {
+  ALL_ANNOTATION_TOOL_TYPES,
   getAvailableToolTypes,
   getToolbarToolTypes,
   addToolToToolbar,
@@ -29,6 +35,8 @@ import {
 } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
 import SubPageHeader from './SubPageHeader';
+
+type ZoneId = 'toolbar' | 'available';
 
 interface AnnotationToolbarCustomizerProps {
   bookKey: string;
@@ -41,20 +49,25 @@ const toolButtonOf = (type: AnnotationToolType) =>
 interface ToolChipProps {
   type: AnnotationToolType;
   label: string;
-  hint: string;
+  variant: ZoneId;
   onActivate: () => void;
 }
 
-const ToolChip: React.FC<ToolChipProps> = ({ type, label, hint, onActivate }) => {
+const ToolChip: React.FC<ToolChipProps> = ({ type, label, variant, onActivate }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: type,
   });
   const Icon = toolButtonOf(type)?.Icon;
   const style: React.CSSProperties = {
+    // `transform` is a relative translate, so the chip tracks the pointer
+    // correctly even though the settings dialog is a transformed container
+    // (a `position: fixed` DragOverlay would be offset by that transform).
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 20 : undefined,
+    opacity: isDragging ? 0.85 : 1,
   };
+  const isToolbar = variant === 'toolbar';
   return (
     <button
       ref={setNodeRef}
@@ -65,36 +78,52 @@ const ToolChip: React.FC<ToolChipProps> = ({ type, label, hint, onActivate }) =>
       // on e-ink and for keyboard/AT users where drag is impractical.
       onClick={onActivate}
       className={clsx(
-        'eink-bordered flex touch-none select-none items-center gap-1.5 rounded-md px-2.5 py-1.5',
-        'cursor-grab text-sm active:cursor-grabbing',
-        isDragging ? 'z-10 shadow-md' : '',
+        'flex cursor-grab touch-none select-none items-center active:cursor-grabbing',
+        isToolbar
+          ? // Mirror the live toolbar's AnnotationToolButton: icon-only 32×32.
+            'h-8 min-h-8 w-8 justify-center rounded-md p-0 not-eink:hover:bg-gray-500 eink:hover:border'
+          : // Available tools are labeled so they're identifiable off the bar.
+            'eink-bordered border-base-300 bg-base-100 gap-1.5 rounded-md border px-2.5 py-1.5 text-sm',
+        isDragging && 'shadow-lg',
       )}
       aria-label={label}
-      title={hint}
+      title={label}
       {...attributes}
       {...listeners}
     >
-      {Icon ? <Icon className='h-4 w-4 shrink-0' /> : null}
-      <span className='whitespace-nowrap'>{label}</span>
+      {Icon ? <Icon className={isToolbar ? undefined : 'h-4 w-4 shrink-0'} /> : null}
+      {isToolbar ? null : <span className='whitespace-nowrap'>{label}</span>}
     </button>
   );
 };
 
 const Zone: React.FC<{
-  id: 'toolbar' | 'available';
+  id: ZoneId;
   items: AnnotationToolType[];
   emptyHint: string;
   renderChip: (type: AnnotationToolType) => React.ReactNode;
 }> = ({ id, items, emptyHint, renderChip }) => {
   const { setNodeRef } = useDroppable({ id });
+  const isToolbar = id === 'toolbar';
   return (
-    <SortableContext items={items} strategy={horizontalListSortingStrategy}>
+    <SortableContext items={items} strategy={rectSortingStrategy}>
       <div
         ref={setNodeRef}
-        className={clsx('bg-base-200/60 flex min-h-14 flex-wrap items-center gap-2 rounded-lg p-2')}
+        className={clsx(
+          'flex min-h-12 flex-wrap items-center gap-2 rounded-lg p-2',
+          isToolbar
+            ? // A faithful, content-width preview of the real popup, start-aligned
+              // with the Available row below it.
+              'selection-popup bg-gray-600 text-white w-fit max-w-full'
+            : 'bg-base-200/60',
+        )}
       >
         {items.length === 0 ? (
-          <span className='text-base-content/50 px-1 text-sm'>{emptyHint}</span>
+          <span
+            className={clsx('px-1 text-sm', isToolbar ? 'text-white/70' : 'text-base-content/50')}
+          >
+            {emptyHint}
+          </span>
         ) : (
           items.map((type) => <React.Fragment key={type}>{renderChip(type)}</React.Fragment>)
         )}
@@ -124,84 +153,138 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
   );
   const preserveHiddenShare = !canShare && savedHasShare;
 
-  const [toolbar, setToolbar] = useState<AnnotationToolType[]>(() =>
-    getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare),
-  );
-  const [available, setAvailable] = useState<AnnotationToolType[]>(() =>
-    getAvailableToolTypes(viewSettings.annotationToolbarItems, canShare),
-  );
+  const [items, setItems] = useState<Record<ZoneId, AnnotationToolType[]>>(() => ({
+    toolbar: getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare),
+    available: getAvailableToolTypes(viewSettings.annotationToolbarItems, canShare),
+  }));
+  // dnd-kit invokes onDragEnd with the handler captured at drag start, so the
+  // closed-over `items` is stale by the time a cross-zone drag finishes. Read
+  // the live value from this ref instead. Kept in sync on every render.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  // Snapshot taken on drag start so an aborted drag can be fully reverted —
+  // onDragOver mutates `items` live as the pointer crosses zones.
+  const beforeDragRef = useRef<Record<ZoneId, AnnotationToolType[]> | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   );
 
-  const persist = (nextToolbar: AnnotationToolType[]) => {
+  // closestCorners alone can't reliably target an empty container; prefer the
+  // droppable under the pointer, and when that's a zone with items, snap to the
+  // closest chip inside it. (dnd-kit multiple-containers recipe.)
+  const collisionDetection: CollisionDetection = useCallback(
+    (args) => {
+      const pointerCollisions = pointerWithin(args);
+      const collisions = pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+      let overId = getFirstCollision(collisions, 'id');
+      if (overId == null) return [];
+      if (overId === 'toolbar' || overId === 'available') {
+        const ids = items[overId];
+        if (ids.length > 0) {
+          const inner = closestCorners({
+            ...args,
+            droppableContainers: args.droppableContainers.filter(
+              (c) => c.id !== overId && ids.includes(c.id as AnnotationToolType),
+            ),
+          });
+          if (inner.length > 0) overId = inner[0]!.id;
+        }
+      }
+      return [{ id: overId }];
+    },
+    [items],
+  );
+
+  const persist = (toolbar: AnnotationToolType[]) => {
     const toSave =
-      preserveHiddenShare && !nextToolbar.includes('share')
-        ? [...nextToolbar, 'share' as AnnotationToolType]
-        : nextToolbar;
+      preserveHiddenShare && !toolbar.includes('share')
+        ? [...toolbar, 'share' as AnnotationToolType]
+        : toolbar;
     saveViewSettings(envConfig, bookKey, 'annotationToolbarItems', toSave, false, true);
   };
 
-  const containerOf = (id: string): 'toolbar' | 'available' | null => {
-    if (id === 'toolbar' || toolbar.includes(id as AnnotationToolType)) return 'toolbar';
-    if (id === 'available' || available.includes(id as AnnotationToolType)) return 'available';
+  // Commit a new toolbar order: keep the user's arrangement, recompute the
+  // available tray as its canonical-order complement, and persist.
+  const commit = (toolbar: AnnotationToolType[]) => {
+    setItems({ toolbar, available: getAvailableToolTypes(toolbar, canShare) });
+    persist(toolbar);
+  };
+
+  const zoneOf = (id: string, state: Record<ZoneId, AnnotationToolType[]>): ZoneId | null => {
+    if (id === 'toolbar' || id === 'available') return id;
+    if (state.toolbar.includes(id as AnnotationToolType)) return 'toolbar';
+    if (state.available.includes(id as AnnotationToolType)) return 'available';
     return null;
   };
 
-  const moveToToolbar = (type: AnnotationToolType, atIndex?: number) => {
-    const next = addToolToToolbar(toolbar, type, atIndex);
-    setToolbar(next);
-    setAvailable(getAvailableToolTypes(next, canShare));
-    persist(next);
+  const moveToToolbar = (type: AnnotationToolType) =>
+    commit(addToolToToolbar(itemsRef.current.toolbar, type));
+  const moveToAvailable = (type: AnnotationToolType) =>
+    commit(removeToolFromToolbar(itemsRef.current.toolbar, type));
+
+  // "Add all" rebuilds the toolbar in the canonical predefined order (not the
+  // user's prior arrangement); "Clear all" empties it.
+  const addAll = () => commit(ALL_ANNOTATION_TOOL_TYPES.filter((t) => canShare || t !== 'share'));
+  const clearAll = () => commit([]);
+
+  const handleDragStart = () => {
+    beforeDragRef.current = items;
   };
 
-  const moveToAvailable = (type: AnnotationToolType) => {
-    const next = removeToolFromToolbar(toolbar, type);
-    setToolbar(next);
-    setAvailable(getAvailableToolTypes(next, canShare));
-    persist(next);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
+  // Live reparent across zones so chips reflow under the cursor.
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
     const activeId = active.id as AnnotationToolType;
     const overId = over.id as string;
-    const from = containerOf(active.id as string);
-    const to = containerOf(overId);
-    if (!from || !to) return;
+    setItems((prev) => {
+      const from = zoneOf(activeId, prev);
+      const to = zoneOf(overId, prev);
+      if (!from || !to || from === to) return prev;
+      const fromItems = prev[from].filter((t) => t !== activeId);
+      const overIndex = prev[to].indexOf(overId as AnnotationToolType);
+      const insertAt = overIndex >= 0 ? overIndex : prev[to].length;
+      const toItems = [...prev[to]];
+      toItems.splice(insertAt, 0, activeId);
+      return { ...prev, [from]: fromItems, [to]: toItems } as Record<ZoneId, AnnotationToolType[]>;
+    });
+  };
 
-    if (from === 'toolbar' && to === 'toolbar') {
-      if (overId === 'toolbar' || overId === activeId) return;
-      const next = reorderToolbar(toolbar, activeId, overId as AnnotationToolType);
-      if (next !== toolbar) {
-        setToolbar(next);
-        persist(next);
-      }
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    beforeDragRef.current = null;
+    const current = itemsRef.current;
+    if (!over) {
+      commit(current.toolbar);
       return;
     }
-    if (from === 'available' && to === 'toolbar') {
-      const insertAt =
-        overId === 'toolbar'
-          ? toolbar.length
-          : Math.max(0, toolbar.indexOf(overId as AnnotationToolType));
-      moveToToolbar(activeId, insertAt);
+    const activeId = active.id as AnnotationToolType;
+    const overId = over.id as string;
+    // Reorder within the toolbar (cross-zone moves already applied in onDragOver).
+    if (
+      current.toolbar.includes(activeId) &&
+      overId !== 'toolbar' &&
+      overId !== 'available' &&
+      zoneOf(overId, current) === 'toolbar'
+    ) {
+      commit(reorderToolbar(current.toolbar, activeId, overId as AnnotationToolType));
       return;
     }
-    if (from === 'toolbar' && to === 'available') {
-      moveToAvailable(activeId);
-      return;
-    }
-    // from === 'available' && to === 'available': display-only, ignore.
+    commit(current.toolbar);
+  };
+
+  const handleDragCancel = () => {
+    if (beforeDragRef.current) setItems(beforeDragRef.current);
+    beforeDragRef.current = null;
   };
 
   const renderToolbarChip = (type: AnnotationToolType) => (
     <ToolChip
       type={type}
       label={_(toolButtonOf(type)?.label ?? type)}
-      hint={_('Drag to reorder, tap to remove')}
+      variant='toolbar'
       onActivate={() => moveToAvailable(type)}
     />
   );
@@ -209,7 +292,7 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
     <ToolChip
       type={type}
       label={_(toolButtonOf(type)?.label ?? type)}
-      hint={_('Drag to toolbar, tap to add')}
+      variant='available'
       onActivate={() => moveToToolbar(type)}
     />
   );
@@ -223,14 +306,42 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
           'Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.',
         )}
         onBack={onBack}
+        rightSlot={
+          <div className='flex shrink-0 items-center gap-1'>
+            <button
+              type='button'
+              className='btn btn-ghost btn-xs'
+              onClick={addAll}
+              disabled={items.available.length === 0}
+            >
+              {_('Add all')}
+            </button>
+            <button
+              type='button'
+              className='btn btn-ghost btn-xs'
+              onClick={clearAll}
+              disabled={items.toolbar.length === 0}
+            >
+              {_('Clear all')}
+            </button>
+          </div>
+        }
       />
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className='my-4 space-y-5'>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        {/* px-4 matches SubPageHeader so the zone labels align with the breadcrumb. */}
+        <div className='my-4 space-y-5 px-4'>
           <div className='space-y-2'>
             <div className='text-base-content/70 text-sm font-medium'>{_('In toolbar')}</div>
             <Zone
               id='toolbar'
-              items={toolbar}
+              items={items.toolbar}
               emptyHint={_('No tools — drag one here.')}
               renderChip={renderToolbarChip}
             />
@@ -239,7 +350,7 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
             <div className='text-base-content/70 text-sm font-medium'>{_('Available')}</div>
             <Zone
               id='available'
-              items={available}
+              items={items.available}
               emptyHint={_('All tools are in the toolbar.')}
               renderChip={renderAvailableChip}
             />
