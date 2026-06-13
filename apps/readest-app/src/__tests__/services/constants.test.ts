@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 
 vi.mock('@/utils/config', () => ({
   getDefaultMaxBlockSize: vi.fn(() => 1600),
@@ -709,6 +710,13 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_ANNOTATOR_CONFIG.copyToNotebook).toBe('boolean');
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBeDefined();
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBe(DEFAULT_NOTE_EXPORT_CONFIG);
+    });
+
+    it('annotationToolbarItems defaults to the eight non-share tools', () => {
+      expect(DEFAULT_ANNOTATOR_CONFIG.annotationToolbarItems).toEqual(
+        DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
+      );
+      expect(DEFAULT_ANNOTATOR_CONFIG.annotationToolbarItems).not.toContain('share');
     });
   });
 
