@@ -1,3 +1,4 @@
+import { writeTextToClipboard } from '@/utils/clipboard';
 import { READEST_WEB_BASE_URL, SHARE_BASE_URL, SHARE_TOKEN_LENGTH } from '@/services/constants';
 
 export interface ShareDeepLink {
@@ -42,6 +43,61 @@ export const parseShareDeepLink = (url: string): ShareDeepLink | null => {
     return isValidToken(token) ? { token } : null;
   }
   return null;
+};
+
+export interface SharePosition {
+  x: number;
+  y: number;
+  preferredEdge?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+/** Minimal slice of AppService needed to decide the native-share path. */
+interface ShareCapableService {
+  isMobileApp?: boolean;
+  isMacOSApp?: boolean;
+  isWindowsApp?: boolean;
+  isLinuxApp?: boolean;
+  hasWindow?: boolean;
+}
+
+/**
+ * Open the OS share sheet for `text`, with graceful fallbacks.
+ *
+ * Ladder:
+ *  1. Native sharekit on mobile + macOS only. Windows/Linux are excluded: the
+ *     plugin's share UI can freeze the app on Windows (issue #4343) and is not
+ *     functional on Linux — `nativeAppService` gates `shareFile` the same way.
+ *  2. `navigator.share` (web / PWA). A rejection means the user dismissed the
+ *     sheet — respect it, don't silently copy.
+ *  3. Clipboard, as a last resort when no share method exists.
+ */
+export const shareSelectedText = async (
+  text: string,
+  position?: SharePosition,
+  appService?: ShareCapableService | null,
+): Promise<void> => {
+  if (!text) return;
+
+  if (appService?.isMobileApp || appService?.isMacOSApp) {
+    try {
+      const { shareText } = await import('@choochmeque/tauri-plugin-sharekit-api');
+      await shareText(text, { position });
+      return;
+    } catch (err) {
+      console.error('shareText failed; falling back:', err);
+    }
+  }
+
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ text });
+    } catch {
+      // User dismissed or share-time error; respect the choice.
+    }
+    return;
+  }
+
+  await writeTextToClipboard(text);
 };
 
 const isWebReadestHost = (host: string): boolean => {
