@@ -1679,5 +1679,15 @@
   "Reference Pages": "Trang tham chiếu",
   "Reference Page Count": "Số trang tham chiếu",
   "Lookup app reset. The next lookup will ask again.": "Đã đặt lại ứng dụng tra cứu. Lần tra cứu tiếp theo sẽ hỏi lại.",
-  "System Lookup App": "Ứng dụng tra cứu hệ thống"
+  "System Lookup App": "Ứng dụng tra cứu hệ thống",
+  "Share": "Chia sẻ",
+  "Share text after selection": "Chia sẻ văn bản sau khi chọn",
+  "Drag to reorder, tap to remove": "Kéo để sắp xếp lại, chạm để xóa",
+  "Drag to toolbar, tap to add": "Kéo vào thanh công cụ, chạm để thêm",
+  "Customize Toolbar": "Tùy chỉnh thanh công cụ",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Kéo các công cụ giữa các hàng để hiển thị hoặc ẩn chúng và sắp xếp lại thanh công cụ. Bạn cũng có thể chạm vào một công cụ để di chuyển nó.",
+  "In toolbar": "Trên thanh công cụ",
+  "No tools — drag one here.": "Không có công cụ — hãy kéo một công cụ vào đây.",
+  "Available": "Khả dụng",
+  "All tools are in the toolbar.": "Tất cả công cụ đều ở trên thanh công cụ."
 }

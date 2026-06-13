@@ -1712,5 +1712,15 @@
   "Reference Pages": "Referenzseiten",
   "Reference Page Count": "Anzahl der Referenzseiten",
   "Lookup app reset. The next lookup will ask again.": "Nachschlage-App zurückgesetzt. Bei der nächsten Suche wird erneut gefragt.",
-  "System Lookup App": "System-Nachschlage-App"
+  "System Lookup App": "System-Nachschlage-App",
+  "Share": "Teilen",
+  "Share text after selection": "Text nach Auswahl teilen",
+  "Drag to reorder, tap to remove": "Zum Umsortieren ziehen, zum Entfernen tippen",
+  "Drag to toolbar, tap to add": "In die Werkzeugleiste ziehen, zum Hinzufügen tippen",
+  "Customize Toolbar": "Werkzeugleiste anpassen",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Ziehe Werkzeuge zwischen den Zeilen, um sie ein- oder auszublenden und die Werkzeugleiste neu anzuordnen. Du kannst auch auf ein Werkzeug tippen, um es zu verschieben.",
+  "In toolbar": "In der Werkzeugleiste",
+  "No tools — drag one here.": "Keine Werkzeuge — zieh eines hierher.",
+  "Available": "Verfügbar",
+  "All tools are in the toolbar.": "Alle Werkzeuge befinden sich in der Werkzeugleiste."
 }

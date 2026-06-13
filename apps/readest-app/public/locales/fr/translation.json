@@ -1745,5 +1745,15 @@
   "Reference Pages": "Pages de référence",
   "Reference Page Count": "Nombre de pages de référence",
   "Lookup app reset. The next lookup will ask again.": "Application de recherche réinitialisée. La prochaine recherche redemandera.",
-  "System Lookup App": "Application de recherche système"
+  "System Lookup App": "Application de recherche système",
+  "Share": "Partager",
+  "Share text after selection": "Partager le texte après la sélection",
+  "Drag to reorder, tap to remove": "Glisser pour réorganiser, toucher pour retirer",
+  "Drag to toolbar, tap to add": "Glisser vers la barre d’outils, toucher pour ajouter",
+  "Customize Toolbar": "Personnaliser la barre d’outils",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Faites glisser les outils entre les lignes pour les afficher ou les masquer et réorganiser la barre d’outils. Vous pouvez aussi toucher un outil pour le déplacer.",
+  "In toolbar": "Dans la barre d’outils",
+  "No tools — drag one here.": "Aucun outil — glissez-en un ici.",
+  "Available": "Disponibles",
+  "All tools are in the toolbar.": "Tous les outils sont dans la barre d’outils."
 }

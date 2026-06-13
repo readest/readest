@@ -1679,5 +1679,15 @@
   "Reference Pages": "Halaman rujukan",
   "Reference Page Count": "Bilangan halaman rujukan",
   "Lookup app reset. The next lookup will ask again.": "Apl carian ditetapkan semula. Carian seterusnya akan bertanya lagi.",
-  "System Lookup App": "Apl carian sistem"
+  "System Lookup App": "Apl carian sistem",
+  "Share": "Kongsi",
+  "Share text after selection": "Kongsi teks selepas pemilihan",
+  "Drag to reorder, tap to remove": "Seret untuk menyusun semula, ketik untuk membuang",
+  "Drag to toolbar, tap to add": "Seret ke bar alat, ketik untuk menambah",
+  "Customize Toolbar": "Sesuaikan Bar Alat",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Seret alat antara baris untuk menunjukkan atau menyembunyikannya dan menyusun semula bar alat. Anda juga boleh mengetik alat untuk mengalihkannya.",
+  "In toolbar": "Dalam bar alat",
+  "No tools — drag one here.": "Tiada alat — seret satu ke sini.",
+  "Available": "Tersedia",
+  "All tools are in the toolbar.": "Semua alat berada dalam bar alat."
 }

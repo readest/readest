@@ -1712,5 +1712,15 @@
   "Reference Pages": "রেফারেন্স পৃষ্ঠা",
   "Reference Page Count": "রেফারেন্স পৃষ্ঠার সংখ্যা",
   "Lookup app reset. The next lookup will ask again.": "লুকআপ অ্যাপ রিসেট করা হয়েছে। পরবর্তী লুকআপে আবার জিজ্ঞাসা করা হবে।",
-  "System Lookup App": "সিস্টেম লুকআপ অ্যাপ"
+  "System Lookup App": "সিস্টেম লুকআপ অ্যাপ",
+  "Share": "শেয়ার করুন",
+  "Share text after selection": "নির্বাচনের পর টেক্সট শেয়ার করুন",
+  "Drag to reorder, tap to remove": "পুনর্বিন্যাস করতে টেনে আনুন, সরাতে ট্যাপ করুন",
+  "Drag to toolbar, tap to add": "টুলবারে টেনে আনুন, যোগ করতে ট্যাপ করুন",
+  "Customize Toolbar": "টুলবার কাস্টমাইজ করুন",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "সারিগুলোর মধ্যে টুল টেনে এনে সেগুলো দেখান বা লুকান এবং টুলবার পুনর্বিন্যাস করুন। আপনি কোনো টুল সরাতে সেটিতে ট্যাপও করতে পারেন।",
+  "In toolbar": "টুলবারে",
+  "No tools — drag one here.": "কোনো টুল নেই — এখানে একটি টেনে আনুন।",
+  "Available": "উপলব্ধ",
+  "All tools are in the toolbar.": "সব টুল টুলবারে রয়েছে।"
 }

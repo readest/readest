@@ -1712,5 +1712,15 @@
   "Reference Pages": "Referenciaoldalak",
   "Reference Page Count": "Referenciaoldalak száma",
   "Lookup app reset. The next lookup will ask again.": "A keresőalkalmazás visszaállítva. A következő keresésnél újra rákérdez.",
-  "System Lookup App": "Rendszer keresőalkalmazás"
+  "System Lookup App": "Rendszer keresőalkalmazás",
+  "Share": "Megosztás",
+  "Share text after selection": "Szöveg megosztása kijelölés után",
+  "Drag to reorder, tap to remove": "Húzd az átrendezéshez, koppints az eltávolításhoz",
+  "Drag to toolbar, tap to add": "Húzd az eszköztárra, koppints a hozzáadáshoz",
+  "Customize Toolbar": "Eszköztár testreszabása",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Húzd az eszközöket a sorok között a megjelenítésükhöz vagy elrejtésükhöz, és az eszköztár átrendezéséhez. Egy eszközre koppintva is áthelyezheted azt.",
+  "In toolbar": "Az eszköztáron",
+  "No tools — drag one here.": "Nincsenek eszközök — húzz ide egyet.",
+  "Available": "Elérhető",
+  "All tools are in the toolbar.": "Minden eszköz az eszköztáron van."
 }

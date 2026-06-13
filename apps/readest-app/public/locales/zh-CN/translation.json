@@ -1679,5 +1679,15 @@
   "Reference Pages": "参考页码",
   "Reference Page Count": "参考总页数",
   "Lookup app reset. The next lookup will ask again.": "已重置查词应用。下次查词时将再次询问。",
-  "System Lookup App": "系统查词应用"
+  "System Lookup App": "系统查词应用",
+  "Share": "分享",
+  "Share text after selection": "选择后分享文本",
+  "Drag to reorder, tap to remove": "拖动以重新排序，点按以移除",
+  "Drag to toolbar, tap to add": "拖动到工具栏，点按以添加",
+  "Customize Toolbar": "自定义工具栏",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "在两行之间拖动工具即可显示或隐藏它们并重新排列工具栏。你也可以点按某个工具来移动它。",
+  "In toolbar": "工具栏中",
+  "No tools — drag one here.": "没有工具——拖一个到这里。",
+  "Available": "可用",
+  "All tools are in the toolbar.": "所有工具都在工具栏中。"
 }

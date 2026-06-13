@@ -1712,5 +1712,15 @@
   "Reference Pages": "Referans sayfaları",
   "Reference Page Count": "Referans sayfa sayısı",
   "Lookup app reset. The next lookup will ask again.": "Arama uygulaması sıfırlandı. Sonraki aramada tekrar sorulacak.",
-  "System Lookup App": "Sistem arama uygulaması"
+  "System Lookup App": "Sistem arama uygulaması",
+  "Share": "Paylaş",
+  "Share text after selection": "Seçimden sonra metni paylaş",
+  "Drag to reorder, tap to remove": "Yeniden sıralamak için sürükleyin, kaldırmak için dokunun",
+  "Drag to toolbar, tap to add": "Araç çubuğuna sürükleyin, eklemek için dokunun",
+  "Customize Toolbar": "Araç Çubuğunu Özelleştir",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Araçları satırlar arasında sürükleyerek gösterin veya gizleyin ve araç çubuğunu yeniden sıralayın. Bir aracı taşımak için ona dokunabilirsiniz de.",
+  "In toolbar": "Araç çubuğunda",
+  "No tools — drag one here.": "Araç yok — buraya bir tane sürükleyin.",
+  "Available": "Kullanılabilir",
+  "All tools are in the toolbar.": "Tüm araçlar araç çubuğunda."
 }

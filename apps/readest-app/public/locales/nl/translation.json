@@ -1712,5 +1712,15 @@
   "Reference Pages": "Referentiepagina's",
   "Reference Page Count": "Aantal referentiepagina's",
   "Lookup app reset. The next lookup will ask again.": "Opzoekapp gereset. De volgende keer wordt het opnieuw gevraagd.",
-  "System Lookup App": "Systeem-opzoekapp"
+  "System Lookup App": "Systeem-opzoekapp",
+  "Share": "Delen",
+  "Share text after selection": "Tekst delen na selectie",
+  "Drag to reorder, tap to remove": "Sleep om te herschikken, tik om te verwijderen",
+  "Drag to toolbar, tap to add": "Sleep naar de werkbalk, tik om toe te voegen",
+  "Customize Toolbar": "Werkbalk aanpassen",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Sleep gereedschappen tussen de rijen om ze te tonen of te verbergen en de werkbalk te herschikken. Je kunt ook op een gereedschap tikken om het te verplaatsen.",
+  "In toolbar": "Op de werkbalk",
+  "No tools — drag one here.": "Geen gereedschappen — sleep er een hierheen.",
+  "Available": "Beschikbaar",
+  "All tools are in the toolbar.": "Alle gereedschappen staan op de werkbalk."
 }

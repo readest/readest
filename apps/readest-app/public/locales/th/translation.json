@@ -1679,5 +1679,15 @@
   "Reference Pages": "หน้าอ้างอิง",
   "Reference Page Count": "จำนวนหน้าอ้างอิง",
   "Lookup app reset. The next lookup will ask again.": "รีเซ็ตแอปค้นหาแล้ว การค้นหาครั้งถัดไปจะถามอีกครั้ง",
-  "System Lookup App": "แอปค้นหาของระบบ"
+  "System Lookup App": "แอปค้นหาของระบบ",
+  "Share": "แชร์",
+  "Share text after selection": "แชร์ข้อความหลังการเลือก",
+  "Drag to reorder, tap to remove": "ลากเพื่อจัดเรียงใหม่ แตะเพื่อนำออก",
+  "Drag to toolbar, tap to add": "ลากไปยังแถบเครื่องมือ แตะเพื่อเพิ่ม",
+  "Customize Toolbar": "ปรับแต่งแถบเครื่องมือ",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "ลากเครื่องมือระหว่างแถวเพื่อแสดงหรือซ่อน และจัดเรียงแถบเครื่องมือใหม่ คุณยังสามารถแตะเครื่องมือเพื่อย้ายได้",
+  "In toolbar": "ในแถบเครื่องมือ",
+  "No tools — drag one here.": "ไม่มีเครื่องมือ — ลากมาที่นี่สักรายการ",
+  "Available": "พร้อมใช้งาน",
+  "All tools are in the toolbar.": "เครื่องมือทั้งหมดอยู่ในแถบเครื่องมือแล้ว"
 }

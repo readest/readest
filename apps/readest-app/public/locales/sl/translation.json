@@ -1778,5 +1778,15 @@
   "Reference Pages": "Referenčne strani",
   "Reference Page Count": "Število referenčnih strani",
   "Lookup app reset. The next lookup will ask again.": "Aplikacija za iskanje je ponastavljena. Ob naslednjem iskanju bo znova vprašala.",
-  "System Lookup App": "Sistemska aplikacija za iskanje"
+  "System Lookup App": "Sistemska aplikacija za iskanje",
+  "Share": "Deli",
+  "Share text after selection": "Deli besedilo po izbiri",
+  "Drag to reorder, tap to remove": "Povlecite za prerazporeditev, tapnite za odstranitev",
+  "Drag to toolbar, tap to add": "Povlecite v orodno vrstico, tapnite za dodajanje",
+  "Customize Toolbar": "Prilagodi orodno vrstico",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Povlecite orodja med vrsticami, da jih prikažete ali skrijete in prerazporedite orodno vrstico. Orodje lahko tudi tapnete, da ga premaknete.",
+  "In toolbar": "V orodni vrstici",
+  "No tools — drag one here.": "Ni orodij — povlecite eno sem.",
+  "Available": "Na voljo",
+  "All tools are in the toolbar.": "Vsa orodja so v orodni vrstici."
 }

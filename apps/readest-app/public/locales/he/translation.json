@@ -1745,5 +1745,15 @@
   "Reference Pages": "עמודי ייחוס",
   "Reference Page Count": "מספר עמודי ייחוס",
   "Lookup app reset. The next lookup will ask again.": "אפליקציית החיפוש אופסה. בחיפוש הבא תוצג שאלה שוב.",
-  "System Lookup App": "אפליקציית חיפוש מערכת"
+  "System Lookup App": "אפליקציית חיפוש מערכת",
+  "Share": "שיתוף",
+  "Share text after selection": "שיתוף טקסט לאחר הבחירה",
+  "Drag to reorder, tap to remove": "גררו כדי לסדר מחדש, הקישו כדי להסיר",
+  "Drag to toolbar, tap to add": "גררו אל סרגל הכלים, הקישו כדי להוסיף",
+  "Customize Toolbar": "התאמת סרגל הכלים",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "גררו כלים בין השורות כדי להציג או להסתיר אותם ולסדר מחדש את סרגל הכלים. אפשר גם להקיש על כלי כדי להעביר אותו.",
+  "In toolbar": "בסרגל הכלים",
+  "No tools — drag one here.": "אין כלים — גררו אחד לכאן.",
+  "Available": "זמינים",
+  "All tools are in the toolbar.": "כל הכלים נמצאים בסרגל הכלים."
 }

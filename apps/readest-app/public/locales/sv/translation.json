@@ -1712,5 +1712,15 @@
   "Reference Pages": "Referenssidor",
   "Reference Page Count": "Antal referenssidor",
   "Lookup app reset. The next lookup will ask again.": "Uppslagsappen återställd. Nästa sökning frågar igen.",
-  "System Lookup App": "Systemets uppslagsapp"
+  "System Lookup App": "Systemets uppslagsapp",
+  "Share": "Dela",
+  "Share text after selection": "Dela text efter markering",
+  "Drag to reorder, tap to remove": "Dra för att ändra ordning, tryck för att ta bort",
+  "Drag to toolbar, tap to add": "Dra till verktygsfältet, tryck för att lägga till",
+  "Customize Toolbar": "Anpassa verktygsfältet",
+  "Drag tools between the rows to show or hide them and reorder the toolbar. You can also tap a tool to move it.": "Dra verktyg mellan raderna för att visa eller dölja dem och ändra ordningen i verktygsfältet. Du kan även trycka på ett verktyg för att flytta det.",
+  "In toolbar": "I verktygsfältet",
+  "No tools — drag one here.": "Inga verktyg — dra ett hit.",
+  "Available": "Tillgängliga",
+  "All tools are in the toolbar.": "Alla verktyg finns i verktygsfältet."
 }
