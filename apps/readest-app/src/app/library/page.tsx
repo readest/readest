@@ -10,7 +10,7 @@ import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import { buildBookLookupIndex } from '@/services/bookService';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
-import { formatAuthors, formatTitle, getPrimaryLanguage, listFormater } from '@/utils/book';
+import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
@@ -918,16 +918,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
-    book.metadata = metadata;
-    book.title = formatTitle(metadata.title);
-    book.author = formatAuthors(metadata.author);
-    book.primaryLanguage = getPrimaryLanguage(metadata.language);
-    book.updatedAt = Date.now();
+    // Build a NEW book object instead of mutating `book` in place. <BookCover>
+    // is memoized and compares fields off the book, so mutating the existing
+    // object (which React holds as the previous snapshot) makes the comparator
+    // see no change and the library cover only refreshes after a full reload.
+    const updatedBook = getBookWithUpdatedMetadata(book, metadata);
     if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
-      book.coverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
       try {
         await appService?.updateCoverImage(
-          book,
+          updatedBook,
           metadata.coverImageBlobUrl || metadata.coverImageUrl,
           metadata.coverImageFile,
         );
@@ -945,7 +944,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
     metadata.coverImageBlobUrl = undefined;
     metadata.coverImageFile = undefined;
-    await updateBook(envConfig, book);
+    await updateBook(envConfig, updatedBook);
   };
 
   const handleImportBooksFromFiles = async () => {

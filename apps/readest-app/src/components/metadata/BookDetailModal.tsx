@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 import { Book } from '@/types/book';
+import { getBookWithUpdatedMetadata } from '@/utils/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -54,6 +55,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  // The parent owns the `book` prop and does not re-pass it after a metadata
+  // save, so the details view tracks the saved book locally to refresh its
+  // cover/title/author immediately (otherwise it shows the stale prop).
+  const [displayBook, setDisplayBook] = useState<Book>(book);
 
   // Initialize metadata edit hook
   const {
@@ -110,6 +115,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book]);
 
+  useEffect(() => {
+    setDisplayBook(book);
+  }, [book]);
+
   const handleClose = () => {
     setBookMeta(null);
     setEditMode(false);
@@ -129,6 +138,9 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleSaveMetadata = () => {
     if (editedMeta && handleBookMetadataUpdate) {
       setBookMeta({ ...editedMeta });
+      // Capture the updated book before handleBookMetadataUpdate clears the
+      // temporary cover fields on editedMeta, so the view refreshes its cover.
+      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta));
       handleBookMetadataUpdate(book, editedMeta);
       setEditMode(false);
     }
@@ -220,7 +232,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
               />
             ) : (
               <BookDetailView
-                book={book}
+                book={displayBook}
                 metadata={bookMeta}
                 fileSize={fileSize}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
