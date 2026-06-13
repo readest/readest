@@ -1710,5 +1710,7 @@
   "Look up": "खोजें",
   "Search on Goodreads": "Goodreads पर खोजें",
   "Reference Pages": "संदर्भ पृष्ठ",
-  "Reference Page Count": "संदर्भ पृष्ठ संख्या"
+  "Reference Page Count": "संदर्भ पृष्ठ संख्या",
+  "Lookup app reset. The next lookup will ask again.": "लुकअप ऐप रीसेट कर दिया गया। अगली बार फिर से पूछा जाएगा।",
+  "System Lookup App": "सिस्टम लुकअप ऐप"
 }

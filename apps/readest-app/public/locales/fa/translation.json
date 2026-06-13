@@ -1710,5 +1710,7 @@
   "Look up": "جستجو",
   "Search on Goodreads": "جستجو در Goodreads",
   "Reference Pages": "صفحات مرجع",
-  "Reference Page Count": "تعداد صفحات مرجع"
+  "Reference Page Count": "تعداد صفحات مرجع",
+  "Lookup app reset. The next lookup will ask again.": "برنامهٔ جستجو بازنشانی شد. در جستجوی بعدی دوباره پرسیده می‌شود.",
+  "System Lookup App": "برنامهٔ جستجوی سیستم"
 }

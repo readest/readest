@@ -1677,5 +1677,7 @@
   "Look up": "찾기",
   "Search on Goodreads": "Goodreads에서 검색",
   "Reference Pages": "참조 페이지",
-  "Reference Page Count": "참조 페이지 수"
+  "Reference Page Count": "참조 페이지 수",
+  "Lookup app reset. The next lookup will ask again.": "검색 앱을 초기화했습니다. 다음 검색 시 다시 묻습니다.",
+  "System Lookup App": "시스템 검색 앱"
 }

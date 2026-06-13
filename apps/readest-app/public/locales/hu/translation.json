@@ -1710,5 +1710,7 @@
   "Look up": "Keresés",
   "Search on Goodreads": "Keresés a Goodreadson",
   "Reference Pages": "Referenciaoldalak",
-  "Reference Page Count": "Referenciaoldalak száma"
+  "Reference Page Count": "Referenciaoldalak száma",
+  "Lookup app reset. The next lookup will ask again.": "A keresőalkalmazás visszaállítva. A következő keresésnél újra rákérdez.",
+  "System Lookup App": "Rendszer keresőalkalmazás"
 }

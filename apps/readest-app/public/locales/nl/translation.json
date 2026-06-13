@@ -1710,5 +1710,7 @@
   "Look up": "Opzoeken",
   "Search on Goodreads": "Zoeken op Goodreads",
   "Reference Pages": "Referentiepagina's",
-  "Reference Page Count": "Aantal referentiepagina's"
+  "Reference Page Count": "Aantal referentiepagina's",
+  "Lookup app reset. The next lookup will ask again.": "Opzoekapp gereset. De volgende keer wordt het opnieuw gevraagd.",
+  "System Lookup App": "Systeem-opzoekapp"
 }

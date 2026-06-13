@@ -1710,5 +1710,7 @@
   "Look up": "Qidirish",
   "Search on Goodreads": "Goodreads'da qidirish",
   "Reference Pages": "Bosma sahifalar",
-  "Reference Page Count": "Bosma sahifalar soni"
+  "Reference Page Count": "Bosma sahifalar soni",
+  "Lookup app reset. The next lookup will ask again.": "Qidiruv ilovasi tiklandi. Keyingi qidiruvda yana so‘raladi.",
+  "System Lookup App": "Tizim qidiruv ilovasi"
 }

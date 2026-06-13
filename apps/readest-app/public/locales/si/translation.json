@@ -1710,5 +1710,7 @@
   "Look up": "සොයන්න",
   "Search on Goodreads": "Goodreads හි සොයන්න",
   "Reference Pages": "යොමු පිටු",
-  "Reference Page Count": "යොමු පිටු ගණන"
+  "Reference Page Count": "යොමු පිටු ගණන",
+  "Lookup app reset. The next lookup will ask again.": "සෙවුම් යෙදුම යළි සකසන ලදී. ඊළඟ සෙවුමේදී නැවත අසනු ඇත.",
+  "System Lookup App": "පද්ධති සෙවුම් යෙදුම"
 }

@@ -1710,5 +1710,7 @@
   "Look up": "Nachschlagen",
   "Search on Goodreads": "Auf Goodreads suchen",
   "Reference Pages": "Referenzseiten",
-  "Reference Page Count": "Anzahl der Referenzseiten"
+  "Reference Page Count": "Anzahl der Referenzseiten",
+  "Lookup app reset. The next lookup will ask again.": "Nachschlage-App zurückgesetzt. Bei der nächsten Suche wird erneut gefragt.",
+  "System Lookup App": "System-Nachschlage-App"
 }

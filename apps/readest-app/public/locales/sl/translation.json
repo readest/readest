@@ -1776,5 +1776,7 @@
   "Look up": "Poišči",
   "Search on Goodreads": "Išči v Goodreads",
   "Reference Pages": "Referenčne strani",
-  "Reference Page Count": "Število referenčnih strani"
+  "Reference Page Count": "Število referenčnih strani",
+  "Lookup app reset. The next lookup will ask again.": "Aplikacija za iskanje je ponastavljena. Ob naslednjem iskanju bo znova vprašala.",
+  "System Lookup App": "Sistemska aplikacija za iskanje"
 }

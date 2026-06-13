@@ -1776,5 +1776,7 @@
   "Look up": "Знайти",
   "Search on Goodreads": "Шукати в Goodreads",
   "Reference Pages": "Сторінки паперової книги",
-  "Reference Page Count": "Кількість сторінок паперової книги"
+  "Reference Page Count": "Кількість сторінок паперової книги",
+  "Lookup app reset. The next lookup will ask again.": "Застосунок для пошуку скинуто. Під час наступного пошуку буде запит знову.",
+  "System Lookup App": "Системний застосунок для пошуку"
 }

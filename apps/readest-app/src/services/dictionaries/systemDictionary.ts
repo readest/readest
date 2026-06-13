@@ -211,3 +211,45 @@ export const invokeSystemDictionary = async (
     return false;
   }
 };
+
+/** The dictionary app remembered for the Android browser-excluding chooser. */
+export interface RememberedLookupApp {
+  packageName: string;
+  /** Human-readable app label (e.g. "Eudic"), resolved natively. */
+  label: string;
+}
+
+/**
+ * Android only: the dictionary app the user previously picked from the
+ * browser-excluding lookup chooser (issue #4559), or `null` when none is
+ * remembered or the platform isn't Android. The settings UI uses this to
+ * offer a "reset" affordance so the user can switch dictionaries without
+ * having to uninstall the remembered one.
+ */
+export const getRememberedLookupApp = async (): Promise<RememberedLookupApp | null> => {
+  if (!isTauriAppPlatform()) return null;
+  if (getSystemDictionaryOS() !== 'android') return null;
+  try {
+    const res = await invoke<{ packageName?: string; label?: string }>(
+      'plugin:native-bridge|get_lookup_dictionary',
+    );
+    if (res?.packageName && res.label) {
+      return { packageName: res.packageName, label: res.label };
+    }
+    return null;
+  } catch (error) {
+    console.warn('[systemDictionary] get_lookup_dictionary failed', error);
+    return null;
+  }
+};
+
+/** Android only: forget the remembered lookup dictionary app. */
+export const clearRememberedLookupApp = async (): Promise<void> => {
+  if (!isTauriAppPlatform()) return;
+  if (getSystemDictionaryOS() !== 'android') return;
+  try {
+    await invoke('plugin:native-bridge|clear_lookup_dictionary');
+  } catch (error) {
+    console.warn('[systemDictionary] clear_lookup_dictionary failed', error);
+  }
+};

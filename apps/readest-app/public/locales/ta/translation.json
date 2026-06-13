@@ -1710,5 +1710,7 @@
   "Look up": "தேடு",
   "Search on Goodreads": "Goodreads இல் தேடு",
   "Reference Pages": "குறிப்புப் பக்கங்கள்",
-  "Reference Page Count": "குறிப்புப் பக்கங்களின் எண்ணிக்கை"
+  "Reference Page Count": "குறிப்புப் பக்கங்களின் எண்ணிக்கை",
+  "Lookup app reset. The next lookup will ask again.": "தேடல் செயலி மீட்டமைக்கப்பட்டது. அடுத்த தேடலில் மீண்டும் கேட்கப்படும்.",
+  "System Lookup App": "கணினி தேடல் செயலி"
 }

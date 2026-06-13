@@ -1743,5 +1743,7 @@
   "Look up": "Caută",
   "Search on Goodreads": "Caută pe Goodreads",
   "Reference Pages": "Pagini de referință",
-  "Reference Page Count": "Numărul paginilor de referință"
+  "Reference Page Count": "Numărul paginilor de referință",
+  "Lookup app reset. The next lookup will ask again.": "Aplicația de căutare a fost resetată. La următoarea căutare se va întreba din nou.",
+  "System Lookup App": "Aplicație de căutare a sistemului"
 }

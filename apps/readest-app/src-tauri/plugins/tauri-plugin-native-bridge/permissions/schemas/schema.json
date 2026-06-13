@@ -355,6 +355,18 @@
           "markdownDescription": "Denies the check_permissions command without any pre-configured scope."
         },
         {
+          "description": "Enables the clear_lookup_dictionary command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-clear-lookup-dictionary",
+          "markdownDescription": "Enables the clear_lookup_dictionary command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_lookup_dictionary command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-clear-lookup-dictionary",
+          "markdownDescription": "Denies the clear_lookup_dictionary command without any pre-configured scope."
+        },
+        {
           "description": "Enables the clear_sync_passphrase command without any pre-configured scope.",
           "type": "string",
           "const": "allow-clear-sync-passphrase",
@@ -401,6 +413,18 @@
           "type": "string",
           "const": "deny-get-external-sdcard-path",
           "markdownDescription": "Denies the get_external_sdcard_path command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_lookup_dictionary command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-lookup-dictionary",
+          "markdownDescription": "Enables the get_lookup_dictionary command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_lookup_dictionary command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-lookup-dictionary",
+          "markdownDescription": "Denies the get_lookup_dictionary command without any pre-configured scope."
         },
         {
           "description": "Enables the get_safe_area_insets command without any pre-configured scope.",
@@ -751,10 +775,10 @@
           "markdownDescription": "Denies the use_background_audio command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-show-lookup-popover`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-show-lookup-popover`\n- `allow-get-lookup-dictionary`\n- `allow-clear-lookup-dictionary`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-show-lookup-popover`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-auth-with-safari`\n- `allow-auth-with-custom-tab`\n- `allow-copy-uri-to-path`\n- `allow-use-background-audio`\n- `allow-install-package`\n- `allow-set-system-ui-visibility`\n- `allow-get-status-bar-height`\n- `allow-get-sys-fonts-list`\n- `allow-intercept-keys`\n- `allow-lock-screen-orientation`\n- `allow-iap-is-available`\n- `allow-iap-initialize`\n- `allow-iap-fetch-products`\n- `allow-iap-purchase-product`\n- `allow-iap-restore-purchases`\n- `allow-get-system-color-scheme`\n- `allow-get-safe-area-insets`\n- `allow-get-screen-brightness`\n- `allow-set-screen-brightness`\n- `allow-get-external-sdcard-path`\n- `allow-open-external-url`\n- `allow-show-lookup-popover`\n- `allow-get-lookup-dictionary`\n- `allow-clear-lookup-dictionary`\n- `allow-select-directory`\n- `allow-get-storefront-region-code`\n- `allow-request-manage-storage-permission`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`\n- `allow-set-sync-passphrase`\n- `allow-get-sync-passphrase`\n- `allow-clear-sync-passphrase`\n- `allow-is-sync-keychain-available`"
         }
       ]
     }

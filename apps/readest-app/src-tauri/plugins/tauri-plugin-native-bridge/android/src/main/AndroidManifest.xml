@@ -1,3 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Make dictionary / text-processing apps (Eudic, 欧路词典, GoldenDict,
+         Pleco, etc.) visible to queryIntentActivities under Android 11+
+         package-visibility filtering. Without this declaration only the
+         automatically-visible apps (web browsers) resolve
+         ACTION_PROCESS_TEXT, so dictionary lookups land in the system
+         browser on some OEM ROMs even when a dictionary is installed
+         (issue #4559). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+
+    <application>
+        <!-- Receives the EXTRA_CHOSEN_COMPONENT callback from the
+             browser-excluding dictionary chooser so the user's pick is
+             remembered and launched directly on subsequent lookups. -->
+        <receiver
+            android:name="com.readest.native_bridge.LookupChoiceReceiver"
+            android:exported="false" />
+    </application>
 </manifest>

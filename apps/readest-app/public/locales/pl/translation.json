@@ -1776,5 +1776,7 @@
   "Look up": "Wyszukaj",
   "Search on Goodreads": "Szukaj w Goodreads",
   "Reference Pages": "Strony referencyjne",
-  "Reference Page Count": "Liczba stron referencyjnych"
+  "Reference Page Count": "Liczba stron referencyjnych",
+  "Lookup app reset. The next lookup will ask again.": "Zresetowano aplikację wyszukiwania. Przy następnym wyszukiwaniu zapyta ponownie.",
+  "System Lookup App": "Aplikacja wyszukiwania systemowego"
 }

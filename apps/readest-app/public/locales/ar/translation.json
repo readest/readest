@@ -1842,5 +1842,7 @@
   "Look up": "بحث",
   "Search on Goodreads": "البحث في Goodreads",
   "Reference Pages": "صفحات مرجعية",
-  "Reference Page Count": "عدد الصفحات المرجعية"
+  "Reference Page Count": "عدد الصفحات المرجعية",
+  "Lookup app reset. The next lookup will ask again.": "تمت إعادة تعيين تطبيق البحث. سيُطلب منك الاختيار في المرة التالية.",
+  "System Lookup App": "تطبيق البحث في النظام"
 }

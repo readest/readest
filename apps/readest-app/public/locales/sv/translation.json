@@ -1710,5 +1710,7 @@
   "Look up": "Slå upp",
   "Search on Goodreads": "Sök på Goodreads",
   "Reference Pages": "Referenssidor",
-  "Reference Page Count": "Antal referenssidor"
+  "Reference Page Count": "Antal referenssidor",
+  "Lookup app reset. The next lookup will ask again.": "Uppslagsappen återställd. Nästa sökning frågar igen.",
+  "System Lookup App": "Systemets uppslagsapp"
 }

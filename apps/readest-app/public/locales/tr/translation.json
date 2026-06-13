@@ -1710,5 +1710,7 @@
   "Look up": "Ara",
   "Search on Goodreads": "Goodreads'te ara",
   "Reference Pages": "Referans sayfaları",
-  "Reference Page Count": "Referans sayfa sayısı"
+  "Reference Page Count": "Referans sayfa sayısı",
+  "Lookup app reset. The next lookup will ask again.": "Arama uygulaması sıfırlandı. Sonraki aramada tekrar sorulacak.",
+  "System Lookup App": "Sistem arama uygulaması"
 }

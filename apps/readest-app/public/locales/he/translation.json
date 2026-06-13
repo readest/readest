@@ -1743,5 +1743,7 @@
   "Look up": "חיפוש",
   "Search on Goodreads": "חיפוש ב-Goodreads",
   "Reference Pages": "עמודי ייחוס",
-  "Reference Page Count": "מספר עמודי ייחוס"
+  "Reference Page Count": "מספר עמודי ייחוס",
+  "Lookup app reset. The next lookup will ask again.": "אפליקציית החיפוש אופסה. בחיפוש הבא תוצג שאלה שוב.",
+  "System Lookup App": "אפליקציית חיפוש מערכת"
 }

@@ -1677,5 +1677,7 @@
   "Look up": "查詢",
   "Search on Goodreads": "在 Goodreads 搜尋",
   "Reference Pages": "參考頁碼",
-  "Reference Page Count": "參考總頁數"
+  "Reference Page Count": "參考總頁數",
+  "Lookup app reset. The next lookup will ask again.": "已重設查詞應用程式。下次查詞時將再次詢問。",
+  "System Lookup App": "系統查詞應用程式"
 }

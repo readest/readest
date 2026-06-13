@@ -33,6 +33,8 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 
 import {
+  clearRememberedLookupApp,
+  getRememberedLookupApp,
   invokeSystemDictionary,
   isSystemDictionarySupported,
 } from '@/services/dictionaries/systemDictionary';
@@ -98,6 +100,53 @@ describe('invokeSystemDictionary — native dispatch', () => {
 
     expect(ok).toBe(false);
     expect(invokeMock).not.toHaveBeenCalled();
+  });
+});
+
+const GET_LOOKUP_CMD = 'plugin:native-bridge|get_lookup_dictionary';
+const CLEAR_LOOKUP_CMD = 'plugin:native-bridge|clear_lookup_dictionary';
+
+describe('getRememberedLookupApp — Android-only remembered dictionary', () => {
+  it('returns the remembered app on Android', async () => {
+    appService.value = flags('android');
+    invokeMock.mockResolvedValueOnce({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
+
+    const app = await getRememberedLookupApp();
+
+    expect(app).toEqual({ packageName: 'com.eusoft.eudic', label: 'Eudic' });
+    expect(invokeMock).toHaveBeenCalledWith(GET_LOOKUP_CMD);
+  });
+
+  it('returns null when nothing is remembered (empty response)', async () => {
+    appService.value = flags('android');
+    invokeMock.mockResolvedValueOnce({});
+
+    expect(await getRememberedLookupApp()).toBeNull();
+  });
+
+  it('is a no-op on non-Android platforms', async () => {
+    appService.value = flags('ios');
+
+    expect(await getRememberedLookupApp()).toBeNull();
+    expect(invokeMock).not.toHaveBeenCalledWith(GET_LOOKUP_CMD);
+  });
+});
+
+describe('clearRememberedLookupApp — Android-only reset', () => {
+  it('invokes the clear command on Android', async () => {
+    appService.value = flags('android');
+
+    await clearRememberedLookupApp();
+
+    expect(invokeMock).toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
+  });
+
+  it('is a no-op on non-Android platforms', async () => {
+    appService.value = flags('ios');
+
+    await clearRememberedLookupApp();
+
+    expect(invokeMock).not.toHaveBeenCalledWith(CLEAR_LOOKUP_CMD);
   });
 });
 

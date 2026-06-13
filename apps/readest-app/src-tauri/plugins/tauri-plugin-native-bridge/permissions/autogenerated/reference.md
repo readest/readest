@@ -26,6 +26,8 @@ Default permissions for the plugin
 - `allow-get-external-sdcard-path`
 - `allow-open-external-url`
 - `allow-show-lookup-popover`
+- `allow-get-lookup-dictionary`
+- `allow-clear-lookup-dictionary`
 - `allow-select-directory`
 - `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
@@ -182,6 +184,32 @@ Denies the check_permissions command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-clear-lookup-dictionary`
+
+</td>
+<td>
+
+Enables the clear_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-clear-lookup-dictionary`
+
+</td>
+<td>
+
+Denies the clear_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-clear-sync-passphrase`
 
 </td>
@@ -279,6 +307,32 @@ Enables the get_external_sdcard_path command without any pre-configured scope.
 <td>
 
 Denies the get_external_sdcard_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-lookup-dictionary`
+
+</td>
+<td>
+
+Enables the get_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-lookup-dictionary`
+
+</td>
+<td>
+
+Denies the get_lookup_dictionary command without any pre-configured scope.
 
 </td>
 </tr>

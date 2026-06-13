@@ -1677,5 +1677,7 @@
   "Look up": "འཚོལ་བ།",
   "Search on Goodreads": "Goodreads ནང་འཚོལ།",
   "Reference Pages": "དཔེ་སྟོན་ཤོག་ངོས།",
-  "Reference Page Count": "དཔེ་སྟོན་ཤོག་ངོས་ཀྱི་གྲངས།"
+  "Reference Page Count": "དཔེ་སྟོན་ཤོག་ངོས་ཀྱི་གྲངས།",
+  "Lookup app reset. The next lookup will ask again.": "འཚོལ་བཤེར་ཉེར་སྤྱོད་བསྐྱར་སྒྲིག་བྱས་ཟིན། རྗེས་མའི་འཚོལ་བཤེར་སྐབས་སླར་ཡང་འདྲི་ངེས།",
+  "System Lookup App": "རྒྱུད་ཁོངས་འཚོལ་བཤེར་ཉེར་སྤྱོད།"
 }
