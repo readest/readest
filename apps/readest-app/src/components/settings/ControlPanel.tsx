@@ -11,9 +11,17 @@ import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
-import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
+import {
+  BoxedList,
+  NavigationRow,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import NumberInput from './NumberInput';
 import PageTurnerSettings from './PageTurnerSettings';
+import AnnotationToolbarCustomizer from './AnnotationToolbarCustomizer';
+import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -44,6 +52,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     viewSettings.annotationQuickAction,
   );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
+  const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [animated, setAnimated] = useState(viewSettings.animated);
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
@@ -56,6 +65,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
   const resetToDefaults = useResetViewSettings();
   const pageTurnerResetRef = useRef<() => void>(() => {});
+  const canShare =
+    !!appService?.isMobileApp ||
+    !!appService?.isMacOSApp ||
+    (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
 
   const handleReset = () => {
     resetToDefaults({
@@ -75,6 +88,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
       copyToNotebook: setCopyToNotebook,
     });
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'annotationToolbarItems',
+      DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
+      false,
+      true,
+    );
     pageTurnerResetRef.current();
   };
 
@@ -237,10 +258,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         value: '',
         label: _('None'),
       },
-      ...annotationToolQuickActions.map((button) => ({
-        value: button.type,
-        label: _(button.label),
-      })),
+      ...annotationToolQuickActions
+        .filter((button) => button.type !== 'share' || canShare)
+        .map((button) => ({
+          value: button.type,
+          label: _(button.label),
+        })),
     ];
   };
 
@@ -249,6 +272,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     setAnnotationQuickAction(action);
     saveViewSettings(envConfig, bookKey, 'annotationQuickAction', action, false, true);
   };
+
+  if (showToolbarCustomizer) {
+    return (
+      <AnnotationToolbarCustomizer
+        bookKey={bookKey}
+        onBack={() => setShowToolbarCustomizer(false)}
+      />
+    );
+  }
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -355,6 +387,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={copyToNotebook}
           onChange={() => setCopyToNotebook(!copyToNotebook)}
           data-setting-id='settings.control.copyToNotebook'
+        />
+        <NavigationRow
+          title={_('Customize Toolbar')}
+          onClick={() => setShowToolbarCustomizer(true)}
+          data-setting-id='settings.control.customizeToolbar'
         />
       </BoxedList>
 
