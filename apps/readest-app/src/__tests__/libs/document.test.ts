@@ -47,4 +47,27 @@ describe('DocumentLoader.open', () => {
     expect(result.book).toBeTruthy();
     expect(result.format).toBe('EPUB');
   }, 15000);
+
+  it('opens a raw .txt by converting it to EPUB in-memory', async () => {
+    // The Android "Open with Readest" (VIEW intent) transient path hands the
+    // reader the original .txt file (its filePath points at the content:// URI),
+    // unlike the managed library which stores the already-converted EPUB. The
+    // loader must therefore be able to open a raw .txt directly; otherwise it
+    // returns { book: null } and initViewState crashes on `bookDoc.metadata`.
+    const txt = [
+      'Chapter 1',
+      '',
+      'It was a bright cold day in April, and the clocks were striking thirteen.',
+      '',
+      'Chapter 2',
+      '',
+      'Winston Smith slipped quickly through the glass doors of Victory Mansions.',
+    ].join('\n');
+    const file = new File([txt], 'my-book.txt', { type: 'text/plain' });
+
+    const result = await new DocumentLoader(file).open();
+
+    expect(result.book).toBeTruthy();
+    expect(result.format).toBe('EPUB');
+  }, 15000);
 });
