@@ -519,6 +519,16 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     refreshTtsSyncStatus,
   ]);
 
+  // Re-engage TTS following after a manual nav decoupled it (indicator's
+  // "Resume audio" action). Sets following back on and refreshes the derived
+  // status; the next tts-position event re-syncs the focused paragraph. No-op
+  // on fixed-layout (sync is unsupported there).
+  const reengageTtsFollow = useCallback(() => {
+    if (isFixedLayout) return;
+    followingTtsRef.current = true;
+    refreshTtsSyncStatus();
+  }, [isFixedLayout, refreshTtsSyncStatus]);
+
   const goToParagraph = useCallback(
     (index: number) => {
       const iterator = iteratorRef.current;
@@ -757,6 +767,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     goToNextParagraph,
     goToPrevParagraph,
     goToParagraph,
+    reengageTtsFollow,
     focusCurrentParagraph,
     initIterator,
   };

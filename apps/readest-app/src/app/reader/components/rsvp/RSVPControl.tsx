@@ -241,6 +241,9 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
   // Derived TTS-sync status for the overlay indicator (slice 8b, #3235).
   const [ttsSyncStatus, setTtsSyncStatus] = useState<TtsSyncStatus>('idle');
+  // True when the last accepted position was sentence-level (non-Edge), so
+  // following is paced by the estimator — the indicator appends " · estimated".
+  const [ttsEstimated, setTtsEstimated] = useState(false);
 
   useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
@@ -257,6 +260,20 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     lastSequenceSeen: -Infinity,
     currentSectionIndex: -1,
   });
+  // Lets the indicator's "Resume audio" action re-derive the status outside the
+  // sync effect that owns refreshSyncStatus (mirrors the paragraph hook).
+  const refreshSyncStatusRef = useRef<(() => void) | null>(null);
+
+  // Re-engage TTS following after a manual nav decoupled it (indicator action).
+  // Sets following back on and re-derives the status; the next tts-position
+  // event re-syncs. No-op when the controller is gone or sync isn't running.
+  const reengageTtsFollow = useCallback(() => {
+    const sync = syncStateRef.current;
+    if (sync.following) return;
+    sync.following = true;
+    controllerRef.current?.setExternallyDriven(true);
+    refreshSyncStatusRef.current?.();
+  }, []);
 
   // Helper to remove any existing RSVP highlight
   const removeRsvpHighlight = useCallback(() => {
@@ -411,6 +428,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         setTtsSyncStatus('following');
       }
     };
+    refreshSyncStatusRef.current = refreshSyncStatus;
     refreshSyncStatus();
 
     const handlePlaybackState = (event: CustomEvent) => {
@@ -433,6 +451,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         isPlaying = false;
         sync.following = false;
         sync.pendingSync = undefined;
+        setTtsEstimated(false);
         controller.stopEstimator();
         controller.setExternallyDriven(false);
       }
@@ -450,12 +469,14 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       switch (decision.action) {
         case 'sync':
           if (decision.cfi) controller.syncToCfi(decision.cfi);
+          setTtsEstimated(false);
           break;
         case 'drive-estimator': {
           if (!decision.cfi) break;
           const viewSettings = getViewSettings(bookKey);
           const wpm = RSVPController.estimatedWpmFromRate(viewSettings?.ttsRate ?? 1);
           controller.driveEstimatedFromCfi(decision.cfi, wpm);
+          setTtsEstimated(true);
           break;
         }
         case 'reextract':
@@ -487,6 +508,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       controller.stopEstimator();
       controller.setExternallyDriven(false);
       setTtsSyncStatus('idle');
+      setTtsEstimated(false);
     };
   }, [
     isActive,
@@ -497,6 +519,24 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     decoupleFromTts,
     reextractForTtsSection,
   ]);
+
+  // One-time-per-session decouple toast: the first time following drops while
+  // TTS still plays, tell the user once. Reset when following re-engages so a
+  // later decouple notifies again.
+  const decoupleToastShownRef = useRef(false);
+  useEffect(() => {
+    if (ttsSyncStatus === 'decoupled') {
+      if (!decoupleToastShownRef.current) {
+        decoupleToastShownRef.current = true;
+        eventDispatcher.dispatch('toast', {
+          message: _('Stopped following audio'),
+          type: 'info',
+        });
+      }
+    } else if (ttsSyncStatus === 'following') {
+      decoupleToastShownRef.current = false;
+    }
+  }, [ttsSyncStatus, _]);
 
   const handleStart = useCallback(
     (selectionText?: string) => {
@@ -890,6 +930,9 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
             currentChapterHref={currentChapterHref}
             fontFamily={fontFamily}
             lang={dictionaryLang}
+            ttsSyncStatus={ttsSyncStatus}
+            estimated={ttsEstimated}
+            onResumeTtsFollow={reengageTtsFollow}
             onClose={handleClose}
             onChapterSelect={handleChapterSelect}
             onRequestNextPage={handleRequestNextPage}

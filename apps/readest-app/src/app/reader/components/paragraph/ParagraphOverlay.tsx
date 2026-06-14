@@ -12,12 +12,17 @@ import {
   getParagraphLayoutContext,
   ParagraphPresentation,
 } from '@/utils/paragraphPresentation';
+import TTSFollowIndicator, { TtsSyncStatus } from '../tts/TTSFollowIndicator';
 
 interface ParagraphOverlayProps {
   bookKey: string;
   dimOpacity: number;
   viewSettings?: ViewSettings;
   gridInsets?: Insets;
+  /** Derived TTS-sync status driving the "following audio" indicator (#3235). */
+  ttsSyncStatus?: TtsSyncStatus;
+  /** Re-engage following after a manual nav decoupled it (indicator action). */
+  onResumeTtsFollow?: () => void;
   onClose?: () => void;
 }
 
@@ -119,6 +124,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   dimOpacity,
   viewSettings,
   gridInsets = { top: 0, right: 0, bottom: 0, left: 0 },
+  ttsSyncStatus = 'idle',
+  onResumeTtsFollow,
   onClose,
 }) => {
   const { appService } = useEnv();
@@ -465,6 +472,21 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       onTouchStart={handleTouchStart}
       onKeyDown={(e) => e.stopPropagation()}
     >
+      {/* TTS "following audio" indicator, pinned top-center. Anchored below the
+          top safe-area inset the overlay already accounts for; idle/unsupported
+          render nothing so it stays out of the way when TTS isn't driving. */}
+      <div
+        className='pointer-events-none absolute inset-x-0 z-10 flex justify-center'
+        style={{
+          top: appService?.hasSafeAreaInset ? `calc(${gridInsets.top}px + 0.75rem)` : '0.75rem',
+        }}
+      >
+        {/* Only the indicator itself takes pointer events (its decoupled state is
+            a button); the wrapper stays transparent to backdrop/region taps. */}
+        <div className='pointer-events-auto'>
+          <TTSFollowIndicator status={ttsSyncStatus} onResume={onResumeTtsFollow} />
+        </div>
+      </div>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         ref={contentRef}
