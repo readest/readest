@@ -159,7 +159,11 @@ mod tests {
 
     #[test]
     fn verify_accepts_valid_signature() {
-        assert!(verify_signature_impl(TEST_DATA, TEST_SIG_B64, TEST_PUBKEY_B64));
+        assert!(verify_signature_impl(
+            TEST_DATA,
+            TEST_SIG_B64,
+            TEST_PUBKEY_B64
+        ));
     }
 
     #[test]
@@ -174,7 +178,11 @@ mod tests {
 
     #[test]
     fn verify_rejects_bad_signature() {
-        assert!(!verify_signature_impl(TEST_DATA, "not-base64-!!!", TEST_PUBKEY_B64));
+        assert!(!verify_signature_impl(
+            TEST_DATA,
+            "not-base64-!!!",
+            TEST_PUBKEY_B64
+        ));
         assert!(!verify_signature_impl(TEST_DATA, "", TEST_PUBKEY_B64));
     }
 
