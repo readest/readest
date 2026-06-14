@@ -7,11 +7,12 @@ import { ScrollBarStyle } from '@tauri-apps/api/window';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { setUpdaterWindowVisible } from '@/components/UpdaterWindow';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getAppVersion } from '@/utils/version';
+import { getAppVersion, isUpdateNewer } from '@/utils/version';
 import {
   CHECK_UPDATE_INTERVAL_SEC,
   READEST_CHANGELOG_FILE,
   READEST_UPDATER_FILE,
+  READEST_NIGHTLY_UPDATER_FILE,
 } from '@/services/constants';
 
 const LAST_CHECK_KEY = 'lastAppUpdateCheck';
@@ -32,6 +33,97 @@ const showUpdateWindow = (latestVersion: string, scrollBarStyle: ScrollBarStyle)
   win.once('tauri://error', (e) => {
     console.error('error creating window', e);
   });
+};
+
+type FetchFn = typeof fetch;
+
+export interface UpdateManifestEntry {
+  url?: string;
+  signature?: string;
+}
+export interface UpdateManifest {
+  version: string;
+  pub_date?: string;
+  notes?: string;
+  platforms: Record<string, UpdateManifestEntry>;
+}
+export interface ResolvedNightlyUpdate {
+  endpoint: string; // manifest URL (for the Tauri UpdaterBuilder path)
+  version: string;
+  notes?: string;
+  pubDate?: string;
+  platformKey: string;
+  url: string; // artifact URL (for the custom install flows)
+  signature: string; // artifact signature
+}
+
+export const getNightlyPlatformKey = (
+  osTypeVal: string,
+  osArchVal: string,
+  isPortable: boolean,
+  isAppImage: boolean,
+): string | null => {
+  const is64 = osArchVal === 'x86_64';
+  if (osTypeVal === 'android')
+    return osArchVal === 'aarch64' ? 'android-arm64' : 'android-universal';
+  if (osTypeVal === 'macos') return osArchVal === 'aarch64' ? 'darwin-aarch64' : 'darwin-x86_64';
+  if (osTypeVal === 'windows') {
+    if (isPortable) return is64 ? 'windows-x86_64-portable' : 'windows-aarch64-portable';
+    return is64 ? 'windows-x86_64' : 'windows-aarch64';
+  }
+  if (osTypeVal === 'linux') {
+    if (isAppImage) return is64 ? 'linux-x86_64-appimage' : 'linux-aarch64-appimage';
+    return is64 ? 'linux-x86_64' : 'linux-aarch64';
+  }
+  return null;
+};
+
+const fetchManifest = async (fetchFn: FetchFn, url: string): Promise<UpdateManifest | null> => {
+  try {
+    const res = await fetchFn(url, { connectTimeout: 5000 } as RequestInit);
+    if (!res.ok) return null;
+    return (await res.json()) as UpdateManifest;
+  } catch (err) {
+    console.warn('Failed to fetch update manifest', url, err);
+    return null;
+  }
+};
+
+// Nightly channel resolution: fetch the nightly + stable manifests, keep only
+// candidates that (a) have a usable artifact for this platform and (b) are newer
+// than the installed version, then return the newest by the base-aware rule.
+export const resolveNightlyUpdate = async (
+  currentVersion: string,
+  platformKey: string,
+  fetchFn: FetchFn,
+): Promise<ResolvedNightlyUpdate | null> => {
+  const [nightly, stable] = await Promise.all([
+    fetchManifest(fetchFn, READEST_NIGHTLY_UPDATER_FILE),
+    fetchManifest(fetchFn, READEST_UPDATER_FILE),
+  ]);
+  const sources: Array<[UpdateManifest | null, string]> = [
+    [nightly, READEST_NIGHTLY_UPDATER_FILE],
+    [stable, READEST_UPDATER_FILE],
+  ];
+  const candidates: ResolvedNightlyUpdate[] = [];
+  for (const [manifest, endpoint] of sources) {
+    if (!manifest?.version) continue;
+    const entry = manifest.platforms?.[platformKey];
+    if (!entry?.url || !entry?.signature) continue; // platform-eligibility filter
+    if (!isUpdateNewer(manifest.version, currentVersion)) continue;
+    candidates.push({
+      endpoint,
+      version: manifest.version,
+      notes: manifest.notes,
+      pubDate: manifest.pub_date,
+      platformKey,
+      url: entry.url,
+      signature: entry.signature,
+    });
+  }
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => (isUpdateNewer(a.version, b.version) ? -1 : 1));
+  return candidates[0]!;
 };
 
 export const checkForAppUpdates = async (

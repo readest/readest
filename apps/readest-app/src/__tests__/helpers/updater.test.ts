@@ -43,14 +43,19 @@ vi.mock('@/services/environment', () => ({
 }));
 
 let mockAppVersion = '1.0.0';
-vi.mock('@/utils/version', () => ({
-  getAppVersion: () => mockAppVersion,
-}));
+vi.mock('@/utils/version', async () => {
+  const actual = await vi.importActual<typeof import('@/utils/version')>('@/utils/version');
+  return {
+    ...actual,
+    getAppVersion: () => mockAppVersion,
+  };
+});
 
 vi.mock('@/services/constants', () => ({
   CHECK_UPDATE_INTERVAL_SEC: 86400,
   READEST_UPDATER_FILE: 'https://example.com/latest.json',
   READEST_CHANGELOG_FILE: 'https://example.com/release-notes.json',
+  READEST_NIGHTLY_UPDATER_FILE: 'https://example.com/nightly/latest.json',
 }));
 
 import {
@@ -58,6 +63,8 @@ import {
   checkAppReleaseNotes,
   setLastShownReleaseNotesVersion,
   getLastShownReleaseNotesVersion,
+  resolveNightlyUpdate,
+  getNightlyPlatformKey,
 } from '@/helpers/updater';
 
 beforeEach(() => {
@@ -361,5 +368,77 @@ describe('updater', () => {
     test('equal versions return false', () => {
       expect(semver.gt('1.0.0', '1.0.0')).toBe(false);
     });
+  });
+});
+
+describe('getNightlyPlatformKey', () => {
+  test('android', () => {
+    expect(getNightlyPlatformKey('android', 'aarch64', false, false)).toBe('android-arm64');
+    expect(getNightlyPlatformKey('android', 'x86_64', false, false)).toBe('android-universal');
+  });
+  test('windows nsis vs portable', () => {
+    expect(getNightlyPlatformKey('windows', 'x86_64', false, false)).toBe('windows-x86_64');
+    expect(getNightlyPlatformKey('windows', 'x86_64', true, false)).toBe('windows-x86_64-portable');
+  });
+  test('linux appimage vs deb', () => {
+    expect(getNightlyPlatformKey('linux', 'x86_64', false, true)).toBe('linux-x86_64-appimage');
+    expect(getNightlyPlatformKey('linux', 'x86_64', false, false)).toBe('linux-x86_64');
+  });
+  test('macos', () => {
+    expect(getNightlyPlatformKey('macos', 'aarch64', false, false)).toBe('darwin-aarch64');
+  });
+});
+
+describe('resolveNightlyUpdate', () => {
+  const mkRes = (body: unknown) => ({ ok: true, json: async () => body });
+  const platformKey = 'darwin-aarch64';
+  const entry = { url: 'https://x/app.tar.gz', signature: 'sig' };
+
+  test('picks newer nightly over stable when stable is same-base', async () => {
+    const fetchFn = vi.fn(async (url: string) =>
+      url.includes('nightly')
+        ? mkRes({ version: '0.11.4-2026061406', platforms: { [platformKey]: entry } })
+        : mkRes({ version: '0.11.4', platforms: { [platformKey]: entry } }),
+    );
+    const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
+    expect(r?.version).toBe('0.11.4-2026061406');
+    expect(r?.endpoint).toContain('nightly');
+  });
+
+  test('picks higher-base stable over older nightly', async () => {
+    const fetchFn = vi.fn(async (url: string) =>
+      url.includes('nightly')
+        ? mkRes({ version: '0.11.4-2026061406', platforms: { [platformKey]: entry } })
+        : mkRes({ version: '0.11.5', platforms: { [platformKey]: entry } }),
+    );
+    const r = await resolveNightlyUpdate('0.11.4-2026061406', platformKey, fetchFn as never);
+    expect(r?.version).toBe('0.11.5');
+    expect(r?.endpoint).not.toContain('nightly');
+  });
+
+  test('ignores a manifest missing the current platform key', async () => {
+    const fetchFn = vi.fn(async (url: string) =>
+      url.includes('nightly')
+        ? mkRes({ version: '0.11.4-2026061406', platforms: { [platformKey]: entry } })
+        : mkRes({ version: '0.11.5', platforms: {} }),
+    );
+    const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
+    expect(r?.version).toBe('0.11.4-2026061406');
+  });
+
+  test('returns null when nothing is newer than installed', async () => {
+    const fetchFn = vi.fn(async () =>
+      mkRes({ version: '0.11.4', platforms: { [platformKey]: entry } }),
+    );
+    const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
+    expect(r).toBeNull();
+  });
+
+  test('returns null when both manifests fail to fetch', async () => {
+    const fetchFn = vi.fn(async () => {
+      throw new Error('network');
+    });
+    const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
+    expect(r).toBeNull();
   });
 });
