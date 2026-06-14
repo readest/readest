@@ -321,4 +321,107 @@ describe('TTS auto-advance across a chapter boundary (browser e2e)', () => {
 
     unmount();
   }, 60000);
+
+  // Slice 2: the hook republishes the controller's canonical 'tts-position'
+  // CustomEvent onto the app-wide eventDispatcher (tagged with bookKey) so
+  // paragraph mode + RSVP can follow TTS without touching the controller. It
+  // also emits 'tts-playback-state' transitions for consumers (like RSVP) that
+  // can't read the hook-local isPlaying flag.
+  it('republishes controller tts-position + tts-playback-state onto the global eventDispatcher', async () => {
+    const viewSettings: ViewSettings = {
+      ...getDefaultViewSettings({
+        fs: {} as FileSystem,
+        isMobile: false,
+        isEink: false,
+        isAppDataSandbox: false,
+      }),
+      maxColumnCount: 1,
+      scrolled: false,
+    };
+
+    const { view } = createView(viewSettings);
+    await view.open(bookDoc);
+    view.renderer.setAttribute('max-column-count', '1');
+    view.renderer.setAttribute('max-inline-size', '800px');
+    view.renderer.setAttribute('max-block-size', '1000px');
+    view.renderer.setAttribute('margin-top', '0px');
+    view.renderer.setAttribute('margin-bottom', '0px');
+    view.renderer.setAttribute('margin-left', '0px');
+    view.renderer.setAttribute('margin-right', '0px');
+    view.renderer.setAttribute('gap', '0%');
+    await view.goToFraction(0);
+
+    seedStores(view, viewSettings);
+    wireRelocate(view);
+    await view.renderer.goTo({ index: CH4_SECTION_INDEX });
+    await sleep(50);
+
+    interface BusPosition {
+      bookKey: string;
+      cfi: string;
+      kind: 'word' | 'sentence';
+      sectionIndex: number;
+      sequence: number;
+    }
+    const positions: BusPosition[] = [];
+    const playbackStates: string[] = [];
+    const onPosition = (e: CustomEvent) => {
+      positions.push(e.detail as BusPosition);
+    };
+    const onPlaybackState = (e: CustomEvent) => {
+      const detail = e.detail as { bookKey: string; state: string };
+      if (detail.bookKey === BOOK_KEY) playbackStates.push(detail.state);
+    };
+    eventDispatcher.on('tts-position', onPosition);
+    eventDispatcher.on('tts-playback-state', onPlaybackState);
+
+    const { unmount } = renderHook(() => useTTSControl({ bookKey: BOOK_KEY }));
+
+    try {
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-speak', {
+          bookKey: BOOK_KEY,
+          index: CH4_SECTION_INDEX,
+        });
+      });
+
+      // Let the controller walk a few sentences so several 'tts-position'
+      // events fire on the bus.
+      await act(async () => {
+        const deadline = Date.now() + 5000;
+        while (Date.now() < deadline && positions.length < 3) {
+          await sleep(50);
+        }
+      });
+
+      // 1. Playback started -> the bus saw a 'playing' state.
+      expect(playbackStates).toContain('playing');
+
+      // 2. The global bus received the controller's canonical positions, each
+      //    tagged with the bookKey and carrying the controller detail.
+      expect(positions.length).toBeGreaterThan(0);
+      for (const pos of positions) {
+        expect(pos.bookKey).toBe(BOOK_KEY);
+        expect(pos.kind).toBe('sentence'); // mock client reports no word boundaries
+        expect(typeof pos.cfi).toBe('string');
+        expect(pos.cfi.length).toBeGreaterThan(0);
+        expect(pos.sectionIndex).toBe(CH4_SECTION_INDEX);
+        expect(typeof pos.sequence).toBe('number');
+      }
+      // Sequence is monotonic from the controller.
+      const sequences = positions.map((p) => p.sequence);
+      expect([...sequences].sort((a, b) => a - b)).toEqual(sequences);
+
+      // 3. Stopping TTS emits a 'stopped' state on the bus.
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-stop', { bookKey: BOOK_KEY });
+        await sleep(50);
+      });
+      expect(playbackStates[playbackStates.length - 1]).toBe('stopped');
+    } finally {
+      eventDispatcher.off('tts-position', onPosition);
+      eventDispatcher.off('tts-playback-state', onPlaybackState);
+      unmount();
+    }
+  }, 60000);
 });
