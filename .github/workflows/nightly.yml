@@ -236,8 +236,27 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           version="${{ needs.compute-version.outputs.nightly_version }}"
           arch="${{ matrix.config.arch }}"
+          rust_target="${{ matrix.config.rust_target }}"
+
+          # The clean NSIS build above produced bundle/nsis/Readest_<ver>_<x64|
+          # arm64>-setup.exe (+ .sig). The portable rebuild below runs `tauri
+          # build ... --bundles nsis` AGAIN with NEXT_PUBLIC_PORTABLE_APP=true,
+          # which OVERWRITES that installer with a portable-flavored one. Stage
+          # the clean installer + its updater .sig to a safe dir FIRST so the
+          # collect step can read the untouched copy for the windows-* keys.
+          if [ "$arch" = "x86_64" ]; then
+            nsis_name="Readest_${version}_x64-setup.exe"
+          else
+            nsis_name="Readest_${version}_arm64-setup.exe"
+          fi
+          nsis_src="target/${rust_target}/release/bundle/nsis/${nsis_name}"
+          mkdir -p nsis-staged
+          cp "$nsis_src" "nsis-staged/${nsis_name}"
+          cp "${nsis_src}.sig" "nsis-staged/${nsis_name}.sig"
+
           pushd apps/readest-app/
           echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
           pnpm tauri build ${{ matrix.config.args }}
@@ -248,7 +267,7 @@ jobs:
           else
             bin_file="Readest_${version}_arm64-portable.exe"
           fi
-          exe_file="apps/readest-app/src-tauri/target/${{ matrix.config.rust_target }}/release/readest.exe"
+          exe_file="target/${{ matrix.config.rust_target }}/release/readest.exe"
           # Browsers on Windows refuse to download zips containing exe files, so
           # ship the exe directly (matches release.yml).
           cp "$exe_file" "$bin_file"
@@ -275,7 +294,9 @@ jobs:
           out="$PWD/nightly-out"
           frag_dir="$out/frag"
           mkdir -p "$out" "$frag_dir"
-          bundle="apps/readest-app/src-tauri/target"
+          # Cargo WORKSPACE: bundles land in the REPO-ROOT target/ dir, not
+          # apps/readest-app/src-tauri/target/ (matches release.yml line 371).
+          bundle="target"
 
           # Stage one artifact + its .sig into $out, then append a
           # platforms[<key>] = {signature, url} entry to the fragment JSON.
@@ -324,7 +345,10 @@ jobs:
                 portable_name="Readest_${version}_arm64-portable.exe"
                 nsis_key="windows-aarch64"; portable_key="windows-aarch64-portable"
               fi
-              add_entry "${bundle}/${rust_target}/release/bundle/nsis/${nsis_name}" "$nsis_name" "$nsis_key"
+              # Read the CLEAN NSIS installer staged before the portable rebuild
+              # (the rebuild overwrites bundle/nsis/...-setup.exe). See the
+              # "build and sign portable binaries" step.
+              add_entry "nsis-staged/${nsis_name}" "$nsis_name" "$nsis_key"
               # Portable exe was copied + signed into the repo root above.
               add_entry "$portable_name" "$portable_name" "$portable_key"
               ;;
@@ -408,8 +432,12 @@ jobs:
         run: |
           set -euo pipefail
           base="r2:readest-releases/nightly"
-          # Version dirs sort lexicographically == chronologically (<base>-<YYYYMMDDHH>).
-          mapfile -t dirs < <(rclone lsf "$base/" --dirs-only | sed 's:/$::' | sort)
+          # Version dirs are <base>-<YYYYMMDDHH>. Lexicographic order is NOT
+          # chronological across a base-version bump (e.g. 0.2.0-* sorts after
+          # 0.11.0-*), so sort by the numeric stamp tail (everything after the
+          # last '-') to keep the newest 7 by build time.
+          mapfile -t dirs < <(rclone lsf "$base/" --dirs-only | sed 's:/$::' \
+            | sed -E 's/^(.*)-([0-9]{10})$/\2 \1-\2/' | sort -n -k1,1 | cut -d' ' -f2-)
           count=${#dirs[@]}
           if [ "$count" -gt 7 ]; then
             for d in "${dirs[@]:0:$((count-7))}"; do
