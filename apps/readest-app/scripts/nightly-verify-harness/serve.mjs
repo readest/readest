@@ -75,19 +75,23 @@ const json = (res, obj) => {
   res.end(JSON.stringify(obj, null, 2));
 };
 
-const routes = {
-  '/nightly/latest.json': (res) => json(res, buildNightlyManifest(false)),
-  '/nightly/latest-badsig.json': (res) => json(res, buildNightlyManifest(true)),
-  '/releases/latest.json': (res) => json(res, buildStableManifest(false)),
-  '/releases/latest-surpass.json': (res) => json(res, buildStableManifest(true)),
-};
+// A Map (not a plain object) so a user-controlled request path can never
+// resolve to an inherited Object.prototype method (e.g. `toString`) and be
+// dispatched — `Map.get` returns undefined for any non-route key.
+const routes = new Map([
+  ['/nightly/latest.json', (res) => json(res, buildNightlyManifest(false))],
+  ['/nightly/latest-badsig.json', (res) => json(res, buildNightlyManifest(true))],
+  ['/releases/latest.json', (res) => json(res, buildStableManifest(false))],
+  ['/releases/latest-surpass.json', (res) => json(res, buildStableManifest(true))],
+]);
 
 const serve = () =>
   http
     .createServer((req, res) => {
       const url = req.url.split('?')[0];
       console.log(`${req.method} ${url}`);
-      if (routes[url]) return routes[url](res);
+      const route = routes.get(url);
+      if (route) return route(res);
       if (url === '/artifacts/test.bin') {
         res.writeHead(200, { 'content-type': 'application/octet-stream' });
         return fs.createReadStream(ARTIFACT).pipe(res);
