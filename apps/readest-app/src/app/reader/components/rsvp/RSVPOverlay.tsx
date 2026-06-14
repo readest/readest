@@ -111,10 +111,14 @@ interface RSVPOverlayProps {
   estimated?: boolean;
   /** True when TTS audio is engaged (playing/paused) — drives the audio toggle. */
   ttsActive?: boolean;
+  /** True when TTS is actively playing (vs paused) — drives the transport icon. */
+  ttsPlaying?: boolean;
   /** Current TTS playback rate, shown selected in the rate picker (decision 6). */
   ttsRate?: number;
   /** Toggle TTS audio: start from the current word, or stop when engaged. */
   onToggleTtsAudio?: () => void;
+  /** Pause/resume TTS — the transport play/pause maps here while read-along is on. */
+  onToggleTtsPlay?: () => void;
   /** Set the TTS rate (one-shot) when the WPM control is TTS-driven. */
   onSetTtsRate?: (rate: number) => void;
   /** Re-engage following after a manual nav decoupled it (indicator action). */
@@ -136,8 +140,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   ttsSyncStatus = 'idle',
   estimated = false,
   ttsActive = false,
+  ttsPlaying = false,
   ttsRate = 1,
   onToggleTtsAudio,
+  onToggleTtsPlay,
   onSetTtsRate,
   onResumeTtsFollow,
   onClose,
@@ -149,6 +155,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
   const [state, setState] = useState<RsvpState>(controller.currentState);
   const currentWord = controller.currentDisplayWord;
+  // The transport (center) play/pause controls TTS while read-along is engaged,
+  // otherwise RSVP's own timer (#3235). A ref keeps the latest closure so the
+  // capture-phase keyboard/tap effects don't need it in their dep arrays.
+  const transportToggleRef = useRef<() => void>(() => {});
+  transportToggleRef.current = () => {
+    if (ttsActive && onToggleTtsPlay) onToggleTtsPlay();
+    else controller.togglePlayPause();
+  };
+  const transportPlaying = ttsActive ? ttsPlaying : state.playing;
   const [countdown, setCountdown] = useState<number | null>(controller.currentCountdown);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
@@ -271,7 +286,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
         case ' ':
           event.preventDefault();
           event.stopPropagation();
-          controller.togglePlayPause();
+          transportToggleRef.current();
           break;
         case 'Escape':
           event.preventDefault();
@@ -482,7 +497,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       } else if (tapX > screenWidth * 0.75) {
         controller.skipForward(15);
       } else {
-        controller.togglePlayPause();
+        transportToggleRef.current();
       }
     }
   };
@@ -1078,15 +1093,15 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </button>
 
           <button
-            aria-label={state.playing ? _('Pause') : _('Play')}
+            aria-label={transportPlaying ? _('Pause') : _('Play')}
             className={clsx(
               'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
-              state.playing ? '' : 'ps-1',
+              transportPlaying ? '' : 'ps-1',
             )}
-            onClick={() => controller.togglePlayPause()}
-            title={state.playing ? _('Pause (Space)') : _('Play (Space)')}
+            onClick={() => transportToggleRef.current()}
+            title={transportPlaying ? _('Pause (Space)') : _('Play (Space)')}
           >
-            {state.playing ? (
+            {transportPlaying ? (
               <IoPause className='h-7 w-7 md:h-8 md:w-8' />
             ) : (
               <IoPlay className='h-7 w-7 md:h-8 md:w-8' />

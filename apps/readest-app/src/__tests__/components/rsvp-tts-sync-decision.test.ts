@@ -11,6 +11,7 @@ const freshState = (over: Partial<RsvpTtsSyncState> = {}): RsvpTtsSyncState => (
   following: true,
   lastSequenceSeen: -Infinity,
   currentSectionIndex: 2,
+  hasWordPositions: false,
   ...over,
 });
 
@@ -35,7 +36,16 @@ describe('decideRsvpTtsPosition (slice 5, #3235)', () => {
     expect(result.nextState.lastSequenceSeen).toBe(5);
   });
 
-  test('sentence + following + same section → drive-estimator (non-Edge)', () => {
+  test('word position marks the engine word-capable (hasWordPositions)', () => {
+    const result = decideRsvpTtsPosition(
+      freshState(),
+      detail({ kind: 'word', sequence: 1 }),
+      BOOK_KEY,
+    );
+    expect(result.nextState.hasWordPositions).toBe(true);
+  });
+
+  test('sentence + following + same section → drive-estimator (non-Edge, no words seen)', () => {
     const result = decideRsvpTtsPosition(
       freshState(),
       detail({ kind: 'sentence', sequence: 3 }),
@@ -44,6 +54,18 @@ describe('decideRsvpTtsPosition (slice 5, #3235)', () => {
     expect(result.action).toBe('drive-estimator');
     expect(result.cfi).toBe('epubcfi(/6/6!/4/2/1:0)');
     expect(result.nextState.lastSequenceSeen).toBe(3);
+  });
+
+  test('sentence is IGNORED once a word has been seen (Edge: estimator must not fight words)', () => {
+    // Word-boundary engines emit sentence marks too; driving the estimator on
+    // them makes RSVP outrun the audio and the words snap it back → flashing.
+    const result = decideRsvpTtsPosition(
+      freshState({ hasWordPositions: true }),
+      detail({ kind: 'sentence', sequence: 7 }),
+      BOOK_KEY,
+    );
+    expect(result.action).toBe('ignore');
+    expect(result.nextState.lastSequenceSeen).toBe(7);
   });
 
   test('drops events for a different bookKey (no state change)', () => {

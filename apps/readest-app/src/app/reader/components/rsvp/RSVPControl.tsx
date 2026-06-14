@@ -74,6 +74,13 @@ export interface RsvpTtsSyncState {
   currentSectionIndex: number;
   // Latest sync stashed during a pending section re-extract.
   pendingSync?: RsvpTtsPendingSync;
+  // True once a word-level position has arrived — i.e. the engine emits word
+  // boundaries (Edge). Word-boundary engines ALSO emit sentence marks, so once
+  // this is set we must NOT drive the estimator on sentence positions (it
+  // outruns the audio and the word positions snap RSVP back → flashing). Reset
+  // on a full stop so a later voice switch (e.g. to a sentence-only engine)
+  // re-enables the estimator.
+  hasWordPositions: boolean;
 }
 
 export interface RsvpTtsPositionDecision {
@@ -128,8 +135,24 @@ export const decideRsvpTtsPosition = (
     };
   }
 
+  // Word-level position (Edge): the authoritative path. Mark the engine as
+  // word-capable so subsequent sentence marks don't also drive the estimator.
+  if (detail.kind === 'word') {
+    return {
+      action: 'sync',
+      cfi: detail.cfi,
+      nextState: { ...state, lastSequenceSeen: sequence, hasWordPositions: true },
+    };
+  }
+
+  // Sentence mark. Word-boundary engines emit these too — but once we've seen a
+  // word position, the words drive RSVP and the estimator must stay off (running
+  // it makes RSVP outrun the audio, then word positions snap it back → flashing).
+  if (state.hasWordPositions) {
+    return { action: 'ignore', nextState: { ...state, lastSequenceSeen: sequence } };
+  }
   return {
-    action: detail.kind === 'sentence' ? 'drive-estimator' : 'sync',
+    action: 'drive-estimator',
     cfi: detail.cfi,
     nextState: { ...state, lastSequenceSeen: sequence },
   };
@@ -249,6 +272,9 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // tracked from the tts-playback-state bus. Drives the overlay's audio toggle
   // active/idle icon (slice 7, #3235).
   const [ttsActive, setTtsActive] = useState(false);
+  // TTS currently playing (vs paused). Drives the RSVP transport button's icon
+  // when read-along is engaged so play/pause maps to the audio (slice, #3235).
+  const [ttsPlaying, setTtsPlaying] = useState(false);
 
   useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
@@ -264,6 +290,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     following: false,
     lastSequenceSeen: -Infinity,
     currentSectionIndex: -1,
+    hasWordPositions: false,
   });
   // Lets the indicator's "Resume audio" action re-derive the status outside the
   // sync effect that owns refreshSyncStatus (mirrors the paragraph hook).
@@ -443,6 +470,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       if (detail.state === 'playing') {
         isPlaying = true;
         setTtsActive(true);
+        setTtsPlaying(true);
         // D7: never engage following on fixed-layout.
         if (!isFixedLayout) {
           // (Re-)engage following from the current section.
@@ -453,13 +481,25 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
               : (getView(bookKey)?.renderer.primaryIndex ?? -1);
           controller.setExternallyDriven(true);
         }
-      } else if (detail.state === 'paused' || detail.state === 'stopped') {
+      } else if (detail.state === 'paused') {
+        // Paused, still engaged: keep RSVP suspended (frozen on the current
+        // word) so its own timer can't run away while audio is paused. The
+        // transport button (mapped to TTS) resumes it.
         isPlaying = false;
-        // Paused TTS is still engaged (the audio toggle reflects active); only
-        // a full stop clears it.
-        setTtsActive(detail.state === 'paused');
+        setTtsActive(true);
+        setTtsPlaying(false);
         sync.following = false;
         sync.pendingSync = undefined;
+        setTtsEstimated(false);
+        controller.stopEstimator();
+      } else if (detail.state === 'stopped') {
+        isPlaying = false;
+        setTtsActive(false);
+        setTtsPlaying(false);
+        sync.following = false;
+        sync.pendingSync = undefined;
+        // A full stop may be followed by a voice switch; re-detect word support.
+        sync.hasWordPositions = false;
         setTtsEstimated(false);
         controller.stopEstimator();
         controller.setExternallyDriven(false);
@@ -477,6 +517,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
 
       switch (decision.action) {
         case 'sync':
+          // Word-boundary engine: words are authoritative. Kill any estimator
+          // started by the sentence mark that preceded the first word, so the
+          // two never co-run (the cause of jump-ahead-then-snap-back flashing).
+          controller.stopEstimator();
           if (decision.cfi) controller.syncToCfi(decision.cfi);
           setTtsEstimated(false);
           break;
@@ -519,6 +563,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       setTtsSyncStatus('idle');
       setTtsEstimated(false);
       setTtsActive(false);
+      setTtsPlaying(false);
     };
   }, [
     isActive,
@@ -930,6 +975,13 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     eventDispatcher.dispatch('tts-speak', detail ?? { bookKey });
   }, [bookKey, getView, ttsActive]);
 
+  // RSVP transport (center play/pause) mapped to TTS play/pause while read-along
+  // is engaged (#3235): the button should pause/resume the audio, not RSVP's own
+  // (suspended) timer. Reuses the existing tts-toggle-play bus event.
+  const handleToggleTtsPlay = useCallback(() => {
+    eventDispatcher.dispatch('tts-toggle-play', { bookKey });
+  }, [bookKey]);
+
   // Change the TTS playback rate from the overlay's rate picker (decision 6).
   // The TTS rate panel is unreachable behind the full-screen overlay, so dispatch
   // a one-shot tts-set-rate the TTS hook applies via its existing rate path.
@@ -975,8 +1027,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
             ttsSyncStatus={ttsSyncStatus}
             estimated={ttsEstimated}
             ttsActive={ttsActive}
+            ttsPlaying={ttsPlaying}
             ttsRate={ttsRate}
             onToggleTtsAudio={handleToggleTtsAudio}
+            onToggleTtsPlay={handleToggleTtsPlay}
             onSetTtsRate={handleSetTtsRate}
             onResumeTtsFollow={reengageTtsFollow}
             onClose={handleClose}

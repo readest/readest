@@ -33,6 +33,7 @@ function makeControllerMock() {
     loadNextPageContent: vi.fn(),
     setExternallyDriven: vi.fn(),
     stopEstimator: vi.fn(),
+    togglePlayPause: vi.fn(),
     syncToCfi: vi.fn(() => true),
     driveEstimatedFromCfi: vi.fn(() => true),
     getStoredPosition: vi.fn(() => null),
@@ -205,7 +206,7 @@ describe('RSVPControl — TTS sync wiring (slice 5, #3235)', () => {
     );
   });
 
-  test('paused disengages: stops estimator + restores controller pacing', async () => {
+  test('paused stops the estimator + ignores positions but KEEPS RSVP suspended (#3235)', async () => {
     render(
       <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
     );
@@ -219,14 +220,22 @@ describe('RSVPControl — TTS sync wiring (slice 5, #3235)', () => {
       await eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'paused' });
     });
     expect(controllerMock.stopEstimator).toHaveBeenCalled();
-    expect(controllerMock.setExternallyDriven).toHaveBeenLastCalledWith(false);
+    // Pause must NOT restore the RSVP timer, or RSVP would run away on its own
+    // while audio is paused. Only a full stop releases it (asserted below).
+    expect(controllerMock.setExternallyDriven).not.toHaveBeenCalledWith(false);
 
-    // While disengaged, positions are ignored.
+    // While paused, positions are ignored (following dropped).
     controllerMock.syncToCfi.mockClear();
     await act(async () => {
       await eventDispatcher.dispatch('tts-position', wordPos({ sequence: 99 }));
     });
     expect(controllerMock.syncToCfi).not.toHaveBeenCalled();
+
+    // A full STOP releases RSVP back to its own control.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: BOOK_KEY, state: 'stopped' });
+    });
+    expect(controllerMock.setExternallyDriven).toHaveBeenLastCalledWith(false);
   });
 
   test('a manual nav decouples; following resumes on the next playing', async () => {
