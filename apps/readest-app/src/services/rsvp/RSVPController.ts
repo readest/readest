@@ -3,6 +3,7 @@ import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } 
 import { containsCJK, isCJKPunctuation, splitTextIntoWords, getHyphenParts } from './utils';
 import { compare as compareCFI } from 'foliate-js/epubcfi.js';
 import { XCFI } from '@/utils/xcfi';
+import { isRangeLike } from '@/utils/range';
 
 const DEFAULT_WPM = 300;
 const MIN_WPM = 100;
@@ -426,7 +427,9 @@ export class RSVPController extends EventTarget {
         return null;
       }
       const anchor = resolved.anchor(target.doc);
-      if (anchor instanceof Range) return anchor;
+      // Realm-safe: anchor is an iframe-realm Range, so `instanceof Range` (top
+      // realm) is always false. Duck-type instead (cross-realm instanceof).
+      if (isRangeLike(anchor)) return anchor;
       if (anchor && anchor instanceof target.doc.defaultView!.Node) {
         const range = target.doc.createRange();
         range.selectNode(anchor as Node);

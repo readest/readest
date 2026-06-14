@@ -886,4 +886,46 @@ describe('RSVPController', () => {
       expect(onNav).not.toHaveBeenCalled();
     });
   });
+
+  // #3235 regression: the CFI anchor is a Range created in the book iframe's
+  // realm, so `anchor instanceof Range` (top realm) is always false. Before the
+  // fix resolveCfiToRange fell through to `null`, so syncToCfi never advanced the
+  // word (RSVP stayed frozen while TTS played). Confirmed live via CDP.
+  describe('resolveCfiToRange cross-realm anchor (#3235)', () => {
+    test('resolves an iframe-realm Range that is NOT instanceof the top Range', () => {
+      const doc = makeDoc('hello world');
+      // Range-like anchor with Range methods but not an instance of this realm's
+      // Range constructor — exactly what view.resolveCFI(...).anchor(doc) returns
+      // from inside the book iframe.
+      const crossRealmRange = {
+        startContainer: doc.body,
+        startOffset: 0,
+        endContainer: doc.body,
+        endOffset: 0,
+        cloneRange() {
+          return this;
+        },
+        toString() {
+          return 'hello';
+        },
+      };
+      expect(crossRealmRange instanceof Range).toBe(false);
+
+      const view = createMockView(0, [doc]);
+      (view.resolveCFI as ReturnType<typeof vi.fn>).mockReturnValue({
+        index: 0,
+        anchor: () => crossRealmRange,
+      });
+      const controller = new RSVPController(view, 'cross-realm-book');
+
+      const resolved = (
+        controller as unknown as {
+          resolveCfiToRange: (cfi: string, spineIndex: number) => Range | null;
+        }
+      ).resolveCfiToRange('epubcfi(/6/2!/4/2/1:0)', 0);
+
+      // Before the fix this was null (instanceof Range failed cross-realm).
+      expect(resolved).toBe(crossRealmRange);
+    });
+  });
 });

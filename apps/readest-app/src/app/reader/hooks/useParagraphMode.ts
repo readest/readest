@@ -8,6 +8,7 @@ import { saveViewSettings } from '@/helpers/settings';
 import { ParagraphIterator } from '@/utils/paragraph';
 import { getParagraphPresentation } from '@/utils/paragraphPresentation';
 import { DEFAULT_PARAGRAPH_MODE_CONFIG } from '@/services/constants';
+import { isRangeLike } from '@/utils/range';
 
 interface UseParagraphModeProps {
   bookKey: string;
@@ -182,7 +183,8 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
             const resolved = view.resolveCFI(progressLocation);
             if (!resolved || resolved.index !== docIndex) return null;
             const anchor = resolved.anchor(doc);
-            if (anchor instanceof Range) return anchor;
+            // Realm-safe: iframe-realm Range fails top-realm `instanceof Range`.
+            if (isRangeLike(anchor)) return anchor;
             if (anchor) {
               const range = doc.createRange();
               range.selectNodeContents(anchor);
@@ -202,7 +204,8 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
             const resolved = view.resolveCFI(lastParagraph.paragraphCfi);
             if (!resolved || resolved.index !== docIndex) return null;
             const anchor = resolved.anchor(doc);
-            if (anchor instanceof Range) return anchor;
+            // Realm-safe: iframe-realm Range fails top-realm `instanceof Range`.
+            if (isRangeLike(anchor)) return anchor;
             if (anchor) {
               const range = doc.createRange();
               range.selectNodeContents(anchor);
@@ -361,7 +364,8 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         const doc = content?.doc;
         if (!doc) return;
         const anchor = resolved.anchor(doc);
-        if (anchor instanceof Range) {
+        // Realm-safe: iframe-realm Range fails top-realm `instanceof Range`.
+        if (isRangeLike(anchor)) {
           range = anchor;
         } else if (anchor) {
           range = doc.createRange();
