@@ -33,6 +33,7 @@ dependencies = [
  "rand 0.8.6",
  "read-progress-stream",
  "reqwest 0.12.28",
+ "semver",
  "serde",
  "serde_json",
  "tauri",

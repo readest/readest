@@ -30,6 +30,7 @@ mod epub_parser;
 #[cfg(target_os = "macos")]
 mod macos;
 mod mobi_parser;
+mod nightly_update;
 mod parser_common;
 mod range_file;
 mod transfer_file;
