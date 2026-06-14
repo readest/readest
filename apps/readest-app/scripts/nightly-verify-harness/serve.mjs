@@ -75,31 +75,31 @@ const json = (res, obj) => {
   res.end(JSON.stringify(obj, null, 2));
 };
 
-// A Map (not a plain object) so a user-controlled request path can never
-// resolve to an inherited Object.prototype method (e.g. `toString`) and be
-// dispatched — `Map.get` returns undefined for any non-route key.
-const routes = new Map([
-  ['/nightly/latest.json', (res) => json(res, buildNightlyManifest(false))],
-  ['/nightly/latest-badsig.json', (res) => json(res, buildNightlyManifest(true))],
-  ['/releases/latest.json', (res) => json(res, buildStableManifest(false))],
-  ['/releases/latest-surpass.json', (res) => json(res, buildStableManifest(true))],
-]);
+// Static switch on the literal request path — no user-controlled dynamic
+// dispatch (the request path never selects which function is invoked).
+const handleRequest = (req, res) => {
+  const url = req.url.split('?')[0];
+  console.log(`${req.method} ${url}`);
+  switch (url) {
+    case '/nightly/latest.json':
+      return json(res, buildNightlyManifest(false));
+    case '/nightly/latest-badsig.json':
+      return json(res, buildNightlyManifest(true));
+    case '/releases/latest.json':
+      return json(res, buildStableManifest(false));
+    case '/releases/latest-surpass.json':
+      return json(res, buildStableManifest(true));
+    case '/artifacts/test.bin':
+      res.writeHead(200, { 'content-type': 'application/octet-stream' });
+      return fs.createReadStream(ARTIFACT).pipe(res);
+    default:
+      res.writeHead(404);
+      return res.end('not found');
+  }
+};
 
 const serve = () =>
-  http
-    .createServer((req, res) => {
-      const url = req.url.split('?')[0];
-      console.log(`${req.method} ${url}`);
-      const route = routes.get(url);
-      if (route) return route(res);
-      if (url === '/artifacts/test.bin') {
-        res.writeHead(200, { 'content-type': 'application/octet-stream' });
-        return fs.createReadStream(ARTIFACT).pipe(res);
-      }
-      res.writeHead(404);
-      res.end('not found');
-    })
-    .listen(PORT, HOST, () => {
+  http.createServer(handleRequest).listen(PORT, HOST, () => {
       const base = baseVersion();
       console.log(`nightly harness on http://${HOST}:${PORT}`);
       console.log(`  nightly:        http://${HOST}:${PORT}/nightly/latest.json`);
