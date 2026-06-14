@@ -27,9 +27,11 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
     paragraphState,
     paragraphConfig,
     ttsSyncStatus,
+    ttsActive,
     toggleParagraphMode,
     goToNextParagraph,
     goToPrevParagraph,
+    toggleTtsAudio,
     reengageTtsFollow,
   } = useParagraphMode({ bookKey, viewRef });
 
@@ -74,6 +76,8 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
         onPrev={goToPrevParagraph}
         onNext={goToNextParagraph}
         onClose={toggleParagraphMode}
+        ttsActive={ttsActive}
+        onToggleTtsAudio={toggleTtsAudio}
         viewSettings={viewSettings ?? undefined}
         gridInsets={gridInsets}
       />

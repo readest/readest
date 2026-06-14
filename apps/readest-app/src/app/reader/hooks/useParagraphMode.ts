@@ -9,6 +9,7 @@ import { ParagraphIterator } from '@/utils/paragraph';
 import { getParagraphPresentation } from '@/utils/paragraphPresentation';
 import { DEFAULT_PARAGRAPH_MODE_CONFIG } from '@/services/constants';
 import { isRangeLike } from '@/utils/range';
+import { buildParagraphTtsSpeakDetail } from '@/app/reader/components/paragraph/paragraphTts';
 
 interface UseParagraphModeProps {
   bookKey: string;
@@ -74,6 +75,10 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   // Latest TTS playback-state for this book ('playing' vs not), used to derive
   // the sync status alongside the follow/pending refs.
   const ttsPlayingRef = useRef(false);
+  // A TTS session exists (playing OR paused) for this book. Distinct from
+  // ttsPlayingRef so a pause keeps the indicator + audio toggle "active" (the
+  // mode is still on); only a full stop clears it. Drives the bar's audio toggle.
+  const ttsActiveRef = useRef(false);
   const refreshTtsSyncStatusRef = useRef<(() => void) | null>(null);
   bookKeyRef.current = bookKey;
 
@@ -89,13 +94,20 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     isFixedLayout ? 'unsupported' : 'idle',
   );
 
+  // Whether a TTS session is engaged (playing or paused) for this book. Drives
+  // the bar's audio toggle active/idle glyph (#3235).
+  const [ttsActive, setTtsActive] = useState(false);
+
   // Derive the indicator status from the current refs + the latest playback
   // state and push it to React state so the indicator re-renders. Fixed-layout
   // always wins.
   const refreshTtsSyncStatus = useCallback(() => {
     setTtsSyncStatus(() => {
       if (isFixedLayout) return 'unsupported';
-      if (!ttsPlayingRef.current) return 'idle';
+      // No session at all (never started / fully stopped): idle.
+      if (!ttsActiveRef.current) return 'idle';
+      // Engaged but paused: keep the indicator visible (mode still on).
+      if (!ttsPlayingRef.current) return 'paused';
       if (!followingTtsRef.current) return 'decoupled';
       if (pendingSyncRef.current) return 'syncing';
       return 'following';
@@ -539,6 +551,25 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     refreshTtsSyncStatus();
   }, [isFixedLayout, refreshTtsSyncStatus]);
 
+  // Audio (TTS) toggle from the paragraph bar (#3235). When a TTS session is
+  // engaged, stop it; otherwise start it from the FOCUSED paragraph with
+  // start-alignment — the paragraph's range (validated live) + its section index
+  // — so audio begins at the same paragraph that's highlighted. Mirrors RSVP's
+  // handleToggleTtsAudio.
+  const toggleTtsAudio = useCallback(() => {
+    if (ttsActiveRef.current) {
+      eventDispatcher.dispatch('tts-stop', { bookKey: bookKeyRef.current });
+      return;
+    }
+    const range = iteratorRef.current?.current() ?? null;
+    const docIndex = currentDocIndexRef.current;
+    // The doc the focused paragraph lives in (current primary content), used to
+    // validate the range is live before passing it along.
+    const currentDoc = getPrimaryContent()?.doc;
+    const detail = buildParagraphTtsSpeakDetail(range, docIndex, bookKeyRef.current, currentDoc);
+    eventDispatcher.dispatch('tts-speak', detail);
+  }, [getPrimaryContent]);
+
   const goToParagraph = useCallback(
     (index: number) => {
       const iterator = iteratorRef.current;
@@ -709,6 +740,10 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       if (detail?.bookKey !== bookKeyRef.current) return;
       const playing = detail.state === 'playing';
       ttsPlayingRef.current = playing;
+      // A session exists while playing OR paused; only a full stop clears it.
+      const active = detail.state === 'playing' || detail.state === 'paused';
+      ttsActiveRef.current = active;
+      setTtsActive(active);
       if (playing) {
         // Fresh engage (re-)enables following.
         followingTtsRef.current = true;
@@ -772,11 +807,13 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   return {
     paragraphState,
     ttsSyncStatus,
+    ttsActive,
     paragraphConfig,
     toggleParagraphMode,
     goToNextParagraph,
     goToPrevParagraph,
     goToParagraph,
+    toggleTtsAudio,
     reengageTtsFollow,
     focusCurrentParagraph,
     initIterator,

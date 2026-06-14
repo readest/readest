@@ -775,6 +775,93 @@ describe('paragraph mode TTS sync', () => {
     });
   });
 
+  it('toggleTtsAudio starts TTS aligned to the focused paragraph when idle', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block zero');
+    });
+    expect(hookApi?.ttsActive).toBe(false);
+
+    dispatchSpy.mockClear();
+    act(() => {
+      hookApi?.toggleTtsAudio();
+    });
+
+    const speakCall = dispatchSpy.mock.calls.find(([name]) => name === 'tts-speak');
+    expect(speakCall).toBeDefined();
+    const detail = speakCall![1] as { bookKey: string; index?: number; range?: Range };
+    expect(detail.bookKey).toBe('book-1');
+    // Start-aligned to the focused paragraph: section index + live range.
+    expect(detail.index).toBe(0);
+    expect(detail.range?.toString()).toContain('Block zero');
+  });
+
+  it('toggleTtsAudio stops TTS when a session is active', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    // A playing session makes the toggle a stop.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+    });
+
+    dispatchSpy.mockClear();
+    act(() => {
+      hookApi?.toggleTtsAudio();
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'book-1' });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-speak', expect.anything());
+  });
+
+  it('keeps ttsActive and reports paused on a TTS pause; clears on stop', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+
+    // Pause keeps the session active and persists the indicator as 'paused'.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: 'book-1', state: 'paused' });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+      expect(hookApi?.ttsSyncStatus).toBe('paused');
+    });
+
+    // A full stop clears the session and returns to idle.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: 'book-1', state: 'stopped' });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(false);
+      expect(hookApi?.ttsSyncStatus).toBe('idle');
+    });
+  });
+
   it('ignores tts events for a different bookKey and keeps status unchanged', async () => {
     const doc = createMultiParagraphDoc();
     const { view } = createMockView([doc], 0);

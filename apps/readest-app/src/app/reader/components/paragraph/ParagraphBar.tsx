@@ -9,6 +9,7 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp,
 } from 'react-icons/md';
+import { IoVolumeHigh, IoVolumeMediumOutline } from 'react-icons/io5';
 import { ViewSettings } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -30,6 +31,10 @@ interface ParagraphBarProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  /** True when a TTS session is engaged (playing/paused) — drives the audio glyph. */
+  ttsActive?: boolean;
+  /** Toggle read-along: start TTS from the focused paragraph, or stop it. */
+  onToggleTtsAudio?: () => void;
   viewSettings?: ViewSettings;
   gridInsets: Insets;
 }
@@ -51,6 +56,8 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   onPrev,
   onNext,
   onClose,
+  ttsActive = false,
+  onToggleTtsAudio,
   viewSettings,
   gridInsets,
 }) => {
@@ -285,6 +292,37 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
           >
             <NextIcon size={iconSize} />
           </button>
+
+          {onToggleTtsAudio && (
+            <>
+              <div className='bg-base-content/10 mx-1 h-4 w-px' />
+
+              {/* Audio (TTS) toggle — starts read-along from the focused
+                  paragraph, or stops it when engaged (#3235). Active state uses a
+                  filled glyph + eink-bordered surface so it reads in e-ink
+                  without relying on color. */}
+              <button
+                onClick={onToggleTtsAudio}
+                disabled={isLoading}
+                className={clsx(
+                  'flex items-center justify-center rounded-full p-1.5',
+                  'transition-all duration-200 ease-out active:scale-90',
+                  ttsActive
+                    ? 'text-primary eink-bordered not-eink:bg-base-200'
+                    : 'not-eink:hover:bg-base-200',
+                  isLoading && 'pointer-events-none opacity-50',
+                )}
+                title={ttsActive ? _('Pause audio') : _('Play audio')}
+                aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
+              >
+                {ttsActive ? (
+                  <IoVolumeHigh size={iconSize} aria-hidden='true' />
+                ) : (
+                  <IoVolumeMediumOutline size={iconSize} aria-hidden='true' />
+                )}
+              </button>
+            </>
+          )}
 
           <button
             onClick={onClose}
