@@ -32,6 +32,7 @@
     "test:pr:web": "pnpm test:pr:web:unit && pnpm test:browser && pnpm test:extension && pnpm build-browser-ext",
     "test:pr:tauri": "bash scripts/test-tauri.sh",
     "test:all": "pnpm test -- --watch=false && pnpm test:browser && bash scripts/test-tauri.sh",
+    "verify:nightly": "node scripts/nightly-verify-harness/serve.mjs",
     "bench": "node --experimental-strip-types --no-warnings bench/index.ts",
     "test:e2e": "wdio run wdio.conf.ts",
     "test:e2e:web": "playwright test",

@@ -68,6 +68,11 @@ import {
   resolveNightlyUpdate,
   getNightlyPlatformKey,
 } from '@/helpers/updater';
+import {
+  buildNightlyManifest,
+  buildStableManifest,
+  baseVersion,
+} from '../../../scripts/nightly-verify-harness/serve.mjs';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -473,6 +478,50 @@ describe('resolveNightlyUpdate', () => {
       throw new Error('network');
     });
     const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
+    expect(r).toBeNull();
+  });
+});
+
+// Runs the REAL resolver against the local verify harness's own manifest
+// builders (scripts/nightly-verify-harness/serve.mjs), so the harness and the
+// production decision logic can't drift, and the "what would the app offer"
+// decision for each scenario is asserted without the GUI.
+describe('resolveNightlyUpdate — harness scenarios', () => {
+  const platformKey = 'darwin-aarch64';
+  const base = baseVersion();
+  const [major, minor, patch] = base.split('.').map(Number) as [number, number, number];
+  const mkFetch = (nightly: unknown, stable: unknown) =>
+    vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => (url.includes('nightly') ? nightly : stable),
+    }));
+
+  test('offers the nightly when stable is same-base (Tier 2 detection)', async () => {
+    const r = await resolveNightlyUpdate(
+      base,
+      platformKey,
+      mkFetch(buildNightlyManifest(), buildStableManifest()) as never,
+    );
+    expect(r?.version).toBe(`${base}-2099010100`);
+    expect(r?.endpoint).toContain('nightly');
+  });
+
+  test('offers stable when stable surpasses the nightly (cross-channel)', async () => {
+    const r = await resolveNightlyUpdate(
+      base,
+      platformKey,
+      mkFetch(buildNightlyManifest(), buildStableManifest(true)) as never,
+    );
+    expect(r?.version).toBe(`${major}.${minor}.${patch + 1}`);
+    expect(r?.endpoint).not.toContain('nightly');
+  });
+
+  test('offers nothing when already on the harness nightly', async () => {
+    const r = await resolveNightlyUpdate(
+      `${base}-2099010100`,
+      platformKey,
+      mkFetch(buildNightlyManifest(), buildStableManifest()) as never,
+    );
     expect(r).toBeNull();
   });
 });
