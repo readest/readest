@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "เครื่องมือทั้งหมดอยู่ในแถบเครื่องมือแล้ว",
   "Add all": "เพิ่มทั้งหมด",
   "Clear all": "ล้างทั้งหมด",
-  "No tools, drag one here": "ไม่มีเครื่องมือ ลากมาที่นี่สักรายการ"
+  "No tools, drag one here": "ไม่มีเครื่องมือ ลากมาที่นี่สักรายการ",
+  "Stopped following audio": "หยุดติดตามเสียงแล้ว",
+  "Audio pace": "จังหวะเสียง",
+  "Speed follows audio": "ความเร็วติดตามเสียง",
+  "Pause audio": "หยุดเสียงชั่วคราว",
+  "Play audio": "เล่นเสียง",
+  "Resume audio": "ติดตามเสียงต่อ",
+  "Following audio": "กำลังติดตามเสียง",
+  " · estimated": " · โดยประมาณ"
 }

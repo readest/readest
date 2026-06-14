@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "모든 도구가 도구 모음에 있습니다.",
   "Add all": "모두 추가",
   "Clear all": "모두 지우기",
-  "No tools, drag one here": "도구가 없습니다, 여기로 하나를 드래그하세요"
+  "No tools, drag one here": "도구가 없습니다, 여기로 하나를 드래그하세요",
+  "Stopped following audio": "오디오 따라가기를 중지함",
+  "Audio pace": "오디오 속도",
+  "Speed follows audio": "속도가 오디오를 따릅니다",
+  "Pause audio": "오디오 일시정지",
+  "Play audio": "오디오 재생",
+  "Resume audio": "오디오 다시 따라가기",
+  "Following audio": "오디오 따라가는 중",
+  " · estimated": " · 추정"
 }

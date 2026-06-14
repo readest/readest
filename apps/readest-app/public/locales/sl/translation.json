@@ -1788,5 +1788,13 @@
   "All tools are in the toolbar.": "Vsa orodja so v orodni vrstici.",
   "Add all": "Dodaj vse",
   "Clear all": "Počisti vse",
-  "No tools, drag one here": "Ni orodij, povlecite eno sem"
+  "No tools, drag one here": "Ni orodij, povlecite eno sem",
+  "Stopped following audio": "Sledenje zvoku ustavljeno",
+  "Audio pace": "Tempo zvoka",
+  "Speed follows audio": "Hitrost sledi zvoku",
+  "Pause audio": "Začasno ustavi zvok",
+  "Play audio": "Predvajaj zvok",
+  "Resume audio": "Nadaljuj sledenje",
+  "Following audio": "Sledi zvoku",
+  " · estimated": " · ocenjeno"
 }

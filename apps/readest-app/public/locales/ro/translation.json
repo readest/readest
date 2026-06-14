@@ -1755,5 +1755,13 @@
   "All tools are in the toolbar.": "Toate instrumentele sunt în bara de instrumente.",
   "Add all": "Adaugă tot",
   "Clear all": "Șterge tot",
-  "No tools, drag one here": "Niciun instrument, trage unul aici"
+  "No tools, drag one here": "Niciun instrument, trage unul aici",
+  "Stopped following audio": "Urmărirea audio a fost oprită",
+  "Audio pace": "Ritm audio",
+  "Speed follows audio": "Viteza urmează audio",
+  "Pause audio": "Întrerupe audio",
+  "Play audio": "Redă audio",
+  "Resume audio": "Reia urmărirea",
+  "Following audio": "Urmărește audio",
+  " · estimated": " · estimat"
 }

@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "Minden eszköz az eszköztáron van.",
   "Add all": "Összes hozzáadása",
   "Clear all": "Összes törlése",
-  "No tools, drag one here": "Nincsenek eszközök, húzz ide egyet"
+  "No tools, drag one here": "Nincsenek eszközök, húzz ide egyet",
+  "Stopped following audio": "A hang követése leállt",
+  "Audio pace": "Hang tempója",
+  "Speed follows audio": "A sebesség a hangot követi",
+  "Pause audio": "Hang szüneteltetése",
+  "Play audio": "Hang lejátszása",
+  "Resume audio": "Követés folytatása",
+  "Following audio": "Hangot követi",
+  " · estimated": " · becsült"
 }

@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "همهٔ ابزارها در نوار ابزار هستند.",
   "Add all": "افزودن همه",
   "Clear all": "پاک کردن همه",
-  "No tools, drag one here": "هیچ ابزاری نیست، یکی را به اینجا بکشید"
+  "No tools, drag one here": "هیچ ابزاری نیست، یکی را به اینجا بکشید",
+  "Stopped following audio": "دنبال‌کردن صدا متوقف شد",
+  "Audio pace": "آهنگ صدا",
+  "Speed follows audio": "سرعت از صدا پیروی می‌کند",
+  "Pause audio": "مکث صدا",
+  "Play audio": "پخش صدا",
+  "Resume audio": "ادامهٔ دنبال‌کردن صدا",
+  "Following audio": "در حال دنبال‌کردن صدا",
+  " · estimated": " · تخمینی"
 }

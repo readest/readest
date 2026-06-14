@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "Alle gereedschappen staan op de werkbalk.",
   "Add all": "Alles toevoegen",
   "Clear all": "Alles wissen",
-  "No tools, drag one here": "Geen gereedschappen, sleep er een hierheen"
+  "No tools, drag one here": "Geen gereedschappen, sleep er een hierheen",
+  "Stopped following audio": "Audio niet meer gevolgd",
+  "Audio pace": "Audiotempo",
+  "Speed follows audio": "Snelheid volgt audio",
+  "Pause audio": "Audio pauzeren",
+  "Play audio": "Audio afspelen",
+  "Resume audio": "Audio hervatten",
+  "Following audio": "Volgt audio",
+  " · estimated": " · geschat"
 }

@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "Όλα τα εργαλεία βρίσκονται στη γραμμή εργαλείων.",
   "Add all": "Προσθήκη όλων",
   "Clear all": "Εκκαθάριση όλων",
-  "No tools, drag one here": "Δεν υπάρχουν εργαλεία, σύρετε ένα εδώ"
+  "No tools, drag one here": "Δεν υπάρχουν εργαλεία, σύρετε ένα εδώ",
+  "Stopped following audio": "Διακόπηκε η παρακολούθηση ήχου",
+  "Audio pace": "Ρυθμός ήχου",
+  "Speed follows audio": "Η ταχύτητα ακολουθεί τον ήχο",
+  "Pause audio": "Παύση ήχου",
+  "Play audio": "Αναπαραγωγή ήχου",
+  "Resume audio": "Συνέχιση ήχου",
+  "Following audio": "Ακολουθεί τον ήχο",
+  " · estimated": " · κατ' εκτίμηση"
 }

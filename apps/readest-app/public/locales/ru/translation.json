@@ -1788,5 +1788,13 @@
   "All tools are in the toolbar.": "Все инструменты на панели инструментов.",
   "Add all": "Добавить все",
   "Clear all": "Очистить все",
-  "No tools, drag one here": "Нет инструментов, перетащите один сюда"
+  "No tools, drag one here": "Нет инструментов, перетащите один сюда",
+  "Stopped following audio": "Слежение за аудио остановлено",
+  "Audio pace": "Темп аудио",
+  "Speed follows audio": "Скорость следует за аудио",
+  "Pause audio": "Приостановить аудио",
+  "Play audio": "Воспроизвести аудио",
+  "Resume audio": "Возобновить слежение",
+  "Following audio": "Следует за аудио",
+  " · estimated": " · примерно"
 }

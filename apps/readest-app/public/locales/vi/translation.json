@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "Tất cả công cụ đều ở trên thanh công cụ.",
   "Add all": "Thêm tất cả",
   "Clear all": "Xóa tất cả",
-  "No tools, drag one here": "Không có công cụ, hãy kéo một công cụ vào đây"
+  "No tools, drag one here": "Không có công cụ, hãy kéo một công cụ vào đây",
+  "Stopped following audio": "Đã dừng theo âm thanh",
+  "Audio pace": "Nhịp âm thanh",
+  "Speed follows audio": "Tốc độ theo âm thanh",
+  "Pause audio": "Tạm dừng âm thanh",
+  "Play audio": "Phát âm thanh",
+  "Resume audio": "Tiếp tục theo âm thanh",
+  "Following audio": "Đang theo âm thanh",
+  " · estimated": " · ước tính"
 }

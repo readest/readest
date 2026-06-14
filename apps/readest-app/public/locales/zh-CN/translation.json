@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "所有工具都在工具栏中。",
   "Add all": "全部添加",
   "Clear all": "全部清除",
-  "No tools, drag one here": "没有工具，拖一个到这里"
+  "No tools, drag one here": "没有工具，拖一个到这里",
+  "Stopped following audio": "已停止跟随音频",
+  "Audio pace": "音频节奏",
+  "Speed follows audio": "速度跟随音频",
+  "Pause audio": "暂停音频",
+  "Play audio": "播放音频",
+  "Resume audio": "恢复跟随",
+  "Following audio": "正在跟随音频",
+  " · estimated": " · 估算"
 }

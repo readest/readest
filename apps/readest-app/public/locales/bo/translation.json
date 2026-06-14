@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "ལག་ཆ་ཡོངས་རྫོགས་ལག་ཆའི་ཕྲེང་ནང་ཡོད།",
   "Add all": "ཚང་མ་སྣོན་པ།",
   "Clear all": "ཚང་མ་གཙང་སེལ།",
-  "No tools, drag one here": "ལག་ཆ་མེད། འདིར་གཅིག་འདྲུད་རོགས།"
+  "No tools, drag one here": "ལག་ཆ་མེད། འདིར་གཅིག་འདྲུད་རོགས།",
+  "Stopped following audio": "སྒྲ་གདངས་རྗེས་འདེད་མཚམས་བཞག",
+  "Audio pace": "སྒྲའི་མགྱོགས་ཚད།",
+  "Speed follows audio": "མགྱོགས་ཚད་སྒྲ་གདངས་ལ་རྗེས་འདེད་བྱེད།",
+  "Pause audio": "སྒྲ་གདངས་འགོག་པ།",
+  "Play audio": "སྒྲ་གདངས་གཏོང་བ།",
+  "Resume audio": "རྗེས་འདེད་མུ་མཐུད།",
+  "Following audio": "སྒྲ་གདངས་རྗེས་འདེད་བྱེད་བཞིན་པ།",
+  " · estimated": " · ཚོད་དཔག"
 }

@@ -1755,5 +1755,13 @@
   "All tools are in the toolbar.": "כל הכלים נמצאים בסרגל הכלים.",
   "Add all": "הוסף הכול",
   "Clear all": "נקה הכול",
-  "No tools, drag one here": "אין כלים, גררו אחד לכאן"
+  "No tools, drag one here": "אין כלים, גררו אחד לכאן",
+  "Stopped following audio": "המעקב אחר השמע הופסק",
+  "Audio pace": "קצב השמע",
+  "Speed follows audio": "המהירות עוקבת אחר השמע",
+  "Pause audio": "השהיית שמע",
+  "Play audio": "השמעת שמע",
+  "Resume audio": "חידוש מעקב",
+  "Following audio": "עוקב אחר השמע",
+  " · estimated": " · משוער"
 }

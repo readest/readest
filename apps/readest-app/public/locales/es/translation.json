@@ -1755,5 +1755,13 @@
   "All tools are in the toolbar.": "Todas las herramientas están en la barra de herramientas.",
   "Add all": "Añadir todo",
   "Clear all": "Borrar todo",
-  "No tools, drag one here": "No hay herramientas, arrastra una aquí"
+  "No tools, drag one here": "No hay herramientas, arrastra una aquí",
+  "Stopped following audio": "Se dejó de seguir el audio",
+  "Audio pace": "Ritmo del audio",
+  "Speed follows audio": "La velocidad sigue al audio",
+  "Pause audio": "Pausar audio",
+  "Play audio": "Reproducir audio",
+  "Resume audio": "Reanudar audio",
+  "Following audio": "Siguiendo el audio",
+  " · estimated": " · estimado"
 }

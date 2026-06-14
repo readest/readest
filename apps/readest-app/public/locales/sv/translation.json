@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "Alla verktyg finns i verktygsfältet.",
   "Add all": "Lägg till alla",
   "Clear all": "Rensa alla",
-  "No tools, drag one here": "Inga verktyg, dra ett hit"
+  "No tools, drag one here": "Inga verktyg, dra ett hit",
+  "Stopped following audio": "Slutade följa ljudet",
+  "Audio pace": "Ljudtempo",
+  "Speed follows audio": "Hastigheten följer ljudet",
+  "Pause audio": "Pausa ljud",
+  "Play audio": "Spela upp ljud",
+  "Resume audio": "Återuppta ljud",
+  "Following audio": "Följer ljudet",
+  " · estimated": " · uppskattat"
 }

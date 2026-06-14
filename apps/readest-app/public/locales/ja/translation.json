@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "すべてのツールがツールバーにあります。",
   "Add all": "すべて追加",
   "Clear all": "すべてクリア",
-  "No tools, drag one here": "ツールがありません、ここにドラッグしてください"
+  "No tools, drag one here": "ツールがありません、ここにドラッグしてください",
+  "Stopped following audio": "音声の追従を停止しました",
+  "Audio pace": "音声のペース",
+  "Speed follows audio": "速度は音声に従います",
+  "Pause audio": "音声を一時停止",
+  "Play audio": "音声を再生",
+  "Resume audio": "音声に再追従",
+  "Following audio": "音声に追従中",
+  " · estimated": " · 推定"
 }

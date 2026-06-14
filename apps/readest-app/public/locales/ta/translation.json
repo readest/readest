@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "அனைத்து கருவிகளும் கருவிப்பட்டியில் உள்ளன.",
   "Add all": "அனைத்தையும் சேர்",
   "Clear all": "அனைத்தையும் அழி",
-  "No tools, drag one here": "கருவிகள் இல்லை, ஒன்றை இங்கே இழுக்கவும்"
+  "No tools, drag one here": "கருவிகள் இல்லை, ஒன்றை இங்கே இழுக்கவும்",
+  "Stopped following audio": "ஆடியோ பின்தொடர்தல் நிறுத்தப்பட்டது",
+  "Audio pace": "ஆடியோ வேகம்",
+  "Speed follows audio": "வேகம் ஆடியோவைப் பின்தொடர்கிறது",
+  "Pause audio": "ஆடியோவை இடைநிறுத்து",
+  "Play audio": "ஆடியோவை இயக்கு",
+  "Resume audio": "மீண்டும் பின்தொடர்",
+  "Following audio": "ஆடியோவைப் பின்தொடர்கிறது",
+  " · estimated": " · தோராயமாக"
 }

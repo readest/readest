@@ -1689,5 +1689,13 @@
   "All tools are in the toolbar.": "Semua alat ada di bilah alat.",
   "Add all": "Tambah semua",
   "Clear all": "Hapus semua",
-  "No tools, drag one here": "Tidak ada alat, seret satu ke sini"
+  "No tools, drag one here": "Tidak ada alat, seret satu ke sini",
+  "Stopped following audio": "Berhenti mengikuti audio",
+  "Audio pace": "Tempo audio",
+  "Speed follows audio": "Kecepatan mengikuti audio",
+  "Pause audio": "Jeda audio",
+  "Play audio": "Putar audio",
+  "Resume audio": "Lanjutkan mengikuti",
+  "Following audio": "Mengikuti audio",
+  " · estimated": " · perkiraan"
 }

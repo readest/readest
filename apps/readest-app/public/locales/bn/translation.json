@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "সব টুল টুলবারে রয়েছে।",
   "Add all": "সব যোগ করুন",
   "Clear all": "সব মুছুন",
-  "No tools, drag one here": "কোনো টুল নেই, এখানে একটি টেনে আনুন"
+  "No tools, drag one here": "কোনো টুল নেই, এখানে একটি টেনে আনুন",
+  "Stopped following audio": "অডিও অনুসরণ বন্ধ হয়েছে",
+  "Audio pace": "অডিওর গতি",
+  "Speed follows audio": "গতি অডিও অনুসরণ করে",
+  "Pause audio": "অডিও বিরতি দিন",
+  "Play audio": "অডিও চালান",
+  "Resume audio": "আবার অনুসরণ করুন",
+  "Following audio": "অডিও অনুসরণ করছে",
+  " · estimated": " · আনুমানিক"
 }

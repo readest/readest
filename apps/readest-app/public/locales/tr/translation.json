@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "Tüm araçlar araç çubuğunda.",
   "Add all": "Tümünü ekle",
   "Clear all": "Tümünü temizle",
-  "No tools, drag one here": "Araç yok, buraya bir tane sürükleyin"
+  "No tools, drag one here": "Araç yok, buraya bir tane sürükleyin",
+  "Stopped following audio": "Ses takibi durduruldu",
+  "Audio pace": "Ses temposu",
+  "Speed follows audio": "Hız sesi takip eder",
+  "Pause audio": "Sesi duraklat",
+  "Play audio": "Sesi oynat",
+  "Resume audio": "Sesi takibe devam et",
+  "Following audio": "Sesi takip ediyor",
+  " · estimated": " · tahmini"
 }

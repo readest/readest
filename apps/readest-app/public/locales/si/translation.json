@@ -1722,5 +1722,13 @@
   "All tools are in the toolbar.": "සියලුම මෙවලම් මෙවලම් තීරුවේ ඇත.",
   "Add all": "සියල්ල එක් කරන්න",
   "Clear all": "සියල්ල හිස් කරන්න",
-  "No tools, drag one here": "මෙවලම් නැත, මෙතැනට එකක් ඇද දමන්න"
+  "No tools, drag one here": "මෙවලම් නැත, මෙතැනට එකක් ඇද දමන්න",
+  "Stopped following audio": "ශ්‍රව්‍ය අනුගමනය නැවැත්වීය",
+  "Audio pace": "ශ්‍රව්‍ය වේගය",
+  "Speed follows audio": "වේගය ශ්‍රව්‍යය අනුගමනය කරයි",
+  "Pause audio": "ශ්‍රව්‍යය විරාම කරන්න",
+  "Play audio": "ශ්‍රව්‍යය වාදනය කරන්න",
+  "Resume audio": "නැවත අනුගමනය කරන්න",
+  "Following audio": "ශ්‍රව්‍යය අනුගමනය කරයි",
+  " · estimated": " · ඇස්තමේන්තුගත"
 }

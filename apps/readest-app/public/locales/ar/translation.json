@@ -1854,5 +1854,13 @@
   "All tools are in the toolbar.": "جميع الأدوات موجودة في شريط الأدوات.",
   "Add all": "إضافة الكل",
   "Clear all": "مسح الكل",
-  "No tools, drag one here": "لا توجد أدوات، اسحب واحدة إلى هنا"
+  "No tools, drag one here": "لا توجد أدوات، اسحب واحدة إلى هنا",
+  "Stopped following audio": "تم إيقاف متابعة الصوت",
+  "Audio pace": "إيقاع الصوت",
+  "Speed follows audio": "تتبع السرعة الصوت",
+  "Pause audio": "إيقاف الصوت مؤقتًا",
+  "Play audio": "تشغيل الصوت",
+  "Resume audio": "استئناف متابعة الصوت",
+  "Following audio": "يتابع الصوت",
+  " · estimated": " · تقديري"
 }
