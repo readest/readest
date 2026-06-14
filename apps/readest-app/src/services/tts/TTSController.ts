@@ -36,6 +36,10 @@ export class TTSController extends EventTarget {
 
   #ttsSectionIndex: number = -1;
 
+  // Monotonic counter for the canonical 'tts-position' event so downstream
+  // consumers (paragraph mode, RSVP) can drop out-of-order positions.
+  #positionSequence: number = 0;
+
   // Word-level highlight state for the currently spoken chunk. Armed by a
   // successful dispatchSpeakMark, populated by prepareSpeakWords when a TTS
   // client has word-boundary metadata for the chunk.
@@ -595,6 +599,22 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // Canonical position signal emitted from the same paths as
+  // tts-highlight-mark / tts-highlight-word. The controller is the source of
+  // truth (it owns the section index and current word/sentence CFI).
+  #dispatchPosition(cfi: string, kind: 'word' | 'sentence') {
+    this.dispatchEvent(
+      new CustomEvent('tts-position', {
+        detail: {
+          cfi,
+          kind,
+          sectionIndex: this.#ttsSectionIndex,
+          sequence: ++this.#positionSequence,
+        },
+      }),
+    );
+  }
+
   dispatchSpeakMark(mark?: TTSMark) {
     this.#resetSpeakWords();
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
@@ -610,6 +630,7 @@ export class TTSController extends EventTarget {
         this.#speakWordsArmed = !!range;
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+        this.#dispatchPosition(cfi, 'sentence');
       } catch {
         this.#suppressMarkHighlight = false;
       }
@@ -697,6 +718,7 @@ export class TTSController extends EventTarget {
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         if (cfi) {
           this.dispatchEvent(new CustomEvent('tts-highlight-word', { detail: { cfi } }));
+          this.#dispatchPosition(cfi, 'word');
         }
       } catch {}
     }

@@ -739,6 +739,94 @@ describe('TTSController', () => {
     });
   });
 
+  describe('tts-position event', () => {
+    const makeSentenceRange = () => {
+      document.body.innerHTML = '<p>Hello brave world</p>';
+      const textNode = document.body.firstElementChild!.firstChild as Text;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, textNode.length);
+      return range;
+    };
+
+    const armWithSentence = async (range: Range, markName = '0') => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        setMark: vi.fn().mockReturnValue(range),
+        getLastRange: vi.fn().mockImplementation(() => range.cloneRange()),
+      } as unknown as FoliateView['tts'];
+      controller.dispatchSpeakMark({
+        offset: 0,
+        name: markName,
+        text: 'Hello brave world',
+        language: 'en',
+      });
+    };
+
+    test('dispatchSpeakMark emits tts-position with kind sentence, cfi, sectionIndex and sequence', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        setMark: vi.fn().mockReturnValue(new Range()),
+        getLastRange: vi.fn(),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-sentence');
+
+      const listener = vi.fn();
+      controller.addEventListener('tts-position', listener);
+
+      controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'hello', language: 'en' });
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      const ev = listener.mock.calls[0]![0] as CustomEvent;
+      expect(ev.detail.kind).toBe('sentence');
+      expect(ev.detail.cfi).toBe('cfi-sentence');
+      // initViewTTS(0) set the TTS section index to 0.
+      expect(ev.detail.sectionIndex).toBe(0);
+      expect(typeof ev.detail.sequence).toBe('number');
+    });
+
+    test('dispatchSpeakWord emits tts-position with kind word', async () => {
+      await armWithSentence(makeSentenceRange());
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+
+      const listener = vi.fn();
+      controller.addEventListener('tts-position', listener);
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-word');
+      controller.dispatchSpeakWord(1);
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      const ev = listener.mock.calls[0]![0] as CustomEvent;
+      expect(ev.detail.kind).toBe('word');
+      expect(ev.detail.cfi).toBe('cfi-word');
+      expect(ev.detail.sectionIndex).toBe(0);
+      expect(typeof ev.detail.sequence).toBe('number');
+    });
+
+    test('sequence strictly increases across successive emits', async () => {
+      await armWithSentence(makeSentenceRange());
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-x');
+
+      const sequences: number[] = [];
+      controller.addEventListener('tts-position', (e) => {
+        sequences.push((e as CustomEvent).detail.sequence);
+      });
+
+      // word emit
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      controller.dispatchSpeakWord(1);
+      // sentence emit
+      controller.dispatchSpeakMark({ offset: 0, name: '1', text: 'hello', language: 'en' });
+      // another word emit
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      controller.dispatchSpeakWord(2);
+
+      expect(sequences.length).toBeGreaterThanOrEqual(3);
+      for (let i = 1; i < sequences.length; i++) {
+        expect(sequences[i]!).toBeGreaterThan(sequences[i - 1]!);
+      }
+    });
+  });
+
   describe('getSpokenSentence', () => {
     test('returns the trimmed text and cfi of the current sentence', async () => {
       await controller.initViewTTS(0);
