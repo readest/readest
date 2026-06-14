@@ -428,10 +428,14 @@ jobs:
           echo "Assembled latest.json:"
           jq '{version, platforms: (.platforms | keys)}' latest.json
 
-          # Atomic promote: upload to a temp key, then server-side move so
-          # readers never observe a half-written latest.json.
-          rclone copyto latest.json "$base/latest.json.tmp"
-          rclone moveto "$base/latest.json.tmp" "$base/latest.json"
+          # Promote the manifest with a directory `rclone copy`, exactly like the
+          # stable release flow writes releases/latest.json (upload-to-r2.yml).
+          # A single-file `rclone copyto`/`moveto` first issues a CreateBucket
+          # probe (PUT /<bucket>) that the object-scoped R2 token can't satisfy
+          # (403 AccessDenied); a directory copy PUTs the object directly. R2
+          # PutObject is atomic, so readers never observe a half-written manifest.
+          mkdir -p promote && cp latest.json promote/latest.json
+          rclone copy promote "$base/"
 
       - name: prune old nightly folders (keep newest 7)
         run: |
