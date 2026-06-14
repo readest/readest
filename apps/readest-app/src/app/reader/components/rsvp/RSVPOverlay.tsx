@@ -6,6 +6,7 @@ import { Insets } from '@/types/misc';
 import { RsvpState, RSVPController } from '@/services/rsvp';
 import { containsCJK } from '@/services/rsvp/utils';
 import { useThemeStore } from '@/store/themeStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { TOCItem } from '@/libs/document';
 import {
   IoClose,
@@ -153,6 +154,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 }) => {
   const _ = useTranslation();
   const { themeCode, isDarkMode: _isDarkMode } = useThemeStore();
+  const isSettingsDialogOpen = useSettingsStore((s) => s.isSettingsDialogOpen);
   const [state, setState] = useState<RsvpState>(controller.currentState);
   const currentWord = controller.currentDisplayWord;
   // The transport (center) play/pause controls TTS while read-along is engaged,
@@ -281,6 +283,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       // While the dictionary is open it owns the keyboard (e.g. Escape closes
       // the dictionary, not the whole RSVP session).
       if (dict) return;
+      // Dictionary management (settings dialog) opens OVER RSVP; let it own the
+      // keyboard so its inputs accept space and Escape closes it, not RSVP.
+      if (isSettingsDialogOpen) return;
 
       switch (event.key) {
         case ' ':
@@ -337,7 +342,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     // Use capture phase to handle events before they reach dropdown/select elements
     document.addEventListener('keydown', handleKeyboard, { capture: true });
     return () => document.removeEventListener('keydown', handleKeyboard, { capture: true });
-  }, [state.active, controller, onClose, dict]);
+  }, [state.active, controller, onClose, dict, isSettingsDialogOpen]);
 
   const effectiveChapterHref = currentChapterHref;
 

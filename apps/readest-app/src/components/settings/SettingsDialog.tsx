@@ -347,7 +347,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <Dialog
       isOpen={true}
       onClose={handleClose}
-      className='modal-open'
+      // Settings is the top-level modal: raise it above the full-screen RSVP
+      // speed-reader overlay (z-[10000]) so dictionary management opened from
+      // inside RSVP shows on top instead of behind it (#3235). !important beats
+      // the Dialog's hardcoded z-50.
+      className='modal-open !z-[10050]'
       bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
       boxClassName={clsx(
         'sm:min-w-[520px] overflow-hidden not-eink:bg-base-200',

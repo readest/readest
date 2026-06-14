@@ -966,21 +966,14 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // Book language drives dictionary provider selection for context lookups (#4475).
   const dictionaryLang = bookData?.bookDoc?.metadata?.language as string | undefined;
   const handleManageDictionary = useCallback(() => {
-    // The settings dialog (which hosts dictionary management) renders at z-50,
-    // far below the full-screen RSVP overlay (z-[10000]), so it would open
-    // invisibly behind it. Exit RSVP first — its position is saved and resumable
-    // — so management shows over the reader; the user returns via the saved spot.
-    handleClose();
+    // Open dictionary management OVER the RSVP overlay (RSVP stays open). The
+    // settings dialog is raised above the overlay's z-[10000] (see SettingsDialog),
+    // and RSVP's capture-phase keyboard handler bails while it's open so the
+    // settings inputs / Escape work (see RSVPOverlay).
     setSettingsDialogBookKey(bookKey);
     setActiveSettingsItemId('settings.language.dictionaries.manage');
     setSettingsDialogOpen(true);
-  }, [
-    bookKey,
-    handleClose,
-    setActiveSettingsItemId,
-    setSettingsDialogBookKey,
-    setSettingsDialogOpen,
-  ]);
+  }, [bookKey, setActiveSettingsItemId, setSettingsDialogBookKey, setSettingsDialogOpen]);
 
   // Audio (TTS) toggle from the overlay (slice 7, decision 5, #3235). When TTS
   // is engaged, stop it; otherwise start it from the displayed RSVP word with
