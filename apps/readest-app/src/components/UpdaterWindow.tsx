@@ -16,11 +16,16 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import { getAppVersion } from '@/utils/version';
 import { tauriDownload } from '@/utils/transfer';
-import { installPackage } from '@/utils/bridge';
+import { installPackage, verifyUpdateSignature, installNightlyUpdate } from '@/utils/bridge';
 import { join } from '@tauri-apps/api/path';
 import { getLocale } from '@/utils/misc';
 import { setLastShownReleaseNotesVersion } from '@/helpers/updater';
-import { READEST_UPDATER_FILE, READEST_CHANGELOG_FILE } from '@/services/constants';
+import type { ResolvedNightlyUpdate } from '@/helpers/updater';
+import {
+  READEST_UPDATER_FILE,
+  READEST_CHANGELOG_FILE,
+  READEST_UPDATER_PUBKEY,
+} from '@/services/constants';
 import Dialog from '@/components/Dialog';
 import Link from './Link';
 
@@ -65,14 +70,36 @@ interface GenericUpdate {
   downloadAndInstall?(onEvent?: (progress: DownloadEvent) => void): Promise<void>;
 }
 
+const TAURI_UPDATER_KEYS = new Set([
+  'darwin-aarch64',
+  'darwin-x86_64',
+  'windows-x86_64',
+  'windows-aarch64',
+  'linux-x86_64',
+  'linux-aarch64',
+]);
+
+// Render a nightly stamp (e.g. "0.11.4-2026061406") in a human form. Returns
+// the input unchanged for plain semver versions so stable releases display
+// normally.
+const formatVersionLabel = (v: string): string => {
+  const m = v.match(/^(\d+\.\d+\.\d+)-(\d{4})(\d{2})(\d{2})(\d{2})$/);
+  if (!m) return v;
+  const [, base, y, mo, d, h] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d));
+  return `Nightly · ${base} (${date.toLocaleDateString()}, ${h}:00)`;
+};
+
 export const UpdaterContent = ({
   latestVersion,
   lastVersion,
   checkUpdate = true,
+  nightlyUpdate,
 }: {
   latestVersion?: string;
   lastVersion?: string;
   checkUpdate?: boolean;
+  nightlyUpdate?: ResolvedNightlyUpdate;
 }) => {
   const _ = useTranslation();
   const [targetLang, setTargetLang] = useState('EN');
@@ -97,6 +124,7 @@ export const UpdaterContent = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTargetLang(getLocale());
@@ -283,23 +311,95 @@ export const UpdaterContent = ({
         } as GenericUpdate);
       }
     };
+    const buildNightlyUpdate = (n: ResolvedNightlyUpdate): GenericUpdate => ({
+      currentVersion,
+      version: n.version,
+      date: n.pubDate,
+      body: n.notes,
+      downloadAndInstall: async (onEvent) => {
+        if (TAURI_UPDATER_KEYS.has(n.platformKey)) {
+          // macOS / Windows-NSIS / Linux-deb: Tauri updater (verify + install +
+          // relaunch). A 0 contentLength (server omitted Content-Length) is
+          // tolerated: we only emit 'Started' once a non-zero total arrives so
+          // the percent math never divides by zero.
+          let total = 0;
+          await installNightlyUpdate(n.endpoint, (p) => {
+            if (p.event === 'progress') {
+              if (!total && p.contentLength) {
+                total = p.contentLength;
+                onEvent?.({ event: 'Started', data: { contentLength: total } });
+              }
+              onEvent?.({ event: 'Progress', data: { chunkLength: p.downloaded } });
+            } else if (p.event === 'finished') {
+              onEvent?.({ event: 'Finished' });
+            }
+          });
+          return;
+        }
+        // Windows-portable / Linux-AppImage / Android: download, verify, install.
+        const fileName = n.url.split('/').pop() || `Readest_${n.version}`;
+        let filePath: string;
+        if (n.platformKey.includes('portable')) {
+          // Windows portable: write into the executable dir so the new exe
+          // replaces the running one in place (mirrors checkWindowsPortableUpdate).
+          const execDir = await invoke<string>('get_executable_dir');
+          filePath = await join(execDir, fileName);
+        } else {
+          filePath = await appService!.resolveFilePath(fileName, 'Cache');
+        }
+        await downloadWithProgress(n.url, filePath, onEvent);
+        const ok = await verifyUpdateSignature(filePath, n.signature, READEST_UPDATER_PUBKEY);
+        if (!ok) {
+          console.error('Nightly signature verification failed; aborting install');
+          throw new Error('Signature verification failed');
+        }
+        if (n.platformKey.startsWith('android')) {
+          const res = await installPackage({ path: filePath });
+          if (!res.success) console.error('Failed to install APK:', res.error);
+        } else if (n.platformKey.includes('appimage')) {
+          const chmod = Command.create('chmod-appimage', ['+x', filePath]);
+          await chmod.execute();
+          const launch = Command.create('launch-appimage', [filePath]);
+          await launch.spawn();
+          setTimeout(async () => {
+            await exit(0);
+          }, 500);
+        } else {
+          // windows portable
+          const command = Command.create('start-readest', ['/C', 'start', '', filePath]);
+          await command.spawn();
+          setTimeout(async () => {
+            await exit(0);
+          }, 500);
+        }
+      },
+    });
     const checkForUpdates = async () => {
+      if (nightlyUpdate) {
+        setUpdate(buildNightlyUpdate(nightlyUpdate));
+        return;
+      }
       const OS_TYPE = osType();
-      if (appService?.isPortableApp && OS_TYPE === 'windows') {
-        checkWindowsPortableUpdate();
-      } else if (appService?.isAppImage) {
-        checkAppImageUpdate();
-      } else if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
-        checkDesktopUpdate();
-      } else if (OS_TYPE === 'android') {
-        checkAndroidUpdate();
+      try {
+        if (appService?.isPortableApp && OS_TYPE === 'windows') {
+          await checkWindowsPortableUpdate();
+        } else if (appService?.isAppImage) {
+          await checkAppImageUpdate();
+        } else if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
+          await checkDesktopUpdate();
+        } else if (OS_TYPE === 'android') {
+          await checkAndroidUpdate();
+        }
+      } catch (err) {
+        console.error('Failed to check for updates:', err);
+        setError(_('Failed to check for updates'));
       }
     };
     if (appService?.hasUpdater && checkUpdate) {
       checkForUpdates();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.hasUpdater]);
+  }, [appService?.hasUpdater, nightlyUpdate]);
 
   useEffect(() => {
     if (latestVersion) {
@@ -400,7 +500,9 @@ export const UpdaterContent = ({
         case 'Progress':
           downloaded += event.data.chunkLength;
           setDownloaded(downloaded);
-          const percent = Math.floor((downloaded / contentLength) * 100);
+          // Guard against a 0 total (server omitted Content-Length): keep the
+          // bar at an indeterminate 0% instead of NaN/Infinity.
+          const percent = contentLength > 0 ? Math.floor((downloaded / contentLength) * 100) : 0;
           setProgress(percent);
           if (downloaded - lastLogged >= 1 * 1024 * 1024) {
             console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
@@ -419,7 +521,19 @@ export const UpdaterContent = ({
     }
   };
 
-  if (!isMounted || !newVersion) {
+  if (!isMounted) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div className='bg-base-100 flex min-h-screen items-center justify-center'>
+        <p className='text-base-content text-sm font-bold'>{error}</p>
+      </div>
+    );
+  }
+
+  if (!newVersion) {
     return null;
   }
 
@@ -438,7 +552,7 @@ export const UpdaterContent = ({
               </h2>
               <p className='mb-2'>
                 {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {
-                  newVersion,
+                  newVersion: formatVersionLabel(newVersion),
                   currentVersion,
                 })}
               </p>
@@ -555,11 +669,12 @@ export const setUpdaterWindowVisible = (
   latestVersion: string,
   lastVersion?: string,
   checkUpdate = true,
+  nightlyUpdate?: ResolvedNightlyUpdate,
 ) => {
   const dialog = document.getElementById('updater_window');
   if (dialog) {
     const event = new CustomEvent('setDialogVisibility', {
-      detail: { visible, latestVersion, lastVersion, checkUpdate },
+      detail: { visible, latestVersion, lastVersion, checkUpdate, nightlyUpdate },
     });
     dialog.dispatchEvent(event);
   }
@@ -570,13 +685,15 @@ export const UpdaterWindow = () => {
   const [latestVersion, setLatestVersion] = useState('');
   const [lastVersion, setLastVersion] = useState('');
   const [checkUpdate, setCheckUpdate] = useState(true);
+  const [nightlyUpdate, setNightlyUpdate] = useState<ResolvedNightlyUpdate | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleCustomEvent = (event: CustomEvent) => {
-      const { visible, latestVersion, lastVersion, checkUpdate } = event.detail;
+      const { visible, latestVersion, lastVersion, checkUpdate, nightlyUpdate } = event.detail;
       setIsOpen(visible);
       setCheckUpdate(checkUpdate);
+      setNightlyUpdate(nightlyUpdate);
       if (latestVersion) {
         setLatestVersion(latestVersion);
       }
@@ -610,6 +727,7 @@ export const UpdaterWindow = () => {
           latestVersion={latestVersion ?? undefined}
           lastVersion={lastVersion ?? undefined}
           checkUpdate={checkUpdate}
+          nightlyUpdate={nightlyUpdate}
         />
       )}
     </Dialog>
