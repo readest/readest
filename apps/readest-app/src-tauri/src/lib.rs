@@ -292,6 +292,8 @@ pub fn run() {
             discord_rpc::clear_book_presence,
             clip_url::clip_url,
             nightly_update::verify_update_signature,
+            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
+            nightly_update::install_nightly_update,
         ])
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())

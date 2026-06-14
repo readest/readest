@@ -69,6 +69,72 @@ pub async fn verify_update_signature(path: String, signature: String, pub_key: S
     public_key.verify(&data, &sig, true).is_ok()
 }
 
+/// Progress event streamed to the JS install dialog over an IPC `Channel`.
+#[cfg(desktop)]
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NightlyProgress {
+    pub event: String, // "progress" | "finished"
+    pub downloaded: u64,
+    pub content_length: u64,
+}
+
+/// Drives the Tauri updater against a single nightly/stable manifest endpoint
+/// with the base-aware [`is_update_newer`] comparator, then downloads, installs
+/// and relaunches. Reuses Tauri's minisign verification and native installers
+/// (`.app.tar.gz` on macOS, NSIS on Windows). Progress is streamed to the JS
+/// dialog over `channel`.
+#[cfg(desktop)]
+#[tauri::command]
+pub async fn install_nightly_update<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    endpoint: String,
+    channel: tauri::ipc::Channel<NightlyProgress>,
+) -> std::result::Result<(), String> {
+    use tauri::Url;
+    use tauri_plugin_updater::UpdaterExt;
+
+    let url = Url::parse(&endpoint).map_err(|e| e.to_string())?;
+    let updater = app
+        .updater_builder()
+        .endpoints(vec![url])
+        .map_err(|e| e.to_string())?
+        .version_comparator(|current, release| {
+            is_update_newer(&release.version.to_string(), &current.to_string())
+        })
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let Some(update) = updater.check().await.map_err(|e| e.to_string())? else {
+        return Err("no update available".into());
+    };
+
+    let mut downloaded: u64 = 0;
+    let progress_channel = channel.clone();
+    update
+        .download_and_install(
+            move |chunk, total| {
+                downloaded += chunk as u64;
+                let _ = progress_channel.send(NightlyProgress {
+                    event: "progress".into(),
+                    downloaded,
+                    content_length: total.unwrap_or(0),
+                });
+            },
+            move || {
+                let _ = channel.send(NightlyProgress {
+                    event: "finished".into(),
+                    downloaded: 0,
+                    content_length: 0,
+                });
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    app.restart()
+}
+
 #[cfg(test)]
 mod tests {
     use super::is_update_newer;
