@@ -72,8 +72,10 @@ export const getNightlyPlatformKey = (
     return is64 ? 'windows-x86_64' : 'windows-aarch64';
   }
   if (osTypeVal === 'linux') {
+    // Nightly Linux is AppImage-only; a deb/rpm install has no nightly
+    // artifact, so it cleanly gets no nightly rather than mis-routing.
     if (isAppImage) return is64 ? 'linux-x86_64-appimage' : 'linux-aarch64-appimage';
-    return is64 ? 'linux-x86_64' : 'linux-aarch64';
+    return null;
   }
   return null;
 };

@@ -75,8 +75,6 @@ const TAURI_UPDATER_KEYS = new Set([
   'darwin-x86_64',
   'windows-x86_64',
   'windows-aarch64',
-  'linux-x86_64',
-  'linux-aarch64',
 ]);
 
 // Render a nightly stamp (e.g. "0.11.4-2026061406") in a human form. Returns
@@ -318,18 +316,25 @@ export const UpdaterContent = ({
       body: n.notes,
       downloadAndInstall: async (onEvent) => {
         if (TAURI_UPDATER_KEYS.has(n.platformKey)) {
-          // macOS / Windows-NSIS / Linux-deb: Tauri updater (verify + install +
+          // macOS / Windows-NSIS: Tauri updater (verify + install +
           // relaunch). A 0 contentLength (server omitted Content-Length) is
           // tolerated: we only emit 'Started' once a non-zero total arrives so
           // the percent math never divides by zero.
           let total = 0;
+          let lastDownloaded = 0;
           await installNightlyUpdate(n.endpoint, (p) => {
             if (p.event === 'progress') {
               if (!total && p.contentLength) {
                 total = p.contentLength;
                 onEvent?.({ event: 'Started', data: { contentLength: total } });
               }
-              onEvent?.({ event: 'Progress', data: { chunkLength: p.downloaded } });
+              // p.downloaded is a cumulative running total from Rust, but the
+              // consumer treats chunkLength as a per-chunk delta, so convert.
+              onEvent?.({
+                event: 'Progress',
+                data: { chunkLength: p.downloaded - lastDownloaded },
+              });
+              lastDownloaded = p.downloaded;
             } else if (p.event === 'finished') {
               onEvent?.({ event: 'Finished' });
             }

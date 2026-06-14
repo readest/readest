@@ -416,7 +416,7 @@ describe('getNightlyPlatformKey', () => {
   });
   test('linux appimage vs deb', () => {
     expect(getNightlyPlatformKey('linux', 'x86_64', false, true)).toBe('linux-x86_64-appimage');
-    expect(getNightlyPlatformKey('linux', 'x86_64', false, false)).toBe('linux-x86_64');
+    expect(getNightlyPlatformKey('linux', 'x86_64', false, false)).toBeNull();
   });
   test('macos', () => {
     expect(getNightlyPlatformKey('macos', 'aarch64', false, false)).toBe('darwin-aarch64');

@@ -278,7 +278,7 @@ export async function verifyUpdateSignature(
 }
 
 export interface NightlyProgress {
-  event: 'started' | 'progress' | 'finished';
+  event: 'progress' | 'finished';
   downloaded: number;
   contentLength: number;
 }
