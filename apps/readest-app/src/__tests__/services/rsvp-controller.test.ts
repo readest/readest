@@ -531,4 +531,158 @@ describe('RSVPController', () => {
       expect(controller.currentState.currentIndex).toBe(0);
     });
   });
+
+  describe('syncToCfi / setExternallyDriven (slice 3a, #3235)', () => {
+    // These tests need REAL DOM ranges (not the stubbed createRange from
+    // makeDoc) so compareBoundaryPoints works for containment + binary search.
+    // Build a real jsdom document and a view whose resolveCFI maps a CFI to a
+    // collapsed range at an arbitrary character offset in the section text.
+    const TEXT = 'one two three four five six';
+    // word offsets in TEXT:
+    //   one   [0,3)   two [4,7)   three [8,13)   four [14,18)
+    //   five  [19,23) six [24,27)
+
+    function makeSyncFixture() {
+      const doc = document.implementation.createHTMLDocument('sync');
+      doc.body.innerHTML = `<p>${TEXT}</p>`;
+      const textNode = doc.body.querySelector('p')!.firstChild as Text;
+
+      // resolveCFI returns an anchor function producing a collapsed range at the
+      // offset encoded in the test CFI: epubcfi(/6/2!/4/2/1:<offset>)
+      const resolveCFI = vi.fn().mockImplementation((cfi: string) => {
+        const m = cfi.match(/!\/4\/2\/1:(\d+)\)/);
+        if (!m) return null;
+        const offset = parseInt(m[1]!, 10);
+        return {
+          index: 0,
+          anchor: (d: Document) => {
+            const r = d.createRange();
+            r.setStart(textNode, offset);
+            r.setEnd(textNode, offset);
+            return r;
+          },
+        };
+      });
+
+      const getCFI = vi.fn().mockReturnValue('epubcfi(/6/2!/4/2/1:0)');
+      const view = {
+        renderer: {
+          primaryIndex: 0,
+          getContents: vi.fn().mockReturnValue([{ doc, index: 0 }]),
+        },
+        book: { toc: [] },
+        language: { isCJK: false },
+        tts: null,
+        getCFI,
+        resolveCFI,
+      } as unknown as FoliateView;
+
+      const controller = new RSVPController(view, 'sync-book-abc123');
+      controller.start();
+      return { controller, view, getCFI, resolveCFI };
+    }
+
+    // CFI for docIndex 0 is spine step /6/2 (index = (2-2)/2 = 0).
+    const cfiAt = (offset: number) => `epubcfi(/6/2!/4/2/1:${offset})`;
+
+    test('containment: a CFI starting mid-token resolves to the CONTAINING word, not the next', () => {
+      const { controller } = makeSyncFixture();
+      // offset 9 lands inside "three" [8,13) — at the 'h'.
+      const ok = controller.syncToCfi(cfiAt(9));
+      expect(ok).toBe(true);
+      // Must be "three" (index 2), NOT the next word "four".
+      expect(controller.currentState.currentIndex).toBe(2);
+      expect(controller.currentState.words[2]!.text).toBe('three');
+    });
+
+    test('monotonic forward: a sequence of forward CFIs maps to increasing indices', () => {
+      const { controller } = makeSyncFixture();
+      // Start of each word.
+      expect(controller.syncToCfi(cfiAt(0))).toBe(true); // one
+      expect(controller.currentState.currentIndex).toBe(0);
+      expect(controller.syncToCfi(cfiAt(4))).toBe(true); // two
+      expect(controller.currentState.currentIndex).toBe(1);
+      expect(controller.syncToCfi(cfiAt(8))).toBe(true); // three
+      expect(controller.currentState.currentIndex).toBe(2);
+      expect(controller.syncToCfi(cfiAt(19))).toBe(true); // five
+      expect(controller.currentState.currentIndex).toBe(4);
+      expect(controller.syncToCfi(cfiAt(24))).toBe(true); // six
+      expect(controller.currentState.currentIndex).toBe(5);
+    });
+
+    test('backward seek: a CFI before the cursor lands on the correct earlier word', () => {
+      const { controller } = makeSyncFixture();
+      // Advance the cursor forward first.
+      controller.syncToCfi(cfiAt(24)); // six -> cursor at 5
+      expect(controller.currentState.currentIndex).toBe(5);
+      // Now seek backward (binary-search path); offset 5 is inside "two" [4,7).
+      const ok = controller.syncToCfi(cfiAt(5));
+      expect(ok).toBe(true);
+      expect(controller.currentState.currentIndex).toBe(1);
+      expect(controller.currentState.words[1]!.text).toBe('two');
+    });
+
+    test('gap fallback: a CFI in whitespace maps to the nearest following word', () => {
+      const { controller } = makeSyncFixture();
+      // offset 3 is the space between "one" [0,3) and "two" [4,7).
+      const ok = controller.syncToCfi(cfiAt(3));
+      expect(ok).toBe(true);
+      // No word contains offset 3 -> nearest following word is "two" (index 1).
+      expect(controller.currentState.currentIndex).toBe(1);
+    });
+
+    test('no-match: an unresolvable CFI returns false and leaves currentIndex unchanged (NOT 0)', () => {
+      const { controller } = makeSyncFixture();
+      // Move off index 0 first so we can prove it does not clamp back to 0.
+      controller.syncToCfi(cfiAt(8)); // three -> index 2
+      expect(controller.currentState.currentIndex).toBe(2);
+
+      // A CFI that resolveCFI cannot resolve (no matching anchor pattern).
+      const ok = controller.syncToCfi('epubcfi(/6/2!/9/9/9:bogus)');
+      expect(ok).toBe(false);
+      expect(controller.currentState.currentIndex).toBe(2);
+    });
+
+    test('no-match: an out-of-section CFI returns false and leaves currentIndex unchanged', () => {
+      const { controller } = makeSyncFixture();
+      controller.syncToCfi(cfiAt(8)); // index 2
+      // Spine step /6/8 => index 3, a different section than docIndex 0.
+      const ok = controller.syncToCfi('epubcfi(/6/8!/4/2/1:0)');
+      expect(ok).toBe(false);
+      expect(controller.currentState.currentIndex).toBe(2);
+    });
+
+    test('perf guard: view.getCFI is NOT called during a syncToCfi fast-path call', () => {
+      const { controller, getCFI } = makeSyncFixture();
+      getCFI.mockClear();
+      const ok = controller.syncToCfi(cfiAt(9));
+      expect(ok).toBe(true);
+      expect(getCFI).not.toHaveBeenCalled();
+    });
+
+    test('setExternallyDriven(true) suspends auto-advance; (false) restores it', () => {
+      const { controller } = makeSyncFixture();
+      // Suspend BEFORE the start countdown elapses so no word timer ever arms.
+      controller.setExternallyDriven(true);
+      // Even after plenty of time, the auto-advance timer must not fire.
+      vi.advanceTimersByTime(20000);
+      expect(controller.currentState.currentIndex).toBe(0);
+
+      // Restoring should let auto-advance resume.
+      controller.setExternallyDriven(false);
+      vi.advanceTimersByTime(20000);
+      expect(controller.currentState.currentIndex).toBeGreaterThan(0);
+    });
+
+    test('syncToCfi displays the word without arming auto-advance (no scheduled next word)', () => {
+      const { controller } = makeSyncFixture();
+      controller.setExternallyDriven(true);
+
+      controller.syncToCfi(cfiAt(8)); // three -> index 2
+      expect(controller.currentState.currentIndex).toBe(2);
+      // No timer was armed by syncToCfi: advancing time must not move the index.
+      vi.advanceTimersByTime(20000);
+      expect(controller.currentState.currentIndex).toBe(2);
+    });
+  });
 });
