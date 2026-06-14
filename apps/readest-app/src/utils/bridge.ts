@@ -267,7 +267,7 @@ export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableRe
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────
 // `verify_update_signature` gates the custom install flows (portable /
 // AppImage / Android); `install_nightly_update` drives the Tauri updater for
-// the platform keys it natively installs (macOS / Windows-NSIS / Linux deb).
+// the platform keys it natively installs (macOS / Windows-NSIS).
 
 export async function verifyUpdateSignature(
   path: string,
