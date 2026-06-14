@@ -28,7 +28,7 @@ export default function Page() {
   useEffect(() => {
     const doCheckAppUpdates = async () => {
       if (appService?.hasUpdater && settings.autoCheckUpdates) {
-        await checkForAppUpdates(_);
+        await checkForAppUpdates(_, true, settings.updateChannel);
       } else if (appService?.hasUpdater === false) {
         checkAppReleaseNotes();
       }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
@@ -25,6 +26,7 @@ type UpdateStatus = 'checking' | 'updating' | 'updated' | 'error';
 export const AboutWindow = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [browserInfo, setBrowserInfo] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -52,7 +54,7 @@ export const AboutWindow = () => {
   const handleCheckUpdate = async () => {
     setUpdateStatus('checking');
     try {
-      const hasUpdate = await checkForAppUpdates(_, false);
+      const hasUpdate = await checkForAppUpdates(_, false, settings.updateChannel);
       if (hasUpdate) {
         handleClose();
       } else {

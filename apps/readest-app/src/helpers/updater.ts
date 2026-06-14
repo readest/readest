@@ -1,6 +1,6 @@
 import semver from 'semver';
 import { check } from '@tauri-apps/plugin-updater';
-import { type as osType } from '@tauri-apps/plugin-os';
+import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
 import { fetch } from '@tauri-apps/plugin-http';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ScrollBarStyle } from '@tauri-apps/api/window';
@@ -122,13 +122,16 @@ export const resolveNightlyUpdate = async (
     });
   }
   if (candidates.length === 0) return null;
-  candidates.sort((a, b) => (isUpdateNewer(a.version, b.version) ? -1 : 1));
+  candidates.sort((a, b) =>
+    isUpdateNewer(a.version, b.version) ? -1 : isUpdateNewer(b.version, a.version) ? 1 : 0,
+  );
   return candidates[0]!;
 };
 
 export const checkForAppUpdates = async (
   _: TranslationFunc,
   isAutoCheck = true,
+  updateChannel: 'stable' | 'nightly' = 'stable',
 ): Promise<boolean> => {
   const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
   const now = Date.now();
@@ -136,8 +139,25 @@ export const checkForAppUpdates = async (
     return false;
   localStorage.setItem(LAST_CHECK_KEY, now.toString());
 
-  console.log('Checking for updates');
+  console.log('Checking for updates', { updateChannel });
   const OS_TYPE = osType();
+
+  if (updateChannel === 'nightly') {
+    const platformKey = getNightlyPlatformKey(
+      OS_TYPE,
+      osArch(),
+      Boolean(process.env['NEXT_PUBLIC_PORTABLE_APP']),
+      Boolean((window as { __READEST_IS_APPIMAGE?: boolean }).__READEST_IS_APPIMAGE),
+    );
+    if (!platformKey) return false;
+    const resolved = await resolveNightlyUpdate(getAppVersion(), platformKey, fetch);
+    if (resolved) {
+      setUpdaterWindowVisible(true, resolved.version, getAppVersion(), true, resolved);
+      return true;
+    }
+    return false;
+  }
+
   if (['macos', 'windows', 'linux'].includes(OS_TYPE)) {
     const update = await check();
     if (update) {

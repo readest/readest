@@ -4,6 +4,7 @@ import semver from 'semver';
 // ── Mocks for Tauri and internal modules ─────────────────────────
 const mockCheck = vi.fn();
 const mockOsType = vi.fn();
+const mockOsArch = vi.fn();
 const mockTauriFetch = vi.fn();
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
@@ -12,6 +13,7 @@ vi.mock('@tauri-apps/plugin-updater', () => ({
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => mockOsType(),
+  arch: () => mockOsArch(),
 }));
 
 vi.mock('@tauri-apps/plugin-http', () => ({
@@ -268,6 +270,38 @@ describe('updater', () => {
       const stored = parseInt(localStorage.getItem('lastAppUpdateCheck')!, 10);
       expect(stored).toBeGreaterThanOrEqual(before);
       expect(stored).toBeLessThanOrEqual(after);
+    });
+
+    test('nightly channel resolves and opens the updater window', async () => {
+      const past = Date.now() - 86400 * 1000 - 1000;
+      localStorage.setItem('lastAppUpdateCheck', past.toString());
+      mockOsType.mockReturnValue('macos');
+      mockOsArch.mockReturnValue('aarch64');
+      mockAppVersion = '0.11.4';
+      mockTauriFetch.mockImplementation(async (url: string) =>
+        url.includes('nightly')
+          ? {
+              ok: true,
+              json: async () => ({
+                version: '0.11.4-2026061406',
+                platforms: { 'darwin-aarch64': { url: 'u', signature: 's' } },
+              }),
+            }
+          : {
+              ok: true,
+              json: async () => ({
+                version: '0.11.4',
+                platforms: { 'darwin-aarch64': { url: 'u', signature: 's' } },
+              }),
+            },
+      );
+      mockIsTauriAppPlatform = true;
+
+      const result = await checkForAppUpdates(dummyTranslate, false, 'nightly');
+
+      expect(result).toBe(true);
+      expect(mockCheck).not.toHaveBeenCalled(); // isolated from Tauri check()
+      expect(mockSetUpdaterWindowVisible).toHaveBeenCalled();
     });
   });
 
