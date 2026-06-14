@@ -41,6 +41,7 @@ import {
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
+import { refreshSectionGlosses } from '@/app/reader/utils/wordwiseSection';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -70,6 +71,8 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { isMetered } from '@/utils/network';
+import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
@@ -405,10 +408,44 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  // Build the Word Wise refresh context: gate silent auto-download on the global
+  // toggle AND a best-effort metered-connection check, and show a single
+  // "Downloading…" toast on the first progress tick (the per-percent progress
+  // lives in the Word Wise settings panel). `wordWiseToastShownRef` de-dupes the
+  // toast across the multiple section docs a refresh pass touches.
+  const wordWiseToastShownRef = useRef(false);
+  const buildWordWiseCtx = (bookLang?: string | null) => {
+    // Read the live setting (not the first-render `settings` snapshot closed over
+    // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
+    // takes effect on the next section refresh.
+    const liveSettings = useSettingsStore.getState().settings;
+    const allowDownload =
+      (liveSettings.globalReadSettings.wordWiseAutoDownload ?? true) && !isMetered();
+    return {
+      appService: appService!,
+      bookLang,
+      appLang: getLocale().split('-')[0] || 'en',
+      allowDownload,
+      onProgress: () => {
+        if (wordWiseToastShownRef.current) return;
+        wordWiseToastShownRef.current = true;
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Downloading Word Wise data…'),
+        });
+      },
+    };
+  };
+
   const stabilizedHandler = useCallback(() => {
     setLoading(false);
     // Layout/relayout warichu after paginator has set column-width via columnize()
     const contents = viewRef.current?.renderer?.getContents?.() || [];
+    const vs = getViewSettings(bookKey);
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    // Fixed-layout (pre-paginated) books have no reflow room; injecting ruby
+    // would overflow their fixed boxes, so skip Word Wise glosses there.
+    const isFixedLayout = bookDoc.rendition?.layout === 'pre-paginated';
     for (const { doc } of contents) {
       if (doc) {
         const hasPending = doc.querySelectorAll('.warichu-pending').length > 0;
@@ -418,8 +455,12 @@ const FoliateViewer: React.FC<{
         } else if (hasExisting) {
           relayoutWarichu(doc);
         }
+        if (vs && appService && !isFixedLayout) {
+          void refreshSectionGlosses(doc, vs, buildWordWiseCtx(bookLang));
+        }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const docRelocateHandler = (event: Event) => {
@@ -780,6 +821,22 @@ const FoliateViewer: React.FC<{
     viewSettings?.applyThemeToPDF,
     viewSettings?.hideScrollbar,
   ]);
+
+  useEffect(() => {
+    const contents = viewRef.current?.renderer?.getContents?.() || [];
+    const vs = getViewSettings(bookKey);
+    if (!vs || !appService) return;
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    const isFixedLayout = bookDoc.rendition?.layout === 'pre-paginated';
+    if (isFixedLayout) return;
+    // A settings change is the moment a fresh download may start; let the
+    // one-time "Downloading…" toast fire again for it.
+    wordWiseToastShownRef.current = false;
+    for (const { doc } of contents) {
+      if (doc) void refreshSectionGlosses(doc, vs, buildWordWiseCtx(bookLang));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings?.wordWiseEnabled, viewSettings?.wordWiseLevel, viewSettings?.wordWiseHintLang]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {

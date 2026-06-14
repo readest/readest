@@ -480,35 +480,6 @@ describe('RSVPOverlay — dictionary lookup (#4475)', () => {
   });
 });
 
-describe('RSVPOverlay — audio toggle layout (#3235 mobile follow-up)', () => {
-  afterEach(() => cleanup());
-
-  const wordsState = () =>
-    buildState({ words: [{ text: 'a', orpIndex: 0, pauseMultiplier: 1 }], currentIndex: 0 });
-
-  test('the audio toggle and settings flank the transport in flow, not an overlapping absolute cluster', () => {
-    const { container } = renderOverlay(wordsState());
-    const audioBtn = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
-    const settingsBtn = container.querySelector('[aria-label="Settings"]') as HTMLElement;
-    const playBtn = container.querySelector('[aria-label="Play"]') as HTMLElement;
-    expect(audioBtn).not.toBeNull();
-    expect(settingsBtn).not.toBeNull();
-    expect(playBtn).not.toBeNull();
-
-    // The audio toggle and settings gear must be siblings of the play button in
-    // the same flex row so the cluster never overlaps the centered transport on
-    // a narrow (mobile) viewport.
-    expect(audioBtn.parentElement).toBe(playBtn.parentElement);
-    expect(settingsBtn.parentElement).toBe(playBtn.parentElement);
-
-    // No control may live inside an absolutely-positioned wrapper (the prior
-    // `absolute end-0` cluster that overlapped the transport on mobile).
-    expect(audioBtn.closest('.absolute')).toBeNull();
-    expect(settingsBtn.closest('.absolute')).toBeNull();
-    expect((playBtn.parentElement as HTMLElement).className).not.toContain('absolute');
-  });
-});
-
 describe('RSVPOverlay — start delay setting (#4478)', () => {
   afterEach(() => {
     cleanup();

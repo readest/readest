@@ -12,6 +12,42 @@ export interface TTSWordOffset {
 // Edge TTS word-boundary offsets are in 100-nanosecond ticks.
 const TICKS_PER_SECOND = 10_000_000;
 
+// Gloss markup (<rt cfi-inert>) and any cfi-inert subtree is injected, non-book
+// content — invisible to CFI and to spoken text (the TTS node filter rejects
+// <rt>). Word-offset matching must ignore it too, or boundary words (gloss-free)
+// won't align with the walked text.
+const isInertText = (node: Node): boolean => {
+  let p: Node | null = node.parentNode;
+  while (p) {
+    if (p.nodeType === Node.ELEMENT_NODE) {
+      const el = p as Element;
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'rt' || tag === 'rp' || el.hasAttribute('cfi-inert')) return true;
+    }
+    p = p.parentNode;
+  }
+  return false;
+};
+
+/** range.toString() minus any inert (gloss) text — the matching baseline. */
+export const rangeTextExcludingInert = (base: Range): string => {
+  const root = base.commonAncestorContainer;
+  const doc = root.ownerDocument ?? (root as Document);
+  if (root.nodeType === Node.TEXT_NODE) {
+    return isInertText(root) ? '' : (root as Text).data;
+  }
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let out = '';
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!base.intersectsNode(node) || isInertText(node)) continue;
+    const text = node as Text;
+    const from = node === base.startContainer ? base.startOffset : 0;
+    const to = node === base.endContainer ? base.endOffset : text.data.length;
+    if (to > from) out += text.data.slice(from, to);
+  }
+  return out;
+};
+
 export const computeWordOffsets = (text: string, words: string[]): (TTSWordOffset | null)[] => {
   const offsets: (TTSWordOffset | null)[] = [];
   let cursor = 0;
@@ -67,7 +103,9 @@ export const getTextSubRange = (base: Range, start: number, end: number): Range 
       return;
     }
     const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) yield node;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!isInertText(node)) yield node;
+    }
   };
   let pos = 0;
   let startNode: Text | null = null;

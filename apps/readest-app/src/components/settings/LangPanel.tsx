@@ -26,6 +26,8 @@ import {
   SettingsSwitchRow,
 } from './primitives';
 import CustomDictionaries from './CustomDictionaries';
+import WordWisePanel from './WordWisePanel';
+import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -50,14 +52,19 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
+  const [showWordWise, setShowWordWise] = useState(false);
 
-  // Android Back / Esc: when the Manage Dictionaries sub-page is open,
-  // intercept and step back to the language list instead of letting
-  // <Dialog>'s listener close the whole Settings dialog. See the matching
-  // comment in FontPanel.tsx for the LIFO-dispatch reasoning.
+  // Android Back / Esc: when a sub-page is open, intercept and step back to the
+  // language list instead of letting <Dialog>'s listener close the whole
+  // Settings dialog. See the matching comment in FontPanel.tsx for the
+  // LIFO-dispatch reasoning.
   useKeyDownActions({
     enabled: showCustomDictionaries,
     onCancel: () => setShowCustomDictionaries(false),
+  });
+  useKeyDownActions({
+    enabled: showWordWise,
+    onCancel: () => setShowWordWise(false),
   });
 
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
@@ -281,6 +288,10 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     );
   }
 
+  if (showWordWise) {
+    return <WordWisePanel bookKey={bookKey} onBack={() => setShowWordWise(false)} />;
+  }
+
   return (
     <div className={clsx('my-4 w-full space-y-6')}>
       <BoxedList title={_('Language')} data-setting-id='settings.language.interfaceLanguage'>
@@ -303,6 +314,19 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           title={_('Manage Dictionaries')}
           onClick={() => setShowCustomDictionaries(true)}
           className='h-14'
+        />
+      </BoxedList>
+
+      <BoxedList
+        title={_('Word Wise')}
+        data-setting-id='settings.language.wordwise'
+        cardClassName='overflow-hidden'
+      >
+        <NavigationRow
+          icon={PiTranslate}
+          title={_('Word Wise')}
+          status={_('Show a short native-language hint above difficult words.')}
+          onClick={() => setShowWordWise(true)}
         />
       </BoxedList>
 

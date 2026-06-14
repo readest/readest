@@ -15,6 +15,7 @@ import {
   ViewConfig,
   ViewSettings,
   ViewSettingsConfig,
+  WordWiseConfig,
 } from '@/types/book';
 import {
   HardcoverSettings,
@@ -197,6 +198,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   autohideCursor: true,
   translationProvider: 'deepl',
   translateTargetLang: 'EN',
+  wordWiseAutoDownload: true,
 
   customThemes: [],
   highlightStyle: 'highlight',
@@ -400,6 +402,12 @@ export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   annotationToolbarItems: DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
   copyToNotebook: false,
   noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,
+};
+
+export const DEFAULT_WORD_WISE_CONFIG: WordWiseConfig = {
+  wordWiseEnabled: false,
+  wordWiseLevel: 3,
+  wordWiseHintLang: '',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {

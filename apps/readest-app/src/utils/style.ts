@@ -760,6 +760,16 @@ const getRubyStyles = () => `
   rp {
     display: none !important;
   }
+  ruby.ww-gloss {
+    cursor: help;
+  }
+  ruby.ww-gloss > rt {
+    font-size: 0.5em;
+    line-height: 1.1;
+    opacity: 0.7;
+    font-weight: normal;
+    text-align: center;
+  }
 `;
 
 export interface ThemeCode {

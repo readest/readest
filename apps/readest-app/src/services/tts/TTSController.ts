@@ -10,7 +10,12 @@ import { EdgeTTSClient } from './EdgeTTSClient';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { isValidLang } from '@/utils/lang';
-import { computeWordOffsets, getTextSubRange, TTSWordOffset } from './wordHighlight';
+import {
+  computeWordOffsets,
+  getTextSubRange,
+  rangeTextExcludingInert,
+  TTSWordOffset,
+} from './wordHighlight';
 
 type TTSState =
   | 'stopped'
@@ -684,7 +689,7 @@ export class TTSController extends EventTarget {
     const range = this.view.tts?.getLastRange();
     if (!range) return;
     this.#speakWordBaseRange = range;
-    this.#speakWordOffsets = computeWordOffsets(range.toString(), words);
+    this.#speakWordOffsets = computeWordOffsets(rangeTextExcludingInert(range), words);
     this.#speakWordRanges = [];
     if (words.length === 0) {
       // No word boundaries for this chunk: the sentence highlight was

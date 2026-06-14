@@ -174,6 +174,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // (Android long-press selects text via selectionchange before touchend). The
   // pending action runs on touchend so popups don't open under an active touch.
   const deferredQuickActionRef = useRef(createDeferredActionState());
+  // Set when a Word Wise gloss tap synthesizes a selection so the
+  // selection-change effect opens the dictionary popup instead of the
+  // annotation toolbar. Cleared as soon as it's consumed.
+  const pendingWordWiseDictRef = useRef(false);
 
   const showingPopup =
     showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
@@ -556,6 +560,47 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   useFoliateEvents(view, { onLoad, onCreateOverlay, onDrawAnnotation, onShowAnnotation });
 
+  // Word Wise: open the dictionary popup for a tapped glossed word. The tap is
+  // detected in the iframe click handler (iframeEventHandlers.ts), which sends
+  // the gloss <ruby> element here. We synthesize a selection over the base word
+  // (excluding the <rt> hint) so the existing dictionary popup positions itself.
+  useEffect(() => {
+    const handleWordWiseDictionary = (event: CustomEvent) => {
+      const { element, word } = event.detail as { element: Element | null; word: string };
+      if (event.detail?.bookKey !== bookKey || !element || !word) return;
+      // Read the view fresh: this handler is registered once (deps [bookKey]) and
+      // the closed-over `view` may still be null from when the effect first ran.
+      const view = getView(bookKey);
+      const doc = element.ownerDocument;
+      const content = view?.renderer?.getContents().find((c) => c.doc === doc);
+      if (!content || content.index == null) return;
+      const index = content.index;
+      const rt = element.querySelector('rt');
+      const range = doc.createRange();
+      try {
+        range.selectNodeContents(element);
+        if (rt) range.setEndBefore(rt);
+      } catch {
+        return;
+      }
+      const text = range.toString().trim() || word;
+      pendingWordWiseDictRef.current = true;
+      setSelection({
+        key: bookKey,
+        text,
+        range,
+        index,
+        cfi: view?.getCFI(index, range),
+        page: index + 1,
+      });
+    };
+    eventDispatcher.on('wordwise-dictionary', handleWordWiseDictionary);
+    return () => {
+      eventDispatcher.off('wordwise-dictionary', handleWordWiseDictionary);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
+
   useEffect(() => {
     handleShowPopup(showingPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -772,6 +817,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useEffect(() => {
     setHighlightOptionsVisible(!!(selection && selection.annotated));
     if (selection && selection.text.trim().length > 0) {
+      // Read-and-reset the Word Wise dictionary flag up front so it can never
+      // stick to a later selection if an early return below fires (e.g. a gloss
+      // tap whose synthesized range yields an off-frame/zero position).
+      const wantWordWiseDict = pendingWordWiseDictRef.current;
+      pendingWordWiseDictRef.current = false;
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
       const rect = gridFrame.getBoundingClientRect();
@@ -816,7 +866,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setTrianglePosition(triangPos);
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
-      if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
+      if (wantWordWiseDict) {
+        setShowAnnotPopup(false);
+        setShowDictionaryPopup(true);
+      } else if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
         handleQuickAction();
       } else {
         handleShowAnnotPopup();

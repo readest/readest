@@ -54,6 +54,12 @@ export interface ReadSettings {
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
+  /**
+   * Global Word Wise toggle: auto-download a gloss pack on demand when the
+   * pair isn't cached locally. When off, the reader never fetches packs
+   * silently; users download them explicitly from the Word Wise sub-page.
+   */
+  wordWiseAutoDownload: boolean;
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
 

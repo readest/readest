@@ -1070,41 +1070,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           </div>
         </div>
 
-        {/* Playback controls — a single full-width flex row on mobile so the
-            audio toggle (far left) and settings gear (far right) flank the
-            centered transport in normal flow instead of overlapping it from an
-            absolute corner; a centered cluster on md+ where there is room. */}
-        <div className='flex items-center justify-between md:justify-center md:gap-2'>
-          {/* Audio (TTS) read-along toggle — starts TTS from the displayed word,
-              or stops it when engaged (decision 5, #3235). Far-left peer of the
-              transport so the centered play button stays centered and nothing
-              overlaps on mobile. Active state uses a filled glyph + eink-bordered
-              surface so it reads in e-ink without relying on color. */}
-          <button
-            aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
-            className={clsx(
-              'touch-target flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none transition-colors active:scale-95 md:h-9 md:w-9',
-              ttsActive
-                ? 'eink-bordered bg-[color-mix(in_srgb,var(--rsvp-accent)_18%,transparent)]'
-                : 'bg-transparent hover:bg-gray-500/20',
-            )}
-            onClick={() => onToggleTtsAudio?.()}
-            title={ttsActive ? _('Pause audio') : _('Play audio')}
-          >
-            {ttsActive ? (
-              <IoVolumeHigh
-                className='h-4 w-4 md:h-5 md:w-5'
-                style={{ color: accentColor }}
-                aria-hidden='true'
-              />
-            ) : (
-              <IoVolumeMediumOutline className='h-4 w-4 md:h-5 md:w-5' aria-hidden='true' />
-            )}
-          </button>
-
+        {/* Playback controls */}
+        <div className='relative flex items-center justify-center gap-1 md:gap-2'>
           <button
             aria-label={_('Skip back 15 words')}
-            className='flex shrink-0 cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-1.5 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-2'
+            className='flex cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.skipBackward(15)}
             title={_('Back 15 words (Shift+Left)')}
           >
@@ -1114,7 +1084,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Decrease speed')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.decreaseSpeed()}
             title={_('Slower (Left/Down)')}
           >
@@ -1123,7 +1093,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Previous word')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.prevWord()}
             title={_('Previous word (,)')}
           >
@@ -1133,7 +1103,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <button
             aria-label={transportPlaying ? _('Pause') : _('Play')}
             className={clsx(
-              'flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
+              'flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-none bg-gray-500/15 transition-colors hover:bg-gray-500/25 active:scale-95 md:h-16 md:w-16',
               transportPlaying ? '' : 'ps-1',
             )}
             onClick={() => transportToggleRef.current()}
@@ -1148,7 +1118,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Next word')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.nextWord()}
             title={_('Next word (.)')}
           >
@@ -1157,7 +1127,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Increase speed')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.increaseSpeed()}
             title={_('Faster (Right/Up)')}
           >
@@ -1166,7 +1136,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Skip forward 15 words')}
-            className='flex shrink-0 cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-1.5 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95 md:px-2'
+            className='flex cursor-pointer items-center gap-0.5 rounded-full border-none bg-transparent px-2 py-1.5 transition-colors hover:bg-gray-500/20 active:scale-95'
             onClick={() => controller.skipForward(15)}
             title={_('Forward 15 words (Shift+Right)')}
           >
@@ -1174,20 +1144,48 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <span className='text-xs font-semibold opacity-80'>15</span>
           </button>
 
-          {/* Settings — far-right peer mirroring the audio toggle on the left,
-              so both flank the centered transport in normal flow (decision 5,
-              #3235) without an absolute cluster overlapping it on mobile. */}
-          <button
-            aria-label={_('Settings')}
-            className={clsx(
-              'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9',
-              showSettings && 'bg-gray-500/15',
-            )}
-            onClick={() => setShowSettings((prev) => !prev)}
-            title={_('Settings')}
-          >
-            <IoSettingsSharp className='h-4 w-4 md:h-5 md:w-5' />
-          </button>
+          {/* Trailing cluster: audio (TTS) toggle + divider + settings gear.
+              The audio toggle starts TTS from the displayed word (or stops it
+              when engaged) — never a second play triangle (decision 5). Active
+              state uses a filled glyph + eink-bordered surface so it reads in
+              e-ink without relying on color. */}
+          <div className='absolute end-0 flex items-center gap-1'>
+            <button
+              aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
+              className={clsx(
+                'touch-target flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none transition-colors active:scale-95',
+                ttsActive
+                  ? 'eink-bordered bg-[color-mix(in_srgb,var(--rsvp-accent)_18%,transparent)]'
+                  : 'bg-transparent hover:bg-gray-500/20',
+              )}
+              onClick={() => onToggleTtsAudio?.()}
+              title={ttsActive ? _('Pause audio') : _('Play audio')}
+            >
+              {ttsActive ? (
+                <IoVolumeHigh
+                  className='h-4 w-4 md:h-5 md:w-5'
+                  style={{ color: accentColor }}
+                  aria-hidden='true'
+                />
+              ) : (
+                <IoVolumeMediumOutline className='h-4 w-4 md:h-5 md:w-5' aria-hidden='true' />
+              )}
+            </button>
+
+            <span className='h-5 w-px bg-gray-500/30' aria-hidden='true' />
+
+            <button
+              aria-label={_('Settings')}
+              className={clsx(
+                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95',
+                showSettings && 'bg-gray-500/15',
+              )}
+              onClick={() => setShowSettings((prev) => !prev)}
+              title={_('Settings')}
+            >
+              <IoSettingsSharp className='h-4 w-4 md:h-5 md:w-5' />
+            </button>
+          </div>
         </div>
 
         {/* Settings row (collapsible) */}

@@ -1,8 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, it, expect } from 'vitest';
 import {
   computeWordOffsets,
   findBoundaryIndexAtTime,
   getTextSubRange,
+  rangeTextExcludingInert,
 } from '@/services/tts/wordHighlight';
 
 describe('computeWordOffsets', () => {
@@ -147,5 +148,34 @@ describe('getTextSubRange', () => {
     expect(getTextSubRange(base, 2, 2)).toBeNull();
     expect(getTextSubRange(base, 3, 2)).toBeNull();
     expect(getTextSubRange(base, -1, 2)).toBeNull();
+  });
+});
+
+const makeBaseRangeFrom = (html: string): Range => {
+  document.body.innerHTML = html;
+  const root = document.body.firstElementChild!;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+  const range = document.createRange();
+  range.setStart(nodes[0]!, 0);
+  range.setEnd(nodes.at(-1)!, nodes.at(-1)!.length);
+  return range;
+};
+
+describe('gloss-aware word highlighting', () => {
+  it('rangeTextExcludingInert drops cfi-inert gloss text', () => {
+    const base = makeBaseRangeFrom(
+      `<p>The <ruby cfi-skip="">quick<rt cfi-inert="">敏捷</rt></ruby> fox</p>`,
+    );
+    expect(rangeTextExcludingInert(base)).toBe('The quick fox');
+  });
+
+  it('getTextSubRange ignores the gloss when slicing a word', () => {
+    const base = makeBaseRangeFrom(
+      `<p>The <ruby cfi-skip="">quick<rt cfi-inert="">敏捷</rt></ruby> fox</p>`,
+    );
+    const sub = getTextSubRange(base, 10, 13)!;
+    expect(sub.toString()).toBe('fox');
   });
 });
