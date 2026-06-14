@@ -685,4 +685,205 @@ describe('RSVPController', () => {
       expect(controller.currentState.currentIndex).toBe(2);
     });
   });
+
+  describe('estimator: driveEstimatedFromCfi (slice 5, #3235)', () => {
+    // Non-Edge TTS only emits sentence-level marks. The estimator jumps RSVP to
+    // the sentence's first word (syncToCfi) then SELF-PACES forward through the
+    // following words on a timer at an estimated rate, capped so it can't run
+    // away past the (unknown) sentence end. A new sentence drive re-syncs (snap).
+    //
+    // Build a long single-text-node section so there are plenty of words to
+    // advance through and so the cap is reachable. Word i starts at offset i*5
+    // ("wNNN " is padded to a fixed width so offsets are predictable).
+    // Enough words that the cap (60) is reachable from both anchors used below
+    // (10 and 20) without clamping to the last word: 20 + 60 = 80 < 100.
+    const WORD_COUNT = 100;
+    const WORD_WIDTH = 4; // "w000".."w099" -> 4 chars each, space-separated -> stride 5
+
+    function makeEstimatorFixture() {
+      const text = Array.from(
+        { length: WORD_COUNT },
+        (_, i) => `w${String(i).padStart(3, '0')}`,
+      ).join(' ');
+      const doc = document.implementation.createHTMLDocument('estimator');
+      doc.body.innerHTML = `<p>${text}</p>`;
+      const textNode = doc.body.querySelector('p')!.firstChild as Text;
+
+      const resolveCFI = vi.fn().mockImplementation((cfi: string) => {
+        const m = cfi.match(/!\/4\/2\/1:(\d+)\)/);
+        if (!m) return null;
+        const offset = parseInt(m[1]!, 10);
+        return {
+          index: 0,
+          anchor: (d: Document) => {
+            const r = d.createRange();
+            r.setStart(textNode, offset);
+            r.setEnd(textNode, offset);
+            return r;
+          },
+        };
+      });
+
+      const view = {
+        renderer: {
+          primaryIndex: 0,
+          getContents: vi.fn().mockReturnValue([{ doc, index: 0 }]),
+        },
+        book: { toc: [] },
+        language: { isCJK: false },
+        tts: null,
+        getCFI: vi.fn().mockReturnValue('epubcfi(/6/2!/4/2/1:0)'),
+        resolveCFI,
+      } as unknown as FoliateView;
+
+      const controller = new RSVPController(view, 'estimator-book-abc123');
+      controller.start();
+      return { controller, view };
+    }
+
+    // Offset for the start of word index `i` (stride 5: WORD_WIDTH + 1 space).
+    const offsetOf = (i: number) => i * (WORD_WIDTH + 1);
+    const cfiAt = (offset: number) => `epubcfi(/6/2!/4/2/1:${offset})`;
+    const cfiOfWord = (i: number) => cfiAt(offsetOf(i));
+
+    test('jumps to the sentence first word, then self-advances at the estimated rate', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+
+      // ttsRate 1.0 -> 190 wpm -> ~316ms per word.
+      controller.driveEstimatedFromCfi(cfiOfWord(10), 190);
+      expect(controller.currentState.currentIndex).toBe(10);
+
+      const perWordMs = 60000 / 190;
+      vi.advanceTimersByTime(perWordMs + 5);
+      expect(controller.currentState.currentIndex).toBe(11);
+      vi.advanceTimersByTime(perWordMs + 5);
+      expect(controller.currentState.currentIndex).toBe(12);
+    });
+
+    test('estimatedWpmFromRate clamps extreme tts rates to FLOOR/CEIL', () => {
+      // 190 * rate, clamped to [60, 600].
+      expect(RSVPController.estimatedWpmFromRate(1)).toBe(190);
+      expect(RSVPController.estimatedWpmFromRate(0.1)).toBe(60); // 19 -> floor 60
+      expect(RSVPController.estimatedWpmFromRate(10)).toBe(600); // 1900 -> ceil 600
+      expect(RSVPController.estimatedWpmFromRate(2)).toBe(380);
+    });
+
+    test('drive seeds the rate via estimatedWpmFromRate so an extreme rate is clamped', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+
+      // Very slow rate -> clamp to FLOOR (60 wpm -> 1000ms/word). At 190's
+      // rate (316ms) it would have advanced; at 60 it must not yet.
+      const wpm = RSVPController.estimatedWpmFromRate(0.1);
+      controller.driveEstimatedFromCfi(cfiOfWord(5), wpm);
+      expect(controller.currentState.currentIndex).toBe(5);
+
+      vi.advanceTimersByTime(60000 / 190 + 50); // enough for 190, not for 60
+      expect(controller.currentState.currentIndex).toBe(5);
+
+      vi.advanceTimersByTime(60000 / 60); // now enough for 60 wpm
+      expect(controller.currentState.currentIndex).toBe(6);
+    });
+
+    test('HOLDS at MAX_WORDS_AHEAD past the sentence first word (does not run away)', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+
+      const startIndex = 2;
+      controller.driveEstimatedFromCfi(cfiOfWord(startIndex), 600); // fast
+      // Run far longer than needed to advance past the cap.
+      vi.advanceTimersByTime(60_000);
+
+      const cap = RSVPController.ESTIMATED_MAX_WORDS_AHEAD;
+      // Held at startIndex + cap, never beyond.
+      expect(controller.currentState.currentIndex).toBe(startIndex + cap);
+
+      // Still held after even more time (timer stopped, not racing).
+      vi.advanceTimersByTime(60_000);
+      expect(controller.currentState.currentIndex).toBe(startIndex + cap);
+    });
+
+    test('a new sentence drive resets (snaps) to the new sentence first word', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+
+      controller.driveEstimatedFromCfi(cfiOfWord(10), 190);
+      const perWordMs = 60000 / 190;
+      vi.advanceTimersByTime(perWordMs * 3 + 15); // drift forward a few words
+      expect(controller.currentState.currentIndex).toBeGreaterThan(10);
+
+      // Next sentence mark snaps to its first word, regardless of drift.
+      controller.driveEstimatedFromCfi(cfiOfWord(20), 190);
+      expect(controller.currentState.currentIndex).toBe(20);
+
+      // And the cap is measured from the NEW anchor (20), not the old one.
+      vi.advanceTimersByTime(60_000);
+      expect(controller.currentState.currentIndex).toBe(
+        20 + RSVPController.ESTIMATED_MAX_WORDS_AHEAD,
+      );
+    });
+
+    test('estimator pacing does not co-run with normal auto-advance', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+      controller.driveEstimatedFromCfi(cfiOfWord(0), 190);
+
+      // Only the estimator timer should be advancing. Over one estimator tick
+      // exactly one word advances (not two from a co-running WPM timer).
+      const perWordMs = 60000 / 190;
+      vi.advanceTimersByTime(perWordMs + 5);
+      expect(controller.currentState.currentIndex).toBe(1);
+    });
+
+    test('stopping external drive cancels estimator pacing', () => {
+      const { controller } = makeEstimatorFixture();
+      controller.setExternallyDriven(true);
+      controller.driveEstimatedFromCfi(cfiOfWord(10), 190);
+
+      // Disengaging the external driver must clear the estimator timer so it
+      // cannot keep advancing on its own.
+      controller.stopEstimator();
+      const before = controller.currentState.currentIndex;
+      vi.advanceTimersByTime(60_000);
+      expect(controller.currentState.currentIndex).toBe(before);
+    });
+  });
+
+  describe('manual-nav decouple signal (slice 5, #3235)', () => {
+    // The TTS-sync wiring listens for 'rsvp-manual-nav' to drop following so a
+    // user jump isn't immediately overwritten by the next TTS position.
+    const navMethods: Array<[string, (c: RSVPController) => void]> = [
+      ['skipForward', (c) => c.skipForward()],
+      ['skipBackward', (c) => c.skipBackward()],
+      ['nextWord', (c) => c.nextWord()],
+      ['prevWord', (c) => c.prevWord()],
+      ['seekToPosition', (c) => c.seekToPosition(50)],
+      ['seekToIndex', (c) => c.seekToIndex(1)],
+    ];
+
+    test.each(navMethods)('%s emits rsvp-manual-nav', (_name, run) => {
+      const view = createMockView(0, [makeDoc('one two three four')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const onNav = vi.fn();
+      controller.addEventListener('rsvp-manual-nav', onNav);
+      run(controller);
+      expect(onNav).toHaveBeenCalledTimes(1);
+    });
+
+    test('syncToCfi does NOT emit rsvp-manual-nav', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.start();
+
+      const onNav = vi.fn();
+      controller.addEventListener('rsvp-manual-nav', onNav);
+      // resolveCFI on the stubbed view returns a real Range but syncToCfi will
+      // no-op on the stubbed createRange; either way it must not fire manual-nav.
+      controller.syncToCfi('epubcfi(/6/2!/4/2/1:0)');
+      expect(onNav).not.toHaveBeenCalled();
+    });
+  });
 });

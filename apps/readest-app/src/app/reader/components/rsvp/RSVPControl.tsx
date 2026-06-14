@@ -29,6 +29,86 @@ interface RSVPControlProps {
   gridInsets: Insets;
 }
 
+// ─── TTS-sync decision logic (slice 5, #3235) ──────────────────────────
+// RSVP follows the spoken position while TTS plays (TTS is the clock). The
+// pure decision below maps an incoming tts-position event to the action the
+// component should take, so the stale-sequence / decouple / section-stash
+// rules can be unit-tested without mounting the heavy component.
+
+export interface RsvpTtsPositionDetail {
+  bookKey?: string;
+  cfi?: string;
+  kind?: 'word' | 'sentence';
+  sectionIndex?: number;
+  sequence?: number;
+}
+
+export interface RsvpTtsPendingSync {
+  cfi: string;
+  sequence: number;
+  sectionIndex: number;
+}
+
+export interface RsvpTtsSyncState {
+  // Whether RSVP is currently following TTS. A manual RSVP nav decouples
+  // (sets false); the next 'playing' re-engages.
+  following: boolean;
+  // Monotonic guard: drop tts-position with sequence <= this.
+  lastSequenceSeen: number;
+  // The section RSVP currently has extracted words for.
+  currentSectionIndex: number;
+  // Latest sync stashed during a pending section re-extract.
+  pendingSync?: RsvpTtsPendingSync;
+}
+
+export interface RsvpTtsPositionDecision {
+  // sync           → Edge word-level: controller.syncToCfi(cfi)
+  // drive-estimator→ non-Edge sentence: controller.driveEstimatedFromCfi(cfi)
+  // reextract      → different section: trigger re-extract, apply stash after
+  // ignore         → drop (wrong book / stale seq / decoupled / malformed)
+  action: 'sync' | 'drive-estimator' | 'reextract' | 'ignore';
+  cfi?: string;
+  nextState: RsvpTtsSyncState;
+}
+
+export const decideRsvpTtsPosition = (
+  state: RsvpTtsSyncState,
+  detail: RsvpTtsPositionDetail,
+  bookKey: string,
+): RsvpTtsPositionDecision => {
+  const ignore = (next: RsvpTtsSyncState = state): RsvpTtsPositionDecision => ({
+    action: 'ignore',
+    nextState: next,
+  });
+
+  if (detail.bookKey !== bookKey) return ignore();
+  if (!state.following) return ignore();
+  if (typeof detail.cfi !== 'string' || typeof detail.sectionIndex !== 'number') return ignore();
+
+  const sequence = detail.sequence ?? -Infinity;
+  if (sequence <= state.lastSequenceSeen) return ignore();
+
+  // Different section: don't map. Stash the latest sync + bump the sequence,
+  // and let the caller trigger RSVP's re-extract for the new section; the stash
+  // is applied once re-extract completes and the sequence is still current.
+  if (detail.sectionIndex !== state.currentSectionIndex) {
+    return {
+      action: 'reextract',
+      nextState: {
+        ...state,
+        lastSequenceSeen: sequence,
+        pendingSync: { cfi: detail.cfi, sequence, sectionIndex: detail.sectionIndex },
+      },
+    };
+  }
+
+  return {
+    action: detail.kind === 'sentence' ? 'drive-estimator' : 'sync',
+    cfi: detail.cfi,
+    nextState: { ...state, lastSequenceSeen: sequence },
+  };
+};
+
 // Helper to expand a range to include the full sentence
 const expandRangeToSentence = (range: Range, doc: Document): Range => {
   const sentenceRange = doc.createRange();
@@ -138,6 +218,14 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const rsvpSectionRef = useRef<number>(-1);
   const rsvpChapterHrefRef = useRef<string | null>(null);
 
+  // TTS-sync follower state (slice 5, #3235). Mutated by the tts-position /
+  // tts-playback-state handlers and the manual-nav decouple listener.
+  const syncStateRef = useRef<RsvpTtsSyncState>({
+    following: false,
+    lastSequenceSeen: -Infinity,
+    currentSectionIndex: -1,
+  });
+
   // Helper to remove any existing RSVP highlight
   const removeRsvpHighlight = useCallback(() => {
     const view = getView(bookKey);
@@ -191,6 +279,144 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
+
+  // Drop TTS following on a user-initiated manual RSVP nav (skip/seek/word-step;
+  // chapter-jump decouples in handleChapterSelect). Stays decoupled until the
+  // next 'playing' re-engages.
+  const decoupleFromTts = useCallback(() => {
+    const sync = syncStateRef.current;
+    if (!sync.following) return;
+    sync.following = false;
+    sync.pendingSync = undefined;
+    const controller = controllerRef.current;
+    controller?.stopEstimator();
+    controller?.setExternallyDriven(false);
+  }, []);
+
+  // Re-extract for the section TTS just drove the view into, then apply the
+  // stashed sync once the view settles on the target section and the stash is
+  // still the latest. Reuses the controller's section-load path
+  // (loadNextPageContent) — the same re-extract the rsvp-request-next-page flow
+  // uses — instead of navigating the view (TTS already navigated it).
+  const reextractForTtsSection = useCallback(() => {
+    const view = getView(bookKey);
+    const controller = controllerRef.current;
+    if (!view || !controller) return;
+
+    const targetSection = syncStateRef.current.pendingSync?.sectionIndex;
+    if (targetSection === undefined) return;
+
+    let cleanup: ReturnType<typeof setTimeout> | null = null;
+    const applyPending = () => {
+      rsvpSectionRef.current = view.renderer.primaryIndex;
+      syncStateRef.current.currentSectionIndex = view.renderer.primaryIndex;
+      const progress = getProgress(bookKey);
+      if (progress?.location) controller.setCurrentCfi(progress.location);
+      controller.loadNextPageContent();
+
+      // Apply the stash only if it's still the latest position and its section
+      // matches what we just extracted (a newer event may have superseded it).
+      const pending = syncStateRef.current.pendingSync;
+      if (
+        pending &&
+        pending.sequence === syncStateRef.current.lastSequenceSeen &&
+        pending.sectionIndex === view.renderer.primaryIndex
+      ) {
+        if (syncStateRef.current.pendingSync?.cfi) {
+          controller.syncToCfi(pending.cfi);
+        }
+        syncStateRef.current.pendingSync = undefined;
+      }
+    };
+
+    // If the view is already on the target section, re-extract immediately;
+    // otherwise wait for TTS's own page-follow relocate to land there.
+    if (view.renderer.primaryIndex === targetSection) {
+      applyPending();
+      return;
+    }
+
+    const onRelocate = () => {
+      if (view.renderer.primaryIndex !== targetSection) return; // keep waiting
+      view.removeEventListener('relocate', onRelocate);
+      if (cleanup) clearTimeout(cleanup);
+      applyPending();
+    };
+    view.addEventListener('relocate', onRelocate);
+    cleanup = setTimeout(() => view.removeEventListener('relocate', onRelocate), 5000);
+  }, [bookKey, getProgress, getView]);
+
+  // TTS-sync follower (slice 5, #3235). While an RSVP session is active, follow
+  // the spoken position; TTS is the clock. Filtered to this bookKey, decoupled
+  // by manual nav, re-engaged on the next 'playing'.
+  useEffect(() => {
+    if (!isActive) return;
+    const controller = controllerRef.current;
+    if (!controller) return;
+
+    const handlePlaybackState = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey?: string; state?: string } | undefined;
+      if (detail?.bookKey !== bookKey) return;
+      const sync = syncStateRef.current;
+      if (detail.state === 'playing') {
+        // (Re-)engage following from the current section.
+        sync.following = true;
+        sync.currentSectionIndex =
+          rsvpSectionRef.current >= 0
+            ? rsvpSectionRef.current
+            : (getView(bookKey)?.renderer.primaryIndex ?? -1);
+        controller.setExternallyDriven(true);
+      } else if (detail.state === 'paused' || detail.state === 'stopped') {
+        sync.following = false;
+        sync.pendingSync = undefined;
+        controller.stopEstimator();
+        controller.setExternallyDriven(false);
+      }
+    };
+
+    const handlePosition = (event: CustomEvent) => {
+      const detail = event.detail as RsvpTtsPositionDetail | undefined;
+      if (!detail) return;
+      const decision = decideRsvpTtsPosition(syncStateRef.current, detail, bookKey);
+      syncStateRef.current = decision.nextState;
+
+      switch (decision.action) {
+        case 'sync':
+          if (decision.cfi) controller.syncToCfi(decision.cfi);
+          break;
+        case 'drive-estimator': {
+          if (!decision.cfi) break;
+          const viewSettings = getViewSettings(bookKey);
+          const wpm = RSVPController.estimatedWpmFromRate(viewSettings?.ttsRate ?? 1);
+          controller.driveEstimatedFromCfi(decision.cfi, wpm);
+          break;
+        }
+        case 'reextract':
+          reextractForTtsSection();
+          break;
+        case 'ignore':
+        default:
+          break;
+      }
+    };
+
+    const handleManualNav = () => decoupleFromTts();
+
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    eventDispatcher.on('tts-position', handlePosition);
+    controller.addEventListener('rsvp-manual-nav', handleManualNav);
+
+    return () => {
+      eventDispatcher.off('tts-playback-state', handlePlaybackState);
+      eventDispatcher.off('tts-position', handlePosition);
+      controller.removeEventListener('rsvp-manual-nav', handleManualNav);
+      // Leaving sync: restore the controller's own pacing.
+      syncStateRef.current.following = false;
+      syncStateRef.current.pendingSync = undefined;
+      controller.stopEstimator();
+      controller.setExternallyDriven(false);
+    };
+  }, [isActive, bookKey, getView, getViewSettings, decoupleFromTts, reextractForTtsSection]);
 
   const handleStart = useCallback(
     (selectionText?: string) => {
@@ -463,6 +689,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const view = getView(bookKey);
       if (!view) return;
 
+      // A chapter jump is a user-initiated nav: decouple from TTS following.
+      decoupleFromTts();
+
       const onRelocate = (e: Event) => {
         view.removeEventListener('relocate', onRelocate);
         const detail = (e as CustomEvent).detail as { section?: PageInfo; tocItem?: TOCItem };
@@ -480,7 +709,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       view.addEventListener('relocate', onRelocate);
       view.goTo(href);
     },
-    [bookKey, getProgress, getView],
+    [bookKey, getProgress, getView, decoupleFromTts],
   );
 
   const handleRequestNextPage = useCallback(async () => {

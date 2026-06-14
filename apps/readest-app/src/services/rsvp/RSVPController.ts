@@ -14,6 +14,20 @@ const DEFAULT_SPLIT_HYPHENS = false;
 const DEFAULT_CJK_CHAR_MODE = false;
 const DEFAULT_START_DELAY_SECONDS = 3;
 const START_DELAY_OPTIONS = [0, 1, 2, 3];
+
+// Slice 5 (#3235): non-Edge TTS estimator. Sentence-only voices give us one
+// mark per sentence; RSVP jumps to the sentence's first word then SELF-PACES
+// forward through the following words at a rate estimated from the TTS voice
+// rate, until the next sentence mark snaps it back into alignment.
+//   wpm = clamp(BASE * ttsRate, FLOOR, CEIL)
+const ESTIMATED_TTS_WPM_BASE = 190;
+const ESTIMATED_TTS_WPM_FLOOR = 60;
+const ESTIMATED_TTS_WPM_CEIL = 600;
+// Cap self-advance to this many words past the sentence's first word. The
+// sentence end isn't known until the next mark arrives, so without a cap a fast
+// estimate could outrun the audio across the rest of the section. At the cap the
+// estimator HOLDS (stops its timer) and waits for the next snap.
+const ESTIMATED_MAX_WORDS_AHEAD = 60;
 const STORAGE_KEY_PREFIX = 'readest_rsvp_wpm_';
 const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
@@ -58,6 +72,14 @@ export class RSVPController extends EventTarget {
   // While true, scheduleNextWord becomes a no-op so the auto-advance timer never
   // fires — the external driver owns advancement via syncToCfi.
   #externallyDriven = false;
+
+  // Slice 5 (#3235): non-Edge estimator pacing. Its own timer + the cap anchor
+  // it self-advances from. Kept separate from playbackTimer so the estimator and
+  // the normal WPM auto-advance can never co-run; both are gated by
+  // #externallyDriven anyway, but separate state keeps the cap bookkeeping clean.
+  #estimatorTimer: ReturnType<typeof setTimeout> | null = null;
+  #estimatorAnchorIndex = -1;
+  #estimatorWpm = ESTIMATED_TTS_WPM_BASE;
 
   constructor(view: FoliateView, bookKey: string, primaryLanguage?: string) {
     super();
@@ -554,6 +576,7 @@ export class RSVPController extends EventTarget {
 
     this.clearTimer();
     this.clearCountdown();
+    this.stopEstimator();
     this.#lastSyncIndex = -1;
     this.state = {
       ...this.state,
@@ -709,18 +732,27 @@ export class RSVPController extends EventTarget {
     this.emitStateChange();
   }
 
+  // Slice 5 (#3235): a user-initiated jump (skip/seek/word-step) decouples RSVP
+  // from TTS following. Emitted so the TTS-sync wiring can set following=false;
+  // sync/estimator paths set currentIndex directly and never fire this.
+  private emitManualNav(): void {
+    this.dispatchEvent(new CustomEvent('rsvp-manual-nav'));
+  }
+
   skipForward(count: number = 10): void {
     this.state.currentIndex = Math.min(
       this.state.words.length - 1,
       this.state.currentIndex + count,
     );
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
   skipBackward(count: number = 10): void {
     this.state.currentIndex = Math.max(0, this.state.currentIndex - count);
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -734,6 +766,7 @@ export class RSVPController extends EventTarget {
       this.state.currentIndex + 1,
     );
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -741,6 +774,7 @@ export class RSVPController extends EventTarget {
     if (this.state.playing) this.pause();
     this.state.currentIndex = Math.max(0, this.state.currentIndex - 1);
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -749,6 +783,7 @@ export class RSVPController extends EventTarget {
     const newIndex = Math.floor((percentage / 100) * this.state.words.length);
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, newIndex));
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -756,7 +791,18 @@ export class RSVPController extends EventTarget {
     if (this.state.words.length === 0) return;
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
+  }
+
+  // Slice 5 (#3235): cap exposed for the non-Edge estimator's tests + callers.
+  static readonly ESTIMATED_MAX_WORDS_AHEAD = ESTIMATED_MAX_WORDS_AHEAD;
+
+  // Slice 5 (#3235): estimated reading rate for a non-Edge TTS voice rate.
+  //   clamp(BASE * ttsRate, FLOOR, CEIL)
+  static estimatedWpmFromRate(ttsRate: number): number {
+    const wpm = ESTIMATED_TTS_WPM_BASE * (ttsRate || 1);
+    return Math.max(ESTIMATED_TTS_WPM_FLOOR, Math.min(ESTIMATED_TTS_WPM_CEIL, wpm));
   }
 
   // Slice 3a (#3235): suspend/restore the auto-advance timer so an external
@@ -768,10 +814,68 @@ export class RSVPController extends EventTarget {
     if (on) {
       // Stop any pending auto-advance immediately.
       this.clearTimer();
-    } else if (this.state.playing && this.state.active) {
-      // Resume normal auto-advance from the current word.
-      this.scheduleNextWord();
+    } else {
+      // Leaving external-drive mode: kill any estimator pacing first so it
+      // can't keep advancing, then resume normal auto-advance if playing.
+      this.stopEstimator();
+      if (this.state.playing && this.state.active) {
+        this.scheduleNextWord();
+      }
     }
+  }
+
+  // Slice 5 (#3235): drive RSVP from a non-Edge sentence mark. Jumps to the
+  // sentence's first word (syncToCfi — corrects any drift; that's the "snap"),
+  // then SELF-PACES forward through the following words on a timer at the given
+  // estimated wpm. Capped at ESTIMATED_MAX_WORDS_AHEAD past the anchor so a fast
+  // estimate can't outrun the audio past the (still-unknown) sentence end; at
+  // the cap it HOLDS until the next drive. No-op (and leaves the cursor put) if
+  // the cfi can't be resolved in this section.
+  driveEstimatedFromCfi(cfi: string, wpm: number): boolean {
+    // Stop any in-flight estimator pacing before re-anchoring (snap).
+    this.stopEstimator();
+    if (!this.syncToCfi(cfi)) return false;
+    this.#estimatorAnchorIndex = this.state.currentIndex;
+    this.#estimatorWpm = Math.max(ESTIMATED_TTS_WPM_FLOOR, Math.min(ESTIMATED_TTS_WPM_CEIL, wpm));
+    this.scheduleEstimatorAdvance();
+    return true;
+  }
+
+  // Slice 5 (#3235): cancel estimator pacing (e.g. disengage / stop / snap).
+  stopEstimator(): void {
+    if (this.#estimatorTimer) {
+      clearTimeout(this.#estimatorTimer);
+      this.#estimatorTimer = null;
+    }
+    this.#estimatorAnchorIndex = -1;
+  }
+
+  private scheduleEstimatorAdvance(): void {
+    if (this.#estimatorTimer) {
+      clearTimeout(this.#estimatorTimer);
+      this.#estimatorTimer = null;
+    }
+    if (!this.#externallyDriven || this.#estimatorAnchorIndex < 0) return;
+
+    // HOLD at the cap: never advance more than MAX_WORDS_AHEAD past the anchor.
+    const capIndex = Math.min(
+      this.state.words.length - 1,
+      this.#estimatorAnchorIndex + ESTIMATED_MAX_WORDS_AHEAD,
+    );
+    if (this.state.currentIndex >= capIndex) return;
+
+    const perWordMs = 60000 / this.#estimatorWpm;
+    this.#estimatorTimer = setTimeout(() => {
+      this.#estimatorTimer = null;
+      if (!this.#externallyDriven || this.#estimatorAnchorIndex < 0) return;
+      const next = Math.min(this.state.words.length - 1, this.state.currentIndex + 1);
+      if (next === this.state.currentIndex) return;
+      this.state.currentIndex = next;
+      this.state.currentPartIndex = 0;
+      this.#lastSyncIndex = next;
+      this.emitStateChange();
+      this.scheduleEstimatorAdvance();
+    }, perWordMs);
   }
 
   // Slice 3a (#3235): drive the displayed word from an external CFI (e.g. the
