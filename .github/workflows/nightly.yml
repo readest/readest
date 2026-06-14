@@ -361,7 +361,12 @@ jobs:
                 appimage_name="Readest_${version}_aarch64.AppImage"
                 key="linux-aarch64-appimage"
               fi
-              add_entry "${bundle}/${rust_target}/release/bundle/appimage/${appimage_name}" "$appimage_name" "$key"
+              # The Linux leg builds with `cargo tauri build` WITHOUT `--target`
+              # (no matrix args), so cargo emits bundles under target/release/
+              # (host-target default) — NOT target/<triple>/release/ like the
+              # macOS/Windows legs, which DO pass `--target`. So there is no
+              # ${rust_target} subdir here.
+              add_entry "${bundle}/release/bundle/appimage/${appimage_name}" "$appimage_name" "$key"
               ;;
             *)
               echo "::error::unknown release leg: $release"; exit 1
