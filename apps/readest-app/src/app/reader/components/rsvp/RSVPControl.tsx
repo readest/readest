@@ -56,7 +56,13 @@ export interface RsvpTtsPositionDetail {
 //   syncing     — a cross-section re-extract is pending
 //   decoupled   — a manual RSVP nav dropped following while TTS still plays
 //   unsupported — fixed-layout book; TTS sync can never engage (D7)
-export type TtsSyncStatus = 'idle' | 'following' | 'syncing' | 'decoupled' | 'unsupported';
+export type TtsSyncStatus =
+  | 'idle'
+  | 'following'
+  | 'syncing'
+  | 'decoupled'
+  | 'paused'
+  | 'unsupported';
 
 export interface RsvpTtsPendingSync {
   cfi: string;
@@ -441,6 +447,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
 
     const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
     let isPlaying = false;
+    // A TTS session exists (playing OR paused). Distinct from isPlaying so a
+    // pause keeps the indicator + "Audio pace" present (no layout shift) — the
+    // mode is still on; only a full stop clears it.
+    let sessionActive = false;
 
     const refreshSyncStatus = () => {
       if (isFixedLayout) {
@@ -448,8 +458,11 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         return;
       }
       const sync = syncStateRef.current;
-      if (!isPlaying) {
+      if (!sessionActive) {
         setTtsSyncStatus('idle');
+      } else if (!isPlaying) {
+        // Engaged but paused: keep the indicator visible (mode still on).
+        setTtsSyncStatus('paused');
       } else if (!sync.following) {
         // Manual nav decoupled following while TTS still plays.
         setTtsSyncStatus('decoupled');
@@ -469,6 +482,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       const sync = syncStateRef.current;
       if (detail.state === 'playing') {
         isPlaying = true;
+        sessionActive = true;
         setTtsActive(true);
         setTtsPlaying(true);
         // D7: never engage following on fixed-layout.
@@ -486,6 +500,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         // word) so its own timer can't run away while audio is paused. The
         // transport button (mapped to TTS) resumes it.
         isPlaying = false;
+        sessionActive = true;
         setTtsActive(true);
         setTtsPlaying(false);
         sync.following = false;
@@ -494,6 +509,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         controller.stopEstimator();
       } else if (detail.state === 'stopped') {
         isPlaying = false;
+        sessionActive = false;
         setTtsActive(false);
         setTtsPlaying(false);
         sync.following = false;
@@ -950,10 +966,21 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // Book language drives dictionary provider selection for context lookups (#4475).
   const dictionaryLang = bookData?.bookDoc?.metadata?.language as string | undefined;
   const handleManageDictionary = useCallback(() => {
+    // The settings dialog (which hosts dictionary management) renders at z-50,
+    // far below the full-screen RSVP overlay (z-[10000]), so it would open
+    // invisibly behind it. Exit RSVP first — its position is saved and resumable
+    // — so management shows over the reader; the user returns via the saved spot.
+    handleClose();
     setSettingsDialogBookKey(bookKey);
     setActiveSettingsItemId('settings.language.dictionaries.manage');
     setSettingsDialogOpen(true);
-  }, [bookKey, setActiveSettingsItemId, setSettingsDialogBookKey, setSettingsDialogOpen]);
+  }, [
+    bookKey,
+    handleClose,
+    setActiveSettingsItemId,
+    setSettingsDialogBookKey,
+    setSettingsDialogOpen,
+  ]);
 
   // Audio (TTS) toggle from the overlay (slice 7, decision 5, #3235). When TTS
   // is engaged, stop it; otherwise start it from the displayed RSVP word with

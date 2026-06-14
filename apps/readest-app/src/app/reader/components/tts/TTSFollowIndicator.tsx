@@ -5,9 +5,17 @@ import clsx from 'clsx';
 import { IoVolumeHigh, IoSync } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 
-// The five derived states both reader modes expose (slice 5, #3235). idle and
+// The derived states both reader modes expose (slice 5, #3235). idle and
 // unsupported render nothing — we never nag, especially not on fixed-layout.
-export type TtsSyncStatus = 'idle' | 'following' | 'syncing' | 'decoupled' | 'unsupported';
+// 'paused' keeps the pill visible while TTS is engaged but paused (no layout
+// shift) — it renders like 'following'.
+export type TtsSyncStatus =
+  | 'idle'
+  | 'following'
+  | 'syncing'
+  | 'decoupled'
+  | 'paused'
+  | 'unsupported';
 
 interface TTSFollowIndicatorProps {
   status: TtsSyncStatus;

@@ -668,7 +668,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   // The WPM timer doesn't drive pacing while RSVP follows TTS — the voice does.
   // Replace the WPM control with an "Audio pace" affordance that opens a TTS
   // rate picker instead (decision 6, #3235).
-  const ttsDriven = ttsSyncStatus === 'following' || ttsSyncStatus === 'syncing';
+  // 'paused' keeps the WPM "Audio pace" lock too, so pausing doesn't shift layout.
+  const ttsDriven =
+    ttsSyncStatus === 'following' || ttsSyncStatus === 'syncing' || ttsSyncStatus === 'paused';
 
   return (
     <div
@@ -855,7 +857,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           collapse to nothing. */}
       {(ttsSyncStatus === 'following' ||
         ttsSyncStatus === 'syncing' ||
-        ttsSyncStatus === 'decoupled') && (
+        ttsSyncStatus === 'decoupled' ||
+        ttsSyncStatus === 'paused') && (
         <div className='flex shrink-0 justify-center px-3 pb-1 md:px-4'>
           <TTSFollowIndicator
             status={ttsSyncStatus}

@@ -21,7 +21,13 @@ interface UseParagraphModeProps {
 //  - 'following':   actively following the spoken position.
 //  - 'syncing':     a cross-section position is pending a re-init.
 //  - 'decoupled':   was following, user took manual control (TTS still playing).
-export type TtsSyncStatus = 'unsupported' | 'idle' | 'following' | 'syncing' | 'decoupled';
+export type TtsSyncStatus =
+  | 'unsupported'
+  | 'idle'
+  | 'following'
+  | 'syncing'
+  | 'decoupled'
+  | 'paused';
 
 export interface ParagraphState {
   isActive: boolean;
