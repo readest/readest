@@ -1,0 +1,87 @@
+# Updating the Word Wise gloss packs
+
+**Model:** the committed `data/wordwise/*.json` + `manifest.json` are the source of
+truth. They are **not** bundled into the app — `pnpm wordwise:sync` mirrors them to the
+`cdn.readest.com` R2 bucket, and the app downloads each pack on demand and **re-downloads
+it automatically whenever its `sha256` changes in the manifest**. So updating data is:
+regenerate → sync → commit. No app release required.
+
+See `ATTRIBUTION.md` for the data sources + licenses.
+
+## Prerequisites
+- `sqlite3` CLI (for the WikDict pairs).
+- `wrangler` logged in to Cloudflare + the R2 bucket name (for sync).
+- A scratch dir for source corpora (e.g. `/tmp/ww-data`).
+
+## 1. Fetch source corpora
+```bash
+mkdir -p /tmp/ww-data && cd /tmp/ww-data
+
+# en→中文: ECDICT (MIT) — ~66 MB
+curl -sL -o ecdict.csv https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv
+
+# 中文→en: CC-CEDICT (CC-BY-SA) + HSK levels (drkameleon)
+curl -sL -o cedict.txt.gz https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz && gunzip -f cedict.txt.gz
+for n in $(seq 1 9); do curl -sL -o hsk-$n.json https://raw.githubusercontent.com/drkameleon/complete-hsk-vocabulary/main/wordlists/exclusive/new/$n.json; done
+node -e "const fs=require('fs');let o=[];for(let n=1;n<=9;n++){try{for(const it of JSON.parse(fs.readFileSync('hsk-'+n+'.json','utf8')))if(it.simplified)o.push({simplified:it.simplified,level:n});}catch(e){}}fs.writeFileSync('hsk.json',JSON.stringify(o))"
+
+# Other pairs: WikDict SQLite (CC-BY-SA-3.0) + FrequencyWords (CC-BY-SA-4.0)
+for c in en es fr de pt it ru; do curl -sL -o ${c}_50k.txt https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/$c/${c}_50k.txt; done
+for p in es-en fr-en de-en pt-en it-en ru-en en-es en-fr en-de en-pt en-ru; do curl -sL -o $p.sqlite3 https://download.wikdict.com/dictionaries/sqlite/2/$p.sqlite3; done
+
+# Source-language lemmatization lists (michmech) — used to lemmatize X→en source words
+for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-$c.txt; done
+```
+
+## 2. Generate packs (run from `apps/readest-app`)
+> **Order matters:** build `en-zh` **first** — the en→X WikDict builds reuse its English
+> inflection table to lemmatize (`kept`→`keep`).
+```bash
+cd apps/readest-app
+
+# Flagship pairs (dedicated dictionaries — higher quality)
+node scripts/build-wordwise-data.mjs en-zh /tmp/ww-data/ecdict.csv 30000
+node scripts/build-wordwise-data.mjs zh-en /tmp/ww-data/cedict.txt /tmp/ww-data/hsk.json 12000
+
+# X→en (foreign source): pass the source-language lemmatization list (6th arg) so
+# inflected source words ("corriendo" -> "correr") resolve to their lemma's gloss.
+for src in es fr de pt it ru; do
+  node scripts/build-wordwise-data.mjs build-wikdict "$src" en "/tmp/ww-data/${src}_50k.txt" "/tmp/ww-data/$src-en.sqlite3" 20000 "/tmp/ww-data/lemmatization-$src.txt"
+done
+# en→X (English source): lemmatized automatically via en-zh.json (build it first)
+for tgt in es fr de pt ru; do
+  node scripts/build-wordwise-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
+done
+```
+- Each build writes `data/wordwise/<pair>.json` **and** regenerates `manifest.json`
+  (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordwise:manifest`.
+- The last CLI arg is `topN` (default 30000 for en-zh, 20000 otherwise).
+- **Add a new pair** (e.g. en→ja): fetch `en-ja.sqlite3` + `en_50k.txt`, run
+  `build-wikdict en ja …` — it joins the manifest automatically. (ja/ko/th as a *source*
+  language still need a word segmenter — deferred.)
+
+> Max-coverage alternative to WikDict (heavier): the kaikki Wiktionary dump via the
+> `build <src> <tgt> <freq.txt> <wiktionary.jsonl>` mode — see `ATTRIBUTION.md`.
+
+## 3. Sync to R2
+```bash
+WORDWISE_R2_BUCKET=<cdn-bucket> pnpm wordwise:sync
+```
+Uploads every pack (immutable cache) + `manifest.json` (5-min cache), manifest last.
+
+## 4. Commit
+```bash
+git add data/wordwise && git commit -m "chore(wordwise): refresh gloss packs"
+```
+
+## 5. How clients update
+On next load the app fetches `manifest.json` (≤5-min CDN cache), compares each pack's
+`sha256` to the locally cached copy, and re-downloads any that changed. Nothing else to do.
+
+## Tuning knobs
+| What | Where |
+| --- | --- |
+| `topN` per pack | the build CLI's last arg |
+| commonest-N words skipped (`skipTop`) + per-chapter render cap (`DEFAULT_CAP`) | `src/services/wordwise/{planner,…}` and `buildPack` in the build script |
+| difficulty cutoffs per slider level | `src/services/wordwise/difficulty.ts` |
+| gloss cleaning (POS/`[…]`/`CL:` strip, 24-char cap) | `shortGloss` in `scripts/build-wordwise-data.mjs` |
