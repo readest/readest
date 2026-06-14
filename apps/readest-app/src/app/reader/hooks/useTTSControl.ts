@@ -98,6 +98,22 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...sentence });
   };
 
+  // Set the TTS rate from the app bus. The RSVP overlay is full-screen, so its
+  // rate picker can't reach the TTS panel; it dispatches `tts-set-rate` and we
+  // reuse the same controller rate-change path the panel uses (handleSetRate,
+  // defined below — stop→setRate→start while playing, throttled). Also persists
+  // the value to viewSettings so it survives like a panel change.
+  const handleTTSSetRate = (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; rate?: number } | undefined;
+    if (detail?.bookKey !== bookKey || typeof detail.rate !== 'number') return;
+    const viewSettings = getViewSettings(bookKey);
+    if (viewSettings) {
+      viewSettings.ttsRate = detail.rate;
+      setViewSettings(bookKey, viewSettings);
+    }
+    handleSetRate(detail.rate);
+  };
+
   const handleTTSTogglePlay = async (event: CustomEvent) => {
     const detail = event.detail as { bookKey: string } | undefined;
     if (detail?.bookKey !== bookKey) return;
@@ -126,6 +142,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.on('tts-forward', handleTTSForward);
     eventDispatcher.on('tts-backward', handleTTSBackward);
     eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
+    eventDispatcher.on('tts-set-rate', handleTTSSetRate);
     eventDispatcher.on('tts-highlight-sentence', handleTTSHighlightSentence);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
@@ -133,6 +150,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       eventDispatcher.off('tts-forward', handleTTSForward);
       eventDispatcher.off('tts-backward', handleTTSBackward);
       eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
+      eventDispatcher.off('tts-set-rate', handleTTSSetRate);
       eventDispatcher.off('tts-highlight-sentence', handleTTSHighlightSentence);
       if (ttsControllerRef.current) {
         ttsControllerRef.current.shutdown();

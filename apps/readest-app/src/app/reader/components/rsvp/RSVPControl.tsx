@@ -14,6 +14,7 @@ import {
   buildRsvpExitConfigUpdate,
 } from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
+import { buildRsvpTtsSpeakDetail } from './rsvpTts';
 import { getBaseFontFamily } from '@/utils/style';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -244,6 +245,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // True when the last accepted position was sentence-level (non-Edge), so
   // following is paced by the estimator — the indicator appends " · estimated".
   const [ttsEstimated, setTtsEstimated] = useState(false);
+  // Whether TTS audio is currently engaged (playing or paused) for this book,
+  // tracked from the tts-playback-state bus. Drives the overlay's audio toggle
+  // active/idle icon (slice 7, #3235).
+  const [ttsActive, setTtsActive] = useState(false);
 
   useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
@@ -437,6 +442,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       const sync = syncStateRef.current;
       if (detail.state === 'playing') {
         isPlaying = true;
+        setTtsActive(true);
         // D7: never engage following on fixed-layout.
         if (!isFixedLayout) {
           // (Re-)engage following from the current section.
@@ -449,6 +455,9 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         }
       } else if (detail.state === 'paused' || detail.state === 'stopped') {
         isPlaying = false;
+        // Paused TTS is still engaged (the audio toggle reflects active); only
+        // a full stop clears it.
+        setTtsActive(detail.state === 'paused');
         sync.following = false;
         sync.pendingSync = undefined;
         setTtsEstimated(false);
@@ -509,6 +518,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       controller.setExternallyDriven(false);
       setTtsSyncStatus('idle');
       setTtsEstimated(false);
+      setTtsActive(false);
     };
   }, [
     isActive,
@@ -900,6 +910,38 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     setSettingsDialogOpen(true);
   }, [bookKey, setActiveSettingsItemId, setSettingsDialogBookKey, setSettingsDialogOpen]);
 
+  // Audio (TTS) toggle from the overlay (slice 7, decision 5, #3235). When TTS
+  // is engaged, stop it; otherwise start it from the displayed RSVP word with
+  // start-alignment — the word's range (validated live) + its section index — so
+  // audio begins at the same word RSVP is flashing.
+  const handleToggleTtsAudio = useCallback(() => {
+    if (ttsActive) {
+      eventDispatcher.dispatch('tts-stop', { bookKey });
+      return;
+    }
+    const controller = controllerRef.current;
+    const currentWord = controller?.currentDisplayWord ?? null;
+    const view = getView(bookKey);
+    const currentDoc =
+      typeof currentWord?.docIndex === 'number'
+        ? view?.renderer.getContents().find((c) => c.index === currentWord.docIndex)?.doc
+        : undefined;
+    const detail = buildRsvpTtsSpeakDetail(currentWord, bookKey, currentDoc);
+    eventDispatcher.dispatch('tts-speak', detail ?? { bookKey });
+  }, [bookKey, getView, ttsActive]);
+
+  // Change the TTS playback rate from the overlay's rate picker (decision 6).
+  // The TTS rate panel is unreachable behind the full-screen overlay, so dispatch
+  // a one-shot tts-set-rate the TTS hook applies via its existing rate path.
+  const handleSetTtsRate = useCallback(
+    (rate: number) => {
+      eventDispatcher.dispatch('tts-set-rate', { bookKey, rate });
+    },
+    [bookKey],
+  );
+
+  const ttsRate = viewSettings?.ttsRate ?? 1;
+
   // Use portal to render overlay at body level to avoid stacking context issues
   const portalContainer = typeof document !== 'undefined' ? document.body : null;
 
@@ -932,6 +974,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
             lang={dictionaryLang}
             ttsSyncStatus={ttsSyncStatus}
             estimated={ttsEstimated}
+            ttsActive={ttsActive}
+            ttsRate={ttsRate}
+            onToggleTtsAudio={handleToggleTtsAudio}
+            onSetTtsRate={handleSetTtsRate}
             onResumeTtsFollow={reengageTtsFollow}
             onClose={handleClose}
             onChapterSelect={handleChapterSelect}

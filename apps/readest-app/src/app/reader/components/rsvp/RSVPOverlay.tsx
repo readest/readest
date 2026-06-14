@@ -20,6 +20,9 @@ import {
   IoChevronDown,
   IoSettingsSharp,
   IoSearch,
+  IoVolumeHigh,
+  IoVolumeMediumOutline,
+  IoLockClosed,
 } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getPopupPosition, Position } from '@/utils/sel';
@@ -80,6 +83,10 @@ const CONTEXT_CHUNK_SIZE = 50;
 const CONTEXT_WINDOW_BEFORE = 200;
 const CONTEXT_WINDOW_AFTER = 1000;
 
+// TTS rate options for the overlay's rate picker (decision 6) — mirrors the
+// 0.5–3.0 range the TTS panel slider clamps to, in 0.25 steps.
+const TTS_RATE_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
+
 // Dictionary lookup popup sizing (mirrors the reader's Annotator popup).
 const DICT_POPUP_PADDING = 10;
 const DICT_POPUP_MAX_WIDTH = 480;
@@ -102,6 +109,14 @@ interface RSVPOverlayProps {
   ttsSyncStatus?: TtsSyncStatus;
   /** True when following is paced by the estimator (non-Edge sentence sync). */
   estimated?: boolean;
+  /** True when TTS audio is engaged (playing/paused) — drives the audio toggle. */
+  ttsActive?: boolean;
+  /** Current TTS playback rate, shown selected in the rate picker (decision 6). */
+  ttsRate?: number;
+  /** Toggle TTS audio: start from the current word, or stop when engaged. */
+  onToggleTtsAudio?: () => void;
+  /** Set the TTS rate (one-shot) when the WPM control is TTS-driven. */
+  onSetTtsRate?: (rate: number) => void;
   /** Re-engage following after a manual nav decoupled it (indicator action). */
   onResumeTtsFollow?: () => void;
   onClose: () => void;
@@ -120,6 +135,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   lang,
   ttsSyncStatus = 'idle',
   estimated = false,
+  ttsActive = false,
+  ttsRate = 1,
+  onToggleTtsAudio,
+  onSetTtsRate,
   onResumeTtsFollow,
   onClose,
   onChapterSelect,
@@ -134,6 +153,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const chapterDropdownRef = useRef<HTMLDivElement>(null);
   const [showWpmDropdown, setShowWpmDropdown] = useState(false);
+  const [showRateDropdown, setShowRateDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [contextCollapsed, setContextCollapsed] = useState(() => {
     try {
@@ -630,6 +650,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const currentFontSize =
     FONT_SIZE_OPTIONS[fontSizeIndex] ?? FONT_SIZE_OPTIONS[DEFAULT_FONT_SIZE_INDEX]!;
 
+  // The WPM timer doesn't drive pacing while RSVP follows TTS — the voice does.
+  // Replace the WPM control with an "Audio pace" affordance that opens a TTS
+  // rate picker instead (decision 6, #3235).
+  const ttsDriven = ttsSyncStatus === 'following' || ttsSyncStatus === 'syncing';
+
   return (
     <div
       data-testid='rsvp-overlay'
@@ -707,31 +732,57 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           )}
         </div>
 
-        {/* WPM selector */}
+        {/* WPM selector — while RSVP follows TTS the timer no longer paces, so it
+            becomes an "Audio pace" affordance that opens a TTS rate picker
+            instead (decision 6). aria-disabled (not hard-disabled) keeps it
+            focusable as a hint; the lock glyph + border reads in e-ink without
+            relying on opacity. */}
         <div className='relative shrink-0'>
-          <button
-            className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20'
-            onClick={() => setShowWpmDropdown(!showWpmDropdown)}
-            aria-label={_('Select reading speed')}
-            title={_('Select reading speed')}
-          >
-            <span className='font-semibold'>{state.wpm}</span>
-            <span className='ml-0.5 text-xs opacity-50'>WPM</span>
-            <svg
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2.5'
-              className='ml-0.5 h-3 w-3 shrink-0 opacity-50'
+          {ttsDriven ? (
+            <button
+              className='eink-bordered flex items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20'
+              onClick={() => setShowRateDropdown(!showRateDropdown)}
+              aria-disabled='true'
+              aria-label={_('Audio pace')}
+              title={_('Speed follows audio')}
             >
-              <path d='M6 9l6 6 6-6' />
-            </svg>
-          </button>
-          {showWpmDropdown && (
+              <IoLockClosed className='h-3.5 w-3.5 shrink-0 opacity-70' aria-hidden='true' />
+              <span className='font-medium'>{_('Audio pace')}</span>
+              <svg
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2.5'
+                className='ms-0.5 h-3 w-3 shrink-0 opacity-50'
+              >
+                <path d='M6 9l6 6 6-6' />
+              </svg>
+            </button>
+          ) : (
+            <button
+              className='flex items-center gap-1 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm tabular-nums transition-colors hover:bg-gray-500/20'
+              onClick={() => setShowWpmDropdown(!showWpmDropdown)}
+              aria-label={_('Select reading speed')}
+              title={_('Select reading speed')}
+            >
+              <span className='font-semibold'>{state.wpm}</span>
+              <span className='ms-0.5 text-xs opacity-50'>WPM</span>
+              <svg
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2.5'
+                className='ms-0.5 h-3 w-3 shrink-0 opacity-50'
+              >
+                <path d='M6 9l6 6 6-6' />
+              </svg>
+            </button>
+          )}
+          {showWpmDropdown && !ttsDriven && (
             <>
               <Overlay onDismiss={() => setShowWpmDropdown(false)} />
               <div
-                className='absolute right-0 top-full z-[100] mt-1.5 max-h-64 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
+                className='absolute end-0 top-full z-[100] mt-1.5 max-h-64 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
                 style={{ backgroundColor: bgColor }}
               >
                 {controller.getWpmOptions().map((wpm) => (
@@ -749,6 +800,32 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                   >
                     <span>{wpm}</span>
                     <span className='text-xs opacity-40'>WPM</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {showRateDropdown && ttsDriven && (
+            <>
+              <Overlay onDismiss={() => setShowRateDropdown(false)} />
+              <div
+                className='absolute end-0 top-full z-[100] mt-1.5 max-h-64 min-w-[7rem] overflow-y-auto rounded-2xl border border-gray-500/20 shadow-2xl'
+                style={{ backgroundColor: bgColor }}
+              >
+                {TTS_RATE_OPTIONS.map((rate) => (
+                  <button
+                    key={rate}
+                    className={clsx(
+                      'flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md border-none bg-transparent px-4 py-1.5 text-sm tabular-nums transition-colors first:rounded-t-2xl last:rounded-b-2xl hover:bg-gray-500/15',
+                      Math.abs(ttsRate - rate) < 0.001 &&
+                        'bg-[color-mix(in_srgb,var(--rsvp-accent)_15%,transparent)] font-semibold',
+                    )}
+                    onClick={() => {
+                      onSetTtsRate?.(rate);
+                      setShowRateDropdown(false);
+                    }}
+                  >
+                    <span>{rate.toFixed(2)}×</span>
                   </button>
                 ))}
               </div>
@@ -1044,17 +1121,48 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <span className='text-xs font-semibold opacity-80'>15</span>
           </button>
 
-          <button
-            aria-label={_('Settings')}
-            className={clsx(
-              'absolute right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95',
-              showSettings && 'bg-gray-500/15',
-            )}
-            onClick={() => setShowSettings((prev) => !prev)}
-            title={_('Settings')}
-          >
-            <IoSettingsSharp className='h-4 w-4 md:h-5 md:w-5' />
-          </button>
+          {/* Trailing cluster: audio (TTS) toggle + divider + settings gear.
+              The audio toggle starts TTS from the displayed word (or stops it
+              when engaged) — never a second play triangle (decision 5). Active
+              state uses a filled glyph + eink-bordered surface so it reads in
+              e-ink without relying on color. */}
+          <div className='absolute end-0 flex items-center gap-1'>
+            <button
+              aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
+              className={clsx(
+                'touch-target flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none transition-colors active:scale-95',
+                ttsActive
+                  ? 'eink-bordered bg-[color-mix(in_srgb,var(--rsvp-accent)_18%,transparent)]'
+                  : 'bg-transparent hover:bg-gray-500/20',
+              )}
+              onClick={() => onToggleTtsAudio?.()}
+              title={ttsActive ? _('Pause audio') : _('Play audio')}
+            >
+              {ttsActive ? (
+                <IoVolumeHigh
+                  className='h-4 w-4 md:h-5 md:w-5'
+                  style={{ color: accentColor }}
+                  aria-hidden='true'
+                />
+              ) : (
+                <IoVolumeMediumOutline className='h-4 w-4 md:h-5 md:w-5' aria-hidden='true' />
+              )}
+            </button>
+
+            <span className='h-5 w-px bg-gray-500/30' aria-hidden='true' />
+
+            <button
+              aria-label={_('Settings')}
+              className={clsx(
+                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95',
+                showSettings && 'bg-gray-500/15',
+              )}
+              onClick={() => setShowSettings((prev) => !prev)}
+              title={_('Settings')}
+            >
+              <IoSettingsSharp className='h-4 w-4 md:h-5 md:w-5' />
+            </button>
+          </div>
         </div>
 
         {/* Settings row (collapsible) */}
