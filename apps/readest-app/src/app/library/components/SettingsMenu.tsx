@@ -55,6 +55,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
+  const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
@@ -159,6 +160,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.autoCheckUpdates;
     saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
     setIsAutoCheckUpdates(newValue);
+  };
+
+  const toggleNightlyChannel = () => {
+    const newValue = !isNightlyChannel;
+    saveSysSettings(envConfig, 'updateChannel', newValue ? 'nightly' : 'stable');
+    setIsNightlyChannel(newValue);
   };
 
   const toggleOpenLastBooks = () => {
@@ -390,6 +397,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           label={_('Check Updates on Start')}
           toggled={isAutoCheckUpdates}
           onClick={toggleAutoCheckUpdates}
+        />
+      )}
+      {appService?.hasUpdater && (
+        <MenuItem
+          label={_('Nightly Builds (Unstable)')}
+          description={isNightlyChannel ? _('Early daily builds; may be unstable') : ''}
+          toggled={isNightlyChannel}
+          onClick={toggleNightlyChannel}
         />
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
