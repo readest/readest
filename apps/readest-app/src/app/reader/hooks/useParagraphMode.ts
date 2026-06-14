@@ -9,7 +9,11 @@ import { ParagraphIterator } from '@/utils/paragraph';
 import { getParagraphPresentation } from '@/utils/paragraphPresentation';
 import { DEFAULT_PARAGRAPH_MODE_CONFIG } from '@/services/constants';
 import { isRangeLike } from '@/utils/range';
-import { buildParagraphTtsSpeakDetail } from '@/app/reader/components/paragraph/paragraphTts';
+import {
+  buildParagraphTtsSpeakDetail,
+  computeParagraphHighlightOffsets,
+  decideParagraphTtsHighlight,
+} from '@/app/reader/components/paragraph/paragraphTts';
 
 interface UseParagraphModeProps {
   bookKey: string;
@@ -66,12 +70,18 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   // TTS-sync (one-way follower): TTS is the clock, paragraph mode follows it.
   const followingTtsRef = useRef(false);
   const lastSequenceSeenRef = useRef(-Infinity);
-  const pendingSyncRef = useRef<{ cfi: string; sequence: number; sectionIndex: number } | null>(
-    null,
-  );
+  const pendingSyncRef = useRef<{
+    cfi: string;
+    sequence: number;
+    sectionIndex: number;
+    kind?: 'word' | 'sentence';
+  } | null>(null);
+  // Whether the active TTS session has emitted word boundaries (Edge). Drives the
+  // word-vs-sentence highlight granularity; reset when a session fully stops.
+  const hasWordPositionsRef = useRef(false);
   // Holds the latest applySyncCfi so initIterator can apply a pending cross-
   // section sync after re-init without a circular useCallback dependency.
-  const applySyncCfiRef = useRef<((cfi: string) => void) | null>(null);
+  const applySyncCfiRef = useRef<((cfi: string, highlight: boolean) => void) | null>(null);
   // Latest TTS playback-state for this book ('playing' vs not), used to derive
   // the sync status alongside the follow/pending refs.
   const ttsPlayingRef = useRef(false);
@@ -261,7 +271,11 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
           pending.sequence >= lastSequenceSeenRef.current
         ) {
           pendingSyncRef.current = null;
-          applySyncCfiRef.current?.(pending.cfi);
+          const action = decideParagraphTtsHighlight({
+            kind: pending.kind,
+            hasWordPositions: hasWordPositionsRef.current,
+          });
+          applySyncCfiRef.current?.(pending.cfi, action !== 'skip');
           refreshTtsSyncStatusRef.current?.();
         }
         return true;
@@ -367,8 +381,11 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
   // Resolve a TTS cfi to the matching paragraph index in the current section and
   // sync-focus it. No-op when the cfi can't be resolved or maps nowhere (-1).
+  // When `highlight` is set, also dispatch the spoken word/sentence offsets so
+  // the overlay highlights the current text within the focused paragraph (#3235);
+  // this fires even when the paragraph doesn't change (word moving within it).
   const applySyncCfi = useCallback(
-    (cfi: string) => {
+    (cfi: string, highlight: boolean) => {
       const view = viewRef.current;
       const iterator = iteratorRef.current;
       const docIndex = currentDocIndexRef.current;
@@ -395,8 +412,28 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       if (!range) return;
 
       const index = iterator.findIndexByRange(range, iterator.currentIndex);
-      if (index < 0 || index === iterator.currentIndex) return;
-      focusParagraphForSync(index);
+      if (index < 0) return;
+
+      // Move focus only when the spoken position crossed into another paragraph;
+      // goTo() runs synchronously so iterator.current() is the target afterwards.
+      if (index !== iterator.currentIndex) {
+        focusParagraphForSync(index);
+      }
+
+      if (highlight) {
+        const paragraphRange = iterator.current();
+        const offsets = paragraphRange
+          ? computeParagraphHighlightOffsets(paragraphRange, range)
+          : null;
+        if (offsets) {
+          eventDispatcher.dispatch('paragraph-tts-highlight', {
+            bookKey: bookKeyRef.current,
+            index,
+            start: offsets.start,
+            end: offsets.end,
+          });
+        }
+      }
     },
     [viewRef, getPrimaryContent, focusParagraphForSync],
   );
@@ -748,12 +785,27 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         // Fresh engage (re-)enables following.
         followingTtsRef.current = true;
       }
+      if (!active) {
+        // Full stop: forget word-boundary state and clear the word highlight so a
+        // later engine (which may lack word boundaries) starts clean.
+        hasWordPositionsRef.current = false;
+        eventDispatcher.dispatch('paragraph-tts-highlight', {
+          bookKey: bookKeyRef.current,
+          clear: true,
+        });
+      }
       refreshTtsSyncStatus();
     };
 
     const handlePosition = (event: CustomEvent) => {
       const detail = event.detail as
-        | { bookKey?: string; cfi?: string; sectionIndex?: number; sequence?: number }
+        | {
+            bookKey?: string;
+            cfi?: string;
+            sectionIndex?: number;
+            sequence?: number;
+            kind?: 'word' | 'sentence';
+          }
         | undefined;
       if (detail?.bookKey !== bookKeyRef.current) return;
       if (!followingTtsRef.current) return;
@@ -765,8 +817,16 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       if (sequence <= lastSequenceSeenRef.current) return;
       lastSequenceSeenRef.current = sequence;
 
+      // Word vs sentence highlight granularity (Edge emits both; words win once
+      // seen). Paragraph selection still runs for 'skip' so following keeps up.
+      const action = decideParagraphTtsHighlight({
+        kind: detail.kind,
+        hasWordPositions: hasWordPositionsRef.current,
+      });
+      if (detail.kind === 'word') hasWordPositionsRef.current = true;
+
       if (detail.sectionIndex === currentDocIndexRef.current) {
-        applySyncCfi(detail.cfi);
+        applySyncCfi(detail.cfi, action !== 'skip');
         return;
       }
 
@@ -777,6 +837,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         cfi: detail.cfi,
         sequence,
         sectionIndex: detail.sectionIndex,
+        kind: detail.kind,
       };
       iteratorRef.current = null;
       refreshTtsSyncStatus();
