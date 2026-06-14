@@ -175,6 +175,28 @@ interface OverlayerLike {
 }
 
 /**
+ * Per-section memo of which global notes have already been fanned out.
+ *
+ * Issue #4575: the `progress` effect re-expands every global annotation across
+ * every rendered section on EVERY page turn. The overlays already exist after
+ * the first pass, so re-walking the DOM and re-computing `view.getCFI()` for
+ * each occurrence is pure wasted work — and on books where highlighted words
+ * (e.g. recurring character names) appear hundreds of times per chapter it was
+ * the dominant per-page-turn cost (tens of ms of synchronous main-thread work
+ * each turn, multiplied on slower mobile hardware).
+ *
+ * Keying on the live section `Document` makes invalidation automatic: a section
+ * that is unloaded and later re-rendered gets a fresh `Document`, so its
+ * overlays are rebuilt; the stale entry is collected with the old document. The
+ * signature embeds `updatedAt` (bumped on every edit/recolor/global toggle) so
+ * an edited note re-expands once the caller has torn down its old overlays.
+ */
+const expandedByDoc = new WeakMap<Document, Map<string, string>>();
+
+const annotationSignature = (note: BookNote): string =>
+  `${note.updatedAt ?? 0}:${note.style ?? ''}:${note.color ?? ''}:${note.text ?? ''}`;
+
+/**
  * For a single `note` with `global=true`, fan out one overlay per
  * occurrence of `note.text` in the given section.
  *
@@ -211,6 +233,12 @@ export function expandGlobalAnnotation(
   const live = getLiveSection(view, index);
   if (!live) return [];
   const { overlayer } = live;
+
+  // Skip the (expensive) re-fan-out when this exact note has already been
+  // expanded into this section's current document — see `expandedByDoc`.
+  const signature = annotationSignature(note);
+  let docMemo = expandedByDoc.get(doc);
+  if (docMemo?.get(note.id) === signature) return [];
 
   const added: string[] = [];
   const seen = new Set<string>();
@@ -253,6 +281,17 @@ export function expandGlobalAnnotation(
       console.warn('Failed to add global annotation overlay', { note: note.id, err });
     }
   }
+
+  // Record that this note (at its current content signature) is now expanded
+  // into this section's document, so later page turns short-circuit above.
+  // Recorded even when there were zero matches — a note that doesn't appear in
+  // this section must not be re-walked every turn either.
+  if (!docMemo) {
+    docMemo = new Map<string, string>();
+    expandedByDoc.set(doc, docMemo);
+  }
+  docMemo.set(note.id, signature);
+
   return added;
 }
 
@@ -309,11 +348,15 @@ export function removeGlobalAnnotationOverlays(
   if (!view) return;
   const sections = (view.renderer?.getContents?.() ?? []) as Array<{
     index?: number;
+    doc?: Document;
     overlayer?: OverlayerLike;
   }>;
   for (const section of sections) {
-    const { index, overlayer } = section;
+    const { index, doc, overlayer } = section;
     if (typeof index !== 'number' || !overlayer) continue;
+    // Drop the expansion memo so a later re-add re-fans-out even if the note's
+    // content signature is unchanged (e.g. toggle global off then on again).
+    if (doc) expandedByDoc.get(doc)?.delete(note.id);
     for (let i = 0; i < maxOccurrencesPerSection; i += 1) {
       const value = makeSyntheticValue(note, index, i);
       try {
