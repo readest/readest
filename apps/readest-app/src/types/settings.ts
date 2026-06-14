@@ -281,6 +281,7 @@ export interface SystemSettings {
   alwaysOnTop: boolean;
   openBookInNewWindow: boolean;
   autoCheckUpdates: boolean;
+  updateChannel: 'stable' | 'nightly';
   screenWakeLock: boolean;
   screenBrightness: number;
   autoScreenBrightness: boolean;

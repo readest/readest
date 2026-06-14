@@ -107,6 +107,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   alwaysShowStatusBar: false,
   alwaysInForeground: false,
   autoCheckUpdates: true,
+  updateChannel: 'stable',
   screenWakeLock: false,
   screenBrightness: -1, // -1~100, -1 for system default
   autoScreenBrightness: true,
@@ -796,6 +797,14 @@ const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
 
 export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`;
+
+export const READEST_NIGHTLY_UPDATER_FILE = 'https://download.readest.com/nightly/latest.json';
+
+// Public (verification) key, identical to src-tauri/tauri.conf.json `updater.pubkey`.
+// Used to verify nightly artifacts in the custom install flows (portable /
+// AppImage / Android). Safe to embed — it is a public key.
+export const READEST_UPDATER_PUBKEY =
+  'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFMEQ1QjE2OEU1NEIzNTEKUldSUnMxU09GbHNOdmpEaWFMT1crRFpEV2VORzQ2MklxaFc0M1R0ci9xY2c1bENXS0xhM1R1L2sK';
 
 export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://storage.readest.com';
 
