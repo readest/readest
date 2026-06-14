@@ -41,6 +41,15 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     paragraphCfi: string;
     docIndex: number;
   } | null>(null);
+  // TTS-sync (one-way follower): TTS is the clock, paragraph mode follows it.
+  const followingTtsRef = useRef(false);
+  const lastSequenceSeenRef = useRef(-Infinity);
+  const pendingSyncRef = useRef<{ cfi: string; sequence: number; sectionIndex: number } | null>(
+    null,
+  );
+  // Holds the latest applySyncCfi so initIterator can apply a pending cross-
+  // section sync after re-init without a circular useCallback dependency.
+  const applySyncCfiRef = useRef<((cfi: string) => void) | null>(null);
   bookKeyRef.current = bookKey;
 
   const [paragraphState, setParagraphState] = useState<ParagraphState>({
@@ -182,6 +191,19 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         }
 
         updateStateFromIterator(false);
+
+        // Apply a pending cross-section TTS sync once the iterator targets the
+        // CFI's section and that sync is still the latest sequence seen.
+        const pending = pendingSyncRef.current;
+        if (
+          pending &&
+          followingTtsRef.current &&
+          pending.sectionIndex === currentDocIndexRef.current &&
+          pending.sequence >= lastSequenceSeenRef.current
+        ) {
+          pendingSyncRef.current = null;
+          applySyncCfiRef.current?.(pending.cfi);
+        }
         return true;
       } finally {
         isProcessingRef.current = false;
@@ -236,6 +258,89 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     });
   }, [getViewSettings, viewRef]);
 
+  // Sync-focus path for TTS following. Moves focus to `index` and scrolls/emits
+  // exactly like focusCurrentParagraph but WITHOUT arming isFocusingRef. The
+  // 200ms isFocusingRef window makes the relocate handler skip re-init; if a
+  // TTS-driven focus armed it, the subsequent TTS section-change relocate would
+  // be eaten and the iterator would never re-init for the new section (it would
+  // then focus paragraph 0 of the wrong section). Re-entrancy from this
+  // programmatic scroll's own relocate is instead prevented by the
+  // lastSequenceSeen / section-match guards on the tts-position handler.
+  const focusParagraphForSync = useCallback(
+    async (index: number) => {
+      const view = viewRef.current;
+      const iterator = iteratorRef.current;
+      if (!view || !iterator) return;
+
+      const range = iterator.goTo(index);
+      if (!range) return;
+      updateStateFromIterator();
+
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const presentation = getParagraphPresentation(
+        range.startContainer.ownerDocument,
+        range,
+        getViewSettings(bookKeyRef.current),
+      );
+
+      const docIndex = currentDocIndexRef.current;
+      const renderer = view.renderer as FoliateView['renderer'] & {
+        goTo?: (target: { index: number; anchor: Range }) => Promise<void>;
+      };
+      if (docIndex !== undefined && renderer.goTo) {
+        renderer.goTo({ index: docIndex, anchor: range });
+      } else {
+        view.renderer.scrollToAnchor?.(range);
+      }
+
+      eventDispatcher.dispatch('paragraph-focus', {
+        bookKey: bookKeyRef.current,
+        range,
+        index: iterator.currentIndex,
+        total: iterator.length,
+        presentation,
+      });
+    },
+    [getViewSettings, viewRef, updateStateFromIterator],
+  );
+
+  // Resolve a TTS cfi to the matching paragraph index in the current section and
+  // sync-focus it. No-op when the cfi can't be resolved or maps nowhere (-1).
+  const applySyncCfi = useCallback(
+    (cfi: string) => {
+      const view = viewRef.current;
+      const iterator = iteratorRef.current;
+      const docIndex = currentDocIndexRef.current;
+      if (!view || !iterator || docIndex === undefined) return;
+
+      let range: Range | null = null;
+      try {
+        const resolved = view.resolveCFI(cfi);
+        if (!resolved || resolved.index !== docIndex) return;
+        const content = getPrimaryContent();
+        const doc = content?.doc;
+        if (!doc) return;
+        const anchor = resolved.anchor(doc);
+        if (anchor instanceof Range) {
+          range = anchor;
+        } else if (anchor) {
+          range = doc.createRange();
+          range.selectNodeContents(anchor);
+        }
+      } catch {
+        return;
+      }
+      if (!range) return;
+
+      const index = iterator.findIndexByRange(range, iterator.currentIndex);
+      if (index < 0 || index === iterator.currentIndex) return;
+      focusParagraphForSync(index);
+    },
+    [viewRef, getPrimaryContent, focusParagraphForSync],
+  );
+  applySyncCfiRef.current = applySyncCfi;
+
   const waitForNewSection = useCallback(
     async (oldIndex: number | undefined, maxAttempts: number = 15): Promise<boolean> => {
       const view = viewRef.current;
@@ -261,6 +366,10 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     const iterator = iteratorRef.current;
     const view = viewRef.current;
     if (!iterator || !view) return false;
+
+    // Manual nav decouples from TTS following until the user re-engages.
+    followingTtsRef.current = false;
+    pendingSyncRef.current = null;
 
     const range = iterator.next();
     if (range) {
@@ -308,6 +417,10 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     const iterator = iteratorRef.current;
     const view = viewRef.current;
     if (!iterator || !view) return false;
+
+    // Manual nav decouples from TTS following until the user re-engages.
+    followingTtsRef.current = false;
+    pendingSyncRef.current = null;
 
     const range = iterator.prev();
     if (range) {
@@ -508,6 +621,59 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       eventDispatcher.off('paragraph-prev', handlePrev);
     };
   }, [toggleParagraphMode, goToNextParagraph, goToPrevParagraph, paragraphConfig.enabled]);
+
+  // TTS sync (one-way follower): while paragraph mode is active, follow the
+  // spoken position. TTS is the clock; this never drives TTS back.
+  useEffect(() => {
+    if (!paragraphConfig.enabled) return;
+
+    const handlePlaybackState = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey?: string; state?: string } | undefined;
+      if (detail?.bookKey !== bookKeyRef.current) return;
+      if (detail.state === 'playing') {
+        // Fresh engage (re-)enables following.
+        followingTtsRef.current = true;
+      }
+    };
+
+    const handlePosition = (event: CustomEvent) => {
+      const detail = event.detail as
+        | { bookKey?: string; cfi?: string; sectionIndex?: number; sequence?: number }
+        | undefined;
+      if (detail?.bookKey !== bookKeyRef.current) return;
+      if (!followingTtsRef.current) return;
+      if (typeof detail.cfi !== 'string' || typeof detail.sectionIndex !== 'number') return;
+
+      // Drop out-of-order / stale events (dispatch awaits listeners serially and
+      // callers fire-and-forget, so a slow map can land after a newer one).
+      const sequence = detail.sequence ?? -Infinity;
+      if (sequence <= lastSequenceSeenRef.current) return;
+      lastSequenceSeenRef.current = sequence;
+
+      if (detail.sectionIndex === currentDocIndexRef.current) {
+        applySyncCfi(detail.cfi);
+        return;
+      }
+
+      // Different section: don't map. Stash the latest sync and invalidate the
+      // current section so the existing relocate handler re-inits the iterator
+      // for the new section; the pending sync is applied once re-init completes.
+      pendingSyncRef.current = {
+        cfi: detail.cfi,
+        sequence,
+        sectionIndex: detail.sectionIndex,
+      };
+      iteratorRef.current = null;
+    };
+
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    eventDispatcher.on('tts-position', handlePosition);
+
+    return () => {
+      eventDispatcher.off('tts-playback-state', handlePlaybackState);
+      eventDispatcher.off('tts-position', handlePosition);
+    };
+  }, [paragraphConfig.enabled, applySyncCfi]);
 
   useEffect(() => {
     return () => {
