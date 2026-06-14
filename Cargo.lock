@@ -12,6 +12,7 @@ checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 name = "Readest"
 version = "0.2.2"
 dependencies = [
+ "base64 0.22.1",
  "block",
  "cocoa",
  "discord-rich-presence",
@@ -21,6 +22,7 @@ dependencies = [
  "libc",
  "log",
  "md-5",
+ "minisign-verify",
  "mobi",
  "objc",
  "objc-foundation",

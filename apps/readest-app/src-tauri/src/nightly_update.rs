@@ -33,6 +33,42 @@ pub fn is_update_newer(candidate: &str, current: &str) -> bool {
     }
 }
 
+/// Base64-decode `s` and interpret the bytes as UTF-8, mirroring Tauri's
+/// `base64_to_string` (`tauri-plugin-updater-2.10.1/src/updater.rs:1465`).
+fn base64_to_string(s: &str) -> Option<String> {
+    use base64::Engine;
+    let decoded = base64::engine::general_purpose::STANDARD.decode(s).ok()?;
+    String::from_utf8(decoded).ok()
+}
+
+/// Verify a downloaded artifact against a minisign signature using the embedded
+/// updater public key. `pub_key` is the base64 blob from `tauri.conf.json`
+/// `updater.pubkey` and `signature` is the base64 contents of the artifact's
+/// `.sig` file — the same two inputs Tauri's own updater consumes. This mirrors
+/// `verify_signature` (`tauri-plugin-updater-2.10.1/src/updater.rs:1453`) so a
+/// nightly artifact accepted here is also accepted by Tauri's installer.
+#[tauri::command]
+pub async fn verify_update_signature(path: String, signature: String, pub_key: String) -> bool {
+    use minisign_verify::{PublicKey, Signature};
+
+    let Some(pub_key_decoded) = base64_to_string(&pub_key) else {
+        return false;
+    };
+    let Ok(public_key) = PublicKey::decode(&pub_key_decoded) else {
+        return false;
+    };
+    let Some(signature_decoded) = base64_to_string(&signature) else {
+        return false;
+    };
+    let Ok(sig) = Signature::decode(&signature_decoded) else {
+        return false;
+    };
+    let Ok(data) = std::fs::read(&path) else {
+        return false;
+    };
+    public_key.verify(&data, &sig, true).is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::is_update_newer;
@@ -53,7 +89,11 @@ mod tests {
             ("0.11.4", "", false),
         ];
         for (cand, cur, want) in cases {
-            assert_eq!(is_update_newer(cand, cur), *want, "is_update_newer({cand}, {cur})");
+            assert_eq!(
+                is_update_newer(cand, cur),
+                *want,
+                "is_update_newer({cand}, {cur})"
+            );
         }
     }
 }
