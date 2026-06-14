@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -29,6 +29,12 @@ interface RSVPControlProps {
   gridInsets: Insets;
 }
 
+// Imperative handle so the later TTS-sync indicator slice (and tests) can read
+// the derived sync status without RSVPControl having a sibling to surface it to.
+export interface RSVPControlHandle {
+  ttsSyncStatus: TtsSyncStatus;
+}
+
 // ─── TTS-sync decision logic (slice 5, #3235) ──────────────────────────
 // RSVP follows the spoken position while TTS plays (TTS is the clock). The
 // pure decision below maps an incoming tts-position event to the action the
@@ -42,6 +48,14 @@ export interface RsvpTtsPositionDetail {
   sectionIndex?: number;
   sequence?: number;
 }
+
+// Derived sync state surfaced to RSVPOverlay for the later indicator slice.
+//   idle        — RSVP not following TTS (not playing / not engaged)
+//   following   — engaged and mapping the spoken position
+//   syncing     — a cross-section re-extract is pending
+//   decoupled   — a manual RSVP nav dropped following while TTS still plays
+//   unsupported — fixed-layout book; TTS sync can never engage (D7)
+export type TtsSyncStatus = 'idle' | 'following' | 'syncing' | 'decoupled' | 'unsupported';
 
 export interface RsvpTtsPendingSync {
   cfi: string;
@@ -65,22 +79,33 @@ export interface RsvpTtsPositionDecision {
   // sync           → Edge word-level: controller.syncToCfi(cfi)
   // drive-estimator→ non-Edge sentence: controller.driveEstimatedFromCfi(cfi)
   // reextract      → different section: trigger re-extract, apply stash after
-  // ignore         → drop (wrong book / stale seq / decoupled / malformed)
+  // ignore         → drop (wrong book / stale seq / decoupled / malformed /
+  //                  fixed-layout where sync is unsupported, decision D7)
   action: 'sync' | 'drive-estimator' | 'reextract' | 'ignore';
   cfi?: string;
   nextState: RsvpTtsSyncState;
+}
+
+export interface RsvpTtsDecisionOptions {
+  // Fixed-layout books can't host the synthetic word stream RSVP sync drives,
+  // so TTS sync is unsupported (decision D7). When set, every position is
+  // dropped without mapping or advancing state.
+  unsupported?: boolean;
 }
 
 export const decideRsvpTtsPosition = (
   state: RsvpTtsSyncState,
   detail: RsvpTtsPositionDetail,
   bookKey: string,
+  options: RsvpTtsDecisionOptions = {},
 ): RsvpTtsPositionDecision => {
   const ignore = (next: RsvpTtsSyncState = state): RsvpTtsPositionDecision => ({
     action: 'ignore',
     nextState: next,
   });
 
+  // D7: never engage on fixed-layout. Checked first so state is left untouched.
+  if (options.unsupported) return ignore();
   if (detail.bookKey !== bookKey) return ignore();
   if (!state.following) return ignore();
   if (typeof detail.cfi !== 'string' || typeof detail.sectionIndex !== 'number') return ignore();
@@ -192,7 +217,10 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
   return range;
 };
 
-const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
+const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSVPControl(
+  { bookKey, gridInsets },
+  ref,
+) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const settings = useSettingsStore((s) => s.settings);
@@ -211,6 +239,10 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const [isActive, setIsActive] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
+  // Derived TTS-sync status for the overlay indicator (slice 8b, #3235).
+  const [ttsSyncStatus, setTtsSyncStatus] = useState<TtsSyncStatus>('idle');
+
+  useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
   const tempHighlightRef = useRef<BookNote | null>(null);
   // renderer.primaryIndex reverts after navigation (paginator #detectPrimaryView),
@@ -349,35 +381,70 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   // TTS-sync follower (slice 5, #3235). While an RSVP session is active, follow
   // the spoken position; TTS is the clock. Filtered to this bookKey, decoupled
   // by manual nav, re-engaged on the next 'playing'.
+  // Fixed-layout books can't host the synthetic word stream sync drives, so
+  // sync is unsupported there (decision D7): playing never engages and
+  // positions are dropped. The derived ttsSyncStatus feeds the overlay
+  // indicator (slice 8b).
   useEffect(() => {
     if (!isActive) return;
     const controller = controllerRef.current;
     if (!controller) return;
+
+    const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
+    let isPlaying = false;
+
+    const refreshSyncStatus = () => {
+      if (isFixedLayout) {
+        setTtsSyncStatus('unsupported');
+        return;
+      }
+      const sync = syncStateRef.current;
+      if (!isPlaying) {
+        setTtsSyncStatus('idle');
+      } else if (!sync.following) {
+        // Manual nav decoupled following while TTS still plays.
+        setTtsSyncStatus('decoupled');
+      } else if (sync.pendingSync) {
+        // Cross-section re-extract in flight.
+        setTtsSyncStatus('syncing');
+      } else {
+        setTtsSyncStatus('following');
+      }
+    };
+    refreshSyncStatus();
 
     const handlePlaybackState = (event: CustomEvent) => {
       const detail = event.detail as { bookKey?: string; state?: string } | undefined;
       if (detail?.bookKey !== bookKey) return;
       const sync = syncStateRef.current;
       if (detail.state === 'playing') {
-        // (Re-)engage following from the current section.
-        sync.following = true;
-        sync.currentSectionIndex =
-          rsvpSectionRef.current >= 0
-            ? rsvpSectionRef.current
-            : (getView(bookKey)?.renderer.primaryIndex ?? -1);
-        controller.setExternallyDriven(true);
+        isPlaying = true;
+        // D7: never engage following on fixed-layout.
+        if (!isFixedLayout) {
+          // (Re-)engage following from the current section.
+          sync.following = true;
+          sync.currentSectionIndex =
+            rsvpSectionRef.current >= 0
+              ? rsvpSectionRef.current
+              : (getView(bookKey)?.renderer.primaryIndex ?? -1);
+          controller.setExternallyDriven(true);
+        }
       } else if (detail.state === 'paused' || detail.state === 'stopped') {
+        isPlaying = false;
         sync.following = false;
         sync.pendingSync = undefined;
         controller.stopEstimator();
         controller.setExternallyDriven(false);
       }
+      refreshSyncStatus();
     };
 
     const handlePosition = (event: CustomEvent) => {
       const detail = event.detail as RsvpTtsPositionDetail | undefined;
       if (!detail) return;
-      const decision = decideRsvpTtsPosition(syncStateRef.current, detail, bookKey);
+      const decision = decideRsvpTtsPosition(syncStateRef.current, detail, bookKey, {
+        unsupported: isFixedLayout,
+      });
       syncStateRef.current = decision.nextState;
 
       switch (decision.action) {
@@ -398,9 +465,13 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
         default:
           break;
       }
+      refreshSyncStatus();
     };
 
-    const handleManualNav = () => decoupleFromTts();
+    const handleManualNav = () => {
+      decoupleFromTts();
+      refreshSyncStatus();
+    };
 
     eventDispatcher.on('tts-playback-state', handlePlaybackState);
     eventDispatcher.on('tts-position', handlePosition);
@@ -415,8 +486,17 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       syncStateRef.current.pendingSync = undefined;
       controller.stopEstimator();
       controller.setExternallyDriven(false);
+      setTtsSyncStatus('idle');
     };
-  }, [isActive, bookKey, getView, getViewSettings, decoupleFromTts, reextractForTtsSection]);
+  }, [
+    isActive,
+    bookKey,
+    getBookData,
+    getView,
+    getViewSettings,
+    decoupleFromTts,
+    reextractForTtsSection,
+  ]);
 
   const handleStart = useCallback(
     (selectionText?: string) => {
@@ -819,6 +899,6 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
         )}
     </>
   );
-};
+});
 
 export default RSVPControl;

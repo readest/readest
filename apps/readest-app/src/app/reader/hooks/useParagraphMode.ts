@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
@@ -13,6 +14,14 @@ interface UseParagraphModeProps {
   viewRef: React.RefObject<FoliateView | null>;
 }
 
+// Derived state for the TTS-sync indicator (later slice renders it).
+//  - 'unsupported': fixed-layout book; sync can never engage.
+//  - 'idle':        TTS not playing / not engaged.
+//  - 'following':   actively following the spoken position.
+//  - 'syncing':     a cross-section position is pending a re-init.
+//  - 'decoupled':   was following, user took manual control (TTS still playing).
+export type TtsSyncStatus = 'unsupported' | 'idle' | 'following' | 'syncing' | 'decoupled';
+
 export interface ParagraphState {
   isActive: boolean;
   isLoading: boolean;
@@ -24,6 +33,11 @@ export interface ParagraphState {
 export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) => {
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings, getProgress } = useReaderStore();
+  const { getBookData } = useBookDataStore();
+
+  // Fixed-layout gate (D7): paragraph mode must never engage TTS sync for a
+  // fixed-layout book. Mirrors how other reader code reads the flag.
+  const isFixedLayout = getBookData(bookKey)?.isFixedLayout ?? false;
 
   const iteratorRef = useRef<ParagraphIterator | null>(null);
   const currentDocIndexRef = useRef<number | undefined>(undefined);
@@ -50,6 +64,10 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   // Holds the latest applySyncCfi so initIterator can apply a pending cross-
   // section sync after re-init without a circular useCallback dependency.
   const applySyncCfiRef = useRef<((cfi: string) => void) | null>(null);
+  // Latest TTS playback-state for this book ('playing' vs not), used to derive
+  // the sync status alongside the follow/pending refs.
+  const ttsPlayingRef = useRef(false);
+  const refreshTtsSyncStatusRef = useRef<(() => void) | null>(null);
   bookKeyRef.current = bookKey;
 
   const [paragraphState, setParagraphState] = useState<ParagraphState>({
@@ -59,6 +77,26 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     totalParagraphs: 0,
     currentRange: null,
   });
+
+  const [ttsSyncStatus, setTtsSyncStatus] = useState<TtsSyncStatus>(
+    isFixedLayout ? 'unsupported' : 'idle',
+  );
+
+  // Derive the indicator status from the current refs + the latest playback
+  // state and push it to React state so the indicator re-renders. Fixed-layout
+  // always wins.
+  const refreshTtsSyncStatus = useCallback(() => {
+    setTtsSyncStatus(() => {
+      if (isFixedLayout) return 'unsupported';
+      if (!ttsPlayingRef.current) return 'idle';
+      if (!followingTtsRef.current) return 'decoupled';
+      if (pendingSyncRef.current) return 'syncing';
+      return 'following';
+    });
+  }, [isFixedLayout]);
+  // Lets initIterator refresh the status after clearing a pending sync without
+  // pulling refreshTtsSyncStatus into its (widely-depended-on) deps array.
+  refreshTtsSyncStatusRef.current = refreshTtsSyncStatus;
 
   const paragraphConfig = getViewSettings(bookKey)?.paragraphMode ?? DEFAULT_PARAGRAPH_MODE_CONFIG;
 
@@ -203,6 +241,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         ) {
           pendingSyncRef.current = null;
           applySyncCfiRef.current?.(pending.cfi);
+          refreshTtsSyncStatusRef.current?.();
         }
         return true;
       } finally {
@@ -370,6 +409,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     // Manual nav decouples from TTS following until the user re-engages.
     followingTtsRef.current = false;
     pendingSyncRef.current = null;
+    refreshTtsSyncStatus();
 
     const range = iterator.next();
     if (range) {
@@ -411,7 +451,14 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       focusCurrentParagraph();
       return false;
     }
-  }, [viewRef, updateStateFromIterator, focusCurrentParagraph, initIterator, waitForNewSection]);
+  }, [
+    viewRef,
+    updateStateFromIterator,
+    focusCurrentParagraph,
+    initIterator,
+    waitForNewSection,
+    refreshTtsSyncStatus,
+  ]);
 
   const goToPrevParagraph = useCallback(async () => {
     const iterator = iteratorRef.current;
@@ -421,6 +468,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     // Manual nav decouples from TTS following until the user re-engages.
     followingTtsRef.current = false;
     pendingSyncRef.current = null;
+    refreshTtsSyncStatus();
 
     const range = iterator.prev();
     if (range) {
@@ -462,7 +510,14 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       focusCurrentParagraph();
       return false;
     }
-  }, [viewRef, updateStateFromIterator, focusCurrentParagraph, initIterator, waitForNewSection]);
+  }, [
+    viewRef,
+    updateStateFromIterator,
+    focusCurrentParagraph,
+    initIterator,
+    waitForNewSection,
+    refreshTtsSyncStatus,
+  ]);
 
   const goToParagraph = useCallback(
     (index: number) => {
@@ -623,17 +678,22 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   }, [toggleParagraphMode, goToNextParagraph, goToPrevParagraph, paragraphConfig.enabled]);
 
   // TTS sync (one-way follower): while paragraph mode is active, follow the
-  // spoken position. TTS is the clock; this never drives TTS back.
+  // spoken position. TTS is the clock; this never drives TTS back. Fixed-layout
+  // books never engage (D7); the indicator stays 'unsupported'.
   useEffect(() => {
     if (!paragraphConfig.enabled) return;
+    if (isFixedLayout) return;
 
     const handlePlaybackState = (event: CustomEvent) => {
       const detail = event.detail as { bookKey?: string; state?: string } | undefined;
       if (detail?.bookKey !== bookKeyRef.current) return;
-      if (detail.state === 'playing') {
+      const playing = detail.state === 'playing';
+      ttsPlayingRef.current = playing;
+      if (playing) {
         // Fresh engage (re-)enables following.
         followingTtsRef.current = true;
       }
+      refreshTtsSyncStatus();
     };
 
     const handlePosition = (event: CustomEvent) => {
@@ -664,6 +724,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         sectionIndex: detail.sectionIndex,
       };
       iteratorRef.current = null;
+      refreshTtsSyncStatus();
     };
 
     eventDispatcher.on('tts-playback-state', handlePlaybackState);
@@ -673,7 +734,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       eventDispatcher.off('tts-playback-state', handlePlaybackState);
       eventDispatcher.off('tts-position', handlePosition);
     };
-  }, [paragraphConfig.enabled, applySyncCfi]);
+  }, [paragraphConfig.enabled, isFixedLayout, applySyncCfi, refreshTtsSyncStatus]);
 
   useEffect(() => {
     return () => {
@@ -690,6 +751,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
   return {
     paragraphState,
+    ttsSyncStatus,
     paragraphConfig,
     toggleParagraphMode,
     goToNextParagraph,

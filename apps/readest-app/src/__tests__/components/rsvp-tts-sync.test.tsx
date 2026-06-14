@@ -1,9 +1,10 @@
 'use client';
 
+import { createRef } from 'react';
 import { render, act, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import RSVPControl from '@/app/reader/components/rsvp/RSVPControl';
+import RSVPControl, { type RSVPControlHandle } from '@/app/reader/components/rsvp/RSVPControl';
 import { eventDispatcher } from '@/utils/event';
 
 // Mounts the real RSVPControl with a mocked RSVPController + stores and asserts
@@ -13,6 +14,7 @@ import { eventDispatcher } from '@/utils/event';
 const BOOK_KEY = 'hash123-session456';
 
 let primaryIndex = 2;
+let isFixedLayout = false;
 const controllerEventListeners = new Map<string, EventListener[]>();
 let controllerMock: ReturnType<typeof makeControllerMock>;
 
@@ -78,7 +80,7 @@ vi.mock('@/store/readerStore', () => {
 
 vi.mock('@/store/bookDataStore', () => {
   const state = {
-    getBookData: () => ({ book: { format: 'EPUB' }, bookDoc: { toc: [] } }),
+    getBookData: () => ({ book: { format: 'EPUB' }, bookDoc: { toc: [] }, isFixedLayout }),
     getConfig: () => null,
     setConfig: vi.fn(),
     saveConfig: vi.fn(),
@@ -146,6 +148,7 @@ async function startSession() {
 describe('RSVPControl — TTS sync wiring (slice 5, #3235)', () => {
   beforeEach(() => {
     primaryIndex = 2;
+    isFixedLayout = false;
     controllerEventListeners.clear();
     controllerMock = makeControllerMock();
   });
@@ -272,5 +275,110 @@ describe('RSVPControl — TTS sync wiring (slice 5, #3235)', () => {
       await eventDispatcher.dispatch('tts-position', wordPos({ sequence: 200 }));
     });
     expect(controllerMock.syncToCfi).not.toHaveBeenCalled();
+  });
+
+  // ─── Fixed-layout gate + ttsSyncStatus (slice 8b, #3235) ───────────────
+  describe('fixed-layout gate (D7)', () => {
+    test('playing does NOT engage and positions do NOT drive the controller', async () => {
+      isFixedLayout = true;
+      render(
+        <RSVPControl bookKey={BOOK_KEY} gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }} />,
+      );
+      await startSession();
+
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'playing',
+        });
+      });
+      // Never engage external driving for fixed-layout.
+      expect(controllerMock.setExternallyDriven).not.toHaveBeenCalledWith(true);
+
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-position', wordPos({ sequence: 1 }));
+        await eventDispatcher.dispatch('tts-position', wordPos({ kind: 'sentence', sequence: 2 }));
+      });
+      expect(controllerMock.syncToCfi).not.toHaveBeenCalled();
+      expect(controllerMock.driveEstimatedFromCfi).not.toHaveBeenCalled();
+    });
+
+    test('exposes ttsSyncStatus="unsupported" via the imperative handle', async () => {
+      isFixedLayout = true;
+      const handle = createRef<RSVPControlHandle>();
+      render(
+        <RSVPControl
+          ref={handle}
+          bookKey={BOOK_KEY}
+          gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        />,
+      );
+      await startSession();
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'playing',
+        });
+      });
+      expect(handle.current?.ttsSyncStatus).toBe('unsupported');
+    });
+  });
+
+  describe('ttsSyncStatus transitions (reflowable)', () => {
+    test('idle → following on playing → idle on stopped', async () => {
+      const handle = createRef<RSVPControlHandle>();
+      render(
+        <RSVPControl
+          ref={handle}
+          bookKey={BOOK_KEY}
+          gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        />,
+      );
+      await startSession();
+      // Not playing yet.
+      expect(handle.current?.ttsSyncStatus).toBe('idle');
+
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'playing',
+        });
+      });
+      expect(handle.current?.ttsSyncStatus).toBe('following');
+
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'stopped',
+        });
+      });
+      expect(handle.current?.ttsSyncStatus).toBe('idle');
+    });
+
+    test('decoupled on a manual nav while playing', async () => {
+      const handle = createRef<RSVPControlHandle>();
+      render(
+        <RSVPControl
+          ref={handle}
+          bookKey={BOOK_KEY}
+          gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        />,
+      );
+      await startSession();
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-playback-state', {
+          bookKey: BOOK_KEY,
+          state: 'playing',
+        });
+      });
+      expect(handle.current?.ttsSyncStatus).toBe('following');
+
+      await act(async () => {
+        (controllerEventListeners.get('rsvp-manual-nav') ?? []).forEach((h) =>
+          h(new CustomEvent('rsvp-manual-nav')),
+        );
+      });
+      expect(handle.current?.ttsSyncStatus).toBe('decoupled');
+    });
   });
 });

@@ -95,4 +95,54 @@ describe('decideRsvpTtsPosition (slice 5, #3235)', () => {
       'ignore',
     );
   });
+
+  // ─── Fixed-layout gate (decision D7, slice 8b, #3235) ──────────────────
+  describe('fixed-layout / unsupported gate (D7)', () => {
+    test('word + fixed-layout → never sync; ignore (no state change)', () => {
+      const state = freshState();
+      const result = decideRsvpTtsPosition(state, detail({ kind: 'word', sequence: 5 }), BOOK_KEY, {
+        unsupported: true,
+      });
+      expect(result.action).toBe('ignore');
+      expect(result.cfi).toBeUndefined();
+      // The gate is checked first; it must not advance the sequence.
+      expect(result.nextState).toBe(state);
+    });
+
+    test('sentence + fixed-layout → never drive-estimator; ignore', () => {
+      const state = freshState();
+      const result = decideRsvpTtsPosition(
+        state,
+        detail({ kind: 'sentence', sequence: 3 }),
+        BOOK_KEY,
+        { unsupported: true },
+      );
+      expect(result.action).toBe('ignore');
+      expect(result.nextState).toBe(state);
+    });
+
+    test('different section + fixed-layout → ignore (no reextract / no stash)', () => {
+      const state = freshState({ currentSectionIndex: 2 });
+      const result = decideRsvpTtsPosition(
+        state,
+        detail({ sectionIndex: 5, sequence: 9 }),
+        BOOK_KEY,
+        { unsupported: true },
+      );
+      expect(result.action).toBe('ignore');
+      expect(result.nextState).toBe(state);
+      expect(result.nextState.pendingSync).toBeUndefined();
+    });
+
+    test('unsupported=false behaves exactly like the default (word → sync)', () => {
+      const result = decideRsvpTtsPosition(
+        freshState(),
+        detail({ kind: 'word', sequence: 5 }),
+        BOOK_KEY,
+        { unsupported: false },
+      );
+      expect(result.action).toBe('sync');
+      expect(result.nextState.lastSequenceSeen).toBe(5);
+    });
+  });
 });

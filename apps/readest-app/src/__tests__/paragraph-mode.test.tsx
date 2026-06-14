@@ -23,6 +23,14 @@ const mockGetViewSettings = vi.fn(() => currentViewSettings);
 const mockSetViewSettings = vi.fn();
 const mockGetProgress = vi.fn(() => null);
 
+let mockIsFixedLayout = false;
+
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: () => ({
+    getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
+  }),
+}));
+
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { hasSafeAreaInset: false } }),
 }));
@@ -102,6 +110,7 @@ describe('paragraph mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hookApi = null;
+    mockIsFixedLayout = false;
     currentViewSettings.writingMode = 'horizontal-tb';
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
@@ -378,6 +387,7 @@ describe('paragraph mode TTS sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hookApi = null;
+    mockIsFixedLayout = false;
     currentViewSettings.writingMode = 'horizontal-tb';
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
@@ -676,5 +686,118 @@ describe('paragraph mode TTS sync', () => {
       expect(hookApi?.paragraphState.currentRange?.toString()).toContain('S1 second');
     });
     expect(hookApi?.paragraphState.currentIndex).toBe(1);
+  });
+
+  it('does not follow TTS and reports unsupported for a fixed-layout book', async () => {
+    mockIsFixedLayout = true;
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, { 'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+    expect(hookApi?.ttsSyncStatus).toBe('unsupported');
+
+    await dispatchPlaying('book-1');
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 1,
+    });
+
+    // Fixed-layout never follows: focus stays on the first paragraph.
+    expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block zero');
+    expect(hookApi?.ttsSyncStatus).toBe('unsupported');
+  });
+
+  it('derives ttsSyncStatus through the follow lifecycle (reflowable)', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc, createMultiParagraphDoc()], 0);
+    stubResolveCFI(view, {
+      'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 },
+      'cfi-s1-block-1': { sectionIndex: 1, paragraphIndex: 1 },
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    // Initial: idle (TTS not engaged).
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
+
+    // Playing -> following.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+
+    // Manual nav -> decoupled (TTS still playing).
+    await act(async () => {
+      await hookApi?.goToNextParagraph();
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('decoupled');
+    });
+
+    // Re-engage, then a cross-section position (before re-init) -> syncing.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-s1-block-1',
+      kind: 'sentence',
+      sectionIndex: 1,
+      sequence: 40,
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('syncing');
+    });
+
+    // Stopped -> idle.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', {
+        bookKey: 'book-1',
+        state: 'stopped',
+      });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('idle');
+    });
+  });
+
+  it('ignores tts events for a different bookKey and keeps status unchanged', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, { 'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
+
+    // Playback + position for a DIFFERENT book: must be ignored.
+    await dispatchPlaying('other-book');
+    await dispatchPosition({
+      bookKey: 'other-book',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 1,
+    });
+
+    expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
   });
 });
