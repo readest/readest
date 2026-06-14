@@ -25,7 +25,10 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({ word, lang, onDismiss
       dismissible
       header={
         <DictionaryResultsHeader
-          headerClassName='-mt-4'
+          // The -mt-4 compensates for Dialog's drag handle, which is `sm:hidden`
+          // (shown only below sm). Mirror that breakpoint so on sm+ (no handle)
+          // the header isn't pulled up into the top edge.
+          headerClassName='-mt-4 sm:mt-0'
           currentWord={state.currentWord}
           canGoBack={state.canGoBack}
           goBack={state.goBack}
