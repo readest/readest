@@ -1731,8 +1731,6 @@
   "Resume audio": "Återuppta ljud",
   "Following audio": "Följer ljudet",
   " · estimated": " · uppskattat",
-  "Nightly Builds (Unstable)": "Nattliga versioner (instabila)",
-  "Early daily builds; may be unstable": "Tidiga dagliga versioner; kan vara instabila",
   "Downloading Word Wise data…": "Laddar ner Word Wise-data…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Visa en kort ledtråd på ditt modersmål ovanför svåra ord.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "Språk för ledtrådar",
   "Data": "Data",
   "Download data packs automatically when needed.": "Ladda ner datapaket automatiskt vid behov.",
-  "Failed to check for updates": "Det gick inte att söka efter uppdateringar"
+  "Failed to check for updates": "Det gick inte att söka efter uppdateringar",
+  "Update": "Uppdatering",
+  "Nightly Builds": "Nattliga versioner",
+  "Early daily builds": "Tidiga dagliga versioner",
+  "Privacy": "Integritet"
 }

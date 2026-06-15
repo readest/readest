@@ -23,6 +23,7 @@ import PageTurnerSettings from './PageTurnerSettings';
 import AnnotationToolbarCustomizer from './AnnotationToolbarCustomizer';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
+import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -63,6 +64,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   );
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
+  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
+  const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
+  const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
 
   const resetToDefaults = useResetViewSettings();
   const pageTurnerResetRef = useRef<() => void>(() => {});
@@ -249,6 +253,29 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
+
+  const toggleAutoCheckUpdates = () => {
+    const newValue = !isAutoCheckUpdates;
+    saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
+    setIsAutoCheckUpdates(newValue);
+  };
+
+  const toggleNightlyChannel = () => {
+    const newValue = !isNightlyChannel;
+    saveSysSettings(envConfig, 'updateChannel', newValue ? 'nightly' : 'stable');
+    setIsNightlyChannel(newValue);
+  };
+
+  const toggleTelemetry = () => {
+    const newValue = !isTelemetryEnabled;
+    saveSysSettings(envConfig, 'telemetryEnabled', newValue);
+    setIsTelemetryEnabled(newValue);
+    if (newValue) {
+      optInTelemetry();
+    } else {
+      optOutTelemetry();
+    }
+  };
 
   const getQuickActionOptions = () => {
     return [
@@ -443,6 +470,23 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         />
       </BoxedList>
 
+      {appService?.hasUpdater && (
+        <BoxedList title={_('Update')} data-setting-id='settings.control.checkUpdates'>
+          <SettingsSwitchRow
+            label={_('Check Updates on Start')}
+            checked={isAutoCheckUpdates}
+            onChange={toggleAutoCheckUpdates}
+          />
+          <SettingsSwitchRow
+            label={_('Nightly Builds')}
+            description={isNightlyChannel ? _('Early daily builds') : ''}
+            checked={isNightlyChannel}
+            onChange={toggleNightlyChannel}
+            data-setting-id='settings.control.nightlyChannel'
+          />
+        </BoxedList>
+      )}
+
       <BoxedList title={_('Security')} data-setting-id='settings.control.allowJavascript'>
         <SettingsSwitchRow
           label={_('Allow JavaScript')}
@@ -450,6 +494,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={allowScript}
           disabled={bookData?.book?.format !== 'EPUB'}
           onChange={() => setAllowScript(!allowScript)}
+        />
+      </BoxedList>
+
+      <BoxedList title={_('Privacy')} data-setting-id='settings.control.telemetry'>
+        <SettingsSwitchRow
+          label={_('Help improve Readest')}
+          description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
+          checked={isTelemetryEnabled}
+          onChange={toggleTelemetry}
         />
       </BoxedList>
     </div>

@@ -1731,8 +1731,6 @@
   "Resume audio": "ادامهٔ دنبال‌کردن صدا",
   "Following audio": "در حال دنبال‌کردن صدا",
   " · estimated": " · تخمینی",
-  "Nightly Builds (Unstable)": "نسخه‌های شبانه (ناپایدار)",
-  "Early daily builds; may be unstable": "نسخه‌های روزانهٔ اولیه؛ ممکن است ناپایدار باشند",
   "Downloading Word Wise data…": "در حال دانلود داده‌های Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "نمایش راهنمایی کوتاه به زبان مادری بالای واژه‌های دشوار.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "زبان راهنمایی",
   "Data": "داده",
   "Download data packs automatically when needed.": "دانلود خودکار بسته‌های داده در صورت نیاز.",
-  "Failed to check for updates": "بررسی به‌روزرسانی‌ها ناموفق بود"
+  "Failed to check for updates": "بررسی به‌روزرسانی‌ها ناموفق بود",
+  "Update": "به‌روزرسانی",
+  "Nightly Builds": "نسخه‌های شبانه",
+  "Early daily builds": "نسخه‌های روزانهٔ آزمایشی",
+  "Privacy": "حریم خصوصی"
 }

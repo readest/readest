@@ -1698,8 +1698,6 @@
   "Resume audio": "音声に再追従",
   "Following audio": "音声に追従中",
   " · estimated": " · 推定",
-  "Nightly Builds (Unstable)": "ナイトリービルド（不安定版）",
-  "Early daily builds; may be unstable": "毎日配信の先行ビルド。不安定な場合があります",
   "Downloading Word Wise data…": "Word Wise データをダウンロード中…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "難しい単語の上に母国語の短いヒントを表示します。",
@@ -1716,5 +1714,9 @@
   "Hint Language": "ヒント言語",
   "Data": "データ",
   "Download data packs automatically when needed.": "必要に応じてデータパックを自動的にダウンロードします。",
-  "Failed to check for updates": "更新の確認に失敗しました"
+  "Failed to check for updates": "更新の確認に失敗しました",
+  "Update": "アップデート",
+  "Nightly Builds": "ナイトリービルド",
+  "Early daily builds": "毎日の先行ビルド",
+  "Privacy": "プライバシー"
 }

@@ -1863,8 +1863,6 @@
   "Resume audio": "استئناف متابعة الصوت",
   "Following audio": "يتابع الصوت",
   " · estimated": " · تقديري",
-  "Nightly Builds (Unstable)": "إصدارات ليلية (غير مستقرة)",
-  "Early daily builds; may be unstable": "إصدارات يومية مبكرة؛ قد تكون غير مستقرة",
   "Downloading Word Wise data…": "جارٍ تنزيل بيانات Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "إظهار تلميح قصير بلغتك الأم فوق الكلمات الصعبة.",
@@ -1881,5 +1879,9 @@
   "Hint Language": "لغة التلميح",
   "Data": "البيانات",
   "Download data packs automatically when needed.": "تنزيل حزم البيانات تلقائيًا عند الحاجة.",
-  "Failed to check for updates": "فشل التحقق من التحديثات"
+  "Failed to check for updates": "فشل التحقق من التحديثات",
+  "Update": "تحديث",
+  "Nightly Builds": "إصدارات ليلية",
+  "Early daily builds": "إصدارات يومية مبكرة",
+  "Privacy": "الخصوصية"
 }

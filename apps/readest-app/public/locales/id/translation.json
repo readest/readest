@@ -1698,8 +1698,6 @@
   "Resume audio": "Lanjutkan mengikuti",
   "Following audio": "Mengikuti audio",
   " · estimated": " · perkiraan",
-  "Nightly Builds (Unstable)": "Build Harian (Tidak Stabil)",
-  "Early daily builds; may be unstable": "Build harian awal; mungkin tidak stabil",
   "Downloading Word Wise data…": "Mengunduh data Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Tampilkan petunjuk singkat dalam bahasa ibu di atas kata-kata sulit.",
@@ -1716,5 +1714,9 @@
   "Hint Language": "Bahasa Petunjuk",
   "Data": "Data",
   "Download data packs automatically when needed.": "Unduh paket data secara otomatis saat diperlukan.",
-  "Failed to check for updates": "Gagal memeriksa pembaruan"
+  "Failed to check for updates": "Gagal memeriksa pembaruan",
+  "Update": "Pembaruan",
+  "Nightly Builds": "Build Nightly",
+  "Early daily builds": "Build harian awal",
+  "Privacy": "Privasi"
 }

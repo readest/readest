@@ -1731,8 +1731,6 @@
   "Resume audio": "Audio hervatten",
   "Following audio": "Volgt audio",
   " · estimated": " · geschat",
-  "Nightly Builds (Unstable)": "Nightly-builds (onstabiel)",
-  "Early daily builds; may be unstable": "Vroege dagelijkse builds; kunnen onstabiel zijn",
   "Downloading Word Wise data…": "Word Wise-gegevens downloaden…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Toon een korte hint in je moedertaal boven moeilijke woorden.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "Hinttaal",
   "Data": "Gegevens",
   "Download data packs automatically when needed.": "Download gegevenspakketten automatisch wanneer nodig.",
-  "Failed to check for updates": "Controleren op updates mislukt"
+  "Failed to check for updates": "Controleren op updates mislukt",
+  "Update": "Update",
+  "Nightly Builds": "Nightly-builds",
+  "Early daily builds": "Vroege dagelijkse builds",
+  "Privacy": "Privacy"
 }

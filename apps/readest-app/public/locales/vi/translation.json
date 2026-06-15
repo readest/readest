@@ -1698,8 +1698,6 @@
   "Resume audio": "Tiếp tục theo âm thanh",
   "Following audio": "Đang theo âm thanh",
   " · estimated": " · ước tính",
-  "Nightly Builds (Unstable)": "Bản dựng hằng đêm (Không ổn định)",
-  "Early daily builds; may be unstable": "Bản dựng hằng ngày sớm; có thể không ổn định",
   "Downloading Word Wise data…": "Đang tải dữ liệu Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Hiển thị gợi ý ngắn bằng tiếng mẹ đẻ phía trên các từ khó.",
@@ -1716,5 +1714,9 @@
   "Hint Language": "Ngôn ngữ gợi ý",
   "Data": "Dữ liệu",
   "Download data packs automatically when needed.": "Tự động tải gói dữ liệu khi cần.",
-  "Failed to check for updates": "Không kiểm tra được bản cập nhật"
+  "Failed to check for updates": "Không kiểm tra được bản cập nhật",
+  "Update": "Cập nhật",
+  "Nightly Builds": "Bản dựng hằng đêm",
+  "Early daily builds": "Bản dựng hằng ngày sớm",
+  "Privacy": "Quyền riêng tư"
 }

@@ -1731,8 +1731,6 @@
   "Resume audio": "மீண்டும் பின்தொடர்",
   "Following audio": "ஆடியோவைப் பின்தொடர்கிறது",
   " · estimated": " · தோராயமாக",
-  "Nightly Builds (Unstable)": "நைட்லி பதிப்புகள் (நிலையற்றவை)",
-  "Early daily builds; may be unstable": "ஆரம்ப தினசரி பதிப்புகள்; நிலையற்றதாக இருக்கலாம்",
   "Downloading Word Wise data…": "Word Wise தரவு பதிவிறக்கப்படுகிறது…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "கடினமான சொற்களுக்கு மேல் தாய்மொழியில் ஒரு சிறிய குறிப்பைக் காட்டு.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "குறிப்பு மொழி",
   "Data": "தரவு",
   "Download data packs automatically when needed.": "தேவைப்படும்போது தரவுத் தொகுப்புகளைத் தானாகப் பதிவிறக்கு.",
-  "Failed to check for updates": "புதுப்பிப்புகளைச் சரிபார்க்க முடியவில்லை"
+  "Failed to check for updates": "புதுப்பிப்புகளைச் சரிபார்க்க முடியவில்லை",
+  "Update": "புதுப்பிப்பு",
+  "Nightly Builds": "இரவு உருவாக்கங்கள்",
+  "Early daily builds": "ஆரம்ப தினசரி உருவாக்கங்கள்",
+  "Privacy": "தனியுரிமை"
 }

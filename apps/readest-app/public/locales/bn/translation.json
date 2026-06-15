@@ -1731,8 +1731,6 @@
   "Resume audio": "আবার অনুসরণ করুন",
   "Following audio": "অডিও অনুসরণ করছে",
   " · estimated": " · আনুমানিক",
-  "Nightly Builds (Unstable)": "নাইটলি বিল্ড (অস্থিতিশীল)",
-  "Early daily builds; may be unstable": "প্রাথমিক দৈনিক বিল্ড; অস্থিতিশীল হতে পারে",
   "Downloading Word Wise data…": "Word Wise ডেটা ডাউনলোড হচ্ছে…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "কঠিন শব্দের উপরে মাতৃভাষায় একটি সংক্ষিপ্ত ইঙ্গিত দেখান।",
@@ -1749,5 +1747,9 @@
   "Hint Language": "ইঙ্গিতের ভাষা",
   "Data": "ডেটা",
   "Download data packs automatically when needed.": "প্রয়োজনে স্বয়ংক্রিয়ভাবে ডেটা প্যাক ডাউনলোড করুন।",
-  "Failed to check for updates": "আপডেট পরীক্ষা করতে ব্যর্থ"
+  "Failed to check for updates": "আপডেট পরীক্ষা করতে ব্যর্থ",
+  "Update": "আপডেট",
+  "Nightly Builds": "নাইটলি বিল্ড",
+  "Early daily builds": "প্রাথমিক দৈনিক বিল্ড",
+  "Privacy": "গোপনীয়তা"
 }

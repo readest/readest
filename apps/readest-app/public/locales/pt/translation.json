@@ -1764,8 +1764,6 @@
   "Resume audio": "Retomar áudio",
   "Following audio": "A seguir o áudio",
   " · estimated": " · estimado",
-  "Nightly Builds (Unstable)": "Versões nightly (instáveis)",
-  "Early daily builds; may be unstable": "Versões diárias antecipadas; podem ser instáveis",
   "Downloading Word Wise data…": "A transferir dados do Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Mostra uma breve dica na sua língua por cima das palavras difíceis.",
@@ -1782,5 +1780,9 @@
   "Hint Language": "Idioma das dicas",
   "Data": "Dados",
   "Download data packs automatically when needed.": "Transferir pacotes de dados automaticamente quando necessário.",
-  "Failed to check for updates": "Falha ao procurar atualizações"
+  "Failed to check for updates": "Falha ao procurar atualizações",
+  "Update": "Atualização",
+  "Nightly Builds": "Compilações noturnas",
+  "Early daily builds": "Compilações diárias antecipadas",
+  "Privacy": "Privacidade"
 }

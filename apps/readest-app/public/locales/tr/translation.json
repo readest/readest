@@ -1731,8 +1731,6 @@
   "Resume audio": "Sesi takibe devam et",
   "Following audio": "Sesi takip ediyor",
   " · estimated": " · tahmini",
-  "Nightly Builds (Unstable)": "Gecelik Sürümler (Kararsız)",
-  "Early daily builds; may be unstable": "Erken günlük sürümler; kararsız olabilir",
   "Downloading Word Wise data…": "Word Wise verileri indiriliyor…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Zor sözcüklerin üzerinde ana dilde kısa bir ipucu göster.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "İpucu Dili",
   "Data": "Veri",
   "Download data packs automatically when needed.": "Gerektiğinde veri paketlerini otomatik olarak indir.",
-  "Failed to check for updates": "Güncellemeler denetlenemedi"
+  "Failed to check for updates": "Güncellemeler denetlenemedi",
+  "Update": "Güncelleme",
+  "Nightly Builds": "Gecelik sürümler",
+  "Early daily builds": "Erken günlük sürümler",
+  "Privacy": "Gizlilik"
 }

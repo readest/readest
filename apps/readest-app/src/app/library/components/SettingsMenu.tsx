@@ -22,7 +22,6 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
-import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { requestStoragePermission } from '@/utils/permission';
@@ -54,15 +53,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
-  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
-  const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
-  const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
   const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
   const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
     settings.savedBookCoverForLockScreen || '',
@@ -156,33 +152,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsAutoImportBooksOnOpen(newValue);
   };
 
-  const toggleAutoCheckUpdates = () => {
-    const newValue = !settings.autoCheckUpdates;
-    saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
-    setIsAutoCheckUpdates(newValue);
-  };
-
-  const toggleNightlyChannel = () => {
-    const newValue = !isNightlyChannel;
-    saveSysSettings(envConfig, 'updateChannel', newValue ? 'nightly' : 'stable');
-    setIsNightlyChannel(newValue);
-  };
-
   const toggleOpenLastBooks = () => {
     const newValue = !settings.openLastBooks;
     saveSysSettings(envConfig, 'openLastBooks', newValue);
     setIsOpenLastBooks(newValue);
-  };
-
-  const toggleTelemetry = () => {
-    const newValue = !settings.telemetryEnabled;
-    saveSysSettings(envConfig, 'telemetryEnabled', newValue);
-    setIsTelemetryEnabled(newValue);
-    if (newValue) {
-      optInTelemetry();
-    } else {
-      optOutTelemetry();
-    }
   };
 
   const handleUpgrade = () => {
@@ -392,21 +365,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           onClick={toggleOpenLastBooks}
         />
       )}
-      {appService?.hasUpdater && (
-        <MenuItem
-          label={_('Check Updates on Start')}
-          toggled={isAutoCheckUpdates}
-          onClick={toggleAutoCheckUpdates}
-        />
-      )}
-      {appService?.hasUpdater && (
-        <MenuItem
-          label={_('Nightly Builds (Unstable)')}
-          description={isNightlyChannel ? _('Early daily builds; may be unstable') : ''}
-          toggled={isNightlyChannel}
-          onClick={toggleNightlyChannel}
-        />
-      )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {appService?.hasWindow && (
         <MenuItem
@@ -486,12 +444,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
-      <MenuItem
-        label={_('Help improve Readest')}
-        description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
-        toggled={isTelemetryEnabled}
-        onClick={toggleTelemetry}
-      />
     </Menu>
   );
 };

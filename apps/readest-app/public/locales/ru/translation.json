@@ -1797,8 +1797,6 @@
   "Resume audio": "Возобновить слежение",
   "Following audio": "Следует за аудио",
   " · estimated": " · примерно",
-  "Nightly Builds (Unstable)": "Ночные сборки (нестабильные)",
-  "Early daily builds; may be unstable": "Ранние ежедневные сборки; могут быть нестабильными",
   "Downloading Word Wise data…": "Загрузка данных Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Показывать краткую подсказку на родном языке над сложными словами.",
@@ -1815,5 +1813,9 @@
   "Hint Language": "Язык подсказок",
   "Data": "Данные",
   "Download data packs automatically when needed.": "Автоматически загружать пакеты данных при необходимости.",
-  "Failed to check for updates": "Не удалось проверить обновления"
+  "Failed to check for updates": "Не удалось проверить обновления",
+  "Update": "Обновление",
+  "Nightly Builds": "Ночные сборки",
+  "Early daily builds": "Ранние ежедневные сборки",
+  "Privacy": "Конфиденциальность"
 }

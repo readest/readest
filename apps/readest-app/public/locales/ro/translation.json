@@ -1764,8 +1764,6 @@
   "Resume audio": "Reia urmărirea",
   "Following audio": "Urmărește audio",
   " · estimated": " · estimat",
-  "Nightly Builds (Unstable)": "Versiuni nightly (instabile)",
-  "Early daily builds; may be unstable": "Versiuni zilnice timpurii; pot fi instabile",
   "Downloading Word Wise data…": "Se descarcă datele Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Afișează un scurt indiciu în limba maternă deasupra cuvintelor dificile.",
@@ -1782,5 +1780,9 @@
   "Hint Language": "Limba indiciilor",
   "Data": "Date",
   "Download data packs automatically when needed.": "Descarcă automat pachetele de date când este necesar.",
-  "Failed to check for updates": "Verificarea actualizărilor a eșuat"
+  "Failed to check for updates": "Verificarea actualizărilor a eșuat",
+  "Update": "Actualizare",
+  "Nightly Builds": "Versiuni nightly",
+  "Early daily builds": "Versiuni zilnice timpurii",
+  "Privacy": "Confidențialitate"
 }

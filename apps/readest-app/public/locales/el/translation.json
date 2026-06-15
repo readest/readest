@@ -1731,8 +1731,6 @@
   "Resume audio": "Συνέχιση ήχου",
   "Following audio": "Ακολουθεί τον ήχο",
   " · estimated": " · κατ' εκτίμηση",
-  "Nightly Builds (Unstable)": "Νυχτερινές εκδόσεις (ασταθείς)",
-  "Early daily builds; may be unstable": "Πρώιμες ημερήσιες εκδόσεις· ενδέχεται να είναι ασταθείς",
   "Downloading Word Wise data…": "Λήψη δεδομένων Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Εμφάνιση σύντομης υπόδειξης στη μητρική σας γλώσσα πάνω από δύσκολες λέξεις.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "Γλώσσα υπόδειξης",
   "Data": "Δεδομένα",
   "Download data packs automatically when needed.": "Αυτόματη λήψη πακέτων δεδομένων όταν χρειάζεται.",
-  "Failed to check for updates": "Αποτυχία ελέγχου για ενημερώσεις"
+  "Failed to check for updates": "Αποτυχία ελέγχου για ενημερώσεις",
+  "Update": "Ενημέρωση",
+  "Nightly Builds": "Νυχτερινές εκδόσεις",
+  "Early daily builds": "Πρώιμες καθημερινές εκδόσεις",
+  "Privacy": "Απόρρητο"
 }

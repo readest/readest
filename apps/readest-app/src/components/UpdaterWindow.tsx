@@ -77,17 +77,6 @@ const TAURI_UPDATER_KEYS = new Set([
   'windows-aarch64',
 ]);
 
-// Render a nightly stamp (e.g. "0.11.4-2026061406") in a human form. Returns
-// the input unchanged for plain semver versions so stable releases display
-// normally.
-const formatVersionLabel = (v: string): string => {
-  const m = v.match(/^(\d+\.\d+\.\d+)-(\d{4})(\d{2})(\d{2})(\d{2})$/);
-  if (!m) return v;
-  const [, base, y, mo, d, h] = m;
-  const date = new Date(Number(y), Number(mo) - 1, Number(d));
-  return `Nightly · ${base} (${date.toLocaleDateString()}, ${h}:00)`;
-};
-
 export const UpdaterContent = ({
   latestVersion,
   lastVersion,
@@ -557,7 +546,7 @@ export const UpdaterContent = ({
               </h2>
               <p className='mb-2'>
                 {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {
-                  newVersion: formatVersionLabel(newVersion),
+                  newVersion,
                   currentVersion,
                 })}
               </p>

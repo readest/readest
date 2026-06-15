@@ -1764,8 +1764,6 @@
   "Resume audio": "חידוש מעקב",
   "Following audio": "עוקב אחר השמע",
   " · estimated": " · משוער",
-  "Nightly Builds (Unstable)": "גרסאות לילה (לא יציבות)",
-  "Early daily builds; may be unstable": "גרסאות יומיות מוקדמות; עשויות להיות לא יציבות",
   "Downloading Word Wise data…": "מוריד נתוני Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "הצגת רמז קצר בשפת האם מעל מילים קשות.",
@@ -1782,5 +1780,9 @@
   "Hint Language": "שפת הרמז",
   "Data": "נתונים",
   "Download data packs automatically when needed.": "הורדת חבילות נתונים אוטומטית בעת הצורך.",
-  "Failed to check for updates": "בדיקת העדכונים נכשלה"
+  "Failed to check for updates": "בדיקת העדכונים נכשלה",
+  "Update": "עדכון",
+  "Nightly Builds": "גרסאות לילה",
+  "Early daily builds": "גרסאות יומיות מוקדמות",
+  "Privacy": "פרטיות"
 }

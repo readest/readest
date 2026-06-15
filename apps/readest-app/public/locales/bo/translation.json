@@ -1698,8 +1698,6 @@
   "Resume audio": "རྗེས་འདེད་མུ་མཐུད།",
   "Following audio": "སྒྲ་གདངས་རྗེས་འདེད་བྱེད་བཞིན་པ།",
   " · estimated": " · ཚོད་དཔག",
-  "Nightly Builds (Unstable)": "ཉིན་ལྟར་བཟོ་སྐྲུན། (བརྟན་པོ་མིན)",
-  "Early daily builds; may be unstable": "ཉིན་ལྟར་བཟོ་སྐྲུན་སྔ་མོ། བརྟན་པོ་མེད་སྲིད།",
   "Downloading Word Wise data…": "Word Wise གཞི་གྲངས་ཕབ་ལེན་བྱེད་བཞིན་པ།…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "ཚིག་དཀའ་མོའི་སྟེང་དུ་རང་སྐད་ནང་མཚོན་བྱེད་ཐུང་ངུ་ཞིག་སྟོན།",
@@ -1716,5 +1714,9 @@
   "Hint Language": "མཚོན་བྱེད་སྐད་ཡིག",
   "Data": "གཞི་གྲངས།",
   "Download data packs automatically when needed.": "དགོས་མཁོ་བྱུང་སྐབས་གཞི་གྲངས་ཐུམ་སྒྲིལ་རང་འགུལ་གྱིས་ཕབ་ལེན་བྱེད།",
-  "Failed to check for updates": "གསར་སྒྱུར་ཞིབ་བཤེར་མ་ཐུབ།"
+  "Failed to check for updates": "གསར་སྒྱུར་ཞིབ་བཤེར་མ་ཐུབ།",
+  "Update": "གསར་སྒྱུར།",
+  "Nightly Builds": "མཚན་མོའི་བཟོ་སྐྲུན།",
+  "Early daily builds": "སྔ་མོའི་ཉིན་རེའི་བཟོ་སྐྲུན།",
+  "Privacy": "གསང་དོན།"
 }

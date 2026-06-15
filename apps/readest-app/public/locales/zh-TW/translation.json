@@ -1698,8 +1698,6 @@
   "Resume audio": "恢復跟隨",
   "Following audio": "正在跟隨音訊",
   " · estimated": " · 估算",
-  "Nightly Builds (Unstable)": "每夜建置版（不穩定）",
-  "Early daily builds; may be unstable": "每日搶先建置，可能不穩定",
   "Downloading Word Wise data…": "正在下載 Word Wise 資料…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "在生難字上方顯示簡短的母語提示。",
@@ -1716,5 +1714,9 @@
   "Hint Language": "提示語言",
   "Data": "資料",
   "Download data packs automatically when needed.": "需要時自動下載資料包。",
-  "Failed to check for updates": "檢查更新失敗"
+  "Failed to check for updates": "檢查更新失敗",
+  "Update": "更新",
+  "Nightly Builds": "每夜建置版",
+  "Early daily builds": "每日搶先建置版",
+  "Privacy": "隱私"
 }

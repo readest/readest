@@ -1797,8 +1797,6 @@
   "Resume audio": "Nadaljuj sledenje",
   "Following audio": "Sledi zvoku",
   " · estimated": " · ocenjeno",
-  "Nightly Builds (Unstable)": "Nočne različice (nestabilne)",
-  "Early daily builds; may be unstable": "Zgodnje dnevne različice; lahko so nestabilne",
   "Downloading Word Wise data…": "Prenašanje podatkov Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Nad težkimi besedami prikaži kratek namig v maternem jeziku.",
@@ -1815,5 +1813,9 @@
   "Hint Language": "Jezik namigov",
   "Data": "Podatki",
   "Download data packs automatically when needed.": "Samodejno prenesi pakete podatkov, ko je to potrebno.",
-  "Failed to check for updates": "Preverjanje posodobitev ni uspelo"
+  "Failed to check for updates": "Preverjanje posodobitev ni uspelo",
+  "Update": "Posodobitev",
+  "Nightly Builds": "Nočne gradnje",
+  "Early daily builds": "Zgodnje dnevne gradnje",
+  "Privacy": "Zasebnost"
 }

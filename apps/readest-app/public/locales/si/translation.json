@@ -1731,8 +1731,6 @@
   "Resume audio": "නැවත අනුගමනය කරන්න",
   "Following audio": "ශ්‍රව්‍යය අනුගමනය කරයි",
   " · estimated": " · ඇස්තමේන්තුගත",
-  "Nightly Builds (Unstable)": "රාත්‍රික නිකුතු (අස්ථිර)",
-  "Early daily builds; may be unstable": "මුල් දෛනික නිකුතු; අස්ථිර විය හැක",
   "Downloading Word Wise data…": "Word Wise දත්ත බාගත වෙමින්…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "අසීරු වචන ඉහළින් මව්බසින් කෙටි ඉඟියක් පෙන්වන්න.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "ඉඟි භාෂාව",
   "Data": "දත්ත",
   "Download data packs automatically when needed.": "අවශ්‍ය විට දත්ත පැකේජ ස්වයංක්‍රීයව බාගන්න.",
-  "Failed to check for updates": "යාවත්කාලීන සඳහා පරීක්ෂා කිරීමට අසමත් විය"
+  "Failed to check for updates": "යාවත්කාලීන සඳහා පරීක්ෂා කිරීමට අසමත් විය",
+  "Update": "යාවත්කාලීන කිරීම",
+  "Nightly Builds": "රාත්‍රී නිකුතු",
+  "Early daily builds": "මුල් දෛනික නිකුතු",
+  "Privacy": "පෞද්ගලිකත්වය"
 }

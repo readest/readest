@@ -1698,8 +1698,6 @@
   "Resume audio": "ติดตามเสียงต่อ",
   "Following audio": "กำลังติดตามเสียง",
   " · estimated": " · โดยประมาณ",
-  "Nightly Builds (Unstable)": "รุ่นทดสอบรายวัน (ไม่เสถียร)",
-  "Early daily builds; may be unstable": "รุ่นทดสอบรายวันช่วงแรก อาจไม่เสถียร",
   "Downloading Word Wise data…": "กำลังดาวน์โหลดข้อมูล Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "แสดงคำใบ้สั้น ๆ ในภาษาแม่เหนือคำที่ยาก",
@@ -1716,5 +1714,9 @@
   "Hint Language": "ภาษาของคำใบ้",
   "Data": "ข้อมูล",
   "Download data packs automatically when needed.": "ดาวน์โหลดชุดข้อมูลโดยอัตโนมัติเมื่อจำเป็น",
-  "Failed to check for updates": "ตรวจหาอัปเดตไม่สำเร็จ"
+  "Failed to check for updates": "ตรวจหาอัปเดตไม่สำเร็จ",
+  "Update": "อัปเดต",
+  "Nightly Builds": "บิลด์รายคืน",
+  "Early daily builds": "บิลด์รายวันรุ่นแรก",
+  "Privacy": "ความเป็นส่วนตัว"
 }

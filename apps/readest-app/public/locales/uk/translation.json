@@ -1797,8 +1797,6 @@
   "Resume audio": "Відновити стеження",
   "Following audio": "Стежить за аудіо",
   " · estimated": " · приблизно",
-  "Nightly Builds (Unstable)": "Нічні збірки (нестабільні)",
-  "Early daily builds; may be unstable": "Ранні щоденні збірки; можуть бути нестабільними",
   "Downloading Word Wise data…": "Завантаження даних Word Wise…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Показувати коротку підказку рідною мовою над складними словами.",
@@ -1815,5 +1813,9 @@
   "Hint Language": "Мова підказок",
   "Data": "Дані",
   "Download data packs automatically when needed.": "Автоматично завантажувати пакети даних за потреби.",
-  "Failed to check for updates": "Не вдалося перевірити оновлення"
+  "Failed to check for updates": "Не вдалося перевірити оновлення",
+  "Update": "Оновлення",
+  "Nightly Builds": "Нічні збірки",
+  "Early daily builds": "Ранні щоденні збірки",
+  "Privacy": "Конфіденційність"
 }

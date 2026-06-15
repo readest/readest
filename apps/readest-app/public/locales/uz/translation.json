@@ -1731,8 +1731,6 @@
   "Resume audio": "Ergashishni davom ettirish",
   "Following audio": "Audioga ergashmoqda",
   " · estimated": " · taxminiy",
-  "Nightly Builds (Unstable)": "Tungi yig'malar (Beqaror)",
-  "Early daily builds; may be unstable": "Erta kunlik yig'malar; beqaror bo'lishi mumkin",
   "Downloading Word Wise data…": "Word Wise ma'lumotlari yuklab olinmoqda…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Qiyin so'zlar ustida ona tilida qisqa maslahat ko'rsatish.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "Maslahat tili",
   "Data": "Ma'lumotlar",
   "Download data packs automatically when needed.": "Kerak bo'lganda ma'lumotlar to'plamlarini avtomatik yuklab olish.",
-  "Failed to check for updates": "Yangilanishlarni tekshirib bo'lmadi"
+  "Failed to check for updates": "Yangilanishlarni tekshirib bo'lmadi",
+  "Update": "Yangilanish",
+  "Nightly Builds": "Tungi buildlar",
+  "Early daily builds": "Erta kunlik buildlar",
+  "Privacy": "Maxfiylik"
 }

@@ -1731,8 +1731,6 @@
   "Resume audio": "Követés folytatása",
   "Following audio": "Hangot követi",
   " · estimated": " · becsült",
-  "Nightly Builds (Unstable)": "Éjszakai buildek (instabil)",
-  "Early daily builds; may be unstable": "Korai napi buildek; instabilak lehetnek",
   "Downloading Word Wise data…": "Word Wise-adatok letöltése…",
   "Word Wise": "Word Wise",
   "Show a short native-language hint above difficult words.": "Rövid, anyanyelvi tipp megjelenítése a nehéz szavak felett.",
@@ -1749,5 +1747,9 @@
   "Hint Language": "Tippek nyelve",
   "Data": "Adatok",
   "Download data packs automatically when needed.": "Adatcsomagok automatikus letöltése, amikor szükséges.",
-  "Failed to check for updates": "A frissítések keresése sikertelen"
+  "Failed to check for updates": "A frissítések keresése sikertelen",
+  "Update": "Frissítés",
+  "Nightly Builds": "Éjszakai buildek",
+  "Early daily builds": "Korai napi buildek",
+  "Privacy": "Adatvédelem"
 }
