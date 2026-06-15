@@ -195,12 +195,28 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const footerBarRef = useRef<HTMLDivElement>(null);
   useSpatialNavigation(footerBarRef, isVisible);
 
-  // Force the mobile footer bar on mobile tablets/foldables in portrait mode
-  // where the viewport width exceeds the `sm:` (640px) breakpoint. Phones
-  // (innerWidth < 640) are intentionally excluded so their styling and panel
-  // slide-down animation remain exactly as before — see #3742 / #3746.
-  const forceMobileLayout =
-    !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
+  // Always use the mobile footer bar on mobile devices (phones, tablets, and
+  // foldables on iOS / Android). Previously this flag also factored in the
+  // current viewport's portrait/landscape state — it was only true when
+  // `innerWidth <= innerHeight`. That made the entire bottom toolbar swap
+  // contents on every orientation change: a phone in landscape (or a
+  // foldable in landscape) would suddenly drop the brightness / font /
+  // color / progress panels and render the desktop layout instead, then
+  // swing back to the mobile panels when rotated to portrait. Users
+  // expect rotating the device to leave the toolbar alone, so we no
+  // longer key off orientation here.
+  //
+  // Phones in landscape (innerWidth >= 640, innerHeight < 640) used to
+  // fall through to the `sm:` breakpoint and pick up the desktop layout;
+  // they now stay on the mobile layout, which is the more useful default
+  // because the mobile layout still exposes the per-book panels (this
+  // is the same fix #3759 applied for the tablet-portrait case, just
+  // generalized to all mobile orientations).
+  //
+  // Desktop / web continues to honor the `sm:` (640px) Tailwind breakpoint
+  // because `appService.isMobile` is false there — the layout still
+  // collapses to mobile on a sub-640px desktop window.
+  const forceMobileLayout = !!appService?.isMobile;
 
   const commonProps: FooterBarChildProps = {
     bookKey,
