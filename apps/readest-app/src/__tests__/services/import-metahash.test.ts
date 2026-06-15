@@ -648,4 +648,23 @@ describe('importBook with BookLookupIndex', () => {
     // Should reuse the existing book object via lookup index
     expect(result).toBe(existingBook);
   });
+
+  it('buildBookLookupIndex skips deleted and url-backed books in byFilePath', async () => {
+    const inPlaceBook = makeBook({
+      hash: 'a',
+      filePath: '/lib/a.epub',
+    });
+    const deletedBook = makeBook({
+      hash: 'b',
+      filePath: '/lib/b.epub',
+      deletedAt: Date.now(),
+    });
+    const urlBook = makeBook({ hash: 'c', filePath: 'https://example.com/c.epub' });
+
+    const lookupIndex = buildBookLookupIndex([inPlaceBook, deletedBook, urlBook], 'linux');
+
+    expect(lookupIndex.byFilePath.get('/lib/a.epub')).toBe(inPlaceBook);
+    expect(lookupIndex.byFilePath.has('/lib/b.epub')).toBe(false);
+    expect(lookupIndex.byFilePath.has('https://example.com/c.epub')).toBe(false);
+  });
 });

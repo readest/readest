@@ -543,6 +543,87 @@ describe('ingestFile', () => {
     expect(importBook.mock.calls[0]?.[2]).toMatchObject({ inPlace: false });
   });
 
+  // ------ in-place + byFilePath fast path ------
+  // ingestFile probes the byFilePath index before delegating to importBook
+  // so a re-scan of an already-imported external folder skips file I/O,
+  // parsing, hashing, AND every downstream side effect (group / tag / upload
+  // decisions). The fast path returning early is what guarantees a manual
+  // GroupingModal assignment survives a folder re-import — without it, a
+  // path-derived empty groupId would clobber the existing group.
+
+  test('byFilePath hit short-circuits importBook entirely on in-place re-import', async () => {
+    const { appService, settings, isLoggedIn, importBook } = makeDeps({
+      externalLibraryFolders: ['/Users/me/Library'],
+      osPlatform: 'macos',
+    });
+    const sourcePath = '/Users/me/Library/sample.epub';
+    const existing: Book = {
+      hash: 'previously-hashed',
+      format: 'EPUB',
+      title: 'Existing',
+      author: 'Author',
+      filePath: sourcePath,
+      createdAt: 1000,
+      updatedAt: 2000,
+      groupId: 'manual',
+      groupName: 'Manual/Group',
+    };
+    // macOS is case-insensitive, so the index key is lowercased to match
+    // what `normalizeFilePathForIndex` produces in production.
+    const lookupIndex = {
+      byHash: new Map(),
+      byMetaKey: new Map(),
+      byFilePath: new Map([[sourcePath.toLowerCase(), existing]]),
+    } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
+    const book = await ingestFile(
+      {
+        file: sourcePath,
+        books: [existing],
+        lookupIndex,
+        groupId: '',
+        groupName: undefined,
+      },
+      { appService, settings, isLoggedIn },
+    );
+    expect(book).toBe(existing);
+    // importBook never ran, so no file I/O, no parser, no partialMD5.
+    expect(importBook).not.toHaveBeenCalled();
+    // Existing fields are untouched: createdAt / updatedAt / group all stay.
+    expect(existing.createdAt).toBe(1000);
+    expect(existing.updatedAt).toBe(2000);
+    expect(existing.groupId).toBe('manual');
+    expect(existing.groupName).toBe('Manual/Group');
+  });
+
+  test('without inPlace the byFilePath index is ignored and importBook runs', async () => {
+    // Fast path is gated on `inPlace`. A classic copy-mode import (no
+    // external library folder configured) that happens to point at a path
+    // already in the library must still go through importBook so dedup
+    // falls back to byHash.
+    const { appService, settings, isLoggedIn, importBook } = makeDeps();
+    const sourcePath = '/Users/me/Downloads/sample.epub';
+    const existing: Book = {
+      hash: 'previously-hashed',
+      format: 'EPUB',
+      title: 'Existing',
+      author: 'Author',
+      filePath: sourcePath,
+      createdAt: 1000,
+      updatedAt: 2000,
+    };
+    const lookupIndex = {
+      byHash: new Map(),
+      byMetaKey: new Map(),
+      byFilePath: new Map([[sourcePath, existing]]),
+    } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
+    await ingestFile(
+      { file: sourcePath, books: [existing], lookupIndex },
+      { appService, settings, isLoggedIn },
+    );
+    expect(importBook).toHaveBeenCalledTimes(1);
+    expect(importBook.mock.calls[0]?.[2]).toMatchObject({ inPlace: false });
+  });
+
   // ------ in-place + cloud upload ------
   // In-place imports are still uploaded so the user gets backup / cross-device
   // sync. Only transient imports opt out of upload entirely. The on-the-wire

@@ -45,6 +45,13 @@ export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 export interface BookLookupIndex {
   byHash: Map<string, Book>;
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+  // Maps normalized absolute source path -> Book for in-place imports.
+  // Lets the importer recognize "I already have this exact file" without
+  // having to open, parse, and hash it again. Only books with a non-empty
+  // `filePath` and `!deletedAt` are indexed. The key is produced by
+  // `normalizeFilePathForIndex` so callers must use the same helper to
+  // probe; importBook handles that internally.
+  byFilePath: Map<string, Book>;
 }
 
 /**

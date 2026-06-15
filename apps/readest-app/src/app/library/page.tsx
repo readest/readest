@@ -678,7 +678,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // O(1) instead of O(n) over the existing library. importBook also keeps
     // the index updated as new books are appended, so subsequent files in
     // the same batch see the additions.
-    const lookupIndex = buildBookLookupIndex(library);
+    //
+    // `osPlatform` is required for the `byFilePath` arm: on case-insensitive
+    // filesystems (macOS / iOS / Windows) two paths that differ only in
+    // casing must hash to the same key, so the in-place fast path in
+    // importBook can recognize a re-import of the same file.
+    const lookupIndex = buildBookLookupIndex(library, appService?.osPlatform);
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const successfulImports: string[] = [];
 

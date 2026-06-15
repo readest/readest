@@ -261,6 +261,10 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.importBook(this.fs, file, books, {
       saveBookConfig: this.saveBookConfig.bind(this),
       generateCoverImageUrl: this.generateCoverImageUrl.bind(this),
+      // Pass the host platform through so the in-place fast path and the
+      // lookup index can normalize source paths consistently on
+      // case-insensitive filesystems (macOS / iOS / Windows).
+      osPlatform: this.osPlatform,
       ...options,
     });
   }
