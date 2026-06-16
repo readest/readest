@@ -98,6 +98,10 @@ export interface HardcoverSettings {
   enabled: boolean;
   accessToken: string;
   lastSyncedAt: number;
+  // When true, progress + notes are pushed to Hardcover automatically as the
+  // user reads (debounced) instead of only via the reader menu. Default OFF;
+  // existing connected users (undefined) stay manual until they opt in.
+  autoSync?: boolean;
 }
 
 export interface WebDAVSettings {

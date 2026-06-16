@@ -1786,5 +1786,8 @@
   "Early daily builds": "Build giornaliere anticipate",
   "Privacy": "Privacy",
   "No downloadable format available": "Nessun formato scaricabile disponibile",
-  "Content is neither valid XML nor JSON": "Il contenuto non è né XML né JSON valido"
+  "Content is neither valid XML nor JSON": "Il contenuto non è né XML né JSON valido",
+  "Reading statistics": "Statistiche di lettura",
+  "Reading time and pages read, synced across your devices and KOReader.": "Tempo di lettura e pagine lette, sincronizzati tra i tuoi dispositivi e KOReader.",
+  "Auto Sync": "Sincronizzazione automatica"
 }

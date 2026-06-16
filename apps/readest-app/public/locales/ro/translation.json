@@ -1786,5 +1786,8 @@
   "Early daily builds": "Versiuni zilnice timpurii",
   "Privacy": "Confidențialitate",
   "No downloadable format available": "Niciun format descărcabil disponibil",
-  "Content is neither valid XML nor JSON": "Conținutul nu este nici XML, nici JSON valid"
+  "Content is neither valid XML nor JSON": "Conținutul nu este nici XML, nici JSON valid",
+  "Reading statistics": "Statistici de lectură",
+  "Reading time and pages read, synced across your devices and KOReader.": "Timpul de citire și paginile citite, sincronizate pe dispozitivele tale și KOReader.",
+  "Auto Sync": "Sincronizare automată"
 }

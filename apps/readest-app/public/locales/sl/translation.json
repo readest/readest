@@ -1819,5 +1819,8 @@
   "Early daily builds": "Zgodnje dnevne gradnje",
   "Privacy": "Zasebnost",
   "No downloadable format available": "Na voljo ni nobene oblike za prenos",
-  "Content is neither valid XML nor JSON": "Vsebina ni veljaven XML niti JSON"
+  "Content is neither valid XML nor JSON": "Vsebina ni veljaven XML niti JSON",
+  "Reading statistics": "Statistika branja",
+  "Reading time and pages read, synced across your devices and KOReader.": "Čas branja in prebrane strani, sinhronizirano med vašimi napravami in KOReader.",
+  "Auto Sync": "Samodejna sinhronizacija"
 }

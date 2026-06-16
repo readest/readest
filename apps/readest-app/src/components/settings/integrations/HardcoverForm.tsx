@@ -36,6 +36,7 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
             enabled: true,
             accessToken,
             lastSyncedAt: settings.hardcover?.lastSyncedAt ?? 0,
+            autoSync: settings.hardcover?.autoSync ?? false,
           },
         };
         setSettings(newSettings);
@@ -76,6 +77,15 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  const handleToggleAutoSync = async () => {
+    const newSettings = {
+      ...settings,
+      hardcover: { ...settings.hardcover, autoSync: !(settings.hardcover?.autoSync === true) },
+    };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
   const lastSyncedAt = settings.hardcover?.lastSyncedAt ?? 0;
   const lastSyncedLabel = lastSyncedAt ? new Date(lastSyncedAt).toLocaleString() : _('Never');
 
@@ -105,6 +115,15 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
                   className='toggle'
                   checked={settings.hardcover?.enabled ?? false}
                   onChange={handleToggleEnabled}
+                />
+              </label>
+              <label className='flex min-h-14 items-center justify-between px-4'>
+                <SettingLabel>{_('Auto Sync')}</SettingLabel>
+                <input
+                  type='checkbox'
+                  className='toggle'
+                  checked={settings.hardcover?.autoSync === true}
+                  onChange={handleToggleAutoSync}
                 />
               </label>
             </div>

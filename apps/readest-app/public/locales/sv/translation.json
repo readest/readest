@@ -1753,5 +1753,8 @@
   "Early daily builds": "Tidiga dagliga versioner",
   "Privacy": "Integritet",
   "No downloadable format available": "Inget nedladdningsbart format tillgängligt",
-  "Content is neither valid XML nor JSON": "Innehållet är varken giltig XML eller JSON"
+  "Content is neither valid XML nor JSON": "Innehållet är varken giltig XML eller JSON",
+  "Reading statistics": "Lässtatistik",
+  "Reading time and pages read, synced across your devices and KOReader.": "Lästid och lästa sidor, synkroniserat mellan dina enheter och KOReader.",
+  "Auto Sync": "Automatisk synkronisering"
 }

@@ -1753,5 +1753,8 @@
   "Early daily builds": "Erken günlük sürümler",
   "Privacy": "Gizlilik",
   "No downloadable format available": "İndirilebilir biçim yok",
-  "Content is neither valid XML nor JSON": "İçerik geçerli XML veya JSON değil"
+  "Content is neither valid XML nor JSON": "İçerik geçerli XML veya JSON değil",
+  "Reading statistics": "Okuma İstatistikleri",
+  "Reading time and pages read, synced across your devices and KOReader.": "Okuma süresi ve okunan sayfalar, cihazlarınız ve KOReader arasında senkronize edilir.",
+  "Auto Sync": "Otomatik Senkronizasyon"
 }

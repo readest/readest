@@ -1720,5 +1720,8 @@
   "Early daily builds": "毎日の先行ビルド",
   "Privacy": "プライバシー",
   "No downloadable format available": "ダウンロード可能な形式がありません",
-  "Content is neither valid XML nor JSON": "コンテンツが有効な XML でも JSON でもありません"
+  "Content is neither valid XML nor JSON": "コンテンツが有効な XML でも JSON でもありません",
+  "Reading statistics": "読書統計",
+  "Reading time and pages read, synced across your devices and KOReader.": "読書時間と読んだページ数。デバイス間および KOReader と同期されます。",
+  "Auto Sync": "自動同期"
 }

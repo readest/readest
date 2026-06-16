@@ -1819,5 +1819,8 @@
   "Early daily builds": "Ранні щоденні збірки",
   "Privacy": "Конфіденційність",
   "No downloadable format available": "Немає доступного формату для завантаження",
-  "Content is neither valid XML nor JSON": "Вміст не є дійсним XML чи JSON"
+  "Content is neither valid XML nor JSON": "Вміст не є дійсним XML чи JSON",
+  "Reading statistics": "Статистика читання",
+  "Reading time and pages read, synced across your devices and KOReader.": "Час читання та прочитані сторінки, синхронізуються між вашими пристроями та KOReader.",
+  "Auto Sync": "Автоматична синхронізація"
 }

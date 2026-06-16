@@ -1753,5 +1753,8 @@
   "Early daily builds": "Vroege dagelijkse builds",
   "Privacy": "Privacy",
   "No downloadable format available": "Geen downloadbaar formaat beschikbaar",
-  "Content is neither valid XML nor JSON": "Inhoud is geen geldige XML of JSON"
+  "Content is neither valid XML nor JSON": "Inhoud is geen geldige XML of JSON",
+  "Reading statistics": "Leesstatistieken",
+  "Reading time and pages read, synced across your devices and KOReader.": "Leestijd en gelezen pagina's, gesynchroniseerd op je apparaten en KOReader.",
+  "Auto Sync": "Automatische synchronisatie"
 }

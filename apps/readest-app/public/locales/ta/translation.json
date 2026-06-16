@@ -1753,5 +1753,8 @@
   "Early daily builds": "ஆரம்ப தினசரி உருவாக்கங்கள்",
   "Privacy": "தனியுரிமை",
   "No downloadable format available": "பதிவிறக்கம் செய்யக்கூடிய வடிவம் எதுவும் இல்லை",
-  "Content is neither valid XML nor JSON": "உள்ளடக்கம் சரியான XML அல்லது JSON அல்ல"
+  "Content is neither valid XML nor JSON": "உள்ளடக்கம் சரியான XML அல்லது JSON அல்ல",
+  "Reading statistics": "வாசிப்பு புள்ளிவிவரங்கள்",
+  "Reading time and pages read, synced across your devices and KOReader.": "வாசிப்பு நேரம் மற்றும் படித்த பக்கங்கள், உங்கள் சாதனங்கள் மற்றும் KOReader இடையே ஒத்திசைக்கப்படும்.",
+  "Auto Sync": "தானியங்கு ஒத்திசைவு"
 }

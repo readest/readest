@@ -1753,5 +1753,8 @@
   "Early daily builds": "प्रारंभिक दैनिक बिल्ड",
   "Privacy": "गोपनीयता",
   "No downloadable format available": "कोई डाउनलोड करने योग्य प्रारूप उपलब्ध नहीं है",
-  "Content is neither valid XML nor JSON": "सामग्री न तो मान्य XML है और न ही JSON"
+  "Content is neither valid XML nor JSON": "सामग्री न तो मान्य XML है और न ही JSON",
+  "Reading statistics": "पठन सांख्यिकी",
+  "Reading time and pages read, synced across your devices and KOReader.": "पढ़ने का समय और पढ़े गए पृष्ठ, आपके डिवाइसों और KOReader के बीच सिंक किए गए।",
+  "Auto Sync": "स्वतः सिंक"
 }

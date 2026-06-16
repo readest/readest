@@ -84,6 +84,7 @@ export const DEFAULT_HARDCOVER_SETTINGS = {
   enabled: false,
   accessToken: '',
   lastSyncedAt: 0,
+  autoSync: false,
 } as HardcoverSettings;
 
 export const DEFAULT_WEBDAV_SETTINGS = {

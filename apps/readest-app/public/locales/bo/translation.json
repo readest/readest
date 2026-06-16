@@ -1720,5 +1720,8 @@
   "Early daily builds": "སྔ་མོའི་ཉིན་རེའི་བཟོ་སྐྲུན།",
   "Privacy": "གསང་དོན།",
   "No downloadable format available": "ཕབ་ལེན་བྱེད་ཆོག་པའི་རྣམ་པ་མི་འདུག",
-  "Content is neither valid XML nor JSON": "ནང་དོན་ནི་ XML དང་ JSON གང་ཡང་ཚད་ལྡན་མིན།"
+  "Content is neither valid XML nor JSON": "ནང་དོན་ནི་ XML དང་ JSON གང་ཡང་ཚད་ལྡན་མིན།",
+  "Reading statistics": "ཀློག་འདོན་གྱི་གྲངས་ཐོ།",
+  "Reading time and pages read, synced across your devices and KOReader.": "ཀློག་འདོན་གྱི་དུས་ཚོད་དང་ཀློག་ཟིན་པའི་ཤོག་གྲངས། ཁྱེད་ཀྱི་སྒྲིག་ཆས་དང་ KOReader བར་མཉམ་སྒྲིག་བྱེད།",
+  "Auto Sync": "རང་འགུལ་སྤྲི་དོན།"
 }

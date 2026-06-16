@@ -1720,5 +1720,8 @@
   "Early daily builds": "Build harian awal",
   "Privacy": "Privasi",
   "No downloadable format available": "Tidak ada format yang dapat diunduh",
-  "Content is neither valid XML nor JSON": "Konten bukan XML maupun JSON yang valid"
+  "Content is neither valid XML nor JSON": "Konten bukan XML maupun JSON yang valid",
+  "Reading statistics": "Statistik Bacaan",
+  "Reading time and pages read, synced across your devices and KOReader.": "Waktu membaca dan halaman yang dibaca, disinkronkan di seluruh perangkat Anda dan KOReader.",
+  "Auto Sync": "Sinkronisasi Otomatis"
 }
