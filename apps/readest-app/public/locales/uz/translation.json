@@ -1754,6 +1754,7 @@
   "Privacy": "Maxfiylik",
   "No downloadable format available": "Yuklab olinadigan format mavjud emas",
   "Content is neither valid XML nor JSON": "Kontent yaroqli XML ham, JSON ham emas",
+  "Clear Pending": "Kutilayotganlarni tozalash",
   "Reading statistics": "Oʻqish statistikasi",
   "Reading time and pages read, synced across your devices and KOReader.": "Oʻqish vaqti va oʻqilgan sahifalar, qurilmalaringiz va KOReader oʻrtasida sinxronlanadi.",
   "Auto Sync": "Avtomatik sinxronlash"

@@ -1820,6 +1820,7 @@
   "Privacy": "Конфиденциальность",
   "No downloadable format available": "Нет доступного формата для загрузки",
   "Content is neither valid XML nor JSON": "Содержимое не является ни корректным XML, ни JSON",
+  "Clear Pending": "Очистить ожидающие",
   "Reading statistics": "Статистика чтения",
   "Reading time and pages read, synced across your devices and KOReader.": "Время чтения и прочитанные страницы, синхронизируются между вашими устройствами и KOReader.",
   "Auto Sync": "Автосинхронизация"

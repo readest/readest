@@ -1886,6 +1886,7 @@
   "Privacy": "الخصوصية",
   "No downloadable format available": "لا يتوفر تنسيق قابل للتنزيل",
   "Content is neither valid XML nor JSON": "المحتوى ليس بصيغة XML ولا JSON صالحة",
+  "Clear Pending": "مسح قيد الانتظار",
   "Reading statistics": "إحصائيات القراءة",
   "Reading time and pages read, synced across your devices and KOReader.": "وقت القراءة والصفحات المقروءة، تتم مزامنتها عبر أجهزتك و KOReader.",
   "Auto Sync": "مزامنة تلقائية"

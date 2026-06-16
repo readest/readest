@@ -1754,6 +1754,7 @@
   "Privacy": "පෞද්ගලිකත්වය",
   "No downloadable format available": "බාගත කළ හැකි ආකෘතියක් නොමැත",
   "Content is neither valid XML nor JSON": "අන්තර්ගතය වලංගු XML හෝ JSON නොවේ",
+  "Clear Pending": "බලාපොරොත්තුවේ ඇති ඒවා මකන්න",
   "Reading statistics": "කියවීමේ සංඛ්‍යාලේඛන",
   "Reading time and pages read, synced across your devices and KOReader.": "කියවීමේ කාලය සහ කියවූ පිටු, ඔබේ උපාංග සහ KOReader හරහා සමමුහුර්ත වේ.",
   "Auto Sync": "ස්වයංක්‍රීය සමමුහුර්තය"

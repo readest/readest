@@ -1721,6 +1721,7 @@
   "Privacy": "Quyền riêng tư",
   "No downloadable format available": "Không có định dạng nào để tải xuống",
   "Content is neither valid XML nor JSON": "Nội dung không phải XML hay JSON hợp lệ",
+  "Clear Pending": "Xóa đang chờ",
   "Reading statistics": "Thống kê đọc",
   "Reading time and pages read, synced across your devices and KOReader.": "Thời gian đọc và số trang đã đọc, được đồng bộ trên các thiết bị của bạn và KOReader.",
   "Auto Sync": "Tự động đồng bộ"

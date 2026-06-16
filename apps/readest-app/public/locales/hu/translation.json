@@ -1754,6 +1754,7 @@
   "Privacy": "Adatvédelem",
   "No downloadable format available": "Nincs letölthető formátum",
   "Content is neither valid XML nor JSON": "A tartalom sem érvényes XML, sem JSON",
+  "Clear Pending": "Függőben lévők törlése",
   "Reading statistics": "Olvasási statisztika",
   "Reading time and pages read, synced across your devices and KOReader.": "Olvasási idő és elolvasott oldalak, szinkronizálva az eszközei és a KOReader között.",
   "Auto Sync": "Automatikus szinkronizálás"

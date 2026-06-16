@@ -1721,6 +1721,7 @@
   "Privacy": "隐私",
   "No downloadable format available": "没有可下载的格式",
   "Content is neither valid XML nor JSON": "内容既不是有效的 XML 也不是 JSON",
+  "Clear Pending": "清除等待中",
   "Reading statistics": "阅读统计",
   "Reading time and pages read, synced across your devices and KOReader.": "阅读时间和已读页数，在您的设备和 KOReader 之间同步。",
   "Auto Sync": "自动同步"

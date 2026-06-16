@@ -1754,6 +1754,7 @@
   "Privacy": "Datenschutz",
   "No downloadable format available": "Kein herunterladbares Format verfügbar",
   "Content is neither valid XML nor JSON": "Inhalt ist weder gültiges XML noch JSON",
+  "Clear Pending": "Ausstehende löschen",
   "Reading statistics": "Lesestatistik",
   "Reading time and pages read, synced across your devices and KOReader.": "Lesezeit und gelesene Seiten, synchronisiert über deine Geräte und KOReader.",
   "Auto Sync": "Automatische Synchronisierung"

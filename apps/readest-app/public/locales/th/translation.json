@@ -1721,6 +1721,7 @@
   "Privacy": "ความเป็นส่วนตัว",
   "No downloadable format available": "ไม่มีรูปแบบที่ดาวน์โหลดได้",
   "Content is neither valid XML nor JSON": "เนื้อหาไม่ใช่ทั้ง XML และ JSON ที่ถูกต้อง",
+  "Clear Pending": "ล้างที่รอดำเนินการ",
   "Reading statistics": "สถิติการอ่าน",
   "Reading time and pages read, synced across your devices and KOReader.": "เวลาในการอ่านและจำนวนหน้าที่อ่าน ซิงค์ข้ามอุปกรณ์ของคุณและ KOReader",
   "Auto Sync": "ซิงค์อัตโนมัติ"
