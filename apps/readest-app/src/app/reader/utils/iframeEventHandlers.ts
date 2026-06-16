@@ -155,9 +155,32 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
   );
 };
 
+// A tappable/long-pressable media element under the pointer, resolved to the
+// payload the image gallery / table zoom viewers consume. Shared by the
+// long-press path and the single-tap path so the two can't drift.
+type MediaTarget = { elementType: 'image'; src: string } | { elementType: 'table'; html: string };
+
+const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
+  if (!target) return null;
+  if (target.localName === 'img') {
+    return { elementType: 'image', src: (target as HTMLImageElement).src };
+  }
+  const svgImage = target.closest('svg')?.querySelector('image');
+  if (svgImage) {
+    const href =
+      svgImage.getAttribute('href') ||
+      svgImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (href) return { elementType: 'image', src: href };
+  }
+  const table = target.localName === 'table' ? target : target.closest('table');
+  if (table) return { elementType: 'table', html: (table as HTMLElement).outerHTML };
+  return null;
+};
+
 export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
+  isFixedLayout: boolean,
   event: MouseEvent,
 ) => {
   const now = Date.now();
@@ -232,6 +255,18 @@ export const handleClick = (
       const ruby = element?.closest('ruby.ww-gloss') ?? null;
       eventDispatcher.dispatch('wordwise-dictionary', { bookKey, element: ruby, word: glossWord });
       return;
+    }
+
+    // In reflowable books a single tap on an image/table opens the same viewer
+    // a long-press does, so the image gallery / table zoom is reachable by both
+    // gestures (#4584). Fixed-layout books (PDF/comics/manga) keep tap-to-turn,
+    // since there the tap is the page-turn gesture.
+    if (!isFixedLayout) {
+      const media = detectMediaTarget(element);
+      if (media) {
+        window.postMessage({ type: 'iframe-long-press', bookKey, ...media }, '*');
+        return;
+      }
     }
 
     window.postMessage(
@@ -316,47 +351,9 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
       return;
     }
 
-    if (target.localName === 'img') {
-      const imgTarget = target as HTMLImageElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'image',
-          src: imgTarget.src,
-        },
-        '*',
-      );
-    } else if (target.closest('svg')) {
-      const svg = target.closest('svg')!;
-      const svgImage = svg.querySelector('image');
-      const href =
-        svgImage?.getAttribute('href') ||
-        svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-      if (href) {
-        window.postMessage(
-          {
-            type: 'iframe-long-press',
-            bookKey,
-            elementType: 'image',
-            src: href,
-          },
-          '*',
-        );
-      }
-    } else if (target.localName === 'table' || target.closest('table')) {
-      const tableTarget = (
-        target.localName === 'table' ? target : target.closest('table')
-      ) as HTMLTableElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'table',
-          html: tableTarget.outerHTML,
-        },
-        '*',
-      );
+    const media = detectMediaTarget(target);
+    if (media) {
+      window.postMessage({ type: 'iframe-long-press', bookKey, ...media }, '*');
     }
   };
 
