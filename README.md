@@ -341,8 +341,8 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 
 [badge-website]: https://img.shields.io/badge/website-readest.com-orange
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
-[badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
-[badge-release]: https://img.shields.io/github/release/readest/readest?color=green
+[badge-license]: https://img.shields.io/badge/license-AGPL--3.0-teal
+[badge-release]: https://img.shields.io/github/v/release/readest/readest?color=green
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=blue
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest?color=blue
