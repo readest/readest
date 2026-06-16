@@ -13,7 +13,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent, useLongPressEvent } from '../hooks/useIframeEvents';
+import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIframeEvents';
 import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
@@ -588,7 +588,7 @@ const FoliateViewer: React.FC<{
     setCurrentImageIndex(0);
   }, []);
 
-  useLongPressEvent(bookKey, handleImagePress, handleTablePress);
+  useOpenMediaEvent(bookKey, handleImagePress, handleTablePress);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,

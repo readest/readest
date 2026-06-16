@@ -77,13 +77,17 @@ export const useMouseEvent = (
   };
 };
 
-export const useLongPressEvent = (
+// Opens the image gallery / table zoom viewer when the iframe reports that the
+// user activated an image or table — via either a long-press (any book) or a
+// single tap (reflowable books). See the `iframe-open-media` producers in
+// iframeEventHandlers.ts.
+export const useOpenMediaEvent = (
   bookKey: string,
   handleImagePress: (src: string) => void,
   handleTablePress: (html: string) => void,
 ) => {
-  const handleLongPress = (msg: MessageEvent) => {
-    if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-long-press') {
+  const handleOpenMedia = (msg: MessageEvent) => {
+    if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-open-media') {
       if (msg.data.elementType === 'image') {
         handleImagePress(msg.data.src);
       } else if (msg.data.elementType === 'table') {
@@ -93,9 +97,9 @@ export const useLongPressEvent = (
   };
 
   useEffect(() => {
-    window.addEventListener('message', handleLongPress);
+    window.addEventListener('message', handleOpenMedia);
     return () => {
-      window.removeEventListener('message', handleLongPress);
+      window.removeEventListener('message', handleOpenMedia);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);

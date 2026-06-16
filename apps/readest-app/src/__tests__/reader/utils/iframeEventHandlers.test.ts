@@ -131,7 +131,7 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     vi.advanceTimersByTime(260);
   };
 
-  test('reflowable: tap on an image posts iframe-long-press (image), not iframe-single-click', async () => {
+  test('reflowable: tap on an image posts iframe-open-media (image), not iframe-single-click', async () => {
     const handlers = await importHandlers();
     const img = document.createElement('img');
     img.src = 'blob:http://localhost/abc';
@@ -140,14 +140,14 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
 
     const messages = postedMessages();
     const types = messages.map((m) => m['type']);
-    expect(types).toContain('iframe-long-press');
+    expect(types).toContain('iframe-open-media');
     expect(types).not.toContain('iframe-single-click');
-    const longPress = messages.find((m) => m['type'] === 'iframe-long-press')!;
-    expect(longPress['elementType']).toBe('image');
-    expect(longPress['src']).toBe(img.src);
+    const media = messages.find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('image');
+    expect(media['src']).toBe(img.src);
   });
 
-  test('reflowable: tap on a table posts iframe-long-press (table), not iframe-single-click', async () => {
+  test('reflowable: tap on a table posts iframe-open-media (table), not iframe-single-click', async () => {
     const handlers = await importHandlers();
     const table = document.createElement('table');
     const cell = document.createElement('td');
@@ -157,11 +157,11 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
 
     const messages = postedMessages();
     const types = messages.map((m) => m['type']);
-    expect(types).toContain('iframe-long-press');
+    expect(types).toContain('iframe-open-media');
     expect(types).not.toContain('iframe-single-click');
-    const longPress = messages.find((m) => m['type'] === 'iframe-long-press')!;
-    expect(longPress['elementType']).toBe('table');
-    expect(longPress['html']).toBe(table.outerHTML);
+    const media = messages.find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('table');
+    expect(media['html']).toBe(table.outerHTML);
   });
 
   test('fixed-layout: tap on an image still posts iframe-single-click (tap turns page)', async () => {
@@ -173,7 +173,7 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
 
     const types = postedMessages().map((m) => m['type']);
     expect(types).toContain('iframe-single-click');
-    expect(types).not.toContain('iframe-long-press');
+    expect(types).not.toContain('iframe-open-media');
   });
 
   test('reflowable: tap on a linked image follows the link (posts neither)', async () => {
@@ -187,7 +187,7 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     tap(handlers, false, img);
 
     const types = postedMessages().map((m) => m['type']);
-    expect(types).not.toContain('iframe-long-press');
+    expect(types).not.toContain('iframe-open-media');
     expect(types).not.toContain('iframe-single-click');
   });
 });

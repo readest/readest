@@ -264,7 +264,7 @@ export const handleClick = (
     if (!isFixedLayout) {
       const media = detectMediaTarget(element);
       if (media) {
-        window.postMessage({ type: 'iframe-long-press', bookKey, ...media }, '*');
+        window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
         return;
       }
     }
@@ -353,7 +353,7 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
 
     const media = detectMediaTarget(target);
     if (media) {
-      window.postMessage({ type: 'iframe-long-press', bookKey, ...media }, '*');
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
     }
   };
 
