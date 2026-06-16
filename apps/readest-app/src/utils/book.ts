@@ -158,6 +158,14 @@ export const formatDescription = (description?: string | LanguageMap) => {
     .trim();
 };
 
+export const formatSeries = (series?: string, seriesIndex?: number) => {
+  const name = series?.trim();
+  if (!name) return '';
+  const hasIndex =
+    typeof seriesIndex === 'number' && Number.isFinite(seriesIndex) && seriesIndex > 0;
+  return hasIndex ? `${name} #${seriesIndex}` : name;
+};
+
 export const formatPublisher = (publisher: string | LanguageMap) => {
   return typeof publisher === 'string' ? publisher : formatLanguageMap(publisher);
 };

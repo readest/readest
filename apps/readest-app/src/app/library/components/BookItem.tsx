@@ -16,7 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
-import { formatAuthors, formatDescription } from '@/utils/book';
+import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -65,6 +65,8 @@ const BookItem: React.FC<BookItemProps> = ({
       }
     : undefined;
 
+  const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+
   return (
     <div
       role='none'
@@ -112,15 +114,15 @@ const BookItem: React.FC<BookItemProps> = ({
         className={clsx(
           'flex w-full flex-col p-0',
           mode === 'grid' && 'pt-2',
-          mode === 'list' && 'gap-2 py-0',
+          mode === 'list' && 'gap-1 py-0',
         )}
       >
-        <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-2')}>
+        <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-1')}>
           <h4
             className={clsx(
               'overflow-hidden text-ellipsis font-semibold',
               mode === 'grid' && 'block whitespace-nowrap text-[0.6em] text-xs',
-              mode === 'list' && 'line-clamp-2 text-base',
+              mode === 'list' && 'line-clamp-1 text-base',
             )}
           >
             {book.title}
@@ -131,6 +133,9 @@ const BookItem: React.FC<BookItemProps> = ({
             </p>
           )}
         </div>
+        {mode === 'list' && seriesText && (
+          <p className='text-neutral-content line-clamp-1 text-sm'>{seriesText}</p>
+        )}
         {mode === 'list' && (
           <h4 className='text-neutral-content line-clamp-1 text-sm'>
             {formatDescription(book.metadata?.description)}
