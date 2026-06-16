@@ -60,18 +60,6 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      # Turbopack persists its build cache here (turbopackFileSystemCacheForBuild).
-      # The key is deterministic (no commit SHA) so every PR restores the same
-      # entry — in practice the one `main` last saved, which is the only cache
-      # sibling PRs can all see.
-      - name: cache Turbopack build cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: apps/readest-app/.next/cache
-          key: turbo-build-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            turbo-build-web-${{ runner.os }}-
-
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
