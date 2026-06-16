@@ -436,3 +436,9 @@ msgstr "התקדמות הקריאה סונכרנה"
 
 msgid "No saved reading progress found for this book"
 msgstr "לא נמצאה התקדמות קריאה שמורה לספר זה"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

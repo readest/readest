@@ -436,3 +436,9 @@ msgstr "Progres baca disinkronkan"
 
 msgid "No saved reading progress found for this book"
 msgstr "Tidak ada progres baca tersimpan untuk buku ini"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

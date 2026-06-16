@@ -25,6 +25,7 @@ import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
+import ReadingStatsTracker from './ReadingStatsTracker';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -278,6 +279,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
         isHoveredAnim={false}
         gridInsets={gridInsets}
       />
+      <ReadingStatsTracker bookKey={bookKey} />
     </div>
   );
 };

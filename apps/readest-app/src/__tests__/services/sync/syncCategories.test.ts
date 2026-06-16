@@ -149,7 +149,7 @@ describe('isSyncCategoryEnabled', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all nine user-facing categories (incl. settings + credentials)', () => {
+  test('covers all ten user-facing categories (incl. settings + stats + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'book',
@@ -160,6 +160,7 @@ describe('SYNC_CATEGORIES', () => {
         'opds_catalog',
         'progress',
         'settings',
+        'stats',
         'texture',
       ].sort(),
     );

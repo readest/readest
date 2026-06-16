@@ -7,9 +7,35 @@ import { transformBookConfigToDB } from '@/utils/transform';
 import { transformBookNoteToDB } from '@/utils/transform';
 import { transformBookToDB } from '@/utils/transform';
 import { runMiddleware, corsAllMethods } from '@/utils/cors';
-import { SyncData, SyncRecord, SyncResult, SyncType } from '@/libs/sync';
+import {
+  SyncData,
+  SyncRecord,
+  SyncResult,
+  SyncType,
+  StatBookRecord,
+  StatPageRecord,
+} from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
 import { DBBook, DBBookConfig } from '@/types/records';
+
+const pageKey = (r: StatPageRecord) => `${r.book_hash}|${r.page}|${r.start_time}`;
+
+/**
+ * Decide which incoming page events to write: new keys always win; existing
+ * keys win only when the incoming duration is strictly longer (union/upsert
+ * semantics — KOReader-compatible).
+ */
+export function pickWinningPages(
+  incoming: StatPageRecord[],
+  server: Map<string, StatPageRecord>,
+): { toUpsert: StatPageRecord[] } {
+  const toUpsert: StatPageRecord[] = [];
+  for (const rec of incoming) {
+    const existing = server.get(pageKey(rec));
+    if (!existing || rec.duration > existing.duration) toUpsert.push(rec);
+  }
+  return { toUpsert };
+}
 
 const transformsToDB = {
   books: transformBookToDB,
@@ -39,6 +65,10 @@ export async function GET(req: NextRequest) {
   const typeParam = searchParams.get('type') as SyncType | undefined;
   const bookParam = searchParams.get('book');
   const metaHashParam = searchParams.get('meta_hash');
+  // Optional page size for `type=stats` (client-driven paged pull). Absent for
+  // the koplugin, which keeps the full-delta response.
+  const statsLimitParam = searchParams.get('limit');
+  const statsLimit = statsLimitParam ? Math.max(1, Math.floor(Number(statsLimitParam))) : 0;
 
   if (!sinceParam) {
     return NextResponse.json({ error: '"since" query parameter is required' }, { status: 400 });
@@ -52,7 +82,7 @@ export async function GET(req: NextRequest) {
   const sinceIso = since.toISOString();
 
   try {
-    const results: SyncResult = { books: [], configs: [], notes: [] };
+    const results: SyncResult = { books: [], configs: [], notes: [], statBooks: [], statPages: [] };
     const errors: Record<TableName, DBError | null> = {
       books: null,
       book_notes: null,
@@ -113,7 +143,7 @@ export async function GET(req: NextRequest) {
           }
         });
       }
-      results[DBSyncTypeMap[table] as SyncType] = records || [];
+      (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records || [];
     };
 
     if (!typeParam || typeParam === 'books') {
@@ -145,6 +175,99 @@ export async function GET(req: NextRequest) {
     if (!typeParam || typeParam === 'notes') {
       await queryTables('book_notes', ['id']).catch((err) => (errors['book_notes'] = err));
     }
+    if (!typeParam || typeParam === 'stats') {
+      // PostgREST caps responses at ~1000 rows; stat_pages grows one row per page
+      // event, so page through both tables (ordered by updated_at ascending for a
+      // stable cursor) and accumulate every row — otherwise a device pulling >1000
+      // events only gets the first page and then advances its cursor past the rest.
+      const PAGE = 1000;
+      const fetchAll = async (table: 'stat_books' | 'stat_pages', filterBook: boolean) => {
+        const all: Record<string, unknown>[] = [];
+        let offset = 0;
+        for (;;) {
+          let q = supabase
+            .from(table)
+            .select('*')
+            .eq('user_id', user.id)
+            .or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`)
+            .order('updated_at', { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (filterBook && bookParam) q = q.eq('book_hash', bookParam);
+          const { data, error } = await q;
+          if (error) return { error };
+          const rows = (data ?? []) as Record<string, unknown>[];
+          all.push(...rows);
+          if (rows.length < PAGE) break;
+          offset += PAGE;
+        }
+        return { data: all };
+      };
+      // A single bounded page of stat_pages for the app's client-driven paged
+      // pull, completed to the trailing updated_at millisecond so the client can
+      // advance its cursor with a strict `> cursor` without skipping ties.
+      const fetchPagedPages = async () => {
+        let q = supabase
+          .from('stat_pages')
+          .select('*')
+          .eq('user_id', user.id)
+          .or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`)
+          .order('updated_at', { ascending: true })
+          .range(0, statsLimit - 1);
+        if (bookParam) q = q.eq('book_hash', bookParam);
+        const { data, error } = await q;
+        if (error) return { error };
+        const rows = (data ?? []) as Record<string, unknown>[];
+        if (rows.length === statsLimit) {
+          const lastUpdated = rows[rows.length - 1]!['updated_at'] as string;
+          let eq = supabase
+            .from('stat_pages')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('updated_at', lastUpdated);
+          if (bookParam) eq = eq.eq('book_hash', bookParam);
+          const { data: extra, error: extraErr } = await eq;
+          if (extraErr) return { error: extraErr };
+          const keyOf = (r: Record<string, unknown>) =>
+            `${r['book_hash']}|${r['page']}|${r['start_time']}`;
+          const seen = new Set(rows.map(keyOf));
+          for (const r of (extra ?? []) as Record<string, unknown>[]) {
+            const k = keyOf(r);
+            if (!seen.has(k)) {
+              seen.add(k);
+              rows.push(r);
+            }
+          }
+        }
+        return { data: rows };
+      };
+      // stat_books is always returned in full (one row per book, small); only
+      // stat_pages pages when the client asks (the koplugin omits `limit`).
+      const sb = await fetchAll('stat_books', false);
+      const sp = statsLimit > 0 ? await fetchPagedPages() : await fetchAll('stat_pages', true);
+      if (sb.error)
+        return NextResponse.json(
+          { error: `stat_books: ${sb.error.message || 'Unknown error'}` },
+          { status: 500 },
+        );
+      if (sp.error)
+        return NextResponse.json(
+          { error: `stat_pages: ${sp.error.message || 'Unknown error'}` },
+          { status: 500 },
+        );
+      // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
+      // compute their pull cursor without parsing ISO-8601 timestamps.
+      const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
+        rows.map((r) => ({
+          ...r,
+          updated_at_ms: r.updated_at ? new Date(r.updated_at).getTime() : 0,
+        }));
+      (
+        results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
+      ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
+      (
+        results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
+      ).statPages = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
+    }
 
     const dbErrors = Object.values(errors).filter((err) => err !== null);
     if (dbErrors.length > 0) {
@@ -174,7 +297,7 @@ export async function POST(req: NextRequest) {
   }
   const supabase = createSupabaseClient(token);
   const body = await req.json();
-  const { books = [], configs = [], notes = [] } = body as SyncData;
+  const { books = [], configs = [], notes = [], statBooks = [], statPages = [] } = body as SyncData;
 
   const BATCH_SIZE = 100;
   const upsertRecords = async (
@@ -362,6 +485,65 @@ export async function POST(req: NextRequest) {
           }
         }),
       );
+    }
+
+    if (statBooks.length > 0) {
+      const rows = statBooks.map((b: StatBookRecord) => ({
+        user_id: user.id,
+        book_hash: b.book_hash,
+        title: b.title,
+        authors: b.authors,
+        updated_at: new Date().toISOString(),
+        deleted_at: b.deleted_at ?? null,
+      }));
+      const { error } = await supabase
+        .from('stat_books')
+        .upsert(rows, { onConflict: 'user_id,book_hash' });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (statPages.length > 0) {
+      // Process in batches so the "longer-duration-wins" merge stays correct at
+      // scale: the existing-row fetch is scoped to each batch's (book_hash,
+      // start_time) keys (not a book's whole history) and bounded under
+      // PostgREST's ~1000-row cap — otherwise existing rows beyond 1000 are
+      // invisible to pickWinningPages and a shorter duration could overwrite a
+      // longer one.
+      const BATCH = 500;
+      for (let off = 0; off < statPages.length; off += BATCH) {
+        const batch = statPages.slice(off, off + BATCH);
+        const bookHashes = [...new Set(batch.map((p) => p.book_hash))];
+        const startTimes = [...new Set(batch.map((p) => p.start_time))];
+        const { data: existing, error: exErr } = await supabase
+          .from('stat_pages')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('book_hash', bookHashes)
+          .in('start_time', startTimes);
+        if (exErr) return NextResponse.json({ error: exErr.message }, { status: 500 });
+        const serverMap = new Map<string, StatPageRecord>();
+        (existing ?? []).forEach((r) =>
+          serverMap.set(pageKey(r as StatPageRecord), r as StatPageRecord),
+        );
+        const { toUpsert } = pickWinningPages(batch, serverMap);
+        const rows = toUpsert.map((p) => ({
+          user_id: user.id,
+          book_hash: p.book_hash,
+          page: p.page,
+          start_time: p.start_time,
+          duration: p.duration,
+          total_pages: p.total_pages,
+          ext: p.ext ?? null,
+          updated_at: new Date().toISOString(),
+          deleted_at: p.deleted_at ?? null,
+        }));
+        if (rows.length > 0) {
+          const { error } = await supabase
+            .from('stat_pages')
+            .upsert(rows, { onConflict: 'user_id,book_hash,page,start_time' });
+          if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      }
     }
 
     return NextResponse.json(

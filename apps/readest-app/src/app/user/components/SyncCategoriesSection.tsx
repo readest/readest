@@ -59,6 +59,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
         'Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.',
       ),
     },
+    stats: {
+      title: _('Reading statistics'),
+      description: _('Reading time and pages read, synced across your devices and KOReader.'),
+    },
   };
 };
 

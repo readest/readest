@@ -436,3 +436,9 @@ msgstr "Leesvoortgang gesynchroniseerd"
 
 msgid "No saved reading progress found for this book"
 msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

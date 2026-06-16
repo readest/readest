@@ -436,3 +436,9 @@ msgstr "읽기 진행 상황이 동기화되었습니다"
 
 msgid "No saved reading progress found for this book"
 msgstr "이 책의 저장된 읽기 진행 상황을 찾을 수 없습니다"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

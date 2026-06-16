@@ -436,3 +436,9 @@ msgstr "Napredek branja sinhroniziran"
 
 msgid "No saved reading progress found for this book"
 msgstr "Za to knjigo ni shranjenega napredka branja"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

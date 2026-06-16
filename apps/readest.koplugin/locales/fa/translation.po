@@ -436,3 +436,9 @@ msgstr "پیشرفت مطالعه همگام‌سازی شد"
 
 msgid "No saved reading progress found for this book"
 msgstr "پیشرفت مطالعه ذخیره‌شده‌ای برای این کتاب یافت نشد"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

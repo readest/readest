@@ -436,3 +436,9 @@ msgstr "Η πρόοδος ανάγνωσης συγχρονίστηκε"
 
 msgid "No saved reading progress found for this book"
 msgstr "Δεν βρέθηκε αποθηκευμένη πρόοδος ανάγνωσης για αυτό το βιβλίο"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

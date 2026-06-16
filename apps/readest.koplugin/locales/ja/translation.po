@@ -436,3 +436,9 @@ msgstr "読書の進捗を同期しました"
 
 msgid "No saved reading progress found for this book"
 msgstr "この書籍の保存された読書進捗が見つかりません"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

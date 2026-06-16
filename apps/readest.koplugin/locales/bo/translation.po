@@ -436,3 +436,9 @@ msgstr "ཀློག་པའི་འཕེལ་རིམ་མཉམ་འག
 
 msgid "No saved reading progress found for this book"
 msgstr "དཔེ་ཆ་འདིའི་ཀློག་པའི་འཕེལ་རིམ་ཉར་ཚགས་མ་རྙེད།"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

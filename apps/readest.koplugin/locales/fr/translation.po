@@ -436,3 +436,9 @@ msgstr "Progression de lecture synchronisée"
 
 msgid "No saved reading progress found for this book"
 msgstr "Aucune progression de lecture enregistrée pour ce livre"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

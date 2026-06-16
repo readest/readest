@@ -436,3 +436,9 @@ msgstr "পড়ার অগ্রগতি সিঙ্ক হয়েছে
 
 msgid "No saved reading progress found for this book"
 msgstr "এই বইয়ের জন্য সংরক্ষিত পড়ার অগ্রগতি পাওয়া যায়নি"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

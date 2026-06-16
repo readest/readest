@@ -436,3 +436,9 @@ msgstr "पठन प्रगति सिंक हो गई"
 
 msgid "No saved reading progress found for this book"
 msgstr "इस पुस्तक के लिए सहेजी गई पठन प्रगति नहीं मिली"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

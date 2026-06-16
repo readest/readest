@@ -436,3 +436,9 @@ msgstr "阅读进度已同步"
 
 msgid "No saved reading progress found for this book"
 msgstr "未找到此书籍的已保存阅读进度"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""

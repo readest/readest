@@ -109,8 +109,12 @@ export function useSync(bookKey?: string) {
 
     try {
       const result = await syncClient.pullChanges(since, type, bookId, metaHash);
-      setSyncResult({ ...syncResult, [type]: result[type] });
-      const records = result[type];
+      const resultAsRecord = result as unknown as Record<
+        string,
+        BookDataRecord[] | null | undefined
+      >;
+      setSyncResult({ ...syncResult, [type]: resultAsRecord[type] });
+      const records = resultAsRecord[type];
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();

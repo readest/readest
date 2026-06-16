@@ -12,6 +12,7 @@ local _ = require("readest_i18n")
 local SyncAuth = require("readest_syncauth")
 local SyncConfig = require("readest_syncconfig")
 local SyncAnnotations = require("readest_syncannotations")
+local SyncStats = require("readest_syncstats")
 local SelfUpdate = require("readest_selfupdate")
 
 local ReadestSync = WidgetContainer:new{
@@ -91,6 +92,7 @@ function ReadestSync:onReaderReady()
         UIManager:nextTick(function()
             self:pullBookConfig(false)
             self:pullBookNotes(false)
+            self:pullBookStats(false)
         end)
     end
     self:onDispatcherRegisterReaderActions()
@@ -533,6 +535,27 @@ function ReadestSync:pullBookConfig(interactive)
     )
 end
 
+-- ── Reading statistics sync ────────────────────────────────────────
+
+function ReadestSync:pushBookStats(interactive)
+    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then return end
+    SyncStats:push(self.settings, client, interactive)
+end
+
+function ReadestSync:pullBookStats(interactive)
+    if NetworkMgr:willRerunWhenOnline(function() self:pullBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then return end
+    SyncStats:pull(self.settings, client, interactive,
+        function() SyncAuth:logout(self.settings, self.path) end)
+end
+
 -- ── Annotation sync ────────────────────────────────────────────────
 
 function ReadestSync:pushBookNotes(interactive, full_sync)
@@ -722,6 +745,7 @@ function ReadestSync:onCloseDocument()
         NetworkMgr:goOnlineToRun(function()
             self:pushBookConfig(false)
             self:pushBookNotes(false)
+            self:pushBookStats(false)
             self:syncBooksLibrary("both", false)
         end)
     end

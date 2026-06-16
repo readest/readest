@@ -436,3 +436,9 @@ msgstr "تمت مزامنة تقدم القراءة"
 
 msgid "No saved reading progress found for this book"
 msgstr "لم يتم العثور على تقدم قراءة محفوظ لهذا الكتاب"
+
+msgid "Failed to push reading statistics"
+msgstr ""
+
+msgid "Failed to pull reading statistics"
+msgstr ""
