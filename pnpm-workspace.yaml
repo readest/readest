@@ -24,18 +24,18 @@ patchedDependencies:
 overrides:
   glob: '>=11.1.0'
   jws: '>=4.0.1'
-  vite: '>=7.3.2 <8'
+  vite: '>=7.3.5 <8'
   esbuild: '>=0.28.1 <0.29'
   srvx: '>=0.11.13'
   rollup: '>=4.59.0'
   undici: '>=7.24.0'
   flatted: '>=3.4.2'
   body-parser: '>=2.2.1'
-  dompurify: '>=3.4.0'
+  dompurify: '>=3.4.9'
   i18next-http-backend: '>=3.0.5'
   picomatch: '>=4.0.4'
   path-to-regexp: '>=8.4.0'
-  protobufjs: '>=7.5.5'
+  protobufjs: '>=7.6.3 <8'
   serialize-javascript: 7.0.5
   fast-xml-parser: '>=5.7.0'
   lodash: '>=4.18.0'
@@ -44,10 +44,14 @@ overrides:
   basic-ftp: '>=5.3.0'
   qs: '>=6.15.2'
   shell-quote: '>=1.8.4'
+  form-data: '>=4.0.6'
+  js-yaml: '>=4.2.0'
+  '@opentelemetry/core': '>=2.8.0'
   '@babel/runtime': '>=7.26.10'
   '@babel/helpers': '>=7.26.10'
+  '@babel/core': '>=7.29.6'
   mdast-util-gfm-autolink-literal: 2.0.1
   uuid: '>=14.0.0'
-  ws: 8.20.1
+  ws: '>=8.21.0'
   '@emnapi/core': 1.8.1
   '@emnapi/runtime': 1.8.1
