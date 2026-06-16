@@ -1784,5 +1784,7 @@
   "Update": "Actualizare",
   "Nightly Builds": "Versiuni nightly",
   "Early daily builds": "Versiuni zilnice timpurii",
-  "Privacy": "Confidențialitate"
+  "Privacy": "Confidențialitate",
+  "No downloadable format available": "Niciun format descărcabil disponibil",
+  "Content is neither valid XML nor JSON": "Conținutul nu este nici XML, nici JSON valid"
 }

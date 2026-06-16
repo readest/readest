@@ -1817,5 +1817,7 @@
   "Update": "Оновлення",
   "Nightly Builds": "Нічні збірки",
   "Early daily builds": "Ранні щоденні збірки",
-  "Privacy": "Конфіденційність"
+  "Privacy": "Конфіденційність",
+  "No downloadable format available": "Немає доступного формату для завантаження",
+  "Content is neither valid XML nor JSON": "Вміст не є дійсним XML чи JSON"
 }

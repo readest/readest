@@ -1784,5 +1784,7 @@
   "Update": "Aggiornamento",
   "Nightly Builds": "Build notturne",
   "Early daily builds": "Build giornaliere anticipate",
-  "Privacy": "Privacy"
+  "Privacy": "Privacy",
+  "No downloadable format available": "Nessun formato scaricabile disponibile",
+  "Content is neither valid XML nor JSON": "Il contenuto non è né XML né JSON valido"
 }

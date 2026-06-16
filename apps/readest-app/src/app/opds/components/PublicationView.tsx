@@ -223,6 +223,10 @@ export function PublicationView({
             )}
           </div>
 
+          {!downloadedBook && acquisitionLinks.length === 0 && streamLinks.length === 0 && (
+            <p className='text-base-content/60 text-sm'>{_('No downloadable format available')}</p>
+          )}
+
           {(acquisitionLinks.length > 0 || streamLinks.length > 0) && (
             <div className='flex flex-wrap items-center gap-2'>
               {acquisitionLinks.map(({ rel, links }) => {

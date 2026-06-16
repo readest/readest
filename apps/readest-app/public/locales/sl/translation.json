@@ -1817,5 +1817,7 @@
   "Update": "Posodobitev",
   "Nightly Builds": "Nočne gradnje",
   "Early daily builds": "Zgodnje dnevne gradnje",
-  "Privacy": "Zasebnost"
+  "Privacy": "Zasebnost",
+  "No downloadable format available": "Na voljo ni nobene oblike za prenos",
+  "Content is neither valid XML nor JSON": "Vsebina ni veljaven XML niti JSON"
 }

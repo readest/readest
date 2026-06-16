@@ -1718,5 +1718,7 @@
   "Update": "更新",
   "Nightly Builds": "每夜建置版",
   "Early daily builds": "每日搶先建置版",
-  "Privacy": "隱私"
+  "Privacy": "隱私",
+  "No downloadable format available": "沒有可下載的格式",
+  "Content is neither valid XML nor JSON": "內容既不是有效的 XML 也不是 JSON"
 }

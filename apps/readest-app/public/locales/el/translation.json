@@ -1751,5 +1751,7 @@
   "Update": "Ενημέρωση",
   "Nightly Builds": "Νυχτερινές εκδόσεις",
   "Early daily builds": "Πρώιμες καθημερινές εκδόσεις",
-  "Privacy": "Απόρρητο"
+  "Privacy": "Απόρρητο",
+  "No downloadable format available": "Δεν υπάρχει διαθέσιμη μορφή για λήψη",
+  "Content is neither valid XML nor JSON": "Το περιεχόμενο δεν είναι ούτε έγκυρο XML ούτε JSON"
 }

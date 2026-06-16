@@ -1751,5 +1751,7 @@
   "Update": "Update",
   "Nightly Builds": "Nightly-builds",
   "Early daily builds": "Vroege dagelijkse builds",
-  "Privacy": "Privacy"
+  "Privacy": "Privacy",
+  "No downloadable format available": "Geen downloadbaar formaat beschikbaar",
+  "Content is neither valid XML nor JSON": "Inhoud is geen geldige XML of JSON"
 }

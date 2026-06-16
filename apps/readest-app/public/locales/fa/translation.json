@@ -1751,5 +1751,7 @@
   "Update": "به‌روزرسانی",
   "Nightly Builds": "نسخه‌های شبانه",
   "Early daily builds": "نسخه‌های روزانهٔ آزمایشی",
-  "Privacy": "حریم خصوصی"
+  "Privacy": "حریم خصوصی",
+  "No downloadable format available": "هیچ قالب قابل دانلودی موجود نیست",
+  "Content is neither valid XML nor JSON": "محتوا نه XML معتبر است و نه JSON"
 }

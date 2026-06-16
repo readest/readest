@@ -1817,5 +1817,7 @@
   "Update": "Обновление",
   "Nightly Builds": "Ночные сборки",
   "Early daily builds": "Ранние ежедневные сборки",
-  "Privacy": "Конфиденциальность"
+  "Privacy": "Конфиденциальность",
+  "No downloadable format available": "Нет доступного формата для загрузки",
+  "Content is neither valid XML nor JSON": "Содержимое не является ни корректным XML, ни JSON"
 }

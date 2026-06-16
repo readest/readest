@@ -1751,5 +1751,7 @@
   "Update": "अपडेट",
   "Nightly Builds": "नाइटली बिल्ड",
   "Early daily builds": "प्रारंभिक दैनिक बिल्ड",
-  "Privacy": "गोपनीयता"
+  "Privacy": "गोपनीयता",
+  "No downloadable format available": "कोई डाउनलोड करने योग्य प्रारूप उपलब्ध नहीं है",
+  "Content is neither valid XML nor JSON": "सामग्री न तो मान्य XML है और न ही JSON"
 }

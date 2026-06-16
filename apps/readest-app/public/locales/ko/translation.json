@@ -1718,5 +1718,7 @@
   "Update": "업데이트",
   "Nightly Builds": "야간 빌드",
   "Early daily builds": "매일 제공되는 미리 보기 빌드",
-  "Privacy": "개인정보 보호"
+  "Privacy": "개인정보 보호",
+  "No downloadable format available": "다운로드 가능한 형식이 없습니다",
+  "Content is neither valid XML nor JSON": "콘텐츠가 유효한 XML 또는 JSON이 아닙니다"
 }

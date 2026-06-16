@@ -1751,5 +1751,7 @@
   "Update": "புதுப்பிப்பு",
   "Nightly Builds": "இரவு உருவாக்கங்கள்",
   "Early daily builds": "ஆரம்ப தினசரி உருவாக்கங்கள்",
-  "Privacy": "தனியுரிமை"
+  "Privacy": "தனியுரிமை",
+  "No downloadable format available": "பதிவிறக்கம் செய்யக்கூடிய வடிவம் எதுவும் இல்லை",
+  "Content is neither valid XML nor JSON": "உள்ளடக்கம் சரியான XML அல்லது JSON அல்ல"
 }

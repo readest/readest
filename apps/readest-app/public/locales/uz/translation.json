@@ -1751,5 +1751,7 @@
   "Update": "Yangilanish",
   "Nightly Builds": "Tungi buildlar",
   "Early daily builds": "Erta kunlik buildlar",
-  "Privacy": "Maxfiylik"
+  "Privacy": "Maxfiylik",
+  "No downloadable format available": "Yuklab olinadigan format mavjud emas",
+  "Content is neither valid XML nor JSON": "Kontent yaroqli XML ham, JSON ham emas"
 }

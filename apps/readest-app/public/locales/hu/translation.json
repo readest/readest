@@ -1751,5 +1751,7 @@
   "Update": "Frissítés",
   "Nightly Builds": "Éjszakai buildek",
   "Early daily builds": "Korai napi buildek",
-  "Privacy": "Adatvédelem"
+  "Privacy": "Adatvédelem",
+  "No downloadable format available": "Nincs letölthető formátum",
+  "Content is neither valid XML nor JSON": "A tartalom sem érvényes XML, sem JSON"
 }

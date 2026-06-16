@@ -1751,5 +1751,7 @@
   "Update": "යාවත්කාලීන කිරීම",
   "Nightly Builds": "රාත්‍රී නිකුතු",
   "Early daily builds": "මුල් දෛනික නිකුතු",
-  "Privacy": "පෞද්ගලිකත්වය"
+  "Privacy": "පෞද්ගලිකත්වය",
+  "No downloadable format available": "බාගත කළ හැකි ආකෘතියක් නොමැත",
+  "Content is neither valid XML nor JSON": "අන්තර්ගතය වලංගු XML හෝ JSON නොවේ"
 }

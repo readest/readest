@@ -1718,5 +1718,7 @@
   "Update": "อัปเดต",
   "Nightly Builds": "บิลด์รายคืน",
   "Early daily builds": "บิลด์รายวันรุ่นแรก",
-  "Privacy": "ความเป็นส่วนตัว"
+  "Privacy": "ความเป็นส่วนตัว",
+  "No downloadable format available": "ไม่มีรูปแบบที่ดาวน์โหลดได้",
+  "Content is neither valid XML nor JSON": "เนื้อหาไม่ใช่ทั้ง XML และ JSON ที่ถูกต้อง"
 }

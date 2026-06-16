@@ -329,7 +329,16 @@ export default function BrowserPage() {
             }
           }
         } else {
-          const feed = JSON.parse(text);
+          // Defense-in-depth: a non-feed response (e.g. an image returned for a
+          // link that isn't actually a feed) is neither XML nor JSON. Surface a
+          // clear message instead of letting a raw JSON.parse SyntaxError leak
+          // into the error view (readest issue #4599).
+          let feed;
+          try {
+            feed = JSON.parse(text);
+          } catch {
+            throw new Error(_('Content is neither valid XML nor JSON'));
+          }
           const newState = {
             feed,
             baseURL: responseURL,

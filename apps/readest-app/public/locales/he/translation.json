@@ -1784,5 +1784,7 @@
   "Update": "עדכון",
   "Nightly Builds": "גרסאות לילה",
   "Early daily builds": "גרסאות יומיות מוקדמות",
-  "Privacy": "פרטיות"
+  "Privacy": "פרטיות",
+  "No downloadable format available": "אין פורמט להורדה זמין",
+  "Content is neither valid XML nor JSON": "התוכן אינו XML או JSON תקין"
 }

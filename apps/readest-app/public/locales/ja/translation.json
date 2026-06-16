@@ -1718,5 +1718,7 @@
   "Update": "アップデート",
   "Nightly Builds": "ナイトリービルド",
   "Early daily builds": "毎日の先行ビルド",
-  "Privacy": "プライバシー"
+  "Privacy": "プライバシー",
+  "No downloadable format available": "ダウンロード可能な形式がありません",
+  "Content is neither valid XML nor JSON": "コンテンツが有効な XML でも JSON でもありません"
 }

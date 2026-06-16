@@ -1718,5 +1718,7 @@
   "Update": "གསར་སྒྱུར།",
   "Nightly Builds": "མཚན་མོའི་བཟོ་སྐྲུན།",
   "Early daily builds": "སྔ་མོའི་ཉིན་རེའི་བཟོ་སྐྲུན།",
-  "Privacy": "གསང་དོན།"
+  "Privacy": "གསང་དོན།",
+  "No downloadable format available": "ཕབ་ལེན་བྱེད་ཆོག་པའི་རྣམ་པ་མི་འདུག",
+  "Content is neither valid XML nor JSON": "ནང་དོན་ནི་ XML དང་ JSON གང་ཡང་ཚད་ལྡན་མིན།"
 }

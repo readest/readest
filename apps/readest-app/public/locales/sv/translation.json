@@ -1751,5 +1751,7 @@
   "Update": "Uppdatering",
   "Nightly Builds": "Nattliga versioner",
   "Early daily builds": "Tidiga dagliga versioner",
-  "Privacy": "Integritet"
+  "Privacy": "Integritet",
+  "No downloadable format available": "Inget nedladdningsbart format tillgängligt",
+  "Content is neither valid XML nor JSON": "Innehållet är varken giltig XML eller JSON"
 }
