@@ -166,6 +166,7 @@ const TransferQueuePanel: React.FC = () => {
     resumeQueue,
     clearCompleted,
     clearFailed,
+    clearPending,
     queueUpload,
     queueDownload,
   } = useTransferQueue();
@@ -333,6 +334,12 @@ const TransferQueuePanel: React.FC = () => {
             <button onClick={retryAllFailed} className='btn btn-ghost btn-sm gap-1'>
               <MdRefresh size={iconSize - 2} />
               {_('Retry All')}
+            </button>
+          )}
+          {stats.pending > 0 && (
+            <button onClick={clearPending} className='btn btn-ghost btn-sm gap-1'>
+              <MdDeleteSweep size={iconSize - 2} />
+              {_('Clear Pending')}
             </button>
           )}
           {stats.completed > 0 && (

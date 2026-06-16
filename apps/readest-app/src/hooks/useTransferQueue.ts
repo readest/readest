@@ -74,6 +74,10 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
     useTransferStore.getState().clearFailed();
   }, []);
 
+  const clearPending = useCallback(() => {
+    transferManager.clearPending();
+  }, []);
+
   const clearAll = useCallback(() => {
     useTransferStore.getState().clearAll();
   }, []);
@@ -136,6 +140,7 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
     resumeQueue,
     clearCompleted,
     clearFailed,
+    clearPending,
     clearAll,
     getTransferProgress,
   };

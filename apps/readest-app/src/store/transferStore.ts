@@ -85,6 +85,7 @@ interface TransferState {
   resumeQueue: () => void;
   clearCompleted: () => void;
   clearFailed: () => void;
+  clearPending: () => void;
   clearAll: () => void;
 
   // Getters
@@ -296,6 +297,18 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       const remaining: Record<string, TransferItem> = {};
       Object.entries(state.transfers).forEach(([id, transfer]) => {
         if (transfer.status !== 'failed' && transfer.status !== 'cancelled') {
+          remaining[id] = transfer;
+        }
+      });
+      return { transfers: remaining };
+    });
+  },
+
+  clearPending: () => {
+    set((state) => {
+      const remaining: Record<string, TransferItem> = {};
+      Object.entries(state.transfers).forEach(([id, transfer]) => {
+        if (transfer.status !== 'pending') {
           remaining[id] = transfer;
         }
       });

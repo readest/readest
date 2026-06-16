@@ -226,6 +226,40 @@ describe('transferStore', () => {
     });
   });
 
+  // ── clearPending ─────────────────────────────────────────────────
+  describe('clearPending', () => {
+    test('removes only pending transfers', () => {
+      const id1 = useTransferStore.getState().addTransfer('h1', 'B1', 'upload');
+      const id2 = useTransferStore.getState().addTransfer('h2', 'B2', 'download');
+      const id3 = useTransferStore.getState().addTransfer('h3', 'B3', 'upload');
+      const id4 = useTransferStore.getState().addTransfer('h4', 'B4', 'delete');
+      const id5 = useTransferStore.getState().addTransfer('h5', 'B5', 'upload');
+      useTransferStore.getState().setTransferStatus(id1, 'in_progress');
+      useTransferStore.getState().setTransferStatus(id2, 'completed');
+      useTransferStore.getState().setTransferStatus(id3, 'failed', 'err');
+      useTransferStore.getState().setTransferStatus(id4, 'cancelled');
+      // id5 remains pending
+
+      useTransferStore.getState().clearPending();
+      const transfers = useTransferStore.getState().transfers;
+      expect(transfers[id1]).toBeDefined(); // in_progress kept
+      expect(transfers[id2]).toBeDefined(); // completed kept
+      expect(transfers[id3]).toBeDefined(); // failed kept
+      expect(transfers[id4]).toBeDefined(); // cancelled kept
+      expect(transfers[id5]).toBeUndefined(); // pending removed
+    });
+
+    test('removes retry-pending transfers (status pending with an error message)', () => {
+      const id = useTransferStore.getState().addTransfer('h', 'B', 'upload');
+      // mimic the retry path: failed -> back to pending with a "Retry x/y" note
+      useTransferStore.getState().setTransferStatus(id, 'pending', 'Retry 1/3');
+      expect(useTransferStore.getState().transfers[id]!.status).toBe('pending');
+
+      useTransferStore.getState().clearPending();
+      expect(useTransferStore.getState().transfers[id]).toBeUndefined();
+    });
+  });
+
   // ── clearAll ─────────────────────────────────────────────────────
   describe('clearAll', () => {
     test('removes all transfers', () => {
