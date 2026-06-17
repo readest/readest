@@ -90,12 +90,12 @@ export function libraryTests(getService: () => AppService) {
       expect(loaded).toEqual([]);
     });
 
-    it('should overwrite previous library on save', async () => {
+    it('should overwrite (and shrink) the library only when replace is set', async () => {
       const service = getService();
       await service.saveLibraryBooks([makeBook({ hash: 'old' })]);
 
       const newBooks = [makeBook({ hash: 'new1' }), makeBook({ hash: 'new2' })];
-      await service.saveLibraryBooks(newBooks);
+      await service.saveLibraryBooks(newBooks, { replace: true });
 
       const loaded = await service.loadLibraryBooks();
       expect(loaded).toHaveLength(2);
@@ -143,13 +143,70 @@ export function libraryTests(getService: () => AppService) {
       expect(loaded[0]!.updatedAt).toBe(5000);
     });
 
-    it('should save empty array', async () => {
+    it('should clear the library when saving an empty array with replace', async () => {
       const service = getService();
       await service.saveLibraryBooks([makeBook()]);
-      await service.saveLibraryBooks([]);
+      await service.saveLibraryBooks([], { replace: true });
 
       const loaded = await service.loadLibraryBooks();
       expect(loaded).toEqual([]);
+    });
+
+    // Merge-floor safebelt: a routine save may ADD or MODIFY rows (including
+    // setting `deletedAt` tombstones) but must never silently DROP a book that
+    // exists on disk. Guards against a stale or partially-loaded in-memory
+    // library wiping library.json (the cold-start "Open with" race).
+    it('should not drop on-disk books absent from the saved set (merge floor)', async () => {
+      const service = getService();
+      await service.saveLibraryBooks([
+        makeBook({ hash: 'a', title: 'A' }),
+        makeBook({ hash: 'b', title: 'B' }),
+        makeBook({ hash: 'c', title: 'C' }),
+      ]);
+
+      // A later save that only knows about 'a' must not erase 'b' and 'c'.
+      await service.saveLibraryBooks([makeBook({ hash: 'a', title: 'A2' })]);
+
+      const loaded = await service.loadLibraryBooks();
+      const byHash = Object.fromEntries(loaded.map((b) => [b.hash, b.title]));
+      expect(loaded).toHaveLength(3);
+      expect(byHash).toEqual({ a: 'A2', b: 'B', c: 'C' });
+    });
+
+    it('should preserve the whole library when an empty set is saved (no wipe)', async () => {
+      const service = getService();
+      await service.saveLibraryBooks([makeBook({ hash: 'a' }), makeBook({ hash: 'b' })]);
+
+      await service.saveLibraryBooks([]);
+
+      const loaded = await service.loadLibraryBooks();
+      expect(loaded.map((b) => b.hash).sort()).toEqual(['a', 'b']);
+    });
+
+    it('should keep tombstones (deletedAt) not present in the incoming set', async () => {
+      const service = getService();
+      await service.saveLibraryBooks([
+        makeBook({ hash: 'live' }),
+        makeBook({ hash: 'gone', deletedAt: 1234 }),
+      ]);
+
+      // A save that omits the tombstone must neither lose nor resurrect it.
+      await service.saveLibraryBooks([makeBook({ hash: 'live' })]);
+
+      const loaded = await service.loadLibraryBooks();
+      const tomb = loaded.find((b) => b.hash === 'gone');
+      expect(loaded).toHaveLength(2);
+      expect(tomb?.deletedAt).toBe(1234);
+    });
+
+    it('should let the incoming row win on a hash conflict (modify in place)', async () => {
+      const service = getService();
+      await service.saveLibraryBooks([makeBook({ hash: 'a', title: 'old' })]);
+      await service.saveLibraryBooks([makeBook({ hash: 'a', title: 'new' })]);
+
+      const loaded = await service.loadLibraryBooks();
+      expect(loaded).toHaveLength(1);
+      expect(loaded[0]!.title).toBe('new');
     });
   });
 }

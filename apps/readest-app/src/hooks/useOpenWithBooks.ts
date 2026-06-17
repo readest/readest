@@ -83,7 +83,18 @@ export function useOpenWithBooks() {
       // or uploading to the cloud. We also setLibrary so the reader's
       // initViewState (which looks the book up via getBookByHash) can find
       // the ephemeral entry.
-      const { library, setLibrary, getBookByHash } = useLibraryStore.getState();
+      const { setLibrary, getBookByHash, libraryLoaded } = useLibraryStore.getState();
+      // Load the real library from disk before building any transient entry.
+      // On a cold-start "Open with" the store may not be populated yet; importing
+      // onto an empty in-memory library would (a) miss the hash-match for an
+      // already-imported book and (b) let the library page's cached-skip persist
+      // an empty library, wiping library.json. Loading first makes the store
+      // reflect disk (and marks it loaded) so neither happens.
+      let library = useLibraryStore.getState().library;
+      if (!libraryLoaded) {
+        library = await appService.loadLibraryBooks();
+        setLibrary(library);
+      }
       const bookIds: string[] = [];
       let libraryMutated = false;
 

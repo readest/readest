@@ -68,6 +68,16 @@ export interface FileSystem {
   getPrefix(base: BaseDir): Promise<string>;
 }
 
+export interface SaveLibraryBooksOptions {
+  /**
+   * Overwrite `library.json` with exactly the given set, allowing it to shrink.
+   * Reserved for deliberate, authoritative rewrites (tombstone GC, explicit
+   * "clear library", account reset). Routine saves must NOT set this — the
+   * default merge-floor protects against silently dropping books on disk.
+   */
+  replace?: boolean;
+}
+
 export interface AppService {
   osPlatform: OsPlatform;
   appPlatform: AppPlatform;
@@ -205,7 +215,7 @@ export interface AppService {
   loadBookContent(book: Book): Promise<BookContent>;
   resolveNativeBookFilePath(book: Book): Promise<string | null>;
   loadLibraryBooks(): Promise<Book[]>;
-  saveLibraryBooks(books: Book[]): Promise<void>;
+  saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void>;
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;
   generateCoverImageUrl(book: Book): Promise<string>;
