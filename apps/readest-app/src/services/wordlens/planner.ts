@@ -1,5 +1,6 @@
-import type { GlossOccurrence, GlossSource, WordLensSourceLang } from './types';
+import type { GlossEntry, GlossOccurrence, GlossSource, WordLensSourceLang } from './types';
 import { isDifficult } from './difficulty';
+import { baseFormCandidates, cleanGloss, glossesShareMeaning } from './gloss';
 
 export interface PlanOptions {
   sourceLang: WordLensSourceLang;
@@ -67,11 +68,31 @@ export const planGlosses = (
   for (const t of tokens) {
     const entry = source.lookup(t.word);
     if (!entry || !isDifficult(entry.rank, opts.rankCutoff)) continue;
-    occurrences.push({ start: t.start, end: t.end, word: t.word, gloss: entry.gloss });
+    // English derivations inherit a known base's lower rank (lazily ⇐ lazy), so
+    // they drop below the cutoff and aren't hinted. Gated to English source.
+    if (
+      opts.sourceLang === 'en' &&
+      !isDifficult(effectiveRank(t.word, entry, source), opts.rankCutoff)
+    ) {
+      continue;
+    }
+    occurrences.push({ start: t.start, end: t.end, word: t.word, gloss: cleanGloss(entry.gloss) });
     if (occurrences.length >= cap) {
       console.warn(`[wordlens] occurrence cap (${cap}) hit; some hints omitted`);
       break;
     }
   }
   return occurrences;
+};
+
+// Lowest rank among the word itself and any base form that exists in the index
+// AND shares meaning with it (transparent derivation). A drifted form like
+// `hardly` finds `hard` but their glosses don't overlap, so it keeps its own rank.
+const effectiveRank = (word: string, entry: GlossEntry, source: GlossSource): number => {
+  let rank = entry.rank;
+  for (const base of baseFormCandidates(word)) {
+    const b = source.lookup(base);
+    if (b && glossesShareMeaning(entry.gloss, b.gloss)) rank = Math.min(rank, b.rank);
+  }
+  return rank;
 };

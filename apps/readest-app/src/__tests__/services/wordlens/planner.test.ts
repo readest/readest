@@ -52,6 +52,39 @@ describe('planGlosses (Chinese)', () => {
   });
 });
 
+describe('planGlosses derivational reduction (English source)', () => {
+  // A derived word inherits its base's (lower) rank when the base exists and
+  // their glosses share meaning — so it drops below the cutoff and isn't hinted.
+  const derv: GlossSource = {
+    lookup(word) {
+      const table: Record<string, GlossEntry> = {
+        lazily: { rank: 16150, gloss: '懒洋洋地' },
+        lazy: { rank: 6238, gloss: '懒惰的, 怠惰的' },
+        // hardly is artificially rare here to prove the gloss-overlap gate (not rank) keeps it.
+        hardly: { rank: 16000, gloss: '几乎不' },
+        hard: { rank: 438, gloss: '坚硬的, 硬的' },
+        ahem: { rank: 24471, gloss: 'interj. 呃哼' },
+      };
+      return table[word.toLowerCase()] ?? null;
+    },
+  };
+  const cutoff = 14000; // ~C1
+
+  it('suppresses a transparent derivation whose base is known (lazily ⇐ lazy)', () => {
+    expect(planGlosses('lazily', derv, { sourceLang: 'en', rankCutoff: cutoff })).toEqual([]);
+  });
+
+  it('keeps a drifted derivation even when its base is common (hardly ≠ hard)', () => {
+    const occ = planGlosses('hardly', derv, { sourceLang: 'en', rankCutoff: cutoff });
+    expect(occ.map((o) => o.word)).toEqual(['hardly']);
+  });
+
+  it('cleans the displayed gloss (strips interj., keeps first sense)', () => {
+    const occ = planGlosses('ahem', derv, { sourceLang: 'en', rankCutoff: cutoff });
+    expect(occ[0]?.gloss).toBe('呃哼');
+  });
+});
+
 describe('planGlosses against a zh-en fixture', () => {
   // Decoupled from the shipping data/wordlens/zh-en.json: the committed pack is
   // (re)generated from real corpora, so the test owns its ranks via a fixture.
