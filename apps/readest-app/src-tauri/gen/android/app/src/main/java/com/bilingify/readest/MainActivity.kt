@@ -33,9 +33,31 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     // is an evaluateJavascript round-trip into the WebView.
     private val touchMoveThrottleMs = 100L
     private var lastTouchMoveTime = 0L
+    // #3297: on Android 14+ the window can gain focus before the WebView has
+    // loaded/painted its first frame, leaving a blank screen. Force a single
+    // repaint as soon as both the window has focus and the WebView exists —
+    // whichever happens last — so the compositor draws the initial frame.
+    private var hasWindowFocus = false
+    private var didInitialInvalidate = false
 
     override fun onWebViewCreate(webView: WebView) {
         wv = webView
+        ensureInitialPaint()
+    }
+
+    private fun ensureInitialPaint() {
+        val webView = wv ?: return
+        if (didInitialInvalidate || !hasWindowFocus) return
+        didInitialInvalidate = true
+        webView.post { webView.invalidate() }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hasWindowFocus = true
+            ensureInitialPaint()
+        }
     }
 
     private val keyEventMap = mapOf(

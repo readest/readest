@@ -42,6 +42,7 @@ import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
 import org.json.JSONArray
 import java.io.*
+import kotlinx.coroutines.*
 
 @InvokeArg
 class AuthRequestArgs {
@@ -140,6 +141,16 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private var redirectHost = "auth-callback"
     private val billingManager by lazy {
         BillingManager(activity)
+    }
+    // Scope for offloading blocking @Command I/O (file copy, package
+    // install, font scan, dictionary lookup) off the plugin command thread.
+    // Cancelled in onDestroy so in-flight work can't resolve into — or leak —
+    // a dead Activity.
+    private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    override fun onDestroy() {
+        pluginScope.cancel()
+        instance = null
     }
 
     companion object {
@@ -329,58 +340,68 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun copy_uri_to_path(invoke: Invoke) {
         val args = invoke.parseArgs(CopyURIRequestArgs::class.java)
-        val ret = JSObject()
-        try {
-            val uri = Uri.parse(args.uri ?: "")
-            val dst = File(args.dst ?: "")
-            val inputStream = activity.contentResolver.openInputStream(uri)
+        pluginScope.launch {
+            val ret = withContext(Dispatchers.IO) {
+                val r = JSObject()
+                try {
+                    val uri = Uri.parse(args.uri ?: "")
+                    val dst = File(args.dst ?: "")
+                    val inputStream = activity.contentResolver.openInputStream(uri)
 
-            if (inputStream != null) {
-                dst.outputStream().use { output ->
-                    inputStream.use { input ->
-                        input.copyTo(output)
+                    if (inputStream != null) {
+                        dst.outputStream().use { output ->
+                            inputStream.use { input ->
+                                input.copyTo(output)
+                            }
+                        }
+                        r.put("success", true)
+                    } else {
+                        r.put("success", false)
+                        r.put("error", "Failed to open input stream from URI")
                     }
+                } catch (e: Exception) {
+                    r.put("success", false)
+                    r.put("error", e.message)
                 }
-                ret.put("success", true)
-            } else {
-                ret.put("success", false)
-                ret.put("error", "Failed to open input stream from URI")
+                r
             }
-        } catch (e: Exception) {
-            ret.put("success", false)
-            ret.put("error", e.message)
+            if (isActive) invoke.resolve(ret)
         }
-        invoke.resolve(ret)
     }
 
     @Command
     fun install_package(invoke: Invoke) {
         val args = invoke.parseArgs(InstallPackageRequestArgs::class.java)
-        val ret = JSObject()
-        try {
-            val file = File(args.path ?: "")
-            if (file.exists()) {
-                val intent = Intent(Intent.ACTION_VIEW)
-                val apkUri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
-                intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                val packageManager = activity.packageManager
-                val resolveInfos = packageManager.queryIntentActivities(intent, 0)
-                for (resolveInfo in resolveInfos) {
-                    val packageName = resolveInfo.activityInfo.packageName
-                    activity.grantUriPermission(packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        pluginScope.launch {
+            val ret = withContext(Dispatchers.IO) {
+                val r = JSObject()
+                try {
+                    val file = File(args.path ?: "")
+                    if (file.exists()) {
+                        val intent = Intent(Intent.ACTION_VIEW)
+                        val apkUri = FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", file)
+                        intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val packageManager = activity.packageManager
+                        val resolveInfos = packageManager.queryIntentActivities(intent, 0)
+                        for (resolveInfo in resolveInfos) {
+                            val packageName = resolveInfo.activityInfo.packageName
+                            activity.grantUriPermission(packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        withContext(Dispatchers.Main) { activity.startActivity(intent) }
+                        r.put("success", true)
+                    } else {
+                        r.put("success", false)
+                        r.put("error", "File does not exist")
+                    }
+                } catch (e: Exception) {
+                    r.put("success", false)
+                    r.put("error", e.message)
                 }
-                activity.startActivity(intent)
-                ret.put("success", true)
-            } else {
-                ret.put("success", false)
-                ret.put("error", "File does not exist")
+                r
             }
-        } catch (e: Exception) {
-            ret.put("success", false)
-            ret.put("error", e.message)
+            if (isActive) invoke.resolve(ret)
         }
-        invoke.resolve(ret)
     }
 
     @Command
@@ -493,46 +514,66 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     @Command
     fun get_sys_fonts_list(invoke: Invoke) {
-        val ret = JSObject()
-        try {
-            val fontList = mutableListOf<String>()
-            val fontFileList = mutableListOf<String>()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val systemFonts = SystemFonts.getAvailableFonts()
-                for (font in systemFonts) {
-                    val file = font.getFile()?: continue
-                    if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
-                        fontFileList.add(file.name)
+        pluginScope.launch {
+            val ret = withContext(Dispatchers.IO) {
+                val r = JSObject()
+                try {
+                    val fontList = cachedFontList ?: run {
+                        val fonts = scanFonts()
+                        cachedFontList = fonts
+                        fonts
+                    }
+                    val fontDict = JSObject()
+                    for (fontName in fontList) {
+                        fontDict.put(fontName, fontName)
+                    }
+                    r.put("fonts", fontDict)
+                } catch (e: Exception) {
+                    r.put("error", e.message)
+                }
+                r
+            }
+            if (isActive) invoke.resolve(ret)
+        }
+    }
+
+    // Scanning system fonts walks the font directory and is stable for the
+    // process lifetime, so cache it. @Volatile for safe publication across
+    // the IO dispatcher threads.
+    @Volatile
+    private var cachedFontList: List<String>? = null
+
+    private fun scanFonts(): List<String> {
+        val fontList = mutableListOf<String>()
+        val fontFileList = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val systemFonts = SystemFonts.getAvailableFonts()
+            for (font in systemFonts) {
+                val file = font.getFile() ?: continue
+                if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
+                    fontFileList.add(file.name)
+                }
+            }
+        } else {
+            val fontDirs = listOf("/system/fonts", "/system/font", "/data/fonts")
+            for (dirPath in fontDirs) {
+                val dir = File(dirPath)
+                if (dir.exists() && dir.isDirectory) {
+                    dir.listFiles()?.forEach { file ->
+                        if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
+                            fontFileList.add(file.name)
+                        }
                     }
                 }
-            } else {
-                val fontDirs = listOf("/system/fonts", "/system/font", "/data/fonts")
-                for (dirPath in fontDirs) {
-                  val dir = File(dirPath)
-                  if (dir.exists() && dir.isDirectory) {
-                      dir.listFiles()?.forEach { file ->
-                          if (file.isFile && (file.name.endsWith(".ttf", true) || file.name.endsWith(".otf", true))) {
-                              fontFileList.add(file.name)
-                          }
-                      }
-                  }
-                }
             }
-            for (fileFileName in fontFileList) {
-                var fontName = fileFileName
-                    .replace(Regex("\\.(ttf|otf)$", RegexOption.IGNORE_CASE), "")
-                    .trim()
-                fontList.add(fontName)
-            }
-            var fontDict = JSObject()
-            for (fontName in fontList) {
-                fontDict.put(fontName, fontName)
-            }
-            ret.put("fonts", fontDict)
-        } catch (e: Exception) {
-            ret.put("error", e.message)
         }
-        invoke.resolve(ret)
+        for (fileFileName in fontFileList) {
+            val fontName = fileFileName
+                .replace(Regex("\\.(ttf|otf)$", RegexOption.IGNORE_CASE), "")
+                .trim()
+            fontList.add(fontName)
+        }
+        return fontList
     }
 
     @Command
@@ -1046,57 +1087,69 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             return invoke.reject("empty word")
         }
 
-        try {
-            val intent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_PROCESS_TEXT, word)
-                // Read-only — we don't want third-party apps writing
-                // back into a clipboard or selection slot we don't own.
-                putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true)
-            }
+        val intent = Intent(Intent.ACTION_PROCESS_TEXT).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_PROCESS_TEXT, word)
+            // Read-only — we don't want third-party apps writing
+            // back into a clipboard or selection slot we don't own.
+            putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true)
+        }
 
-            val pm = activity.packageManager
-            val handlers = pm.queryIntentActivities(intent, 0).map {
-                LookupHandler(it.activityInfo.packageName, it.activityInfo.name)
-            }
-            val browserPackages = queryBrowserPackages(pm)
-            val remembered = readRememberedDictionary()
+        pluginScope.launch {
+            try {
+                // queryIntentActivities/queryBrowserPackages scan installed-app
+                // manifests (50–200ms) and readRememberedDictionary touches
+                // disk; keep them off the plugin command thread so other plugin
+                // IPC isn't queued behind a dictionary lookup. The dispatch
+                // itself (startActivity) hops back to Main below.
+                val (dispatch, remembered) = withContext(Dispatchers.IO) {
+                    val pm = activity.packageManager
+                    val handlers = pm.queryIntentActivities(intent, 0).map {
+                        LookupHandler(it.activityInfo.packageName, it.activityInfo.name)
+                    }
+                    val browserPackages = queryBrowserPackages(pm)
+                    val remembered = readRememberedDictionary()
+                    decideLookupDispatch(handlers, browserPackages, remembered) to remembered
+                }
+                if (!isActive) return@launch
 
-            when (val dispatch = decideLookupDispatch(handlers, browserPackages, remembered)) {
-                is LookupDispatch.Unavailable -> {
-                    val ret = JSObject()
-                    ret.put("success", false)
-                    ret.put("unavailable", true)
-                    return invoke.resolve(ret)
+                when (dispatch) {
+                    is LookupDispatch.Unavailable -> {
+                        val ret = JSObject()
+                        ret.put("success", false)
+                        ret.put("unavailable", true)
+                        invoke.resolve(ret)
+                        return@launch
+                    }
+                    // FLAG_ACTIVITY_NEW_TASK is required because `activity`
+                    // here is the plugin's host activity context — without it
+                    // some OEM ROMs reject the dispatch with "Calling
+                    // startActivity() from outside of an Activity context".
+                    is LookupDispatch.DispatchImplicit -> {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        activity.startActivity(intent)
+                    }
+                    is LookupDispatch.DispatchExplicit -> {
+                        intent.setClassName(dispatch.handler.packageName, dispatch.handler.className)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        activity.startActivity(intent)
+                    }
+                    is LookupDispatch.DispatchChooser -> {
+                        // We only reach here when the remembered app (if any)
+                        // was stale — otherwise it would have been launched
+                        // directly. Drop it so a fresh pick replaces it.
+                        if (remembered != null) clearRememberedDictionary()
+                        startBrowserExcludingChooser(intent, dispatch.exclude)
+                    }
                 }
-                // FLAG_ACTIVITY_NEW_TASK is required because `activity`
-                // here is the plugin's host activity context — without it
-                // some OEM ROMs reject the dispatch with "Calling
-                // startActivity() from outside of an Activity context".
-                is LookupDispatch.DispatchImplicit -> {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    activity.startActivity(intent)
-                }
-                is LookupDispatch.DispatchExplicit -> {
-                    intent.setClassName(dispatch.handler.packageName, dispatch.handler.className)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    activity.startActivity(intent)
-                }
-                is LookupDispatch.DispatchChooser -> {
-                    // We only reach here when the remembered app (if any)
-                    // was stale — otherwise it would have been launched
-                    // directly. Drop it so a fresh pick replaces it.
-                    if (remembered != null) clearRememberedDictionary()
-                    startBrowserExcludingChooser(intent, dispatch.exclude)
-                }
-            }
 
-            val ret = JSObject()
-            ret.put("success", true)
-            invoke.resolve(ret)
-        } catch (e: Exception) {
-            Log.e("NativeBridgePlugin", "show_lookup_popover failed", e)
-            invoke.reject("Failed to look up word: ${e.message}")
+                val ret = JSObject()
+                ret.put("success", true)
+                invoke.resolve(ret)
+            } catch (e: Exception) {
+                Log.e("NativeBridgePlugin", "show_lookup_popover failed", e)
+                if (isActive) invoke.reject("Failed to look up word: ${e.message}")
+            }
         }
     }
 
