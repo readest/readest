@@ -771,7 +771,15 @@ function ReadestSync:onPageUpdate(page)
     end
 end
 
-function ReadestSync:onAnnotationsModified()
+function ReadestSync:onAnnotationsModified(items)
+    -- A removal fires AnnotationsModified with a negative index_modified and the
+    -- deleted item at items[1]. Capture a tombstone now, before the item is gone
+    -- for good — the push walk only sees live annotations, so without this the
+    -- deletion never reaches the server (issue #4119, push direction).
+    if self.settings.access_token and items and items.index_modified
+            and items.index_modified < 0 and items[1] then
+        SyncAnnotations:recordDeletion(self.ui.doc_settings, items[1])
+    end
     if self.settings.auto_sync and self.settings.access_token then
         UIManager:nextTick(function()
             self:pushBookNotes(false)
