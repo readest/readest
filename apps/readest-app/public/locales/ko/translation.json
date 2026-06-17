@@ -1724,5 +1724,14 @@
   "Clear Pending": "대기 중 항목 지우기",
   "Reading statistics": "독서 통계",
   "Reading time and pages read, synced across your devices and KOReader.": "읽은 시간과 읽은 페이지 수로, 여러 기기와 KOReader 간에 동기화됩니다.",
-  "Auto Sync": "자동 동기화"
+  "Auto Sync": "자동 동기화",
+  "Purged book data: {{title}}": "도서 데이터를 삭제했습니다: {{title}}",
+  "Failed to purge book data: {{title}}": "도서 데이터 삭제에 실패했습니다: {{title}}",
+  "Purge Book Data": "도서 데이터 완전 삭제",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "책과 읽기 진행률, 메모, 책갈피를 포함한 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "Purge Data": "데이터 완전 삭제",
+  "Erase the book and all its data, including reading progress": "읽기 진행률을 포함한 책과 모든 데이터를 삭제합니다",
+  "More Actions": "추가 작업",
+  "Sign in and make the book available to share it": "공유하려면 로그인하고 책을 사용할 수 있도록 하세요",
+  "Download the book to export it": "내보내려면 책을 다운로드하세요"
 }

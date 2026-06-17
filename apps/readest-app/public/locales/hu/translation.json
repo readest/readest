@@ -1757,5 +1757,14 @@
   "Clear Pending": "Függőben lévők törlése",
   "Reading statistics": "Olvasási statisztika",
   "Reading time and pages read, synced across your devices and KOReader.": "Olvasási idő és elolvasott oldalak, szinkronizálva az eszközei és a KOReader között.",
-  "Auto Sync": "Automatikus szinkronizálás"
+  "Auto Sync": "Automatikus szinkronizálás",
+  "Purged book data: {{title}}": "Könyv adatai törölve: {{title}}",
+  "Failed to purge book data: {{title}}": "A könyv adatainak törlése sikertelen: {{title}}",
+  "Purge Book Data": "Könyv összes adatának törlése",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Ez véglegesen törli a könyvet és minden adatát, beleértve az olvasási előrehaladást, a jegyzeteket és a könyvjelzőket. A művelet nem vonható vissza.",
+  "Purge Data": "Összes adat törlése",
+  "Erase the book and all its data, including reading progress": "Törli a könyvet és minden adatát, beleértve az olvasási előrehaladást",
+  "More Actions": "További műveletek",
+  "Sign in and make the book available to share it": "Jelentkezz be, és tedd elérhetővé a könyvet a megosztáshoz",
+  "Download the book to export it": "Töltsd le a könyvet az exportáláshoz"
 }

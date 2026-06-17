@@ -1724,5 +1724,14 @@
   "Clear Pending": "待機中を消去",
   "Reading statistics": "読書統計",
   "Reading time and pages read, synced across your devices and KOReader.": "読書時間と読んだページ数。デバイス間および KOReader と同期されます。",
-  "Auto Sync": "自動同期"
+  "Auto Sync": "自動同期",
+  "Purged book data: {{title}}": "書籍データを消去しました: {{title}}",
+  "Failed to purge book data: {{title}}": "書籍データの消去に失敗しました: {{title}}",
+  "Purge Book Data": "書籍データを消去",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "これにより、本と読書の進行状況・メモ・しおりを含むすべてのデータが完全に削除されます。この操作は取り消せません。",
+  "Purge Data": "データを消去",
+  "Erase the book and all its data, including reading progress": "本と読書の進行状況を含むすべてのデータを消去します",
+  "More Actions": "その他の操作",
+  "Sign in and make the book available to share it": "共有するにはサインインして書籍を利用可能にしてください",
+  "Download the book to export it": "エクスポートするには書籍をダウンロードしてください"
 }

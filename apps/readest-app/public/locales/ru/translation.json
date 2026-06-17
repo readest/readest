@@ -1823,5 +1823,14 @@
   "Clear Pending": "Очистить ожидающие",
   "Reading statistics": "Статистика чтения",
   "Reading time and pages read, synced across your devices and KOReader.": "Время чтения и прочитанные страницы, синхронизируются между вашими устройствами и KOReader.",
-  "Auto Sync": "Автосинхронизация"
+  "Auto Sync": "Автосинхронизация",
+  "Purged book data: {{title}}": "Данные книги очищены: {{title}}",
+  "Failed to purge book data: {{title}}": "Не удалось очистить данные книги: {{title}}",
+  "Purge Book Data": "Очистить данные книги",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Это навсегда удалит книгу и все её данные, включая прогресс чтения, заметки и закладки. Это действие нельзя отменить.",
+  "Purge Data": "Очистить данные",
+  "Erase the book and all its data, including reading progress": "Удаляет книгу и все её данные, включая прогресс чтения",
+  "More Actions": "Ещё действия",
+  "Sign in and make the book available to share it": "Войдите и сделайте книгу доступной, чтобы поделиться ею",
+  "Download the book to export it": "Скачайте книгу, чтобы экспортировать её"
 }

@@ -1757,5 +1757,14 @@
   "Clear Pending": "காத்திருப்பதை அழிக்கவும்",
   "Reading statistics": "வாசிப்பு புள்ளிவிவரங்கள்",
   "Reading time and pages read, synced across your devices and KOReader.": "வாசிப்பு நேரம் மற்றும் படித்த பக்கங்கள், உங்கள் சாதனங்கள் மற்றும் KOReader இடையே ஒத்திசைக்கப்படும்.",
-  "Auto Sync": "தானியங்கு ஒத்திசைவு"
+  "Auto Sync": "தானியங்கு ஒத்திசைவு",
+  "Purged book data: {{title}}": "புத்தகத் தரவு அழிக்கப்பட்டது: {{title}}",
+  "Failed to purge book data: {{title}}": "புத்தகத் தரவை அழிக்க முடியவில்லை: {{title}}",
+  "Purge Book Data": "புத்தகத்தின் எல்லா தரவையும் அழி",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "இது புத்தகத்தையும் வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புத்தகக்குறிகள் உள்ளிட்ட அதன் அனைத்து தரவையும் நிரந்தரமாக அழிக்கும். இதை மீட்டெடுக்க முடியாது.",
+  "Purge Data": "எல்லா தரவையும் அழி",
+  "Erase the book and all its data, including reading progress": "வாசிப்பு முன்னேற்றம் உட்பட புத்தகத்தையும் அதன் எல்லா தரவையும் அழிக்கும்",
+  "More Actions": "மேலும் செயல்கள்",
+  "Sign in and make the book available to share it": "பகிர உள்நுழைந்து புத்தகத்தைக் கிடைக்கச் செய்யவும்",
+  "Download the book to export it": "ஏற்றுமதி செய்ய புத்தகத்தைப் பதிவிறக்கவும்"
 }

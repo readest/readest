@@ -5,11 +5,10 @@ import {
   MdOutlineCloudUpload,
   MdOutlineDelete,
   MdOutlineEdit,
-  MdSaveAlt,
+  MdMenu,
   MdExpandMore,
   MdExpandLess,
 } from 'react-icons/md';
-import { FaGoodreads } from 'react-icons/fa';
 
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
@@ -35,12 +34,15 @@ interface BookDetailViewProps {
   book: Book;
   metadata: BookMetadata | null;
   fileSize: number | null;
+  shareEnabled?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
+  onPurge?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
+  onShare?: () => void;
   onExport?: () => void;
 }
 
@@ -48,17 +50,24 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   book,
   metadata,
   fileSize,
+  shareEnabled,
   onEdit,
   onDelete,
   onDeleteCloudBackup,
   onDeleteLocalCopy,
+  onPurge,
   onDownload,
   onUpload,
+  onShare,
   onExport,
 }) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
+
+  // Export and Share both read the book file off disk; `fileSize` is only
+  // non-null when getBookFileSize could actually open the local copy.
+  const hasLocalFile = fileSize !== null;
 
   const toggleSeriesCollapse = () => {
     saveSysSettings(envConfig, 'metadataSeriesCollapsed', !settings.metadataSeriesCollapsed);
@@ -101,12 +110,16 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdOutlineEdit className='hover:fill-blue-500' />
               </button>
             )}
-            <button
-              onClick={() => openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))}
-              title={_('Search on Goodreads')}
-            >
-              <FaGoodreads className='fill-base-content' />
-            </button>
+            {book.uploadedAt && onDownload && (
+              <button onClick={onDownload} title={_('Download from Cloud')}>
+                <MdOutlineCloudDownload className='fill-base-content' />
+              </button>
+            )}
+            {book.downloadedAt && onUpload && (
+              <button onClick={onUpload} title={_('Upload to Cloud')}>
+                <MdOutlineCloudUpload className='fill-base-content' />
+              </button>
+            )}
             {onDelete && (
               <Dropdown
                 label={_('Delete Book Options')}
@@ -140,24 +153,65 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     onClick={onDeleteLocalCopy}
                     disabled={!book.downloadedAt}
                   />
+                  {onPurge && (
+                    <MenuItem
+                      noIcon
+                      transient
+                      label={_('Purge Data')}
+                      labelClass='text-red-500'
+                      tooltip={_('Erase the book and all its data, including reading progress')}
+                      onClick={onPurge}
+                    />
+                  )}
                 </div>
               </Dropdown>
             )}
-            {book.uploadedAt && onDownload && (
-              <button onClick={onDownload} title={_('Download from Cloud')}>
-                <MdOutlineCloudDownload className='fill-base-content' />
-              </button>
-            )}
-            {book.downloadedAt && onUpload && (
-              <button onClick={onUpload} title={_('Upload to Cloud')}>
-                <MdOutlineCloudUpload className='fill-base-content' />
-              </button>
-            )}
-            {book.downloadedAt && onExport && (
-              <button onClick={onExport} title={_('Export Book')}>
-                <MdSaveAlt className='fill-base-content' />
-              </button>
-            )}
+            <Dropdown
+              label={_('More Actions')}
+              className='dropdown-bottom dropdown-center flex justify-center'
+              buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+              toggleButton={<MdMenu className='fill-base-content' />}
+            >
+              <div
+                className={clsx(
+                  'more-menu dropdown-content no-triangle !relative',
+                  'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                )}
+              >
+                <MenuItem
+                  noIcon
+                  transient
+                  label={_('Search on Goodreads')}
+                  onClick={() =>
+                    openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
+                  }
+                />
+                {onShare && (
+                  <MenuItem
+                    noIcon
+                    transient
+                    label={_('Share Book')}
+                    disabled={!shareEnabled}
+                    tooltip={
+                      shareEnabled
+                        ? undefined
+                        : _('Sign in and make the book available to share it')
+                    }
+                    onClick={onShare}
+                  />
+                )}
+                {onExport && (
+                  <MenuItem
+                    noIcon
+                    transient
+                    label={_('Export Book')}
+                    disabled={!hasLocalFile}
+                    tooltip={hasLocalFile ? undefined : _('Download the book to export it')}
+                    onClick={onExport}
+                  />
+                )}
+              </div>
+            </Dropdown>
           </div>
         </div>
       </div>

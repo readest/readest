@@ -1724,5 +1724,14 @@
   "Clear Pending": "Kosongkan Menunggu",
   "Reading statistics": "Statistik Bacaan",
   "Reading time and pages read, synced across your devices and KOReader.": "Masa membaca dan halaman dibaca, disegerakkan merentas peranti anda dan KOReader.",
-  "Auto Sync": "Segerak Automatik"
+  "Auto Sync": "Segerak Automatik",
+  "Purged book data: {{title}}": "Data buku dipadam: {{title}}",
+  "Failed to purge book data: {{title}}": "Gagal memadam data buku: {{title}}",
+  "Purge Book Data": "Padam semua data buku",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Ini memadamkan buku dan semua datanya secara kekal, termasuk kemajuan bacaan, nota dan penanda buku. Tindakan ini tidak boleh dibuat asal.",
+  "Purge Data": "Padam semua data",
+  "Erase the book and all its data, including reading progress": "Memadam buku dan semua datanya, termasuk kemajuan bacaan",
+  "More Actions": "Tindakan lain",
+  "Sign in and make the book available to share it": "Log masuk dan sediakan buku untuk berkongsinya",
+  "Download the book to export it": "Muat turun buku untuk mengeksportnya"
 }

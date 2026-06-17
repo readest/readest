@@ -1790,5 +1790,14 @@
   "Clear Pending": "Șterge în așteptare",
   "Reading statistics": "Statistici de lectură",
   "Reading time and pages read, synced across your devices and KOReader.": "Timpul de citire și paginile citite, sincronizate pe dispozitivele tale și KOReader.",
-  "Auto Sync": "Sincronizare automată"
+  "Auto Sync": "Sincronizare automată",
+  "Purged book data: {{title}}": "Datele cărții au fost șterse: {{title}}",
+  "Failed to purge book data: {{title}}": "Ștergerea datelor cărții a eșuat: {{title}}",
+  "Purge Book Data": "Șterge toate datele cărții",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Aceasta șterge definitiv cartea și toate datele sale, inclusiv progresul lecturii, notițele și marcajele. Această acțiune nu poate fi anulată.",
+  "Purge Data": "Șterge toate datele",
+  "Erase the book and all its data, including reading progress": "Șterge cartea și toate datele sale, inclusiv progresul lecturii",
+  "More Actions": "Mai multe acțiuni",
+  "Sign in and make the book available to share it": "Conectează-te și fă cartea disponibilă pentru a o partaja",
+  "Download the book to export it": "Descarcă cartea pentru a o exporta"
 }

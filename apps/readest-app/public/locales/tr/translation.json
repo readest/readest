@@ -1757,5 +1757,14 @@
   "Clear Pending": "Bekleyenleri Temizle",
   "Reading statistics": "Okuma İstatistikleri",
   "Reading time and pages read, synced across your devices and KOReader.": "Okuma süresi ve okunan sayfalar, cihazlarınız ve KOReader arasında senkronize edilir.",
-  "Auto Sync": "Otomatik Senkronizasyon"
+  "Auto Sync": "Otomatik Senkronizasyon",
+  "Purged book data: {{title}}": "Kitap verileri silindi: {{title}}",
+  "Failed to purge book data: {{title}}": "Kitap verileri silinemedi: {{title}}",
+  "Purge Book Data": "Tüm kitap verilerini sil",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Bu işlem kitabı ve okuma ilerlemesi, notlar ve yer imleri dahil tüm verilerini kalıcı olarak siler. Bu işlem geri alınamaz.",
+  "Purge Data": "Tüm verileri sil",
+  "Erase the book and all its data, including reading progress": "Kitabı ve okuma ilerlemesi dahil tüm verilerini siler",
+  "More Actions": "Diğer eylemler",
+  "Sign in and make the book available to share it": "Paylaşmak için oturum açın ve kitabı kullanılabilir hale getirin",
+  "Download the book to export it": "Dışa aktarmak için kitabı indirin"
 }

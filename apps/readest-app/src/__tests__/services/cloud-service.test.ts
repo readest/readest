@@ -176,6 +176,73 @@ describe('cloudService', () => {
       });
     });
 
+    // Purge is the "Cloud & Device" delete PLUS a full wipe of the
+    // app-generated Books/<hash>/ directory (config.json reading progress/notes,
+    // nav.json, cover.png) that the other deletes leave behind (issue #4615).
+    // The local-file side lives here; the tombstone + queued cloud deletion are
+    // owned by the page's handleBookDelete, exactly like the 'both'/'local'
+    // split, so this branch must NOT touch deletedAt or the cloud.
+    describe('purge delete action', () => {
+      test('removes the entire Books/<hash>/ directory', async () => {
+        const book = createMockBook();
+        await deleteBook(mockFs, book, 'purge');
+
+        expect(mockFs.removeDir).toHaveBeenCalledWith(book.hash, 'Books', true);
+      });
+
+      test('does not remove the managed book file individually (the dir wipe covers it)', async () => {
+        const book = createMockBook();
+        await deleteBook(mockFs, book, 'purge');
+
+        // The whole directory is removed in one shot; no per-file removeFile.
+        expect(mockFs.removeFile).not.toHaveBeenCalled();
+      });
+
+      test('clears downloadedAt but leaves deletedAt for the caller (mirrors local)', async () => {
+        const book = createMockBook({ downloadedAt: 12345, deletedAt: null });
+        await deleteBook(mockFs, book, 'purge');
+
+        expect(book.downloadedAt).toBeNull();
+        expect(book.deletedAt).toBeNull();
+      });
+
+      test('does not delete cloud files (the page queues the cloud deletion)', async () => {
+        const { deleteFile: deleteCloudFile } = await import('@/libs/storage');
+        const book = createMockBook({ uploadedAt: 1000 });
+        await deleteBook(mockFs, book, 'purge');
+
+        expect(deleteCloudFile).not.toHaveBeenCalled();
+        // uploadedAt is left intact for the queued cloud-delete transfer to clear.
+        expect(book.uploadedAt).toBe(1000);
+      });
+
+      test('removes the in-place source file and the sidecar dir for in-place books', async () => {
+        const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
+        vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+          if (base === 'None' && path === book.filePath) return true;
+          if (base === 'Books' && path === book.hash) return true;
+          return false;
+        });
+
+        await deleteBook(mockFs, book, 'purge');
+
+        // External source file (outside Books/<hash>/) is removed...
+        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+        // ...and the metadata sidecar directory is wiped too.
+        expect(mockFs.removeDir).toHaveBeenCalledWith(book.hash, 'Books', true);
+      });
+
+      test('does not throw when the directory does not exist', async () => {
+        vi.mocked(mockFs.exists).mockResolvedValue(false);
+        const book = createMockBook({ downloadedAt: 12345 });
+
+        await deleteBook(mockFs, book, 'purge');
+
+        expect(mockFs.removeDir).not.toHaveBeenCalled();
+        expect(book.downloadedAt).toBeNull();
+      });
+    });
+
     describe('cloud delete action', () => {
       test('does not delete local files', async () => {
         const book = createMockBook({ uploadedAt: 1000 });

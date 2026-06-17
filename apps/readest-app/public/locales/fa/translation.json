@@ -1757,5 +1757,14 @@
   "Clear Pending": "پاک کردن در انتظارها",
   "Reading statistics": "آمار مطالعه",
   "Reading time and pages read, synced across your devices and KOReader.": "زمان مطالعه و صفحات خوانده‌شده، همگام‌سازی‌شده در دستگاه‌های شما و KOReader.",
-  "Auto Sync": "همگام‌سازی خودکار"
+  "Auto Sync": "همگام‌سازی خودکار",
+  "Purged book data: {{title}}": "داده‌های کتاب پاک شد: {{title}}",
+  "Failed to purge book data: {{title}}": "پاک‌سازی داده‌های کتاب ناموفق بود: {{title}}",
+  "Purge Book Data": "پاک‌سازی داده‌های کتاب",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "این کار کتاب و تمام داده‌های آن، شامل پیشرفت مطالعه، یادداشت‌ها و نشانک‌ها را برای همیشه پاک می‌کند. این عمل قابل بازگشت نیست.",
+  "Purge Data": "پاک‌سازی داده‌ها",
+  "Erase the book and all its data, including reading progress": "کتاب و تمام داده‌های آن، شامل پیشرفت مطالعه را پاک می‌کند",
+  "More Actions": "اقدامات بیشتر",
+  "Sign in and make the book available to share it": "برای اشتراک‌گذاری، وارد شوید و کتاب را در دسترس قرار دهید",
+  "Download the book to export it": "برای خروجی گرفتن، کتاب را دانلود کنید"
 }

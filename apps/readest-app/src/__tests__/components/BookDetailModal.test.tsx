@@ -17,6 +17,10 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: { getAppService: async () => appSvc }, appService: appSvc }),
 }));
 
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'u1' } }),
+}));
+
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({ safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 } }),
 }));

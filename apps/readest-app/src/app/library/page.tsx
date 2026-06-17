@@ -877,18 +877,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         both: _('Book deleted: {{title}}', { title: book.title }),
         cloud: _('Deleted cloud backup of the book: {{title}}', { title: book.title }),
         local: _('Deleted local copy of the book: {{title}}', { title: book.title }),
+        purge: _('Purged book data: {{title}}', { title: book.title }),
       };
       const deletionFailMessages = {
         both: _('Failed to delete book: {{title}}', { title: book.title }),
         cloud: _('Failed to delete cloud backup of the book: {{title}}', { title: book.title }),
         local: _('Failed to delete local copy of the book: {{title}}', { title: book.title }),
+        purge: _('Failed to purge book data: {{title}}', { title: book.title }),
       };
 
       try {
-        // Handle local deletion immediately
-        if (deleteAction === 'local' || deleteAction === 'both') {
-          await appService?.deleteBook(book, 'local');
-          if (deleteAction === 'both') {
+        // Handle local deletion immediately. Purge mirrors 'both' (tombstone +
+        // queued cloud delete) but hands 'purge' to deleteBook, which also wipes
+        // the entire Books/<hash>/ folder (config/nav/cover) — issue #4615.
+        if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
+          await appService?.deleteBook(book, deleteAction === 'purge' ? 'purge' : 'local');
+          if (deleteAction === 'both' || deleteAction === 'purge') {
             book.deletedAt = Date.now();
             book.downloadedAt = null;
             book.coverDownloadedAt = null;
@@ -899,7 +903,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         }
 
         // Queue cloud deletion
-        if (deleteAction === 'cloud' || deleteAction === 'both') {
+        if (deleteAction === 'cloud' || deleteAction === 'both' || deleteAction === 'purge') {
           const transferId = transferManager.queueDelete(book, 1, true);
           if (!transferId) {
             throw new Error('Failed to queue cloud deletion');
@@ -1468,6 +1472,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDelete={handleBookDelete('both')}
           handleBookDeleteCloudBackup={handleBookDelete('cloud')}
           handleBookDeleteLocalCopy={handleBookDelete('local')}
+          handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}
         />
       )}

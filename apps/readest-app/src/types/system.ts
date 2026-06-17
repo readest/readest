@@ -15,7 +15,7 @@ export type AppPlatform = 'web' | 'tauri' | 'node';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
 // biome-ignore format: keep the union members compact on a single line
 export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Dictionaries' | 'Log' | 'Cache' | 'Temp' | 'None';
-export type DeleteAction = 'cloud' | 'local' | 'both';
+export type DeleteAction = 'cloud' | 'local' | 'both' | 'purge';
 export type SelectDirectoryMode = 'read' | 'write';
 export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
 

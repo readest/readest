@@ -1823,5 +1823,14 @@
   "Clear Pending": "Počisti čakajoče",
   "Reading statistics": "Statistika branja",
   "Reading time and pages read, synced across your devices and KOReader.": "Čas branja in prebrane strani, sinhronizirano med vašimi napravami in KOReader.",
-  "Auto Sync": "Samodejna sinhronizacija"
+  "Auto Sync": "Samodejna sinhronizacija",
+  "Purged book data: {{title}}": "Podatki knjige izbrisani: {{title}}",
+  "Failed to purge book data: {{title}}": "Podatkov knjige ni bilo mogoče izbrisati: {{title}}",
+  "Purge Book Data": "Izbriši vse podatke knjige",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "S tem trajno izbrišete knjigo in vse njene podatke, vključno z napredkom branja, zapiski in zaznamki. Tega dejanja ni mogoče razveljaviti.",
+  "Purge Data": "Izbriši vse podatke",
+  "Erase the book and all its data, including reading progress": "Izbriše knjigo in vse njene podatke, vključno z napredkom branja",
+  "More Actions": "Več dejanj",
+  "Sign in and make the book available to share it": "Prijavite se in omogočite knjigo za deljenje",
+  "Download the book to export it": "Prenesite knjigo, da jo izvozite"
 }

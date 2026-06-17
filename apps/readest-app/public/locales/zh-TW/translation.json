@@ -1724,5 +1724,14 @@
   "Clear Pending": "清除等待中",
   "Reading statistics": "閱讀統計",
   "Reading time and pages read, synced across your devices and KOReader.": "閱讀時間與已讀頁數，在您的裝置與 KOReader 之間同步。",
-  "Auto Sync": "自動同步"
+  "Auto Sync": "自動同步",
+  "Purged book data: {{title}}": "已清除書籍資料：{{title}}",
+  "Failed to purge book data: {{title}}": "清除書籍資料失敗：{{title}}",
+  "Purge Book Data": "清除書籍資料",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "這將永久刪除該書籍及其所有資料，包括閱讀進度、筆記和書籤。此操作無法復原。",
+  "Purge Data": "清除資料",
+  "Erase the book and all its data, including reading progress": "刪除該書籍及其所有資料，包括閱讀進度",
+  "More Actions": "更多操作",
+  "Sign in and make the book available to share it": "登入並使書籍可用後即可分享",
+  "Download the book to export it": "下載書籍後即可匯出"
 }

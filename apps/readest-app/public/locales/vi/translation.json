@@ -1724,5 +1724,14 @@
   "Clear Pending": "Xóa đang chờ",
   "Reading statistics": "Thống kê đọc",
   "Reading time and pages read, synced across your devices and KOReader.": "Thời gian đọc và số trang đã đọc, được đồng bộ trên các thiết bị của bạn và KOReader.",
-  "Auto Sync": "Tự động đồng bộ"
+  "Auto Sync": "Tự động đồng bộ",
+  "Purged book data: {{title}}": "Đã xóa dữ liệu sách: {{title}}",
+  "Failed to purge book data: {{title}}": "Không thể xóa dữ liệu sách: {{title}}",
+  "Purge Book Data": "Xóa toàn bộ dữ liệu sách",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Thao tác này sẽ xóa vĩnh viễn sách và toàn bộ dữ liệu của nó, bao gồm tiến độ đọc, ghi chú và dấu trang. Không thể hoàn tác.",
+  "Purge Data": "Xóa toàn bộ dữ liệu",
+  "Erase the book and all its data, including reading progress": "Xóa sách và toàn bộ dữ liệu, bao gồm tiến độ đọc",
+  "More Actions": "Thao tác khác",
+  "Sign in and make the book available to share it": "Đăng nhập và tải sách về để chia sẻ",
+  "Download the book to export it": "Tải sách về để xuất ra"
 }

@@ -24,7 +24,7 @@ export async function deleteBook(
   book: Book,
   deleteAction: DeleteAction,
 ): Promise<void> {
-  if (deleteAction === 'local' || deleteAction === 'both') {
+  if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
     const source = await resolveBookContentSource(fs, book);
     if (source.kind === 'external') {
       try {
@@ -36,16 +36,32 @@ export async function deleteBook(
         // the metadata-side bookkeeping that follows.
         console.log('Failed to remove in-place source file:', error);
       }
-    } else if (source.kind === 'managed') {
+    } else if (source.kind === 'managed' && deleteAction !== 'purge') {
+      // Purge wipes the whole directory below, so skip the per-file removal.
       if (await fs.exists(source.path, source.base)) {
         await fs.removeFile(source.path, source.base);
+      }
+    }
+
+    // Purge erases the entire app-generated Books/<hash>/ directory — the
+    // managed book file, cover.png, and (the reason for issue #4615)
+    // config.json (reading progress, notes, bookmarks) + nav.json that the
+    // other delete actions leave behind. For in-place books the external
+    // source file was already removed above; this clears the sidecar dir.
+    if (deleteAction === 'purge') {
+      const dir = getDir(book);
+      if (await fs.exists(dir, 'Books')) {
+        await fs.removeDir(dir, 'Books', true);
       }
     }
 
     if (deleteAction === 'both' && (await fs.exists(getCoverFilename(book), 'Books'))) {
       await fs.removeFile(getCoverFilename(book), 'Books');
     }
-    if (deleteAction === 'local') {
+    if (deleteAction === 'local' || deleteAction === 'purge') {
+      // Mirror 'local': mark not-downloaded but leave the tombstone (deletedAt)
+      // to the caller. The page's handleBookDelete sets deletedAt and queues the
+      // cloud deletion for purge, exactly as it does for the 'both' action.
       book.downloadedAt = null;
     } else {
       book.deletedAt = Date.now();

@@ -1724,5 +1724,14 @@
   "Clear Pending": "ล้างที่รอดำเนินการ",
   "Reading statistics": "สถิติการอ่าน",
   "Reading time and pages read, synced across your devices and KOReader.": "เวลาในการอ่านและจำนวนหน้าที่อ่าน ซิงค์ข้ามอุปกรณ์ของคุณและ KOReader",
-  "Auto Sync": "ซิงค์อัตโนมัติ"
+  "Auto Sync": "ซิงค์อัตโนมัติ",
+  "Purged book data: {{title}}": "ล้างข้อมูลหนังสือแล้ว: {{title}}",
+  "Failed to purge book data: {{title}}": "ล้างข้อมูลหนังสือไม่สำเร็จ: {{title}}",
+  "Purge Book Data": "ล้างข้อมูลหนังสือทั้งหมด",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "การดำเนินการนี้จะลบหนังสือและข้อมูลทั้งหมดอย่างถาวร รวมถึงความคืบหน้าการอ่าน บันทึก และที่คั่นหนังสือ ไม่สามารถเลิกทำได้",
+  "Purge Data": "ล้างข้อมูลทั้งหมด",
+  "Erase the book and all its data, including reading progress": "ลบหนังสือและข้อมูลทั้งหมด รวมถึงความคืบหน้าการอ่าน",
+  "More Actions": "การทำงานเพิ่มเติม",
+  "Sign in and make the book available to share it": "ลงชื่อเข้าใช้และทำให้หนังสือพร้อมใช้งานเพื่อแชร์",
+  "Download the book to export it": "ดาวน์โหลดหนังสือเพื่อส่งออก"
 }

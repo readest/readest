@@ -1757,5 +1757,14 @@
   "Clear Pending": "অপেক্ষমাণ মুছুন",
   "Reading statistics": "পড়ার পরিসংখ্যান",
   "Reading time and pages read, synced across your devices and KOReader.": "পড়ার সময় এবং পড়া পৃষ্ঠা, আপনার ডিভাইস এবং KOReader জুড়ে সিঙ্ক করা হয়।",
-  "Auto Sync": "স্বয়ংক্রিয় সিঙ্ক"
+  "Auto Sync": "স্বয়ংক্রিয় সিঙ্ক",
+  "Purged book data: {{title}}": "বইয়ের ডেটা মুছে ফেলা হয়েছে: {{title}}",
+  "Failed to purge book data: {{title}}": "বইয়ের ডেটা মুছতে ব্যর্থ: {{title}}",
+  "Purge Book Data": "বইয়ের সমস্ত ডেটা মুছুন",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "এটি বইটি এবং পড়ার অগ্রগতি, নোট ও বুকমার্ক সহ এর সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "Purge Data": "সমস্ত ডেটা মুছুন",
+  "Erase the book and all its data, including reading progress": "পড়ার অগ্রগতিসহ বই ও এর সমস্ত ডেটা মুছে ফেলুন",
+  "More Actions": "আরও ক্রিয়া",
+  "Sign in and make the book available to share it": "শেয়ার করতে সাইন ইন করুন এবং বইটি উপলব্ধ করুন",
+  "Download the book to export it": "এক্সপোর্ট করতে বইটি ডাউনলোড করুন"
 }

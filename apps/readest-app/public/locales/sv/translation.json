@@ -1757,5 +1757,14 @@
   "Clear Pending": "Rensa väntande",
   "Reading statistics": "Lässtatistik",
   "Reading time and pages read, synced across your devices and KOReader.": "Lästid och lästa sidor, synkroniserat mellan dina enheter och KOReader.",
-  "Auto Sync": "Automatisk synkronisering"
+  "Auto Sync": "Automatisk synkronisering",
+  "Purged book data: {{title}}": "Bokdata rensad: {{title}}",
+  "Failed to purge book data: {{title}}": "Det gick inte att rensa bokdata: {{title}}",
+  "Purge Book Data": "Rensa all bokdata",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Detta raderar permanent boken och all dess data, inklusive läsförlopp, anteckningar och bokmärken. Detta kan inte ångras.",
+  "Purge Data": "Rensa all data",
+  "Erase the book and all its data, including reading progress": "Raderar boken och all data, inklusive läsförlopp",
+  "More Actions": "Fler åtgärder",
+  "Sign in and make the book available to share it": "Logga in och gör boken tillgänglig för att dela den",
+  "Download the book to export it": "Ladda ner boken för att exportera den"
 }

@@ -1790,5 +1790,14 @@
   "Clear Pending": "Limpar pendentes",
   "Reading statistics": "Estatísticas de leitura",
   "Reading time and pages read, synced across your devices and KOReader.": "Tempo de leitura e páginas lidas, sincronizados entre seus dispositivos e o KOReader.",
-  "Auto Sync": "Sincronização automática"
+  "Auto Sync": "Sincronização automática",
+  "Purged book data: {{title}}": "Dados do livro apagados: {{title}}",
+  "Failed to purge book data: {{title}}": "Falha ao apagar os dados do livro: {{title}}",
+  "Purge Book Data": "Apagar todos os dados do livro",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Isso apaga permanentemente o livro e todos os seus dados, incluindo o progresso de leitura, notas e marcadores. Esta ação não pode ser desfeita.",
+  "Purge Data": "Apagar todos os dados",
+  "Erase the book and all its data, including reading progress": "Apaga o livro e todos os seus dados, incluindo o progresso de leitura",
+  "More Actions": "Mais ações",
+  "Sign in and make the book available to share it": "Faça login e tenha o livro disponível para compartilhá-lo",
+  "Download the book to export it": "Baixe o livro para exportá-lo"
 }

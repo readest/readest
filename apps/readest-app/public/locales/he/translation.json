@@ -1790,5 +1790,14 @@
   "Clear Pending": "נקה בהמתנה",
   "Reading statistics": "סטטיסטיקת קריאה",
   "Reading time and pages read, synced across your devices and KOReader.": "זמן קריאה ועמודים שנקראו, מסונכרנים בין המכשירים שלך ו-KOReader.",
-  "Auto Sync": "סנכרון אוטומטי"
+  "Auto Sync": "סנכרון אוטומטי",
+  "Purged book data: {{title}}": "נתוני הספר נמחקו: {{title}}",
+  "Failed to purge book data: {{title}}": "מחיקת נתוני הספר נכשלה: {{title}}",
+  "Purge Book Data": "מחיקת כל נתוני הספר",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "פעולה זו מוחקת לצמיתות את הספר ואת כל הנתונים שלו, כולל התקדמות הקריאה, ההערות והסימניות. לא ניתן לבטל פעולה זו.",
+  "Purge Data": "מחק את כל הנתונים",
+  "Erase the book and all its data, including reading progress": "מחיקת הספר וכל הנתונים שלו, כולל התקדמות הקריאה",
+  "More Actions": "פעולות נוספות",
+  "Sign in and make the book available to share it": "היכנס והפוך את הספר לזמין כדי לשתף אותו",
+  "Download the book to export it": "הורד את הספר כדי לייצא אותו"
 }

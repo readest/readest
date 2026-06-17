@@ -1889,5 +1889,14 @@
   "Clear Pending": "مسح قيد الانتظار",
   "Reading statistics": "إحصائيات القراءة",
   "Reading time and pages read, synced across your devices and KOReader.": "وقت القراءة والصفحات المقروءة، تتم مزامنتها عبر أجهزتك و KOReader.",
-  "Auto Sync": "مزامنة تلقائية"
+  "Auto Sync": "مزامنة تلقائية",
+  "Purged book data: {{title}}": "تم محو بيانات الكتاب: {{title}}",
+  "Failed to purge book data: {{title}}": "فشل محو بيانات الكتاب: {{title}}",
+  "Purge Book Data": "محو جميع بيانات الكتاب",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "سيؤدي هذا إلى محو الكتاب وجميع بياناته نهائيًا، بما في ذلك تقدم القراءة والملاحظات والإشارات المرجعية. لا يمكن التراجع عن هذا الإجراء.",
+  "Purge Data": "محو جميع البيانات",
+  "Erase the book and all its data, including reading progress": "محو الكتاب وجميع بياناته، بما في ذلك تقدم القراءة",
+  "More Actions": "إجراءات أخرى",
+  "Sign in and make the book available to share it": "سجّل الدخول واجعل الكتاب متاحًا لمشاركته",
+  "Download the book to export it": "نزّل الكتاب لتصديره"
 }

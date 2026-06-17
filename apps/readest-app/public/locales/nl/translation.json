@@ -1757,5 +1757,14 @@
   "Clear Pending": "Wachtende wissen",
   "Reading statistics": "Leesstatistieken",
   "Reading time and pages read, synced across your devices and KOReader.": "Leestijd en gelezen pagina's, gesynchroniseerd op je apparaten en KOReader.",
-  "Auto Sync": "Automatische synchronisatie"
+  "Auto Sync": "Automatische synchronisatie",
+  "Purged book data: {{title}}": "Boekgegevens gewist: {{title}}",
+  "Failed to purge book data: {{title}}": "Kan boekgegevens niet wissen: {{title}}",
+  "Purge Book Data": "Alle boekgegevens wissen",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "Hiermee worden het boek en alle bijbehorende gegevens, waaronder leesvoortgang, notities en bladwijzers, permanent gewist. Dit kan niet ongedaan worden gemaakt.",
+  "Purge Data": "Alle gegevens wissen",
+  "Erase the book and all its data, including reading progress": "Wist het boek en alle gegevens, inclusief leesvoortgang",
+  "More Actions": "Meer acties",
+  "Sign in and make the book available to share it": "Meld je aan en maak het boek beschikbaar om het te delen",
+  "Download the book to export it": "Download het boek om het te exporteren"
 }

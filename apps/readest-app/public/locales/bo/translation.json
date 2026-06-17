@@ -1724,5 +1724,14 @@
   "Clear Pending": "སྒུག་བཞིན་པ་གསལ་བ་",
   "Reading statistics": "ཀློག་འདོན་གྱི་གྲངས་ཐོ།",
   "Reading time and pages read, synced across your devices and KOReader.": "ཀློག་འདོན་གྱི་དུས་ཚོད་དང་ཀློག་ཟིན་པའི་ཤོག་གྲངས། ཁྱེད་ཀྱི་སྒྲིག་ཆས་དང་ KOReader བར་མཉམ་སྒྲིག་བྱེད།",
-  "Auto Sync": "རང་འགུལ་སྤྲི་དོན།"
+  "Auto Sync": "རང་འགུལ་སྤྲི་དོན།",
+  "Purged book data: {{title}}": "དཔེ་དེབ་ཀྱི་གཞི་གྲངས་བསུབ་ཟིན། {{title}}",
+  "Failed to purge book data: {{title}}": "དཔེ་དེབ་ཀྱི་གཞི་གྲངས་བསུབ་མ་ཐུབ། {{title}}",
+  "Purge Book Data": "དཔེ་དེབ་ཀྱི་གཞི་གྲངས་ཡོངས་སུ་བསུབ།",
+  "This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.": "འདིས་དཔེ་དེབ་དང་ཀློག་འདོན་གྱི་འཕེལ་རིམ། ཟིན་ཐོ། དེབ་རྟགས་བཅས་ཀྱི་གཞི་གྲངས་ཡོངས་རྫོགས་གཏན་འཁེལ་དུ་བསུབ་པ་ཡིན། འདི་ཕྱིར་བསྒྱུར་མི་ཐུབ།",
+  "Purge Data": "གཞི་གྲངས་ཡོངས་སུ་བསུབ།",
+  "Erase the book and all its data, including reading progress": "དཔེ་དེབ་དང་ཀློག་འདོན་གྱི་འཕེལ་རིམ་བཅས་ཀྱི་གཞི་གྲངས་ཡོངས་སུ་བསུབ།",
+  "More Actions": "བྱ་སྤྱོད་གཞན་དག",
+  "Sign in and make the book available to share it": "ནང་འཛུལ་བྱས་ནས་དཔེ་དེབ་མཁོ་སྤྲོད་རུང་བར་བཟོས་ནས་མཉམ་སྤྱོད་བྱོས།",
+  "Download the book to export it": "ཕྱིར་འདྲེན་བྱེད་པར་དཔེ་དེབ་ཕབ་ལེན་བྱོས།"
 }
