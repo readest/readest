@@ -23,7 +23,16 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
 
   const handleBack = () => {
     const params = new URLSearchParams(searchParams?.toString());
-    params.delete('group');
+    // Set `group` to an empty string instead of deleting it. After a cold start
+    // the URL inside a series/author folder is just `?group=X` (groupBy comes
+    // from settings, not the URL), so deleting `group` would leave an empty
+    // search string — and `router.replace('/library')` with an empty search
+    // silently no-ops under the Next.js 16.2 static export, leaving the back
+    // button dead (#4437). This mirrors the workaround in
+    // `handleLibraryNavigation` (see page.tsx, originally #3782/#3832): the
+    // resulting `/library?group=` does commit, and the trailing empty `group=`
+    // is stripped cosmetically by the cleanup effect in page.tsx.
+    params.set('group', '');
     navigateToLibrary(router, params.toString());
   };
 
