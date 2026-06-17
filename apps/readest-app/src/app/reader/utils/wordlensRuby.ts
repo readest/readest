@@ -1,6 +1,6 @@
 import type { GlossOccurrence } from '@/services/wordlens/types';
 
-const GLOSS_CLASS = 'ww-gloss';
+const GLOSS_CLASS = 'wl-gloss';
 
 interface Segment {
   node: Text;
@@ -77,7 +77,7 @@ const occurrenceRange = (
   return range;
 };
 
-/** Wrap each occurrence as <ruby class=ww-gloss cfi-skip>word<rt cfi-inert>gloss</rt></ruby>. */
+/** Wrap each occurrence as <ruby class=wl-gloss cfi-skip>word<rt cfi-inert>gloss</rt></ruby>. */
 export const applyGlosses = (
   doc: Document,
   model: SectionTextModel,

@@ -17,12 +17,12 @@ describe('Word Lens rendering (browser)', () => {
       { start, end: start + 'cryptic'.length, word: 'cryptic', gloss: '晦涩的' },
     ]);
 
-    const rt = document.querySelector('ruby.ww-gloss > rt')!;
+    const rt = document.querySelector('ruby.wl-gloss > rt')!;
     expect(rt.textContent).toBe('晦涩的');
     expect(root.getBoundingClientRect().height).toBeGreaterThan(before);
 
     clearGlosses(document);
-    expect(document.querySelector('ruby.ww-gloss')).toBeNull();
+    expect(document.querySelector('ruby.wl-gloss')).toBeNull();
     expect(root.textContent).toBe('A cryptic note appears.');
   });
 });

@@ -34,14 +34,14 @@ describe('wordlensRuby', () => {
     const model = buildSectionTextModel(document);
     applyGlosses(document, model, [{ start: 4, end: 9, word: 'quick', gloss: '敏捷' }]);
 
-    const ruby = document.querySelector('ruby.ww-gloss')!;
+    const ruby = document.querySelector('ruby.wl-gloss')!;
     expect(ruby.getAttribute('cfi-skip')).toBe('');
     expect(ruby.querySelector('rt')!.getAttribute('cfi-inert')).toBe('');
     expect(ruby.querySelector('rt')!.textContent).toBe('敏捷');
     expect(document.getElementById('p')!.textContent).toBe('The quick敏捷 fox');
 
     clearGlosses(document);
-    expect(document.querySelector('ruby.ww-gloss')).toBeNull();
+    expect(document.querySelector('ruby.wl-gloss')).toBeNull();
     expect(document.getElementById('p')!.textContent).toBe('The quick fox');
   });
 

@@ -252,7 +252,7 @@ export const handleClick = (
     // after the drag/long-hold guards so only a clean single tap triggers it.
     const glossWord = findGlossWord(element);
     if (glossWord) {
-      const ruby = element?.closest('ruby.ww-gloss') ?? null;
+      const ruby = element?.closest('ruby.wl-gloss') ?? null;
       eventDispatcher.dispatch('wordlens-dictionary', { bookKey, element: ruby, word: glossWord });
       return;
     }

@@ -760,10 +760,10 @@ const getRubyStyles = () => `
   rp {
     display: none !important;
   }
-  ruby.ww-gloss {
+  ruby.wl-gloss {
     cursor: help;
   }
-  ruby.ww-gloss > rt {
+  ruby.wl-gloss > rt {
     font-size: 0.5em;
     line-height: 1.1;
     opacity: 0.7;
