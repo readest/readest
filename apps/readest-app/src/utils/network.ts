@@ -11,7 +11,7 @@ type NavWithConnection = Navigator & {
  * Best-effort metered-connection detection. Returns `true` only when the
  * Network Information API positively reports a cellular connection or the
  * user's data-saver preference; returns `false` when the API is unavailable or
- * inconclusive. Used to gate silent Word Wise pack auto-downloads.
+ * inconclusive. Used to gate silent Word Lens pack auto-downloads.
  */
 export const isMetered = (): boolean => {
   if (typeof navigator === 'undefined') return false;

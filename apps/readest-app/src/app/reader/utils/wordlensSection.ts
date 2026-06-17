@@ -1,14 +1,14 @@
 import type { ViewSettings } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { ProgressHandler } from '@/utils/transfer';
-import { canTokenizeSource, getRankCutoff } from '@/services/wordwise/difficulty';
-import { loadGlossIndex } from '@/services/wordwise/glossPacks';
-import { planGlosses } from '@/services/wordwise/planner';
-import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordwiseRuby';
+import { canTokenizeSource, getRankCutoff } from '@/services/wordlens/difficulty';
+import { loadGlossIndex } from '@/services/wordlens/glossPacks';
+import { planGlosses } from '@/services/wordlens/planner';
+import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { cutZh, isJiebaReady, initJieba } from '@/utils/jieba';
 
 /** Normalize a book language tag to its 2-letter base source code, or null. */
-export const toWordWiseSource = (lang?: string | null): string | null => {
+export const toWordLensSource = (lang?: string | null): string | null => {
   if (!lang) return null;
   const base = lang.toLowerCase().split('-')[0];
   return base || null;
@@ -22,7 +22,7 @@ interface RefreshContext {
   /**
    * Whether the reader may silently download an uncached pack. Threaded to
    * loadGlossIndex → ensurePack; when false an uncached pack yields no glosses
-   * (the user downloads it explicitly from the Word Wise sub-page).
+   * (the user downloads it explicitly from the Word Lens sub-page).
    */
   allowDownload?: boolean;
   onProgress?: ProgressHandler;
@@ -49,10 +49,10 @@ export const refreshSectionGlosses = async (
     const myGen = (refreshGen.get(doc) ?? 0) + 1;
     refreshGen.set(doc, myGen);
     clearGlosses(doc);
-    if (!viewSettings.wordWiseEnabled) return;
-    const source = toWordWiseSource(ctx.bookLang);
+    if (!viewSettings.wordLensEnabled) return;
+    const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;
-    const hint = (viewSettings.wordWiseHintLang || ctx.appLang).toLowerCase().split('-')[0] || '';
+    const hint = (viewSettings.wordLensHintLang || ctx.appLang).toLowerCase().split('-')[0] || '';
     if (!hint || hint === source) return; // no self-gloss
     const index = await loadGlossIndex(ctx.appService, source, hint, {
       onProgress: ctx.onProgress,
@@ -67,11 +67,11 @@ export const refreshSectionGlosses = async (
     const model = buildSectionTextModel(doc);
     const occ = planGlosses(model.text, index, {
       sourceLang: source,
-      rankCutoff: getRankCutoff(source, viewSettings.wordWiseLevel),
+      rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
       cutZh: source === 'zh' ? cutZh : undefined,
     });
     if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {
-    console.warn('[wordwise] refresh failed', err);
+    console.warn('[wordlens] refresh failed', err);
   }
 };

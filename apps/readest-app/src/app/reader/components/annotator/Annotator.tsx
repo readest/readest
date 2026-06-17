@@ -174,10 +174,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // (Android long-press selects text via selectionchange before touchend). The
   // pending action runs on touchend so popups don't open under an active touch.
   const deferredQuickActionRef = useRef(createDeferredActionState());
-  // Set when a Word Wise gloss tap synthesizes a selection so the
+  // Set when a Word Lens gloss tap synthesizes a selection so the
   // selection-change effect opens the dictionary popup instead of the
   // annotation toolbar. Cleared as soon as it's consumed.
-  const pendingWordWiseDictRef = useRef(false);
+  const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
     showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
@@ -560,12 +560,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   useFoliateEvents(view, { onLoad, onCreateOverlay, onDrawAnnotation, onShowAnnotation });
 
-  // Word Wise: open the dictionary popup for a tapped glossed word. The tap is
+  // Word Lens: open the dictionary popup for a tapped glossed word. The tap is
   // detected in the iframe click handler (iframeEventHandlers.ts), which sends
   // the gloss <ruby> element here. We synthesize a selection over the base word
   // (excluding the <rt> hint) so the existing dictionary popup positions itself.
   useEffect(() => {
-    const handleWordWiseDictionary = (event: CustomEvent) => {
+    const handleWordLensDictionary = (event: CustomEvent) => {
       const { element, word } = event.detail as { element: Element | null; word: string };
       if (event.detail?.bookKey !== bookKey || !element || !word) return;
       // Read the view fresh: this handler is registered once (deps [bookKey]) and
@@ -584,7 +584,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return;
       }
       const text = range.toString().trim() || word;
-      pendingWordWiseDictRef.current = true;
+      pendingWordLensDictRef.current = true;
       setSelection({
         key: bookKey,
         text,
@@ -594,9 +594,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         page: index + 1,
       });
     };
-    eventDispatcher.on('wordwise-dictionary', handleWordWiseDictionary);
+    eventDispatcher.on('wordlens-dictionary', handleWordLensDictionary);
     return () => {
-      eventDispatcher.off('wordwise-dictionary', handleWordWiseDictionary);
+      eventDispatcher.off('wordlens-dictionary', handleWordLensDictionary);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
@@ -817,11 +817,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useEffect(() => {
     setHighlightOptionsVisible(!!(selection && selection.annotated));
     if (selection && selection.text.trim().length > 0) {
-      // Read-and-reset the Word Wise dictionary flag up front so it can never
+      // Read-and-reset the Word Lens dictionary flag up front so it can never
       // stick to a later selection if an early return below fires (e.g. a gloss
       // tap whose synthesized range yields an off-frame/zero position).
-      const wantWordWiseDict = pendingWordWiseDictRef.current;
-      pendingWordWiseDictRef.current = false;
+      const wantWordLensDict = pendingWordLensDictRef.current;
+      pendingWordLensDictRef.current = false;
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
       const rect = gridFrame.getBoundingClientRect();
@@ -866,7 +866,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setTrianglePosition(triangPos);
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
-      if (wantWordWiseDict) {
+      if (wantWordLensDict) {
         setShowAnnotPopup(false);
         setShowDictionaryPopup(true);
       } else if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {

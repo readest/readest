@@ -1,4 +1,4 @@
-import type { GlossOccurrence } from '@/services/wordwise/types';
+import type { GlossOccurrence } from '@/services/wordlens/types';
 
 const GLOSS_CLASS = 'ww-gloss';
 

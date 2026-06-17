@@ -19,4 +19,4 @@ metadata:
 
 **Ordering gotcha**: `-ses→-sis` rule must come BEFORE generic `-es`/`-s` so `analyses`→`analysis` (the issue's expected noun) is tried ahead of `analyse` (the verb). Both are linguistically valid for `analyses`; issue wants the noun.
 
-Tests: `__tests__/services/dictionaries/lemmatize/{english,index}.test.ts` + extended `lookupCandidates.test.ts` (all 8 issue cases asserted). Existing trim test's `spaced` sample swapped to `planet` (non-inflecting) since no-lang path now defaults to English lemmatization. Pure functions, fully deterministic — no live MDX needed. Related: [[dict-lookup-browser-hijack-4559]], [[wordwise-feature]].
+Tests: `__tests__/services/dictionaries/lemmatize/{english,index}.test.ts` + extended `lookupCandidates.test.ts` (all 8 issue cases asserted). Existing trim test's `spaced` sample swapped to `planet` (non-inflecting) since no-lang path now defaults to English lemmatization. Pure functions, fully deterministic — no live MDX needed. Related: [[dict-lookup-browser-hijack-4559]], [[wordlens-feature]].

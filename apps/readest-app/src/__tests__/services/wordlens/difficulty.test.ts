@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import {
-  WORD_WISE_MIN_LEVEL,
-  WORD_WISE_MAX_LEVEL,
+  WORD_LENS_MIN_LEVEL,
+  WORD_LENS_MAX_LEVEL,
   CEFR_LEVELS,
   getRankCutoff,
   cefrLabel,
   isDifficult,
   canTokenizeSource,
-} from '@/services/wordwise/difficulty';
+} from '@/services/wordlens/difficulty';
 
 describe('difficulty', () => {
   it('exposes a 1..6 (A1..C2) level range', () => {
-    expect(WORD_WISE_MIN_LEVEL).toBe(1);
-    expect(WORD_WISE_MAX_LEVEL).toBe(6);
+    expect(WORD_LENS_MIN_LEVEL).toBe(1);
+    expect(WORD_LENS_MAX_LEVEL).toBe(6);
     expect(CEFR_LEVELS).toEqual(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
   });
 

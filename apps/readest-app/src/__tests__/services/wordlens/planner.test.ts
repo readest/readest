@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { planGlosses } from '@/services/wordwise/planner';
-import { GlossIndex } from '@/services/wordwise/glossIndex';
-import { getRankCutoff } from '@/services/wordwise/difficulty';
-import type { GlossSource, GlossEntry, GlossIndexData } from '@/services/wordwise/types';
-import zhEnFixture from '../../fixtures/wordwise/zh-en.fixture.json';
+import { planGlosses } from '@/services/wordlens/planner';
+import { GlossIndex } from '@/services/wordlens/glossIndex';
+import { getRankCutoff } from '@/services/wordlens/difficulty';
+import type { GlossSource, GlossEntry, GlossIndexData } from '@/services/wordlens/types';
+import zhEnFixture from '../../fixtures/wordlens/zh-en.fixture.json';
 
 const source: GlossSource = {
   lookup(word) {
@@ -53,7 +53,7 @@ describe('planGlosses (Chinese)', () => {
 });
 
 describe('planGlosses against a zh-en fixture', () => {
-  // Decoupled from the shipping data/wordwise/zh-en.json: the committed pack is
+  // Decoupled from the shipping data/wordlens/zh-en.json: the committed pack is
   // (re)generated from real corpora, so the test owns its ranks via a fixture.
   const data = zhEnFixture as GlossIndexData;
   const index = GlossIndex.fromData(data);

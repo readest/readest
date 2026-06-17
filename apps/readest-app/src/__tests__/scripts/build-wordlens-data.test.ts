@@ -17,8 +17,8 @@ import {
   inflectionMapFromPack as inflectionMapFromPackUntyped,
   parseLemmatizationList as parseLemmatizationListUntyped,
   buildPack as buildPackUntyped,
-} from '../../../scripts/build-wordwise-data.mjs';
-import type { GlossIndexData } from '@/services/wordwise/types';
+} from '../../../scripts/build-wordlens-data.mjs';
+import type { GlossIndexData } from '@/services/wordlens/types';
 
 // The .mjs script has no type annotations; pin the builders' returns to the
 // real GlossIndexData shape so the assertions are type-checked.

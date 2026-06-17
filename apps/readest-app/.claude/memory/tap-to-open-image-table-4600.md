@@ -20,7 +20,7 @@ Impl in `src/app/reader/utils/iframeEventHandlers.ts`:
 - New shared `detectMediaTarget(el) -> {elementType:'image',src} | {elementType:'table',html} | null`,
   used by BOTH `handleLongPress` and the new single-tap branch in `postSingleClick`.
 - The single-tap branch sits AFTER the link/footnote/`isMouseDown`/`!longHoldTimeout`/
-  Word-Wise-gloss guards, so drag/long-hold/double-tap can't double-trigger; it rides
+  Word-Lens-gloss guards, so drag/long-hold/double-tap can't double-trigger; it rides
   the 250ms double-click deferral.
 - `handleClick` gained an `isFixedLayout` param, passed from `FoliateViewer`
   `docLoadHandler` via `!!bookData?.isFixedLayout`.

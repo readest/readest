@@ -4,13 +4,13 @@ import {
   applyGlosses,
   clearGlosses,
   findGlossWord,
-} from '@/app/reader/utils/wordwiseRuby';
+} from '@/app/reader/utils/wordlensRuby';
 
 afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('wordwiseRuby', () => {
+describe('wordlensRuby', () => {
   it('builds a text model whose string matches visible text and locates offsets', () => {
     document.body.innerHTML = `<p id="p">The quick fox</p>`;
     const model = buildSectionTextModel(document);

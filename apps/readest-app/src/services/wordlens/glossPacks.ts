@@ -6,11 +6,11 @@ import { webDownload } from '@/utils/transfer';
 import { GlossIndex } from './glossIndex';
 import type { GlossIndexData } from './types';
 
-export const WORDWISE_CDN_BASE = 'https://cdn.readest.com/wordwise';
-const STORE_DIR = 'wordwise'; // relative dir under BaseDir 'Data'
+export const WORDLENS_CDN_BASE = 'https://cdn.readest.com/wordlens';
+const STORE_DIR = 'wordlens'; // relative dir under BaseDir 'Data'
 const MANIFEST_FILE = 'manifest.json';
 
-export interface WordWisePack {
+export interface WordLensPack {
   pair: string;
   source: string;
   target: string;
@@ -20,9 +20,9 @@ export interface WordWisePack {
   entries: number;
 }
 
-export interface WordWiseManifest {
+export interface WordLensManifest {
   schemaVersion: number;
-  packs: WordWisePack[];
+  packs: WordLensPack[];
 }
 
 /** Injectable byte-getter so the loader stays cross-platform AND unit-testable. */
@@ -114,27 +114,27 @@ const getDownloader =
     override ? override(url, onProgress) : defaultDownloader(appService, url, onProgress);
 
 export const resolvePack = (
-  manifest: WordWiseManifest | null,
+  manifest: WordLensManifest | null,
   source: string,
   hint: string,
-): WordWisePack | null =>
+): WordLensPack | null =>
   manifest?.packs.find((p) => p.source === source && p.target === hint) ?? null;
 
 /** The `target` codes the manifest offers for `source` (for the hint selector). */
-export const listAvailableTargets = (manifest: WordWiseManifest | null, source: string): string[] =>
+export const listAvailableTargets = (manifest: WordLensManifest | null, source: string): string[] =>
   manifest?.packs.filter((p) => p.source === source).map((p) => p.target) ?? [];
 
 // In-session memoized manifest (one network attempt per session unless forced).
-let manifestPromise: Promise<WordWiseManifest | null> | null = null;
+let manifestPromise: Promise<WordLensManifest | null> | null = null;
 
 // Module-level lazy cache: one resolved GlossIndex per pair per session.
 const indexCache = new Map<string, Promise<GlossIndex | null>>();
 
-const readPersistedManifest = async (appService: AppService): Promise<WordWiseManifest | null> => {
+const readPersistedManifest = async (appService: AppService): Promise<WordLensManifest | null> => {
   try {
     if (!(await appService.exists(storePath(MANIFEST_FILE), 'Data'))) return null;
     const text = (await appService.readFile(storePath(MANIFEST_FILE), 'Data', 'text')) as string;
-    return JSON.parse(text) as WordWiseManifest;
+    return JSON.parse(text) as WordLensManifest;
   } catch {
     return null;
   }
@@ -143,19 +143,19 @@ const readPersistedManifest = async (appService: AppService): Promise<WordWiseMa
 export const fetchManifest = async (
   appService: AppService,
   opts?: { download?: BytesDownloader; force?: boolean },
-): Promise<WordWiseManifest | null> => {
+): Promise<WordLensManifest | null> => {
   if (manifestPromise && !opts?.force) return manifestPromise;
   const download = getDownloader(appService, opts?.download);
   manifestPromise = (async () => {
     try {
-      const bytes = await download(`${WORDWISE_CDN_BASE}/${MANIFEST_FILE}`);
+      const bytes = await download(`${WORDLENS_CDN_BASE}/${MANIFEST_FILE}`);
       const text = new TextDecoder().decode(bytes);
-      const manifest = JSON.parse(text) as WordWiseManifest;
+      const manifest = JSON.parse(text) as WordLensManifest;
       await ensureStoreDir(appService);
       await appService.writeFile(storePath(MANIFEST_FILE), 'Data', text);
       return manifest;
     } catch (err) {
-      console.warn('[wordwise] manifest fetch failed; trying persisted copy', err);
+      console.warn('[wordlens] manifest fetch failed; trying persisted copy', err);
       return readPersistedManifest(appService);
     }
   })();
@@ -167,7 +167,7 @@ const ensureFlights = new Map<string, Promise<string | null>>();
 
 const ensurePackUncached = async (
   appService: AppService,
-  pack: WordWisePack,
+  pack: WordLensPack,
   opts?: { onProgress?: ProgressHandler; download?: BytesDownloader; allowDownload?: boolean },
 ): Promise<string | null> => {
   const dst = storePath(pack.file);
@@ -184,18 +184,18 @@ const ensurePackUncached = async (
   if (opts?.allowDownload === false) return null;
 
   const download = getDownloader(appService, opts?.download);
-  const url = `${WORDWISE_CDN_BASE}/${pack.file}?v=${pack.sha256.slice(0, 8)}`;
+  const url = `${WORDLENS_CDN_BASE}/${pack.file}?v=${pack.sha256.slice(0, 8)}`;
   let bytes: ArrayBuffer;
   try {
     bytes = await download(url, opts?.onProgress);
   } catch (err) {
-    console.warn('[wordwise] pack download failed', pack.pair, err);
+    console.warn('[wordlens] pack download failed', pack.pair, err);
     return null;
   }
 
   const actual = await sha256OfBytes(bytes);
   if (actual !== pack.sha256) {
-    console.warn('[wordwise] pack sha mismatch; discarding', pack.pair, {
+    console.warn('[wordlens] pack sha mismatch; discarding', pack.pair, {
       actual,
       expected: pack.sha256,
     });
@@ -214,7 +214,7 @@ const ensurePackUncached = async (
 
 export const ensurePack = async (
   appService: AppService,
-  pack: WordWisePack,
+  pack: WordLensPack,
   opts?: { onProgress?: ProgressHandler; download?: BytesDownloader; allowDownload?: boolean },
 ): Promise<string | null> => {
   const existing = ensureFlights.get(pack.pair);
@@ -236,7 +236,7 @@ export const getPackStatus = async (
   source: string,
   hint: string,
   opts?: { download?: BytesDownloader },
-): Promise<{ pack: WordWisePack; downloaded: boolean } | null> => {
+): Promise<{ pack: WordLensPack; downloaded: boolean } | null> => {
   const manifest = await fetchManifest(appService, { download: opts?.download });
   const pack = resolvePack(manifest, source, hint);
   if (!pack) return null;
@@ -259,7 +259,7 @@ export const getPackStatus = async (
  * not-found), and evict the in-session GlossIndex memo so a later re-enable
  * reloads from a fresh download.
  */
-export const deletePack = async (appService: AppService, pack: WordWisePack): Promise<void> => {
+export const deletePack = async (appService: AppService, pack: WordLensPack): Promise<void> => {
   for (const path of [storePath(pack.file), sidecarPath(pack.file)]) {
     try {
       await appService.deleteFile(path, 'Data');
@@ -296,7 +296,7 @@ export const loadGlossIndex = async (
       const text = typeof raw === 'string' ? raw : new TextDecoder().decode(raw);
       return GlossIndex.fromData(JSON.parse(text) as GlossIndexData);
     } catch (err) {
-      console.warn('[wordwise] loadGlossIndex failed', key, err);
+      console.warn('[wordlens] loadGlossIndex failed', key, err);
       return null;
     }
   })();

@@ -1,8 +1,8 @@
-// Word Wise: inline native-language hints above difficult words.
-// See docs/superpowers/specs/2026-06-14-word-wise-design.md
+// Word Lens: inline native-language hints above difficult words.
+// See docs/superpowers/specs/2026-06-14-word-lens-design.md
 
 /** Book source language as an ISO-639-1 base code (en, zh, es, …). */
-export type WordWiseSourceLang = string;
+export type WordLensSourceLang = string;
 
 /** A difficulty rank + native-language gloss for one headword. */
 export interface GlossEntry {
@@ -30,7 +30,7 @@ export interface GlossOccurrence {
   gloss: string;
 }
 
-/** On-disk shape of a downloaded gloss pack (data/wordwise/<pair>.json, served from R2). */
+/** On-disk shape of a downloaded gloss pack (data/wordlens/<pair>.json, served from R2). */
 export interface GlossIndexData {
   meta: { source: string; target: string; metric: string; version: number; count: number };
   /** headword -> { r: rank, g: gloss }. Compact keys to shrink the asset. */

@@ -1,8 +1,8 @@
-import type { GlossOccurrence, GlossSource, WordWiseSourceLang } from './types';
+import type { GlossOccurrence, GlossSource, WordLensSourceLang } from './types';
 import { isDifficult } from './difficulty';
 
 export interface PlanOptions {
-  sourceLang: WordWiseSourceLang;
+  sourceLang: WordLensSourceLang;
   /** A word is glossed when its rank >= rankCutoff. */
   rankCutoff: number;
   /** Hard cap on occurrences per call (default 2000). Logged when hit. */
@@ -69,7 +69,7 @@ export const planGlosses = (
     if (!entry || !isDifficult(entry.rank, opts.rankCutoff)) continue;
     occurrences.push({ start: t.start, end: t.end, word: t.word, gloss: entry.gloss });
     if (occurrences.length >= cap) {
-      console.warn(`[wordwise] occurrence cap (${cap}) hit; some hints omitted`);
+      console.warn(`[wordlens] occurrence cap (${cap}) hit; some hints omitted`);
       break;
     }
   }

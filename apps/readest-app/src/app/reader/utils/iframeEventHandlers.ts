@@ -1,6 +1,6 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
-import { findGlossWord } from '@/app/reader/utils/wordwiseRuby';
+import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -248,12 +248,12 @@ export const handleClick = (
       return;
     }
 
-    // Word Wise: tapping a glossed word looks it up in the dictionary. Checked
+    // Word Lens: tapping a glossed word looks it up in the dictionary. Checked
     // after the drag/long-hold guards so only a clean single tap triggers it.
     const glossWord = findGlossWord(element);
     if (glossWord) {
       const ruby = element?.closest('ruby.ww-gloss') ?? null;
-      eventDispatcher.dispatch('wordwise-dictionary', { bookKey, element: ruby, word: glossWord });
+      eventDispatcher.dispatch('wordlens-dictionary', { bookKey, element: ruby, word: glossWord });
       return;
     }
 

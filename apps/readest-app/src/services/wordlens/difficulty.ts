@@ -1,4 +1,4 @@
-import type { WordWiseSourceLang } from './types';
+import type { WordLensSourceLang } from './types';
 
 // CEFR proficiency levels. The slider picks the reader's level; a word is glossed
 // when it's ABOVE that level (rarer than the vocabulary a learner at that level
@@ -8,8 +8,8 @@ import type { WordWiseSourceLang } from './types';
 export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 export type CefrLevel = (typeof CEFR_LEVELS)[number];
 
-export const WORD_WISE_MIN_LEVEL = 1; // A1
-export const WORD_WISE_MAX_LEVEL = CEFR_LEVELS.length; // 6 (C2)
+export const WORD_LENS_MIN_LEVEL = 1; // A1
+export const WORD_LENS_MAX_LEVEL = CEFR_LEVELS.length; // 6 (C2)
 
 // Level (1=A1 … 6=C2) -> rank cutoff = the vocabulary a learner at that level
 // knows. A word is glossed when its rank >= cutoff, so a LOWER level (A1) => LOWER
@@ -25,9 +25,9 @@ const FREQUENCY: readonly number[] = [1000, 2000, 4000, 8000, 14000, 24000];
 const HSK: readonly number[] = [6000, 9000, 12000, 15000, 18000, 24000];
 
 const clampLevel = (level: number): number =>
-  Math.min(WORD_WISE_MAX_LEVEL, Math.max(WORD_WISE_MIN_LEVEL, Math.round(level)));
+  Math.min(WORD_LENS_MAX_LEVEL, Math.max(WORD_LENS_MIN_LEVEL, Math.round(level)));
 
-export const getRankCutoff = (lang: WordWiseSourceLang, level: number): number =>
+export const getRankCutoff = (lang: WordLensSourceLang, level: number): number =>
   (lang === 'zh' ? HSK : FREQUENCY)[clampLevel(level) - 1]!;
 
 /** CEFR label ('A1'…'C2') for a 1..6 slider level. */

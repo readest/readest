@@ -1,7 +1,7 @@
-// Upload the committed Word Wise gloss packs + manifest to the cdn.readest.com
-// R2 bucket under /wordwise/. Maintainer/CI tool — run after regenerating data.
+// Upload the committed Word Lens gloss packs + manifest to the cdn.readest.com
+// R2 bucket under /wordlens/. Maintainer/CI tool — run after regenerating data.
 //
-//   WORDWISE_R2_BUCKET=<bucket> node scripts/sync-wordwise-r2.mjs
+//   WORDLENS_R2_BUCKET=<bucket> node scripts/sync-wordlens-r2.mjs
 //
 // Pack files get a one-year immutable cache (the app cache-busts via a ?v=<sha8>
 // query); manifest.json gets a short max-age so new packs surface quickly. Packs
@@ -18,7 +18,7 @@ import { readdirSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-const SRC_DIR = resolve('data/wordwise');
+const SRC_DIR = resolve('data/wordlens');
 const PACK_CACHE = 'public, max-age=31536000, immutable';
 const MANIFEST_CACHE = 'public, max-age=300';
 const SUCCESS_RE = /Upload complete/i;
@@ -28,7 +28,7 @@ const PER_FILE_TIMEOUT_MS = 120_000; // hard backstop per file
 const uploadOne = (bucket, file) =>
   new Promise((resolveP) => {
     const cacheControl = file === 'manifest.json' ? MANIFEST_CACHE : PACK_CACHE;
-    const key = `${bucket}/wordwise/${file}`;
+    const key = `${bucket}/wordlens/${file}`;
     console.log(`Uploading ${file} -> ${key}`);
     const child = spawn(
       'wrangler',
@@ -82,13 +82,13 @@ const uploadOne = (bucket, file) =>
   });
 
 async function main() {
-  const bucket = process.env.WORDWISE_R2_BUCKET;
+  const bucket = process.env.WORDLENS_R2_BUCKET;
   if (!bucket) {
-    throw new Error('WORDWISE_R2_BUCKET env var is required (the cdn.readest.com R2 bucket name)');
+    throw new Error('WORDLENS_R2_BUCKET env var is required (the cdn.readest.com R2 bucket name)');
   }
   const all = readdirSync(SRC_DIR).filter((f) => f.endsWith('.json'));
   if (!all.includes('manifest.json')) {
-    throw new Error('manifest.json missing — run `pnpm wordwise:manifest` first');
+    throw new Error('manifest.json missing — run `pnpm wordlens:manifest` first');
   }
   const ordered = [...all.filter((f) => f !== 'manifest.json').sort(), 'manifest.json'];
 
@@ -101,7 +101,7 @@ async function main() {
     else failed.push(file);
   }
 
-  console.log(`\nSynced ${ok}/${ordered.length} files to ${bucket}/wordwise/`);
+  console.log(`\nSynced ${ok}/${ordered.length} files to ${bucket}/wordlens/`);
   if (failed.length) {
     console.error(`Failed: ${failed.join(', ')}`);
     process.exit(1);

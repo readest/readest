@@ -11,31 +11,31 @@ import { formatBytes } from '@/utils/book';
 import { eventDispatcher } from '@/utils/event';
 import { TRANSLATED_LANGS } from '@/services/constants';
 import {
-  WORD_WISE_MIN_LEVEL,
-  WORD_WISE_MAX_LEVEL,
+  WORD_LENS_MIN_LEVEL,
+  WORD_LENS_MAX_LEVEL,
   cefrLabel,
-} from '@/services/wordwise/difficulty';
-import { toWordWiseSource } from '@/app/reader/utils/wordwiseSection';
+} from '@/services/wordlens/difficulty';
+import { toWordLensSource } from '@/app/reader/utils/wordlensSection';
 import {
   deletePack,
   ensurePack,
   fetchManifest,
   getPackStatus,
   listAvailableTargets,
-  type WordWiseManifest,
-  type WordWisePack,
-} from '@/services/wordwise/glossPacks';
+  type WordLensManifest,
+  type WordLensPack,
+} from '@/services/wordlens/glossPacks';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 
-interface WordWisePanelProps {
+interface WordLensPanelProps {
   bookKey: string;
   onBack: () => void;
 }
 
 const baseCode = (lang?: string | null): string => (lang || '').toLowerCase().split('-')[0] || '';
 
-const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
+const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { getViewSettings, setViewSettings } = useReaderStore();
@@ -45,17 +45,17 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
   const bookData = getBookData(bookKey);
 
   const appLang = baseCode(getLocale());
-  const bookSource = toWordWiseSource(bookData?.book?.primaryLanguage);
+  const bookSource = toWordLensSource(bookData?.book?.primaryLanguage);
 
-  const [wordWiseEnabled, setWordWiseEnabled] = useState(viewSettings.wordWiseEnabled ?? false);
-  const [wordWiseLevel, setWordWiseLevel] = useState(viewSettings.wordWiseLevel ?? 3);
-  const [hintLang, setHintLang] = useState(viewSettings.wordWiseHintLang || appLang);
+  const [wordLensEnabled, setWordLensEnabled] = useState(viewSettings.wordLensEnabled ?? false);
+  const [wordLensLevel, setWordLensLevel] = useState(viewSettings.wordLensLevel ?? 3);
+  const [hintLang, setHintLang] = useState(viewSettings.wordLensHintLang || appLang);
   const [autoDownload, setAutoDownload] = useState(
-    settings.globalReadSettings.wordWiseAutoDownload ?? true,
+    settings.globalReadSettings.wordLensAutoDownload ?? true,
   );
 
-  const [manifest, setManifest] = useState<WordWiseManifest | null>(null);
-  const [packStatus, setPackStatus] = useState<{ pack: WordWisePack; downloaded: boolean } | null>(
+  const [manifest, setManifest] = useState<WordLensManifest | null>(null);
+  const [packStatus, setPackStatus] = useState<{ pack: WordLensPack; downloaded: boolean } | null>(
     null,
   );
   const [resolving, setResolving] = useState(false);
@@ -77,16 +77,16 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
   }, [appService]);
 
   useEffect(() => {
-    if (wordWiseEnabled === viewSettings.wordWiseEnabled) return;
-    saveViewSettings(envConfig, bookKey, 'wordWiseEnabled', wordWiseEnabled, false, false);
+    if (wordLensEnabled === viewSettings.wordLensEnabled) return;
+    saveViewSettings(envConfig, bookKey, 'wordLensEnabled', wordLensEnabled, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wordWiseEnabled]);
+  }, [wordLensEnabled]);
 
   useEffect(() => {
-    if (wordWiseLevel === viewSettings.wordWiseLevel) return;
-    saveViewSettings(envConfig, bookKey, 'wordWiseLevel', wordWiseLevel, false, false);
+    if (wordLensLevel === viewSettings.wordLensLevel) return;
+    saveViewSettings(envConfig, bookKey, 'wordLensLevel', wordLensLevel, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wordWiseLevel]);
+  }, [wordLensLevel]);
 
   // Re-resolve the data-pack row whenever the (source → hint) pair changes.
   useEffect(() => {
@@ -138,7 +138,7 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
   // option that should appear selected. '' shows Auto; a base code resolves to
   // the first option whose base code matches (e.g. 'zh' → 'zh-CN').
   const selectedHintValue = (() => {
-    const stored = viewSettings.wordWiseHintLang;
+    const stored = viewSettings.wordLensHintLang;
     if (!stored) return '';
     if (hintLangOptions.some((o) => o.value === stored)) return stored;
     const byBase = hintLangOptions.find((o) => baseCode(o.value) === baseCode(stored));
@@ -148,15 +148,15 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
   const handleSelectHintLang = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const option = event.target.value;
     setHintLang(option || appLang);
-    saveViewSettings(envConfig, bookKey, 'wordWiseHintLang', option, false, false);
-    viewSettings.wordWiseHintLang = option;
+    saveViewSettings(envConfig, bookKey, 'wordLensHintLang', option, false, false);
+    viewSettings.wordLensHintLang = option;
     setViewSettings(bookKey, { ...viewSettings });
   };
 
   const handleToggleAutoDownload = () => {
     const next = !autoDownload;
     setAutoDownload(next);
-    settings.globalReadSettings.wordWiseAutoDownload = next;
+    settings.globalReadSettings.wordLensAutoDownload = next;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
@@ -176,18 +176,18 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
         setPackStatus({ ...packStatus, downloaded: true });
         eventDispatcher.dispatch('toast', {
           type: 'success',
-          message: _('Word Wise data downloaded'),
+          message: _('Word Lens data downloaded'),
         });
       } else {
         eventDispatcher.dispatch('toast', {
           type: 'error',
-          message: _('Failed to download Word Wise data'),
+          message: _('Failed to download Word Lens data'),
         });
       }
     } catch {
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: _('Failed to download Word Wise data'),
+        message: _('Failed to download Word Lens data'),
       });
     } finally {
       setDownloading(false);
@@ -199,7 +199,7 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
     if (!appService || !packStatus) return;
     await deletePack(appService, packStatus.pack);
     setPackStatus({ ...packStatus, downloaded: false });
-    eventDispatcher.dispatch('toast', { type: 'info', message: _('Word Wise data removed') });
+    eventDispatcher.dispatch('toast', { type: 'info', message: _('Word Lens data removed') });
   };
 
   const renderDataPackRow = () => {
@@ -266,7 +266,7 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
             type='button'
             onClick={handleDownload}
             disabled={downloading}
-            className='btn btn-primary btn-sm shrink-0'
+            className='btn btn-primary btn-contrast btn-sm shrink-0'
           >
             {_('Download {{size}}', { size })}
           </button>
@@ -279,46 +279,44 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
     <div className={clsx('my-4 w-full space-y-6')}>
       <SubPageHeader
         parentLabel={_('Language')}
-        currentLabel={_('Word Wise')}
-        description={_('Show a short native-language hint above difficult words.')}
+        currentLabel={_('Word Lens')}
+        description={_(
+          'Show a short native-language hint above difficult words. Words above your level get a hint.',
+        )}
         onBack={onBack}
       />
 
-      <BoxedList title={_('Word Wise')} data-setting-id='settings.wordwise.main'>
+      <BoxedList title={_('Word Lens')} data-setting-id='settings.wordlens.main'>
         <SettingsSwitchRow
-          label={_('Enable Word Wise')}
-          checked={wordWiseEnabled}
-          onChange={() => setWordWiseEnabled(!wordWiseEnabled)}
-          data-setting-id='settings.wordwise.enabled'
+          label={_('Enable Word Lens')}
+          checked={wordLensEnabled}
+          onChange={() => setWordLensEnabled(!wordLensEnabled)}
+          data-setting-id='settings.wordlens.enabled'
         />
-        <SettingsRow
-          label={_('Vocabulary level')}
-          description={_('Words above your level get a hint')}
-          disabled={!wordWiseEnabled}
-        >
+        <SettingsRow label={_('Level')} disabled={!wordLensEnabled}>
           <div className='flex items-center gap-2'>
             <input
               type='range'
               className='range range-sm eink-bordered'
-              min={WORD_WISE_MIN_LEVEL}
-              max={WORD_WISE_MAX_LEVEL}
+              min={WORD_LENS_MIN_LEVEL}
+              max={WORD_LENS_MAX_LEVEL}
               step={1}
-              value={wordWiseLevel}
-              disabled={!wordWiseEnabled}
+              value={wordLensLevel}
+              disabled={!wordLensEnabled}
               aria-label={_('Vocabulary level')}
-              onChange={(e) => setWordWiseLevel(Number(e.target.value))}
-              data-setting-id='settings.wordwise.level'
+              onChange={(e) => setWordLensLevel(Number(e.target.value))}
+              data-setting-id='settings.wordlens.level'
             />
             <span className='text-base-content/70 w-6 text-end text-sm tabular-nums'>
-              {cefrLabel(wordWiseLevel)}
+              {cefrLabel(wordLensLevel)}
             </span>
           </div>
         </SettingsRow>
-        <SettingsRow label={_('Hint Language')}>
+        <SettingsRow label={_('Language')}>
           <SettingsSelect
             value={selectedHintValue}
             onChange={handleSelectHintLang}
-            ariaLabel={_('Hint Language')}
+            ariaLabel={_('Language')}
             options={hintLangOptions}
           />
         </SettingsRow>
@@ -328,7 +326,6 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
         {renderDataPackRow()}
         <SettingsSwitchRow
           label={_('Auto-download')}
-          description={_('Download data packs automatically when needed.')}
           checked={autoDownload}
           onChange={handleToggleAutoDownload}
         />
@@ -337,4 +334,4 @@ const WordWisePanel: React.FC<WordWisePanelProps> = ({ bookKey, onBack }) => {
   );
 };
 
-export default WordWisePanel;
+export default WordLensPanel;

@@ -26,7 +26,7 @@ import {
   SettingsSwitchRow,
 } from './primitives';
 import CustomDictionaries from './CustomDictionaries';
-import WordWisePanel from './WordWisePanel';
+import WordLensPanel from './WordLensPanel';
 import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -52,7 +52,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
-  const [showWordWise, setShowWordWise] = useState(false);
+  const [showWordLens, setShowWordLens] = useState(false);
 
   // Android Back / Esc: when a sub-page is open, intercept and step back to the
   // language list instead of letting <Dialog>'s listener close the whole
@@ -63,8 +63,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     onCancel: () => setShowCustomDictionaries(false),
   });
   useKeyDownActions({
-    enabled: showWordWise,
-    onCancel: () => setShowWordWise(false),
+    enabled: showWordLens,
+    onCancel: () => setShowWordLens(false),
   });
 
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
@@ -288,8 +288,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     );
   }
 
-  if (showWordWise) {
-    return <WordWisePanel bookKey={bookKey} onBack={() => setShowWordWise(false)} />;
+  if (showWordLens) {
+    return <WordLensPanel bookKey={bookKey} onBack={() => setShowWordLens(false)} />;
   }
 
   return (
@@ -318,15 +318,15 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       </BoxedList>
 
       <BoxedList
-        title={_('Word Wise')}
-        data-setting-id='settings.language.wordwise'
+        title={_('Word Lens')}
+        data-setting-id='settings.language.wordlens'
         cardClassName='overflow-hidden'
       >
         <NavigationRow
           icon={PiTranslate}
-          title={_('Word Wise')}
+          title={_('Word Lens')}
           status={_('Show a short native-language hint above difficult words.')}
-          onClick={() => setShowWordWise(true)}
+          onClick={() => setShowWordLens(true)}
         />
       </BoxedList>
 

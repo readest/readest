@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { GlossIndex } from '@/services/wordwise/glossIndex';
-import fixture from '../../fixtures/wordwise/en-zh.fixture.json';
-import type { GlossIndexData } from '@/services/wordwise/types';
+import { GlossIndex } from '@/services/wordlens/glossIndex';
+import fixture from '../../fixtures/wordlens/en-zh.fixture.json';
+import type { GlossIndexData } from '@/services/wordlens/types';
 
 const index = GlossIndex.fromData(fixture as GlossIndexData);
 

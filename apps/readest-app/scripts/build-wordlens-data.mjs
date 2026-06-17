@@ -1,8 +1,8 @@
-// Build trimmed Word Wise gloss indices from open datasets.
+// Build trimmed Word Lens gloss indices from open datasets.
 //
-//   node scripts/build-wordwise-data.mjs en-zh path/to/ecdict.csv [topN]
-//   node scripts/build-wordwise-data.mjs zh-en path/to/cedict.txt path/to/hsk.json [topN]
-//   node scripts/build-wordwise-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]
+//   node scripts/build-wordlens-data.mjs en-zh path/to/ecdict.csv [topN]
+//   node scripts/build-wordlens-data.mjs zh-en path/to/cedict.txt path/to/hsk.json [topN]
+//   node scripts/build-wordlens-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]
 //
 // The generalized `build` mode assembles a pack for any (src→tgt) pair where one
 // side is English, from two open datasets:
@@ -11,9 +11,9 @@
 //     tgt === 'en'  → foreign headword → English glosses (extractXToEn).
 //     src === 'en'  → English headword → target-language words (extractEnToX).
 //
-// Outputs data/wordwise/<pair>.json in the GlossIndexData shape:
+// Outputs data/wordlens/<pair>.json in the GlossIndexData shape:
 //   { meta, entries: { word: { r, g } }, inflections: { form: lemma } }
-// plus data/wordwise/manifest.json indexing the available packs.
+// plus data/wordlens/manifest.json indexing the available packs.
 //
 // ECDICT (MIT): columns word,phonetic,definition,translation,pos,collins,
 //   oxford,tag,bnc,frq,exchange,detail,audio. We keep word, frq (rank),
@@ -33,7 +33,7 @@ import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { execFileSync } from 'node:child_process';
 
-const OUT_DIR = resolve('data/wordwise');
+const OUT_DIR = resolve('data/wordlens');
 const TOP_DEFAULT = 30000;
 
 // Keep a hint short + clean: drop bracket annotations ([医], [网络], [ge4]),
@@ -505,7 +505,7 @@ async function main() {
     const [src, tgt, freqPath, glossPath, topN] = rest;
     if (!src || !tgt || !freqPath || !glossPath)
       throw new Error(
-        'usage: build-wordwise-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]',
+        'usage: build-wordlens-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]',
       );
     const freqList = parseFrequencyWords(readFileSync(freqPath, 'utf8'));
     let glossMap;
@@ -532,7 +532,7 @@ async function main() {
     const [src, tgt, freqPath, dbPath, topN, lemmaFile] = rest;
     if (!src || !tgt || !freqPath || !dbPath)
       throw new Error(
-        'usage: build-wordwise-data.mjs build-wikdict <src> <tgt> <freq.txt> <wikdict.sqlite3> [topN] [lemma.txt]',
+        'usage: build-wordlens-data.mjs build-wikdict <src> <tgt> <freq.txt> <wikdict.sqlite3> [topN] [lemma.txt]',
       );
     let rows;
     try {
@@ -574,7 +574,7 @@ async function main() {
     writeManifest();
   } else if (pair === 'en-zh') {
     const [csv, topN] = rest;
-    if (!csv) throw new Error('usage: build-wordwise-data.mjs en-zh <ecdict.csv> [topN]');
+    if (!csv) throw new Error('usage: build-wordlens-data.mjs en-zh <ecdict.csv> [topN]');
     const data = buildEnZh(readFileSync(csv, 'utf8'), Number(topN) || TOP_DEFAULT);
     writeFileSync(resolve(OUT_DIR, 'en-zh.json'), JSON.stringify(data));
     console.log(
@@ -584,7 +584,7 @@ async function main() {
   } else if (pair === 'zh-en') {
     const [cedict, hsk, topN] = rest;
     if (!cedict || !hsk)
-      throw new Error('usage: build-wordwise-data.mjs zh-en <cedict.txt> <hsk.json> [topN]');
+      throw new Error('usage: build-wordlens-data.mjs zh-en <cedict.txt> <hsk.json> [topN]');
     const data = buildZhEn(
       readFileSync(cedict, 'utf8'),
       JSON.parse(readFileSync(hsk, 'utf8')),
@@ -598,12 +598,12 @@ async function main() {
     console.log('manifest.json:', m.packs.length, 'packs');
   } else {
     throw new Error(
-      'usage: build-wordwise-data.mjs <en-zh|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
+      'usage: build-wordlens-data.mjs <en-zh|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
     );
   }
 }
 
-// Only run the CLI when executed directly (`node build-wordwise-data.mjs ...`),
+// Only run the CLI when executed directly (`node build-wordlens-data.mjs ...`),
 // not when imported by the unit tests.
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
   main().catch((err) => {

@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AppService, BaseDir } from '@/types/system';
-import type { GlossIndexData } from '@/services/wordwise/types';
+import type { GlossIndexData } from '@/services/wordlens/types';
 import type {
   BytesDownloader,
-  WordWiseManifest,
-  WordWisePack,
-} from '@/services/wordwise/glossPacks';
+  WordLensManifest,
+  WordLensPack,
+} from '@/services/wordlens/glossPacks';
 
 // Fresh module instance per test so the in-session memos (manifestPromise,
 // indexCache, ensureFlights, storeDirReady) start clean — via vi.resetModules()
 // instead of a production-side reset helper.
-const importGlossPacks = () => import('@/services/wordwise/glossPacks');
+const importGlossPacks = () => import('@/services/wordlens/glossPacks');
 
 // ---- in-memory fake AppService (only the file IO glossPacks touches) ----
 // Mirrors the REAL web appService: writeFile stores content verbatim and a 'text'
@@ -69,7 +69,7 @@ const packData: GlossIndexData = {
 const packBytes = (): ArrayBuffer =>
   new TextEncoder().encode(JSON.stringify(packData)).buffer as ArrayBuffer;
 
-const makePack = (overrides: Partial<WordWisePack>, sha: string): WordWisePack => ({
+const makePack = (overrides: Partial<WordLensPack>, sha: string): WordLensPack => ({
   pair: 'en-zh',
   source: 'en',
   target: 'zh',
@@ -130,7 +130,7 @@ describe('glossPacks', () => {
       // Fake Rust downloader: write the bytes into the map at the exact `dst`
       // it was handed (the absolute path). Read must use that same path.
       const downloadFileFn = vi.fn(async ({ dst }: { dst: string }) => {
-        expect(dst.startsWith('/abs/Data/wordwise/.dl-')).toBe(true);
+        expect(dst.startsWith('/abs/Data/wordlens/.dl-')).toBe(true);
         map.set(dst, bytes);
         return new Headers();
       });
@@ -148,7 +148,7 @@ describe('glossPacks', () => {
   describe('resolvePack', () => {
     it('picks the pack matching (source, target)', async () => {
       const { resolvePack } = await importGlossPacks();
-      const manifest: WordWiseManifest = {
+      const manifest: WordLensManifest = {
         schemaVersion: 1,
         packs: [
           makePack({ pair: 'en-zh', source: 'en', target: 'zh' }, 'a'),
@@ -161,7 +161,7 @@ describe('glossPacks', () => {
 
     it('returns null when no pack matches', async () => {
       const { resolvePack } = await importGlossPacks();
-      const manifest: WordWiseManifest = {
+      const manifest: WordLensManifest = {
         schemaVersion: 1,
         packs: [makePack({ source: 'en', target: 'zh' }, 'a')],
       };
@@ -180,10 +180,10 @@ describe('glossPacks', () => {
 
       const path = await ensurePack(appService, pack, { download });
 
-      expect(path).toBe('wordwise/en-zh.json');
+      expect(path).toBe('wordlens/en-zh.json');
       expect(download).toHaveBeenCalledTimes(1);
-      expect(await appService.exists('wordwise/en-zh.json', 'Data')).toBe(true);
-      expect(await appService.readFile('wordwise/en-zh.json.sha', 'Data', 'text')).toBe(sha);
+      expect(await appService.exists('wordlens/en-zh.json', 'Data')).toBe(true);
+      expect(await appService.readFile('wordlens/en-zh.json.sha', 'Data', 'text')).toBe(sha);
       expect(store.size).toBe(2);
     });
 
@@ -193,13 +193,13 @@ describe('glossPacks', () => {
       const sha = await sha256Hex(packBytes());
       const pack = makePack({}, sha);
       // Seed local file + sidecar.
-      await appService.writeFile('wordwise/en-zh.json', 'Data', packBytes());
-      await appService.writeFile('wordwise/en-zh.json.sha', 'Data', sha);
+      await appService.writeFile('wordlens/en-zh.json', 'Data', packBytes());
+      await appService.writeFile('wordlens/en-zh.json.sha', 'Data', sha);
       const download: BytesDownloader = vi.fn(async () => packBytes());
 
       const path = await ensurePack(appService, pack, { download });
 
-      expect(path).toBe('wordwise/en-zh.json');
+      expect(path).toBe('wordlens/en-zh.json');
       expect(download).not.toHaveBeenCalled();
     });
 
@@ -212,7 +212,7 @@ describe('glossPacks', () => {
       const path = await ensurePack(appService, pack, { download });
 
       expect(path).toBeNull();
-      expect(await appService.exists('wordwise/en-zh.json', 'Data')).toBe(false);
+      expect(await appService.exists('wordlens/en-zh.json', 'Data')).toBe(false);
       expect(store.size).toBe(0);
     });
 
@@ -228,8 +228,8 @@ describe('glossPacks', () => {
         ensurePack(appService, pack, { download }),
       ]);
 
-      expect(a).toBe('wordwise/en-zh.json');
-      expect(b).toBe('wordwise/en-zh.json');
+      expect(a).toBe('wordlens/en-zh.json');
+      expect(b).toBe('wordlens/en-zh.json');
       expect(download).toHaveBeenCalledTimes(1);
     });
   });
@@ -240,7 +240,7 @@ describe('glossPacks', () => {
       const { appService } = createFakeAppService();
       const sha = await sha256Hex(packBytes());
       const pack = makePack({}, sha);
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [pack] };
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [pack] };
 
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
@@ -261,9 +261,9 @@ describe('glossPacks', () => {
       // Seed the cache the OLD way: pack stored as a raw ArrayBuffer (+ sidecar).
       // A 'text' read returns the ArrayBuffer verbatim, so loadGlossIndex must
       // decode it rather than JSON.parse("[object ArrayBuffer]").
-      await appService.writeFile('wordwise/en-zh.json', 'Data', packBytes());
-      await appService.writeFile('wordwise/en-zh.json.sha', 'Data', sha);
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [pack] };
+      await appService.writeFile('wordlens/en-zh.json', 'Data', packBytes());
+      await appService.writeFile('wordlens/en-zh.json.sha', 'Data', sha);
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [pack] };
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
       // Only the manifest is fetched; the pack is already cached.
@@ -280,7 +280,7 @@ describe('glossPacks', () => {
     it('returns null when the manifest has no pack for the pair', async () => {
       const { loadGlossIndex } = await importGlossPacks();
       const { appService } = createFakeAppService();
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [] };
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [] };
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
       const download: BytesDownloader = vi.fn(async () => manifestBytes);
@@ -310,13 +310,13 @@ describe('glossPacks', () => {
       const { appService } = createFakeAppService();
       const sha = await sha256Hex(packBytes());
       const pack = makePack({}, sha);
-      await appService.writeFile('wordwise/en-zh.json', 'Data', packBytes());
-      await appService.writeFile('wordwise/en-zh.json.sha', 'Data', sha);
+      await appService.writeFile('wordlens/en-zh.json', 'Data', packBytes());
+      await appService.writeFile('wordlens/en-zh.json.sha', 'Data', sha);
       const download: BytesDownloader = vi.fn(async () => packBytes());
 
       const path = await ensurePack(appService, pack, { download, allowDownload: false });
 
-      expect(path).toBe('wordwise/en-zh.json');
+      expect(path).toBe('wordlens/en-zh.json');
       expect(download).not.toHaveBeenCalled();
     });
 
@@ -325,7 +325,7 @@ describe('glossPacks', () => {
       const { appService } = createFakeAppService();
       const sha = await sha256Hex(packBytes());
       const pack = makePack({}, sha);
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [pack] };
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [pack] };
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
       // Manifest still downloads; the *pack* must not.
@@ -343,7 +343,7 @@ describe('glossPacks', () => {
   });
 
   describe('getPackStatus', () => {
-    const buildManifest = (pack: WordWisePack): WordWiseManifest => ({
+    const buildManifest = (pack: WordLensPack): WordLensManifest => ({
       schemaVersion: 1,
       packs: [pack],
     });
@@ -374,7 +374,7 @@ describe('glossPacks', () => {
     it('returns null when the manifest has no pack for the pair', async () => {
       const { getPackStatus } = await importGlossPacks();
       const { appService } = createFakeAppService();
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [] };
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [] };
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
       const download: BytesDownloader = vi.fn(async () => manifestBytes);
@@ -390,7 +390,7 @@ describe('glossPacks', () => {
       const { appService, store } = createFakeAppService();
       const sha = await sha256Hex(packBytes());
       const pack = makePack({}, sha);
-      const manifest: WordWiseManifest = { schemaVersion: 1, packs: [pack] };
+      const manifest: WordLensManifest = { schemaVersion: 1, packs: [pack] };
       const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest))
         .buffer as ArrayBuffer;
       const download: BytesDownloader = vi.fn(async (url: string) =>
@@ -402,10 +402,10 @@ describe('glossPacks', () => {
 
       await deletePack(appService, pack);
 
-      expect(await appService.exists('wordwise/en-zh.json', 'Data')).toBe(false);
-      expect(await appService.exists('wordwise/en-zh.json.sha', 'Data')).toBe(false);
+      expect(await appService.exists('wordlens/en-zh.json', 'Data')).toBe(false);
+      expect(await appService.exists('wordlens/en-zh.json.sha', 'Data')).toBe(false);
       // Only the persisted manifest remains.
-      expect(store.has('Data:wordwise/manifest.json')).toBe(true);
+      expect(store.has('Data:wordlens/manifest.json')).toBe(true);
       expect((await getPackStatus(appService, 'en', 'zh', { download }))!.downloaded).toBe(false);
     });
 
@@ -420,7 +420,7 @@ describe('glossPacks', () => {
   describe('listAvailableTargets', () => {
     it('returns the target codes the manifest offers for a source', async () => {
       const { listAvailableTargets } = await importGlossPacks();
-      const manifest: WordWiseManifest = {
+      const manifest: WordLensManifest = {
         schemaVersion: 1,
         packs: [
           makePack({ pair: 'en-zh', source: 'en', target: 'zh' }, 'a'),
@@ -439,7 +439,7 @@ describe('glossPacks', () => {
     it('downloads, persists to Data, then serves the persisted copy when offline', async () => {
       const { fetchManifest } = await importGlossPacks();
       const { appService } = createFakeAppService();
-      const manifest: WordWiseManifest = {
+      const manifest: WordLensManifest = {
         schemaVersion: 1,
         packs: [makePack({}, 'abc')],
       };
@@ -449,7 +449,7 @@ describe('glossPacks', () => {
 
       const first = await fetchManifest(appService, { download });
       expect(first?.packs[0]?.pair).toBe('en-zh');
-      expect(await appService.exists('wordwise/manifest.json', 'Data')).toBe(true);
+      expect(await appService.exists('wordlens/manifest.json', 'Data')).toBe(true);
 
       // force: true bypasses the in-session memo, so we re-attempt the (now
       // offline) download and fall back to the persisted copy.

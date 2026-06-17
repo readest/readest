@@ -41,7 +41,7 @@ import {
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
-import { refreshSectionGlosses } from '@/app/reader/utils/wordwiseSection';
+import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -411,30 +411,30 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  // Build the Word Wise refresh context: gate silent auto-download on the global
+  // Build the Word Lens refresh context: gate silent auto-download on the global
   // toggle AND a best-effort metered-connection check, and show a single
   // "Downloading…" toast on the first progress tick (the per-percent progress
-  // lives in the Word Wise settings panel). `wordWiseToastShownRef` de-dupes the
+  // lives in the Word Lens settings panel). `wordLensToastShownRef` de-dupes the
   // toast across the multiple section docs a refresh pass touches.
-  const wordWiseToastShownRef = useRef(false);
-  const buildWordWiseCtx = (bookLang?: string | null) => {
+  const wordLensToastShownRef = useRef(false);
+  const buildWordLensCtx = (bookLang?: string | null) => {
     // Read the live setting (not the first-render `settings` snapshot closed over
     // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
     // takes effect on the next section refresh.
     const liveSettings = useSettingsStore.getState().settings;
     const allowDownload =
-      (liveSettings.globalReadSettings.wordWiseAutoDownload ?? true) && !isMetered();
+      (liveSettings.globalReadSettings.wordLensAutoDownload ?? true) && !isMetered();
     return {
       appService: appService!,
       bookLang,
       appLang: getLocale().split('-')[0] || 'en',
       allowDownload,
       onProgress: () => {
-        if (wordWiseToastShownRef.current) return;
-        wordWiseToastShownRef.current = true;
+        if (wordLensToastShownRef.current) return;
+        wordLensToastShownRef.current = true;
         eventDispatcher.dispatch('toast', {
           type: 'info',
-          message: _('Downloading Word Wise data…'),
+          message: _('Downloading Word Lens data…'),
         });
       },
     };
@@ -447,7 +447,7 @@ const FoliateViewer: React.FC<{
     const vs = getViewSettings(bookKey);
     const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
     // Fixed-layout (pre-paginated) books have no reflow room; injecting ruby
-    // would overflow their fixed boxes, so skip Word Wise glosses there.
+    // would overflow their fixed boxes, so skip Word Lens glosses there.
     const isFixedLayout = bookDoc.rendition?.layout === 'pre-paginated';
     for (const { doc } of contents) {
       if (doc) {
@@ -459,7 +459,7 @@ const FoliateViewer: React.FC<{
           relayoutWarichu(doc);
         }
         if (vs && appService && !isFixedLayout) {
-          void refreshSectionGlosses(doc, vs, buildWordWiseCtx(bookLang));
+          void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
         }
       }
     }
@@ -834,12 +834,12 @@ const FoliateViewer: React.FC<{
     if (isFixedLayout) return;
     // A settings change is the moment a fresh download may start; let the
     // one-time "Downloading…" toast fire again for it.
-    wordWiseToastShownRef.current = false;
+    wordLensToastShownRef.current = false;
     for (const { doc } of contents) {
-      if (doc) void refreshSectionGlosses(doc, vs, buildWordWiseCtx(bookLang));
+      if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings?.wordWiseEnabled, viewSettings?.wordWiseLevel, viewSettings?.wordWiseHintLang]);
+  }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {

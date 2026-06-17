@@ -339,12 +339,12 @@ export interface AnnotatorConfig {
   noteExportConfig: NoteExportConfig;
 }
 
-export interface WordWiseConfig {
-  wordWiseEnabled: boolean;
+export interface WordLensConfig {
+  wordLensEnabled: boolean;
   /** Difficulty slider, 1 (fewest hints) .. 5 (most hints). */
-  wordWiseLevel: number;
+  wordLensLevel: number;
   /** Hint (target) language; '' = auto (app UI language). */
-  wordWiseHintLang: string;
+  wordLensHintLang: string;
 }
 
 export interface ScreenConfig {
@@ -387,7 +387,7 @@ export interface ViewSettings
     ScreenConfig,
     ProofreadRulesConfig,
     AnnotatorConfig,
-    WordWiseConfig,
+    WordLensConfig,
     ViewSettingsConfig {}
 
 export interface BookProgress {

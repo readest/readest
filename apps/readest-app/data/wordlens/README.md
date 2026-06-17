@@ -1,7 +1,7 @@
-# Updating the Word Wise gloss packs
+# Updating the Word Lens gloss packs
 
-**Model:** the committed `data/wordwise/*.json` + `manifest.json` are the source of
-truth. They are **not** bundled into the app — `pnpm wordwise:sync` mirrors them to the
+**Model:** the committed `data/wordlens/*.json` + `manifest.json` are the source of
+truth. They are **not** bundled into the app — `pnpm wordlens:sync` mirrors them to the
 `cdn.readest.com` R2 bucket, and the app downloads each pack on demand and **re-downloads
 it automatically whenever its `sha256` changes in the manifest**. So updating data is:
 regenerate → sync → commit. No app release required.
@@ -40,21 +40,21 @@ for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.gith
 cd apps/readest-app
 
 # Flagship pairs (dedicated dictionaries — higher quality)
-node scripts/build-wordwise-data.mjs en-zh /tmp/ww-data/ecdict.csv 30000
-node scripts/build-wordwise-data.mjs zh-en /tmp/ww-data/cedict.txt /tmp/ww-data/hsk.json 12000
+node scripts/build-wordlens-data.mjs en-zh /tmp/ww-data/ecdict.csv 30000
+node scripts/build-wordlens-data.mjs zh-en /tmp/ww-data/cedict.txt /tmp/ww-data/hsk.json 12000
 
 # X→en (foreign source): pass the source-language lemmatization list (6th arg) so
 # inflected source words ("corriendo" -> "correr") resolve to their lemma's gloss.
 for src in es fr de pt it ru; do
-  node scripts/build-wordwise-data.mjs build-wikdict "$src" en "/tmp/ww-data/${src}_50k.txt" "/tmp/ww-data/$src-en.sqlite3" 20000 "/tmp/ww-data/lemmatization-$src.txt"
+  node scripts/build-wordlens-data.mjs build-wikdict "$src" en "/tmp/ww-data/${src}_50k.txt" "/tmp/ww-data/$src-en.sqlite3" 20000 "/tmp/ww-data/lemmatization-$src.txt"
 done
 # en→X (English source): lemmatized automatically via en-zh.json (build it first)
 for tgt in es fr de pt ru; do
-  node scripts/build-wordwise-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
+  node scripts/build-wordlens-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
 done
 ```
-- Each build writes `data/wordwise/<pair>.json` **and** regenerates `manifest.json`
-  (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordwise:manifest`.
+- Each build writes `data/wordlens/<pair>.json` **and** regenerates `manifest.json`
+  (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordlens:manifest`.
 - The last CLI arg is `topN` (default 30000 for en-zh, 20000 otherwise).
 - **Add a new pair** (e.g. en→ja): fetch `en-ja.sqlite3` + `en_50k.txt`, run
   `build-wikdict en ja …` — it joins the manifest automatically. (ja/ko/th as a *source*
@@ -65,13 +65,13 @@ done
 
 ## 3. Sync to R2
 ```bash
-WORDWISE_R2_BUCKET=<cdn-bucket> pnpm wordwise:sync
+WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync
 ```
 Uploads every pack (immutable cache) + `manifest.json` (5-min cache), manifest last.
 
 ## 4. Commit
 ```bash
-git add data/wordwise && git commit -m "chore(wordwise): refresh gloss packs"
+git add data/wordlens && git commit -m "chore(wordlens): refresh gloss packs"
 ```
 
 ## 5. How clients update
@@ -82,6 +82,6 @@ On next load the app fetches `manifest.json` (≤5-min CDN cache), compares each
 | What | Where |
 | --- | --- |
 | `topN` per pack | the build CLI's last arg |
-| commonest-N words skipped (`skipTop`) + per-chapter render cap (`DEFAULT_CAP`) | `src/services/wordwise/{planner,…}` and `buildPack` in the build script |
-| difficulty cutoffs per slider level | `src/services/wordwise/difficulty.ts` |
-| gloss cleaning (POS/`[…]`/`CL:` strip, 24-char cap) | `shortGloss` in `scripts/build-wordwise-data.mjs` |
+| commonest-N words skipped (`skipTop`) + per-chapter render cap (`DEFAULT_CAP`) | `src/services/wordlens/{planner,…}` and `buildPack` in the build script |
+| difficulty cutoffs per slider level | `src/services/wordlens/difficulty.ts` |
+| gloss cleaning (POS/`[…]`/`CL:` strip, 24-char cap) | `shortGloss` in `scripts/build-wordlens-data.mjs` |

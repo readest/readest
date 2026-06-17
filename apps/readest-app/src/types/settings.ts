@@ -55,11 +55,11 @@ export interface ReadSettings {
   translationProvider: string;
   translateTargetLang: string;
   /**
-   * Global Word Wise toggle: auto-download a gloss pack on demand when the
+   * Global Word Lens toggle: auto-download a gloss pack on demand when the
    * pair isn't cached locally. When off, the reader never fetches packs
-   * silently; users download them explicitly from the Word Wise sub-page.
+   * silently; users download them explicitly from the Word Lens sub-page.
    */
-  wordWiseAutoDownload: boolean;
+  wordLensAutoDownload: boolean;
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
 
