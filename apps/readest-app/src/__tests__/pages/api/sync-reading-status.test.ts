@@ -25,6 +25,6 @@ describe('resolveReadingStatusMerge', () => {
       { reading_status: undefined, reading_status_updated_at: undefined },
       { reading_status: 'abandoned', reading_status_updated_at: iso(1) },
     );
-    expect(out.reading_status).toBe('abandoned');
+    expect(out).toEqual({ reading_status: 'abandoned', reading_status_updated_at: iso(1) });
   });
 });
