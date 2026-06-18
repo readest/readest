@@ -38,9 +38,10 @@ import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/services/nav';
 import { throttle } from '@/utils/throttle';
 import {
-  cancelDeferredAction,
+  beginGesture,
   createDeferredActionState,
   flushDeferredAction,
+  isLongPressHold,
   runOrDeferAction,
 } from '../../utils/deferredAction';
 import { Insets } from '@/types/misc';
@@ -174,6 +175,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // (Android long-press selects text via selectionchange before touchend). The
   // pending action runs on touchend so popups don't open under an active touch.
   const deferredQuickActionRef = useRef(createDeferredActionState());
+  // Timestamp of the latest touch pointerdown (0 for mouse). Used to require a
+  // long-press hold before the instant quick action fires, so a tap-to-deselect
+  // can't re-open the dictionary off a racy lingering selectionchange (iOS).
+  const pointerDownTimeRef = useRef(0);
   // Set when a Word Lens gloss tap synthesizes a selection so the
   // selection-change effect opens the dictionary popup instead of the
   // annotation toolbar. Cleared as soon as it's consumed.
@@ -353,7 +358,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const ev = event.detail as NativeTouchEventType;
       if (ev.type === 'touchstart') {
         androidTouchEndRef.current = false;
-        cancelDeferredAction(deferredQuickActionRef.current);
+        beginGesture(deferredQuickActionRef.current);
         handleTouchStart();
       } else if (ev.type === 'touchmove') {
         // The Android pointer engagement signal (throttled in MainActivity.kt).
@@ -382,6 +387,25 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     detail.doc?.addEventListener('touchstart', handleTouchStart, opts);
     detail.doc?.addEventListener('touchmove', handleTouchmove, opts);
     detail.doc?.addEventListener('touchend', handleTouchEnd);
+    // Re-arm the instant quick action at the start of each gesture. Android does
+    // this via the native-touch touchstart above; iOS/desktop have no such path,
+    // and a single iOS long-press emits multiple selectionchange events for the
+    // same word — without re-arming, the system-dictionary sheet stacked twice
+    // (the action fired once per event instead of once per gesture).
+    if (!appService?.isAndroidApp) {
+      detail.doc?.addEventListener(
+        'pointerdown',
+        (ev: Event) => {
+          beginGesture(deferredQuickActionRef.current);
+          // Remember when the gesture started so the instant quick action can
+          // require a long-press hold (touch only — mouse selections fire on
+          // pointerup and shouldn't be time-gated).
+          pointerDownTimeRef.current =
+            (ev as PointerEvent).pointerType === 'mouse' ? 0 : Date.now();
+        },
+        opts,
+      );
+    }
     detail.doc?.addEventListener('pointerdown', handlePointerDown.bind(null, doc, index), opts);
     detail.doc?.addEventListener('pointermove', handlePointerMove.bind(null, doc, index), opts);
     detail.doc?.addEventListener('pointercancel', handlePointerCancel.bind(null, doc, index));
@@ -775,7 +799,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A real touch selection only appears after the OS long-press (~500ms); a
+  // quick tap that re-reports a lingering selection fires far sooner.
+  const quickActionMinHoldMs = 300;
+
   const handleQuickAction = () => {
+    // iOS/desktop immediate path: only fire from a long-press hold. Without this
+    // a tap-to-deselect after dismissing the system dictionary occasionally
+    // re-opened it off a racy lingering selectionchange. Android defers to
+    // touchend (a deliberate lift) and is left as-is.
+    if (
+      !appService?.isAndroidApp &&
+      !isLongPressHold(pointerDownTimeRef.current, Date.now(), quickActionMinHoldMs)
+    ) {
+      return;
+    }
     const action = viewSettings.annotationQuickAction;
     const runAction = () => {
       switch (action) {
@@ -867,8 +905,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (wantWordLensDict) {
-        setShowAnnotPopup(false);
-        setShowDictionaryPopup(true);
+        // Route through handleDictionary so a Word Lens gloss tap honours the
+        // dictionary settings (system dictionary vs the in-app popup) — same
+        // as the selection-toolbar and instant-quick-action dictionary paths.
+        handleDictionary();
       } else if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
         handleQuickAction();
       } else {
