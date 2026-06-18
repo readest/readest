@@ -20,62 +20,81 @@ export const isMetered = (): boolean => {
   return connection.type === 'cellular' || connection.saveData === true;
 };
 
-export const isLanAddress = (url: string) => {
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
+/** Whether a dotted-decimal IPv4 address falls in a private / reserved range. */
+function isBlockedV4(a: number, b: number, c: number, _d: number): boolean {
+  if (a === 0 || a === 10 || a === 127) return true; // this-network, private, loopback
+  if (a === 169 && b === 254) return true; // link-local
+  if (a === 172 && b >= 16 && b <= 31) return true; // private
+  if (a === 192 && b === 168) return true; // private
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT / Tailscale
+  if (a === 192 && b === 0 && c === 0) return true; // IETF protocol assignments
+  if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
+  if (a >= 224) return true; // multicast + reserved
+  return false;
+}
 
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
-      return true;
+/**
+ * Canonical SSRF host blocklist, shared by every server route that fetches a
+ * client-supplied URL (`/api/opds/proxy`, `/api/kosync`, `/api/send/fetch-url`).
+ * Returns true for hosts that must never be reached: loopback, private,
+ * link-local, CGNAT, benchmarking, multicast, internal hostname suffixes, and
+ * bare single-label names.
+ *
+ * Input is a hostname as the WHATWG URL parser serializes it (decimal/hex/octal
+ * IPv4 already normalized to dotted-quad). This is a string check — a hostname
+ * that DNS-resolves to a private address (DNS rebinding) is a documented
+ * residual risk; the hosted web build runs on the Cloudflare Workers edge,
+ * which has no reachable internal network or metadata endpoint.
+ */
+export function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h) return true;
+  if (h === 'localhost' || h.endsWith('.localhost')) return true;
+  if (h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.lan')) return true;
+  // Bare single-label hostnames (e.g. `intranet`, `metadata`) — never public.
+  if (!h.includes('.') && !h.includes(':')) return true;
+
+  // IPv4 — the WHATWG URL parser already normalized decimal/hex/octal forms.
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    return isBlockedV4(Number(v4[1]), Number(v4[2]), Number(v4[3]), Number(v4[4]));
+  }
+
+  // IPv6, including IPv4-mapped / -compatible forms.
+  if (h.includes(':')) {
+    if (h === '::' || h === '::1') return true; // unspecified, loopback
+    if (/^(fc|fd)/.test(h)) return true; // unique-local
+    if (/^fe[89ab]/.test(h)) return true; // link-local
+    const mapped = h.match(/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (mapped) {
+      return isBlockedV4(
+        Number(mapped[1]),
+        Number(mapped[2]),
+        Number(mapped[3]),
+        Number(mapped[4]),
+      );
     }
-
-    // Check for IPv4 private ranges
-    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    const match = hostname.match(ipv4Regex);
-
-    if (match) {
-      const [, a, b, c, d] = match.map(Number);
-      if (a === undefined || b === undefined || c === undefined || d === undefined) {
-        return false;
-      }
-
-      // Validate IP format
-      if (a > 255 || b > 255 || c > 255 || d > 255) {
-        return false;
-      }
-
-      // Check private IP ranges:
-      // 10.0.0.0/8 (10.0.0.0 to 10.255.255.255)
-      if (a === 10) return true;
-
-      // 172.16.0.0/12 (172.16.0.0 to 172.31.255.255)
-      if (a === 172 && b >= 16 && b <= 31) return true;
-
-      // 192.168.0.0/16 (192.168.0.0 to 192.168.255.255)
-      if (a === 192 && b === 168) return true;
-
-      // 169.254.0.0/16 (link-local addresses)
-      if (a === 169 && b === 254) return true;
-
-      // Tailscale IPv4 range: 100.64.0.0/10 (100.64.0.0 to 100.127.255.255)
-      if (a === 100 && b >= 64 && b <= 127) return true;
+    const hexMapped = h.match(/::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    if (hexMapped) {
+      const hi = parseInt(hexMapped[1] ?? '0', 16);
+      const lo = parseInt(hexMapped[2] ?? '0', 16);
+      return isBlockedV4((hi >> 8) & 0xff, hi & 0xff, (lo >> 8) & 0xff, lo & 0xff);
     }
-
-    // Check for IPv6 private addresses
-    // URL.hostname wraps IPv6 in brackets, e.g. '[::1]' — strip them
-    const ipv6 = hostname.startsWith('[') ? hostname.slice(1, -1) : hostname;
-    if (ipv6.includes(':')) {
-      if (
-        ipv6 === '::1' ||
-        ipv6.startsWith('fe80:') ||
-        ipv6.startsWith('fc00:') ||
-        ipv6.startsWith('fd00:')
-      ) {
-        return true;
-      }
-    }
-
     return false;
+  }
+  return false;
+}
+
+/**
+ * Whether a URL points at a LAN / internal address. Delegates to the canonical
+ * {@link isBlockedHost} so the proxy SSRF guard and the LAN-detection callers
+ * (KOSync direct-vs-proxy routing, OPDS catalog warnings) stay in sync.
+ * Returns false for unparseable URLs (matching the previous best-effort
+ * behavior — an invalid host can't be reached anyway).
+ */
+export const isLanAddress = (url: string): boolean => {
+  try {
+    return isBlockedHost(new URL(url).hostname);
   } catch {
     return false;
   }
