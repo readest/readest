@@ -26,11 +26,12 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (k: string) => k }));
 
 vi.mock('@/store/appLockStore', () => ({
-  useAppLockStore: () => ({ pinHash: 'h', pinSalt: 's', unlock: unlockMock }),
-}));
-
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings: { biometricUnlockEnabled } }),
+  useAppLockStore: () => ({
+    pinHash: 'h',
+    pinSalt: 's',
+    unlock: unlockMock,
+    biometricUnlockEnabled,
+  }),
 }));
 
 vi.mock('@/components/PinInput', () => ({

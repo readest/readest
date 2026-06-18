@@ -95,6 +95,14 @@ describe('getBiometricStatus', () => {
     });
   });
 
+  test('returns available:false when checkStatus resolves with isAvailable false', async () => {
+    checkStatusMock.mockResolvedValue({ isAvailable: false, biometryType: BiometryType.None });
+    await expect(getBiometricStatus()).resolves.toEqual({
+      available: false,
+      biometryType: BiometryType.None,
+    });
+  });
+
   test('returns unavailable when checkStatus throws', async () => {
     checkStatusMock.mockRejectedValue(new Error('no plugin'));
     await expect(getBiometricStatus()).resolves.toEqual({
@@ -117,5 +125,9 @@ describe('authenticateWithBiometrics', () => {
   test('false when authenticate throws (cancel/fail)', async () => {
     authenticateMock.mockRejectedValue(new Error('userCancel'));
     await expect(authenticateWithBiometrics('Unlock')).resolves.toBe(false);
+    expect(authenticateMock).toHaveBeenCalledWith(
+      'Unlock',
+      expect.objectContaining({ allowDeviceCredential: false }),
+    );
   });
 });

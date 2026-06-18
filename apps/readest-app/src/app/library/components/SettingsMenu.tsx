@@ -75,7 +75,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { openDialog: openAppLockDialogInStore } = useAppLockStore();
   const isPinEnabled = !!settings.pinCodeEnabled;
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometryLabelKey, setBiometryLabelKey] = useState('biometrics');
+  const [biometryLabelKey, setBiometryLabelKey] = useState('');
   const showBiometricToggle = !!appService?.isMobileApp && isPinEnabled && biometricAvailable;
 
   useEffect(() => {

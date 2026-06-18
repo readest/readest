@@ -169,6 +169,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           enabled: !!settings.pinCodeEnabled,
           hash: settings.pinCodeHash,
           salt: settings.pinCodeSalt,
+          biometricUnlockEnabled: !!settings.biometricUnlockEnabled,
         });
         // Subscribe the bundled-settings publisher to settingsStore
         // changes, AFTER priming the publish snapshot from the just-

@@ -7,7 +7,6 @@ import PinInput from '@/components/PinInput';
 import { useEnv } from '@/context/EnvContext';
 import { PIN_LENGTH, verifyPin } from '@/libs/crypto/applock';
 import { useAppLockStore } from '@/store/appLockStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   authenticateWithBiometrics,
@@ -20,8 +19,7 @@ import {
 export default function AppLockScreen() {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { pinHash, pinSalt, unlock } = useAppLockStore();
-  const { settings } = useSettingsStore();
+  const { pinHash, pinSalt, unlock, biometricUnlockEnabled } = useAppLockStore();
   const [biometryLabel, setBiometryLabel] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -51,7 +49,7 @@ export default function AppLockScreen() {
       if (
         !shouldAttemptBiometricUnlock({
           isMobileApp: !!appService?.isMobileApp,
-          biometricUnlockEnabled: !!settings.biometricUnlockEnabled,
+          biometricUnlockEnabled,
           available,
         })
       ) {
