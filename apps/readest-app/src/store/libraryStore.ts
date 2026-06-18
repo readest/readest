@@ -107,10 +107,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const idx = hashIndex.get(hash);
     if (idx === undefined) return;
     const book = library[idx]!;
+    const statusChanged = readingStatus !== book.readingStatus;
     const updatedBook: Book = {
       ...book,
       progress,
       readingStatus,
+      readingStatusUpdatedAt: statusChanged ? Date.now() : book.readingStatusUpdatedAt,
       updatedAt: Date.now(),
     };
     const newLibrary = library.slice();

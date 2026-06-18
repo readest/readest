@@ -163,6 +163,25 @@ describe('libraryStore', () => {
       const visible = useLibraryStore.getState().getVisibleLibrary();
       expect(visible.map((b) => b.hash)).toEqual(['a', 'c']);
     });
+
+    test('stamps readingStatusUpdatedAt when the status changes', () => {
+      useLibraryStore.getState().setLibrary([makeBook({ hash: 'a', readingStatus: undefined })]);
+      useLibraryStore.getState().updateBookProgress('a', [100, 100], 'finished');
+      const book = useLibraryStore.getState().getBookByHash('a');
+      expect(book?.readingStatus).toBe('finished');
+      expect(book?.readingStatusUpdatedAt).toBeGreaterThan(0);
+    });
+
+    test('does NOT change readingStatusUpdatedAt on a progress-only update', () => {
+      useLibraryStore
+        .getState()
+        .setLibrary([
+          makeBook({ hash: 'a', readingStatus: 'reading', readingStatusUpdatedAt: 111 }),
+        ]);
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], 'reading');
+      const book = useLibraryStore.getState().getBookByHash('a');
+      expect(book?.readingStatusUpdatedAt).toBe(111);
+    });
   });
 
   describe('updateBooks', () => {
