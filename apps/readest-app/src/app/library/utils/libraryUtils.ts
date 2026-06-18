@@ -1,4 +1,4 @@
-import { Book, BooksGroup } from '@/types/book';
+import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import {
   LibraryGroupByType,
   LibrarySecondarySortByType,
@@ -597,6 +597,17 @@ export type BookContextMenuItemId =
   | 'upload'
   | 'share'
   | 'delete';
+
+/**
+ * Build a new Book with an explicit reading status. Stamps both `updatedAt`
+ * (so the library sync picks it up) and `readingStatusUpdatedAt` (so the
+ * field-level merge resolves status independently of progress). Use this for
+ * every deliberate status edit so the timestamp is never forgotten.
+ */
+export const withReadingStatus = (book: Book, status: ReadingStatus | undefined): Book => {
+  const now = Date.now();
+  return { ...book, readingStatus: status, readingStatusUpdatedAt: now, updatedAt: now };
+};
 
 /**
  * Resolve the ordered list of context-menu item ids for a book from its state.

@@ -43,6 +43,7 @@ import {
   compareSortValues,
   resolveEffectivePrimarySort,
   resolveEffectiveSecondarySort,
+  withReadingStatus,
 } from '../utils/libraryUtils';
 import { eventDispatcher } from '@/utils/event';
 import { getLocalBookFilename } from '@/utils/book';
@@ -542,7 +543,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     for (const id of selectedIds) {
       const book = filteredBooks.find((b) => b.hash === id);
       if (book) {
-        booksToUpdate.push({ ...book, readingStatus: status, updatedAt: Date.now() });
+        booksToUpdate.push(withReadingStatus(book, status));
       }
     }
 
@@ -557,7 +558,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const handleUpdateReadingStatus = useCallback(
     async (book: Book, status: ReadingStatus | undefined) => {
-      const updatedBook = { ...book, readingStatus: status, updatedAt: Date.now() };
+      const updatedBook = withReadingStatus(book, status);
       await updateBooks(envConfig, [updatedBook]);
     },
     [envConfig, updateBooks],
