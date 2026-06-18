@@ -77,6 +77,25 @@ describe('Calibre series metadata', () => {
     });
   });
 
+  describe('FB2 (title-info sequence)', () => {
+    let book: BookDoc;
+
+    beforeAll(async () => {
+      book = await loadFixture('sample-metadata.fb2', 'application/x-fictionbook+xml', 'FB2');
+    });
+
+    it('extracts series name and position from the sequence element', () => {
+      const series = getSeries(book);
+      expect(series).toBeTruthy();
+      expect(series!.name).toBe('Metadata Series');
+      expect(series!.position).toBe('3');
+    });
+
+    it('preserves the title', () => {
+      expect(book.metadata.title).toBe('FB2 Metadata');
+    });
+  });
+
   describe('CBZ (ComicInfo.xml + ComicBookInfo)', () => {
     let book: BookDoc;
 
