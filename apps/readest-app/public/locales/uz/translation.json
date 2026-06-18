@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Kitobni va uning barcha maʼlumotlarini, jumladan oʻqish jarayonini oʻchiradi",
   "More Actions": "Qoʻshimcha amallar",
   "Sign in and make the book available to share it": "Ulashish uchun tizimga kiring va kitobni mavjud qiling",
-  "Download the book to export it": "Eksport qilish uchun kitobni yuklab oling"
+  "Download the book to export it": "Eksport qilish uchun kitobni yuklab oling",
+  "Unlock Readest": "Readest-ni ochish",
+  "Use {{biometry}}": "{{biometry}} dan foydalanish",
+  "Unlock with {{biometry}}": "{{biometry}} bilan ochish",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest-ni ochish uchun PIN (va mavjud bo'lsa, biometrik ma'lumotlar) talab qilinadi",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometrik"
 }

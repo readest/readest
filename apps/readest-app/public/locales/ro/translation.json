@@ -1799,5 +1799,12 @@
   "Erase the book and all its data, including reading progress": "Șterge cartea și toate datele sale, inclusiv progresul lecturii",
   "More Actions": "Mai multe acțiuni",
   "Sign in and make the book available to share it": "Conectează-te și fă cartea disponibilă pentru a o partaja",
-  "Download the book to export it": "Descarcă cartea pentru a o exporta"
+  "Download the book to export it": "Descarcă cartea pentru a o exporta",
+  "Unlock Readest": "Deblochează Readest",
+  "Use {{biometry}}": "Folosește {{biometry}}",
+  "Unlock with {{biometry}}": "Deblochează cu {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Necesită un PIN (și biometrie, dacă este disponibilă) pentru a deschide Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometrie"
 }

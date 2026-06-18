@@ -1832,5 +1832,12 @@
   "Erase the book and all its data, including reading progress": "Izbriše knjigo in vse njene podatke, vključno z napredkom branja",
   "More Actions": "Več dejanj",
   "Sign in and make the book available to share it": "Prijavite se in omogočite knjigo za deljenje",
-  "Download the book to export it": "Prenesite knjigo, da jo izvozite"
+  "Download the book to export it": "Prenesite knjigo, da jo izvozite",
+  "Unlock Readest": "Odkleni Readest",
+  "Use {{biometry}}": "Uporabi {{biometry}}",
+  "Unlock with {{biometry}}": "Odkleni z {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Za odpiranje Readest je potrebna PIN-koda (in biometrija, če je na voljo)",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometrija"
 }

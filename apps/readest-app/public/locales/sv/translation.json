@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Raderar boken och all data, inklusive läsförlopp",
   "More Actions": "Fler åtgärder",
   "Sign in and make the book available to share it": "Logga in och gör boken tillgänglig för att dela den",
-  "Download the book to export it": "Ladda ner boken för att exportera den"
+  "Download the book to export it": "Ladda ner boken för att exportera den",
+  "Unlock Readest": "Lås upp Readest",
+  "Use {{biometry}}": "Använd {{biometry}}",
+  "Unlock with {{biometry}}": "Lås upp med {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Kräver en PIN-kod (och biometri, om tillgängligt) för att öppna Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometri"
 }

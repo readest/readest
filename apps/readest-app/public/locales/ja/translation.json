@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "本と読書の進行状況を含むすべてのデータを消去します",
   "More Actions": "その他の操作",
   "Sign in and make the book available to share it": "共有するにはサインインして書籍を利用可能にしてください",
-  "Download the book to export it": "エクスポートするには書籍をダウンロードしてください"
+  "Download the book to export it": "エクスポートするには書籍をダウンロードしてください",
+  "Unlock Readest": "Readest のロックを解除",
+  "Use {{biometry}}": "{{biometry}} を使用",
+  "Unlock with {{biometry}}": "{{biometry}} でロック解除",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest を開くには PIN（および利用可能な場合は生体認証）が必要です",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "生体認証"
 }

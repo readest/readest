@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Διαγράφει το βιβλίο και όλα τα δεδομένα του, συμπεριλαμβανομένης της προόδου ανάγνωσης",
   "More Actions": "Περισσότερες ενέργειες",
   "Sign in and make the book available to share it": "Συνδεθείτε και κάντε το βιβλίο διαθέσιμο για να το μοιραστείτε",
-  "Download the book to export it": "Κατεβάστε το βιβλίο για να το εξαγάγετε"
+  "Download the book to export it": "Κατεβάστε το βιβλίο για να το εξαγάγετε",
+  "Unlock Readest": "Ξεκλείδωμα του Readest",
+  "Use {{biometry}}": "Χρήση {{biometry}}",
+  "Unlock with {{biometry}}": "Ξεκλείδωμα με {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Απαιτείται PIN (και βιομετρικά, εάν διατίθενται) για το άνοιγμα του Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "βιομετρικά"
 }

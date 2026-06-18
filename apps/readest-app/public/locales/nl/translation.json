@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Wist het boek en alle gegevens, inclusief leesvoortgang",
   "More Actions": "Meer acties",
   "Sign in and make the book available to share it": "Meld je aan en maak het boek beschikbaar om het te delen",
-  "Download the book to export it": "Download het boek om het te exporteren"
+  "Download the book to export it": "Download het boek om het te exporteren",
+  "Unlock Readest": "Readest ontgrendelen",
+  "Use {{biometry}}": "{{biometry}} gebruiken",
+  "Unlock with {{biometry}}": "Ontgrendelen met {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Vereist een pincode (en biometrie, indien beschikbaar) om Readest te openen",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometrie"
 }

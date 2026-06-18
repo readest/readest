@@ -1799,5 +1799,12 @@
   "Erase the book and all its data, including reading progress": "מחיקת הספר וכל הנתונים שלו, כולל התקדמות הקריאה",
   "More Actions": "פעולות נוספות",
   "Sign in and make the book available to share it": "היכנס והפוך את הספר לזמין כדי לשתף אותו",
-  "Download the book to export it": "הורד את הספר כדי לייצא אותו"
+  "Download the book to export it": "הורד את הספר כדי לייצא אותו",
+  "Unlock Readest": "פתח את Readest",
+  "Use {{biometry}}": "השתמש ב-{{biometry}}",
+  "Unlock with {{biometry}}": "פתח עם {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "דרוש קוד PIN (וביומטריה, אם זמינה) כדי לפתוח את Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "ביומטריה"
 }

@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Törli a könyvet és minden adatát, beleértve az olvasási előrehaladást",
   "More Actions": "További műveletek",
   "Sign in and make the book available to share it": "Jelentkezz be, és tedd elérhetővé a könyvet a megosztáshoz",
-  "Download the book to export it": "Töltsd le a könyvet az exportáláshoz"
+  "Download the book to export it": "Töltsd le a könyvet az exportáláshoz",
+  "Unlock Readest": "Readest feloldása",
+  "Use {{biometry}}": "{{biometry}} használata",
+  "Unlock with {{biometry}}": "Feloldás {{biometry}} segítségével",
+  "Require a PIN (and biometrics, if available) to open Readest": "PIN-kód (és biometria, ha elérhető) szükséges a Readest megnyitásához",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometria"
 }

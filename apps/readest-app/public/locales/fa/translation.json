@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "کتاب و تمام داده‌های آن، شامل پیشرفت مطالعه را پاک می‌کند",
   "More Actions": "اقدامات بیشتر",
   "Sign in and make the book available to share it": "برای اشتراک‌گذاری، وارد شوید و کتاب را در دسترس قرار دهید",
-  "Download the book to export it": "برای خروجی گرفتن، کتاب را دانلود کنید"
+  "Download the book to export it": "برای خروجی گرفتن، کتاب را دانلود کنید",
+  "Unlock Readest": "باز کردن قفل Readest",
+  "Use {{biometry}}": "استفاده از {{biometry}}",
+  "Unlock with {{biometry}}": "باز کردن قفل با {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "برای باز کردن Readest به PIN (و در صورت موجود بودن، بیومتریک) نیاز است",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "بیومتریک"
 }

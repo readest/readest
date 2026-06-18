@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "வாசிப்பு முன்னேற்றம் உட்பட புத்தகத்தையும் அதன் எல்லா தரவையும் அழிக்கும்",
   "More Actions": "மேலும் செயல்கள்",
   "Sign in and make the book available to share it": "பகிர உள்நுழைந்து புத்தகத்தைக் கிடைக்கச் செய்யவும்",
-  "Download the book to export it": "ஏற்றுமதி செய்ய புத்தகத்தைப் பதிவிறக்கவும்"
+  "Download the book to export it": "ஏற்றுமதி செய்ய புத்தகத்தைப் பதிவிறக்கவும்",
+  "Unlock Readest": "Readest-ஐ திறக்கவும்",
+  "Use {{biometry}}": "{{biometry}} பயன்படுத்தவும்",
+  "Unlock with {{biometry}}": "{{biometry}} மூலம் திறக்கவும்",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest திறக்க PIN (மற்றும் கிடைத்தால் உயிரியல் அடையாளம்) தேவை",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "உயிரியல் அடையாளம்"
 }

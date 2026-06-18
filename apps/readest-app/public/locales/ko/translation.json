@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "읽기 진행률을 포함한 책과 모든 데이터를 삭제합니다",
   "More Actions": "추가 작업",
   "Sign in and make the book available to share it": "공유하려면 로그인하고 책을 사용할 수 있도록 하세요",
-  "Download the book to export it": "내보내려면 책을 다운로드하세요"
+  "Download the book to export it": "내보내려면 책을 다운로드하세요",
+  "Unlock Readest": "Readest 잠금 해제",
+  "Use {{biometry}}": "{{biometry}} 사용",
+  "Unlock with {{biometry}}": "{{biometry}}로 잠금 해제",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest를 열려면 PIN(및 사용 가능한 경우 생체 인증)이 필요합니다",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "생체 인증"
 }

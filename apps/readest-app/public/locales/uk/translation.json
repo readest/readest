@@ -1832,5 +1832,12 @@
   "Erase the book and all its data, including reading progress": "Видаляє книгу та всі її дані, зокрема прогрес читання",
   "More Actions": "Більше дій",
   "Sign in and make the book available to share it": "Увійдіть і зробіть книгу доступною, щоб поділитися нею",
-  "Download the book to export it": "Завантажте книгу, щоб експортувати її"
+  "Download the book to export it": "Завантажте книгу, щоб експортувати її",
+  "Unlock Readest": "Розблокувати Readest",
+  "Use {{biometry}}": "Використати {{biometry}}",
+  "Unlock with {{biometry}}": "Розблокувати за допомогою {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Потрібен PIN-код (і біометрія, якщо доступна) для відкриття Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "біометрія"
 }

@@ -1799,5 +1799,12 @@
   "Erase the book and all its data, including reading progress": "Supprime le livre et toutes ses données, y compris la progression de lecture",
   "More Actions": "Plus d'actions",
   "Sign in and make the book available to share it": "Connectez-vous et rendez le livre disponible pour le partager",
-  "Download the book to export it": "Téléchargez le livre pour l'exporter"
+  "Download the book to export it": "Téléchargez le livre pour l'exporter",
+  "Unlock Readest": "Déverrouiller Readest",
+  "Use {{biometry}}": "Utiliser {{biometry}}",
+  "Unlock with {{biometry}}": "Déverrouiller avec {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Exiger un code PIN (et la biométrie, si disponible) pour ouvrir Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biométrie"
 }

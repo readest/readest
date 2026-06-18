@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "পড়ার অগ্রগতিসহ বই ও এর সমস্ত ডেটা মুছে ফেলুন",
   "More Actions": "আরও ক্রিয়া",
   "Sign in and make the book available to share it": "শেয়ার করতে সাইন ইন করুন এবং বইটি উপলব্ধ করুন",
-  "Download the book to export it": "এক্সপোর্ট করতে বইটি ডাউনলোড করুন"
+  "Download the book to export it": "এক্সপোর্ট করতে বইটি ডাউনলোড করুন",
+  "Unlock Readest": "Readest আনলক করুন",
+  "Use {{biometry}}": "{{biometry}} ব্যবহার করুন",
+  "Unlock with {{biometry}}": "{{biometry}} দিয়ে আনলক করুন",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest খুলতে PIN (এবং উপলব্ধ হলে বায়োমেট্রিক্স) প্রয়োজন",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "বায়োমেট্রিক্স"
 }

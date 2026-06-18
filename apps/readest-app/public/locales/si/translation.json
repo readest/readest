@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "කියවීමේ ප්‍රගතිය ඇතුළුව පොත සහ එහි සියලු දත්ත මකන්න",
   "More Actions": "තවත් ක්‍රියා",
   "Sign in and make the book available to share it": "බෙදා ගැනීමට පුරනය වී පොත ලබා ගත හැකි කරන්න",
-  "Download the book to export it": "අපනයනය කිරීමට පොත බාගන්න"
+  "Download the book to export it": "අපනයනය කිරීමට පොත බාගන්න",
+  "Unlock Readest": "Readest අඟුල් හරිනු",
+  "Use {{biometry}}": "{{biometry}} භාවිත කරන්න",
+  "Unlock with {{biometry}}": "{{biometry}} සමඟ අඟුල් හරිනු",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest විවෘත කිරීමට PIN (සහ ජෛව මිතික, ලබා ගත හැකි නම්) අවශ්‍ය වේ",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "ජෛව මිතික"
 }

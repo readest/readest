@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "Xóa sách và toàn bộ dữ liệu, bao gồm tiến độ đọc",
   "More Actions": "Thao tác khác",
   "Sign in and make the book available to share it": "Đăng nhập và tải sách về để chia sẻ",
-  "Download the book to export it": "Tải sách về để xuất ra"
+  "Download the book to export it": "Tải sách về để xuất ra",
+  "Unlock Readest": "Mở khóa Readest",
+  "Use {{biometry}}": "Sử dụng {{biometry}}",
+  "Unlock with {{biometry}}": "Mở khóa bằng {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Yêu cầu mã PIN (và sinh trắc học, nếu có) để mở Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "sinh trắc học"
 }

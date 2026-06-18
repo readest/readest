@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "ลบหนังสือและข้อมูลทั้งหมด รวมถึงความคืบหน้าการอ่าน",
   "More Actions": "การทำงานเพิ่มเติม",
   "Sign in and make the book available to share it": "ลงชื่อเข้าใช้และทำให้หนังสือพร้อมใช้งานเพื่อแชร์",
-  "Download the book to export it": "ดาวน์โหลดหนังสือเพื่อส่งออก"
+  "Download the book to export it": "ดาวน์โหลดหนังสือเพื่อส่งออก",
+  "Unlock Readest": "ปลดล็อก Readest",
+  "Use {{biometry}}": "ใช้ {{biometry}}",
+  "Unlock with {{biometry}}": "ปลดล็อกด้วย {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "ต้องใช้ PIN (และข้อมูลไบโอเมตริก หากมี) เพื่อเปิด Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "ข้อมูลไบโอเมตริก"
 }

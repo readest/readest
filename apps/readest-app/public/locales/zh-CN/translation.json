@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "删除该书籍及其所有数据，包括阅读进度",
   "More Actions": "更多操作",
   "Sign in and make the book available to share it": "登录并使书籍可用后即可分享",
-  "Download the book to export it": "下载书籍后即可导出"
+  "Download the book to export it": "下载书籍后即可导出",
+  "Unlock Readest": "解锁 Readest",
+  "Use {{biometry}}": "使用{{biometry}}",
+  "Unlock with {{biometry}}": "通过{{biometry}}解锁",
+  "Require a PIN (and biometrics, if available) to open Readest": "打开 Readest 需要 PIN 码（如可用，也支持生物识别）",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "生物识别"
 }

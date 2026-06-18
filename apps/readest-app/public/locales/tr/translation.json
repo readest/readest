@@ -1766,5 +1766,12 @@
   "Erase the book and all its data, including reading progress": "Kitabı ve okuma ilerlemesi dahil tüm verilerini siler",
   "More Actions": "Diğer eylemler",
   "Sign in and make the book available to share it": "Paylaşmak için oturum açın ve kitabı kullanılabilir hale getirin",
-  "Download the book to export it": "Dışa aktarmak için kitabı indirin"
+  "Download the book to export it": "Dışa aktarmak için kitabı indirin",
+  "Unlock Readest": "Readest'i Kilidi Aç",
+  "Use {{biometry}}": "{{biometry}} Kullan",
+  "Unlock with {{biometry}}": "{{biometry}} ile Kilidi Aç",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest'i açmak için PIN (ve varsa biyometri) gereklidir",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biyometri"
 }

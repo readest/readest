@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "དཔེ་དེབ་དང་ཀློག་འདོན་གྱི་འཕེལ་རིམ་བཅས་ཀྱི་གཞི་གྲངས་ཡོངས་སུ་བསུབ།",
   "More Actions": "བྱ་སྤྱོད་གཞན་དག",
   "Sign in and make the book available to share it": "ནང་འཛུལ་བྱས་ནས་དཔེ་དེབ་མཁོ་སྤྲོད་རུང་བར་བཟོས་ནས་མཉམ་སྤྱོད་བྱོས།",
-  "Download the book to export it": "ཕྱིར་འདྲེན་བྱེད་པར་དཔེ་དེབ་ཕབ་ལེན་བྱོས།"
+  "Download the book to export it": "ཕྱིར་འདྲེན་བྱེད་པར་དཔེ་དེབ་ཕབ་ལེན་བྱོས།",
+  "Unlock Readest": "Readest སྒོ་ལྕགས་ཕྱེ།",
+  "Use {{biometry}}": "{{biometry}} བེད་སྤྱོད།",
+  "Unlock with {{biometry}}": "{{biometry}} ཐོག་ནས་སྒོ་ལྕགས་ཕྱེ།",
+  "Require a PIN (and biometrics, if available) to open Readest": "Readest ཕྱེ་བར་ PIN (དང་གལ་ཏེ་ཡོད་ན་ལུས་རྟགས་ངོ་སྤྲོད།) དགོས།",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "ལུས་རྟགས་ངོ་སྤྲོད།"
 }

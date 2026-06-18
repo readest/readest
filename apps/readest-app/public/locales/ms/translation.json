@@ -1733,5 +1733,12 @@
   "Erase the book and all its data, including reading progress": "Memadam buku dan semua datanya, termasuk kemajuan bacaan",
   "More Actions": "Tindakan lain",
   "Sign in and make the book available to share it": "Log masuk dan sediakan buku untuk berkongsinya",
-  "Download the book to export it": "Muat turun buku untuk mengeksportnya"
+  "Download the book to export it": "Muat turun buku untuk mengeksportnya",
+  "Unlock Readest": "Buka kunci Readest",
+  "Use {{biometry}}": "Guna {{biometry}}",
+  "Unlock with {{biometry}}": "Buka kunci dengan {{biometry}}",
+  "Require a PIN (and biometrics, if available) to open Readest": "Memerlukan PIN (dan biometrik, jika tersedia) untuk membuka Readest",
+  "Face ID": "Face ID",
+  "Touch ID": "Touch ID",
+  "biometrics": "biometrik"
 }
