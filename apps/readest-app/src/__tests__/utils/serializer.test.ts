@@ -70,4 +70,71 @@ describe('BookConfig serialization', () => {
     expect(config.viewSettings?.zoomLevel).toBe(90);
     expect(config.searchConfig?.query).toBe('rabbit');
   });
+
+  it('migrates legacy split annotations on load when schemaVersion < 2', () => {
+    const config = deserializeConfig(
+      JSON.stringify({
+        updatedAt: 1,
+        booknotes: [
+          {
+            id: 'h',
+            type: 'annotation',
+            cfi: 'C1',
+            style: 'highlight',
+            color: 'yellow',
+            text: 't',
+            note: '',
+            createdAt: 10,
+            updatedAt: 10,
+          },
+          {
+            id: 'n',
+            type: 'annotation',
+            cfi: 'C1',
+            text: 't',
+            note: 'hello',
+            createdAt: 20,
+            updatedAt: 20,
+          },
+        ],
+      }),
+      globalViewSettings,
+      defaultSearchConfig,
+    );
+    const survivor = config.booknotes!.find((n) => n.id === 'h')!;
+    const tombstone = config.booknotes!.find((n) => n.id === 'n')!;
+    expect(survivor.note).toBe('hello');
+    expect(survivor.deletedAt).toBeFalsy();
+    expect(tombstone.deletedAt).toBeTruthy();
+  });
+
+  it('does not migrate annotations when schemaVersion is already 2', () => {
+    const config = deserializeConfig(
+      JSON.stringify({
+        schemaVersion: 2,
+        booknotes: [
+          {
+            id: 'h',
+            type: 'annotation',
+            cfi: 'C1',
+            style: 'highlight',
+            note: '',
+            createdAt: 10,
+            updatedAt: 10,
+          },
+          {
+            id: 'n',
+            type: 'annotation',
+            cfi: 'C1',
+            note: 'hello',
+            createdAt: 20,
+            updatedAt: 20,
+          },
+        ],
+      }),
+      globalViewSettings,
+      defaultSearchConfig,
+    );
+    expect(config.booknotes!.every((n) => !n.deletedAt)).toBe(true);
+  });
 });

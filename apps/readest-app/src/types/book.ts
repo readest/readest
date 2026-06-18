@@ -434,7 +434,7 @@ export interface BookSearchResult {
   progress?: number;
 }
 
-export const BOOK_CONFIG_SCHEMA_VERSION = 1;
+export const BOOK_CONFIG_SCHEMA_VERSION = 2;
 
 export interface BookConfig {
   schemaVersion?: number;

@@ -4,6 +4,7 @@ import {
   BookSearchConfig,
   ViewSettings,
 } from '@/types/book';
+import { unifyAnnotations } from '@/utils/booknoteMigration';
 
 export const stampBookConfigSchema = <T extends Partial<BookConfig>>(config: T): T => {
   return { ...config, schemaVersion: BOOK_CONFIG_SCHEMA_VERSION };
@@ -64,6 +65,11 @@ export const deserializeConfig = (
   const { viewSettings, searchConfig } = config;
   config.viewSettings = { ...globalViewSettings, ...viewSettings };
   config.searchConfig = { ...defaultSearchConfig, ...searchConfig };
+  // v1 -> v2: collapse split highlight+note records into one unified record so a
+  // note renders with its highlight and round-trips cleanly to KOReader.
+  if ((config.schemaVersion ?? 0) < 2 && config.booknotes?.length) {
+    config.booknotes = unifyAnnotations(config.booknotes);
+  }
   config.schemaVersion ??= BOOK_CONFIG_SCHEMA_VERSION;
   config.updatedAt ??= Date.now();
   return config;

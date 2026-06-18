@@ -199,7 +199,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             <span
               className={clsx(
                 'booknote-text inline leading-normal',
-                item.note && 'content font-size-xs text-gray-500',
+                item.note && 'content font-size-xs text-base-content',
                 (item.style === 'underline' || item.style === 'squiggly') &&
                   'underline decoration-2',
                 item.style === 'highlight' && 'rounded-[4px] px-[2px] py-[1px]',
