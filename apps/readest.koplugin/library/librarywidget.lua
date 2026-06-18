@@ -471,22 +471,54 @@ end
 -- ---------------------------------------------------------------------------
 local function runCloudSync(opts, store)
     local mode = opts.settings.auto_sync and "both" or "pull"
+    local DocSettings = require("docsettings")
+    local BookList = require("ui/widget/booklist")
+    local statussync = require("library.statussync")
+    local deps = {
+        now_ms = function() return os.time() * 1000 end,
+        open_summary = function(file_path)
+            local ok, ds = pcall(DocSettings.open, DocSettings, file_path)
+            if not ok or not ds then return nil end
+            return ds:readSetting("summary")
+        end,
+        write_status = function(file_path, ko_status)
+            local ok, ds = pcall(DocSettings.open, DocSettings, file_path)
+            if not ok or not ds then return end
+            local summary = ds:readSetting("summary") or {}
+            summary.status = ko_status  -- nil clears -> KOReader "New"
+            summary.modified = os.date("%Y-%m-%d", os.time())
+            ds:saveSetting("summary", summary)
+            ds:flush()
+            BookList.setBookInfoCacheProperty(file_path, "status", ko_status)
+        end,
+    }
+    local function reconcile() statussync.reconcileLocalStatuses(store, deps) end
+
     logger.info("ReadestLibrary runCloudSync: mode=" .. mode
         .. " auto_sync=" .. tostring(opts.settings.auto_sync))
-    syncbooks.syncBooks({
-        sync_auth = opts.sync_auth,
-        sync_path = opts.sync_path,
-        settings  = opts.settings,
-        store     = store,
-    }, mode, function(success, msg, status)
+
+    local function done(success, msg, status)
         logger.info("ReadestLibrary runCloudSync[" .. mode .. "] done: success="
-            .. tostring(success) .. " msg=" .. tostring(msg)
-            .. " status=" .. tostring(status))
-        -- Refresh either way: success picks up new cloud rows; failure
-        -- (auth, network, server) leaves local rows visible without
-        -- leaking a stale display state.
+            .. tostring(success) .. " msg=" .. tostring(msg) .. " status=" .. tostring(status))
         M.refresh()
-    end)
+    end
+
+    if mode == "both" then
+        -- before_push runs after pull, before push: apply pulled statuses to
+        -- sidecars and capture sidecar changes into the store so they're pushed.
+        syncbooks.syncBooks({
+            sync_auth = opts.sync_auth, sync_path = opts.sync_path,
+            settings = opts.settings, store = store,
+        }, "both", done, reconcile)
+    else
+        syncbooks.syncBooks({
+            sync_auth = opts.sync_auth, sync_path = opts.sync_path,
+            settings = opts.settings, store = store,
+        }, "pull", function(success, msg, status)
+            reconcile()  -- apply cloud statuses to sidecars even when auto_sync is off
+            done(success, msg, status)
+        end)
+    end
 end
 
 -- Cloud sync HTTP is synchronous on platforms without the Turbo looper
