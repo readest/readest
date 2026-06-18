@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withReadingStatus } from '@/app/library/utils/libraryUtils';
+import { withReadingStatus, pickFresherReadingStatus } from '@/app/library/utils/libraryUtils';
 import type { Book } from '@/types/book';
 
 const book: Book = {
@@ -25,5 +25,31 @@ describe('withReadingStatus', () => {
     const out = withReadingStatus({ ...book, readingStatus: 'finished' }, undefined);
     expect(out.readingStatus).toBeUndefined();
     expect(out.readingStatusUpdatedAt).toBe(out.updatedAt);
+  });
+});
+
+describe('pickFresherReadingStatus', () => {
+  it('keeps the status whose timestamp is newer, even if the other object is newer overall', () => {
+    const local = { readingStatus: 'finished' as const, readingStatusUpdatedAt: 200 };
+    const remote = { readingStatus: undefined, readingStatusUpdatedAt: 100 };
+    expect(pickFresherReadingStatus(local, remote)).toEqual({
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: 200,
+    });
+  });
+
+  it('treats a missing timestamp as oldest', () => {
+    const local = { readingStatus: undefined, readingStatusUpdatedAt: undefined };
+    const remote = { readingStatus: 'abandoned' as const, readingStatusUpdatedAt: 5 };
+    expect(pickFresherReadingStatus(local, remote)).toEqual({
+      readingStatus: 'abandoned',
+      readingStatusUpdatedAt: 5,
+    });
+  });
+
+  it('prefers the first argument on a timestamp tie', () => {
+    const a = { readingStatus: 'reading' as const, readingStatusUpdatedAt: 50 };
+    const b = { readingStatus: 'finished' as const, readingStatusUpdatedAt: 50 };
+    expect(pickFresherReadingStatus(a, b).readingStatus).toBe('reading');
   });
 });

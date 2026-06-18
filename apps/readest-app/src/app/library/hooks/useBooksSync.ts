@@ -9,6 +9,7 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { pickFresherReadingStatus } from '@/app/library/utils/libraryUtils';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -129,6 +130,11 @@ export const useBooksSync = () => {
           matchingBook.updatedAt >= oldBook.updatedAt
             ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
             : { ...matchingBook, ...oldBook, syncedAt: Date.now() };
+        // Status is resolved by its own timestamp, independent of the row's
+        // updatedAt (which page-turn progress dominates) — see #4634.
+        const status = pickFresherReadingStatus(oldBook, matchingBook);
+        mergedBook.readingStatus = status.readingStatus;
+        mergedBook.readingStatusUpdatedAt = status.readingStatusUpdatedAt;
         return mergedBook;
       }
       return oldBook;

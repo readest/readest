@@ -609,6 +609,26 @@ export const withReadingStatus = (book: Book, status: ReadingStatus | undefined)
   return { ...book, readingStatus: status, readingStatusUpdatedAt: now, updatedAt: now };
 };
 
+type ReadingStatusFields = Pick<Book, 'readingStatus' | 'readingStatusUpdatedAt'>;
+
+/**
+ * Field-level last-writer-wins for reading status: return whichever side's
+ * status was set more recently (ties → `a`). Missing timestamp = epoch 0.
+ * The book row's `updatedAt` is dominated by page-turn progress, so status
+ * must be resolved by its own timestamp or progress would clobber it.
+ */
+export const pickFresherReadingStatus = (
+  a: ReadingStatusFields,
+  b: ReadingStatusFields,
+): ReadingStatusFields => {
+  const at = (x: ReadingStatusFields) => x.readingStatusUpdatedAt ?? 0;
+  const winner = at(a) >= at(b) ? a : b;
+  return {
+    readingStatus: winner.readingStatus,
+    readingStatusUpdatedAt: winner.readingStatusUpdatedAt,
+  };
+};
+
 /**
  * Resolve the ordered list of context-menu item ids for a book from its state.
  *
