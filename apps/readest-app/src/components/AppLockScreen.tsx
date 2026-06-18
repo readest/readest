@@ -28,11 +28,18 @@ export default function AppLockScreen() {
   const [shaking, setShaking] = useState(false);
   const [kbInset, setKbInset] = useState(0);
   const biometricAttemptedRef = useRef(false);
+  const biometricInFlightRef = useRef(false);
   const autoFocusEnabled = !appService?.isMobile;
 
   const runBiometric = async () => {
-    const ok = await authenticateWithBiometrics(_('Unlock Readest'));
-    if (ok) unlock();
+    if (biometricInFlightRef.current) return;
+    biometricInFlightRef.current = true;
+    try {
+      const ok = await authenticateWithBiometrics(_('Unlock Readest'));
+      if (ok) unlock();
+    } finally {
+      biometricInFlightRef.current = false;
+    }
   };
 
   useEffect(() => {

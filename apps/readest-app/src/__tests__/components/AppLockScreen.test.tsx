@@ -64,12 +64,14 @@ describe('AppLockScreen biometric gate', () => {
     await waitFor(() => expect(authenticateWithBiometricsMock).toHaveBeenCalledTimes(1));
     expect(unlockMock).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /Use/ })).toBeTruthy();
+    expect(screen.getByLabelText('PIN code')).toBeTruthy();
   });
 
   it('never calls biometric when unsupported (desktop/web)', async () => {
     isSupported = false;
     render(<AppLockScreen />);
-    await waitFor(() => expect(getBiometricStatusMock).not.toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(getBiometricStatusMock).not.toHaveBeenCalled();
     expect(authenticateWithBiometricsMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /Use/ })).toBeNull();
   });
