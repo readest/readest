@@ -129,6 +129,7 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.76.1",
     "@tauri-apps/api": "2.10.1",
+    "@tauri-apps/plugin-biometric": "^2.3.2",
     "@tauri-apps/plugin-cli": "^2.4.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.0",
     "@tauri-apps/plugin-deep-link": "^2.4.7",

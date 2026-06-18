@@ -346,6 +346,14 @@ export interface SystemSettings {
   pinCodeEnabled?: boolean;
   pinCodeHash?: string;
   pinCodeSalt?: string;
+  /**
+   * Mobile-only. When true AND a PIN lock is configured AND the device
+   * has enrolled biometrics, the app-lock screen prompts for biometrics
+   * (fingerprint / Face ID) first and falls back to the PIN. No effect on
+   * desktop/web (no biometric plugin). `undefined` is treated as `false`
+   * so existing PIN users are never silently switched to biometric.
+   */
+  biometricUnlockEnabled?: boolean;
 
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
