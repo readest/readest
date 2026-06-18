@@ -45,7 +45,6 @@ function M.reconcile(cloud, ko)
 
     -- KO has no opinion (new/nil): push the cloud status down if one exists.
     if ko_readest == nil then
-        if cloud_status == nil then return { action = "none" } end
         return {
             action = "apply_to_ko",
             readest_status = cloud_status,

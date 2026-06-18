@@ -16,6 +16,7 @@ describe("readingstatus mapping", function()
     assert.are.equal("reading", RS.ko_to_readest("reading"))
     assert.are.equal("abandoned", RS.ko_to_readest("abandoned"))
     assert.is_nil(RS.ko_to_readest(nil))   -- "new"/no status -> no opinion
+    assert.is_nil(RS.ko_to_readest("New")) -- KOReader "New" has no Readest equivalent
   end)
 
   it("parses summary.modified to day ms", function()
@@ -69,6 +70,18 @@ describe("readingstatus reconcile", function()
     -- emulate equalization: store now holds the winner, sidecar already had it
     local r2 = RS.reconcile({ reading_status = r.readest_status, reading_status_updated_at = r.ts },
                             { status = "complete", ts = 300 })
+    assert.are.equal("none", r2.action)
+  end)
+
+  it("converges (apply_to_ko): cloud newer ts wins; re-reconcile after equalization is a no-op", function()
+    -- cloud ts=1770000000000 beats ko "2026-01-01" (a small local ts)
+    local ko_ts = RS.parse_modified_ms("2026-01-01")
+    local r = RS.reconcile({ reading_status = "finished", reading_status_updated_at = 1770000000000 },
+                           { status = "reading", ts = ko_ts })
+    assert.are.equal("apply_to_ko", r.action)
+    -- equalize: KO is now updated to "complete" with the cloud ts
+    local r2 = RS.reconcile({ reading_status = r.readest_status, reading_status_updated_at = r.ts },
+                            { status = r.ko_status, ts = r.ts })
     assert.are.equal("none", r2.action)
   end)
 end)

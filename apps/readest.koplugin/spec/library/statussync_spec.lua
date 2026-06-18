@@ -23,6 +23,8 @@ describe("statussync.reconcileLocalStatuses", function()
   end)
 
   it("captures a newer sidecar status into the store and bumps updated_at", function()
+    local RS = require("library.readingstatus")
+    local expected_ts = RS.parse_modified_ms("2026-06-18")
     local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
     store:upsertBook({ hash = "h2", title = "T", file_path = "/b2.epub", local_present = 1,
                        reading_status = "reading", reading_status_updated_at = 100 })
@@ -30,7 +32,10 @@ describe("statussync.reconcileLocalStatuses", function()
     StatusSync.reconcileLocalStatuses(store, fake_deps(summaries, {}))
     local row = store:_getRowRaw("h2")
     assert.are.equal("finished", row.reading_status)
-    assert.is_truthy(row.updated_at)  -- touched => dirty for push
+    -- reading_status_updated_at must equal parse_modified_ms("2026-06-18")
+    assert.are.equal(expected_ts, row.reading_status_updated_at)
+    -- updated_at must have advanced past the pre-set 100ms value
+    assert.is_true(row.updated_at > 100, "updated_at should have advanced past 100")
     store:close()
   end)
 

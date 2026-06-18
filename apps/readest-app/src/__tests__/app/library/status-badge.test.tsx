@@ -12,4 +12,9 @@ describe('StatusBadge', () => {
     const { container } = render(<StatusBadge status='reading'>x</StatusBadge>);
     expect(container.firstChild).toBeNull();
   });
+
+  it('renders nothing when status is undefined', () => {
+    const { container } = render(<StatusBadge>x</StatusBadge>);
+    expect(container.firstChild).toBeNull();
+  });
 });

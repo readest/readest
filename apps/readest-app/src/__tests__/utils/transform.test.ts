@@ -332,7 +332,7 @@ describe('transformBook readingStatus + readingStatusUpdatedAt', () => {
       title: 'T',
       author: 'A',
       reading_status: 'finished',
-      reading_status_updated_at: null as unknown as undefined,
+      reading_status_updated_at: null,
       created_at: new Date(1).toISOString(),
       updated_at: new Date(2).toISOString(),
     });

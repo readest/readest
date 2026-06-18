@@ -94,6 +94,95 @@ describe("LibraryStore", function()
             assert.are.equal(2, store:getUserVersion())
             store:close()
         end)
+
+        -- -----------------------------------------------------------------
+        -- v1 → v2 migration: ALTER TABLE adds reading_status_updated_at
+        -- -----------------------------------------------------------------
+        describe("v1 -> v2 migration", function()
+            local db_path
+            local SQ3 = require("lua-ljsqlite3/init")
+
+            after_each(function()
+                if db_path then
+                    os.remove(db_path)
+                    db_path = nil
+                end
+            end)
+
+            it("migrates an existing v1 DB: column added, row preserved, user_version=2", function()
+                -- Build a temp file path; os.tmpname() creates the file, remove it
+                -- so sqlite.open() starts fresh instead of opening an existing file.
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                -- Create a v1 DB: books table WITHOUT reading_status_updated_at
+                -- (all other v2 columns present so SCHEMA_SQL indexes succeed),
+                -- user_version = 1, one existing row.
+                local v1db = SQ3.open(db_path)
+                v1db:exec([[
+                    CREATE TABLE books (
+                        user_id          TEXT NOT NULL,
+                        hash             TEXT NOT NULL,
+                        meta_hash        TEXT,
+                        title            TEXT NOT NULL,
+                        source_title     TEXT,
+                        author           TEXT,
+                        format           TEXT,
+                        metadata_json    TEXT,
+                        series           TEXT,
+                        series_index     REAL,
+                        group_id         TEXT,
+                        group_name       TEXT,
+                        cover_path       TEXT,
+                        file_path        TEXT,
+                        cloud_present    INTEGER NOT NULL DEFAULT 0,
+                        local_present    INTEGER NOT NULL DEFAULT 0,
+                        uploaded_at      INTEGER,
+                        progress_lib     TEXT,
+                        reading_status   TEXT,
+                        last_read_at     INTEGER,
+                        created_at       INTEGER,
+                        updated_at       INTEGER,
+                        deleted_at       INTEGER,
+                        PRIMARY KEY (user_id, hash)
+                    );
+                    CREATE INDEX IF NOT EXISTS books_user_updated  ON books(user_id, updated_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_lastread ON books(user_id, last_read_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_meta     ON books(user_id, meta_hash);
+                    CREATE INDEX IF NOT EXISTS books_user_group    ON books(user_id, group_name);
+                    CREATE INDEX IF NOT EXISTS books_user_author   ON books(user_id, author);
+                ]])
+                v1db:exec("PRAGMA user_version = 1;")
+                local ins = v1db:prepare(
+                    "INSERT INTO books (user_id, hash, title, cloud_present, local_present, reading_status) VALUES (?, ?, ?, ?, ?, ?)")
+                ins:reset():bind("alice", "h-v1", "OldBook", 1, 1, "reading"):step()
+                ins:close()
+                v1db:close()
+
+                -- Open the v1 file via LibraryStore; migration should run silently.
+                local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
+
+                -- 1. user_version must now be 2
+                assert.are.equal(2, store:getUserVersion())
+
+                -- 2. The pre-existing row is still readable (no error, title intact)
+                local row = store:_getRowRaw("h-v1")
+                assert.is_not_nil(row)
+                assert.are.equal("OldBook", row.title)
+                assert.are.equal("reading", row.reading_status)
+
+                -- 3. reading_status_updated_at round-trips (column exists and is writable)
+                store:upsertBook({
+                    hash = "h-v1",
+                    title = "OldBook",
+                    reading_status_updated_at = 1750000000000,
+                })
+                local row2 = store:_getRowRaw("h-v1")
+                assert.are.equal(1750000000000, row2.reading_status_updated_at)
+
+                store:close()
+            end)
+        end)
     end)
 
     -- =====================================================================
@@ -115,7 +204,8 @@ describe("LibraryStore", function()
                 book_hash = "h2", title = "T", reading_status = "abandoned",
                 reading_status_updated_at = "2026-06-18T00:00:00+00:00", updated_at = "2026-06-18T00:00:00+00:00",
             })
-            assert.is_truthy(parsed.reading_status_updated_at)
+            -- 2026-06-18T00:00:00Z = 1781740800 unix seconds = 1781740800000 ms
+            assert.are.equal(1781740800000, parsed.reading_status_updated_at)
             assert.are.equal("abandoned", parsed.reading_status)
         end)
     end)
