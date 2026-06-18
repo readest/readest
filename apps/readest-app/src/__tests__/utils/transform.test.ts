@@ -4,8 +4,10 @@ import {
   transformBookNoteFromDB,
   transformBookConfigToDB,
   transformBookConfigFromDB,
+  transformBookToDB,
+  transformBookFromDB,
 } from '@/utils/transform';
-import { BookConfig, BookNote } from '@/types/book';
+import { BookConfig, BookNote, Book } from '@/types/book';
 import { DBBookConfig, DBBookNote } from '@/types/records';
 
 describe('transformBookNoteToDB with xpointer fields', () => {
@@ -282,5 +284,58 @@ describe('transformBookConfigToDB / transformBookConfigFromDB rsvpPosition', () 
     const dbRecord: DBBookConfig = { ...db, updated_at: new Date(config.updatedAt).toISOString() };
     const restored = transformBookConfigFromDB(dbRecord);
     expect(restored.rsvpPosition).toEqual(config.rsvpPosition);
+  });
+});
+
+describe('transformBook readingStatus + readingStatusUpdatedAt', () => {
+  const userId = 'user-1';
+  const baseBook: Book = {
+    hash: 'h1',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('serializes abandoned status + timestamp to ISO in the DB record', () => {
+    const ts = Date.UTC(2026, 5, 18, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, readingStatus: 'abandoned', readingStatusUpdatedAt: ts },
+      userId,
+    );
+    expect(db.reading_status).toBe('abandoned');
+    expect(db.reading_status_updated_at).toBe(new Date(ts).toISOString());
+  });
+
+  it('leaves reading_status_updated_at null when unset', () => {
+    const db = transformBookToDB({ ...baseBook, readingStatus: 'finished' }, userId);
+    expect(db.reading_status_updated_at).toBeNull();
+  });
+
+  it('round-trips abandoned + timestamp back to the client shape', () => {
+    const ts = Date.UTC(2026, 5, 18, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, readingStatus: 'abandoned', readingStatusUpdatedAt: ts },
+      userId,
+    );
+    const back = transformBookFromDB(db);
+    expect(back.readingStatus).toBe('abandoned');
+    expect(back.readingStatusUpdatedAt).toBe(ts);
+  });
+
+  it('reads undefined readingStatusUpdatedAt when the DB column is null', () => {
+    const back = transformBookFromDB({
+      user_id: userId,
+      book_hash: 'h1',
+      format: 'EPUB',
+      title: 'T',
+      author: 'A',
+      reading_status: 'finished',
+      reading_status_updated_at: null as unknown as undefined,
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    });
+    expect(back.readingStatusUpdatedAt).toBeUndefined();
   });
 });

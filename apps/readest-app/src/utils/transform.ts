@@ -76,6 +76,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     tags,
     progress,
     readingStatus,
+    readingStatusUpdatedAt,
     metadata,
     createdAt,
     updatedAt,
@@ -95,6 +96,9 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     tags: tags,
     progress: progress,
     reading_status: readingStatus,
+    reading_status_updated_at: readingStatusUpdatedAt
+      ? new Date(readingStatusUpdatedAt).toISOString()
+      : null,
     source_title: sanitizeString(sourceTitle),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
@@ -116,6 +120,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     tags,
     progress,
     reading_status,
+    reading_status_updated_at,
     source_title,
     metadata,
     created_at,
@@ -135,6 +140,9 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     tags: tags,
     progress: progress,
     readingStatus: reading_status as ReadingStatus,
+    readingStatusUpdatedAt: reading_status_updated_at
+      ? new Date(reading_status_updated_at).getTime()
+      : undefined,
     sourceTitle: source_title,
     metadata: metadata ? JSON.parse(metadata) : null,
     createdAt: new Date(created_at!).getTime(),

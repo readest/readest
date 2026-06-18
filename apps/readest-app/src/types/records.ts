@@ -11,6 +11,7 @@ export interface DBBook {
   tags?: string[];
   progress?: [number, number];
   reading_status?: string;
+  reading_status_updated_at?: string | null;
 
   metadata?: string | null;
   created_at?: string;
