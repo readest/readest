@@ -1,0 +1,26 @@
+---
+name: security-advisories-web-2026-06
+description: "GHSA advisory fixes (OPDS SSRF, storage traversal, Stripe hijack, Tauri IPC scoping) — PRs #4638 (web) + #4639 (native); canonical isBlockedHost location"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: 552008b6-251e-478c-91f3-f05526537157
+---
+
+Five GitHub security advisories filed against readest (2026-06-06/09), all `triage` when worked on 2026-06-18. Four distinct issues (GHSA-c7mm & GHSA-5g3f are the same OPDS-proxy SSRF). ALL FOUR FIXED across two PRs (base `main`):
+- **PR #4638** `fix/security-advisories-web` — web/server: A (OPDS SSRF + kosync isLanAddress), B (storage), D (Stripe).
+- **PR #4639** `fix/security-tauri-transfer-scope` — native: C (Tauri transfer_file scoping).
+
+After both merge: comment on each GHSA noting the fixing PR (pending merge). Note: a stray `git checkout dev` happened during the first lint-staged commit (commit landed on dev, moved back to feature branch via `git branch -f`) — double-check `git branch --show-current` before committing here.
+
+**Fixed (A, B, D):**
+- **A — OPDS proxy SSRF** (`src/app/api/opds/proxy/route.ts`): added scheme allowlist + `isBlockedHost` + manual per-hop redirect (`fetchFollowingRedirects`/`SsrfBlockedError`). Closes the self-hosted Critical (IMDS/internal/redirect-SSRF). Reference safe pattern was `src/pages/api/send/fetch-url.ts`.
+- **A2 — canonical SSRF blocklist**: moved `isBlockedHost`/`isBlockedV4` into `src/utils/network.ts` (canonical home). `fetch-url.ts` now imports + re-exports it (keeps `send-fetch-url-guard.test.ts` import valid). Reimplemented `isLanAddress(url)` to delegate to `isBlockedHost` — fixes the kosync secondary finding (old one only blocked literal `127.0.0.1`/`0.0.0.0`, missed `127.0.0.0/8`, `198.18/15`, multicast, `.internal`/`.lan`/single-label, mapped IPv6). Safe: `new URL()` throws on invalid-octet IPs so the catch keeps `10.256.0.1`→false (existing `network.test.ts` stays green). `KOSyncClient` treats LAN as fetch-direct; `CatalogManager` only warns → stricter is safe.
+- **B — storage upload key traversal** (`src/pages/api/storage/upload.ts`): added `isSafeObjectKeyName` in `src/utils/object.ts`, guard after auth (covers temp + main). KEY CONSTRAINT: legit `fileName` DOES contain `/` (`Readest/Books/...`, `Readest/Replicas/<kind>/<id>/<file>` from `uploadReplicaFile`), so reject `..`/`.`/empty segments + leading-slash + backslash + NUL (raw & percent-decoded), NOT all slashes.
+- **D — Stripe `/check` hijack** (`src/app/api/stripe/check/route.ts`): added `if (session.metadata?.userId !== user.id) return 403` before createOrUpdate*. checkout route stamps `metadata.userId`; webhook already binds on it.
+
+**C — Tauri native (PR #4639)** GHSA-55vr-pvq5-6fmg: unscoped `download_file`/`upload_file` in `src-tauri/src/transfer_file.rs` → arbitrary local read/write. FIXED: added `app: AppHandle` param + `ensure_path_allowed` (rejects relative + `..` via `has_disallowed_components`, then `fs_scope().is_allowed()`). Chose STRICT `is_allowed` (NOT read_dir's `|| contains("Readest")` substring hatch) because all legit callers (cloud sync, WebDAV, self-updater APK→`'Cache'`, OPDS→`'Cache'`) resolve under static scope ($APPDATA/Readest, $APPCACHE, $TEMP) OR persisted dialog grants (custom root via `setCustomRootDir`→picker→`allow_paths_in_scopes`; external folders re-granted at startup; `tauri_plugin_persisted_scope` makes sticky). Clippy needed `#[allow(clippy::too_many_arguments)]` on download_file (8 args). AppHandle auto-injected → JS invoke unchanged. NOTE: shared `target/` (worktree) was polluted with a deleted sibling worktree's abs plugin-permission paths → build failed `failed to read .../readest-feat-nightly-update-channel/.../fs/permissions/app.toml`; fix = `rm -rf` the `target/debug/build/<pkg>-<hash>` dirs grepping for the stale path, then rebuild. skip_ssl_verification left as-is (OPDS needs it). read_dir's own `contains("Readest")` hatch left untouched (out of scope).
+
+**Non-obvious decision:** OPDS proxy can't require Readest auth — it's consumed from the browser via `<img src={getProxiedURL(...)}>` (covers) and `window.fetch` WITHOUT a Readest token; the `auth` query param is the *upstream* OPDS server cred, not the user token. So auth would break OPDS browsing/images. SSRF host-filter is the non-breaking high-value fix; residual relay/CORS-bypass on hosted CF (Medium) left for maintainer. On web the proxy is a CF Worker that can't reach a user LAN anyway (desktop bypasses via `needsProxy`), so blocking private hosts removes no functionality.
+
+Test invocation gotcha: `npx vitest run <file>` skips dotenv → `src/utils/supabase.ts:8 atob(...)` throws at import for tests that load the REAL `@/utils/access` (e.g. `send-fetch-url-guard.test.ts`). Use `pnpm test` (wraps `dotenv -e .env -e .env.test.local`) or `npx dotenv -e .env -e .env.test.local -- vitest run`. Tests that mock supabase/access are unaffected.
