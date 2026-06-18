@@ -33,6 +33,20 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
       );
     }
 
+    if (book.readingStatus === 'abandoned') {
+      return (
+        <div
+          className='text-neutral-content/70 flex items-center justify-between gap-2 text-xs'
+          role='status'
+        >
+          <StatusBadge status={book.readingStatus}>{_('On hold')}</StatusBadge>
+          {progressPercentage !== null && !Number.isNaN(progressPercentage) && (
+            <span>{progressPercentage}%</span>
+          )}
+        </div>
+      );
+    }
+
     if (book.readingStatus === 'unread') {
       if (SHOW_UNREAD_STATUS_BADGE) {
         return (
