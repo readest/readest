@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
 import { RsvpState, RSVPController } from '@/services/rsvp';
-import { containsCJK } from '@/services/rsvp/utils';
+import { containsCJK, isRTLText } from '@/services/rsvp/utils';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TOCItem } from '@/libs/document';
@@ -351,6 +351,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
   const wordAfter = currentWord ? currentWord.text.substring(currentWord.orpIndex + 1) : '';
   const isCJKWord = currentWord ? containsCJK(currentWord.text) : false;
+  // RTL words (Arabic, Hebrew, …) must never be split into before/orp/after
+  // spans: slicing by character index breaks letter shaping and reverses the
+  // visual order. Render them whole instead, like CJK Highlight Word (#4630).
+  const isRTLWord = currentWord ? isRTLText(currentWord.text) : false;
   const wordLetterSpacing = undefined;
   const wordSideOffset = isCJKWord ? '0.45em' : '0.3em';
 
@@ -973,12 +977,16 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                 }}
               >
                 {currentWord ? (
-                  isCJKWord && highlightWholeWord ? (
-                    // Whole-word mode: center the full CJK word and color every
-                    // character, instead of anchoring a single focus character.
+                  isRTLWord || (isCJKWord && highlightWholeWord) ? (
+                    // Whole-word mode: center the full word and color it, instead
+                    // of anchoring a single focus character. Used for CJK Highlight
+                    // Word and always for RTL words, whose shaping/order would
+                    // break if sliced into before/orp/after spans (#4630). dir=rtl
+                    // restores correct letter order and connection for RTL.
                     <span
                       className='rsvp-word-whole relative z-10 font-bold'
                       style={{ color: effectiveOrpColor }}
+                      dir={isRTLWord ? 'rtl' : undefined}
                     >
                       {currentWord.text}
                     </span>

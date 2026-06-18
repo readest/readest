@@ -343,6 +343,55 @@ describe('RSVPOverlay — CJK reading options', () => {
   });
 });
 
+describe('RSVPOverlay — RTL word display (#4630)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  test('renders an Arabic word as a single RTL whole-word span, never split', () => {
+    const state = buildState({
+      words: [{ text: 'علم', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    // Splitting the word into before/orp/after spans breaks Arabic shaping and
+    // reverses the visual order — RTL words must render whole instead.
+    const whole = container.querySelector('.rsvp-word-whole');
+    expect(whole).not.toBeNull();
+    expect(whole!.textContent).toBe('علم');
+    expect(whole!.getAttribute('dir')).toBe('rtl');
+    expect(container.querySelector('.rsvp-word-orp')).toBeNull();
+    expect(container.querySelector('.rsvp-word-before')).toBeNull();
+    expect(container.querySelector('.rsvp-word-after')).toBeNull();
+  });
+
+  test('renders a Hebrew word whole as well', () => {
+    const state = buildState({
+      words: [{ text: 'שלום', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const whole = container.querySelector('.rsvp-word-whole');
+    expect(whole).not.toBeNull();
+    expect(whole!.textContent).toBe('שלום');
+    expect(container.querySelector('.rsvp-word-orp')).toBeNull();
+  });
+
+  test('keeps the focus-letter split for Latin words (no spurious dir)', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    expect(container.querySelector('.rsvp-word-orp')).not.toBeNull();
+    expect(container.querySelector('.rsvp-word-whole')).toBeNull();
+  });
+});
+
 describe('RSVPOverlay — manual word stepping (#4476)', () => {
   afterEach(() => cleanup());
 
