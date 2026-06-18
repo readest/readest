@@ -98,20 +98,34 @@ fn has_disallowed_components(file_path: &str) -> bool {
             .any(|c| matches!(c, std::path::Component::ParentDir))
 }
 
+/// The app's own storage always carries either the `Readest` data folder or the
+/// app's bundle identifier in its path — the Android sandbox
+/// (`/data/user/0/<identifier>/…`, including the cache dir) and the desktop
+/// identifier dirs (`…/<identifier>/…`). Those paths aren't in the global
+/// `fs_scope()` (their capability patterns are command-scoped), so `is_allowed`
+/// returns false for the app's own files. Accept these segments as a fallback,
+/// the way `dir_scanner::read_dir` does. `..` is already rejected, so foreign
+/// targets (e.g. `~/.ssh/id_rsa`) stay blocked.
+fn is_within_app_storage(file_path: &str, app_identifier: &str) -> bool {
+    file_path.contains("Readest") || file_path.contains(app_identifier)
+}
+
 /// Validate a webview-supplied `file_path` before any `File::create`/`File::open`.
 /// Without this, `download_file`/`upload_file` would write/read arbitrary local
 /// paths (e.g. `~/.ssh/id_rsa`, autostart entries) from any JS running in the
 /// privileged Tauri origin — see GHSA-55vr-pvq5-6fmg. We require an absolute,
-/// traversal-free path that is inside the app's filesystem scope (the static
-/// capability globs plus persisted dialog grants for custom/external roots).
+/// traversal-free path that is either granted by the fs scope (persisted dialog
+/// grants for custom/external roots) or lives inside the app's own storage.
 fn ensure_path_allowed(app: &AppHandle, file_path: &str) -> Result<()> {
     if has_disallowed_components(file_path) {
         return Err(Error::Forbidden(file_path.to_string()));
     }
-    if !app.fs_scope().is_allowed(std::path::Path::new(file_path)) {
-        return Err(Error::Forbidden(file_path.to_string()));
+    if app.fs_scope().is_allowed(std::path::Path::new(file_path))
+        || is_within_app_storage(file_path, &app.config().identifier)
+    {
+        return Ok(());
     }
-    Ok(())
+    Err(Error::Forbidden(file_path.to_string()))
 }
 
 impl Serialize for Error {
@@ -370,7 +384,30 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 
 #[cfg(test)]
 mod tests {
-    use super::has_disallowed_components;
+    use super::{has_disallowed_components, is_within_app_storage};
+
+    #[test]
+    fn app_storage_fallback_accepts_app_paths() {
+        let id = "com.bilingify.readest";
+        // Covers, dictionaries, books, gloss packs — under the `Readest` data dir.
+        assert!(is_within_app_storage(
+            "/data/user/0/com.bilingify.readest/Readest/Books/abc/cover.png",
+            id
+        ));
+        assert!(is_within_app_storage(
+            "/data/user/0/com.bilingify.readest/Readest/Dictionaries/x/d.mdx",
+            id
+        ));
+        // Cache-dir downloads (e.g. OPDS) carry no `Readest` segment but are still
+        // inside the app sandbox, matched via the bundle identifier.
+        assert!(is_within_app_storage(
+            "/data/user/0/com.bilingify.readest/cache/opds-book.epub",
+            id
+        ));
+        // Foreign targets carry neither segment and stay blocked.
+        assert!(!is_within_app_storage("/home/user/.ssh/id_rsa", id));
+        assert!(!is_within_app_storage("/etc/passwd", id));
+    }
 
     #[test]
     fn rejects_relative_and_traversal_paths() {
