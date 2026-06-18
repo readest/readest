@@ -196,8 +196,16 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     case LibrarySortByType.Format:
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
-    case LibrarySortByType.Series:
+    case LibrarySortByType.Series: {
+      // Group by series name first so books of the same series stay consecutive,
+      // then order within a series by index. Comparing index alone would interleave
+      // series (all #1s, then all #2s) when this key is used as a secondary sort.
+      const aSeries = a.metadata?.series || '';
+      const bSeries = b.metadata?.series || '';
+      const bySeries = aSeries.localeCompare(bSeries, uiLanguage || navigator.language);
+      if (bySeries !== 0) return bySeries;
       return (a.metadata?.seriesIndex || 0) - (b.metadata?.seriesIndex || 0);
+    }
     case LibrarySortByType.Published: {
       const aPublished = a.metadata?.published || '0001-01-01';
       const bPublished = b.metadata?.published || '0001-01-01';
@@ -227,8 +235,8 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
 
 /**
  * @param secondarySortBy - Optional tiebreaker key applied when the primary
- *   comparison returns 0. Pass `'none'` (or omit) to disable. Series-index ties
- *   on a Series secondary fall through to the underlying primary tie.
+ *   comparison returns 0. Pass `'none'` (or omit) to disable. A Series secondary
+ *   orders by series name then index; ties on both fall through to the primary tie.
  */
 export const createBookSorter =
   (sortBy: string, uiLanguage: string, secondarySortBy: LibrarySecondarySortByType = 'none') =>

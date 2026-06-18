@@ -1184,6 +1184,47 @@ describe('secondary sort - createWithinGroupSorter (drilled-in group)', () => {
     expect(sorted.map((b) => b.metadata?.seriesIndex)).toEqual([1, 2, 3]);
   });
 
+  it('keeps each series together (in series order) when an author has multiple series', () => {
+    const books = [
+      createMockBook({
+        hash: 'b1',
+        title: 'B One',
+        metadata: { series: 'Series B', seriesIndex: 1 },
+      }),
+      createMockBook({
+        hash: 'a2',
+        title: 'A Two',
+        metadata: { series: 'Series A', seriesIndex: 2 },
+      }),
+      createMockBook({
+        hash: 'a1',
+        title: 'A One',
+        metadata: { series: 'Series A', seriesIndex: 1 },
+      }),
+      createMockBook({
+        hash: 'b2',
+        title: 'B Two',
+        metadata: { series: 'Series B', seriesIndex: 2 },
+      }),
+    ];
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Title,
+      'en',
+      true,
+      LibrarySortByType.Series,
+    );
+    const sorted = [...books].sort(sorter);
+    // All of Series A consecutively in index order, then all of Series B —
+    // not interleaved by index across series (#1s together, #2s together).
+    expect(sorted.map((b) => `${b.metadata?.series} #${b.metadata?.seriesIndex}`)).toEqual([
+      'Series A #1',
+      'Series A #2',
+      'Series B #1',
+      'Series B #2',
+    ]);
+  });
+
   it('falls back to primary when secondary ties (same series index)', () => {
     const books = [
       createMockBook({
