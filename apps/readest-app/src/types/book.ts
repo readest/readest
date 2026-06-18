@@ -464,6 +464,10 @@ export interface BookDataRecord {
   user_id: string;
   updated_at: number | null;
   deleted_at: number | null;
+  // Only book records carry an upload state: a book is indexed in the cloud
+  // as soon as its metadata syncs, but is unavailable to peers until its file
+  // blob is uploaded. Absent on config/note records.
+  uploaded_at?: string | null;
 }
 
 export interface BooksGroup {

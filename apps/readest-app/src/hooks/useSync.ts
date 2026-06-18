@@ -35,6 +35,19 @@ const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   return maxTime;
 };
 
+// Count the records a pull surfaces to the user as "synced". Deleted records
+// never count. For books we additionally require an upload state: a book is
+// indexed in the cloud as soon as its metadata syncs, but updateLibrary only
+// adds books that are uploaded && !deleted, so counting metadata-only books
+// would over-report relative to what actually lands in the library.
+export const countSyncedRecords = (
+  type: SyncType,
+  records: BookDataRecord[] | null | undefined,
+): number => {
+  if (!records?.length) return 0;
+  return records.filter((rec) => !rec.deleted_at && (type !== 'books' || !!rec.uploaded_at)).length;
+};
+
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 export function useSync(bookKey?: string) {
   const router = useRouter();
@@ -145,7 +158,7 @@ export function useSync(bookKey?: string) {
           }
           break;
       }
-      return records?.filter((rec) => !rec.deleted_at).length || 0;
+      return countSyncedRecords(type, records);
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
