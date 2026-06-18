@@ -213,6 +213,13 @@ describe("library.syncbooks", function()
         it("returns nil for nil input (defensive)", function()
             assert.is_nil(syncbooks._row_to_wire(nil))
         end)
+
+        it("emits readingStatusUpdatedAt in the wire payload", function()
+            local wire = syncbooks._row_to_wire({ hash = "h1", title = "T",
+                reading_status = "finished", reading_status_updated_at = 1750000000000 })
+            assert.are.equal("finished", wire.readingStatus)
+            assert.are.equal(1750000000000, wire.readingStatusUpdatedAt)
+        end)
     end)
 
     -- =====================================================================

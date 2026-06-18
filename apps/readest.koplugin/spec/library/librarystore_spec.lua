@@ -89,10 +89,34 @@ describe("LibraryStore", function()
             s3:close()
         end)
 
-        it("sets PRAGMA user_version = 1", function()
+        it("sets PRAGMA user_version = 2", function()
             local store = LibraryStore.new({ user_id = "alice" })
-            assert.are.equal(1, store:getUserVersion())
+            assert.are.equal(2, store:getUserVersion())
             store:close()
+        end)
+    end)
+
+    -- =====================================================================
+    -- reading_status_updated_at: new column added in schema v2
+    -- =====================================================================
+    describe("reading_status_updated_at", function()
+        it("round-trips reading_status_updated_at through upsert + read", function()
+            local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
+            store:upsertBook({ hash = "h1", title = "T", reading_status = "finished",
+                               reading_status_updated_at = 1750000000000, local_present = 1 })
+            local row = store:_getRowRaw("h1")
+            assert.are.equal("finished", row.reading_status)
+            assert.are.equal(1750000000000, row.reading_status_updated_at)
+            store:close()
+        end)
+
+        it("parseSyncRow reads reading_status_updated_at from the server ISO field", function()
+            local parsed = LibraryStore.parseSyncRow({
+                book_hash = "h2", title = "T", reading_status = "abandoned",
+                reading_status_updated_at = "2026-06-18T00:00:00+00:00", updated_at = "2026-06-18T00:00:00+00:00",
+            })
+            assert.is_truthy(parsed.reading_status_updated_at)
+            assert.are.equal("abandoned", parsed.reading_status)
         end)
     end)
 

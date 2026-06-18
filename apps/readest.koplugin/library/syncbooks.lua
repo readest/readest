@@ -148,6 +148,7 @@ local function row_to_wire(row)
         groupId       = row.group_id,
         groupName     = row.group_name,
         readingStatus = row.reading_status,
+        readingStatusUpdatedAt = num(row.reading_status_updated_at),
         createdAt     = num(row.created_at),
         updatedAt     = num(row.updated_at),
         deletedAt     = num(row.deleted_at),

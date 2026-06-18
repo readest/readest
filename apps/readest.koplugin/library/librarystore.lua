@@ -13,7 +13,7 @@
 local SQ3 = require("lua-ljsqlite3/init")
 local json = require("json")
 
-local SCHEMA_VERSION = 1
+local SCHEMA_VERSION = 2
 
 local SCHEMA_SQL = [[
 CREATE TABLE IF NOT EXISTS books (
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS books (
     uploaded_at      INTEGER,
     progress_lib     TEXT,
     reading_status   TEXT,
+    reading_status_updated_at INTEGER,
     last_read_at     INTEGER,
     created_at       INTEGER,
     updated_at       INTEGER,
@@ -62,7 +63,7 @@ local BOOK_COLS = {
     "format", "metadata_json", "series", "series_index", "group_id",
     "group_name", "cover_path", "file_path", "cloud_present",
     "local_present", "uploaded_at", "progress_lib", "reading_status",
-    "last_read_at", "created_at", "updated_at", "deleted_at",
+    "reading_status_updated_at", "last_read_at", "created_at", "updated_at", "deleted_at",
 }
 local BOOK_COL_INDEX = {}
 for i, c in ipairs(BOOK_COLS) do BOOK_COL_INDEX[c] = i end
@@ -73,8 +74,8 @@ for i, c in ipairs(BOOK_COLS) do BOOK_COL_INDEX[c] = i end
 -- well within Lua's 53-bit double mantissa.
 local NUMERIC_COLS = {
     series_index = true, cloud_present = true, local_present = true,
-    uploaded_at = true, last_read_at = true, created_at = true,
-    updated_at = true, deleted_at = true,
+    uploaded_at = true, reading_status_updated_at = true, last_read_at = true,
+    created_at = true, updated_at = true, deleted_at = true,
 }
 
 local function row_to_table(raw)
@@ -136,8 +137,24 @@ function M.new(opts)
     self.user_id = opts.user_id
     self.db_path = opts.db_path or ":memory:"
     self.db = SQ3.open(self.db_path)
+    -- Read version before creating tables; getUserVersion uses rowexec which
+    -- may leave an open iterator in some SQLite bindings, so use prepare/step.
+    local prev_stmt = self.db:prepare("PRAGMA user_version;")
+    local prev_row = prev_stmt:reset():step()
+    prev_stmt:close()
+    local prev = prev_row and tonumber(prev_row[1]) or 0
     self.db:exec(SCHEMA_SQL)
-    self.db:exec(string.format("PRAGMA user_version = %d;", SCHEMA_VERSION))
+    -- v1 -> v2: add reading_status_updated_at to existing DBs. CREATE TABLE
+    -- IF NOT EXISTS won't add a column, so ALTER it in (pcall guards a DB that
+    -- somehow already has the column).
+    if prev >= 1 and prev < 2 then
+        pcall(function()
+            self.db:exec("ALTER TABLE books ADD COLUMN reading_status_updated_at INTEGER;")
+        end)
+    end
+    if prev < SCHEMA_VERSION then
+        self.db:exec(string.format("PRAGMA user_version = %d;", SCHEMA_VERSION))
+    end
     self._groups_cache = {}
     return self
 end
@@ -745,6 +762,10 @@ function M.parseSyncRow(dbRow)
 
     -- Reading status passthrough (web side has 'unread'/'reading'/'finished')
     out.reading_status = dbRow.readingStatus or dbRow.reading_status
+    -- ms; server sends it as a timestamptz ISO string (iso_to_ms also passes
+    -- through a raw number when a caller already supplied ms).
+    out.reading_status_updated_at = iso_to_ms(dbRow.reading_status_updated_at)
+        or iso_to_ms(dbRow.readingStatusUpdatedAt)
 
     -- Cloud-presence flag: tombstones from the cloud arrive with deleted_at
     -- set; the row is still useful for tracking that the cloud copy is gone,
