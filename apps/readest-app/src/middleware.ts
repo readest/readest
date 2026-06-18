@@ -53,7 +53,17 @@ export function middleware(request: NextRequest) {
   // of the top-level browsing context, determined by the document's headers.
   const response = NextResponse.next();
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-  response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  // The /s share landing embeds the book cover via an <img> that redirects to a
+  // cross-origin R2 presigned URL. Under COEP: require-corp the browser blocks
+  // that image, because R2 can't attach a Cross-Origin-Resource-Policy header to
+  // a presigned GET. `credentialless` keeps the page cross-origin isolated — so
+  // EnvContext can still boot the Turso replica (SharedArrayBuffer) here when the
+  // user has sync enabled — while dropping the CORP requirement for no-cors
+  // subresources, letting the cover load with no client-side change. Every other
+  // route keeps the stricter require-corp.
+  const path = request.nextUrl.pathname;
+  const coep = path === '/s' || path.startsWith('/s/') ? 'credentialless' : 'require-corp';
+  response.headers.set('Cross-Origin-Embedder-Policy', coep);
   return response;
 }
 
