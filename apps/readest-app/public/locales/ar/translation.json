@@ -1872,13 +1872,9 @@
   "Data pack": "حزمة البيانات",
   "Open a book to manage its data pack.": "افتح كتابًا لإدارة حزمة بياناته.",
   "No data available for this language pair yet.": "لا تتوفر بيانات لهذا الزوج اللغوي بعد.",
-  "Download {{size}}": "تنزيل {{size}}",
   "Enable Word Lens": "تفعيل Word Lens",
   "Vocabulary level": "مستوى المفردات",
-  "Words above your level get a hint": "تحصل الكلمات الأعلى من مستواك على تلميح",
-  "Hint Language": "لغة التلميح",
   "Data": "البيانات",
-  "Download data packs automatically when needed.": "تنزيل حزم البيانات تلقائيًا عند الحاجة.",
   "Failed to check for updates": "فشل التحقق من التحديثات",
   "Update": "تحديث",
   "Nightly Builds": "إصدارات ليلية",
@@ -1905,5 +1901,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "يتطلب رمز PIN (والبيومترية، إن توفّرت) لفتح Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "البيومترية"
+  "biometrics": "البيومترية",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "أظهر تلميحًا قصيرًا بلغتك الأم فوق الكلمات الصعبة. الكلمات التي تفوق مستواك تحصل على تلميح.",
+  "Level": "المستوى",
+  "CEFR level": "مستوى CEFR"
 }

@@ -1740,13 +1740,9 @@
   "Data pack": "ডেটা প্যাক",
   "Open a book to manage its data pack.": "এর ডেটা প্যাক পরিচালনা করতে একটি বই খুলুন।",
   "No data available for this language pair yet.": "এই ভাষা জোড়ার জন্য এখনও কোনো ডেটা উপলব্ধ নেই।",
-  "Download {{size}}": "{{size}} ডাউনলোড করুন",
   "Enable Word Lens": "Word Lens চালু করুন",
   "Vocabulary level": "শব্দভান্ডার স্তর",
-  "Words above your level get a hint": "আপনার স্তরের উপরের শব্দগুলির জন্য একটি ইঙ্গিত দেখানো হয়",
-  "Hint Language": "ইঙ্গিতের ভাষা",
   "Data": "ডেটা",
-  "Download data packs automatically when needed.": "প্রয়োজনে স্বয়ংক্রিয়ভাবে ডেটা প্যাক ডাউনলোড করুন।",
   "Failed to check for updates": "আপডেট পরীক্ষা করতে ব্যর্থ",
   "Update": "আপডেট",
   "Nightly Builds": "নাইটলি বিল্ড",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest খুলতে PIN (এবং উপলব্ধ হলে বায়োমেট্রিক্স) প্রয়োজন",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "বায়োমেট্রিক্স"
+  "biometrics": "বায়োমেট্রিক্স",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "কঠিন শব্দের উপরে আপনার মাতৃভাষায় একটি সংক্ষিপ্ত ইঙ্গিত দেখান। আপনার স্তরের উপরের শব্দগুলো একটি ইঙ্গিত পায়।",
+  "Level": "স্তর",
+  "CEFR level": "CEFR স্তর"
 }

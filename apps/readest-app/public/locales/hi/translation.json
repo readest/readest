@@ -1740,13 +1740,9 @@
   "Data pack": "डेटा पैक",
   "Open a book to manage its data pack.": "इसके डेटा पैक को प्रबंधित करने के लिए कोई पुस्तक खोलें।",
   "No data available for this language pair yet.": "इस भाषा युग्म के लिए अभी कोई डेटा उपलब्ध नहीं है।",
-  "Download {{size}}": "{{size}} डाउनलोड करें",
   "Enable Word Lens": "Word Lens सक्षम करें",
   "Vocabulary level": "शब्दावली स्तर",
-  "Words above your level get a hint": "आपके स्तर से ऊपर के शब्दों के लिए संकेत मिलता है",
-  "Hint Language": "संकेत भाषा",
   "Data": "डेटा",
-  "Download data packs automatically when needed.": "ज़रूरत पड़ने पर डेटा पैक स्वतः डाउनलोड करें।",
   "Failed to check for updates": "अपडेट की जाँच करने में विफल",
   "Update": "अपडेट",
   "Nightly Builds": "नाइटली बिल्ड",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest खोलने के लिए PIN (और यदि उपलब्ध हो तो बायोमेट्रिक्स) आवश्यक है",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "बायोमेट्रिक्स"
+  "biometrics": "बायोमेट्रिक्स",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "कठिन शब्दों के ऊपर आपकी मातृभाषा में एक छोटा संकेत दिखाता है। आपके स्तर से ऊपर के शब्दों को संकेत मिलता है।",
+  "Level": "स्तर",
+  "CEFR level": "CEFR स्तर"
 }

@@ -1707,13 +1707,9 @@
   "Data pack": "Gói dữ liệu",
   "Open a book to manage its data pack.": "Mở một cuốn sách để quản lý gói dữ liệu của nó.",
   "No data available for this language pair yet.": "Chưa có dữ liệu cho cặp ngôn ngữ này.",
-  "Download {{size}}": "Tải xuống {{size}}",
   "Enable Word Lens": "Bật Word Lens",
   "Vocabulary level": "Trình độ từ vựng",
-  "Words above your level get a hint": "Các từ vượt trình độ của bạn sẽ có gợi ý",
-  "Hint Language": "Ngôn ngữ gợi ý",
   "Data": "Dữ liệu",
-  "Download data packs automatically when needed.": "Tự động tải gói dữ liệu khi cần.",
   "Failed to check for updates": "Không kiểm tra được bản cập nhật",
   "Update": "Cập nhật",
   "Nightly Builds": "Bản dựng hằng đêm",
@@ -1740,5 +1736,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Yêu cầu mã PIN (và sinh trắc học, nếu có) để mở Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "sinh trắc học"
+  "biometrics": "sinh trắc học",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Hiển thị gợi ý ngắn bằng tiếng mẹ đẻ của bạn phía trên những từ khó. Những từ trên trình độ của bạn sẽ có gợi ý.",
+  "Level": "Cấp độ",
+  "CEFR level": "Cấp độ CEFR"
 }

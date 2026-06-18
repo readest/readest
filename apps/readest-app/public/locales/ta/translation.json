@@ -1740,13 +1740,9 @@
   "Data pack": "தரவுத் தொகுப்பு",
   "Open a book to manage its data pack.": "அதன் தரவுத் தொகுப்பை நிர்வகிக்க ஒரு புத்தகத்தைத் திற.",
   "No data available for this language pair yet.": "இந்த மொழி இணைக்கு இன்னும் தரவு எதுவும் கிடைக்கவில்லை.",
-  "Download {{size}}": "{{size}} பதிவிறக்கு",
   "Enable Word Lens": "Word Lens-ஐ இயக்கு",
   "Vocabulary level": "சொல்வளம் நிலை",
-  "Words above your level get a hint": "உங்கள் நிலைக்கு மேலான சொற்களுக்கு ஒரு குறிப்பு கிடைக்கும்",
-  "Hint Language": "குறிப்பு மொழி",
   "Data": "தரவு",
-  "Download data packs automatically when needed.": "தேவைப்படும்போது தரவுத் தொகுப்புகளைத் தானாகப் பதிவிறக்கு.",
   "Failed to check for updates": "புதுப்பிப்புகளைச் சரிபார்க்க முடியவில்லை",
   "Update": "புதுப்பிப்பு",
   "Nightly Builds": "இரவு உருவாக்கங்கள்",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest திறக்க PIN (மற்றும் கிடைத்தால் உயிரியல் அடையாளம்) தேவை",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "உயிரியல் அடையாளம்"
+  "biometrics": "உயிரியல் அடையாளம்",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "கடினமான சொற்களுக்கு மேலே உங்கள் தாய்மொழியில் ஒரு சிறு குறிப்பைக் காட்டும். உங்கள் நிலைக்கு மேலான சொற்களுக்கு குறிப்பு கிடைக்கும்.",
+  "Level": "நிலை",
+  "CEFR level": "CEFR நிலை"
 }

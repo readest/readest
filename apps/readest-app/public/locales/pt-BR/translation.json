@@ -1773,13 +1773,9 @@
   "Data pack": "Pacote de dados",
   "Open a book to manage its data pack.": "Abra um livro para gerenciar seu pacote de dados.",
   "No data available for this language pair yet.": "Ainda não há dados disponíveis para este par de idiomas.",
-  "Download {{size}}": "Baixar {{size}}",
   "Enable Word Lens": "Ativar o Word Lens",
   "Vocabulary level": "Nível de vocabulário",
-  "Words above your level get a hint": "As palavras acima do seu nível recebem uma dica",
-  "Hint Language": "Idioma das dicas",
   "Data": "Dados",
-  "Download data packs automatically when needed.": "Baixar pacotes de dados automaticamente quando necessário.",
   "Failed to check for updates": "Falha ao verificar atualizações",
   "Update": "Atualização",
   "Nightly Builds": "Compilações noturnas",
@@ -1806,5 +1802,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Requer um PIN (e biometria, se disponível) para abrir o Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometria"
+  "biometrics": "biometria",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Mostra uma breve dica no seu idioma nativo acima de palavras difíceis. Palavras acima do seu nível recebem uma dica.",
+  "Level": "Nível",
+  "CEFR level": "Nível CEFR"
 }

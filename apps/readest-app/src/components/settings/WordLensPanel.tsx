@@ -205,11 +205,10 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
   const renderDataPackRow = () => {
     if (!bookSource) {
       return (
-        <SettingsRow label={_('Data pack')}>
-          <span className='text-base-content/60 settings-content text-end'>
-            {_('Open a book to manage its data pack.')}
-          </span>
-        </SettingsRow>
+        <SettingsRow
+          label={_('Data pack')}
+          description={_('Open a book to manage its data pack.')}
+        />
       );
     }
     if (resolving) {
@@ -221,11 +220,10 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
     }
     if (!packStatus) {
       return (
-        <SettingsRow label={_('Data pack')}>
-          <span className='text-base-content/60 settings-content text-end'>
-            {_('No data available for this language pair yet.')}
-          </span>
-        </SettingsRow>
+        <SettingsRow
+          label={_('Data pack')}
+          description={_('No data available for this language pair yet.')}
+        />
       );
     }
     const size = formatBytes(packStatus.pack.bytes);
@@ -243,7 +241,7 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
       );
     }
     return (
-      <SettingsRow label={_('Data pack')}>
+      <SettingsRow label={_('Data pack')} description={size}>
         <div className='flex items-center gap-2'>
           {downloading && progress !== null && progress > 0 && (
             <div
@@ -268,7 +266,7 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
             disabled={downloading}
             className='btn btn-primary btn-contrast btn-sm shrink-0'
           >
-            {_('Download {{size}}', { size })}
+            {_('Download')}
           </button>
         </div>
       </SettingsRow>
@@ -293,7 +291,7 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
           onChange={() => setWordLensEnabled(!wordLensEnabled)}
           data-setting-id='settings.wordlens.enabled'
         />
-        <SettingsRow label={_('Level')} disabled={!wordLensEnabled}>
+        <SettingsRow label={_('Level')} description={_('CEFR level')} disabled={!wordLensEnabled}>
           <div className='flex items-center gap-2'>
             <input
               type='range'

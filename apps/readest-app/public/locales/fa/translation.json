@@ -1740,13 +1740,9 @@
   "Data pack": "بستهٔ داده",
   "Open a book to manage its data pack.": "برای مدیریت بستهٔ دادهٔ آن، کتابی را باز کنید.",
   "No data available for this language pair yet.": "هنوز داده‌ای برای این جفت‌زبان موجود نیست.",
-  "Download {{size}}": "دانلود {{size}}",
   "Enable Word Lens": "فعال‌سازی Word Lens",
   "Vocabulary level": "سطح واژگان",
-  "Words above your level get a hint": "واژه‌های بالاتر از سطح شما راهنمایی می‌گیرند",
-  "Hint Language": "زبان راهنمایی",
   "Data": "داده",
-  "Download data packs automatically when needed.": "دانلود خودکار بسته‌های داده در صورت نیاز.",
   "Failed to check for updates": "بررسی به‌روزرسانی‌ها ناموفق بود",
   "Update": "به‌روزرسانی",
   "Nightly Builds": "نسخه‌های شبانه",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "برای باز کردن Readest به PIN (و در صورت موجود بودن، بیومتریک) نیاز است",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "بیومتریک"
+  "biometrics": "بیومتریک",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "یک راهنمای کوتاه به زبان مادری‌تان بالای واژه‌های دشوار نشان می‌دهد. واژه‌های بالاتر از سطح شما راهنما می‌گیرند.",
+  "Level": "سطح",
+  "CEFR level": "سطح CEFR"
 }

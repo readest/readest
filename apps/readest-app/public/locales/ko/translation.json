@@ -1707,13 +1707,9 @@
   "Data pack": "데이터 팩",
   "Open a book to manage its data pack.": "데이터 팩을 관리하려면 책을 여세요.",
   "No data available for this language pair yet.": "이 언어 쌍에 사용할 수 있는 데이터가 아직 없습니다.",
-  "Download {{size}}": "다운로드 {{size}}",
   "Enable Word Lens": "Word Lens 사용",
   "Vocabulary level": "어휘 수준",
-  "Words above your level get a hint": "수준을 넘는 단어에 힌트를 표시합니다",
-  "Hint Language": "힌트 언어",
   "Data": "데이터",
-  "Download data packs automatically when needed.": "필요할 때 데이터 팩을 자동으로 다운로드합니다.",
   "Failed to check for updates": "업데이트 확인에 실패했습니다",
   "Update": "업데이트",
   "Nightly Builds": "야간 빌드",
@@ -1740,5 +1736,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest를 열려면 PIN(및 사용 가능한 경우 생체 인증)이 필요합니다",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "생체 인증"
+  "biometrics": "생체 인증",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "어려운 단어 위에 모국어로 된 짧은 힌트를 표시합니다. 내 수준보다 높은 단어에 힌트가 표시됩니다.",
+  "Level": "수준",
+  "CEFR level": "CEFR 수준"
 }

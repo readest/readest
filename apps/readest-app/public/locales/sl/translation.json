@@ -1806,13 +1806,9 @@
   "Data pack": "Paket podatkov",
   "Open a book to manage its data pack.": "Odprite knjigo za upravljanje njenega paketa podatkov.",
   "No data available for this language pair yet.": "Za ta jezikovni par še ni podatkov.",
-  "Download {{size}}": "Prenesi {{size}}",
   "Enable Word Lens": "Omogoči Word Lens",
   "Vocabulary level": "Raven besedišča",
-  "Words above your level get a hint": "Besede nad vašo ravnjo dobijo namig",
-  "Hint Language": "Jezik namigov",
   "Data": "Podatki",
-  "Download data packs automatically when needed.": "Samodejno prenesi pakete podatkov, ko je to potrebno.",
   "Failed to check for updates": "Preverjanje posodobitev ni uspelo",
   "Update": "Posodobitev",
   "Nightly Builds": "Nočne gradnje",
@@ -1839,5 +1835,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Za odpiranje Readest je potrebna PIN-koda (in biometrija, če je na voljo)",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometrija"
+  "biometrics": "biometrija",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Prikaže kratek namig v tvojem maternem jeziku nad težkimi besedami. Besede nad tvojo ravnjo dobijo namig.",
+  "Level": "Raven",
+  "CEFR level": "Raven CEFR"
 }

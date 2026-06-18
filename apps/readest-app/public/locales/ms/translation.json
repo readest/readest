@@ -1707,13 +1707,9 @@
   "Data pack": "Pakej data",
   "Open a book to manage its data pack.": "Buka buku untuk mengurus pakej datanya.",
   "No data available for this language pair yet.": "Belum ada data tersedia untuk pasangan bahasa ini.",
-  "Download {{size}}": "Muat turun {{size}}",
   "Enable Word Lens": "Dayakan Word Lens",
   "Vocabulary level": "Tahap perbendaharaan kata",
-  "Words above your level get a hint": "Perkataan melebihi tahap anda akan diberi petunjuk",
-  "Hint Language": "Bahasa Petunjuk",
   "Data": "Data",
-  "Download data packs automatically when needed.": "Muat turun pakej data secara automatik apabila diperlukan.",
   "Failed to check for updates": "Gagal menyemak kemas kini",
   "Update": "Kemas kini",
   "Nightly Builds": "Binaan Nightly",
@@ -1740,5 +1736,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Memerlukan PIN (dan biometrik, jika tersedia) untuk membuka Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometrik"
+  "biometrics": "biometrik",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Menunjukkan petunjuk ringkas dalam bahasa ibunda anda di atas perkataan sukar. Perkataan melebihi tahap anda akan mendapat petunjuk.",
+  "Level": "Tahap",
+  "CEFR level": "Tahap CEFR"
 }

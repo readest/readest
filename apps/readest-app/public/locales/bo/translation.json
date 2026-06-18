@@ -1707,13 +1707,9 @@
   "Data pack": "གཞི་གྲངས་ཐུམ་སྒྲིལ།",
   "Open a book to manage its data pack.": "དེའི་གཞི་གྲངས་ཐུམ་སྒྲིལ་དོ་དམ་བྱེད་པར་དཔེ་ཆ་ཞིག་ཁ་ཕྱེ།",
   "No data available for this language pair yet.": "སྐད་ཡིག་ཟུང་འདིའི་ཆེད་ད་དུང་གཞི་གྲངས་མེད།",
-  "Download {{size}}": "{{size}} ཕབ་ལེན།",
   "Enable Word Lens": "Word Lens སྤྱོད་རུང་བཟོ།",
   "Vocabulary level": "ཚིག་མཛོད་རིམ་པ།",
-  "Words above your level get a hint": "ཁྱེད་ཀྱི་རིམ་པ་ལས་མཐོ་བའི་ཚིག་ལ་མཚོན་བྱེད་ཐོབ།",
-  "Hint Language": "མཚོན་བྱེད་སྐད་ཡིག",
   "Data": "གཞི་གྲངས།",
-  "Download data packs automatically when needed.": "དགོས་མཁོ་བྱུང་སྐབས་གཞི་གྲངས་ཐུམ་སྒྲིལ་རང་འགུལ་གྱིས་ཕབ་ལེན་བྱེད།",
   "Failed to check for updates": "གསར་སྒྱུར་ཞིབ་བཤེར་མ་ཐུབ།",
   "Update": "གསར་སྒྱུར།",
   "Nightly Builds": "མཚན་མོའི་བཟོ་སྐྲུན།",
@@ -1740,5 +1736,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest ཕྱེ་བར་ PIN (དང་གལ་ཏེ་ཡོད་ན་ལུས་རྟགས་ངོ་སྤྲོད།) དགོས།",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "ལུས་རྟགས་ངོ་སྤྲོད།"
+  "biometrics": "ལུས་རྟགས་ངོ་སྤྲོད།",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "ཚིག་དཀའ་མོའི་སྟེང་དུ་རང་གི་སྐད་ཡིག་ཐོག་ནས་བརྡ་སྟོན་ཐུང་ངུ་ཞིག་སྟོན། ཁྱེད་ཀྱི་རིམ་པ་ལས་མཐོ་བའི་ཚིག་ལ་བརྡ་སྟོན་ཐོབ།",
+  "Level": "རིམ་པ།",
+  "CEFR level": "CEFR རིམ་པ།"
 }

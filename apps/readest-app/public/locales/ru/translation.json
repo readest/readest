@@ -1806,13 +1806,9 @@
   "Data pack": "Пакет данных",
   "Open a book to manage its data pack.": "Откройте книгу, чтобы управлять её пакетом данных.",
   "No data available for this language pair yet.": "Для этой языковой пары пока нет данных.",
-  "Download {{size}}": "Скачать {{size}}",
   "Enable Word Lens": "Включить Word Lens",
   "Vocabulary level": "Уровень словарного запаса",
-  "Words above your level get a hint": "Слова выше вашего уровня получают подсказку",
-  "Hint Language": "Язык подсказок",
   "Data": "Данные",
-  "Download data packs automatically when needed.": "Автоматически загружать пакеты данных при необходимости.",
   "Failed to check for updates": "Не удалось проверить обновления",
   "Update": "Обновление",
   "Nightly Builds": "Ночные сборки",
@@ -1839,5 +1835,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Требуется PIN-код (и биометрия, если доступна) для открытия Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "биометрия"
+  "biometrics": "биометрия",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Показывает короткую подсказку на вашем родном языке над сложными словами. Слова выше вашего уровня получают подсказку.",
+  "Level": "Уровень",
+  "CEFR level": "Уровень CEFR"
 }

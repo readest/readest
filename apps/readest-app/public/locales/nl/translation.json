@@ -1740,13 +1740,9 @@
   "Data pack": "Gegevenspakket",
   "Open a book to manage its data pack.": "Open een boek om het gegevenspakket te beheren.",
   "No data available for this language pair yet.": "Nog geen gegevens beschikbaar voor deze taalcombinatie.",
-  "Download {{size}}": "Download {{size}}",
   "Enable Word Lens": "Word Lens inschakelen",
   "Vocabulary level": "Woordenschatniveau",
-  "Words above your level get a hint": "Woorden boven je niveau krijgen een hint",
-  "Hint Language": "Hinttaal",
   "Data": "Gegevens",
-  "Download data packs automatically when needed.": "Download gegevenspakketten automatisch wanneer nodig.",
   "Failed to check for updates": "Controleren op updates mislukt",
   "Update": "Update",
   "Nightly Builds": "Nightly-builds",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Vereist een pincode (en biometrie, indien beschikbaar) om Readest te openen",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometrie"
+  "biometrics": "biometrie",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Toont een korte hint in je moedertaal boven moeilijke woorden. Woorden boven jouw niveau krijgen een hint.",
+  "Level": "Niveau",
+  "CEFR level": "CEFR-niveau"
 }

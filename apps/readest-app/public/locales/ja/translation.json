@@ -1707,13 +1707,9 @@
   "Data pack": "データパック",
   "Open a book to manage its data pack.": "データパックを管理するには本を開いてください。",
   "No data available for this language pair yet.": "この言語ペアに対応するデータはまだありません。",
-  "Download {{size}}": "ダウンロード {{size}}",
   "Enable Word Lens": "Word Lens を有効にする",
   "Vocabulary level": "語彙レベル",
-  "Words above your level get a hint": "レベルを超える単語にヒントを表示します",
-  "Hint Language": "ヒント言語",
   "Data": "データ",
-  "Download data packs automatically when needed.": "必要に応じてデータパックを自動的にダウンロードします。",
   "Failed to check for updates": "更新の確認に失敗しました",
   "Update": "アップデート",
   "Nightly Builds": "ナイトリービルド",
@@ -1740,5 +1736,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest を開くには PIN（および利用可能な場合は生体認証）が必要です",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "生体認証"
+  "biometrics": "生体認証",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "難しい単語の上に母語の短いヒントを表示します。あなたのレベルを超える単語にヒントが付きます。",
+  "Level": "レベル",
+  "CEFR level": "CEFRレベル"
 }

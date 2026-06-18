@@ -1740,13 +1740,9 @@
   "Data pack": "දත්ත පැකේජය",
   "Open a book to manage its data pack.": "එහි දත්ත පැකේජය කළමනාකරණය කිරීමට පොතක් විවෘත කරන්න.",
   "No data available for this language pair yet.": "මෙම භාෂා යුගලය සඳහා තවම දත්ත නොමැත.",
-  "Download {{size}}": "{{size}} බාගන්න",
   "Enable Word Lens": "Word Lens සක්‍රීය කරන්න",
   "Vocabulary level": "වචන මාලා මට්ටම",
-  "Words above your level get a hint": "ඔබේ මට්ටමට වඩා ඉහළ වචන සඳහා ඉඟියක් ලැබේ",
-  "Hint Language": "ඉඟි භාෂාව",
   "Data": "දත්ත",
-  "Download data packs automatically when needed.": "අවශ්‍ය විට දත්ත පැකේජ ස්වයංක්‍රීයව බාගන්න.",
   "Failed to check for updates": "යාවත්කාලීන සඳහා පරීක්ෂා කිරීමට අසමත් විය",
   "Update": "යාවත්කාලීන කිරීම",
   "Nightly Builds": "රාත්‍රී නිකුතු",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest විවෘත කිරීමට PIN (සහ ජෛව මිතික, ලබා ගත හැකි නම්) අවශ්‍ය වේ",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "ජෛව මිතික"
+  "biometrics": "ජෛව මිතික",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "අසීරු වචන මත ඔබේ මව් භාෂාවෙන් කෙටි ඉඟියක් පෙන්වයි. ඔබේ මට්ටමට වඩා ඉහළ වචනවලට ඉඟියක් ලැබේ.",
+  "Level": "මට්ටම",
+  "CEFR level": "CEFR මට්ටම"
 }

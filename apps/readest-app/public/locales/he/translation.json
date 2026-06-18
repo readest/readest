@@ -1773,13 +1773,9 @@
   "Data pack": "חבילת נתונים",
   "Open a book to manage its data pack.": "פתח ספר כדי לנהל את חבילת הנתונים שלו.",
   "No data available for this language pair yet.": "אין עדיין נתונים זמינים עבור צמד שפות זה.",
-  "Download {{size}}": "הורדה {{size}}",
   "Enable Word Lens": "הפעלת Word Lens",
   "Vocabulary level": "רמת אוצר מילים",
-  "Words above your level get a hint": "מילים מעל הרמה שלך מקבלות רמז",
-  "Hint Language": "שפת הרמז",
   "Data": "נתונים",
-  "Download data packs automatically when needed.": "הורדת חבילות נתונים אוטומטית בעת הצורך.",
   "Failed to check for updates": "בדיקת העדכונים נכשלה",
   "Update": "עדכון",
   "Nightly Builds": "גרסאות לילה",
@@ -1806,5 +1802,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "דרוש קוד PIN (וביומטריה, אם זמינה) כדי לפתוח את Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "ביומטריה"
+  "biometrics": "ביומטריה",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "מציג רמז קצר בשפת האם שלך מעל מילים קשות. מילים מעל הרמה שלך מקבלות רמז.",
+  "Level": "רמה",
+  "CEFR level": "רמת CEFR"
 }

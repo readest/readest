@@ -1740,13 +1740,9 @@
   "Data pack": "Πακέτο δεδομένων",
   "Open a book to manage its data pack.": "Ανοίξτε ένα βιβλίο για να διαχειριστείτε το πακέτο δεδομένων του.",
   "No data available for this language pair yet.": "Δεν υπάρχουν ακόμη διαθέσιμα δεδομένα για αυτό το ζεύγος γλωσσών.",
-  "Download {{size}}": "Λήψη {{size}}",
   "Enable Word Lens": "Ενεργοποίηση Word Lens",
   "Vocabulary level": "Επίπεδο λεξιλογίου",
-  "Words above your level get a hint": "Οι λέξεις πάνω από το επίπεδό σας λαμβάνουν υπόδειξη",
-  "Hint Language": "Γλώσσα υπόδειξης",
   "Data": "Δεδομένα",
-  "Download data packs automatically when needed.": "Αυτόματη λήψη πακέτων δεδομένων όταν χρειάζεται.",
   "Failed to check for updates": "Αποτυχία ελέγχου για ενημερώσεις",
   "Update": "Ενημέρωση",
   "Nightly Builds": "Νυχτερινές εκδόσεις",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Απαιτείται PIN (και βιομετρικά, εάν διατίθενται) για το άνοιγμα του Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "βιομετρικά"
+  "biometrics": "βιομετρικά",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Εμφανίζει μια σύντομη υπόδειξη στη μητρική σου γλώσσα πάνω από δύσκολες λέξεις. Οι λέξεις πάνω από το επίπεδό σου λαμβάνουν υπόδειξη.",
+  "Level": "Επίπεδο",
+  "CEFR level": "Επίπεδο CEFR"
 }

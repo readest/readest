@@ -1740,13 +1740,9 @@
   "Data pack": "Ma'lumotlar to'plami",
   "Open a book to manage its data pack.": "Ma'lumotlar to'plamini boshqarish uchun kitob oching.",
   "No data available for this language pair yet.": "Bu til juftligi uchun hali ma'lumot yo'q.",
-  "Download {{size}}": "Yuklab olish {{size}}",
   "Enable Word Lens": "Word Lens'ni yoqish",
   "Vocabulary level": "Lug'at darajasi",
-  "Words above your level get a hint": "Darajangizdan yuqori so'zlar uchun maslahat beriladi",
-  "Hint Language": "Maslahat tili",
   "Data": "Ma'lumotlar",
-  "Download data packs automatically when needed.": "Kerak bo'lganda ma'lumotlar to'plamlarini avtomatik yuklab olish.",
   "Failed to check for updates": "Yangilanishlarni tekshirib bo'lmadi",
   "Update": "Yangilanish",
   "Nightly Builds": "Tungi buildlar",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest-ni ochish uchun PIN (va mavjud bo'lsa, biometrik ma'lumotlar) talab qilinadi",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometrik"
+  "biometrics": "biometrik",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Qiyin so‘zlar ustida ona tilingizda qisqa maslahat ko‘rsatadi. Darajangizdan yuqori so‘zlarga maslahat beriladi.",
+  "Level": "Daraja",
+  "CEFR level": "CEFR darajasi"
 }

@@ -1773,13 +1773,9 @@
   "Data pack": "Pachet de date",
   "Open a book to manage its data pack.": "Deschide o carte pentru a gestiona pachetul ei de date.",
   "No data available for this language pair yet.": "Încă nu există date pentru această pereche de limbi.",
-  "Download {{size}}": "Descarcă {{size}}",
   "Enable Word Lens": "Activează Word Lens",
   "Vocabulary level": "Nivel de vocabular",
-  "Words above your level get a hint": "Cuvintele peste nivelul tău primesc un indiciu",
-  "Hint Language": "Limba indiciilor",
   "Data": "Date",
-  "Download data packs automatically when needed.": "Descarcă automat pachetele de date când este necesar.",
   "Failed to check for updates": "Verificarea actualizărilor a eșuat",
   "Update": "Actualizare",
   "Nightly Builds": "Versiuni nightly",
@@ -1806,5 +1802,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Necesită un PIN (și biometrie, dacă este disponibilă) pentru a deschide Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometrie"
+  "biometrics": "biometrie",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Afișează un scurt indiciu în limba ta maternă deasupra cuvintelor dificile. Cuvintele peste nivelul tău primesc un indiciu.",
+  "Level": "Nivel",
+  "CEFR level": "Nivel CEFR"
 }

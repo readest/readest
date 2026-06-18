@@ -1740,13 +1740,9 @@
   "Data pack": "Adatcsomag",
   "Open a book to manage its data pack.": "Nyiss meg egy könyvet az adatcsomagjának kezeléséhez.",
   "No data available for this language pair yet.": "Ehhez a nyelvpárhoz még nincsenek adatok.",
-  "Download {{size}}": "Letöltés ({{size}})",
   "Enable Word Lens": "Word Lens bekapcsolása",
   "Vocabulary level": "Szókincsszint",
-  "Words above your level get a hint": "A szintednél nehezebb szavakhoz tipp jár",
-  "Hint Language": "Tippek nyelve",
   "Data": "Adatok",
-  "Download data packs automatically when needed.": "Adatcsomagok automatikus letöltése, amikor szükséges.",
   "Failed to check for updates": "A frissítések keresése sikertelen",
   "Update": "Frissítés",
   "Nightly Builds": "Éjszakai buildek",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "PIN-kód (és biometria, ha elérhető) szükséges a Readest megnyitásához",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometria"
+  "biometrics": "biometria",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Rövid anyanyelvi tippet jelenít meg a nehéz szavak fölött. A szintednél nehezebb szavak kapnak tippet.",
+  "Level": "Szint",
+  "CEFR level": "CEFR-szint"
 }

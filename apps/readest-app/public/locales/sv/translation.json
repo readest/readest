@@ -1740,13 +1740,9 @@
   "Data pack": "Datapaket",
   "Open a book to manage its data pack.": "Öppna en bok för att hantera dess datapaket.",
   "No data available for this language pair yet.": "Inga data tillgängliga för det här språkparet ännu.",
-  "Download {{size}}": "Ladda ner {{size}}",
   "Enable Word Lens": "Aktivera Word Lens",
   "Vocabulary level": "Ordförrådsnivå",
-  "Words above your level get a hint": "Ord över din nivå får en ledtråd",
-  "Hint Language": "Språk för ledtrådar",
   "Data": "Data",
-  "Download data packs automatically when needed.": "Ladda ner datapaket automatiskt vid behov.",
   "Failed to check for updates": "Det gick inte att söka efter uppdateringar",
   "Update": "Uppdatering",
   "Nightly Builds": "Nattliga versioner",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Kräver en PIN-kod (och biometri, om tillgängligt) för att öppna Readest",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biometri"
+  "biometrics": "biometri",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Visar en kort ledtråd på ditt modersmål ovanför svåra ord. Ord över din nivå får en ledtråd.",
+  "Level": "Nivå",
+  "CEFR level": "CEFR-nivå"
 }

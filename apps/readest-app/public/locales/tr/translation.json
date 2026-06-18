@@ -1740,13 +1740,9 @@
   "Data pack": "Veri paketi",
   "Open a book to manage its data pack.": "Veri paketini yönetmek için bir kitap açın.",
   "No data available for this language pair yet.": "Bu dil çifti için henüz veri yok.",
-  "Download {{size}}": "İndir {{size}}",
   "Enable Word Lens": "Word Lens'ı etkinleştir",
   "Vocabulary level": "Kelime düzeyi",
-  "Words above your level get a hint": "Düzeyinizin üzerindeki sözcükler bir ipucu alır",
-  "Hint Language": "İpucu Dili",
   "Data": "Veri",
-  "Download data packs automatically when needed.": "Gerektiğinde veri paketlerini otomatik olarak indir.",
   "Failed to check for updates": "Güncellemeler denetlenemedi",
   "Update": "Güncelleme",
   "Nightly Builds": "Gecelik sürümler",
@@ -1773,5 +1769,8 @@
   "Require a PIN (and biometrics, if available) to open Readest": "Readest'i açmak için PIN (ve varsa biyometri) gereklidir",
   "Face ID": "Face ID",
   "Touch ID": "Touch ID",
-  "biometrics": "biyometri"
+  "biometrics": "biyometri",
+  "Show a short native-language hint above difficult words. Words above your level get a hint.": "Zor kelimelerin üzerinde ana dilinizde kısa bir ipucu gösterir. Seviyenizin üzerindeki kelimeler ipucu alır.",
+  "Level": "Seviye",
+  "CEFR level": "CEFR seviyesi"
 }
