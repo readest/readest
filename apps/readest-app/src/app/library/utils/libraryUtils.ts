@@ -589,6 +589,7 @@ export type BookContextMenuItemId =
   | 'group'
   | 'markFinished'
   | 'markUnread'
+  | 'markAbandoned'
   | 'clearStatus'
   | 'showDetails'
   | 'showInFinder'
@@ -640,8 +641,13 @@ export const pickFresherReadingStatus = (
 export const getBookContextMenuItemIds = (book: Book): BookContextMenuItemId[] => {
   const ids: BookContextMenuItemId[] = ['select', 'group'];
   ids.push(book.readingStatus === 'finished' ? 'markUnread' : 'markFinished');
+  if (book.readingStatus !== 'abandoned') ids.push('markAbandoned');
   // "Clear Status" is offered only when the book has an explicit status set.
-  if (book.readingStatus === 'finished' || book.readingStatus === 'unread') {
+  if (
+    book.readingStatus === 'finished' ||
+    book.readingStatus === 'unread' ||
+    book.readingStatus === 'abandoned'
+  ) {
     ids.push('clearStatus');
   }
   ids.push('showDetails', 'showInFinder', 'searchGoodreads');

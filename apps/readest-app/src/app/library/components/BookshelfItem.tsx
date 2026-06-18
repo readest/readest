@@ -254,6 +254,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           handleUpdateReadingStatus(book, 'unread');
         },
       },
+      markAbandoned: {
+        text: _('Mark as On hold'),
+        action: async () => {
+          handleUpdateReadingStatus(book, 'abandoned');
+        },
+      },
       clearStatus: {
         text: _('Clear Status'),
         action: async () => {

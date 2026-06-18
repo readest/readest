@@ -35,6 +35,12 @@ const SetStatusAlert: React.FC<SetStatusAlertProps> = ({
         'not-eink:bg-success/15 not-eink:text-success not-eink:border-success/20 eink-bordered',
     },
     {
+      label: _('Mark as On hold'),
+      status: 'abandoned' as ReadingStatus,
+      className:
+        'not-eink:bg-slate-500/15 not-eink:text-slate-600 dark:not-eink:text-slate-300 not-eink:border-slate-500/20 eink-bordered',
+    },
+    {
       label: _('Clear Status'),
       status: undefined,
       className:
