@@ -827,6 +827,85 @@ describe('TTSController', () => {
     });
   });
 
+  describe('redispatchPosition', () => {
+    const makeSentenceRange = () => {
+      document.body.innerHTML = '<p>Hello brave world</p>';
+      const textNode = document.body.firstElementChild!.firstChild as Text;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, textNode.length);
+      return range;
+    };
+
+    const armWithSentence = async (range: Range, markName = '0') => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        setMark: vi.fn().mockReturnValue(range),
+        getLastRange: vi.fn().mockImplementation(() => range.cloneRange()),
+      } as unknown as FoliateView['tts'];
+      controller.dispatchSpeakMark({
+        offset: 0,
+        name: markName,
+        text: 'Hello brave world',
+        language: 'en',
+      });
+    };
+
+    test('re-emits the current sentence position when not in word mode', async () => {
+      await armWithSentence(makeSentenceRange());
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-sentence');
+
+      const listener = vi.fn();
+      controller.addEventListener('tts-position', listener);
+      controller.redispatchPosition();
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      const ev = listener.mock.calls[0]![0] as CustomEvent;
+      expect(ev.detail.kind).toBe('sentence');
+      expect(ev.detail.cfi).toBe('cfi-sentence');
+      expect(ev.detail.sectionIndex).toBe(0);
+      expect(typeof ev.detail.sequence).toBe('number');
+    });
+
+    test('re-emits the current word position when in word mode', async () => {
+      await armWithSentence(makeSentenceRange());
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-word');
+      controller.dispatchSpeakWord(1);
+
+      const listener = vi.fn();
+      controller.addEventListener('tts-position', listener);
+      controller.redispatchPosition();
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      const ev = listener.mock.calls[0]![0] as CustomEvent;
+      expect(ev.detail.kind).toBe('word');
+      expect(ev.detail.cfi).toBe('cfi-word');
+    });
+
+    test('uses a fresh, strictly increasing sequence on each call', async () => {
+      await armWithSentence(makeSentenceRange());
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-x');
+
+      const sequences: number[] = [];
+      controller.addEventListener('tts-position', (e) => {
+        sequences.push((e as CustomEvent).detail.sequence);
+      });
+      controller.redispatchPosition();
+      controller.redispatchPosition();
+
+      expect(sequences.length).toBe(2);
+      expect(sequences[1]!).toBeGreaterThan(sequences[0]!);
+    });
+
+    test('is a no-op when TTS is inactive (no section)', () => {
+      const listener = vi.fn();
+      controller.addEventListener('tts-position', listener);
+      controller.redispatchPosition();
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getSpokenSentence', () => {
     test('returns the trimmed text and cfi of the current sentence', async () => {
       await controller.initViewTTS(0);

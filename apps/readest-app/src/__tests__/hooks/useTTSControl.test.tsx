@@ -146,6 +146,7 @@ vi.mock('@/services/tts', () => ({
       backward: vi.fn().mockResolvedValue(undefined),
       getVoices: vi.fn().mockResolvedValue([]),
       getVoiceId: vi.fn().mockReturnValue(''),
+      redispatchPosition: vi.fn(),
       state: 'idle',
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -250,6 +251,76 @@ describe('useTTSControl concurrent tts-speak events', () => {
       while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
       await Promise.all([p1, p2]);
     });
+  });
+});
+
+describe('useTTSControl tts-sync-request (mode-entry replay)', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const startSession = async () => {
+    render(<Harness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    return ttsControllerInstances[0] as { redispatchPosition: ReturnType<typeof vi.fn> };
+  };
+
+  it('replays the current position then the playback state when a session exists', async () => {
+    const controller = await startSession();
+    const order: string[] = [];
+    controller.redispatchPosition.mockImplementation(() => order.push('position'));
+    const stateListener = (e: Event) => {
+      order.push(`state:${(e as CustomEvent).detail.state}`);
+    };
+    eventDispatcher.on('tts-playback-state', stateListener);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'book-1' });
+    });
+
+    eventDispatcher.off('tts-playback-state', stateListener);
+    // Position-before-state is required so RSVP's 'paused' handler (which drops
+    // following) can't discard the replayed position.
+    expect(order).toEqual(['position', 'state:playing']);
+  });
+
+  it('ignores a sync request for a different book', async () => {
+    const controller = await startSession();
+    controller.redispatchPosition.mockClear();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'other-book' });
+    });
+
+    expect(controller.redispatchPosition).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op once the session has stopped', async () => {
+    const controller = await startSession();
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    controller.redispatchPosition.mockClear();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'book-1' });
+    });
+
+    expect(controller.redispatchPosition).not.toHaveBeenCalled();
   });
 });
 

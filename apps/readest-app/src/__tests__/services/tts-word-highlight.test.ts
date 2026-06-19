@@ -163,6 +163,42 @@ const makeBaseRangeFrom = (html: string): Range => {
   return range;
 };
 
+describe('rangeTextExcludingInert respects the range offsets', () => {
+  // A paragraph whose whole text is a single text node (e.g. wrapped in one
+  // <span>): a middle sentence is a sub-range of that node with non-zero
+  // start/end offsets. The text must be the sentence, not the whole node.
+  it('returns only the sub-range text when the range is inside a single text node', () => {
+    document.body.innerHTML =
+      '<p><span>First sentence. Second sentence. Third sentence.</span></p>';
+    const textNode = document.querySelector('span')!.firstChild as Text;
+    const data = textNode.data;
+    const base = document.createRange();
+    base.setStart(textNode, data.indexOf('Second'));
+    base.setEnd(textNode, data.indexOf('Third'));
+    expect(base.toString()).toBe('Second sentence. ');
+    expect(rangeTextExcludingInert(base)).toBe('Second sentence. ');
+  });
+
+  // The actual word-highlight failure: offsets computed from the matching text
+  // must line up with getTextSubRange (which respects the range offsets), or
+  // every highlighted word drifts. Reproduces the "second/third sentence"
+  // skipping seen with single-text-node paragraphs.
+  it('word offsets from rangeTextExcludingInert align with getTextSubRange mid-node', () => {
+    document.body.innerHTML =
+      '<p><span>First sentence here. Those immortals are going crazy. Last one.</span></p>';
+    const textNode = document.querySelector('span')!.firstChild as Text;
+    const data = textNode.data;
+    const base = document.createRange();
+    base.setStart(textNode, data.indexOf('Those'));
+    base.setEnd(textNode, data.indexOf('Last'));
+    const sentenceText = rangeTextExcludingInert(base);
+    const offsets = computeWordOffsets(sentenceText, ['Those', 'immortals', 'crazy']);
+    expect(getTextSubRange(base, offsets[0]!.start, offsets[0]!.end)?.toString()).toBe('Those');
+    expect(getTextSubRange(base, offsets[1]!.start, offsets[1]!.end)?.toString()).toBe('immortals');
+    expect(getTextSubRange(base, offsets[2]!.start, offsets[2]!.end)?.toString()).toBe('crazy');
+  });
+});
+
 describe('gloss-aware word highlighting', () => {
   it('rangeTextExcludingInert drops cfi-inert gloss text', () => {
     const base = makeBaseRangeFrom(

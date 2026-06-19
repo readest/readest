@@ -45,6 +45,7 @@ vi.mock('@/store/readerStore', () => {
       sectionHref: `ch${primaryIndex}.xhtml`,
     }),
     getViewSettings: () => null,
+    getViewState: () => null,
   };
   return {
     useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),

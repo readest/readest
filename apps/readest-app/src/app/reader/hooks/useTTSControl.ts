@@ -55,6 +55,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const previousSectionLabelRef = useRef<string | undefined>(undefined);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const isStartingTTSRef = useRef(false);
+  // Last broadcast playback state, so a follower engaging mid-session can be
+  // replayed the current state on demand (see handleTTSSyncRequest).
+  const playbackStateRef = useRef<'playing' | 'paused' | 'stopped'>('stopped');
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
 
@@ -69,7 +72,28 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // Broadcast playback transitions on the app-wide bus so consumers that
   // can't read the hook-local isPlaying flag (RSVP, paragraph mode) can react.
   const emitPlaybackState = (state: 'playing' | 'paused' | 'stopped') => {
+    playbackStateRef.current = state;
     eventDispatcher.dispatch('tts-playback-state', { bookKey, state });
+  };
+
+  // A follower (paragraph / RSVP mode) that engages mid-session asks the
+  // controller to re-broadcast its current playback state and position, so it
+  // can sync immediately instead of waiting for the next word/sentence boundary
+  // (or forcing the user to stop and restart TTS inside the mode). Replays only
+  // when a session actually exists (playing or paused).
+  const handleTTSSyncRequest = (event: CustomEvent) => {
+    const detail = event.detail as { bookKey?: string } | undefined;
+    if (detail?.bookKey !== bookKey) return;
+    const state = playbackStateRef.current;
+    if (state !== 'playing' && state !== 'paused') return;
+    if (!ttsControllerRef.current) return;
+    // Position first, then state: RSVP's 'paused' handler drops following, which
+    // would discard a position arriving after it. Position-first lets the
+    // follower sync the current word/paragraph before a (possibly paused) state
+    // lands. Only the entering mode listens to these events, so the order is
+    // deterministic. The live flow (separate emits) is unaffected.
+    ttsControllerRef.current.redispatchPosition();
+    emitPlaybackState(state);
   };
 
   const handleTTSForward = async (event: CustomEvent) => {
@@ -144,6 +168,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
     eventDispatcher.on('tts-set-rate', handleTTSSetRate);
     eventDispatcher.on('tts-highlight-sentence', handleTTSHighlightSentence);
+    eventDispatcher.on('tts-sync-request', handleTTSSyncRequest);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
       eventDispatcher.off('tts-stop', handleTTSStop);
@@ -152,6 +177,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
       eventDispatcher.off('tts-set-rate', handleTTSSetRate);
       eventDispatcher.off('tts-highlight-sentence', handleTTSHighlightSentence);
+      eventDispatcher.off('tts-sync-request', handleTTSSyncRequest);
       if (ttsControllerRef.current) {
         ttsControllerRef.current.shutdown();
         ttsControllerRef.current = null;

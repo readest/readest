@@ -260,6 +260,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   const getView = useReaderStore((s) => s.getView);
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const getViewState = useReaderStore((s) => s.getViewState);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
@@ -301,6 +302,24 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   // Lets the indicator's "Resume audio" action re-derive the status outside the
   // sync effect that owns refreshSyncStatus (mirrors the paragraph hook).
   const refreshSyncStatusRef = useRef<(() => void) | null>(null);
+
+  // Whether a TTS session exists (playing or paused), tracked independently of
+  // RSVP being active so handleStart can decide whether to reuse it (skip the
+  // start dialog + countdown, start externally driven). Mirrors the exact
+  // tts-playback-state signal useTTSControl's sync-request replay keys off, so
+  // the two never disagree — a disagreement would flash a countdown before the
+  // replay engages. Seeded from the store for sessions already live at mount.
+  const ttsSessionActiveRef = useRef(false);
+  useEffect(() => {
+    ttsSessionActiveRef.current = !!getViewState(bookKey)?.ttsEnabled;
+    const handlePlaybackState = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { bookKey?: string; state?: string };
+      if (detail?.bookKey !== bookKey) return;
+      ttsSessionActiveRef.current = detail.state === 'playing' || detail.state === 'paused';
+    };
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    return () => eventDispatcher.off('tts-playback-state', handlePlaybackState);
+  }, [bookKey, getViewState]);
 
   // Re-engage TTS following after a manual nav decoupled it (indicator action).
   // Sets following back on and re-derives the status; the next tts-position
@@ -507,6 +526,10 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         sync.pendingSync = undefined;
         setTtsEstimated(false);
         controller.stopEstimator();
+        // Freeze RSVP on the current word while audio is paused. In the live
+        // flow this is already true (set on 'playing'); setting it here also
+        // covers entering RSVP while TTS is paused, so its own timer never runs.
+        controller.setExternallyDriven(true);
       } else if (detail.state === 'stopped') {
         isPlaying = false;
         sessionActive = false;
@@ -518,6 +541,11 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
         sync.hasWordPositions = false;
         setTtsEstimated(false);
         controller.stopEstimator();
+        // The driving TTS session ended: freeze RSVP on the current word instead
+        // of letting its own auto-advance resume. pause() before clearing
+        // externally-driven so setExternallyDriven(false) (which reschedules the
+        // next word when playing) leaves it paused.
+        controller.pause();
         controller.setExternallyDriven(false);
       }
       refreshSyncStatus();
@@ -591,6 +619,24 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
     reextractForTtsSection,
   ]);
 
+  // Entering RSVP while a TTS session already exists: engage following and ask
+  // useTTSControl to replay the current playback state + position so RSVP locks
+  // onto the spoken word immediately, instead of running its own pacing and
+  // forcing the user to stop and restart TTS inside RSVP. Declared after the
+  // sync effect so its handlers are registered (in effect-declaration order)
+  // before the replayed events fire. The request is a no-op when no session
+  // exists, so plain RSVP (own pacing) is unaffected. Resetting lastSequenceSeen
+  // lets the replayed position through past any stale sequence from a prior
+  // session.
+  useEffect(() => {
+    if (!isActive) return;
+    if (!controllerRef.current) return;
+    if (getBookData(bookKey)?.isFixedLayout) return;
+    syncStateRef.current.following = true;
+    syncStateRef.current.lastSequenceSeen = -Infinity;
+    eventDispatcher.dispatch('tts-sync-request', { bookKey });
+  }, [isActive, bookKey, getBookData]);
+
   // One-time-per-session decouple toast: the first time following drops while
   // TTS still plays, tell the user once. Reset when following re-engages so a
   // later decouple notifies again.
@@ -653,6 +699,14 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
 
       const controller = controllerRef.current;
 
+      // Reuse a live TTS session: start externally-driven so the get-ready
+      // countdown is skipped and RSVP locks straight onto the spoken word (the
+      // engage-on-entry effect replays the current position). Set explicitly
+      // both ways so a session that ended since the last start re-enables the
+      // countdown. handleStart only runs when RSVP isn't already active.
+      const ttsSessionActive = ttsSessionActiveRef.current;
+      controller.setExternallyDriven(ttsSessionActive);
+
       // For Chinese books, preload jieba-wasm so that the synchronous word
       // extractor can use it. Done before requestStart() so the loader has
       // the dialog's interaction time to fetch ~3.8MB of WASM.
@@ -680,6 +734,16 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
       const handleStartChoice = (e: Event) => {
         const choice = (e as CustomEvent<RsvpStartChoice>).detail;
         setStartChoice(choice);
+
+        // Reusing a live TTS session: don't prompt where to start — the
+        // engage-on-entry sync overrides the start position anyway, so begin
+        // immediately (externally driven, no countdown) and let RSVP lock onto
+        // the spoken word.
+        if (ttsSessionActive) {
+          controller.startFromCurrentPosition();
+          setIsActive(true);
+          return;
+        }
 
         // If there's a saved position or selection, show dialog for user to choose
         if (choice.hasSavedPosition || choice.hasSelection) {

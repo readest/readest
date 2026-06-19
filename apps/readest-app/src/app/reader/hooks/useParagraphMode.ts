@@ -852,6 +852,21 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     };
   }, [paragraphConfig.enabled, isFixedLayout, applySyncCfi, refreshTtsSyncStatus]);
 
+  // Entering paragraph mode while a TTS session already exists: engage following
+  // and ask useTTSControl to replay the current playback state + position so the
+  // mode syncs to the spoken paragraph immediately, without the user having to
+  // stop and restart TTS inside the mode. Declared after the follow-listener
+  // effect so those handlers are registered (in effect-declaration order) before
+  // the replayed events fire. No-op when no session exists (the request returns
+  // early) or on fixed-layout (sync unsupported). Resetting lastSequenceSeen lets
+  // the replayed position through even if a prior session left a higher sequence.
+  useEffect(() => {
+    if (!paragraphConfig.enabled || isFixedLayout) return;
+    followingTtsRef.current = true;
+    lastSequenceSeenRef.current = -Infinity;
+    eventDispatcher.dispatch('tts-sync-request', { bookKey: bookKeyRef.current });
+  }, [paragraphConfig.enabled, isFixedLayout]);
+
   useEffect(() => {
     return () => {
       if (focusResetTimerRef.current) {

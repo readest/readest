@@ -487,6 +487,29 @@ describe('RSVPController', () => {
       expect(controller.currentCountdown).toBeNull();
       expect(controller.currentState.playing).toBe(true);
     });
+
+    test('skips the countdown when externally driven (reusing a TTS session)', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setStartDelay(3);
+      // TTS owns pacing — no get-ready countdown should show.
+      controller.setExternallyDriven(true);
+      controller.start();
+
+      expect(controller.currentCountdown).toBeNull();
+    });
+
+    test('setExternallyDriven hides a countdown already in progress', () => {
+      const view = createMockView(0, [makeDoc('one two three')]);
+      const controller = new RSVPController(view, 'test-book-abc123');
+      controller.setStartDelay(3);
+      controller.start();
+      expect(controller.currentCountdown).toBe(3);
+
+      // TTS engages mid-countdown (e.g. started from the in-RSVP audio toggle).
+      controller.setExternallyDriven(true);
+      expect(controller.currentCountdown).toBeNull();
+    });
   });
 
   describe('nextWord / prevWord (#4476)', () => {

@@ -359,6 +359,59 @@ describe('TTS', () => {
     });
   });
 
+  describe('from() selection start', () => {
+    // A paragraph whose whole text is one text node (one <span>), so every
+    // sentence after the first is a mid-node sub-range — the case where the
+    // annotation "Speak from selection" misfired.
+    const SENTENCE_DOC =
+      '<p><span>First sentence here. Those immortals are going crazy. Last one.</span></p>';
+
+    const makeWordRange = (doc: Document, word: string): Range => {
+      const textNode = doc.querySelector('span')!.firstChild as Text;
+      const start = textNode.data.indexOf(word);
+      const range = doc.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + word.length);
+      return range;
+    };
+
+    it('starts at the sentence that contains a mid-sentence selection', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'immortals'));
+
+      expect(ssml).toBeTruthy();
+      const text = stripTags(ssml!);
+      // starts at the selected word's own sentence (not the next one), and the
+      // earlier sentence is dropped
+      expect(text.startsWith('Those immortals')).toBe(true);
+      expect(text).not.toContain('First sentence here');
+    });
+
+    it('starts at the sentence when the first word of it is selected', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'Those'));
+
+      expect(ssml).toBeTruthy();
+      expect(stripTags(ssml!).startsWith('Those immortals')).toBe(true);
+    });
+
+    it('starts at the last sentence when a word in it is selected', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'Last'));
+
+      expect(ssml).toBeTruthy();
+      const text = stripTags(ssml!);
+      expect(text.startsWith('Last one')).toBe(true);
+      expect(text).not.toContain('immortals');
+    });
+  });
+
   describe('SSML output correctness', () => {
     it('should produce valid SSML with speak root element', () => {
       const doc = createHTMLDoc('<p>Test content</p>', { lang: 'en' });

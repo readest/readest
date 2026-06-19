@@ -679,6 +679,31 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // Re-emit the controller's current position on the canonical 'tts-position'
+  // signal with a fresh (monotonic) sequence. Lets a follower that engages
+  // mid-session (paragraph / RSVP mode entered while TTS is already playing or
+  // paused) sync to the current position without waiting for the next word or
+  // sentence boundary. Mirrors reapplyCurrentHighlight's word-vs-sentence
+  // choice, but dispatches a position instead of drawing a highlight.
+  redispatchPosition() {
+    if (this.#ttsSectionIndex < 0) return;
+    if (this.#wordHighlightActive && this.#lastSpeakWordRange) {
+      try {
+        const cfi = this.view.getCFI(this.#ttsSectionIndex, this.#lastSpeakWordRange);
+        if (cfi) {
+          this.#dispatchPosition(cfi, 'word');
+          return;
+        }
+      } catch {}
+    }
+    const range = this.view.tts?.getLastRange();
+    if (!range) return;
+    try {
+      const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+      if (cfi) this.#dispatchPosition(cfi, 'sentence');
+    } catch {}
+  }
+
   // Word-level highlighting within the chunk of the last dispatched mark,
   // driven by TTS clients that report word boundaries (Edge TTS). It only
   // swaps the visual highlight from the sentence to the spoken word —
@@ -689,8 +714,24 @@ export class TTSController extends EventTarget {
     const range = this.view.tts?.getLastRange();
     if (!range) return;
     this.#speakWordBaseRange = range;
-    this.#speakWordOffsets = computeWordOffsets(rangeTextExcludingInert(range), words);
+    const matchText = rangeTextExcludingInert(range);
+    this.#speakWordOffsets = computeWordOffsets(matchText, words);
     this.#speakWordRanges = [];
+    if (process.env.NODE_ENV !== 'production') {
+      // Dev-only trace of the Edge word-sync: each spoken (boundary) word vs the
+      // text it actually highlights. A drifted or "(unmatched)" mapping — or an
+      // empty word list — pinpoints word-highlight bugs without instrumenting
+      // the overlayer by hand. `process.env.NODE_ENV` is statically inlined, so
+      // this whole block is dropped from production builds.
+      const mapping = words.map((word, i) => {
+        const offset = this.#speakWordOffsets[i];
+        const highlighted = offset
+          ? getTextSubRange(range, offset.start, offset.end)?.toString()
+          : '';
+        return { spoken: word, highlighted: highlighted || '(unmatched)' };
+      });
+      console.log('[TTS] word-sync', { sentence: matchText, words: mapping });
+    }
     if (words.length === 0) {
       // No word boundaries for this chunk: the sentence highlight was
       // suppressed at mark dispatch, so draw it now as the fallback.

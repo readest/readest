@@ -34,7 +34,12 @@ export const rangeTextExcludingInert = (base: Range): string => {
   const root = base.commonAncestorContainer;
   const doc = root.ownerDocument ?? (root as Document);
   if (root.nodeType === Node.TEXT_NODE) {
-    return isInertText(root) ? '' : (root as Text).data;
+    // A range contained in one text node (e.g. a middle sentence of a paragraph
+    // wrapped in a single <span>) must honour the range offsets, exactly as
+    // getTextSubRange does. Returning the whole node would make word offsets
+    // drift relative to the highlighted sub-range.
+    if (isInertText(root)) return '';
+    return (root as Text).data.slice(base.startOffset, base.endOffset);
   }
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let out = '';

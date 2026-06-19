@@ -518,9 +518,12 @@ export class RSVPController extends EventTarget {
   private startCountdown(onComplete: () => void): void {
     this.clearCountdown();
 
-    // A delay of 0 means instant start — skip the countdown entirely.
+    // A delay of 0 means instant start — skip the countdown entirely. When TTS
+    // owns pacing (externally driven, e.g. RSVP entered while TTS is playing),
+    // there is nothing to "get ready" for, so skip it too — the spoken word
+    // shows immediately and advancement is driven by syncToCfi.
     let count = this.state.startDelaySeconds;
-    if (count <= 0) {
+    if (count <= 0 || this.#externallyDriven) {
       onComplete();
       return;
     }
@@ -817,6 +820,9 @@ export class RSVPController extends EventTarget {
     if (on) {
       // Stop any pending auto-advance immediately.
       this.clearTimer();
+      // TTS owns pacing now; a get-ready countdown is meaningless, so hide one
+      // already in progress (e.g. TTS started from the in-RSVP audio toggle).
+      this.clearCountdown();
     } else {
       // Leaving external-drive mode: kill any estimator pacing first so it
       // can't keep advancing, then resume normal auto-advance if playing.

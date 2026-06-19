@@ -1248,9 +1248,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     eventDispatcher.dispatch('tts-speak', {
       bookKey,
       oneTime,
-      range: selection.range,
+      // Clone so clearing the live selection below can't disturb the range
+      // TTS uses to choose where to start.
+      range: selection.range.cloneRange(),
       index: selection.index,
     });
+    // The word was only selected to pick where to start reading; drop the
+    // selection so its highlight isn't left behind once TTS begins.
+    view?.deselect();
   };
 
   const handleProofread = () => {
