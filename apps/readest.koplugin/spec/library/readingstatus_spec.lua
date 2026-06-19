@@ -149,6 +149,37 @@ describe("readingstatus reconcile — both decisive", function()
   end)
 end)
 
+describe("readingstatus reconcile — remaining transfer-graph cells", function()
+  it("unread × reading: pushes a clear to KO + stamps", function()
+    local r = RS.reconcile({ reading_status = "unread", reading_status_updated_at = 0 },
+                           { status = "reading", ts = 1000 }, NOW)
+    assert.is_true(r.write_ko)
+    assert.is_nil(r.ko_status) -- clear -> "New"
+    assert.is_true(r.write_store)
+    assert.are.equal("unread", r.readest_status)
+    assert.are.equal(NOW, r.ts)
+  end)
+
+  it("abandoned × reading: pushes 'abandoned' down to KO + stamps", function()
+    local r = RS.reconcile({ reading_status = "abandoned", reading_status_updated_at = 0 },
+                           { status = "reading", ts = 1000 }, NOW)
+    assert.is_true(r.write_ko)
+    assert.are.equal("abandoned", r.ko_status)
+    assert.is_true(r.write_store)
+    assert.are.equal("abandoned", r.readest_status)
+  end)
+
+  it("abandoned × complete (bootstrap conflict): Readest 'abandoned' wins, KO pulled to abandoned", function()
+    local r = RS.reconcile({ reading_status = "abandoned", reading_status_updated_at = 0 },
+                           { status = "complete", ts = 300 }, NOW)
+    assert.is_true(r.write_ko)
+    assert.are.equal("abandoned", r.ko_status)
+    assert.is_true(r.write_store)
+    assert.are.equal("abandoned", r.readest_status)
+    assert.are.equal(NOW, r.ts)
+  end)
+end)
+
 describe("readingstatus reconcile — convergence (no ping-pong)", function()
   it("converges after a capture", function()
     local r = RS.reconcile({ reading_status = nil, reading_status_updated_at = 0 },

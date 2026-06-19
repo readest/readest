@@ -332,6 +332,12 @@ docker schema and a new numbered migration file.
   KOReader `complete`/`abandoned` (Readest-authoritative); rare.
 - **Whole-library reconcile touches many sidecars on first sync** — bounded to
   `local_present` rows; per-book conditional writes + one bootstrap stamp each.
+- **First sync re-orders the koplugin Library's "recently read" view.** Each
+  decisive book's bootstrap stamp bumps `updated_at` (load-bearing: it's what
+  pushes the stamp to the cloud so the next pull doesn't reset it and re-enter
+  bootstrap), and the Library sort is `COALESCE(updated_at, last_read_at)`. So
+  status-stamped books cluster at the top once, after the first sync. One-time,
+  cosmetic; not engineered around in v1.
 
 ## Implementation phasing
 
