@@ -48,4 +48,34 @@ describe("statussync.reconcileLocalStatuses", function()
     assert.are.same({}, writes)
     store:close()
   end)
+
+  it("first sync: pushes a bootstrap 'finished' to an opened KO book AND stamps the store", function()
+    -- Reported case 1: finished in Readest (never-stamped baseline), opened in
+    -- KOReader so its sidecar is the auto 'reading'. Must push complete down and
+    -- stamp the store so the book leaves bootstrap.
+    local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
+    store:upsertBook({ hash = "h4", title = "T", file_path = "/b4.epub", local_present = 1,
+                       reading_status = "finished", reading_status_updated_at = 0 })
+    local summaries = { ["/b4.epub"] = { status = "reading", modified = "2026-01-01" } }
+    local writes = {}
+    StatusSync.reconcileLocalStatuses(store, fake_deps(summaries, writes))
+    assert.are.equal("complete", writes["/b4.epub"]) -- pushed down, no downgrade
+    local row = store:_getRowRaw("h4")
+    assert.are.equal("finished", row.reading_status)
+    assert.are.equal(1750000000000, row.reading_status_updated_at) -- stamped with now_ms
+    store:close()
+  end)
+
+  it("first sync: does not touch a book that is undefined in Readest and only 'reading' in KO (case 2)", function()
+    local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
+    store:upsertBook({ hash = "h5", title = "T", file_path = "/b5.epub", local_present = 1,
+                       reading_status = nil, reading_status_updated_at = 0 })
+    local summaries = { ["/b5.epub"] = { status = "reading", modified = "2026-01-01" } }
+    local writes = {}
+    StatusSync.reconcileLocalStatuses(store, fake_deps(summaries, writes))
+    assert.are.same({}, writes)
+    local row = store:_getRowRaw("h5")
+    assert.is_nil(row.reading_status)
+    store:close()
+  end)
 end)
