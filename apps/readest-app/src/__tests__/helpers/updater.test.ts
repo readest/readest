@@ -426,6 +426,18 @@ describe('getNightlyPlatformKey', () => {
   test('macos', () => {
     expect(getNightlyPlatformKey('macos', 'aarch64', false, false)).toBe('darwin-aarch64');
   });
+  test('windows/linux aarch64 still map to their arm keys', () => {
+    expect(getNightlyPlatformKey('windows', 'aarch64', false, false)).toBe('windows-aarch64');
+    expect(getNightlyPlatformKey('windows', 'aarch64', true, false)).toBe(
+      'windows-aarch64-portable',
+    );
+    expect(getNightlyPlatformKey('linux', 'aarch64', false, true)).toBe('linux-aarch64-appimage');
+  });
+  test('an unknown / 32-bit arch yields no nightly (no aarch64 mis-route)', () => {
+    expect(getNightlyPlatformKey('windows', 'i686', false, false)).toBeNull();
+    expect(getNightlyPlatformKey('windows', 'i686', true, false)).toBeNull();
+    expect(getNightlyPlatformKey('linux', 'i686', false, true)).toBeNull();
+  });
 });
 
 describe('resolveNightlyUpdate', () => {

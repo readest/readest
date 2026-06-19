@@ -760,15 +760,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
         {/* WPM selector — while RSVP follows TTS the timer no longer paces, so it
             becomes an "Audio pace" affordance that opens a TTS rate picker
-            instead (decision 6). aria-disabled (not hard-disabled) keeps it
-            focusable as a hint; the lock glyph + border reads in e-ink without
-            relying on opacity. */}
+            instead (decision 6). It stays a real, enabled button (it opens the
+            picker), so no aria-disabled; the lock glyph + border reads in e-ink
+            without relying on opacity. */}
         <div className='relative shrink-0'>
           {ttsDriven ? (
             <button
               className='eink-bordered flex items-center gap-1.5 rounded-full border border-gray-500/20 bg-gray-500/10 px-3 py-1.5 text-sm transition-colors hover:bg-gray-500/20'
               onClick={() => setShowRateDropdown(!showRateDropdown)}
-              aria-disabled='true'
               aria-label={_('Audio pace')}
               title={_('Speed follows audio')}
             >

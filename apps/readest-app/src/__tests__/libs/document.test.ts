@@ -70,4 +70,27 @@ describe('DocumentLoader.open', () => {
     expect(result.book).toBeTruthy();
     expect(result.format).toBe('EPUB');
   }, 15000);
+
+  const txtBody = ['Chapter 1', '', 'Hello world.'].join('\n');
+
+  it('opens a .txt whose MIME carries a charset param and whose name lacks the ext', async () => {
+    // Android can hand over a content:// URI with no .txt extension and a
+    // parameterised MIME (text/plain;charset=utf-8). Strict `=== 'text/plain'`
+    // plus a name-only ext check would both miss and yield a null book.
+    const file = new File([txtBody], 'content-12345', { type: 'text/plain;charset=utf-8' });
+
+    const result = await new DocumentLoader(file).open();
+
+    expect(result.book).toBeTruthy();
+    expect(result.format).toBe('EPUB');
+  }, 15000);
+
+  it('opens a .txt with an uppercase extension and a generic MIME', async () => {
+    const file = new File([txtBody], 'MY-BOOK.TXT', { type: 'application/octet-stream' });
+
+    const result = await new DocumentLoader(file).open();
+
+    expect(result.book).toBeTruthy();
+    expect(result.format).toBe('EPUB');
+  }, 15000);
 });

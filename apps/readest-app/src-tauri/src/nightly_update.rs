@@ -49,7 +49,7 @@ fn base64_to_string(s: &str) -> Option<String> {
 /// nightly artifact accepted here is also accepted by Tauri's installer.
 #[tauri::command]
 pub async fn verify_update_signature(path: String, signature: String, pub_key: String) -> bool {
-    let Ok(data) = std::fs::read(&path) else {
+    let Ok(data) = tokio::fs::read(&path).await else {
         return false;
     };
     verify_signature_impl(&data, &signature, &pub_key)

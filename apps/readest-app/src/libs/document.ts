@@ -328,7 +328,13 @@ export class DocumentLoader {
   }
 
   private isTxt(): boolean {
-    return this.file.type === 'text/plain' || this.file.name.endsWith(`.${EXTS.TXT}`);
+    // Tolerate MIME params (text/plain;charset=utf-8), uppercase extensions
+    // (BOOK.TXT), and a nameless Blob — otherwise a TXT can slip onto the
+    // non-text path and yield a null book.
+    return (
+      this.file.type.startsWith('text/plain') ||
+      (this.file.name?.toLowerCase().endsWith(`.${EXTS.TXT}`) ?? false)
+    );
   }
 
   public async open(): Promise<{ book: BookDoc; format: BookFormat }> {

@@ -63,18 +63,23 @@ export const getNightlyPlatformKey = (
   isPortable: boolean,
   isAppImage: boolean,
 ): string | null => {
-  const is64 = osArchVal === 'x86_64';
   if (osTypeVal === 'android')
     return osArchVal === 'aarch64' ? 'android-arm64' : 'android-universal';
   if (osTypeVal === 'macos') return osArchVal === 'aarch64' ? 'darwin-aarch64' : 'darwin-x86_64';
+  // Match the arch explicitly so a 32-bit (or otherwise unknown) arch yields no
+  // nightly rather than mis-routing to aarch64.
   if (osTypeVal === 'windows') {
-    if (isPortable) return is64 ? 'windows-x86_64-portable' : 'windows-aarch64-portable';
-    return is64 ? 'windows-x86_64' : 'windows-aarch64';
+    if (osArchVal === 'x86_64') return isPortable ? 'windows-x86_64-portable' : 'windows-x86_64';
+    if (osArchVal === 'aarch64') return isPortable ? 'windows-aarch64-portable' : 'windows-aarch64';
+    return null;
   }
   if (osTypeVal === 'linux') {
     // Nightly Linux is AppImage-only; a deb/rpm install has no nightly
     // artifact, so it cleanly gets no nightly rather than mis-routing.
-    if (isAppImage) return is64 ? 'linux-x86_64-appimage' : 'linux-aarch64-appimage';
+    if (isAppImage) {
+      if (osArchVal === 'x86_64') return 'linux-x86_64-appimage';
+      if (osArchVal === 'aarch64') return 'linux-aarch64-appimage';
+    }
     return null;
   }
   return null;

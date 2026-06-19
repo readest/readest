@@ -825,6 +825,38 @@ describe('TTSController', () => {
         expect(sequences[i]!).toBeGreaterThan(sequences[i - 1]!);
       }
     });
+
+    test('a fresh controller continues the sequence instead of restarting', async () => {
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-x');
+
+      // Emit one sentence position from a controller and return its sequence.
+      const emitOnce = async (c: TTSController) => {
+        await c.initViewTTS(0);
+        mockView.tts = {
+          setMark: vi.fn().mockReturnValue(makeSentenceRange()),
+          getLastRange: vi.fn().mockImplementation(() => makeSentenceRange()),
+        } as unknown as FoliateView['tts'];
+        let seq = -1;
+        const handler = (e: Event) => {
+          seq = (e as CustomEvent).detail.sequence;
+        };
+        c.addEventListener('tts-position', handler);
+        c.dispatchSpeakMark({ offset: 0, name: '0', text: 'hello', language: 'en' });
+        c.removeEventListener('tts-position', handler);
+        return seq;
+      };
+
+      const firstSeq = await emitOnce(controller);
+      // A new `tts-speak` builds a fresh TTSController (see useTTSControl). A
+      // per-instance counter would restart, so the new session's first sequence
+      // would be <= the previous session's and a consumer holding
+      // `lastSequenceSeen` would drop it. A module-level counter keeps the
+      // sequence strictly increasing across sessions.
+      const controller2 = new TTSController(mockAppService, mockView, false);
+      const secondSeq = await emitOnce(controller2);
+
+      expect(secondSeq).toBeGreaterThan(firstSeq);
+    });
   });
 
   describe('redispatchPosition', () => {

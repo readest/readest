@@ -186,40 +186,33 @@ export const UpdaterContent = ({
         } as GenericUpdate);
       }
     };
-    const downloadWithProgress = (
+    const downloadWithProgress = async (
       downloadUrl: string,
       filePath: string,
       onEvent?: (progress: DownloadEvent) => void,
     ): Promise<void> => {
-      return new Promise<void>(async (resolve, reject) => {
-        let downloaded = 0;
-        let total = 0;
-        await tauriDownload(downloadUrl, filePath, (progress) => {
-          if (!onEvent) return;
-          if (!total && progress.total) {
-            total = progress.total;
-            onEvent({
-              event: 'Started',
-              data: { contentLength: total },
-            });
-          } else if (downloaded > 0 && progress.progress === progress.total) {
-            console.log('File downloaded to', filePath);
-            onEvent?.({ event: 'Finished' });
-            setTimeout(() => {
-              resolve();
-            }, 1000);
-          }
-
-          onEvent({
-            event: 'Progress',
-            data: { chunkLength: progress.progress - downloaded },
-          });
-          downloaded = progress.progress;
-        }).catch((error) => {
-          console.error('Download failed:', error);
-          reject(error);
-        });
+      let downloaded = 0;
+      let total = 0;
+      let finished = false;
+      // Resolve when tauriDownload itself completes — NOT only when a progress
+      // tick reports progress === total. Servers that omit Content-Length leave
+      // total at 0, so that tick never fires and the await would hang forever
+      // after the file is fully written (nightly portable/AppImage/Android).
+      await tauriDownload(downloadUrl, filePath, (progress) => {
+        if (!onEvent) return;
+        if (!total && progress.total) {
+          total = progress.total;
+          onEvent({ event: 'Started', data: { contentLength: total } });
+        }
+        onEvent({ event: 'Progress', data: { chunkLength: progress.progress - downloaded } });
+        downloaded = progress.progress;
+        if (progress.total && progress.progress === progress.total && !finished) {
+          finished = true;
+          onEvent({ event: 'Finished' });
+        }
       });
+      console.log('File downloaded to', filePath);
+      if (onEvent && !finished) onEvent({ event: 'Finished' });
     };
     const checkWindowsPortableUpdate = async () => {
       if (!appService) return;
