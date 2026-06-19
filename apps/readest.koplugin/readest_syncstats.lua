@@ -2,6 +2,7 @@ local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local SQ3 = require("lua-ljsqlite3/init")
+local logger = require("logger")
 local _ = require("readest_i18n")
 
 local SyncStats = {}
@@ -85,28 +86,54 @@ function SyncStats:applyRemote(books, pages)
 end
 
 function SyncStats:push(settings, client, interactive)
-    local cursor = settings:readSetting("stats_push_cursor") or 0
+    -- `settings` is the plain readest_sync data table (see main.lua:init), so
+    -- the cursor is a field; persist by saving the whole table back to
+    -- G_reader_settings, mirroring readest_syncauth.
+    local cursor = settings.stats_push_cursor or 0
     local books, pages = self:collectSince(cursor)
-    if #pages == 0 then return end
+    logger.dbg("ReadestStats push: cursor=" .. tostring(cursor)
+        .. " collected books=" .. #books .. " pages=" .. #pages
+        .. " interactive=" .. tostring(interactive))
+    if #pages == 0 then
+        logger.dbg("ReadestStats push: nothing to push (no page events past cursor)")
+        return
+    end
     local max_start = cursor
     for _, p in ipairs(pages) do if p.start_time > max_start then max_start = p.start_time end end
+    logger.dbg("ReadestStats push: dispatching " .. #pages .. " page(s); new cursor would be "
+        .. tostring(max_start))
+    -- pushChanges declares books/notes/configs as required_params (shared /sync
+    -- POST contract, readest-sync-api.json); include them empty so Spore sends
+    -- the request — the server defaults each to [] and processes statBooks/
+    -- statPages independently (apps/readest-app/src/pages/api/sync.ts).
     client:pushChanges(
-        { statBooks = books, statPages = pages },
-        function(success)
+        { books = {}, notes = {}, configs = {}, statBooks = books, statPages = pages },
+        function(success, body, status)
+            logger.dbg("ReadestStats push: response success=" .. tostring(success)
+                .. " status=" .. tostring(status))
             if success then
-                settings:saveSetting("stats_push_cursor", max_start)
-            elseif interactive then
-                UIManager:show(InfoMessage:new{ text = _("Failed to push reading statistics"), timeout = 2 })
+                settings.stats_push_cursor = max_start
+                G_reader_settings:saveSetting("readest_sync", settings)
+                logger.dbg("ReadestStats push: cursor advanced to " .. tostring(max_start))
+            else
+                logger.dbg("ReadestStats push: failed, cursor unchanged; body=" .. tostring(body))
+                if interactive then
+                    UIManager:show(InfoMessage:new{ text = _("Failed to push reading statistics"), timeout = 2 })
+                end
             end
         end)
 end
 
 function SyncStats:pull(settings, client, interactive, logout_fn)
-    local since = settings:readSetting("stats_pull_cursor") or 0
+    local since = settings.stats_pull_cursor or 0
+    logger.dbg("ReadestStats pull: since=" .. tostring(since)
+        .. " interactive=" .. tostring(interactive))
     -- pullChanges requires since/type/book/meta_hash params (readest-sync-api.json).
     client:pullChanges(
         { since = since, type = "stats", book = "", meta_hash = "" },
         function(success, response, status)
+            logger.dbg("ReadestStats pull: response success=" .. tostring(success)
+                .. " status=" .. tostring(status))
             if not success then
                 if status == 401 or status == 403 then
                     if logout_fn then logout_fn() end
@@ -116,13 +143,22 @@ function SyncStats:pull(settings, client, interactive, logout_fn)
                 end
                 return
             end
+            local nbooks = response and response.statBooks and #response.statBooks or 0
+            local npages = response and response.statPages and #response.statPages or 0
+            logger.dbg("ReadestStats pull: applying statBooks=" .. nbooks .. " statPages=" .. npages)
             self:applyRemote(response.statBooks, response.statPages)
             local newest = since
             for _, p in ipairs(response.statPages or {}) do
                 local u = tonumber(p.updated_at_ms) or 0
                 if u > newest then newest = u end
             end
-            if newest > since then settings:saveSetting("stats_pull_cursor", newest) end
+            if newest > since then
+                settings.stats_pull_cursor = newest
+                G_reader_settings:saveSetting("readest_sync", settings)
+                logger.dbg("ReadestStats pull: cursor advanced to " .. tostring(newest))
+            else
+                logger.dbg("ReadestStats pull: cursor unchanged (no newer rows)")
+            end
         end)
 end
 

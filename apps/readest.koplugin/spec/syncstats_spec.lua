@@ -146,4 +146,83 @@ describe("readest_syncstats", function()
         assert.are.equal(2, tonumber(total_pages)) -- distinct pages 1,2
         assert.are.equal(212, tonumber(last_open)) -- max(start_time + duration) = 200 + 12
     end)
+
+    -- settings here is the plain readest_sync data table (as returned by
+    -- G_reader_settings:readSetting("readest_sync", ...)), NOT a LuaSettings
+    -- object — push/pull must read/persist the cursor as a field, not via
+    -- settings:readSetting/saveSetting (which would crash on the plain table).
+    -- The shared /sync POST (pushChanges) declares books/notes/configs as
+    -- required_params in readest-sync-api.json, so Spore rejects the request
+    -- before sending if any is absent. This mock mirrors that rejection so the
+    -- stats push must include them (empty) alongside statBooks/statPages.
+    local PUSH_REQUIRED = { "books", "notes", "configs" }
+    local function makePushClient(captured)
+        return {
+            pushChanges = function(_, payload, cb)
+                captured.payload = payload
+                for _, k in ipairs(PUSH_REQUIRED) do
+                    if payload[k] == nil then
+                        captured.missing = k
+                        return cb(false) -- Spore would reject; request never sent
+                    end
+                end
+                cb(true)
+            end,
+        }
+    end
+
+    it("advances stats_push_cursor as a plain field after a successful push", function()
+        local conn = SQ3.open(statsDbPath())
+        conn:exec("INSERT INTO book (title, authors, md5) VALUES ('T', 'A', 'md5-p');")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 1, 100, 5, 9);")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 2, 250, 6, 9);")
+        conn:close()
+
+        local settings = { stats_push_cursor = 0 }
+        local captured = {}
+
+        SyncStats:push(settings, makePushClient(captured), false)
+
+        assert.is_nil(captured.missing) -- satisfied the pushChanges required_params
+        assert.are.equal(2, #captured.payload.statPages)
+        assert.are.equal(250, settings.stats_push_cursor) -- max start_time; only set on success
+    end)
+
+    -- Spore's validate() (common/Spore/Request.lua) asserts every param passed
+    -- to a method is in required_params ∪ optional_params ("X is not expected"),
+    -- and that every required_param is present. Declaring a key only under
+    -- `payload` controls body serialization, NOT acceptance. So the readest-sync
+    -- spec must list statBooks/statPages as optional_params for the stats push.
+    it("declares the stats push payload keys as expected pushChanges params", function()
+        local json = require("json")
+        local f = assert(io.open("readest-sync-api.json", "r"))
+        local spec = json.decode(f:read("*a"))
+        f:close()
+
+        local method = spec.methods.pushChanges
+        local expected = {}
+        for _, k in ipairs(method.required_params or {}) do expected[k] = true end
+        for _, k in ipairs(method.optional_params or {}) do expected[k] = true end
+
+        -- the exact set of keys SyncStats:push sends
+        for _, k in ipairs({ "books", "notes", "configs", "statBooks", "statPages" }) do
+            assert.is_true(expected[k] == true, k .. " must be an expected pushChanges param")
+        end
+    end)
+
+    it("advances stats_pull_cursor as a plain field after a successful pull", function()
+        local settings = { stats_pull_cursor = 0 }
+        local response = {
+            statBooks = { { book_hash = "md5-pull", title = "P", authors = "A" } },
+            statPages = {
+                { book_hash = "md5-pull", page = 1, start_time = 100, duration = 5,
+                  total_pages = 10, updated_at_ms = 4242 },
+            },
+        }
+        local client = { pullChanges = function(_, _params, cb) cb(true, response, 200) end }
+
+        SyncStats:pull(settings, client, false, function() end)
+
+        assert.are.equal(4242, settings.stats_pull_cursor) -- newest updated_at_ms
+    end)
 end)

@@ -538,20 +538,28 @@ end
 -- ── Reading statistics sync ────────────────────────────────────────
 
 function ReadestSync:pushBookStats(interactive)
+    logger.dbg("ReadestStats pushBookStats: triggered, interactive=" .. tostring(interactive))
     if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookStats(interactive) end) then
         return
     end
     local client = self:ensureClient(interactive)
-    if not client then return end
+    if not client then
+        logger.dbg("ReadestStats pushBookStats: no client (not signed in / offline); skipping")
+        return
+    end
     SyncStats:push(self.settings, client, interactive)
 end
 
 function ReadestSync:pullBookStats(interactive)
+    logger.dbg("ReadestStats pullBookStats: triggered, interactive=" .. tostring(interactive))
     if NetworkMgr:willRerunWhenOnline(function() self:pullBookStats(interactive) end) then
         return
     end
     local client = self:ensureClient(interactive)
-    if not client then return end
+    if not client then
+        logger.dbg("ReadestStats pullBookStats: no client (not signed in / offline); skipping")
+        return
+    end
     SyncStats:pull(self.settings, client, interactive,
         function() SyncAuth:logout(self.settings, self.path) end)
 end

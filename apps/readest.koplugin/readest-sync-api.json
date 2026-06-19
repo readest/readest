@@ -12,6 +12,7 @@
       "path": "/sync",
       "method": "POST",
       "required_params": ["books", "notes", "configs"],
+      "optional_params": ["statBooks", "statPages"],
       "payload": ["books", "notes", "configs", "statBooks", "statPages"],
       "expected_status": [200, 201, 301, 400, 401, 403]
     },
