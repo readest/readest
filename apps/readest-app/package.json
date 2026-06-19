@@ -71,6 +71,8 @@
     "build-ios-appstore": "dotenv -e .env.ios-appstore.local -- tauri ios build --export-method app-store-connect",
     "release-macos-universial-appstore": "dotenv -e .env.tauri.local -e .env.apple-appstore.local -- bash scripts/release-mac-appstore.sh",
     "release-ios-appstore": "dotenv -e .env.ios-appstore.local -- bash scripts/release-ios-appstore.sh",
+    "submit-appstore-ios": "dotenv -e .env.apple-appstore.local -- bash -c 'cd ../.. && fastlane release_ios'",
+    "submit-appstore-macos": "dotenv -e .env.apple-appstore.local -- bash -c 'cd ../.. && fastlane release_macos'",
     "release-google-play": "dotenv -e .env.google-play.local -- bash scripts/release-google-play.sh",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
     "preview": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare preview --ip 0.0.0.0 --port 3001",

@@ -25,3 +25,7 @@ INSTALLER_BUNDLE=$BUNDLE_DIR/Readest.pkg
 
 xcrun productbuild --sign "$APPLE_INSTALLER_SIGNING_IDENTITY" --component $APP_BUNDLE /Applications $INSTALLER_BUNDLE
 xcrun altool --upload-app --type macos --file $INSTALLER_BUNDLE --apiKey $APPLE_API_KEY --apiIssuer $APPLE_API_ISSUER
+
+echo "macOS build uploaded to App Store Connect."
+echo "Submit it to App Store + TestFlight with:"
+echo "  pnpm run submit-appstore-macos"
