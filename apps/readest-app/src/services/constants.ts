@@ -241,6 +241,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   compactMarginRightPx: 16,
   gapPercent: 5,
   scrolled: false,
+  webtoonMode: false,
   noContinuousScroll: false,
   disableClick: false,
   disableSwipe: false,
