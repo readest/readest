@@ -1840,5 +1840,6 @@
   "biometrics": "biometrija",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Prikaže kratek namig v tvojem maternem jeziku nad težkimi besedami. Besede nad tvojo ravnjo dobijo namig.",
   "Level": "Raven",
-  "CEFR level": "Raven CEFR"
+  "CEFR level": "Raven CEFR",
+  "Webtoon Mode": "Tryb webtoon"
 }

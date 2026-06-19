@@ -1840,5 +1840,6 @@
   "biometrics": "biometria",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Pokazuje krótką wskazówkę w Twoim języku ojczystym nad trudnymi słowami. Słowa powyżej Twojego poziomu otrzymują wskazówkę.",
   "Level": "Poziom",
-  "CEFR level": "Poziom CEFR"
+  "CEFR level": "Poziom CEFR",
+  "Webtoon Mode": "Tryb webtoon"
 }

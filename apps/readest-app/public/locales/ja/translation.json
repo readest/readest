@@ -1741,5 +1741,6 @@
   "biometrics": "生体認証",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "難しい単語の上に母語の短いヒントを表示します。あなたのレベルを超える単語にヒントが付きます。",
   "Level": "レベル",
-  "CEFR level": "CEFRレベル"
+  "CEFR level": "CEFRレベル",
+  "Webtoon Mode": "ウェブトゥーンモード"
 }

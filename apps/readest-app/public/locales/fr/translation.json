@@ -1807,5 +1807,6 @@
   "biometrics": "biométrie",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Affiche une courte indication dans votre langue maternelle au-dessus des mots difficiles. Les mots au-dessus de votre niveau reçoivent une indication.",
   "Level": "Niveau",
-  "CEFR level": "Niveau CEFR"
+  "CEFR level": "Niveau CEFR",
+  "Webtoon Mode": "Mode webtoon"
 }

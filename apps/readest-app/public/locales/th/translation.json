@@ -1741,5 +1741,6 @@
   "biometrics": "ข้อมูลไบโอเมตริก",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "แสดงคำใบ้สั้น ๆ ในภาษาแม่ของคุณเหนือคำที่ยาก คำที่สูงกว่าระดับของคุณจะมีคำใบ้",
   "Level": "ระดับ",
-  "CEFR level": "ระดับ CEFR"
+  "CEFR level": "ระดับ CEFR",
+  "Webtoon Mode": "โหมดเว็บตูน"
 }

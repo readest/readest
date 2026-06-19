@@ -1741,5 +1741,6 @@
   "biometrics": "生物辨識",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "在難詞上方顯示一則母語簡短提示。高於你程度的單字會顯示提示。",
   "Level": "等級",
-  "CEFR level": "CEFR 等級"
+  "CEFR level": "CEFR 等級",
+  "Webtoon Mode": "條漫模式"
 }

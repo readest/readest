@@ -1774,5 +1774,6 @@
   "biometrics": "biyometri",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Zor kelimelerin üzerinde ana dilinizde kısa bir ipucu gösterir. Seviyenizin üzerindeki kelimeler ipucu alır.",
   "Level": "Seviye",
-  "CEFR level": "CEFR seviyesi"
+  "CEFR level": "CEFR seviyesi",
+  "Webtoon Mode": "Webtoon modu"
 }

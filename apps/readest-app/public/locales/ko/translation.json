@@ -1741,5 +1741,6 @@
   "biometrics": "생체 인증",
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "어려운 단어 위에 모국어로 된 짧은 힌트를 표시합니다. 내 수준보다 높은 단어에 힌트가 표시됩니다.",
   "Level": "수준",
-  "CEFR level": "CEFR 수준"
+  "CEFR level": "CEFR 수준",
+  "Webtoon Mode": "웹툰 모드"
 }
