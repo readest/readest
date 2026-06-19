@@ -3,6 +3,9 @@
 # `chrome://extensions`.
 dist/
 
+# Versioned upload archives produced by `pnpm zip`.
+*.zip
+
 # Per-package node_modules (the workspace hoists most of it to the root,
 # but pnpm still drops a `.pnpm` symlink tree here).
 node_modules/
