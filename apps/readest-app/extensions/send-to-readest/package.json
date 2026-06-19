@@ -8,6 +8,7 @@
     "dev": "webpack --watch --mode development",
     "clean": "rimraf dist",
     "zip": "pnpm build && node scripts/zip.mjs",
+    "store:screenshots": "node store/generate.mjs",
     "i18n:extract": "node scripts/extract-i18n.mjs",
     "i18n:check": "node scripts/extract-i18n.mjs --check"
   },
