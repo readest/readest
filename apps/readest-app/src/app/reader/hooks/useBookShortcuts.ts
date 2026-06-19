@@ -11,6 +11,7 @@ import { eventDispatcher } from '@/utils/event';
 import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
+import { getScrollGapAttr } from '@/utils/webtoon';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
@@ -53,6 +54,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
     if (viewSettings && sideBarBookKey) {
       viewSettings.scrolled = !viewSettings.scrolled;
+      // Webtoon Mode requires scrolled flow; leaving scrolled exits Webtoon Mode
+      // and restores the default page gap (mirror the View menu's behavior).
+      if (!viewSettings.scrolled && viewSettings.webtoonMode) {
+        viewSettings.webtoonMode = false;
+        getView(sideBarBookKey)?.renderer.setAttribute('scroll-gap', getScrollGapAttr(false));
+      }
       setViewSettings(sideBarBookKey, viewSettings!);
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
       getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
