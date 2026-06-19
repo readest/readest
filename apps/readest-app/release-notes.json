@@ -1,5 +1,21 @@
 {
   "releases": {
+    "0.11.10": {
+      "date": "2026-06-19",
+      "notes": [
+        "Reading: Added Word Lens, which shows a quick translation above difficult words as you read",
+        "Reading: Added real page numbers from the book's own page list, and the current page now appears under the active chapter in the table of contents",
+        "Reading: Added Webtoon Mode for seamless, gap-free scrolling through comics and image books, and you can now tap an image or table to open it full-screen",
+        "Reading Stats: Track your reading time and pages, now synced across your devices and with KOReader",
+        "Library: Unlock the app with your fingerprint or Face ID, browse books by series in list view, search any title on Goodreads",
+        "Integrations: Hardcover progress and notes sync automatically, OPDS catalogs gained search and richer descriptions",
+        "Text-to-Speech: Words are highlighted one at a time as they're read aloud, with read-along following you through paragraph and speed reading modes",
+        "Speed Reading: Added a start delay, word-by-word stepping, dictionary lookups, keyboard shortcuts, and your reading font now styles the focused word",
+        "Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS",
+        "Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists",
+        "Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes"
+      ]
+    },
     "0.11.4": {
       "date": "2026-06-03",
       "notes": [

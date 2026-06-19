@@ -70,6 +70,23 @@
   </supports>
 
   <releases>
+    <release version="0.11.10" date="2026-06-19">
+      <description>
+        <ul>
+          <li>Reading: Added Word Lens, which shows a quick translation above difficult words as you read</li>
+          <li>Reading: Added real page numbers from the book's own page list, and the current page now appears under the active chapter in the table of contents</li>
+          <li>Reading: Added Webtoon Mode for seamless, gap-free scrolling through comics and image books, and you can now tap an image or table to open it full-screen</li>
+          <li>Reading Stats: Track your reading time and pages, now synced across your devices and with KOReader</li>
+          <li>Library: Unlock the app with your fingerprint or Face ID, browse books by series in list view, search any title on Goodreads</li>
+          <li>Integrations: Hardcover progress and notes sync automatically, OPDS catalogs gained search and richer descriptions</li>
+          <li>Text-to-Speech: Words are highlighted one at a time as they're read aloud, with read-along following you through paragraph and speed reading modes</li>
+          <li>Speed Reading: Added a start delay, word-by-word stepping, dictionary lookups, keyboard shortcuts, and your reading font now styles the focused word</li>
+          <li>Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS</li>
+          <li>Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists</li>
+          <li>Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.4" date="2026-06-03">
       <description>
         <ul>
@@ -209,28 +226,6 @@
           <li>Metadata: Added support for parsing series information from Calibre-exported EPUB files</li>
           <li>Eink: Improved component layout and colors in E-ink mode</li>
           <li>Layout: Sidebar toggle button position is now persistent</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.99" date="2026-02-07">
-      <description>
-        <ul>
-          <li>Reading: Added a reading ruler (line highlight) to help guide your eyes while reading</li>
-          <li>Reading: Added paragraph-by-paragraph reading mode for more focused navigation</li>
-          <li>Reading: Added a speed reading mode to support faster reading workflows</li>
-          <li>Reading: Added support for gamepad input to turn pages</li>
-          <li>Accessibility: Improved TalkBack support in dropdown menus for smoother navigation</li>
-          <li>Accessibility: Page navigation buttons are now always visible to screen readers</li>
-          <li>Accessibility: Reading progress is now updated correctly when navigating with screen readers</li>
-          <li>Annotations: Expanded highlight customization with more color options</li>
-          <li>Annotations: Added an option to export annotations as plain text</li>
-          <li>Library: Added grouping by author and series for better library organization</li>
-          <li>Library: Added support of marking books as finished</li>
-          <li>Search: Added fuzzy search to quickly find settings even with partial keywords</li>
-          <li>Table of Contents: Added page numbers for nested TOC entries</li>
-          <li>Text-to-Speech: Added navigation controls to return to the current reading position</li>
-          <li>Linux: Added an in-app updater for AppImage builds</li>
-          <li>E-ink: Improved color support for color E-ink devices to display richer highlights</li>
         </ul>
       </description>
     </release>
