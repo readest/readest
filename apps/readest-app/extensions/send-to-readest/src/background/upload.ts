@@ -87,7 +87,7 @@ export async function uploadEpub(opts: {
     return {
       ok: false,
       code: 'network-error',
-      message: _('Could not reach {host} — {reason}', {
+      message: _('Could not reach {host}: {reason}', {
         host: new URL(target).host,
         reason,
       }),

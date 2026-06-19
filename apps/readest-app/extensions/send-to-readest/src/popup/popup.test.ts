@@ -143,7 +143,7 @@ describe('popup — render(progress)', () => {
     expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(false);
     const status = document.getElementById('status')!;
     expect(status.classList.contains('ok')).toBe(true);
-    expect(status.textContent).toContain('Sent');
+    expect(status.textContent).toContain('Saved to your library');
   });
 
   test('"done" with missingAssets surfaces the image-fetch failure count', async () => {

@@ -94,9 +94,9 @@ function render(progress: ClipProgress | null): void {
 }
 
 function doneMessage(missing: number): string {
-  if (missing <= 0) return _('Sent — it will appear in your library shortly.');
-  if (missing === 1) return _('Sent — 1 image could not be fetched.');
-  return _('Sent — {count} images could not be fetched.', { count: missing });
+  if (missing <= 0) return _('Saved to your library.');
+  if (missing === 1) return _('Sent. 1 image could not be fetched.');
+  return _('Sent. {count} images could not be fetched.', { count: missing });
 }
 
 function showSignedOut(): void {

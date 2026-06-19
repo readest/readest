@@ -6,7 +6,7 @@
  *
  *     import { translate as _ } from '../lib/i18n';
  *     _('Send to Readest')
- *     _('Sent — {count} images could not be fetched.', { count: 3 })
+ *     _('Sent. {count} images could not be fetched.', { count: 3 })
  *
  * Translation tables live at `src/locales/<locale>.json`. The English bundle is
  * literally `{}` — fall-through to the key. Non-English bundles are
