@@ -148,6 +148,41 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
     });
   });
 
+  // Measure-word phrases such as 第一封信 ("the first letter") and 第四本书
+  // ("the fourth book") are running prose, not chapter headings. The volume
+  // measure words 卷/本/册/部/封 only start a heading when followed by a
+  // separator or the line end — not when a noun follows them directly. See
+  // issue #4658.
+  describe('measure-word false positives (issue #4658)', () => {
+    it.each([
+      '第一封信',
+      '第一封信。',
+      '第七封信',
+      '第四本书记载着锤法',
+      '第四本书记载着锤法，来自孙家，可惜对秦铭用处不大了，他已经彻底掌握。',
+      '第三本书',
+      '第十部手机',
+      '第一册书',
+      '第二卷书卷',
+    ])('should NOT match measure-word prose "%s"', (line) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${line}\n`)).toBe(false);
+    });
+
+    it.each([
+      '第一封',
+      '第一封 致读者',
+      '第一本',
+      '第一本 标题',
+      '第二部 中篇',
+      '第一册 上',
+      '第一卷 起始篇',
+    ])('should still match a real heading "%s"', (line) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${line}\n`)).toBe(true);
+    });
+  });
+
   describe('should not match', () => {
     it('should not match chapter heading embedded mid-line', () => {
       const regex = getFirstRegex('zh');
@@ -385,6 +420,35 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     const chapters = extractChapters('这是前文内容\n第一章 开始\n正文内容', 'zh');
     expect(chapters.length).toBeGreaterThanOrEqual(2);
     expect(chapters[0]!.content).toContain('前文');
+  });
+
+  it('should not extract 第N封信 letter markers as chapters (issue #4658)', () => {
+    const text = [
+      '第一百八十九章 许七安的七封信',
+      '驿卒将信递了过来。',
+      '第一封信',
+      '写这封信的时候我正在云州。',
+      '第二封信',
+      '临安公主亲启。',
+    ].join('\n');
+    const chapters = extractChapters(text, 'zh');
+    const titles = chapters.map((c) => c.title);
+    expect(titles).toEqual(['第一百八十九章 许七安的七封信']);
+    expect(chapters[0]!.content).toContain('第一封信');
+    expect(chapters[0]!.content).toContain('第二封信');
+  });
+
+  it('should not extract 第N本书 + sentence as a chapter (issue #4658)', () => {
+    const text = [
+      '第八十四章 比异人强一点',
+      '他翻阅着那几本秘籍。',
+      '第四本书记载着锤法，来自孙家，可惜对秦铭用处不大了，他已经彻底掌握。',
+      '日子一天天过去。',
+    ].join('\n');
+    const chapters = extractChapters(text, 'zh');
+    const titles = chapters.map((c) => c.title);
+    expect(titles).toEqual(['第八十四章 比异人强一点']);
+    expect(chapters[0]!.content).toContain('第四本书记载着锤法');
   });
 
   it('should extract 番外 chapters mixed with regular chapters (issue #4016)', () => {
