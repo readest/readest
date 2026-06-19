@@ -74,6 +74,7 @@ import { getLocale } from '@/utils/misc';
 import { isMetered } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
+import { getScrollGapAttr } from '@/utils/webtoon';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
@@ -702,6 +703,7 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
         view.renderer.setAttribute('spread', viewSettings.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
+        view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
