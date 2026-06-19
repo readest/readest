@@ -14,7 +14,7 @@ const Alert: React.FC<{
   const divRef = useKeyDownActions({ onCancel, onConfirm });
 
   return (
-    <div className={clsx('z-[100] flex justify-center px-4')}>
+    <div className={clsx('z-[130] flex justify-center px-4')}>
       <div
         ref={divRef}
         role='alert'

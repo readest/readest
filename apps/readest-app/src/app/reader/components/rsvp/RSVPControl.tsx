@@ -1031,7 +1031,7 @@ const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSV
   const dictionaryLang = bookData?.bookDoc?.metadata?.language as string | undefined;
   const handleManageDictionary = useCallback(() => {
     // Open dictionary management OVER the RSVP overlay (RSVP stays open). The
-    // settings dialog is raised above the overlay's z-[10000] (see SettingsDialog),
+    // settings dialog is raised above the overlay's z-[100] (see SettingsDialog),
     // and RSVP's capture-phase keyboard handler bails while it's open so the
     // settings inputs / Escape work (see RSVPOverlay).
     setSettingsDialogBookKey(bookKey);

@@ -628,6 +628,29 @@ the closest analog.
 - Drag handle at top (the small horizontal pill) is mandatory if the sheet supports
   swipe-to-dismiss.
 
+#### Stacking order (z-index scale)
+
+Full-screen and body-portaled overlays share **one global stacking scale**. Keep it
+compact — never reach for four-digit z-indexes. Every layer must clear the desktop
+rounded-window page frame (`.window-border`, `z-99` in `globals.css`), then layer:
+
+| z-index | Layer | Where |
+| ------- | ----- | ----- |
+| `99` | Desktop window-border page frame | `globals.css` |
+| `100` | RSVP immersive reading overlay | `RSVPOverlay` |
+| `101` | RSVP immersive controls (start dialog, lookup chip) | `RSVPStartDialog`, `RSVPOverlay` |
+| `110` | Settings app dialog (above RSVP for in-overlay dictionary mgmt) | `SettingsDialog` |
+| `120` | Modal / command palette | `ModalPortal`, `CommandPalette` |
+| `130` | Toast / alert | `Alert` |
+| `200` | Security lock screen | `AppLockScreen` |
+
+The non-obvious invariant: **`ModalPortal` (120) must stay above `SettingsDialog`
+(110)** so a modal opened _from inside_ Settings (e.g. Add OPDS Catalog) isn't buried.
+This bites only on mobile — desktop traps `SettingsDialog` inside the `z-99`
+`.window-border` stacking context, so the body-portaled modal already wins there.
+The ordering is locked by `src/__tests__/styles/zIndexScale.test.ts`; update both
+together.
+
 ---
 
 ### 7. Motion + a11y

@@ -685,7 +685,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     <div
       data-testid='rsvp-overlay'
       aria-label={_('Speed Reading')}
-      className='fixed inset-0 z-[10000] flex select-none flex-col'
+      className='fixed inset-0 z-[100] flex select-none flex-col'
       style={{
         paddingTop: `${gridInsets.top}px`,
         paddingBottom: `${gridInsets.bottom * 0.33}px`,
@@ -1323,7 +1323,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       {lookup && (
         <button
           aria-label={_('Look up')}
-          className='eink-bordered fixed z-[10001] flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold shadow-lg'
+          className='eink-bordered fixed z-[101] flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold shadow-lg'
           style={{
             left: `${lookup.left}px`,
             top: `${lookup.top}px`,
