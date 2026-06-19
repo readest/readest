@@ -188,6 +188,24 @@ describe("readest_syncstats", function()
         assert.are.equal(250, settings.stats_push_cursor) -- max start_time; only set on success
     end)
 
+    -- The "Push stats now" / "Pull stats now" menu entries call push/pull with
+    -- interactive=true; an interactive sync must confirm its result the way the
+    -- sibling "now" menu items do (a silent success looks like a no-op).
+    it("shows an interactive confirmation when there is nothing to push", function()
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+        local orig_new, orig_show = InfoMessage.new, UIManager.show
+        local shown
+        InfoMessage.new = function(_, o) return { text = o and o.text } end
+        UIManager.show = function(_, w) shown = w and w.text end
+
+        -- fresh empty stats DB (before_each) → no page events past the cursor
+        SyncStats:push({ stats_push_cursor = 0 }, makePushClient({}), true)
+
+        InfoMessage.new, UIManager.show = orig_new, orig_show
+        assert.are.equal("Reading statistics are up to date", shown)
+    end)
+
     -- Spore's validate() (common/Spore/Request.lua) asserts every param passed
     -- to a method is in required_params ∪ optional_params ("X is not expected"),
     -- and that every required_param is present. Declaring a key only under

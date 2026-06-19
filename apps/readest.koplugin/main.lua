@@ -332,6 +332,24 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Push stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pushBookStats(true)
+                end,
+            },
+            {
+                text = _("Pull stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pullBookStats(true)
+                end,
+            },
+            {
                 text = _("Push books now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.settings.user_id ~= nil

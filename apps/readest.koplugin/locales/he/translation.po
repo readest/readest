@@ -251,6 +251,12 @@ msgstr "סנכרון אוטומטי"
 msgid "Readest library"
 msgstr "ספריית Readest"
 
+msgid "Push stats now"
+msgstr ""
+
+msgid "Pull stats now"
+msgstr ""
+
 msgid "Push books now"
 msgstr "שלח ספרים עכשיו"
 
@@ -437,8 +443,17 @@ msgstr "התקדמות הקריאה סונכרנה"
 msgid "No saved reading progress found for this book"
 msgstr "לא נמצאה התקדמות קריאה שמורה לספר זה"
 
+msgid "Reading statistics are up to date"
+msgstr ""
+
+msgid "Reading statistics pushed"
+msgstr ""
+
 msgid "Failed to push reading statistics"
 msgstr ""
 
 msgid "Failed to pull reading statistics"
+msgstr ""
+
+msgid "Reading statistics pulled"
 msgstr ""

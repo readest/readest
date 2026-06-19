@@ -251,6 +251,12 @@ msgstr "همگام‌سازی خودکار"
 msgid "Readest library"
 msgstr "کتابخانه Readest"
 
+msgid "Push stats now"
+msgstr ""
+
+msgid "Pull stats now"
+msgstr ""
+
 msgid "Push books now"
 msgstr "اکنون ارسال کتاب‌ها"
 
@@ -437,8 +443,17 @@ msgstr "پیشرفت مطالعه همگام‌سازی شد"
 msgid "No saved reading progress found for this book"
 msgstr "پیشرفت مطالعه ذخیره‌شده‌ای برای این کتاب یافت نشد"
 
+msgid "Reading statistics are up to date"
+msgstr ""
+
+msgid "Reading statistics pushed"
+msgstr ""
+
 msgid "Failed to push reading statistics"
 msgstr ""
 
 msgid "Failed to pull reading statistics"
+msgstr ""
+
+msgid "Reading statistics pulled"
 msgstr ""

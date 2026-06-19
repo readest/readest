@@ -251,6 +251,12 @@ msgstr "ස්වයංක්‍රීය සමමුහූර්ත"
 msgid "Readest library"
 msgstr "Readest පුස්තකාලය"
 
+msgid "Push stats now"
+msgstr ""
+
+msgid "Pull stats now"
+msgstr ""
+
 msgid "Push books now"
 msgstr "දැන් පොත් යවන්න"
 
@@ -437,8 +443,17 @@ msgstr "කියවීමේ ප්‍රගතිය සමමුහූර්�
 msgid "No saved reading progress found for this book"
 msgstr "මෙම පොත සඳහා සුරකින ලද කියවීමේ ප්‍රගතියක් හමු නොවුණි"
 
+msgid "Reading statistics are up to date"
+msgstr ""
+
+msgid "Reading statistics pushed"
+msgstr ""
+
 msgid "Failed to push reading statistics"
 msgstr ""
 
 msgid "Failed to pull reading statistics"
+msgstr ""
+
+msgid "Reading statistics pulled"
 msgstr ""

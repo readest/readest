@@ -251,6 +251,12 @@ msgstr "자동 동기화"
 msgid "Readest library"
 msgstr "Readest 라이브러리"
 
+msgid "Push stats now"
+msgstr ""
+
+msgid "Pull stats now"
+msgstr ""
+
 msgid "Push books now"
 msgstr "지금 책 푸시"
 
@@ -437,8 +443,17 @@ msgstr "읽기 진행 상황이 동기화되었습니다"
 msgid "No saved reading progress found for this book"
 msgstr "이 책의 저장된 읽기 진행 상황을 찾을 수 없습니다"
 
+msgid "Reading statistics are up to date"
+msgstr ""
+
+msgid "Reading statistics pushed"
+msgstr ""
+
 msgid "Failed to push reading statistics"
 msgstr ""
 
 msgid "Failed to pull reading statistics"
+msgstr ""
+
+msgid "Reading statistics pulled"
 msgstr ""

@@ -96,6 +96,9 @@ function SyncStats:push(settings, client, interactive)
         .. " interactive=" .. tostring(interactive))
     if #pages == 0 then
         logger.dbg("ReadestStats push: nothing to push (no page events past cursor)")
+        if interactive then
+            UIManager:show(InfoMessage:new{ text = _("Reading statistics are up to date"), timeout = 2 })
+        end
         return
     end
     local max_start = cursor
@@ -115,6 +118,9 @@ function SyncStats:push(settings, client, interactive)
                 settings.stats_push_cursor = max_start
                 G_reader_settings:saveSetting("readest_sync", settings)
                 logger.dbg("ReadestStats push: cursor advanced to " .. tostring(max_start))
+                if interactive then
+                    UIManager:show(InfoMessage:new{ text = _("Reading statistics pushed"), timeout = 2 })
+                end
             else
                 logger.dbg("ReadestStats push: failed, cursor unchanged; body=" .. tostring(body))
                 if interactive then
@@ -158,6 +164,11 @@ function SyncStats:pull(settings, client, interactive, logout_fn)
                 logger.dbg("ReadestStats pull: cursor advanced to " .. tostring(newest))
             else
                 logger.dbg("ReadestStats pull: cursor unchanged (no newer rows)")
+            end
+            if interactive then
+                local text = npages > 0 and _("Reading statistics pulled")
+                    or _("Reading statistics are up to date")
+                UIManager:show(InfoMessage:new{ text = text, timeout = 2 })
             end
         end)
 end
