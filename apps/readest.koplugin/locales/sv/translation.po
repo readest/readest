@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Readest-bibliotek"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Skicka statistik nu"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Hämta statistik nu"
 
 msgid "Push books now"
 msgstr "Skicka böcker nu"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Inget sparat läsförlopp hittades för boken"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Lässtatistiken är uppdaterad"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Lässtatistik skickad"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Det gick inte att skicka lässtatistiken"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Det gick inte att hämta lässtatistiken"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Lässtatistik hämtad"

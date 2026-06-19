@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Readest kütüphanesi"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "İstatistikleri şimdi gönder"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "İstatistikleri şimdi al"
 
 msgid "Push books now"
 msgstr "Kitapları şimdi gönder"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Bu kitap için kayıtlı okuma ilerlemesi bulunamadı"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Okuma istatistikleri güncel"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Okuma istatistikleri gönderildi"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Okuma istatistikleri gönderilemedi"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Okuma istatistikleri alınamadı"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Okuma istatistikleri alındı"

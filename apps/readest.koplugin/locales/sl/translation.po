@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Knjižnica Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Pošlji statistiko zdaj"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Pridobi statistiko zdaj"
 
 msgid "Push books now"
 msgstr "Pošlji knjige zdaj"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Za to knjigo ni shranjenega napredka branja"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Statistika branja je posodobljena"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Statistika branja poslana"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Pošiljanje statistike branja ni uspelo"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Pridobivanje statistike branja ni uspelo"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Statistika branja pridobljena"

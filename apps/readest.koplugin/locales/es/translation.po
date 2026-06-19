@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Biblioteca de Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Enviar estadísticas ahora"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Obtener estadísticas ahora"
 
 msgid "Push books now"
 msgstr "Enviar libros ahora"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "No se encontró progreso de lectura guardado para este libro"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Las estadísticas de lectura están actualizadas"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Estadísticas de lectura enviadas"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Error al enviar las estadísticas de lectura"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Error al obtener las estadísticas de lectura"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Estadísticas de lectura obtenidas"

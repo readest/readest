@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Readest நூலகம்"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "புள்ளிவிவரங்களை இப்போது அனுப்பு"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "புள்ளிவிவரங்களை இப்போது பெறு"
 
 msgid "Push books now"
 msgstr "இப்போது புத்தகங்களை அனுப்பு"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "இந்த நூலுக்கான சேமிக்கப்பட்ட வாசிப்பு முன்னேற்றம் இல்லை"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "வாசிப்பு புள்ளிவிவரங்கள் புதுப்பித்த நிலையில் உள்ளன"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "வாசிப்பு புள்ளிவிவரங்கள் அனுப்பப்பட்டன"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "வாசிப்பு புள்ளிவிவரங்களை அனுப்புவதில் தோல்வி"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "வாசிப்பு புள்ளிவிவரங்களைப் பெறுவதில் தோல்வி"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "வாசிப்பு புள்ளிவிவரங்கள் பெறப்பட்டன"

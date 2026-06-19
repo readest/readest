@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Readest könyvtár"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Statisztikák küldése most"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Statisztikák lekérése most"
 
 msgid "Push books now"
 msgstr "Könyvek küldése most"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Nem található mentett olvasási haladás ehhez a könyvhöz"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Az olvasási statisztikák naprakészek"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Olvasási statisztikák elküldve"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Az olvasási statisztikák küldése sikertelen"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Az olvasási statisztikák lekérése sikertelen"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Olvasási statisztikák lekérve"

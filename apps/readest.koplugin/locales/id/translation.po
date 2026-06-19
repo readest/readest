@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Pustaka Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Kirim statistik sekarang"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Tarik statistik sekarang"
 
 msgid "Push books now"
 msgstr "Kirim buku sekarang"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Tidak ada progres baca tersimpan untuk buku ini"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Statistik baca sudah terbaru"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Statistik baca terkirim"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Gagal mengirim statistik baca"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Gagal mengambil statistik baca"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Statistik baca diambil"

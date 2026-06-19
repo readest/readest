@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Бібліотека Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Надіслати статистику зараз"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Отримати статистику зараз"
 
 msgid "Push books now"
 msgstr "Надіслати книги зараз"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Збережений прогрес читання для цієї книги не знайдено"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Статистика читання актуальна"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Статистику читання надіслано"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Не вдалося надіслати статистику читання"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Не вдалося отримати статистику читання"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Статистику читання отримано"

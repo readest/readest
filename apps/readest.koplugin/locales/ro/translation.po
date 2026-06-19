@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Biblioteca Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Trimite statisticile acum"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Preia statisticile acum"
 
 msgid "Push books now"
 msgstr "Trimite cărțile acum"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Nu s-a găsit progres de citire salvat pentru această carte"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Statisticile de citire sunt actualizate"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Statistici de citire trimise"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Trimiterea statisticilor de citire a eșuat"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Obținerea statisticilor de citire a eșuat"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Statistici de citire obținute"

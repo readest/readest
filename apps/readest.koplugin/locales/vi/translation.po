@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Thư viện Readest"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "Gửi thống kê ngay"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "Lấy thống kê ngay"
 
 msgid "Push books now"
 msgstr "Gửi sách ngay"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "Không tìm thấy tiến trình đọc đã lưu cho sách này"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "Thống kê đọc đã được cập nhật"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "Đã đẩy thống kê đọc"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "Không thể đẩy thống kê đọc"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "Không thể lấy thống kê đọc"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "Đã lấy thống kê đọc"

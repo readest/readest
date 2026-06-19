@@ -252,10 +252,10 @@ msgid "Readest library"
 msgstr "Readest লাইব্রেরি"
 
 msgid "Push stats now"
-msgstr ""
+msgstr "এখনই পরিসংখ্যান পুশ করুন"
 
 msgid "Pull stats now"
-msgstr ""
+msgstr "এখনই পরিসংখ্যান পুল করুন"
 
 msgid "Push books now"
 msgstr "এখনই বই পুশ করুন"
@@ -444,16 +444,16 @@ msgid "No saved reading progress found for this book"
 msgstr "এই বইয়ের জন্য সংরক্ষিত পড়ার অগ্রগতি পাওয়া যায়নি"
 
 msgid "Reading statistics are up to date"
-msgstr ""
+msgstr "পড়ার পরিসংখ্যান হালনাগাদ আছে"
 
 msgid "Reading statistics pushed"
-msgstr ""
+msgstr "পড়ার পরিসংখ্যান পাঠানো হয়েছে"
 
 msgid "Failed to push reading statistics"
-msgstr ""
+msgstr "পড়ার পরিসংখ্যান পাঠানো ব্যর্থ"
 
 msgid "Failed to pull reading statistics"
-msgstr ""
+msgstr "পড়ার পরিসংখ্যান আনা ব্যর্থ"
 
 msgid "Reading statistics pulled"
-msgstr ""
+msgstr "পড়ার পরিসংখ্যান আনা হয়েছে"
