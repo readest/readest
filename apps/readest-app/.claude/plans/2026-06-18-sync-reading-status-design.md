@@ -86,26 +86,52 @@ back into the store.
 KOReader stores `summary.status ∈ { "reading", "abandoned", "complete" }`
 (unopened books have no sidecar and render as "New"; there is no "unread").
 
-| Readest         | KOReader `summary.status` |
-| --------------- | ------------------------- |
-| `finished`      | `complete`                |
-| `reading`       | `reading`                 |
-| `abandoned`     | `abandoned` ("On hold")   |
-| `unread`        | clear `summary.status` (→ "New") |
-| `undefined`     | leave sidecar untouched   |
+**Only deliberate statuses sync.** KOReader auto-sets `summary.status = "reading"`
+the *first time a book is opened* — that is not a user decision, so treating it
+as a syncable status would let merely opening a finished book downgrade it.
+Therefore:
 
-Reverse mapping is the inverse; KOReader "New"/absent → Readest `unread`.
+- **Decisive (sync):** Readest `unread`, `finished`, `abandoned`; KOReader
+  `complete`, `abandoned`.
+- **Non-decisive (ignored as a status signal):** Readest `undefined`/`reading`
+  (Readest never even sets `reading` explicitly); KOReader `reading` (auto) and
+  `New`/absent.
+
+Reading *position* still syncs via the separate progress channel — this section
+is only about the status badge.
+
+| Readest      | → KOReader `summary.status` | KOReader        | → Readest      |
+| ------------ | --------------------------- | --------------- | -------------- |
+| `finished`   | `complete`                  | `complete`      | `finished`     |
+| `abandoned`  | `abandoned` ("On hold")     | `abandoned`     | `abandoned`    |
+| `unread`     | clear (→ "New")             | `reading`/`New` | — (no opinion) |
+| `undefined`  | — (leave sidecar)           |                 |                |
 
 `unread` in Readest means **"not started / reset"**: it intentionally hides the
 progress bar *and* any badge (`SHOW_UNREAD_STATUS_BADGE = false`,
 `ReadingProgress` renders nothing — decision from `#3103`/`c58e172a5`), and the
 reader clears it back to `undefined` the moment the book is opened
-(`readerStore.ts:393-394`). Entry points: the batch `SetStatusAlert` and the
-"un-finish" toggle in the single-book context menu. KOReader's faithful
-equivalent of "not started" is **no sidecar status** ("New"), so
-`unread → clear summary.status` is correct. The only nuance (not a real loss):
-KOReader can't tell "deliberately marked not-started" from "never opened" —
-both render as "New", which is harmless.
+(`readerStore.ts:393-394`). Clearing KOReader's status (→ "New") is its faithful
+equivalent; KOReader can't tell "deliberately marked not-started" from "never
+opened", which is harmless.
+
+#### First-sync transfer graph (the unsynced baseline)
+
+On the baseline — a book whose Readest `reading_status_updated_at` is `0`/absent
+(status predates this feature, or was pulled before it) — timestamps are not
+trustworthy, so conflicts resolve **Readest-authoritative**:
+
+| Readest ↓ \ KOReader → | `New`/`reading` (auto) | `complete`              | `abandoned`             |
+| ---------------------- | ---------------------- | ----------------------- | ----------------------- |
+| `undefined`            | — (nothing)            | capture → `finished`    | capture → `abandoned`   |
+| `unread`               | push → clear KO        | Readest wins → clear KO | Readest wins → clear KO |
+| `finished`             | push → KO `complete`   | agree                   | Readest wins → `complete` |
+| `abandoned`            | push → KO `abandoned`  | Readest wins → `abandoned` | agree                |
+
+The two reported cases fall out of this graph: a `finished`-in-Readest book that
+is *opened* in KOReader hits the `finished × reading` cell → **push down to
+`complete`, no downgrade**; a `reading`-in-KOReader / `undefined`-in-Readest book
+hits `undefined × reading` → **nothing synced**.
 
 ### Field-level last-writer-wins
 
@@ -131,10 +157,13 @@ actually changes** — never on a pure progress update. Sources:
 - Readest auto-status in the reader (`readerStore.ts`: `unread`→cleared on open,
   →`finished` at 100%) — stamped inside `updateBookProgress` only when the
   status arg differs from the existing value.
-- KOReader: the status change time is `summary.modified` parsed to day-ms
-  (KOReader's own change date), falling back to detection-time ms if
-  `summary.modified` is absent. Used as the field's ms stamp for LWW.
-  (Day-granularity; see Known limitations.)
+- KOReader: a *captured* decisive status (`complete`/`abandoned`) is stamped
+  with `summary.modified` parsed to day-ms (KOReader's own change date), falling
+  back to the sync time if absent. (Day-granularity; see Known limitations.)
+- Bootstrap exit: the first reconcile of a book that has a decisive status but a
+  `0`/absent Readest `reading_status_updated_at` stamps it with the sync time, so
+  every later change resolves by ordinary LWW instead of the Readest-authoritative
+  baseline rule (see First sync below).
 
 ## Part A — Cloud field-level LWW (Readest web/app)
 
@@ -201,35 +230,58 @@ already-exists error (reusing the store's schema-version path if one exists —
 to be confirmed in the plan). Carry the field in `row_to_wire` (`syncbooks.lua`)
 and `parseSyncRow` (`librarystore.lua`).
 
-**Status mapping module** (new `library/readingstatus.lua`): pure bidirectional
-map per the table above (`readest_to_ko`, `ko_to_readest`), unit-tested.
+**Status mapping module** (new `library/readingstatus.lua`): pure, unit-tested.
+`readest_to_ko` (`finished→complete`, `abandoned→abandoned`, `unread→`clear),
+`ko_to_readest` (decisive only: `complete→finished`, `abandoned→abandoned`;
+`reading`/`New`/unknown → `nil`), `readest_decisive`, `parse_modified_ms`, and
+`reconcile(cloud, ko, now_ms)`. `reconcile` decides the winning decisive status
+W (per the transfer graph: only-one-decisive → that side; both-agree → that
+status; both-conflict → Readest-authoritative when the Readest ts is `0`, else
+LWW) and returns `{ write_ko, write_store, readest_status, ts, ko_status }` so
+the caller equalizes both sides to W. The bootstrap stamp uses `now_ms`.
 
-**Apply (cloud → KOReader), whole-library** — in the library sync pull path
-(`librarywidget.lua` `syncbooks.syncBooks` → after `pullBooks`): for each row
-with `local_present == 1` and a resolvable `file_path`, reconcile:
-- compare the row's `reading_status_updated_at` against the sidecar's effective
-  status time; if cloud wins and the mapped `summary.status` differs, open
-  `DocSettings:open(file_path)`, set `summary.status` (+ `summary.modified`),
-  `flush()`, and `BookList.setBookInfoCacheProperty(file, "status", ...)`.
+**Apply + capture, whole-library** — `statussync.reconcileLocalStatuses` runs in
+the library sync (after `pullBooks`, before `pushChangedBooks` via the
+`before_push` hook; and after pull in pull-only mode), over every row with
+`local_present == 1` and a resolvable `file_path`. For each it reads the sidecar
+`summary` through injected `deps` (production: `DocSettings:open(file_path)`),
+calls `reconcile`, then:
+- if `write_ko`: set `summary.status` (+ `summary.modified`), `flush()`, and
+  `BookList.setBookInfoCacheProperty(file, "status", ...)` — `ko_status` may be
+  `nil` to clear (→ "New");
+- if `write_store`: `touchBook(hash, { reading_status, reading_status_updated_at })`
+  so `pushChangedBooks` sends the complete row (pushing through `LibraryStore`
+  avoids a partial books row that would null out other columns server-side).
 
-**Capture (KOReader → cloud), whole-library** — extend `localscanner` (which
-already opens each sidecar and reads `partial_md5_checksum`): also read
-`summary.status`, map to a Readest `reading_status`, and when it differs from
-the stored row and the sidecar is the newer side, `touchBook(hash, {
-reading_status, reading_status_updated_at = now })` so `pushChangedBooks` sends
-the complete row. (Pushing through `LibraryStore` avoids a partial books row
-that would null out other columns server-side.)
+The IO is injected via `deps` (`now_ms`, `open_summary`, `write_status`) so the
+walk is unit-testable without DocSettings.
 
-**Reconciliation = one pure function** so apply/capture converge and never
-ping-pong. It compares `reading_status_updated_at` (store) vs the sidecar status
-time and, on **any** mismatch, **equalizes both sides** to the winner (writes
-the sidecar *and* the store row to the winning status + winning ms). Because
-both sides end equal, the next scan finds no mismatch and stops — convergence is
-guaranteed regardless of which side won.
+`statussync.reconcileLocalStatuses(store, deps)` walks `local_present == 1` rows,
+calls `reconcile`, then performs `deps.write_status` (when `write_ko`) and
+`store:touchBook` (when `write_store`). It equalizes both sides to W, so the next
+pass finds no mismatch and stops — convergence holds regardless of which side won.
 
-**i18n + tests**: any new user-facing string via `_( )` + `.po` catalogs
-(`docs`/i18n-koplugin flow); busted specs for the mapping module and the
-reconcile decision (`spec/`), following existing `*_spec.lua` idioms.
+#### First sync & failure handling
+
+- **Bootstrap (Readest ts `0`)** resolves conflicts Readest-authoritative, then
+  stamps the winning status with `now_ms` so the book leaves bootstrap; every
+  later change (either side) then resolves by ordinary LWW. So "Readest wins"
+  applies only to the *initial* reconciliation, not forever — a deliberate
+  KOReader status set *after* first sync correctly wins over an old Readest one.
+- **Idempotent + convergent + per-book.** A failed/partial first sync just leaves
+  some books un-baselined; the next sync finishes them, and already-baselined
+  books re-evaluate to no-op. There is **no global "bootstrap done" flag** — the
+  per-book timestamp is the marker.
+- **Non-destructive ordering.** Writes are durable before the next book; a crash
+  mid-book re-reconciles that book *identically* (no double-apply, no loss).
+  A decisive status is never downgraded to a non-decisive one in any ordering.
+  Cloud push is eventually-consistent via the existing `getChangedBooks`
+  watermark.
+
+**i18n + tests**: no new user-facing string (status sync is silent). Busted specs
+cover the mappings (decisive-only), the full transfer graph, bootstrap vs
+steady-state, both reported cases, and convergence — following existing
+`*_spec.lua` idioms.
 
 ## Testing strategy
 
@@ -242,8 +294,9 @@ Per `.claude/rules/test-first.md`, write failing tests first.
   resolver.
 - **Part B**: `StatusBadge` / context-menu tests extended for `abandoned`
   (mirror existing `book-context-menu.test.ts`).
-- **Part C (busted)**: mapping module both directions; reconcile picks the newer
-  side and converges (no oscillation across two passes).
+- **Part C (busted)**: decisive-only mappings; the full first-sync transfer graph;
+  bootstrap (Readest-authoritative + stamp-to-exit) vs steady-state LWW; both
+  reported cases; convergence (no oscillation across two passes).
 
 ## Verification (per `.claude/rules/verification.md`)
 
@@ -261,20 +314,24 @@ docker schema and a new numbered migration file.
 
 ## Known limitations / risks
 
-- **`unread` ⇄ KOReader "New" is faithful, with one harmless ambiguity** —
-  `unread` ("not started / reset") maps to clearing `summary.status`, which is
-  exactly KOReader's "New". KOReader simply can't distinguish "deliberately
-  marked not-started" from "never opened"; both show as "New". No data loss.
+- **KOReader `reading` is never captured.** It is auto-set on first open, so
+  treating it as a status would downgrade a finished book. The trade-off: a
+  *deliberate* "I'm reading this" on KOReader is not reflected as a Readest
+  status — but Readest renders `reading` and `undefined` identically (a progress
+  bar), and reading *position* syncs via the progress channel, so nothing
+  user-visible is lost.
+- **Decisive-vs-decisive cross-conflict on the unsynced baseline** — e.g.
+  `finished` in Readest *and* `abandoned` ("On hold") in KOReader, both set
+  before they ever synced. Resolves Readest-authoritative (per the chosen
+  policy); rare, and the user can re-set. After first sync, recency LWW governs.
 - **KOReader status timestamp is coarse** — `summary.modified` is day-grained,
-  so a same-day Readest edit (real ms) always beats a KOReader change made the
-  same day. Edge case: KOReader auto-sets `reading` on a book's *first* open; if
-  such a book was marked `finished` in Readest but never synced to this device
-  via the Readest Library (which writes the sidecar proactively on Library sync),
-  a direct first-open in KOReader could capture `reading` and beat an older
-  Readest `finished`. Rare; user can re-set. Documented, not engineered around
-  in v1.
-- **Whole-library apply touches many sidecars** — bounded to `local_present`
-  rows with changed status; writes are conditional and flushed per book.
+  so a same-day Readest edit (real ms) beats a same-day KOReader change. Minor.
+- **`unread` ⇄ KOReader "New"** — `unread` maps to clearing `summary.status`,
+  exactly KOReader's "New"; KOReader can't distinguish "marked not-started" from
+  "never opened" (harmless). On the baseline a Readest `unread` will also clear a
+  KOReader `complete`/`abandoned` (Readest-authoritative); rare.
+- **Whole-library reconcile touches many sidecars on first sync** — bounded to
+  `local_present` rows; per-book conditional writes + one bootstrap stamp each.
 
 ## Implementation phasing
 

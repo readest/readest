@@ -1335,3 +1335,30 @@ git commit -m "feat(koplugin): bridge reading status to KOReader summary.status 
 - Readest⇄KOReader mapping + reconcile/convergence → C1.
 - Whole-library apply + capture via `file_path`/`local_present` → C3.
 - Known limitations (unread→"New", day-granularity) → encoded in `readingstatus.lua` mapping + reconcile (C1) and documented in the spec.
+
+---
+
+## Addendum (first-sync redesign — supersedes the C1/C3 reconcile above)
+
+After review, the Part C reconcile was redesigned to handle the never-synced
+"first sync" between the two libraries safely. See the design spec's updated
+"Readest ⇄ KOReader status mapping", "First-sync transfer graph", and
+"First sync & failure handling" sections. Key changes vs the original C1/C3:
+
+- **Decisive-only mapping.** `ko_to_readest` returns a status ONLY for
+  `complete`→finished and `abandoned`→abandoned; KOReader `reading` (auto-set on
+  open), `New`, and unknown → `nil` (no opinion, never captured). Readest
+  `reading`/`undefined` are non-decisive. New helper `readest_decisive`.
+- **`reconcile(cloud, ko, now_ms)`** returns
+  `{ write_ko, write_store, readest_status, ts, ko_status }` (replacing the old
+  `action` field). It picks the winning decisive status W: only-one-decisive →
+  that side; both-agree → that status; both-conflict → Readest-authoritative when
+  `cloud.reading_status_updated_at == 0` (bootstrap), else recency LWW.
+- **Bootstrap exit:** when the Readest ts is `0`, the resolved status is stamped
+  with `now_ms` (via `write_store`) so subsequent syncs use steady-state LWW.
+- **`statussync.reconcileLocalStatuses`** captures `now_ms` once, passes it to
+  `reconcile`, and drives on `write_ko`/`write_store` instead of `action`.
+- **Tests** rewritten to cover the decisive-only mappings, the full transfer
+  graph, bootstrap vs steady, both reported cases, and convergence.
+
+No web/TS changes — Parts A and B are unaffected. koplugin-only.
