@@ -7,6 +7,7 @@ Default permissions for the plugin
 - `allow-auth-with-safari`
 - `allow-auth-with-custom-tab`
 - `allow-copy-uri-to-path`
+- `allow-save-image-to-gallery`
 - `allow-use-background-audio`
 - `allow-install-package`
 - `allow-set-system-ui-visibility`
@@ -931,6 +932,32 @@ Enables the request_permissions command without any pre-configured scope.
 <td>
 
 Denies the request_permissions command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-save-image-to-gallery`
+
+</td>
+<td>
+
+Enables the save_image_to_gallery command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-save-image-to-gallery`
+
+</td>
+<td>
+
+Denies the save_image_to_gallery command without any pre-configured scope.
 
 </td>
 </tr>

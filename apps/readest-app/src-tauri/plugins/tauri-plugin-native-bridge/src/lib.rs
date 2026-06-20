@@ -58,6 +58,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::auth_with_safari,
             commands::auth_with_custom_tab,
             commands::copy_uri_to_path,
+            commands::save_image_to_gallery,
             commands::use_background_audio,
             commands::install_package,
             commands::set_system_ui_visibility,

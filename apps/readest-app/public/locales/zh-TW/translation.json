@@ -1743,8 +1743,9 @@
   "Level": "等級",
   "CEFR level": "CEFR 等級",
   "Webtoon Mode": "條漫模式",
-  "Image saved successfully.": "圖片儲存成功。",
-  "Failed to save the image.": "圖片儲存失敗。",
+  "Image saved successfully": "圖片儲存成功",
+  "Failed to save the image": "圖片儲存失敗",
   "Share Image": "分享圖片",
-  "Save Image": "儲存圖片"
+  "Save Image": "儲存圖片",
+  "Image saved to gallery": "圖片已儲存至相簿"
 }

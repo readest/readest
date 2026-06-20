@@ -1743,8 +1743,9 @@
   "Level": "Cấp độ",
   "CEFR level": "Cấp độ CEFR",
   "Webtoon Mode": "Chế độ webtoon",
-  "Image saved successfully.": "Đã lưu hình ảnh thành công.",
-  "Failed to save the image.": "Không thể lưu hình ảnh.",
+  "Image saved successfully": "Đã lưu hình ảnh thành công",
+  "Failed to save the image": "Không thể lưu hình ảnh",
   "Share Image": "Chia sẻ hình ảnh",
-  "Save Image": "Lưu hình ảnh"
+  "Save Image": "Lưu hình ảnh",
+  "Image saved to gallery": "Đã lưu hình ảnh vào thư viện"
 }

@@ -1776,8 +1776,9 @@
   "Level": "நிலை",
   "CEFR level": "CEFR நிலை",
   "Webtoon Mode": "வெப்டூன் பயன்முறை",
-  "Image saved successfully.": "படம் வெற்றிகரமாகச் சேமிக்கப்பட்டது.",
-  "Failed to save the image.": "படத்தைச் சேமிக்க முடியவில்லை.",
+  "Image saved successfully": "படம் வெற்றிகரமாகச் சேமிக்கப்பட்டது",
+  "Failed to save the image": "படத்தைச் சேமிக்க முடியவில்லை",
   "Share Image": "படத்தைப் பகிர்",
-  "Save Image": "படத்தைச் சேமி"
+  "Save Image": "படத்தைச் சேமி",
+  "Image saved to gallery": "படம் கேலரியில் சேமிக்கப்பட்டது"
 }

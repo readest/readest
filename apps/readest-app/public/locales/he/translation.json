@@ -1809,8 +1809,9 @@
   "Level": "רמה",
   "CEFR level": "רמת CEFR",
   "Webtoon Mode": "מצב ובטון",
-  "Image saved successfully.": "התמונה נשמרה בהצלחה.",
-  "Failed to save the image.": "שמירת התמונה נכשלה.",
+  "Image saved successfully": "התמונה נשמרה בהצלחה",
+  "Failed to save the image": "שמירת התמונה נכשלה",
   "Share Image": "שיתוף התמונה",
-  "Save Image": "שמירת התמונה"
+  "Save Image": "שמירת התמונה",
+  "Image saved to gallery": "התמונה נשמרה בגלריה"
 }

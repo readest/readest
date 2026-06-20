@@ -1743,8 +1743,9 @@
   "Level": "Level",
   "CEFR level": "Level CEFR",
   "Webtoon Mode": "Mode webtoon",
-  "Image saved successfully.": "Gambar berhasil disimpan.",
-  "Failed to save the image.": "Gagal menyimpan gambar.",
+  "Image saved successfully": "Gambar berhasil disimpan",
+  "Failed to save the image": "Gagal menyimpan gambar",
   "Share Image": "Bagikan Gambar",
-  "Save Image": "Simpan Gambar"
+  "Save Image": "Simpan Gambar",
+  "Image saved to gallery": "Gambar disimpan ke galeri"
 }

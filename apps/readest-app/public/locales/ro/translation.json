@@ -1809,8 +1809,9 @@
   "Level": "Nivel",
   "CEFR level": "Nivel CEFR",
   "Webtoon Mode": "Mod webtoon",
-  "Image saved successfully.": "Imagine salvată cu succes.",
-  "Failed to save the image.": "Salvarea imaginii a eșuat.",
+  "Image saved successfully": "Imagine salvată cu succes",
+  "Failed to save the image": "Salvarea imaginii a eșuat",
   "Share Image": "Partajează imaginea",
-  "Save Image": "Salvează imaginea"
+  "Save Image": "Salvează imaginea",
+  "Image saved to gallery": "Imagine salvată în galerie"
 }

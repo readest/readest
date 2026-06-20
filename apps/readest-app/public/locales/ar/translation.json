@@ -1908,8 +1908,9 @@
   "Level": "المستوى",
   "CEFR level": "مستوى CEFR",
   "Webtoon Mode": "وضع الويبتون",
-  "Image saved successfully.": "تم حفظ الصورة بنجاح.",
-  "Failed to save the image.": "فشل حفظ الصورة.",
+  "Image saved successfully": "تم حفظ الصورة بنجاح",
+  "Failed to save the image": "فشل حفظ الصورة",
   "Share Image": "مشاركة الصورة",
-  "Save Image": "حفظ الصورة"
+  "Save Image": "حفظ الصورة",
+  "Image saved to gallery": "تم حفظ الصورة في المعرض"
 }

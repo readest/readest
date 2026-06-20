@@ -1743,8 +1743,9 @@
   "Level": "수준",
   "CEFR level": "CEFR 수준",
   "Webtoon Mode": "웹툰 모드",
-  "Image saved successfully.": "이미지를 저장했습니다.",
-  "Failed to save the image.": "이미지를 저장하지 못했습니다.",
+  "Image saved successfully": "이미지를 저장했습니다",
+  "Failed to save the image": "이미지를 저장하지 못했습니다",
   "Share Image": "이미지 공유",
-  "Save Image": "이미지 저장"
+  "Save Image": "이미지 저장",
+  "Image saved to gallery": "이미지를 갤러리에 저장했습니다"
 }

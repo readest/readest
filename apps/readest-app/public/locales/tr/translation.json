@@ -1776,8 +1776,9 @@
   "Level": "Seviye",
   "CEFR level": "CEFR seviyesi",
   "Webtoon Mode": "Webtoon modu",
-  "Image saved successfully.": "Görsel başarıyla kaydedildi.",
-  "Failed to save the image.": "Görsel kaydedilemedi.",
+  "Image saved successfully": "Görsel başarıyla kaydedildi",
+  "Failed to save the image": "Görsel kaydedilemedi",
   "Share Image": "Görseli Paylaş",
-  "Save Image": "Görseli Kaydet"
+  "Save Image": "Görseli Kaydet",
+  "Image saved to gallery": "Görsel galeriye kaydedildi"
 }

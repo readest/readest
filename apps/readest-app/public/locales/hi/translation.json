@@ -1776,8 +1776,9 @@
   "Level": "स्तर",
   "CEFR level": "CEFR स्तर",
   "Webtoon Mode": "वेबटून मोड",
-  "Image saved successfully.": "छवि सफलतापूर्वक सहेजी गई।",
-  "Failed to save the image.": "छवि सहेजने में विफल।",
+  "Image saved successfully": "छवि सफलतापूर्वक सहेजी गई",
+  "Failed to save the image": "छवि सहेजने में विफल",
   "Share Image": "छवि साझा करें",
-  "Save Image": "छवि सहेजें"
+  "Save Image": "छवि सहेजें",
+  "Image saved to gallery": "छवि गैलरी में सहेजी गई"
 }

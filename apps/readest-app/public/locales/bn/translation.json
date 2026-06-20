@@ -1776,8 +1776,9 @@
   "Level": "স্তর",
   "CEFR level": "CEFR স্তর",
   "Webtoon Mode": "ওয়েবটুন মোড",
-  "Image saved successfully.": "ছবি সফলভাবে সংরক্ষিত হয়েছে।",
-  "Failed to save the image.": "ছবি সংরক্ষণ করা যায়নি।",
+  "Image saved successfully": "ছবি সফলভাবে সংরক্ষিত হয়েছে",
+  "Failed to save the image": "ছবি সংরক্ষণ করা যায়নি",
   "Share Image": "ছবি শেয়ার করুন",
-  "Save Image": "ছবি সংরক্ষণ করুন"
+  "Save Image": "ছবি সংরক্ষণ করুন",
+  "Image saved to gallery": "ছবি গ্যালারিতে সংরক্ষিত হয়েছে"
 }

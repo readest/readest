@@ -1776,8 +1776,9 @@
   "Level": "سطح",
   "CEFR level": "سطح CEFR",
   "Webtoon Mode": "حالت وب‌تون",
-  "Image saved successfully.": "تصویر با موفقیت ذخیره شد.",
-  "Failed to save the image.": "ذخیره تصویر ناموفق بود.",
+  "Image saved successfully": "تصویر با موفقیت ذخیره شد",
+  "Failed to save the image": "ذخیره تصویر ناموفق بود",
   "Share Image": "اشتراک‌گذاری تصویر",
-  "Save Image": "ذخیره تصویر"
+  "Save Image": "ذخیره تصویر",
+  "Image saved to gallery": "تصویر در گالری ذخیره شد"
 }

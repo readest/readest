@@ -1743,8 +1743,9 @@
   "Level": "རིམ་པ།",
   "CEFR level": "CEFR རིམ་པ།",
   "Webtoon Mode": "Webtoon སྤྱོད་ཚུལ།",
-  "Image saved successfully.": "པར་རིས་ཉར་ཚགས་ལེགས་གྲུབ་བྱུང་།",
-  "Failed to save the image.": "པར་རིས་ཉར་ཚགས་བྱས་མ་ཐུབ།",
+  "Image saved successfully": "པར་རིས་ཉར་ཚགས་ལེགས་གྲུབ་བྱུང་",
+  "Failed to save the image": "པར་རིས་ཉར་ཚགས་བྱས་མ་ཐུབ",
   "Share Image": "པར་རིས་མཉམ་སྤྱོད།",
-  "Save Image": "པར་རིས་ཉར་ཚགས།"
+  "Save Image": "པར་རིས་ཉར་ཚགས།",
+  "Image saved to gallery": "པར་རིས་པར་མཛོད་ནང་ཉར་ཚགས་བྱས་ཟིན"
 }

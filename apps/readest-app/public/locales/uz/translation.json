@@ -1776,8 +1776,9 @@
   "Level": "Daraja",
   "CEFR level": "CEFR darajasi",
   "Webtoon Mode": "Webtoon rejimi",
-  "Image saved successfully.": "Rasm muvaffaqiyatli saqlandi.",
-  "Failed to save the image.": "Rasmni saqlab bo'lmadi.",
+  "Image saved successfully": "Rasm muvaffaqiyatli saqlandi",
+  "Failed to save the image": "Rasmni saqlab bo'lmadi",
   "Share Image": "Rasmni ulashish",
-  "Save Image": "Rasmni saqlash"
+  "Save Image": "Rasmni saqlash",
+  "Image saved to gallery": "Rasm galereyaga saqlandi"
 }

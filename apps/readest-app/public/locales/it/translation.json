@@ -1809,8 +1809,9 @@
   "Level": "Livello",
   "CEFR level": "Livello CEFR",
   "Webtoon Mode": "Modalità webtoon",
-  "Image saved successfully.": "Immagine salvata correttamente.",
-  "Failed to save the image.": "Impossibile salvare l'immagine.",
+  "Image saved successfully": "Immagine salvata correttamente",
+  "Failed to save the image": "Impossibile salvare l'immagine",
   "Share Image": "Condividi immagine",
-  "Save Image": "Salva immagine"
+  "Save Image": "Salva immagine",
+  "Image saved to gallery": "Immagine salvata nella galleria"
 }

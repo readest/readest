@@ -49,6 +49,17 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn save_image_to_gallery(
+        &self,
+        payload: SaveImageToGalleryRequest,
+    ) -> crate::Result<SaveImageToGalleryResponse> {
+        self.0
+            .run_mobile_plugin("save_image_to_gallery", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn use_background_audio(&self, payload: UseBackgroundAudioRequest) -> crate::Result<()> {
         self.0
             .run_mobile_plugin("use_background_audio", payload)

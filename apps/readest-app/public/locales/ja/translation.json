@@ -1743,8 +1743,9 @@
   "Level": "レベル",
   "CEFR level": "CEFRレベル",
   "Webtoon Mode": "ウェブトゥーンモード",
-  "Image saved successfully.": "画像を保存しました。",
-  "Failed to save the image.": "画像の保存に失敗しました。",
+  "Image saved successfully": "画像を保存しました",
+  "Failed to save the image": "画像の保存に失敗しました",
   "Share Image": "画像を共有",
-  "Save Image": "画像を保存"
+  "Save Image": "画像を保存",
+  "Image saved to gallery": "画像をギャラリーに保存しました"
 }

@@ -1776,8 +1776,9 @@
   "Level": "මට්ටම",
   "CEFR level": "CEFR මට්ටම",
   "Webtoon Mode": "Webtoon ආකාරය",
-  "Image saved successfully.": "රූපය සාර්ථකව සුරැකිණි.",
-  "Failed to save the image.": "රූපය සුරැකීමට අසමත් විය.",
+  "Image saved successfully": "රූපය සාර්ථකව සුරැකිණි",
+  "Failed to save the image": "රූපය සුරැකීමට අසමත් විය",
   "Share Image": "රූපය බෙදාගන්න",
-  "Save Image": "රූපය සුරකින්න"
+  "Save Image": "රූපය සුරකින්න",
+  "Image saved to gallery": "රූපය ගැලරියට සුරැකිණි"
 }

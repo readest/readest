@@ -1842,8 +1842,9 @@
   "Level": "Poziom",
   "CEFR level": "Poziom CEFR",
   "Webtoon Mode": "Tryb webtoon",
-  "Image saved successfully.": "Obraz został zapisany pomyślnie.",
-  "Failed to save the image.": "Nie udało się zapisać obrazu.",
+  "Image saved successfully": "Obraz został zapisany pomyślnie",
+  "Failed to save the image": "Nie udało się zapisać obrazu",
   "Share Image": "Udostępnij obraz",
-  "Save Image": "Zapisz obraz"
+  "Save Image": "Zapisz obraz",
+  "Image saved to gallery": "Obraz zapisano w galerii"
 }

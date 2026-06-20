@@ -1743,8 +1743,9 @@
   "Level": "ระดับ",
   "CEFR level": "ระดับ CEFR",
   "Webtoon Mode": "โหมดเว็บตูน",
-  "Image saved successfully.": "บันทึกรูปภาพสำเร็จแล้ว",
-  "Failed to save the image.": "ไม่สามารถบันทึกรูปภาพได้",
+  "Image saved successfully": "บันทึกรูปภาพสำเร็จแล้ว",
+  "Failed to save the image": "ไม่สามารถบันทึกรูปภาพได้",
   "Share Image": "แชร์รูปภาพ",
-  "Save Image": "บันทึกรูปภาพ"
+  "Save Image": "บันทึกรูปภาพ",
+  "Image saved to gallery": "บันทึกรูปภาพไปยังแกลเลอรีแล้ว"
 }

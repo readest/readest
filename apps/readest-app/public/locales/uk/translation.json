@@ -1842,8 +1842,9 @@
   "Level": "Рівень",
   "CEFR level": "Рівень CEFR",
   "Webtoon Mode": "Режим вебтуна",
-  "Image saved successfully.": "Зображення успішно збережено.",
-  "Failed to save the image.": "Не вдалося зберегти зображення.",
+  "Image saved successfully": "Зображення успішно збережено",
+  "Failed to save the image": "Не вдалося зберегти зображення",
   "Share Image": "Поділитися зображенням",
-  "Save Image": "Зберегти зображення"
+  "Save Image": "Зберегти зображення",
+  "Image saved to gallery": "Зображення збережено в галереї"
 }

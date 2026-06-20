@@ -1842,8 +1842,9 @@
   "Level": "Raven",
   "CEFR level": "Raven CEFR",
   "Webtoon Mode": "Tryb webtoon",
-  "Image saved successfully.": "Slika je bila uspešno shranjena.",
-  "Failed to save the image.": "Slike ni bilo mogoče shraniti.",
+  "Image saved successfully": "Slika je bila uspešno shranjena",
+  "Failed to save the image": "Slike ni bilo mogoče shraniti",
   "Share Image": "Deli sliko",
-  "Save Image": "Shrani sliko"
+  "Save Image": "Shrani sliko",
+  "Image saved to gallery": "Slika je shranjena v galerijo"
 }

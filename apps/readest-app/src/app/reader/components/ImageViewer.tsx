@@ -32,7 +32,11 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const canShare = canShareText(appService);
+  // On Android the button saves straight to the photo gallery (the share sheet
+  // can't save to a file there); elsewhere it shares where supported, else
+  // exports. The affordance reflects the actual action.
+  const saveToGallery = appService?.isAndroidApp ?? false;
+  const canShare = !saveToGallery && canShareText(appService);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -347,6 +351,18 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     try {
       const { bytes, mimeType } = dataUrlToBytes(decodeURIComponent(src));
       const filename = `image.${imageExtensionFromMime(mimeType)}`;
+      if (saveToGallery) {
+        const saved = await appService.saveImageToGallery(
+          filename,
+          bytes.buffer as ArrayBuffer,
+          mimeType,
+        );
+        eventDispatcher.dispatch('toast', {
+          type: saved ? 'info' : 'error',
+          message: saved ? _('Image saved to gallery') : _('Failed to save the image'),
+        });
+        return;
+      }
       const saved = await appService.saveFile(filename, bytes.buffer as ArrayBuffer, {
         share: true,
         mimeType,
@@ -356,14 +372,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       if (!canShare) {
         eventDispatcher.dispatch('toast', {
           type: saved ? 'info' : 'error',
-          message: saved ? _('Image saved successfully.') : _('Failed to save the image.'),
+          message: saved ? _('Image saved successfully') : _('Failed to save the image'),
         });
       }
     } catch (error) {
       console.error('Failed to save image:', error);
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: _('Failed to save the image.'),
+        message: _('Failed to save the image'),
       });
     }
   };
@@ -434,7 +450,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       <div
         role='button'
         tabIndex={0}
-        className='not-eink:bg-black/50 eink:bg-base-100 not-eink:backdrop-blur-md absolute inset-0'
+        className='image-viewer-overlay not-eink:bg-black/50 eink:bg-base-100 not-eink:backdrop-blur-md absolute inset-0'
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             onClose();

@@ -69,6 +69,9 @@ class TestAppService extends BaseAppService {
   async saveFile() {
     return false;
   }
+  async saveImageToGallery() {
+    return false;
+  }
   async ask() {
     return false;
   }

@@ -396,6 +396,11 @@ export class WebAppService extends BaseAppService {
     }
   }
 
+  // No system photo gallery on the web; callers fall back to the saveFile flow.
+  async saveImageToGallery(): Promise<boolean> {
+    return false;
+  }
+
   async ask(message: string): Promise<boolean> {
     return window.confirm(message);
   }

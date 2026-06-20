@@ -1776,8 +1776,9 @@
   "Level": "Niveau",
   "CEFR level": "CEFR-niveau",
   "Webtoon Mode": "Webtoon-modus",
-  "Image saved successfully.": "Afbeelding succesvol opgeslagen.",
-  "Failed to save the image.": "Kan de afbeelding niet opslaan.",
+  "Image saved successfully": "Afbeelding succesvol opgeslagen",
+  "Failed to save the image": "Kan de afbeelding niet opslaan",
   "Share Image": "Afbeelding delen",
-  "Save Image": "Afbeelding opslaan"
+  "Save Image": "Afbeelding opslaan",
+  "Image saved to gallery": "Afbeelding opgeslagen in de galerij"
 }
