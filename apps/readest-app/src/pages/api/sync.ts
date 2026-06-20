@@ -44,6 +44,19 @@ export function pickWinningPages(
  * decided the other way by updated_at (which page-turn progress dominates) —
  * issue #4634.
  */
+/**
+ * `undefined` (the client omitted reading_status entirely — e.g. a locally
+ * imported book that never had a status set) and `null` (the DB default) both
+ * mean "no reading status". Collapse them so a statusless book never registers
+ * as a status change. Without this, the `statusChanged` branch below rewrites
+ * `updated_at = now()` on every push for such books, and since the 1-day
+ * re-sync window re-pushes recently-touched books each cycle, they get a fresh
+ * timestamp every sync and pin themselves to the top of the date-sorted
+ * library.
+ */
+export const readingStatusChanged = (client?: string | null, server?: string | null): boolean =>
+  (client ?? null) !== (server ?? null);
+
 export function resolveReadingStatusMerge(
   client: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
   server: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
@@ -419,7 +432,10 @@ export async function POST(req: NextRequest) {
               // Only rewrite when the resolved status VALUE differs from the
               // server's — a timestamp-only difference on the same value is a
               // no-op, and rewriting it would churn updated_at + re-propagate.
-              const statusChanged = status.reading_status !== serverBook.reading_status;
+              const statusChanged = readingStatusChanged(
+                status.reading_status,
+                serverBook.reading_status,
+              );
               if (statusChanged) {
                 // Server wins the row, but the client's status is newer. Write
                 // server's row with the fresher status and bump updated_at so
