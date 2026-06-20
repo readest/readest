@@ -529,6 +529,51 @@ describe('RSVPOverlay — dictionary lookup (#4475)', () => {
   });
 });
 
+describe('RSVPOverlay — playback control layout (#4585, regressed by #4589)', () => {
+  afterEach(() => cleanup());
+
+  // The audio (TTS) toggle and the settings gear must sit in the SAME flex row
+  // as the transport buttons, flanking the centered play button in normal flow.
+  // The earlier `absolute end-0` cluster overlaid them on top of the right end
+  // of the transport, hiding the audio button behind "skip forward 15" on narrow
+  // phones. Keeping all three as siblings of the play button is what prevents the
+  // overlap, so assert the structure here (jsdom can't measure the overlap).
+  test('audio toggle and settings flank the transport in the same flex row', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const audioButton = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    const settingsButton = container.querySelector('[aria-label="Settings"]') as HTMLElement;
+    const playButton = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    expect(audioButton).not.toBeNull();
+    expect(settingsButton).not.toBeNull();
+    expect(playButton).not.toBeNull();
+
+    // All three share the play button's parent (the single flex row) — the audio
+    // toggle and settings are not tucked into a separate absolute cluster.
+    expect(audioButton.parentElement).toBe(playButton.parentElement);
+    expect(settingsButton.parentElement).toBe(playButton.parentElement);
+  });
+
+  // The previous fix relied on absolute positioning being gone; guard against it
+  // sneaking back into the row that holds the transport controls.
+  test('the playback control row is not absolutely positioned', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const playButton = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    const audioButton = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    expect(playButton.parentElement!.className).not.toContain('absolute');
+    expect(audioButton.parentElement!.className).not.toContain('absolute');
+  });
+});
+
 describe('RSVPOverlay — start delay setting (#4478)', () => {
   afterEach(() => {
     cleanup();
