@@ -11,10 +11,10 @@ overrides:
   esbuild: '>=0.28.1 <0.29'
   srvx: '>=0.11.13'
   rollup: '>=4.59.0'
-  undici: '>=7.24.0'
+  undici: '>=7.28.0 <8'
   flatted: '>=3.4.2'
   body-parser: '>=2.2.1'
-  dompurify: '>=3.4.9'
+  dompurify: '>=3.4.11'
   i18next-http-backend: '>=3.0.5'
   picomatch: '>=4.0.4'
   path-to-regexp: '>=8.4.0'
@@ -265,8 +265,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.20
       dompurify:
-        specifier: '>=3.4.9'
-        version: 3.4.10
+        specifier: '>=3.4.11'
+        version: 3.4.11
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
@@ -596,8 +596,8 @@ importers:
         specifier: ^2.8.16
         version: 2.8.26
       dompurify:
-        specifier: '>=3.4.9'
-        version: 3.4.10
+        specifier: '>=3.4.11'
+        version: 3.4.11
     devDependencies:
       '@types/chrome':
         specifier: ^0.0.270
@@ -4997,8 +4997,8 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@3.4.10:
-    resolution: {integrity: sha512-0xzNv0e7oYC6yyuOGZIABPM4qtg3QxLFniDNPP4ZP90wR8Yq3zgwpRbrNiT4N3IKqDbbYFEJLV+JWEs19aZ//w==}
+  dompurify@3.4.11:
+    resolution: {integrity: sha512-zhlUV12GsaRzMsf9q5M254YhA4+VuF0fG+QFqu6aYpoGlKtz+w8//jBcGVYBgQkR5GHjUomejY84AV+/uPbWdw==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -8050,8 +8050,8 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici@7.25.0:
-    resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
+  undici@7.28.0:
+    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
     engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.24:
@@ -11939,7 +11939,7 @@ snapshots:
 
   '@types/dompurify@3.2.0':
     dependencies:
-      dompurify: 3.4.10
+      dompurify: 3.4.11
 
   '@types/eslint-scope@3.7.7':
     dependencies:
@@ -12992,7 +12992,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.25.0
+      undici: 7.28.0
       whatwg-mimetype: 4.0.0
 
   chokidar@3.6.0:
@@ -13577,7 +13577,7 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@3.4.10:
+  dompurify@3.4.11:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -14757,7 +14757,7 @@ snapshots:
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.1
-      undici: 7.25.0
+      undici: 7.28.0
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -15193,7 +15193,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.20
-      dompurify: 3.4.10
+      dompurify: 3.4.11
       es-toolkit: 1.46.1
       katex: 0.16.45
       khroma: 2.1.0
@@ -15461,7 +15461,7 @@ snapshots:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       sharp: 0.34.5
-      undici: 7.25.0
+      undici: 7.28.0
       workerd: 1.20260507.1
       ws: 8.21.0
       youch: 4.1.0-beta.10
@@ -15959,7 +15959,7 @@ snapshots:
       '@posthog/core': 1.28.7
       '@posthog/types': 1.373.2
       core-js: 3.49.0
-      dompurify: 3.4.10
+      dompurify: 3.4.11
       fflate: 0.4.8
       preact: 10.29.1
       query-selector-shadow-dom: 1.0.1
@@ -17178,7 +17178,7 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici@7.25.0: {}
+  undici@7.28.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
@@ -17527,7 +17527,7 @@ snapshots:
       '@wdio/utils': 9.27.1
       deepmerge-ts: 7.1.5
       https-proxy-agent: 7.0.6
-      undici: 7.25.0
+      undici: 7.28.0
       ws: 8.21.0
     transitivePeerDependencies:
       - bare-abort-controller
