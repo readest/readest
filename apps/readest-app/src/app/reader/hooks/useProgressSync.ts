@@ -27,7 +27,6 @@ export const useProgressSync = (bookKey: string) => {
   // to the WHOLE bookDataStore — saveConfig writes booksData on every
   // throttled save and would otherwise re-render the entire reader subtree.
   const getConfig = useBookDataStore((s) => s.getConfig);
-  const setConfig = useBookDataStore((s) => s.setConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getView = useReaderStore((s) => s.getView);
   const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
@@ -238,14 +237,8 @@ export const useProgressSync = (bookKey: string) => {
           remoteCFILocation = candidateCFI;
         }
       }
-      const filteredSyncedConfig = Object.fromEntries(
-        Object.entries(syncedConfig).filter(([_, value]) => value !== null && value !== undefined),
-      );
-      if (syncedConfig.updatedAt >= config.updatedAt) {
-        setConfig(bookKey, { ...config, ...filteredSyncedConfig });
-      } else {
-        setConfig(bookKey, { ...filteredSyncedConfig, ...config });
-      }
+      // Currently, only reading progress is synced.
+      // TODO: Configuration sync will be handled through a more robust profile-based solution in the future.
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
           // While previewing a deep-link target, do NOT yank the view to the
