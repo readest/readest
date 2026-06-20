@@ -558,6 +558,30 @@ describe('RSVPOverlay — playback control layout (#4585, regressed by #4589)', 
     expect(settingsButton.parentElement).toBe(playButton.parentElement);
   });
 
+  // On very narrow phones (< 350px) the row has no room for every control, so
+  // the Faster/Slower speed buttons collapse to save space (speed is still
+  // adjustable from the WPM dropdown). The core transport stays put.
+  test('hides the Faster/Slower buttons below 350px to save space', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const decrease = container.querySelector('[aria-label="Decrease speed"]') as HTMLElement;
+    const increase = container.querySelector('[aria-label="Increase speed"]') as HTMLElement;
+    const play = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    const audio = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    const settings = container.querySelector('[aria-label="Settings"]') as HTMLElement;
+
+    expect(decrease.className).toContain('max-[350px]:hidden');
+    expect(increase.className).toContain('max-[350px]:hidden');
+    // Transport, audio toggle and settings must remain visible at any width.
+    expect(play.className).not.toContain('max-[350px]:hidden');
+    expect(audio.className).not.toContain('max-[350px]:hidden');
+    expect(settings.className).not.toContain('max-[350px]:hidden');
+  });
+
   // The previous fix relied on absolute positioning being gone; guard against it
   // sneaking back into the row that holds the transport controls.
   test('the playback control row is not absolutely positioned', () => {

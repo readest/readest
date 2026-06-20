@@ -1119,9 +1119,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <IoPlaySkipBack className='h-5 w-5 md:h-6 md:w-6' />
           </button>
 
+          {/* Faster/Slower collapse below 350px (speed is still adjustable from
+              the WPM dropdown) so the transport never overflows the row. */}
           <button
             aria-label={_('Decrease speed')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 max-[350px]:hidden md:h-9 md:w-9'
             onClick={() => controller.decreaseSpeed()}
             title={_('Slower (Left/Down)')}
           >
@@ -1164,7 +1166,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
           <button
             aria-label={_('Increase speed')}
-            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 md:h-9 md:w-9'
+            className='flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95 max-[350px]:hidden md:h-9 md:w-9'
             onClick={() => controller.increaseSpeed()}
             title={_('Faster (Right/Up)')}
           >
