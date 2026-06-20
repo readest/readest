@@ -70,6 +70,19 @@
   </supports>
 
   <releases>
+    <release version="0.11.12" date="2026-06-20">
+      <description>
+        <ul>
+          <li>Reading: Fixed full-page cover images and cover backgrounds that didn't display correctly under a page texture</li>
+          <li>Reading: Fixed a crash when opening large PDF files on mobile devices</li>
+          <li>Reading: You can now save or share an image straight from the image viewer</li>
+          <li>Speed Reading: Fixed the control bar overlapping the playback controls on mobile</li>
+          <li>Sync: Books without a reading status no longer jump back to the top after every sync</li>
+          <li>Sync: Your per-device reading view settings now stay local instead of syncing between devices</li>
+          <li>OPDS: Fixed the Add Catalog dialog appearing behind Settings on mobile</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.10" date="2026-06-19">
       <description>
         <ul>
@@ -207,25 +220,6 @@
           <li>Annotations: Added support for exporting highlights to Readwise</li>
           <li>OPDS: Fixed missing book descriptions in OPDS feeds</li>
           <li>Android: Improved compatibility with older WebView versions on Android</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.100" date="2026-02-13">
-      <description>
-        <ul>
-          <li>Text-to-Speech: Automatically moves to the next chapter when the current chapter finishes</li>
-          <li>Reading: Fixed the reading ruler on Android</li>
-          <li>Reading: Improved RSVP layout and stability</li>
-          <li>Reading: Fixed an issue where some EPUB books could not adjust font size</li>
-          <li>Annotations: Added a magnifier (loupe) when adjusting text selection</li>
-          <li>Annotations: Text selection now snaps to word boundaries for better accuracy</li>
-          <li>Annotations: Custom highlight colors now apply correctly in the sidebar</li>
-          <li>Dictionary: Added a back button for easier navigation</li>
-          <li>Dictionary: Fixed an issue where Dictionary and Wikipedia could not open on Android</li>
-          <li>Metadata: Added collapsible sections in Book Details</li>
-          <li>Metadata: Added support for parsing series information from Calibre-exported EPUB files</li>
-          <li>Eink: Improved component layout and colors in E-ink mode</li>
-          <li>Layout: Sidebar toggle button position is now persistent</li>
         </ul>
       </description>
     </release>

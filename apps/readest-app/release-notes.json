@@ -1,5 +1,17 @@
 {
   "releases": {
+    "0.11.12": {
+      "date": "2026-06-20",
+      "notes": [
+        "Reading: Fixed full-page cover images and cover backgrounds that didn't display correctly under a page texture",
+        "Reading: Fixed a crash when opening large PDF files on mobile devices",
+        "Reading: You can now save or share an image straight from the image viewer",
+        "Speed Reading: Fixed the control bar overlapping the playback controls on mobile",
+        "Sync: Books without a reading status no longer jump back to the top after every sync",
+        "Sync: Your per-device reading view settings now stay local instead of syncing between devices",
+        "OPDS: Fixed the Add Catalog dialog appearing behind Settings on mobile"
+      ]
+    },
     "0.11.10": {
       "date": "2026-06-19",
       "notes": [
