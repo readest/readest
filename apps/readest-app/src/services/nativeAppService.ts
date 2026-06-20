@@ -756,7 +756,15 @@ export class NativeAppService extends BaseAppService {
       if (wantShare) {
         let shareablePath = options?.filePath;
         if (!shareablePath) {
-          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          // Write into a Temp SUBDIRECTORY, never the Temp root. On Android the
+          // sharekit plugin copies the shared file to `<cacheDir>/<name>` before
+          // sharing, and Tauri's Temp dir IS `<cacheDir>` — writing to the root
+          // makes that a copy onto itself, whose output stream truncates the
+          // source to 0 bytes (the shared image came out 0 KB). A subdirectory
+          // gives the plugin's copy a distinct source path. (#4680)
+          const shareDir = await this.resolveFilePath('shared', 'Temp');
+          await mkdir(shareDir, { recursive: true });
+          shareablePath = await this.resolveFilePath(`shared/${filename}`, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
           } else if (content) {
