@@ -1,6 +1,6 @@
 import type { LanguageModel, EmbeddingModel } from 'ai';
 
-export type AIProviderName = 'ollama' | 'ai-gateway';
+export type AIProviderName = 'ollama' | 'ai-gateway' | 'openrouter';
 
 export interface AIProvider {
   id: AIProviderName;
@@ -27,9 +27,33 @@ export interface AISettings {
   aiGatewayCustomModel?: string;
   aiGatewayEmbeddingModel?: string;
 
+  // OpenAI-compatible provider (OpenRouter, Together, Groq, vLLM, ...).
+  // Default base URL is OpenRouter's, but any compatible endpoint works.
+  openrouterApiKey?: string;
+  openrouterBaseUrl?: string;
+  openrouterModel?: string;
+  openrouterEmbeddingModel?: string;
+
   spoilerProtection: boolean;
   maxContextChunks: number;
   indexingMode: 'on-demand' | 'background';
+
+  /**
+   * Reedy MVP retrieval (Turso vector + Tantivy FTS + CFI citations).
+   * MVP is desktop-only — the runtime gate in `selectBackend()` enforces
+   * isTauri() regardless of this flag. UI in M1.8 disables the toggle on web.
+   */
+  reedy?: {
+    enabled: boolean;
+    /**
+     * 'mvp' (default) keeps the Phase 1B path: lookupPassage tool wired
+     * through @assistant-ui/react's adapter. 'agent' switches the
+     * notebook AI tab to the Phase 4 ReedyAssistant (custom AgentRuntime
+     * + thread UI). Requires `reedy.enabled && isTauri() &&
+     * runtime === 'agent'` to engage.
+     */
+    runtime?: 'mvp' | 'agent';
+  };
 }
 
 export interface TextChunk {

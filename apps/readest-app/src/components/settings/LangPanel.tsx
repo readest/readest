@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { MdChevronRight } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -13,13 +12,22 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { ConvertChineseVariant } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { getDirFromLanguage } from '@/utils/rtl';
 import { isCJKEnv } from '@/utils/misc';
-import Select from '@/components/Select';
+import {
+  BoxedList,
+  NavigationRow,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import CustomDictionaries from './CustomDictionaries';
+import WordLensPanel from './WordLensPanel';
+import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -44,6 +52,20 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
+  const [showWordLens, setShowWordLens] = useState(false);
+
+  // Android Back / Esc: when a sub-page is open, intercept and step back to the
+  // language list instead of letting <Dialog>'s listener close the whole
+  // Settings dialog. See the matching comment in FontPanel.tsx for the
+  // LIFO-dispatch reasoning.
+  useKeyDownActions({
+    enabled: showCustomDictionaries,
+    onCancel: () => setShowCustomDictionaries(false),
+  });
+  useKeyDownActions({
+    enabled: showWordLens,
+    onCancel: () => setShowWordLens(false),
+  });
 
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
   // activeSettingsItemId to `'settings.language.dictionaries.manage'` to
@@ -266,133 +288,114 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     );
   }
 
+  if (showWordLens) {
+    return <WordLensPanel bookKey={bookKey} onBack={() => setShowWordLens(false)} />;
+  }
+
   return (
     <div className={clsx('my-4 w-full space-y-6')}>
-      <div className='w-full' data-setting-id='settings.language.interfaceLanguage'>
-        <h2 className='mb-2 font-medium'>{_('Language')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Language')}</span>
-              <Select
-                value={getCurrentUILangOption().value}
-                onChange={handleSelectUILang}
-                options={getLangOptions(TRANSLATED_LANGS)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Language')} data-setting-id='settings.language.interfaceLanguage'>
+        <SettingsRow label={_('Language')}>
+          <SettingsSelect
+            value={getCurrentUILangOption().value}
+            onChange={handleSelectUILang}
+            ariaLabel={_('Language')}
+            options={getLangOptions(TRANSLATED_LANGS)}
+          />
+        </SettingsRow>
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.language.dictionaries'>
-        <h2 className='mb-2 font-medium'>{_('Dictionaries')}</h2>
-        <div className='card border-base-200 bg-base-100 overflow-hidden border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <button
-              type='button'
-              className='config-item hover:bg-base-200/40 w-full text-left'
-              onClick={() => setShowCustomDictionaries(true)}
-            >
-              <span>{_('Manage Dictionaries')}</span>
-              <MdChevronRight className='text-base-content/60 h-5 w-5' />
-            </button>
-          </div>
-        </div>
-      </div>
+      <BoxedList
+        title={_('Dictionaries')}
+        data-setting-id='settings.language.dictionaries'
+        cardClassName='overflow-hidden'
+      >
+        <NavigationRow
+          title={_('Manage Dictionaries')}
+          onClick={() => setShowCustomDictionaries(true)}
+          className='h-14'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.language.translationEnabled'>
-        <h2 className='mb-2 font-medium'>{_('Translation')}</h2>
-        <div className='card border-base-200 bg-base-100 border shadow'>
-          <div className='divide-base-200'>
-            <div className='config-item'>
-              <span className=''>{_('Enable Translation')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={translationEnabled}
-                onChange={() => setTranslationEnabled(!translationEnabled)}
-                disabled={!bookKey}
-              />
-            </div>
+      <BoxedList
+        title={_('Word Lens')}
+        data-setting-id='settings.language.wordlens'
+        cardClassName='overflow-hidden'
+      >
+        <NavigationRow
+          icon={PiTranslate}
+          title={_('Word Lens')}
+          status={_('Show a short native-language hint above difficult words.')}
+          onClick={() => setShowWordLens(true)}
+        />
+      </BoxedList>
 
-            <div className='config-item'>
-              <span className=''>{_('Show Source Text')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showTranslateSource}
-                onChange={() => setShowTranslateSource(!showTranslateSource)}
-              />
-            </div>
-
-            <div className='config-item' data-setting-id='settings.language.ttsTextTranslation'>
-              <span className=''>{_('TTS Text')}</span>
-              <Select
-                value={ttsReadAloudText}
-                onChange={handleSelectTTSText}
-                options={getTTSTextOptions()}
-              />
-            </div>
-
-            <div className='config-item' data-setting-id='settings.language.translationProvider'>
-              <span className=''>{_('Translation Service')}</span>
-              <Select
-                value={getCurrentTranslationProviderOption().value}
-                onChange={handleSelectTranslationProvider}
-                options={getTranslationProviderOptions()}
-              />
-            </div>
-
-            <div className='config-item' data-setting-id='settings.language.targetLanguage'>
-              <span className=''>{_('Translate To')}</span>
-              <Select
-                value={getCurrentTargetLangOption().value}
-                onChange={handleSelectTargetLang}
-                options={getLangOptions(TRANSLATOR_LANGS)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Translation')} data-setting-id='settings.language.translationEnabled'>
+        <SettingsSwitchRow
+          label={_('Enable Translation')}
+          checked={translationEnabled}
+          onChange={() => setTranslationEnabled(!translationEnabled)}
+          disabled={!bookKey}
+        />
+        <SettingsSwitchRow
+          label={_('Show Source Text')}
+          checked={showTranslateSource}
+          onChange={() => setShowTranslateSource(!showTranslateSource)}
+        />
+        <SettingsRow label={_('TTS Text')} data-setting-id='settings.language.ttsTextTranslation'>
+          <SettingsSelect
+            value={ttsReadAloudText}
+            onChange={handleSelectTTSText}
+            ariaLabel={_('TTS Text')}
+            options={getTTSTextOptions()}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={_('Translation Service')}
+          data-setting-id='settings.language.translationProvider'
+        >
+          <SettingsSelect
+            value={getCurrentTranslationProviderOption().value}
+            onChange={handleSelectTranslationProvider}
+            ariaLabel={_('Translation Service')}
+            options={getTranslationProviderOptions()}
+          />
+        </SettingsRow>
+        <SettingsRow label={_('Translate To')} data-setting-id='settings.language.targetLanguage'>
+          <SettingsSelect
+            value={getCurrentTargetLangOption().value}
+            onChange={handleSelectTargetLang}
+            ariaLabel={_('Translate To')}
+            options={getLangOptions(TRANSLATOR_LANGS)}
+          />
+        </SettingsRow>
+      </BoxedList>
 
       {(isCJKEnv() || view?.language.isCJK) && (
-        <div className='w-full' data-setting-id='settings.language.quotationMarks'>
-          <h2 className='mb-2 font-medium'>{_('Punctuation')}</h2>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200'>
-              <div className='config-item !h-16'>
-                <div className='flex flex-col gap-1'>
-                  <span className=''>{_('Replace Quotation Marks')}</span>
-                  <span className='text-xs'>{_('Enabled only in vertical layout.')}</span>
-                </div>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={replaceQuotationMarks}
-                  onChange={() => setReplaceQuotationMarks(!replaceQuotationMarks)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <BoxedList title={_('Punctuation')} data-setting-id='settings.language.quotationMarks'>
+          <SettingsSwitchRow
+            label={_('Replace Quotation Marks')}
+            description={_('Enabled only in vertical layout.')}
+            checked={replaceQuotationMarks}
+            onChange={() => setReplaceQuotationMarks(!replaceQuotationMarks)}
+          />
+        </BoxedList>
       )}
 
       {(isCJKEnv() || view?.language.isCJK) && (
-        <div className='w-full' data-setting-id='settings.language.chineseConversion'>
-          <h2 className='mb-2 font-medium'>{_('Convert Simplified and Traditional Chinese')}</h2>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200'>
-              <div className='config-item'>
-                <span className=''>{_('Convert Mode')}</span>
-                <Select
-                  value={getConvertModeOption().value}
-                  onChange={handleSelectConvertMode}
-                  options={getConvertModeOptions()}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <BoxedList
+          title={_('Convert Simplified and Traditional Chinese')}
+          data-setting-id='settings.language.chineseConversion'
+        >
+          <SettingsRow label={_('Convert Mode')}>
+            <SettingsSelect
+              value={getConvertModeOption().value}
+              onChange={handleSelectConvertMode}
+              ariaLabel={_('Convert Mode')}
+              options={getConvertModeOptions()}
+            />
+          </SettingsRow>
+        </BoxedList>
       )}
     </div>
   );

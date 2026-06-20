@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from '@/services/constants';
+import { createWheelGestureDetector } from '@/app/reader/utils/wheelGesture';
 import { dispatchTouchInterceptors, TouchDetail } from './useTouchInterceptor';
 
 export const useMouseEvent = (
@@ -11,36 +11,48 @@ export const useMouseEvent = (
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
 ) => {
   const { hoveredBookKey } = useReaderStore();
-  // Keep the latest handlePageFlip in a ref so the debounced wrapper (created
-  // once via useMemo) always invokes the most recent closure. Without this
-  // ref, the empty-deps useMemo would freeze the first-render handler and any
-  // state captured in subsequent re-renders would be invisible to wheel-driven
-  // page flips.
+  // Keep the latest handlePageFlip in a ref so the wheel-driven flip path
+  // always invokes the most recent closure, independent of when listeners
+  // were registered.
   const handlePageFlipRef = useRef(handlePageFlip);
   useEffect(() => {
     handlePageFlipRef.current = handlePageFlip;
   }, [handlePageFlip]);
-  const debounceFlip = useMemo(
-    () =>
-      debounce(
-        (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) =>
-          handlePageFlipRef.current(msg),
-        100,
-      ),
-    [],
-  );
+  // Filters the raw wheel stream so a touch-surface mouse (e.g. Magic Mouse)
+  // — which emits a flood of tiny events plus an inertial momentum tail for
+  // one physical gesture — flips exactly one page instead of cascading
+  // through several. See wheelGesture.ts.
+  const wheelDetectorRef = useRef<ReturnType<typeof createWheelGestureDetector> | null>(null);
+  if (!wheelDetectorRef.current) {
+    wheelDetectorRef.current = createWheelGestureDetector();
+  }
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
         if (msg.data.type === 'iframe-wheel') {
           if (msg.data.ctrlKey) {
+            // Pinch/ctrl-wheel zoom is not a page-turn gesture — drop any
+            // travel accumulated so far so it can't bleed into a later flip.
+            wheelDetectorRef.current!.reset();
             if (msg.data.deltaY > 0) {
               eventDispatcher.dispatch('zoom-out', { factor: Math.abs(msg.data.deltaY) / 100 });
             } else if (msg.data.deltaY < 0) {
               eventDispatcher.dispatch('zoom-in', { factor: Math.abs(msg.data.deltaY) / 100 });
             }
           } else {
-            debounceFlip(msg);
+            const flip = wheelDetectorRef.current!.feed({
+              deltaX: msg.data.deltaX ?? 0,
+              deltaY: msg.data.deltaY ?? 0,
+              deltaMode: msg.data.deltaMode ?? 0,
+              timeStamp: Date.now(),
+            });
+            if (flip) {
+              handlePageFlipRef.current(
+                new MessageEvent('message', {
+                  data: { ...msg.data, deltaX: flip.deltaX, deltaY: flip.deltaY },
+                }),
+              );
+            }
           }
         } else {
           handlePageFlip(msg);
@@ -65,13 +77,17 @@ export const useMouseEvent = (
   };
 };
 
-export const useLongPressEvent = (
+// Opens the image gallery / table zoom viewer when the iframe reports that the
+// user activated an image or table — via either a long-press (any book) or a
+// single tap (reflowable books). See the `iframe-open-media` producers in
+// iframeEventHandlers.ts.
+export const useOpenMediaEvent = (
   bookKey: string,
   handleImagePress: (src: string) => void,
   handleTablePress: (html: string) => void,
 ) => {
-  const handleLongPress = (msg: MessageEvent) => {
-    if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-long-press') {
+  const handleOpenMedia = (msg: MessageEvent) => {
+    if (msg.data && msg.data.bookKey === bookKey && msg.data.type === 'iframe-open-media') {
       if (msg.data.elementType === 'image') {
         handleImagePress(msg.data.src);
       } else if (msg.data.elementType === 'table') {
@@ -81,9 +97,9 @@ export const useLongPressEvent = (
   };
 
   useEffect(() => {
-    window.addEventListener('message', handleLongPress);
+    window.addEventListener('message', handleOpenMedia);
     return () => {
-      window.removeEventListener('message', handleLongPress);
+      window.removeEventListener('message', handleOpenMedia);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);

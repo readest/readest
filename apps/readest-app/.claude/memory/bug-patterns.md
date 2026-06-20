@@ -114,6 +114,13 @@
 
 **Fix Strategy:** Scope event handlers to the loaded section's index. Use unique IDs for SVG elements across overlayer instances. Minimize iframe DOM mutations during drag operations.
 
+### 13. Whole-Field-Synced Flag Reaches an Unsupported Platform
+**Pattern:** A setting is whole-field synced across devices (e.g. `dictionarySettings.providerEnabled`), so a flag enabled on one platform arrives `true` on a platform where that feature isn't supported. The lookup/runtime path correctly gates on platform support, but a *secondary consumer* (usually UI gating) reads the raw synced flag and misbehaves.
+**Example:**
+- System Dictionary enabled on macOS synced to web → web's `CustomDictionaries.tsx` locked all other dictionary toggles read-only (`lockedBySystem`) even though System Dictionary is hidden + a no-op there. The annotator's lookup path used the platform-gated `isSystemDictionaryEnabled(settings)` (registry.ts, gates on `isSystemDictionarySupported()`), but the settings UI compared the raw `providerEnabled[systemDictionary] === true`.
+
+**Fix Strategy:** Every consumer of a synced flag for a platform-specific feature must route through the *same* platform-aware gate the runtime uses — not the raw `providerEnabled[...]`/setting value. Here: `lockedBySystem = isSystemDictionaryEnabled(settings) && ...`. Search for other readers of the raw flag when fixing one.
+
 ## Debugging Workflow
 
 1. **Identify the category** from the issue description

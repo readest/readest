@@ -25,6 +25,9 @@ Default permissions for the plugin
 - `allow-set-screen-brightness`
 - `allow-get-external-sdcard-path`
 - `allow-open-external-url`
+- `allow-show-lookup-popover`
+- `allow-get-lookup-dictionary`
+- `allow-clear-lookup-dictionary`
 - `allow-select-directory`
 - `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
@@ -181,6 +184,32 @@ Denies the check_permissions command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-clear-lookup-dictionary`
+
+</td>
+<td>
+
+Enables the clear_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-clear-lookup-dictionary`
+
+</td>
+<td>
+
+Denies the clear_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-clear-sync-passphrase`
 
 </td>
@@ -200,6 +229,32 @@ Enables the clear_sync_passphrase command without any pre-configured scope.
 <td>
 
 Denies the clear_sync_passphrase command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-clip-url`
+
+</td>
+<td>
+
+Enables the clip_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-clip-url`
+
+</td>
+<td>
+
+Denies the clip_url command without any pre-configured scope.
 
 </td>
 </tr>
@@ -252,6 +307,32 @@ Enables the get_external_sdcard_path command without any pre-configured scope.
 <td>
 
 Denies the get_external_sdcard_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-get-lookup-dictionary`
+
+</td>
+<td>
+
+Enables the get_lookup_dictionary command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-get-lookup-dictionary`
+
+</td>
+<td>
+
+Denies the get_lookup_dictionary command without any pre-configured scope.
 
 </td>
 </tr>
@@ -954,6 +1035,32 @@ Enables the set_system_ui_visibility command without any pre-configured scope.
 <td>
 
 Denies the set_system_ui_visibility command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-show-lookup-popover`
+
+</td>
+<td>
+
+Enables the show_lookup_popover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-show-lookup-popover`
+
+</td>
+<td>
+
+Denies the show_lookup_popover command without any pre-configured scope.
 
 </td>
 </tr>

@@ -3,6 +3,7 @@ import {
   isCJK,
   containsCJK,
   isCJKPunctuation,
+  isRTLText,
   getSegmenterLocale,
   segmentCJKText,
   splitTextIntoWords,
@@ -115,6 +116,41 @@ describe('rsvp/utils', () => {
 
     test('returns false for a letter', () => {
       expect(isCJKPunctuation('A')).toBe(false);
+    });
+  });
+
+  describe('isRTLText', () => {
+    test('returns true for Arabic text', () => {
+      expect(isRTLText('علم')).toBe(true);
+      expect(isRTLText('مرحبا')).toBe(true);
+    });
+
+    test('returns true for Hebrew text', () => {
+      expect(isRTLText('שלום')).toBe(true);
+    });
+
+    test('returns true for Arabic presentation forms', () => {
+      expect(isRTLText('ﺍ')).toBe(true); // Arabic letter alef isolated form
+    });
+
+    test('returns true for text mixing Arabic and Latin', () => {
+      expect(isRTLText('Hello علم')).toBe(true);
+    });
+
+    test('returns false for pure Latin text', () => {
+      expect(isRTLText('hello')).toBe(false);
+    });
+
+    test('returns false for CJK text', () => {
+      expect(isRTLText('你好世界')).toBe(false);
+    });
+
+    test('returns false for digits and Latin punctuation', () => {
+      expect(isRTLText('123, 456.')).toBe(false);
+    });
+
+    test('returns false for empty string', () => {
+      expect(isRTLText('')).toBe(false);
     });
   });
 
@@ -322,6 +358,48 @@ describe('rsvp/utils', () => {
 
     test('returns ellipsis-only unchanged', () => {
       expect(getHyphenParts('...')).toEqual(['...']);
+    });
+  });
+
+  describe('CJK character mode', () => {
+    test('segmentCJKText splits CJK text per-character when cjkCharMode is true', () => {
+      expect(segmentCJKText('你好世界', undefined, true)).toEqual(['你', '好', '世', '界']);
+    });
+
+    test('segmentCJKText attaches CJK punctuation to the preceding character in char mode', () => {
+      expect(segmentCJKText('你好。世界！', undefined, true)).toEqual(['你', '好。', '世', '界！']);
+    });
+
+    test('segmentCJKText keeps leading punctuation as its own token in char mode', () => {
+      expect(segmentCJKText('。你好', undefined, true)).toEqual(['。', '你', '好']);
+    });
+
+    test('segmentCJKText returns empty array for empty text in char mode', () => {
+      expect(segmentCJKText('', undefined, true)).toEqual([]);
+    });
+
+    test('splitTextIntoWords splits CJK per-character in char mode', () => {
+      expect(splitTextIntoWords('我喜欢阅读', undefined, true)).toEqual([
+        '我',
+        '喜',
+        '欢',
+        '阅',
+        '读',
+      ]);
+    });
+
+    test('splitTextIntoWords leaves Latin words intact in char mode', () => {
+      expect(splitTextIntoWords('Hello 你好 World', undefined, true)).toEqual([
+        'Hello',
+        '你',
+        '好',
+        'World',
+      ]);
+    });
+
+    test('splitTextIntoWords groups CJK characters when char mode is off', () => {
+      // Default segmentation should group multi-character words like 喜欢 / 阅读.
+      expect(splitTextIntoWords('我喜欢阅读').length).toBeLessThan(5);
     });
   });
 });

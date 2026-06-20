@@ -7,4 +7,5 @@ export type AnnotationToolType =
   | 'translate'
   | 'tts'
   | 'proofread'
-  | 'xray';
+  | 'xray'
+  | 'share';

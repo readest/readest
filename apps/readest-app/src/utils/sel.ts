@@ -32,6 +32,9 @@ export interface TextSelection {
   href?: string;
   annotated?: boolean;
   rect?: Rect;
+  // Native Android selection handles were suppressed for this selection
+  // (Blink hyphen bounds bug, issue #1553) — the app draws its own handles.
+  handlesSuppressed?: boolean;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
@@ -72,6 +75,128 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   return {
     x: Math.max(padding, Math.min(point.x, rect.right - rect.left - padding)),
     y: Math.max(padding, Math.min(point.y, rect.bottom - rect.top - padding)),
+  };
+};
+
+export const isPointInRect = (point: Point, rect: Rect, padding: number = 1): boolean => {
+  return (
+    point.x >= rect.left + padding &&
+    point.x <= rect.right - padding &&
+    point.y >= rect.top + padding &&
+    point.y <= rect.bottom - padding
+  );
+};
+
+/**
+ * Resolve the bounding rect of a {@link Range} in the OUTER webview's
+ * viewport coordinate system (CSS pixels, top-down).
+ *
+ * Foliate renders book pages inside an iframe with a CSS transform
+ * (its column-pagination layout uses non-identity `matrix(...)` to
+ * shift columns). A naive `range.getBoundingClientRect()` returns
+ * coordinates in the iframe's local viewport, which won't line up
+ * with anything outside the iframe. This helper applies the iframe's
+ * transform scale and offset, mirroring the math in {@link getPosition}.
+ *
+ * Returns `null` when the range is detached (no iframe ancestor) or
+ * has no client rects (collapsed / off-screen).
+ */
+export const getRangeRectInWebview = (range: Range): Rect | null => {
+  const rect = range.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return null;
+  const frameElement = getIframeElement(range);
+  // No iframe ancestor — range lives directly in the host document
+  // (e.g. fixed-layout PDF). Pass through the rect as-is.
+  if (!frameElement) {
+    return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+  }
+  const transform = getComputedStyle(frameElement).transform;
+  const match = transform.match(/matrix\((.+)\)/);
+  const [sx, , , sy] = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x)) ?? [];
+  const scaleX = Number.isFinite(sx) ? sx! : 1;
+  const scaleY = Number.isFinite(sy) ? sy! : 1;
+  const frame = frameElement.getBoundingClientRect();
+  return {
+    top: scaleY * rect.top + frame.top,
+    bottom: scaleY * rect.bottom + frame.top,
+    left: scaleX * rect.left + frame.left,
+    right: scaleX * rect.right + frame.left,
+  };
+};
+
+/**
+ * Sample the visual style (font size / family / color) of the text
+ * underneath a {@link Range}. Used by the macOS system-dictionary
+ * bridge so the inline HUD label matches the original paragraph's
+ * typography — `-[NSView showDefinitionForAttributedString:atPoint:]`
+ * re-draws the word using whatever attributes we hand in, and a plain
+ * unattributed string falls back to AppKit's small system font.
+ *
+ * The font-size is scaled by the iframe's vertical transform so the
+ * value is in **outer webview** CSS pixels (matching what AppKit
+ * receives via the contentView, which itself reports its bounds in
+ * CSS pixels on standard Tauri/macOS).
+ *
+ * Returns `null` when the range has no element parent we can sample.
+ */
+export interface RangeTextStyle {
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+}
+
+export const getRangeTextStyleInWebview = (range: Range): RangeTextStyle | null => {
+  const node: Node | null =
+    range.startContainer.nodeType === Node.ELEMENT_NODE
+      ? range.startContainer
+      : range.startContainer.parentElement;
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return null;
+  const element = node as Element;
+  const style = element.ownerDocument?.defaultView?.getComputedStyle(element);
+  if (!style) return null;
+
+  const frameElement = getIframeElement(range);
+  let scaleY = 1;
+  if (frameElement) {
+    const transform = getComputedStyle(frameElement).transform;
+    const match = transform.match(/matrix\((.+)\)/);
+    const parts = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x));
+    const sy = parts?.[3];
+    if (Number.isFinite(sy)) scaleY = sy!;
+  }
+
+  // Cross-check the declared font-size against the range's actual
+  // visual height. In typical EPUB layout the inline box is roughly
+  // `font-size × line-height` tall (≈1.2× by default), so a declared
+  // font-size noticeably *larger* than the rendered height means the
+  // value isn't a real CSS pixel measurement we can hand to NSFont —
+  // pdf.js's text layer is the canonical offender: each glyph span
+  // can carry an intrinsic `font-size` that reflects the document's
+  // unit-em size before `transform: scale(...)` shrinks it back to
+  // page-coordinate pixels, leaving `getComputedStyle(...).fontSize`
+  // many times bigger than the on-screen glyph. Without compensation
+  // the macOS HUD lays out a giant attributed string and the yellow
+  // highlight rectangle behind it engulfs neighbouring paragraphs.
+  //
+  // Fix: when the declared size exceeds the inline box height by
+  // more than 30 %, treat the inline box height as the source of
+  // truth and back out a plausible font-size. 0.85 is the typical
+  // ratio of cap-height-ish font-size to a 1.2 line-height box; it
+  // matches normal EPUB body text (the common case) within a few
+  // percent and converges PDF text layers onto something AppKit can
+  // render at a sensible scale. Below the threshold (the common
+  // EPUB case) we leave the declared value alone.
+  const declaredFontSize = (parseFloat(style.fontSize) || 0) * scaleY;
+  let fontSize = declaredFontSize;
+  const renderedHeight = range.getBoundingClientRect().height;
+  if (renderedHeight > 0 && declaredFontSize > renderedHeight * 1.3) {
+    fontSize = renderedHeight * 0.85;
+  }
+
+  return {
+    fontSize,
+    fontFamily: style.fontFamily,
+    color: style.color,
   };
 };
 
@@ -170,9 +295,38 @@ export const getPosition = (
     ),
     dir: 'down',
   } as Position;
-  const startInView = pointIsInView(start.point);
-  const endInView = pointIsInView(end.point);
-  if (!startInView && !endInView) return { point: { x: 0, y: 0 } };
+  // Decide which selection end is on-screen by testing its UNCLAMPED line-rect
+  // midpoint against the READING FRAME (`rect`) — not the window. A cross-page
+  // selection's off-screen start maps to a negative/sidebar x that is still
+  // inside the window, so a window-based check would wrongly read it "in view"
+  // and pin the popup off the visible page (#1354).
+  const midX = (r: Rect) => (r.left + r.right) / 2;
+  const midY = (r: Rect) => (r.top + r.bottom) / 2;
+  const inFrame = (px: number, py: number) =>
+    px > rect.left && px < rect.right && py > rect.top && py < rect.bottom;
+  const startInView = inFrame(midX(first), midY(first));
+  const endInView = inFrame(midX(last), midY(last));
+  if (!startInView && !endInView) {
+    // Multi-page selection: both ends are off the visible page, but the middle
+    // may cross it. Anchor to the last on-screen line so the popup tracks the
+    // visible part of the selection.
+    const v = rects
+      .map((r) => frameRect(frame, r, sx, sy))
+      .filter((r) => inFrame(midX(r), midY(r)))
+      .at(-1);
+    if (v) {
+      return {
+        point: constrainPointWithinRect(
+          { x: midX(v) - rect.left, y: v.bottom - rect.top + 6 },
+          rect,
+          paddingPx,
+        ),
+        dir: 'down',
+      } as Position;
+    }
+    // Otherwise fall through and anchor to an end so the popup still shows
+    // (the constrained points are always within the frame, never {0,0}).
+  }
   if (!startInView) return end;
   if (!endInView) return start;
   return start.point.y > window.innerHeight - end.point.y ? start : end;
@@ -266,6 +420,218 @@ export const snapRangeToWords = (range: Range): void => {
 
   snapStartToWordBoundary();
   snapEndToWordBoundary();
+};
+
+// --- Android hyphenation selection-bounds bug (issue #1553) -----------------
+//
+// Blink's `LayoutSelection::ComputePaintingSelectionStateForCursor` compares
+// the selection's paragraph text-content offsets against each fragment's
+// `TextOffset()`. Auto/soft-hyphen fragments are layout-generated text whose
+// offsets are self-relative ({0,1}), so a touch selection starting at the
+// first character of a paragraph marks EVERY hyphen fragment in it as a
+// selection start: the native start handle is painted on the paragraph's last
+// hyphen and drag gestures re-anchor the selection base there. The helpers
+// below detect that condition so the app can repair the range and suppress
+// the broken native handles (touch handles are the only consumer of the bogus
+// bounds, so mouse/desktop selections are unaffected).
+
+const isInlineDisplay = (el: Element): boolean => {
+  const display = el.ownerDocument.defaultView?.getComputedStyle(el).display ?? '';
+  return display === 'inline' || display.startsWith('ruby');
+};
+
+// The element establishing the inline formatting context the range starts in.
+const getBlockAncestor = (node: Node): Element | null => {
+  let el: Element | null =
+    node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+  while (el && isInlineDisplay(el)) {
+    el = el.parentElement;
+  }
+  return el;
+};
+
+// Whether the range starts at the first character of its paragraph's inline
+// content (leading collapsed whitespace does not count: it never reaches the
+// paragraph's laid-out text, so the selection still maps to offset 0).
+export const isRangeStartAtBlockStart = (range: Range): boolean => {
+  const block = getBlockAncestor(range.startContainer);
+  if (!block) return false;
+  const probe = (block.ownerDocument ?? document).createRange();
+  try {
+    probe.selectNodeContents(block);
+    probe.setEnd(range.startContainer, range.startOffset);
+  } catch {
+    return false;
+  }
+  return probe.toString().trim().length === 0;
+};
+
+// A generated hyphen is the only way a single text node produces two adjacent
+// boxes on the same line where the trailing one is sub-glyph narrow.
+const HYPHEN_MAX_EM = 0.6;
+const HYPHEN_ADJACENCY_PX = 2;
+
+interface RectLike {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export const hasTrailingHyphenRectPattern = (
+  rects: RectLike[],
+  emPx: number,
+  vertical: boolean,
+): boolean => {
+  for (let i = 1; i < rects.length; i++) {
+    const a = rects[i - 1]!;
+    const b = rects[i]!;
+    const sameLine = vertical
+      ? Math.abs(a.left - b.left) < Math.max(a.width, b.width) / 2
+      : Math.abs(a.top - b.top) < Math.max(a.height, b.height) / 2;
+    if (!sameLine) continue;
+    const adjacent = vertical
+      ? Math.abs(b.top - (a.top + a.height)) <= HYPHEN_ADJACENCY_PX
+      : Math.abs(b.left - (a.left + a.width)) <= HYPHEN_ADJACENCY_PX ||
+        Math.abs(a.left - (b.left + b.width)) <= HYPHEN_ADJACENCY_PX;
+    if (!adjacent) continue;
+    const size = vertical ? b.height : b.width;
+    if (size > 0 && size <= emPx * HYPHEN_MAX_EM) return true;
+  }
+  return false;
+};
+
+const blockHasGeneratedHyphens = (block: Element, vertical: boolean): boolean => {
+  const doc = block.ownerDocument;
+  const win = doc.defaultView;
+  if (!win) return false;
+  const emPx = parseFloat(win.getComputedStyle(block).fontSize) || 16;
+  const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  const probe = doc.createRange();
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    if (!(node as Text).data.trim()) continue;
+    let rects: RectLike[];
+    try {
+      probe.selectNodeContents(node);
+      rects = Array.from(probe.getClientRects());
+    } catch {
+      return false;
+    }
+    if (hasTrailingHyphenRectPattern(rects, emPx, vertical)) return true;
+  }
+  return false;
+};
+
+// Whether painting this selection hits the Blink generated-hyphen bounds bug:
+// it starts at the first character of a paragraph that renders hyphens.
+export const isHyphenHandleBugProneRange = (range: Range, vertical = false): boolean => {
+  const block = getBlockAncestor(range.startContainer);
+  if (!block) return false;
+  const win = block.ownerDocument.defaultView;
+  if (!win) return false;
+  const style = win.getComputedStyle(block);
+  const mayHyphenate =
+    style.getPropertyValue('hyphens') === 'auto' ||
+    style.getPropertyValue('-webkit-hyphens') === 'auto' ||
+    (block.textContent ?? '').includes('­');
+  if (!mayHyphenate) return false;
+  if (!isRangeStartAtBlockStart(range)) return false;
+  return blockHasGeneratedHyphens(block, vertical);
+};
+
+// Rebuild a selection range between a known-good anchor and the caret at a
+// point (in `doc` viewport coordinates) — used to restore the range a
+// corrupted long-press drag was meant to produce: anchored at the
+// gesture-initial position, ending where the finger was. Snapped to word
+// boundaries like the native word-granularity drag.
+export const rangeFromAnchorToPoint = (
+  doc: Document,
+  anchorNode: Node,
+  anchorOffset: number,
+  x: number,
+  y: number,
+): Range | null => {
+  let pointNode: Node | null = null;
+  let pointOffset = 0;
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (pos) {
+      pointNode = pos.offsetNode;
+      pointOffset = pos.offset;
+    }
+  } else if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (range) {
+      pointNode = range.startContainer;
+      pointOffset = range.startOffset;
+    }
+  }
+  if (!pointNode) return null;
+  const range = doc.createRange();
+  try {
+    const anchorPoint = doc.createRange();
+    anchorPoint.setStart(anchorNode, anchorOffset);
+    anchorPoint.collapse(true);
+    const caretPoint = doc.createRange();
+    caretPoint.setStart(pointNode, pointOffset);
+    caretPoint.collapse(true);
+    if (anchorPoint.compareBoundaryPoints(Range.START_TO_START, caretPoint) <= 0) {
+      range.setStart(anchorNode, anchorOffset);
+      range.setEnd(pointNode, pointOffset);
+    } else {
+      range.setStart(pointNode, pointOffset);
+      range.setEnd(anchorNode, anchorOffset);
+    }
+  } catch {
+    return null;
+  }
+  if (range.collapsed) return null;
+  snapRangeToWords(range);
+  return range;
+};
+
+// During a long-press drag the bug re-anchors the selection base at the last
+// hyphen, dropping the word the gesture started on. If the gesture-initial
+// anchor fell out of the final range, rebuild [initial anchor → focus] (the
+// focus is where the finger actually went) and snap it to word boundaries
+// like the native word-granularity drag would.
+export const repairJumpedSelectionRange = (
+  sel: Selection,
+  initialNode: Node,
+  initialOffset: number,
+): Range | null => {
+  if (sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  const { focusNode, focusOffset } = sel;
+  const doc = range.startContainer.ownerDocument;
+  if (!focusNode || !doc) return null;
+  try {
+    if (range.comparePoint(initialNode, initialOffset) === 0) return null;
+  } catch {
+    return null;
+  }
+  const repaired = doc.createRange();
+  try {
+    const initialPoint = doc.createRange();
+    initialPoint.setStart(initialNode, initialOffset);
+    initialPoint.collapse(true);
+    const focusPoint = doc.createRange();
+    focusPoint.setStart(focusNode, focusOffset);
+    focusPoint.collapse(true);
+    if (initialPoint.compareBoundaryPoints(Range.START_TO_START, focusPoint) <= 0) {
+      repaired.setStart(initialNode, initialOffset);
+      repaired.setEnd(focusNode, focusOffset);
+    } else {
+      repaired.setStart(focusNode, focusOffset);
+      repaired.setEnd(initialNode, initialOffset);
+    }
+  } catch {
+    return null;
+  }
+  if (repaired.collapsed) return null;
+  snapRangeToWords(repaired);
+  return repaired;
 };
 
 export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {

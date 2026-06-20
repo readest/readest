@@ -8,7 +8,7 @@ vi.mock('@/utils/md5', () => ({
   md5Fingerprint: (value: string) => `md5_${value}`,
 }));
 
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, flushPendingLibrarySave } from '@/store/bookDataStore';
 import type { BookData } from '@/store/bookDataStore';
 import type { BookConfig, BookNote, Book } from '@/types/book';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -379,7 +379,15 @@ describe('bookDataStore', () => {
 
       const stored = useLibraryStore.getState().getBookByHash('h1');
       expect(stored?.progress).toEqual([42, 100]);
+      // Per-book config still writes eagerly — it's small and the source
+      // of truth for reconstructing the shelf on next launch.
       expect(saveBookConfig).toHaveBeenCalledOnce();
+      // Library JSON write is throttled (see scheduleLibrarySave in
+      // bookDataStore) so a burst of saveConfig calls during reading
+      // doesn't fire IPC on every page turn. Force-flush here to
+      // observe the write actually happens.
+      expect(saveLibraryBooks).not.toHaveBeenCalled();
+      await flushPendingLibrarySave();
       expect(saveLibraryBooks).toHaveBeenCalledOnce();
     });
 
@@ -399,6 +407,74 @@ describe('bookDataStore', () => {
 
       expect(saveBookConfig).not.toHaveBeenCalled();
       expect(saveLibraryBooks).not.toHaveBeenCalled();
+    });
+
+    test('refreshes config.updatedAt in the store with a fresh reference', async () => {
+      const saveBookConfig = vi.fn().mockResolvedValue(undefined);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ saveBookConfig, saveLibraryBooks });
+
+      useLibraryStore.getState().setLibrary([makeLibraryBook({ hash: 'h1' })]);
+
+      const data = makeBookData('h1', { progress: [42, 100] });
+      useBookDataStore.setState({ booksData: { h1: data } });
+      const before = useBookDataStore.getState().getConfig('h1');
+
+      await useBookDataStore.getState().saveConfig(envConfig, 'h1', data.config!, FAKE_SETTINGS);
+
+      const after = useBookDataStore.getState().getConfig('h1');
+      // New reference so Zustand change-detection fires for selector subscribers.
+      expect(after).not.toBe(before);
+      expect(after!.updatedAt).toBeGreaterThan(1000);
+    });
+
+    test('refreshes the store config even when the caller passes a separate object', async () => {
+      const saveBookConfig = vi.fn().mockResolvedValue(undefined);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ saveBookConfig, saveLibraryBooks });
+
+      useLibraryStore.getState().setLibrary([makeLibraryBook({ hash: 'h1' })]);
+
+      const data = makeBookData('h1', { progress: [42, 100] });
+      useBookDataStore.setState({ booksData: { h1: data } });
+
+      // Caller passes a freshly-built config, not the shared store object.
+      const detachedConfig: BookConfig = { ...data.config! };
+      await useBookDataStore.getState().saveConfig(envConfig, 'h1', detachedConfig, FAKE_SETTINGS);
+
+      expect(useBookDataStore.getState().getConfig('h1')!.updatedAt).toBeGreaterThan(1000);
+    });
+
+    test('does not mutate the caller-provided config object', async () => {
+      const saveBookConfig = vi.fn().mockResolvedValue(undefined);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ saveBookConfig, saveLibraryBooks });
+
+      useLibraryStore.getState().setLibrary([makeLibraryBook({ hash: 'h1' })]);
+
+      const data = makeBookData('h1', { progress: [42, 100] });
+      useBookDataStore.setState({ booksData: { h1: data } });
+
+      const detachedConfig: BookConfig = { ...data.config!, updatedAt: 1000 };
+      await useBookDataStore.getState().saveConfig(envConfig, 'h1', detachedConfig, FAKE_SETTINGS);
+
+      expect(detachedConfig.updatedAt).toBe(1000);
+    });
+
+    test('persists a config carrying the refreshed updatedAt', async () => {
+      const saveBookConfig = vi.fn().mockResolvedValue(undefined);
+      const saveLibraryBooks = vi.fn().mockResolvedValue(undefined);
+      const envConfig = makeEnvConfig({ saveBookConfig, saveLibraryBooks });
+
+      useLibraryStore.getState().setLibrary([makeLibraryBook({ hash: 'h1' })]);
+
+      const data = makeBookData('h1', { progress: [42, 100] });
+      useBookDataStore.setState({ booksData: { h1: data } });
+
+      await useBookDataStore.getState().saveConfig(envConfig, 'h1', data.config!, FAKE_SETTINGS);
+
+      const persistedConfig = saveBookConfig.mock.calls[0]![1] as BookConfig;
+      expect(persistedConfig.updatedAt).toBeGreaterThan(1000);
     });
   });
 });

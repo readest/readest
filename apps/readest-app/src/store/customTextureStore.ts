@@ -92,11 +92,31 @@ export const useCustomTextureStore = create<TextureStoreState>((set, get) => ({
     const existingTexture = get().textures.find((t) => t.id === texture.id);
 
     if (existingTexture) {
+      // Re-import of an existing texture. Under CRDT remove-wins, a plain
+      // upsert can't revive a server-side tombstone — the next pull would
+      // re-apply the delete and the texture silently disappears while
+      // logged into cloud sync (same latent bug as issue #4410). Mint a
+      // reincarnation token so the row surfaces as alive on every device's
+      // next pull. Covers both re-import after a local delete and re-import
+      // while the entry is still live but another device tombstoned the row
+      // (the token is inert when there's no tombstone). Preserve any
+      // existing token instead of churning a new one on each import.
+      // Mirrors dictionaryService's reincarnation logic.
+      const shouldMintReincarnation =
+        !!texture.contentId &&
+        !existingTexture.reincarnation &&
+        (!!existingTexture.deletedAt || existingTexture.contentId === texture.contentId);
+      const reincarnation =
+        texture.reincarnation ??
+        (shouldMintReincarnation
+          ? Math.random().toString(36).slice(2)
+          : existingTexture.reincarnation);
       get().updateTexture(texture.id, {
         ...texture,
         path: texture.path,
         downloadedAt: Date.now(),
         deletedAt: undefined,
+        reincarnation,
         loaded: false,
         blobUrl: undefined,
         error: undefined,

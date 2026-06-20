@@ -21,6 +21,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStyles } from '@/utils/style';
 import { navigateToLogin } from '@/utils/nav';
+import { getScrollGapAttr } from '@/utils/webtoon';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import dayjs from 'dayjs';
@@ -54,6 +55,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
   const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
+  const [webtoonMode, setWebtoonMode] = useState(viewSettings!.webtoonMode ?? false);
   const [isParagraphMode, setParagraphMode] = useState(
     viewSettings?.paragraphMode?.enabled ?? false,
   );
@@ -70,6 +72,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
+  const toggleWebtoonMode = () => setWebtoonMode(!webtoonMode);
   const toggleParagraphMode = () => {
     setParagraphMode(!isParagraphMode);
     eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey });
@@ -119,6 +122,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   useEffect(() => {
     if (isScrolledMode === viewSettings!.scrolled) return;
     viewSettings!.scrolled = isScrolledMode;
+    if (!isScrolledMode && webtoonMode) setWebtoonMode(false);
     getView(bookKey)?.renderer.setAttribute('flow', isScrolledMode ? 'scrolled' : 'paginated');
     getView(bookKey)?.renderer.setAttribute(
       'max-inline-size',
@@ -128,6 +132,23 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setViewSettings(bookKey, viewSettings!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
+
+  useEffect(() => {
+    if (webtoonMode === viewSettings.webtoonMode) return;
+    viewSettings.webtoonMode = webtoonMode;
+    getView(bookKey)?.renderer.setAttribute('scroll-gap', getScrollGapAttr(webtoonMode));
+    if (webtoonMode) {
+      // Webtoon Mode implies scrolled flow + fit-width (scale-factor 100) so pages
+      // fill the width without horizontal overflow/clipping. Reuse the existing
+      // scrolled / zoomLevel effects rather than duplicating their renderer wiring.
+      if (!isScrolledMode) setScrolledMode(true);
+      if (zoomLevel !== 100) setZoomLevel(100);
+      saveViewSettings(envConfig, bookKey, 'scrolled', true, false, false);
+    }
+    setViewSettings(bookKey, viewSettings);
+    saveViewSettings(envConfig, bookKey, 'webtoonMode', webtoonMode, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webtoonMode]);
 
   useEffect(() => {
     if (zoomLevel === viewSettings.zoomLevel) return;
@@ -290,6 +311,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               onClick={() => setKeepCoverSpread(!keepCoverSpread)}
               disabled={spreadMode === 'none'}
             />
+            <MenuItem label={_('Webtoon Mode')} toggled={webtoonMode} onClick={toggleWebtoonMode} />
           </>
           <hr aria-hidden='true' className='border-base-300 my-1' />
         </>
@@ -316,6 +338,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <MenuItem
         label={_('Speed Reading Mode')}
+        shortcut='Shift+V'
         onClick={handleStartRSVP}
         disabled={bookData.isFixedLayout}
       />

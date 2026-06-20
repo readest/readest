@@ -9,6 +9,7 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { pickFresherReadingStatus } from '@/app/library/utils/libraryUtils';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -22,12 +23,24 @@ export const useBooksSync = () => {
   const getNewBooks = useCallback(() => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
-    const newBooks = library.filter(
-      (book) =>
-        !book.syncedAt ||
-        lastSyncedAtBooks < book.updatedAt ||
-        lastSyncedAtBooks < (book.deletedAt ?? 0),
-    );
+    const newBooks = library
+      .filter(
+        (book) =>
+          !book.syncedAt ||
+          lastSyncedAtBooks < book.updatedAt ||
+          lastSyncedAtBooks < (book.deletedAt ?? 0),
+      )
+      // book.filePath is a device-local absolute path used by the in-place
+      // import flow to point at a file outside Books/<hash>/. It is
+      // meaningless on any other device, so strip it before pushing to the
+      // cloud — peers always rehydrate via the hash-keyed copy that
+      // cloudService.downloadBook lands under Books/<hash>/. Keeping the
+      // source device's path in the cloud record would be dead data at
+      // best, and would become an active footgun if isBookAvailable ever
+      // got its branch order swapped (it currently checks Books/<hash>
+      // before falling back to filePath; flipping that order would make
+      // peers chase a non-existent path instead of downloading).
+      .map(({ filePath: _filePath, ...rest }): Book => rest);
     return {
       books: newBooks,
       lastSyncedAt: lastSyncedAtBooks,
@@ -117,6 +130,11 @@ export const useBooksSync = () => {
           matchingBook.updatedAt >= oldBook.updatedAt
             ? { ...oldBook, ...matchingBook, syncedAt: Date.now() }
             : { ...matchingBook, ...oldBook, syncedAt: Date.now() };
+        // Status is resolved by its own timestamp, independent of the row's
+        // updatedAt (which page-turn progress dominates) — see #4634.
+        const status = pickFresherReadingStatus(oldBook, matchingBook);
+        mergedBook.readingStatus = status.readingStatus;
+        mergedBook.readingStatusUpdatedAt = status.readingStatusUpdatedAt;
         return mergedBook;
       }
       return oldBook;

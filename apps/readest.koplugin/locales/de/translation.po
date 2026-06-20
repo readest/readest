@@ -251,6 +251,12 @@ msgstr "Automatische Synchronisierung"
 msgid "Readest library"
 msgstr "Readest-Bibliothek"
 
+msgid "Push stats now"
+msgstr "Statistik jetzt senden"
+
+msgid "Pull stats now"
+msgstr "Statistik jetzt abrufen"
+
 msgid "Push books now"
 msgstr "Bücher jetzt senden"
 
@@ -436,3 +442,18 @@ msgstr "Lesefortschritt synchronisiert"
 
 msgid "No saved reading progress found for this book"
 msgstr "Kein gespeicherter Lesefortschritt für dieses Buch gefunden"
+
+msgid "Reading statistics are up to date"
+msgstr "Lesestatistik ist auf dem neuesten Stand"
+
+msgid "Reading statistics pushed"
+msgstr "Lesestatistik gesendet"
+
+msgid "Failed to push reading statistics"
+msgstr "Senden der Lesestatistik fehlgeschlagen"
+
+msgid "Failed to pull reading statistics"
+msgstr "Abrufen der Lesestatistik fehlgeschlagen"
+
+msgid "Reading statistics pulled"
+msgstr "Lesestatistik abgerufen"

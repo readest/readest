@@ -1,0 +1,468 @@
+# Nightly builds. Mirrors the build matrix and build/signing steps of
+# release.yml — keep cert/NDK/toolchain bumps, secret names, and the
+# truly-portable AppImage + portable-Windows steps in sync between the two.
+#
+# Differences from release.yml: this workflow (1) stamps a nightly version
+# `<base>-<YYYYMMDDHH>` (Asia/Shanghai), (2) publishes to Cloudflare R2 only (no
+# GitHub release), and (3) assembles `nightly/latest.json` race-free from
+# per-leg manifest fragments so a single failing leg never clobbers the manifest.
+name: Nightly Readest
+
+on:
+  schedule:
+    - cron: '0 22 * * *' # 22:00 UTC = 06:00 GMT+8
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialize runs so an older run can't publish nightly/latest.json after a newer
+# one (no cancel — let an in-flight build finish rather than drop artifacts).
+concurrency:
+  group: nightly-readest
+  cancel-in-progress: false
+
+jobs:
+  compute-version:
+    runs-on: ubuntu-latest
+    outputs:
+      nightly_version: ${{ steps.v.outputs.nightly_version }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - id: v
+        run: |
+          BASE=$(node -p "require('./apps/readest-app/package.json').version")
+          STAMP=$(TZ=Asia/Shanghai date +%Y%m%d%H)
+          echo "nightly_version=${BASE}-${STAMP}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: compute-version
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-latest
+            release: android
+            rust_target: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          - os: ubuntu-22.04
+            release: linux
+            arch: x86_64
+            rust_target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            release: linux
+            arch: aarch64
+            rust_target: aarch64-unknown-linux-gnu
+          - os: macos-latest
+            release: macos
+            arch: aarch64
+            rust_target: x86_64-apple-darwin,aarch64-apple-darwin
+            args: '--target universal-apple-darwin'
+          - os: windows-latest
+            release: windows
+            arch: x86_64
+            rust_target: x86_64-pc-windows-msvc
+            args: '--target x86_64-pc-windows-msvc --bundles nsis'
+          - os: windows-latest
+            release: windows
+            arch: aarch64
+            rust_target: aarch64-pc-windows-msvc
+            args: '--target aarch64-pc-windows-msvc --bundles nsis'
+
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: initialize git submodules
+        run: git submodule update --init --recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: setup Java (for Android build only)
+        if: matrix.config.release == 'android'
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: setup Android SDK (for Android build only)
+        if: matrix.config.release == 'android'
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+
+      - name: install NDK (for Android build only)
+        if: matrix.config.release == 'android'
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: nightly-${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
+
+      - name: install dependencies (ubuntu only)
+        if: contains(matrix.config.os, 'ubuntu') && matrix.config.release != 'android'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - name: create .env.local file for Next.js
+        run: |
+          echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+          cp .env.local apps/readest-app/.env.local
+
+      - name: install rclone
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y rclone
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install rclone
+          else
+            choco install rclone -y
+          fi
+
+      - name: configure rclone
+        shell: bash
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.RELEASE_R2_ACCESS_KEY_ID }}
+          secret_access_key = ${{ secrets.RELEASE_R2_SECRET_ACCESS_KEY }}
+          endpoint = https://${{ secrets.RELEASE_R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          EOF
+
+      # ──────────────────────────── ANDROID ────────────────────────────
+      # `pnpm tauri android init` + `git checkout .` reverts tracked files
+      # (including package.json), so the nightly version MUST be patched AFTER
+      # the checkout. Mirrors release.yml's android build/signing steps.
+      - name: build and sign Android apks
+        if: matrix.config.release == 'android'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          cd apps/readest-app/
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
+          # Patch the nightly version AFTER checkout so the stamp survives.
+          node -e "const f='package.json';const j=require('./'+f);j.version='${version}';require('fs').writeFileSync(f, JSON.stringify(j,null,2)+'\n')"
+
+          pushd src-tauri/gen/android
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+          popd
+
+          apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
+          universal_apk=Readest_${version}_universal.apk
+          arm64_apk=Readest_${version}_arm64.apk
+          pnpm tauri android build
+          cp ${apk_path}/app-universal-release.apk $universal_apk
+          pnpm tauri android build -t aarch64
+          cp ${apk_path}/app-universal-release.apk $arm64_apk
+          pnpm tauri signer sign $universal_apk
+          pnpm tauri signer sign $arm64_apk
+
+      # ──────────────────────────── DESKTOP ────────────────────────────
+      # Linux uses the truly-portable AppImage tauri CLI fork (mirrors
+      # release.yml). The nightly version is patched BEFORE `tauri build` so the
+      # bundle filenames carry the stamp.
+      - name: Override tauri-cli with custom AppImage format (Linux)
+        if: matrix.config.release == 'linux'
+        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
+
+      - name: build desktop bundles
+        if: matrix.config.release != 'android'
+        shell: bash
+        env:
+          TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          node -e "const f='apps/readest-app/package.json';const j=require('./'+f);j.version='${version}';require('fs').writeFileSync(f, JSON.stringify(j,null,2)+'\n')"
+          cd apps/readest-app
+          # On Linux use the cargo `tauri` CLI (the truly-portable AppImage fork
+          # installed above); elsewhere the npm @tauri-apps/cli.
+          if [ "${{ matrix.config.release }}" = "linux" ]; then
+            cargo tauri build ${{ matrix.config.args }}
+          else
+            pnpm tauri build ${{ matrix.config.args }}
+          fi
+
+      # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
+      # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
+      - name: build and sign portable binaries (Windows only)
+        if: matrix.config.os == 'windows-latest'
+        shell: bash
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          arch="${{ matrix.config.arch }}"
+          rust_target="${{ matrix.config.rust_target }}"
+
+          # The clean NSIS build above produced bundle/nsis/Readest_<ver>_<x64|
+          # arm64>-setup.exe (+ .sig). The portable rebuild below runs `tauri
+          # build ... --bundles nsis` AGAIN with NEXT_PUBLIC_PORTABLE_APP=true,
+          # which OVERWRITES that installer with a portable-flavored one. Stage
+          # the clean installer + its updater .sig to a safe dir FIRST so the
+          # collect step can read the untouched copy for the windows-* keys.
+          if [ "$arch" = "x86_64" ]; then
+            nsis_name="Readest_${version}_x64-setup.exe"
+          else
+            nsis_name="Readest_${version}_arm64-setup.exe"
+          fi
+          nsis_src="target/${rust_target}/release/bundle/nsis/${nsis_name}"
+          mkdir -p nsis-staged
+          cp "$nsis_src" "nsis-staged/${nsis_name}"
+          cp "${nsis_src}.sig" "nsis-staged/${nsis_name}.sig"
+
+          pushd apps/readest-app/
+          echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
+          pnpm tauri build ${{ matrix.config.args }}
+          popd
+
+          if [ "$arch" = "x86_64" ]; then
+            bin_file="Readest_${version}_x64-portable.exe"
+          else
+            bin_file="Readest_${version}_arm64-portable.exe"
+          fi
+          exe_file="target/${{ matrix.config.rust_target }}/release/readest.exe"
+          # Browsers on Windows refuse to download zips containing exe files, so
+          # ship the exe directly (matches release.yml).
+          cp "$exe_file" "$bin_file"
+          pushd apps/readest-app/
+          pnpm tauri signer sign "../../$bin_file"
+          popd
+
+      # ───────────────── COLLECT ARTIFACTS + BUILD FRAGMENT ─────────────────
+      # Each leg copies its updater artifacts (+ .sig) into ./nightly-out and
+      # emits a per-leg manifest fragment keyed by the EXACT Tauri platform keys
+      # the client expects (see src/helpers/updater.ts::getNightlyPlatformKey and
+      # src/components/UpdaterWindow.tsx::TAURI_UPDATER_KEYS). The fragment
+      # `signature` is the .sig file CONTENTS; `url` is the download.readest.com
+      # URL of the uploaded artifact under nightly/<version>/.
+      - name: collect artifacts + build manifest fragment
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          release="${{ matrix.config.release }}"
+          arch="${{ matrix.config.arch }}"
+          rust_target="${{ matrix.config.rust_target }}"
+          base_url="https://download.readest.com/nightly/${version}"
+          out="$PWD/nightly-out"
+          frag_dir="$out/frag"
+          mkdir -p "$out" "$frag_dir"
+          # Cargo WORKSPACE: bundles land in the REPO-ROOT target/ dir, not
+          # apps/readest-app/src-tauri/target/ (matches release.yml line 371).
+          bundle="target"
+
+          # Stage one artifact + its .sig into $out, then append a
+          # platforms[<key>] = {signature, url} entry to the fragment JSON.
+          frag="$frag_dir/${release}-${arch:-all}.json"
+          echo '{"platforms":{}}' > "$frag"
+          add_entry() {
+            local src="$1"; local fname="$2"; local key="$3"
+            if [ ! -f "$src" ] || [ ! -f "${src}.sig" ]; then
+              echo "::error::missing artifact or signature for $key: $src"
+              exit 1
+            fi
+            cp "$src" "$out/$fname"
+            cp "${src}.sig" "$out/${fname}.sig"
+            local sig; sig=$(cat "${src}.sig")
+            local url="${base_url}/${fname}"
+            jq --arg k "$key" --arg sig "$sig" --arg url "$url" \
+              '.platforms[$k] = {signature: $sig, url: $url}' "$frag" > "$frag.tmp" && mv "$frag.tmp" "$frag"
+            echo "fragment += $key -> $fname"
+          }
+
+          case "$release" in
+            android)
+              # Signed in the android step; basenames already version-stamped.
+              add_entry "apps/readest-app/Readest_${version}_universal.apk" "Readest_${version}_universal.apk" "android-universal"
+              add_entry "apps/readest-app/Readest_${version}_arm64.apk"     "Readest_${version}_arm64.apk"     "android-arm64"
+              ;;
+            macos)
+              # Universal updater bundle: bundle/macos/Readest.app.tar.gz (no
+              # version/arch on disk). Upload under the stable convention name
+              # Readest_universal.app.tar.gz; both darwin keys point at it.
+              src="${bundle}/universal-apple-darwin/release/bundle/macos/Readest.app.tar.gz"
+              add_entry "$src" "Readest_universal.app.tar.gz" "darwin-aarch64"
+              # Reuse the already-staged copy for the x86_64 key (same artifact).
+              x86_sig=$(cat "$out/Readest_universal.app.tar.gz.sig")
+              jq --arg sig "$x86_sig" --arg url "${base_url}/Readest_universal.app.tar.gz" \
+                '.platforms["darwin-x86_64"] = {signature: $sig, url: $url}' "$frag" > "$frag.tmp" && mv "$frag.tmp" "$frag"
+              echo "fragment += darwin-x86_64 -> Readest_universal.app.tar.gz"
+              ;;
+            windows)
+              if [ "$arch" = "x86_64" ]; then
+                nsis_name="Readest_${version}_x64-setup.exe"
+                portable_name="Readest_${version}_x64-portable.exe"
+                nsis_key="windows-x86_64"; portable_key="windows-x86_64-portable"
+              else
+                nsis_name="Readest_${version}_arm64-setup.exe"
+                portable_name="Readest_${version}_arm64-portable.exe"
+                nsis_key="windows-aarch64"; portable_key="windows-aarch64-portable"
+              fi
+              # Read the CLEAN NSIS installer staged before the portable rebuild
+              # (the rebuild overwrites bundle/nsis/...-setup.exe). See the
+              # "build and sign portable binaries" step.
+              add_entry "nsis-staged/${nsis_name}" "$nsis_name" "$nsis_key"
+              # Portable exe was copied + signed into the repo root above.
+              add_entry "$portable_name" "$portable_name" "$portable_key"
+              ;;
+            linux)
+              # Truly-portable AppImage: bundle/appimage/Readest_<ver>_<amd64|aarch64>.AppImage
+              if [ "$arch" = "x86_64" ]; then
+                appimage_name="Readest_${version}_amd64.AppImage"
+                key="linux-x86_64-appimage"
+              else
+                appimage_name="Readest_${version}_aarch64.AppImage"
+                key="linux-aarch64-appimage"
+              fi
+              # The Linux leg builds with `cargo tauri build` WITHOUT `--target`
+              # (no matrix args), so cargo emits bundles under target/release/
+              # (host-target default) — NOT target/<triple>/release/ like the
+              # macOS/Windows legs, which DO pass `--target`. So there is no
+              # ${rust_target} subdir here.
+              add_entry "${bundle}/release/bundle/appimage/${appimage_name}" "$appimage_name" "$key"
+              ;;
+            *)
+              echo "::error::unknown release leg: $release"; exit 1
+              ;;
+          esac
+
+      - name: upload artifacts + fragment to R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          base="r2:readest-releases/nightly/${version}"
+          out="$PWD/nightly-out"
+          # Artifacts (exclude the local frag/ scratch dir).
+          rclone copy "$out" "$base/" --exclude "frag/**"
+          # Per-leg manifest fragment.
+          rclone copy "$out/frag" "$base/manifest-fragments/"
+
+  assemble-manifest:
+    needs: [compute-version, build]
+    if: ${{ always() && needs.build.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: install rclone + jq
+        run: sudo apt-get update && sudo apt-get install -y rclone jq
+
+      - name: configure rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.RELEASE_R2_ACCESS_KEY_ID }}
+          secret_access_key = ${{ secrets.RELEASE_R2_SECRET_ACCESS_KEY }}
+          endpoint = https://${{ secrets.RELEASE_R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          EOF
+
+      - name: assemble + atomically promote latest.json
+        run: |
+          set -euo pipefail
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          base="r2:readest-releases/nightly"
+
+          # Pull only the fragments that SUCCEEDED legs uploaded.
+          rclone copy "$base/${version}/manifest-fragments" ./frag || true
+          if [ -z "$(ls -A ./frag 2>/dev/null)" ]; then
+            echo "::error::no manifest fragments found — all build legs failed; manifest NOT promoted"
+            exit 1
+          fi
+
+          # Merge every fragment's .platforms into one manifest.
+          jq -s \
+            --arg version "$version" \
+            '{version: $version, pub_date: (now | todateiso8601), notes: "Nightly build", platforms: (map(.platforms) | add)}' \
+            ./frag/*.json > latest.json
+
+          echo "Assembled latest.json:"
+          jq '{version, platforms: (.platforms | keys)}' latest.json
+
+          # Promote the manifest with a directory `rclone copy`, exactly like the
+          # stable release flow writes releases/latest.json (upload-to-r2.yml).
+          # A single-file `rclone copyto`/`moveto` first issues a CreateBucket
+          # probe (PUT /<bucket>) that the object-scoped R2 token can't satisfy
+          # (403 AccessDenied); a directory copy PUTs the object directly. R2
+          # PutObject is atomic, so readers never observe a half-written manifest.
+          mkdir -p promote && cp latest.json promote/latest.json
+          rclone copy promote "$base/"
+
+      - name: prune old nightly folders (keep newest 7)
+        run: |
+          set -euo pipefail
+          base="r2:readest-releases/nightly"
+          # Version dirs are <base>-<YYYYMMDDHH>. Lexicographic order is NOT
+          # chronological across a base-version bump (e.g. 0.2.0-* sorts after
+          # 0.11.0-*), so sort by the numeric stamp tail (everything after the
+          # last '-') to keep the newest 7 by build time.
+          mapfile -t dirs < <(rclone lsf "$base/" --dirs-only | sed 's:/$::' \
+            | sed -E 's/^(.*)-([0-9]{10})$/\2 \1-\2/' | sort -n -k1,1 | cut -d' ' -f2-)
+          count=${#dirs[@]}
+          if [ "$count" -gt 7 ]; then
+            for d in "${dirs[@]:0:$((count-7))}"; do
+              echo "pruning $d"
+              rclone purge "$base/$d"
+            done
+          fi
+
+      - name: notify on failure
+        if: failure()
+        run: echo "::error::Nightly assemble failed — manifest not promoted."

@@ -16,6 +16,9 @@ export interface RsvpState {
   wpm: number;
   punctuationPauseMs: number;
   splitHyphens: boolean;
+  cjkCharMode: boolean;
+  startDelaySeconds: number;
+  hasCJK: boolean;
   progress: number;
 }
 

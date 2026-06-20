@@ -11,7 +11,16 @@ local T_MID    = 1750000000000  -- 2025-06-15
 local T_RECENT = 1770000000000  -- 2026-02-01
 
 -- Minimal book row factory; tests override fields they care about.
+--
+-- The store only shows a book whose file is reachable: uploaded to cloud
+-- (uploaded_at set) or present locally (local_present = 1). A real
+-- cloud-present book always has its file uploaded — that's what makes it
+-- downloadable — so the factory keeps cloud_present and uploaded_at
+-- consistent: cloud_present = 1 implies an uploaded_at unless the test
+-- pins one. To model a *phantom* cloud record (the book row exists but
+-- the file was never uploaded), pass uploaded_at = false.
 local function book(over)
+    over = over or {}
     local row = {
         hash             = "h" .. tostring(math.random(2 ^ 31)),
         meta_hash        = nil,
@@ -36,7 +45,12 @@ local function book(over)
         updated_at       = T_OLD,
         deleted_at       = nil,
     }
-    if over then for k, v in pairs(over) do row[k] = v end end
+    for k, v in pairs(over) do row[k] = v end
+    if row.uploaded_at == false then
+        row.uploaded_at = nil  -- explicit phantom: cloud record, no file
+    elseif row.cloud_present == 1 and row.uploaded_at == nil then
+        row.uploaded_at = row.updated_at or T_OLD
+    end
     return row
 end
 
@@ -75,10 +89,124 @@ describe("LibraryStore", function()
             s3:close()
         end)
 
-        it("sets PRAGMA user_version = 1", function()
+        it("sets PRAGMA user_version = 2", function()
             local store = LibraryStore.new({ user_id = "alice" })
-            assert.are.equal(1, store:getUserVersion())
+            assert.are.equal(2, store:getUserVersion())
             store:close()
+        end)
+
+        -- -----------------------------------------------------------------
+        -- v1 → v2 migration: ALTER TABLE adds reading_status_updated_at
+        -- -----------------------------------------------------------------
+        describe("v1 -> v2 migration", function()
+            local db_path
+            local SQ3 = require("lua-ljsqlite3/init")
+
+            after_each(function()
+                if db_path then
+                    os.remove(db_path)
+                    db_path = nil
+                end
+            end)
+
+            it("migrates an existing v1 DB: column added, row preserved, user_version=2", function()
+                -- Build a temp file path; os.tmpname() creates the file, remove it
+                -- so sqlite.open() starts fresh instead of opening an existing file.
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                -- Create a v1 DB: books table WITHOUT reading_status_updated_at
+                -- (all other v2 columns present so SCHEMA_SQL indexes succeed),
+                -- user_version = 1, one existing row.
+                local v1db = SQ3.open(db_path)
+                v1db:exec([[
+                    CREATE TABLE books (
+                        user_id          TEXT NOT NULL,
+                        hash             TEXT NOT NULL,
+                        meta_hash        TEXT,
+                        title            TEXT NOT NULL,
+                        source_title     TEXT,
+                        author           TEXT,
+                        format           TEXT,
+                        metadata_json    TEXT,
+                        series           TEXT,
+                        series_index     REAL,
+                        group_id         TEXT,
+                        group_name       TEXT,
+                        cover_path       TEXT,
+                        file_path        TEXT,
+                        cloud_present    INTEGER NOT NULL DEFAULT 0,
+                        local_present    INTEGER NOT NULL DEFAULT 0,
+                        uploaded_at      INTEGER,
+                        progress_lib     TEXT,
+                        reading_status   TEXT,
+                        last_read_at     INTEGER,
+                        created_at       INTEGER,
+                        updated_at       INTEGER,
+                        deleted_at       INTEGER,
+                        PRIMARY KEY (user_id, hash)
+                    );
+                    CREATE INDEX IF NOT EXISTS books_user_updated  ON books(user_id, updated_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_lastread ON books(user_id, last_read_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_meta     ON books(user_id, meta_hash);
+                    CREATE INDEX IF NOT EXISTS books_user_group    ON books(user_id, group_name);
+                    CREATE INDEX IF NOT EXISTS books_user_author   ON books(user_id, author);
+                ]])
+                v1db:exec("PRAGMA user_version = 1;")
+                local ins = v1db:prepare(
+                    "INSERT INTO books (user_id, hash, title, cloud_present, local_present, reading_status) VALUES (?, ?, ?, ?, ?, ?)")
+                ins:reset():bind("alice", "h-v1", "OldBook", 1, 1, "reading"):step()
+                ins:close()
+                v1db:close()
+
+                -- Open the v1 file via LibraryStore; migration should run silently.
+                local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
+
+                -- 1. user_version must now be 2
+                assert.are.equal(2, store:getUserVersion())
+
+                -- 2. The pre-existing row is still readable (no error, title intact)
+                local row = store:_getRowRaw("h-v1")
+                assert.is_not_nil(row)
+                assert.are.equal("OldBook", row.title)
+                assert.are.equal("reading", row.reading_status)
+
+                -- 3. reading_status_updated_at round-trips (column exists and is writable)
+                store:upsertBook({
+                    hash = "h-v1",
+                    title = "OldBook",
+                    reading_status_updated_at = 1750000000000,
+                })
+                local row2 = store:_getRowRaw("h-v1")
+                assert.are.equal(1750000000000, row2.reading_status_updated_at)
+
+                store:close()
+            end)
+        end)
+    end)
+
+    -- =====================================================================
+    -- reading_status_updated_at: new column added in schema v2
+    -- =====================================================================
+    describe("reading_status_updated_at", function()
+        it("round-trips reading_status_updated_at through upsert + read", function()
+            local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
+            store:upsertBook({ hash = "h1", title = "T", reading_status = "finished",
+                               reading_status_updated_at = 1750000000000, local_present = 1 })
+            local row = store:_getRowRaw("h1")
+            assert.are.equal("finished", row.reading_status)
+            assert.are.equal(1750000000000, row.reading_status_updated_at)
+            store:close()
+        end)
+
+        it("parseSyncRow reads reading_status_updated_at from the server ISO field", function()
+            local parsed = LibraryStore.parseSyncRow({
+                book_hash = "h2", title = "T", reading_status = "abandoned",
+                reading_status_updated_at = "2026-06-18T00:00:00+00:00", updated_at = "2026-06-18T00:00:00+00:00",
+            })
+            -- 2026-06-18T00:00:00Z = 1781740800 unix seconds = 1781740800000 ms
+            assert.are.equal(1781740800000, parsed.reading_status_updated_at)
+            assert.are.equal("abandoned", parsed.reading_status)
         end)
     end)
 
@@ -317,6 +445,35 @@ describe("LibraryStore", function()
             for _, r in ipairs(rows) do assert.is_not.equal("Ghost", r.title) end
         end)
 
+        it("hides a phantom cloud record — cloud_present=1 but file never uploaded", function()
+            -- A book row synced from cloud whose file was never uploaded
+            -- (uploaded_at NULL) has no cover and cannot be opened. It is
+            -- not local either, so it must not appear in the Library.
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+            }))
+            local rows = store:listBooks({})
+            assert.are.equal(3, #rows)
+            for _, r in ipairs(rows) do assert.is_not.equal("Phantom", r.title) end
+        end)
+
+        it("shows a phantom cloud record once its file is present locally", function()
+            -- Same row as above, but the local scanner found the file.
+            -- local_present = 1 makes the book openable, so it shows.
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 1,
+            }))
+            local rows = store:listBooks({})
+            assert.are.equal(4, #rows)
+            local found = false
+            for _, r in ipairs(rows) do
+                if r.title == "Phantom" then found = true end
+            end
+            assert.is_true(found)
+        end)
+
         it("filters by case-insensitive substring search across title and author", function()
             local r1 = store:listBooks({ search = "asimov" })
             assert.are.equal(1, #r1)
@@ -408,6 +565,20 @@ describe("LibraryStore", function()
         end)
 
         it("group by group_name skips rows with null group_name", function()
+            local groups = store:getGroups("group_name")
+            assert.are.equal(1, #groups)
+            assert.are.equal("Sci-Fi", groups[1].name)
+            assert.are.equal(2, groups[1].count)
+        end)
+
+        it("excludes phantom cloud records from group counts", function()
+            -- A phantom row (cloud record, no uploaded file, not local) in
+            -- the Sci-Fi group must not inflate the group's book count.
+            store:upsertBook(book({
+                hash = "g-phantom", title = "GP", author = "Anon",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+                group_name = "Sci-Fi", updated_at = T_RECENT,
+            }))
             local groups = store:getGroups("group_name")
             assert.are.equal(1, #groups)
             assert.are.equal("Sci-Fi", groups[1].name)

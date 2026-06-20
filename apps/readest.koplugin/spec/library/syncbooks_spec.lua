@@ -213,6 +213,13 @@ describe("library.syncbooks", function()
         it("returns nil for nil input (defensive)", function()
             assert.is_nil(syncbooks._row_to_wire(nil))
         end)
+
+        it("emits readingStatusUpdatedAt in the wire payload", function()
+            local wire = syncbooks._row_to_wire({ hash = "h1", title = "T",
+                reading_status = "finished", reading_status_updated_at = 1750000000000 })
+            assert.are.equal("finished", wire.readingStatus)
+            assert.are.equal(1750000000000, wire.readingStatusUpdatedAt)
+        end)
     end)
 
     -- =====================================================================
@@ -248,6 +255,166 @@ describe("library.syncbooks", function()
             local out = syncbooks.resolve_collision("README",
                 function(name) return name == "README" end)
             assert.are.equal("README (1)", out)
+        end)
+    end)
+
+    -- =====================================================================
+    -- extractLocalCover(file_path, dst_png) — render a book's embedded cover
+    -- to dst_png as PNG via coverbrowser's BookInfo:getCoverImage so
+    -- uploadBook can ship a cover for books that originated on this device
+    -- (issue #4374), not just ones previously downloaded from the cloud.
+    -- The blitbuffer/document work is live-KOReader-only, so we inject a fake
+    -- BookInfo via package.loaded and assert the success/failure wiring.
+    -- =====================================================================
+    describe("extractLocalCover", function()
+        local BI_KEY = "apps/filemanager/filemanagerbookinfo"
+        local saved_bookinfo
+
+        before_each(function()
+            saved_bookinfo = package.loaded[BI_KEY]
+        end)
+        after_each(function()
+            package.loaded[BI_KEY] = saved_bookinfo
+        end)
+
+        it("writes the cover as PNG and returns true when the book has a cover", function()
+            local wrote, freed
+            local fake_bb = {
+                writeToFile = function(_self, path, fmt)
+                    wrote = { path = path, fmt = fmt }
+                    return true
+                end,
+                free = function() freed = true end,
+            }
+            package.loaded[BI_KEY] = {
+                getCoverImage = function(_self, document, file)
+                    -- Called with a nil document + the book's path so BookInfo
+                    -- opens the file itself (matches calibre.koplugin's usage).
+                    assert.is_nil(document)
+                    assert.are.equal("/books/foo.epub", file)
+                    return fake_bb
+                end,
+            }
+
+            local ok = syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png")
+
+            assert.is_true(ok)
+            assert.are.equal("/cache/abc.png", wrote.path)
+            assert.are.equal("png", wrote.fmt)
+            assert.is_true(freed, "the cover blitbuffer must be freed")
+        end)
+
+        it("returns false when the book has no extractable cover", function()
+            package.loaded[BI_KEY] = {
+                getCoverImage = function() return nil end,
+            }
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false when the PNG write fails", function()
+            package.loaded[BI_KEY] = {
+                getCoverImage = function()
+                    return { writeToFile = function() return false end, free = function() end }
+                end,
+            }
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false when coverbrowser's BookInfo isn't available", function()
+            -- Neither package.loaded nor package.path resolves the module in
+            -- the test env, so require() errors and the pcall guard kicks in.
+            package.loaded[BI_KEY] = nil
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", "/cache/abc.png"))
+        end)
+
+        it("returns false for missing arguments", function()
+            assert.is_false(syncbooks.extractLocalCover(nil, "/cache/abc.png"))
+            assert.is_false(syncbooks.extractLocalCover("/books/foo.epub", nil))
+        end)
+    end)
+
+    -- =====================================================================
+    -- syncBooks(opts, mode, cb, before_push) — bidirectional orchestration.
+    --
+    -- The order matters: pull must run BEFORE push in "both" mode so the
+    -- local row has fresh cloud-side fields (uploaded_at, metadata, etc.)
+    -- before we touch + push it. Otherwise the push would send a row with
+    -- those fields nil, and the server's transformBookToDB explicit-nulls
+    -- them on the cloud — wiping out group/upload state on every device
+    -- that pulls afterward. Regression guard for issue #4138.
+    -- =====================================================================
+    describe("syncBooks", function()
+        -- Stub the network-touching halves so we can record call order and
+        -- assert it without standing up Spore + a fake server.
+        local function with_stubs(fn)
+            local original_pull  = syncbooks.pullBooks
+            local original_push  = syncbooks.pushChangedBooks
+            local calls = {}
+            syncbooks.pullBooks = function(_opts, cb)
+                table.insert(calls, "pull")
+                if cb then cb(true, 0) end
+            end
+            syncbooks.pushChangedBooks = function(_opts, cb)
+                table.insert(calls, "push")
+                if cb then cb(true, 0) end
+            end
+            local ok, err = pcall(fn, calls)
+            syncbooks.pullBooks         = original_pull
+            syncbooks.pushChangedBooks  = original_push
+            if not ok then error(err) end
+        end
+
+        it("runs pull before push in 'both' mode", function()
+            with_stubs(function(calls)
+                local before_push_at
+                syncbooks.syncBooks({}, "both",
+                    function() end,
+                    function() before_push_at = #calls end)
+                assert.are.same({ "pull", "push" }, calls)
+                -- before_push runs AFTER pull and BEFORE push — i.e. with
+                -- exactly one call ("pull") recorded so far.
+                assert.are.equal(1, before_push_at)
+            end)
+        end)
+
+        it("invokes before_push between pull and push in 'both' mode", function()
+            with_stubs(function(calls)
+                local before_push_called = 0
+                syncbooks.syncBooks({}, "both",
+                    function() end,
+                    function() before_push_called = before_push_called + 1 end)
+                assert.are.equal(1, before_push_called)
+            end)
+        end)
+
+        it("invokes before_push and then push in 'push' mode", function()
+            with_stubs(function(calls)
+                local before_push_at
+                syncbooks.syncBooks({}, "push",
+                    function() end,
+                    function() before_push_at = #calls end)
+                assert.are.same({ "push" }, calls)
+                assert.are.equal(0, before_push_at)
+            end)
+        end)
+
+        it("skips before_push in 'pull' mode (no push happens)", function()
+            with_stubs(function(calls)
+                local before_push_called = 0
+                syncbooks.syncBooks({}, "pull",
+                    function() end,
+                    function() before_push_called = before_push_called + 1 end)
+                assert.are.same({ "pull" }, calls)
+                assert.are.equal(0, before_push_called)
+            end)
+        end)
+
+        it("tolerates a missing before_push callback", function()
+            with_stubs(function(calls)
+                -- No before_push passed; orchestration should still work.
+                syncbooks.syncBooks({}, "both", function() end)
+                assert.are.same({ "pull", "push" }, calls)
+            end)
         end)
     end)
 end)

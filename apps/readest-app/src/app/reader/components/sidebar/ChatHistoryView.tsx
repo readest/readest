@@ -233,16 +233,26 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
         )}
       </div>
 
-      {/* Floating New Chat button at bottom right */}
-      <div className='absolute bottom-4 right-4'>
+      {/* Floating New Chat button at bottom right.
+          Use safe-area-inset-bottom so it doesn't get hidden behind the
+          Android gesture pill / iOS home indicator on mobile.
+          Use btn-primary colors to guarantee a visible contrast across
+          both light and dark themes (previously bg-base-300 / text-base-content
+          could collapse to a near-invisible solid black pill on some themes). */}
+      <div
+        className='pointer-events-none absolute right-4'
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+        }}
+      >
         <button
           onClick={handleNewConversation}
           className={clsx(
-            'flex items-center gap-2 rounded-full px-4 py-2',
-            'bg-base-300 text-base-content',
-            'hover:bg-base-content/10',
-            'border-base-content/10 border',
-            'shadow-sm',
+            'pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2',
+            'bg-primary text-primary-content',
+            'hover:bg-primary/90',
+            'border-primary/20 border',
+            'shadow-md',
             'transition-all duration-200 ease-out',
             'active:scale-[0.97]',
           )}

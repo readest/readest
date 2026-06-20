@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Position } from '@/utils/sel';
+import { Position, isPointInRect } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -128,6 +128,18 @@ const Popup = ({
   const outerTriangleStyles = getTriangleStyles(trianglePosition, 7, 0);
   const innerTriangleStyles = getTriangleStyles(trianglePosition, 7, -1);
 
+  const popupHeight = height ?? childrenHeight;
+  const triangleHidden = !!(
+    adjustedPosition &&
+    trianglePosition &&
+    isPointInRect(trianglePosition.point, {
+      left: adjustedPosition.point.x,
+      top: adjustedPosition.point.y,
+      right: adjustedPosition.point.x + width,
+      bottom: adjustedPosition.point.y + popupHeight,
+    })
+  );
+
   return (
     <div>
       <div
@@ -156,7 +168,11 @@ const Popup = ({
         {children}
       </div>
       <div
-        className={clsx('popup-triangle-inner text-base-300 absolute z-50', triangleClassName)}
+        className={clsx(
+          'popup-triangle-inner text-base-300 absolute',
+          triangleHidden ? 'z-10' : 'z-50',
+          triangleClassName,
+        )}
         style={innerTriangleStyles}
       />
     </div>

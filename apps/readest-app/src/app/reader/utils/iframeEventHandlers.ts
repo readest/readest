@@ -1,9 +1,10 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
-import { isLikelyMouseWheel } from './smoothWheelScroll';
+import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
+let isMouseDown = false;
 
 let keyboardState = {
   key: '',
@@ -88,6 +89,7 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 };
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
+  isMouseDown = true;
   longHoldTimeout = setTimeout(() => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);
@@ -110,6 +112,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleMouseup = (bookKey: string, event: MouseEvent) => {
+  isMouseDown = false;
   // we will handle mouse back and forward buttons ourselves
   if ([3, 4].includes(event.button)) {
     event.preventDefault();
@@ -132,13 +135,6 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleWheel = (bookKey: string, event: WheelEvent) => {
-  const isMouseWheel = isLikelyMouseWheel(event);
-  // Suppress the browser's native wheel scroll only for mouse-wheel-shaped
-  // events. Trackpad / high-resolution input is already pixel-precise, so
-  // we let it through to keep the existing momentum and 2-axis behaviour.
-  if (isMouseWheel) {
-    event.preventDefault();
-  }
   window.postMessage(
     {
       type: 'iframe-wheel',
@@ -147,7 +143,6 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
       deltaX: event.deltaX,
       deltaY: event.deltaY,
       deltaZ: event.deltaZ,
-      isMouseWheel,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,
@@ -160,9 +155,32 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
   );
 };
 
+// A tappable/long-pressable media element under the pointer, resolved to the
+// payload the image gallery / table zoom viewers consume. Shared by the
+// long-press path and the single-tap path so the two can't drift.
+type MediaTarget = { elementType: 'image'; src: string } | { elementType: 'table'; html: string };
+
+const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
+  if (!target) return null;
+  if (target.localName === 'img') {
+    return { elementType: 'image', src: (target as HTMLImageElement).src };
+  }
+  const svgImage = target.closest('svg')?.querySelector('image');
+  if (svgImage) {
+    const href =
+      svgImage.getAttribute('href') ||
+      svgImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (href) return { elementType: 'image', src: href };
+  }
+  const table = target.localName === 'table' ? target : target.closest('table');
+  if (table) return { elementType: 'table', html: (table as HTMLElement).outerHTML };
+  return null;
+};
+
 export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
+  isFixedLayout: boolean,
   event: MouseEvent,
 ) => {
   const now = Date.now();
@@ -218,9 +236,37 @@ export const handleClick = (
       return;
     }
 
+    // if the mouse button is still held, a drag is in progress (e.g. a
+    // double-click-and-drag selection); sending a single click here would turn
+    // the page mid-selection (#4524).
+    if (isMouseDown) {
+      return;
+    }
+
     // if long hold is detected, we don't want to send single click event
     if (!longHoldTimeout) {
       return;
+    }
+
+    // Word Lens: tapping a glossed word looks it up in the dictionary. Checked
+    // after the drag/long-hold guards so only a clean single tap triggers it.
+    const glossWord = findGlossWord(element);
+    if (glossWord) {
+      const ruby = element?.closest('ruby.wl-gloss') ?? null;
+      eventDispatcher.dispatch('wordlens-dictionary', { bookKey, element: ruby, word: glossWord });
+      return;
+    }
+
+    // In reflowable books a single tap on an image/table opens the same viewer
+    // a long-press does, so the image gallery / table zoom is reachable by both
+    // gestures (#4584). Fixed-layout books (PDF/comics/manga) keep tap-to-turn,
+    // since there the tap is the page-turn gesture.
+    if (!isFixedLayout) {
+      const media = detectMediaTarget(element);
+      if (media) {
+        window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
+        return;
+      }
     }
 
     window.postMessage(
@@ -305,47 +351,9 @@ export const addLongPressListeners = (bookKey: string, doc: Document) => {
       return;
     }
 
-    if (target.localName === 'img') {
-      const imgTarget = target as HTMLImageElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'image',
-          src: imgTarget.src,
-        },
-        '*',
-      );
-    } else if (target.closest('svg')) {
-      const svg = target.closest('svg')!;
-      const svgImage = svg.querySelector('image');
-      const href =
-        svgImage?.getAttribute('href') ||
-        svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-      if (href) {
-        window.postMessage(
-          {
-            type: 'iframe-long-press',
-            bookKey,
-            elementType: 'image',
-            src: href,
-          },
-          '*',
-        );
-      }
-    } else if (target.localName === 'table' || target.closest('table')) {
-      const tableTarget = (
-        target.localName === 'table' ? target : target.closest('table')
-      ) as HTMLTableElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'table',
-          html: tableTarget.outerHTML,
-        },
-        '*',
-      );
+    const media = detectMediaTarget(target);
+    if (media) {
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
     }
   };
 

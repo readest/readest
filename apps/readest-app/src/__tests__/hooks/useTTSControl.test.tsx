@@ -35,6 +35,7 @@ const mockView = {
   getCFI: vi.fn().mockReturnValue('cfi'),
   deselect: vi.fn(),
   resolveNavigation: vi.fn(),
+  goTo: vi.fn(),
   history: { back: vi.fn(), forward: vi.fn() },
   tts: {
     from: vi.fn().mockReturnValue('<speak>hello</speak>'),
@@ -76,15 +77,25 @@ vi.mock('@/store/readerStore', () => {
     setViewSettings: vi.fn(),
     setTTSEnabled: vi.fn(),
   };
-  const useReaderStore = () => store;
+  // Production code uses per-field selectors; mock must apply them.
+  const useReaderStore = <R,>(selector?: (s: typeof store) => R) =>
+    selector ? selector(store) : store;
   useReaderStore.getState = () => store;
   return { useReaderStore };
 });
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => mockBookData,
-  }),
+vi.mock('@/store/bookDataStore', () => {
+  const state = { getBookData: () => mockBookData };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
+
+// useTTSControl now reads progress reactively from readerProgressStore.
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => mockProgress,
+  getBookProgress: () => mockProgress,
 }));
 
 vi.mock('@/store/proofreadStore', () => ({
@@ -135,6 +146,7 @@ vi.mock('@/services/tts', () => ({
       backward: vi.fn().mockResolvedValue(undefined),
       getVoices: vi.fn().mockResolvedValue([]),
       getVoiceId: vi.fn().mockReturnValue(''),
+      redispatchPosition: vi.fn(),
       state: 'idle',
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -239,5 +251,142 @@ describe('useTTSControl concurrent tts-speak events', () => {
       while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
       await Promise.all([p1, p2]);
     });
+  });
+});
+
+describe('useTTSControl tts-sync-request (mode-entry replay)', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const startSession = async () => {
+    render(<Harness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    return ttsControllerInstances[0] as { redispatchPosition: ReturnType<typeof vi.fn> };
+  };
+
+  it('replays the current position then the playback state when a session exists', async () => {
+    const controller = await startSession();
+    const order: string[] = [];
+    controller.redispatchPosition.mockImplementation(() => order.push('position'));
+    const stateListener = (e: Event) => {
+      order.push(`state:${(e as CustomEvent).detail.state}`);
+    };
+    eventDispatcher.on('tts-playback-state', stateListener);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'book-1' });
+    });
+
+    eventDispatcher.off('tts-playback-state', stateListener);
+    // Position-before-state is required so RSVP's 'paused' handler (which drops
+    // following) can't discard the replayed position.
+    expect(order).toEqual(['position', 'state:playing']);
+  });
+
+  it('ignores a sync request for a different book', async () => {
+    const controller = await startSession();
+    controller.redispatchPosition.mockClear();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'other-book' });
+    });
+
+    expect(controller.redispatchPosition).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op once the session has stopped', async () => {
+    const controller = await startSession();
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    controller.redispatchPosition.mockClear();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-sync-request', { bookKey: 'book-1' });
+    });
+
+    expect(controller.redispatchPosition).not.toHaveBeenCalled();
+  });
+});
+
+describe('useTTSControl handleHighlightMark cross-section navigation', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockView.renderer.scrollToAnchor.mockClear();
+    mockView.renderer.goTo.mockClear();
+    mockView.goTo.mockClear();
+    mockView.resolveCFI.mockReset();
+    mockViewSettings.ttsLocation = null;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const setupAndCaptureHighlightHandler = async () => {
+    render(<Harness />);
+
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+
+    // Let the listener-registration useEffect run.
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+
+    const controller = ttsControllerInstances[0] as {
+      addEventListener: { mock: { calls: [string, (e: Event) => void][] } };
+    };
+    const calls = controller.addEventListener.mock.calls;
+    const entry = calls.find(([name]) => name === 'tts-highlight-mark');
+    if (!entry) throw new Error('tts-highlight-mark listener was not registered');
+    return entry[1];
+  };
+
+  it('navigates to the cfi via view.goTo when TTS crosses into a new section', async () => {
+    const handler = await setupAndCaptureHighlightHandler();
+
+    // primaryIndex is 0 (current view section). Make the TTS cfi resolve to section 1.
+    mockView.resolveCFI.mockReturnValue({ index: 1, anchor: () => new Range() });
+
+    await act(async () => {
+      handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/8!/4/2)' } }));
+    });
+
+    expect(mockView.goTo).toHaveBeenCalledWith('epubcfi(/6/8!/4/2)');
+    expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+  });
+
+  it('keeps in-section behaviour: scrolls via renderer without navigating', async () => {
+    const handler = await setupAndCaptureHighlightHandler();
+
+    mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+
+    await act(async () => {
+      handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+    });
+
+    expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+    expect(mockView.goTo).not.toHaveBeenCalled();
   });
 });

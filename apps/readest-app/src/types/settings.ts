@@ -22,6 +22,15 @@ export const LibrarySortByType = {
 
 export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibrarySortByType];
 
+/**
+ * Secondary sort key. Same options as the primary sort key plus `'none'` which
+ * disables the secondary sort. When set to `'none'` and a smart default applies
+ * (e.g. groupBy=Author -> series), the resolver in `libraryUtils` substitutes
+ * the implicit default at sort time without persisting it. See
+ * `resolveEffectiveSecondarySort`.
+ */
+export type LibrarySecondarySortByType = LibrarySortByType | 'none';
+
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export const LibraryGroupByType = {
@@ -45,6 +54,12 @@ export interface ReadSettings {
   autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
+  /**
+   * Global Word Lens toggle: auto-download a gloss pack on demand when the
+   * pair isn't cached locally. When off, the reader never fetches packs
+   * silently; users download them explicitly from the Word Lens sub-page.
+   */
+  wordLensAutoDownload: boolean;
   highlightStyle: HighlightStyle;
   highlightStyles: Record<HighlightStyle, HighlightColor>;
 
@@ -71,19 +86,147 @@ export interface ReadwiseSettings {
   enabled: boolean;
   accessToken: string;
   lastSyncedAt: number;
+  /**
+   * Advanced: override the Readwise API base URL (e.g. for a self-hosted,
+   * Readwise-compatible receiver). When unset or blank, the official
+   * `READWISE_API_BASE_URL` is used.
+   */
+  baseUrl?: string;
 }
 
 export interface HardcoverSettings {
   enabled: boolean;
   accessToken: string;
   lastSyncedAt: number;
+  // When true, progress + notes are pushed to Hardcover automatically as the
+  // user reads (debounced) instead of only via the reader menu. Default OFF;
+  // existing connected users (undefined) stay manual until they opt in.
+  autoSync?: boolean;
 }
+
+export interface WebDAVSettings {
+  enabled: boolean;
+  serverUrl: string;
+  username: string;
+  password: string;
+  rootPath: string;
+  // Sync sub-toggles. WebDAV sync runs as a parallel channel alongside the
+  // native cloud sync, KOSync, Readwise, and Hardcover; each sub-toggle
+  // gates a category independently so a user can e.g. mirror progress to
+  // their own server without uploading book binaries.
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  // Conflict policy — same vocabulary as KOSync so users only learn one.
+  strategy?: KOSyncStrategy;
+  // Stable per-device id (uuidv4); written into library.json so we can tell
+  // which device last touched a given book.
+  deviceId?: string;
+  // Wall-clock millisecond timestamp of the last successful end-to-end
+  // sync, surfaced in the WebDAV settings sub-page.
+  lastSyncedAt?: number;
+  // Diagnostic ring buffer: most recent ten "Sync now" runs, oldest first
+  // dropped when full. Persisted alongside the rest of settings so users
+  // can screenshot a failure breakdown when reporting issues. We keep the
+  // cap small both for storage hygiene and because debugging beyond ten
+  // back is rarely useful — by then the live state has long moved on.
+  syncLog?: WebDAVSyncLogEntry[];
+}
+
+/**
+ * Outcome category for one entry in {@link WebDAVSettings.syncLog}. We
+ * keep this coarse on purpose — it drives the colour of the status pill
+ * in the history panel and nothing else. Per-step counters travel in the
+ * same entry for users who want detail.
+ *
+ * - `success`: ran to completion with `failures === 0` and at least one
+ *   meaningful action (download/upload). "Up to date" runs (no work) also
+ *   land here.
+ * - `partial`: ran to completion but `failures > 0`. At least one book
+ *   may need a re-sync to fully converge.
+ * - `failure`: did not finish. Either a top-level error (auth failed,
+ *   network down before any work) or every book failed.
+ */
+export type WebDAVSyncLogStatus = 'success' | 'partial' | 'failure';
+
+export interface WebDAVSyncLogFailure {
+  /** Stable identifier for the book — used as React key, never displayed. */
+  hash: string;
+  /** Human-readable book title at the time of the failed attempt. */
+  title: string;
+  /**
+   * Short, single-line failure description. We deliberately strip stacks
+   * and long server XML; users want "auth failed" / "404", not a wall of
+   * text. Truncate to ~200 chars at write time so the persisted log
+   * doesn't bloat settings.json.
+   */
+  reason: string;
+}
+
+export interface WebDAVSyncLogEntry {
+  /** UUIDv4. Used as React list key and for "expand details" toggling. */
+  id: string;
+  /** Wall-clock ms when handleSyncNow began. */
+  startedAt: number;
+  /** Wall-clock ms when the run finished or aborted. */
+  finishedAt: number;
+  status: WebDAVSyncLogStatus;
+  /**
+   * What kind of run this entry records. Defaults to 'sync' when
+   * absent so log entries persisted before this field was introduced
+   * keep rendering the same way they always did. 'cleanup' is set
+   * for entries written by the WebDAV browser's batch
+   * Delete-from-server action; renderers use this to swap the badge
+   * label and pick a cleanup-specific summary line.
+   */
+  kind?: 'sync' | 'cleanup';
+  /**
+   * What kicked off this run. v1 only writes 'manual' (the Sync now
+   * button is the only entry point). The reader-hook auto-pushes are
+   * intentionally NOT logged: they fire once per page-turn and would
+   * drown out the manual-run signal users care about.
+   */
+  trigger: 'manual' | 'auto';
+  /** Counters mirroring `SyncLibraryResult` — directly screenshot-friendly. */
+  totalBooks: number;
+  booksDownloaded: number;
+  filesUploaded: number;
+  filesAlreadyInSync: number;
+  configsUploaded: number;
+  configsDownloaded: number;
+  coversUploaded: number;
+  /**
+   * Number of per-hash directories successfully removed from the
+   * server in a cleanup run. Only meaningful when `kind === 'cleanup'`;
+   * sync entries leave this undefined / zero. Kept optional to avoid
+   * a migration step on existing settings.json files.
+   */
+  booksDeleted?: number;
+  failures: number;
+  /** The same one-liner shown in the toast. Kept for at-a-glance reading. */
+  summary: string;
+  /**
+   * Top-level error message when the run aborted before processing
+   * books (auth, root not reachable, connectivity). Mutually exclusive
+   * with `failedBooks` in practice — a top-level abort means we never
+   * iterated, so per-book failures don't apply.
+   */
+  errorMessage?: string;
+  /** Per-book failure breakdown when `failures > 0`. */
+  failedBooks?: WebDAVSyncLogFailure[];
+}
+
+/** Maximum entries retained in {@link WebDAVSettings.syncLog}. */
+export const WEBDAV_SYNC_LOG_LIMIT = 10;
 
 /**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica
- * sync. Adding a new replica kind extends this union.
+ * sync. 'credentials' is a meta-toggle that gates the encrypted-credential
+ * fields (OPDS username/password, KOSync credentials, Readwise / Hardcover
+ * tokens) across whichever replica kinds carry them. Adding a new replica
+ * kind extends this union.
  */
 export type SyncCategory =
   | 'book'
@@ -93,7 +236,9 @@ export type SyncCategory =
   | 'font'
   | 'texture'
   | 'opds_catalog'
-  | 'settings';
+  | 'settings'
+  | 'credentials'
+  | 'stats';
 
 export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'book',
@@ -104,22 +249,56 @@ export const SYNC_CATEGORIES: readonly SyncCategory[] = [
   'texture',
   'opds_catalog',
   'settings',
+  'stats',
+  'credentials',
 ] as const;
+
+export interface KeyBinding {
+  /** `native` = media keys forwarded by the OS bridge; `dom` = keyboard/D-pad keys. */
+  source: 'native' | 'dom';
+  /** Native key name (e.g. `MediaNext`) or DOM `event.code` (e.g. `ArrowLeft`). */
+  id: string;
+  /** Human-readable label shown in settings. */
+  label: string;
+}
+
+export interface HardwarePageTurnerSettings {
+  enabled: boolean;
+  bindings: {
+    pagePrev: KeyBinding | null;
+    pageNext: KeyBinding | null;
+    sectionPrev: KeyBinding | null;
+    sectionNext: KeyBinding | null;
+  };
+}
 
 export interface SystemSettings {
   version: number;
   migrationVersion: number;
   localBooksDir: string;
   customRootDir?: string;
+  /**
+   * Absolute paths the user has registered as "external library folders" —
+   * directories managed by the user (or another reader app, e.g. Duokan,
+   * Calibre, Moon+ Reader) that Readest should read in place instead of
+   * copying into Books/<hash>/. Each entry must be an absolute path; entries
+   * are matched as path-prefix roots when ingesting a file. Device-local
+   * (path is meaningful only on this filesystem) and excluded from cloud
+   * settings backups via `BACKUP_SETTINGS_BLACKLIST`.
+   */
+  externalLibraryFolders?: string[];
 
   keepLogin: boolean;
   autoUpload: boolean;
   alwaysOnTop: boolean;
   openBookInNewWindow: boolean;
   autoCheckUpdates: boolean;
+  updateChannel: 'stable' | 'nightly';
   screenWakeLock: boolean;
   screenBrightness: number;
   autoScreenBrightness: boolean;
+  swipeBrightnessGesture: boolean;
+  hardwarePageTurner: HardwarePageTurnerSettings;
   alwaysShowStatusBar: boolean;
   alwaysInForeground: boolean;
   openLastBooks: boolean;
@@ -132,6 +311,15 @@ export interface SystemSettings {
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;
+  /**
+   * Whether the primary sort uses a smart default derived from `libraryGroupBy`.
+   * When `true` and grouping by Series, the effective primary sort becomes
+   * Series at sort time (the stored `librarySortBy` is left unchanged so users
+   * who later turn auto off keep their previous explicit pick). Flipped to
+   * `false` the moment the user picks any primary sort in the menu.
+   */
+  librarySortByAuto: boolean;
+  librarySortBy2: LibrarySecondarySortByType;
   libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
@@ -158,10 +346,19 @@ export interface SystemSettings {
   pinCodeEnabled?: boolean;
   pinCodeHash?: string;
   pinCodeSalt?: string;
+  /**
+   * Mobile-only. When true AND a PIN lock is configured AND the device
+   * has enrolled biometrics, the app-lock screen prompts for biometrics
+   * (fingerprint / Face ID) first and falls back to the PIN. No effect on
+   * desktop/web (no biometric plugin). `undefined` is treated as `false`
+   * so existing PIN users are never silently switched to biometric.
+   */
+  biometricUnlockEnabled?: boolean;
 
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
+  webdav: WebDAVSettings;
 
   aiSettings: AISettings;
   /**

@@ -1,5 +1,7 @@
 import { transferManager } from '@/services/transferManager';
 import { getReplicaAdapter } from './replicaRegistry';
+import { isSyncCategoryEnabled } from './syncCategories';
+import { getAccessToken } from '@/utils/access';
 import type { AppService, BaseDir } from '@/types/system';
 import type { ReplicaTransferFile } from '@/store/transferStore';
 import type { ClosableFile } from '@/utils/file';
@@ -42,6 +44,11 @@ interface ReplicaBinaryRecord {
  * publishReplicaManifest call (binaries first, manifest last).
  *
  * No-op when:
+ *   - the user has turned the matching sync category off in Manage Sync
+ *     (`dictionary`, `font`, `texture` — i.e. backgrounds). Skipping
+ *     here keeps potentially large bundle uploads from leaving the
+ *     device when the user has opted out, and matches the metadata-side
+ *     gate already enforced by `publishReplicaUpsert`.
  *   - the record lacks contentId (legacy / unsynced)
  *   - the kind isn't registered or has no binary capability
  *   - TransferManager isn't initialized yet (pre-library mount)
@@ -54,7 +61,9 @@ export const queueReplicaBinaryUpload = async <T extends ReplicaBinaryRecord>(
   record: T,
   appService: AppService,
 ): Promise<string | null> => {
+  if (!isSyncCategoryEnabled(kind)) return null;
   if (!record.contentId) return null;
+  if (!(await getAccessToken())) return null;
   if (!transferManager.isReady()) return null;
 
   const adapter = getReplicaAdapter<T>(kind);

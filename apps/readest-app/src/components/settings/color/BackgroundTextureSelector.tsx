@@ -2,7 +2,7 @@ import React from 'react';
 import { MdRadioButtonChecked, MdClose, MdAdd, MdPlayCircleOutline } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import Select from '@/components/Select';
+import { BoxedList, SectionTitle, SettingsRow, SettingsSelect } from '../primitives';
 
 interface Texture {
   id: string;
@@ -44,7 +44,7 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
 
   return (
     <div>
-      <h2 className='mb-2 font-medium'>{_('Background Image')}</h2>
+      <SectionTitle className='mb-2'>{_('Background Image')}</SectionTitle>
       <div className='mb-4 grid grid-cols-2 gap-4'>
         {allTextures.map((texture) => (
           // The swatch is a div (not a <button>) so the inner Delete
@@ -63,10 +63,13 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
                 onTextureSelect(texture.id);
               }
             }}
-            className={`bg-base-100 relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-4 shadow-md transition-all ${
-              selectedTextureId === texture.id
-                ? 'ring-2 ring-indigo-500 ring-offset-2'
-                : 'border-base-300'
+            // Selected texture gets a 2px border in `base-content` (the
+            // app's primary text color — white on dark mode, near-black on
+            // light mode). Guaranteed contrast against any texture image.
+            // Inactive cards keep `border-base-300` so the slot doesn't
+            // shift on selection change.
+            className={`bg-base-100 relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 p-4 shadow-md transition-colors ${
+              selectedTextureId === texture.id ? 'border-base-content' : 'border-base-300'
             }`}
             style={{
               backgroundImage: texture.loaded ? `url("${texture.blobUrl || texture.url}")` : 'none',
@@ -123,11 +126,10 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
         </div>
       </div>
 
-      {/* Background Image Settings */}
+      {/* Background Image Settings — boxed list once a texture is selected */}
       {selectedTextureId !== 'none' && (
-        <div className='card border-base-200 bg-base-100 space-y-4 border p-4 shadow'>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>{_('Opacity')}</span>
+        <BoxedList>
+          <SettingsRow label={_('Opacity')}>
             <div className='flex items-center gap-2'>
               <input
                 type='range'
@@ -138,25 +140,24 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
                 onChange={(e) => onOpacityChange(parseFloat(e.target.value))}
                 className='range range-sm w-32'
               />
-              <span className='w-12 text-right text-sm'>
+              <span className='text-base-content/70 w-12 text-end text-sm'>
                 {Math.round(backgroundOpacity * 100)}%
               </span>
             </div>
-          </div>
-
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>{_('Size')}</span>
-            <Select
+          </SettingsRow>
+          <SettingsRow label={_('Size')}>
+            <SettingsSelect
               value={backgroundSize}
               onChange={(e) => onSizeChange(e.target.value)}
+              ariaLabel={_('Size')}
               options={[
                 { value: 'auto', label: _('Auto') },
                 { value: 'cover', label: _('Cover') },
                 { value: 'contain', label: _('Contain') },
               ]}
             />
-          </div>
-        </div>
+          </SettingsRow>
+        </BoxedList>
       )}
     </div>
   );

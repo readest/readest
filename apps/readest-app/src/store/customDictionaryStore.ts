@@ -30,20 +30,27 @@ const BUILTIN_WEB_ORDER = [
   BUILTIN_WEB_SEARCH_IDS.google,
   BUILTIN_WEB_SEARCH_IDS.urban,
   BUILTIN_WEB_SEARCH_IDS.merriamWebster,
+  BUILTIN_WEB_SEARCH_IDS.goodreads,
 ];
 
 const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
   providerOrder: [
+    BUILTIN_PROVIDER_IDS.systemDictionary,
     BUILTIN_PROVIDER_IDS.wiktionary,
     BUILTIN_PROVIDER_IDS.wikipedia,
     ...BUILTIN_WEB_ORDER,
   ],
   providerEnabled: {
+    // System dictionary is opt-in — enabling it disables the rest (and
+    // vice versa) via the settings UI's exclusivity rule. Default off
+    // so existing users see no behavior change on upgrade.
+    [BUILTIN_PROVIDER_IDS.systemDictionary]: false,
     [BUILTIN_PROVIDER_IDS.wiktionary]: true,
     [BUILTIN_PROVIDER_IDS.wikipedia]: true,
     [BUILTIN_WEB_SEARCH_IDS.google]: false,
     [BUILTIN_WEB_SEARCH_IDS.urban]: false,
     [BUILTIN_WEB_SEARCH_IDS.merriamWebster]: false,
+    [BUILTIN_WEB_SEARCH_IDS.goodreads]: false,
   },
   webSearches: [],
 };
@@ -405,12 +412,21 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
   },
 
   setEnabled: (id, enabled) => {
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        providerEnabled: { ...state.settings.providerEnabled, [id]: enabled },
-      },
-    }));
+    set((state) => {
+      // System-dictionary exclusivity is enforced at LOOKUP time:
+      // `isSystemDictionaryEnabled` short-circuits to the OS handoff before
+      // any in-app provider runs. Persisting each provider's enabled state
+      // independently lets the user toggle System on/off without losing
+      // their preferred set of in-app providers — every flag is restored
+      // verbatim the moment System is turned back off.
+      const next: Record<string, boolean> = {
+        ...state.settings.providerEnabled,
+        [id]: enabled,
+      };
+      return {
+        settings: { ...state.settings, providerEnabled: next },
+      };
+    });
   },
 
   setDefaultProviderId: (id) => {

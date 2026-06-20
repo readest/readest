@@ -18,7 +18,7 @@ local TitleBar     = require("ui/widget/titlebar")
 local Trapper      = require("ui/trapper")
 local UIManager    = require("ui/uimanager")
 local logger       = require("logger")
-local _            = require("i18n")
+local _            = require("readest_i18n")
 
 local LibraryStore   = require("library.librarystore")
 local libraryitem    = require("library.libraryitem")
@@ -427,6 +427,21 @@ function M.refresh()
     M._menu:switchItemTable(title_for(M._search), items, jump_to)
 end
 
+-- ---------------------------------------------------------------------------
+-- close() — tear down the Library Menu if it's open.
+-- ---------------------------------------------------------------------------
+-- UIManager:close fires the Menu's onCloseWidget, which M.open wraps to
+-- clear M._menu + the visible-hash filter. That matters because background
+-- work (book-sync and cover-download completions) calls M.refresh(): once
+-- M._menu is nil, refresh() no-ops instead of repainting a ghost Library
+-- on top of whatever replaced it — e.g. the reader, after a book was
+-- opened from the Library. Safe to call when nothing is open.
+function M.close()
+    if M._menu then
+        UIManager:close(M._menu)
+    end
+end
+
 -- Close the current Menu and rebuild it from scratch using the latest
 -- settings. Used after view-menu changes that affect layout dimensions
 -- (view mode, column count, cover fit) — those are baked in at Menu
@@ -435,13 +450,7 @@ end
 -- query (sort, group, search) keep using M.refresh() since rebuilding
 -- the whole Menu would be needless flicker.
 function M.reopen()
-    if M._menu then
-        UIManager:close(M._menu)
-        M._menu = nil
-        -- Clear the visible-hash filter so any in-flight BIM lookups
-        -- after close don't kick off downloads we no longer want.
-        libraryitem.set_visible_hashes(nil)
-    end
+    M.close()
     -- A view-mode/columns/cover-fit change is layout-only — keep the
     -- user's current drill-in. _keep_state tells M.open to skip its
     -- per-session resets (group_path, search reset).
@@ -462,22 +471,54 @@ end
 -- ---------------------------------------------------------------------------
 local function runCloudSync(opts, store)
     local mode = opts.settings.auto_sync and "both" or "pull"
+    local DocSettings = require("docsettings")
+    local BookList = require("ui/widget/booklist")
+    local statussync = require("library.statussync")
+    local deps = {
+        now_ms = function() return os.time() * 1000 end,
+        open_summary = function(file_path)
+            local ok, ds = pcall(DocSettings.open, DocSettings, file_path)
+            if not ok or not ds then return nil end
+            return ds:readSetting("summary")
+        end,
+        write_status = function(file_path, ko_status)
+            local ok, ds = pcall(DocSettings.open, DocSettings, file_path)
+            if not ok or not ds then return end
+            local summary = ds:readSetting("summary") or {}
+            summary.status = ko_status  -- nil clears -> KOReader "New"
+            summary.modified = os.date("%Y-%m-%d", os.time())
+            ds:saveSetting("summary", summary)
+            ds:flush()
+            BookList.setBookInfoCacheProperty(file_path, "status", ko_status)
+        end,
+    }
+    local function reconcile() statussync.reconcileLocalStatuses(store, deps) end
+
     logger.info("ReadestLibrary runCloudSync: mode=" .. mode
         .. " auto_sync=" .. tostring(opts.settings.auto_sync))
-    syncbooks.syncBooks({
-        sync_auth = opts.sync_auth,
-        sync_path = opts.sync_path,
-        settings  = opts.settings,
-        store     = store,
-    }, mode, function(success, msg, status)
+
+    local function done(success, msg, status)
         logger.info("ReadestLibrary runCloudSync[" .. mode .. "] done: success="
-            .. tostring(success) .. " msg=" .. tostring(msg)
-            .. " status=" .. tostring(status))
-        -- Refresh either way: success picks up new cloud rows; failure
-        -- (auth, network, server) leaves local rows visible without
-        -- leaking a stale display state.
+            .. tostring(success) .. " msg=" .. tostring(msg) .. " status=" .. tostring(status))
         M.refresh()
-    end)
+    end
+
+    if mode == "both" then
+        -- before_push runs after pull, before push: apply pulled statuses to
+        -- sidecars and capture sidecar changes into the store so they're pushed.
+        syncbooks.syncBooks({
+            sync_auth = opts.sync_auth, sync_path = opts.sync_path,
+            settings = opts.settings, store = store,
+        }, "both", done, reconcile)
+    else
+        syncbooks.syncBooks({
+            sync_auth = opts.sync_auth, sync_path = opts.sync_path,
+            settings = opts.settings, store = store,
+        }, "pull", function(success, msg, status)
+            reconcile()  -- apply cloud statuses to sidecars even when auto_sync is off
+            done(success, msg, status)
+        end)
+    end
 end
 
 -- Cloud sync HTTP is synchronous on platforms without the Turbo looper
@@ -691,6 +732,21 @@ function M.open(opts, internal)
     }
     menu.onTapTitle = function() view_menu_callback() return true end
 
+    -- Drop the module reference whenever this Menu leaves the screen —
+    -- the title-bar X, the hardware Back key, M.close() on book-open, or
+    -- any other path all funnel through UIManager:close → onCloseWidget.
+    -- Without this, M._menu stays set after the Menu is gone and a later
+    -- M.refresh() (book-sync or cover-download completion) repaints a
+    -- ghost Library over whatever replaced it — e.g. the open reader.
+    local prev_on_close_widget = menu.onCloseWidget
+    menu.onCloseWidget = function(self, ...)
+        if M._menu == self then
+            M._menu = nil
+            libraryitem.set_visible_hashes(nil)
+        end
+        if prev_on_close_widget then return prev_on_close_widget(self, ...) end
+    end
+
     M._menu = menu
     UIManager:show(menu)
 
@@ -740,7 +796,10 @@ function M.handleTap(item, opts)
             })
             return
         end
+        -- Close the Library before handing off to the reader so it isn't
+        -- left in the widget stack underneath — see M.close().
         local ReaderUI = require("apps/reader/readerui")
+        M.close()
         ReaderUI:showReader(row.file_path)
         return
     end
@@ -784,8 +843,10 @@ function M.handleTap(item, opts)
                         hash = row.hash, title = row.title,
                         local_present = 1, file_path = dst_or_err,
                     })
-                    M.refresh()
+                    -- Hand off to the reader and close the Library — no
+                    -- M.refresh() needed since the Menu is going away.
                     local ReaderUI = require("apps/reader/readerui")
+                    M.close()
                     ReaderUI:showReader(dst_or_err)
                 end)
             end,

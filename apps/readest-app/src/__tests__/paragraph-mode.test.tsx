@@ -23,6 +23,14 @@ const mockGetViewSettings = vi.fn(() => currentViewSettings);
 const mockSetViewSettings = vi.fn();
 const mockGetProgress = vi.fn(() => null);
 
+let mockIsFixedLayout = false;
+
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: () => ({
+    getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
+  }),
+}));
+
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { hasSafeAreaInset: false } }),
 }));
@@ -102,6 +110,7 @@ describe('paragraph mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     hookApi = null;
+    mockIsFixedLayout = false;
     currentViewSettings.writingMode = 'horizontal-tb';
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
@@ -279,5 +288,603 @@ describe('paragraph mode', () => {
     await waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
     });
+  });
+
+  const renderVisibleOverlay = async (onClose: () => void) => {
+    const overlayBookKey = 'overlay-book';
+    const doc = createDoc('<p>Hello world</p>');
+    const paragraph = doc.querySelector('p')!;
+    const range = doc.createRange();
+    range.selectNodeContents(paragraph);
+
+    const { container } = render(
+      <ParagraphOverlay
+        bookKey={overlayBookKey}
+        dimOpacity={0.3}
+        viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: false } as never}
+        onClose={onClose}
+      />,
+    );
+
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-focus', {
+        bookKey: overlayBookKey,
+        range,
+        presentation: { dir: 'ltr', writingMode: 'horizontal-tb', vertical: false, rtl: false },
+      });
+    });
+
+    return { container, overlayBookKey };
+  };
+
+  const mockContentRect = (contentArea: HTMLElement) =>
+    vi.spyOn(contentArea, 'getBoundingClientRect').mockReturnValue({
+      width: 300,
+      height: 300,
+      top: 0,
+      left: 0,
+      right: 300,
+      bottom: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+  it('reveals the controls instead of exiting when the backdrop is tapped', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const onClose = vi.fn();
+    const { container, overlayBookKey } = await renderVisibleOverlay(onClose);
+
+    const dialog = await waitFor(() => {
+      const node = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(node).not.toBeNull();
+      return node!;
+    });
+    dispatchSpy.mockClear();
+
+    fireEvent.click(dialog);
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-show-controls', {
+      bookKey: overlayBookKey,
+    });
+  });
+
+  it('reveals the controls instead of exiting when the center zone is tapped', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const onClose = vi.fn();
+    const { container, overlayBookKey } = await renderVisibleOverlay(onClose);
+
+    const contentArea = container.querySelector('.relative.flex') as HTMLDivElement;
+    mockContentRect(contentArea);
+    dispatchSpy.mockClear();
+
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-show-controls', {
+      bookKey: overlayBookKey,
+    });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-prev', { bookKey: overlayBookKey });
+  });
+
+  it('still exits on a double-tap of the paragraph', async () => {
+    const onClose = vi.fn();
+    const { container } = await renderVisibleOverlay(onClose);
+
+    const contentArea = container.querySelector('.relative.flex') as HTMLDivElement;
+    mockContentRect(contentArea);
+
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+    fireEvent.click(contentArea, { clientX: 150, clientY: 150 });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('paragraph mode TTS sync', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    hookApi = null;
+    mockIsFixedLayout = false;
+    currentViewSettings.writingMode = 'horizontal-tb';
+    currentViewSettings.vertical = false;
+    currentViewSettings.rtl = false;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  // Multi-paragraph doc: ParagraphIterator turns each <p> into one block, so
+  // block N corresponds to the Nth <p>.
+  const createMultiParagraphDoc = () =>
+    createDoc('<p>Block zero</p><p>Block one</p><p>Block two</p>');
+
+  // Mock view.resolveCFI so a given cfi resolves into the Nth <p> of the doc at
+  // `sectionIndex`. The hook anchors the current section's doc, so `anchor(doc)`
+  // returns a Range selecting the target paragraph's contents.
+  const stubResolveCFI = (
+    view: FoliateView,
+    mapping: Record<string, { sectionIndex: number; paragraphIndex: number }>,
+  ) => {
+    (view.resolveCFI as ReturnType<typeof vi.fn>).mockImplementation((cfi: string) => {
+      const target = mapping[cfi];
+      if (!target) return null;
+      return {
+        index: target.sectionIndex,
+        anchor: (doc: Document) => {
+          const paragraph = doc.querySelectorAll('p')[target.paragraphIndex];
+          if (!paragraph) return null;
+          const range = doc.createRange();
+          range.selectNodeContents(paragraph);
+          return range;
+        },
+      };
+    });
+  };
+
+  const dispatchPlaying = async (bookKey: string) => {
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey, state: 'playing' });
+    });
+  };
+
+  const dispatchPosition = async (detail: {
+    bookKey: string;
+    cfi: string;
+    kind: 'word' | 'sentence';
+    sectionIndex: number;
+    sequence: number;
+  }) => {
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-position', detail);
+    });
+  };
+
+  it('follows TTS to the spoken paragraph in the same section', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, { 'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block zero');
+    });
+    expect(hookApi?.paragraphState.currentIndex).toBe(0);
+
+    await dispatchPlaying('book-1');
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 1,
+    });
+
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(2);
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block two');
+  });
+
+  it('ignores tts-position events with a stale (<=) sequence', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, {
+      'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 },
+      'cfi-block-1': { sectionIndex: 0, paragraphIndex: 1 },
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    await dispatchPlaying('book-1');
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 5,
+    });
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(2);
+    });
+
+    // A later-arriving but older-sequence event must be dropped.
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-1',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 3,
+    });
+
+    expect(hookApi?.paragraphState.currentIndex).toBe(2);
+
+    // An equal sequence is also stale.
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-1',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 5,
+    });
+    expect(hookApi?.paragraphState.currentIndex).toBe(2);
+  });
+
+  it('decouples on manual nav and re-engages on the next playing state', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, {
+      'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 },
+      'cfi-block-0': { sectionIndex: 0, paragraphIndex: 0 },
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    await dispatchPlaying('book-1');
+
+    // Manual nav decouples: paragraph stops following TTS.
+    await act(async () => {
+      await hookApi?.goToNextParagraph();
+    });
+    expect(hookApi?.paragraphState.currentIndex).toBe(1);
+
+    // While decoupled, tts-position is ignored (no focus change).
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 10,
+    });
+    expect(hookApi?.paragraphState.currentIndex).toBe(1);
+
+    // Re-engage via a fresh 'playing' state, then follow again.
+    await dispatchPlaying('book-1');
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 11,
+    });
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(2);
+    });
+  });
+
+  it('stashes a cross-section tts-position and applies it after the iterator re-inits', async () => {
+    const sectionZeroDoc = createDoc('<p>S0 first</p><p>S0 second</p>');
+    const sectionOneDoc = createDoc('<p>S1 first</p><p>S1 second</p><p>S1 third</p>');
+    const { view, renderer } = createMockView([sectionZeroDoc, sectionOneDoc], 0);
+    stubResolveCFI(view, { 'cfi-s1-block-2': { sectionIndex: 1, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('S0 first');
+    });
+
+    // Capture the relocate handler the hook registered with the renderer.
+    const relocateCall = (renderer.addEventListener as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([eventName]) => eventName === 'relocate',
+    );
+    const handleRelocate = relocateCall?.[1] as () => void;
+    expect(handleRelocate).toBeTypeOf('function');
+
+    await dispatchPlaying('book-1');
+
+    // A tts-position for section 1 while we are on section 0: must NOT map yet.
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-s1-block-2',
+      kind: 'sentence',
+      sectionIndex: 1,
+      sequence: 20,
+    });
+    // Still on section 0, focus unchanged (no cross-section mapping).
+    expect(hookApi?.paragraphState.currentRange?.toString()).toContain('S0 first');
+
+    // Let the initial mount-focus isFocusingRef window (200ms) expire so the
+    // relocate below isn't eaten by an unrelated guard.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 250));
+    });
+
+    // TTS drives the view into section 1; the existing relocate handler re-inits
+    // the iterator for the new section, after which the stashed CFI applies.
+    renderer.primaryIndex = 1;
+    await act(async () => {
+      handleRelocate();
+      await new Promise((r) => setTimeout(r, 250));
+    });
+
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(2);
+    });
+    expect(hookApi?.paragraphState.currentRange?.toString()).toContain('S1 third');
+  });
+
+  it('does not arm the isFocusingRef guard on a TTS-driven sync focus', async () => {
+    const sectionZeroDoc = createDoc('<p>S0 first</p><p>S0 second</p><p>S0 third</p>');
+    const sectionOneDoc = createDoc('<p>S1 first</p><p>S1 second</p>');
+    const { view, renderer } = createMockView([sectionZeroDoc, sectionOneDoc], 0);
+    stubResolveCFI(view, {
+      'cfi-s0-block-2': { sectionIndex: 0, paragraphIndex: 2 },
+      'cfi-s1-block-1': { sectionIndex: 1, paragraphIndex: 1 },
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    const relocateCall = (renderer.addEventListener as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([eventName]) => eventName === 'relocate',
+    );
+    const handleRelocate = relocateCall?.[1] as () => void;
+
+    // Drain the initial mount-focus isFocusingRef window (200ms) so only the
+    // sync focus under test can possibly arm the guard.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 250));
+    });
+
+    await dispatchPlaying('book-1');
+
+    // A TTS-driven sync focus within the same section must NOT arm the focusing
+    // guard; otherwise the next relocate (a TTS-driven section change) would be
+    // swallowed and the iterator would never re-init for the new section.
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-s0-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 30,
+    });
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(2);
+    });
+    // Let the sync focus fully settle (its scroll runs after a rAF) so that IF
+    // it (wrongly) armed isFocusingRef, the guard would be set and persist by
+    // the time the relocate below fires.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    // A cross-section tts-position stashes; the following relocate for section 1
+    // must still re-init. If the sync focus above had armed isFocusingRef, this
+    // relocate would be eaten and the iterator would never re-init -> still
+    // section 0.
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-s1-block-1',
+      kind: 'sentence',
+      sectionIndex: 1,
+      sequence: 31,
+    });
+    renderer.primaryIndex = 1;
+    await act(async () => {
+      handleRelocate();
+      await new Promise((r) => setTimeout(r, 250));
+    });
+
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('S1 second');
+    });
+    expect(hookApi?.paragraphState.currentIndex).toBe(1);
+  });
+
+  it('does not follow TTS and reports unsupported for a fixed-layout book', async () => {
+    mockIsFixedLayout = true;
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, { 'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+    expect(hookApi?.ttsSyncStatus).toBe('unsupported');
+
+    await dispatchPlaying('book-1');
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 1,
+    });
+
+    // Fixed-layout never follows: focus stays on the first paragraph.
+    expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block zero');
+    expect(hookApi?.ttsSyncStatus).toBe('unsupported');
+  });
+
+  it('derives ttsSyncStatus through the follow lifecycle (reflowable)', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc, createMultiParagraphDoc()], 0);
+    stubResolveCFI(view, {
+      'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 },
+      'cfi-s1-block-1': { sectionIndex: 1, paragraphIndex: 1 },
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    // Initial: idle (TTS not engaged).
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
+
+    // Playing -> following.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+
+    // Manual nav -> decoupled (TTS still playing).
+    await act(async () => {
+      await hookApi?.goToNextParagraph();
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('decoupled');
+    });
+
+    // Re-engage, then a cross-section position (before re-init) -> syncing.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+    await dispatchPosition({
+      bookKey: 'book-1',
+      cfi: 'cfi-s1-block-1',
+      kind: 'sentence',
+      sectionIndex: 1,
+      sequence: 40,
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('syncing');
+    });
+
+    // Stopped -> idle.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', {
+        bookKey: 'book-1',
+        state: 'stopped',
+      });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsSyncStatus).toBe('idle');
+    });
+  });
+
+  it('toggleTtsAudio starts TTS aligned to the focused paragraph when idle', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block zero');
+    });
+    expect(hookApi?.ttsActive).toBe(false);
+
+    dispatchSpy.mockClear();
+    act(() => {
+      hookApi?.toggleTtsAudio();
+    });
+
+    const speakCall = dispatchSpy.mock.calls.find(([name]) => name === 'tts-speak');
+    expect(speakCall).toBeDefined();
+    const detail = speakCall![1] as { bookKey: string; index?: number; range?: Range };
+    expect(detail.bookKey).toBe('book-1');
+    // Start-aligned to the focused paragraph: section index + live range.
+    expect(detail.index).toBe(0);
+    expect(detail.range?.toString()).toContain('Block zero');
+  });
+
+  it('toggleTtsAudio stops TTS when a session is active', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    // A playing session makes the toggle a stop.
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+    });
+
+    dispatchSpy.mockClear();
+    act(() => {
+      hookApi?.toggleTtsAudio();
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledWith('tts-stop', { bookKey: 'book-1' });
+    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-speak', expect.anything());
+  });
+
+  it('keeps ttsActive and reports paused on a TTS pause; clears on stop', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+
+    await dispatchPlaying('book-1');
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+      expect(hookApi?.ttsSyncStatus).toBe('following');
+    });
+
+    // Pause keeps the session active and persists the indicator as 'paused'.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: 'book-1', state: 'paused' });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(true);
+      expect(hookApi?.ttsSyncStatus).toBe('paused');
+    });
+
+    // A full stop clears the session and returns to idle.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-playback-state', { bookKey: 'book-1', state: 'stopped' });
+    });
+    await waitFor(() => {
+      expect(hookApi?.ttsActive).toBe(false);
+      expect(hookApi?.ttsSyncStatus).toBe('idle');
+    });
+  });
+
+  it('ignores tts events for a different bookKey and keeps status unchanged', async () => {
+    const doc = createMultiParagraphDoc();
+    const { view } = createMockView([doc], 0);
+    stubResolveCFI(view, { 'cfi-block-2': { sectionIndex: 0, paragraphIndex: 2 } });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    });
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
+
+    // Playback + position for a DIFFERENT book: must be ignored.
+    await dispatchPlaying('other-book');
+    await dispatchPosition({
+      bookKey: 'other-book',
+      cfi: 'cfi-block-2',
+      kind: 'sentence',
+      sectionIndex: 0,
+      sequence: 1,
+    });
+
+    expect(hookApi?.paragraphState.currentIndex).toBe(0);
+    expect(hookApi?.ttsSyncStatus).toBe('idle');
   });
 });

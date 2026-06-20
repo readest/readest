@@ -82,6 +82,57 @@ The `invoke()` helper accesses `window.top.__TAURI_INTERNALS__` (Vitest runs in 
 
 **Limitations:** Only custom invoke commands and plugin commands listed in the webdriver capability work. Standard Tauri JS APIs (e.g. `@tauri-apps/api`) that rely on `URL: local` may not work from the Vitest iframe.
 
+## Android Device E2E (`pnpm test:android`)
+
+Drives the **installed Readest app** on an adb-connected Android device or
+emulator: gestures are injected with `adb shell input`, and the app's state is
+probed through the WebView's **Chrome DevTools Protocol** (forwarded from the
+`webview_devtools_remote_<pid>` abstract socket). This is the only lane that
+exercises real Android touch selection, native handle behavior, and page-turn
+gestures (e.g. the issue #1553 hyphen-selection fixes).
+
+```bash
+# One-time: install a dev build on the device/emulator
+pnpm dev-android
+
+# Start an emulator if no device is attached (see `emulator -list-avds`)
+emulator -avd Pixel_9_Pro &
+
+# Run the lane (soft-skips when no adb/device/app is available)
+pnpm test:android
+
+# With several devices attached, pick one:
+ANDROID_SERIAL=emulator-5554 pnpm test:android
+```
+
+- **Config:** `vitest.android.config.mts` (node environment, serial execution, `retry: 1`)
+- **Pattern:** `src/**/*.android.test.ts`
+- **Helpers:** `src/__tests__/android/helpers/` — `adb.ts` (gestures), `cdp.ts` (DevTools client), `reader.ts` (app-level probes)
+- **Fixtures:** plain EPUBs from `src/__tests__/fixtures/data/` (e.g. `sample-alice.epub`), opened transiently via a `VIEW` intent so the device library is never modified
+- **Use for:** native text selection, touch gestures, selection handles, anything that only reproduces in the Android WebView compositor.
+
+### Conventions
+
+- **Probe, don't hardcode:** locate words/handles at runtime via CDP and derive
+  device pixels from `devicePixelRatio` — never bake in coordinates.
+- **Poll, don't sleep:** use `waitFor()` on an observable condition (selection
+  state, handle count, frame position); reserve fixed pauses for gesture
+  pacing (long-press hold, corner dwell).
+- **Discover, don't assume:** the harness finds a hyphenated on-screen
+  paragraph at runtime and derives every gesture target from live layout, so
+  any English fixture works regardless of fonts or screen size (hyphenation
+  is on by default in the app).
+- **Serial only:** one device, one app — the config disables parallelism.
+
+### CI
+
+`.github/workflows/android-e2e.yml` runs the lane on an x86_64 emulator
+(ubuntu runner with KVM): it builds a **debug** APK for `x86_64` (no signing
+secrets needed), boots a cached AVD via `reactivecircus/android-emulator-runner`,
+installs the APK, and runs `pnpm test:android`. It is intentionally not
+PR-blocking — it runs nightly, on `workflow_dispatch`, or when a PR gets the
+`e2e-android` label.
+
 ## E2E Tests (WDIO)
 
 Full end-to-end tests using WebDriverIO, for UI-level testing against the running Tauri app. Same two-step workflow as Tauri integration tests.
@@ -108,3 +159,4 @@ pnpm test:e2e
 | `*.browser.test.ts` | `pnpm test:browser` | Chromium (Playwright) |
 | `*.tauri.test.ts`   | `pnpm test:tauri`   | Tauri WebView         |
 | `*.e2e.ts`          | `pnpm test:e2e`     | Tauri app (WDIO)      |
+| `*.android.test.ts` | `pnpm test:android` | Android device (CDP)  |

@@ -1,0 +1,6 @@
+{
+  "name": "Readest",
+  // Initialize only the submodules required for Docker builds.
+  // tauri/tauri-plugins are skipped here since they're only needed for desktop builds.
+  "postCreateCommand": "git submodule update --init packages/foliate-js packages/simplecc-wasm"
+}

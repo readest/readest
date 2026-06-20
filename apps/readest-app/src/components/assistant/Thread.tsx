@@ -34,15 +34,32 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/utils/tailwind';
-import type { ScoredChunk } from '@/services/ai/types';
+import type { SourceItem } from '@/services/ai/adapters/reedySourceStore';
 
 interface ThreadProps {
-  sources?: ScoredChunk[];
+  sources?: SourceItem[];
+  /** Invoked when a source row is clicked. Reedy passes the CFI to the reader's goTo. */
+  onSourceClick?: (source: SourceItem) => void;
   onClear?: () => void;
   onResetIndex?: () => void;
   isLoadingHistory?: boolean;
-  hasStoredMessages?: boolean;
+  hasActiveConversation?: boolean;
 }
+
+const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
+  return (
+    <div
+      className={cn(
+        'absolute inset-0 z-20 flex items-center justify-center',
+        'bg-base-100/60 backdrop-blur-sm',
+        'transition-all duration-300 ease-out',
+        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+      )}
+    >
+      <div className='bg-base-content/10 size-8 animate-pulse rounded-full' />
+    </div>
+  );
+};
 
 const ScrollToBottomButton: FC = () => {
   const isAtBottom = useThreadViewport((v) => v.isAtBottom);
@@ -86,20 +103,18 @@ const ScrollToBottomButton: FC = () => {
 
 export const Thread: FC<ThreadProps> = ({
   sources = [],
+  onSourceClick,
   onClear,
   onResetIndex,
   isLoadingHistory = false,
-  hasStoredMessages = false,
+  hasActiveConversation = false,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const messageCount = useThread((t) => t.messages.length);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
-  const isThreadEmpty = useAssistantState((s) => s.thread.isEmpty);
-
-  const hideEmptyState = isLoadingHistory || (hasStoredMessages && isThreadEmpty);
-  const showEmptyState = isThreadEmpty && !hideEmptyState;
+  const showLoading = isLoadingHistory && hasActiveConversation;
 
   useEffect(() => {
     if (isInitialMount.current && messageCount > 0 && viewportRef.current) {
@@ -146,7 +161,9 @@ export const Thread: FC<ThreadProps> = ({
 
   return (
     <ThreadPrimitive.Root className='bg-base-100 relative flex h-full w-full flex-col items-stretch px-3'>
-      {showEmptyState && (
+      <LoadingOverlay isVisible={showLoading} />
+
+      {!hasActiveConversation && (
         <ThreadPrimitive.Empty>
           <div className='animate-in fade-in flex h-full flex-col items-center justify-center duration-300'>
             <div className='bg-base-content/10 mb-4 rounded-full p-3'>
@@ -162,7 +179,12 @@ export const Thread: FC<ThreadProps> = ({
       )}
 
       <AssistantIf condition={(s) => s.thread.isEmpty === false}>
-        <div className='relative min-h-0 flex-1 transition-opacity duration-300'>
+        <div
+          className={cn(
+            'relative min-h-0 flex-1 transition-opacity duration-300',
+            showLoading ? 'opacity-0' : 'opacity-100',
+          )}
+        >
           <ThreadPrimitive.Viewport
             ref={viewportRef}
             autoScroll={false}
@@ -172,7 +194,9 @@ export const Thread: FC<ThreadProps> = ({
               components={{
                 UserMessage,
                 EditComposer,
-                AssistantMessage: () => <AssistantMessage sources={sources} />,
+                AssistantMessage: () => (
+                  <AssistantMessage sources={sources} onSourceClick={onSourceClick} />
+                ),
               }}
             />
             <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
@@ -260,10 +284,11 @@ const Composer: FC<ComposerProps> = ({ onClear, onResetIndex }) => {
 };
 
 interface AssistantMessageProps {
-  sources?: ScoredChunk[];
+  sources?: SourceItem[];
+  onSourceClick?: (source: SourceItem) => void;
 }
 
-const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
+const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceClick }) => {
   return (
     <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
       <div className='flex flex-col items-start'>
@@ -296,22 +321,41 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [] }) => {
                       Sources from book
                     </div>
                     <div className='flex flex-col gap-1.5'>
-                      {sources.map((source, i) => (
-                        <div
-                          key={source.id || i}
-                          className='border-base-content/10 bg-base-200/50 rounded-lg border px-2 py-1.5 text-[11px]'
-                        >
-                          <div className='text-base-content font-medium'>
-                            {source.chapterTitle ||
-                              (typeof source.chapterNumber === 'number'
-                                ? `Chapter ${source.chapterNumber}`
-                                : `Section ${source.sectionIndex + 1}`)}
+                      {sources.map((source, i) => {
+                        const clickable = !!source.cfi && !!onSourceClick;
+                        const baseClass =
+                          'border-base-content/10 bg-base-200/50 rounded-lg border px-2 py-1.5 text-[11px]';
+                        const content = (
+                          <>
+                            <div className='text-base-content font-medium'>
+                              {source.chapterTitle || `Section ${source.sectionIndex + 1}`}
+                            </div>
+                            <div className='text-base-content/60 mt-0.5 line-clamp-3'>
+                              {source.text}
+                            </div>
+                          </>
+                        );
+                        if (clickable) {
+                          return (
+                            <button
+                              type='button'
+                              key={source.id || i}
+                              className={cn(
+                                baseClass,
+                                'hover:bg-base-200 text-start transition-colors',
+                              )}
+                              onClick={() => onSourceClick?.(source)}
+                            >
+                              {content}
+                            </button>
+                          );
+                        }
+                        return (
+                          <div key={source.id || i} className={baseClass}>
+                            {content}
                           </div>
-                          <div className='text-base-content/60 mt-0.5 line-clamp-3'>
-                            {source.text}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>

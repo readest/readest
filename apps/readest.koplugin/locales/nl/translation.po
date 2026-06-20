@@ -251,6 +251,12 @@ msgstr "Automatische synchronisatie"
 msgid "Readest library"
 msgstr "Readest-bibliotheek"
 
+msgid "Push stats now"
+msgstr "Statistieken nu pushen"
+
+msgid "Pull stats now"
+msgstr "Statistieken nu pullen"
+
 msgid "Push books now"
 msgstr "Boeken nu pushen"
 
@@ -436,3 +442,18 @@ msgstr "Leesvoortgang gesynchroniseerd"
 
 msgid "No saved reading progress found for this book"
 msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"
+
+msgid "Reading statistics are up to date"
+msgstr "Leesstatistieken zijn up-to-date"
+
+msgid "Reading statistics pushed"
+msgstr "Leesstatistieken verzonden"
+
+msgid "Failed to push reading statistics"
+msgstr "Leesstatistieken verzenden mislukt"
+
+msgid "Failed to pull reading statistics"
+msgstr "Leesstatistieken ophalen mislukt"
+
+msgid "Reading statistics pulled"
+msgstr "Leesstatistieken opgehaald"

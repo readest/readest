@@ -1,6 +1,7 @@
 import { ConvertChineseVariant } from '@/types/book';
 import { BookDoc, SectionFragment, TOCItem } from '@/libs/document';
 import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
+import { runWithConcurrency } from '@/utils/concurrency';
 import {
   cloneSectionFragments,
   cloneTocItems,
@@ -11,6 +12,43 @@ import {
 import { bakeLocationsAndCfis, sortTocItems } from './locations';
 import { buildSectionFragments } from './fragments';
 import { enrichTocFromNavElements } from './enrichment';
+
+/**
+ * Bound on simultaneous in-flight section reads during nav build.
+ *
+ * The original perf commit fanned every section out via Promise.all under
+ * the assumption that `section.loadText()` is a cheap in-memory inflate.
+ * That holds for pure-web targets (the EPUB Blob is an in-memory File
+ * backed by IndexedDB, slice/arrayBuffer is synchronous), but on Tauri
+ * each loadText drives a `@tauri-apps/plugin-fs` open/read/close round
+ * trip across the JS<->Rust IPC bridge: see `utils/file.ts::NativeFile`.
+ * Past a per-platform threshold the bridge or the fd pool saturates,
+ * individual reads reject, and the zip.js TextWriter driving that
+ * entry's inflate transitions to ERRORED, surfacing as
+ *   "Cannot close a ERRORED writable stream"
+ * with the affected sections silently losing their TOC fragments.
+ *
+ * The cap was picked empirically against the worst-case combination we
+ * could reproduce — Android emulator + dev mode + a 250-section EPUB —
+ * binary-searching the threshold:
+ *   - 30 ✅, 64 ✅, 128 ✅
+ *   - 200 ❌ (≈ 30 contiguous sections fail with the ERRORED message)
+ * Real devices (release build, native fd pool, no Next.js dev tooling
+ * sharing the event loop) sit well above this, so 128 leaves a healthy
+ * margin while preserving close-to-unbounded cross-section inflate
+ * overlap during cold nav build (CPU `parseFromString` for one section
+ * runs while the next several inflate). Higher caps yield diminishing
+ * returns: parseFromString is CPU-bound on the main thread and
+ * dominates total nav-build time once IPC latency is paid in parallel.
+ *
+ * Failure-isolation note: `runWithConcurrency` swallows per-task
+ * exceptions into the result tuple, so even if a future workload pushes
+ * past this cap on an unfamiliar platform, individual section failures
+ * degrade gracefully (the caller logs them and skips the offending
+ * fragments) instead of aborting the whole nav build the way the
+ * original Promise.all path did.
+ */
+const NAV_BUILD_CONCURRENCY = 128;
 
 export { findParentPath, findTocItemBS } from './lookup';
 export type { SectionFragment };
@@ -97,32 +135,59 @@ export const computeBookNav = async (bookDoc: BookDoc): Promise<BookNav> => {
   const groups = groupItemsBySection(bookDoc, allItems);
   const splitHref = (href: string) => bookDoc.splitTOCHref(href);
 
-  for (const [sectionId, { base, fragments }] of groups.entries()) {
-    const section = sectionMap.get(sectionId);
-    if (!section || fragments.length === 0) continue;
-    if (!section.loadText) continue;
+  // Process sections with a bounded worker pool. Each section's work is
+  // independent: the only shared writes are into `sections` (keyed by
+  // sectionId, no collisions) and into `bookSections` later (after all
+  // workers settle). The cross-section inflate overlap that motivated the
+  // original parallel rewrite is preserved — we just cap simultaneous
+  // in-flight reads at NAV_BUILD_CONCURRENCY so we don't saturate the
+  // platform's IPC bridge / fd pool. See the constant's docblock for the
+  // failure mode that drove this cap.
+  type SectionEntry = [string, BookNavSection];
+  const taskOutcomes = await runWithConcurrency(
+    Array.from(groups.entries()),
+    NAV_BUILD_CONCURRENCY,
+    async ([sectionId, { base, fragments }]): Promise<SectionEntry | null> => {
+      const section = sectionMap.get(sectionId);
+      if (!section || fragments.length === 0) return null;
+      if (!section.loadText) return null;
 
-    const content = await section.loadText();
-    if (!content) continue;
+      // Issue both the raw-text and DOM-parse loads concurrently within
+      // this section. makeZipLoader's in-flight loadText dedupe (see
+      // libs/document.ts) collapses these onto a single zip inflate when
+      // both await the same href in the same microtask span, so the cost
+      // is one read + one parse, not two reads.
+      const contentP = section.loadText();
+      const docP = section.createDocument().catch((e: unknown) => {
+        console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
+        return null;
+      });
+      const [content, doc] = await Promise.all([contentP, docP]);
+      if (!content) return null;
+      if (!doc) return null;
 
-    let doc: Document | null = null;
-    try {
-      doc = await section.createDocument();
-    } catch (e) {
-      console.warn(`Failed to parse section ${sectionId} for fragment CFIs:`, e);
+      const sectionFragments = buildSectionFragments(
+        section,
+        fragments,
+        base,
+        content,
+        doc,
+        splitHref,
+      );
+      if (sectionFragments.length === 0) return null;
+      return [sectionId, { id: sectionId, fragments: sectionFragments }];
+    },
+  );
+
+  for (const outcome of taskOutcomes) {
+    if ('error' in outcome) {
+      const [sectionId] = outcome.item;
+      console.warn(`Failed to build section ${sectionId} for fragment CFIs:`, outcome.error);
+      continue;
     }
-    if (!doc) continue;
-
-    const sectionFragments = buildSectionFragments(
-      section,
-      fragments,
-      base,
-      content,
-      doc,
-      splitHref,
-    );
-    if (sectionFragments.length > 0) {
-      sections[sectionId] = { id: sectionId, fragments: sectionFragments };
+    if (outcome.result) {
+      const [id, section] = outcome.result;
+      sections[id] = section;
     }
   }
 

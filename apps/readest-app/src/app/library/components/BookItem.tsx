@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useEffect, useState } from 'react';
 import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
@@ -15,7 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
-import { formatAuthors, formatDescription } from '@/utils/book';
+import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -49,6 +50,23 @@ const BookItem: React.FC<BookItemProps> = ({
   const { settings } = useSettingsStore();
   const iconSize15 = useResponsiveSize(15);
 
+  const [coverAspect, setCoverAspect] = useState<number | null>(null);
+  useEffect(() => {
+    setCoverAspect(null);
+  }, [book.hash, book.metadata?.coverImageUrl, book.coverImageUrl]);
+
+  const CELL_ASPECT_RATIO = 28 / 41;
+  const fitCoverInGrid = mode === 'grid' && coverFit === 'fit' && coverAspect !== null;
+  const shouldShrinkWidth = fitCoverInGrid && coverAspect! < CELL_ASPECT_RATIO;
+  const bookitemMainStyle = fitCoverInGrid
+    ? {
+        aspectRatio: coverAspect!,
+        ...(shouldShrinkWidth ? { width: `${(coverAspect! / CELL_ASPECT_RATIO) * 100}%` } : {}),
+      }
+    : undefined;
+
+  const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+
   return (
     <div
       role='none'
@@ -63,11 +81,13 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'bookitem-main relative flex aspect-[28/41] justify-center overflow-hidden rounded',
+          'bookitem-main relative flex justify-center overflow-hidden rounded',
+          !fitCoverInGrid && 'aspect-[28/41]',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
         )}
+        style={bookitemMainStyle}
       >
         <BookCover
           mode={mode}
@@ -75,6 +95,7 @@ const BookItem: React.FC<BookItemProps> = ({
           coverFit={coverFit}
           showSpine={false}
           imageClassName='rounded shadow-md'
+          onAspectRatioChange={setCoverAspect}
         />
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
@@ -93,15 +114,15 @@ const BookItem: React.FC<BookItemProps> = ({
         className={clsx(
           'flex w-full flex-col p-0',
           mode === 'grid' && 'pt-2',
-          mode === 'list' && 'gap-2 py-0',
+          mode === 'list' && 'gap-1 py-0',
         )}
       >
-        <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-2')}>
+        <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-1')}>
           <h4
             className={clsx(
               'overflow-hidden text-ellipsis font-semibold',
               mode === 'grid' && 'block whitespace-nowrap text-[0.6em] text-xs',
-              mode === 'list' && 'line-clamp-2 text-base',
+              mode === 'list' && 'line-clamp-1 text-base',
             )}
           >
             {book.title}
@@ -112,6 +133,9 @@ const BookItem: React.FC<BookItemProps> = ({
             </p>
           )}
         </div>
+        {mode === 'list' && seriesText && (
+          <p className='text-neutral-content line-clamp-1 text-sm'>{seriesText}</p>
+        )}
         {mode === 'list' && (
           <h4 className='text-neutral-content line-clamp-1 text-sm'>
             {formatDescription(book.metadata?.description)}

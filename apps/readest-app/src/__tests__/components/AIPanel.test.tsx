@@ -18,6 +18,7 @@ vi.mock('@/services/environment', () => ({
       saveSettings: mockSaveSettings,
     }),
   },
+  isTauriAppPlatform: () => false,
 }));
 
 import { EnvProvider } from '@/context/EnvContext';

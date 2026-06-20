@@ -8,7 +8,40 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     app: &AppHandle<R>,
     _api: PluginApi<R, C>,
 ) -> crate::Result<NativeBridge<R>> {
+    // keyring v4 split the library into `keyring-core` plus a
+    // per-platform credential-store crate. The default store is a
+    // process-wide global that must be installed before the first
+    // `Entry::new` call. `set_default_store` is idempotent — calling
+    // it again on plugin re-init just replaces the previous handle.
+    // We log and swallow errors so a misconfigured keychain doesn't
+    // block plugin init; downstream calls then fail with NoDefaultStore
+    // and the TS layer falls back to the ephemeral store.
+    install_default_keyring_store();
     Ok(NativeBridge(app.clone()))
+}
+
+#[cfg(target_os = "macos")]
+fn install_default_keyring_store() {
+    match apple_native_keyring_store::keychain::Store::new() {
+        Ok(store) => keyring_core::set_default_store(store),
+        Err(err) => eprintln!("[native-bridge] keychain store init failed: {err}"),
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn install_default_keyring_store() {
+    match windows_native_keyring_store::Store::new() {
+        Ok(store) => keyring_core::set_default_store(store),
+        Err(err) => eprintln!("[native-bridge] credential manager init failed: {err}"),
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn install_default_keyring_store() {
+    match dbus_secret_service_keyring_store::Store::new() {
+        Ok(store) => keyring_core::set_default_store(store),
+        Err(err) => eprintln!("[native-bridge] secret service init failed: {err}"),
+    }
 }
 
 /// Access to the native-bridge APIs.
@@ -133,6 +166,19 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    /// Desktop has no mobile-style "system dictionary intent" surface;
+    /// macOS's HUD is invoked through a separate top-level Tauri
+    /// command (`show_lookup_popover` in `src/macos/system_dictionary.rs`),
+    /// and Linux/Windows have no native target. Return
+    /// UnsupportedPlatformError here so the TS layer doesn't
+    /// accidentally dispatch through the mobile plugin on desktop.
+    pub fn show_lookup_popover(
+        &self,
+        _payload: ShowLookupPopoverRequest,
+    ) -> crate::Result<ShowLookupPopoverResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
@@ -149,10 +195,11 @@ impl<R: Runtime> NativeBridge<R> {
 
     // ── Sync passphrase keychain ────────────────────────────────────────
     //
-    // Uses the `keyring` crate, which transparently maps to:
-    //   * macOS → Security framework Keychain
-    //   * Windows → Credential Manager
-    //   * Linux → Secret Service (libsecret-compatible)
+    // Uses `keyring-core` v1 with a platform-specific credential store
+    // installed in `init()` above:
+    //   * macOS → Security framework Keychain (apple-native-keyring-store)
+    //   * Windows → Credential Manager (windows-native-keyring-store)
+    //   * Linux → Secret Service (dbus-secret-service-keyring-store)
     //
     // `service` and `user` form the keychain item identity. Service is
     // the bundle id; user is a stable string ("default") so multiple
@@ -181,7 +228,7 @@ impl<R: Runtime> NativeBridge<R> {
                 passphrase: Some(passphrase),
                 error: None,
             }),
-            Err(keyring::Error::NoEntry) => Ok(GetSyncPassphraseResponse {
+            Err(keyring_core::Error::NoEntry) => Ok(GetSyncPassphraseResponse {
                 passphrase: None,
                 error: None,
             }),
@@ -194,7 +241,7 @@ impl<R: Runtime> NativeBridge<R> {
 
     pub fn clear_sync_passphrase(&self) -> crate::Result<SyncPassphraseResponse> {
         match keyring_entry().and_then(|e| e.delete_credential()) {
-            Ok(()) | Err(keyring::Error::NoEntry) => Ok(SyncPassphraseResponse {
+            Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(SyncPassphraseResponse {
                 success: true,
                 error: None,
             }),
@@ -220,11 +267,22 @@ impl<R: Runtime> NativeBridge<R> {
             }),
         }
     }
+
+    /// Desktop has its own URL-clip path (`src/clip_url.rs` spawns a
+    /// hidden `WebviewWindow` and listens on `127.0.0.1`). The plugin
+    /// branch is mobile-only — if anyone calls into it from desktop,
+    /// surface that mistake instead of silently returning empty HTML.
+    pub fn clip_url(&self, _payload: ClipUrlRequest) -> crate::Result<ClipUrlResponse> {
+        Err(crate::Error::NativeBridgeError(
+            "clip_url plugin is mobile-only; desktop callers should invoke the top-level command"
+                .to_string(),
+        ))
+    }
 }
 
-const KEYRING_SERVICE: &str = "com.bilingify.readest.sync-passphrase";
+const KEYRING_SERVICE: &str = "Readest Safe Storage";
 const KEYRING_USER: &str = "default";
 
-fn keyring_entry() -> std::result::Result<keyring::Entry, keyring::Error> {
-    keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+fn keyring_entry() -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
+    keyring_core::Entry::new(KEYRING_SERVICE, KEYRING_USER)
 }

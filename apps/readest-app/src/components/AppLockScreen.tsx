@@ -1,19 +1,86 @@
 'use client';
 
 import clsx from 'clsx';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import PinInput from '@/components/PinInput';
+import { useEnv } from '@/context/EnvContext';
 import { PIN_LENGTH, verifyPin } from '@/libs/crypto/applock';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import {
+  authenticateWithBiometrics,
+  getBiometricStatus,
+  getBiometryLabelKey,
+  isBiometricSupported,
+  shouldAttemptBiometricUnlock,
+} from '@/services/biometric';
 
 export default function AppLockScreen() {
   const _ = useTranslation();
-  const { pinHash, pinSalt, unlock } = useAppLockStore();
+  const { appService } = useEnv();
+  const { pinHash, pinSalt, unlock, biometricUnlockEnabled } = useAppLockStore();
+  const [biometryLabel, setBiometryLabel] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
+  const [kbInset, setKbInset] = useState(0);
+  const biometricAttemptedRef = useRef(false);
+  const biometricInFlightRef = useRef(false);
+  const autoFocusEnabled = !appService?.isMobile;
+
+  const runBiometric = async () => {
+    if (biometricInFlightRef.current) return;
+    biometricInFlightRef.current = true;
+    try {
+      const ok = await authenticateWithBiometrics(_('Unlock Readest'));
+      if (ok) unlock();
+    } finally {
+      biometricInFlightRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (!isBiometricSupported(appService)) return;
+    let cancelled = false;
+    void (async () => {
+      const { available, biometryType } = await getBiometricStatus();
+      if (cancelled) return;
+      if (
+        !shouldAttemptBiometricUnlock({
+          isMobileApp: !!appService?.isMobileApp,
+          biometricUnlockEnabled,
+          available,
+        })
+      ) {
+        return;
+      }
+      setBiometryLabel(_(getBiometryLabelKey(biometryType)));
+      if (biometricAttemptedRef.current) return;
+      biometricAttemptedRef.current = true;
+      await runBiometric();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [appService]);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const layoutH = document.documentElement.clientHeight;
+      const offset = layoutH - vv.height - vv.offsetTop;
+      setKbInset(offset > 1 ? offset : 0);
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
   // Avoid React state for the in-flight guard — `setVerifying(true)`
   // would re-trigger the effect, the cleanup would set `cancelled=true`,
   // and the resolve handler would short-circuit before clearing the
@@ -50,6 +117,7 @@ export default function AppLockScreen() {
   return (
     <div
       className='bg-base-100 full-height inset-0 z-[200] flex flex-col items-center justify-center px-6'
+      style={{ paddingBottom: kbInset || undefined }}
       role='dialog'
       aria-modal='true'
       aria-label={_('App locked')}
@@ -66,7 +134,7 @@ export default function AppLockScreen() {
           value={pin}
           onChange={handleChange}
           ariaLabel={_('PIN code')}
-          stickyFocus
+          stickyFocus={autoFocusEnabled}
           shake={shaking}
         />
 
@@ -79,6 +147,20 @@ export default function AppLockScreen() {
         >
           {error || ' '}
         </p>
+
+        {biometryLabel && (
+          <button
+            type='button'
+            onClick={runBiometric}
+            className={clsx(
+              'eink-bordered',
+              'mt-2 h-10 rounded-lg px-4 text-sm font-medium',
+              'text-base-content hover:bg-base-200 transition-colors duration-150',
+            )}
+          >
+            {_('Use {{biometry}}', { biometry: biometryLabel })}
+          </button>
+        )}
 
         <p className='text-base-content/40 mt-10 text-xs leading-relaxed'>
           {_(

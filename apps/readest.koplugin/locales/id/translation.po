@@ -251,6 +251,12 @@ msgstr "Sinkronisasi otomatis"
 msgid "Readest library"
 msgstr "Pustaka Readest"
 
+msgid "Push stats now"
+msgstr "Kirim statistik sekarang"
+
+msgid "Pull stats now"
+msgstr "Tarik statistik sekarang"
+
 msgid "Push books now"
 msgstr "Kirim buku sekarang"
 
@@ -436,3 +442,18 @@ msgstr "Progres baca disinkronkan"
 
 msgid "No saved reading progress found for this book"
 msgstr "Tidak ada progres baca tersimpan untuk buku ini"
+
+msgid "Reading statistics are up to date"
+msgstr "Statistik baca sudah terbaru"
+
+msgid "Reading statistics pushed"
+msgstr "Statistik baca terkirim"
+
+msgid "Failed to push reading statistics"
+msgstr "Gagal mengirim statistik baca"
+
+msgid "Failed to pull reading statistics"
+msgstr "Gagal mengambil statistik baca"
+
+msgid "Reading statistics pulled"
+msgstr "Statistik baca diambil"

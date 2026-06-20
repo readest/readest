@@ -1,11 +1,11 @@
 /**
  * Built-in web-search templates.
  *
- * Three universally-useful entries (Google, Urban Dictionary,
- * Merriam-Webster). They are seeded into `providerOrder` but **disabled by
- * default** — users opt in from the settings list. Custom URL templates
- * live in `settings.webSearches`; this file is only the immutable
- * built-ins.
+ * A few universally-useful entries (Google, Urban Dictionary,
+ * Merriam-Webster, and Goodreads for looking up a selected title). They are
+ * seeded into `providerOrder` but **disabled by default** — users opt in
+ * from the settings list. Custom URL templates live in
+ * `settings.webSearches`; this file is only the immutable built-ins.
  *
  * The `%WORD%` placeholder marks where the looked-up word goes; the
  * provider URL-encodes it at substitution time. (GoldenDict users may know
@@ -37,6 +37,12 @@ export const BUILTIN_WEB_SEARCHES: BuiltinWebSearchTemplate[] = [
     name: 'Merriam-Webster',
     nameKey: 'Merriam-Webster',
     urlTemplate: 'https://www.merriam-webster.com/dictionary/%WORD%',
+  },
+  {
+    id: BUILTIN_WEB_SEARCH_IDS.goodreads,
+    name: 'Goodreads',
+    nameKey: 'Goodreads',
+    urlTemplate: 'https://www.goodreads.com/search?q=%WORD%',
   },
 ];
 

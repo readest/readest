@@ -73,9 +73,19 @@ const DEFAULT_SHORTCUTS = {
     description: _('Previous Paragraph'),
     section: 'Text to Speech',
   },
+  onTTSHighlightSentence: {
+    keys: ['shift+m'],
+    description: _('Highlight Current Sentence'),
+    section: 'Text to Speech',
+  },
   onToggleParagraphMode: {
     keys: ['shift+p'],
     description: _('Toggle Paragraph Mode'),
+    section: 'General',
+  },
+  onStartRSVP: {
+    keys: ['shift+v'],
+    description: _('Speed Reading Mode'),
     section: 'General',
   },
   onToggleToolbar: {

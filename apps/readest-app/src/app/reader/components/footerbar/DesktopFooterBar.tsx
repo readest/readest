@@ -7,8 +7,8 @@ import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { formatProgress } from '@/utils/progress';
-import { FooterBarChildProps } from './types';
+import { formatProgress, getReferencePageInfo } from '@/utils/progress';
+import type { FooterBarChildProps } from './types';
 import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
 
@@ -38,7 +38,18 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   const { section, pageinfo } = progress || {};
   const template = progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
-  const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, false, 'en', 0);
+  const referenceInfo =
+    progressStyle === 'reference'
+      ? getReferencePageInfo({
+          pageList: bookData?.bookDoc?.pageList,
+          pageItem: progress?.pageItem,
+          fraction: progressFraction,
+          referencePageCount: viewSettings?.referencePageCount,
+        })
+      : null;
+  const progressInfo = referenceInfo
+    ? `${referenceInfo.current} / ${referenceInfo.total}`
+    : formatProgress(pageInfo?.current, pageInfo?.total, template, false, 'en', 0);
 
   const rangeInputRef = useRef<HTMLInputElement>(null);
 

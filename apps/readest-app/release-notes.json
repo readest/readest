@@ -1,5 +1,66 @@
 {
   "releases": {
+    "0.11.10": {
+      "date": "2026-06-19",
+      "notes": [
+        "Reading: Added Word Lens, which shows a quick translation above difficult words as you read",
+        "Reading: Added real page numbers from the book's own page list, and the current page now appears under the active chapter in the table of contents",
+        "Reading: Added Webtoon Mode for seamless, gap-free scrolling through comics and image books, and you can now tap an image or table to open it full-screen",
+        "Reading Stats: Track your reading time and pages, now synced across your devices and with KOReader",
+        "Library: Unlock the app with your fingerprint or Face ID, browse books by series in list view, search any title on Goodreads",
+        "Integrations: Hardcover progress and notes sync automatically, OPDS catalogs gained search and richer descriptions",
+        "Text-to-Speech: Words are highlighted one at a time as they're read aloud, with read-along following you through paragraph and speed reading modes",
+        "Speed Reading: Added a start delay, word-by-word stepping, dictionary lookups, keyboard shortcuts, and your reading font now styles the focused word",
+        "Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS",
+        "Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists",
+        "Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes"
+      ]
+    },
+    "0.11.4": {
+      "date": "2026-06-03",
+      "notes": [
+        "Library: You can now send a book file directly from the bookshelf selection popup",
+        "Reading: Wide tables now scroll sideways, and oversized images or code blocks scroll in place instead of accidentally turning the page",
+        "Reading: Fixed page backgrounds, textures, and full-page cover images that didn't display correctly in paginated and scrolled modes",
+        "Reading: Fixed bright table and note backgrounds that didn't match the page in dark mode",
+        "Reading: Fixed the reading ruler drifting while scrolling and a stray line at the bottom of the page",
+        "Fonts: Fixed custom fonts disappearing after re-importing, and they now apply correctly inside books",
+        "PDF: Fixed scanned PDFs not displaying in installed app builds",
+        "Annotations: The annotation list now scrolls back to your nearest highlight, and exporting to Readwise works again on desktop",
+        "Android: Fixed a freeze when long-pressing images, plus issues with copying text and opening books directly from other apps",
+        "Fixes: Kept the book menu order stable, synced KOReader book covers, and fixed a Windows launch crash"
+      ]
+    },
+    "0.11.2": {
+      "date": "2026-05-31",
+      "notes": [
+        "Send to Readest: Clip web pages and articles into your library via the system share sheet, or by emailing them in",
+        "Dictionary: Look up words with your device's built-in system dictionary on macOS, iOS, and Android, plus faster MDict and StarDict imports",
+        "Library: Import books from a folder with format and size filters, or read them in place from external folders without copying",
+        "Reading: The reading ruler now follows individual lines, you can swipe along the edge to adjust brightness on mobile, and customize hardware-button page turning",
+        "Annotations: Create global highlights that apply to every matching passage in a book",
+        "Text-to-Speech: Added a hotkey to highlight the sentence being read aloud, and made TTS more reliable",
+        "Fonts: Fixed custom fonts disappearing after restarting or reloading the app",
+        "iOS: Fixed the reader not updating when you switch between light and dark mode",
+        "Android: Fixed an issue where highlighting text could trigger unintended page turns",
+        "Fixes: Many improvements across PDFs, EPUBs, Sync, Scrolling, Highlighting"
+      ]
+    },
+    "0.11.1": {
+      "date": "2026-05-11",
+      "notes": [
+        "Dictionaries: You can now import your own StarDict and MDict dictionaries",
+        "Sync: Your custom dictionaries, custom fonts, background textures and OPDS catalogs now sync across devices",
+        "KOReader Sync: Browse your full Readest Library from inside KOReader, with improved sync diagnostics",
+        "OPDS: Stream books over OPDS-PSE and optionally auto-download new titles from feeds",
+        "Sharing: Create share links for books, jump directly to book via deep links in exported annotations",
+        "Library: Added an optional 4-digit PIN lock at app launch to keep your library private",
+        "Library: You can now drag entire folders to import books",
+        "Reading: Added support for inline CJK ruby annotations (warichu/Gezhu), improved footnote detection",
+        "Speed Reading: Reading position now resumes correctly across devices and inside long sections",
+        "Fixes: Many fixes across PDFs, MOBIs, EPUBs, TTS, scrolling, and accessibility"
+      ]
+    },
     "0.10.6": {
       "date": "2026-04-13",
       "notes": [

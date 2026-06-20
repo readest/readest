@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
+  buildTTSSentenceHighlight,
   getExternalDragHandle,
   getHighlightColorLabel,
   removeBookNoteOverlays,
   toParentViewportPoint,
 } from '@/app/reader/utils/annotatorUtil';
 import { Point } from '@/utils/sel';
-import { BookNote, UserHighlightColor } from '@/types/book';
+import { BookNote, HighlightColor, HighlightStyle, UserHighlightColor } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 
@@ -223,5 +224,76 @@ describe('removeBookNoteOverlays', () => {
 
   it('is a no-op when view is null', () => {
     expect(() => removeBookNoteOverlays(null, baseNote({ style: 'highlight' }))).not.toThrow();
+  });
+});
+
+describe('buildTTSSentenceHighlight', () => {
+  const params = {
+    cfi: 'epubcfi(/6/4!/4/10,/1:0,/1:42)',
+    text: 'A spoken sentence.',
+    style: 'highlight' as HighlightStyle,
+    color: 'yellow' as HighlightColor,
+    page: 7,
+  };
+
+  it('builds an annotation BookNote when none exists at the cfi', () => {
+    const note = buildTTSSentenceHighlight([], params, 1000);
+    expect(note).not.toBeNull();
+    expect(note).toMatchObject({
+      type: 'annotation',
+      cfi: params.cfi,
+      text: params.text,
+      style: 'highlight',
+      color: 'yellow',
+      page: 7,
+      note: '',
+      createdAt: 1000,
+      updatedAt: 1000,
+    });
+    expect(typeof note!.id).toBe('string');
+    expect(note!.id.length).toBeGreaterThan(0);
+  });
+
+  it('returns null (skip) when a live annotation already exists at the cfi', () => {
+    const existing: BookNote = {
+      id: 'a1',
+      type: 'annotation',
+      cfi: params.cfi,
+      style: 'highlight',
+      color: 'red',
+      text: params.text,
+      note: '',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    expect(buildTTSSentenceHighlight([existing], params, 1000)).toBeNull();
+  });
+
+  it('builds when the only note at the cfi is soft-deleted', () => {
+    const deleted: BookNote = {
+      id: 'a1',
+      type: 'annotation',
+      cfi: params.cfi,
+      style: 'highlight',
+      color: 'red',
+      text: params.text,
+      note: '',
+      createdAt: 1,
+      updatedAt: 1,
+      deletedAt: 5,
+    };
+    expect(buildTTSSentenceHighlight([deleted], params, 1000)).not.toBeNull();
+  });
+
+  it('builds when the note at the cfi is a non-annotation (bookmark)', () => {
+    const bookmark: BookNote = {
+      id: 'b1',
+      type: 'bookmark',
+      cfi: params.cfi,
+      note: '',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    expect(buildTTSSentenceHighlight([bookmark], params, 1000)).not.toBeNull();
   });
 });

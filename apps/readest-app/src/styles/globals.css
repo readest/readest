@@ -59,10 +59,22 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Hide the native number-input spinner arrows. WebKit on macOS draws
+     them on top of rounded input borders, which looks broken; Firefox
+     respects -moz-appearance: textfield. */
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 .full-height {
-  height: -webkit-fill-available;
+  height: 100vh;
 }
 
 @supports (height: 100dvh) {
@@ -430,6 +442,13 @@ foliate-fxl {
   touch-action: manipulation;
 }
 
+.no-context-menu img,
+.no-context-menu a {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 .book-spine {
   background-image:
     linear-gradient(
@@ -530,6 +549,13 @@ input[type='range'].slider-input {
   background-color: theme('colors.base-content') !important;
 }
 
+/* Inverted chip for e-ink: base-content fill, base-100 content. Declared after
+   the substring matchers above so the content color wins the cascade. */
+[data-eink='true'] .eink-inverted {
+  background-color: theme('colors.base-content') !important;
+  color: theme('colors.base-100') !important;
+}
+
 [data-eink='true'] [class*='font-light'] {
   font-weight: normal !important;
 }
@@ -576,8 +602,21 @@ input[type='range'].slider-input {
   color: theme('colors.base-content') !important;
 }
 
+/* btn-contrast — a solid, high-contrast CTA: base-content background with a
+   base-100 label. Theme-neutral (unlike the colored btn-primary); fits the
+   minimalist themes and is already e-ink-correct. */
+.btn-contrast {
+  background-color: theme('colors.base-content') !important;
+  border: 1px solid theme('colors.base-content') !important;
+  color: theme('colors.base-100') !important;
+}
+.btn-contrast:hover {
+  opacity: 0.9;
+}
+
 [data-eink='true'] .btn-primary,
-[data-eink='true'] .btn-outline {
+[data-eink='true'] .btn-outline,
+[data-eink='true'] .btn-contrast {
   background-color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
   color: theme('colors.base-100') !important;
@@ -591,6 +630,11 @@ input[type='range'].slider-input {
 
 [data-eink='true'] .dropdown-toggle {
   background-color: theme('colors.transparent') !important;
+  /* A toggle that also carries a fill class (e.g. btn-outline) gets its label
+     inverted to base-100 by the rule above; with the background neutralized to
+     transparent that leaves white-on-white. Keep the text base-content so the
+     label stays legible (issue #4435). */
+  color: theme('colors.base-content') !important;
 }
 
 [data-eink='true'] .opds-navigation .card {

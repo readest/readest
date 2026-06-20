@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
@@ -10,6 +10,7 @@ import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
+import { setCacheManagerDialogVisible } from '@/app/library/components/CacheManagerWindow';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -21,11 +22,15 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
-import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
+import {
+  getBiometricStatus,
+  getBiometryLabelKey,
+  isBiometricSupported,
+} from '@/services/biometric';
 import { selectDirectory } from '@/utils/bridge';
 import dayjs from 'dayjs';
 import UserAvatar from '@/components/UserAvatar';
@@ -53,14 +58,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
-  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
-  const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
   const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
   const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
     settings.savedBookCoverForLockScreen || '',
@@ -71,6 +74,26 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const [refreshMetadataProgress, setRefreshMetadataProgress] = useState('');
   const { openDialog: openAppLockDialogInStore } = useAppLockStore();
   const isPinEnabled = !!settings.pinCodeEnabled;
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometryLabelKey, setBiometryLabelKey] = useState('');
+  const showBiometricToggle = !!appService?.isMobileApp && isPinEnabled && biometricAvailable;
+
+  useEffect(() => {
+    if (!isBiometricSupported(appService) || !isPinEnabled) return;
+    let cancelled = false;
+    void getBiometricStatus().then(({ available, biometryType }) => {
+      if (cancelled) return;
+      setBiometricAvailable(available);
+      setBiometryLabelKey(getBiometryLabelKey(biometryType));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [appService, isPinEnabled]);
+
+  const toggleBiometricUnlock = () => {
+    void saveSysSettings(envConfig, 'biometricUnlockEnabled', !settings.biometricUnlockEnabled);
+  };
 
   const openAppLockDialog = (mode: AppLockDialogMode) => {
     openAppLockDialogInStore(mode);
@@ -154,27 +177,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsAutoImportBooksOnOpen(newValue);
   };
 
-  const toggleAutoCheckUpdates = () => {
-    const newValue = !settings.autoCheckUpdates;
-    saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
-    setIsAutoCheckUpdates(newValue);
-  };
-
   const toggleOpenLastBooks = () => {
     const newValue = !settings.openLastBooks;
     saveSysSettings(envConfig, 'openLastBooks', newValue);
     setIsOpenLastBooks(newValue);
-  };
-
-  const toggleTelemetry = () => {
-    const newValue = !settings.telemetryEnabled;
-    saveSysSettings(envConfig, 'telemetryEnabled', newValue);
-    setIsTelemetryEnabled(newValue);
-    if (newValue) {
-      optInTelemetry();
-    } else {
-      optOutTelemetry();
-    }
   };
 
   const handleUpgrade = () => {
@@ -190,6 +196,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const handleBackupRestore = () => {
     setIsDropdownOpen?.(false);
     setBackupDialogVisible(true);
+  };
+
+  const handleManageCache = () => {
+    setIsDropdownOpen?.(false);
+    setCacheManagerDialogVisible(true);
   };
 
   const handleRefreshMetadata = async () => {
@@ -283,6 +294,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
+  const lastSyncTime = Math.max(
+    settings.lastSyncedAtBooks || 0,
+    settings.lastSyncedAtConfigs || 0,
+    settings.lastSyncedAtNotes || 0,
+  );
+
   return (
     <Menu
       className={clsx(
@@ -326,9 +343,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             />
             <MenuItem
               label={
-                settings.lastSyncedAtBooks
+                lastSyncTime
                   ? _('Synced {{time}}', {
-                      time: dayjs(settings.lastSyncedAtBooks).fromNow(),
+                      time: dayjs(lastSyncTime).fromNow(),
                     })
                   : _('Never synced')
               }
@@ -371,13 +388,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           label={_('Open Last Book on Start')}
           toggled={isOpenLastBooks}
           onClick={toggleOpenLastBooks}
-        />
-      )}
-      {appService?.hasUpdater && (
-        <MenuItem
-          label={_('Check Updates on Start')}
-          toggled={isAutoCheckUpdates}
-          onClick={toggleAutoCheckUpdates}
         />
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
@@ -426,10 +436,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             onClick={handleRefreshMetadata}
             disabled={isRefreshingMetadata}
           />
+          {appService?.isMobileApp && (
+            <MenuItem label={_('Manage Cache')} onClick={handleManageCache} />
+          )}
           {!isPinEnabled && (
             <MenuItem
               label={_('Set PIN…')}
-              tooltip={_('Require a 4-digit PIN to open Readest')}
+              tooltip={
+                appService?.isMobileApp
+                  ? _('Require a PIN (and biometrics, if available) to open Readest')
+                  : _('Require a 4-digit PIN to open Readest')
+              }
               onClick={() => openAppLockDialog('set')}
             />
           )}
@@ -438,6 +455,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           )}
           {isPinEnabled && (
             <MenuItem label={_('Disable PIN…')} onClick={() => openAppLockDialog('disable')} />
+          )}
+          {showBiometricToggle && (
+            <MenuItem
+              label={_('Unlock with {{biometry}}', { biometry: _(biometryLabelKey) })}
+              toggled={!!settings.biometricUnlockEnabled}
+              onClick={toggleBiometricUnlock}
+            />
           )}
           {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
             <MenuItem
@@ -456,12 +480,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
-      <MenuItem
-        label={_('Help improve Readest')}
-        description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
-        toggled={isTelemetryEnabled}
-        onClick={toggleTelemetry}
-      />
     </Menu>
   );
 };

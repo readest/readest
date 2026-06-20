@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-clear-lookup-dictionary"
+description = "Enables the clear_lookup_dictionary command without any pre-configured scope."
+commands.allow = ["clear_lookup_dictionary"]
+
+[[permission]]
+identifier = "deny-clear-lookup-dictionary"
+description = "Denies the clear_lookup_dictionary command without any pre-configured scope."
+commands.deny = ["clear_lookup_dictionary"]

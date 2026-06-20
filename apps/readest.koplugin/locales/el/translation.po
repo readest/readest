@@ -251,6 +251,12 @@ msgstr "Αυτόματος συγχρονισμός"
 msgid "Readest library"
 msgstr "Βιβλιοθήκη Readest"
 
+msgid "Push stats now"
+msgstr "Αποστολή στατιστικών τώρα"
+
+msgid "Pull stats now"
+msgstr "Λήψη στατιστικών τώρα"
+
 msgid "Push books now"
 msgstr "Αποστολή βιβλίων τώρα"
 
@@ -436,3 +442,18 @@ msgstr "Η πρόοδος ανάγνωσης συγχρονίστηκε"
 
 msgid "No saved reading progress found for this book"
 msgstr "Δεν βρέθηκε αποθηκευμένη πρόοδος ανάγνωσης για αυτό το βιβλίο"
+
+msgid "Reading statistics are up to date"
+msgstr "Τα στατιστικά ανάγνωσης είναι ενημερωμένα"
+
+msgid "Reading statistics pushed"
+msgstr "Τα στατιστικά ανάγνωσης αποστάλθηκαν"
+
+msgid "Failed to push reading statistics"
+msgstr "Η αποστολή των στατιστικών ανάγνωσης απέτυχε"
+
+msgid "Failed to pull reading statistics"
+msgstr "Η λήψη των στατιστικών ανάγνωσης απέτυχε"
+
+msgid "Reading statistics pulled"
+msgstr "Τα στατιστικά ανάγνωσης ελήφθησαν"

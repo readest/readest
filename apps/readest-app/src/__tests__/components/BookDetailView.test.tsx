@@ -13,7 +13,9 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: {
       metadataSeriesCollapsed: true,
-      metadataOthersCollapsed: true,
+      // The "File Path" entry lives under the Metadata section; tests below
+      // depend on it being expanded by default so the row is in the DOM.
+      metadataOthersCollapsed: false,
       metadataDescriptionCollapsed: true,
     },
   }),
@@ -25,6 +27,10 @@ vi.mock('@/context/EnvContext', () => ({
 
 vi.mock('@/helpers/settings', () => ({
   saveSysSettings: vi.fn(),
+}));
+
+vi.mock('@/utils/open', () => ({
+  openExternalUrl: vi.fn(),
 }));
 
 vi.mock('@/components/BookCover', () => ({
@@ -98,5 +104,105 @@ describe('BookDetailView delete dropdown layout', () => {
     // It should keep position: relative via the !relative override so it
     // anchors against the centered parent.
     expect(menu!.className).toContain('!relative');
+  });
+});
+
+describe('BookDetailView More menu (Goodreads + Share)', () => {
+  const openMore = (container: HTMLElement) => {
+    const toggle = container.querySelector('button[aria-label="More Actions"]');
+    expect(toggle).toBeTruthy();
+    fireEvent.click(toggle!);
+  };
+
+  it('folds Goodreads and Share into the hamburger menu', () => {
+    const { container, getByText } = renderView({ onShare: vi.fn(), shareEnabled: true });
+    // Goodreads is no longer a standalone icon button outside the menu.
+    expect(container.querySelector('button[aria-label="More Actions"]')).toBeTruthy();
+    openMore(container);
+    expect(getByText('Search on Goodreads')).toBeTruthy();
+    expect(getByText('Share Book')).toBeTruthy();
+  });
+
+  it('enables Share and calls onShare when the book is shareable', () => {
+    const onShare = vi.fn();
+    const { container, getByText } = renderView({ onShare, shareEnabled: true });
+    openMore(container);
+    const shareButton = getByText('Share Book').closest('button');
+    expect(shareButton).toBeTruthy();
+    expect(shareButton!.disabled).toBe(false);
+    fireEvent.click(shareButton!);
+    expect(onShare).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Share when not shareable (logged out or no local file)', () => {
+    const onShare = vi.fn();
+    const { container, getByText } = renderView({ onShare, shareEnabled: false });
+    openMore(container);
+    const shareButton = getByText('Share Book').closest('button');
+    expect(shareButton!.disabled).toBe(true);
+    fireEvent.click(shareButton!);
+    expect(onShare).not.toHaveBeenCalled();
+  });
+
+  it('keeps Export in the More menu and calls onExport when the file exists', () => {
+    const onExport = vi.fn();
+    const { container, getByText } = renderView({ onExport, fileSize: 1024 });
+    openMore(container);
+    const exportButton = getByText('Export Book').closest('button');
+    expect(exportButton).toBeTruthy();
+    expect(exportButton!.disabled).toBe(false);
+    fireEvent.click(exportButton!);
+    expect(onExport).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Export when the book has no local file', () => {
+    const onExport = vi.fn();
+    const { container, getByText } = renderView({ onExport, fileSize: null });
+    openMore(container);
+    const exportButton = getByText('Export Book').closest('button');
+    expect(exportButton!.disabled).toBe(true);
+    fireEvent.click(exportButton!);
+    expect(onExport).not.toHaveBeenCalled();
+  });
+});
+
+describe('BookDetailView Purge Data action', () => {
+  it('offers Purge Data in the delete dropdown and calls onPurge', () => {
+    const onPurge = vi.fn();
+    const { container, getByText } = renderView({ onPurge });
+    const toggle = container.querySelector('button[aria-label="Delete Book Options"]');
+    fireEvent.click(toggle!);
+    const purgeButton = getByText('Purge Data').closest('button');
+    expect(purgeButton).toBeTruthy();
+    fireEvent.click(purgeButton!);
+    expect(onPurge).toHaveBeenCalledTimes(1);
+  });
+
+  it('omits Purge Data when onPurge is not provided', () => {
+    const { container, queryByText } = renderView();
+    const toggle = container.querySelector('button[aria-label="Delete Book Options"]');
+    fireEvent.click(toggle!);
+    expect(queryByText('Purge Data')).toBeNull();
+  });
+});
+
+describe('BookDetailView file path row', () => {
+  // book.filePath is only set for in-place imports (and OS-handed paths like
+  // Android "Open with Readest"). Hash-copy imports leave it undefined, so
+  // surfacing it lets users tell the two storage modes apart at a glance.
+  it('shows the actual file path when book.filePath is set', () => {
+    const filePath = '/Users/me/Library/Books/sample.epub';
+    const { getByText } = renderView({ book: makeBook({ filePath }) });
+
+    expect(getByText('File Path')).toBeTruthy();
+    const value = getByText(filePath);
+    expect(value).toBeTruthy();
+    // Long paths must remain hoverable for the full string.
+    expect(value.getAttribute('title')).toBe(filePath);
+  });
+
+  it('omits the file path row for hash-copy books (no filePath)', () => {
+    const { queryByText } = renderView({ book: makeBook() });
+    expect(queryByText('File Path')).toBeNull();
   });
 });

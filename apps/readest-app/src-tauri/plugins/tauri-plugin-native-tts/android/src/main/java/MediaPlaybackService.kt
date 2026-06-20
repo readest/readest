@@ -26,12 +26,14 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.tauri.plugin.JSObject
+import kotlinx.coroutines.*
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
     private lateinit var player: ExoPlayer
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
     private lateinit var audioManager: AudioManager
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         Log.i("MediaPlaybackService", "Audio focus changed: $focusChange, $player.isPlaying")
@@ -221,24 +223,29 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         if (intent?.action == "UPDATE_METADATA") {
             currentTitle = intent.getStringExtra("title") ?: currentTitle
             currentArtist = intent.getStringExtra("artist") ?: currentArtist
-            val newArtwork = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra("artwork", Bitmap::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getParcelableExtra("artwork")
+            // Unmarshal the artwork Bitmap off the main thread; copying its
+            // pixel buffer out of the Parcel can stall the UI thread and trip
+            // an ANR for large covers.
+            serviceScope.launch {
+                val newArtwork = withContext(Dispatchers.Default) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        intent.getParcelableExtra("artwork", Bitmap::class.java)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        intent.getParcelableExtra("artwork")
+                    }
+                }
+                if (newArtwork != null) {
+                    currentArtwork = newArtwork
+                }
+                if (!isActive) return@launch
+                val metadataBuilder = MediaMetadataCompat.Builder()
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
+                mediaSession?.setMetadata(metadataBuilder.build())
+                showNotification(if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED)
             }
-            if (newArtwork != null) {
-                currentArtwork = newArtwork
-            }
-
-            val metadataBuilder = MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
-                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
-            
-            mediaSession?.setMetadata(metadataBuilder.build())
-
-            showNotification(if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED)
         } else if (intent?.action == "UPDATE_PLAYBACK_STATE") {
             val isPlaying = intent.getBooleanExtra("playing", false)
             val position = intent.getLongExtra("position", 0L) // in milliseconds
@@ -262,6 +269,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     override fun onDestroy() {
+        serviceScope.cancel()
         super.onDestroy()
         player.release()
         mediaSession?.release()

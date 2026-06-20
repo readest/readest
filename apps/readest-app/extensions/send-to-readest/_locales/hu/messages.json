@@ -1,0 +1,14 @@
+{
+  "app_name": {
+    "message": "Küldés a Readestbe",
+    "description": "Extension name shown in the browser toolbar and the Chrome Web Store listing."
+  },
+  "app_description": {
+    "message": "Mentsd a weboldalakat a Readest-könyvtáradba",
+    "description": "Short description shown in the Chrome Web Store listing."
+  },
+  "action_title": {
+    "message": "Küldés a Readestbe",
+    "description": "Tooltip on the toolbar action button."
+  }
+}

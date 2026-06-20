@@ -251,6 +251,12 @@ msgstr "Avtomatik sinxronlash"
 msgid "Readest library"
 msgstr "Readest kutubxonasi"
 
+msgid "Push stats now"
+msgstr "Statistikani hozir yuborish"
+
+msgid "Pull stats now"
+msgstr "Statistikani hozir olish"
+
 msgid "Push books now"
 msgstr "Kitoblarni hozir yuborish"
 
@@ -436,3 +442,18 @@ msgstr "Oʻqish jarayoni sinxronlandi"
 
 msgid "No saved reading progress found for this book"
 msgstr "Ushbu kitob uchun saqlangan oʻqish jarayoni topilmadi"
+
+msgid "Reading statistics are up to date"
+msgstr "Oʻqish statistikasi eng songgi holatda"
+
+msgid "Reading statistics pushed"
+msgstr "Oʻqish statistikasi yuborildi"
+
+msgid "Failed to push reading statistics"
+msgstr "Oʻqish statistikasini yuborib boʻlmadi"
+
+msgid "Failed to pull reading statistics"
+msgstr "Oʻqish statistikasini olib boʻlmadi"
+
+msgid "Reading statistics pulled"
+msgstr "Oʻqish statistikasi olindi"

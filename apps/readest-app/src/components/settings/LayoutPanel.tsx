@@ -18,7 +18,13 @@ import { saveViewSettings } from '@/helpers/settings';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import Select from '@/components/Select';
+import {
+  BoxedList,
+  SettingLabel,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import NumberInput from './NumberInput';
 
 const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -66,8 +72,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [borderColor, setBorderColor] = useState(viewSettings.borderColor);
   const [showHeader, setShowHeader] = useState(viewSettings.showHeader);
   const [showFooter, setShowFooter] = useState(viewSettings.showFooter);
-  const [showBarsOnScroll, setShowBarsOnScroll] = useState(viewSettings.showBarsOnScroll);
-  const [showMarginsOnScroll, setShowMarginsOnScroll] = useState(viewSettings.showMarginsOnScroll);
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
@@ -81,6 +85,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   );
   const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
+  const [referencePageCount, setReferencePageCount] = useState(viewSettings.referencePageCount);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
 
   const resetToDefaults = useResetViewSettings();
@@ -112,7 +117,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       borderColor: setBorderColor,
       showHeader: setShowHeader,
       showFooter: setShowFooter,
-      showBarsOnScroll: setShowBarsOnScroll,
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
@@ -121,7 +125,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
       showBatteryPercentage: setShowBatteryPercentage,
       tapToToggleFooter: setTapToToggleFooter,
-      showMarginsOnScroll: setShowMarginsOnScroll,
     });
   };
 
@@ -335,16 +338,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [borderColor]);
 
   useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showBarsOnScroll', showBarsOnScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showBarsOnScroll]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'showMarginsOnScroll', showMarginsOnScroll, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showMarginsOnScroll]);
-
-  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showRemainingTime', showRemainingTime, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showRemainingTime]);
@@ -399,6 +392,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [progressStyle]);
 
   useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'referencePageCount', referencePageCount, true, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [referencePageCount]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'tapToToggleFooter', tapToToggleFooter, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tapToToggleFooter]);
@@ -445,9 +443,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     <div className='my-4 w-full space-y-6'>
       <div
         data-setting-id='settings.layout.overrideBookLayout'
-        className='flex items-center justify-between'
+        className='flex items-center justify-between px-4'
       >
-        <h2 className='font-medium'>{_('Override Book Layout')}</h2>
+        <SettingLabel>{_('Override Book Layout')}</SettingLabel>
         <input
           type='checkbox'
           className='toggle'
@@ -458,9 +456,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       {mightBeRTLBook && (
         <div
           data-setting-id='settings.layout.writingMode'
-          className='flex items-center justify-between'
+          className='flex items-center justify-between px-4'
         >
-          <h2 className='font-medium'>{_('Writing Mode')}</h2>
+          <SettingLabel>{_('Writing Mode')}</SettingLabel>
           <div className='flex gap-4'>
             <button
               title={_('Default')}
@@ -498,403 +496,315 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       )}
 
       {viewSettings.vertical && (
-        <div className='w-full' data-setting-id='settings.layout.borderFrame'>
-          <h2 className='mb-2 font-medium'>{_('Border Frame')}</h2>
-          <div className='card bg-base-100 border-base-200 border shadow'>
-            <div className='divide-base-200 divide-y'>
-              <div className='config-item'>
-                <span className=''>{_('Double Border')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={doubleBorder}
-                  onChange={() => setDoubleBorder(!doubleBorder)}
-                />
-              </div>
-
-              <div className='config-item'>
-                <span className=''>{_('Border Color')}</span>
-                <div className='flex gap-4'>
-                  <button
-                    className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
-                    onClick={() => setBorderColor('red')}
-                  ></button>
-
-                  <button
-                    className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
-                    onClick={() => setBorderColor('black')}
-                  ></button>
-                </div>
-              </div>
+        <BoxedList title={_('Border Frame')} data-setting-id='settings.layout.borderFrame'>
+          <SettingsSwitchRow
+            label={_('Double Border')}
+            checked={doubleBorder}
+            onChange={() => setDoubleBorder(!doubleBorder)}
+          />
+          <SettingsRow label={_('Border Color')}>
+            <div className='flex gap-4'>
+              <button
+                className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
+                onClick={() => setBorderColor('red')}
+              ></button>
+              <button
+                className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
+                onClick={() => setBorderColor('black')}
+              ></button>
             </div>
-          </div>
-        </div>
+          </SettingsRow>
+        </BoxedList>
       )}
 
-      <div className='w-full'>
-        <h2 className='mb-2 font-medium'>{_('Paragraph')}</h2>
-        <div className='card bg-base-100 border-base-200 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item' data-setting-id='settings.layout.useBookLayout'>
-              <span className=''>{_('Use Book Layout')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={useBookLayout}
-                onChange={() => setUseBookLayout(!useBookLayout)}
-              />
-            </div>
-            <NumberInput
-              label={_('Paragraph Margin')}
-              value={paragraphMargin}
-              onChange={setParagraphMargin}
-              disabled={useBookLayout}
-              min={0}
-              max={4}
-              step={0.1}
-              data-setting-id='settings.layout.paragraphMargin'
-            />
-            <NumberInput
-              label={_('Line Spacing')}
-              value={lineHeight}
-              onChange={setLineHeight}
-              disabled={useBookLayout}
-              min={1.0}
-              max={3.0}
-              step={0.1}
-              data-setting-id='settings.layout.lineSpacing'
-            />
-            {langCode !== 'zh' && (
-              <NumberInput
-                label={_('Word Spacing')}
-                value={wordSpacing}
-                onChange={setWordSpacing}
-                disabled={useBookLayout}
-                min={-4}
-                max={8}
-                step={0.5}
-                data-setting-id='settings.layout.wordSpacing'
-              />
-            )}
-            <NumberInput
-              label={_('Letter Spacing')}
-              value={letterSpacing}
-              onChange={setLetterSpacing}
-              disabled={useBookLayout}
-              min={-2}
-              max={4}
-              step={0.5}
-              data-setting-id='settings.layout.letterSpacing'
-            />
-            <NumberInput
-              label={_('Text Indent')}
-              value={textIndent}
-              onChange={setTextIndent}
-              disabled={useBookLayout}
-              min={-2}
-              max={4}
-              step={1}
-              data-setting-id='settings.layout.paragraphIndent'
-            />
-            <div className='config-item' data-setting-id='settings.layout.fullJustification'>
-              <span className=''>{_('Full Justification')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={fullJustification}
-                disabled={useBookLayout}
-                onChange={() => setFullJustification(!fullJustification)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.layout.hyphenation'>
-              <span className=''>{_('Hyphenation')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={hyphenation}
-                disabled={useBookLayout}
-                onChange={() => setHyphenation(!hyphenation)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Paragraph')}>
+        <SettingsSwitchRow
+          label={_('Use Book Layout')}
+          checked={useBookLayout}
+          onChange={() => setUseBookLayout(!useBookLayout)}
+          data-setting-id='settings.layout.useBookLayout'
+        />
+        <NumberInput
+          label={_('Paragraph Margin')}
+          value={paragraphMargin}
+          onChange={setParagraphMargin}
+          disabled={useBookLayout}
+          min={0}
+          max={4}
+          step={0.1}
+          data-setting-id='settings.layout.paragraphMargin'
+        />
+        <NumberInput
+          label={_('Line Spacing')}
+          value={lineHeight}
+          onChange={setLineHeight}
+          disabled={useBookLayout}
+          min={1.0}
+          max={3.0}
+          step={0.1}
+          data-setting-id='settings.layout.lineSpacing'
+        />
+        {langCode !== 'zh' && (
+          <NumberInput
+            label={_('Word Spacing')}
+            value={wordSpacing}
+            onChange={setWordSpacing}
+            disabled={useBookLayout}
+            min={-4}
+            max={8}
+            step={0.5}
+            data-setting-id='settings.layout.wordSpacing'
+          />
+        )}
+        <NumberInput
+          label={_('Letter Spacing')}
+          value={letterSpacing}
+          onChange={setLetterSpacing}
+          disabled={useBookLayout}
+          min={-2}
+          max={4}
+          step={0.5}
+          data-setting-id='settings.layout.letterSpacing'
+        />
+        <NumberInput
+          label={_('Text Indent')}
+          value={textIndent}
+          onChange={setTextIndent}
+          disabled={useBookLayout}
+          min={-2}
+          max={4}
+          step={1}
+          data-setting-id='settings.layout.paragraphIndent'
+        />
+        <SettingsSwitchRow
+          label={_('Full Justification')}
+          checked={fullJustification}
+          disabled={useBookLayout}
+          onChange={() => setFullJustification(!fullJustification)}
+          data-setting-id='settings.layout.fullJustification'
+        />
+        <SettingsSwitchRow
+          label={_('Hyphenation')}
+          checked={hyphenation}
+          disabled={useBookLayout}
+          onChange={() => setHyphenation(!hyphenation)}
+          data-setting-id='settings.layout.hyphenation'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.layout.pageMargins'>
-        <h2 className='mb-2 font-medium'>{_('Page')}</h2>
-        <div className='card bg-base-100 border-base-200 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <NumberInput
-              label={_('Top Margin (px)')}
-              value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
-              onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
-              min={
-                showHeader && !isVertical
-                  ? Math.max(0, Math.round((44 - gridInsets.top) / 4) * 4)
-                  : 0
-              }
-              max={88}
-              step={4}
-            />
-            <NumberInput
-              label={_('Bottom Margin (px)')}
-              value={showFooter && !isVertical ? marginBottomPx : compactMarginBottomPx}
-              onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
-              min={
-                showFooter && !isVertical
-                  ? Math.max(0, Math.round((44 - gridInsets.bottom) / 4) * 4)
-                  : 0
-              }
-              max={88}
-              step={4}
-            />
-            <NumberInput
-              label={_('Left Margin (px)')}
-              value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
-              onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
-              min={0}
-              max={88}
-              step={4}
-            />
-            <NumberInput
-              label={_('Right Margin (px)')}
-              value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
-              onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
-              min={0}
-              max={88}
-              step={4}
-            />
-            <NumberInput
-              label={_('Column Gap (%)')}
-              value={gapPercent}
-              onChange={setGapPercent}
-              min={0}
-              max={30}
-              data-setting-id='settings.layout.pageGap'
-            />
-            <NumberInput
-              label={_('Maximum Number of Columns')}
-              value={maxColumnCount}
-              onChange={setMaxColumnCount}
-              min={1}
-              max={4}
-              data-setting-id='settings.layout.maxColumnCount'
-            />
-            <NumberInput
-              label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
-              value={maxInlineSize}
-              onChange={setMaxInlineSize}
-              disabled={false}
-              min={200}
-              max={9999}
-              step={50}
-              data-setting-id='settings.layout.maxInlineSize'
-            />
-            <NumberInput
-              label={viewSettings.vertical ? _('Maximum Column Width') : _('Maximum Column Height')}
-              value={maxBlockSize}
-              onChange={setMaxBlockSize}
-              disabled={false}
-              min={400}
-              max={9999}
-              step={50}
-              data-setting-id='settings.layout.maxBlockSize'
-            />
-            <div className='config-item'>
-              <span className=''>{_('Apply also in Scrolled Mode')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showMarginsOnScroll}
-                onChange={() => setShowMarginsOnScroll(!showMarginsOnScroll)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Page')} data-setting-id='settings.layout.pageMargins'>
+        <NumberInput
+          label={_('Top Margin (px)')}
+          value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
+          onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
+          min={
+            showHeader && !isVertical ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) : 0
+          }
+          max={88}
+          step={4}
+        />
+        <NumberInput
+          label={_('Bottom Margin (px)')}
+          value={showFooter && !isVertical ? marginBottomPx : compactMarginBottomPx}
+          onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
+          min={
+            showFooter && !isVertical
+              ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4)
+              : 0
+          }
+          max={88}
+          step={4}
+        />
+        <NumberInput
+          label={_('Left Margin (px)')}
+          value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
+          onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
+          min={0}
+          max={88}
+          step={4}
+        />
+        <NumberInput
+          label={_('Right Margin (px)')}
+          value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
+          onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
+          min={0}
+          max={88}
+          step={4}
+        />
+        <NumberInput
+          label={_('Column Gap (%)')}
+          value={gapPercent}
+          onChange={setGapPercent}
+          min={0}
+          max={30}
+          data-setting-id='settings.layout.pageGap'
+        />
+        <NumberInput
+          label={_('Maximum Number of Columns')}
+          value={maxColumnCount}
+          onChange={setMaxColumnCount}
+          min={1}
+          max={4}
+          data-setting-id='settings.layout.maxColumnCount'
+        />
+        <NumberInput
+          label={viewSettings.vertical ? _('Maximum Column Height') : _('Maximum Column Width')}
+          value={maxInlineSize}
+          onChange={setMaxInlineSize}
+          disabled={false}
+          min={200}
+          max={9999}
+          step={50}
+          data-setting-id='settings.layout.maxInlineSize'
+        />
+        <NumberInput
+          label={viewSettings.vertical ? _('Maximum Column Width') : _('Maximum Column Height')}
+          value={maxBlockSize}
+          onChange={setMaxBlockSize}
+          disabled={false}
+          min={400}
+          max={9999}
+          step={50}
+          data-setting-id='settings.layout.maxBlockSize'
+        />
+      </BoxedList>
 
-      <div className='w-full' data-setting-id='settings.layout.showHeader'>
-        <h2 className='mb-2 font-medium'>{_('Header & Footer')}</h2>
-        <div className='card bg-base-100 border-base-200 border shadow'>
-          <div className='divide-base-200 divide-y'>
-            <div className='config-item'>
-              <span className=''>{_('Show Header')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showHeader}
-                onChange={() => setShowHeader(!showHeader)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.layout.showFooter'>
-              <span className=''>{_('Show Footer')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showFooter}
-                onChange={() => setShowFooter(!showFooter)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Remaining Time')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showRemainingTime}
-                disabled={!showFooter}
-                onChange={() => {
-                  if (!showRemainingTime) {
-                    setShowRemainingTime(true);
-                    setShowRemainingPages(false);
-                  } else {
-                    setShowRemainingTime(false);
-                  }
-                }}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Remaining Pages')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showRemainingPages}
-                disabled={!showFooter}
-                onChange={() => {
-                  if (!showRemainingPages) {
-                    setShowRemainingPages(true);
-                    setShowRemainingTime(false);
-                  } else {
-                    setShowRemainingPages(false);
-                  }
-                }}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Reading Progress')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showProgressInfo}
-                disabled={!showFooter}
-                onChange={() => setShowProgressInfo(!showProgressInfo)}
-              />
-            </div>
-            <div className='config-item' data-setting-id='settings.layout.progressDisplay'>
-              <span className=''>{_('Reading Progress Style')}</span>
-              <Select
-                value={progressStyle}
-                onChange={(e) => setProgressStyle(e.target.value as 'percentage' | 'fraction')}
-                options={[
-                  { value: 'fraction', label: _('Page Number') },
-                  { value: 'percentage', label: _('Percentage') },
-                ]}
-                disabled={!showProgressInfo}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Current Time')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showCurrentTime}
-                disabled={!showFooter}
-                onChange={() => setShowCurrentTime(!showCurrentTime)}
-              />
-            </div>
-            {showCurrentTime && (
-              <div className='config-item'>
-                <span className=''>{_('Use 24 Hour Clock')}</span>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={use24HourClock}
-                  disabled={!showFooter}
-                  onChange={() => setUse24HourClock(!use24HourClock)}
-                />
-              </div>
-            )}
-            <div className='config-item'>
-              <span className=''>{_('Show Current Battery Status')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showCurrentBatteryStatus}
-                disabled={!showFooter}
-                onChange={() => setShowCurrentBatteryStatus(!showCurrentBatteryStatus)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Show Battery Percentage')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showBatteryPercentage}
-                disabled={!showFooter || !showCurrentBatteryStatus}
-                onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Tap to Toggle Footer')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={tapToToggleFooter}
-                disabled={!showFooter}
-                onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
-              />
-            </div>
-            <div className='config-item'>
-              <span className=''>{_('Apply also in Scrolled Mode')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
-                checked={showBarsOnScroll}
-                onChange={() => setShowBarsOnScroll(!showBarsOnScroll)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoxedList title={_('Header & Footer')} data-setting-id='settings.layout.showHeader'>
+        <SettingsSwitchRow
+          label={_('Show Header')}
+          checked={showHeader}
+          onChange={() => setShowHeader(!showHeader)}
+        />
+        <SettingsSwitchRow
+          label={_('Show Footer')}
+          checked={showFooter}
+          onChange={() => setShowFooter(!showFooter)}
+          data-setting-id='settings.layout.showFooter'
+        />
+        <SettingsSwitchRow
+          label={_('Show Remaining Time')}
+          checked={showRemainingTime}
+          disabled={!showFooter}
+          onChange={() => {
+            if (!showRemainingTime) {
+              setShowRemainingTime(true);
+              setShowRemainingPages(false);
+            } else {
+              setShowRemainingTime(false);
+            }
+          }}
+        />
+        <SettingsSwitchRow
+          label={_('Show Remaining Pages')}
+          checked={showRemainingPages}
+          disabled={!showFooter}
+          onChange={() => {
+            if (!showRemainingPages) {
+              setShowRemainingPages(true);
+              setShowRemainingTime(false);
+            } else {
+              setShowRemainingPages(false);
+            }
+          }}
+        />
+        <SettingsSwitchRow
+          label={_('Show Reading Progress')}
+          checked={showProgressInfo}
+          disabled={!showFooter}
+          onChange={() => setShowProgressInfo(!showProgressInfo)}
+        />
+        <SettingsRow
+          label={_('Reading Progress Style')}
+          data-setting-id='settings.layout.progressDisplay'
+        >
+          <SettingsSelect
+            value={progressStyle}
+            onChange={(e) => setProgressStyle(e.target.value as 'percentage' | 'fraction')}
+            ariaLabel={_('Reading Progress Style')}
+            options={[
+              { value: 'fraction', label: _('Page Number') },
+              { value: 'percentage', label: _('Percentage') },
+              { value: 'reference', label: _('Reference Pages') },
+            ]}
+            disabled={!showProgressInfo}
+          />
+        </SettingsRow>
+        {progressStyle === 'reference' && !bookData?.bookDoc?.pageList?.length && (
+          <NumberInput
+            label={_('Reference Page Count')}
+            value={referencePageCount}
+            onChange={setReferencePageCount}
+            disabled={!showProgressInfo}
+            min={0}
+            max={10000}
+            data-setting-id='settings.layout.referencePageCount'
+          />
+        )}
+        <SettingsSwitchRow
+          label={_('Show Current Time')}
+          checked={showCurrentTime}
+          disabled={!showFooter}
+          onChange={() => setShowCurrentTime(!showCurrentTime)}
+        />
+        {showCurrentTime && (
+          <SettingsSwitchRow
+            label={_('Use 24 Hour Clock')}
+            checked={use24HourClock}
+            disabled={!showFooter}
+            onChange={() => setUse24HourClock(!use24HourClock)}
+          />
+        )}
+        <SettingsSwitchRow
+          label={_('Show Current Battery Status')}
+          checked={showCurrentBatteryStatus}
+          disabled={!showFooter}
+          onChange={() => setShowCurrentBatteryStatus(!showCurrentBatteryStatus)}
+        />
+        <SettingsSwitchRow
+          label={_('Show Battery Percentage')}
+          checked={showBatteryPercentage}
+          disabled={!showFooter || !showCurrentBatteryStatus}
+          onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
+        />
+        <SettingsSwitchRow
+          label={_('Tap to Toggle Footer')}
+          checked={tapToToggleFooter}
+          disabled={!showFooter}
+          onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
+        />
+      </BoxedList>
 
       {appService?.hasOrientationLock && (
-        <div className='w-full'>
-          <h2 className='mb-2 font-medium'>{_('Screen')}</h2>
-          <div className='card border-base-200 bg-base-100 border shadow'>
-            <div className='divide-base-200 divide-y'>
-              <div className='config-item'>
-                <span className=''>{_('Orientation')}</span>
-                <div className='flex gap-4'>
-                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
-                    <button
-                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
-                      onClick={() => setScreenOrientation('auto')}
-                    >
-                      <MdOutlineScreenRotation />
-                    </button>
-                  </div>
-
-                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
-                    <button
-                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
-                      onClick={() => setScreenOrientation('portrait')}
-                    >
-                      <IoPhonePortraitOutline />
-                    </button>
-                  </div>
-
-                  <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
-                    <button
-                      className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
-                      onClick={() => setScreenOrientation('landscape')}
-                    >
-                      <IoPhoneLandscapeOutline />
-                    </button>
-                  </div>
-                </div>
+        <BoxedList title={_('Screen')}>
+          <SettingsRow label={_('Orientation')}>
+            <div className='flex gap-4'>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
+                <button
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setScreenOrientation('auto')}
+                >
+                  <MdOutlineScreenRotation />
+                </button>
+              </div>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
+                <button
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setScreenOrientation('portrait')}
+                >
+                  <IoPhonePortraitOutline />
+                </button>
+              </div>
+              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
+                <button
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
+                  onClick={() => setScreenOrientation('landscape')}
+                >
+                  <IoPhoneLandscapeOutline />
+                </button>
               </div>
             </div>
-          </div>
-        </div>
+          </SettingsRow>
+        </BoxedList>
       )}
     </div>
   );

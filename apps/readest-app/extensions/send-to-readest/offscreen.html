@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Send to Readest — converter</title>
+  </head>
+  <body>
+    <!-- `defer` is fine here: the SW polls for a `ping` ack before
+         sending the real clip request (see `waitForOffscreenReady`),
+         so any race between createDocument resolving and the script
+         finishing executes is absorbed by the retry loop. -->
+    <script src="offscreen.js" defer></script>
+  </body>
+</html>

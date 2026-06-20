@@ -1,32 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { TOCItem } from '@/libs/document';
-
-/**
- * Regression test for TOC sidebar blank on initial book load.
- *
- * When a book opens at a position with no TOC entry (e.g., cover page),
- * progress.sectionHref is undefined and expandParents is never called.
- * For books with a nested TOC structure (chapters nested under a root
- * container), the sidebar appears blank because expandedItems is empty
- * and only the root item is shown.
- *
- * Fix: Initialize expandedItems with top-level TOC items that have subitems
- * so chapters are visible immediately on sidebar open.
- */
-
-// Mirrors the logic in TOCView.tsx's getItemIdentifier
-const getItemIdentifier = (item: TOCItem) => {
-  const href = item.href || '';
-  return `toc-item-${item.id}-${href}`;
-};
-
-// Mirrors the initialization logic to be added to TOCView.tsx
-const getInitialExpandedItems = (toc: TOCItem[]): Set<string> => {
-  const topLevelWithSubitems = toc
-    .filter((item) => item.subitems?.length)
-    .map((item) => getItemIdentifier(item));
-  return topLevelWithSubitems.length > 0 ? new Set(topLevelWithSubitems) : new Set();
-};
+import { computeExpandedSet, getItemIdentifier } from '@/app/reader/components/sidebar/tocTree';
 
 // Mirrors useFlattenedTOC logic in TOCView.tsx
 const flattenTOC = (items: TOCItem[], expandedItems: Set<string>, depth = 0): TOCItem[] => {
@@ -41,28 +15,10 @@ const flattenTOC = (items: TOCItem[], expandedItems: Set<string>, depth = 0): TO
   return result;
 };
 
-// Helpers mirrored from TOCView.tsx for the initial-scroll-target logic.
-// These drive the Virtuoso `initialTopMostItemIndex` prop, which avoids the
-// race where a setTimeout-based scrollToIndex fires before Virtuoso has
-// finished its first layout pass.
-const findParentPath = (items: TOCItem[], href: string, path: TOCItem[] = []): TOCItem[] => {
-  for (const item of items) {
-    const newPath = [...path, item];
-    if (item.href === href) return path;
-    if (item.subitems) {
-      const found = findParentPath(item.subitems, href, newPath);
-      if (found.length > 0) return found;
-    }
-  }
-  return [];
-};
-
-const computeExpandedSet = (toc: TOCItem[], href: string | undefined): Set<string> => {
-  const topLevel = toc.filter((item) => item.subitems?.length).map(getItemIdentifier);
-  const parents = href ? findParentPath(toc, href).map(getItemIdentifier).filter(Boolean) : [];
-  return new Set([...topLevel, ...parents]);
-};
-
+// Mirrors the initial-scroll-target logic in TOCView.tsx (uses the real
+// computeExpandedSet). This drives the Virtuoso `initialTopMostItemIndex`
+// prop, which avoids the race where a setTimeout-based scrollToIndex fires
+// before Virtuoso has finished its first layout pass.
 const getInitialScrollTarget = (
   toc: TOCItem[],
   href: string | undefined,
@@ -74,6 +30,15 @@ const getInitialScrollTarget = (
   return { index: idx > 0 ? idx : 0, expanded };
 };
 
+/**
+ * Auto-expansion policy (computeExpandedSet).
+ *
+ * Only the ancestors of the current reading location are "necessary" to
+ * expand — a deep, multi-volume hierarchy must otherwise stay collapsed so
+ * it is easy to scan (issue #4059). The single exception is a TOC wrapped in
+ * one root container: collapsing it would reduce the sidebar to a single
+ * uninformative row, so that lone root is expanded as a fallback.
+ */
 describe('TOC sidebar initialization', () => {
   const nestedTOC: TOCItem[] = [
     {
@@ -94,54 +59,90 @@ describe('TOC sidebar initialization', () => {
     { id: 3, label: 'Chapter 3', href: 'ch3.html' } as unknown as TOCItem,
   ];
 
-  describe('before fix (demonstrates the bug)', () => {
-    it('nested TOC with empty expandedItems only shows root item, not chapters', () => {
-      const expandedItems = new Set<string>(); // Empty initial state (the bug)
-      const flatItems = flattenTOC(nestedTOC, expandedItems);
-      // Only root "Book" shows — chapters are hidden
-      expect(flatItems).toHaveLength(1);
-      expect(flatItems[0]!.label).toBe('Book');
-    });
-  });
+  // Mirrors a multi-volume collection ("文学必读合集20册" in issue #4059):
+  // several top-level volume containers, each with their own chapters.
+  const multiVolumeTOC: TOCItem[] = [
+    {
+      id: 0,
+      label: 'Volume 1',
+      href: 'v1.html',
+      subitems: [
+        { id: 1, label: 'V1 Chapter 1', href: 'v1c1.html' },
+        { id: 2, label: 'V1 Chapter 2', href: 'v1c2.html' },
+      ],
+    },
+    {
+      id: 3,
+      label: 'Volume 2',
+      href: 'v2.html',
+      subitems: [
+        { id: 4, label: 'V2 Chapter 1', href: 'v2c1.html' },
+        { id: 5, label: 'V2 Chapter 2', href: 'v2c2.html' },
+      ],
+    },
+    {
+      id: 6,
+      label: 'Volume 3',
+      href: 'v3.html',
+      subitems: [{ id: 7, label: 'V3 Chapter 1', href: 'v3c1.html' }],
+    },
+  ] as unknown as TOCItem[];
 
-  describe('after fix (initialization effect behavior)', () => {
-    it('nested TOC: getInitialExpandedItems expands the root container', () => {
-      const expandedItems = getInitialExpandedItems(nestedTOC);
-      expect(expandedItems.size).toBe(1);
-      expect(expandedItems.has(getItemIdentifier(nestedTOC[0]!))).toBe(true);
+  describe('single-root fallback (prevents a blank sidebar)', () => {
+    it('nested TOC with no current location expands only the lone root container', () => {
+      const expanded = computeExpandedSet(nestedTOC, undefined);
+      expect(expanded.size).toBe(1);
+      expect(expanded.has(getItemIdentifier(nestedTOC[0]!))).toBe(true);
     });
 
-    it('nested TOC: with initialized expandedItems, all chapters are visible', () => {
-      const expandedItems = getInitialExpandedItems(nestedTOC);
-      const flatItems = flattenTOC(nestedTOC, expandedItems);
+    it('nested TOC: with the root expanded, all chapters are visible', () => {
+      const expanded = computeExpandedSet(nestedTOC, undefined);
+      const flatItems = flattenTOC(nestedTOC, expanded);
       // Root + 3 chapters = 4 items
       expect(flatItems).toHaveLength(4);
       expect(flatItems[1]!.label).toBe('Chapter 1');
-      expect(flatItems[2]!.label).toBe('Chapter 2');
       expect(flatItems[3]!.label).toBe('Chapter 3');
     });
 
-    it('flat TOC: getInitialExpandedItems returns empty set (no change)', () => {
-      const expandedItems = getInitialExpandedItems(flatTOC);
-      expect(expandedItems.size).toBe(0);
+    it('flat TOC with no current location expands nothing', () => {
+      const expanded = computeExpandedSet(flatTOC, undefined);
+      expect(expanded.size).toBe(0);
     });
 
-    it('flat TOC: all chapters visible regardless of expandedItems', () => {
-      const expandedItems = getInitialExpandedItems(flatTOC);
-      const flatItems = flattenTOC(flatTOC, expandedItems);
-      expect(flatItems).toHaveLength(3);
+    it('empty TOC produces an empty expanded set', () => {
+      expect(computeExpandedSet([], undefined).size).toBe(0);
+    });
+  });
+
+  describe('multi-volume TOC stays collapsed (issue #4059)', () => {
+    it('expands nothing when there is no current location', () => {
+      const expanded = computeExpandedSet(multiVolumeTOC, undefined);
+      expect(expanded.size).toBe(0);
     });
 
-    it('non-empty expandedItems is preserved (no re-initialization)', () => {
-      const existingItems = new Set(['toc-item-1-ch1.html']);
-      // The effect uses: if (prev.size > 0) return prev
-      const result = existingItems.size > 0 ? existingItems : getInitialExpandedItems(nestedTOC);
-      expect(result).toBe(existingItems); // Same reference - not re-initialized
+    it('shows only the collapsed volume rows when nothing is expanded', () => {
+      const expanded = computeExpandedSet(multiVolumeTOC, undefined);
+      const flatItems = flattenTOC(multiVolumeTOC, expanded);
+      expect(flatItems.map((i) => i.label)).toEqual(['Volume 1', 'Volume 2', 'Volume 3']);
     });
 
-    it('empty TOC produces empty expandedItems', () => {
-      const expandedItems = getInitialExpandedItems([]);
-      expect(expandedItems.size).toBe(0);
+    it('expands only the current volume, leaving the others collapsed', () => {
+      const expanded = computeExpandedSet(multiVolumeTOC, 'v2c1.html');
+      expect(expanded.has(getItemIdentifier(multiVolumeTOC[1]!))).toBe(true); // Volume 2
+      expect(expanded.has(getItemIdentifier(multiVolumeTOC[0]!))).toBe(false); // Volume 1
+      expect(expanded.has(getItemIdentifier(multiVolumeTOC[2]!))).toBe(false); // Volume 3
+    });
+
+    it('only the current volume reveals its chapters in the flattened list', () => {
+      const expanded = computeExpandedSet(multiVolumeTOC, 'v2c1.html');
+      const flatItems = flattenTOC(multiVolumeTOC, expanded);
+      expect(flatItems.map((i) => i.label)).toEqual([
+        'Volume 1',
+        'Volume 2',
+        'V2 Chapter 1',
+        'V2 Chapter 2',
+        'Volume 3',
+      ]);
     });
   });
 });
@@ -491,6 +492,70 @@ describe('TOC scroll effect retries when flatItems is stale', () => {
       // A subsequent flatItems change without a new pending must not scroll again.
       runScrollNew(refs, 'b.html', flat, scroll);
       expect(scroll).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+/**
+ * Regression test for issue #4059 follow-up: collapsed-by-default TOC drops
+ * the initial auto-scroll.
+ *
+ * With the current volume collapsed at mount (pinned sidebar mounts before
+ * the first relocate), the post-mount progress effect expands that volume,
+ * growing the virtualized list from a few rows to dozens. That growth makes
+ * Virtuoso emit a synthetic onScroll. The old handler treated ANY scroll
+ * while a scroll was queued as "the user took over" and cleared
+ * pendingScrollRef — so the one-shot auto-scroll to the current chapter was
+ * silently dropped and the TOC stayed near the top.
+ *
+ * Fix: ignore a queued-state scroll unless a real user gesture
+ * (wheel/touch/pointer/key) preceded it.
+ */
+describe('TOC onScroll distinguishes user scroll from expansion shift', () => {
+  type Refs = { pendingScroll: boolean; userScrolled: boolean };
+
+  // Mirrors the onScroll handler BEFORE the fix: any scroll clears pending.
+  const runOnScrollOld = (refs: Refs): void => {
+    refs.pendingScroll = false;
+    refs.userScrolled = true;
+  };
+
+  // Mirrors the onScroll handler AFTER the fix: a scroll arriving while an
+  // auto-scroll is queued is ignored unless a real user gesture preceded it.
+  const runOnScrollNew = (refs: Refs, userInput: boolean): void => {
+    if (refs.pendingScroll && !userInput) return;
+    refs.pendingScroll = false;
+    refs.userScrolled = true;
+  };
+
+  describe('before fix (demonstrates the bug)', () => {
+    it('a synthetic expansion scroll clears the queued auto-scroll', () => {
+      const refs: Refs = { pendingScroll: true, userScrolled: false };
+      runOnScrollOld(refs);
+      expect(refs.pendingScroll).toBe(false); // BUG: queued auto-scroll lost
+    });
+  });
+
+  describe('after fix', () => {
+    it('preserves the queued auto-scroll on a no-gesture expansion scroll', () => {
+      const refs: Refs = { pendingScroll: true, userScrolled: false };
+      runOnScrollNew(refs, false);
+      expect(refs.pendingScroll).toBe(true);
+      expect(refs.userScrolled).toBe(false);
+    });
+
+    it('lets a real user gesture cancel the queued auto-scroll', () => {
+      const refs: Refs = { pendingScroll: true, userScrolled: false };
+      runOnScrollNew(refs, true);
+      expect(refs.pendingScroll).toBe(false);
+      expect(refs.userScrolled).toBe(true);
+    });
+
+    it('records user scrolls normally once nothing is queued', () => {
+      const refs: Refs = { pendingScroll: false, userScrolled: false };
+      // No gesture flag needed: with nothing queued the guard does not apply.
+      runOnScrollNew(refs, false);
+      expect(refs.userScrolled).toBe(true);
     });
   });
 });

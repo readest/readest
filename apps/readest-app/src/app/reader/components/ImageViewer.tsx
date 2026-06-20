@@ -196,23 +196,29 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
 
-  const handleImageMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || scale <= 1) return;
-    e.preventDefault();
+  // Track the drag on `window` (not the moving <img>) so the pan keeps
+  // following the pointer even when it crosses the image boundary. Binding the
+  // move/up handlers to the image meant the cursor leaving the lagging image
+  // aborted and restarted the drag, which flickered on desktop (#4451). This
+  // mirrors the touch path, which tracks on the full-screen container.
+  useEffect(() => {
+    if (!isDragging) return;
 
-    wasDragging.current = true;
-    const newX = e.clientX - dragStart.current.x;
-    const newY = e.clientY - dragStart.current.y;
+    const handleMouseMove = (e: MouseEvent) => {
+      wasDragging.current = true;
+      setPosition({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
+    };
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
 
-    setPosition({ x: newX, y: newY });
-  };
-
-  const handleImageMouseUp = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.stopPropagation();
-    }
-    setIsDragging(false);
-  };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touches = e.touches;
@@ -367,12 +373,15 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   if (!src) return null;
 
   return (
+    // `no-context-menu` suppresses the WebView's native long-press image
+    // callout (via the `.no-context-menu img` rule). On Android it otherwise
+    // collides with the pinch/pan handlers below and freezes the app.
     <div
       ref={containerRef}
       tabIndex={-1}
       role='button'
       aria-label={_('Image viewer')}
-      className='fixed inset-0 z-50 flex items-center justify-center outline-none'
+      className='no-context-menu fixed inset-0 z-50 flex items-center justify-center outline-none'
       onKeyDown={handleKeyDown}
       onWheel={handleWheel}
       onTouchMove={onTouchMove}
@@ -442,9 +451,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           sizes='100vw'
           onClick={handleImageClick}
           onMouseDown={handleImageMouseDown}
-          onMouseMove={handleImageMouseMove}
-          onMouseUp={handleImageMouseUp}
-          onMouseLeave={handleImageMouseUp}
           onDoubleClick={onDoubleClick}
           style={{
             width: 'auto',
@@ -452,7 +458,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            transition: 'transform 0.05s ease-out',
+            // No transition while dragging: the 0.05s ease made the image lag
+            // behind the cursor, which flickered on desktop (#4451). Keep the
+            // smoothing only for discrete zoom (buttons, double-click, wheel).
+            transition: isDragging ? 'none' : 'transform 0.05s ease-out',
+            // Promote to a GPU layer so transform changes don't repaint the
+            // page (the `transform-gpu` class is overridden by this inline
+            // transform, so its hint is lost).
+            willChange: 'transform',
             cursor: cursorStyle,
           }}
         />

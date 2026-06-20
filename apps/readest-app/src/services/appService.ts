@@ -9,6 +9,7 @@ import {
   FileSystem,
   OsPlatform,
   ResolvedPath,
+  SaveLibraryBooksOptions,
   SelectDirectoryMode,
 } from '@/types/system';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
@@ -42,6 +43,7 @@ export abstract class BaseAppService implements AppService {
   isAppDataSandbox = false;
   isAndroidApp = false;
   isIOSApp = false;
+  isWindowsApp = false;
   isMobileApp = false;
   isPortableApp = false;
   isDesktopApp = false;
@@ -76,7 +78,7 @@ export abstract class BaseAppService implements AppService {
   abstract selectFiles(name: string, extensions: string[]): Promise<string[]>;
   abstract saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -260,6 +262,10 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.importBook(this.fs, file, books, {
       saveBookConfig: this.saveBookConfig.bind(this),
       generateCoverImageUrl: this.generateCoverImageUrl.bind(this),
+      // Pass the host platform through so the in-place fast path and the
+      // lookup index can normalize source paths consistently on
+      // case-insensitive filesystems (macOS / iOS / Windows).
+      osPlatform: this.osPlatform,
       ...options,
     });
   }
@@ -388,6 +394,10 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.loadBookContent(this.fs, book);
   }
 
+  async resolveNativeBookFilePath(book: Book): Promise<string | null> {
+    return BookSvc.resolveNativeBookFilePath(this.fs, this.resolveFilePath.bind(this), book);
+  }
+
   async loadBookConfig(book: Book, settings: SystemSettings): Promise<BookConfig> {
     return BookSvc.loadBookConfig(this.fs, book, settings);
   }
@@ -412,7 +422,7 @@ export abstract class BaseAppService implements AppService {
     return LibrarySvc.loadLibraryBooks(this.fs, this.generateCoverImageUrl.bind(this));
   }
 
-  async saveLibraryBooks(books: Book[]): Promise<void> {
-    return LibrarySvc.saveLibraryBooks(this.fs, books);
+  async saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void> {
+    return LibrarySvc.saveLibraryBooks(this.fs, books, options);
   }
 }

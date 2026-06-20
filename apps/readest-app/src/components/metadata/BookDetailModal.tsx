@@ -2,8 +2,10 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 import { Book } from '@/types/book';
+import { getBookWithUpdatedMetadata } from '@/utils/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
@@ -26,6 +28,7 @@ interface BookDetailModalProps {
   handleBookDelete?: (book: Book) => void;
   handleBookDeleteCloudBackup?: (book: Book) => void;
   handleBookDeleteLocalCopy?: (book: Book) => void;
+  handleBookPurge?: (book: Book) => void;
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
 }
 
@@ -44,16 +47,22 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   handleBookDelete,
   handleBookDeleteCloudBackup,
   handleBookDeleteLocalCopy,
+  handleBookPurge,
   handleBookMetadataUpdate,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { user } = useAuth();
   const { safeAreaInsets } = useThemeStore();
   const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  // The parent owns the `book` prop and does not re-pass it after a metadata
+  // save, so the details view tracks the saved book locally to refresh its
+  // cover/title/author immediately (otherwise it shows the stale prop).
+  const [displayBook, setDisplayBook] = useState<Book>(book);
 
   // Initialize metadata edit hook
   const {
@@ -90,6 +99,13 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
       message: _('Are you sure to delete the local copy of the selected book?'),
       handler: handleBookDeleteLocalCopy,
     },
+    purge: {
+      title: _('Purge Book Data'),
+      message: _(
+        'This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.',
+      ),
+      handler: handleBookPurge,
+    },
   };
 
   useEffect(() => {
@@ -108,6 +124,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     };
     fetchBookDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book]);
+
+  useEffect(() => {
+    setDisplayBook(book);
   }, [book]);
 
   const handleClose = () => {
@@ -129,6 +149,9 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleSaveMetadata = () => {
     if (editedMeta && handleBookMetadataUpdate) {
       setBookMeta({ ...editedMeta });
+      // Capture the updated book before handleBookMetadataUpdate clears the
+      // temporary cover fields on editedMeta, so the view refreshes its cover.
+      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta));
       handleBookMetadataUpdate(book, editedMeta);
       setEditMode(false);
     }
@@ -156,19 +179,14 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleDelete = () => handleDeleteAction('both');
   const handleDeleteCloudBackup = () => handleDeleteAction('cloud');
   const handleDeleteLocalCopy = () => handleDeleteAction('local');
+  const handlePurge = () => handleDeleteAction('purge');
 
-  const handleRedownload = async () => {
+  const handleShare = () => {
+    // Close this modal first, then hand off to the share dialog hosted by
+    // Bookshelf (it owns the login gate + ShareBookDialog). Mirrors how the
+    // bookshelf context menu dispatches the same event.
     handleClose();
-    if (handleBookDownload) {
-      handleBookDownload(book, { redownload: true, queued: false });
-    }
-  };
-
-  const handleReupload = async () => {
-    handleClose();
-    if (handleBookUpload) {
-      handleBookUpload(book);
-    }
+    eventDispatcher.dispatch('show-share-dialog', { book });
   };
 
   const handleBookExport = async () => {
@@ -184,6 +202,25 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
       }
     }, 0);
   };
+
+  const handleRedownload = async () => {
+    handleClose();
+    if (handleBookDownload) {
+      handleBookDownload(book, { redownload: true, queued: false });
+    }
+  };
+
+  const handleReupload = async () => {
+    handleClose();
+    if (handleBookUpload) {
+      handleBookUpload(book);
+    }
+  };
+
+  // Sharing uploads the book to the Readest backend and mints a public link, so
+  // it needs a signed-in user and a resolvable on-disk file. `fileSize` is only
+  // non-null when getBookFileSize could actually open the local file.
+  const shareEnabled = !!user && fileSize !== null;
 
   const currentDeleteConfig = activeDeleteAction ? deleteConfigs[activeDeleteAction] : null;
 
@@ -220,17 +257,20 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
               />
             ) : (
               <BookDetailView
-                book={book}
+                book={displayBook}
                 metadata={bookMeta}
                 fileSize={fileSize}
+                shareEnabled={shareEnabled}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={
                   handleBookDeleteCloudBackup ? handleDeleteCloudBackup : undefined
                 }
                 onDeleteLocalCopy={handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined}
+                onPurge={handleBookPurge ? handlePurge : undefined}
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
+                onShare={handleShare}
                 onExport={handleBookExport}
               />
             )}

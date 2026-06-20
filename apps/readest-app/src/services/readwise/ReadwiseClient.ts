@@ -1,7 +1,9 @@
 import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
+import { isTauriAppPlatform } from '@/services/environment';
 import { buildAnnotationWebUrl } from '@/utils/deeplink';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
 const READEST_TO_READWISE_COLOR: Record<HighlightColor, string> = {
   red: 'pink',
@@ -18,12 +20,24 @@ export class ReadwiseClient {
     this.config = config;
   }
 
+  /**
+   * Resolve the API base URL. An advanced custom override (self-hosted,
+   * Readwise-compatible receiver) wins when set; trailing slashes are
+   * trimmed so `${baseUrl}${endpoint}` joins cleanly. Falls back to the
+   * official endpoint when unset or blank.
+   */
+  private get baseUrl(): string {
+    const custom = this.config.baseUrl?.trim();
+    return (custom || READWISE_API_BASE_URL).replace(/\/+$/, '');
+  }
+
   private async request(
     endpoint: string,
     options: { method?: 'GET' | 'POST'; body?: string } = {},
   ): Promise<Response> {
     const { method = 'GET', body } = options;
-    return fetch(`${READWISE_API_BASE_URL}${endpoint}`, {
+    const fetchFn = isTauriAppPlatform() ? tauriFetch : globalThis.fetch;
+    return fetchFn(`${this.baseUrl}${endpoint}`, {
       method,
       headers: {
         Authorization: `Token ${this.config.accessToken}`,

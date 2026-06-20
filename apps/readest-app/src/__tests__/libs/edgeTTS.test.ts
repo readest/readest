@@ -213,4 +213,115 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
       }),
     ).rejects.toThrow();
   });
+
+  test('captures word boundaries from audio.metadata frames', async () => {
+    const listeners: Record<string, Array<(event: unknown) => void>> = {};
+    const mockSocket = {
+      accept: vi.fn(),
+      send: vi.fn(),
+      close: vi.fn(),
+      addEventListener: vi.fn((type: string, cb: (event: unknown) => void) => {
+        (listeners[type] ??= []).push(cb);
+      }),
+      removeEventListener: vi.fn(),
+    };
+
+    const audioFrame = () => {
+      const headerText = 'X-RequestId:1\r\nContent-Type:audio/mpeg\r\nPath:audio\r\n';
+      const headerBytes = new TextEncoder().encode(headerText);
+      const audioBody = new Uint8Array([0xaa, 0xbb]);
+      const frame = new Uint8Array(2 + headerBytes.byteLength + audioBody.byteLength);
+      new DataView(frame.buffer).setInt16(0, headerBytes.byteLength);
+      frame.set(headerBytes, 2);
+      frame.set(audioBody, 2 + headerBytes.byteLength);
+      return frame.buffer;
+    };
+    const metadataFrame = (text: string, offset: number) =>
+      'X-RequestId:1\r\nContent-Type:application/json; charset=utf-8\r\nPath:audio.metadata\r\n\r\n' +
+      JSON.stringify({
+        Metadata: [
+          { Type: 'WordBoundary', Data: { Offset: offset, Duration: 1000, text: { Text: text } } },
+        ],
+      });
+
+    let sendCount = 0;
+    mockSocket.send.mockImplementation(() => {
+      sendCount++;
+      if (sendCount === 2) {
+        queueMicrotask(() => {
+          for (const cb of listeners['message'] ?? [])
+            cb({ data: metadataFrame('Hello', 1000000) });
+          for (const cb of listeners['message'] ?? []) cb({ data: audioFrame() });
+          for (const cb of listeners['message'] ?? [])
+            cb({ data: metadataFrame('brave', 6000000) });
+          for (const cb of listeners['message'] ?? [])
+            cb({ data: 'X-RequestId:1\r\nPath:turn.end\r\n\r\n' });
+        });
+      }
+    });
+
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ status: 101, webSocket: mockSocket }) as unknown as typeof fetch;
+
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    const tts = new EdgeSpeechTTS('wss');
+    const { boundaries } = await tts.createWithBoundaries({
+      lang: 'en-US',
+      text: 'Hello brave',
+      voice: 'en-US-AriaNeural',
+      rate: 1.0,
+      pitch: 1.0,
+    });
+    expect(boundaries).toEqual([
+      { offset: 1000000, duration: 1000, text: 'Hello' },
+      { offset: 6000000, duration: 1000, text: 'brave' },
+    ]);
+  });
+});
+
+describe('parseAudioMetadataBody', () => {
+  test('extracts WordBoundary entries from an audio.metadata body', async () => {
+    const { parseAudioMetadataBody } = await import('@/libs/edgeTTS');
+    const body = JSON.stringify({
+      Metadata: [
+        {
+          Type: 'WordBoundary',
+          Data: {
+            Offset: 1000000,
+            Duration: 4250000,
+            text: { Text: 'Dr.', Length: 3, BoundaryType: 'WordBoundary' },
+          },
+        },
+      ],
+    });
+    expect(parseAudioMetadataBody(body)).toEqual([
+      { offset: 1000000, duration: 4250000, text: 'Dr.' },
+    ]);
+  });
+
+  test('ignores non-WordBoundary metadata entries', async () => {
+    const { parseAudioMetadataBody } = await import('@/libs/edgeTTS');
+    const body = JSON.stringify({
+      Metadata: [
+        { Type: 'SessionEnd', Data: { Offset: 99 } },
+        {
+          Type: 'WordBoundary',
+          Data: { Offset: 5000000, Duration: 1000000, text: { Text: 'hello' } },
+        },
+      ],
+    });
+    expect(parseAudioMetadataBody(body)).toEqual([
+      { offset: 5000000, duration: 1000000, text: 'hello' },
+    ]);
+  });
+
+  test('returns an empty list for malformed or empty bodies', async () => {
+    const { parseAudioMetadataBody } = await import('@/libs/edgeTTS');
+    expect(parseAudioMetadataBody('not json')).toEqual([]);
+    expect(parseAudioMetadataBody('{}')).toEqual([]);
+    expect(
+      parseAudioMetadataBody(JSON.stringify({ Metadata: [{ Type: 'WordBoundary' }] })),
+    ).toEqual([]);
+  });
 });

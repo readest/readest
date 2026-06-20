@@ -251,6 +251,12 @@ msgstr "ซิงค์อัตโนมัติ"
 msgid "Readest library"
 msgstr "คลัง Readest"
 
+msgid "Push stats now"
+msgstr "ส่งสถิติเดี๋ยวนี้"
+
+msgid "Pull stats now"
+msgstr "ดึงสถิติเดี๋ยวนี้"
+
 msgid "Push books now"
 msgstr "ส่งหนังสือเดี๋ยวนี้"
 
@@ -436,3 +442,18 @@ msgstr "ซิงค์ความคืบหน้าการอ่านแ
 
 msgid "No saved reading progress found for this book"
 msgstr "ไม่พบความคืบหน้าการอ่านที่บันทึกไว้สำหรับหนังสือเล่มนี้"
+
+msgid "Reading statistics are up to date"
+msgstr "สถิติการอ่านเป็นปัจจุบันแล้ว"
+
+msgid "Reading statistics pushed"
+msgstr "ส่งสถิติการอ่านแล้ว"
+
+msgid "Failed to push reading statistics"
+msgstr "ส่งสถิติการอ่านไม่สำเร็จ"
+
+msgid "Failed to pull reading statistics"
+msgstr "ดึงสถิติการอ่านไม่สำเร็จ"
+
+msgid "Reading statistics pulled"
+msgstr "ดึงสถิติการอ่านแล้ว"

@@ -14,6 +14,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   upload-to-r2:
     runs-on: ubuntu-latest
@@ -36,7 +39,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install rclone
-        run: curl https://rclone.org/install.sh | sudo bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rclone
 
       - name: Configure rclone
         run: |
@@ -67,15 +72,3 @@ jobs:
       - name: Upload successful
         if: success()
         run: echo "Upload completed successfully"
-
-  retry-on-failure:
-    if: failure() && fromJSON(github.run_attempt) < 3
-    needs: [upload-to-r2]
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - env:
-          GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run retry-workflow.yml -F run_id=${{ github.run_id }}

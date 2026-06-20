@@ -23,8 +23,8 @@ pnpm test:tauri            # Run Tauri integration tests
 
 # Linting & Formatting
 pnpm lint                  # Biome (linter) + tsgo (type check)
-pnpm format                # Prettier (runs from monorepo root)
-pnpm format:check          # Check formatting without writing
+pnpm format                # Biome formatter (runs from monorepo root)
+pnpm format:check          # Check formatting without writing (Biome)
 
 # Rust
 pnpm fmt:check             # Check formatting Rust code (src-tauri)
@@ -65,9 +65,28 @@ pnpm worktree:new feat/my-feature   # New branch from origin/main
 pnpm worktree:new 3837              # Checkout PR #3837 with push access to fork
 ```
 
+## Agent Workspace
+
+Project-related agent context lives under `.agents/`, which is a symlink to `.claude/`. Treat `.agents/` as the canonical path when looking for or updating local agent material:
+
+- `.agents/memory/` — persistent project memory and recurring context
+- `.agents/plans/` — active or archived implementation plans
+- `.agents/rules/` — project rules for test-first work, TypeScript, verification, and related workflows
+
 ## Project Rules
 
-Rules are in `.claude/rules/`: test-first, typescript, verification.
+Rules are in `.agents/rules/`: test-first, typescript, verification.
+
+### Implementation Scope
+
+For every coding task, write the minimum code that solves the requested problem.
+
+- Do not add features beyond what was asked.
+- Do not add abstractions for single-use code.
+- Do not add flexibility or configurability unless requested.
+- Do not add error handling for impossible scenarios.
+- If a solution is much longer than necessary, simplify it before finishing.
+- Before shipping, ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
 ### i18n
 
@@ -76,6 +95,10 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 ### Safe Area Insets
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
+
+### Design System
+
+UI/UX rules — surface tiers, action vocabulary, settings primitives (`BoxedList`, `SettingsRow`, `SettingsSwitchRow`, `SettingsSelect`, `NavigationRow`, `Tips`, etc.), boxed-list anatomy, RTL conventions, e-ink overlay, and anti-patterns — live in [DESIGN.md](DESIGN.md). Codify recurring decisions there so they persist for the team and future contributors. Reach for the primitives in `src/components/settings/primitives/` instead of inlining chassis classes.
 
 ### E-ink mode
 
@@ -87,21 +110,3 @@ Every new UI widget must look right under `[data-eink='true']`. E-ink screens ha
 - **Don't rely on color/shadow alone for hierarchy.** Two same-tone buttons differ only by hover on color themes, and hover doesn't exist on e-ink touchscreens. Pair a borderless ghost (cancel) with a solid CTA (submit) so eink can invert one without flattening the difference.
 
 When in doubt, toggle E-ink in Settings → Misc and check. The rules in `globals.css` cover most cases automatically, but composite components (custom buttons, layered cards) often need `eink-bordered` on the right element to stay legible.
-
-Available gstack skills:
-
-- `/plan-ceo-review` — CEO/founder-mode plan review
-- `/plan-eng-review` — Eng manager-mode plan review
-- `/plan-design-review` — Designer's eye review of a live site
-- `/design-consultation` — Design system consultation
-- `/review` — Pre-landing PR review
-- `/ship` — Ship workflow (merge, test, review, bump, PR)
-- `/browse` — Fast headless browser for QA and site interaction
-- `/qa` — QA test and fix bugs
-- `/qa-only` — QA report only (no fixes)
-- `/qa-design-review` — Designer's eye QA with fixes
-- `/setup-browser-cookies` — Import cookies for authenticated testing
-- `/retro` — Weekly engineering retrospective
-- `/document-release` — Post-ship documentation update
-
-If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.

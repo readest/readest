@@ -1,6 +1,7 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
 import { TTSMediaMetadataMode } from '@/services/tts/types';
+import type { AnnotationLinkType } from '@/utils/deeplink';
 import { AnnotationToolType } from './annotator';
 
 export type BookFormat =
@@ -15,7 +16,7 @@ export type BookFormat =
   | 'TXT'
   | 'MD';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
-export type ReadingStatus = 'unread' | 'reading' | 'finished';
+export type ReadingStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 // Predefined highlight colors, can be extended with custom hex colors
 export type HighlightColor = 'red' | 'yellow' | 'green' | 'blue' | 'violet' | string;
@@ -44,6 +45,13 @@ export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 export interface BookLookupIndex {
   byHash: Map<string, Book>;
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+  // Maps normalized absolute source path -> Book for in-place imports.
+  // Lets the importer recognize "I already have this exact file" without
+  // having to open, parse, and hash it again. Only books with a non-empty
+  // `filePath` and `!deletedAt` are indexed. The key is produced by
+  // `normalizeFilePathForIndex` so callers must use the same helper to
+  // probe; importBook handles that internally.
+  byFilePath: Map<string, Book>;
 }
 
 /**
@@ -60,6 +68,15 @@ export interface ImportBookOptions {
   overwrite?: boolean;
   /** Whether the import is transient (not stored long-term). Defaults to false. */
   transient?: boolean;
+  /**
+   * If true, do NOT copy the source file into Books/<hash>/. Instead, persist
+   * an absolute filePath on the Book and let isBookAvailable / loadBookContent
+   * fall back to it. The caller is responsible for verifying the source is
+   * already inside the user's chosen library root (customRootDir) so that the
+   * file remains stable across launches. Sidecar files (cover.png, config.json,
+   * nav.json) are still written to Books/<hash>/ as usual. Defaults to false.
+   */
+  inPlace?: boolean;
   /** Pre-built lookup index for O(1) dedup during batch imports. */
   lookupIndex?: BookLookupIndex;
 }
@@ -95,6 +112,7 @@ export interface Book {
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
   readingStatus?: ReadingStatus;
+  readingStatusUpdatedAt?: number; // ms; bumped only when readingStatus changes
   primaryLanguage?: string;
 
   metadata?: BookMetadata;
@@ -130,6 +148,14 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
+  /**
+   * If true, this annotation should be applied to every occurrence of `text`
+   * within the same section (chapter/spine item), in addition to the original
+   * range identified by `cfi`. Defaults to false / undefined (single-range).
+   * Only meaningful for annotations that have a `text` value; ignored for
+   * bookmarks and excerpts, and for fixed-layout formats (e.g. PDF).
+   */
+  global?: boolean;
 
   createdAt: number;
   updatedAt: number;
@@ -158,8 +184,10 @@ export interface BookLayout {
   compactMarginPx?: number; // deprecated
   gapPercent: number;
   scrolled: boolean;
+  webtoonMode: boolean;
   noContinuousScroll: boolean;
   disableClick: boolean;
+  disableSwipe: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
@@ -253,10 +281,9 @@ export interface ViewConfig {
   showCurrentBatteryStatus: boolean;
   showBatteryPercentage: boolean;
   tapToToggleFooter: boolean;
-  showBarsOnScroll: boolean;
-  showMarginsOnScroll: boolean;
   showPaginationButtons: boolean;
-  progressStyle: 'percentage' | 'fraction';
+  progressStyle: 'percentage' | 'fraction' | 'reference';
+  referencePageCount: number;
   progressInfoMode: ProgressBarMode;
 
   animated: boolean;
@@ -299,6 +326,7 @@ export interface NoteExportConfig {
   includePageNumber: boolean;
   includeTimestamp: boolean;
   includeChapterSeparator: boolean;
+  linkType: AnnotationLinkType;
   noteSeparator: string;
   useCustomTemplate: boolean;
   customTemplate: string;
@@ -308,8 +336,17 @@ export interface NoteExportConfig {
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
+  annotationToolbarItems: AnnotationToolType[];
   copyToNotebook: boolean;
   noteExportConfig: NoteExportConfig;
+}
+
+export interface WordLensConfig {
+  wordLensEnabled: boolean;
+  /** Difficulty slider, 1 (fewest hints) .. 5 (most hints). */
+  wordLensLevel: number;
+  /** Hint (target) language; '' = auto (app UI language). */
+  wordLensHintLang: string;
 }
 
 export interface ScreenConfig {
@@ -342,8 +379,7 @@ export interface ViewSettingsConfig {
 }
 
 export interface ViewSettings
-  extends
-    BookLayout,
+  extends BookLayout,
     BookStyle,
     BookFont,
     BookLanguage,
@@ -353,6 +389,7 @@ export interface ViewSettings
     ScreenConfig,
     ProofreadRulesConfig,
     AnnotatorConfig,
+    WordLensConfig,
     ViewSettingsConfig {}
 
 export interface BookProgress {
@@ -361,6 +398,7 @@ export interface BookProgress {
   sectionLabel: string;
   section: PageInfo;
   pageinfo: PageInfo;
+  pageItem?: { label?: string; href?: string } | null;
   timeinfo: TimeInfo;
   index: number;
   range: Range;
@@ -398,7 +436,10 @@ export interface BookSearchResult {
   progress?: number;
 }
 
+export const BOOK_CONFIG_SCHEMA_VERSION = 2;
+
 export interface BookConfig {
+  schemaVersion?: number;
   bookHash?: string;
   metaHash?: string;
   progress?: [number, number]; // [current pagenum, total pagenum], 1-based page number
@@ -415,9 +456,6 @@ export interface BookConfig {
   lastPushedAtNotes?: number;
   foliateImportedAt?: number;
 
-  // Per-book switch for hardcover exports in reader menu.
-  hardcoverSyncEnabled?: boolean;
-
   updatedAt: number;
 }
 
@@ -428,6 +466,10 @@ export interface BookDataRecord {
   user_id: string;
   updated_at: number | null;
   deleted_at: number | null;
+  // Only book records carry an upload state: a book is indexed in the cloud
+  // as soon as its metadata syncs, but is unavailable to peers until its file
+  // blob is uploaded. Absent on config/note records.
+  uploaded_at?: string | null;
 }
 
 export interface BooksGroup {

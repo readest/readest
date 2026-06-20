@@ -42,6 +42,7 @@ describe('trafficLightStore', () => {
       isTrafficLightVisible: false,
       shouldShowTrafficLight: false,
       trafficLightInFullscreen: false,
+      headerHeight: 44,
       unlistenEnterFullScreen: undefined,
       unlistenExitFullScreen: undefined,
     });
@@ -119,27 +120,41 @@ describe('trafficLightStore', () => {
       expect(state.shouldShowTrafficLight).toBe(false);
     });
 
-    test('invokes set_traffic_lights with default position', async () => {
+    test('invokes set_traffic_lights with default header height when none provided', async () => {
+      // y is computed Rust-side from headerHeight + the live close-button
+      // frame, so the IPC payload carries height-in-logical-px rather
+      // than a precomputed inset. Without an explicit value we fall
+      // back to readest's standard `h-11` (44px).
       mockIsFullscreen.mockResolvedValue(false);
 
       await useTrafficLightStore.getState().setTrafficLightVisibility(true);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
         visible: true,
-        x: 10.0,
-        y: 22.0,
+        headerHeight: 44,
       });
     });
 
-    test('invokes set_traffic_lights with custom position', async () => {
+    test('invokes set_traffic_lights with caller-supplied header height', async () => {
       mockIsFullscreen.mockResolvedValue(false);
 
-      await useTrafficLightStore.getState().setTrafficLightVisibility(true, { x: 20, y: 30 });
+      await useTrafficLightStore.getState().setTrafficLightVisibility(true, 56);
 
       expect(invoke).toHaveBeenCalledWith('set_traffic_lights', {
         visible: true,
-        x: 20,
-        y: 30,
+        headerHeight: 56,
+      });
+    });
+
+    test('remembers the last header height across visibility toggles', async () => {
+      mockIsFullscreen.mockResolvedValue(false);
+
+      await useTrafficLightStore.getState().setTrafficLightVisibility(true, 56);
+      await useTrafficLightStore.getState().setTrafficLightVisibility(false);
+
+      expect(invoke).toHaveBeenLastCalledWith('set_traffic_lights', {
+        visible: false,
+        headerHeight: 56,
       });
     });
   });

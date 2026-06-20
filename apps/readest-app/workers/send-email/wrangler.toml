@@ -1,0 +1,27 @@
+name = "readest-send-email"
+main = "src/index.ts"
+compatibility_date = "2026-04-10"
+compatibility_flags = ["nodejs_compat"]
+
+# Bound to Cloudflare Email Routing on the readest.com zone: the catch-all
+# rule routes to this Worker, while the existing role addresses (info@,
+# admin@, …) keep their own forward rules. readest.com MX must point to
+# Cloudflare.
+
+[vars]
+SEND_EMAIL_DOMAIN = "readest.com"
+# Reject inbound messages larger than this (Cloudflare's own ceiling is
+# ~25-30 MB); senders are pointed at the web /send page instead.
+MAX_MESSAGE_BYTES = "26214400"
+# Per-user cap on undrained inbox items.
+INBOX_PENDING_LIMIT = "50"
+
+# R2 bucket for raw inbound payloads. Drained, then deleted by the client.
+[[r2_buckets]]
+binding = "INBOX_BUCKET"
+bucket_name = "readest-send-inbox"
+
+# Secrets (set with `wrangler secret put`):
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   APPROVE_LINK_BASE   e.g. https://web.readest.com/settings/send

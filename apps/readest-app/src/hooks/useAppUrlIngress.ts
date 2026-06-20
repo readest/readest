@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -17,6 +17,15 @@ interface OpenFilesPayload {
 
 interface SharedIntentPayload {
   urls: string[];
+  /**
+   * Android-only. Distinguishes "Open with Readest" (`VIEW` — the user
+   * tapped a file in their file browser and chose Readest) from "Send to
+   * Readest" (`SEND` / `SEND_MULTIPLE` — share-sheet capture). We forward
+   * it on the `app-incoming-url` event so consumers can pick the right
+   * import strategy: VIEW should open the file directly without writing
+   * it to the library, SEND should ingest it like a sync capture.
+   */
+  action?: 'VIEW' | 'SEND';
 }
 
 /**
@@ -46,17 +55,27 @@ interface SharedIntentPayload {
  */
 export function useAppUrlIngress() {
   const { appService } = useEnv();
-  const listened = useRef(false);
 
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
-    if (listened.current) return;
-    listened.current = true;
+    // Note: removed an old `listened.current` ref guard that tried to
+    // make this effect a one-shot. In React strict mode (dev) the effect
+    // mounts → cleans up → mounts again. With the guard, the second
+    // mount short-circuited (ref still true) and DID NOT re-register
+    // any listeners — but the previous cleanup had already
+    // `unregister()`ed the underlying native plugin listener
+    // (NativeBridgePlugin's listeners["shared-intent"] map). Net result:
+    // the app ended up with zero shared-intent listeners on the native
+    // side, so any "Open with Readest" intent that arrived AFTER cold
+    // start was silently dropped (event got queued by our pending-events
+    // workaround but, with no future register call, never replayed).
+    // Letting the effect re-run on every mount cycle keeps the JS-side
+    // and native-side listener bookkeeping in lockstep.
 
-    const dispatch = (urls: string[]) => {
+    const dispatch = (urls: string[], action?: 'VIEW' | 'SEND') => {
       if (!urls.length) return;
-      console.log('App incoming URL:', urls);
-      eventDispatcher.dispatch('app-incoming-url', { urls });
+      console.log('App incoming URL:', urls, 'action:', action);
+      eventDispatcher.dispatch('app-incoming-url', { urls, action });
     };
 
     const unlistenSingleInstance = getCurrentWindow().listen<SingleInstancePayload>(
@@ -83,7 +102,7 @@ export function useAppUrlIngress() {
         'native-bridge',
         'shared-intent',
         (payload) => {
-          if (payload.urls?.length) dispatch(payload.urls);
+          if (payload.urls?.length) dispatch(payload.urls, payload.action);
         },
       );
     }

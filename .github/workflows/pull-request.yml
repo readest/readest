@@ -5,8 +5,7 @@ on:
   pull_request:
     branches: [main]
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 jobs:
   rust_lint:
     runs-on: ubuntu-latest
@@ -15,19 +14,19 @@ jobs:
       SCCACHE_GHA_ENABLED: 'true'
       RUSTC_WRAPPER: sccache
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: 'true'
       - name: setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
       - name: Install minimal stable with clippy and rustfmt
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
         with:
           toolchain: stable
           override: true
           components: rustfmt, clippy
       - name: Cache apt packages
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: /var/cache/apt/archives
           key: apt-rust-lint-${{ runner.os }}
@@ -41,44 +40,38 @@ jobs:
       - name: Clippy Check
         working-directory: apps/readest-app/src-tauri
         run: cargo clippy -p Readest --no-deps -- -D warnings
+      - name: Unit tests
+        working-directory: apps/readest-app/src-tauri
+        run: cargo test -p Readest --lib
 
   build_web_app:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
-        uses: actions/cache@v5
-        with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-web-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            nextjs-web-${{ github.sha }}-
-            nextjs-web-
-
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
-
-      - name: install LuaJIT (for koplugin lint)
-        run: sudo apt-get update && sudo apt-get install -y luajit
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: run format check
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
 
+      # pnpm lint here is web-only (tsgo + biome). The koplugin syntax check
+      # (lint:lua) runs in the test_extensions job, which installs LuaJIT only
+      # when the koplugin sources changed.
       - name: run lint
         working-directory: apps/readest-app
         run: |
@@ -89,40 +82,149 @@ jobs:
         run: |
           pnpm build-web && pnpm check:all
 
+      - name: cache playwright browsers
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: install playwright browsers
+        working-directory: apps/readest-app
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: run web e2e tests
+        id: web_e2e
+        working-directory: apps/readest-app
+        run: pnpm test:e2e:web
+
+      - name: upload e2e report
+        if: ${{ failure() && steps.web_e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report
+          path: apps/readest-app/playwright-report/
+          retention-days: 7
+
+  # The jsdom unit suite is the slowest part of the PR checks, so it is split
+  # across two parallel shards (vitest --shard). The browser tests need
+  # Playwright and run only on shard 1; koplugin + browser-extension tests
+  # moved to the test_extensions job.
   test_web_app:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
-        uses: actions/cache@v5
+      - name: install Dependencies
+        working-directory: apps/readest-app
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
+
+      # Playwright is only needed by the browser tests, which run on shard 1.
+      - name: cache playwright browsers
+        if: matrix.shard == 1
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-test-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            nextjs-test-${{ github.sha }}-
-            nextjs-test-
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: install playwright browsers
+        if: matrix.shard == 1
+        working-directory: apps/readest-app
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: run web unit tests (shard ${{ matrix.shard }}/2)
+        working-directory: apps/readest-app
+        run: pnpm test:pr:web:unit --shard=${{ matrix.shard }}/2
+
+      - name: run web browser tests
+        if: matrix.shard == 1
+        working-directory: apps/readest-app
+        run: pnpm test:browser
+
+  # Browser-extension tests + build always run. The koplugin lint + Lua tests
+  # (and the ~45s LuaJIT/busted install they need) only run when the koplugin
+  # sources changed, so most PRs skip that cost entirely.
+  test_extensions:
+    runs-on: ubuntu-latest
+    # pull-requests: read lets dorny/paths-filter list a PR's changed files
+    # via the REST API (the top-level grant is contents: read only).
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: 'true'
+
+      - name: detect koplugin changes
+        id: changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        with:
+          filters: |
+            koplugin:
+              - 'apps/readest.koplugin/**'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          cache: pnpm
 
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
-      - name: install LuaJIT + busted (for koplugin tests)
+      - name: run extension tests
+        working-directory: apps/readest-app
+        run: pnpm test:extension
+
+      - name: build browser extension
+        working-directory: apps/readest-app
+        run: pnpm build-browser-ext
+
+      - name: cache apt packages
+        if: steps.changes.outputs.koplugin == 'true'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: /var/cache/apt/archives
+          key: apt-test-koplugin-${{ runner.os }}
+
+      - name: install LuaJIT + busted (for koplugin lint + tests)
+        if: steps.changes.outputs.koplugin == 'true'
         run: |
           sudo apt-get update
-          # luajit  — pnpm test:lua
+          # luajit  — pnpm lint:lua + pnpm test:lua
           # luarocks/libsqlite3-dev — required to build lsqlite3complete
           sudo apt-get install -y luajit luarocks libsqlite3-dev
           # Install busted + the SQLite binding the LibraryStore specs use,
@@ -132,15 +234,13 @@ jobs:
           sudo luarocks --lua-version=5.1 install busted
           sudo luarocks --lua-version=5.1 install lsqlite3complete
 
-      - name: install playwright browsers
+      - name: lint koplugin
+        if: steps.changes.outputs.koplugin == 'true'
         working-directory: apps/readest-app
-        run: npx playwright install --with-deps chromium
-
-      - name: run web tests
-        working-directory: apps/readest-app
-        run: pnpm test:pr:web
+        run: pnpm lint:lua
 
       - name: run koplugin tests
+        if: steps.changes.outputs.koplugin == 'true'
         working-directory: apps/readest-app
         run: pnpm test:lua
 
@@ -150,48 +250,64 @@ jobs:
       SCCACHE_GHA_ENABLED: 'true'
       RUSTC_WRAPPER: sccache
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 24
           cache: pnpm
 
-      - name: cache Next.js build
-        uses: actions/cache@v5
+      # The tauri tests run `next dev`, whose Turbopack cache lives in
+      # `.next/dev/cache` (a different path from the `next build` cache).
+      - name: cache Turbopack dev cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-tauri-${{ github.sha }}-${{ hashFiles('pnpm-lock.yaml') }}
+          path: apps/readest-app/.next/dev/cache
+          key: turbo-dev-tauri-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            nextjs-tauri-${{ github.sha }}-
-            nextjs-tauri-
+            turbo-dev-tauri-${{ runner.os }}-
 
       - name: install Dependencies
         working-directory: apps/readest-app
         run: |
-          pnpm install && pnpm setup-vendors
+          pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
       - name: install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
         with:
           toolchain: stable
+          # Disable this action's built-in rust-cache so the explicit
+          # Swatinem/rust-cache below is the single cache (it's the one
+          # configured with cache-workspace-crates for the vendored tauri fork).
+          cache: false
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: tauri-cargo
+          # cache-workspace-crates caches the path/workspace crates too: the
+          # vendored tauri fork (packages/tauri, packages/tauri-plugins, wired
+          # via [patch.crates-io]) and the local src-tauri/plugins/*. These are
+          # workspace members that rust-cache prunes by default, so the whole
+          # tauri stack — plus every crates.io plugin that depends on the
+          # patched `tauri` — rebuilt on every run. They change only
+          # sporadically (pinned submodules), so caching them is a big win.
+          # The key is bumped (-ws) so the old workspace-crate-less cache is
+          # invalidated and the next run repopulates it with the workspace
+          # crates included.
+          key: tauri-cargo-ws
           cache-all-crates: 'true'
+          cache-workspace-crates: 'true'
 
       - name: Cache apt packages
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: /var/cache/apt/archives
           key: apt-tauri-${{ runner.os }}

@@ -251,6 +251,12 @@ msgstr "Tự động đồng bộ"
 msgid "Readest library"
 msgstr "Thư viện Readest"
 
+msgid "Push stats now"
+msgstr "Gửi thống kê ngay"
+
+msgid "Pull stats now"
+msgstr "Lấy thống kê ngay"
+
 msgid "Push books now"
 msgstr "Gửi sách ngay"
 
@@ -436,3 +442,18 @@ msgstr "Tiến trình đọc đã đồng bộ"
 
 msgid "No saved reading progress found for this book"
 msgstr "Không tìm thấy tiến trình đọc đã lưu cho sách này"
+
+msgid "Reading statistics are up to date"
+msgstr "Thống kê đọc đã được cập nhật"
+
+msgid "Reading statistics pushed"
+msgstr "Đã đẩy thống kê đọc"
+
+msgid "Failed to push reading statistics"
+msgstr "Không thể đẩy thống kê đọc"
+
+msgid "Failed to pull reading statistics"
+msgstr "Không thể lấy thống kê đọc"
+
+msgid "Reading statistics pulled"
+msgstr "Đã lấy thống kê đọc"

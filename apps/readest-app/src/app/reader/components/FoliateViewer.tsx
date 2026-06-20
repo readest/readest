@@ -13,7 +13,9 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
-import { useMouseEvent, useTouchEvent, useLongPressEvent } from '../hooks/useIframeEvents';
+import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIframeEvents';
+import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
+import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
@@ -25,12 +27,12 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
+import { useWebDAVSync } from '../hooks/useWebDAVSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
   applyScrollbarStyle,
   applyScrollModeClass,
-  applyTableStyle,
   applyThemeModeClass,
   applyTranslationStyle,
   getStyles,
@@ -38,8 +40,10 @@ import {
   keepTextAlignment,
   transformStylesheet,
 } from '@/utils/style';
+import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
+import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -69,7 +73,10 @@ import { getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
+import { isMetered } from '@/utils/network';
+import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
+import { getScrollGapAttr } from '@/utils/webtoon';
 import { ParagraphControl } from './paragraph';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
@@ -95,13 +102,23 @@ const FoliateViewer: React.FC<{
   const { themeCode, isDarkMode } = useThemeStore();
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
-  const { getView, setView: setFoliateView, setViewInited, setProgress } = useReaderStore();
+  // Per-field selectors — see store/readerProgressStore.ts header for the
+  // "destructure-subscribes-the-whole-store" rationale.
+  const getView = useReaderStore((s) => s.getView);
+  const setFoliateView = useReaderStore((s) => s.setView);
+  const setViewInited = useReaderStore((s) => s.setViewInited);
+  const setProgress = useReaderStore((s) => s.setProgress);
   const setPreviewMode = useReaderStore((s) => s.setPreviewMode);
-  const { getViewState, getProgress, getViewSettings, setViewSettings } = useReaderStore();
-  const { getParallels } = useParallelViewStore();
-  const { getBookData } = useBookDataStore();
+  const getViewState = useReaderStore((s) => s.getViewState);
+  const getProgress = useReaderStore((s) => s.getProgress);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const getParallels = useParallelViewStore((s) => s.getParallels);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
+  const { registerBrightnessListeners, overlayVisible, overlayLevel } =
+    useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
@@ -135,10 +152,40 @@ const FoliateViewer: React.FC<{
   useXRayAutoUpdate(bookKey);
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
+  useWebDAVSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
-  const progressRelocateHandler = (event: Event) => {
-    const detail = (event as CustomEvent).detail;
+  // Coalesce setProgress writes within a single animation frame.
+  //
+  // Why: foliate fires `relocate` multiple times during a swipe burst
+  // (one per snap step / intermediate stabilize). Each call ends up in
+  // `setProgress`, which writes to readerProgressStore + bookDataStore.
+  // Even after we split progress into its own store, running the writes
+  // back-to-back on the same frame is still wasted work — only the
+  // last detail in the burst is what the user sees on screen.
+  //
+  // Earlier this used requestIdleCallback to defer the commit further,
+  // but profiling on Android showed Fire Idle Callback ballooning to
+  // 2.0+ seconds of total time per ~28 s session: rIC backed up under
+  // sustained pressure and dumped the whole queue into the post-swipe
+  // pause, producing exactly the "feels sluggish right after I let go"
+  // jank we were trying to fix. rAF runs once per frame, gets scheduled
+  // by the browser's normal vsync loop, and doesn't accumulate when
+  // the page is busy — which is the behaviour we want here.
+  const pendingRelocateRef = useRef<CustomEvent | null>(null);
+  const relocateRafRef = useRef<number | null>(null);
+  const cancelRelocateScheduled = useCallback(() => {
+    const id = relocateRafRef.current;
+    if (id == null) return;
+    relocateRafRef.current = null;
+    cancelAnimationFrame(id);
+  }, []);
+  const commitRelocate = useCallback(() => {
+    relocateRafRef.current = null;
+    const event = pendingRelocateRef.current;
+    pendingRelocateRef.current = null;
+    if (!event) return;
+    const detail = event.detail;
     const atEnd = viewRef.current?.renderer.atEnd || false;
     const { current, next, total } = detail.location as PageInfo;
     const currentPage = atEnd && total > 0 ? total - 1 : current;
@@ -147,12 +194,39 @@ const FoliateViewer: React.FC<{
       bookKey,
       detail.cfi,
       detail.tocItem,
+      detail.pageItem,
       detail.section,
       pageInfo,
       detail.time,
       detail.range,
     );
+  }, [bookKey, setProgress]);
+
+  const progressRelocateHandler = (event: Event) => {
+    // Always stash the latest detail; if another rAF is already pending
+    // it'll pick this up and the intermediate states are skipped.
+    pendingRelocateRef.current = event as CustomEvent;
+    if (relocateRafRef.current != null) return;
+    relocateRafRef.current = requestAnimationFrame(commitRelocate);
   };
+
+  useEffect(() => {
+    // On unmount: flush any pending commit synchronously before tearing
+    // down — otherwise the last page-turn before the user closes the
+    // book could be lost. Then cancel the scheduled handle to be safe
+    // against double-fire.
+    return () => {
+      if (pendingRelocateRef.current) {
+        try {
+          commitRelocate();
+        } catch {
+          // Tearing down — last-effort save shouldn't crash the unmount
+        }
+      }
+      cancelRelocateScheduled();
+      pendingRelocateRef.current = null;
+    };
+  }, [cancelRelocateScheduled, commitRelocate]);
 
   const getDocTransformHandler = ({ width, height }: { width: number; height: number }) => {
     return (event: Event) => {
@@ -260,7 +334,8 @@ const FoliateViewer: React.FC<{
       }
 
       applyImageStyle(detail.doc);
-      applyTableStyle(detail.doc);
+      applyScrollableStyle(detail.doc);
+      applyTableTouchScroll(detail.doc);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -311,14 +386,16 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('keyup', handleKeyup.bind(null, bookKey));
         detail.doc.addEventListener('mousedown', handleMousedown.bind(null, bookKey));
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
-        detail.doc.addEventListener('click', handleClick.bind(null, bookKey, doubleClickDisabled));
-        // passive: false so handleWheel can preventDefault for mouse-wheel
-        // events and replace the native jerky scroll with a smooth animation.
-        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey), { passive: false });
+        detail.doc.addEventListener(
+          'click',
+          handleClick.bind(null, bookKey, doubleClickDisabled, !!bookData?.isFixedLayout),
+        );
+        detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
         addLongPressListeners(bookKey, detail.doc);
+        registerBrightnessListeners(detail.doc);
       }
     }
   };
@@ -339,10 +416,44 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  // Build the Word Lens refresh context: gate silent auto-download on the global
+  // toggle AND a best-effort metered-connection check, and show a single
+  // "Downloading…" toast on the first progress tick (the per-percent progress
+  // lives in the Word Lens settings panel). `wordLensToastShownRef` de-dupes the
+  // toast across the multiple section docs a refresh pass touches.
+  const wordLensToastShownRef = useRef(false);
+  const buildWordLensCtx = (bookLang?: string | null) => {
+    // Read the live setting (not the first-render `settings` snapshot closed over
+    // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
+    // takes effect on the next section refresh.
+    const liveSettings = useSettingsStore.getState().settings;
+    const allowDownload =
+      (liveSettings.globalReadSettings.wordLensAutoDownload ?? true) && !isMetered();
+    return {
+      appService: appService!,
+      bookLang,
+      appLang: getLocale().split('-')[0] || 'en',
+      allowDownload,
+      onProgress: () => {
+        if (wordLensToastShownRef.current) return;
+        wordLensToastShownRef.current = true;
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Downloading Word Lens data…'),
+        });
+      },
+    };
+  };
+
   const stabilizedHandler = useCallback(() => {
     setLoading(false);
     // Layout/relayout warichu after paginator has set column-width via columnize()
     const contents = viewRef.current?.renderer?.getContents?.() || [];
+    const vs = getViewSettings(bookKey);
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    // Fixed-layout (pre-paginated) books have no reflow room; injecting ruby
+    // would overflow their fixed boxes, so skip Word Lens glosses there.
+    const isFixedLayout = bookDoc.rendition?.layout === 'pre-paginated';
     for (const { doc } of contents) {
       if (doc) {
         const hasPending = doc.querySelectorAll('.warichu-pending').length > 0;
@@ -352,8 +463,12 @@ const FoliateViewer: React.FC<{
         } else if (hasExisting) {
           relayoutWarichu(doc);
         }
+        if (vs && appService && !isFixedLayout) {
+          void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
+        }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const docRelocateHandler = (event: Event) => {
@@ -478,7 +593,7 @@ const FoliateViewer: React.FC<{
     setCurrentImageIndex(0);
   }, []);
 
-  useLongPressEvent(bookKey, handleImagePress, handleTablePress);
+  useOpenMediaEvent(bookKey, handleImagePress, handleTablePress);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
@@ -557,7 +672,7 @@ const FoliateViewer: React.FC<{
       const width = viewWidth - insets.left - insets.right;
       const height = viewHeight - insets.top - insets.bottom;
       book.transformTarget?.addEventListener('data', getDocTransformHandler({ width, height }));
-      view.renderer.setStyles?.(getStyles(viewSettings));
+      view.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       applyTranslationStyle(viewSettings);
 
       doubleClickDisabled.current = viewSettings.disableDoubleClick!;
@@ -575,6 +690,11 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
+      if (viewSettings.disableSwipe) {
+        view.renderer.setAttribute('no-swipe', '');
+      } else {
+        view.renderer.removeAttribute('no-swipe');
+      }
       if (appService?.isAndroidApp) {
         if (eink) {
           view.renderer.setAttribute('eink', '');
@@ -587,6 +707,7 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
         view.renderer.setAttribute('spread', viewSettings.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
+        view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
@@ -636,11 +757,11 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     const showBottomFooter = viewSettings.showFooter && !viewSettings.vertical;
-    const moreTopInset = showTopHeader ? Math.max(0, 44 - insets.top) : 0;
+    const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     const ttsBarHeight =
       viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(ttsBarHeight, 52) - insets.bottom)
+      ? Math.max(0, Math.max(ttsBarHeight, 16) - insets.bottom)
       : Math.max(0, ttsBarHeight);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
@@ -648,19 +769,17 @@ const FoliateViewer: React.FC<{
     const rightMargin = insets.right + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
     const leftMargin = insets.left + moreLeftInset;
-    const viewMargins = viewSettings.showMarginsOnScroll && viewSettings.scrolled;
-
-    viewRef.current?.renderer.setAttribute('margin-top', `${viewMargins ? 0 : topMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
-    viewRef.current?.renderer.setAttribute('margin-bottom', `${viewMargins ? 0 : bottomMargin}px`);
+    viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
-    if (viewMargins) {
-      const showBarsOnScroll = viewSettings.showBarsOnScroll;
-      const headerVisible = showTopHeader && showBarsOnScroll;
-      const footerVisible = showBottomFooter && showBarsOnScroll;
+
+    if (viewSettings.scrolled) {
+      const headerVisible = showTopHeader;
+      const footerVisible = showBottomFooter;
       const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-      const footerBarHeight = 52 + safeBottomPadding;
-      const scrollTop = headerVisible ? gridInsets.top + 44 : 0;
+      const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
+      const scrollTop = headerVisible ? gridInsets.top + viewSettings.marginTopPx : 0;
       const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
       setScrollMargins({ top: scrollTop, bottom: scrollBottom });
     } else {
@@ -681,7 +800,7 @@ const FoliateViewer: React.FC<{
     if (viewRef.current && viewRef.current.renderer) {
       const renderer = viewRef.current.renderer;
       const viewSettings = getViewSettings(bookKey)!;
-      viewRef.current.renderer.setStyles?.(getStyles(viewSettings));
+      viewRef.current.renderer.setStyles?.(getStyles(viewSettings, undefined, getLoadedFonts()));
       const docs = viewRef.current.renderer.getContents();
       docs.forEach(({ doc }) => {
         if (bookDoc.rendition?.layout === 'pre-paginated') {
@@ -711,6 +830,22 @@ const FoliateViewer: React.FC<{
     viewSettings?.applyThemeToPDF,
     viewSettings?.hideScrollbar,
   ]);
+
+  useEffect(() => {
+    const contents = viewRef.current?.renderer?.getContents?.() || [];
+    const vs = getViewSettings(bookKey);
+    if (!vs || !appService) return;
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    const isFixedLayout = bookDoc.rendition?.layout === 'pre-paginated';
+    if (isFixedLayout) return;
+    // A settings change is the moment a fresh download may start; let the
+    // one-time "Downloading…" toast fire again for it.
+    wordLensToastShownRef.current = false;
+    for (const { doc } of contents) {
+      if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {
@@ -758,8 +893,6 @@ const FoliateViewer: React.FC<{
     viewSettings?.showHeader,
     viewSettings?.showFooter,
     viewSettings?.showTTSBar,
-    viewSettings?.showBarsOnScroll,
-    viewSettings?.showMarginsOnScroll,
     viewSettings?.scrolled,
     viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,
@@ -799,6 +932,7 @@ const FoliateViewer: React.FC<{
         {...mouseHandlers}
         {...touchHandlers}
       />
+      <BrightnessOverlay visible={overlayVisible} level={overlayLevel} />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
       {((!docLoaded.current && loading) || viewState?.loading) && (
         <div className='absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>

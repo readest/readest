@@ -22,6 +22,8 @@ import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
+import clsx from 'clsx';
+import { SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './color/ThemeEditor';
 import ThemeModeSelector from './color/ThemeModeSelector';
@@ -318,11 +320,15 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             data-setting-id='settings.color.themeMode'
           />
 
-          <div
+          <label
             data-setting-id='settings.color.invertImageInDarkMode'
-            className='flex items-center justify-between'
+            className={clsx(
+              'flex items-center justify-between px-4',
+              !isDarkMode && 'cursor-not-allowed opacity-50',
+              isDarkMode && 'cursor-pointer',
+            )}
           >
-            <h2 className='font-medium'>{_('Invert Image In Dark Mode')}</h2>
+            <SettingLabel>{_('Invert Image In Dark Mode')}</SettingLabel>
             <input
               type='checkbox'
               className='toggle'
@@ -330,20 +336,20 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
               disabled={!isDarkMode}
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
             />
-          </div>
+          </label>
 
-          <div
+          <label
             data-setting-id='settings.color.overrideBookColor'
-            className='flex items-center justify-between'
+            className='flex cursor-pointer items-center justify-between px-4'
           >
-            <h2 className='font-medium'>{_('Override Book Color')}</h2>
+            <SettingLabel>{_('Override Book Color')}</SettingLabel>
             <input
               type='checkbox'
               className='toggle'
               checked={overrideColor}
               onChange={() => setOverrideColor(!overrideColor)}
             />
-          </div>
+          </label>
 
           <ThemeColorSelector
             themes={themes.concat(customThemes)}
@@ -374,7 +380,6 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             userHighlightColors={userHighlightColors}
             defaultHighlightLabels={defaultHighlightLabels}
             highlightOpacity={highlightOpacity}
-            isEink={viewSettings.isEink}
             onCustomHighlightColorsChange={handleCustomHighlightColorsChange}
             onUserHighlightColorsChange={handleUserHighlightColorsChange}
             onDefaultHighlightLabelsChange={handleDefaultHighlightLabelsChange}

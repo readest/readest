@@ -13,9 +13,9 @@ import type { SelectedFile } from '@/hooks/useFileSelector';
 
 export type AppPlatform = 'web' | 'tauri' | 'node';
 export type OsPlatform = 'android' | 'ios' | 'macos' | 'windows' | 'linux' | 'unknown';
-// prettier-ignore
+// biome-ignore format: keep the union members compact on a single line
 export type BaseDir = | 'Books' | 'Settings' | 'Data' | 'Fonts' | 'Images' | 'Dictionaries' | 'Log' | 'Cache' | 'Temp' | 'None';
-export type DeleteAction = 'cloud' | 'local' | 'both';
+export type DeleteAction = 'cloud' | 'local' | 'both' | 'purge';
 export type SelectDirectoryMode = 'read' | 'write';
 export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
 
@@ -41,7 +41,7 @@ export type FileInfo = {
 };
 
 export type NativeTouchEventType = {
-  type: 'touchstart' | 'touchcancel' | 'touchend';
+  type: 'touchstart' | 'touchmove' | 'touchcancel' | 'touchend';
   pointerId: number;
   x: number;
   y: number;
@@ -68,6 +68,16 @@ export interface FileSystem {
   getPrefix(base: BaseDir): Promise<string>;
 }
 
+export interface SaveLibraryBooksOptions {
+  /**
+   * Overwrite `library.json` with exactly the given set, allowing it to shrink.
+   * Reserved for deliberate, authoritative rewrites (tombstone GC, explicit
+   * "clear library", account reset). Routine saves must NOT set this — the
+   * default merge-floor protects against silently dropping books on disk.
+   */
+  replace?: boolean;
+}
+
 export interface AppService {
   osPlatform: OsPlatform;
   appPlatform: AppPlatform;
@@ -89,6 +99,7 @@ export interface AppService {
   isIOSApp: boolean;
   isMacOSApp: boolean;
   isLinuxApp: boolean;
+  isWindowsApp: boolean;
   isPortableApp: boolean;
   isDesktopApp: boolean;
   isAppImage: boolean;
@@ -118,9 +129,21 @@ export interface AppService {
   selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
   readDirectory(path: string, base: BaseDir): Promise<FileItem[]>;
+  /**
+   * Best-effort: extend the Tauri `fs_scope` and `asset_protocol_scope`
+   * to cover the given paths. No-op on web. Used after a directory or
+   * file path is recovered from somewhere other than the native picker
+   * (e.g. localStorage of the last-used import folder), since the
+   * dialog plugin only auto-allows `fs_scope` for paths it returned in
+   * the current session.
+   */
+  allowPathsInScopes?(paths: string[], isDirectory: boolean): Promise<void>;
+  // Pass `null` for `content` when `options.filePath` already points to the
+  // file on disk you want to save/share — the native share path reads it
+  // directly instead of buffering an in-memory copy.
   saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -190,8 +213,9 @@ export interface AppService {
   loadBookNav(book: Book): Promise<BookNav | null>;
   saveBookNav(book: Book, nav: BookNav): Promise<void>;
   loadBookContent(book: Book): Promise<BookContent>;
+  resolveNativeBookFilePath(book: Book): Promise<string | null>;
   loadLibraryBooks(): Promise<Book[]>;
-  saveLibraryBooks(books: Book[]): Promise<void>;
+  saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void>;
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;
   generateCoverImageUrl(book: Book): Promise<string>;

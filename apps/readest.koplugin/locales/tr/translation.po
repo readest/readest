@@ -251,6 +251,12 @@ msgstr "Otomatik senkronizasyon"
 msgid "Readest library"
 msgstr "Readest kütüphanesi"
 
+msgid "Push stats now"
+msgstr "İstatistikleri şimdi gönder"
+
+msgid "Pull stats now"
+msgstr "İstatistikleri şimdi al"
+
 msgid "Push books now"
 msgstr "Kitapları şimdi gönder"
 
@@ -436,3 +442,18 @@ msgstr "Okuma ilerlemesi senkronize edildi"
 
 msgid "No saved reading progress found for this book"
 msgstr "Bu kitap için kayıtlı okuma ilerlemesi bulunamadı"
+
+msgid "Reading statistics are up to date"
+msgstr "Okuma istatistikleri güncel"
+
+msgid "Reading statistics pushed"
+msgstr "Okuma istatistikleri gönderildi"
+
+msgid "Failed to push reading statistics"
+msgstr "Okuma istatistikleri gönderilemedi"
+
+msgid "Failed to pull reading statistics"
+msgstr "Okuma istatistikleri alınamadı"
+
+msgid "Reading statistics pulled"
+msgstr "Okuma istatistikleri alındı"

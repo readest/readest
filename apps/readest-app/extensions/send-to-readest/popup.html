@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Send to Readest</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #1a1a1a;
+        --muted: #666;
+        --surface: #ffffff;
+        --raised: #f5f5f5;
+        --border: #e5e5e5;
+        --accent: #1a1a1a;
+        --accent-fg: #ffffff;
+        --ok: #1e8e3e;
+        --err: #c0392b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f0f0f0;
+          --muted: #a8a8a8;
+          --surface: #1a1a1a;
+          --raised: #262626;
+          --border: #333;
+          --accent: #f0f0f0;
+          --accent-fg: #1a1a1a;
+          --ok: #4ade80;
+          --err: #f87171;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--surface);
+        color: var(--fg);
+      }
+      body {
+        width: 320px;
+        padding: 16px;
+        font:
+          13px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .signed-out-badge {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: var(--raised);
+        color: var(--muted);
+      }
+      .page {
+        background: var(--raised);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      .page-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0 0 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .page-url {
+        font-size: 11px;
+        color: var(--muted);
+        word-break: break-all;
+        margin: 0;
+      }
+      button.primary {
+        width: 100%;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-fg);
+        background: var(--accent);
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      button.primary:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button.link {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        color: var(--fg);
+        font: inherit;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+      .progress {
+        margin-top: 10px;
+        display: none;
+      }
+      .progress.show {
+        display: block;
+      }
+      .progress-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .progress-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width 200ms ease;
+      }
+      .progress-bar.indeterminate .progress-bar-fill {
+        width: 30%;
+        animation: scan 1.1s ease-in-out infinite;
+      }
+      @keyframes scan {
+        0% {
+          margin-left: -30%;
+        }
+        100% {
+          margin-left: 100%;
+        }
+      }
+      .status {
+        font-size: 12px;
+      }
+      /* Only reserve vertical space once there's actual text — an empty
+         status used to leave a 16 px gap below the progress bar that made
+         the bottom padding look bigger than the top. */
+      .status:not(:empty) {
+        margin-top: 10px;
+      }
+      .status.ok {
+        color: var(--ok);
+      }
+      .status.err {
+        color: var(--err);
+      }
+      [hidden],
+      .hidden {
+        display: none;
+      }
+      .sign-in {
+        text-align: center;
+        padding: 20px 0 4px;
+      }
+      .sign-in p {
+        margin: 0 0 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 data-i18n="Send to Readest"></h1>
+      <span id="auth-badge" class="signed-out-badge hidden" data-i18n="Signed out"></span>
+    </header>
+
+    <section id="signed-in-view">
+      <div class="page">
+        <p id="page-title" class="page-title" data-i18n="Loading…"></p>
+        <p id="page-url" class="page-url"></p>
+      </div>
+      <button id="send" class="primary" disabled data-i18n="Send to Readest"></button>
+      <div id="progress" class="progress">
+        <div class="progress-label" id="progress-label"></div>
+        <div class="progress-bar indeterminate"><div class="progress-bar-fill"></div></div>
+      </div>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section id="signed-out-view" class="sign-in hidden">
+      <p data-i18n="Sign in to Readest to start clipping pages."></p>
+      <button id="open-readest" class="primary" data-i18n="Open web.readest.com"></button>
+    </section>
+
+    <script src="popup.js" defer></script>
+  </body>
+</html>

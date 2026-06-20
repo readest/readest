@@ -251,6 +251,12 @@ msgstr "Automatikus szinkron"
 msgid "Readest library"
 msgstr "Readest könyvtár"
 
+msgid "Push stats now"
+msgstr "Statisztikák küldése most"
+
+msgid "Pull stats now"
+msgstr "Statisztikák lekérése most"
+
 msgid "Push books now"
 msgstr "Könyvek küldése most"
 
@@ -436,3 +442,18 @@ msgstr "Olvasási haladás szinkronizálva"
 
 msgid "No saved reading progress found for this book"
 msgstr "Nem található mentett olvasási haladás ehhez a könyvhöz"
+
+msgid "Reading statistics are up to date"
+msgstr "Az olvasási statisztikák naprakészek"
+
+msgid "Reading statistics pushed"
+msgstr "Olvasási statisztikák elküldve"
+
+msgid "Failed to push reading statistics"
+msgstr "Az olvasási statisztikák küldése sikertelen"
+
+msgid "Failed to pull reading statistics"
+msgstr "Az olvasási statisztikák lekérése sikertelen"
+
+msgid "Reading statistics pulled"
+msgstr "Olvasási statisztikák lekérve"

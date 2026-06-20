@@ -10,6 +10,7 @@ import {
   decryptRowFields,
 } from './replicaCryptoMiddleware';
 import { ensurePassphraseUnlocked } from './passphraseGate';
+import { isCredentialsSyncEnabled } from './syncCategories';
 import { cryptoSession } from '@/libs/crypto/session';
 
 export interface ReplicaLocalRecord {
@@ -147,6 +148,18 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   // Cancel / failure leaves the field absent; the store's applyRemote
   // merge preserves any local plaintext copy.
   const encryptedFields = deps.adapter.encryptedFields;
+  // Credentials meta-toggle (default OFF): when the user hasn't opted
+  // in, every cipher payload in this row's encrypted slots gets stripped
+  // before we even capture the cipher fingerprint. The decrypt loop
+  // sees nothing, the prompt never fires, and the adapter unpacks
+  // without the credential fields. The store's applyRemote merge keeps
+  // any local plaintext copy intact (same code path as the locked-
+  // session case).
+  if (encryptedFields && encryptedFields.length > 0 && !isCredentialsSyncEnabled()) {
+    for (const field of encryptedFields) {
+      delete row.fields_jsonb[field];
+    }
+  }
   const beforeDecrypt = captureCipherTexts(row.fields_jsonb, encryptedFields);
   const localLastSeen = local?.lastSeenCipher;
 

@@ -251,6 +251,12 @@ msgstr "स्वतः सिंक"
 msgid "Readest library"
 msgstr "Readest लाइब्रेरी"
 
+msgid "Push stats now"
+msgstr "अभी आँकड़े पुश करें"
+
+msgid "Pull stats now"
+msgstr "अभी आँकड़े पुल करें"
+
 msgid "Push books now"
 msgstr "अभी पुस्तकें पुश करें"
 
@@ -436,3 +442,18 @@ msgstr "पठन प्रगति सिंक हो गई"
 
 msgid "No saved reading progress found for this book"
 msgstr "इस पुस्तक के लिए सहेजी गई पठन प्रगति नहीं मिली"
+
+msgid "Reading statistics are up to date"
+msgstr "पठन आँकड़े अद्यतित हैं"
+
+msgid "Reading statistics pushed"
+msgstr "पठन आँकड़े भेजे गए"
+
+msgid "Failed to push reading statistics"
+msgstr "पठन आँकड़े भेजने में विफल"
+
+msgid "Failed to pull reading statistics"
+msgstr "पठन आँकड़े प्राप्त करने में विफल"
+
+msgid "Reading statistics pulled"
+msgstr "पठन आँकड़े प्राप्त हुए"

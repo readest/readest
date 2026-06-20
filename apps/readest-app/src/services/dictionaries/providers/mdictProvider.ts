@@ -222,6 +222,103 @@ async function resolveCssUrls(
   });
 }
 
+// Pattern for the audio-play handler used by Vocabulary.com-derived MDicts:
+//
+//   <img src="..." onclick="v0r.v(this,'E/BDAWTHU6YF46')" class="m">
+//
+// The first argument is the element itself; the second is the key into the
+// companion MDD's audio store. The bundled `j.js` script (which we ignore for
+// XSS reasons — never execute MDX-supplied JavaScript inside the shadow root)
+// resolves that key to a path like `E/BDAWTHU6YF46.mp3` and plays it. We do
+// the same lookup ourselves from a CSP-safe click handler.
+const V0R_PLAY_RX = /v0r\.v\s*\(\s*this\s*,\s*['"]([^'"]+)['"]\s*\)/i;
+const AUDIO_EXTS = ['.mp3', '.m4a', '.aac', '.ogg', '.opus', '.wav'] as const;
+
+async function wireMdictAudioOnclick(
+  container: HTMLElement,
+  mdds: MDDInstance[],
+  trackedUrls: string[],
+): Promise<void> {
+  // Note: we deliberately leave `<script>` tags and other inline `onclick`
+  // attributes in place. innerHTML parsing does NOT execute scripts, and
+  // inline handlers attached via attributes only fire when the element is
+  // actually clicked — most dictionaries' MDX layouts include them only to
+  // power their own helper JS (which we never load) and leaving them alone
+  // avoids touching CSS rules that depend on attribute presence
+  // (`[onclick]`, `:empty` interactions, etc.). Only the audio-play
+  // pattern below gets rewritten so the icon actually does something.
+  const elements = Array.from(container.querySelectorAll<HTMLElement>('[onclick]'));
+  for (const el of elements) {
+    const onclick = el.getAttribute('onclick') ?? '';
+    const playMatch = onclick.match(V0R_PLAY_RX);
+    if (!playMatch || !mdds.length) continue;
+    const key = playMatch[1]!.trim();
+    if (!key) continue;
+
+    // Drop the inline handler ONLY for the v0r.v audio call we're about to
+    // replace. The dict's `j.js` isn't loaded inside the shadow root, so the
+    // original handler would throw `ReferenceError: v0r is not defined` on
+    // every click; our listener handles the playback instead.
+    el.removeAttribute('onclick');
+
+    el.style.cursor ||= 'pointer';
+    el.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let url = el.getAttribute('data-mdd-audio');
+      if (!url) {
+        // Candidate paths: vocabulary.com's MDD stores audio as
+        // `<KEY>.mp3` (with `/` -> `\` normalisation handled inside
+        // js-mdict's `locate` step). Other Vocabulary-derived packs use a
+        // leading `audio/` directory. Try each in order; first hit wins.
+        const candidates: string[] = [];
+        for (const ext of AUDIO_EXTS) candidates.push(`${key}${ext}`, `audio/${key}${ext}`);
+        console.log(
+          `[MDD-AUDIO] probe key=${key} candidates=${candidates.length} mdds=${mdds.length}`,
+        );
+        outer: for (const path of candidates) {
+          for (let i = 0; i < mdds.length; i++) {
+            const mdd = mdds[i]!;
+            try {
+              const t = performance.now();
+              const located = await mdd.locateBytes(path);
+              const dt = (performance.now() - t).toFixed(0);
+              if (located.data) {
+                console.log(
+                  `[MDD-AUDIO] HIT path="${path}" mdd[${i}] ${dt}ms bytes=${located.data.byteLength}`,
+                );
+                const blob = new Blob([new Uint8Array(located.data)]);
+                url = URL.createObjectURL(blob);
+                trackedUrls.push(url);
+                el.setAttribute('data-mdd-audio', url);
+                break outer;
+              } else {
+                console.log(`[MDD-AUDIO] miss path="${path}" mdd[${i}] ${dt}ms`);
+              }
+            } catch (err) {
+              console.warn(
+                `[MDD-AUDIO] error path="${path}" mdd[${i}]:`,
+                (err as Error).message ?? err,
+              );
+            }
+          }
+        }
+        if (!url) {
+          console.warn(`[MDD-AUDIO] not found for key=${key} after ${candidates.length} probes`);
+        }
+      } else {
+        console.log(`[MDD-AUDIO] cache hit key=${key}`);
+      }
+      if (!url) return;
+      const audio = new Audio(url);
+      audio.play().catch((err) => {
+        console.warn('[MDD-AUDIO] playback failed for key', key, err);
+      });
+    });
+  }
+}
+
 function wireMdxAnchors(
   container: HTMLElement,
   mdds: MDDInstance[],
@@ -321,8 +418,12 @@ export const createMdictProvider = ({
     if (!initPromise) {
       initPromise = (async () => {
         const { MDX, MDD } = (await import('js-mdict')) as {
-          MDX: { create(file: Blob): Promise<MDXInstance> };
-          MDD: { create(file: Blob): Promise<MDDInstance> };
+          MDX: {
+            create(file: Blob, options?: { lazy?: boolean }): Promise<MDXInstance>;
+          };
+          MDD: {
+            create(file: Blob, options?: { lazy?: boolean }): Promise<MDDInstance>;
+          };
         };
 
         if (!dict.files.mdx) {
@@ -331,7 +432,10 @@ export const createMdictProvider = ({
         const mdxFile = await fs.openFile(`${dict.bundleDir}/${dict.files.mdx}`, 'Dictionaries');
         let mdxInst: MDXInstance;
         try {
-          mdxInst = await MDX.create(mdxFile);
+          // Lazy mode: skip the upfront decompress-every-key-block + sort
+          // that costs ~80 s on a 250 MB MDX. Lookups decode only the
+          // relevant key block on demand (~tens of ms each).
+          mdxInst = await MDX.create(mdxFile, { lazy: true });
         } catch (err) {
           const message = (err as Error).message ?? String(err);
           if (/encrypted file|user identification/i.test(message)) {
@@ -361,6 +465,14 @@ export const createMdictProvider = ({
         for (const name of mddNames) {
           try {
             const mddFile = await fs.openFile(`${dict.bundleDir}/${name}`, 'Dictionaries');
+            // MDD is eager: js-mdict's lazy binary-search on the per-block
+            // envelope uses `comp` (localeCompare), which doesn't match the
+            // MDD's native byte-sorted storage order. That mismatch makes
+            // resource lookups (`sound.png`, `<KEY>.mp3`, …) miss even when
+            // the file is present, breaking icons / audio. MDDs are smaller
+            // than MDXs (a few MB to a few hundred MB for audio packs) and
+            // the eager init was already fast enough — only the MDX side
+            // (millions of headwords) actually needed lazy.
             mddInsts.push(await MDD.create(mddFile));
           } catch (err) {
             console.warn('Failed to open MDD resource bundle', name, err);
@@ -480,6 +592,12 @@ export const createMdictProvider = ({
         );
         if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
         wireMdxAnchors(body, mdds, trackedUrls, ctx.onNavigate);
+        // Some MDicts (notably Vocabulary.com-derived ones) wire audio
+        // playback through inline `onclick="v0r.v(this,'KEY')"` handlers
+        // that depend on the dict's own `j.js` script. We never run
+        // MDX-supplied JS inside the shadow root (XSS surface), so parse
+        // the audio key ourselves and bind a CSP-safe replacement.
+        await wireMdictAudioOnclick(body, mdds, trackedUrls);
 
         // Attach a shadow root to a dedicated host so the dict's CSS (loose
         // .css files imported alongside + `<link>` references resolved from
@@ -494,7 +612,8 @@ export const createMdictProvider = ({
         // icons, etc.), then the dict's own loose CSS, then any
         // MDD-resident stylesheets the MDX referenced via `<link>`.
         // Cascade order matches authoring order.
-        const allStylesheets = [getDictStyles(), ...looseStylesheets, ...mddStylesheets];
+        const dictStyles = getDictStyles(ctx.bg ?? '', ctx.fg ?? '', !!ctx.isDarkMode);
+        const allStylesheets = [dictStyles, ...looseStylesheets, ...mddStylesheets];
         for (const cssText of allStylesheets) {
           if (!cssText) continue;
           const style = document.createElement('style');

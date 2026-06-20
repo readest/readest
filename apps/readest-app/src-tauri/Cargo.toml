@@ -27,6 +27,9 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+semver = "1"
+base64 = "0.22"
+minisign-verify = "0.2"
 log = "0.4"
 thiserror = "2"
 walkdir = "2"
@@ -53,14 +56,48 @@ tauri-plugin-opener = "2"
 tauri-plugin-deep-link = "2"
 tauri-plugin-sign-in-with-apple = "1.0.2"
 tauri-plugin-haptics = "2"
+tauri-plugin-biometric = "2"
 tauri-plugin-persisted-scope = "2"
 tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }
 tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }
+tauri-plugin-webview-upgrade = { path = "./plugins/tauri-plugin-webview-upgrade" }
 tauri-plugin-websocket = "2"
 tauri-plugin-sharekit = "0.3"
+tauri-plugin-clipboard-manager = "2"
 tauri-plugin-device-info = "1.0.1"
 tauri-plugin-turso = { path = "./plugins/tauri-plugin-turso" }
 tauri-plugin-webdriver = { version = "0.2", optional = true }
+
+# Native EPUB import path (Q1): zip + quick-xml + md5.
+# Used by `epub_parser::parse_epub_metadata` (partialMD5 + downscaled
+# cover) and `parse_epub_full` (OPF/nav/ncx prefetch + entry-size
+# table) to do the mechanical zip work without ferrying multi-MB blobs
+# across the JS<->Rust IPC boundary. Pure-Rust crates so they ship to
+# every Tauri target (desktop, iOS, Android) without extra system deps.
+zip = { version = "2", default-features = false, features = ["deflate"] }
+quick-xml = "0.36"
+md-5 = "0.10"
+# Used by `epub_parser::read_zip_entry` as a fallback when an OPF/manifest
+# href is percent-encoded (e.g. spaces as %20, CJK paths) but the zip stores
+# the raw decoded bytes — or vice versa. Already in our transitive dep graph
+# (reqwest pulls it), so adding it explicitly costs nothing.
+percent-encoding = "2"
+
+# Cover thumbnail generation (Q2). We decode the cover image extracted
+# from the EPUB and, when its long edge exceeds the library-grid size,
+# re-encode a smaller JPEG so the on-disk `cover.png` is suitable for
+# webview rendering (~30-60 KB instead of multi-MB). Default features
+# are disabled to keep the binary lean — we only need decoders for the
+# formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif"] }
+
+# Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
+# PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/
+# description/isbn/asin/subjects/language and the cover image, then
+# return them to JS so the importer skips the foliate-js MOBI parser
+# (which has to inflate the whole record stream up-front on the iOS
+# WebView). Pure-Rust crate, ships to every Tauri target.
+mobi = "0.8"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"

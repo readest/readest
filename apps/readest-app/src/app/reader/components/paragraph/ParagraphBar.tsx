@@ -9,12 +9,14 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp,
 } from 'react-icons/md';
+import { IoVolumeHigh, IoVolumeMediumOutline } from 'react-icons/io5';
 import { ViewSettings } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { getParagraphButtonDirections } from '@/utils/paragraphPresentation';
 
 const INITIAL_SHOW_DURATION = 2500;
@@ -29,6 +31,10 @@ interface ParagraphBarProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  /** True when a TTS session is engaged (playing/paused) — drives the audio glyph. */
+  ttsActive?: boolean;
+  /** Toggle read-along: start TTS from the focused paragraph, or stop it. */
+  onToggleTtsAudio?: () => void;
   viewSettings?: ViewSettings;
   gridInsets: Insets;
 }
@@ -50,6 +56,8 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   onPrev,
   onNext,
   onClose,
+  ttsActive = false,
+  onToggleTtsAudio,
   viewSettings,
   gridInsets,
 }) => {
@@ -152,6 +160,18 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
     };
   }, [checkTriggerZone, showBar]);
 
+  useEffect(() => {
+    // Touch taps in the overlay's neutral zones ask the bar to reappear so the
+    // exit button stays reachable after it has auto-hidden.
+    const handleShowControls = (event: CustomEvent) => {
+      if (event.detail?.bookKey === bookKey) {
+        showBar();
+      }
+    };
+    eventDispatcher.on('paragraph-show-controls', handleShowControls);
+    return () => eventDispatcher.off('paragraph-show-controls', handleShowControls);
+  }, [bookKey, showBar]);
+
   const isHiddenByHover = hoveredBookKey === bookKey;
   const isVisible = isBarVisible && !isHiddenByHover;
   const progress =
@@ -185,7 +205,10 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
       `}</style>
       <div
         className={clsx(
-          'absolute bottom-6 left-1/2 z-50 -translate-x-1/2',
+          // `fixed` (not `absolute`) so the bar centers on the viewport like the
+          // overlay paragraph; `absolute` centered it on the gridcell, which is
+          // pushed off-center when the sidebar is pinned (#4474).
+          'fixed bottom-6 left-1/2 z-50 -translate-x-1/2',
           'transition-[opacity,filter,transform] duration-200 ease-out',
           isVisible
             ? 'pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0'
@@ -269,6 +292,37 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
           >
             <NextIcon size={iconSize} />
           </button>
+
+          {onToggleTtsAudio && (
+            <>
+              <div className='bg-base-content/10 mx-1 h-4 w-px' />
+
+              {/* Audio (TTS) toggle — starts read-along from the focused
+                  paragraph, or stops it when engaged (#3235). Active state uses a
+                  filled glyph + eink-bordered surface so it reads in e-ink
+                  without relying on color. */}
+              <button
+                onClick={onToggleTtsAudio}
+                disabled={isLoading}
+                className={clsx(
+                  'flex items-center justify-center rounded-full p-1.5',
+                  'transition-all duration-200 ease-out active:scale-90',
+                  ttsActive
+                    ? 'text-primary eink-bordered not-eink:bg-base-200'
+                    : 'not-eink:hover:bg-base-200',
+                  isLoading && 'pointer-events-none opacity-50',
+                )}
+                title={ttsActive ? _('Pause audio') : _('Play audio')}
+                aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
+              >
+                {ttsActive ? (
+                  <IoVolumeHigh size={iconSize} aria-hidden='true' />
+                ) : (
+                  <IoVolumeMediumOutline size={iconSize} aria-hidden='true' />
+                )}
+              </button>
+            </>
+          )}
 
           <button
             onClick={onClose}

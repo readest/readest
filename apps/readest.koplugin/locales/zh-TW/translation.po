@@ -251,6 +251,12 @@ msgstr "自動同步"
 msgid "Readest library"
 msgstr "Readest 書庫"
 
+msgid "Push stats now"
+msgstr "立即推送統計"
+
+msgid "Pull stats now"
+msgstr "立即拉取統計"
+
 msgid "Push books now"
 msgstr "立即推送書籍"
 
@@ -436,3 +442,18 @@ msgstr "閱讀進度已同步"
 
 msgid "No saved reading progress found for this book"
 msgstr "找不到此書籍的閱讀進度"
+
+msgid "Reading statistics are up to date"
+msgstr "閱讀統計已是最新"
+
+msgid "Reading statistics pushed"
+msgstr "閱讀統計已推送"
+
+msgid "Failed to push reading statistics"
+msgstr "推送閱讀統計失敗"
+
+msgid "Failed to pull reading statistics"
+msgstr "拉取閱讀統計失敗"
+
+msgid "Reading statistics pulled"
+msgstr "閱讀統計已拉取"

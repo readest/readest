@@ -251,6 +251,12 @@ msgstr "المزامنة التلقائية"
 msgid "Readest library"
 msgstr "مكتبة Readest"
 
+msgid "Push stats now"
+msgstr "إرسال الإحصائيات الآن"
+
+msgid "Pull stats now"
+msgstr "جلب الإحصائيات الآن"
+
 msgid "Push books now"
 msgstr "إرسال الكتب الآن"
 
@@ -436,3 +442,18 @@ msgstr "تمت مزامنة تقدم القراءة"
 
 msgid "No saved reading progress found for this book"
 msgstr "لم يتم العثور على تقدم قراءة محفوظ لهذا الكتاب"
+
+msgid "Reading statistics are up to date"
+msgstr "إحصائيات القراءة محدّثة"
+
+msgid "Reading statistics pushed"
+msgstr "تم إرسال إحصائيات القراءة"
+
+msgid "Failed to push reading statistics"
+msgstr "فشل إرسال إحصائيات القراءة"
+
+msgid "Failed to pull reading statistics"
+msgstr "فشل جلب إحصائيات القراءة"
+
+msgid "Reading statistics pulled"
+msgstr "تم جلب إحصائيات القراءة"

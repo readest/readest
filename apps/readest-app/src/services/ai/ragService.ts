@@ -262,7 +262,9 @@ export async function indexBook(
       const embeddingModelName =
         settings.provider === 'ollama'
           ? settings.ollamaEmbeddingModel
-          : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
+          : settings.provider === 'openrouter'
+            ? settings.openrouterEmbeddingModel || 'text-embedding-3-small'
+            : settings.aiGatewayEmbeddingModel || 'text-embedding-3-small';
       aiLogger.embedding.start(embeddingModelName, allChunks.length);
 
       let processed = alreadyEmbedded;

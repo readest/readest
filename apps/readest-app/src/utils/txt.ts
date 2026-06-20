@@ -21,7 +21,13 @@ export const extractTxtFilenameMetadata = (
   const base = getBaseFilename(filename);
   const cjkMatch = base.match(/《([^》]+)》(.*)/);
   if (!cjkMatch) {
-    return { title: base };
+    // No 《》 wrapper: keep the whole filename as the title (web-novel files use
+    // 【】 brackets for the title and tack the author on, e.g.
+    // 【书名】1-129 作者：起落.txt). Only the labeled "作者：X" form is safe to pull
+    // here — a bracketed/bare fallback would mistake a leading 【title】 for the
+    // author. See issue #4390.
+    const author = parseLabeledAuthor(base);
+    return author ? { title: base, author } : { title: base };
   }
   const title = cjkMatch[1]!.trim();
   const rest = (cjkMatch[2] ?? '').trim();
@@ -29,11 +35,17 @@ export const extractTxtFilenameMetadata = (
   return author ? { title, author } : { title };
 };
 
+// 作者：X / 作者:X / 作者 X — a labeled author. Returns '' when absent.
+const parseLabeledAuthor = (text: string): string => {
+  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
+  return labeled ? stripWrappingPunctuation(labeled[1]!) : '';
+};
+
 const parseAuthorFragment = (text: string): string => {
   if (!text) return '';
   // 作者：X / 作者:X / 作者 X — labeled author wins
-  const labeled = text.match(/作者\s*[：:\s]\s*(.+)$/);
-  if (labeled) return stripWrappingPunctuation(labeled[1]!);
+  const labeled = parseLabeledAuthor(text);
+  if (labeled) return labeled;
   // [X] (X) 【X】 （X）［X］ — bracketed author
   const bracketed = text.match(/[[(（【［]\s*([^\])）】］]+?)\s*[\])）】］]/);
   if (bracketed) return stripWrappingPunctuation(bracketed[1]!);
@@ -50,10 +62,24 @@ const stripWrappingPunctuation = (text: string): string => {
   }
 };
 
+// A header line like "作者：X" is meant to yield a short personal/pen name. Some
+// web-novel TXT files instead carry a metadata blob there (e.g.
+// "作者：2024/08/01发表于：是否首发：是 字数1023150字…") that the greedy capture would
+// otherwise surface as the author. Reject values that look like such a blob —
+// an embedded field separator (a second colon), a long digit run, or excessive
+// length — so callers fall back to the filename's labeled author. See #4390.
+const isPlausibleAuthorName = (name: string): boolean =>
+  name.length > 0 && name.length <= 20 && !/[:：]/.test(name) && !/\d{4,}/.test(name);
+
 interface Chapter {
   title: string;
   content: string;
   isVolume: boolean;
+  // True when the title came from a detected chapter heading. Chapters whose
+  // content was not found under a heading (paragraph fallback, or stray text
+  // split off by the segment regex) are merged into the preceding detected
+  // chapter instead of becoming bogus TOC entries. See issue #4063.
+  detected?: boolean;
 }
 
 interface Txt2EpubOptions {
@@ -125,7 +151,8 @@ export class TxtToEpubConverter {
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || filenameMeta.author || providedAuthor || '';
+    const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
+    const author = headerAuthor || filenameMeta.author || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     // console.log(`Detected language: ${language}`);
     const identifier = await partialMD5(txtFile);
@@ -242,10 +269,28 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
 
     return chapters;
+  }
+
+  /**
+   * Append a segment's chapters to the running list. The segment regex also
+   * splits on dash dividers, which authors frequently use as in-chapter scene
+   * breaks; the content after such a divider has no heading of its own. When a
+   * heading-less chapter follows a detected chapter, merge its content into
+   * that chapter instead of emitting a separate (bogus) TOC entry. See #4063.
+   */
+  private appendSegmentChapters(chapters: Chapter[], segmentChapters: Chapter[]): void {
+    for (const chapter of segmentChapters) {
+      const previous = chapters[chapters.length - 1];
+      if (!chapter.detected && previous?.detected) {
+        previous.content += chapter.content.replace(/^<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/, '');
+      } else {
+        chapters.push(chapter);
+      }
+    }
   }
 
   private probeChapterCount(
@@ -286,7 +331,7 @@ export class TxtToEpubConverter {
         option,
         chapters.length,
       );
-      chapters.push(...segmentChapters);
+      this.appendSegmentChapters(chapters, segmentChapters);
     }
     return chapters;
   }
@@ -500,11 +545,12 @@ export class TxtToEpubConverter {
     const authorMatch =
       fileHeader.match(/[【\[]?作者[】\]]?[:：\s]\s*(.+)\r?\n/) ||
       fileHeader.match(/[【\[]?\s*(.+)\s+著\s*[】\]]?\r?\n/);
-    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : providedAuthor || '';
+    let matchedAuthor = authorMatch ? authorMatch[1]!.trim() : '';
     try {
       matchedAuthor = matchedAuthor.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
     } catch {}
-    const author = matchedAuthor || providedAuthor || '';
+    const headerAuthor = isPlausibleAuthorName(matchedAuthor) ? matchedAuthor : '';
+    const author = headerAuthor || providedAuthor || '';
     const language = providedLanguage || detectLanguage(fileHeader);
     return { author, language };
   }
@@ -545,7 +591,7 @@ export class TxtToEpubConverter {
         const formattedSegment = this.formatSegment(chunks.join('\n'));
         const title = `${chapterOffset + chapters.length + 1}`;
         const content = `<h2>${title}</h2><p>${formattedSegment}</p>`;
-        chapters.push({ title, content, isVolume: false });
+        chapters.push({ title, content, isVolume: false, detected: false });
       }
       return chapters;
     }
@@ -568,6 +614,7 @@ export class TxtToEpubConverter {
         title: escapeXml(title),
         content: `${headTitle}<p>${formattedSegment}</p>`,
         isVolume,
+        detected: true,
       });
     }
 
@@ -582,6 +629,7 @@ export class TxtToEpubConverter {
         title: escapeXml(segmentTitle),
         content: `<h3></h3><p>${formattedSegment}</p>`,
         isVolume: false,
+        detected: false,
       });
     }
 
@@ -671,15 +719,28 @@ export class TxtToEpubConverter {
     const chapterRegexps: RegExp[] = [];
 
     if (language === 'zh') {
+      // 第N + unit, expressed as two explicit tiers that share the 第N prefix and
+      // the trailing boundary. They stay in ONE alternation (and so one split
+      // pass) on purpose: a segment often mixes chapter and volume headings (a
+      // volume wraps chapters), and the regexps array is a fallback chain — the
+      // first regex that splits "well enough" wins — so separate entries would
+      // recognize one tier and silently drop the other.
+      const cjkNumber = '第[ 　零〇一二三四五六七八九十0-9][ 　零〇一二三四五六七八九十百千万0-9]*';
+      // Tier 1 — chapter units. Real headings; a title may attach directly
+      // (第一章天地初开) or after a separator.
+      const chapterUnit = String.raw`[章节回讲篇话](?:[：:、 　\(\)0-9]*[^\n-]{0,36})`;
+      // Tier 2 — volume/measure-word units. These double as 量词 in prose
+      // (第一封信 "the first letter", 第四本书 "the fourth book"), so a title only
+      // counts when introduced by a separator (：:、, space, parens) or the line
+      // ends — never a bare noun directly after the unit. See issue #4658.
+      const volumeUnit = String.raw`[卷本册部封](?:[：:、 　\(\)][：:、 　\(\)0-9]*[^\n-]{0,36})?`;
+      const numberedHeading = String.raw`${cjkNumber}(?:${chapterUnit}|${volumeUnit})(?!\S)`;
+      const prefaceHeading = String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记|番外篇|番外|外传)(?:[：: 　][^\n-]{0,36})?(?!\S)`;
+      const englishHeading = String.raw`chapter[\s.]*[0-9]+(?:[：:. 　]+[^\n-]{0,50})?(?!\S)`;
       chapterRegexps.push(
         new RegExp(
-          String.raw`(?:^|\n)\s*` +
-            '(' +
-            [
-              String.raw`第[ 　零〇一二三四五六七八九十0-9][ 　零〇一二三四五六七八九十百千万0-9]*(?:[章卷节回讲篇封本册部话])(?:[：:、 　\(\)0-9]*[^\n-]{0,36})(?!\S)`,
-              String.raw`(?:楔子|前言|简介|引言|序言|序章|总论|概论|后记|番外篇|番外|外传)(?:[：: 　][^\n-]{0,36})?(?!\S)`,
-              String.raw`chapter[\s.]*[0-9]+(?:[：:. 　]+[^\n-]{0,50})?(?!\S)`,
-            ].join('|') +
+          String.raw`(?:^|\n)\s*(` +
+            [numberedHeading, prefaceHeading, englishHeading].join('|') +
             ')',
           'gui',
         ),

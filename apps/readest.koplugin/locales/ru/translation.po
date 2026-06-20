@@ -251,6 +251,12 @@ msgstr "Автосинхронизация"
 msgid "Readest library"
 msgstr "Библиотека Readest"
 
+msgid "Push stats now"
+msgstr "Отправить статистику сейчас"
+
+msgid "Pull stats now"
+msgstr "Получить статистику сейчас"
+
 msgid "Push books now"
 msgstr "Отправить книги сейчас"
 
@@ -436,3 +442,18 @@ msgstr "Прогресс чтения синхронизирован"
 
 msgid "No saved reading progress found for this book"
 msgstr "Сохранённый прогресс чтения для этой книги не найден"
+
+msgid "Reading statistics are up to date"
+msgstr "Статистика чтения актуальна"
+
+msgid "Reading statistics pushed"
+msgstr "Статистика чтения отправлена"
+
+msgid "Failed to push reading statistics"
+msgstr "Не удалось отправить статистику чтения"
+
+msgid "Failed to pull reading statistics"
+msgstr "Не удалось получить статистику чтения"
+
+msgid "Reading statistics pulled"
+msgstr "Статистика чтения получена"

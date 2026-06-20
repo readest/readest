@@ -148,6 +148,7 @@ local function row_to_wire(row)
         groupId       = row.group_id,
         groupName     = row.group_name,
         readingStatus = row.reading_status,
+        readingStatusUpdatedAt = num(row.reading_status_updated_at),
         createdAt     = num(row.created_at),
         updatedAt     = num(row.updated_at),
         deletedAt     = num(row.deleted_at),
@@ -278,28 +279,41 @@ function M.pushChangedBooks(opts, cb)
 end
 
 -- ---------------------------------------------------------------------------
--- syncBooks(opts, mode, cb) — convenience wrapper for the bidirectional
--- sync the web does on auto-sync (useBooksSync.handleAutoSync). Modes:
+-- syncBooks(opts, mode, cb, before_push) — convenience wrapper for the
+-- bidirectional sync the web does on auto-sync (useBooksSync.handleAutoSync).
+-- Modes:
 --   "push" — pushChangedBooks only
 --   "pull" — pullBooks only (existing fetch)
---   "both" — push then pull (matches the web's syncBooks(..., 'both') call)
+--   "both" — pull then push (closes #4138)
 -- cb is invoked once after the LAST step completes; intermediate failures
--- are logged but do not abort (push failure shouldn't prevent pull).
+-- are logged but do not abort (pull failure shouldn't prevent push).
+--
+-- before_push (optional): callback invoked AFTER pull and BEFORE push in
+-- "both" / "push" modes. Callers use this to bump updated_at on the open
+-- book so its touched row gets included in the push delta — but crucially,
+-- AFTER pull has refreshed the local row with the cloud's uploaded_at /
+-- metadata / group_id. Doing the touch before pull (the original ordering)
+-- meant the push could send a row with those fields nil, and the server's
+-- transformBookToDB explicit-nulls uploaded_at and metadata for any field
+-- absent in the wire payload — wiping the cloud copy on every device.
+-- See apps/readest-app/src/utils/transform.ts:99,103.
 -- ---------------------------------------------------------------------------
-function M.syncBooks(opts, mode, cb)
+function M.syncBooks(opts, mode, cb, before_push)
     mode = mode or "both"
     if mode == "push" then
+        if before_push then before_push() end
         M.pushChangedBooks(opts, cb)
     elseif mode == "pull" then
         M.pullBooks(opts, cb)
     else  -- "both"
-        M.pushChangedBooks(opts, function(push_ok, push_msg)
-            M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+        M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+            if before_push then before_push() end
+            M.pushChangedBooks(opts, function(push_ok, push_msg)
                 if cb then
-                    cb(push_ok and pull_ok,
-                       string.format("push=%s/%s pull=%s/%s",
-                           tostring(push_ok), tostring(push_msg),
-                           tostring(pull_ok), tostring(pull_msg)),
+                    cb(pull_ok and push_ok,
+                       string.format("pull=%s/%s push=%s/%s",
+                           tostring(pull_ok), tostring(pull_msg),
+                           tostring(push_ok), tostring(push_msg)),
                        pull_status)
                 end
             end)
@@ -579,16 +593,32 @@ function M.downloadCover(book, opts, cb)
 
             local pid, parent_read_fd = FFIUtil.runInSubProcess(
                 function(_child_pid, child_write_fd)
-                    local socket     = require("socket")
-                    local http       = require("socket.http")
-                    local socketutil = require("socketutil")
-                    local ltn12      = require("ltn12")
-
+                    -- Runs in a forked child. Two hard rules, both to keep
+                    -- KOReader alive on Boox / Adreno devices (issue #4165):
+                    --
+                    --  1. No Lua error may escape this function. An uncaught
+                    --     error unwinds back to KOReader's android_main,
+                    --     which terminates the child through the libc exit()
+                    --     path — running __cxa_finalize.
+                    --  2. Terminate via _exit(), never exit(): __cxa_finalize
+                    --     runs the destructor of the GL driver inherited from
+                    --     the parent, which segfaults on Adreno and takes the
+                    --     whole app down with it.
+                    --
+                    -- A network failure in http.request is exactly the kind
+                    -- of error rule 1 guards against, so wrap the body.
                     local result
-                    local f, ferr = io.open(dst, "wb")
-                    if not f then
-                        result = "error:open:" .. tostring(ferr)
-                    else
+                    local ok, err = pcall(function()
+                        local socket     = require("socket")
+                        local http       = require("socket.http")
+                        local socketutil = require("socketutil")
+                        local ltn12      = require("ltn12")
+
+                        local f, ferr = io.open(dst, "wb")
+                        if not f then
+                            result = "error:open:" .. tostring(ferr)
+                            return
+                        end
                         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
                         local code = socket.skip(1, http.request{
                             url     = url,
@@ -603,8 +633,16 @@ function M.downloadCover(book, opts, cb)
                         else
                             result = "error:http:" .. tostring(code)
                         end
+                    end)
+                    if not ok then
+                        result = "error:exception:" .. tostring(err)
                     end
-                    FFIUtil.writeToFD(child_write_fd, result, true)
+                    pcall(FFIUtil.writeToFD, child_write_fd, result or "error:unknown", true)
+
+                    -- Hard exit, bypassing libc atexit handlers (rule 2).
+                    local ffi = require("ffi")
+                    pcall(ffi.cdef, "void _exit(int status);")
+                    ffi.C._exit(0)
                 end,
                 true)  -- with_pipe = true
 
@@ -637,6 +675,27 @@ function M.downloadCover(book, opts, cb)
 end
 
 -- ---------------------------------------------------------------------------
+-- extractLocalCover(file_path, dst_png) → true on success
+-- ---------------------------------------------------------------------------
+-- Render the book's embedded cover to dst_png as PNG via coverbrowser's
+-- BookInfo:getCoverImage, which opens the document, honors any custom cover
+-- the user set in KOReader, and returns a native-resolution blitbuffer.
+-- Passing a nil document + the file path makes BookInfo open + close the
+-- document itself (same call form calibre.koplugin uses). Live-KOReader only
+-- (FileManagerBookInfo + blitbuffer); the success/failure wiring is exercised
+-- by a busted test that injects a fake BookInfo.
+function M.extractLocalCover(file_path, dst_png)
+    if not file_path or not dst_png then return false end
+    local ok, FileManagerBookInfo = pcall(require, "apps/filemanager/filemanagerbookinfo")
+    if not ok or not FileManagerBookInfo then return false end
+    local got, cover_bb = pcall(FileManagerBookInfo.getCoverImage, FileManagerBookInfo, nil, file_path)
+    if not got or not cover_bb then return false end
+    local wrote = cover_bb:writeToFile(dst_png, "png")
+    if cover_bb.free then cover_bb:free() end
+    return wrote == true
+end
+
+-- ---------------------------------------------------------------------------
 -- uploadBook(book, opts, cb) — push a local book file to Readest cloud.
 -- ---------------------------------------------------------------------------
 -- Two-step flow mirroring `apps/readest-app/src/libs/storage.ts:42-78`:
@@ -647,10 +706,12 @@ end
 --      downloadBook for the same UX trade-off — UI freezes during the
 --      upload but the dialog stays visible).
 --
--- Cover.png handling is intentionally minimal in v1: if a cover is
--- already cached at <covers_dir>/<hash>.png (from a prior cloud
--- download), upload it too. Books without a cached cover skip the cover
--- step silently — the server tolerates books with no cover row.
+-- Cover.png handling: if a cover is already cached at <covers_dir>/<hash>.png
+-- (from a prior cloud download) upload it as-is; otherwise extract the
+-- embedded cover from the local file via extractLocalCover so books that
+-- originated on this device still get a cover in the cloud (issue #4374).
+-- Best-effort: books with no extractable cover skip the cover step silently
+-- and the server tolerates a book with no cover row.
 --
 -- opts: { sync_auth, sync_path, settings, covers_dir = optional }
 -- book: row with { hash, format, file_path, title, source_title }
@@ -685,6 +746,20 @@ function M.uploadBook(book, opts, cb)
         and (opts.covers_dir .. "/" .. book.hash .. ".png") or nil
     local cover_attr = cover_path and lfs.attributes(cover_path) or nil
     local has_cover = cover_attr and cover_attr.mode == "file"
+
+    -- No cached cloud cover (e.g. a book that originated on this device and
+    -- was never downloaded from the cloud): extract the embedded cover from
+    -- the local file so it still ships a cover.png. Cached under covers_dir so
+    -- the Library view reuses it just like a downloaded cover would.
+    if not has_cover and cover_path then
+        if not lfs.attributes(opts.covers_dir, "mode") then
+            lfs.mkdir(opts.covers_dir)
+        end
+        if M.extractLocalCover(book.file_path, cover_path) then
+            cover_attr = lfs.attributes(cover_path)
+            has_cover = cover_attr and cover_attr.mode == "file"
+        end
+    end
 
     -- Synchronous PUT helper. Returns (ok, code, body_or_err) — body
     -- captures the S3/R2 XML error response on failure, so the caller

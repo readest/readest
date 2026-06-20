@@ -29,6 +29,7 @@
   <a href="#planned-features">Planned Features</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#downloads">Downloads</a> •
+  <a href="#documentation">Documentation</a> •
   <a href="#getting-started">Getting Started</a> •
   <a href="#troubleshooting">Troubleshooting</a> •
   <a href="#support">Support</a> •
@@ -113,6 +114,12 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 - Windows / Linux / Android: Visit and download **Readest** at [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
 - Linux users can also install [Readest on Flathub][link-flathub].
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
+
+## Documentation
+
+Guides, tutorials, and FAQs for installing and using Readest live in the official documentation:
+
+📖 **[https://readest.com/docs][link-docs]**
 
 ## Requirements
 
@@ -295,15 +302,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development. You can [become a sponsor on GitHub](https://github.com/sponsors/readest), [donate via Stripe](https://donate.stripe.com/4gMcN5aZdcE52kW3TFgjC01), or [donate with crypto](https://donate.readest.com). Your contribution helps us squash bugs faster, improve performance, and keep building great features.
-
-### Sponsors
-
-<p align="center">
-  <a title="Browser testing via TestMu AI" href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=readest" target="_blank">
-    <img src="https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/sponsors/testmu-ai-logo.png" style="vertical-align: middle;" width="250" />
-  </a>
-</p>
+If Readest has been useful to you, consider supporting its development at [donate.readest.com](https://donate.readest.com), where you'll find all available donation methods, including GitHub Sponsors, card payments, and crypto. Your contribution helps us fix bugs faster, improve performance, and keep building great features.
 
 ## License
 
@@ -334,8 +333,8 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 
 [badge-website]: https://img.shields.io/badge/website-readest.com-orange
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
-[badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
-[badge-release]: https://img.shields.io/github/release/readest/readest?color=green
+[badge-license]: https://img.shields.io/badge/license-AGPL--3.0-teal
+[badge-release]: https://img.shields.io/github/v/release/readest/readest?color=green
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=blue
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest?color=blue
@@ -350,6 +349,7 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
 [link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
 [link-web-readest]: https://web.readest.com
+[link-docs]: https://readest.com/docs
 [link-gh-releases]: https://github.com/readest/readest/releases
 [link-gh-commits]: https://github.com/readest/readest/commits/main
 [link-gh-pulse]: https://github.com/readest/readest/pulse

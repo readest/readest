@@ -3,7 +3,18 @@ import type { LanguageModel, EmbeddingModel } from 'ai';
 import type { AIProvider, AISettings, AIProviderName } from '../types';
 import { aiLogger } from '../logger';
 import { AI_TIMEOUTS } from '../utils/retry';
+import { getAIFetch } from '../utils/httpFetch';
 
+/**
+ * Provider for a local (or LAN) Ollama instance.
+ *
+ * All outbound HTTP — both the streaming chat/embedding traffic going
+ * through ai-sdk-ollama and the lightweight `/api/tags` probes used by
+ * the availability/health checks — goes through {@link getAIFetch}. In
+ * the Tauri app that hands the request off to the Rust HTTP transport
+ * (no CORS preflight, no Android cleartext restriction); on the web
+ * build it falls back to `window.fetch`.
+ */
 export class OllamaProvider implements AIProvider {
   id: AIProviderName = 'ollama';
   name = 'Ollama (Local)';
@@ -11,11 +22,14 @@ export class OllamaProvider implements AIProvider {
 
   private ollama;
   private settings: AISettings;
+  private httpFetch: typeof fetch;
 
   constructor(settings: AISettings) {
     this.settings = settings;
+    this.httpFetch = getAIFetch();
     this.ollama = createOllama({
       baseURL: settings.ollamaBaseUrl || 'http://127.0.0.1:11434',
+      fetch: this.httpFetch,
     });
     aiLogger.provider.init('ollama', settings.ollamaModel || 'llama3.2');
   }
@@ -32,7 +46,7 @@ export class OllamaProvider implements AIProvider {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), AI_TIMEOUTS.OLLAMA_CONNECT);
-      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
+      const response = await this.httpFetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -46,7 +60,7 @@ export class OllamaProvider implements AIProvider {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), AI_TIMEOUTS.HEALTH_CHECK);
-      const response = await fetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
+      const response = await this.httpFetch(`${this.settings.ollamaBaseUrl}/api/tags`, {
         signal: controller.signal,
       });
       clearTimeout(timeout);

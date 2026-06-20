@@ -23,7 +23,7 @@ interface HandleProps {
   onDragEnd: () => void;
 }
 
-const Handle: React.FC<HandleProps> = ({
+export const Handle: React.FC<HandleProps> = ({
   hidden,
   position,
   isVertical,

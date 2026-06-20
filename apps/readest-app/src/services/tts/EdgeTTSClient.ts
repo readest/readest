@@ -1,11 +1,13 @@
 import { getUserLocale } from '@/utils/misc';
+import { isSameLang } from '@/utils/lang';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
+import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL, TTSWordBoundary } from '@/libs/edgeTTS';
 import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { findBoundaryIndexAtTime } from './wordHighlight';
 
 export class EdgeTTSClient implements TTSClient {
   name = 'edge-tts';
@@ -26,6 +28,7 @@ export class EdgeTTSClient implements TTSClient {
   #pausedAt = 0;
   #startedAt = 0;
   #fadeCompensation: number | null = null;
+  #wordTrackingRafId: number | null = null;
 
   constructor(controller?: TTSController, appService?: AppService | null) {
     this.controller = controller;
@@ -62,6 +65,29 @@ export class EdgeTTSClient implements TTSClient {
     return { lang, text, voice: voiceId, rate: 1.0, pitch: this.#pitch } as EdgeTTSPayload;
   };
 
+  // Edge TTS websocket requests fail intermittently; retry the preload a few times
+  // before giving up so a single transient failure doesn't stall playback.
+  #createAudioUrlWithRetry = async (
+    payload: EdgeTTSPayload,
+    signal: AbortSignal,
+    maxAttempts = 3,
+  ): Promise<string | undefined> => {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (signal.aborted) return undefined;
+      try {
+        return await this.#edgeTTS?.createAudioUrl(payload);
+      } catch (err) {
+        lastError = err;
+        console.warn(`Edge TTS preload attempt ${attempt}/${maxAttempts} failed`, err);
+        if (attempt < maxAttempts && !signal.aborted) {
+          await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+        }
+      }
+    }
+    throw lastError;
+  };
+
   getVoiceIdFromLang = async (lang: string) => {
     const preferredVoiceId = TTSUtils.getPreferredVoice(this.name, lang);
     const preferredVoice = this.#voices.find((v) => v.id === preferredVoiceId);
@@ -85,11 +111,14 @@ export class EdgeTTSClient implements TTSClient {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#currentVoiceId = voiceId;
-        await this.#edgeTTS
-          ?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId))
-          .catch((err) => {
-            console.warn('Error preloading mark', i, err);
-          });
+        try {
+          await this.#createAudioUrlWithRetry(
+            this.getPayload(voiceLang, mark.text, voiceId),
+            signal,
+          );
+        } catch (err) {
+          console.warn('Error preloading mark', i, err);
+        }
       }
       if (marks.length > maxImmediate) {
         (async () => {
@@ -99,7 +128,10 @@ export class EdgeTTSClient implements TTSClient {
               if (signal.aborted) break;
               const { language: voiceLang } = mark;
               const voiceId = await this.getVoiceIdFromLang(voiceLang);
-              await this.#edgeTTS?.createAudioUrl(this.getPayload(voiceLang, mark.text, voiceId));
+              await this.#createAudioUrlWithRetry(
+                this.getPayload(voiceLang, mark.text, voiceId),
+                signal,
+              );
             } catch (err) {
               console.warn('Error preloading mark (bg)', i, err);
             }
@@ -131,9 +163,11 @@ export class EdgeTTSClient implements TTSClient {
         const { language: voiceLang } = mark;
         const voiceId = await this.getVoiceIdFromLang(voiceLang);
         this.#speakingLang = voiceLang;
-        const audioUrl = await this.#edgeTTS?.createAudioUrl(
+        const audioResult = await this.#edgeTTS?.createAudio(
           this.getPayload(voiceLang, mark.text, voiceId),
         );
+        const audioUrl = audioResult?.url;
+        const boundaries = audioResult?.boundaries ?? [];
         if (signal.aborted) {
           yield { code: 'error', message: 'Aborted' } as TTSMessageEvent;
           break;
@@ -147,6 +181,7 @@ export class EdgeTTSClient implements TTSClient {
 
         const result = await new Promise<TTSMessageEvent>((resolve) => {
           const cleanUp = () => {
+            this.#stopWordTracking();
             audio.onended = null;
             audio.onerror = null;
             audio.src = '';
@@ -177,6 +212,7 @@ export class EdgeTTSClient implements TTSClient {
           };
           this.#isPlaying = true;
           audio.src = audioUrl || '';
+          this.#startWordTracking(audio, boundaries);
           if (!this.appService?.isLinuxApp) {
             audio.playbackRate = this.#rate;
           }
@@ -211,6 +247,39 @@ export class EdgeTTSClient implements TTSClient {
       }
     }
     await this.stopInternal();
+  }
+
+  // Follow playback time against the word-boundary metadata of the current
+  // chunk and tell the controller which word is being spoken so it can
+  // highlight it. Word offsets are in media time, so audio.playbackRate and
+  // pause/resume (including the resume rewind on iOS) are handled naturally
+  // by polling audio.currentTime.
+  #startWordTracking(audio: HTMLAudioElement, boundaries: TTSWordBoundary[]) {
+    this.#stopWordTracking();
+    const controller = this.controller;
+    if (!controller) return;
+    // Always hand the words to the controller — with boundaries it highlights
+    // word-by-word; with none it draws the sentence highlight that was
+    // suppressed at mark dispatch (see TTSController.prepareSpeakWords).
+    controller.prepareSpeakWords(boundaries.map((boundary) => boundary.text));
+    if (!boundaries.length) return;
+    let lastIndex = -1;
+    const tick = () => {
+      const index = findBoundaryIndexAtTime(boundaries, audio.currentTime);
+      if (index !== lastIndex && index >= 0) {
+        lastIndex = index;
+        controller.dispatchSpeakWord(index);
+      }
+      this.#wordTrackingRafId = requestAnimationFrame(tick);
+    };
+    this.#wordTrackingRafId = requestAnimationFrame(tick);
+  }
+
+  #stopWordTracking() {
+    if (this.#wordTrackingRafId !== null) {
+      cancelAnimationFrame(this.#wordTrackingRafId);
+      this.#wordTrackingRafId = null;
+    }
   }
 
   async pause() {
@@ -251,6 +320,7 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   private async stopInternal() {
+    this.#stopWordTracking();
     this.#isPlaying = false;
     this.#pausedAt = 0;
     this.#startedAt = 0;
@@ -291,14 +361,15 @@ export class EdgeTTSClient implements TTSClient {
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
-    const filteredVoices = voices.filter(
-      (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
-    );
+    // Match by primary language so the voice set stays the same across a book
+    // whose sections mix region variants (e.g. en-US front matter and en-GB
+    // body text); the requested locale's voices sort first. See #4033.
+    const filteredVoices = voices.filter((v) => isSameLang(v.lang, lang));
 
     const voicesGroup: TTSVoicesGroup = {
       id: 'edge-tts',
       name: 'Edge TTS',
-      voices: filteredVoices.sort(TTSUtils.sortVoicesFunc),
+      voices: filteredVoices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
       disabled: !this.initialized || filteredVoices.length === 0,
     };
 
@@ -307,6 +378,10 @@ export class EdgeTTSClient implements TTSClient {
 
   setPrimaryLang(lang: string) {
     this.#primaryLang = lang;
+  }
+
+  supportsWordBoundaries(): boolean {
+    return true;
   }
 
   getGranularities(): TTSGranularity[] {

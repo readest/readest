@@ -247,6 +247,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         query: term,
         acceptNode: createRejectFilter({
           tags: primaryLang.startsWith('ja') ? ['rt'] : [],
+          // Word Lens gloss text (<rt cfi-inert>) is injected, non-book content.
+          attributes: ['cfi-inert'],
         }),
         results: cachedResults,
       });

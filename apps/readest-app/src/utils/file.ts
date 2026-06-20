@@ -110,6 +110,10 @@ export class NativeFile extends File implements ClosableFile {
     return this.#lastModified;
   }
 
+  getNativeLocation(): { path: string; baseDir: BaseDirectory | null } {
+    return { path: this.#fp, baseDir: this.#baseDir };
+  }
+
   async stat() {
     return this.#handle?.stat();
   }
@@ -286,9 +290,13 @@ export class RemoteFile extends File implements ClosableFile {
   #order: number[] = [];
   #cache: Map<number, ArrayBuffer> = new Map(); // LRU cache
   #pendingFetches: Map<string, Promise<ArrayBuffer>> = new Map();
+  // When true, byte ranges are carried in the URL query (?start=&end=) instead
+  // of a `Range` header — see fromNativePath().
+  #queryRange = false;
 
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
   static MAX_CACHE_ITEMS_SIZE: number = 128;
+  static RANGE_SCHEME_ORIGIN = 'http://rangefile.localhost';
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
     const basename = url.split('/').pop() || 'remote-file';
@@ -297,6 +305,26 @@ export class RemoteFile extends File implements ClosableFile {
     this.#name = name || basename;
     this.#type = type;
     this.#lastModified = lastModified;
+  }
+
+  /**
+   * Read a local file path through the `rangefile` custom URI scheme, carrying
+   * the byte range in the URL query (`?path=&start=&end=`) rather than a
+   * `Range` request header.
+   *
+   * On Android the WebView re-applies a `Range` header's offset to the body
+   * returned from an intercepted custom protocol (Chromium 40739128;
+   * tauri-apps/tauri#12019, #3725), corrupting any non-zero-start read — so the
+   * asset protocol can't back `RemoteFile` there. A query-carried range has no
+   * `Range` header, so the WebView delivers the 200 body verbatim while the
+   * bytes still stream through the network stack (not the slow Tauri IPC
+   * bridge). The Rust handler is scope-gated by `asset_protocol_scope`.
+   */
+  static fromNativePath(absolutePath: string, name?: string): RemoteFile {
+    const url = `${RemoteFile.RANGE_SCHEME_ORIGIN}/?path=${encodeURIComponent(absolutePath)}`;
+    const file = new RemoteFile(url, name);
+    file.#queryRange = true;
+    return file;
   }
 
   override get name() {
@@ -335,7 +363,22 @@ export class RemoteFile extends File implements ClosableFile {
     return this;
   }
 
+  async _open_with_query() {
+    // No `Range` header — the rangefile handler returns the file size in
+    // `X-Total-Size` and the requested bytes as a plain 200 body.
+    const response = await fetch(`${this.url}&start=0&end=0`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file size: ${response.status}`);
+    }
+    this.#size = Number(response.headers.get('x-total-size'));
+    this.#type = response.headers.get('content-type') || '';
+    return this;
+  }
+
   async open() {
+    if (this.#queryRange) {
+      return this._open_with_query();
+    }
     // FIXME: currently HEAD request in asset protocol is not supported on Android
     if (getOSPlatform() === 'android') {
       return this._open_with_range();
@@ -353,7 +396,9 @@ export class RemoteFile extends File implements ClosableFile {
     start = Math.max(0, start);
     end = Math.min(this.size - 1, end);
     // console.log(`Fetching range: ${start}-${end}, size: ${end - start + 1}`);
-    const response = await fetch(this.url, { headers: { Range: `bytes=${start}-${end}` } });
+    const response = this.#queryRange
+      ? await fetch(`${this.url}&start=${start}&end=${end}`)
+      : await fetch(this.url, { headers: { Range: `bytes=${start}-${end}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch range: ${response.status}`);
     }

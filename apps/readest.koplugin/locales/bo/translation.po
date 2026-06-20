@@ -251,6 +251,12 @@ msgstr "རང་འགུལ་མཉམ་སྦྱོར་"
 msgid "Readest library"
 msgstr "Readest དཔེ་མཛོད་"
 
+msgid "Push stats now"
+msgstr "གྲངས་ཐོ་ད་ལྟ་སྐུར་"
+
+msgid "Pull stats now"
+msgstr "གྲངས་ཐོ་ད་ལྟ་ལེན་"
+
 msgid "Push books now"
 msgstr "དེབ་རྣམས་ད་ལྟ་སྐུར་"
 
@@ -436,3 +442,18 @@ msgstr "ཀློག་པའི་འཕེལ་རིམ་མཉམ་འག
 
 msgid "No saved reading progress found for this book"
 msgstr "དཔེ་ཆ་འདིའི་ཀློག་པའི་འཕེལ་རིམ་ཉར་ཚགས་མ་རྙེད།"
+
+msgid "Reading statistics are up to date"
+msgstr "ཀློག་པའི་གྲངས་ཐོ་གསར་ཤོས་ཡིན།"
+
+msgid "Reading statistics pushed"
+msgstr "ཀློག་པའི་གྲངས་ཐོ་སྐུར་སོང་།"
+
+msgid "Failed to push reading statistics"
+msgstr "ཀློག་པའི་གྲངས་ཐོ་སྐུར་མ་ཐུབ།"
+
+msgid "Failed to pull reading statistics"
+msgstr "ཀློག་པའི་གྲངས་ཐོ་ལེན་མ་ཐུབ།"
+
+msgid "Reading statistics pulled"
+msgstr "ཀློག་པའི་གྲངས་ཐོ་ལེན་སོང་།"

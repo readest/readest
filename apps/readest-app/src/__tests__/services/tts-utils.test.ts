@@ -199,6 +199,44 @@ describe('TTSUtils', () => {
     });
   });
 
+  describe('sortVoicesPreferLocaleFunc', () => {
+    const aria = { id: 'en-US-AriaNeural', name: 'Aria', lang: 'en-US' };
+    const sonia = { id: 'en-GB-SoniaNeural', name: 'Sonia', lang: 'en-GB' };
+    const natasha = { id: 'en-AU-NatashaNeural', name: 'Natasha', lang: 'en-AU' };
+
+    test('voices matching the locale sort first', () => {
+      const sorted = [aria, natasha, sonia].sort(TTSUtils.sortVoicesPreferLocaleFunc('en-GB'));
+      expect(sorted.map((v) => v.id)).toEqual([
+        'en-GB-SoniaNeural',
+        'en-US-AriaNeural',
+        'en-AU-NatashaNeural',
+      ]);
+    });
+
+    test('falls back to sortVoicesFunc when no voice matches the locale', () => {
+      const sorted = [natasha, sonia, aria].sort(TTSUtils.sortVoicesPreferLocaleFunc('en-NZ'));
+      expect(sorted.map((v) => v.id)).toEqual([
+        'en-US-AriaNeural',
+        'en-GB-SoniaNeural',
+        'en-AU-NatashaNeural',
+      ]);
+    });
+
+    test('locale match is case-insensitive', () => {
+      const sorted = [aria, sonia].sort(TTSUtils.sortVoicesPreferLocaleFunc('en-gb'));
+      expect(sorted[0]).toBe(sonia);
+    });
+
+    test('empty locale keeps sortVoicesFunc order', () => {
+      const sorted = [natasha, sonia, aria].sort(TTSUtils.sortVoicesPreferLocaleFunc(''));
+      expect(sorted.map((v) => v.id)).toEqual([
+        'en-US-AriaNeural',
+        'en-GB-SoniaNeural',
+        'en-AU-NatashaNeural',
+      ]);
+    });
+  });
+
   describe('persistence', () => {
     test('preferences survive across calls', () => {
       TTSUtils.setPreferredClient('edge');

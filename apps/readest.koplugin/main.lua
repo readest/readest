@@ -7,12 +7,13 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
 local T = require("ffi/util").template
-local _ = require("i18n")
+local _ = require("readest_i18n")
 
-local SyncAuth = require("syncauth")
-local SyncConfig = require("syncconfig")
-local SyncAnnotations = require("syncannotations")
-local SelfUpdate = require("selfupdate")
+local SyncAuth = require("readest_syncauth")
+local SyncConfig = require("readest_syncconfig")
+local SyncAnnotations = require("readest_syncannotations")
+local SyncStats = require("readest_syncstats")
+local SelfUpdate = require("readest_selfupdate")
 
 local ReadestSync = WidgetContainer:new{
     name = "readest",
@@ -91,6 +92,7 @@ function ReadestSync:onReaderReady()
         UIManager:nextTick(function()
             self:pullBookConfig(false)
             self:pullBookNotes(false)
+            self:pullBookStats(false)
         end)
     end
     self:onDispatcherRegisterReaderActions()
@@ -330,6 +332,24 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Push stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pushBookStats(true)
+                end,
+            },
+            {
+                text = _("Pull stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pullBookStats(true)
+                end,
+            },
+            {
                 text = _("Push books now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.settings.user_id ~= nil
@@ -533,6 +553,35 @@ function ReadestSync:pullBookConfig(interactive)
     )
 end
 
+-- ── Reading statistics sync ────────────────────────────────────────
+
+function ReadestSync:pushBookStats(interactive)
+    logger.dbg("ReadestStats pushBookStats: triggered, interactive=" .. tostring(interactive))
+    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then
+        logger.dbg("ReadestStats pushBookStats: no client (not signed in / offline); skipping")
+        return
+    end
+    SyncStats:push(self.settings, client, interactive)
+end
+
+function ReadestSync:pullBookStats(interactive)
+    logger.dbg("ReadestStats pullBookStats: triggered, interactive=" .. tostring(interactive))
+    if NetworkMgr:willRerunWhenOnline(function() self:pullBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then
+        logger.dbg("ReadestStats pullBookStats: no client (not signed in / offline); skipping")
+        return
+    end
+    SyncStats:pull(self.settings, client, interactive,
+        function() SyncAuth:logout(self.settings, self.path) end)
+end
+
 -- ── Annotation sync ────────────────────────────────────────────────
 
 function ReadestSync:pushBookNotes(interactive, full_sync)
@@ -669,8 +718,10 @@ end
 -- syncBooksLibrary(mode, interactive) — bidirectional book-row sync,
 -- mirroring useBooksSync.handleAutoSync at apps/readest-app/src/app/
 -- library/hooks/useBooksSync.ts:66-78. mode: "push"|"pull"|"both".
--- Touches the currently-open book first so its updated_at gets included
--- in the push delta. Interactive=true shows toast feedback.
+-- The touched-row bump happens via the before_push callback so it lands
+-- AFTER pull has refreshed the local row with the cloud's uploaded_at /
+-- metadata / group_id — see syncbooks.syncBooks docstring + issue #4138.
+-- Interactive=true shows toast feedback.
 function ReadestSync:syncBooksLibrary(mode, interactive)
     if not self.settings.access_token or not self.settings.user_id then
         if interactive then
@@ -684,11 +735,6 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
             UIManager:show(InfoMessage:new{ text = _("Library not initialized"), timeout = 2 })
         end
         return
-    end
-
-    if mode ~= "pull" then
-        -- Touch only matters for push (and 'both' which includes push)
-        self:touchOpenBook()
     end
 
     local syncbooks = require("library.syncbooks")
@@ -711,6 +757,12 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
         -- If the Library widget is open, refresh it so newly-pulled rows show
         local LibraryWidget = require("library.librarywidget")
         if LibraryWidget._menu then LibraryWidget.refresh() end
+    end, function()
+        -- before_push: bump updated_at on the open book so its row is in
+        -- the push delta. Runs after pull so the cloud's uploaded_at /
+        -- metadata / group_id have already merged into the local row;
+        -- touchBook then preserves those fields.
+        self:touchOpenBook()
     end)
 end
 
@@ -719,6 +771,7 @@ function ReadestSync:onCloseDocument()
         NetworkMgr:goOnlineToRun(function()
             self:pushBookConfig(false)
             self:pushBookNotes(false)
+            self:pushBookStats(false)
             self:syncBooksLibrary("both", false)
         end)
     end
@@ -744,7 +797,15 @@ function ReadestSync:onPageUpdate(page)
     end
 end
 
-function ReadestSync:onAnnotationsModified()
+function ReadestSync:onAnnotationsModified(items)
+    -- A removal fires AnnotationsModified with a negative index_modified and the
+    -- deleted item at items[1]. Capture a tombstone now, before the item is gone
+    -- for good — the push walk only sees live annotations, so without this the
+    -- deletion never reaches the server (issue #4119, push direction).
+    if self.settings.access_token and items and items.index_modified
+            and items.index_modified < 0 and items[1] then
+        SyncAnnotations:recordDeletion(self.ui.doc_settings, items[1])
+    end
     if self.settings.auto_sync and self.settings.access_token then
         UIManager:nextTick(function()
             self:pushBookNotes(false)

@@ -71,6 +71,76 @@ const safeDecodePath = (input: string) => {
   }
 };
 
+/**
+ * In-process cache of directories we've already verified (or just created)
+ * in this app session.
+ *
+ * Why: `writeFile` / `copyFile` defensively call `fs.exists(dir)` before
+ * every write to make sure the parent directory exists. On the hot path
+ * for `saveBookConfig` (fires roughly once every 1.5s while the user is
+ * reading via `useProgressAutoSave`) the parent is always the same book
+ * directory that's been there since the book was opened — so the
+ * `exists` IPC is pure overhead.
+ *
+ * The cost shows up clearly in Chrome DevTools' Bottom-Up profile of a
+ * release Android build: the `A` (= `plugin:fs|exists`) branch following
+ * each `sendIpcMessage` accounts for ~50% of the IPC time during a
+ * reading session, doubling the per-save IPC cost.
+ *
+ * Cache semantics:
+ *   - Key = `${base}:${dirPath}` (BaseDir + normalized directory path).
+ *   - Membership = "this process has at some point seen the directory
+ *     exist". We do NOT track deletions performed outside the app, but
+ *     the directories that matter for the read-path (per-book config
+ *     dirs, library dir) are created by the app and only deleted via
+ *     `removeDir` / book removal, both of which clear the relevant
+ *     entries below.
+ *   - On a fresh app start the cache is empty, so the first write to a
+ *     directory still does the original `exists`+`createDir` dance —
+ *     this is a perf cache, not a correctness shortcut.
+ */
+const knownExistingDirs = new Set<string>();
+const dirCacheKey = (base: BaseDir, dir: string) => `${base}:${dir}`;
+const markDirKnown = (base: BaseDir, dir: string) => {
+  // Empty string is a valid path: it represents the BaseDir itself, which
+  // is the parent dir for root-level files like `settings.json`. We must
+  // cache it too, otherwise every root-level write would re-probe the
+  // BaseDir via `exists()`.
+  knownExistingDirs.add(dirCacheKey(base, dir));
+};
+const forgetDirKnown = (base: BaseDir, dir: string) => {
+  knownExistingDirs.delete(dirCacheKey(base, dir));
+};
+
+/**
+ * Helper used by `writeFile` / `copyFile`. If we already know this
+ * directory exists, returns immediately. Otherwise performs the normal
+ * `exists` IPC + `createDir` fallback and records the result in the
+ * cache so subsequent writes skip both round-trips.
+ *
+ * `dir` may be the empty string, which represents the BaseDir itself
+ * (i.e. when writing a root-level file like `settings.json` whose
+ * `getDirPath` is ""). On a fresh install the BaseDir may not exist
+ * yet — the underlying Tauri `exists("", base)` / `createDir("", base,
+ * recursive)` calls handle the empty path correctly by operating on
+ * the BaseDir itself, so we must NOT short-circuit on empty string.
+ */
+async function ensureDirExists(
+  self: {
+    exists: (path: string, base: BaseDir) => Promise<boolean>;
+    createDir: (path: string, base: BaseDir, recursive?: boolean) => Promise<void>;
+  },
+  dir: string,
+  base: BaseDir,
+): Promise<void> {
+  const key = dirCacheKey(base, dir);
+  if (knownExistingDirs.has(key)) return;
+  if (!(await self.exists(dir, base))) {
+    await self.createDir(dir, base, true);
+  }
+  knownExistingDirs.add(key);
+}
+
 // Helper function to create a path resolver based on custom root directory and portable mode
 // 0. If no custom root dir and not portable mode, use default Tauri BaseDirectory
 // 1. If custom root dir is set, use it as base dir (baseDir = 0)
@@ -239,31 +309,44 @@ export const nativeFileSystem: FileSystem = {
       }
     } else if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-    } else {
-      if (OS_TYPE === 'android' || OS_TYPE === 'ios') {
-        // NOTE: RemoteFile is not usable on Android due to a known issue of range request in Android WebView.
-        // see https://issues.chromium.org/issues/40739128
-        // On iOS, importing picker Inbox files should also use NativeFile to avoid fetch/HEAD issues.
+    } else if (OS_TYPE === 'android') {
+      // Android can't use the asset protocol for ranged reads — its WebView
+      // re-applies a `Range` header's offset to intercepted bodies and corrupts
+      // non-zero-start reads (Chromium 40739128). Instead route reads through
+      // the `rangefile` custom scheme, which carries the range in the URL query
+      // (no `Range` header) so the WebView delivers the bytes verbatim, still
+      // over the network stack rather than the slow Tauri IPC bridge.
+      // Falls back to NativeFile if the path is outside the asset scope.
+      try {
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
+        return await RemoteFile.fromNativePath(absolutePath, fname).open();
+      } catch {
         return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-      } else {
-        // NOTE: RemoteFile currently performs about 2× faster than NativeFile
-        // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
-        // Once the bug is resolved, we should switch back to using NativeFile.
-        try {
-          const prefix = await this.getPrefix(base);
-          const absolutePath = prefix ? await join(prefix, path) : path;
-          return await new RemoteFile(this.getURL(absolutePath), fname).open();
-        } catch {
-          return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-        }
+      }
+    } else if (OS_TYPE === 'ios') {
+      // On iOS, importing picker Inbox files should use NativeFile to avoid
+      // fetch/HEAD issues.
+      return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
+    } else {
+      // NOTE: RemoteFile currently performs about 2× faster than NativeFile
+      // due to an unresolved performance issue in Tauri (see tauri-apps/tauri#9190).
+      // Once the bug is resolved, we should switch back to using NativeFile.
+      try {
+        const prefix = await this.getPrefix(base);
+        const absolutePath = prefix ? await join(prefix, path) : path;
+        return await new RemoteFile(this.getURL(absolutePath), fname).open();
+      } catch {
+        return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
       }
     }
   },
   async copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir) {
     try {
-      if (!(await this.exists(getDirPath(dstPath), dstBase))) {
-        await this.createDir(getDirPath(dstPath), dstBase, true);
-      }
+      // Uses the in-process dir cache (see `knownExistingDirs` above) so a
+      // burst of copies into the same destination dir doesn't fire an
+      // `exists` IPC per file.
+      await ensureDirExists(this, getDirPath(dstPath), dstBase);
     } catch (error) {
       console.log('Failed to create directory for copying file:', error);
     }
@@ -300,13 +383,33 @@ export const nativeFileSystem: FileSystem = {
     // NOTE: this could be very slow for large files and might block the UI thread
     // so do not use this for large files
     const { fp, baseDir } = this.resolvePath(path, base);
-    if (!(await this.exists(getDirPath(path), base))) {
-      await this.createDir(getDirPath(path), base, true);
-    }
+    // Skip the redundant `exists` IPC after the first write to this dir
+    // in the current session — `useProgressAutoSave` writes to the same
+    // per-book directory once every ~1.5s while the user is reading, so
+    // checking each time roughly doubles the IPC cost of saveBookConfig.
+    // See `knownExistingDirs` near the top of this file for the cache
+    // invariants.
+    await ensureDirExists(this, getDirPath(path), base);
 
     if (typeof content === 'string') {
       return writeTextFile(fp, content, baseDir ? { baseDir } : undefined);
     } else if (content instanceof File) {
+      // Fast path for NativeFile inputs (e.g. user-picked source on import):
+      // do a native filesystem copy at the Rust side rather than pumping
+      // ~1 MB chunks through the Tauri IPC bridge. On Android the stream
+      // path costs ~400 ms per IPC round-trip, which puts a 250 MB file
+      // at ~100 s; the native copy is bound by disk throughput instead.
+      try {
+        if (content instanceof NativeFile) {
+          const src = content.getNativeLocation();
+          const opts: { fromPathBaseDir?: number; toPathBaseDir?: number } = {};
+          if (src.baseDir != null) opts.fromPathBaseDir = src.baseDir;
+          if (baseDir) opts.toPathBaseDir = baseDir;
+          return await copyFile(src.path, fp, Object.keys(opts).length > 0 ? opts : undefined);
+        }
+      } catch (error) {
+        console.warn('Native copy failed, falling back to stream copy:', error);
+      }
       const writeOptions = {
         write: true,
         create: true,
@@ -326,11 +429,28 @@ export const nativeFileSystem: FileSystem = {
     const { fp, baseDir } = this.resolvePath(path, base);
 
     await mkdir(fp, { baseDir: baseDir ? baseDir : undefined, recursive });
+    // Now that the dir is on disk, record it so subsequent writes can
+    // skip the `exists` probe.
+    markDirKnown(base, path);
   },
   async removeDir(path: string, base: BaseDir, recursive = false) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
     await remove(fp, { baseDir: baseDir ? baseDir : undefined, recursive });
+    // The cached entry for this dir is now stale, and a recursive remove
+    // also tears down everything beneath it. Drop every cached entry that
+    // points at this dir or any of its descendants so the next write
+    // here goes through the slow `exists`+`createDir` path again.
+    const prefix = dirCacheKey(base, path);
+    forgetDirKnown(base, path);
+    if (recursive) {
+      // Iterate a snapshot — Set forbids mutation during iteration.
+      for (const key of Array.from(knownExistingDirs)) {
+        if (key === prefix || key.startsWith(prefix + '/')) {
+          knownExistingDirs.delete(key);
+        }
+      }
+    }
   },
   async readDir(path: string, base: BaseDir) {
     const { fp, baseDir } = this.resolvePath(path, base);
@@ -428,6 +548,7 @@ export class NativeAppService extends BaseAppService {
   override isIOSApp = OS_TYPE === 'ios';
   override isMacOSApp = OS_TYPE === 'macos';
   override isLinuxApp = OS_TYPE === 'linux';
+  override isWindowsApp = OS_TYPE === 'windows';
   override isMobileApp = ['android', 'ios'].includes(OS_TYPE);
   override isDesktopApp = ['macos', 'windows', 'linux'].includes(OS_TYPE);
   override isAppImage = Boolean(window.__READEST_IS_APPIMAGE);
@@ -492,9 +613,18 @@ export class NativeAppService extends BaseAppService {
     }
     if (this.isIOSApp) {
       this.isOnlineCatalogsAccessible = this.distChannel !== 'appstore';
-      const res = await getStorefrontRegionCode();
-      if (res.regionCode) {
-        this.storefrontRegionCode = res.regionCode;
+      try {
+        const res = await getStorefrontRegionCode();
+        if (res?.regionCode) {
+          this.storefrontRegionCode = res.regionCode;
+        }
+      } catch (err) {
+        // Storefront.current is nil on simulators without a signed-in
+        // App Store account, and may also fail on real devices with no
+        // StoreKit configuration. Treat as "unknown region" — we leave
+        // storefrontRegionCode as null and let downstream features that
+        // depend on region degrade gracefully.
+        console.warn('[nativeAppService] getStorefrontRegionCode failed:', err);
       }
     }
     await this.prepareBooksDir();
@@ -541,11 +671,39 @@ export class NativeAppService extends BaseAppService {
   }
 
   async selectDirectory(): Promise<string> {
+    // On mobile, Tauri's dialog plugin rejects folder picks with
+    // "FolderPickerNotImplemented" — neither iOS nor Android ship a
+    // folder picker via that surface. Route through the native-bridge
+    // plugin instead, where each platform has a native implementation
+    // (Android: ACTION_OPEN_DOCUMENT_TREE, iOS:
+    // UIDocumentPickerViewController with `.folder`). The bridge
+    // returns `{ path, uri, cancelled }`; we surface the path string
+    // so the rest of the app can treat it like any local directory.
+    if (this.isIOSApp || this.isAndroidApp) {
+      const { selectDirectory } = await import('@/utils/bridge');
+      const result = await selectDirectory();
+      const path = result.path ?? '';
+      if (path) {
+        // Match the desktop branch — make sure both fs_scope and the
+        // asset-protocol scope can read from the chosen directory.
+        await this.allowPathsInScopes([path], true);
+      }
+      return path;
+    }
+
     const selected = await openDialog({
       directory: true,
       multiple: false,
       recursive: true,
     });
+    if (selected) {
+      // Tauri's dialog plugin only auto-grants fs_scope; the asset
+      // protocol scope still needs an explicit allow before
+      // RemoteFile / convertFileSrc-based reads can succeed against
+      // arbitrary user paths. Persisted-scope plugin makes this
+      // sticky across restarts.
+      await this.allowPathsInScopes([selected as string], true);
+    }
     return selected as string;
   }
 
@@ -555,12 +713,31 @@ export class NativeAppService extends BaseAppService {
       filters: [{ name, extensions }],
     });
     const files = Array.isArray(selected) ? selected : selected ? [selected] : [];
-    return OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    const decoded = OS_TYPE === 'ios' ? files.map((f) => safeDecodePath(f)) : files;
+    if (decoded.length > 0) {
+      // See the note in selectDirectory above.
+      await this.allowPathsInScopes(decoded, false);
+    }
+    return decoded;
+  }
+
+  /**
+   * Best-effort: ask the Rust side to extend `fs_scope` and
+   * `asset_protocol_scope` to cover the given paths. Errors are logged
+   * and swallowed because the import path can still succeed via the
+   * NativeFile fallback even when scope extension fails.
+   */
+  async allowPathsInScopes(paths: string[], isDirectory: boolean): Promise<void> {
+    try {
+      await invoke('allow_paths_in_scopes', { paths, isDirectory });
+    } catch (e) {
+      console.warn('allow_paths_in_scopes failed:', e);
+    }
   }
 
   async saveFile(
     filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -570,15 +747,19 @@ export class NativeAppService extends BaseAppService {
   ): Promise<boolean> {
     try {
       const ext = filename.split('.').pop() || '';
-      // Linux desktop has no system share sheet; always fall through to saveDialog.
-      const wantShare = !this.isLinuxApp && (this.isIOSApp || options?.share);
+      // Linux desktop has no system share sheet; Windows WebView2's native
+      // share UI (via tauri-plugin-sharekit) blocks the main thread waiting
+      // on complete/cancel callbacks that may never fire when the user
+      // dismisses the picker, freezing the app (issue #4343). Both fall
+      // through to saveDialog instead.
+      const wantShare = !this.isLinuxApp && !this.isWindowsApp && (this.isIOSApp || options?.share);
       if (wantShare) {
         let shareablePath = options?.filePath;
         if (!shareablePath) {
           shareablePath = await this.resolveFilePath(filename, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
-          } else {
+          } else if (content) {
             await writeFile(shareablePath, new Uint8Array(content));
           }
         }
@@ -590,10 +771,17 @@ export class NativeAppService extends BaseAppService {
             // WebView's top-left corner.
             ...(options?.sharePosition ? { position: options.sharePosition } : {}),
           });
-          return true;
         } catch (error) {
-          console.error('shareFile failed; falling back to saveDialog:', error);
+          // The plugin throws on user cancellation (e.g. dismissing the
+          // Android share sheet returns "Share cancelled"). That's not a
+          // failure — the user explicitly chose not to share, so we must
+          // NOT fall back to saveDialog and pop a "Save As..." prompt.
+          // Same goes for any other share error: the caller asked for a
+          // share sheet, fulfilled or not, the saveDialog flow is a
+          // completely different user intent.
+          console.warn('shareFile did not complete:', error);
         }
+        return true;
       }
 
       const filePath = await saveDialog({
@@ -604,7 +792,7 @@ export class NativeAppService extends BaseAppService {
 
       if (typeof content === 'string') {
         await writeTextFile(filePath, content);
-      } else {
+      } else if (content) {
         await writeFile(filePath, new Uint8Array(content));
       }
       return true;
@@ -638,10 +826,20 @@ export class NativeAppService extends BaseAppService {
     const rootPath = await this.resolveFilePath('..', 'Data');
     const newDir = await this.fs.getPrefix('Images');
     const oldDir = await join(rootPath, 'Images', 'Readest', 'Images');
+    const dirToDelete = await join(rootPath, 'Images', 'Readest');
+
+    // Skip silently on fresh installs that never had the legacy layout.
+    // copyFiles / deleteDir would otherwise throw `os error 2` when the
+    // old directory does not exist, which is harmless but noisy.
+    if (!(await this.fs.exists(oldDir, 'None'))) {
+      console.log('Migration 20251029: legacy Images/Readest/Images not found, skipping.');
+      return;
+    }
 
     await copyFiles(this, oldDir, newDir);
 
-    const dirToDelete = await join(rootPath, 'Images', 'Readest');
-    await this.deleteDir(dirToDelete, 'None', true);
+    if (await this.fs.exists(dirToDelete, 'None')) {
+      await this.deleteDir(dirToDelete, 'None', true);
+    }
   }
 }

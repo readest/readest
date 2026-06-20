@@ -15,6 +15,7 @@ import {
   ViewConfig,
   ViewSettings,
   ViewSettingsConfig,
+  WordLensConfig,
 } from '@/types/book';
 import {
   HardcoverSettings,
@@ -24,11 +25,13 @@ import {
   ReadSettings,
   ReadwiseSettings,
   SystemSettings,
+  WebDAVSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 
 export const DATA_SUBDIR = 'Readest';
 export const LOCAL_BOOKS_SUBDIR = `${DATA_SUBDIR}/Books`;
@@ -81,7 +84,22 @@ export const DEFAULT_HARDCOVER_SETTINGS = {
   enabled: false,
   accessToken: '',
   lastSyncedAt: 0,
+  autoSync: false,
 } as HardcoverSettings;
+
+export const DEFAULT_WEBDAV_SETTINGS = {
+  enabled: false,
+  serverUrl: '',
+  username: '',
+  password: '',
+  rootPath: '/',
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as WebDAVSettings;
 
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
@@ -91,9 +109,15 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   alwaysShowStatusBar: false,
   alwaysInForeground: false,
   autoCheckUpdates: true,
+  updateChannel: 'stable',
   screenWakeLock: false,
   screenBrightness: -1, // -1~100, -1 for system default
   autoScreenBrightness: true,
+  swipeBrightnessGesture: true,
+  hardwarePageTurner: {
+    enabled: false,
+    bindings: { pagePrev: null, pageNext: null, sectionPrev: null, sectionNext: null },
+  },
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
@@ -102,6 +126,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryViewMode: 'grid',
   librarySortBy: LibrarySortByType.Updated,
   librarySortAscending: false,
+  librarySortByAuto: true,
+  librarySortBy2: 'none',
   libraryGroupBy: LibraryGroupByType.Group,
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
@@ -125,6 +151,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   kosync: DEFAULT_KOSYNC_SETTINGS,
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
+  webdav: DEFAULT_WEBDAV_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
@@ -172,6 +199,7 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   autohideCursor: true,
   translationProvider: 'deepl',
   translateTargetLang: 'EN',
+  wordLensAutoDownload: true,
 
   customThemes: [],
   highlightStyle: 'highlight',
@@ -213,8 +241,10 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   compactMarginRightPx: 16,
   gapPercent: 5,
   scrolled: false,
+  webtoonMode: false,
   noContinuousScroll: false,
   disableClick: false,
+  disableSwipe: false,
   fullscreenClickArea: false,
   swapClickArea: false,
   disableDoubleClick: false,
@@ -270,7 +300,6 @@ export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
   fullJustification: false,
   animated: true,
   defaultFont: 'Sans-serif',
-  marginBottomPx: 16,
   disableDoubleClick: true,
   spreadMode: 'none',
 };
@@ -306,7 +335,6 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
 
   showHeader: true,
   showFooter: true,
-  showBarsOnScroll: false,
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
@@ -315,9 +343,9 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showBatteryPercentage: true,
   use24HourClock: false,
   tapToToggleFooter: false,
-  showMarginsOnScroll: false,
   showPaginationButtons: false,
   progressStyle: 'fraction',
+  referencePageCount: 0,
   progressInfoMode: 'all',
 
   animated: false,
@@ -360,6 +388,10 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   includePageNumber: true,
   includeTimestamp: false,
   includeChapterSeparator: false,
+  // Default to the app deeplink in the native app and the universal web link on
+  // the web. Inlined platform check avoids a circular import with
+  // environment.ts, which imports from this module.
+  linkType: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'app' : 'web',
   noteSeparator: '\n\n',
   useCustomTemplate: false,
   customTemplate: '',
@@ -369,8 +401,15 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   enableAnnotationQuickActions: true,
   annotationQuickAction: null,
+  annotationToolbarItems: DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
   copyToNotebook: false,
   noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,
+};
+
+export const DEFAULT_WORD_LENS_CONFIG: WordLensConfig = {
+  wordLensEnabled: false,
+  wordLensLevel: 3,
+  wordLensHintLang: '',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
@@ -744,6 +783,19 @@ export const READEST_NODE_BASE_URL = 'https://node.readest.com';
 
 export const SHARE_BASE_URL = `${READEST_WEB_BASE_URL}/s`;
 export const SHARE_EXPIRATION_DAYS = [1, 3, 7] as const;
+
+// Send to Readest — the domain inbound capture emails are addressed to, the
+// R2 bucket holding raw inbound payloads, and the per-user cap on undrained
+// inbox items (defense against a leaked address).
+export const SEND_EMAIL_DOMAIN = 'readest.com';
+export const SEND_INBOX_BUCKET = 'readest-send-inbox';
+export const SEND_INBOX_PENDING_LIMIT = 50;
+// Hard cap on the size of a single uploaded EPUB the browser extension can
+// drop into the inbox. 30 MB is the same total-asset cap the client-side
+// bundler enforces — plus a bit of head-room for chapter HTML / structural
+// overhead. Beyond this size a clipped article is almost certainly an
+// over-illustrated page that would never read well in the EPUB anyway.
+export const SEND_INBOX_FILE_MAX_BYTES = 40 * 1024 * 1024;
 export const SHARE_DEFAULT_EXPIRATION_DAYS = 3;
 export const SHARE_MAX_PER_USER = 50;
 export const SHARE_TOKEN_LENGTH = 22;
@@ -755,6 +807,14 @@ const LATEST_DOWNLOAD_BASE_URL = 'https://download.readest.com/releases';
 export const READEST_UPDATER_FILE = `${LATEST_DOWNLOAD_BASE_URL}/latest.json`;
 
 export const READEST_CHANGELOG_FILE = `${LATEST_DOWNLOAD_BASE_URL}/release-notes.json`;
+
+export const READEST_NIGHTLY_UPDATER_FILE = 'https://download.readest.com/nightly/latest.json';
+
+// Public (verification) key, identical to src-tauri/tauri.conf.json `updater.pubkey`.
+// Used to verify nightly artifacts in the custom install flows (portable /
+// AppImage / Android). Safe to embed — it is a public key.
+export const READEST_UPDATER_PUBKEY =
+  'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFMEQ1QjE2OEU1NEIzNTEKUldSUnMxU09GbHNOdmpEaWFMT1crRFpEV2VORzQ2MklxaFc0M1R0ci9xY2c1bENXS0xhM1R1L2sK';
 
 export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://storage.readest.com';
 

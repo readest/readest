@@ -48,8 +48,9 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
     >
       {/* `overflow-hidden rounded-lg` clips the body's section backgrounds /
           borders to the Popup's rounded shape. */}
-      <div className='flex h-full flex-col overflow-hidden rounded-lg pt-2'>
+      <div className='flex h-full flex-col overflow-hidden rounded-lg pt-4'>
         <DictionaryResultsHeader
+          headerClassName='-mt-2'
           currentWord={state.currentWord}
           canGoBack={state.canGoBack}
           goBack={state.goBack}

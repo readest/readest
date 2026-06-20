@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { EdgeSpeechTTS, EdgeTTSPayload } from '@/libs/edgeTTS';
+import {
+  EdgeSpeechTTS,
+  EdgeTTSPayload,
+  serializeWordBoundaries,
+  WORD_BOUNDARIES_HEADER,
+} from '@/libs/edgeTTS';
 import { validateUserAndToken } from '@/utils/access';
 
 const getLangFromVoice = (voiceId: string): string => {
@@ -69,16 +74,22 @@ export async function POST(request: NextRequest) {
     };
 
     const tts = new EdgeSpeechTTS();
-    const response = await tts.create(payload);
+    const { response, boundaries } = await tts.createWithBoundaries(payload);
     const arrayBuffer = await response.arrayBuffer();
 
-    return new NextResponse(arrayBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': arrayBuffer.byteLength.toString(),
-      },
-    });
+    const headers: Record<string, string> = {
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': arrayBuffer.byteLength.toString(),
+    };
+    // Only emit the word-boundary header when it fits well under common
+    // header-size caps (~8KB). Oversized values can be dropped by proxies and
+    // break delivery; the client falls back to [] when the header is absent.
+    const serializedBoundaries = serializeWordBoundaries(boundaries);
+    if (serializedBoundaries.length <= 8192) {
+      headers[WORD_BOUNDARIES_HEADER] = serializedBoundaries;
+    }
+
+    return new NextResponse(arrayBuffer, { status: 200, headers });
   } catch (error) {
     console.error('Edge TTS API error:', error);
     return NextResponse.json(

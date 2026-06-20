@@ -39,6 +39,7 @@ TTS tracks its own section independently from the view via `#ttsSectionIndex`:
 | #3291 | TTS fails without lang attribute | Invalid SSML from missing lang | Set lang/xml:lang on html element from `ttsLang` |
 | #3292 | Can't restart TTS from annotation | `ttsOnRef` blocks re-entry | Removed the guard ref entirely |
 | #3400 | TTS highlight stops after restart | `view.tts` not nulled on shutdown | Added `this.view.tts = null` in `shutdown()` |
+| #4033 | Voice count flip-flops within one book (17↔5) | All 3 clients filtered voices by full locale (`v.lang.startsWith(locale)`); panel lang refreshes from the speaking mark (`getSpeakingLang`), and books mix region variants — Standard Ebooks boilerplate is `en-US` (17 Edge voices), body `en-GB` (5 Edge voices) | PR #4565: filter by primary lang (`isSameLang`) in Edge/Web/Native `getVoices`; new `TTSUtils.sortVoicesPreferLocaleFunc(locale)` keeps exact-locale voices first so `getVoiceIdFromLang` default stays region-aware. Also fixed `zh-Hans` → empty Edge list |
 
 ## Debugging TTS Issues
 

@@ -1,11 +1,14 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { RiQuillPenLine } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import type { NotebookTab } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
@@ -16,18 +19,19 @@ import { BookNote } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
+import { getPanelTopInset } from '@/utils/insets';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
 import useShortcuts from '@/hooks/useShortcuts';
+import { findAnnotationAtCfi } from '../../utils/annotatorUtil';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
-import dynamic from 'next/dynamic';
-import type { NotebookTab } from '@/store/notebookStore';
+import EmptyState from '../EmptyState';
 
 const XRayView = dynamic(() => import('./XRayView'), { ssr: false });
 
@@ -154,18 +158,42 @@ const Notebook: React.FC = ({}) => {
     if (!cfi) return;
 
     const { booknotes: annotations = [] } = config;
-    const annotation: BookNote = {
-      id: uniqueId(),
-      type: 'annotation',
-      cfi,
-      note,
-      page: selection.page,
-      text: selection.text,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    view?.addAnnotation({ ...annotation, value: `${NOTE_PREFIX}${annotation.cfi}` });
-    annotations.push(annotation);
+    const existingIndex = findAnnotationAtCfi(annotations, cfi);
+    if (existingIndex !== -1) {
+      // Attach the note to the existing highlight at this CFI instead of
+      // creating a second record. The highlight overlay (value = cfi) already
+      // exists; add the note bubble overlay (value = NOTE_PREFIX+cfi).
+      const existing = annotations[existingIndex]!;
+      const updated: BookNote = {
+        ...existing,
+        note,
+        text: selection.text || existing.text,
+        updatedAt: Date.now(),
+      };
+      annotations[existingIndex] = updated;
+      view?.addAnnotation({ ...updated, value: `${NOTE_PREFIX}${updated.cfi}` });
+    } else {
+      // No highlight at this CFI yet (e.g. a note added without first
+      // highlighting): create one unified record with the current global style
+      // so the note still shows an underlying highlight, and draw both overlays.
+      const style = settings.globalReadSettings.highlightStyle;
+      const color = settings.globalReadSettings.highlightStyles[style];
+      const annotation: BookNote = {
+        id: uniqueId(),
+        type: 'annotation',
+        cfi,
+        style,
+        color,
+        note,
+        page: selection.page,
+        text: selection.text,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      view?.addAnnotation(annotation);
+      view?.addAnnotation({ ...annotation, value: `${NOTE_PREFIX}${annotation.cfi}` });
+      annotations.push(annotation);
+    }
     const updatedConfig = updateBooknotes(sideBarBookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);
@@ -250,6 +278,8 @@ const Notebook: React.FC = ({}) => {
 
   const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
   const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const isNotesTabEmpty =
+    !notebookNewAnnotation && !notebookEditAnnotation && !isSearchBarVisible && !hasAnyNotes;
 
   return isNotebookVisible ? (
     <>
@@ -276,11 +306,13 @@ const Notebook: React.FC = ({}) => {
           width: isMobile ? '100%' : `${notebookWidth}`,
           maxWidth: isMobile ? '100%' : `${MAX_NOTEBOOK_WIDTH * 100}%`,
           position: isMobile ? 'fixed' : isNotebookPinned ? 'relative' : 'absolute',
-          paddingTop: isFullHeightInMobile
-            ? systemUIVisible
-              ? `${Math.max(safeAreaInsets?.top || 0, statusBarHeight)}px`
-              : `${safeAreaInsets?.top || 0}px`
-            : '0px',
+          paddingTop: `${getPanelTopInset({
+            isMobile,
+            isFullHeightInMobile,
+            systemUIVisible,
+            statusBarHeight,
+            safeAreaInsets,
+          })}px`,
         }}
       >
         <style jsx>{`
@@ -353,6 +385,14 @@ const Notebook: React.FC = ({}) => {
         ) : notebookActiveTab === 'xray' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <XRayView bookKey={sideBarBookKey} />
+          </div>
+        ) : isNotesTabEmpty ? (
+          <div className='flex flex-grow items-center justify-center overflow-y-auto px-3'>
+            <EmptyState
+              Icon={RiQuillPenLine}
+              label={_('No Notes')}
+              hint={_('Capture an idea as you read')}
+            />
           </div>
         ) : (
           <div className='flex-grow overflow-y-auto px-3'>

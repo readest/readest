@@ -28,6 +28,10 @@ export interface DictionaryLookupContext {
    * the current app theme. Optional — defaults to light treatment.
    */
   isDarkMode?: boolean;
+  /** Theme background color (e.g. `#ffffff`). Forwarded into shadow-scoped CSS. */
+  bg?: string;
+  /** Theme foreground color (e.g. `#1a1a1a`). Forwarded into shadow-scoped CSS. */
+  fg?: string;
 }
 
 export type DictionaryLookupOutcome =
@@ -172,6 +176,17 @@ export interface DictionarySettings {
 export const BUILTIN_PROVIDER_IDS = {
   wiktionary: 'builtin:wiktionary',
   wikipedia: 'builtin:wikipedia',
+  /**
+   * "Sentinel" id for the OS-native dictionary (macOS Dictionary.app via the
+   * `dict://` URL scheme; iOS `UIReferenceLibraryViewController`; Android
+   * `ACTION_PROCESS_TEXT`). The provider has no `lookup`-time UI: when this
+   * is the only enabled provider, the annotator's "Dictionary" button skips
+   * the in-app popup entirely and hands the selection to the OS. The
+   * settings UI enforces single-select between this id and any other
+   * provider so the popup either always opens (no system) or never opens
+   * (system only).
+   */
+  systemDictionary: 'builtin:system',
 } as const;
 
 export type BuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[keyof typeof BUILTIN_PROVIDER_IDS];
@@ -186,6 +201,7 @@ export const BUILTIN_WEB_SEARCH_IDS = {
   google: 'web:builtin:google',
   urban: 'web:builtin:urban',
   merriamWebster: 'web:builtin:merriam-webster',
+  goodreads: 'web:builtin:goodreads',
 } as const;
 
 export type BuiltinWebSearchId =

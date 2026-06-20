@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns:l="http://www.w3.org/1999/xlink">
+<description>
+  <title-info>
+    <genre>sf_fantasy</genre>
+    <author>
+      <first-name>Jane</first-name>
+      <last-name>Doe</last-name>
+    </author>
+    <book-title>FB2 Metadata</book-title>
+    <annotation>
+      <p>A short annotation.</p>
+    </annotation>
+    <lang>en</lang>
+    <sequence name="Metadata Series" number="3"/>
+  </title-info>
+  <document-info>
+    <author>
+      <first-name/>
+      <last-name/>
+    </author>
+    <date value="2023-10-18">18 October 2023</date>
+    <id>43AC9A08-92D4-432C-B908-FCE4992205CC</id>
+    <version>1.0</version>
+  </document-info>
+</description>
+<body>
+  <title>
+   <p>FB2 Metadata</p>
+  </title>
+  <section>
+   <title>
+    <p>Chapter 1</p>
+   </title>
+   <p>Hello world.</p>
+  </section>
+</body>
+</FictionBook>

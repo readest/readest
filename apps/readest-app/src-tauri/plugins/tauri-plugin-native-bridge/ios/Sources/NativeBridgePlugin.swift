@@ -7,6 +7,7 @@ import StoreKit
 import SwiftRs
 import Tauri
 import UIKit
+import UniformTypeIdentifiers
 import WebKit
 import os
 
@@ -43,6 +44,8 @@ class SetSystemUIVisibilityRequestArgs: Decodable {
 class InterceptKeysRequestArgs: Decodable {
   let backKey: Bool?
   let volumeKeys: Bool?
+  let pageTurnerKeys: Bool?
+  let learnMode: Bool?
 }
 
 class LockScreenOrientationRequestArgs: Decodable {
@@ -188,6 +191,44 @@ class VolumeKeyHandler: NSObject {
       }
       self.previousVolume = currentVolume
       self.setSessionVolume(self.referenceVolume)
+    }
+  }
+}
+
+class MediaKeyHandler {
+  private weak var webView: WKWebView?
+  private var registered = false
+  private let commandCenter = MPRemoteCommandCenter.shared()
+
+  func start(webView: WKWebView) {
+    self.webView = webView
+    if registered { return }
+    registered = true
+    commandCenter.nextTrackCommand.isEnabled = true
+    commandCenter.previousTrackCommand.isEnabled = true
+    commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+      self?.forward("MediaNext")
+      return .success
+    }
+    commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+      self?.forward("MediaPrevious")
+      return .success
+    }
+    logger.log("MediaKeyHandler: started")
+  }
+
+  func stop() {
+    if !registered { return }
+    registered = false
+    commandCenter.nextTrackCommand.removeTarget(nil)
+    commandCenter.previousTrackCommand.removeTarget(nil)
+    logger.log("MediaKeyHandler: stopped")
+  }
+
+  private func forward(_ name: String) {
+    DispatchQueue.main.async { [weak self] in
+      self?.webView?.evaluateJavaScript(
+        "try { window.onNativeKeyDown('\(name)', 0); } catch (_) {}", completionHandler: nil)
     }
   }
 }
@@ -423,14 +464,35 @@ class NativeBridgePlugin: Plugin {
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
   private var webViewLifecycleManager: WebViewLifecycleManager?
+  private var traitChangeRegistered = false
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
     logger.log("NativeBridgePlugin loaded")
 
+    // Suppress the iOS system text-selection edit menu so it never
+    // covers Readest's annotation toolbar. See ContextMenuSuppressor.
+    ContextMenuSuppressor.installIfNeeded()
+
+    // Register a WKScriptMessageHandler so JS can signal when its
+    // share-extension hook has mounted. On `{type: 'ready'}` we run a
+    // sync immediately, which is the cold-start path (app launched
+    // because the Share Extension just woke it up, JS may not have been
+    // listening when the first `appDidBecomeActive` fired).
+    webview.configuration.userContentController.add(
+      ShareBridgeMessageHandler(owner: self), name: "readestShareBridge")
+
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
+
+    // The WKWebView never fires the `prefers-color-scheme` media query
+    // `change` event while the app stays foregrounded, so observe the
+    // native appearance and push changes to JS instead. Registration is
+    // deferred because the window scene may not be connected yet.
+    DispatchQueue.main.async { [weak self] in
+      self?.registerTraitChangeObserverIfNeeded()
+    }
 
     NotificationCenter.default.addObserver(
       self,
@@ -459,6 +521,13 @@ class NativeBridgePlugin: Plugin {
     } else {
       Logger.error("NativeBridgePlugin: Failed to get shared application")
     }
+
+    // Re-acquire security-scoped access for every external library
+    // folder the user registered in a previous session. Done here in
+    // `load` so the WebView can issue fs reads against those paths as
+    // soon as the JS layer comes up. See `FolderBookmarkStore`
+    // for the why and how.
+    FolderBookmarkStore.restoreAllPersisted()
   }
 
   @objc func appWillEnterForeground() {
@@ -469,6 +538,118 @@ class NativeBridgePlugin: Plugin {
   @objc func appDidBecomeActive() {
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
+    }
+    registerTraitChangeObserverIfNeeded()
+    // Fallback for iOS < 17 (no `registerForTraitChanges`): re-check the
+    // appearance whenever the app becomes active, e.g. after toggling
+    // dark mode from Control Center.
+    notifyColorSchemeChange()
+    syncShareExtensionState()
+  }
+
+  /// JS-initiated entry point. The share-extension JS hook calls
+  /// `window.webkit.messageHandlers.readestShareBridge.postMessage({type:'ready'})`
+  /// once mounted, which routes here so the cold-start drain happens
+  /// even when the JS hook wasn't listening at app launch.
+  @objc func syncShareExtensionStateFromJS() {
+    syncShareExtensionState()
+  }
+
+  /// Bridge between the Readest Share Extension (separate process) and
+  /// the host app's JS, via the App Group container at
+  /// `group.com.bilingify.readest`. Two directions on every activation:
+  ///
+  ///   1. Groups (host → extension). Read the current library group list
+  ///      from JS (`window.__readestGetGroups`) and persist it so the
+  ///      extension's picker shows up-to-date options next time the user
+  ///      shares. If the JS function isn't installed yet (cold start, hook
+  ///      hasn't mounted), no-op — the next activation will refresh.
+  ///
+  ///   2. Pending saves (extension → host). Drain any queued saves the
+  ///      extension wrote, hand them to JS
+  ///      (`window.__readestOnShareExtensionPending`), then clear the
+  ///      queue only if JS confirmed receipt. If JS isn't ready yet,
+  ///      leave the queue intact — the next activation (or the JS hook
+  ///      on its own mount) will pick them up.
+  private func syncShareExtensionState() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self, let webView = self.webView else { return }
+      // Pull groups + the user-locale "Default" label from JS → App Group.
+      webView.evaluateJavaScript(
+        "(window.__readestGetGroups && window.__readestGetGroups()) || null"
+      ) { result, _ in
+        guard let payload = result as? [String: Any] else { return }
+        if let array = payload["groups"] as? [[String: Any]] {
+          let groups: [AppGroupBridge.LibraryGroup] = array.compactMap { item in
+            guard let id = item["id"] as? String, let name = item["name"] as? String else {
+              return nil
+            }
+            return AppGroupBridge.LibraryGroup(id: id, name: name)
+          }
+          AppGroupBridge.writeGroups(groups)
+        }
+        if let defaultName = payload["defaultGroupName"] as? String, !defaultName.isEmpty {
+          AppGroupBridge.writeDefaultGroupName(defaultName)
+        }
+      }
+      // Push pending saves → JS, clear queue iff JS confirmed.
+      let saves = AppGroupBridge.readPendingSaves()
+      guard !saves.isEmpty else { return }
+      let payload: [[String: Any?]] = saves.map { save in
+        [
+          "url": save.url,
+          "groupId": save.groupId,
+          "groupName": save.groupName,
+          "addedAt": save.addedAt,
+        ]
+      }
+      guard let json = try? JSONSerialization.data(withJSONObject: payload, options: []),
+        let jsonString = String(data: json, encoding: .utf8)
+      else { return }
+      let script =
+        "(window.__readestOnShareExtensionPending && window.__readestOnShareExtensionPending(\(jsonString))) === true"
+      webView.evaluateJavaScript(script) { result, _ in
+        if let acknowledged = result as? Bool, acknowledged {
+          AppGroupBridge.clearPendingSaves()
+        }
+      }
+    }
+  }
+
+  // Resolves the foreground window scene. Its trait collection reflects
+  // the real system appearance and is unaffected by the per-window
+  // `overrideUserInterfaceStyle` that `set_system_ui_visibility` applies.
+  private func foregroundWindowScene() -> UIWindowScene? {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    return scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+  }
+
+  private func systemColorScheme() -> String {
+    let userInterfaceStyle =
+      foregroundWindowScene()?.traitCollection.userInterfaceStyle
+      ?? UITraitCollection.current.userInterfaceStyle
+    return (userInterfaceStyle == .dark) ? "dark" : "light"
+  }
+
+  private func registerTraitChangeObserverIfNeeded() {
+    guard !traitChangeRegistered, #available(iOS 17.0, *) else { return }
+    guard let windowScene = foregroundWindowScene() else { return }
+    traitChangeRegistered = true
+    MainActor.assumeIsolated {
+      windowScene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) {
+        [weak self] (_: UIWindowScene, _: UITraitCollection) in
+        self?.notifyColorSchemeChange()
+      }
+    }
+  }
+
+  private func notifyColorSchemeChange() {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self, let webView = self.webView else { return }
+      let colorScheme = self.systemColorScheme()
+      webView.evaluateJavaScript(
+        "try { window.onNativeColorSchemeChange && window.onNativeColorSchemeChange('\(colorScheme)'); } catch (_) {}",
+        completionHandler: nil)
     }
   }
 
@@ -503,6 +684,8 @@ class NativeBridgePlugin: Plugin {
   private struct AssociatedKeys {
     static var volumeKeyHandler = "volumeKeyHandler"
     static var interceptingVolumeKeys = "interceptingVolumeKeys"
+    static var mediaKeyHandler = "mediaKeyHandler"
+    static var mediaKeyState = "mediaKeyState"
   }
 
   private var volumeKeyHandler: VolumeKeyHandler? {
@@ -523,6 +706,44 @@ class NativeBridgePlugin: Plugin {
     set {
       objc_setAssociatedObject(
         self, &AssociatedKeys.interceptingVolumeKeys, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  private var mediaKeyHandler: MediaKeyHandler? {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.mediaKeyHandler) as? MediaKeyHandler
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.mediaKeyHandler, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  // Bit 0 = pageTurnerKeys interception, bit 1 = learn mode.
+  private var mediaKeyState: Int {
+    get {
+      return objc_getAssociatedObject(self, &AssociatedKeys.mediaKeyState) as? Int ?? 0
+    }
+    set {
+      objc_setAssociatedObject(
+        self, &AssociatedKeys.mediaKeyState, newValue, .OBJC_ASSOCIATION_RETAIN)
+    }
+  }
+
+  private func updateMediaKeyHandler() {
+    let shouldRun = mediaKeyState != 0
+    if shouldRun {
+      if mediaKeyHandler == nil {
+        mediaKeyHandler = MediaKeyHandler()
+      }
+      if let webView = self.webView {
+        mediaKeyHandler?.start(webView: webView)
+      } else {
+        logger.warning("Cannot start media key handler: webView is nil")
+      }
+    } else {
+      mediaKeyHandler?.stop()
+      mediaKeyHandler = nil
     }
   }
 
@@ -633,6 +854,19 @@ class NativeBridgePlugin: Plugin {
           }
         }
       }
+
+      if let pageTurnerKeys = args.pageTurnerKeys {
+        mediaKeyState = pageTurnerKeys ? (mediaKeyState | 1) : (mediaKeyState & ~1)
+      }
+      if let learnMode = args.learnMode {
+        mediaKeyState = learnMode ? (mediaKeyState | 2) : (mediaKeyState & ~2)
+      }
+      if args.pageTurnerKeys != nil || args.learnMode != nil {
+        DispatchQueue.main.async { [weak self] in
+          self?.updateMediaKeyHandler()
+        }
+      }
+
       invoke.resolve()
     } catch {
       invoke.reject(error.localizedDescription)
@@ -794,9 +1028,9 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc public func get_system_color_scheme(_ invoke: Invoke) {
-    let userInterfaceStyle = UITraitCollection.current.userInterfaceStyle
-    let colorScheme = (userInterfaceStyle == .dark) ? "dark" : "light"
-    invoke.resolve(["colorScheme": colorScheme])
+    DispatchQueue.main.async { [weak self] in
+      invoke.resolve(["colorScheme": self?.systemColorScheme() ?? "light"])
+    }
   }
 
   @objc public func get_screen_brightness(_ invoke: Invoke) {
@@ -999,15 +1233,437 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve(["available": false, "error": "OSStatus \(status)"])
     }
   }
+
+  @objc public func show_lookup_popover(_ invoke: Invoke) {
+    // Bridge for the system-dictionary "Look Up" surface on iOS.
+    // We use `UIReferenceLibraryViewController`, which is the same
+    // view UIKit presents for the Look Up callout in editable text
+    // views. Two notes:
+    //
+    //   * The controller refuses to render and `dictionaryHasDefinitionForTerm`
+    //     returns false for empty strings, so guard for that explicitly
+    //     to keep the rejection path consistent with the Rust models.
+    //   * Presentation must happen on the main thread, against a
+    //     view controller that's actually in the active window
+    //     hierarchy. We reach the foreground scene (matching how
+    //     other commands here pick a `keyWindow`) and walk down to
+    //     the topmost presented controller so the lookup view sits
+    //     above any modal sheet (settings, notebook, etc.) the user
+    //     might have open when they tap "dictionary".
+    guard let args = try? invoke.parseArgs(ShowLookupPopoverArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    let trimmed = args.word.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      return invoke.reject("empty word")
+    }
+
+    DispatchQueue.main.async {
+      let windows = UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap { $0.windows }
+      let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
+      guard let rootVC = keyWindow?.rootViewController else {
+        invoke.reject("no root view controller")
+        return
+      }
+      // Drill past any modally-presented stack so the dictionary
+      // view appears on top of (not behind) settings dialogs etc.
+      var presenter: UIViewController = rootVC
+      while let next = presenter.presentedViewController {
+        presenter = next
+      }
+
+      // `UIReferenceLibraryViewController` itself doesn't expose
+      // dictionary availability, but the static
+      // `dictionaryHasDefinitionForTerm:` does. We don't surface
+      // "no definition" as an error — Apple's view shows its own
+      // "No definition found" / download UI in that case, which is
+      // the expected UX. Logging it is enough for diagnostics.
+      let hasDefinition = UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: trimmed)
+      if !hasDefinition {
+        logger.log("[show_lookup_popover] no built-in dictionary entry for '\(trimmed, privacy: .private)'")
+      }
+
+      let dictVC = UIReferenceLibraryViewController(term: trimmed)
+      // Constrain the lookup to the lower half of the screen so the
+      // book content the user just selected from stays visible above
+      // it — the full-screen default feels heavyweight for a quick
+      // dictionary glance. On iOS 15+ we use a half-detent sheet
+      // presentation: medium height by default, but the user can
+      // drag-to-expand to full if they want more room. iPad keeps
+      // the form sheet (a native floating panel) since half-screen
+      // sheets look out of place on tablet-class screens.
+      if UIDevice.current.userInterfaceIdiom == .pad {
+        dictVC.modalPresentationStyle = .formSheet
+      } else if #available(iOS 15.0, *) {
+        dictVC.modalPresentationStyle = .pageSheet
+        if let sheet = dictVC.sheetPresentationController {
+          sheet.detents = [.medium(), .large()]
+          // Default to medium (lower half). The system handles drag
+          // to expand to large; we don't need to track changes.
+          sheet.selectedDetentIdentifier = .medium
+          // Keep the grabber visible so users discover they can
+          // expand or drag down to dismiss.
+          sheet.prefersGrabberVisible = true
+          // Round only the top corners (the standard iOS sheet look).
+          sheet.preferredCornerRadius = 16
+        }
+      } else {
+        // iOS 14 and earlier — sheets/detents API doesn't exist; fall
+        // back to a centered form sheet so it at least doesn't take
+        // the full screen.
+        dictVC.modalPresentationStyle = .formSheet
+      }
+      presenter.present(dictVC, animated: true) {
+        invoke.resolve(["success": true])
+      }
+    }
+  }
+
+  /// Open a hidden-but-visible WKWebView at `url`, capture
+  /// `document.documentElement.outerHTML` after the page settles, and
+  /// resolve with `{ html }`. Implements the mobile half of the
+  /// `clip_url` command — see `clip_url.rs` for the desktop half and
+  /// `ClipUrlController.swift` for the actual lifecycle.
+  @objc public func clip_url(_ invoke: Invoke) {
+    let args: ClipUrlArgs
+    do {
+      args = try invoke.parseArgs(ClipUrlArgs.self)
+    } catch {
+      invoke.reject(error.localizedDescription)
+      return
+    }
+    DispatchQueue.main.async {
+      // Find the topmost view controller to present from. The Tauri
+      // root WKWebView lives in the app's key window — present over
+      // whatever's currently on top of it (e.g., the library page,
+      // a settings sheet) so the user keeps their place after the
+      // controller dismisses.
+      guard let presenter = topmostViewController() else {
+        invoke.reject("Could not find a view controller to present from")
+        return
+      }
+
+      let controller = ClipUrlController(args: args) { result in
+        switch result {
+        case .success(let html):
+          invoke.resolve(["html": html])
+        case .failure(let err):
+          invoke.reject(err.message)
+        }
+      }
+      presenter.present(controller, animated: true)
+    }
+  }
+
+  /// Hold a strong reference to the active folder picker delegate so
+  /// it survives until the user dismisses the picker. `present`
+  /// only retains the controller; the delegate is `weak` from
+  /// `UIDocumentPickerViewController`'s side, so without our retain
+  /// it would deallocate immediately and the callbacks would never
+  /// fire.
+  private var folderPickerDelegate: FolderPickerDelegate?
+
+  /// Bridge for the native-bridge `select_directory` command on iOS.
+  /// Mirrors the Android implementation (ACTION_OPEN_DOCUMENT_TREE)
+  /// but uses `UIDocumentPickerViewController(forOpeningContentTypes:
+  /// [.folder])` — the same picker the system uses for "Files" → choose
+  /// folder. Users can navigate into On My iPhone / iCloud Drive /
+  /// any third-party file provider and pick a directory there.
+  ///
+  /// Caveats around iOS sandbox model (callers should be aware):
+  ///   * Resolving the returned path on a SUBSEQUENT app launch
+  ///     requires a security-scoped bookmark — for now we hold the
+  ///     security-scoped resource open for the lifetime of the app
+  ///     process so the current session works. v2 should persist a
+  ///     bookmark and resolve it on launch; until then a relaunch
+  ///     after picking a non-Documents folder may need the user to
+  ///     re-pick.
+  ///   * The returned `path` is `url.path` — a normal POSIX path.
+  ///     Combined with the resource being open, plain Foundation /
+  ///     stdlib fs reads work against it.
+  @objc public func select_directory(_ invoke: Invoke) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else {
+        invoke.reject("plugin deallocated")
+        return
+      }
+      guard let presenter = topmostViewController() else {
+        invoke.reject("Could not find a view controller to present from")
+        return
+      }
+
+      // `forOpeningContentTypes: [.folder]` tells the picker to surface
+      // folders as the selectable entries (you can't pick individual
+      // files in this mode). `asCopy: false` keeps it a reference into
+      // the original location instead of copying into our sandbox.
+      let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
+      picker.allowsMultipleSelection = false
+
+      let delegate = FolderPickerDelegate(invoke: invoke) { [weak self] in
+        // Drop our strong reference once the picker resolves so the
+        // delegate (and thus the closure capture chain) can deallocate.
+        // The security-scoped URL resource stays open via
+        // `FolderBookmarkStore.persist`, which retains the URL
+        // for the rest of the process and writes a bookmark to
+        // UserDefaults so the next launch can re-acquire access
+        // without prompting the user again.
+        self?.folderPickerDelegate = nil
+      }
+      self.folderPickerDelegate = delegate
+      picker.delegate = delegate
+
+      presenter.present(picker, animated: true)
+    }
+  }
+}
+
+/// Persistent store for security-scoped folder bookmarks.
+///
+/// `UIDocumentPickerViewController(forOpeningContentTypes: [.folder])`
+/// hands us a security-scoped URL whose access right is granted only to
+/// the running process. To read the same folder on the *next* launch
+/// (without making the user re-pick it every time) we have to:
+///
+///   1. Right after the pick, call `URL.bookmarkData(.withSecurityScope)`
+///      and stash the bytes in `UserDefaults` keyed by the POSIX path.
+///   2. On every app launch, walk every persisted bookmark, resolve it
+///      back into a URL, and call `startAccessingSecurityScopedResource()`.
+///      Hold the URL alive for the entire process so subsequent
+///      Foundation / POSIX reads against `url.path` succeed.
+///
+/// The TS-visible `path` is unchanged across launches, so the rest of
+/// the app doesn't need to know about bookmarks — they're an iOS
+/// sandbox plumbing detail that lives entirely on the Swift side.
+///
+/// `isStale` recovery: when the source moves (user renamed, system
+/// migrated) `URL(resolvingBookmarkData:..., bookmarkDataIsStale:)`
+/// sets `isStale=true` and the new URL still works. We re-encode and
+/// rewrite. If the bookmark can't be resolved at all (file deleted,
+/// provider gone), we drop the entry — the user will need to re-pick.
+enum FolderBookmarkStore {
+  /// UserDefaults key prefix; the actual key is "<prefix><path>".
+  /// Using the path verbatim keeps debugging straightforward (you can
+  /// see the registered folders in `defaults read`), and UserDefaults
+  /// keys can contain any valid string.
+  private static let keyPrefix = "readest.folderBookmark."
+
+  /// Every URL we've successfully `startAccessingSecurityScopedResource`-ed
+  /// during this process, indexed by the POSIX path the JS layer uses.
+  /// Held forever (until process exit) — calling `stop` would kill any
+  /// subsequent fs read against the path.
+  private static var liveAccess: [String: URL] = [:]
+
+  /// Persist a bookmark for `url` so it can be resolved on next launch,
+  /// and pre-warm `liveAccess` for the current session.
+  static func persist(url: URL) {
+    let path = url.path
+    do {
+      let data = try url.bookmarkData(
+        options: .minimalBookmark,
+        includingResourceValuesForKeys: nil,
+        relativeTo: nil)
+      UserDefaults.standard.set(data, forKey: keyPrefix + path)
+      liveAccess[path] = url
+      logger.log(
+        "FolderBookmarkStore: persisted bookmark for \(path, privacy: .public)")
+    } catch {
+      Logger.error(
+        "FolderBookmarkStore: failed to encode bookmark for \(path): \(error)")
+    }
+  }
+
+  /// Resolve every stored bookmark and start accessing its security-
+  /// scoped resource. Called once from `NativeBridgePlugin.load(webview:)`
+  /// so all previously-registered folders are reachable before
+  /// the WebView begins issuing fs reads.
+  static func restoreAllPersisted() {
+    let defaults = UserDefaults.standard
+    let allKeys = defaults.dictionaryRepresentation().keys.filter {
+      $0.hasPrefix(keyPrefix)
+    }
+    var restored = 0
+    var dropped = 0
+    for key in allKeys {
+      guard let data = defaults.data(forKey: key) else { continue }
+      let storedPath = String(key.dropFirst(keyPrefix.count))
+      var isStale = false
+      do {
+        let url = try URL(
+          resolvingBookmarkData: data,
+          options: [],
+          relativeTo: nil,
+          bookmarkDataIsStale: &isStale)
+        let started = url.startAccessingSecurityScopedResource()
+        if started {
+          liveAccess[url.path] = url
+          restored += 1
+        } else {
+          // The OS denied access (e.g. file provider revoked). Don't
+          // delete the entry — the user may reauthorize the provider
+          // in Settings; we'll pick it up on the next launch.
+          Logger.error(
+            "FolderBookmarkStore: startAccessing denied for \(storedPath)")
+        }
+        if isStale {
+          // Re-encode against the resolved URL so the next launch
+          // doesn't have to walk the stale path again.
+          if let fresh = try? url.bookmarkData(
+            options: .minimalBookmark,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil)
+          {
+            defaults.set(fresh, forKey: key)
+          }
+        }
+      } catch {
+        // Bookmark is unrecoverable — folder gone, provider uninstalled,
+        // disk reformatted. Drop it from UserDefaults so the next launch
+        // doesn't re-attempt it.
+        defaults.removeObject(forKey: key)
+        dropped += 1
+        Logger.error(
+          "FolderBookmarkStore: dropped unresolvable bookmark for \(storedPath): \(error)")
+      }
+    }
+    logger.log(
+      "FolderBookmarkStore: restored \(restored, privacy: .public) folder(s), dropped \(dropped, privacy: .public)"
+    )
+  }
+
+  /// Stop accessing and forget the bookmark for `path`. Used when the
+  /// JS layer removes a folder from `settings.externalLibraryFolders`.
+  /// Currently unused — the v1 UI doesn't expose folder removal — but
+  /// kept here so the cleanup contract is obvious from one place.
+  static func forget(path: String) {
+    if let url = liveAccess.removeValue(forKey: path) {
+      url.stopAccessingSecurityScopedResource()
+    }
+    UserDefaults.standard.removeObject(forKey: keyPrefix + path)
+  }
+}
+
+/// Delegate for `select_directory`'s `UIDocumentPickerViewController`.
+/// We split this out into a dedicated class (rather than making
+/// `NativeBridgePlugin` itself the delegate) so multiple concurrent
+/// picker invocations would each hold their own state — currently we
+/// only allow one at a time, but the wiring is cleaner this way and
+/// `Invoke` is easier to capture by reference.
+///
+/// Lifecycle:
+///   1. Plugin retains us strongly via `folderPickerDelegate`.
+///   2. UIKit holds us as the picker's `delegate` (weak).
+///   3. When the user picks or cancels, we call back into `invoke`
+///      and then run `onComplete`, which clears the plugin's strong
+///      reference. We deallocate at that point.
+///   4. The chosen URL retains its security-scoped access for the
+///      remainder of the process via `FolderBookmarkStore`,
+///      and is also persisted to UserDefaults so the next launch can
+///      re-acquire access without prompting the user again.
+private final class FolderPickerDelegate: NSObject, UIDocumentPickerDelegate {
+  private let invoke: Invoke
+  private let onComplete: () -> Void
+
+  init(invoke: Invoke, onComplete: @escaping () -> Void) {
+    self.invoke = invoke
+    self.onComplete = onComplete
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    defer { onComplete() }
+    guard let url = urls.first else {
+      invoke.resolve(["cancelled": true])
+      return
+    }
+
+    // `startAccessingSecurityScopedResource` is required for any URL
+    // returned by the picker that lives outside our sandbox (which is
+    // the only interesting case — anything inside our sandbox we
+    // already have access to without it). Returns false when no scope
+    // is needed or the request was denied; in either case we still
+    // try to use the URL because (a) sandbox-internal paths work
+    // either way, (b) for denied requests `path` access will surface
+    // a normal "permission denied" later, which is a clearer error
+    // than failing here pre-emptively.
+    let started = url.startAccessingSecurityScopedResource()
+    if started {
+      // Persist a security-scoped bookmark so the same path is
+      // reachable on the next launch, without forcing the user to
+      // re-pick it. The store also retains the URL so the resource
+      // stays accessible for the remainder of this process.
+      FolderBookmarkStore.persist(url: url)
+    }
+
+    let result: [String: Any] = [
+      "cancelled": false,
+      "uri": url.absoluteString,
+      "path": url.path,
+    ]
+    invoke.resolve(result)
+  }
+
+  func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+    defer { onComplete() }
+    invoke.resolve(["cancelled": true])
+  }
+}
+
+/// Find the visible top-of-stack `UIViewController` so the clip flow
+/// can present over whatever the user is looking at. Walks
+/// presentedViewController chains and unwraps standard container
+/// types (UINavigationController, UITabBarController).
+private func topmostViewController() -> UIViewController? {
+  let scene =
+    UIApplication.shared.connectedScenes
+    .compactMap { $0 as? UIWindowScene }
+    .first { $0.activationState == .foregroundActive }
+    ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+  let window = scene?.windows.first(where: \.isKeyWindow) ?? scene?.windows.first
+  var top = window?.rootViewController
+  while let presented = top?.presentedViewController {
+    top = presented
+  }
+  if let nav = top as? UINavigationController { top = nav.visibleViewController ?? nav }
+  if let tab = top as? UITabBarController { top = tab.selectedViewController ?? tab }
+  return top
 }
 
 class SyncPassphraseSetArgs: Decodable {
   let passphrase: String
 }
 
+class ShowLookupPopoverArgs: Decodable {
+  let word: String
+}
+
 @_cdecl("init_plugin_native_bridge")
 func initPlugin() -> Plugin {
   return NativeBridgePlugin()
+}
+
+/// JS → Swift bridge for the share-extension state. Lives in its own
+/// class because WKScriptMessageHandler conformance on NativeBridgePlugin
+/// would require routing every message type through the plugin's
+/// existing @objc method surface, which is noisier than a dedicated
+/// handler. We weakly retain the plugin so the WKWebView's
+/// WKUserContentController holding the handler doesn't extend the
+/// plugin's lifetime.
+private final class ShareBridgeMessageHandler: NSObject, WKScriptMessageHandler {
+  private weak var owner: NativeBridgePlugin?
+  init(owner: NativeBridgePlugin) { self.owner = owner }
+  func userContentController(
+    _ userContentController: WKUserContentController,
+    didReceive message: WKScriptMessage
+  ) {
+    guard message.name == "readestShareBridge" else { return }
+    guard let body = message.body as? [String: Any], let type = body["type"] as? String else {
+      return
+    }
+    if type == "ready" {
+      owner?.syncShareExtensionStateFromJS()
+    }
+  }
 }
 
 @available(iOS 13.0, *)

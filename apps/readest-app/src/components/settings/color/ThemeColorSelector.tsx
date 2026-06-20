@@ -5,6 +5,7 @@ import { PiPlus } from 'react-icons/pi';
 import { Theme } from '@/styles/themes';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { SectionTitle } from '../primitives';
 
 interface ThemeColorSelectorProps {
   themes: Theme[];
@@ -29,7 +30,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
 
   return (
     <div>
-      <h2 className='mb-2 font-medium'>{_('Theme Color')}</h2>
+      <SectionTitle className='mb-2'>{_('Theme Color')}</SectionTitle>
       <div className='grid grid-cols-3 gap-4'>
         {themes.map(({ name, label, colors, isCustomizale }) => (
           <button
@@ -42,8 +43,13 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
               }
               e.stopPropagation();
             }}
-            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg px-2 py-4 shadow-md ${
-              themeColor === name ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
+            // Selected card gets a 2px border in the card's OWN text color
+            // (`border-current`) — guaranteed contrast against the theme's
+            // background, light or dark. The transparent border on inactive
+            // cards reserves the same 2px so selecting/deselecting doesn't
+            // shift the grid.
+            className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 px-2 py-4 shadow-md ${
+              themeColor === name ? 'border-current' : 'border-transparent'
             }`}
             style={{
               backgroundColor: isDarkMode ? colors.dark['base-100'] : colors.light['base-100'],

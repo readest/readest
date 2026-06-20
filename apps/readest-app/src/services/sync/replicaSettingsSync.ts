@@ -38,6 +38,7 @@ import {
 } from '@/services/sync/adapters/settings';
 import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
@@ -205,11 +206,20 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
   const encryptedChanged: Array<{ path: string; value: unknown; hash: string }> = [];
   let hasNewEncryptedContent = false;
 
+  // Credentials meta-toggle (default OFF). When the user hasn't opted
+  // in, every ENCRYPTED_PATH is short-circuited here so the diff loop
+  // never produces an entry for it, the proactive passphrase gate is
+  // never triggered, and stored encrypted-hashes stay untouched. The
+  // belt-and-braces filter in `publishReplicaUpsert` would still drop
+  // the field at the wire, but doing it here also avoids the prompt.
+  const credentialsSync = isCredentialsSyncEnabled();
+
   for (const path of SETTINGS_WHITELIST) {
     const current = readPath(settings, path);
     if (current === undefined) continue;
 
     if (ENCRYPTED_PATHS.has(path)) {
+      if (!credentialsSync) continue;
       // Skip empty / cleared credentials entirely — there's nothing
       // useful to encrypt and pushing a plaintext "" would make the
       // server-side schema mix cipher envelopes with bare empty

@@ -1,11 +1,21 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 
-import { StaticListRow } from '@/app/reader/components/sidebar/TOCItem';
+import {
+  StaticListRow,
+  CurrentPositionRow,
+  buildTOCDisplayItems,
+  isCurrentPositionItem,
+  type FlatTOCItem,
+} from '@/app/reader/components/sidebar/TOCItem';
 import { TOCItem } from '@/libs/document';
 
 vi.mock('@/utils/misc', () => ({
   getContentMd5: (s: string) => s,
+}));
+
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (key: string) => key,
 }));
 
 const makeLeafItem = (overrides?: Partial<TOCItem>): TOCItem => ({
@@ -143,6 +153,108 @@ describe('aria-current on active treeitem', () => {
     );
     const treeitem = screen.getByRole('treeitem');
     expect(treeitem.getAttribute('tabindex')).toBe('0');
+  });
+});
+
+describe('CurrentPositionRow', () => {
+  it('renders the "Current position" label and the current page number', () => {
+    render(
+      <div role='tree'>
+        <CurrentPositionRow depth={1} page={42} />
+      </div>,
+    );
+    expect(screen.getByText('Current position')).toBeTruthy();
+    expect(screen.getByText('42')).toBeTruthy();
+  });
+
+  it('renders an open-book icon', () => {
+    const { container } = render(<CurrentPositionRow depth={0} page={1} />);
+    expect(container.querySelector('svg')).toBeTruthy();
+  });
+
+  it('indents according to depth (matching a child of the active item)', () => {
+    const { container } = render(<CurrentPositionRow depth={2} page={1} />);
+    const row = container.querySelector('[role="treeitem"]') as HTMLElement;
+    expect(row.style.paddingInlineStart).toBe(`${2 * 12 + 8}px`);
+  });
+
+  it('exposes the page number in its aria-label', () => {
+    render(<CurrentPositionRow depth={0} page={7} />);
+    const row = screen.getByRole('treeitem');
+    expect(row.getAttribute('aria-label')).toContain('Current position');
+    expect(row.getAttribute('aria-label')).toContain('7');
+  });
+
+  it('calls onClick when clicked', () => {
+    const onClick = vi.fn();
+    render(<CurrentPositionRow depth={0} page={5} onClick={onClick} />);
+    fireEvent.click(screen.getByRole('treeitem'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onClick when Enter is pressed', () => {
+    const onClick = vi.fn();
+    render(<CurrentPositionRow depth={0} page={5} onClick={onClick} />);
+    fireEvent.keyDown(screen.getByRole('treeitem'), { key: 'Enter' });
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('is focusable (tabIndex=0) when an onClick is provided', () => {
+    render(<CurrentPositionRow depth={0} page={5} onClick={vi.fn()} />);
+    expect(screen.getByRole('treeitem').getAttribute('tabindex')).toBe('0');
+  });
+});
+
+describe('buildTOCDisplayItems', () => {
+  const makeFlat = (count: number, depth = 0): FlatTOCItem[] =>
+    Array.from({ length: count }, (_, i) => ({
+      item: { id: i + 1, label: `Chapter ${i}`, href: `ch${i}.html`, index: i },
+      depth,
+      index: i,
+    }));
+
+  it('inserts a current-position row right after the active item', () => {
+    const flat = makeFlat(4);
+    const result = buildTOCDisplayItems(flat, 'ch1.html', 10);
+    expect(result).toHaveLength(5);
+    const inserted = result[2]!;
+    expect(isCurrentPositionItem(inserted)).toBe(true);
+    if (isCurrentPositionItem(inserted)) expect(inserted.page).toBe(10);
+  });
+
+  it('indents the current-position row one level deeper than the active item', () => {
+    const flat = makeFlat(3, 1);
+    const result = buildTOCDisplayItems(flat, 'ch0.html', 5);
+    const inserted = result[1]!;
+    expect(isCurrentPositionItem(inserted)).toBe(true);
+    if (isCurrentPositionItem(inserted)) expect(inserted.depth).toBe(2);
+  });
+
+  it('keeps the active item index unchanged so auto-scroll still targets it', () => {
+    const flat = makeFlat(4);
+    const result = buildTOCDisplayItems(flat, 'ch2.html', 9);
+    const activeIdx = result.findIndex(
+      (r) => !isCurrentPositionItem(r) && r.item.href === 'ch2.html',
+    );
+    expect(activeIdx).toBe(2);
+    expect(isCurrentPositionItem(result[3]!)).toBe(true);
+  });
+
+  it('returns the original list when no item matches the active href', () => {
+    const flat = makeFlat(3);
+    const result = buildTOCDisplayItems(flat, 'missing.html', 5);
+    expect(result).toBe(flat);
+  });
+
+  it('returns the original list when the current page is unknown', () => {
+    const flat = makeFlat(3);
+    expect(buildTOCDisplayItems(flat, 'ch1.html', null)).toBe(flat);
+    expect(buildTOCDisplayItems(flat, 'ch1.html', undefined)).toBe(flat);
+  });
+
+  it('returns the original list when there is no active href', () => {
+    const flat = makeFlat(3);
+    expect(buildTOCDisplayItems(flat, null, 5)).toBe(flat);
   });
 });
 

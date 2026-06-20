@@ -1,4 +1,18 @@
-import { BookConfig, BookSearchConfig, ViewSettings } from '@/types/book';
+import {
+  BOOK_CONFIG_SCHEMA_VERSION,
+  BookConfig,
+  BookSearchConfig,
+  ViewSettings,
+} from '@/types/book';
+import { unifyAnnotations } from '@/utils/booknoteMigration';
+
+export const stampBookConfigSchema = <T extends Partial<BookConfig>>(config: T): T => {
+  return { ...config, schemaVersion: BOOK_CONFIG_SCHEMA_VERSION };
+};
+
+export const serializeRawConfig = (config: Partial<BookConfig>): string => {
+  return JSON.stringify(stampBookConfigSchema(config));
+};
 
 export const serializeConfig = (
   config: BookConfig,
@@ -6,8 +20,19 @@ export const serializeConfig = (
   defaultSearchConfig: BookSearchConfig,
 ): string => {
   config = JSON.parse(JSON.stringify(config));
-  const viewSettings = config.viewSettings as Partial<ViewSettings>;
-  const searchConfig = config.searchConfig as Partial<BookSearchConfig>;
+  // Tolerate configs that arrive without these fields. Two real-world
+  // call sites can produce that shape:
+  //   1. A freshly-initialised config (`INIT_BOOK_CONFIG`) that has
+  //      never been touched by the reader yet.
+  //   2. The WebDAV sync download path, which merges `{ updatedAt: 0,
+  //      booknotes: [] }` with a remote `compressConfig` payload — the
+  //      latter omits viewSettings/searchConfig entirely when they
+  //      match global defaults.
+  // Treating null/undefined as `{}` is semantically identical to "no
+  // overrides vs global", so the reduce below correctly emits an empty
+  // object that downstream `deserializeConfig` re-hydrates from globals.
+  const viewSettings = (config.viewSettings ?? {}) as Partial<ViewSettings>;
+  const searchConfig = (config.searchConfig ?? {}) as Partial<BookSearchConfig>;
   config.viewSettings = Object.entries(viewSettings).reduce(
     (acc: Partial<Record<keyof ViewSettings, unknown>>, [key, value]) => {
       if (globalViewSettings[key as keyof ViewSettings] !== value) {
@@ -26,6 +51,7 @@ export const serializeConfig = (
     },
     {} as Partial<BookSearchConfig>,
   ) as Partial<BookSearchConfig>;
+  config.schemaVersion = BOOK_CONFIG_SCHEMA_VERSION;
 
   return JSON.stringify(config);
 };
@@ -39,6 +65,12 @@ export const deserializeConfig = (
   const { viewSettings, searchConfig } = config;
   config.viewSettings = { ...globalViewSettings, ...viewSettings };
   config.searchConfig = { ...defaultSearchConfig, ...searchConfig };
+  // v1 -> v2: collapse split highlight+note records into one unified record so a
+  // note renders with its highlight and round-trips cleanly to KOReader.
+  if ((config.schemaVersion ?? 0) < 2 && config.booknotes?.length) {
+    config.booknotes = unifyAnnotations(config.booknotes);
+  }
+  config.schemaVersion ??= BOOK_CONFIG_SCHEMA_VERSION;
   config.updatedAt ??= Date.now();
   return config;
 };

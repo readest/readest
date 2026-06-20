@@ -190,12 +190,15 @@
         }
       ]
     },
+    "biometric:default",
     "haptics:allow-vibrate",
     "haptics:allow-impact-feedback",
     "haptics:allow-notification-feedback",
     "haptics:allow-selection-feedback",
     "deep-link:default",
     "sharekit:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text",
     "device-info:default",
     "turso:default",
     "native-tts:default",

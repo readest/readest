@@ -6,9 +6,39 @@ import type { Rect, Position } from '@/utils/sel';
 // constrainPointWithinRect is also non-exported but exercised through getPosition.
 
 // For getPopupPosition we can test directly.
-import { getPopupPosition } from '@/utils/sel';
+import { getPopupPosition, isPointInRect } from '@/utils/sel';
 
 describe('sel utilities', () => {
+  describe('isPointInRect', () => {
+    const rect: Rect = { left: 100, top: 50, right: 300, bottom: 200 };
+
+    it('returns true for a point strictly inside the rect', () => {
+      expect(isPointInRect({ x: 200, y: 100 }, rect)).toBe(true);
+    });
+
+    it('treats edges as outside with the default 1px padding', () => {
+      expect(isPointInRect({ x: 100, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 300, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 50 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 200 }, rect)).toBe(false);
+    });
+
+    it('returns true on edges when padding is 0', () => {
+      expect(isPointInRect({ x: 100, y: 50 }, rect, 0)).toBe(true);
+      expect(isPointInRect({ x: 300, y: 200 }, rect, 0)).toBe(true);
+    });
+
+    it('returns false when x is outside', () => {
+      expect(isPointInRect({ x: 99, y: 100 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 301, y: 100 }, rect)).toBe(false);
+    });
+
+    it('returns false when y is outside', () => {
+      expect(isPointInRect({ x: 200, y: 49 }, rect)).toBe(false);
+      expect(isPointInRect({ x: 200, y: 201 }, rect)).toBe(false);
+    });
+  });
+
   describe('getPopupPosition', () => {
     const boundingRect: Rect = { top: 0, right: 800, bottom: 600, left: 0 };
 
@@ -205,6 +235,27 @@ describe('sel utilities', () => {
       const result = getPosition(mockTextSelection, rect, 10);
       expect(result.point).toBeDefined();
       expect(result.dir).toBeDefined();
+    });
+
+    it('anchors to the on-screen end when the selection start is off-screen (cross-page)', async () => {
+      const { getPosition } = await import('@/utils/sel');
+      // A selection that spans a page boundary: its first line is on the
+      // previous page (off-screen, negative x); its last line is on the current
+      // page (visible). The popup must anchor to the visible (last) end.
+      const mockRange = {
+        getClientRects: () =>
+          [
+            { top: 400, right: -100, bottom: 420, left: -300 }, // previous page (off-screen)
+            { top: 200, right: 300, bottom: 220, left: 100 }, // current page (visible)
+          ] as unknown as DOMRectList,
+        commonAncestorContainer: document.createElement('div'),
+      } as unknown as Range;
+
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+      const result = getPosition(mockRange, rect, 10);
+      // 'down' = anchored below the visible last line, not the off-screen start.
+      expect(result.dir).toBe('down');
+      expect(result.point.x).toBeGreaterThan(0);
     });
   });
 

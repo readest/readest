@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { getUserLocale } from '@/utils/misc';
+import { isSameLang } from '@/utils/lang';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
@@ -250,9 +251,10 @@ export class NativeTTSClient implements TTSClient {
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
     const voices = await this.getAllVoices();
-    const filteredVoices = voices.filter(
-      (v) => v.lang.startsWith(locale) || (lang === 'en' && ['en-US', 'en-GB'].includes(v.lang)),
-    );
+    // Match by primary language so the voice set stays the same across a book
+    // whose sections mix region variants (e.g. en-US front matter and en-GB
+    // body text); the requested locale's voices sort first. See #4033.
+    const filteredVoices = voices.filter((v) => isSameLang(v.lang, lang));
     const voiceGroups = new Map<string, TTSVoice[]>();
     filteredVoices.forEach((voice) => {
       const { name, lang } = voice;
@@ -279,7 +281,7 @@ export class NativeTTSClient implements TTSClient {
           ({
             id: groupId,
             name: TTSEngines[groupId] || groupId,
-            voices: voices.sort(TTSUtils.sortVoicesFunc),
+            voices: voices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
             disabled: !this.initialized || voices.length === 0,
           }) as TTSVoicesGroup,
       )
@@ -292,6 +294,10 @@ export class NativeTTSClient implements TTSClient {
 
   setPrimaryLang(lang: string) {
     this.#primaryLang = lang;
+  }
+
+  supportsWordBoundaries(): boolean {
+    return false;
   }
 
   getGranularities(): TTSGranularity[] {

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { VscLibrary } from 'react-icons/vsc';
+import { MdOutlineMenu } from 'react-icons/md';
 
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -58,7 +58,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { isTrafficLightVisible } = useTrafficLight();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
   const { bookKeys, hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
@@ -75,9 +76,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
   const [headerWidth, setHeaderWidth] = useState(0);
   const view = getView(bookKey);
-  const iconSize16 = useResponsiveSize(16);
   const iconSize18 = useResponsiveSize(18);
-  const headerRef = useRef<HTMLDivElement>(null);
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
@@ -108,7 +107,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     if (!appService?.hasTrafficLight) return;
 
     if (hoveredBookKey === bookKey && isTopLeft) {
-      setTrafficLightVisibility(true, { x: 10, y: 20 });
+      setTrafficLightVisibility(true);
     } else if (!hoveredBookKey) {
       setTimeout(() => {
         if (!getIsSideBarVisible()) {
@@ -240,7 +239,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               toggleButton={
                 annotationQuickAction === 'highlight' || annotationQuickAction === null ? (
                   <HighlighterIcon
-                    size={iconSize16}
+                    size={iconSize18}
                     tipColor={annotationQuickAction === null ? '#8F8F8F' : highlightHexColor}
                     tipStyle={{
                       opacity: annotationQuickAction === null ? 0.5 : 0.8,
@@ -248,7 +247,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                     }}
                   />
                 ) : (
-                  <AnnotationToolQuickActionIcon size={iconSize16} />
+                  <AnnotationToolQuickActionIcon size={iconSize18} />
                 )
               }
               onToggle={handleToggleDropdown}
@@ -286,9 +285,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
             label={_('View Options')}
+            containerClassName='h-8'
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
-            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
-            toggleButton={<PiDotsThreeVerticalBold size={iconSize16} />}
+            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 mt-0'
+            toggleButton={<MdOutlineMenu />}
             onToggle={handleToggleDropdown}
           >
             <ViewMenu

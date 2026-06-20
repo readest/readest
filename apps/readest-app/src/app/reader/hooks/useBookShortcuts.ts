@@ -11,10 +11,11 @@ import { eventDispatcher } from '@/utils/event';
 import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
+import { getScrollGapAttr } from '@/utils/webtoon';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
-import { getReadingRulerMoveDirection } from '../utils/readingRuler';
+import { getReadingRulerMoveDirection, isReadingRulerMoveKey } from '../utils/readingRuler';
 
 interface UseBookShortcutsProps {
   sideBarBookKey: string | null;
@@ -40,6 +41,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
     const viewSettings = getViewSettings(sideBarBookKey);
     if (!viewSettings?.readingRulerEnabled) return false;
+    // In vertical layout, only Up/Down move the ruler; Left/Right turn pages.
+    if (!isReadingRulerMoveKey(side, !!viewSettings.vertical)) return false;
 
     return eventDispatcher.dispatchSync('reading-ruler-move', {
       bookKey: sideBarBookKey,
@@ -51,6 +54,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const viewSettings = getViewSettings(sideBarBookKey ?? '');
     if (viewSettings && sideBarBookKey) {
       viewSettings.scrolled = !viewSettings.scrolled;
+      // Webtoon Mode requires scrolled flow; leaving scrolled exits Webtoon Mode
+      // and restores the default page gap (mirror the View menu's behavior).
+      if (!viewSettings.scrolled && viewSettings.webtoonMode) {
+        viewSettings.webtoonMode = false;
+        getView(sideBarBookKey)?.renderer.setAttribute('scroll-gap', getScrollGapAttr(false));
+      }
       setViewSettings(sideBarBookKey, viewSettings!);
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
       getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
@@ -298,6 +307,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: false });
   };
 
+  const ttsHighlightSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-highlight-sentence', { bookKey: sideBarBookKey });
+  };
+
   const toggleBookmark = () => {
     if (!sideBarBookKey) return;
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
@@ -313,6 +327,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
     eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey: sideBarBookKey });
     return true;
+  };
+
+  const startRSVP = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('rsvp-start', { bookKey: sideBarBookKey });
   };
 
   const handlePinchZoom = (event: CustomEvent) => {
@@ -344,6 +363,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
       onToggleParagraphMode: toggleParagraphMode,
+      onStartRSVP: startRSVP,
       onToggleToolbar: toggleToolbar,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onShowSearchBar: showSearchBar,
@@ -354,6 +374,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onTTSGoPreviousSentence: ttsGoPreviousSentence,
       onTTSGoNextParagraph: ttsGoNextParagraph,
       onTTSGoPreviousParagraph: ttsGoPreviousParagraph,
+      onTTSHighlightSentence: ttsHighlightSentence,
       onReloadPage: reloadPage,
       onCloseWindow: closeWindow,
       onQuitApp: quitApp,

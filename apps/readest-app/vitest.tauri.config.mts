@@ -14,6 +14,28 @@ export default defineConfig({
   resolve: {
     conditions: ['development'],
   },
+  optimizeDeps: {
+    include: [
+      '@supabase/supabase-js',
+      '@tauri-apps/plugin-fs',
+      '@tauri-apps/plugin-http',
+      '@tauri-apps/api/path',
+      '@tauri-apps/api/core',
+      '@zip.js/zip.js',
+      'franc-min',
+      'iso-639-2',
+      'iso-639-3',
+      'js-md5',
+      'jwt-decode',
+      'uuid',
+    ],
+    exclude: [
+      '@pdfjs/pdf.min.mjs',
+      '@readest/turso-database-wasm',
+      '@readest/turso-database-wasm-common',
+      '@readest/turso-database-common',
+    ],
+  },
   test: {
     include: ['src/**/*.tauri.test.ts'],
     setupFiles: ['./vitest.tauri.setup.ts'],

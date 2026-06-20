@@ -37,24 +37,33 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {} }),
 }));
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+vi.mock('@/store/readerStore', () => {
+  const state = {
     getView: () => mockView,
     getProgress: () => ({
       location: 'epubcfi(/6/8!/4/1:0)',
       sectionHref: `ch${primaryIndex}.xhtml`,
     }),
-  }),
-}));
+    getViewSettings: () => null,
+    getViewState: () => null,
+  };
+  return {
+    useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
+  };
+});
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+vi.mock('@/store/bookDataStore', () => {
+  const state = {
     getBookData: () => ({ book: { format: 'EPUB' }, bookDoc: { toc: [] } }),
     getConfig: () => null,
     setConfig: vi.fn(),
     saveConfig: vi.fn(),
-  }),
-}));
+  };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: {} }),
@@ -84,6 +93,11 @@ vi.mock('@/services/rsvp', () => ({
       loadNextPageContent: vi.fn(() => {
         loadedSections.push(primaryIndex);
       }),
+      // Slice 5 (#3235) TTS-sync surface used by RSVPControl's subscription.
+      setExternallyDriven: vi.fn(),
+      stopEstimator: vi.fn(),
+      syncToCfi: vi.fn(() => false),
+      driveEstimatedFromCfi: vi.fn(() => false),
       getStoredPosition: vi.fn(() => null),
       get currentState() {
         return { active: true };

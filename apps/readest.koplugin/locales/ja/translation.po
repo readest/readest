@@ -251,6 +251,12 @@ msgstr "自動同期"
 msgid "Readest library"
 msgstr "Readest ライブラリ"
 
+msgid "Push stats now"
+msgstr "今すぐ統計を送信"
+
+msgid "Pull stats now"
+msgstr "今すぐ統計を取得"
+
 msgid "Push books now"
 msgstr "今すぐ書籍を送信"
 
@@ -436,3 +442,18 @@ msgstr "読書の進捗を同期しました"
 
 msgid "No saved reading progress found for this book"
 msgstr "この書籍の保存された読書進捗が見つかりません"
+
+msgid "Reading statistics are up to date"
+msgstr "読書統計は最新です"
+
+msgid "Reading statistics pushed"
+msgstr "読書統計を送信しました"
+
+msgid "Failed to push reading statistics"
+msgstr "読書統計の送信に失敗しました"
+
+msgid "Failed to pull reading statistics"
+msgstr "読書統計の取得に失敗しました"
+
+msgid "Reading statistics pulled"
+msgstr "読書統計を取得しました"

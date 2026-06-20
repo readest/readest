@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { textWalker } from 'foliate-js/text-walker.js';
 import { TTS } from 'foliate-js/tts.js';
+import { createRejectFilter } from '@/utils/node';
 
 const createHTMLDoc = (bodyHTML: string, attrs: Record<string, string> = {}): Document => {
   const parser = new DOMParser();
@@ -31,6 +32,21 @@ const createPlainHTMLDoc = (html: string): Document => {
 const stripTags = (ssml: string): string => ssml.replace(/<[^>]+\/?>/g, '').trim();
 
 const highlight = vi.fn();
+
+/** Node filter mirroring the footnote rules TTSController passes to TTS. */
+const ttsNodeFilter = createRejectFilter({
+  tags: ['rt', 'canvas', 'br'],
+  classes: [
+    'annotationLayer',
+    'epubtype-footnote',
+    'duokan-footnote-content',
+    'duokan-footnote-item',
+  ],
+  attributeTokens: [
+    { tag: 'aside', attribute: 'epub:type', tokens: ['footnote', 'endnote', 'note', 'rearnote'] },
+  ],
+  contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
+});
 
 describe('TTS', () => {
   describe('plain HTML document', () => {
@@ -187,6 +203,212 @@ describe('TTS', () => {
       if (ssml2) {
         expect(ssml2).toBeTruthy();
       }
+    });
+  });
+
+  describe('footnotes', () => {
+    /** Collect plain text of every TTS block by walking start()/next(). */
+    const collectBlocks = (tts: InstanceType<typeof TTS>): string[] => {
+      const blocks: string[] = [];
+      let ssml = tts.start();
+      while (ssml) {
+        blocks.push(stripTags(ssml));
+        ssml = tts.next();
+      }
+      return blocks;
+    };
+
+    it('should not read aside footnotes (epub:type) at the end of a chapter', () => {
+      const doc = createHTMLDoc(
+        '<p>First paragraph of the chapter.</p>' +
+          '<p>Second paragraph of the chapter.</p>' +
+          '<aside epub:type="footnote" id="fn1"><p>Hidden footnote content.</p></aside>',
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('First paragraph');
+      expect(combined).toContain('Second paragraph');
+      expect(combined).not.toContain('Hidden footnote content');
+    });
+
+    it('should not read aside footnotes in a namespaced XHTML doc', () => {
+      const doc = createXHTMLDoc(
+        '<p>Body text here.</p>' +
+          '<aside epub:type="footnote"><p>Namespaced footnote.</p></aside>',
+        {
+          xmlns: 'http://www.w3.org/1999/xhtml',
+          'xmlns:epub': 'http://www.idpf.org/2007/ops',
+        },
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('Body text here');
+      expect(combined).not.toContain('Namespaced footnote');
+    });
+
+    it('should not read endnote, note, or rearnote asides', () => {
+      for (const type of ['endnote', 'note', 'rearnote']) {
+        const doc = createHTMLDoc(
+          '<p>Visible paragraph.</p>' +
+            `<aside epub:type="${type}"><p>Hidden ${type} text.</p></aside>`,
+        );
+        const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+        const combined = collectBlocks(tts).join(' ');
+
+        expect(combined).toContain('Visible paragraph');
+        expect(combined).not.toContain(`Hidden ${type} text`);
+      }
+    });
+
+    it('should not read elements with the epubtype-footnote class', () => {
+      const doc = createHTMLDoc(
+        '<p>Chapter body.</p>' +
+          '<aside class="epubtype-footnote" epub:type="footnote">' +
+          '<p>Transformed footnote.</p></aside>',
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('Chapter body');
+      expect(combined).not.toContain('Transformed footnote');
+    });
+
+    it('should not read duokan footnote content', () => {
+      const doc = createHTMLDoc(
+        '<p>Real text.</p>' + '<div class="duokan-footnote-content"><p>Duokan footnote.</p></div>',
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('Real text');
+      expect(combined).not.toContain('Duokan footnote');
+    });
+
+    it('should not leak footnote text into the preceding block', () => {
+      const doc = createHTMLDoc(
+        '<p>Paragraph before footnote.</p>' +
+          '<aside epub:type="footnote"><p>Inline footnote text.</p></aside>' +
+          '<p>Paragraph after footnote.</p>',
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const blocks = collectBlocks(tts);
+
+      expect(blocks.some((b) => b.includes('Paragraph before footnote'))).toBe(true);
+      expect(blocks.some((b) => b.includes('Paragraph after footnote'))).toBe(true);
+      for (const block of blocks) {
+        expect(block).not.toContain('Inline footnote text');
+      }
+    });
+
+    it('should still read non-footnote aside elements', () => {
+      const doc = createHTMLDoc(
+        '<p>Main content.</p>' + '<aside epub:type="sidebar"><p>Sidebar content stays.</p></aside>',
+      );
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('Main content');
+      expect(combined).toContain('Sidebar content stays');
+    });
+
+    it('should keep reading footnote text when no node filter is given', () => {
+      // getBlocks only skips a block when the filter rejects it; without a
+      // filter, behaviour is unchanged (footnote handling lives in the filter).
+      const doc = createHTMLDoc(
+        '<p>Body paragraph.</p>' +
+          '<aside epub:type="footnote"><p>Unfiltered footnote.</p></aside>',
+      );
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'word');
+      const combined = collectBlocks(tts).join(' ');
+
+      expect(combined).toContain('Body paragraph');
+      expect(combined).toContain('Unfiltered footnote');
+    });
+  });
+
+  describe('createRejectFilter attributeTokens', () => {
+    it('should reject an element whose attribute value contains a token', () => {
+      const aside = document.createElement('aside');
+      aside.setAttribute('epub:type', 'footnote');
+      expect(ttsNodeFilter(aside)).toBe(NodeFilter.FILTER_REJECT);
+    });
+
+    it('should match a single token within a space-separated value', () => {
+      const aside = document.createElement('aside');
+      aside.setAttribute('epub:type', 'bodymatter rearnote');
+      expect(ttsNodeFilter(aside)).toBe(NodeFilter.FILTER_REJECT);
+    });
+
+    it('should not reject when no token matches', () => {
+      const aside = document.createElement('aside');
+      aside.setAttribute('epub:type', 'sidebar');
+      expect(ttsNodeFilter(aside)).toBe(NodeFilter.FILTER_SKIP);
+    });
+
+    it('should not reject when the tag does not match', () => {
+      const section = document.createElement('section');
+      section.setAttribute('epub:type', 'footnote');
+      expect(ttsNodeFilter(section)).toBe(NodeFilter.FILTER_SKIP);
+    });
+
+    it('should not reject an element missing the attribute', () => {
+      const aside = document.createElement('aside');
+      expect(ttsNodeFilter(aside)).toBe(NodeFilter.FILTER_SKIP);
+    });
+  });
+
+  describe('from() selection start', () => {
+    // A paragraph whose whole text is one text node (one <span>), so every
+    // sentence after the first is a mid-node sub-range — the case where the
+    // annotation "Speak from selection" misfired.
+    const SENTENCE_DOC =
+      '<p><span>First sentence here. Those immortals are going crazy. Last one.</span></p>';
+
+    const makeWordRange = (doc: Document, word: string): Range => {
+      const textNode = doc.querySelector('span')!.firstChild as Text;
+      const start = textNode.data.indexOf(word);
+      const range = doc.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + word.length);
+      return range;
+    };
+
+    it('starts at the sentence that contains a mid-sentence selection', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'immortals'));
+
+      expect(ssml).toBeTruthy();
+      const text = stripTags(ssml!);
+      // starts at the selected word's own sentence (not the next one), and the
+      // earlier sentence is dropped
+      expect(text.startsWith('Those immortals')).toBe(true);
+      expect(text).not.toContain('First sentence here');
+    });
+
+    it('starts at the sentence when the first word of it is selected', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'Those'));
+
+      expect(ssml).toBeTruthy();
+      expect(stripTags(ssml!).startsWith('Those immortals')).toBe(true);
+    });
+
+    it('starts at the last sentence when a word in it is selected', () => {
+      const doc = createHTMLDoc(SENTENCE_DOC, { lang: 'en' });
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+      tts.start();
+      const ssml = tts.from(makeWordRange(doc, 'Last'));
+
+      expect(ssml).toBeTruthy();
+      const text = stripTags(ssml!);
+      expect(text.startsWith('Last one')).toBe(true);
+      expect(text).not.toContain('immortals');
     });
   });
 

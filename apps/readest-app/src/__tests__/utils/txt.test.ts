@@ -76,23 +76,38 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
   });
 
   describe('第N[卷节回讲篇封本册部话] variants', () => {
-    it.each(['卷', '节', '回', '讲', '篇', '封', '本', '册', '部', '话'])(
-      'should match 第一%s',
-      (suffix) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      '卷',
+      '节',
+      '回',
+      '讲',
+      '篇',
+      '封',
+      '本',
+      '册',
+      '部',
+      '话',
+    ])('should match 第一%s', (suffix) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
+    });
   });
 
   describe('Chinese preface keywords', () => {
-    it.each(['楔子', '前言', '简介', '引言', '序言', '序章', '总论', '概论', '后记'])(
-      'should match %s',
-      (keyword) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      '楔子',
+      '前言',
+      '简介',
+      '引言',
+      '序言',
+      '序章',
+      '总论',
+      '概论',
+      '后记',
+    ])('should match %s', (keyword) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
     it('should match 前言 with title', () => {
       const regex = getFirstRegex('zh');
@@ -106,13 +121,15 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
   });
 
   describe('"chapter" keyword in Chinese context', () => {
-    it.each(['Chapter 1', 'CHAPTER 10', 'chapter.5', 'chapter 2: The Beginning'])(
-      'should match "%s" (case-insensitive)',
-      (heading) => {
-        const regex = getFirstRegex('zh');
-        expect(regex.test(`\n${heading}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Chapter 1',
+      'CHAPTER 10',
+      'chapter.5',
+      'chapter 2: The Beginning',
+    ])('should match "%s" (case-insensitive)', (heading) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
   });
 
   describe('番外 (bonus) prefix variants', () => {
@@ -128,6 +145,41 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
     ])('should match "%s"', (heading) => {
       const regex = getFirstRegex('zh');
       expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
+  });
+
+  // Measure-word phrases such as 第一封信 ("the first letter") and 第四本书
+  // ("the fourth book") are running prose, not chapter headings. The volume
+  // measure words 卷/本/册/部/封 only start a heading when followed by a
+  // separator or the line end — not when a noun follows them directly. See
+  // issue #4658.
+  describe('measure-word false positives (issue #4658)', () => {
+    it.each([
+      '第一封信',
+      '第一封信。',
+      '第七封信',
+      '第四本书记载着锤法',
+      '第四本书记载着锤法，来自孙家，可惜对秦铭用处不大了，他已经彻底掌握。',
+      '第三本书',
+      '第十部手机',
+      '第一册书',
+      '第二卷书卷',
+    ])('should NOT match measure-word prose "%s"', (line) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${line}\n`)).toBe(false);
+    });
+
+    it.each([
+      '第一封',
+      '第一封 致读者',
+      '第一本',
+      '第一本 标题',
+      '第二部 中篇',
+      '第一册 上',
+      '第一卷 起始篇',
+    ])('should still match a real heading "%s"', (line) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n${line}\n`)).toBe(true);
     });
   });
 
@@ -167,13 +219,16 @@ describe('createChapterRegexps — Chinese (zh) second regex', () => {
 // ---------------------------------------------------------------------------
 describe('createChapterRegexps — English (en) regex matching', () => {
   describe('Chapter keyword', () => {
-    it.each(['Chapter 1', 'Chapter 12', 'Chapter 999', 'CHAPTER 5', 'chapter 3'])(
-      'should match "%s"',
-      (heading) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${heading}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Chapter 1',
+      'Chapter 12',
+      'Chapter 999',
+      'CHAPTER 5',
+      'chapter 3',
+    ])('should match "%s"', (heading) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${heading}\n`)).toBe(true);
+    });
 
     it('should match "Chapter 1: Title" with title', () => {
       const regex = getFirstRegex('en');
@@ -187,21 +242,30 @@ describe('createChapterRegexps — English (en) regex matching', () => {
   });
 
   describe('Roman numeral chapters', () => {
-    it.each(['V', 'X', 'L', 'C', 'D', 'M'])(
-      'should match single Roman numeral "Chapter %s"',
-      (numeral) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'V',
+      'X',
+      'L',
+      'C',
+      'D',
+      'M',
+    ])('should match single Roman numeral "Chapter %s"', (numeral) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
+    });
 
-    it.each(['II', 'III', 'IV', 'VII', 'XII', 'XIV', 'XLII'])(
-      'should match multi-char Roman numeral "Chapter %s"',
-      (numeral) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'II',
+      'III',
+      'IV',
+      'VII',
+      'XII',
+      'XIV',
+      'XLII',
+    ])('should match multi-char Roman numeral "Chapter %s"', (numeral) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\nChapter ${numeral}\n`)).toBe(true);
+    });
 
     it('should not match single "I" as Roman numeral (not in allowed set)', () => {
       const regex = getFirstRegex('en');
@@ -223,31 +287,39 @@ describe('createChapterRegexps — English (en) regex matching', () => {
       expect(regex.test(`\n${keyword} 1\n`)).toBe(true);
     });
 
-    it.each(['Part', 'Section', 'Book', 'Volume', 'Act'])(
-      'should match "%s 3: A New Beginning" with title',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword} 3: A New Beginning\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Part',
+      'Section',
+      'Book',
+      'Volume',
+      'Act',
+    ])('should match "%s 3: A New Beginning" with title', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword} 3: A New Beginning\n`)).toBe(true);
+    });
   });
 
   describe('preface keywords', () => {
-    it.each(['Prologue', 'Epilogue', 'Introduction', 'Foreword', 'Preface', 'Afterword'])(
-      'should match "%s"',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'Prologue',
+      'Epilogue',
+      'Introduction',
+      'Foreword',
+      'Preface',
+      'Afterword',
+    ])('should match "%s"', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
-    it.each(['PROLOGUE', 'prologue', 'Prologue'])(
-      'should match "%s" case-insensitively',
-      (keyword) => {
-        const regex = getFirstRegex('en');
-        expect(regex.test(`\n${keyword}\n`)).toBe(true);
-      },
-    );
+    it.each([
+      'PROLOGUE',
+      'prologue',
+      'Prologue',
+    ])('should match "%s" case-insensitively', (keyword) => {
+      const regex = getFirstRegex('en');
+      expect(regex.test(`\n${keyword}\n`)).toBe(true);
+    });
 
     it('should match "Prologue: The Beginning"', () => {
       const regex = getFirstRegex('en');
@@ -348,6 +420,35 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     const chapters = extractChapters('这是前文内容\n第一章 开始\n正文内容', 'zh');
     expect(chapters.length).toBeGreaterThanOrEqual(2);
     expect(chapters[0]!.content).toContain('前文');
+  });
+
+  it('should not extract 第N封信 letter markers as chapters (issue #4658)', () => {
+    const text = [
+      '第一百八十九章 许七安的七封信',
+      '驿卒将信递了过来。',
+      '第一封信',
+      '写这封信的时候我正在云州。',
+      '第二封信',
+      '临安公主亲启。',
+    ].join('\n');
+    const chapters = extractChapters(text, 'zh');
+    const titles = chapters.map((c) => c.title);
+    expect(titles).toEqual(['第一百八十九章 许七安的七封信']);
+    expect(chapters[0]!.content).toContain('第一封信');
+    expect(chapters[0]!.content).toContain('第二封信');
+  });
+
+  it('should not extract 第N本书 + sentence as a chapter (issue #4658)', () => {
+    const text = [
+      '第八十四章 比异人强一点',
+      '他翻阅着那几本秘籍。',
+      '第四本书记载着锤法，来自孙家，可惜对秦铭用处不大了，他已经彻底掌握。',
+      '日子一天天过去。',
+    ].join('\n');
+    const chapters = extractChapters(text, 'zh');
+    const titles = chapters.map((c) => c.title);
+    expect(titles).toEqual(['第八十四章 比异人强一点']);
+    expect(chapters[0]!.content).toContain('第四本书记载着锤法');
   });
 
   it('should extract 番外 chapters mixed with regular chapters (issue #4016)', () => {

@@ -84,6 +84,7 @@ export interface BookDoc {
   };
   dir: string;
   toc?: Array<TOCItem>;
+  pageList?: Array<TOCItem>;
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
@@ -116,11 +117,25 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
   MD: ['text/markdown', 'text/x-markdown'],
 };
 
+export interface DocumentLoaderOptions {
+  /**
+   * Absolute filesystem path of `file`, used by Tauri builds to invoke the
+   * Rust EPUB pre-parser (`parse_epub_full`). When omitted (web platform,
+   * synthetic File, tests) the loader silently falls back to the
+   * zip.js-only path. Callers SHOULD pass it whenever they have one --
+   * the foliate-js init() drops from ~1.5s to ~0.3s on iOS for a typical
+   * EPUB when the prefetch cache is hit.
+   */
+  nativeFilePath?: string;
+}
+
 export class DocumentLoader {
   private file: File;
+  private nativeFilePath?: string;
 
-  constructor(file: File) {
+  constructor(file: File, options: DocumentLoaderOptions = {}) {
     this.file = file;
+    this.nativeFilePath = options.nativeFilePath;
   }
 
   private async isZip(): Promise<boolean> {
@@ -129,7 +144,39 @@ export class DocumentLoader {
     // EPUB writers emit malformed bytes (e.g., PK\x03\x02) on the first entry.
     // The archive is still readable via the central directory, so don't gate on
     // the 4th byte. PK\x03 alone is enough to identify a local file header.
-    return arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03;
+    if (arr[0] === 0x50 && arr[1] === 0x4b && arr[2] === 0x03) {
+      return true;
+    }
+    // Some files have their first few bytes corrupted (e.g. Baidu Netdisk
+    // mangles the leading PK\x03\x04 into garbage on certain epubs). The zip
+    // format is officially located by walking the End-of-Central-Directory
+    // record at the *tail* of the file -- everything before it is allowed to
+    // be arbitrary data (self-extracting executables rely on this). So when
+    // the magic bytes look wrong, fall back to searching for the EOCD
+    // signature (PK\x05\x06) in the last 64 KiB of the file. If found, the
+    // file is still a usable zip and we should let zip.js try to read it.
+    return await this.hasEOCD();
+  }
+
+  private async hasEOCD(): Promise<boolean> {
+    // EOCD record is at least 22 bytes (sig + 16 + comment length); the
+    // trailing comment can be up to 64 KiB, so search the last 64 KiB + 22.
+    const maxEOCDSearch = 1024 * 64 + 22;
+    const sliceSize = Math.min(maxEOCDSearch, this.file.size);
+    if (sliceSize < 22) return false;
+    const tail = await this.file.slice(this.file.size - sliceSize, this.file.size).arrayBuffer();
+    const bytes = new Uint8Array(tail);
+    for (let i = bytes.length - 22; i >= 0; i--) {
+      if (
+        bytes[i] === 0x50 &&
+        bytes[i + 1] === 0x4b &&
+        bytes[i + 2] === 0x05 &&
+        bytes[i + 3] === 0x06
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private async isPDF(): Promise<boolean> {
@@ -139,7 +186,10 @@ export class DocumentLoader {
     );
   }
 
-  private async makeZipLoader() {
+  private async makeZipLoader(prefetch?: {
+    textCache?: Map<string, string>;
+    sizes?: Map<string, number>;
+  }) {
     const getComment = async (): Promise<string | null> => {
       const EOCD_SIGNATURE = [0x50, 0x4b, 0x05, 0x06];
       const maxEOCDSearch = 1024 * 64;
@@ -189,13 +239,69 @@ export class DocumentLoader {
         return entry ? f(entry, ...args) : null;
       };
 
-    const loadText = load((entry: Entry) =>
+    const zipLoadText = load((entry: Entry) =>
       !entry.directory ? entry.getData(new TextWriter()) : null,
     );
     const loadBlob = load((entry: Entry, type?: string) =>
       !entry.directory ? entry.getData(new BlobWriter(type!)) : null,
     );
-    const getSize = (name: string) => getEntry(name)?.uncompressedSize ?? 0;
+
+    // Prefetch fast-path: foliate-js's EPUB.init() reads container.xml,
+    // the OPF, the EPUB3 nav and (if present) the NCX via this very
+    // `loadText`. On Tauri we already have those bytes in memory from
+    // the Rust `parse_epub_full` command, so we hand them back without
+    // touching zip.js. Anything not in the cache falls through to the
+    // original zip.js path (CSS/HTML/font assets the reader pulls
+    // lazily as the user actually reads stay on the slow path, which
+    // is fine -- they're also tiny per-call and async).
+    const textCache = prefetch?.textCache;
+    const sizesOverride = prefetch?.sizes;
+
+    // In-flight dedupe for spine-text loads.
+    //
+    // foliate-js's `Section` exposes both `loadText()` and `createDocument()`
+    // (which internally re-runs `loadText` + parseFromString). Our nav
+    // pipeline (`computeBookNav` and `enrichTocFromNavElements`) needs both
+    // the raw HTML (for byte-size math + regex-based fragment locator) and
+    // the parsed Document (for CFI computation), so it ends up calling them
+    // back-to-back on the same href — without dedupe, every chapter pays for
+    // two zip.js inflate calls per `computeBookNav`. On iOS WebView a 100KB
+    // chapter inflate is ~3-5ms, so for a 100-section book this costs
+    // ~300-500ms per first open. The dedupe is a single Map lookup on the
+    // hot path, so the overhead when nothing is in flight is negligible.
+    //
+    // We intentionally only dedupe *concurrent* requests: as soon as the
+    // promise settles, we drop it from the map so we don't retain inflated
+    // chapter strings in memory (a long book is megabytes of text). This is
+    // safe because the only consumer that cares about reuse — nav
+    // computation — issues both calls in the same microtask span.
+    const inflight = new Map<string, Promise<string | null>>();
+    const dedupedZipLoadText = (name: string, ...args: [string?]): Promise<string | null> => {
+      const existing = inflight.get(name);
+      if (existing) return existing;
+      const p =
+        (zipLoadText(name, ...args) as Promise<string | null> | null) ?? Promise.resolve(null);
+      const wrapped = Promise.resolve(p).finally(() => {
+        // Release as soon as the promise settles; subsequent independent
+        // reads will re-inflate (intentional — we don't want a nav-time
+        // cache to hold the whole book in RAM).
+        if (inflight.get(name) === wrapped) inflight.delete(name);
+      });
+      inflight.set(name, wrapped);
+      return wrapped;
+    };
+
+    const loadText = textCache
+      ? (name: string, ...args: [string?]) => {
+          const cached = textCache.get(name);
+          if (cached !== undefined) return Promise.resolve(cached);
+          return dedupedZipLoadText(name, ...args);
+        }
+      : dedupedZipLoadText;
+
+    const getSize = sizesOverride
+      ? (name: string) => sizesOverride.get(name) ?? getEntry(name)?.uncompressedSize ?? 0
+      : (name: string) => getEntry(name)?.uncompressedSize ?? 0;
 
     return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
   }
@@ -221,6 +327,16 @@ export class DocumentLoader {
     );
   }
 
+  private isTxt(): boolean {
+    // Tolerate MIME params (text/plain;charset=utf-8), uppercase extensions
+    // (BOOK.TXT), and a nameless Blob — otherwise a TXT can slip onto the
+    // non-text path and yield a null book.
+    return (
+      this.file.type.startsWith('text/plain') ||
+      (this.file.name?.toLowerCase().endsWith(`.${EXTS.TXT}`) ?? false)
+    );
+  }
+
   public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
     let book = null;
     let format: BookFormat = 'EPUB';
@@ -228,8 +344,31 @@ export class DocumentLoader {
       throw new Error('File is empty');
     }
     try {
+      // A raw .txt has no binary book format, so the checks below all miss and
+      // `book` stays null. Convert it to EPUB in-memory first (the same
+      // conversion the import path runs) and parse that. The managed library
+      // stores the already-converted EPUB, but the Android "Open with" transient
+      // path points the book at the original .txt, so it reaches us unconverted.
+      if (this.isTxt()) {
+        const { TxtToEpubConverter } = await import('@/utils/txt');
+        const { file: epubFile } = await new TxtToEpubConverter().convert({ file: this.file });
+        return await new DocumentLoader(epubFile).open();
+      }
       if (await this.isZip()) {
-        const loader = await this.makeZipLoader();
+        // EPUB-only fast path: ask Rust to pre-read OPF/nav/ncx + sizes.
+        // CBZ/FBZ skip this -- they have no OPF and Rust has no parser
+        // for them. We probe `isEPUBLike()` (= isZip but not CBZ/FBZ)
+        // so the prefetch RPC only fires when it can actually be used.
+        const isEPUBLike = !this.isCBZ() && !this.isFBZ();
+        let prefetch: { textCache: Map<string, string>; sizes: Map<string, number> } | undefined;
+        if (isEPUBLike && this.nativeFilePath) {
+          const { tryNativePrefetchEpub } = await import('@/utils/tauriEpubBridge');
+          const native = await tryNativePrefetchEpub(this.nativeFilePath);
+          if (native) {
+            prefetch = { textCache: native.textCache, sizes: native.sizes };
+          }
+        }
+        const loader = await this.makeZipLoader(prefetch);
         const { entries } = loader;
 
         if (this.isCBZ()) {

@@ -4,6 +4,8 @@
   <dict>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Readest uses Face ID to unlock the app.</string>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <false/>
     <key>UIViewControllerBasedStatusBarAppearance</key>

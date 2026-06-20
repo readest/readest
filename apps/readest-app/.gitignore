@@ -11,6 +11,9 @@
 .test-sandbox-node/
 .vitest-attachments/
 
+# benchmarks — personal local perf history; share via PR/issue copy-paste
+bench/results.jsonl
+
 # next.js
 /.next/
 /out/
@@ -59,6 +62,9 @@ src-tauri/gen
 # vendor
 /public/vendor
 
+# docs
+docs/superpowers
+
 # Auto Generated PWA files
 /public/sw.js
 /public/workbox-*.js
@@ -70,4 +76,10 @@ src-tauri/gen
 .context/
 .claude/settings.local.json
 .claude/skills
+
+# Playwright web e2e
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 

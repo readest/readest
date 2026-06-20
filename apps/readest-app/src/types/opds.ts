@@ -1,3 +1,10 @@
+// SYMBOL must be re-exported from foliate-js so consumers read the same Symbol
+// instances that the parser writes onto publication metadata. Declaring fresh
+// `Symbol('content')` calls here would produce different identities, and
+// `metadata[SYMBOL.CONTENT]` would silently return undefined — losing the book
+// description for OPDS 1.x feeds where it lives in <summary>.
+import { SYMBOL as FOLIATE_SYMBOL } from 'foliate-js/opds.js';
+
 export const REL = {
   ACQ: 'http://opds-spec.org/acquisition',
   FACET: 'http://opds-spec.org/facet',
@@ -11,13 +18,7 @@ export const REL = {
   STREAM: 'http://vaemendis.net/opds-pse/stream',
 } as const;
 
-const SUMMARY = Symbol('summary');
-const CONTENT = Symbol('content');
-
-export const SYMBOL = {
-  SUMMARY,
-  CONTENT,
-} as const;
+export const SYMBOL = FOLIATE_SYMBOL as { SUMMARY: symbol; CONTENT: symbol };
 
 export interface OPDSCatalog {
   id: string;
@@ -110,20 +111,23 @@ export interface OPDSBaseLink {
   href?: string;
   type?: string;
   title?: string;
+  /** OPDS 2.0 / RFC 6570: href is a URI template (e.g. `/search{?query}`). */
+  templated?: boolean;
 }
 
 interface OPDSPerson {
   name?: string;
-  links: Array<{ href: string }>;
+  links: Array<{ href: string; type?: string }>;
 }
 
 interface OPDSSubject {
   name?: string;
   code?: string;
   scheme?: string;
+  links?: Array<{ href: string; type?: string }>;
 }
 
-interface OPDSContent {
+export interface OPDSContent {
   value: string;
   type: 'text' | 'html' | 'xhtml';
 }

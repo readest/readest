@@ -14,18 +14,22 @@ import {
   generateLightPalette,
   generateDarkPalette,
 } from '@/styles/themes';
+import { createFontCSS, CustomFont } from '@/styles/fonts';
 import { getOSPlatform } from './misc';
+import { SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
 
-const getFontStyles = (
+/**
+ * Build the resolved CSS font-family lists (serif / sans-serif / monospace)
+ * from the user's font settings. Each value is a ready-to-use `font-family`
+ * string ending in the matching generic family. Shared by getFontStyles (which
+ * exposes them as CSS variables inside the reader iframe) and getBaseFontFamily
+ * (which applies the body font directly to top-level UI such as the RSVP overlay).
+ */
+const buildFontFamilyLists = (
   serif: string,
   sansSerif: string,
   monospace: string,
-  defaultFont: string,
   defaultCJKFont: string,
-  fontSize: number,
-  minFontSize: number,
-  fontWeight: number,
-  overrideFont: boolean,
 ) => {
   const lastSerifFonts = ['Georgia', 'Times New Roman'];
   const serifFonts = [
@@ -48,12 +52,49 @@ const getFontStyles = (
     ...FALLBACK_FONTS,
   ];
   const monospaceFonts = [monospace, ...MONOSPACE_FONTS.filter((font) => font !== monospace)];
+  const quote = (fonts: string[]) => fonts.map((font) => `"${font}"`).join(', ');
+  return {
+    serif: `${quote(serifFonts)}, serif`,
+    sansSerif: `${quote(sansSerifFonts)}, sans-serif`,
+    monospace: `${quote(monospaceFonts)}, monospace`,
+  };
+};
+
+/**
+ * Resolve the body font-family string (serif or sans-serif chain, per the
+ * user's "Default Font" setting) for use outside the reader iframe — e.g. the
+ * RSVP overlay, which renders in the top document and can't read the iframe's
+ * --serif/--sans-serif CSS variables. Custom fonts are already mounted in the
+ * top document, so the returned chain resolves them by family name.
+ */
+export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
+  const families = buildFontFamilyLists(
+    viewSettings.serifFont!,
+    viewSettings.sansSerifFont!,
+    viewSettings.monospaceFont!,
+    viewSettings.defaultCJKFont!,
+  );
+  return viewSettings.defaultFont!.toLowerCase() === 'serif' ? families.serif : families.sansSerif;
+};
+
+const getFontStyles = (
+  serif: string,
+  sansSerif: string,
+  monospace: string,
+  defaultFont: string,
+  defaultCJKFont: string,
+  fontSize: number,
+  minFontSize: number,
+  fontWeight: number,
+  overrideFont: boolean,
+) => {
+  const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
   const fontStyles = `
     html {
-      --serif: ${serifFonts.map((font) => `"${font}"`).join(', ')}, serif;
-      --sans-serif: ${sansSerifFonts.map((font) => `"${font}"`).join(', ')}, sans-serif;
-      --monospace: ${monospaceFonts.map((font) => `"${font}"`).join(', ')}, monospace;
+      --serif: ${families.serif};
+      --sans-serif: ${families.sansSerif};
+      --monospace: ${families.monospace};
       --font-size: ${fontSize}px;
       --min-font-size: ${minFontSize}px;
       --font-weight: ${fontWeight};
@@ -106,6 +147,60 @@ const getFontStyles = (
   `;
   return fontStyles;
 };
+
+/** True for #fff, #f5f5f5, rgb(255,…), etc. Used when rewriting EPUB CSS in dark mode. */
+const isLightCssColor = (value: string): boolean => {
+  const v = value.trim().toLowerCase();
+  if (v === 'white') return true;
+  const hex = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const h = hex[1]!;
+    const expand =
+      h.length === 3
+        ? h
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : h;
+    const r = parseInt(expand.slice(0, 2), 16);
+    const g = parseInt(expand.slice(2, 4), 16);
+    const b = parseInt(expand.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.85;
+  }
+  const rgb = v.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (rgb?.[1] != null && rgb[2] != null && rgb[3] != null) {
+    const r = parseInt(rgb[1], 10);
+    const g = parseInt(rgb[2], 10);
+    const b = parseInt(rgb[3], 10);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.85;
+  }
+  return false;
+};
+
+const getDarkModeLightBackgroundOverrides = (bg: string) => `
+    /* Callout boxes often use inline white/light backgrounds while html/body set dark fg. */
+    *[style*="background-color: #fff"], *[style*="background-color:#fff"],
+    *[style*="background-color: #ffffff"], *[style*="background-color:#ffffff"],
+    *[style*="background-color: white"], *[style*="background-color:white"],
+    *[style*="background: #fff"], *[style*="background:#fff"],
+    *[style*="background: #ffffff"], *[style*="background:#ffffff"],
+    *[style*="background: white"], *[style*="background:white"],
+    *[style*="background-color: rgb(255"], *[style*="background-color:rgb(255"],
+    *[style*="background: rgb(255"], *[style*="background:rgb(255"] {
+      background-color: ${bg} !important;
+    }
+    /* Force transparent, not the theme bg: the dark page fill already comes from
+       the paginator container / reader grid cell, while an opaque body paints over
+       the host background texture (#4446) — and foliate captures docBackground once
+       per section load, so the body must stay transparent regardless of texture
+       state. Book-forced light page backgrounds still get neutralized (#4392) since
+       the theme-dark fill shows through. */
+    body.theme-dark {
+      background-color: transparent !important;
+    }
+`;
 
 const getEinkSelectionStyles = () => {
   return `
@@ -182,16 +277,15 @@ const getColorStyles = (
     hr.background-img {
       mix-blend-mode: multiply;
     }
+    p[width][height] > img:only-child {
+      mix-blend-mode: multiply;
+    }
     /* inline images */
     *:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${bg};` : ''}
     }
     p img.has-text-siblings, span img.has-text-siblings, sup img.has-text-siblings {
       mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
-    }
-    table {
-      overflow: auto;
-      display: table !important;
     }
     table:has(> colgroup) {
       table-layout: fixed;
@@ -209,9 +303,16 @@ const getColorStyles = (
     blockquote {
       ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
+    /* Only tint table descendants when the user has opted into color override.
+       By default, leave them transparent so a plain table (and the invisible
+       spacer cells some books use for vertical layout) keeps the page
+       background instead of a different shade. Illegible light/zebra table
+       backgrounds are handled separately by the dark-mode light-background
+       rewriters (getDarkModeLightBackgroundOverrides / transformStylesheet).
+       See #4419 (and #2377, which this gate originally fixed). */
     blockquote, table * {
-      ${isDarkMode ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
-      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background: color-mix(in srgb, ${bg} 80%, #000);` : ''}
+      ${isDarkMode && overrideColor ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
     /* override inline hardcoded text color */
     font[color="#000000"], font[color="#000"], font[color="black"],
@@ -222,6 +323,7 @@ const getColorStyles = (
     *[style*="color:#000"], *[style*="color:#000000"], *[style*="color:black"] {
       color: ${fg} !important;
     }
+    ${isDarkMode && !overrideColor ? getDarkModeLightBackgroundOverrides(bg) : ''}
     /* for the Gutenberg eBooks */
     #pg-header * {
       color: inherit !important;
@@ -251,7 +353,6 @@ const getPageLayoutStyles = (
   writingMode: string,
   vertical: boolean,
 ) => `
-  @namespace epub "http://www.idpf.org/2007/ops";
   html {
     --margin-top: ${marginTop}px;
     --margin-right: ${marginRight}px;
@@ -288,8 +389,32 @@ const getPageLayoutStyles = (
     position: absolute;
     inset: -10px;
   }
-  pre {
+
+  .${SCROLL_WRAPPER_CLASS} {
+    display: block;
+    overflow: auto;
+    max-width: 100%;
+    touch-action: pan-x pan-y;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .${SCROLL_WRAPPER_FIT_CLASS} {
+    overflow: visible;
+  }
+  .${SCROLL_WRAPPER_CLASS} > table {
+    display: table !important;
+    max-width: 100%;
+  }
+  pre, code, math {
     white-space: pre-wrap !important;
+    scrollbar-width: none;
+  }
+  math {
+    overflow: auto;
+  }
+  table, math {
+    max-width: calc(var(--available-width) * 1px);
+    max-height: calc(var(--available-height) * 1px);
   }
 
   .epubtype-footnote,
@@ -310,12 +435,24 @@ const getPageLayoutStyles = (
     display: none;
   }
 
+  .duokan-image-gallery-cell {
+    height: calc(var(--available-height) * 1px);
+  }
+
+  .duokan-image-gallery-cell img {
+    height: 90%;
+  }
+
   div:has(> img, > svg) {
     max-width: 100% !important;
   }
 
   body.paginated-mode td:has(img), body.paginated-mode td :has(img) {
     max-height: calc(var(--available-height) * 0.8 * 1px);
+  }
+
+  figure.code {
+    overflow: unset !important;
   }
 
   /* some epubs set insane inline-block for p */
@@ -348,6 +485,11 @@ const getPageLayoutStyles = (
     position: relative;
     width: auto;
     height: auto;
+  }
+  /* some mobi */
+  p[width][height] > img:only-child { 
+    width: unset !important;
+    height: unset !important;
   }
 
   /* page break */
@@ -403,8 +545,8 @@ const getParagraphLayoutStyles = (
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
     text-indent: ${textIndent}em ${overrideLayout ? '!important' : ''};
-    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
-    hyphens: ${hyphenate ? 'auto' : 'manual'};
+    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     -webkit-hyphenate-limit-before: 3;
     -webkit-hyphenate-limit-after: 2;
     -webkit-hyphenate-limit-lines: 2;
@@ -413,8 +555,8 @@ const getParagraphLayoutStyles = (
   }
   li {
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
-    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'};
-    hyphens: ${hyphenate ? 'auto' : 'manual'};
+    -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
+    hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
   }
   p.aligned-center, blockquote.aligned-center,
   dd.aligned-center, div.aligned-center {
@@ -459,6 +601,9 @@ const getParagraphLayoutStyles = (
     ${vertical && overrideLayout ? `margin-right: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-top: ${paragraphMargin}em !important;` : ''}
     ${!vertical && overrideLayout ? `margin-bottom: ${paragraphMargin}em !important;` : ''}
+  }
+  p > font:only-child { 
+    display: flow-root; 
   }
 
   :lang(zh), :lang(ja), :lang(ko) {
@@ -539,7 +684,8 @@ export const getFootnoteStyles = () => `
  * The seam exists so app-wide rules can be added in one place without
  * touching the provider code. Currently it ships:
  */
-export const getDictStyles = () => {
+export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
+  void fg;
   return `
     a:empty {
       background-color: transparent;
@@ -547,6 +693,14 @@ export const getDictStyles = () => {
     }
     a img {
       mix-blend-mode: multiply;
+    }
+    div[data-dict-kind="mdict"] .entry_name {
+      font-size: 1.2em;
+      margin-block-start: 0.5em;
+      margin-block-end: 0.5em;
+    }
+    div[data-dict-kind="mdict"] .juan_drop {
+      ${isDarkMode ? `background-color: color-mix(in srgb, ${bg} 80%, #000);` : ''}
     }
   `;
 };
@@ -598,6 +752,26 @@ const getWarichuStyles = () => `
   }
 `;
 
+const getRubyStyles = () => `
+  rt {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  rp {
+    display: none !important;
+  }
+  ruby.wl-gloss {
+    cursor: help;
+  }
+  ruby.wl-gloss > rt {
+    font-size: 0.5em;
+    line-height: 1.1;
+    opacity: 0.7;
+    font-weight: normal;
+    text-align: center;
+  }
+`;
+
 export interface ThemeCode {
   bg: string;
   fg: string;
@@ -643,7 +817,11 @@ export const getThemeCode = () => {
   } as ThemeCode;
 };
 
-export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => {
+export const getStyles = (
+  viewSettings: ViewSettings,
+  themeCode?: ThemeCode,
+  customFonts: CustomFont[] = [],
+) => {
   if (!themeCode) {
     themeCode = getThemeCode();
   }
@@ -685,6 +863,14 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
   );
+  // Inline `@font-face` rules for the caller-supplied custom fonts so
+  // they ship to the iframe synchronously with the rest of the
+  // stylesheet. Paginator injects this CSS into the iframe `<style>`
+  // before the 'load' event fires, so the first paint already resolves
+  // the configured font instead of falling back to serif/sans-serif and
+  // visibly swapping a moment later. Blob URLs are already in memory, so
+  // no network round-trip happens here.
+  const customFontFaces = getCustomFontFaces(customFonts);
   const colorStyles = getColorStyles(
     viewSettings.overrideColor!,
     viewSettings.invertImgColorInDark!,
@@ -694,9 +880,34 @@ export const getStyles = (viewSettings: ViewSettings, themeCode?: ThemeCode) => 
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const warichuStyles = getWarichuStyles();
+  const rubyStyles = getRubyStyles();
   const userStylesheet = viewSettings.userStylesheet!;
-  return `${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${userStylesheet}`;
+  // The `@namespace` declaration must lead the stylesheet: a `@namespace` rule
+  // placed after any style or `@font-face` rule is invalid and silently ignored,
+  // which drops the namespaced `aside[epub|type~="footnote"]` selector and lets
+  // the footnote aside's border show as a stray horizontal line (#4438). Keep it
+  // ahead of the inlined custom `@font-face` rules.
+  const epubNamespace = `@namespace epub "http://www.idpf.org/2007/ops";`;
+  return `${epubNamespace}\n${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
+
+// Build a CSS chunk of `@font-face` rules for the given user custom
+// fonts. The caller (a reader component) owns the font store and passes
+// in the loaded fonts, keeping this util free of store dependencies.
+// Fonts without a blob URL are skipped; createFontCSS throws when the
+// blob URL is unset, so the inner try/catch keeps a single bad font from
+// breaking the whole stylesheet.
+const getCustomFontFaces = (fonts: CustomFont[]): string =>
+  fonts
+    .filter((font) => !!font.blobUrl)
+    .map((font) => {
+      try {
+        return createFontCSS(font);
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
 
 export const applyTranslationStyle = (viewSettings: ViewSettings) => {
   const styleId = 'translation-style';
@@ -877,6 +1088,22 @@ export const transformStylesheet = (css: string, vw: number, vh: number, vertica
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*rgb\(0,\s*0,\s*0\)/gi, '$1color: var(--theme-fg-color)');
+
+  const { isDarkMode, bg } = getThemeCode();
+  if (isDarkMode) {
+    css = css.replace(ruleRegex, (match, selector, block) => {
+      const rewritten = block.replace(
+        /background(-color)?\s*:\s*([^;!}]+)(\s*!important)?(?=\s*[;!}])/gi,
+        (decl: string, _prop: string, value: string, important?: string) => {
+          const raw = value.trim().split(/\s+/)[0] ?? '';
+          if (!isLightCssColor(raw)) return decl;
+          return `background-color: ${bg}${important ?? ''}`;
+        },
+      );
+      return rewritten === block ? match : selector + rewritten;
+    });
+  }
+
   return css;
 };
 
@@ -951,69 +1178,41 @@ export const applyImageStyle = (document: Document) => {
   });
 };
 
-export const applyTableStyle = (document: Document) => {
-  document.querySelectorAll('table').forEach((table) => {
-    const parent = table.parentNode;
-    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
-
-    // Calculate total width from td elements with width attribute or inline style
-    let totalTableWidth = 0;
-    const rows = table.querySelectorAll('tr');
-
-    // Check all rows and use the widest one
-    for (const row of rows) {
-      const cells = row.querySelectorAll('td, th');
-      let rowWidth = 0;
-
-      cells.forEach((cell) => {
-        const cellElement = cell as HTMLElement;
-
-        const widthAttr = cellElement.getAttribute('width');
-        const styleWidth = cellElement.style.width;
-        const widthStr = widthAttr || styleWidth;
-
-        if (widthStr) {
-          const widthValue = parseFloat(widthStr);
-          const widthUnit = widthStr.replace(widthValue.toString(), '').trim();
-
-          if (widthUnit === 'px' || !widthUnit) {
-            rowWidth += widthValue;
-          }
-        }
-      });
-
-      if (rowWidth > totalTableWidth) {
-        totalTableWidth = rowWidth;
-      }
-    }
-
-    const parentWidth = window.getComputedStyle(parent as Element).width;
-    const parentContainerWidth = parseFloat(parentWidth) || 0;
-    if (totalTableWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${totalTableWidth}))`;
-      table.style.transformOrigin = 'left top';
-      table.style.transform = `scale(${scale})`;
-    } else if (parentContainerWidth > 0) {
-      const scale = `calc(min(1, var(--available-width) / ${parentContainerWidth}))`;
-      table.style.transformOrigin = 'center top';
-      table.style.transform = `scale(${scale})`;
-    }
-  });
-};
-
 export const keepTextAlignment = (document: Document) => {
-  document.querySelectorAll('div, p, blockquote, dd').forEach((el) => {
-    const computedStyle = window.getComputedStyle(el);
-    if (computedStyle.textAlign === 'center') {
-      el.classList.add('aligned-center');
-    } else if (computedStyle.textAlign === 'left') {
-      el.classList.add('aligned-left');
-    } else if (computedStyle.textAlign === 'right') {
-      el.classList.add('aligned-right');
-    } else if (computedStyle.textAlign === 'justify') {
-      el.classList.add('aligned-justify');
-    }
-  });
+  // Why two-phase: the previous version read getComputedStyle and wrote
+  // classList.add inside the same forEach pass. classList.add invalidates
+  // the document's style cache (CSS selectors may target the class on
+  // descendants), so the next getComputedStyle() in the loop forced the
+  // browser to recompute style for the whole document. With ~hundreds of
+  // p/div/blockquote/dd elements per chapter (a typical Harry Potter
+  // section) that turned the loop into N x layout — visible on a release
+  // Android build as a 1210ms "Forced reflow" violation in the browser
+  // console and the dominant chunk of "Layout = 32.8% of TBT" in the
+  // open-book Performance trace.
+  //
+  // Two-phase read-then-write keeps the loop O(N) elements + 1 recalc
+  // instead of O(N) recalcs.
+  const win = document.defaultView ?? window;
+  const els = document.querySelectorAll('div, p, blockquote, dd');
+  const alignClasses = new Array<string | null>(els.length);
+  // Read pass: collect computed text-align for every element. The browser
+  // computes style once for the whole document on the first call, then
+  // every subsequent getComputedStyle in this pass reuses that result.
+  for (let i = 0; i < els.length; i++) {
+    const align = win.getComputedStyle(els[i]!).textAlign;
+    if (align === 'center') alignClasses[i] = 'aligned-center';
+    else if (align === 'left') alignClasses[i] = 'aligned-left';
+    else if (align === 'right') alignClasses[i] = 'aligned-right';
+    else if (align === 'justify') alignClasses[i] = 'aligned-justify';
+    else alignClasses[i] = null;
+  }
+  // Write pass: applies all classList changes in a single batch. Style
+  // invalidation happens once at the end, when the next layout-affecting
+  // operation forces a flush.
+  for (let i = 0; i < els.length; i++) {
+    const cls = alignClasses[i];
+    if (cls) els[i]!.classList.add(cls);
+  }
 };
 
 export const applyFixedlayoutStyles = (

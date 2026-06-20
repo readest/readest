@@ -47,7 +47,8 @@ const createCaseMismatchEpub = async () => {
   );
 
   const blob = await writer.close();
-  return new File([blob], 'case-mismatch.epub', { type: 'application/epub+zip' });
+  const arrayBuffer = await blob.arrayBuffer();
+  return new File([arrayBuffer], 'case-mismatch.epub', { type: 'application/epub+zip' });
 };
 
 describe('DocumentLoader EPUB zip lookup', () => {

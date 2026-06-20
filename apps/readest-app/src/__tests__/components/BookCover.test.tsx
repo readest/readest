@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 
 import BookCover from '@/components/BookCover';
 import { Book } from '@/types/book';
@@ -37,6 +37,21 @@ describe('BookCover', () => {
     const img = container.querySelector('img.cover-image');
     expect(img).toBeTruthy();
     expect(img?.getAttribute('loading')).toBe('lazy');
+  });
+
+  it('reports natural aspect ratio via onAspectRatioChange when fit-mode image loads', () => {
+    const onAspectRatioChange = vi.fn();
+    const { container } = render(
+      <BookCover book={makeBook()} coverFit='fit' onAspectRatioChange={onAspectRatioChange} />,
+    );
+    const img = container.querySelector('img.cover-image') as HTMLImageElement;
+    expect(img).toBeTruthy();
+
+    Object.defineProperty(img, 'naturalWidth', { value: 600, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 900, configurable: true });
+    fireEvent.load(img);
+
+    expect(onAspectRatioChange).toHaveBeenCalledWith(600 / 900);
   });
 
   it('falls back to metadata.author on the fallback cover when book.author is empty', () => {

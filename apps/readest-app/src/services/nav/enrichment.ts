@@ -8,11 +8,21 @@
 // elements and merge their links as ordinary top-level TOC items.
 
 import { BookDoc, TOCItem } from '@/libs/document';
+import { runWithConcurrency } from '@/utils/concurrency';
 import { collectAllTocItems } from './grouping';
 
 const NAV_ENRICH_MIN_SECTIONS = 64;
 const NAV_ENRICH_TOC_RATIO = 8;
 const EPUB_NS = 'http://www.idpf.org/2007/ops';
+/**
+ * Mirror `NAV_BUILD_CONCURRENCY` from ./index.ts. Sparse-ncx EPUBs that
+ * trigger this enrichment are exactly the ones with a long spine
+ * (NAV_ENRICH_MIN_SECTIONS = 64+ entries) — i.e. the same workload that
+ * blew up the unbounded Promise.all-based scan on Tauri Android. Cap to
+ * keep simultaneous in-flight section reads bounded; see the docblock
+ * on `NAV_BUILD_CONCURRENCY` for the failure mode that drove this.
+ */
+const NAV_ENRICH_CONCURRENCY = 128;
 
 interface ExtractedNavItem {
   label: string;
@@ -104,31 +114,60 @@ export const enrichTocFromNavElements = async (
 
   const sectionIdSet = new Set(sections.map((s) => s.id));
 
+  // Two-phase scan, each phase bounded by NAV_ENRICH_CONCURRENCY:
+  //   1) `loadText` every section and quick-filter on
+  //      `content.includes('<nav')` — cheap (ASCII substring on the raw
+  //      HTML) and immediately discards 90%+ of chapters that have no
+  //      embedded nav. Bounded concurrency lets the zip inflates overlap
+  //      without saturating the Tauri IPC bridge / fd pool.
+  //   2) For survivors, `createDocument` + walk `<nav>` elements. The
+  //      makeZipLoader dedupes in-flight loadText calls by name, so when
+  //      phase 2 fires inside the same microtask span as phase 1's tail
+  //      its `createDocument()` reuses phase 1's inflated bytes.
+  type Survivor = { section: (typeof sections)[number] };
+  const phase1Outcomes = await runWithConcurrency(
+    sections,
+    NAV_ENRICH_CONCURRENCY,
+    async (section): Promise<Survivor | null> => {
+      if (!section.loadText) return null;
+      try {
+        const content = await section.loadText();
+        if (!content || !content.includes('<nav')) return null;
+        return { section };
+      } catch {
+        return null;
+      }
+    },
+  );
+  const survivors: Survivor[] = [];
+  for (const o of phase1Outcomes) {
+    if ('result' in o && o.result) survivors.push(o.result);
+  }
+
+  type NavMatch = { sectionId: string; navs: Element[] };
+  const phase2Outcomes = await runWithConcurrency(
+    survivors,
+    NAV_ENRICH_CONCURRENCY,
+    async ({ section }): Promise<NavMatch | null> => {
+      let doc: Document;
+      try {
+        doc = await section.createDocument();
+      } catch {
+        return null;
+      }
+      const navs = Array.from(doc.getElementsByTagName('nav'));
+      if (navs.length === 0) return null;
+      return { sectionId: section.id, navs };
+    },
+  );
+
   const collected: ExtractedNavItem[] = [];
   const seenHref = new Set<string>();
-
-  for (const section of sections) {
-    if (!section.loadText) continue;
-    let content: string | null = null;
-    try {
-      content = await section.loadText();
-    } catch {
-      content = null;
-    }
-    if (!content || !content.includes('<nav')) continue;
-
-    let doc: Document;
-    try {
-      doc = await section.createDocument();
-    } catch {
-      continue;
-    }
-
-    const navs = Array.from(doc.getElementsByTagName('nav'));
-    if (navs.length === 0) continue;
-
+  for (const o of phase2Outcomes) {
+    if (!('result' in o) || !o.result) continue;
+    const { sectionId, navs } = o.result;
     for (const navEl of navs) {
-      const extracted = extractTocFromNav(navEl, section.id);
+      const extracted = extractTocFromNav(navEl, sectionId);
       for (const item of extracted) {
         const sectionPart = hrefSection(item.href);
         if (!sectionPart || !sectionIdSet.has(sectionPart)) continue;

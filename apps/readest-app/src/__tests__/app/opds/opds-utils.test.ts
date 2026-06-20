@@ -4,8 +4,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('foliate-js/opds.js', () => ({
   isOPDSCatalog: vi.fn((type: string) => {
     return (
-      type.includes('application/atom+xml') &&
-      (type.includes('opds-catalog') || type.includes('opds'))
+      type.includes('application/opds+json') ||
+      (type.includes('application/atom+xml') &&
+        (type.includes('opds-catalog') || type.includes('opds')))
     );
   }),
 }));
@@ -47,10 +48,14 @@ import {
   groupByArray,
   parseMediaType,
   isSearchLink,
+  expandOPDSSearchTemplate,
   resolveURL,
   getFileExtFromPath,
+  looksLikeXMLContent,
+  parseOPDSXML,
   MIME,
   validateOPDSURL,
+  getOPDSNavLink,
 } from '@/app/opds/utils/opdsUtils';
 import type { OPDSBaseLink } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
@@ -239,6 +244,25 @@ describe('opdsUtils', () => {
       expect(isSearchLink(link)).toBe(false);
     });
 
+    it('should return true for a templated OPDS 2.0 JSON search link', () => {
+      const link: OPDSBaseLink = {
+        rel: 'search',
+        href: '/opds/search{?query}',
+        type: MIME.OPDS2,
+        templated: true,
+      };
+      expect(isSearchLink(link)).toBe(true);
+    });
+
+    it('should return false for an OPDS 2.0 JSON search link that is not templated', () => {
+      const link: OPDSBaseLink = {
+        rel: 'search',
+        href: '/opds/search',
+        type: MIME.OPDS2,
+      };
+      expect(isSearchLink(link)).toBe(false);
+    });
+
     it('should return false when rel is undefined', () => {
       const link: OPDSBaseLink = {
         href: '/search',
@@ -254,6 +278,38 @@ describe('opdsUtils', () => {
         type: MIME.ATOM,
       };
       expect(isSearchLink(link)).toBe(false);
+    });
+  });
+
+  describe('expandOPDSSearchTemplate', () => {
+    it('expands a {?query} template with the search term', () => {
+      expect(expandOPDSSearchTemplate('/opds/search{?query}', 'dune')).toBe(
+        '/opds/search?query=dune',
+      );
+    });
+
+    it('percent-encodes the search term', () => {
+      expect(expandOPDSSearchTemplate('/opds/search{?query}', 'harry potter')).toBe(
+        '/opds/search?query=harry%20potter',
+      );
+    });
+
+    it('fills a {?searchTerms} template variable', () => {
+      expect(expandOPDSSearchTemplate('/search{?searchTerms}', 'foo')).toBe(
+        '/search?searchTerms=foo',
+      );
+    });
+
+    it('fills only the primary text variable, omitting the rest', () => {
+      expect(expandOPDSSearchTemplate('/search{?query,lang}', 'foo')).toBe('/search?query=foo');
+    });
+
+    it('falls back to the only variable when none is a known query name', () => {
+      expect(expandOPDSSearchTemplate('/search{?keyword}', 'foo')).toBe('/search?keyword=foo');
+    });
+
+    it('returns the href unchanged when there are no template variables', () => {
+      expect(expandOPDSSearchTemplate('/search', 'foo')).toBe('/search');
     });
   });
 
@@ -351,6 +407,102 @@ describe('opdsUtils', () => {
       // If both epub and pdf appear, returns whichever EXTS entry matches first
       const result = getFileExtFromPath('/books/epub/pdf/file');
       expect(['epub', 'pdf']).toContain(result);
+    });
+  });
+
+  describe('looksLikeXMLContent', () => {
+    it('detects XML that starts with the root element directly', () => {
+      expect(looksLikeXMLContent('<feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toBe(true);
+    });
+
+    it('detects XML with an <?xml ?> declaration', () => {
+      expect(looksLikeXMLContent('<?xml version="1.0"?><feed></feed>')).toBe(true);
+    });
+
+    // Regression for https://github.com/readest/readest/issues/4181
+    // The Hungarian MEK catalog returns XML feeds with leading whitespace and
+    // newlines before <feed> (and no <?xml ?> declaration). A naive
+    // text.startsWith('<') check misfired, sending the body to JSON.parse.
+    it('detects XML with leading whitespace and newlines', () => {
+      expect(looksLikeXMLContent('  \n  <feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toBe(
+        true,
+      );
+    });
+
+    it('detects XML with a leading UTF-8 BOM', () => {
+      expect(looksLikeXMLContent('﻿<feed></feed>')).toBe(true);
+    });
+
+    it('returns false for JSON content', () => {
+      expect(looksLikeXMLContent('{"metadata":{}}')).toBe(false);
+    });
+
+    it('returns false for JSON with leading whitespace', () => {
+      expect(looksLikeXMLContent('  \n  {"metadata":{}}')).toBe(false);
+    });
+
+    it('returns false for plain text', () => {
+      expect(looksLikeXMLContent('Just some plain text')).toBe(false);
+    });
+
+    it('returns false for an empty string', () => {
+      expect(looksLikeXMLContent('')).toBe(false);
+    });
+  });
+
+  // Regression for https://github.com/readest/readest/issues/4479
+  // The Hungarian MEK catalog (a PHP backend) emits a valid Atom feed followed
+  // by trailing junk after </feed>. Firefox's strict DOMParser replaces the
+  // whole document with a <parsererror> ("junk after document element"), while
+  // Chrome ignores it. jsdom matches Firefox, so these run in the test env.
+  describe('parseOPDSXML', () => {
+    const parserError = (doc: Document) =>
+      doc.documentElement?.localName === 'parsererror' ||
+      doc.getElementsByTagName('parsererror').length > 0;
+
+    it('parses a well-formed feed unchanged', () => {
+      const doc = parseOPDSXML('<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed>');
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers from text junk after the root element', () => {
+      const doc = parseOPDSXML(
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed>\nWarning: junk',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+      expect(doc.querySelector('title')?.textContent).toBe('x');
+    });
+
+    it('recovers from a stray tag after the root element', () => {
+      const doc = parseOPDSXML(
+        '<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title></feed><br/>',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers from leading whitespace and trailing junk (the MEK shape)', () => {
+      const doc = parseOPDSXML(
+        '\n\n\n<feed xmlns="http://www.w3.org/2005/Atom"><title>MEK</title></feed>\n<br />extra',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('feed');
+    });
+
+    it('recovers an entry document with trailing junk', () => {
+      const doc = parseOPDSXML(
+        '<entry xmlns="http://www.w3.org/2005/Atom"><title>book</title></entry> junk',
+      );
+      expect(parserError(doc)).toBe(false);
+      expect(doc.documentElement.localName).toBe('entry');
+    });
+
+    it('returns the error document when recovery is impossible', () => {
+      // Unclosed root element — there is no trailing junk to strip.
+      const doc = parseOPDSXML('<feed xmlns="http://www.w3.org/2005/Atom"><title>x</title>');
+      expect(parserError(doc)).toBe(true);
     });
   });
 
@@ -522,6 +674,38 @@ describe('opdsUtils', () => {
       expect(result.isValid).toBe(true);
     });
 
+    // Regression for https://github.com/readest/readest/issues/4181
+    it('should accept an XML feed with leading whitespace and a text/html Content-Type', async () => {
+      const xmlFeed = `  \n<feed xmlns="http://www.w3.org/2005/Atom">\n  <title>MEK</title>\n</feed>`;
+
+      mockFetchWithAuth.mockResolvedValue({
+        ok: true,
+        url: 'https://bookserver.mek.oszk.hu/all/epub/0',
+        text: () => Promise.resolve(xmlFeed),
+        headers: new Headers({ 'Content-Type': 'text/html' }),
+      } as Response);
+
+      const result = await validateOPDSURL('https://bookserver.mek.oszk.hu/all/epub/0');
+      expect(result.isValid).toBe(true);
+      expect(result.data?.type).toBe('feed');
+    });
+
+    // Regression for https://github.com/readest/readest/issues/4479
+    it('should accept a feed with trailing junk after </feed> (Firefox strict parse)', async () => {
+      const xmlFeed = `\n\n<feed xmlns="http://www.w3.org/2005/Atom">\n  <title>MEK</title>\n</feed>\nWarning: stray PHP output`;
+
+      mockFetchWithAuth.mockResolvedValue({
+        ok: true,
+        url: 'https://bookserver.mek.oszk.hu/abc/teljes/C/0',
+        text: () => Promise.resolve(xmlFeed),
+        headers: new Headers({ 'Content-Type': 'text/html' }),
+      } as Response);
+
+      const result = await validateOPDSURL('https://bookserver.mek.oszk.hu/abc/teljes/C/0');
+      expect(result.isValid).toBe(true);
+      expect(result.data?.type).toBe('feed');
+    });
+
     it('should return invalid for XML that is not a recognized OPDS document type', async () => {
       const xmlDoc = `<?xml version="1.0" encoding="UTF-8"?>
 <catalog>
@@ -563,6 +747,38 @@ describe('opdsUtils', () => {
         expect.objectContaining({ signal: expect.anything() }),
         customHeaders,
       );
+    });
+  });
+
+  describe('getOPDSNavLink', () => {
+    it('returns the href of the first OPDS-typed link', () => {
+      expect(
+        getOPDSNavLink([{ href: '/opds/subjects?id=164', type: 'application/opds+json' }]),
+      ).toBe('/opds/subjects?id=164');
+    });
+
+    it('skips links whose type is not an OPDS catalog type', () => {
+      expect(
+        getOPDSNavLink([{ href: 'https://example.com/author', type: 'text/html' }]),
+      ).toBeUndefined();
+    });
+
+    it('returns the first OPDS link when mixed with non-OPDS links', () => {
+      expect(
+        getOPDSNavLink([
+          { href: 'https://example.com/author', type: 'text/html' },
+          { href: '/opds/search?author_id=52836', type: 'application/opds+json' },
+        ]),
+      ).toBe('/opds/search?author_id=52836');
+    });
+
+    it('returns undefined for an empty or missing array', () => {
+      expect(getOPDSNavLink([])).toBeUndefined();
+      expect(getOPDSNavLink(undefined)).toBeUndefined();
+    });
+
+    it('ignores entries without an href', () => {
+      expect(getOPDSNavLink([{ type: 'application/opds+json' }])).toBeUndefined();
     });
   });
 });

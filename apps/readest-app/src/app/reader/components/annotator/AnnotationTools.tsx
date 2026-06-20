@@ -1,6 +1,7 @@
 import { IconType } from 'react-icons';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
+import { FiShare } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
@@ -96,6 +97,13 @@ export const annotationToolButtons = createAnnotationToolButtons([
     label: _('Proofread'),
     tooltip: _('Proofread text after selection'),
     Icon: IoIosBuild,
+  },
+  {
+    type: 'share',
+    label: _('Share'),
+    tooltip: _('Share text after selection'),
+    Icon: FiShare,
+    quickAction: true,
   },
 ]);
 

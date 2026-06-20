@@ -251,6 +251,12 @@ msgstr "Penyegerakan automatik"
 msgid "Readest library"
 msgstr "Pustaka Readest"
 
+msgid "Push stats now"
+msgstr "Hantar statistik sekarang"
+
+msgid "Pull stats now"
+msgstr "Tarik statistik sekarang"
+
 msgid "Push books now"
 msgstr "Hantar buku sekarang"
 
@@ -436,3 +442,18 @@ msgstr "Kemajuan bacaan disegerakkan"
 
 msgid "No saved reading progress found for this book"
 msgstr "Tiada kemajuan bacaan tersimpan ditemui untuk buku ini"
+
+msgid "Reading statistics are up to date"
+msgstr "Statistik bacaan adalah terkini"
+
+msgid "Reading statistics pushed"
+msgstr "Statistik bacaan dihantar"
+
+msgid "Failed to push reading statistics"
+msgstr "Gagal menghantar statistik bacaan"
+
+msgid "Failed to pull reading statistics"
+msgstr "Gagal menarik statistik bacaan"
+
+msgid "Reading statistics pulled"
+msgstr "Statistik bacaan ditarik"

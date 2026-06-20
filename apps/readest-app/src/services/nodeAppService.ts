@@ -386,7 +386,7 @@ export class NodeAppService extends BaseAppService {
 
   async saveFile(
     _filename: string,
-    content: string | ArrayBuffer,
+    content: string | ArrayBuffer | null,
     options?: {
       filePath?: string;
       mimeType?: string;
@@ -399,7 +399,7 @@ export class NodeAppService extends BaseAppService {
       await fsp.mkdir(nodePath.dirname(filepath), { recursive: true });
       if (typeof content === 'string') {
         await fsp.writeFile(filepath, content, 'utf-8');
-      } else {
+      } else if (content) {
         await fsp.writeFile(filepath, Buffer.from(content));
       }
       return true;

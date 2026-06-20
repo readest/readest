@@ -251,6 +251,12 @@ msgstr "অটো সিঙ্ক"
 msgid "Readest library"
 msgstr "Readest লাইব্রেরি"
 
+msgid "Push stats now"
+msgstr "এখনই পরিসংখ্যান পুশ করুন"
+
+msgid "Pull stats now"
+msgstr "এখনই পরিসংখ্যান পুল করুন"
+
 msgid "Push books now"
 msgstr "এখনই বই পুশ করুন"
 
@@ -436,3 +442,18 @@ msgstr "পড়ার অগ্রগতি সিঙ্ক হয়েছে
 
 msgid "No saved reading progress found for this book"
 msgstr "এই বইয়ের জন্য সংরক্ষিত পড়ার অগ্রগতি পাওয়া যায়নি"
+
+msgid "Reading statistics are up to date"
+msgstr "পড়ার পরিসংখ্যান হালনাগাদ আছে"
+
+msgid "Reading statistics pushed"
+msgstr "পড়ার পরিসংখ্যান পাঠানো হয়েছে"
+
+msgid "Failed to push reading statistics"
+msgstr "পড়ার পরিসংখ্যান পাঠানো ব্যর্থ"
+
+msgid "Failed to pull reading statistics"
+msgstr "পড়ার পরিসংখ্যান আনা ব্যর্থ"
+
+msgid "Reading statistics pulled"
+msgstr "পড়ার পরিসংখ্যান আনা হয়েছে"

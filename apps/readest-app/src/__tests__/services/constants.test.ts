@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 
 vi.mock('@/utils/config', () => ({
   getDefaultMaxBlockSize: vi.fn(() => 1600),
@@ -293,6 +294,16 @@ describe('services/constants', () => {
       expect(Array.isArray(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks)).toBe(true);
       expect(DEFAULT_SYSTEM_SETTINGS.lastOpenBooks!.length).toBe(0);
     });
+
+    it('has a disabled hardwarePageTurner with empty bindings', () => {
+      const hw = DEFAULT_SYSTEM_SETTINGS.hardwarePageTurner!;
+      expect(hw).toBeDefined();
+      expect(hw.enabled).toBe(false);
+      expect(hw.bindings.pagePrev).toBeNull();
+      expect(hw.bindings.pageNext).toBeNull();
+      expect(hw.bindings.sectionPrev).toBeNull();
+      expect(hw.bindings.sectionNext).toBeNull();
+    });
   });
 
   describe('DEFAULT_MOBILE_SYSTEM_SETTINGS', () => {
@@ -543,7 +554,6 @@ describe('services/constants', () => {
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.fullJustification).toBe(false);
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.animated).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.defaultFont).toBe('string');
-      expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.marginBottomPx).toBe('number');
       expect(DEFAULT_MOBILE_VIEW_SETTINGS.disableDoubleClick).toBe(true);
       expect(typeof DEFAULT_MOBILE_VIEW_SETTINGS.spreadMode).toBe('string');
     });
@@ -586,7 +596,6 @@ describe('services/constants', () => {
     it('has boolean display flags', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showHeader).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showBarsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingTime).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showRemainingPages).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showProgressInfo).toBe('boolean');
@@ -595,7 +604,6 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showBatteryPercentage).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.use24HourClock).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.tapToToggleFooter).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.showMarginsOnScroll).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showPaginationButtons).toBe('boolean');
     });
 
@@ -702,6 +710,13 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_ANNOTATOR_CONFIG.copyToNotebook).toBe('boolean');
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBeDefined();
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBe(DEFAULT_NOTE_EXPORT_CONFIG);
+    });
+
+    it('annotationToolbarItems defaults to the eight non-share tools', () => {
+      expect(DEFAULT_ANNOTATOR_CONFIG.annotationToolbarItems).toEqual(
+        DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
+      );
+      expect(DEFAULT_ANNOTATOR_CONFIG.annotationToolbarItems).not.toContain('share');
     });
   });
 

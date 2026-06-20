@@ -40,6 +40,21 @@ export class TTSUtils {
     return storedPreferences ? JSON.parse(storedPreferences) : {};
   }
 
+  // Sorts voices matching the given locale (e.g. 'en-GB') before the rest,
+  // falling back to sortVoicesFunc, so region-relevant voices stay on top
+  // while the overall voice set remains the same for every region variant.
+  static sortVoicesPreferLocaleFunc(locale: string): (a: TTSVoice, b: TTSVoice) => number {
+    const normalizedLocale = locale.toLowerCase();
+    return (a: TTSVoice, b: TTSVoice): number => {
+      if (normalizedLocale) {
+        const aMatches = a.lang.toLowerCase().startsWith(normalizedLocale);
+        const bMatches = b.lang.toLowerCase().startsWith(normalizedLocale);
+        if (aMatches !== bMatches) return aMatches ? -1 : 1;
+      }
+      return TTSUtils.sortVoicesFunc(a, b);
+    };
+  }
+
   static sortVoicesFunc(a: TTSVoice, b: TTSVoice): number {
     const aRegion = a.lang.split('-')[1] || '';
     const bRegion = b.lang.split('-')[1] || '';

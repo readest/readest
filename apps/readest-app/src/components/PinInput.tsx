@@ -105,6 +105,7 @@ const PinInput = forwardRef<PinInputHandle, PinInputProps>(function PinInput(
         onBlur={() => setFocused(false)}
         disabled={disabled}
         autoComplete={autoComplete}
+        autoFocus={autoFocus || stickyFocus}
         aria-label={ariaLabel}
         className='absolute inset-0 z-10 cursor-pointer opacity-0'
       />

@@ -13,20 +13,25 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useAIChatStore } from '@/store/aiChatStore';
+import { aiLogger, aiStore, createTauriAdapter, updateXRayForProgress } from '@/services/ai';
 import {
-  indexBook,
-  isBookIndexed,
-  aiStore,
-  aiLogger,
-  createTauriAdapter,
-  getLastSources,
-  clearLastSources,
-  updateXRayForProgress,
-} from '@/services/ai';
+  LegacyIdbBackend,
+  ReedyBackend,
+  ReedySourceStore,
+  selectBackend,
+  type RetrievalBackend,
+  type SourceItem,
+} from '@/services/ai/adapters';
 import type { EmbeddingProgress, AISettings, AIMessage, IndexingState } from '@/services/ai/types';
+import type { RetrievedChunk } from '@/services/reedy/retrieval/BookRetriever';
 import { useEnv } from '@/context/EnvContext';
+import { isTauriAppPlatform } from '@/services/environment';
+import type { AppService } from '@/types/system';
 import { eventDispatcher } from '@/utils/event';
+import { ReedyAssistant } from '@/services/reedy/ui/ReedyAssistant';
+import type { ReadingContextSnapshot } from '@/services/reedy/tools/builtins/types';
 
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, BookOpenIcon } from 'lucide-react';
@@ -70,13 +75,18 @@ interface AIAssistantProps {
   bookKey: string;
 }
 
-// inner component that coordinates history + runtime
+// inner component that uses the runtime hook
 const AIAssistantChat = ({
   aiSettings,
   bookHash,
   bookTitle,
   authorName,
   currentPage,
+  backend,
+  sourceStore,
+  currentTurnId,
+  setCurrentTurnId,
+  onSourceClick,
   onResetIndex,
 }: {
   aiSettings: AISettings;
@@ -84,6 +94,11 @@ const AIAssistantChat = ({
   bookTitle: string;
   authorName: string;
   currentPage: number;
+  backend: RetrievalBackend;
+  sourceStore: ReedySourceStore;
+  currentTurnId: string | null;
+  setCurrentTurnId: (id: string) => void;
+  onSourceClick?: (source: SourceItem) => void;
   onResetIndex: () => void;
 }) => {
   const {
@@ -93,56 +108,6 @@ const AIAssistantChat = ({
     isLoadingMessages,
   } = useAIChatStore();
 
-  const showHistoryLoading = isLoadingMessages && !!activeConversationId;
-  const hasStoredMessages = storedMessages.length > 0;
-
-  if (showHistoryLoading) {
-    return <div className='flex-1' />;
-  }
-
-  return (
-    <AIAssistantRuntime
-      key={activeConversationId ?? 'new'}
-      aiSettings={aiSettings}
-      bookHash={bookHash}
-      bookTitle={bookTitle}
-      authorName={authorName}
-      currentPage={currentPage}
-      activeConversationId={activeConversationId}
-      storedMessages={storedMessages}
-      addMessage={addMessage}
-      onResetIndex={onResetIndex}
-      isLoadingHistory={isLoadingMessages}
-      hasStoredMessages={hasStoredMessages}
-    />
-  );
-};
-
-const AIAssistantRuntime = ({
-  aiSettings,
-  bookHash,
-  bookTitle,
-  authorName,
-  currentPage,
-  activeConversationId,
-  storedMessages,
-  addMessage,
-  onResetIndex,
-  isLoadingHistory,
-  hasStoredMessages,
-}: {
-  aiSettings: AISettings;
-  bookHash: string;
-  bookTitle: string;
-  authorName: string;
-  currentPage: number;
-  activeConversationId: string | null;
-  storedMessages: AIMessage[];
-  addMessage: (message: Omit<AIMessage, 'id' | 'createdAt'>) => Promise<void>;
-  onResetIndex: () => void;
-  isLoadingHistory: boolean;
-  hasStoredMessages: boolean;
-}) => {
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
     settings: aiSettings,
@@ -150,6 +115,9 @@ const AIAssistantRuntime = ({
     bookTitle,
     authorName,
     currentPage,
+    backend,
+    sourceStore,
+    onTurnStart: setCurrentTurnId,
   });
 
   // update ref on every render with latest values
@@ -160,6 +128,9 @@ const AIAssistantRuntime = ({
       bookTitle,
       authorName,
       currentPage,
+      backend,
+      sourceStore,
+      onTurnStart: setCurrentTurnId,
     };
   });
 
@@ -210,8 +181,11 @@ const AIAssistantRuntime = ({
       adapter={adapter}
       historyAdapter={historyAdapter}
       onResetIndex={onResetIndex}
-      isLoadingHistory={isLoadingHistory}
-      hasStoredMessages={hasStoredMessages}
+      isLoadingHistory={isLoadingMessages}
+      hasActiveConversation={!!activeConversationId}
+      sourceStore={sourceStore}
+      currentTurnId={currentTurnId}
+      onSourceClick={onSourceClick}
     />
   );
 };
@@ -221,13 +195,19 @@ const AIAssistantWithRuntime = ({
   historyAdapter,
   onResetIndex,
   isLoadingHistory,
-  hasStoredMessages,
+  hasActiveConversation,
+  sourceStore,
+  currentTurnId,
+  onSourceClick,
 }: {
   adapter: NonNullable<ReturnType<typeof createTauriAdapter>>;
   historyAdapter?: ThreadHistoryAdapter;
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasStoredMessages: boolean;
+  hasActiveConversation: boolean;
+  sourceStore: ReedySourceStore;
+  currentTurnId: string | null;
+  onSourceClick?: (source: SourceItem) => void;
 }) => {
   const runtime = useLocalRuntime(adapter, {
     adapters: historyAdapter ? { history: historyAdapter } : undefined,
@@ -240,7 +220,10 @@ const AIAssistantWithRuntime = ({
       <ThreadWrapper
         onResetIndex={onResetIndex}
         isLoadingHistory={isLoadingHistory}
-        hasStoredMessages={hasStoredMessages}
+        hasActiveConversation={hasActiveConversation}
+        sourceStore={sourceStore}
+        currentTurnId={currentTurnId}
+        onSourceClick={onSourceClick}
       />
     </AssistantRuntimeProvider>
   );
@@ -249,53 +232,95 @@ const AIAssistantWithRuntime = ({
 const ThreadWrapper = ({
   onResetIndex,
   isLoadingHistory,
-  hasStoredMessages,
+  hasActiveConversation,
+  sourceStore,
+  currentTurnId,
+  onSourceClick,
 }: {
   onResetIndex: () => void;
   isLoadingHistory: boolean;
-  hasStoredMessages: boolean;
+  hasActiveConversation: boolean;
+  sourceStore: ReedySourceStore;
+  currentTurnId: string | null;
+  onSourceClick?: (source: SourceItem) => void;
 }) => {
-  const [sources, setSources] = useState(getLastSources());
+  const [sources, setSources] = useState<RetrievedChunk[]>(
+    currentTurnId ? sourceStore.get(currentTurnId) : [],
+  );
   const assistantRuntime = useAssistantRuntime();
   const { setActiveConversation } = useAIChatStore();
 
+  // Subscribe to the active turn's slot in the source store. Replaces the
+  // pre-Reedy 500ms poll over a module-global lastSources (per plan §M1.7).
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSources(getLastSources());
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
+    if (!currentTurnId) {
+      setSources([]);
+      return;
+    }
+    setSources(sourceStore.get(currentTurnId));
+    return sourceStore.subscribe(currentTurnId, setSources);
+  }, [currentTurnId, sourceStore]);
 
   const handleClear = useCallback(() => {
-    clearLastSources();
+    sourceStore.clear();
     setSources([]);
     setActiveConversation(null);
     assistantRuntime.switchToNewThread();
-  }, [assistantRuntime, setActiveConversation]);
+  }, [assistantRuntime, setActiveConversation, sourceStore]);
 
   return (
     <Thread
       sources={sources}
+      onSourceClick={onSourceClick}
       onClear={handleClear}
       onResetIndex={onResetIndex}
       isLoadingHistory={isLoadingHistory}
-      hasStoredMessages={hasStoredMessages}
+      hasActiveConversation={hasActiveConversation}
     />
   );
 };
 
+/**
+ * Phase 4.3 router. Switches between the legacy / Reedy-MVP path
+ * (LegacyAIAssistant) and the Phase 4 agent-runtime path
+ * (ReedyAgentAssistantBridge) based on aiSettings.reedy.runtime.
+ *
+ * The split is at component boundary rather than inside one component
+ * so hooks always run in stable order on whichever path is rendered.
+ */
 const AIAssistant = ({ bookKey }: AIAssistantProps) => {
+  const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const bookData = getBookData(bookKey);
+
+  const reedyRuntime = settings?.aiSettings?.reedy?.runtime ?? 'mvp';
+  const useAgentRuntime =
+    settings?.aiSettings?.enabled === true &&
+    settings?.aiSettings?.reedy?.enabled === true &&
+    reedyRuntime === 'agent' &&
+    !!appService &&
+    isTauriAppPlatform() &&
+    !!bookData?.bookDoc;
+
+  if (useAgentRuntime) return <ReedyAgentAssistantBridge bookKey={bookKey} />;
+  return <LegacyAIAssistant bookKey={bookKey} />;
+};
+
+const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
-  const { getProgress } = useReaderStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
   const bookData = getBookData(bookKey);
-  const progress = getProgress(bookKey);
+  // Reactive: chat context follows the user's current reading position.
+  const progress = useBookProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
   const [indexingState, setIndexingState] = useState<IndexingState | null>(null);
   const [indexed, setIndexed] = useState(false);
+  const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
   const hasAutoRestored = useRef(false);
 
   const bookHash = bookKey.split('-')[0] || '';
@@ -313,18 +338,34 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       }
     : null;
 
+  // Per-instance source store, plus the active backend chosen via the same
+  // selectBackend gate the chat adapter will hit (Reedy on Tauri when
+  // enabled; legacy IDB otherwise).
+  const sourceStore = useMemo(() => new ReedySourceStore(), []);
+  const backend = useMemo<RetrievalBackend | null>(() => {
+    if (!aiSettings) return null;
+    const legacy = new LegacyIdbBackend(aiSettings);
+    const reedy: RetrievalBackend | null =
+      appService && isTauriAppPlatform()
+        ? new ReedyBackend(appService as AppService, aiSettings)
+        : null;
+    return selectBackend({ settings: aiSettings, isTauri: isTauriAppPlatform(), legacy, reedy });
+  }, [aiSettings, appService]);
+
   // check if book is indexed on mount
   useEffect(() => {
     let cancelled = false;
+
     const loadIndexState = async () => {
-      if (!bookHash) {
+      if (!bookHash || !backend) {
         setIsLoading(false);
         setIndexingState(null);
         return;
       }
+
       const [indexedResult, storedState] = await Promise.all([
-        isBookIndexed(bookHash),
-        aiStore.getIndexingState(bookHash),
+        backend.isIndexed(bookHash),
+        backend.kind === 'legacy-idb' ? aiStore.getIndexingState(bookHash) : Promise.resolve(null),
       ]);
       if (cancelled) return;
       setIndexed(indexedResult);
@@ -346,7 +387,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       cancelled = true;
       eventDispatcher.off('rag-indexing-updated', handleIndexingUpdate);
     };
-  }, [bookHash]);
+  }, [bookHash, backend]);
 
   useEffect(() => {
     hasAutoRestored.current = false;
@@ -404,20 +445,71 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   ]);
 
   const handleIndex = useCallback(async () => {
-    if (!bookData?.bookDoc || !aiSettings) return;
+    if (!bookData?.bookDoc || !aiSettings || !backend) return;
+
     let indexSucceeded = false;
+    setIndexingState({
+      bookHash,
+      status: 'indexing',
+      progress: 0,
+      chunksProcessed: 0,
+      totalChunks: 0,
+      phase: 'chunking',
+      current: 0,
+      total: 1,
+      updatedAt: Date.now(),
+    });
+
     try {
-      await indexBook(bookData.bookDoc as Parameters<typeof indexBook>[0], bookHash, aiSettings);
+      await backend.indexBook(bookData.bookDoc, bookHash, {
+        onProgress: (indexProgress) => {
+          setIndexingState((current) => ({
+            bookHash,
+            status: 'indexing',
+            progress:
+              indexProgress.phase === 'embedding' && indexProgress.total > 0
+                ? Math.round((indexProgress.current / indexProgress.total) * 100)
+                : (current?.progress ?? 0),
+            chunksProcessed: current?.chunksProcessed ?? 0,
+            totalChunks: current?.totalChunks ?? 0,
+            phase: indexProgress.phase,
+            current: indexProgress.current,
+            total: indexProgress.total,
+            updatedAt: Date.now(),
+          }));
+        },
+      });
       indexSucceeded = true;
-    } catch (e) {
-      aiLogger.rag.indexError(bookHash, (e as Error).message);
-    }
-
-    if (indexSucceeded) {
       setIndexed(true);
+      setIndexingState((current) => ({
+        bookHash,
+        status: 'complete',
+        progress: 100,
+        chunksProcessed: current?.chunksProcessed ?? current?.current ?? 0,
+        totalChunks: current?.totalChunks ?? current?.total ?? 0,
+        phase: 'indexing',
+        current: 1,
+        total: 1,
+        updatedAt: Date.now(),
+      }));
+    } catch (e) {
+      const message = (e as Error).message;
+      aiLogger.rag.indexError(bookHash, message);
+      setIndexingState((current) => ({
+        bookHash,
+        status: 'error',
+        progress: current?.progress ?? 0,
+        chunksProcessed: current?.chunksProcessed ?? 0,
+        totalChunks: current?.totalChunks ?? 0,
+        error: message,
+        phase: current?.phase,
+        current: current?.current,
+        total: current?.total,
+        updatedAt: Date.now(),
+      }));
     }
 
-    if (indexSucceeded) {
+    if (indexSucceeded && backend.kind === 'legacy-idb') {
       void updateXRayForProgress({
         bookHash,
         currentPage,
@@ -430,17 +522,37 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
         aiLogger.rag.indexError(bookHash, (error as Error).message);
       });
     }
-  }, [bookData, bookHash, aiSettings, appService, bookTitle, currentPage]);
+  }, [
+    bookData?.bookDoc,
+    bookData?.book?.metadata,
+    bookHash,
+    aiSettings,
+    backend,
+    currentPage,
+    bookTitle,
+    appService,
+  ]);
 
   const handleResetIndex = useCallback(async () => {
-    if (!appService) return;
+    if (!appService || !backend) return;
     if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
-    await aiStore.clearBook(bookHash);
+    await backend.clearBook(bookHash);
     await aiStore.clearXRayBook(bookHash);
     await aiStore.clearIndexingState(bookHash);
     setIndexed(false);
     setIndexingState(null);
-  }, [bookHash, appService, _]);
+  }, [bookHash, appService, backend, _]);
+
+  // Navigate the reader to a clicked source's CFI. Legacy backend chunks have
+  // no CFI so the Thread component renders them as static rows — only Reedy
+  // sources are clickable in M1.10.
+  const handleSourceClick = useCallback(
+    (source: SourceItem) => {
+      if (!source.cfi) return;
+      getView(bookKey)?.goTo(source.cfi);
+    },
+    [bookKey, getView],
+  );
 
   if (!aiSettings?.enabled) {
     return (
@@ -463,19 +575,8 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
   if (!indexed && !isIndexing) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-3 p-4 text-center'>
-        <div
-          className='bg-primary/10 rounded-full p-3'
-          style={{
-            animation: 'subtleBounce 2.5s ease-in-out infinite',
-          }}
-        >
+        <div className='bg-primary/10 rounded-full p-3'>
           <BookOpenIcon className='text-primary size-6' />
-          <style>{`
-            @keyframes subtleBounce {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(2px); }
-            }
-          `}</style>
         </div>
         <div>
           <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
@@ -484,6 +585,7 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
           </p>
         </div>
         <Button onClick={handleIndex} size='sm' className='h-8 text-xs'>
+          <BookOpenIcon className='mr-1.5 size-3.5' />
           {_('Start Indexing')}
         </Button>
       </div>
@@ -512,6 +614,8 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
     );
   }
 
+  if (!backend) return null;
+
   return (
     <AIAssistantChat
       aiSettings={aiSettings}
@@ -519,7 +623,65 @@ const AIAssistant = ({ bookKey }: AIAssistantProps) => {
       bookTitle={bookTitle}
       authorName={authorName}
       currentPage={currentPage}
+      backend={backend}
+      sourceStore={sourceStore}
+      currentTurnId={currentTurnId}
+      setCurrentTurnId={setCurrentTurnId}
+      onSourceClick={handleSourceClick}
       onResetIndex={handleResetIndex}
+    />
+  );
+};
+
+/**
+ * Bridge from the notebook AI tab into the Phase 4 ReedyAssistant.
+ *
+ * Kept separate from AIAssistant so legacy props/state don't leak in
+ * and we don't pay the cost of constructing the agent runtime when the
+ * user is on the MVP path. The flag check in AIAssistant guarantees this
+ * only renders when aiSettings.reedy.runtime === 'agent'.
+ */
+const ReedyAgentAssistantBridge = ({ bookKey }: AIAssistantProps) => {
+  const { appService } = useEnv();
+  const { settings } = useSettingsStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getView = useReaderStore((s) => s.getView);
+  const bookData = getBookData(bookKey);
+  // Reactive: agent runtime needs the latest reading position to seed
+  // tool calls.
+  const progress = useBookProgress(bookKey);
+
+  const bookHash = bookKey.split('-')[0] || '';
+  const aiSettings = settings?.aiSettings;
+
+  const readingContext = useMemo<ReadingContextSnapshot>(
+    () => ({
+      cfi: progress?.location ?? null,
+      sectionIndex: progress?.section?.current ?? 0,
+      chapterTitle: progress?.sectionLabel ?? null,
+      pageNumber: progress?.pageinfo?.current ?? 0,
+    }),
+    [progress],
+  );
+
+  const handleNavigate = useCallback(
+    (cfi: string) => {
+      getView(bookKey)?.goTo(cfi);
+    },
+    [bookKey, getView],
+  );
+
+  if (!aiSettings || !appService || !bookData?.bookDoc) return null;
+
+  return (
+    <ReedyAssistant
+      appService={appService as AppService}
+      bookDoc={bookData.bookDoc}
+      bookHash={bookHash}
+      bookKey={bookKey}
+      aiSettings={aiSettings}
+      readingContext={readingContext}
+      onNavigateToCfi={handleNavigate}
     />
   );
 };

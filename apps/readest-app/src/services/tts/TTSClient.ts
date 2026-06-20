@@ -24,6 +24,9 @@ export interface TTSClient {
   getAllVoices(): Promise<TTSVoice[]>;
   getVoices(lang: string): Promise<TTSVoicesGroup[]>;
   getGranularities(): TTSGranularity[];
+  // Whether this client reports word-boundary timings during playback so the
+  // controller can highlight word-by-word (and suppress the sentence highlight).
+  supportsWordBoundaries(): boolean;
   getVoiceId(): string;
   getSpeakingLang(): string;
 }

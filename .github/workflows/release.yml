@@ -5,10 +5,12 @@ on:
   release:
     types: [published]
 
+permissions: read-all
+
 jobs:
   get-release:
     permissions:
-      contents: write
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.get-release.outputs.release_id }}
@@ -17,14 +19,14 @@ jobs:
       release_version: ${{ steps.get-release-notes.outputs.release_version }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/readest-app/package.json').version")" >> $GITHUB_ENV
       - name: get release
         id: get-release
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const { data } = await github.rest.repos.getLatestRelease({
@@ -35,7 +37,7 @@ jobs:
             core.setOutput('release_tag', data.tag_name);
       - name: get release notes
         id: get-release-notes
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const fs = require('fs');
@@ -57,7 +59,7 @@ jobs:
     steps:
       - name: update release
         id: update-release
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           release_id: ${{ needs.get-release.outputs.release_id }}
           release_tag: ${{ needs.get-release.outputs.release_tag }}
@@ -87,7 +89,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: create KOReader plugin zip
         env:
@@ -154,47 +156,47 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: initialize git submodules
         run: git submodule update --init --recursive
 
       - name: setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 24
           cache: pnpm
 
       - name: setup Java (for Android build only)
         if: matrix.config.release == 'android'
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5
         with:
           distribution: 'zulu'
           java-version: '17'
 
       - name: setup Android SDK (for Android build only)
         if: matrix.config.release == 'android'
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
 
       - name: install NDK (for Android build only)
         if: matrix.config.release == 'android'
         run: sdkmanager "ndk;28.2.13676358"
 
       - name: install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: copy pdfjs-dist and simplecc-dist to public directory
         run: pnpm --filter @readest/readest-app setup-vendors
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: ${{ matrix.config.rust_target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           key: ${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
 
@@ -271,7 +273,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd apps/readest-app/
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+          # Use -f so curl fails on HTTP errors instead of writing the 404 body
+          # ("Not Found") into latest.json and clobbering the release asset with
+          # invalid JSON, which then breaks tauri-action's updater merge on every
+          # subsequent build.
+          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
+            exit 1
+          fi
+          if ! jq empty latest.json 2>/dev/null; then
+            echo "::error::Existing latest.json is not valid JSON; aborting."
+            exit 1
+          fi
 
           version=${{ needs.get-release.outputs.release_version }}
           universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
@@ -295,7 +308,7 @@ jobs:
         if: matrix.config.release == 'linux'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
 
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -311,6 +324,10 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
+          # On Linux, build with the Rust `cargo tauri` CLI installed in the
+          # step above so the new (truly-portable AppImage) bundler is used.
+          # Without this, tauri-action falls back to the npm @tauri-apps/cli.
+          tauriScript: ${{ matrix.config.release == 'linux' && 'cargo tauri' || '' }}
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
@@ -373,7 +390,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
+          # Use -f so curl fails on HTTP errors instead of writing the 404 body
+          # ("Not Found") into latest.json and clobbering the release asset with
+          # invalid JSON, which then breaks tauri-action's updater merge on every
+          # subsequent build.
+          if ! curl -fsSL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json; then
+            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
+            exit 1
+          fi
+          if ! jq empty latest.json 2>/dev/null; then
+            echo "::error::Existing latest.json is not valid JSON; aborting."
+            exit 1
+          fi
 
           version=${{ needs.get-release.outputs.release_version }}
           arch=${{ matrix.config.arch }}
@@ -404,7 +432,6 @@ jobs:
     needs: [get-release, build-tauri]
     permissions:
       contents: read
-      actions: write
     uses: ./.github/workflows/upload-to-r2.yml
     with:
       tag: ${{ needs.get-release.outputs.release_tag }}

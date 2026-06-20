@@ -6,7 +6,7 @@ import {
   validateUserAndToken,
   STORAGE_QUOTA_GRACE_BYTES,
 } from '@/utils/access';
-import { getDownloadSignedUrl, getUploadSignedUrl } from '@/utils/object';
+import { getDownloadSignedUrl, getUploadSignedUrl, isSafeObjectKeyName } from '@/utils/object';
 import { READEST_PUBLIC_STORAGE_BASE_URL } from '@/services/constants';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -22,6 +22,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { fileName, fileSize, bookHash, replicaKind, replicaId, temp = false } = req.body;
+
+  // Reject object-key path traversal before building any key. `fileName` is
+  // fully client-controlled and is interpolated into `${user.id}/${fileName}`;
+  // without this an attacker escapes their own prefix into another user's
+  // namespace (GHSA-mfmj-2frf-vhgw).
+  if (!isSafeObjectKeyName(fileName)) {
+    return res.status(400).json({ error: 'Invalid fileName' });
+  }
+
   if (temp) {
     try {
       const datetime = new Date();
