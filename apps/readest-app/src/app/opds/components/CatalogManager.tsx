@@ -459,7 +459,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                     'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
                     catalog.disabled
                       ? 'cursor-not-allowed opacity-60'
-                      : 'hover:bg-base-200/40 cursor-pointer',
+                      : 'hover:bg-base-300 cursor-pointer',
                   )}
                 >
                   <div className='flex flex-1 flex-col gap-2.5 px-4 pb-2 pt-4'>
