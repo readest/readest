@@ -37,7 +37,6 @@ const h = vi.hoisted(() => {
     user: { id: 'u1' },
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
-    setConfigMock: vi.fn(),
     cfiCompareMock: vi.fn((_a: string, _b: string) => 0),
     view: { renderer: { getContents: () => [], primaryIndex: 0 }, goTo: vi.fn() },
     state: {
@@ -67,7 +66,7 @@ vi.mock('@/hooks/useTranslation', () => ({
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
     getConfig: () => h.config,
-    setConfig: h.setConfigMock,
+    setConfig: vi.fn(),
     getBookData: () => ({ book: h.book }),
   }),
 }));
@@ -142,7 +141,6 @@ beforeEach(() => {
   vi.useFakeTimers();
   h.syncConfigsMock.mockClear();
   h.syncBooksMock.mockClear();
-  h.setConfigMock.mockClear();
   h.view.goTo.mockClear();
   h.cfiCompareMock.mockReset();
   h.cfiCompareMock.mockReturnValue(0);
@@ -247,11 +245,10 @@ describe('useProgressSync', () => {
     renderHook(() => useProgressSync('h1-view1'));
     await advance(0);
 
-    // Not navigated to, and not persisted into the local config (the local
-    // 'cfi-loc' is kept instead of the malformed remote value).
+    // The malformed remote location is discarded so it can't move the reader.
+    // (Config is no longer merged from sync — only reading progress drives
+    // navigation — so the local position is left untouched.)
     expect(h.view.goTo).not.toHaveBeenCalled();
-    const persisted = h.setConfigMock.mock.calls.at(-1)?.[1] as { location?: string } | undefined;
-    expect(persisted?.location).toBe('cfi-loc');
   });
 
   test('navigates to a well-formed newer synced location', async () => {

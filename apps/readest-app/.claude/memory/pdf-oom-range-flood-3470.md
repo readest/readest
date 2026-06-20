@@ -26,7 +26,7 @@ connections/host**; the custom `rangefile` (and iOS native-file) scheme has no
 such cap. Explains "50 MB+" (bigger PDF → more scattered objects → bigger
 flood) and "crashes on some devices only" (heap/WebView threshold).
 
-**Fix (PR TODO):** `packages/foliate-js/pdf.js` `makePDF` — queue + pump bounding
+**Fix (RESOLVED — foliate-js#31 squash `e098bc3` + readest#4670, both merged):** `packages/foliate-js/pdf.js` `makePDF` — queue + pump bounding
 range reads to `MAX_CONCURRENT_RANGES = 6` (mimics the browser's per-host
 limit). One spot covers Android `RemoteFile`, iOS `NativeFile`, web `File`.
 Throttling is **free** on speed (6 parallel fetches saturate throughput). foliate-js

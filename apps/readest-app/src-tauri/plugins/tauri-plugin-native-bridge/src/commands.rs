@@ -31,6 +31,14 @@ pub(crate) async fn copy_uri_to_path<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn save_image_to_gallery<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SaveImageToGalleryRequest,
+) -> Result<SaveImageToGalleryResponse> {
+    app.native_bridge().save_image_to_gallery(payload)
+}
+
+#[command]
 pub(crate) async fn use_background_audio<R: Runtime>(
     app: AppHandle<R>,
     payload: UseBackgroundAudioRequest,

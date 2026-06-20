@@ -10,6 +10,19 @@ export interface CopyURIResponse {
   error?: string;
 }
 
+export interface SaveImageToGalleryRequest {
+  srcPath: string;
+  fileName: string;
+  mimeType: string;
+  albumName?: string;
+}
+
+export interface SaveImageToGalleryResponse {
+  success: boolean;
+  uri?: string;
+  error?: string;
+}
+
 export interface UseBackgroundAudioRequest {
   enabled: boolean;
 }
@@ -106,6 +119,14 @@ export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIRes
   });
 
   return result;
+}
+
+export async function saveImageToGallery(
+  request: SaveImageToGalleryRequest,
+): Promise<SaveImageToGalleryResponse> {
+  return await invoke<SaveImageToGalleryResponse>('plugin:native-bridge|save_image_to_gallery', {
+    payload: request,
+  });
 }
 
 export async function invokeUseBackgroundAudio(request: UseBackgroundAudioRequest): Promise<void> {

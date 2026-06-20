@@ -102,6 +102,10 @@ class TestAppService extends BaseAppService {
     return true;
   }
 
+  async saveImageToGallery(): Promise<boolean> {
+    return true;
+  }
+
   async ask(): Promise<boolean> {
     return true;
   }

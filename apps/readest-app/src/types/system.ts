@@ -155,6 +155,9 @@ export interface AppService {
       sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
     },
   ): Promise<boolean>;
+  // Save an image into the system photo gallery (Android MediaStore). Returns
+  // false on platforms without a gallery (web/desktop) or on failure.
+  saveImageToGallery(filename: string, content: ArrayBuffer, mimeType: string): Promise<boolean>;
 
   getDefaultViewSettings(): ViewSettings;
   loadSettings(): Promise<SystemSettings>;

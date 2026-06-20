@@ -86,6 +86,11 @@ export abstract class BaseAppService implements AppService {
       sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
     },
   ): Promise<boolean>;
+  abstract saveImageToGallery(
+    filename: string,
+    content: ArrayBuffer,
+    mimeType: string,
+  ): Promise<boolean>;
   abstract ask(message: string): Promise<boolean>;
   abstract openDatabase(
     schema: SchemaType,

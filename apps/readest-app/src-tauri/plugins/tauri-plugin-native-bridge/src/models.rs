@@ -29,6 +29,27 @@ pub struct CopyURIResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SaveImageToGalleryRequest {
+    /// Absolute path of the source image file on disk.
+    pub src_path: String,
+    /// Display name for the saved image, e.g. `image.png`.
+    pub file_name: String,
+    pub mime_type: String,
+    /// Subfolder under the system Pictures collection. Defaults to `Readest`.
+    pub album_name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveImageToGalleryResponse {
+    pub success: bool,
+    /// MediaStore content URI of the saved image on success.
+    pub uri: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UseBackgroundAudioRequest {
     pub enabled: bool,
 }

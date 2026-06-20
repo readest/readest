@@ -409,6 +409,11 @@ export class NodeAppService extends BaseAppService {
     }
   }
 
+  // No system photo gallery on Node; callers fall back to the saveFile flow.
+  async saveImageToGallery(): Promise<boolean> {
+    return false;
+  }
+
   async ask(): Promise<boolean> {
     return false;
   }

@@ -60,6 +60,13 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn save_image_to_gallery(
+        &self,
+        _payload: SaveImageToGalleryRequest,
+    ) -> crate::Result<SaveImageToGalleryResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn use_background_audio(&self, _payload: UseBackgroundAudioRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }

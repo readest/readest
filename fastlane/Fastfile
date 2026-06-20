@@ -1,3 +1,5 @@
+require "json"
+
 default_platform(:android)
 
 platform :android do
@@ -41,4 +43,90 @@ platform :android do
       skip_upload_changelogs: true
     )
   end
+end
+
+# fastlane executes lanes from the ./fastlane folder, so paths are anchored to the
+# repo root (its parent) to stay independent of the caller's working directory.
+def repo_path(relative)
+  File.expand_path(relative, File.expand_path("..", __dir__))
+end
+
+def asc_api_key
+  key_id = ENV["APPLE_API_KEY"]
+  # APPLE_API_KEY_PATH is deliberately kept OUT of the App Store build env: with the
+  # full key_id/issuer/path trio present, `tauri build` notarizes the App Store binary,
+  # which fails (App Store apps use an Apple Distribution cert, not Developer ID).
+  # Derive the .p8 path from the key id (same convention altool uses); honor an
+  # explicit APPLE_API_KEY_PATH when set (e.g. the iOS build env).
+  app_store_connect_api_key(
+    key_id: key_id,
+    issuer_id: ENV["APPLE_API_ISSUER"],
+    key_filepath: ENV["APPLE_API_KEY_PATH"] || repo_path("apps/readest-app/private_keys/AuthKey_#{key_id}.p8"),
+  )
+end
+
+# Release notes from the latest version in release-notes.json, excluding notes
+# that mention Android, Windows, or Linux. Used for both the TestFlight changelog
+# and the App Store "What's New" text.
+def release_notes_text
+  releases = JSON.parse(File.read(repo_path("apps/readest-app/release-notes.json")))["releases"]
+  latest = releases.keys.max_by { |version| Gem::Version.new(version) }
+  releases[latest]["notes"]
+    .reject { |note| note =~ /\b(?:Android|Windows|Linux)\b/i }
+    .map { |note| "– #{note}" }
+    .join("\n")
+end
+
+# App Store "Promotional Text". All other metadata fields keep their
+# existing App Store Connect values.
+PROMOTIONAL_TEXT = "Experience the Ultimate Ebook Reader Across All Your Devices for Avid Readers"
+
+# iOS and macOS are one App Store Connect app (com.bilingify.readest), built from
+# separate binaries and submitted independently. Each lane acts only on a build
+# already uploaded by altool (skip_binary_upload / distribute_only) — it never
+# builds or uploads a binary. For its platform it submits the build for App Store
+# review AND distributes it to TestFlight. The App Store submit runs first because
+# it waits for build processing, which the TestFlight distribute then relies on.
+#   pnpm run submit-appstore-ios     # iOS
+#   pnpm run submit-appstore-macos   # macOS
+def submit_apple_build(deliver_opts, testflight_opts)
+  api_key = asc_api_key
+  upload_to_app_store({
+    api_key: api_key,
+    app_identifier: "com.bilingify.readest",
+    skip_binary_upload: true, # use the altool-uploaded build; read version from the binary
+    submit_for_review: true,
+    automatic_release: true,
+    force: true,              # skip the HTML metadata preview prompt
+    skip_screenshots: true,
+    skip_metadata: false,     # upload What's New + Promotional Text; other fields stay as-is
+    release_notes: { "en-US" => release_notes_text },
+    promotional_text: { "en-US" => PROMOTIONAL_TEXT },
+    precheck_include_in_app_purchases: false,
+    submission_information: { add_id_info_uses_idfa: false },
+  }.merge(deliver_opts))
+  upload_to_testflight({
+    api_key: api_key,
+    app_identifier: "com.bilingify.readest",
+    distribute_only: true,    # use the already-uploaded build; do not upload
+    distribute_external: true,
+    groups: ["Beta Testers"],
+    changelog: release_notes_text,
+  }.merge(testflight_opts))
+end
+
+desc "Submit the uploaded iOS build for App Store review and to TestFlight"
+lane :release_ios do
+  submit_apple_build(
+    { platform: "ios", ipa: repo_path("apps/readest-app/src-tauri/gen/apple/build/arm64/Readest.ipa") },
+    { app_platform: "ios" }
+  )
+end
+
+desc "Submit the uploaded macOS build for App Store review and to TestFlight"
+lane :release_macos do
+  submit_apple_build(
+    { platform: "osx", pkg: repo_path("target/universal-apple-darwin/release/bundle/macos/Readest.pkg") },
+    { app_platform: "osx" }
+  )
 end

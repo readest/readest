@@ -4,9 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.os.Build
 import android.os.Environment
@@ -53,6 +55,14 @@ class AuthRequestArgs {
 class CopyURIRequestArgs {
     var uri: String? = null
     var dst: String? = null
+}
+
+@InvokeArg
+class SaveImageToGalleryRequestArgs {
+    var srcPath: String? = null
+    var fileName: String? = null
+    var mimeType: String? = null
+    var albumName: String? = null
 }
 
 @InvokeArg
@@ -359,6 +369,77 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                         r.put("success", false)
                         r.put("error", "Failed to open input stream from URI")
                     }
+                } catch (e: Exception) {
+                    r.put("success", false)
+                    r.put("error", e.message)
+                }
+                r
+            }
+            if (isActive) invoke.resolve(ret)
+        }
+    }
+
+    @Command
+    fun save_image_to_gallery(invoke: Invoke) {
+        val args = invoke.parseArgs(SaveImageToGalleryRequestArgs::class.java)
+        pluginScope.launch {
+            val ret = withContext(Dispatchers.IO) {
+                val r = JSObject()
+                try {
+                    val srcFile = File(args.srcPath ?: "")
+                    if (!srcFile.exists()) {
+                        r.put("success", false)
+                        r.put("error", "Source file does not exist")
+                        return@withContext r
+                    }
+                    val displayName = args.fileName ?: srcFile.name
+                    val mimeType = args.mimeType ?: "image/*"
+                    val album = args.albumName ?: "Readest"
+                    val resolver = activity.contentResolver
+
+                    val values = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                        put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                        // Scoped storage (Android 10+): place the image under the
+                        // shared Pictures collection without any storage permission,
+                        // and mark it pending until the bytes are fully written.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(
+                                MediaStore.Images.Media.RELATIVE_PATH,
+                                "${Environment.DIRECTORY_PICTURES}/$album"
+                            )
+                            put(MediaStore.Images.Media.IS_PENDING, 1)
+                        }
+                    }
+                    val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                    } else {
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    }
+
+                    val itemUri = resolver.insert(collection, values)
+                    if (itemUri == null) {
+                        r.put("success", false)
+                        r.put("error", "Failed to create MediaStore entry")
+                        return@withContext r
+                    }
+
+                    resolver.openOutputStream(itemUri).use { output ->
+                        if (output == null) {
+                            throw IOException("Failed to open output stream")
+                        }
+                        srcFile.inputStream().use { input -> input.copyTo(output) }
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val pending = ContentValues().apply {
+                            put(MediaStore.Images.Media.IS_PENDING, 0)
+                        }
+                        resolver.update(itemUri, pending, null, null)
+                    }
+
+                    r.put("success", true)
+                    r.put("uri", itemUri.toString())
                 } catch (e: Exception) {
                     r.put("success", false)
                     r.put("error", e.message)

@@ -38,7 +38,7 @@ import {
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
-import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
+import { copyURIToPath, getStorefrontRegionCode, saveImageToGallery } from '@/utils/bridge';
 import { copyFiles } from '@/utils/files';
 
 import { BaseAppService } from './appService';
@@ -756,7 +756,15 @@ export class NativeAppService extends BaseAppService {
       if (wantShare) {
         let shareablePath = options?.filePath;
         if (!shareablePath) {
-          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          // Write into a Temp SUBDIRECTORY, never the Temp root. On Android the
+          // sharekit plugin copies the shared file to `<cacheDir>/<name>` before
+          // sharing, and Tauri's Temp dir IS `<cacheDir>` — writing to the root
+          // makes that a copy onto itself, whose output stream truncates the
+          // source to 0 bytes (the shared image came out 0 KB). A subdirectory
+          // gives the plugin's copy a distinct source path. (#4680)
+          const shareDir = await this.resolveFilePath('shared', 'Temp');
+          await mkdir(shareDir, { recursive: true });
+          shareablePath = await this.resolveFilePath(`shared/${filename}`, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
           } else if (content) {
@@ -799,6 +807,36 @@ export class NativeAppService extends BaseAppService {
     } catch (error) {
       console.error('Failed to save file:', error);
       return false;
+    }
+  }
+
+  async saveImageToGallery(
+    filename: string,
+    content: ArrayBuffer,
+    mimeType: string,
+  ): Promise<boolean> {
+    // MediaStore is Android-only; other platforms keep the saveFile/share path.
+    if (!this.isAndroidApp) return false;
+    // Write the bytes to a Temp subdirectory (not the Temp root, mirroring the
+    // share path), then hand the path to the native MediaStore insert.
+    const shareDir = await this.resolveFilePath('shared', 'Temp');
+    await mkdir(shareDir, { recursive: true });
+    const srcPath = await this.resolveFilePath(`shared/${filename}`, 'Temp');
+    try {
+      await writeFile(srcPath, new Uint8Array(content));
+      const res = await saveImageToGallery({
+        srcPath,
+        fileName: filename,
+        mimeType,
+        albumName: 'Readest',
+      });
+      return res.success;
+    } catch (error) {
+      console.error('Failed to save image to gallery:', error);
+      return false;
+    } finally {
+      // Best-effort cleanup of the staged file.
+      await remove(srcPath).catch(() => {});
     }
   }
 
