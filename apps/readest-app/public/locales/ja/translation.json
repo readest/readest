@@ -1742,5 +1742,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "難しい単語の上に母語の短いヒントを表示します。あなたのレベルを超える単語にヒントが付きます。",
   "Level": "レベル",
   "CEFR level": "CEFRレベル",
-  "Webtoon Mode": "ウェブトゥーンモード"
+  "Webtoon Mode": "ウェブトゥーンモード",
+  "Image saved successfully.": "画像を保存しました。",
+  "Failed to save the image.": "画像の保存に失敗しました。",
+  "Share Image": "画像を共有",
+  "Save Image": "画像を保存"
 }

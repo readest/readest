@@ -12,6 +12,11 @@ vi.mock('@/hooks/useKeyDownActions', () => ({
   useKeyDownActions: () => {},
 }));
 
+// ImageViewer reads appService (for the save button) via useEnv; stub it.
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: null }),
+}));
+
 // ZoomControls reaches into the theme store and Tauri window APIs; stub it out.
 vi.mock('@/app/reader/components/ZoomControls', () => ({
   __esModule: true,

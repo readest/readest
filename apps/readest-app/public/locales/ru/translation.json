@@ -1841,5 +1841,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Показывает короткую подсказку на вашем родном языке над сложными словами. Слова выше вашего уровня получают подсказку.",
   "Level": "Уровень",
   "CEFR level": "Уровень CEFR",
-  "Webtoon Mode": "Режим вебтуна"
+  "Webtoon Mode": "Режим вебтуна",
+  "Image saved successfully.": "Изображение успешно сохранено.",
+  "Failed to save the image.": "Не удалось сохранить изображение.",
+  "Share Image": "Поделиться изображением",
+  "Save Image": "Сохранить изображение"
 }

@@ -1742,5 +1742,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Hiển thị gợi ý ngắn bằng tiếng mẹ đẻ của bạn phía trên những từ khó. Những từ trên trình độ của bạn sẽ có gợi ý.",
   "Level": "Cấp độ",
   "CEFR level": "Cấp độ CEFR",
-  "Webtoon Mode": "Chế độ webtoon"
+  "Webtoon Mode": "Chế độ webtoon",
+  "Image saved successfully.": "Đã lưu hình ảnh thành công.",
+  "Failed to save the image.": "Không thể lưu hình ảnh.",
+  "Share Image": "Chia sẻ hình ảnh",
+  "Save Image": "Lưu hình ảnh"
 }

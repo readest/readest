@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Εμφανίζει μια σύντομη υπόδειξη στη μητρική σου γλώσσα πάνω από δύσκολες λέξεις. Οι λέξεις πάνω από το επίπεδό σου λαμβάνουν υπόδειξη.",
   "Level": "Επίπεδο",
   "CEFR level": "Επίπεδο CEFR",
-  "Webtoon Mode": "Λειτουργία webtoon"
+  "Webtoon Mode": "Λειτουργία webtoon",
+  "Image saved successfully.": "Η εικόνα αποθηκεύτηκε με επιτυχία.",
+  "Failed to save the image.": "Αποτυχία αποθήκευσης της εικόνας.",
+  "Share Image": "Κοινή χρήση εικόνας",
+  "Save Image": "Αποθήκευση εικόνας"
 }

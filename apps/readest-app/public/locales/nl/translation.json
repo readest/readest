@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Toont een korte hint in je moedertaal boven moeilijke woorden. Woorden boven jouw niveau krijgen een hint.",
   "Level": "Niveau",
   "CEFR level": "CEFR-niveau",
-  "Webtoon Mode": "Webtoon-modus"
+  "Webtoon Mode": "Webtoon-modus",
+  "Image saved successfully.": "Afbeelding succesvol opgeslagen.",
+  "Failed to save the image.": "Kan de afbeelding niet opslaan.",
+  "Share Image": "Afbeelding delen",
+  "Save Image": "Afbeelding opslaan"
 }

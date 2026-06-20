@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Zor kelimelerin üzerinde ana dilinizde kısa bir ipucu gösterir. Seviyenizin üzerindeki kelimeler ipucu alır.",
   "Level": "Seviye",
   "CEFR level": "CEFR seviyesi",
-  "Webtoon Mode": "Webtoon modu"
+  "Webtoon Mode": "Webtoon modu",
+  "Image saved successfully.": "Görsel başarıyla kaydedildi.",
+  "Failed to save the image.": "Görsel kaydedilemedi.",
+  "Share Image": "Görseli Paylaş",
+  "Save Image": "Görseli Kaydet"
 }

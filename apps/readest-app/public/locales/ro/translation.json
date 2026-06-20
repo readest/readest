@@ -1808,5 +1808,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Afișează un scurt indiciu în limba ta maternă deasupra cuvintelor dificile. Cuvintele peste nivelul tău primesc un indiciu.",
   "Level": "Nivel",
   "CEFR level": "Nivel CEFR",
-  "Webtoon Mode": "Mod webtoon"
+  "Webtoon Mode": "Mod webtoon",
+  "Image saved successfully.": "Imagine salvată cu succes.",
+  "Failed to save the image.": "Salvarea imaginii a eșuat.",
+  "Share Image": "Partajează imaginea",
+  "Save Image": "Salvează imaginea"
 }

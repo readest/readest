@@ -1808,5 +1808,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "מציג רמז קצר בשפת האם שלך מעל מילים קשות. מילים מעל הרמה שלך מקבלות רמז.",
   "Level": "רמה",
   "CEFR level": "רמת CEFR",
-  "Webtoon Mode": "מצב ובטון"
+  "Webtoon Mode": "מצב ובטון",
+  "Image saved successfully.": "התמונה נשמרה בהצלחה.",
+  "Failed to save the image.": "שמירת התמונה נכשלה.",
+  "Share Image": "שיתוף התמונה",
+  "Save Image": "שמירת התמונה"
 }

@@ -1,3 +1,40 @@
+export interface ParsedDataUrl {
+  bytes: Uint8Array;
+  mimeType: string;
+}
+
+/**
+ * Decode a `data:` URL into raw bytes plus its MIME type. Used to turn the
+ * in-memory image shown in the gallery viewer back into a file for the
+ * share / export flow.
+ */
+export function dataUrlToBytes(dataUrl: string): ParsedDataUrl {
+  const match = /^data:([^;,]*)(;base64)?,(.*)$/s.exec(dataUrl);
+  if (!match) {
+    throw new Error('Not a data URL');
+  }
+  const mimeType = match[1] || 'application/octet-stream';
+  const isBase64 = !!match[2];
+  const data = match[3] ?? '';
+  if (isBase64) {
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return { bytes, mimeType };
+  }
+  // Non-base64 data URLs hold percent-encoded text (e.g. inline SVG).
+  return { bytes: new TextEncoder().encode(decodeURIComponent(data)), mimeType };
+}
+
+/** Derive a file extension from an image MIME type (e.g. image/svg+xml -> svg). */
+export function imageExtensionFromMime(mimeType: string): string {
+  const subtype = (mimeType.split('/')[1] || 'png').toLowerCase();
+  const base = subtype.split('+')[0]!;
+  return base === 'jpeg' ? 'jpg' : base;
+}
+
 /**
  * Process book cover for Discord Rich Presence:
  * - Fit to 512x512 with transparent background

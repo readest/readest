@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "कठिन शब्दों के ऊपर आपकी मातृभाषा में एक छोटा संकेत दिखाता है। आपके स्तर से ऊपर के शब्दों को संकेत मिलता है।",
   "Level": "स्तर",
   "CEFR level": "CEFR स्तर",
-  "Webtoon Mode": "वेबटून मोड"
+  "Webtoon Mode": "वेबटून मोड",
+  "Image saved successfully.": "छवि सफलतापूर्वक सहेजी गई।",
+  "Failed to save the image.": "छवि सहेजने में विफल।",
+  "Share Image": "छवि साझा करें",
+  "Save Image": "छवि सहेजें"
 }

@@ -1742,5 +1742,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "ཚིག་དཀའ་མོའི་སྟེང་དུ་རང་གི་སྐད་ཡིག་ཐོག་ནས་བརྡ་སྟོན་ཐུང་ངུ་ཞིག་སྟོན། ཁྱེད་ཀྱི་རིམ་པ་ལས་མཐོ་བའི་ཚིག་ལ་བརྡ་སྟོན་ཐོབ།",
   "Level": "རིམ་པ།",
   "CEFR level": "CEFR རིམ་པ།",
-  "Webtoon Mode": "Webtoon སྤྱོད་ཚུལ།"
+  "Webtoon Mode": "Webtoon སྤྱོད་ཚུལ།",
+  "Image saved successfully.": "པར་རིས་ཉར་ཚགས་ལེགས་གྲུབ་བྱུང་།",
+  "Failed to save the image.": "པར་རིས་ཉར་ཚགས་བྱས་མ་ཐུབ།",
+  "Share Image": "པར་རིས་མཉམ་སྤྱོད།",
+  "Save Image": "པར་རིས་ཉར་ཚགས།"
 }

@@ -1808,5 +1808,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Mostra un breve suggerimento nella tua lingua madre sopra le parole difficili. Le parole sopra il tuo livello ricevono un suggerimento.",
   "Level": "Livello",
   "CEFR level": "Livello CEFR",
-  "Webtoon Mode": "Modalità webtoon"
+  "Webtoon Mode": "Modalità webtoon",
+  "Image saved successfully.": "Immagine salvata correttamente.",
+  "Failed to save the image.": "Impossibile salvare l'immagine.",
+  "Share Image": "Condividi immagine",
+  "Save Image": "Salva immagine"
 }

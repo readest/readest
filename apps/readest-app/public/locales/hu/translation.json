@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Rövid anyanyelvi tippet jelenít meg a nehéz szavak fölött. A szintednél nehezebb szavak kapnak tippet.",
   "Level": "Szint",
   "CEFR level": "CEFR-szint",
-  "Webtoon Mode": "Webtoon mód"
+  "Webtoon Mode": "Webtoon mód",
+  "Image saved successfully.": "A kép sikeresen mentve.",
+  "Failed to save the image.": "Nem sikerült menteni a képet.",
+  "Share Image": "Kép megosztása",
+  "Save Image": "Kép mentése"
 }

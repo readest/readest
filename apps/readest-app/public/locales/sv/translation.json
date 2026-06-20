@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Visar en kort ledtråd på ditt modersmål ovanför svåra ord. Ord över din nivå får en ledtråd.",
   "Level": "Nivå",
   "CEFR level": "CEFR-nivå",
-  "Webtoon Mode": "Webtoon-läge"
+  "Webtoon Mode": "Webtoon-läge",
+  "Image saved successfully.": "Bilden har sparats.",
+  "Failed to save the image.": "Det gick inte att spara bilden.",
+  "Share Image": "Dela bild",
+  "Save Image": "Spara bild"
 }

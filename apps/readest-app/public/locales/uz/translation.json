@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "Qiyin so‘zlar ustida ona tilingizda qisqa maslahat ko‘rsatadi. Darajangizdan yuqori so‘zlarga maslahat beriladi.",
   "Level": "Daraja",
   "CEFR level": "CEFR darajasi",
-  "Webtoon Mode": "Webtoon rejimi"
+  "Webtoon Mode": "Webtoon rejimi",
+  "Image saved successfully.": "Rasm muvaffaqiyatli saqlandi.",
+  "Failed to save the image.": "Rasmni saqlab bo'lmadi.",
+  "Share Image": "Rasmni ulashish",
+  "Save Image": "Rasmni saqlash"
 }

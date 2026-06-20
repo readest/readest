@@ -1775,5 +1775,9 @@
   "Show a short native-language hint above difficult words. Words above your level get a hint.": "یک راهنمای کوتاه به زبان مادری‌تان بالای واژه‌های دشوار نشان می‌دهد. واژه‌های بالاتر از سطح شما راهنما می‌گیرند.",
   "Level": "سطح",
   "CEFR level": "سطح CEFR",
-  "Webtoon Mode": "حالت وب‌تون"
+  "Webtoon Mode": "حالت وب‌تون",
+  "Image saved successfully.": "تصویر با موفقیت ذخیره شد.",
+  "Failed to save the image.": "ذخیره تصویر ناموفق بود.",
+  "Share Image": "اشتراک‌گذاری تصویر",
+  "Save Image": "ذخیره تصویر"
 }
