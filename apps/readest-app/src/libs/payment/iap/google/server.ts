@@ -2,6 +2,7 @@ import { GooglePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import {
+  isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
   mapProductIdToUserPlan,
@@ -91,7 +92,7 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
     await supabase
       .from('plans')
       .update({
-        plan: ['active', 'trialing'].includes(purchase.status) ? plan : 'free',
+        plan: isEntitledStatus(purchase.status) ? plan : 'free',
         status: purchase.status,
       })
       .eq('id', userId);

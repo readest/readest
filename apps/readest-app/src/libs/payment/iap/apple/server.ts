@@ -2,6 +2,7 @@ import { ApplePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import {
+  isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
   mapProductIdToUserPlan,
@@ -23,6 +24,7 @@ export type VerifiedPurchase = VerifiedIAP & {
   type?: string;
   revocationDate?: string | null;
   revocationReason?: number | null;
+  autoRenewStatus?: boolean;
 };
 
 export async function createOrUpdateSubscription(userId: string, purchase: VerifiedPurchase) {
@@ -51,7 +53,7 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
         environment: purchase.environment,
         bundle_id: purchase.bundleId,
         quantity: purchase.quantity || 1,
-        auto_renew_status: true,
+        auto_renew_status: purchase.autoRenewStatus ?? true,
         web_order_line_item_id: purchase.webOrderLineItemId,
         subscription_group_identifier: purchase.subscriptionGroupIdentifier,
         created_at: new Date(),
@@ -71,7 +73,7 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
     await supabase
       .from('plans')
       .update({
-        plan: ['active', 'trialing'].includes(purchase.status) ? plan : 'free',
+        plan: isEntitledStatus(purchase.status) ? plan : 'free',
         status: purchase.status,
       })
       .eq('id', userId);
