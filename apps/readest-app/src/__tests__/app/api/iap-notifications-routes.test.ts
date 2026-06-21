@@ -16,6 +16,12 @@ vi.mock('@/libs/payment/iap/google/notifications', () => ({
   handleGoogleNotification: hooks.handleGoogleNotification,
 }));
 
+const telemetry = vi.hoisted(() => ({ recordIapWebhook: vi.fn() }));
+vi.mock('@/libs/payment/iap/telemetry', () => ({
+  recordIapWebhook: telemetry.recordIapWebhook,
+  recordIapReconcile: vi.fn(),
+}));
+
 import { POST as applePOST } from '@/app/api/apple/notifications/route';
 import { POST as googlePOST } from '@/app/api/google/notifications/route';
 
@@ -29,6 +35,7 @@ const jsonReq = (url: string, body: unknown) =>
 beforeEach(() => {
   hooks.handleAppleNotification.mockReset();
   hooks.handleGoogleNotification.mockReset();
+  telemetry.recordIapWebhook.mockReset();
   hooks.handleAppleNotification.mockResolvedValue({ handled: true, status: 'active' });
   hooks.handleGoogleNotification.mockResolvedValue({ handled: true, status: 'active' });
   delete process.env['GOOGLE_RTDN_VERIFICATION_TOKEN'];
@@ -39,14 +46,24 @@ describe('POST /api/apple/notifications', () => {
     const res = await applePOST(jsonReq('https://web.readest.com/api/apple/notifications', {}));
     expect(res.status).toBe(400);
     expect(hooks.handleAppleNotification).not.toHaveBeenCalled();
+    expect(telemetry.recordIapWebhook).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'apple',
+        outcome: 'rejected',
+        reason: 'missing_payload',
+      }),
+    );
   });
 
-  it('processes a signed payload', async () => {
+  it('processes a signed payload and records the outcome', async () => {
     const res = await applePOST(
       jsonReq('https://web.readest.com/api/apple/notifications', { signedPayload: 'jws' }),
     );
     expect(res.status).toBe(200);
     expect(hooks.handleAppleNotification).toHaveBeenCalledWith('jws');
+    expect(telemetry.recordIapWebhook).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'apple', outcome: 'handled' }),
+    );
   });
 
   it('returns 500 when processing throws so Apple retries', async () => {
@@ -68,6 +85,9 @@ describe('POST /api/google/notifications', () => {
     );
     expect(res.status).toBe(401);
     expect(hooks.handleGoogleNotification).not.toHaveBeenCalled();
+    expect(telemetry.recordIapWebhook).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'google', outcome: 'rejected', reason: 'invalid_token' }),
+    );
   });
 
   it('processes a message when the token matches', async () => {
