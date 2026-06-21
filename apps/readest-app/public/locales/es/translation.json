@@ -476,6 +476,7 @@
   "Reading Progress Style": "Estilo de progreso de lectura",
   "Percentage": "Porcentaje",
   "Show Reading Progress": "Mostrar progreso de lectura",
+  "Show Progress Bar": "Mostrar barra de progreso",
   "Page Number": "Número de página",
   "Deleted local copy of the book: {{title}}": "Se eliminó la copia local del libro: {{title}}",
   "Failed to delete cloud backup of the book: {{title}}": "Error al eliminar la copia de seguridad en la nube del libro: {{title}}",

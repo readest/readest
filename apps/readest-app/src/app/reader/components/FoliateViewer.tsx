@@ -195,6 +195,7 @@ const FoliateViewer: React.FC<{
       pageInfo,
       detail.time,
       detail.range,
+      detail.fraction,
     );
   }, [bookKey, setProgress]);
 

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProgressBar from '@/app/reader/components/ProgressBar';
 import { DEFAULT_VIEW_CONFIG } from '@/services/constants';
 import type { BookProgress, ViewSettings } from '@/types/book';
+import type { TOCItem } from '@/libs/document';
 
 const saveViewSettings = vi.fn();
 
@@ -11,9 +12,11 @@ let currentViewSettings: ViewSettings;
 let currentProgress: BookProgress | null;
 let currentBookData: {
   isFixedLayout: boolean;
-  bookDoc?: { metadata?: Record<string, unknown> };
+  bookDoc?: { metadata?: Record<string, unknown>; toc?: TOCItem[] };
 } | null;
 let currentRenderer: { page: number; pages: number };
+let currentSectionFractions: number[] = [];
+let currentTocHrefIndex: Record<string, number> = {};
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, values?: Record<string, unknown>) =>
@@ -34,7 +37,12 @@ vi.mock('@/store/readerStore', () => {
   const state = {
     getProgress: () => currentProgress,
     getViewSettings: () => currentViewSettings,
-    getView: () => ({ renderer: currentRenderer }),
+    getView: () => ({
+      renderer: currentRenderer,
+      getSectionFractions: () => currentSectionFractions,
+      resolveNavigation: (href: string) =>
+        href in currentTocHrefIndex ? { index: currentTocHrefIndex[href]! } : null,
+    }),
   };
   return {
     useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
@@ -92,6 +100,8 @@ beforeEach(() => {
   currentProgress = null;
   currentBookData = { isFixedLayout: false };
   currentRenderer = { page: 0, pages: 0 };
+  currentSectionFractions = [];
+  currentTocHrefIndex = {};
 });
 
 const makeProgress = (current: number, total: number): BookProgress =>
@@ -215,5 +225,64 @@ describe('ProgressBar — decorative footer is not focusable', () => {
     const progressInfo = container.querySelector('.progressinfo');
     expect(progressInfo).not.toBeNull();
     expect(progressInfo!.hasAttribute('tabindex')).toBe(false);
+  });
+});
+
+describe('ProgressBar — sticky progress bar', () => {
+  const tocItem = (href: string): TOCItem => ({ id: 0, label: href, href, index: 0 }) as TOCItem;
+
+  const enableStickyBar = (overrides?: Partial<ViewSettings>) => {
+    currentViewSettings = {
+      ...baseSettings,
+      showStickyProgressBar: true,
+      progressInfoMode: 'all',
+      ...overrides,
+    } as ViewSettings;
+    // fraction (0.5) deliberately differs from the page fraction
+    // ((2+1)/5 = 0.6) so the test proves the fill uses progress.fraction.
+    currentProgress = { ...makeProgress(2, 5), fraction: 0.5 } as BookProgress;
+    currentBookData = {
+      isFixedLayout: false,
+      bookDoc: {
+        toc: [
+          tocItem('ch1.xhtml'),
+          tocItem('ch2.xhtml'),
+          tocItem('ch3.xhtml'),
+          tocItem('ch4.xhtml'),
+        ],
+      },
+    };
+    // 5 sections; chapter starts [0.2, 0.4, 0.6, 0.8]; first & last dropped -> 2 ticks.
+    currentSectionFractions = [0, 0.2, 0.4, 0.6, 0.8, 1];
+    currentTocHrefIndex = { 'ch1.xhtml': 1, 'ch2.xhtml': 2, 'ch3.xhtml': 3, 'ch4.xhtml': 4 };
+    currentRenderer = { page: 1, pages: 4 };
+  };
+
+  it('renders the sticky bar with chapter ticks and a fill from progress.fraction', () => {
+    enableStickyBar();
+
+    const { container } = renderProgressBar();
+
+    const bar = container.querySelector('.sticky-progress-bar');
+    expect(bar).not.toBeNull();
+    expect(bar!.querySelectorAll('.sticky-progress-tick').length).toBe(2);
+    const fill = bar!.querySelector('.sticky-progress-fill') as HTMLElement;
+    expect(fill.style.width).toBe('50%');
+  });
+
+  it('does not render the sticky bar when the setting is off', () => {
+    enableStickyBar({ showStickyProgressBar: false });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
+  });
+
+  it('does not render the sticky bar in vertical writing mode', () => {
+    enableStickyBar({ vertical: true });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
   });
 });

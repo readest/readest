@@ -444,6 +444,7 @@
   "TTS not supported for this document": "TTS가 이 문서에서 지원되지 않습니다",
   "Reset Password": "비밀번호 재설정",
   "Show Reading Progress": "읽기 진행 상황 표시",
+  "Show Progress Bar": "진행률 표시줄 표시",
   "Reading Progress Style": "읽기 진행 상황 스타일",
   "Page Number": "페이지 번호",
   "Percentage": "백분율",

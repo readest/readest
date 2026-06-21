@@ -276,6 +276,7 @@ export interface ViewConfig {
   showRemainingTime: boolean;
   showRemainingPages: boolean;
   showProgressInfo: boolean;
+  showStickyProgressBar: boolean;
   showCurrentTime: boolean;
   use24HourClock: boolean;
   showCurrentBatteryStatus: boolean;
@@ -400,6 +401,9 @@ export interface BookProgress {
   pageinfo: PageInfo;
   pageItem?: { label?: string; href?: string } | null;
   timeinfo: TimeInfo;
+  // Overall reading position in foliate's size-domain (0..1), matching the
+  // domain used by the sticky progress bar's chapter ticks.
+  fraction: number;
   index: number;
   range: Range;
   page: number;

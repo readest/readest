@@ -70,6 +70,7 @@ export interface FoliateView extends HTMLElement {
   init: (options: { lastLocation: string }) => void;
   goTo: (href: string) => void;
   goToFraction: (fraction: number) => void;
+  getSectionFractions: () => number[];
   prev: (distance?: number) => void;
   next: (distance?: number) => void;
   pan: (dx: number, dy: number) => void;

@@ -448,6 +448,7 @@
   "TTS not supported for this document": "قابلیت تبدیل متن به گفتار برای این سند پشتیبانی نمی‌شود",
   "Reset Password": "بازنشانی رمز عبور",
   "Show Reading Progress": "نمایش وضعیت مطالعه",
+  "Show Progress Bar": "نمایش نوار پیشرفت",
   "Reading Progress Style": "سبک نمایش وضعیت مطالعه",
   "Page Number": "شماره صفحه",
   "Percentage": "درصد",

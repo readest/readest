@@ -338,6 +338,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  showStickyProgressBar: false,
   showCurrentTime: false,
   showCurrentBatteryStatus: false,
   showBatteryPercentage: true,

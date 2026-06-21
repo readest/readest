@@ -443,6 +443,7 @@
   "TTS not supported for this document": "ཡིག་ཆ་འདིར་ TTS རྒྱབ་སྐྱོར་མི་བྱེད།",
   "Reset Password": "གསང་ཨང་བསྐྱར་སྒྲིག",
   "Show Reading Progress": "ཀློག་པའི་ཡར་འཕེལ་མངོན་པ།",
+  "Show Progress Bar": "ཡར་འཕེལ་ཕྲ་རིང་མངོན་པ།",
   "Reading Progress Style": "ཀློག་པའི་ཡར་འཕེལ་གྱི་རྣམ་པ།",
   "Page Number": "ཤོག་ཨང་།",
   "Percentage": "བརྒྱ་ཆ།",
