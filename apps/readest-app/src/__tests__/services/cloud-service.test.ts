@@ -216,7 +216,7 @@ describe('cloudService', () => {
         expect(book.uploadedAt).toBe(1000);
       });
 
-      test('removes the in-place source file and the sidecar dir for in-place books', async () => {
+      test('wipes the sidecar dir but NEVER the in-place source file', async () => {
         const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
         vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
           if (base === 'None' && path === book.filePath) return true;
@@ -226,9 +226,11 @@ describe('cloudService', () => {
 
         await deleteBook(mockFs, book, 'purge');
 
-        // External source file (outside Books/<hash>/) is removed...
-        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
-        // ...and the metadata sidecar directory is wiped too.
+        // The user's original "read in place" file lives outside Books/<hash>/
+        // and must be left untouched — deleting a book from Readest never
+        // removes the user's source file.
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+        // ...but the app-generated metadata sidecar directory is still wiped.
         expect(mockFs.removeDir).toHaveBeenCalledWith(book.hash, 'Books', true);
       });
 
@@ -287,12 +289,14 @@ describe('cloudService', () => {
       });
     });
 
-    // In-place imports keep their content at a user-controlled location
-    // (book.filePath, base 'None') rather than under Books/<hash>/. For
-    // 'local'/'both' deletes that source file IS the local copy and gets
-    // removed (symmetric with deleting Books/<hash>/<title>.epub for a
-    // normal book). The cloud upload path is shared, so cross-device sync
-    // can still pull the book back.
+    // In-place imports ("Read books in place") keep their content at a
+    // user-controlled location (book.filePath, base 'None') OUTSIDE Readest's
+    // Books/<hash>/ dir — Readest never copied it. Deleting such a book from
+    // Readest must NEVER remove that source file; only the app-generated
+    // sidecars (cover.png, config.json, ...) under Books/<hash>/ are ours to
+    // delete. The cloud upload path is shared, so cross-device sync can still
+    // pull the book back. (Regression: in-place delete used to wipe the
+    // user's originals.)
     describe('in-place (book.filePath set)', () => {
       const mockInPlaceExists = (book: Book, coverExists = true) => {
         vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
@@ -302,26 +306,24 @@ describe('cloudService', () => {
         });
       };
 
-      test('local action removes the user-controlled source file', async () => {
+      test('local action does NOT remove the user-controlled source file', async () => {
         const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
         mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'local');
 
-        // The source file is read from base 'None' (absolute path), not Books/.
-        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+        // The external source (base 'None', absolute path) is the user's own
+        // file and must survive a Readest-side delete.
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
       });
 
-      test('local action does not remove Books/<hash>/<title>.epub', async () => {
+      test('local action removes no files at all (nothing managed to delete)', async () => {
         const book = createMockBook({ filePath: '/Users/me/Library/sample.epub' });
         mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'local');
 
-        // The hash-copy path lives only on a normal book; for an in-place book,
-        // the resolver can probe it, but deletion must target the external source.
-        expect(mockFs.removeFile).not.toHaveBeenCalledWith(
-          `${book.hash}/${book.title}.epub`,
-          'Books',
-        );
+        // There is no managed Books/<hash>/<title>.epub copy for an in-place
+        // book, and the external source is off-limits, so nothing is removed.
+        expect(mockFs.removeFile).not.toHaveBeenCalled();
       });
 
       test('local action still clears downloadedAt', async () => {
@@ -335,7 +337,6 @@ describe('cloudService', () => {
       });
 
       test('local action does not throw when the source file is missing', async () => {
-        // exists() returns false → no removeFile call, but no error either.
         vi.mocked(mockFs.exists).mockResolvedValue(false);
         const book = createMockBook({
           filePath: '/Users/me/Library/sample.epub',
@@ -347,21 +348,7 @@ describe('cloudService', () => {
         expect(book.downloadedAt).toBeNull();
       });
 
-      test('local action swallows errors from removeFile (best-effort source delete)', async () => {
-        vi.mocked(mockFs.removeFile).mockRejectedValueOnce(new Error('EPERM'));
-        const book = createMockBook({
-          filePath: '/Users/me/Library/sample.epub',
-          downloadedAt: 12345,
-        });
-        mockInPlaceExists(book);
-
-        // Must not throw, and must still flip the metadata bit so the UI
-        // reflects the user's delete intent.
-        await deleteBook(mockFs, book, 'local');
-        expect(book.downloadedAt).toBeNull();
-      });
-
-      test('both action removes both the source file and the cover sidecar', async () => {
+      test('both action removes the cover sidecar but NEVER the source file', async () => {
         const book = createMockBook({
           filePath: '/Users/me/Library/sample.epub',
           uploadedAt: null,
@@ -369,11 +356,11 @@ describe('cloudService', () => {
         mockInPlaceExists(book);
         await deleteBook(mockFs, book, 'both');
 
-        // Source file under user-controlled path:
-        expect(mockFs.removeFile).toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
-        // Cover sidecar under Books/<hash>/:
+        // Cover sidecar under Books/<hash>/ is app-generated → removable:
         expect(mockFs.removeFile).toHaveBeenCalledWith(`${book.hash}/cover.png`, 'Books');
-        // We must never poke at Books/<hash>/<title>.epub for an in-place book.
+        // The user's source file is NEVER removed:
+        expect(mockFs.removeFile).not.toHaveBeenCalledWith('/Users/me/Library/sample.epub', 'None');
+        // And there is no managed copy to poke at for an in-place book.
         expect(mockFs.removeFile).not.toHaveBeenCalledWith(
           `${book.hash}/${book.title}.epub`,
           'Books',
