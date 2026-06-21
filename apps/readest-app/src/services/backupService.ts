@@ -250,7 +250,7 @@ type ProgressCallback = (current: number, total: number, filename: string) => vo
 /**
  * Shared logic: add all library entries to a ZipWriter.
  */
-async function addBackupEntriesToZip(
+export async function addBackupEntriesToZip(
   writer: ZipWriter<unknown>,
   appService: AppService,
   options: BackupOptions,
@@ -288,7 +288,12 @@ async function addBackupEntriesToZip(
     try {
       const content = await appService.readFile(file.path, 'Books', 'binary');
       const data = new Uint8Array(content as ArrayBuffer);
-      await writer.add(file.path, new Uint8ArrayReader(data), { level: 0 });
+      // `readDirectory` returns host-separator paths; on Windows that is a
+      // backslash (e.g. `hash\cover.png`). Zip entry names must use forward
+      // slashes so the backup restores on every platform — restore matches a
+      // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
+      const entryName = file.path.replace(/\\/g, '/');
+      await writer.add(entryName, new Uint8ArrayReader(data), { level: 0 });
     } catch (error) {
       console.warn(`Skipping file ${file.path}:`, error);
     }
