@@ -44,6 +44,14 @@ interface ProofreadStoreState {
     scope: ProofreadScope,
   ) => Promise<void>;
   toggleRule: (envConfig: EnvConfigType, bookKey: string, ruleId: string) => Promise<void>;
+  /**
+   * Persist a drag-to-reorder of one rule category. `orderedIds` is the new
+   * visual order of the category's rules; each matching rule's `order` field
+   * is set to its index. A category can span both stores (book + library), so
+   * book/selection rules are written to the book config and library rules to
+   * the global settings — only the store(s) actually touched are saved.
+   */
+  reorderRules: (envConfig: EnvConfigType, bookKey: string, orderedIds: string[]) => Promise<void>;
 }
 
 function createProofreadRule(opts: CreateProofreadRuleOptions): ProofreadRule {
@@ -134,6 +142,36 @@ export const useProofreadStore = create<ProofreadStoreState>(() => ({
 
     const { updateRule } = useProofreadStore.getState();
     await updateRule(envConfig, bookKey, ruleId, { enabled: !rule.enabled });
+  },
+
+  reorderRules: async (envConfig, bookKey, orderedIds) => {
+    const orderById = new Map(orderedIds.map((id, index) => [id, index] as const));
+
+    const { getViewSettings } = useReaderStore.getState();
+    const viewSettings = getViewSettings(bookKey);
+    if (viewSettings) {
+      let bookTouched = false;
+      const updated = (viewSettings.proofreadRules || []).map((r) => {
+        const order = orderById.get(r.id);
+        if (order === undefined) return r;
+        bookTouched = true;
+        return { ...r, order };
+      });
+      if (bookTouched) await updateBookViewSettings(envConfig, bookKey, updated);
+    }
+
+    const { settings } = useSettingsStore.getState();
+    const globalRules = settings.globalViewSettings?.proofreadRules;
+    if (globalRules?.length) {
+      let globalTouched = false;
+      const updated = globalRules.map((r) => {
+        const order = orderById.get(r.id);
+        if (order === undefined) return r;
+        globalTouched = true;
+        return { ...r, order };
+      });
+      if (globalTouched) await updateGlobalSettings(envConfig, updated);
+    }
   },
 }));
 

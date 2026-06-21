@@ -1259,7 +1259,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleProofread = () => {
-    if (!selection || !selection.text) return;
+    // With no active selection the shortcut (Ctrl/Cmd+P) has nothing to turn
+    // into a rule, so reuse it to open the replacement-rules manager instead.
+    if (!selection || !selection.text) {
+      setProofreadRulesVisibility(true);
+      return;
+    }
     setShowAnnotPopup(false);
     setShowProofreadPopup(true);
 

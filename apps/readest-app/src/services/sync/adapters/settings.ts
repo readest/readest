@@ -33,6 +33,10 @@ export const SETTINGS_REPLICA_ID = 'singleton';
 export const SETTINGS_WHITELIST = [
   'globalViewSettings.userStylesheet',
   'globalViewSettings.userUIStylesheet',
+  // Library-scope proofread (find/replace) rules. Whole-field LWW like the
+  // other arrays here. Book- and selection-scope rules already ride along the
+  // book config sync; only these global rules were stranded on one device.
+  'globalViewSettings.proofreadRules',
   'globalReadSettings.customThemes',
   'globalReadSettings.customHighlightColors',
   'globalReadSettings.userHighlightColors',

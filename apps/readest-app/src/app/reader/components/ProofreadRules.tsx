@@ -1,16 +1,36 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { RiEditLine, RiDeleteBin7Line } from 'react-icons/ri';
+import { MdDragIndicator } from 'react-icons/md';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useProofreadStore } from '@/store/proofreadStore';
+import { useProofreadStore, validateReplacementRulePattern } from '@/store/proofreadStore';
 import { ProofreadRule, ProofreadScope } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import Dialog from '@/components/Dialog';
+import { SectionTitle } from '@/components/settings/primitives';
 
 const dialogId = 'proofread_rules_window';
 
@@ -20,6 +40,29 @@ export const setProofreadRulesVisibility = (visible: boolean) => {
     dialog.dispatchEvent(new CustomEvent('setProofreadRulesVisibility', { detail: { visible } }));
   }
 };
+
+const byOrder = (a: ProofreadRule, b: ProofreadRule): number => (a.order ?? 0) - (b.order ?? 0);
+
+// Lock drag travel to the vertical axis — the lists are vertical, so any
+// horizontal motion just lets the drag preview drift out from under the row.
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
+// Clamp the drag preview to the list container so a row can't be dragged out.
+const restrictToParentElement: Modifier = ({ containerNodeRect, draggingNodeRect, transform }) => {
+  if (!draggingNodeRect || !containerNodeRect) return transform;
+  const value = { ...transform };
+  if (draggingNodeRect.top + transform.y < containerNodeRect.top) {
+    value.y = containerNodeRect.top - draggingNodeRect.top;
+  } else if (
+    draggingNodeRect.bottom + transform.y >
+    containerNodeRect.top + containerNodeRect.height
+  ) {
+    value.y = containerNodeRect.top + containerNodeRect.height - draggingNodeRect.bottom;
+  }
+  return value;
+};
+
+const dragModifiers: Modifier[] = [restrictToVerticalAxis, restrictToParentElement];
 
 const RuleItem: React.FC<{
   rule: ProofreadRule;
@@ -145,6 +188,53 @@ const RuleItem: React.FC<{
   );
 };
 
+// Sortable wrapper: the draggable `<li>` chassis + a left drag handle around
+// the existing RuleItem. The handle is the only drag-listener surface so the
+// edit/delete buttons stay clickable; it's hidden while the row is in edit mode.
+const SortableRuleItem: React.FC<React.ComponentProps<typeof RuleItem>> = (props) => {
+  const _ = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.rule.id,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={clsx(
+        'card eink-bordered border-base-200 bg-base-100 border transition-colors',
+        isDragging ? 'z-10 shadow-md' : 'hover:border-base-300',
+      )}
+    >
+      <div className='flex items-stretch'>
+        {!props.isEditing && (
+          <button
+            type='button'
+            className={clsx(
+              'touch-target text-base-content/35 hover:text-base-content/70 flex w-7 shrink-0',
+              'cursor-grab touch-none items-center justify-center active:cursor-grabbing',
+            )}
+            aria-label={_('Drag to reorder')}
+            title={_('Drag to reorder')}
+            {...attributes}
+            {...listeners}
+          >
+            <MdDragIndicator className='h-4 w-4' />
+          </button>
+        )}
+        <div className='min-w-0 flex-1'>
+          <RuleItem {...props} />
+        </div>
+      </div>
+    </li>
+  );
+};
+
 // Hook to manage rules logic
 const useReplacementRules = (bookKey: string | null) => {
   const { settings } = useSettingsStore();
@@ -159,7 +249,9 @@ const useReplacementRules = (bookKey: string | null) => {
   // Prefer persisted rules; fall back to in-memory
   const bookRuleSource = persistedBookRules.length ? persistedBookRules : inMemoryRules;
 
-  const singleRules = bookRuleSource.filter((r: ProofreadRule) => r.scope === 'selection');
+  const singleRules = bookRuleSource
+    .filter((r: ProofreadRule) => r.scope === 'selection')
+    .sort(byOrder);
   const bookScopedRules = bookRuleSource.filter((r: ProofreadRule) => r.scope === 'book');
   const globalRules = settings?.globalViewSettings?.proofreadRules || [];
 
@@ -171,11 +263,16 @@ const useReplacementRules = (bookKey: string | null) => {
     (br: ProofreadRule) => br.enabled !== false || globalRuleIds.has(br.id),
   );
 
-  const mergedBookRules = validBookRules.concat(
-    globalRules.filter(
-      (gr: ProofreadRule) => !validBookRules.find((br: ProofreadRule) => br.id === gr.id),
-    ),
-  );
+  // Sort by `order` so a drag-to-reorder (which rewrites the order field)
+  // persists visually; the stable sort keeps insertion order while every
+  // rule still shares the default order.
+  const mergedBookRules = validBookRules
+    .concat(
+      globalRules.filter(
+        (gr: ProofreadRule) => !validBookRules.find((br: ProofreadRule) => br.id === gr.id),
+      ),
+    )
+    .sort(byOrder);
 
   return { singleRules, bookRules: mergedBookRules };
 };
@@ -185,9 +282,23 @@ export const ProofreadRulesManager: React.FC = () => {
   const { envConfig } = useEnv();
   const { recreateViewer } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { updateRule, removeRule } = useProofreadStore();
+  const { addRule, updateRule, removeRule, reorderRules } = useProofreadStore();
+
+  // dnd-kit sensors mirror the dictionaries reorder list: a small pointer
+  // distance gate avoids hijacking handle clicks, a touch delay gives mobile
+  // long-press-to-drag, and the keyboard sensor makes reordering accessible.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const [isOpen, setIsOpen] = useState(false);
+  const [addPattern, setAddPattern] = useState('');
+  const [addReplacement, setAddReplacement] = useState('');
+  const [addScope, setAddScope] = useState<Exclude<ProofreadScope, 'selection'>>('book');
+  const [addIsRegex, setAddIsRegex] = useState(false);
+  const [addCaseSensitive, setAddCaseSensitive] = useState(true);
   const [editing, setEditing] = useState<{
     id: string | null;
     scope: ProofreadScope | null;
@@ -255,42 +366,89 @@ export const ProofreadRulesManager: React.FC = () => {
     }
   };
 
+  const handleAddRule = async () => {
+    if (!sideBarBookKey) return;
+    const pattern = addPattern.trim();
+    const validation = validateReplacementRulePattern(pattern, addIsRegex);
+    if (!validation.valid) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: pattern ? _('Invalid regular expression') : _('Find pattern cannot be empty'),
+        timeout: 3000,
+      });
+      return;
+    }
+
+    await addRule(envConfig, sideBarBookKey, {
+      scope: addScope,
+      pattern,
+      replacement: addReplacement.trim(),
+      isRegex: addIsRegex,
+      caseSensitive: addCaseSensitive,
+      enabled: true,
+    });
+
+    setAddPattern('');
+    setAddReplacement('');
+    setAddIsRegex(false);
+    recreateViewer(envConfig, sideBarBookKey);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, list: ProofreadRule[]) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !sideBarBookKey) return;
+    const ids = list.map((r) => r.id);
+    const fromIdx = ids.indexOf(String(active.id));
+    const toIdx = ids.indexOf(String(over.id));
+    if (fromIdx < 0 || toIdx < 0) return;
+    const [moved] = ids.splice(fromIdx, 1);
+    if (!moved) return;
+    ids.splice(toIdx, 0, moved);
+    await reorderRules(envConfig, sideBarBookKey, ids);
+    recreateViewer(envConfig, sideBarBookKey);
+  };
+
   const renderRuleList = (
     rules: ProofreadRule[],
     scopeType: ProofreadScope,
     title: string,
     emptyMessage: string,
   ) => (
-    <div className='flex flex-col gap-3'>
-      <h3 className='text-base-content/90 text-sm font-semibold'>{title}</h3>
+    <div className='flex flex-col gap-2'>
+      <SectionTitle>{title}</SectionTitle>
       {rules.length === 0 ? (
-        <div className='border-base-content/10 bg-base-200/30 rounded-lg border border-dashed p-6 text-center'>
+        <div className='border-base-300 bg-base-200/30 rounded-xl border border-dashed p-6 text-center'>
           <p className='text-base-content/50 text-sm'>{emptyMessage}</p>
         </div>
       ) : (
-        <ul className='flex flex-col gap-2'>
-          {rules.map((rule) => (
-            <li
-              key={rule.id}
-              className='border-base-content/10 bg-base-100 hover:border-base-content/20 rounded-lg border transition-colors'
-            >
-              <RuleItem
-                rule={rule}
-                scope={scopeType === 'selection' ? 'selection' : rule.scope}
-                isEditing={
-                  editing.id === rule.id &&
-                  editing.scope === (scopeType === 'selection' ? 'selection' : rule.scope)
-                }
-                editingData={editing}
-                onEdit={() => startEdit(rule)}
-                onDelete={() => deleteRule(rule)}
-                onSave={saveEdit}
-                onCancel={cancelEdit}
-                onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}
-              />
-            </li>
-          ))}
-        </ul>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={dragModifiers}
+          onDragEnd={(event) => handleDragEnd(event, rules)}
+        >
+          <SortableContext items={rules.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+            <ul className='flex flex-col gap-2'>
+              {rules.map((rule) => (
+                <SortableRuleItem
+                  key={rule.id}
+                  rule={rule}
+                  scope={scopeType === 'selection' ? 'selection' : rule.scope}
+                  isEditing={
+                    editing.id === rule.id &&
+                    editing.scope === (scopeType === 'selection' ? 'selection' : rule.scope)
+                  }
+                  editingData={editing}
+                  onEdit={() => startEdit(rule)}
+                  onDelete={() => deleteRule(rule)}
+                  onSave={saveEdit}
+                  onCancel={cancelEdit}
+                  onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -301,10 +459,81 @@ export const ProofreadRulesManager: React.FC = () => {
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       title={_('Proofread Replacement Rules')}
-      boxClassName='sm:!min-w-[560px] sm:!max-w-[640px] sm:h-auto'
+      // Cap the height on desktop (where the modal is auto-height) so the body
+      // scrolls; on mobile the modal is full-height and the body fills it.
+      boxClassName='sm:!min-w-[560px] sm:!max-w-[640px] sm:h-auto sm:!max-h-[80vh]'
+      // Drop the body's default horizontal padding so the scrollbar rides the
+      // modal's right edge (the inner `p-4 sm:p-6` keeps content off it), and
+      // `min-h-0` lets the flex-grow body shrink-to-scroll inside the capped
+      // modal instead of overflowing.
+      contentClassName='!px-0 min-h-0'
     >
       {isOpen && (
-        <div className='flex max-h-[70vh] flex-col gap-6 p-4 sm:p-6'>
+        <div className='flex flex-col gap-6 p-4 sm:p-6'>
+          <div className='flex flex-col gap-2'>
+            <SectionTitle>{_('Add Rule')}</SectionTitle>
+            <div className='card eink-bordered border-base-200 bg-base-100 gap-3 border p-4'>
+              <input
+                className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                placeholder={_('Find...')}
+                spellCheck='false'
+                value={addPattern}
+                onChange={(e) => setAddPattern(e.target.value)}
+              />
+              <input
+                className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                placeholder={_('Replace with...')}
+                spellCheck='false'
+                value={addReplacement}
+                onChange={(e) => setAddReplacement(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddRule();
+                }}
+              />
+              <div className='flex flex-wrap items-center gap-x-5 gap-y-3 pt-0.5'>
+                <label className='flex items-center gap-2'>
+                  <span className='text-base-content/70 text-sm'>{_('Scope:')}</span>
+                  <select
+                    className='select select-sm select-bordered eink-bordered min-h-9 h-9'
+                    value={addScope}
+                    onChange={(e) =>
+                      setAddScope(e.target.value as Exclude<ProofreadScope, 'selection'>)
+                    }
+                  >
+                    <option value='book'>{_('Book')}</option>
+                    <option value='library'>{_('Library')}</option>
+                  </select>
+                </label>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <span className='text-base-content/70 text-sm'>{_('Regex:')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle toggle-sm'
+                    checked={addIsRegex}
+                    onChange={(e) => setAddIsRegex(e.target.checked)}
+                  />
+                </label>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <span className='text-base-content/70 text-sm'>{_('Case sensitive:')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle toggle-sm'
+                    checked={addCaseSensitive}
+                    onChange={(e) => setAddCaseSensitive(e.target.checked)}
+                  />
+                </label>
+              </div>
+              <div className='border-base-200 mt-1 flex justify-end border-t pt-3'>
+                <button
+                  className='btn btn-contrast h-10 min-h-10 rounded-lg px-5 text-sm font-medium disabled:opacity-40'
+                  onClick={handleAddRule}
+                  disabled={!addPattern.trim()}
+                >
+                  {_('Add Rule')}
+                </button>
+              </div>
+            </div>
+          </div>
           {renderRuleList(
             singleRules,
             'selection',

@@ -146,6 +146,58 @@ describe('SETTINGS_WHITELIST', () => {
   test('does NOT sync dictionarySettings.defaultProviderId (per-device last-used tab)', () => {
     expect(SETTINGS_WHITELIST).not.toContain('dictionarySettings.defaultProviderId');
   });
+
+  test('syncs library-scope proofread rules (issue #4700 — PC rules not reaching mobile)', () => {
+    expect(SETTINGS_WHITELIST).toContain('globalViewSettings.proofreadRules');
+  });
+});
+
+describe('settingsAdapter proofread rules', () => {
+  test('pack ∘ unpack round-trips globalViewSettings.proofreadRules', () => {
+    const proofreadRules = [
+      {
+        id: 'r1',
+        scope: 'library',
+        pattern: 'colour',
+        replacement: 'color',
+        enabled: true,
+        isRegex: false,
+        caseSensitive: true,
+        order: 1000,
+        wholeWord: true,
+      },
+    ];
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        globalViewSettings: { proofreadRules },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['globalViewSettings.proofreadRules']).toEqual(proofreadRules);
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.globalViewSettings?.proofreadRules).toEqual(proofreadRules);
+  });
+
+  test('unpackRow reconstructs proofread rules from a CRDT envelope', () => {
+    const proofreadRules = [
+      {
+        id: 'r1',
+        scope: 'library',
+        pattern: 'teh',
+        replacement: 'the',
+        enabled: true,
+        isRegex: false,
+        caseSensitive: false,
+        order: 1000,
+        wholeWord: true,
+      },
+    ];
+    const row = makeRow({ 'globalViewSettings.proofreadRules': env(proofreadRules) });
+    const out = settingsAdapter.unpackRow(row, '');
+    expect(out).not.toBeNull();
+    expect(out!.patch.globalViewSettings?.proofreadRules).toEqual(proofreadRules);
+  });
 });
 
 describe('readPath / writePath', () => {

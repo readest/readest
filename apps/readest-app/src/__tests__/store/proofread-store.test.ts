@@ -503,4 +503,87 @@ describe('proofreadStore', () => {
       ).rejects.toThrow('Rule not found: no-exist');
     });
   });
+
+  // -----------------------------------------------------------------------
+  // reorderRules
+  // -----------------------------------------------------------------------
+  describe('reorderRules', () => {
+    test('reassigns order fields for book-scope rules by position; saves config only', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'a', scope: 'book', order: 1000 }),
+          makeRule({ id: 'b', scope: 'book', order: 1000 }),
+          makeRule({ id: 'c', scope: 'book', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['c', 'a', 'b']);
+
+      const saved = mockViewSettingsMap['book1']!.proofreadRules!;
+      const orderById = Object.fromEntries(saved.map((r) => [r.id, r.order]));
+      expect(orderById).toEqual({ c: 0, a: 1, b: 2 });
+      expect(mockSaveConfig).toHaveBeenCalledTimes(1);
+      expect(mockSaveSettings).not.toHaveBeenCalled();
+    });
+
+    test('reassigns order for library-scope rules; saves settings only', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [] });
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'g1', scope: 'library', order: 1000 }),
+          makeRule({ id: 'g2', scope: 'library', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['g2', 'g1']);
+
+      const savedSettings = mockSaveSettings.mock.calls[0]![1] as {
+        globalViewSettings: ViewSettings;
+      };
+      const saved = savedSettings.globalViewSettings.proofreadRules!;
+      const orderById = Object.fromEntries(saved.map((r) => [r.id, r.order]));
+      expect(orderById).toEqual({ g2: 0, g1: 1 });
+      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+      expect(mockSaveConfig).not.toHaveBeenCalled();
+    });
+
+    test('a merged book+library reorder updates both stores', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'bk', scope: 'book', order: 1000 })],
+      });
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'lib', scope: 'library', order: 1000 })],
+      });
+
+      // Drag the library rule above the book rule.
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['lib', 'bk']);
+
+      const savedBook = mockViewSettingsMap['book1']!.proofreadRules!.find((r) => r.id === 'bk');
+      const savedSettings = mockSaveSettings.mock.calls[0]![1] as {
+        globalViewSettings: ViewSettings;
+      };
+      const savedLib = savedSettings.globalViewSettings.proofreadRules!.find((r) => r.id === 'lib');
+      expect(savedLib!.order).toBe(0);
+      expect(savedBook!.order).toBe(1);
+      expect(mockSaveConfig).toHaveBeenCalledTimes(1);
+      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+    });
+
+    test('leaves rules outside the reordered set untouched', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'sel', scope: 'selection', order: 7 }),
+          makeRule({ id: 'a', scope: 'book', order: 1000 }),
+          makeRule({ id: 'b', scope: 'book', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['b', 'a']);
+
+      const saved = mockViewSettingsMap['book1']!.proofreadRules!;
+      expect(saved.find((r) => r.id === 'sel')!.order).toBe(7);
+      expect(saved.find((r) => r.id === 'b')!.order).toBe(0);
+      expect(saved.find((r) => r.id === 'a')!.order).toBe(1);
+    });
+  });
 });
