@@ -470,6 +470,12 @@ export interface BookDataRecord {
   user_id: string;
   updated_at: number | null;
   deleted_at: number | null;
+  // Server-assigned incremental-pull cursor, decoupled from updated_at (the
+  // client event time / sort key). Present on books rows from a server that
+  // ran migration 016; absent (fall back to updated_at) on older servers and
+  // on config/note records. Carried over the wire as an ISO-8601 string.
+  // See issue #4678.
+  synced_at?: string | null;
   // Only book records carry an upload state: a book is indexed in the cloud
   // as soon as its metadata syncs, but is unavailable to peers until its file
   // blob is uploaded. Absent on config/note records.

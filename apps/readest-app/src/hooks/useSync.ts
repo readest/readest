@@ -20,16 +20,24 @@ const transformsFromDB = {
   configs: transformBookConfigFromDB,
 };
 
-const computeMaxTimestamp = (records: BookDataRecord[]): number => {
+// The incremental-pull watermark. The server stamps a `synced_at` on every
+// books write (issue #4678), so it — not updated_at — is the monotonic cursor:
+// keying on it lets a server-resolved merge propagate without the date-read
+// library jumping to sync-processing time. Rows without synced_at (configs,
+// notes, or a pre-migration server) fall back to max(updated_at, deleted_at);
+// for books a delete bumps synced_at too, so deleted_at need not be consulted.
+export const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   let maxTime = 0;
   for (const rec of records) {
+    if (rec.synced_at) {
+      maxTime = Math.max(maxTime, new Date(rec.synced_at).getTime());
+      continue;
+    }
     if (rec.updated_at) {
-      const updatedTime = new Date(rec.updated_at).getTime();
-      maxTime = Math.max(maxTime, updatedTime);
+      maxTime = Math.max(maxTime, new Date(rec.updated_at).getTime());
     }
     if (rec.deleted_at) {
-      const deletedTime = new Date(rec.deleted_at).getTime();
-      maxTime = Math.max(maxTime, deletedTime);
+      maxTime = Math.max(maxTime, new Date(rec.deleted_at).getTime());
     }
   }
   return maxTime;

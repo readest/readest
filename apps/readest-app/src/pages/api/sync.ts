@@ -73,6 +73,28 @@ export function resolveReadingStatusMerge(
       };
 }
 
+/**
+ * Build the row written when the server wins a books row by `updated_at` but
+ * the client's reading_status is the fresher one: graft the status onto the
+ * server row and leave everything else — crucially `updated_at` — untouched.
+ *
+ * The `books_set_synced_at` trigger stamps `synced_at = now()` on this write,
+ * so peers re-pull the status change via the synced_at cursor without the
+ * date-read library (sorted by updated_at) jumping to sync-processing time.
+ * Previously this rewrote `updated_at = now()` to force propagation, which was
+ * the #4677 reorder symptom. See issue #4678.
+ */
+export function buildStatusPropagationRow(
+  serverBook: DBBook,
+  status: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
+): DBBook {
+  return {
+    ...serverBook,
+    reading_status: status.reading_status,
+    reading_status_updated_at: status.reading_status_updated_at,
+  };
+}
+
 const transformsToDB = {
   books: transformBookToDB,
   book_notes: transformBookNoteToDB,
@@ -131,6 +153,13 @@ export async function GET(req: NextRequest) {
       let offset = 0;
       let hasMore = true;
 
+      // books keys the pull on the server-assigned `synced_at` cursor, which a
+      // trigger bumps on every write — including deletes — so a server-resolved
+      // merge propagates without touching updated_at (the date-read sort key).
+      // configs/notes have no server-side merge, so they stay on updated_at and
+      // still need the explicit deleted_at clause. See issue #4678.
+      const cursorColumn = table === 'books' ? 'synced_at' : 'updated_at';
+
       while (hasMore) {
         let query = supabase
           .from(table)
@@ -146,8 +175,12 @@ export async function GET(req: NextRequest) {
           query = query.eq('meta_hash', metaHashParam);
         }
 
-        query = query.or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`);
-        query = query.order('updated_at', { ascending: false });
+        if (cursorColumn === 'synced_at') {
+          query = query.gt('synced_at', sinceIso);
+        } else {
+          query = query.or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`);
+        }
+        query = query.order(cursorColumn, { ascending: false });
 
         console.log('Querying table:', table, 'since:', sinceIso, 'offset:', offset);
 
@@ -438,17 +471,13 @@ export async function POST(req: NextRequest) {
               );
               if (statusChanged) {
                 // Server wins the row, but the client's status is newer. Write
-                // server's row with the fresher status and bump updated_at so
-                // peers re-pull the status change.
+                // server's row with the fresher status; the books_set_synced_at
+                // trigger advances synced_at so peers re-pull the change, while
+                // updated_at (the date-read sort key) stays put. See #4678.
                 // The runtime DB row carries all DBBook columns; the static type
                 // of `serverBook` is a narrower intersection so `unknown` is
                 // required to bridge the gap at this one construction site.
-                toUpdate.push({
-                  ...serverBook,
-                  reading_status: status.reading_status,
-                  reading_status_updated_at: status.reading_status_updated_at,
-                  updated_at: new Date().toISOString(),
-                } as unknown as DBBook);
+                toUpdate.push(buildStatusPropagationRow(serverBook as unknown as DBBook, status));
               } else {
                 batchAuthoritativeRecords.push(serverData);
               }
