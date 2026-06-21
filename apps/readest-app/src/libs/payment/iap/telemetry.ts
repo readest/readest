@@ -28,12 +28,6 @@ export interface IapWebhookEvent {
   durationMs: number;
 }
 
-export interface IapReconcileEvent {
-  appleDrift: number;
-  googleDrift: number;
-  durationMs: number;
-}
-
 const getAnalyticsEngine = (): AnalyticsEngineDataset | undefined => {
   try {
     const env = getCloudflareContext().env as Partial<CloudflareEnv> | undefined;
@@ -67,17 +61,5 @@ export function recordIapWebhook(event: IapWebhookEvent): void {
       event.reason ?? '',
     ],
     doubles: [event.durationMs],
-  });
-}
-
-/** Record the result of a reconciliation sweep (drift = subscriptions still
- *  marked active in our DB whose store expiry has passed = a missed webhook). */
-export function recordIapReconcile(event: IapReconcileEvent): void {
-  console.log(JSON.stringify({ tag: TELEMETRY_TAG, kind: 'reconcile', ...event }));
-
-  getAnalyticsEngine()?.writeDataPoint({
-    indexes: ['reconcile'],
-    blobs: ['reconcile', event.appleDrift + event.googleDrift > 0 ? 'drift' : 'ok'],
-    doubles: [event.appleDrift, event.googleDrift, event.durationMs],
   });
 }

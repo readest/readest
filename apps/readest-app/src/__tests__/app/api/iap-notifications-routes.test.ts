@@ -19,7 +19,6 @@ vi.mock('@/libs/payment/iap/google/notifications', () => ({
 const telemetry = vi.hoisted(() => ({ recordIapWebhook: vi.fn() }));
 vi.mock('@/libs/payment/iap/telemetry', () => ({
   recordIapWebhook: telemetry.recordIapWebhook,
-  recordIapReconcile: vi.fn(),
 }));
 
 import { POST as applePOST } from '@/app/api/apple/notifications/route';

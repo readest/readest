@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const cf = vi.hoisted(() => ({ getCloudflareContext: vi.fn() }));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: cf.getCloudflareContext }));
 
-import { recordIapWebhook, recordIapReconcile } from '@/libs/payment/iap/telemetry';
+import { recordIapWebhook } from '@/libs/payment/iap/telemetry';
 
 type DataPoint = { indexes?: string[]; blobs?: (string | null)[]; doubles?: number[] };
 
@@ -76,21 +76,5 @@ describe('recordIapWebhook', () => {
       recordIapWebhook({ provider: 'apple', outcome: 'handled', durationMs: 1 }),
     ).not.toThrow();
     expect(writeDataPoint).not.toHaveBeenCalled();
-  });
-});
-
-describe('recordIapReconcile', () => {
-  it('records drift counts as doubles and flags drift', () => {
-    recordIapReconcile({ appleDrift: 2, googleDrift: 1, durationMs: 30 });
-
-    const point = firstDataPoint();
-    expect(point.indexes).toEqual(['reconcile']);
-    expect(point.blobs).toEqual(['reconcile', 'drift']);
-    expect(point.doubles).toEqual([2, 1, 30]);
-  });
-
-  it('flags ok when there is no drift', () => {
-    recordIapReconcile({ appleDrift: 0, googleDrift: 0, durationMs: 9 });
-    expect(firstDataPoint().blobs).toEqual(['reconcile', 'ok']);
   });
 });

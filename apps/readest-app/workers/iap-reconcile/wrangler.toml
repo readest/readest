@@ -1,0 +1,25 @@
+name = "readest-iap-reconcile"
+main = "src/index.ts"
+compatibility_date = "2026-04-10"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+# Hourly drift sweep. Catches subscription state changes that never arrived as a
+# webhook (a row still marked active while its store expiry has passed). Invokes
+# the worker's scheduled() handler directly — no public HTTP endpoint.
+[triggers]
+crons = ["7 * * * *"]
+
+# Low volume; capture every run (the main worker stays head-sampled at 1%).
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+# Same dataset the main worker writes webhook events to.
+[[analytics_engine_datasets]]
+binding = "IAP_WEBHOOK_AE"
+dataset = "iap_webhooks"
+
+# Required secrets (do not commit). Set from this directory with:
+#   wrangler secret put SUPABASE_URL
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY

@@ -1,0 +1,19 @@
+{
+  "name": "readest-iap-reconcile-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Cron Worker that reconciles IAP subscription drift (missed App Store / Google Play webhooks)",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
