@@ -51,7 +51,7 @@ import { MIMETYPES, EXTS } from '@/libs/document';
 import { makeSafeFilename } from '@/utils/misc';
 
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import Alert from '@/components/Alert';
+import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
@@ -74,6 +74,7 @@ interface BookshelfProps {
   ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookPurge: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
   handleLibraryNavigation: (targetGroup: string) => void;
@@ -146,6 +147,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookUpload,
   handleBookDownload,
   handleBookDelete,
+  handleBookPurge,
   handleSetSelectMode,
   handleShowDetailsBook,
   handleLibraryNavigation,
@@ -390,8 +392,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (purgeData: boolean) => {
     const books = getBooksToDelete();
+    // Toggling "purge all reading data" on the confirmation routes the whole
+    // batch through the purge path, which also wipes each book's reading-data
+    // sidecars (config/nav) instead of leaving the metadata folder behind.
+    const deleteBook = purgeData ? handleBookPurge : handleBookDelete;
     const concurrency = 20;
 
     for (let i = 0; i < books.length; i += concurrency) {
@@ -400,7 +406,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         break;
       }
       const batch = books.slice(i, i + concurrency);
-      await Promise.all(batch.map((book) => handleBookDelete(book, false)));
+      await Promise.all(batch.map((book) => deleteBook(book, false)));
     }
     handlePushLibrary();
     setSelectedBooks([]);
@@ -843,11 +849,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
           }}
         >
-          <Alert
+          <DeleteConfirmAlert
             title={_('Confirm Deletion')}
             message={_('Are you sure to delete {{count}} selected book(s)?', {
               count: getBooksToDelete().length,
             })}
+            showPurgeToggle
             onCancel={() => {
               abortDeletionRef.current = true;
               setShowDeleteAlert(false);

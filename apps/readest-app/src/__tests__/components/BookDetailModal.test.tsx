@@ -3,6 +3,7 @@ import { render, cleanup, fireEvent, waitFor, screen } from '@testing-library/re
 
 import { Book } from '@/types/book';
 import BookDetailModal from '@/components/metadata/BookDetailModal';
+import { DropdownProvider } from '@/context/DropdownContext';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
@@ -72,7 +73,23 @@ vi.mock('@/components/Dialog', () => ({
   default: ({ children, isOpen }: { children: React.ReactNode; isOpen: boolean }) =>
     isOpen ? <div>{children}</div> : null,
 }));
-vi.mock('@/components/Alert', () => ({ __esModule: true, default: () => null }));
+// Expose the confirm callback with the purge flag so we can assert routing
+// without driving the real toggle UI (covered by DeleteConfirmAlert.test.tsx).
+vi.mock('@/components/DeleteConfirmAlert', () => ({
+  __esModule: true,
+  default: ({
+    showPurgeToggle,
+    onConfirm,
+  }: {
+    showPurgeToggle?: boolean;
+    onConfirm: (purgeData: boolean) => void;
+  }) => (
+    <div data-testid='delete-confirm' data-purge-toggle={String(!!showPurgeToggle)}>
+      <button onClick={() => onConfirm(false)}>confirm-keep-data</button>
+      <button onClick={() => onConfirm(true)}>confirm-purge-data</button>
+    </div>
+  ),
+}));
 vi.mock('@/components/metadata/SourceSelector', () => ({ __esModule: true, default: () => null }));
 vi.mock('@/components/Spinner', () => ({ __esModule: true, default: () => null }));
 
@@ -120,5 +137,51 @@ describe('BookDetailModal cover refresh after save', () => {
       expect(screen.getByTestId('cover').getAttribute('src')).not.toBe('old-cover');
     });
     expect(screen.getByTestId('cover').getAttribute('src')).toBe('_blank');
+  });
+});
+
+describe('BookDetailModal purge-on-delete routing', () => {
+  const renderModal = (handlers: { handleBookDelete: () => void; handleBookPurge: () => void }) =>
+    render(
+      <DropdownProvider>
+        <BookDetailModal
+          book={makeBook()}
+          isOpen
+          onClose={vi.fn()}
+          handleBookDelete={handlers.handleBookDelete}
+          handleBookDeleteCloudBackup={vi.fn()}
+          handleBookDeleteLocalCopy={vi.fn()}
+          handleBookPurge={handlers.handleBookPurge}
+        />
+      </DropdownProvider>,
+    );
+
+  const openStandardDelete = (container: HTMLElement) => {
+    fireEvent.click(container.querySelector('button[aria-label="Delete Book Options"]')!);
+    fireEvent.click(screen.getByText('Remove from Cloud & Device'));
+  };
+
+  it('shows the purge toggle on the standard delete and routes to purge when enabled', () => {
+    const handleBookDelete = vi.fn();
+    const handleBookPurge = vi.fn();
+    const { container } = renderModal({ handleBookDelete, handleBookPurge });
+
+    openStandardDelete(container);
+    expect(screen.getByTestId('delete-confirm').getAttribute('data-purge-toggle')).toBe('true');
+
+    fireEvent.click(screen.getByText('confirm-purge-data'));
+    expect(handleBookPurge).toHaveBeenCalledTimes(1);
+    expect(handleBookDelete).not.toHaveBeenCalled();
+  });
+
+  it('routes the standard delete to a plain delete when the toggle is off', () => {
+    const handleBookDelete = vi.fn();
+    const handleBookPurge = vi.fn();
+    const { container } = renderModal({ handleBookDelete, handleBookPurge });
+
+    openStandardDelete(container);
+    fireEvent.click(screen.getByText('confirm-keep-data'));
+    expect(handleBookDelete).toHaveBeenCalledTimes(1);
+    expect(handleBookPurge).not.toHaveBeenCalled();
   });
 });

@@ -166,23 +166,17 @@ describe('BookDetailView More menu (Goodreads + Share)', () => {
   });
 });
 
-describe('BookDetailView Purge Data action', () => {
-  it('offers Purge Data in the delete dropdown and calls onPurge', () => {
-    const onPurge = vi.fn();
-    const { container, getByText } = renderView({ onPurge });
-    const toggle = container.querySelector('button[aria-label="Delete Book Options"]');
-    fireEvent.click(toggle!);
-    const purgeButton = getByText('Purge Data').closest('button');
-    expect(purgeButton).toBeTruthy();
-    fireEvent.click(purgeButton!);
-    expect(onPurge).toHaveBeenCalledTimes(1);
-  });
-
-  it('omits Purge Data when onPurge is not provided', () => {
+describe('BookDetailView delete dropdown (purge folded into the confirm alert)', () => {
+  it('no longer offers a Purge Data action and keeps the three remove options', () => {
     const { container, queryByText } = renderView();
     const toggle = container.querySelector('button[aria-label="Delete Book Options"]');
     fireEvent.click(toggle!);
+    // Purge is now an opt-in toggle on the delete confirmation alert, not a
+    // standalone menu item.
     expect(queryByText('Purge Data')).toBeNull();
+    expect(queryByText('Remove from Cloud & Device')).toBeTruthy();
+    expect(queryByText('Remove from Cloud Only')).toBeTruthy();
+    expect(queryByText('Remove from Device Only')).toBeTruthy();
   });
 });
 

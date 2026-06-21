@@ -39,7 +39,6 @@ interface BookDetailViewProps {
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
-  onPurge?: () => void;
   onDownload?: () => void;
   onUpload?: () => void;
   onShare?: () => void;
@@ -55,7 +54,6 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onDelete,
   onDeleteCloudBackup,
   onDeleteLocalCopy,
-  onPurge,
   onDownload,
   onUpload,
   onShare,
@@ -153,16 +151,6 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     onClick={onDeleteLocalCopy}
                     disabled={!book.downloadedAt}
                   />
-                  {onPurge && (
-                    <MenuItem
-                      noIcon
-                      transient
-                      label={_('Purge Data')}
-                      labelClass='text-red-500'
-                      tooltip={_('Erase the book and all its data, including reading progress')}
-                      onClick={onPurge}
-                    />
-                  )}
                 </div>
               </Dropdown>
             )}
