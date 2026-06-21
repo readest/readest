@@ -7,29 +7,29 @@ import Providers from '@/components/Providers';
 
 import '../styles/globals.css';
 
-const url = 'https://web.readest.com/';
-const title = 'Readest — Where You Read, Digest and Get Insight';
+const url = 'https://web.readflow.com/';
+const title = 'ReadFlow — Where You Read, Digest and Get Insight';
 const description =
-  'Discover Readest, the ultimate online ebook reader for immersive and organized reading. ' +
+  'Discover ReadFlow, the ultimate online ebook reader for immersive and organized reading. ' +
   'Enjoy seamless access to your digital library, powerful tools for highlighting, bookmarking, ' +
   'and note-taking, and support for multiple book views. ' +
   'Perfect for deep reading, analysis, and understanding. Explore now!';
-const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
+const previewImage = 'https://cdn.readflow.com/images/open_graph_preview_read_now.png';
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),
   title: {
     default: title,
-    template: '%s | Readest',
+    template: '%s | ReadFlow',
   },
   description,
   generator: 'Next.js',
   manifest: '/manifest.json',
-  keywords: ['epub', 'pdf', 'ebook', 'reader', 'readest', 'pwa'],
+  keywords: ['epub', 'pdf', 'ebook', 'reader', 'readflow', 'pwa'],
   authors: [
     {
-      name: 'readest',
-      url: 'https://github.com/readest/readest',
+      name: 'readflow',
+      url: 'https://github.com/readflow/readflow',
     },
   ],
   icons: {
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'Readest',
+    title: 'ReadFlow',
     statusBarStyle: 'default',
   },
   openGraph: {
