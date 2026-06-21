@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
@@ -197,6 +197,10 @@ export const usePagination = (
   // Reactive subscription: drives the effect dependency array below. The
   // handlers themselves re-read via getState() to avoid stale closures.
   const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
+  // While this book's TTS is actively playing, the volume keys must control the
+  // system volume instead of flipping pages (#4691). A paused or stopped session
+  // hands them back to the page-flip interception.
+  const [ttsPlaying, setTtsPlaying] = useState(false);
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -407,20 +411,42 @@ export const usePagination = (
   useEffect(() => {
     if (!appService?.isMobileApp) return;
 
-    const viewSettings = getViewSettings(bookKey);
-    if (viewSettings?.volumeKeysToFlip) {
-      acquireVolumeKeyInterception();
-    } else {
-      releaseVolumeKeyInterception();
-    }
-
     eventDispatcher.on('native-key-down', handlePageFlip);
     return () => {
-      releaseVolumeKeyInterception();
       eventDispatcher.off('native-key-down', handlePageFlip);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Track this book's TTS playback so volume-key interception can step aside
+  // while audio is playing (#4691).
+  useEffect(() => {
+    const handlePlaybackState = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { bookKey?: string; state?: string };
+      if (detail?.bookKey !== bookKey) return;
+      setTtsPlaying(detail.state === 'playing');
+    };
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    return () => {
+      eventDispatcher.off('tts-playback-state', handlePlaybackState);
+    };
+  }, [bookKey]);
+
+  // Volume-key page-flip interception (mobile only). Acquired only while the
+  // setting is on and TTS isn't playing; the matching release on re-run/unmount
+  // keeps the reference count balanced.
+  useEffect(() => {
+    if (!appService?.isMobileApp) return;
+
+    const viewSettings = getViewSettings(bookKey);
+    if (!viewSettings?.volumeKeysToFlip || ttsPlaying) return;
+
+    acquireVolumeKeyInterception();
+    return () => {
+      releaseVolumeKeyInterception();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsPlaying]);
 
   // Hardware page turner: native-key + DOM-key listeners and native
   // media-key interception, re-evaluated whenever the setting changes.
