@@ -142,9 +142,10 @@ function createMockView(): FoliateView {
 
 // --- Helper: create mock AppService ---
 
-function createMockAppService(isAndroid = false): AppService {
+function createMockAppService(isAndroid = false, isIOS = false): AppService {
   return {
     isAndroidApp: isAndroid,
+    isIOSApp: isIOS,
   } as unknown as AppService;
 }
 
@@ -215,7 +216,13 @@ describe('TTSController', () => {
       expect(c.ttsNativeClient).not.toBeNull();
     });
 
-    test('does not create native client when not Android', () => {
+    test('creates native client when isIOSApp', () => {
+      const iosService = createMockAppService(false, true);
+      const c = new TTSController(iosService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+    });
+
+    test('does not create native client when neither Android nor iOS', () => {
       expect(controller.ttsNativeClient).toBeNull();
     });
 
