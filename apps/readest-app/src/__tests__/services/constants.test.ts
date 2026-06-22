@@ -1109,6 +1109,10 @@ describe('services/constants', () => {
       expect(TRANSLATOR_LANGS['fi']).toBeDefined();
     });
 
+    it('TRANSLATOR_LANGS includes Urdu', () => {
+      expect(TRANSLATOR_LANGS['ur']).toBe('اردو');
+    });
+
     it('SUPPORTED_LANGS includes zh in addition to TRANSLATED_LANGS entries', () => {
       expect(typeof SUPPORTED_LANGS).toBe('object');
       expect(SUPPORTED_LANGS['zh']).toBeDefined();

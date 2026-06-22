@@ -958,6 +958,7 @@ export const TRANSLATOR_LANGS: Record<string, string> = {
   sl: 'Slovenščina',
   sk: 'Slovenčina',
   fa: 'فارسی',
+  ur: 'اردو',
 };
 
 export const SUPPORTED_LANGS: Record<string, string> = { ...TRANSLATED_LANGS, zh: '中文' };
