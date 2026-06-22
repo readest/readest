@@ -164,7 +164,13 @@ export abstract class BaseAppService implements AppService {
 
   async resolveFilePath(path: string, base: BaseDir): Promise<string> {
     const prefix = await this.fs.getPrefix(base);
-    return path ? `${prefix}/${path}` : prefix;
+    if (!path) return prefix;
+    // `base: 'None'` carries an already-absolute source path (in-place /
+    // external books point `book.filePath` outside Books/<hash>/) and its
+    // prefix is empty. Joining unconditionally turned `C:\Users\…` into
+    // `/C:\Users\…` (and `/Users/…` into `//Users/…`), which the native
+    // upload guard rejects as outside the fs scope — issue #4720.
+    return prefix ? `${prefix}/${path}` : path;
   }
 
   async readDirectory(path: string, base: BaseDir): Promise<FileItem[]> {
