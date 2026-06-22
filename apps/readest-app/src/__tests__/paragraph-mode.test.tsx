@@ -381,6 +381,24 @@ describe('paragraph mode', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('exits when the toggle paragraph mode shortcut (Shift+P) is pressed (#4717)', async () => {
+    const onClose = vi.fn();
+    await renderVisibleOverlay(onClose);
+
+    fireEvent.keyDown(document.body, { key: 'P', shiftKey: true });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not exit on an unrelated key while visible', async () => {
+    const onClose = vi.fn();
+    await renderVisibleOverlay(onClose);
+
+    fireEvent.keyDown(document.body, { key: 'x' });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
 
 describe('paragraph mode TTS sync', () => {

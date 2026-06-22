@@ -134,7 +134,9 @@ const DEFAULT_SHORTCUTS = {
     section: 'Selection',
   },
   onProofreadSelection: {
-    keys: ['ctrl+p', 'cmd+p'],
+    // alt+p is a print-free alternative on Windows/Linux, where ctrl+p is
+    // intercepted by the browser's print dialog (#4717).
+    keys: ['ctrl+p', 'cmd+p', 'alt+p'],
     description: _('Proofread Selection'),
     section: 'Selection',
   },

@@ -13,6 +13,8 @@ import {
   ParagraphPresentation,
 } from '@/utils/paragraphPresentation';
 import { getTextSubRange } from '@/services/tts/wordHighlight';
+import { loadShortcuts } from '@/helpers/shortcuts';
+import { matchesShortcut } from '@/utils/shortcutKeys';
 import TTSFollowIndicator, { TtsSyncStatus } from '../tts/TTSFollowIndicator';
 import { buildTtsHighlightCssText } from './paragraphTts';
 
@@ -337,6 +339,16 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       e.stopImmediatePropagation();
 
       if (e.key === 'Escape' || e.key === 'Backspace') {
+        e.preventDefault();
+        onCloseRef.current?.();
+        return;
+      }
+
+      // The overlay swallows every keydown in the capture phase, so the global
+      // toggle shortcut (Shift+P by default) never reaches useShortcuts. Honor
+      // it here so the same shortcut that enters paragraph mode also exits it
+      // (#4717).
+      if (matchesShortcut(e, loadShortcuts().onToggleParagraphMode.keys)) {
         e.preventDefault();
         onCloseRef.current?.();
         return;
