@@ -49,6 +49,8 @@ export interface DictionaryResultsState {
   resolveWebSearchUrl: (id: string) => string | undefined;
   onWebSearchClickTauri: (e: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   noProvidersAtAll: boolean;
+  /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
+  fontScale: number;
 }
 
 /**
@@ -312,6 +314,7 @@ export function useDictionaryResults({
     resolveWebSearchUrl,
     onWebSearchClickTauri,
     noProvidersAtAll,
+    fontScale: settings.fontScale ?? 1,
   };
 }
 
@@ -377,6 +380,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   resolveWebSearchUrl,
   onWebSearchClickTauri,
   noProvidersAtAll,
+  fontScale,
 }) => {
   const _ = useTranslation();
   return (
@@ -440,6 +444,12 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                           <div
                             ref={setContainerRef(p.id)}
                             onClick={handleContainerClick}
+                            // `data-dict-content` + `--dict-font-scale` drive the
+                            // popup font-size rules in globals.css (#4443): the
+                            // light-DOM `font-size` cascade and the MDict shadow
+                            // `::part(dict-content)` rule both read this scope.
+                            data-dict-content=''
+                            style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
                             className={clsx(
                               'font-sans',
                               isLoading && 'hidden',

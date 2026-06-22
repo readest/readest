@@ -141,6 +141,8 @@ describe('SETTINGS_WHITELIST', () => {
     expect(SETTINGS_WHITELIST).toContain('dictionarySettings.providerOrder');
     expect(SETTINGS_WHITELIST).toContain('dictionarySettings.providerEnabled');
     expect(SETTINGS_WHITELIST).toContain('dictionarySettings.webSearches');
+    // Dictionary popup font size (#4443) follows the user across devices.
+    expect(SETTINGS_WHITELIST).toContain('dictionarySettings.fontScale');
   });
 
   test('does NOT sync dictionarySettings.defaultProviderId (per-device last-used tab)', () => {

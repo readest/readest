@@ -49,6 +49,7 @@ export const SETTINGS_WHITELIST = [
   'dictionarySettings.providerOrder',
   'dictionarySettings.providerEnabled',
   'dictionarySettings.webSearches',
+  'dictionarySettings.fontScale',
   // External integrations. Server URL + identifiers sync as plaintext;
   // the credential fields are listed in `encryptedFields` below so the
   // publish/pull middleware wraps them in cipher envelopes.
