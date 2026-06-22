@@ -331,12 +331,21 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     };
   }, [bookKey, addParagraph]);
 
+  // Focus the dialog when it opens (the dialog/alert pattern) so it receives
+  // keydowns directly via its own onKeyDown handler, regardless of where focus
+  // sat before — fixes Shift+P/Escape not toggling when focus was still inside
+  // the book iframe (#4717).
   useEffect(() => {
     if (!isVisible) return;
+    containerRef.current?.focus({ preventScroll: true });
+  }, [isVisible]);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+  // Keydown handler bound to the dialog element. Keeps every key inside the
+  // overlay (stopPropagation) so the global shortcut handler never sees it — the
+  // toggle therefore fires exactly once.
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
       e.stopPropagation();
-      e.stopImmediatePropagation();
 
       if (e.key === 'Escape' || e.key === 'Backspace') {
         e.preventDefault();
@@ -344,10 +353,6 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         return;
       }
 
-      // The overlay swallows every keydown in the capture phase, so the global
-      // toggle shortcut (Shift+P by default) never reaches useShortcuts. Honor
-      // it here so the same shortcut that enters paragraph mode also exits it
-      // (#4717).
       if (matchesShortcut(e, loadShortcuts().onToggleParagraphMode.keys)) {
         e.preventDefault();
         onCloseRef.current?.();
@@ -358,18 +363,13 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       if (action === 'next') {
         e.preventDefault();
         eventDispatcher.dispatch('paragraph-next', { bookKey });
-        return;
-      }
-
-      if (action === 'prev') {
+      } else if (action === 'prev') {
         e.preventDefault();
         eventDispatcher.dispatch('paragraph-prev', { bookKey });
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [activePresentation, bookKey, isVisible, viewSettings]);
+    },
+    [activePresentation, bookKey, viewSettings],
+  );
 
   useEffect(() => {
     if (!isVisible) return;
@@ -473,6 +473,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
+      // Keep keyboard focus on the dialog so Escape/Shift+P keep working after a
+      // tap moved focus elsewhere (e.g. into the book iframe).
+      containerRef.current?.focus({ preventScroll: true });
       // Tapping the empty area around the paragraph used to exit, which made it
       // easy to leave paragraph mode by accident. Reveal the controls instead so
       // exiting stays an explicit action (the bar's exit button or Escape).
@@ -487,6 +490,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const handleContentClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+      // Keep keyboard focus on the dialog so it keeps receiving keys after a tap.
+      containerRef.current?.focus({ preventScroll: true });
 
       const now = Date.now();
       if (now - lastTapTimeRef.current < 300) {
@@ -543,6 +548,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       className={clsx(
         'fixed inset-0 z-40',
         'flex flex-col items-center justify-center',
+        // The dialog is focused programmatically (so it receives keys); it is not
+        // a tab stop, so suppress the focus ring that would otherwise outline the
+        // whole viewport.
+        'outline-none',
         'transition-opacity duration-300 ease-out',
         isOverlayMounted ? 'opacity-100' : 'opacity-0',
       )}
@@ -555,7 +564,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       }}
       onClick={handleBackdropClick}
       onTouchStart={handleTouchStart}
-      onKeyDown={(e) => e.stopPropagation()}
+      onKeyDown={handleKeyDown}
     >
       {/* TTS "following audio" indicator, pinned top-center. Anchored below the
           top safe-area inset the overlay already accounts for; idle/unsupported

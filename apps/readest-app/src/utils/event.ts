@@ -22,7 +22,13 @@ class EventDispatcher {
     const listeners = this.asyncListeners.get(event);
     if (listeners) {
       const customEvent = new CustomEvent(event, { detail });
-      for (const listener of listeners) {
+      // Snapshot the listeners before iterating: an awaited listener may
+      // (re)subscribe another handler for the same event — e.g. a React effect
+      // re-running on a state change it triggered. Iterating the live Set would
+      // invoke that freshly-added handler in the same dispatch, double-firing
+      // the event (paragraph mode toggled twice per keypress, #4717). dispatchSync
+      // already snapshots for the same reason.
+      for (const listener of [...listeners]) {
         await listener(customEvent);
       }
     }

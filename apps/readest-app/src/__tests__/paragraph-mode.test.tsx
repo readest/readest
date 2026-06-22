@@ -208,6 +208,89 @@ describe('paragraph mode', () => {
     });
   });
 
+  it('resumes without scrolling the underlying view so repeated enter/exit cannot rewind (#4717)', async () => {
+    const doc = createDoc('<p>Para A</p><p>Para B</p><p>Para C</p>');
+    const { view, renderer } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange).toBeTruthy();
+    });
+
+    // Resuming/entering focuses the paragraph already at the reading position.
+    // Scrolling the underlying view to that paragraph's start rewinds whenever it
+    // began on an earlier page, so the view must NOT be moved on resume (#4717).
+    expect(renderer.goTo).not.toHaveBeenCalled();
+    expect(renderer.scrollToAnchor).not.toHaveBeenCalled();
+  });
+
+  it('resumes at the view live CFI even when the store progress is stale (#4717)', async () => {
+    const doc = createDoc('<p>Block zero</p><p>Block one</p><p>Block two</p>');
+    const { view } = createMockView([doc], 0);
+    // The rAF-debounced store (mockGetProgress) returns null/stale; the view's
+    // live lastLocation CFI points at the third paragraph. Resume must follow the
+    // live CFI (resolved against the current doc), not fall back to chapter start.
+    const thirdParagraph = doc.querySelectorAll('p')[2]!;
+    (view as unknown as { lastLocation: { cfi: string } }).lastLocation = { cfi: 'cfi-live' };
+    (view.resolveCFI as ReturnType<typeof vi.fn>).mockImplementation((cfi: string) =>
+      cfi === 'cfi-live'
+        ? {
+            index: 0,
+            anchor: () => {
+              const r = doc.createRange();
+              r.selectNodeContents(thirdParagraph);
+              return r;
+            },
+          }
+        : null,
+    );
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Block two');
+    });
+  });
+
+  it('does not scroll the underlying view when exiting paragraph mode (#4717)', async () => {
+    const doc = createDoc('<p>Para A</p><p>Para B</p>');
+    const { view, renderer } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange).toBeTruthy();
+    });
+
+    await act(async () => {
+      await hookApi?.toggleParagraphMode();
+    });
+
+    expect(renderer.scrollToAnchor).not.toHaveBeenCalled();
+  });
+
+  it('still scrolls the underlying view when navigating paragraphs', async () => {
+    const doc = createDoc('<p>Para A</p><p>Para B</p><p>Para C</p>');
+    const { view, renderer } = createMockView([doc], 0);
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange).toBeTruthy();
+    });
+
+    await act(async () => {
+      await hookApi?.goToNextParagraph();
+    });
+
+    // Navigation to another paragraph must move the underlying view (the goTo
+    // runs after a rAF inside focusCurrentParagraph, so wait for it).
+    await waitFor(() => {
+      expect(renderer.goTo).toHaveBeenCalled();
+    });
+  });
+
   it('renders preserved presentation and layout-aware click zones in the overlay', async () => {
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
     const overlayBookKey = 'overlay-book';
@@ -382,20 +465,52 @@ describe('paragraph mode', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  const getDialog = (container: HTMLElement) =>
+    container.querySelector('[role="dialog"]') as HTMLDivElement;
+
+  it('focuses the dialog when it opens so it receives keys directly (#4717)', async () => {
+    const { container } = await renderVisibleOverlay(vi.fn());
+    const dialog = getDialog(container);
+    expect(document.activeElement).toBe(dialog);
+  });
+
   it('exits when the toggle paragraph mode shortcut (Shift+P) is pressed (#4717)', async () => {
     const onClose = vi.fn();
-    await renderVisibleOverlay(onClose);
+    const { container } = await renderVisibleOverlay(onClose);
 
-    fireEvent.keyDown(document.body, { key: 'P', shiftKey: true });
+    fireEvent.keyDown(getDialog(container), { key: 'P', shiftKey: true });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('exits when Escape is pressed on the dialog (#4717)', async () => {
+    const onClose = vi.fn();
+    const { container } = await renderVisibleOverlay(onClose);
+
+    fireEvent.keyDown(getDialog(container), { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops the toggle key from propagating so it cannot fire twice (#4717)', async () => {
+    const onClose = vi.fn();
+    const { container } = await renderVisibleOverlay(onClose);
+    const windowSpy = vi.fn();
+    window.addEventListener('keydown', windowSpy);
+
+    fireEvent.keyDown(getDialog(container), { key: 'P', shiftKey: true });
+
+    // The dialog handler must stop propagation so the global useShortcuts
+    // handler never receives the same keypress (which would re-toggle).
+    expect(windowSpy).not.toHaveBeenCalled();
+    window.removeEventListener('keydown', windowSpy);
+  });
+
   it('does not exit on an unrelated key while visible', async () => {
     const onClose = vi.fn();
-    await renderVisibleOverlay(onClose);
+    const { container } = await renderVisibleOverlay(onClose);
 
-    fireEvent.keyDown(document.body, { key: 'x' });
+    fireEvent.keyDown(getDialog(container), { key: 'x' });
 
     expect(onClose).not.toHaveBeenCalled();
   });
