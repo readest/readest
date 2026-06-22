@@ -130,6 +130,11 @@ export const useTextSelector = (
   const isTouchStarted = useRef(false);
   const selectionPosition = useRef<number | null>(null);
   const lastPointerType = useRef<string>('mouse');
+  // Whether a pointer drag (mouse/touch selection) is currently in progress.
+  // Desktop selections defer to pointerup, but a keyboard selection adjustment
+  // (#4728) has no pointer drag — handleSelectionchange uses this to refresh the
+  // popup/range for keyboard-driven changes while still deferring mid-drag.
+  const isPointerDown = useRef(false);
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
@@ -227,6 +232,7 @@ export const useTextSelector = (
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     lastPointerType.current = ev.pointerType;
+    isPointerDown.current = true;
 
     if (isInstantAnnotationEnabled()) {
       const handled = handleInstantAnnotationPointerDown(doc, index, ev);
@@ -305,6 +311,7 @@ export const useTextSelector = (
   };
 
   const handlePointerCancel = (_doc: Document, _index: number, ev: PointerEvent) => {
+    isPointerDown.current = false;
     // NB: don't cancel the auto-turn here — on Android pointercancel fires mid
     // edge-drag (browser takes over for scrolling), which is exactly when the
     // user is dragging into the corner. Cancel only on a real release.
@@ -396,6 +403,7 @@ export const useTextSelector = (
   };
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
+    isPointerDown.current = false;
     if (isInstantAnnotating.current && ev) {
       stopInstantAnnotating(ev);
       const handled = await handleInstantAnnotationPointerUp(doc, index, ev);
@@ -553,10 +561,11 @@ export const useTextSelector = (
       cancelAutoTurn();
     }
 
-    if (!isAndroid && !isTouchInput) return;
+    // Desktop mouse selections defer to pointerup, but a keyboard selection
+    // adjustment (#4728) has no pointerup — process it as long as a pointer drag
+    // isn't in progress (mid-drag still defers to pointerup).
+    if (!isAndroid && !isTouchInput && isPointerDown.current) return;
     if (isValidSelection(sel)) {
-      // On desktop with mouse, defer to pointerup for valid selections.
-      if (!isAndroid && !isTouchInput) return;
       if (selectionPosition.current === null) {
         // Save the absolute container scroll, not `renderer.start` — the
         // latter is section-relative, so restoring it as `containerPosition`

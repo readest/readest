@@ -375,6 +375,59 @@ export const getPopupPosition = (
   return { point: popupPoint, dir: position.dir } as Position;
 };
 
+// Standard desktop text-selection shortcuts (#4728): extend the active
+// selection with the keyboard. Pure key→intent mapping so it stays testable.
+//
+// - Shift+←/→            → extend by character
+// - Ctrl/Alt+Shift+←/→   → extend by word (Ctrl on Windows/Linux, Option on macOS)
+//
+// `direction` is visual ('left'/'right') so it matches the arrow key pressed and
+// reads correctly in RTL text. Meta/Cmd is left alone so the browser's native
+// line-boundary selection (Cmd+Shift+←/→ on macOS) still works.
+export interface KeyModifiers {
+  key: string;
+  shiftKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
+}
+
+export interface SelectionAdjustment {
+  direction: 'left' | 'right';
+  granularity: 'character' | 'word';
+}
+
+export const getKeyboardSelectionAdjustment = (ev: KeyModifiers): SelectionAdjustment | null => {
+  if (!ev.shiftKey || ev.metaKey) return null;
+  const direction = ev.key === 'ArrowLeft' ? 'left' : ev.key === 'ArrowRight' ? 'right' : null;
+  if (!direction) return null;
+  const granularity = ev.ctrlKey || ev.altKey ? 'word' : 'character';
+  return { direction, granularity };
+};
+
+// Locate the active (non-collapsed) selection across the rendered section
+// documents (foliate's `renderer.getContents()`) and, in `extend` mode, grow or
+// shrink it per the keyboard adjustment (#4728). Returns whether a selection was
+// found, so the caller can suppress page-turn navigation. With `extend` false it
+// only reports presence — used when the iframe itself held focus and the browser
+// already extended the selection natively.
+export const extendSelectionFromContents = (
+  contents: { doc: Document }[],
+  ev: KeyModifiers,
+  extend: boolean,
+): boolean => {
+  const adjustment = getKeyboardSelectionAdjustment(ev);
+  if (!adjustment) return false;
+  for (const { doc } of contents) {
+    const sel = doc.defaultView?.getSelection();
+    if (sel && !sel.isCollapsed) {
+      if (extend) sel.modify('extend', adjustment.direction, adjustment.granularity);
+      return true;
+    }
+  }
+  return false;
+};
+
 export const snapRangeToWords = (range: Range): void => {
   if (typeof Intl === 'undefined' || !Intl.Segmenter) return;
 

@@ -12,6 +12,7 @@ import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
+import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
@@ -69,6 +70,19 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const switchSideBar = () => {
     if (sideBarBookKey) setSideBarBookKey(getNextBookKey(sideBarBookKey));
+  };
+
+  // Standard desktop selection shortcuts (#4728). After a selection the reader
+  // container holds focus, so Shift+←/→ keystrokes land here in the parent (not
+  // the iframe). Extend the iframe selection ourselves; for keys forwarded from
+  // a focused iframe (the browser already extended natively) just report that a
+  // selection exists. Returning true stops the page-turn shortcut from firing.
+  const adjustTextSelection = (event?: KeyboardEvent | MessageEvent) => {
+    const isNative = event instanceof KeyboardEvent;
+    const src: KeyModifiers | undefined = isNative ? event : event?.data;
+    if (!src?.key) return false;
+    const contents = getView(sideBarBookKey)?.renderer?.getContents?.() ?? [];
+    return extendSelectionFromContents(contents, src, isNative);
   };
 
   const goLeft = () => {
@@ -357,6 +371,9 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   useShortcuts(
     {
+      // Listed first so an active selection intercepts Shift+←/→ before the
+      // page-navigation actions below can turn the page (#4728).
+      onAdjustTextSelection: adjustTextSelection,
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
       onToggleNotebook: toggleNotebook,

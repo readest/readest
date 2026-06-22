@@ -140,6 +140,21 @@ const DEFAULT_SHORTCUTS = {
     description: _('Proofread Selection'),
     section: 'Selection',
   },
+  onAdjustTextSelection: {
+    // Standard desktop shortcuts for refining an active selection (#4728):
+    // Shift+←/→ by character, Ctrl/Alt(Option)+Shift+←/→ by word. Only act while
+    // text is selected; otherwise these keys fall through to page navigation.
+    keys: [
+      'shift+ArrowLeft',
+      'shift+ArrowRight',
+      'ctrl+shift+ArrowLeft',
+      'ctrl+shift+ArrowRight',
+      'opt+shift+ArrowLeft',
+      'opt+shift+ArrowRight',
+    ],
+    description: _('Adjust Text Selection'),
+    section: 'Selection',
+  },
   onOpenFontLayoutSettings: {
     keys: ['shift+f', 'ctrl+,', 'cmd+,'],
     description: _('Open Settings'),
