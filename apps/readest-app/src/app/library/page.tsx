@@ -944,6 +944,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           metadata.coverImageBlobUrl || metadata.coverImageUrl,
           metadata.coverImageFile,
         );
+        // Cover-change sync (issue #4544): recompute the cover's content hash.
+        // If it actually changed, bump coverHash + coverUpdatedAt so peers
+        // re-download it (the book row already syncs via updatedAt).
+        // computeCoverHash returns null for a '_blank' deletion — we skip the
+        // bump there (cover deletion is intentionally not synced; peers keep
+        // their cover until a new one is set).
+        const newCoverHash = (await appService?.computeCoverHash(updatedBook)) ?? null;
+        if (newCoverHash && newCoverHash !== book.coverHash) {
+          // For a book already in the cloud, re-upload the cover FIRST and only
+          // advertise the new version if it succeeded — otherwise peers would
+          // try to fetch a cover that isn't there. A not-yet-uploaded book
+          // carries the new cover on its first full upload, so the bump is safe.
+          let coverUploaded = true;
+          if (user && updatedBook.uploadedAt) {
+            try {
+              await appService?.uploadBookCover(updatedBook);
+            } catch (uploadError) {
+              console.warn('Failed to upload updated cover:', uploadError);
+              coverUploaded = false;
+            }
+          }
+          if (coverUploaded) {
+            updatedBook.coverHash = newCoverHash;
+            updatedBook.coverUpdatedAt = Date.now();
+          }
+        }
       } catch (error) {
         console.warn('Failed to update cover image:', error);
       }

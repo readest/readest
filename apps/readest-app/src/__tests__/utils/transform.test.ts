@@ -339,3 +339,58 @@ describe('transformBook readingStatus + readingStatusUpdatedAt', () => {
     expect(back.readingStatusUpdatedAt).toBeUndefined();
   });
 });
+
+describe('transformBook coverHash + coverUpdatedAt (issue #4544)', () => {
+  const userId = 'user-1';
+  const baseBook: Book = {
+    hash: 'h1',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('serializes coverHash verbatim and coverUpdatedAt to ISO', () => {
+    const ts = Date.UTC(2026, 5, 22, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, coverHash: 'abcdef0123456789', coverUpdatedAt: ts },
+      userId,
+    );
+    expect(db.cover_hash).toBe('abcdef0123456789');
+    expect(db.cover_updated_at).toBe(new Date(ts).toISOString());
+  });
+
+  it('leaves cover columns null when unset', () => {
+    const db = transformBookToDB(baseBook, userId);
+    expect(db.cover_hash).toBeNull();
+    expect(db.cover_updated_at).toBeNull();
+  });
+
+  it('round-trips coverHash + coverUpdatedAt back to the client shape', () => {
+    const ts = Date.UTC(2026, 5, 22, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, coverHash: 'deadbeef', coverUpdatedAt: ts },
+      userId,
+    );
+    const back = transformBookFromDB(db);
+    expect(back.coverHash).toBe('deadbeef');
+    expect(back.coverUpdatedAt).toBe(ts);
+  });
+
+  it('reads null cover fields when the DB columns are null', () => {
+    const back = transformBookFromDB({
+      user_id: userId,
+      book_hash: 'h1',
+      format: 'EPUB',
+      title: 'T',
+      author: 'A',
+      cover_hash: null,
+      cover_updated_at: null,
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    });
+    expect(back.coverHash).toBeNull();
+    expect(back.coverUpdatedAt).toBeNull();
+  });
+});

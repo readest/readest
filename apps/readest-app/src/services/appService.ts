@@ -238,6 +238,10 @@ export abstract class BaseAppService implements AppService {
     return BookSvc.updateCoverImage(this.coverCtx, book, imageUrl, imageFile);
   }
 
+  async computeCoverHash(book: Book): Promise<string | null> {
+    return BookSvc.computeCoverHash(this.fs, book);
+  }
+
   async importFont(file?: string | File): Promise<CustomFontInfo | null> {
     return FontSvc.importFont(this.fs, file);
   }
@@ -352,6 +356,10 @@ export abstract class BaseAppService implements AppService {
 
   async uploadBook(book: Book, onProgress?: ProgressHandler): Promise<void> {
     return CloudSvc.uploadBook(this.fs, this.resolveFilePath.bind(this), book, onProgress);
+  }
+
+  async uploadBookCover(book: Book, onProgress?: ProgressHandler): Promise<void> {
+    return CloudSvc.uploadBookCover(this.fs, this.resolveFilePath.bind(this), book, onProgress);
   }
 
   async downloadCloudFile(lfp: string, cfp: string, onProgress: ProgressHandler) {

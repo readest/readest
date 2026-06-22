@@ -638,6 +638,47 @@ export const pickFresherReadingStatus = (
   };
 };
 
+type CoverFields = Pick<Book, 'coverHash' | 'coverUpdatedAt'>;
+type CoverSyncFields = Pick<
+  Book,
+  'coverHash' | 'coverUpdatedAt' | 'coverDownloadedAt' | 'deletedAt' | 'uploadedAt'
+>;
+
+const coverMs = (t?: number | null) => t ?? 0;
+
+/**
+ * Decide whether a peer should (re)download a book's cover from the cloud
+ * (issue #4544). True when the synced book is in the cloud AND either:
+ *  - this device has never fetched the cover (first download), or
+ *  - a newer cover edit exists (synced `coverUpdatedAt` strictly newer) whose
+ *    content hash differs from the local one.
+ *
+ * Gating on `coverUpdatedAt` (not just the hash) prevents two failure modes:
+ *  - churn: once a device adopts the synced `coverUpdatedAt` after downloading,
+ *    the comparison stops firing on every subsequent sync;
+ *  - the unpushed-local-edit race: a device that just edited its cover (newer
+ *    local `coverUpdatedAt`) is not made to overwrite it with the stale cloud
+ *    copy before its own push lands.
+ */
+export const needsCoverRefresh = (local: CoverSyncFields, synced: CoverSyncFields): boolean => {
+  if (synced.deletedAt || !synced.uploadedAt) return false;
+  if (!local.coverDownloadedAt) return true; // first download
+  if (!synced.coverHash) return false; // nothing to compare (legacy book)
+  if (coverMs(synced.coverUpdatedAt) <= coverMs(local.coverUpdatedAt)) return false;
+  return synced.coverHash !== local.coverHash;
+};
+
+/**
+ * Field-level last-writer-wins for the cover, by `coverUpdatedAt` (ties →
+ * `local`, which already holds the file). Mirrors {@link pickFresherReadingStatus}:
+ * the row's `updatedAt` is dominated by page-turn progress, so the cover must be
+ * resolved by its own timestamp or progress would clobber a cover edit.
+ */
+export const pickFresherCover = (local: CoverFields, synced: CoverFields): CoverFields =>
+  coverMs(synced.coverUpdatedAt) > coverMs(local.coverUpdatedAt)
+    ? { coverHash: synced.coverHash, coverUpdatedAt: synced.coverUpdatedAt }
+    : { coverHash: local.coverHash, coverUpdatedAt: local.coverUpdatedAt };
+
 /**
  * Resolve the ordered list of context-menu item ids for a book from its state.
  *

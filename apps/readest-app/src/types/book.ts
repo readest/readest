@@ -99,6 +99,10 @@ export interface Book {
   groupName?: string;
   tags?: string[];
   coverImageUrl?: string | null;
+  // Partial MD5 of the local cover.png. Content-addressed cover-change signal:
+  // a peer re-downloads the cover iff its synced value differs from the local
+  // one (issue #4544). Invariant: coverHash === partialMD5(cover.png).
+  coverHash?: string | null;
 
   createdAt: number;
   updatedAt: number;
@@ -107,6 +111,9 @@ export interface Book {
   uploadedAt?: number | null;
   downloadedAt?: number | null;
   coverDownloadedAt?: number | null;
+  // Field-level LWW timestamp for the cover, so a page-turn that wins whole-row
+  // LWW on updatedAt cannot clobber a cover edit (mirrors readingStatusUpdatedAt).
+  coverUpdatedAt?: number | null;
   syncedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt

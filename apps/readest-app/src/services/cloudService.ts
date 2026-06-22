@@ -218,6 +218,25 @@ export async function uploadBook(
   book.coverDownloadedAt = Date.now();
 }
 
+// Re-upload only the cover (books/<hash>/cover.png), overwriting the cloud
+// copy. Used after a cover edit (issue #4544) so peers can re-download it.
+// Deliberately does NOT touch book.uploadedAt — that marker means "the book
+// file is in cloud as of T"; a cover-only change must not trigger a file
+// re-download on peers.
+export async function uploadBookCover(
+  fs: FileSystem,
+  resolveFilePath: (path: string, base: BaseDir) => Promise<string>,
+  book: Book,
+  onProgress?: ProgressHandler,
+): Promise<void> {
+  if (!(await fs.exists(getCoverFilename(book), 'Books'))) return;
+  const completedFiles = { count: 0 };
+  const handleProgress = createProgressHandler(1, completedFiles, onProgress);
+  const lfp = getCoverFilename(book);
+  const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
+  await uploadFileToCloud(fs, resolveFilePath, lfp, cfp, 'Books', handleProgress, book.hash);
+}
+
 export async function downloadCloudFile(
   appService: AppService,
   localBooksDir: string,
