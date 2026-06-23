@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSFeed, OPDSGenericLink } from '@/types/opds';
 import { PublicationCard } from './PublicationCard';
 import { NavigationCard } from './NavigationCard';
+import { GroupCarousel } from './GroupCarousel';
 import { groupByArray } from '../utils/opdsUtils';
 
 interface FeedViewProps {
@@ -41,6 +42,11 @@ export function FeedView({
   }, [linksByRel]);
 
   const hasFacets = feed.facets && feed.facets.length > 0;
+
+  // When a feed lists several groups, full grids make scrolling past them
+  // tedious. Render each group as a compact horizontal carousel instead so the
+  // page stays short and groups are easy to skim (readest issue #4750).
+  const useCarousel = (feed.groups?.length ?? 0) >= 2;
 
   const handlePaginationClick = (links?: OPDSGenericLink[]) => {
     if (links && links.length > 0) {
@@ -172,10 +178,14 @@ export function FeedView({
 
           {/* Groups */}
           {feed.groups?.map((group, groupIndex: number) => (
-            <section key={groupIndex} className='mb-12 flex-shrink-0'>
+            <section key={groupIndex} className={`flex-shrink-0 ${useCarousel ? 'mb-6' : 'mb-12'}`}>
               {group.metadata && (
-                <div className='mb-4 flex items-center justify-between px-4'>
-                  <h2 className='text-2xl font-bold'>{group.metadata.title}</h2>
+                <div
+                  className={`flex items-center justify-between px-4 ${useCarousel ? 'mb-2' : 'mb-4'}`}
+                >
+                  <h2 className={useCarousel ? 'text-lg font-bold' : 'text-2xl font-bold'}>
+                    {group.metadata.title}
+                  </h2>
                   {group.links && group.links.length > 0 && (
                     <button
                       onClick={() => {
@@ -191,34 +201,68 @@ export function FeedView({
                 </div>
               )}
 
-              {group.navigation && (
-                <div className={`opds-navigation ${gridClassName}`}>
-                  {group.navigation.map((item, itemIndex: number) => (
-                    <NavigationCard
-                      key={itemIndex}
-                      item={item}
-                      baseURL={baseURL}
-                      onClick={handleNavigationClick}
-                      resolveURL={resolveURL}
-                    />
-                  ))}
-                </div>
-              )}
+              {group.navigation &&
+                (useCarousel ? (
+                  <GroupCarousel
+                    count={group.navigation.length}
+                    defaultRowHeight={80}
+                    itemContent={(itemIndex) => (
+                      <div data-carousel-item className='w-64 pr-4'>
+                        <NavigationCard
+                          item={group.navigation![itemIndex]!}
+                          baseURL={baseURL}
+                          onClick={handleNavigationClick}
+                          resolveURL={resolveURL}
+                        />
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <div className={`opds-navigation ${gridClassName}`}>
+                    {group.navigation.map((item, itemIndex: number) => (
+                      <NavigationCard
+                        key={itemIndex}
+                        item={item}
+                        baseURL={baseURL}
+                        onClick={handleNavigationClick}
+                        resolveURL={resolveURL}
+                      />
+                    ))}
+                  </div>
+                ))}
 
-              {group.publications && (
-                <div className={`opds-publications ${gridClassName}`}>
-                  {group.publications.map((pub, itemIndex: number) => (
-                    <PublicationCard
-                      key={itemIndex}
-                      publication={pub}
-                      baseURL={baseURL}
-                      onClick={() => onPublicationSelect(groupIndex, itemIndex)}
-                      resolveURL={resolveURL}
-                      onGenerateCachedImageUrl={onGenerateCachedImageUrl}
-                    />
-                  ))}
-                </div>
-              )}
+              {group.publications &&
+                (useCarousel ? (
+                  <GroupCarousel
+                    count={group.publications.length}
+                    defaultRowHeight={250}
+                    coverCentered
+                    itemContent={(itemIndex) => (
+                      <div data-carousel-item className='w-32 pr-4'>
+                        <PublicationCard
+                          publication={group.publications![itemIndex]!}
+                          baseURL={baseURL}
+                          onClick={() => onPublicationSelect(groupIndex, itemIndex)}
+                          resolveURL={resolveURL}
+                          onGenerateCachedImageUrl={onGenerateCachedImageUrl}
+                        />
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <div className={`opds-publications ${gridClassName}`}>
+                    {group.publications.map((pub, itemIndex: number) => (
+                      <PublicationCard
+                        key={itemIndex}
+                        publication={pub}
+                        baseURL={baseURL}
+                        onClick={() => onPublicationSelect(groupIndex, itemIndex)}
+                        resolveURL={resolveURL}
+                        onGenerateCachedImageUrl={onGenerateCachedImageUrl}
+                      />
+                    ))}
+                  </div>
+                ))}
             </section>
           ))}
 

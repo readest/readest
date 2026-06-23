@@ -551,6 +551,15 @@ input[type='range'].slider-input {
   background-color: theme('colors.base-100') !important;
 }
 
+/* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 [data-eink='true'] input.search-input,
 [data-eink='true'] input.search-input:focus {
   border-width: 1px !important;
