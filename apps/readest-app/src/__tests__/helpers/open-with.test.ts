@@ -19,7 +19,7 @@ vi.mock('@tauri-apps/plugin-cli', () => ({
   getMatches: () => mockGetMatches(),
 }));
 
-import { parseOpenWithFiles } from '@/helpers/openWith';
+import { parseOpenWithFiles, shouldOpenTransient } from '@/helpers/openWith';
 
 // Helper type matching the AppService subset used in openWith
 interface MockAppService {
@@ -258,5 +258,28 @@ describe('parseOpenWithFiles', () => {
 
       expect(result).toEqual(['/intent-file.epub']);
     });
+  });
+});
+
+describe('shouldOpenTransient', () => {
+  // Android "Open with" (VIEW) is the only intent that can open a file as a
+  // transient book, and only when the user has turned auto-import off.
+  test('VIEW with auto-import off opens transiently', () => {
+    expect(shouldOpenTransient('VIEW', false)).toBe(true);
+  });
+
+  test('VIEW with auto-import on imports into the library', () => {
+    expect(shouldOpenTransient('VIEW', true)).toBe(false);
+  });
+
+  // Share-sheet SEND captures always import to the library regardless.
+  test('SEND always imports into the library', () => {
+    expect(shouldOpenTransient('SEND', false)).toBe(false);
+    expect(shouldOpenTransient('SEND', true)).toBe(false);
+  });
+
+  test('undefined action always imports into the library', () => {
+    expect(shouldOpenTransient(undefined, false)).toBe(false);
+    expect(shouldOpenTransient(undefined, true)).toBe(false);
   });
 });

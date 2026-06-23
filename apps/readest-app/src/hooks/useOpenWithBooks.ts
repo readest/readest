@@ -3,11 +3,11 @@ import { useRouter } from 'next/navigation';
 import { getAllWindows, getCurrentWindow } from '@tauri-apps/api/window';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { navigateToLibrary, navigateToReader, showLibraryWindow } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { partialMD5 } from '@/utils/md5';
+import { shouldOpenTransient } from '@/helpers/openWith';
 
 /**
  * Handle "Open with Readest" file imports. Consumes the `app-incoming-url`
@@ -20,11 +20,13 @@ import { partialMD5 } from '@/utils/md5';
  * Mount this hook alongside `useAppUrlIngress` so the ingress dispatcher is
  * actually running when URLs arrive.
  *
- * Two routing modes by `action`:
+ * Two routing modes by `action`, gated by the `autoImportBooksOnOpen` setting
+ * (see `shouldOpenTransient`):
  *
- *   `'VIEW'` (Android only — user picked Readest from the system "Open with"
- *   chooser for an epub/pdf): we MUST NOT silently import the file into the
- *   library. We first hash the file ourselves and check the in-memory library:
+ *   `'VIEW'` with auto-import OFF (Android only — user picked Readest from the
+ *   system "Open with" chooser for an epub/pdf): open the file as a transient
+ *   book without importing it. We first hash the file ourselves and check the
+ *   in-memory library:
  *     - if a non-deleted entry with the same hash already exists, jump
  *       straight into the reader on that entry — no `importBook` call, so the
  *       managed `Books/<hash>/` filePath, createdAt and reading progress are
@@ -35,10 +37,11 @@ import { partialMD5 } from '@/utils/md5';
  *       uploading to the cloud, then navigate to the reader on that hash.
  *
  *   `'SEND'` / undefined (iOS / macOS / desktop / Android share-sheet
- *   capture): keep the existing flow that pushes the URLs through
+ *   capture), and `'VIEW'` with auto-import ON: push the URLs through
  *   `window.OPEN_WITH_FILES` so `library/page.tsx::processOpenWithFiles`
- *   does a full ingest + cloud upload — that's the contract a "Send to
- *   Readest" share is meant to honour.
+ *   does a full ingest + cloud upload — the file lands in the library and
+ *   syncs, which is what a "Send to Readest" share (and an opt-in "Open
+ *   with" import) is meant to honour.
  */
 export function useOpenWithBooks() {
   const router = useRouter();
@@ -155,8 +158,18 @@ export function useOpenWithBooks() {
       const filePaths = normalizeUrls(urls);
       if (filePaths.length === 0) return;
 
-      // Android "Open with" → straight to reader, no library write.
-      if (action === 'VIEW') {
+      // Read the persisted setting from disk rather than the settings store:
+      // on a cold-start "Open with" the store may not be hydrated yet (it's
+      // seeded by the library page's init effect, which races the queued
+      // intent replay), and an unhydrated store would wrongly fall back to a
+      // transient open for a user who has auto-import on.
+      const settings = await appService.loadSettings();
+
+      // Android "Open with" with auto-import off → straight to reader, no
+      // library write. When auto-import is on, fall through to the library
+      // ingest path below so the file is copied into the managed library
+      // and synced (the default on mobile).
+      if (shouldOpenTransient(action, settings.autoImportBooksOnOpen)) {
         // If a reader is already mounted, ignore the second tap rather
         // than try to swap books underneath it. The in-place URL swap
         // would otherwise leave ReaderContent's init effect (gated by
@@ -172,7 +185,6 @@ export function useOpenWithBooks() {
         return;
       }
 
-      const settings = useSettingsStore.getState().settings;
       if (appService?.hasWindow && settings.openBookInNewWindow) {
         if (await isFirstWindow()) {
           showLibraryWindow(appService, filePaths);
