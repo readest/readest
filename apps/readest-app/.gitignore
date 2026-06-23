@@ -83,3 +83,7 @@ docs/superpowers
 /blob-report/
 /playwright/.cache/
 
+
+# Word Lens build-input corpora (ECDICT, WikDict, FrequencyWords, etc.) — large,
+# downloaded on demand by scripts/build-wordlens-data.mjs; cached locally, not committed.
+/data/wordlens/.sources/

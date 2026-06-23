@@ -71,6 +71,7 @@ export const refreshSectionGlosses = async (
       sourceLang: source,
       rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
       cutZh: source === 'zh' ? cutZh : undefined,
+      monolingual: hint === source, // en-en: gloss is a build-formatted definition
     });
     if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {

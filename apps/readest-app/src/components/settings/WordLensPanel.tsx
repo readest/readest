@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -26,7 +26,12 @@ import {
   type WordLensPack,
 } from '@/services/wordlens/glossPacks';
 import SubPageHeader from './SubPageHeader';
+import ColorInput from './color/ColorInput';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
+
+// Swatch shown for the "default" (muted, theme-adaptive) gloss color, which has
+// no fixed hex of its own. Picking any color overrides; "Default" clears back.
+const DEFAULT_GLOSS_SWATCH = '#808080';
 
 interface WordLensPanelProps {
   bookKey: string;
@@ -50,6 +55,12 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
   const [wordLensEnabled, setWordLensEnabled] = useState(viewSettings.wordLensEnabled ?? false);
   const [wordLensLevel, setWordLensLevel] = useState(viewSettings.wordLensLevel ?? 3);
   const [hintLang, setHintLang] = useState(viewSettings.wordLensHintLang || appLang);
+  const [glossFontSize, setGlossFontSize] = useState(viewSettings.wordLensGlossFontSize ?? 0.5);
+  const [glossColor, setGlossColor] = useState(viewSettings.wordLensGlossColor ?? '');
+  // Track the latest gloss color so ColorInput's onCommit (no args) persists the
+  // value the user landed on after dragging, without re-injecting CSS per tick.
+  const glossColorRef = useRef(glossColor);
+  glossColorRef.current = glossColor;
   const [autoDownload, setAutoDownload] = useState(
     settings.globalReadSettings.wordLensAutoDownload ?? true,
   );
@@ -153,6 +164,33 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
     saveViewSettings(envConfig, bookKey, 'wordLensHintLang', option, false, false);
     viewSettings.wordLensHintLang = option;
     setViewSettings(bookKey, { ...viewSettings });
+  };
+
+  // Gloss appearance (font size + color) drives the <rt> CSS via getRubyStyles, so
+  // saving with applyStyles (default) re-injects the stylesheet and restyles the
+  // already-rendered glosses live — no DOM rebuild / re-gloss needed.
+  const glossFontSizeOptions = [
+    { value: '0.4', label: _('Small') },
+    { value: '0.5', label: _('Default') },
+    { value: '0.65', label: _('Large') },
+    { value: '0.8', label: _('Extra Large') },
+  ];
+
+  const handleSelectGlossFontSize = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = Number(event.target.value) || 0.5;
+    setGlossFontSize(value);
+    saveViewSettings(envConfig, bookKey, 'wordLensGlossFontSize', value);
+  };
+
+  const handleGlossColorChange = (hex: string) => setGlossColor(hex);
+
+  const handleGlossColorCommit = () => {
+    saveViewSettings(envConfig, bookKey, 'wordLensGlossColor', glossColorRef.current);
+  };
+
+  const handleResetGlossColor = () => {
+    setGlossColor('');
+    saveViewSettings(envConfig, bookKey, 'wordLensGlossColor', '');
   };
 
   const handleToggleAutoDownload = () => {
@@ -319,6 +357,45 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
             ariaLabel={_('Language')}
             options={hintLangOptions}
           />
+        </SettingsRow>
+        <SettingsRow
+          label={_('Hint size')}
+          description={_('Gloss text size above the word')}
+          disabled={!wordLensEnabled}
+        >
+          <SettingsSelect
+            value={String(glossFontSize)}
+            onChange={handleSelectGlossFontSize}
+            ariaLabel={_('Hint size')}
+            options={glossFontSizeOptions}
+            disabled={!wordLensEnabled}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={_('Hint color')}
+          description={glossColor ? glossColor : _('Default')}
+          disabled={!wordLensEnabled}
+        >
+          <div className='flex items-center gap-2'>
+            {glossColor && (
+              <button
+                type='button'
+                onClick={handleResetGlossColor}
+                className='btn btn-ghost btn-xs eink-bordered shrink-0'
+              >
+                {_('Default')}
+              </button>
+            )}
+            <ColorInput
+              label={_('Hint color')}
+              value={glossColor || DEFAULT_GLOSS_SWATCH}
+              onChange={handleGlossColorChange}
+              onCommit={handleGlossColorCommit}
+              swatchOnly
+              showPickerIcon
+              pickerPosition='right'
+            />
+          </div>
         </SettingsRow>
       </BoxedList>
 

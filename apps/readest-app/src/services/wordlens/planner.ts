@@ -1,6 +1,6 @@
 import type { GlossEntry, GlossOccurrence, GlossSource, WordLensSourceLang } from './types';
 import { isDifficult } from './difficulty';
-import { baseFormCandidates, cleanGloss, glossesShareMeaning } from './gloss';
+import { baseFormCandidates, cleanGloss, glossMentionsWord, glossesShareMeaning } from './gloss';
 
 export interface PlanOptions {
   sourceLang: WordLensSourceLang;
@@ -10,6 +10,11 @@ export interface PlanOptions {
   maxOccurrences?: number;
   /** Chinese segmenter; injected for tests. Required for sourceLang 'zh'. */
   cutZh?: (text: string) => string[];
+  /**
+   * Monolingual pack (source === hint, e.g. en-en): the gloss is a definition
+   * formatted at build time, so cleanGloss must preserve it (no sense-split / cut).
+   */
+  monolingual?: boolean;
 }
 
 // A foliate "section" is usually a whole chapter, so this is a per-chapter bound:
@@ -76,7 +81,12 @@ export const planGlosses = (
     ) {
       continue;
     }
-    occurrences.push({ start: t.start, end: t.end, word: t.word, gloss: cleanGloss(entry.gloss) });
+    occurrences.push({
+      start: t.start,
+      end: t.end,
+      word: t.word,
+      gloss: cleanGloss(entry.gloss, opts.monolingual),
+    });
     if (occurrences.length >= cap) {
       console.warn(`[wordlens] occurrence cap (${cap}) hit; some hints omitted`);
       break;
@@ -92,7 +102,9 @@ const effectiveRank = (word: string, entry: GlossEntry, source: GlossSource): nu
   let rank = entry.rank;
   for (const base of baseFormCandidates(word)) {
     const b = source.lookup(base);
-    if (b && glossesShareMeaning(entry.gloss, b.gloss)) rank = Math.min(rank, b.rank);
+    if (b && (glossesShareMeaning(entry.gloss, b.gloss) || glossMentionsWord(entry.gloss, base))) {
+      rank = Math.min(rank, b.rank);
+    }
   }
   return rank;
 };

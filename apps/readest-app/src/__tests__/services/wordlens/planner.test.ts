@@ -83,6 +83,23 @@ describe('planGlosses derivational reduction (English source)', () => {
     const occ = planGlosses('ahem', derv, { sourceLang: 'en', rankCutoff: cutoff });
     expect(occ[0]?.gloss).toBe('呃哼');
   });
+
+  it('suppresses a derivation whose definition mentions the base word (thickly ⇐ thick)', () => {
+    // en-en: glosses are definitions, so the base/derived glosses rarely share a word —
+    // but "thickly"'s definition literally contains "thick", a transparent derivation.
+    const enen: GlossSource = {
+      lookup(word) {
+        const table: Record<string, GlossEntry> = {
+          thickly: { rank: 15000, gloss: 'in a thick manner' },
+          thick: { rank: 1000, gloss: 'of great width' },
+        };
+        return table[word.toLowerCase()] ?? null;
+      },
+    };
+    expect(
+      planGlosses('thickly', enen, { sourceLang: 'en', rankCutoff: cutoff, monolingual: true }),
+    ).toEqual([]);
+  });
 });
 
 describe('planGlosses against a zh-en fixture', () => {
