@@ -95,7 +95,9 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
       return;
     }
     const hint = baseCode(hintLang) || appLang;
-    if (!hint || hint === bookSource) {
+    // Same-language pairs (e.g. en-en) are allowed; getPackStatus returns null
+    // when the manifest has no pack for the pair, which renders the empty row.
+    if (!hint) {
       setPackStatus(null);
       return;
     }

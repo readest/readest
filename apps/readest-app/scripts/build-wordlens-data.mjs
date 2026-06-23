@@ -1,6 +1,7 @@
 // Build trimmed Word Lens gloss indices from open datasets.
 //
 //   node scripts/build-wordlens-data.mjs en-zh path/to/ecdict.csv [topN]
+//   node scripts/build-wordlens-data.mjs en-en path/to/ecdict.csv [topN]
 //   node scripts/build-wordlens-data.mjs zh-en path/to/cedict.txt path/to/hsk.json [topN]
 //   node scripts/build-wordlens-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]
 //
@@ -56,6 +57,52 @@ export function shortGloss(s) {
     .slice(0, 24);
 }
 
+// Connectors/articles/prepositions that read badly as the LAST word of a
+// truncated gloss ("enjoying or showing or" → "enjoying or showing").
+const TRAILING_FN_WORDS = new Set(
+  'a an the of or and to in on for with at by as from'.split(' '),
+);
+
+// Clean one ECDICT definition sense: strip the leading POS code — a period-
+// terminated abbreviation ("n." / "adv." / "interj.") OR a bare single-letter
+// WordNet code without a period ("v" / "s"; the period is inconsistent in the
+// data). A BARE leading "a" is the article and is kept — only "a." is the
+// adjective code. Then drop [..] annotations and the example/qualifier clause
+// after the first ";", collapse whitespace, and drop a Webster-style trailing dot.
+function cleanDefSense(s) {
+  return s
+    .replace(/^\s*(?:(?:[a-zA-Z]{1,6}\.|[nvsr])\s+)+/, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .split(';')[0]
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\.+$/, '');
+}
+
+// Shorten an ECDICT English `definition` (senses separated by a literal "\n")
+// into a compact monolingual hint. Uses the FIRST non-empty cleaned sense (WordNet
+// orders senses by importance, so the first is the primary meaning), then truncates
+// on a word boundary to ≤24 chars — so the runtime cleanGloss's hard cap is a no-op,
+// not a mid-word cut — and trims a dangling connector left by that truncation.
+// A complete gloss already ≤24 is returned verbatim (no trim), so a phrasal gloss
+// like "hold on to" keeps its tail. Returns '' when nothing usable.
+export function shortDefGloss(def) {
+  const senses = String(def || '')
+    .split(/\\n/)
+    .map(cleanDefSense)
+    .filter(Boolean);
+  if (!senses.length) return '';
+  const sense = senses[0];
+  if (sense.length <= 24) return sense;
+  const cut = sense.slice(0, 24);
+  const lastSpace = cut.lastIndexOf(' ');
+  const words = (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim().split(' ');
+  while (words.length > 1 && TRAILING_FN_WORDS.has(words[words.length - 1].toLowerCase())) {
+    words.pop();
+  }
+  return words.join(' ');
+}
+
 // Minimal CSV line parser (ECDICT quotes fields containing commas/newlines).
 export function parseCsvLine(line) {
   if (line == null) return null;
@@ -93,13 +140,17 @@ export function parseExchange(exchange, word) {
   return [...forms];
 }
 
-// Build the EN→中文 index from ECDICT CSV *text* (so it's unit-testable).
-export function buildEnZh(csvText, topN) {
+// Build an English-source index from ECDICT CSV *text* (so it's unit-testable).
+// Shared by buildEnZh (gloss from the Chinese `translation`) and buildEnEn (gloss
+// from the English `definition`). `glossColumn` is the ECDICT column to read and
+// `makeGloss` turns that raw field into the trimmed hint; everything else (frq
+// rank, exchange-based inflection map, drop-inflected-when-lemma-present) is shared.
+function buildEnPack(csvText, topN, { target, glossColumn, makeGloss }) {
   const rows = csvText.split('\n');
   const header = parseCsvLine(rows[0]) ?? [];
   const col = (name) => header.indexOf(name);
   const iWord = col('word'),
-    iTr = col('translation'),
+    iGloss = col(glossColumn),
     iFrq = col('frq'),
     iEx = col('exchange');
   const entries = {};
@@ -109,7 +160,7 @@ export function buildEnZh(csvText, topN) {
     const c = parseCsvLine(rows[i]);
     if (!c || !c[iWord]) continue;
     const frq = parseInt(c[iFrq] || '0', 10) || Number.MAX_SAFE_INTEGER;
-    const g = shortGloss((c[iTr] || '').replace(/\\n/g, '；'));
+    const g = makeGloss(c[iGloss] || '');
     if (!g) continue;
     parsed.push({ word: c[iWord], frq, g, exchange: c[iEx] || '' });
   }
@@ -133,17 +184,23 @@ export function buildEnZh(csvText, topN) {
     if (entries[form] && entries[lemma]) delete entries[form];
   }
   return {
-    meta: {
-      source: 'en',
-      target: 'zh',
-      metric: 'frq',
-      version: 1,
-      count: Object.keys(entries).length,
-    },
+    meta: { source: 'en', target, metric: 'frq', version: 1, count: Object.keys(entries).length },
     entries,
     inflections,
   };
 }
+
+// EN→中文: gloss from ECDICT's `translation` column (senses split by literal "\n").
+export const buildEnZh = (csvText, topN) =>
+  buildEnPack(csvText, topN, {
+    target: 'zh',
+    glossColumn: 'translation',
+    makeGloss: (s) => shortGloss(s.replace(/\\n/g, '；')),
+  });
+
+// EN→EN (monolingual): gloss from ECDICT's English `definition` column.
+export const buildEnEn = (csvText, topN) =>
+  buildEnPack(csvText, topN, { target: 'en', glossColumn: 'definition', makeGloss: shortDefGloss });
 
 // Parse one CC-CEDICT line: `傳統 传统 [chuan2 tong3] /tradition/traditional/`.
 // Returns { simp, senses: [...] } or null for comments / malformed lines.
@@ -581,6 +638,15 @@ async function main() {
       `en-zh.json: ${data.meta.count} entries, ${Object.keys(data.inflections).length} inflections`,
     );
     writeManifest();
+  } else if (pair === 'en-en') {
+    const [csv, topN] = rest;
+    if (!csv) throw new Error('usage: build-wordlens-data.mjs en-en <ecdict.csv> [topN]');
+    const data = buildEnEn(readFileSync(csv, 'utf8'), Number(topN) || TOP_DEFAULT);
+    writeFileSync(resolve(OUT_DIR, 'en-en.json'), JSON.stringify(data));
+    console.log(
+      `en-en.json: ${data.meta.count} entries, ${Object.keys(data.inflections).length} inflections`,
+    );
+    writeManifest();
   } else if (pair === 'zh-en') {
     const [cedict, hsk, topN] = rest;
     if (!cedict || !hsk)
@@ -598,7 +664,7 @@ async function main() {
     console.log('manifest.json:', m.packs.length, 'packs');
   } else {
     throw new Error(
-      'usage: build-wordlens-data.mjs <en-zh|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
+      'usage: build-wordlens-data.mjs <en-zh|en-en|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
     );
   }
 }

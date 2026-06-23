@@ -43,6 +43,10 @@ cd apps/readest-app
 node scripts/build-wordlens-data.mjs en-zh /tmp/ww-data/ecdict.csv 30000
 node scripts/build-wordlens-data.mjs zh-en /tmp/ww-data/cedict.txt /tmp/ww-data/hsk.json 12000
 
+# en→en (monolingual): glosses from ECDICT's English `definition` column (shortest
+# sense), for learners reading English with English hints. Reuses ecdict.csv above.
+node scripts/build-wordlens-data.mjs en-en /tmp/ww-data/ecdict.csv 30000
+
 # X→en (foreign source): pass the source-language lemmatization list (6th arg) so
 # inflected source words ("corriendo" -> "correr") resolve to their lemma's gloss.
 for src in es fr de pt it ru; do

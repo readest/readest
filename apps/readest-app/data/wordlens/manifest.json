@@ -20,6 +20,15 @@
       "entries": 14487
     },
     {
+      "pair": "en-en",
+      "source": "en",
+      "target": "en",
+      "file": "en-en.json",
+      "bytes": 1911825,
+      "sha256": "cfb9cdc118bad288f76e793f437d249ecb19b4421fd708d42ea546397711b48b",
+      "entries": 26578
+    },
+    {
       "pair": "en-es",
       "source": "en",
       "target": "es",

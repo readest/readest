@@ -5,10 +5,12 @@ import {
   parseCsvLine,
   parseExchange,
   shortGloss,
+  shortDefGloss,
   sha256Hex,
   packEntry,
   buildManifest,
   buildEnZh as buildEnZhUntyped,
+  buildEnEn as buildEnEnUntyped,
   buildZhEn as buildZhEnUntyped,
   parseFrequencyWords as parseFrequencyWordsUntyped,
   extractXToEn as extractXToEnUntyped,
@@ -23,6 +25,7 @@ import type { GlossIndexData } from '@/services/wordlens/types';
 // The .mjs script has no type annotations; pin the builders' returns to the
 // real GlossIndexData shape so the assertions are type-checked.
 const buildEnZh = buildEnZhUntyped as (csvText: string, topN: number) => GlossIndexData;
+const buildEnEn = buildEnEnUntyped as (csvText: string, topN: number) => GlossIndexData;
 const buildZhEn = buildZhEnUntyped as (
   cedictText: string,
   hskJson: unknown,
@@ -103,6 +106,107 @@ describe('shortGloss', () => {
     expect(shortGloss('vt. 做；vi. 看')).toBe('做；看');
     expect(shortGloss('[网络] 隐；晦涩的')).toBe('隐；晦涩的');
     expect(shortGloss('government/CL:個|个[ge4]')).toBe('government');
+  });
+});
+
+describe('shortDefGloss', () => {
+  it('uses the first (primary) sense, not a shorter later one', () => {
+    // ECDICT separates senses in `definition` with a literal "\n" (backslash-n);
+    // WordNet orders them by importance, so the first sense is the primary meaning.
+    const def = String.raw`a. enjoying or showing joy\ns. well expressed and to the point`;
+    expect(shortDefGloss(def)).toBe('enjoying or showing joy');
+  });
+
+  it('strips WordNet POS codes with or without a period (n./v/a./s/r)', () => {
+    expect(shortDefGloss('v take the first step')).toBe('take the first step');
+    expect(shortDefGloss('s being present')).toBe('being present');
+    expect(shortDefGloss('a. enjoying joy')).toBe('enjoying joy');
+    // a bare leading "a" is the article, not the adjective POS code → kept.
+    expect(shortDefGloss('n. a small house')).toBe('a small house');
+  });
+
+  it('drops the example/qualifier clause after the first ";"', () => {
+    expect(shortDefGloss('informal or natural; especially caught off guard')).toBe(
+      'informal or natural',
+    );
+  });
+
+  it('word-boundary truncates to <= 24 and trims a dangling connector', () => {
+    const g = shortDefGloss('enjoying or showing or marked by joy or pleasure');
+    expect(g.length).toBeLessThanOrEqual(24);
+    expect(g).toBe('enjoying or showing');
+  });
+
+  it('keeps a complete short gloss that ends in a preposition (no over-trim)', () => {
+    expect(shortDefGloss('hold on to')).toBe('hold on to');
+  });
+
+  it('strips multi-letter POS abbreviations too (adv./conj./interj.)', () => {
+    expect(shortDefGloss('adv. in a quick manner')).toBe('in a quick manner');
+    expect(shortDefGloss('interj. Same as Ha')).toBe('Same as Ha');
+  });
+
+  it('drops a Webster-style trailing period', () => {
+    expect(shortDefGloss('A magician.')).toBe('A magician');
+  });
+
+  it('strips bracket annotations', () => {
+    expect(shortDefGloss('a happy state [psychology]')).toBe('a happy state');
+  });
+
+  it('returns empty string for empty / whitespace-only / all-empty senses', () => {
+    expect(shortDefGloss('')).toBe('');
+    expect(shortDefGloss('   ')).toBe('');
+    expect(shortDefGloss(String.raw`\n  \n`)).toBe('');
+  });
+});
+
+describe('buildEnEn', () => {
+  const header =
+    'word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq,exchange,detail,audio';
+  const csv = [
+    header,
+    'Run,/rʌn/,move fast on foot,跑；经营,v,3,,,100,312,p:ran/i:running/3:runs/0:run,,',
+    String.raw`cryptic,/ˈkrɪptɪk/,having a hidden meaning\nmysterious,晦涩的,adj,2,,,500,18000,,,`,
+  ].join('\n');
+
+  it('produces en/en GlossIndexData with glosses from the definition column', () => {
+    const data = buildEnEn(csv, 100);
+    expect(data.meta).toEqual({
+      source: 'en',
+      target: 'en',
+      metric: 'frq',
+      version: 1,
+      count: 2,
+    });
+    // headword lowercased, r from frq, g from the definition column (not translation).
+    expect(data.entries['run']).toEqual({ r: 312, g: 'move fast on foot' });
+    // first (primary) sense wins: "having a hidden meaning" over the later "mysterious".
+    expect(data.entries['cryptic']).toEqual({ r: 18000, g: 'having a hidden meaning' });
+    // exchange forms map back to the lemma; the lemma itself is not an inflection.
+    expect(data.inflections['ran']).toBe('run');
+    expect(data.inflections['running']).toBe('run');
+    expect(data.inflections['runs']).toBe('run');
+    expect(data.inflections['run']).toBeUndefined();
+  });
+
+  it('skips a row whose definition is empty', () => {
+    const data = buildEnEn([header, 'word,/x/,,无,n,1,,,1,10,,,'].join('\n'), 100);
+    expect(data.entries['word']).toBeUndefined();
+    expect(data.meta.count).toBe(0);
+  });
+
+  it('drops an inflected-form entry when its lemma is present (lemmatize)', () => {
+    const csv2 = [
+      header,
+      'keep,/kiːp/,hold on to,保持,v,5,,,50,120,p:kept/i:keeping/3:keeps,,',
+      'kept,/kept/,past tense of keep,过去式,v,,,,800,2500,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, 100);
+    expect(data.entries['kept']).toBeUndefined();
+    expect(data.entries['keep']).toEqual({ r: 120, g: 'hold on to' });
+    expect(data.inflections['kept']).toBe('keep');
+    expect(data.meta.count).toBe(1);
   });
 });
 
