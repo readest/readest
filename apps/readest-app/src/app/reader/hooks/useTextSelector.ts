@@ -27,6 +27,17 @@ const AUTO_TURN_DWELL_MS = 500;
 // of the page and turns the page unexpectedly.
 const AUTO_TURN_CORNER_FRACTION = 0.15;
 
+// Instant-highlight quick action: on touch a plain tap and a swipe are both
+// page-turn gestures, so the highlight must not engage on pointer-down or it
+// swallows the tap/swipe (an Android tap-to-paginate regression). It only engages
+// after the finger has held still on the text for this long; a tap releases first
+// and a swipe moves first, so both fall through to pagination. Mouse input is not
+// gated — a click vs. a press-drag is already unambiguous.
+const INSTANT_HOLD_MS = 300;
+// Movement past this many CSS px during the hold means the user is swiping, not
+// settling in to highlight, so the pending engagement is cancelled.
+const INSTANT_HOLD_MOVE_PX = 10;
+
 type Corner = 'br' | 'tl';
 
 // Which screen corner a point sits in: bottom-right turns forward, top-left
@@ -138,6 +149,17 @@ export const useTextSelector = (
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
+  // The element instant annotating set `user-select: none` on, so the exact same
+  // element is restored on release (the pointerup target may differ once the
+  // finger has moved across nodes).
+  const instantAnnotationTarget = useRef<HTMLElement | null>(null);
+  // Pending instant-highlight still-hold (touch/pen). While a hold is in flight
+  // these remember the press so the timer can engage at the same spot; the gate
+  // is armed in handlePointerDown and dropped by a release or a swipe.
+  const instantHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instantHoldTarget = useRef<HTMLElement | null>(null);
+  const instantHoldStartClient = useRef<Point | null>(null);
+  const instantHoldStartWindow = useRef<{ x: number; y: number } | null>(null);
   const autoTurnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The corner an input signal is currently engaged in. Stays set after a turn so
   // the dwell can't re-arm while held — a signal must leave the corner and return
@@ -214,20 +236,78 @@ export const useTextSelector = (
     });
   };
 
-  const startInstantAnnotating = (ev: PointerEvent) => {
+  const startInstantAnnotating = (target: HTMLElement, startPoint: Point) => {
     isInstantAnnotating.current = true;
     isInstantAnnotated.current = false;
-    annotationStartPoint.current = { x: ev.clientX, y: ev.clientY };
+    annotationStartPoint.current = startPoint;
+    instantAnnotationTarget.current = target;
     if (view) view.renderer.scrollLocked = true;
-    (ev.target as HTMLElement).style.userSelect = 'none';
+    target.style.userSelect = 'none';
   };
 
-  const stopInstantAnnotating = (ev: PointerEvent) => {
+  const stopInstantAnnotating = () => {
     isInstantAnnotating.current = false;
     isInstantAnnotated.current = false;
     annotationStartPoint.current = null;
     if (view) view.renderer.scrollLocked = false;
-    (ev.target as HTMLElement).style.userSelect = '';
+    if (instantAnnotationTarget.current) {
+      instantAnnotationTarget.current.style.userSelect = '';
+      instantAnnotationTarget.current = null;
+    }
+  };
+
+  // Drop a pending still-hold without engaging (tap released early, finger
+  // swiped, or the gesture was cancelled).
+  const cancelInstantHold = () => {
+    if (instantHoldTimer.current) {
+      clearTimeout(instantHoldTimer.current);
+      instantHoldTimer.current = null;
+    }
+    instantHoldTarget.current = null;
+    instantHoldStartClient.current = null;
+    instantHoldStartWindow.current = null;
+  };
+
+  // Begin the touch still-hold: engage the instant annotation only once the
+  // finger has stayed put on the text for INSTANT_HOLD_MS. preventDefault is NOT
+  // called here, so a tap or swipe that bows out keeps its native page-turn.
+  const armInstantHold = (doc: Document, ev: PointerEvent) => {
+    const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
+    instantHoldTarget.current = ev.target as HTMLElement;
+    instantHoldStartClient.current = { x: ev.clientX, y: ev.clientY };
+    instantHoldStartWindow.current = {
+      x: ev.clientX + (feRect?.left ?? 0),
+      y: ev.clientY + (feRect?.top ?? 0),
+    };
+    if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
+    instantHoldTimer.current = setTimeout(() => {
+      instantHoldTimer.current = null;
+      const target = instantHoldTarget.current;
+      const startClient = instantHoldStartClient.current;
+      const start = instantHoldStartWindow.current;
+      const now = pointerPos.current;
+      cancelInstantHold();
+      if (!target || !startClient) return;
+      // Backstop the move-driven cancel: if the finger drifted during the hold,
+      // treat it as a swipe and bow out.
+      if (start && now && Math.hypot(now.x - start.x, now.y - start.y) > INSTANT_HOLD_MOVE_PX) {
+        handleInstantAnnotationPointerCancel();
+        return;
+      }
+      startInstantAnnotating(target, startClient);
+    }, INSTANT_HOLD_MS);
+  };
+
+  // While a still-hold is pending, a move past the threshold means the user is
+  // swiping to turn the page — cancel so the swipe isn't swallowed.
+  const maybeCancelInstantHoldOnMove = () => {
+    const start = instantHoldStartWindow.current;
+    const now = pointerPos.current;
+    if (!instantHoldTimer.current || !start || !now) return;
+    if (Math.hypot(now.x - start.x, now.y - start.y) > INSTANT_HOLD_MOVE_PX) {
+      cancelInstantHold();
+      handleInstantAnnotationPointerCancel();
+    }
   };
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
@@ -235,10 +315,16 @@ export const useTextSelector = (
     isPointerDown.current = true;
 
     if (isInstantAnnotationEnabled()) {
-      const handled = handleInstantAnnotationPointerDown(doc, index, ev);
-      if (handled) {
+      const eligible = handleInstantAnnotationPointerDown(doc, index, ev);
+      if (!eligible) return;
+      const isTouch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+      if (isTouch) {
+        // Touch: gate behind a still hold so a tap or swipe still turns the page.
+        armInstantHold(doc, ev);
+      } else {
+        // Mouse: a press-drag is an unambiguous highlight intent; engage at once.
         ev.preventDefault();
-        startInstantAnnotating(ev);
+        startInstantAnnotating(ev.target as HTMLElement, { x: ev.clientX, y: ev.clientY });
       }
     }
   };
@@ -252,6 +338,7 @@ export const useTextSelector = (
       x: ev.clientX + (feRect?.left ?? 0),
       y: ev.clientY + (feRect?.top ?? 0),
     };
+    maybeCancelInstantHoldOnMove();
     if (isInstantAnnotating.current) {
       // In scroll mode, detect gesture direction before committing to annotation.
       // Cancel if the gesture is along the scroll axis (vertical for normal, horizontal
@@ -263,7 +350,7 @@ export const useTextSelector = (
         const viewSettings = getViewSettings(bookKey);
         const isScrollGesture = viewSettings?.vertical ? dy < 3 * dx : dx < 3 * dy;
         if (distance >= 10 && isScrollGesture) {
-          stopInstantAnnotating(ev);
+          stopInstantAnnotating();
           handleInstantAnnotationPointerCancel();
           return;
         }
@@ -293,6 +380,7 @@ export const useTextSelector = (
   const handleNativeTouchMove = (x: number, y: number, doc: Document) => {
     const dpr = window.devicePixelRatio || 1;
     pointerPos.current = { x: x / dpr, y: y / dpr };
+    maybeCancelInstantHoldOnMove();
     const viewSettings = getViewSettings(bookKey);
     const sel = doc.getSelection();
     const valid = !!sel && isValidSelection(sel);
@@ -310,13 +398,17 @@ export const useTextSelector = (
     }
   };
 
-  const handlePointerCancel = (_doc: Document, _index: number, ev: PointerEvent) => {
+  const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    // A pending still-hold that never engaged: drop it so a swipe-takeover
+    // (Android fires pointercancel when the browser starts scrolling) keeps its
+    // native page-turn instead of being swallowed.
+    cancelInstantHold();
     // NB: don't cancel the auto-turn here — on Android pointercancel fires mid
     // edge-drag (browser takes over for scrolling), which is exactly when the
     // user is dragging into the corner. Cancel only on a real release.
     if (isInstantAnnotating.current) {
-      stopInstantAnnotating(ev);
+      stopInstantAnnotating();
       handleInstantAnnotationPointerCancel();
     }
   };
@@ -404,8 +496,11 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    // A tap (or a long-press shorter than the hold) that never engaged: drop the
+    // pending still-hold so the tap falls through to a page turn.
+    if (instantHoldTimer.current) cancelInstantHold();
     if (isInstantAnnotating.current && ev) {
-      stopInstantAnnotating(ev);
+      stopInstantAnnotating();
       const handled = await handleInstantAnnotationPointerUp(doc, index, ev);
       if (handled) {
         isTextSelected.current = true;
@@ -651,6 +746,7 @@ export const useTextSelector = (
     return () => {
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
       if (autoTurnTimer.current) clearTimeout(autoTurnTimer.current);
+      if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
