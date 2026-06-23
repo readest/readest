@@ -324,6 +324,18 @@ export interface SystemSettings {
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;
+  /**
+   * Library page background texture, configured independently from the reader
+   * background (issue #4743). When any of these is undefined the library
+   * inherits the corresponding `globalViewSettings.background*` value, so an
+   * existing user's bookshelf looks unchanged until they pick a library
+   * texture. Device-local (the texture *selection* never syncs, matching the
+   * reader's `backgroundTextureId`); only the imported image binaries sync via
+   * the `texture` replica kind. Resolved by `getLibraryViewSettings`.
+   */
+  libraryBackgroundTextureId?: string;
+  libraryBackgroundOpacity?: number;
+  libraryBackgroundSize?: string;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
   customDictionaries: ImportedDictionary[];

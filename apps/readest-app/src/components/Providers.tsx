@@ -25,6 +25,7 @@ import {
   setTelemetryDecision,
   TELEMETRY_OPT_OUT_KEY,
 } from '@/utils/telemetry';
+import { getLibraryViewSettings } from '@/helpers/settings';
 import { SETTINGS_FILENAME } from '@/services/constants';
 import type { AppService } from '@/types/system';
 import type { SystemSettings } from '@/types/settings';
@@ -158,7 +159,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         if (settings.customTextures?.length) {
           useCustomTextureStore.getState().setTextures(settings.customTextures);
         }
-        applyBackgroundTexture(envConfig, globalViewSettings);
+        // The app boots onto the library, so apply the library background
+        // (which inherits the reader/global texture until decoupled). The
+        // reader re-applies its own texture when a book opens (issue #4743).
+        applyBackgroundTexture(envConfig, getLibraryViewSettings(settings));
         if (globalViewSettings.isEink) {
           applyEinkMode(true);
         }

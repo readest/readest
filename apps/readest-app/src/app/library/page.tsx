@@ -41,6 +41,8 @@ import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
+import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
@@ -240,6 +242,25 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   useUICSS();
+
+  // Apply the library's own background texture (separate from the reader's,
+  // issue #4743). Re-applies on mount so returning from a textured book
+  // restores the library background, and whenever the library texture — or the
+  // reader/global texture it inherits when unset — changes from the Color panel.
+  const { applyBackgroundTexture } = useBackgroundTexture();
+  useEffect(() => {
+    applyBackgroundTexture(envConfig, getLibraryViewSettings(settings));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    envConfig,
+    applyBackgroundTexture,
+    settings.libraryBackgroundTextureId,
+    settings.libraryBackgroundOpacity,
+    settings.libraryBackgroundSize,
+    settings.globalViewSettings?.backgroundTextureId,
+    settings.globalViewSettings?.backgroundOpacity,
+    settings.globalViewSettings?.backgroundSize,
+  ]);
 
   useAppUrlIngress();
   useOpenWithBooks();
