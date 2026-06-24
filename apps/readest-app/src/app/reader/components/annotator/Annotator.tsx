@@ -327,6 +327,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleUpToPopup,
     handleContextmenu,
     applyProgrammaticSelection,
+    noteAutoTurnPoint,
+    cancelAutoTurn,
+    onAutoTurn,
   } = useTextSelector(
     bookKey,
     contentInsets,
@@ -1750,6 +1753,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleColor={selectedColor}
           onRangeChange={applyProgrammaticSelection}
           onStartDrag={handleStartEditAnnotation}
+          noteAutoTurnPoint={noteAutoTurnPoint}
+          cancelAutoTurn={cancelAutoTurn}
+          onAutoTurn={onAutoTurn}
         />
       )}
       {editingAnnotation && editingAnnotation.color && selection && (
@@ -1763,6 +1769,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           getAnnotationText={getAnnotationText}
           setSelection={setSelection}
           onStartEdit={handleStartEditAnnotation}
+          noteAutoTurnPoint={noteAutoTurnPoint}
+          cancelAutoTurn={cancelAutoTurn}
+          onAutoTurn={onAutoTurn}
         />
       )}
       {showExportDialog && exportData && bookData.book && (

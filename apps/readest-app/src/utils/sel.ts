@@ -593,6 +593,37 @@ export const isHyphenHandleBugProneRange = (range: Range, vertical = false): boo
   return blockHasGeneratedHyphens(block, vertical);
 };
 
+// Window-coordinate position of the selection focus (caret), or null. The book
+// content lives in a (possibly very wide, multi-column) iframe translated by the
+// pagination offset, so map the caret from iframe space via the iframe element's
+// on-screen rect. Used by the corner auto page-turn (the caret is an engagement
+// signal) and the keyboard turn-on-cross check.
+export const focusCaretWindowPos = (doc: Document, sel: Selection): Point | null => {
+  const focusNode = sel.focusNode;
+  const win = doc.defaultView;
+  if (!focusNode || !win) return null;
+  let rect: DOMRect;
+  try {
+    const range = doc.createRange();
+    const offset =
+      focusNode.nodeType === Node.TEXT_NODE
+        ? Math.min(sel.focusOffset, (focusNode.textContent ?? '').length)
+        : sel.focusOffset;
+    range.setStart(focusNode, offset);
+    range.collapse(true);
+    rect = range.getBoundingClientRect();
+  } catch {
+    return null;
+  }
+  // An unmeasurable range (e.g. focus on an empty element) collapses to 0,0,0,0.
+  if (rect.top === 0 && rect.bottom === 0 && rect.left === 0 && rect.right === 0) return null;
+  const feRect = win.frameElement?.getBoundingClientRect();
+  return {
+    x: (rect.left + rect.right) / 2 + (feRect?.left ?? 0),
+    y: (rect.top + rect.bottom) / 2 + (feRect?.top ?? 0),
+  };
+};
+
 // Rebuild a selection range between a known-good anchor and the caret at a
 // point (in `doc` viewport coordinates) — used to restore the range a
 // corrupted long-press drag was meant to produce: anchored at the

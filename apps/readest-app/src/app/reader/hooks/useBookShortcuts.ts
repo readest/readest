@@ -13,6 +13,7 @@ import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants'
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
+import { getReadingAreaRect, keyboardTurnDirection } from './useAutoPageTurn';
 import { viewPagination } from './usePagination';
 import useShortcuts from '@/hooks/useShortcuts';
 import useBooksManager from './useBooksManager';
@@ -81,8 +82,19 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const isNative = event instanceof KeyboardEvent;
     const src: KeyModifiers | undefined = isNative ? event : event?.data;
     if (!src?.key) return false;
-    const contents = getView(sideBarBookKey)?.renderer?.getContents?.() ?? [];
-    return extendSelectionFromContents(contents, src, isNative);
+    const view = getView(sideBarBookKey ?? '');
+    const contents = view?.renderer?.getContents?.() ?? [];
+    const extended = extendSelectionFromContents(contents, src, isNative);
+    // Keyboard turn-on-cross (#4741): when the extended selection's focus leaves
+    // the visible page in paginated mode, turn the page so the growing selection
+    // stays in view. Only for keys we extended ourselves (the native parent
+    // path); the focused-iframe path lets the browser scroll the focus in.
+    if (extended && isNative && !getViewSettings(sideBarBookKey ?? '')?.scrolled) {
+      const dir = keyboardTurnDirection(contents, getReadingAreaRect(sideBarBookKey ?? ''));
+      if (dir === 'next') view?.next();
+      else if (dir === 'prev') view?.prev();
+    }
+    return extended;
   };
 
   const goLeft = () => {
