@@ -17,7 +17,8 @@ export const sanitizerTransformer: Transformer = {
 
     const sanitized = DOMPurify.sanitize(result, {
       WHOLE_DOCUMENT: true,
-      FORBID_TAGS: ['script'],
+      FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: ['srcdoc'],
       ALLOWED_URI_REGEXP:
         /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
       ADD_TAGS: ['link', 'meta'],
