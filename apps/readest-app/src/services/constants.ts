@@ -424,9 +424,12 @@ export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {
   scope: 'book',
+  mode: 'contains',
   matchCase: false,
-  matchWholeWords: false,
   matchDiacritics: false,
+  nearbyWords: 10,
+  // kept for sync wire back-compat with pre-v3 clients (mirrors mode === 'whole-words')
+  matchWholeWords: false,
 };
 
 export const DEFAULT_VIEW_SETTINGS_CONFIG: ViewSettingsConfig = {

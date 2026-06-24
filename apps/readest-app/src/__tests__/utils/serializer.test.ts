@@ -145,6 +145,40 @@ describe('BookConfig serialization', () => {
     expect(parsed.viewSettings.annotationToolbarItems).toEqual(['copy']);
   });
 
+  it('migrates v2 search config: matchWholeWords:true -> mode "whole-words"', () => {
+    const config = deserializeConfig(
+      JSON.stringify({ schemaVersion: 2, searchConfig: { matchWholeWords: true } }),
+      globalViewSettings,
+      defaultSearchConfig,
+    );
+    const sc = config.searchConfig as BookSearchConfig;
+    expect(sc.mode).toBe('whole-words');
+    expect(sc.matchWholeWords).toBe(true);
+    expect(sc.nearbyWords).toBe(10);
+  });
+
+  it('migrates v2 search config: matchWholeWords:false -> mode "contains"', () => {
+    const config = deserializeConfig(
+      JSON.stringify({ schemaVersion: 2, searchConfig: { matchWholeWords: false } }),
+      globalViewSettings,
+      defaultSearchConfig,
+    );
+    const sc = config.searchConfig as BookSearchConfig;
+    expect(sc.mode).toBe('contains');
+    expect(sc.matchWholeWords).toBe(false);
+  });
+
+  it('preserves an explicit mode and mirrors the deprecated boolean', () => {
+    const config = deserializeConfig(
+      JSON.stringify({ schemaVersion: 3, searchConfig: { mode: 'regex' } }),
+      globalViewSettings,
+      defaultSearchConfig,
+    );
+    const sc = config.searchConfig as BookSearchConfig;
+    expect(sc.mode).toBe('regex');
+    expect(sc.matchWholeWords).toBe(false);
+  });
+
   it('does not migrate annotations when schemaVersion is already 2', () => {
     const config = deserializeConfig(
       JSON.stringify({

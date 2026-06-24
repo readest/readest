@@ -9,6 +9,7 @@ interface SearchNavState {
   searchResults: BookSearchResult[] | BookSearchMatch[] | null;
   searchResultIndex: number;
   searchProgress: number; // 0 to 1, where 1 means search complete
+  searchError: string | null; // invalid regex / nearby-words parse error, shown inline
 }
 
 // Per-book booknotes navigation state
@@ -23,6 +24,7 @@ interface SidebarState {
   sideBarWidth: string;
   isSideBarVisible: boolean;
   isSideBarPinned: boolean;
+  isSearchBarVisible: boolean;
   // Per-book navigation states
   searchNavStates: Record<string, SearchNavState>;
   booknotesNavStates: Record<string, BooknotesNavState>;
@@ -35,6 +37,7 @@ interface SidebarState {
   toggleSideBarPin: () => void;
   setSideBarVisible: (visible: boolean) => void;
   setSideBarPin: (pinned: boolean) => void;
+  setSearchBarVisible: (visible: boolean) => void;
   // Search actions (per bookKey)
   getSearchNavState: (bookKey: string) => SearchNavState;
   setSearchTerm: (bookKey: string, term: string) => void;
@@ -46,6 +49,7 @@ interface SidebarState {
   ) => void;
   setSearchResultIndex: (bookKey: string, index: number) => void;
   setSearchProgress: (bookKey: string, progress: number) => void;
+  setSearchError: (bookKey: string, error: string | null) => void;
   clearSearch: (bookKey: string) => void;
   // Booknotes navigation actions (per bookKey)
   getBooknotesNavState: (bookKey: string) => BooknotesNavState;
@@ -60,6 +64,7 @@ const defaultSearchNavState: SearchNavState = {
   searchResults: null,
   searchResultIndex: 0,
   searchProgress: 1,
+  searchError: null,
 };
 
 const defaultBooknotesNavState: BooknotesNavState = {
@@ -73,6 +78,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   sideBarWidth: '',
   isSideBarVisible: false,
   isSideBarPinned: false,
+  isSearchBarVisible: false,
   // Per-book navigation states
   searchNavStates: {},
   booknotesNavStates: {},
@@ -85,6 +91,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   toggleSideBarPin: () => set((state) => ({ isSideBarPinned: !state.isSideBarPinned })),
   setSideBarVisible: (visible: boolean) => set({ isSideBarVisible: visible }),
   setSideBarPin: (pinned: boolean) => set({ isSideBarPinned: pinned }),
+  setSearchBarVisible: (visible: boolean) => set({ isSearchBarVisible: visible }),
   // Search actions
   getSearchStatus: (bookKey: string) => {
     return get().searchStatuses[bookKey] || null;
@@ -129,6 +136,16 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
         [bookKey]: {
           ...(state.searchNavStates[bookKey] || defaultSearchNavState),
           searchProgress: progress,
+        },
+      },
+    })),
+  setSearchError: (bookKey: string, error: string | null) =>
+    set((state) => ({
+      searchNavStates: {
+        ...state.searchNavStates,
+        [bookKey]: {
+          ...(state.searchNavStates[bookKey] || defaultSearchNavState),
+          searchError: error,
         },
       },
     })),
