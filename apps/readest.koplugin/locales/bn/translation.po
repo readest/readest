@@ -68,6 +68,9 @@ msgstr "আরোহী"
 msgid "Actions"
 msgstr "ক্রিয়াসমূহ"
 
+msgid "Download all books"
+msgstr "সব বই ডাউনলোড করুন"
+
 msgid "Rescan library"
 msgstr "লাইব্রেরি পুনরায় স্ক্যান করুন"
 
@@ -133,6 +136,21 @@ msgstr "প্রচ্ছদ ডাউনলোড ব্যর্থ।"
 
 msgid "Could not delete the file."
 msgstr "ফাইলটি মুছে ফেলা যায়নি।"
+
+msgid "No books to download."
+msgstr "ডাউনলোড করার মতো কোনো বই নেই।"
+
+msgid "Downloading %1 of %2…"
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হচ্ছে…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ডাউনলোড বাতিল করা হয়েছে। %2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে (%3 বাদ দেওয়া হয়েছে)।"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
 
 msgid "Removing from cloud…"
 msgstr "ক্লাউড থেকে সরানো হচ্ছে…"

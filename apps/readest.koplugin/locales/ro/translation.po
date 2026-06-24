@@ -68,6 +68,9 @@ msgstr "Crescător"
 msgid "Actions"
 msgstr "Acțiuni"
 
+msgid "Download all books"
+msgstr "Descarcă toate cărțile"
+
 msgid "Rescan library"
 msgstr "Rescanează biblioteca"
 
@@ -133,6 +136,21 @@ msgstr "Descărcarea copertei a eșuat."
 
 msgid "Could not delete the file."
 msgstr "Nu s-a putut șterge fișierul."
+
+msgid "No books to download."
+msgstr "Nicio carte de descărcat."
+
+msgid "Downloading %1 of %2…"
+msgstr "Se descarcă %1 din %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Descărcare anulată. %1 din %2 descărcate."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Descărcate %1 din %2 (omise %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Descărcate %1 din %2."
 
 msgid "Removing from cloud…"
 msgstr "Se elimină din cloud…"

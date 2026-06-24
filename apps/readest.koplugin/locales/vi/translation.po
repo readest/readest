@@ -68,6 +68,9 @@ msgstr "Tăng dần"
 msgid "Actions"
 msgstr "Tác vụ"
 
+msgid "Download all books"
+msgstr "Tải xuống tất cả sách"
+
 msgid "Rescan library"
 msgstr "Quét lại thư viện"
 
@@ -133,6 +136,21 @@ msgstr "Tải bìa thất bại."
 
 msgid "Could not delete the file."
 msgstr "Không thể xóa tệp."
+
+msgid "No books to download."
+msgstr "Không có sách nào để tải xuống."
+
+msgid "Downloading %1 of %2…"
+msgstr "Đang tải xuống %1 trên %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Đã hủy tải xuống. Đã tải %1 trên %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Đã tải %1 trên %2 (bỏ qua %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Đã tải %1 trên %2."
 
 msgid "Removing from cloud…"
 msgstr "Đang xóa khỏi đám mây…"

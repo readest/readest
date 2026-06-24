@@ -68,6 +68,9 @@ msgstr "Naik"
 msgid "Actions"
 msgstr "Tindakan"
 
+msgid "Download all books"
+msgstr "Unduh semua buku"
+
 msgid "Rescan library"
 msgstr "Pindai ulang pustaka"
 
@@ -133,6 +136,21 @@ msgstr "Unduhan sampul gagal."
 
 msgid "Could not delete the file."
 msgstr "Tidak dapat menghapus berkas."
+
+msgid "No books to download."
+msgstr "Tidak ada buku untuk diunduh."
+
+msgid "Downloading %1 of %2…"
+msgstr "Mengunduh %1 dari %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Unduhan dibatalkan. %1 dari %2 terunduh."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 dari %2 terunduh (%3 dilewati)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 dari %2 terunduh."
 
 msgid "Removing from cloud…"
 msgstr "Menghapus dari cloud…"

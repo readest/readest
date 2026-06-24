@@ -68,6 +68,9 @@ msgstr "ཡར་འཛེག་"
 msgid "Actions"
 msgstr "བྱ་བ་"
 
+msgid "Download all books"
+msgstr "དེབ་ཡོངས་ཕབ་ལེན་"
+
 msgid "Rescan library"
 msgstr "དཔེ་མཛོད་ཡང་བསྐྱར་ཞིབ་ཤིབ་"
 
@@ -133,6 +136,21 @@ msgstr "འགྲམ་ཤོག་ཕབ་ལེན་མ་ཐུབ།"
 
 msgid "Could not delete the file."
 msgstr "ཡིག་ཆ་སུབ་མ་ཐུབ།"
+
+msgid "No books to download."
+msgstr "ཕབ་ལེན་བྱ་རྒྱུའི་དེབ་མེད།"
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་བྱེད་བཞིན་པ་…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ཕབ་ལེན་འདོར་སོང་། %2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན། (%3 མཆོངས་སོང་།)"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
 
 msgid "Removing from cloud…"
 msgstr "སྤྲིན་གྲུབ་ནས་སུབ་བཞིན་པ་…"

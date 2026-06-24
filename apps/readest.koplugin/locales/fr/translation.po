@@ -68,6 +68,9 @@ msgstr "Croissant"
 msgid "Actions"
 msgstr "Actions"
 
+msgid "Download all books"
+msgstr "Télécharger tous les livres"
+
 msgid "Rescan library"
 msgstr "Réanalyser la bibliothèque"
 
@@ -133,6 +136,21 @@ msgstr "Échec du téléchargement de la couverture."
 
 msgid "Could not delete the file."
 msgstr "Impossible de supprimer le fichier."
+
+msgid "No books to download."
+msgstr "Aucun livre à télécharger."
+
+msgid "Downloading %1 of %2…"
+msgstr "Téléchargement de %1 sur %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Téléchargement annulé. %1 sur %2 téléchargés."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 sur %2 téléchargés (%3 ignorés)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 sur %2 téléchargés."
 
 msgid "Removing from cloud…"
 msgstr "Suppression du cloud…"

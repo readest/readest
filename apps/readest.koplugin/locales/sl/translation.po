@@ -68,6 +68,9 @@ msgstr "Naraščajoče"
 msgid "Actions"
 msgstr "Dejanja"
 
+msgid "Download all books"
+msgstr "Prenesi vse knjige"
+
 msgid "Rescan library"
 msgstr "Znova preglej knjižnico"
 
@@ -133,6 +136,21 @@ msgstr "Prenos naslovnice ni uspel."
 
 msgid "Could not delete the file."
 msgstr "Datoteke ni bilo mogoče izbrisati."
+
+msgid "No books to download."
+msgstr "Ni knjig za prenos."
+
+msgid "Downloading %1 of %2…"
+msgstr "Prenašanje %1 od %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Prenos preklican. Prenesenih %1 od %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Prenesenih %1 od %2 (preskočenih %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Prenesenih %1 od %2."
 
 msgid "Removing from cloud…"
 msgstr "Odstranjevanje iz oblaka…"

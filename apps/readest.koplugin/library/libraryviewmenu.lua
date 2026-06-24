@@ -116,6 +116,14 @@ function M.show(opts)
             { { text = _("Actions"), enabled = false } },
             {
                 {
+                    text = _("Download all books"),
+                    callback = function()
+                        require("library.librarywidget").downloadAll()
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Rescan library"),
                     callback = function()
                         local Trapper = require("ui/trapper")

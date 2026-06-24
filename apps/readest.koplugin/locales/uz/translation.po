@@ -68,6 +68,9 @@ msgstr "Oʻsish boʻyicha"
 msgid "Actions"
 msgstr "Amallar"
 
+msgid "Download all books"
+msgstr "Barcha kitoblarni yuklab olish"
+
 msgid "Rescan library"
 msgstr "Kutubxonani qayta skanerlash"
 
@@ -133,6 +136,21 @@ msgstr "Muqovani yuklab olib boʻlmadi."
 
 msgid "Could not delete the file."
 msgstr "Faylni oʻchirib boʻlmadi."
+
+msgid "No books to download."
+msgstr "Yuklab olish uchun kitob yoʻq."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 tadan %1-si yuklab olinmoqda…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 tadan %1 tasi yuklab olindi."
 
 msgid "Removing from cloud…"
 msgstr "Bulutdan olib tashlanmoqda…"

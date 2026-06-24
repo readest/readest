@@ -68,6 +68,9 @@ msgstr "昇順"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Download all books"
+msgstr "すべての書籍をダウンロード"
+
 msgid "Rescan library"
 msgstr "ライブラリを再スキャン"
 
@@ -133,6 +136,21 @@ msgstr "表紙のダウンロードに失敗しました。"
 
 msgid "Could not delete the file."
 msgstr "ファイルを削除できませんでした。"
+
+msgid "No books to download."
+msgstr "ダウンロードする書籍がありません。"
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 件中 %1 件目をダウンロード中…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ダウンロードをキャンセルしました。%2 件中 %1 件をダウンロードしました。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 件中 %1 件をダウンロードしました（%3 件スキップ）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 件中 %1 件をダウンロードしました。"
 
 msgid "Removing from cloud…"
 msgstr "クラウドから削除中…"

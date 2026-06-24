@@ -68,6 +68,9 @@ msgstr "Növekvő"
 msgid "Actions"
 msgstr "Műveletek"
 
+msgid "Download all books"
+msgstr "Összes könyv letöltése"
+
 msgid "Rescan library"
 msgstr "Könyvtár újraolvasása"
 
@@ -133,6 +136,21 @@ msgstr "A borító letöltése sikertelen."
 
 msgid "Could not delete the file."
 msgstr "A fájl nem törölhető."
+
+msgid "No books to download."
+msgstr "Nincs letölthető könyv."
+
+msgid "Downloading %1 of %2…"
+msgstr "Letöltés: %1 / %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Letöltés megszakítva. %2 könyvből %1 letöltve."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 könyvből %1 letöltve (%3 kihagyva)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 könyvből %1 letöltve."
 
 msgid "Removing from cloud…"
 msgstr "Eltávolítás a felhőből…"

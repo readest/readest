@@ -68,6 +68,9 @@ msgstr "تصاعدي"
 msgid "Actions"
 msgstr "إجراءات"
 
+msgid "Download all books"
+msgstr "تنزيل كل الكتب"
+
 msgid "Rescan library"
 msgstr "إعادة فحص المكتبة"
 
@@ -133,6 +136,21 @@ msgstr "فشل تنزيل الغلاف."
 
 msgid "Could not delete the file."
 msgstr "تعذّر حذف الملف."
+
+msgid "No books to download."
+msgstr "لا توجد كتب للتنزيل."
+
+msgid "Downloading %1 of %2…"
+msgstr "جارٍ تنزيل %1 من %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "أُلغي التنزيل. تم تنزيل %1 من %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "تم تنزيل %1 من %2 (تم تخطّي %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "تم تنزيل %1 من %2."
 
 msgid "Removing from cloud…"
 msgstr "جارٍ الإزالة من السحابة…"

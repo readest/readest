@@ -68,6 +68,9 @@ msgstr "Menaik"
 msgid "Actions"
 msgstr "Tindakan"
 
+msgid "Download all books"
+msgstr "Muat turun semua buku"
+
 msgid "Rescan library"
 msgstr "Imbas semula pustaka"
 
@@ -133,6 +136,21 @@ msgstr "Muat turun kulit gagal."
 
 msgid "Could not delete the file."
 msgstr "Tidak dapat memadam fail."
+
+msgid "No books to download."
+msgstr "Tiada buku untuk dimuat turun."
+
+msgid "Downloading %1 of %2…"
+msgstr "Memuat turun %1 daripada %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Muat turun dibatalkan. %1 daripada %2 dimuat turun."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 daripada %2 dimuat turun (%3 dilangkau)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 daripada %2 dimuat turun."
 
 msgid "Removing from cloud…"
 msgstr "Mengeluarkan daripada awan…"

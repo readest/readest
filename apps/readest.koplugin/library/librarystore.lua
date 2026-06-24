@@ -407,6 +407,38 @@ function M:listBooks(filters)
 end
 
 -- ---------------------------------------------------------------------------
+-- listCloudOnlyBooks — the bulk-download candidate set (#4751)
+-- ---------------------------------------------------------------------------
+-- Books that are in the cloud with a downloadable file but not yet on this
+-- device: cloud_present = 1, local_present = 0, not deleted, and with an
+-- uploaded_at (a phantom record without an uploaded file is unreachable, so
+-- it's excluded just like listBooks excludes it). Returns full rows so the
+-- caller can hand each straight to syncbooks.downloadBook. Ordered newest
+-- first for a sensible progress sequence; hash ASC tiebreak for determinism.
+function M:listCloudOnlyBooks()
+    local sql = string.format([[
+        SELECT %s FROM books
+        WHERE user_id = ?
+          AND deleted_at IS NULL
+          AND cloud_present = 1
+          AND local_present = 0
+          AND uploaded_at IS NOT NULL
+        ORDER BY COALESCE(updated_at, created_at) DESC, hash ASC
+    ]], table.concat(BOOK_COLS, ", "))
+    local stmt = self.db:prepare(sql)
+    stmt:reset()
+    stmt:bind1(1, self.user_id)
+    local rows = {}
+    while true do
+        local r = stmt:step()
+        if not r then break end
+        rows[#rows + 1] = row_to_table(r)
+    end
+    stmt:close()
+    return rows
+end
+
+-- ---------------------------------------------------------------------------
 -- getGroups
 -- ---------------------------------------------------------------------------
 -- Returns array of { name, count, latest_updated_at, latest_last_read_at,

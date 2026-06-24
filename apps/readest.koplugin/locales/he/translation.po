@@ -68,6 +68,9 @@ msgstr "עולה"
 msgid "Actions"
 msgstr "פעולות"
 
+msgid "Download all books"
+msgstr "הורד את כל הספרים"
+
 msgid "Rescan library"
 msgstr "סרוק ספרייה מחדש"
 
@@ -133,6 +136,21 @@ msgstr "הורדת הכריכה נכשלה."
 
 msgid "Could not delete the file."
 msgstr "לא ניתן למחוק את הקובץ."
+
+msgid "No books to download."
+msgstr "אין ספרים להורדה."
+
+msgid "Downloading %1 of %2…"
+msgstr "מוריד %1 מתוך %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ההורדה בוטלה. %1 מתוך %2 הורדו."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 מתוך %2 הורדו (%3 דולגו)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 מתוך %2 הורדו."
 
 msgid "Removing from cloud…"
 msgstr "מוסר מהענן…"
