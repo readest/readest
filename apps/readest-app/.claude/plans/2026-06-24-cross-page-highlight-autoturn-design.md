@@ -1,10 +1,10 @@
-# Cross-page corner auto-turn for instant highlight & range editing
+# Cross-page selection: corner auto-turn (drag) + keyboard turn-on-cross
 
 Issue: https://github.com/readest/readest/issues/4741
 
 ## Problem
 
-In paginated (non-scrolling) mode, three drag gestures cannot extend a
+In paginated (non-scrolling) mode, four selection gestures cannot extend a
 selection/highlight past the edge of the page:
 
 1. **Instant Highlight** drag (the highlighter quick action) — drawing a
@@ -13,11 +13,16 @@ selection/highlight past the edge of the page:
    selection's range cannot reach text on another page.
 3. **AnnotationRangeEditor** handle drag — editing an existing highlight's range
    (tap a highlight, drag a handle) cannot reach text on another page.
+4. **Keyboard selection adjust** (#4728) — `Shift+←/→` (and `Ctrl/Alt+Shift`)
+   extends the native selection one char/word into the next, off-screen column
+   without turning the page; `adjustTextSelection` even returns `true` to
+   suppress the normal arrow-key page turn, so at the page edge the selection
+   silently grows off-screen.
 
 Native text selection already auto-turns at the corner (#1354): the selection
 caret dwelling in the bottom-right / top-left corner for ~500ms turns the page
-and the browser-managed selection extends across the boundary. The three
-gestures above do not benefit from it.
+and the browser-managed selection extends across the boundary. The gestures
+above do not benefit from it.
 
 ### Root causes
 
@@ -128,6 +133,29 @@ from the live post-turn point), so it is separable, but it is what makes the
 hold-then-lift case feel right. Native selection does not subscribe (the browser
 extends its own selection).
 
+### 6. Keyboard selection adjust (`Shift+←/→`) — immediate turn-on-cross
+
+Unlike the drag gestures, a keystroke is discrete and deliberate, so the trigger
+is **not** dwell-in-corner but an immediate turn the moment the focus leaves the
+page. In `useBookShortcuts.adjustTextSelection`, after
+`extendSelectionFromContents` has extended the selection (the native parent
+path, `isNative`), and only in paginated mode:
+
+- Compute the selection focus caret's window position (promote the existing
+  `focusCaretWindowPos` from `useTextSelector` to a shared util).
+- If the focus is now **outside the visible reading page in the logical extend
+  direction** (forward → past the trailing edge; backward → past the leading
+  edge; RTL/vertical aware), call `view.next()` / `view.prev()` so the growing
+  selection scrolls back into view.
+
+No dwell, no re-emit: `sel.modify('extend', …)` has already moved the DOM
+selection, so the turn only needs to scroll it into view. Desktop-only (the
+#4728 shortcuts), so the Android scroll-pin is not involved. `adjustTextSelection`
+still returns `true` (it owns the turn; the arrow-key page-turn shortcut stays
+suppressed). Reuses the pure geometry helpers exported from `useAutoPageTurn`
+(`getReadingAreaRect`, a "point beyond page edge" check) rather than the
+dwell machine.
+
 ## Scope / limits
 
 - Within-section column turns only (the common case). A turn that crosses into a
@@ -155,12 +183,23 @@ extends its own selection).
   still cancels.
 - `useAnnotationEditor` / AnnotationRangeEditor: the non-dragged end stays the
   anchored DOM position across a simulated scroll.
+- Keyboard turn-on-cross: with a focus caret mocked beyond the page's trailing
+  edge after `extendSelectionFromContents`, `view.next()` is called; with the
+  focus still on the page, it is not. `Shift+←` past the leading edge →
+  `view.prev()`. Scroll mode → never turns.
 
 ## Files touched
 
-- `src/app/reader/hooks/useAutoPageTurn.ts` — **new**.
+- `src/app/reader/hooks/useAutoPageTurn.ts` — **new**; exports the dwell hook
+  plus pure geometry helpers (`getReadingAreaRect`, point-beyond-page check)
+  reused by the keyboard path.
 - `src/app/reader/hooks/useTextSelector.ts` — consume hook; feed instant
-  highlight; re-expose feed/cancel/subscribe.
+  highlight; re-expose feed/cancel/subscribe; promote `focusCaretWindowPos` to
+  a shared util.
+- `src/app/reader/hooks/useBookShortcuts.ts` — keyboard turn-on-cross after
+  extending the selection.
+- `src/utils/sel.ts` — home for the promoted `focusCaretWindowPos` (or a sibling
+  shared util) used by both `useTextSelector` and the keyboard path.
 - `src/app/reader/hooks/useInstantAnnotation.ts` — DOM-anchored start; relaxed
   cancel; re-emit hook.
 - `src/app/reader/hooks/useAnnotationEditor.ts` — DOM-anchored non-dragged end.
