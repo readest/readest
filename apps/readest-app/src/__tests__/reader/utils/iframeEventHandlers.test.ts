@@ -176,7 +176,7 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(types).not.toContain('iframe-open-media');
   });
 
-  test('reflowable: tap on a linked image follows the link (posts neither)', async () => {
+  test('reflowable: tap on a linked image opens the viewer instead of following the link (#4757)', async () => {
     const handlers = await importHandlers();
     const anchor = document.createElement('a');
     anchor.href = 'https://example.com';
@@ -186,8 +186,27 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
 
     tap(handlers, false, img);
 
+    const messages = postedMessages();
+    const types = messages.map((m) => m['type']);
+    expect(types).toContain('iframe-open-media');
+    expect(types).not.toContain('iframe-single-click');
+    const media = messages.find((m) => m['type'] === 'iframe-open-media')!;
+    expect(media['elementType']).toBe('image');
+    expect(media['src']).toBe(img.src);
+  });
+
+  test('reflowable: tap on a footnote-link image keeps footnote behavior, not the media viewer', async () => {
+    const handlers = await importHandlers();
+    const anchor = document.createElement('a');
+    anchor.className = 'duokan-footnote';
+    anchor.href = '#note-1';
+    const img = document.createElement('img');
+    img.src = 'blob:http://localhost/note';
+    anchor.appendChild(img);
+
+    tap(handlers, false, img);
+
     const types = postedMessages().map((m) => m['type']);
     expect(types).not.toContain('iframe-open-media');
-    expect(types).not.toContain('iframe-single-click');
   });
 });

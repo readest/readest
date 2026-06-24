@@ -208,12 +208,6 @@ export const handleClick = (
 
   const postSingleClick = () => {
     const element = event.target as HTMLElement | null;
-    if (
-      element?.closest('sup, a, audio, video') &&
-      !element?.closest('a.duokan-footnote:not([href])')
-    ) {
-      return;
-    }
     const footnoteSelector = [
       '.js_readerFooterNote',
       '.zhangyue-footnote',
@@ -221,6 +215,19 @@ export const handleClick = (
       '.qqreader-footnote',
     ].join(', ');
     const footnote = element?.closest(footnoteSelector);
+    // In reflowable books a single tap on an image/table opens the media
+    // viewer. A media element wrapped in a plain link (e.g. a figure linking to
+    // its full-resolution image) should still zoom rather than follow the link,
+    // matching long-press (#4757). Footnotes are excluded so footnote links keep
+    // their popup/navigation behavior.
+    const media = !isFixedLayout && !footnote ? detectMediaTarget(element) : null;
+    if (
+      !media &&
+      element?.closest('sup, a, audio, video') &&
+      !element?.closest('a.duokan-footnote:not([href])')
+    ) {
+      return;
+    }
     if (footnote) {
       eventDispatcher.dispatch('footnote-popup', {
         bookKey,
@@ -260,13 +267,10 @@ export const handleClick = (
     // In reflowable books a single tap on an image/table opens the same viewer
     // a long-press does, so the image gallery / table zoom is reachable by both
     // gestures (#4584). Fixed-layout books (PDF/comics/manga) keep tap-to-turn,
-    // since there the tap is the page-turn gesture.
-    if (!isFixedLayout) {
-      const media = detectMediaTarget(element);
-      if (media) {
-        window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
-        return;
-      }
+    // since there the tap is the page-turn gesture (media is null there).
+    if (media) {
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
+      return;
     }
 
     window.postMessage(
