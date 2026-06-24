@@ -175,7 +175,14 @@ export function PublicationView({
 
   const content = publication.metadata?.[SYMBOL.CONTENT] || publication.metadata?.content;
   const description = publication.metadata?.description;
-  const descriptionHtml = useMemo(() => getOPDSDescriptionHtml(content), [content]);
+  // OPDS 2.0 JSON keeps the summary in the plain `description` string (no typed
+  // <content>), and catalogs like pglaf/Gutenberg fill it with HTML. Fall back
+  // to it so that markup renders as markup instead of literal tags; the helper
+  // sanitizes either source (readest issue #4749).
+  const descriptionHtml = useMemo(
+    () => getOPDSDescriptionHtml(content ?? description),
+    [content, description],
+  );
 
   return (
     <div className='flex w-full flex-col px-6 py-6'>
