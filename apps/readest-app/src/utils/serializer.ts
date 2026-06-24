@@ -14,6 +14,15 @@ export const serializeRawConfig = (config: Partial<BookConfig>): string => {
   return JSON.stringify(stampBookConfigSchema(config));
 };
 
+// Compare a per-book view-setting value with the global one by value, not
+// reference. serializeConfig deep-clones the config first, so array/object
+// settings (e.g. annotationToolbarItems) are always fresh references; a reference
+// check would persist them as per-book overrides even when identical to global,
+// which then shadows later global changes on reopen. Primitives short-circuit;
+// the JSON compare covers arrays and plain config objects (all JSON-serializable).
+const isSameViewSettingValue = (a: unknown, b: unknown): boolean =>
+  a === b || JSON.stringify(a) === JSON.stringify(b);
+
 export const serializeConfig = (
   config: BookConfig,
   globalViewSettings: ViewSettings,
@@ -35,7 +44,7 @@ export const serializeConfig = (
   const searchConfig = (config.searchConfig ?? {}) as Partial<BookSearchConfig>;
   config.viewSettings = Object.entries(viewSettings).reduce(
     (acc: Partial<Record<keyof ViewSettings, unknown>>, [key, value]) => {
-      if (globalViewSettings[key as keyof ViewSettings] !== value) {
+      if (!isSameViewSettingValue(globalViewSettings[key as keyof ViewSettings], value)) {
         acc[key as keyof ViewSettings] = value;
       }
       return acc;

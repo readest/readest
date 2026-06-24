@@ -108,6 +108,43 @@ describe('BookConfig serialization', () => {
     expect(tombstone.deletedAt).toBeTruthy();
   });
 
+  it('does not persist an array view setting that equals the global value', () => {
+    // Array/object view settings must be compared by value, not reference —
+    // otherwise annotationToolbarItems (an array) is stored as a per-book override on
+    // every save, shadowing later global changes (the customize-toolbar bug).
+    const global = {
+      ...globalViewSettings,
+      annotationToolbarItems: ['highlight', 'annotate', 'copy'],
+    } as unknown as ViewSettings;
+    const config: BookConfig = {
+      updatedAt: 1,
+      // Same content as global but a distinct array reference, as produced by the
+      // load -> merge -> serialize round-trip.
+      viewSettings: {
+        annotationToolbarItems: ['highlight', 'annotate', 'copy'],
+      } as Partial<ViewSettings>,
+    };
+
+    const parsed = JSON.parse(serializeConfig(config, global, defaultSearchConfig));
+
+    expect(parsed.viewSettings.annotationToolbarItems).toBeUndefined();
+  });
+
+  it('persists an array view setting that differs from the global value', () => {
+    const global = {
+      ...globalViewSettings,
+      annotationToolbarItems: ['highlight', 'annotate', 'copy'],
+    } as unknown as ViewSettings;
+    const config: BookConfig = {
+      updatedAt: 1,
+      viewSettings: { annotationToolbarItems: ['copy'] } as Partial<ViewSettings>,
+    };
+
+    const parsed = JSON.parse(serializeConfig(config, global, defaultSearchConfig));
+
+    expect(parsed.viewSettings.annotationToolbarItems).toEqual(['copy']);
+  });
+
   it('does not migrate annotations when schemaVersion is already 2', () => {
     const config = deserializeConfig(
       JSON.stringify({
