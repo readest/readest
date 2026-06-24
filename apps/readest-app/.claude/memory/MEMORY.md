@@ -65,12 +65,15 @@
 - [Android hyphen selection (#1553)](android-hyphen-selection-bounds-1553.md) — Blink paints start handle on last hyphen; repair anchor + custom handles
 - [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md) — NativeFile slow; RemoteFile can't replace (asset Range broken); handle-reuse 2.3×
 - [Window-state sanitizer (#4398)](window-state-sanitize-4398.md) — invalid `.window-state.json` crashes WebView2; sanitizer plugin before window-state
-- [Android Open-with intent (#4521)](android-open-with-intent-flow.md) — VIEW=transient→reader, SEND=library; Telegram fails cold-start + foreign-file read
+- [Android Open-with intent (#4521)](android-open-with-intent-flow.md) — VIEW/SEND pipeline; VIEW routing now gated by `autoImportBooksOnOpen` (#4747, mobile default ON → import); Telegram cold-start + foreign-file read
 - [Dict lookup browser hijack (#4559)](dict-lookup-browser-hijack-4559.md) — missing `<queries>` ACTION_PROCESS_TEXT sdk36; filter browsers in `decideLookupDispatch`
 - [Large-PDF OOM range flood (#3470)](pdf-oom-range-flood-3470.md) — makePDF fires all ranges un-awaited → OOM; MAX_CONCURRENT_RANGES=6
 - [Android themed icon (#4733)](android-themed-icon-4733.md) — `tauri icon` emits no monochrome → force-commit; tint=SRC_IN, negative-space gap
 
 ## Reader Features & UI
+- [Search modes #4560 + spoiler-bound bug](search-modes-4560-and-spoiler-bound-bug.md) — regex + nearby-words in foliate search.js (phased); deferred cache/searchBook; lookupPassage spoiler bound (page vs chunk ordinal) already wrong
+- [OPDS groups carousel (#4750)](opds-groups-carousel-4750.md) — >=2 groups → horizontal react-virtuoso carousel; lazy covers; `handle.scrollBy` vertical-only so page by `scrollToIndex`; card covers rounded + badge dropped (kept in detail)
+- [Image zoom trackpad flicker (#4742)](image-zoom-trackpad-flicker-4742.md) — macOS trackpad pinch = `ctrl+wheel` stream; `0.05s` transform transition restarts each event → flicker; `isWheelZooming` debounce gates transition off
 - [Instant Highlight ate tap/swipe (Android)](instant-highlight-tap-paginate.md) — `handlePointerDown` preventDefault killed tap-paginate; touch still-hold gate `INSTANT_HOLD_MS=300`
 - [Keyboard selection adjust (#4728)](keyboard-selection-adjust-4728.md) — Shift+←/→ char, Ctrl/Alt+Shift word; `onAdjustTextSelection` in useBookShortcuts
 - [Annotator onLoad listener leak (#4735)](annotator-onload-listener-leak-paragraph-mode.md) — per-section onLoad leaked listeners; `useRendererInputListeners` once-per-view
@@ -90,6 +93,7 @@
 - [Biometric app-lock (#4645)](biometric-app-lock-4645.md) — read flag from `appLockStore` not settingsStore; plugin `cfg(mobile)`
 - [Reference Pages (#4542)](reference-pages-672-4542.md) — 'reference' progressStyle from foliate pageList; per-book `referencePageCount`
 - [Share intent + toolbar (#4014)](annotation-share-toolbar-4014.md) — Share tool gated mobile+macOS; drag-drop customizer; `annotationToolbarItems`
+- [Customize Toolbar global (serializeConfig) #4760](customize-toolbar-global-serializeconfig.md) — was per-book; root cause `serializeConfig` `!==` ref-compares array viewSettings → always stored as stale per-book override shadowing global; fix = value compare (`isSameViewSettingValue`) in viewSettings reduce only; field stays `annotationToolbarItems` in AnnotatorConfig (no exception/rename/move); limitation: pre-existing v0.11.12 overrides not retro-cleared
 - [Native iOS TTS (#4676)](native-ios-tts-4676.md) — AVSpeechSynthesizer plugin; pause==stop, never `end` on didCancel; rate `pow^(1/2.5)`
 - [Native TTS offline halt (#4613)](native-tts-offline-autoadvance-4613.md) — `#speak` advances only on `end`; native SKIP-on-error via `forward()` + cap
 - [Edge TTS word highlight (#4017)](edge-tts-word-highlighting-4017.md) — `audio.metadata` WordBoundary synced by rAF; gates on UA not Origin
@@ -109,6 +113,7 @@
 - [OPDS Firefox strict-XML (#4479)](opds-firefox-strict-xml-4479.md) — junk after `</feed>` → parsererror; `parseOPDSXML` slices to last close tag
 - [OPDS2 JSON search greyed (#4502)](opds2-json-search-4502.md) — `isSearchLink` ignored templated opds+json; expand `{?query}` BEFORE resolveURL
 - [OPDS HTML description (#4503)](opds-html-description-4503.md) — double-escaped into unsanitized HTML; decode-once + sanitize
+- [OPDS self-link metadata (#4749)](opds-self-link-metadata-4749.md) — summary pubs need `rel:self` deref (`opds-publication+json`); JSON `description` is HTML → `getOPDSDescriptionHtml(content ?? description)`
 - [D-pad Navigation](dpad-navigation.md) — Android TV remote / arrow-key nav design + pitfalls
 - [koplugin cover upload (#4374)](koplugin-cover-upload.md) — local covers uploaded blank; `extractLocalCover` via `getCoverImage`
 
@@ -119,6 +124,7 @@
 - [TXT chapter measure-word FP (#4658)](txt-chapter-measure-word-4658.md) — strong `[章节回讲篇话]` vs weak `[卷本册部封]` needs separator
 - [Cover stale (in-place mutation)](cover-stale-inplace-mutation-memo.md) — mutated book in place → memo skip; pure `getBookWithUpdatedMetadata`
 - [Series/author back no-op (#4437)](series-folder-back-noop-4437.md) — Next 16.2 empty-search `router.replace` no-op; `handleBack` `group=''` workaround
+- [Library/reader separate texture (#4743)](library-reader-separate-texture-4743.md) — shared `#background-texture` style; `libraryBackground*` device-local + inherit; `none` must unmount; store inits `{}`
 
 ## Architecture & Patterns
 - foliate-js is a git submodule at `packages/foliate-js/`; multiview paginator preloads adjacent sections (multiple View/Overlayer per book)
