@@ -1755,5 +1755,7 @@
   "Purge & Delete": "清除并删除",
   "Purge all reading data": "清除所有阅读数据",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "这将永久清除阅读进度、笔记和书签，且无法撤销。",
-  "Also erase reading progress, notes, and bookmarks.": "同时清除阅读进度、笔记和书签。"
+  "Also erase reading progress, notes, and bookmarks.": "同时清除阅读进度、笔记和书签。",
+  "Applies to the Library": "应用于书库",
+  "Applies to the Reader": "应用于阅读界面"
 }

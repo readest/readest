@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Rensa och ta bort",
   "Purge all reading data": "Rensa alla läsdata",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Detta raderar permanent läsframsteg, anteckningar och bokmärken. Detta kan inte ångras.",
-  "Also erase reading progress, notes, and bookmarks.": "Raderar även läsframsteg, anteckningar och bokmärken."
+  "Also erase reading progress, notes, and bookmarks.": "Raderar även läsframsteg, anteckningar och bokmärken.",
+  "Applies to the Library": "Gäller biblioteket",
+  "Applies to the Reader": "Gäller läsvyn"
 }

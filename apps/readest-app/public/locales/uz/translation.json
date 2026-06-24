@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Tozalash va oʻchirish",
   "Purge all reading data": "Barcha oʻqish maʼlumotlarini tozalash",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu oʻqish jarayoni, eslatmalar va xatchoʻplarni butunlay oʻchiradi. Buni qaytarib boʻlmaydi.",
-  "Also erase reading progress, notes, and bookmarks.": "Shuningdek, oʻqish jarayoni, eslatmalar va xatchoʻplarni ham oʻchiradi."
+  "Also erase reading progress, notes, and bookmarks.": "Shuningdek, oʻqish jarayoni, eslatmalar va xatchoʻplarni ham oʻchiradi.",
+  "Applies to the Library": "Kutubxonaga qoʻllanadi",
+  "Applies to the Reader": "Oʻqish koʻrinishiga qoʻllanadi"
 }

@@ -1788,5 +1788,7 @@
   "Purge & Delete": "ඉවත් කර මකන්න",
   "Purge all reading data": "සියලු කියවීම් දත්ත ඉවත් කරන්න",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "මෙය කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ස්ථිරවම මකා දමයි. මෙය අහෝසි කළ නොහැක.",
-  "Also erase reading progress, notes, and bookmarks.": "කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ද මකා දමයි."
+  "Also erase reading progress, notes, and bookmarks.": "කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ද මකා දමයි.",
+  "Applies to the Library": "පුස්තකාලයට අදාළ වේ",
+  "Applies to the Reader": "කියවීමේ දසුනට අදාළ වේ"
 }

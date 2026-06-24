@@ -1821,5 +1821,7 @@
   "Purge & Delete": "Purgar y eliminar",
   "Purge all reading data": "Purgar todos los datos de lectura",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Esto borra permanentemente el progreso de lectura, las notas y los marcadores. Esta acción no se puede deshacer.",
-  "Also erase reading progress, notes, and bookmarks.": "También borra el progreso de lectura, las notas y los marcadores."
+  "Also erase reading progress, notes, and bookmarks.": "También borra el progreso de lectura, las notas y los marcadores.",
+  "Applies to the Library": "Se aplica a la biblioteca",
+  "Applies to the Reader": "Se aplica al lector"
 }

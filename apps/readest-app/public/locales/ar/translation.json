@@ -1920,5 +1920,7 @@
   "Purge & Delete": "مسح وحذف",
   "Purge all reading data": "مسح جميع بيانات القراءة",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "يؤدي هذا إلى مسح تقدم القراءة والملاحظات والإشارات المرجعية نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
-  "Also erase reading progress, notes, and bookmarks.": "يمسح أيضًا تقدم القراءة والملاحظات والإشارات المرجعية."
+  "Also erase reading progress, notes, and bookmarks.": "يمسح أيضًا تقدم القراءة والملاحظات والإشارات المرجعية.",
+  "Applies to the Library": "يُطبَّق على المكتبة",
+  "Applies to the Reader": "يُطبَّق على واجهة القراءة"
 }

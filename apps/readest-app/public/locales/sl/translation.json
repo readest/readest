@@ -1854,5 +1854,7 @@
   "Purge & Delete": "Počisti in izbriši",
   "Purge all reading data": "Počisti vse podatke o branju",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "To trajno izbriše napredek branja, opombe in zaznamke. Tega ni mogoče razveljaviti.",
-  "Also erase reading progress, notes, and bookmarks.": "Izbriše tudi napredek branja, opombe in zaznamke."
+  "Also erase reading progress, notes, and bookmarks.": "Izbriše tudi napredek branja, opombe in zaznamke.",
+  "Applies to the Library": "Velja za knjižnico",
+  "Applies to the Reader": "Velja za bralni pogled"
 }

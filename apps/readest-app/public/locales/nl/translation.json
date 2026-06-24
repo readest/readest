@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Wissen en verwijderen",
   "Purge all reading data": "Alle leesgegevens wissen",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Hiermee worden leesvoortgang, notities en bladwijzers permanent gewist. Dit kan niet ongedaan worden gemaakt.",
-  "Also erase reading progress, notes, and bookmarks.": "Wist ook leesvoortgang, notities en bladwijzers."
+  "Also erase reading progress, notes, and bookmarks.": "Wist ook leesvoortgang, notities en bladwijzers.",
+  "Applies to the Library": "Geldt voor de bibliotheek",
+  "Applies to the Reader": "Geldt voor de leesweergave"
 }

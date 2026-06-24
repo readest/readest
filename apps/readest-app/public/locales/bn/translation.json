@@ -1788,5 +1788,7 @@
   "Purge & Delete": "পরিষ্কার করে মুছুন",
   "Purge all reading data": "সমস্ত পড়ার ডেটা পরিষ্কার করুন",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "এটি স্থায়ীভাবে পড়ার অগ্রগতি, নোট এবং বুকমার্ক মুছে ফেলে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
-  "Also erase reading progress, notes, and bookmarks.": "পড়ার অগ্রগতি, নোট এবং বুকমার্কও মুছে ফেলে।"
+  "Also erase reading progress, notes, and bookmarks.": "পড়ার অগ্রগতি, নোট এবং বুকমার্কও মুছে ফেলে।",
+  "Applies to the Library": "লাইব্রেরিতে প্রযোজ্য",
+  "Applies to the Reader": "রিডারে প্রযোজ্য"
 }

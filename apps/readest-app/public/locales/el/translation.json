@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Εκκαθάριση & Διαγραφή",
   "Purge all reading data": "Εκκαθάριση όλων των δεδομένων ανάγνωσης",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Αυτό διαγράφει οριστικά την πρόοδο ανάγνωσης, τις σημειώσεις και τους σελιδοδείκτες. Δεν είναι δυνατή η αναίρεση.",
-  "Also erase reading progress, notes, and bookmarks.": "Διαγράφει επίσης την πρόοδο ανάγνωσης, τις σημειώσεις και τους σελιδοδείκτες."
+  "Also erase reading progress, notes, and bookmarks.": "Διαγράφει επίσης την πρόοδο ανάγνωσης, τις σημειώσεις και τους σελιδοδείκτες.",
+  "Applies to the Library": "Ισχύει για τη βιβλιοθήκη",
+  "Applies to the Reader": "Ισχύει για την προβολή ανάγνωσης"
 }

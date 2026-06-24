@@ -1788,5 +1788,7 @@
   "Purge & Delete": "साफ़ करें और हटाएं",
   "Purge all reading data": "सभी पढ़ने का डेटा साफ़ करें",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "यह पढ़ने की प्रगति, नोट्स और बुकमार्क को स्थायी रूप से मिटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
-  "Also erase reading progress, notes, and bookmarks.": "पढ़ने की प्रगति, नोट्स और बुकमार्क भी मिटा देता है।"
+  "Also erase reading progress, notes, and bookmarks.": "पढ़ने की प्रगति, नोट्स और बुकमार्क भी मिटा देता है।",
+  "Applies to the Library": "लाइब्रेरी पर लागू होता है",
+  "Applies to the Reader": "रीडर पर लागू होता है"
 }

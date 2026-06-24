@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Temizle ve sil",
   "Purge all reading data": "Tüm okuma verilerini temizle",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu, okuma ilerlemesini, notları ve yer işaretlerini kalıcı olarak siler. Bu işlem geri alınamaz.",
-  "Also erase reading progress, notes, and bookmarks.": "Okuma ilerlemesi, notlar ve yer işaretlerini de siler."
+  "Also erase reading progress, notes, and bookmarks.": "Okuma ilerlemesi, notlar ve yer işaretlerini de siler.",
+  "Applies to the Library": "Kütüphaneye uygulanır",
+  "Applies to the Reader": "Okuma görünümüne uygulanır"
 }

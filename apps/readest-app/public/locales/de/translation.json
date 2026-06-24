@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Bereinigen und löschen",
   "Purge all reading data": "Alle Lesedaten bereinigen",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Dadurch werden Lesefortschritt, Notizen und Lesezeichen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
-  "Also erase reading progress, notes, and bookmarks.": "Löscht auch Lesefortschritt, Notizen und Lesezeichen."
+  "Also erase reading progress, notes, and bookmarks.": "Löscht auch Lesefortschritt, Notizen und Lesezeichen.",
+  "Applies to the Library": "Gilt für die Bibliothek",
+  "Applies to the Reader": "Gilt für die Leseansicht"
 }

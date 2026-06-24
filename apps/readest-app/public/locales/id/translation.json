@@ -1755,5 +1755,7 @@
   "Purge & Delete": "Bersihkan & Hapus",
   "Purge all reading data": "Bersihkan semua data baca",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ini menghapus permanen progres membaca, catatan, dan penanda. Tindakan ini tidak dapat dibatalkan.",
-  "Also erase reading progress, notes, and bookmarks.": "Juga menghapus progres membaca, catatan, dan penanda."
+  "Also erase reading progress, notes, and bookmarks.": "Juga menghapus progres membaca, catatan, dan penanda.",
+  "Applies to the Library": "Berlaku untuk Perpustakaan",
+  "Applies to the Reader": "Berlaku untuk tampilan baca"
 }

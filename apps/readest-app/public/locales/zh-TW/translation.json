@@ -1755,5 +1755,7 @@
   "Purge & Delete": "清除並刪除",
   "Purge all reading data": "清除所有閱讀資料",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "這將永久清除閱讀進度、筆記和書籤，且無法復原。",
-  "Also erase reading progress, notes, and bookmarks.": "同時清除閱讀進度、筆記和書籤。"
+  "Also erase reading progress, notes, and bookmarks.": "同時清除閱讀進度、筆記和書籤。",
+  "Applies to the Library": "套用於書庫",
+  "Applies to the Reader": "套用於閱讀介面"
 }

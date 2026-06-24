@@ -1755,5 +1755,7 @@
   "Purge & Delete": "Dọn sạch và xóa",
   "Purge all reading data": "Xóa toàn bộ dữ liệu đọc",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Thao tác này xóa vĩnh viễn tiến độ đọc, ghi chú và dấu trang. Không thể hoàn tác.",
-  "Also erase reading progress, notes, and bookmarks.": "Đồng thời xóa tiến độ đọc, ghi chú và dấu trang."
+  "Also erase reading progress, notes, and bookmarks.": "Đồng thời xóa tiến độ đọc, ghi chú và dấu trang.",
+  "Applies to the Library": "Áp dụng cho Thư viện",
+  "Applies to the Reader": "Áp dụng cho trình đọc"
 }

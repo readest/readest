@@ -1788,5 +1788,7 @@
   "Purge & Delete": "Tisztítás és törlés",
   "Purge all reading data": "Összes olvasási adat törlése",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ez véglegesen törli az olvasási haladást, a jegyzeteket és a könyvjelzőket. A művelet nem vonható vissza.",
-  "Also erase reading progress, notes, and bookmarks.": "Az olvasási haladást, jegyzeteket és könyvjelzőket is törli."
+  "Also erase reading progress, notes, and bookmarks.": "Az olvasási haladást, jegyzeteket és könyvjelzőket is törli.",
+  "Applies to the Library": "A könyvtárra vonatkozik",
+  "Applies to the Reader": "Az olvasónézetre vonatkozik"
 }

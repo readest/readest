@@ -1755,5 +1755,7 @@
   "Purge & Delete": "消去して削除",
   "Purge all reading data": "すべての読書データを消去",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "読書進捗、メモ、ブックマークが完全に消去されます。この操作は元に戻せません。",
-  "Also erase reading progress, notes, and bookmarks.": "読書進捗、メモ、ブックマークも消去します。"
+  "Also erase reading progress, notes, and bookmarks.": "読書進捗、メモ、ブックマークも消去します。",
+  "Applies to the Library": "ライブラリに適用されます",
+  "Applies to the Reader": "リーダーに適用されます"
 }

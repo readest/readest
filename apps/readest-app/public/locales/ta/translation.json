@@ -1788,5 +1788,7 @@
   "Purge & Delete": "அழித்து நீக்கு",
   "Purge all reading data": "அனைத்து வாசிப்புத் தரவையும் அழி",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "இது வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளை நிரந்தரமாக அழிக்கும். இதை மீட்டெடுக்க முடியாது.",
-  "Also erase reading progress, notes, and bookmarks.": "வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளையும் அழிக்கும்."
+  "Also erase reading progress, notes, and bookmarks.": "வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளையும் அழிக்கும்.",
+  "Applies to the Library": "நூலகத்திற்குப் பொருந்தும்",
+  "Applies to the Reader": "வாசிப்புப் பக்கத்திற்குப் பொருந்தும்"
 }

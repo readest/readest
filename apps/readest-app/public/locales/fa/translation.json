@@ -1788,5 +1788,7 @@
   "Purge & Delete": "پاک‌سازی و حذف",
   "Purge all reading data": "پاک‌سازی همه داده‌های مطالعه",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "این کار وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را برای همیشه پاک می‌کند. این عمل قابل بازگشت نیست.",
-  "Also erase reading progress, notes, and bookmarks.": "همچنین وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را پاک می‌کند."
+  "Also erase reading progress, notes, and bookmarks.": "همچنین وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را پاک می‌کند.",
+  "Applies to the Library": "برای کتابخانه اعمال می‌شود",
+  "Applies to the Reader": "برای صفحه مطالعه اعمال می‌شود"
 }

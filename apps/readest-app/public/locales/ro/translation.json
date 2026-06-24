@@ -1821,5 +1821,7 @@
   "Purge & Delete": "Curăță și șterge",
   "Purge all reading data": "Curăță toate datele de citire",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Aceasta șterge definitiv progresul citirii, notele și marcajele. Această acțiune nu poate fi anulată.",
-  "Also erase reading progress, notes, and bookmarks.": "Șterge de asemenea progresul citirii, notele și marcajele."
+  "Also erase reading progress, notes, and bookmarks.": "Șterge de asemenea progresul citirii, notele și marcajele.",
+  "Applies to the Library": "Se aplică bibliotecii",
+  "Applies to the Reader": "Se aplică vizualizării de lectură"
 }

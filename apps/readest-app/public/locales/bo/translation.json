@@ -1755,5 +1755,7 @@
   "Purge & Delete": "གཙང་སེལ་བྱས་ནས་སུབ་པ།",
   "Purge all reading data": "ཀློག་པའི་གཞི་གྲངས་ཡོངས་གཙང་སེལ།",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "འདིས་ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་གཏན་དུ་སུབ་ངེས་ཡིན། ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
-  "Also erase reading progress, notes, and bookmarks.": "ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་ཀྱང་སུབ་པ།"
+  "Also erase reading progress, notes, and bookmarks.": "ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་ཀྱང་སུབ་པ།",
+  "Applies to the Library": "དེབ་མཛོད་ལ་འཇུག་པ།",
+  "Applies to the Reader": "ཀློག་ངོས་ལ་འཇུག་པ།"
 }

@@ -1821,5 +1821,7 @@
   "Purge & Delete": "נקה ומחק",
   "Purge all reading data": "נקה את כל נתוני הקריאה",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "פעולה זו מוחקת לצמיתות את התקדמות הקריאה, ההערות והסימניות. לא ניתן לבטל פעולה זו.",
-  "Also erase reading progress, notes, and bookmarks.": "מוחק גם את התקדמות הקריאה, ההערות והסימניות."
+  "Also erase reading progress, notes, and bookmarks.": "מוחק גם את התקדמות הקריאה, ההערות והסימניות.",
+  "Applies to the Library": "חל על הספרייה",
+  "Applies to the Reader": "חל על מצב הקריאה"
 }

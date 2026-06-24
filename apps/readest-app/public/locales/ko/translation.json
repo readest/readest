@@ -1755,5 +1755,7 @@
   "Purge & Delete": "데이터 지우고 삭제",
   "Purge all reading data": "모든 읽기 데이터 지우기",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "읽기 진행 상황, 메모, 북마크가 영구적으로 지워집니다. 이 작업은 되돌릴 수 없습니다.",
-  "Also erase reading progress, notes, and bookmarks.": "읽기 진행 상황, 메모, 북마크도 함께 지웁니다."
+  "Also erase reading progress, notes, and bookmarks.": "읽기 진행 상황, 메모, 북마크도 함께 지웁니다.",
+  "Applies to the Library": "라이브러리에 적용됩니다",
+  "Applies to the Reader": "리더에 적용됩니다"
 }

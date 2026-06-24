@@ -1755,5 +1755,7 @@
   "Purge & Delete": "ล้างและลบ",
   "Purge all reading data": "ล้างข้อมูลการอ่านทั้งหมด",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "การดำเนินการนี้จะลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กอย่างถาวร ไม่สามารถเลิกทำได้",
-  "Also erase reading progress, notes, and bookmarks.": "ลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กด้วย"
+  "Also erase reading progress, notes, and bookmarks.": "ลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กด้วย",
+  "Applies to the Library": "ใช้กับคลังหนังสือ",
+  "Applies to the Reader": "ใช้กับมุมมองการอ่าน"
 }

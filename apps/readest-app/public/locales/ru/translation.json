@@ -1854,5 +1854,7 @@
   "Purge & Delete": "Очистить и удалить",
   "Purge all reading data": "Очистить все данные чтения",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Это безвозвратно удалит прогресс чтения, заметки и закладки. Это действие нельзя отменить.",
-  "Also erase reading progress, notes, and bookmarks.": "Также удаляет прогресс чтения, заметки и закладки."
+  "Also erase reading progress, notes, and bookmarks.": "Также удаляет прогресс чтения, заметки и закладки.",
+  "Applies to the Library": "Применяется к библиотеке",
+  "Applies to the Reader": "Применяется к режиму чтения"
 }
