@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ini menghapus permanen progres membaca, catatan, dan penanda. Tindakan ini tidak dapat dibatalkan.",
   "Also erase reading progress, notes, and bookmarks.": "Juga menghapus progres membaca, catatan, dan penanda.",
   "Background Image (Library)": "Gambar Latar Belakang (Perpustakaan)",
-  "Background Image (Reader)": "Gambar Latar Belakang (Tampilan Baca)"
+  "Background Image (Reader)": "Gambar Latar Belakang (Tampilan Baca)",
+  "updated metadata for {{n}} book(s)": "metadata diperbarui untuk {{n}} buku",
+  "{{n}} metadata": "{{n}} metadata",
+  "Metadata updated": "Metadata diperbarui"
 }

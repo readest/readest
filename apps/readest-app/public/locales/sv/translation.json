@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Detta raderar permanent läsframsteg, anteckningar och bokmärken. Detta kan inte ångras.",
   "Also erase reading progress, notes, and bookmarks.": "Raderar även läsframsteg, anteckningar och bokmärken.",
   "Background Image (Library)": "Bakgrundsbild (Bibliotek)",
-  "Background Image (Reader)": "Bakgrundsbild (Läsvy)"
+  "Background Image (Reader)": "Bakgrundsbild (Läsvy)",
+  "updated metadata for {{n}} book(s)": "uppdaterade metadata för {{n}} bok/böcker",
+  "{{n}} metadata": "{{n}} metadata",
+  "Metadata updated": "Metadata uppdaterad"
 }

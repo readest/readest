@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "این کار وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را برای همیشه پاک می‌کند. این عمل قابل بازگشت نیست.",
   "Also erase reading progress, notes, and bookmarks.": "همچنین وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را پاک می‌کند.",
   "Background Image (Library)": "تصویر پس‌زمینه (کتابخانه)",
-  "Background Image (Reader)": "تصویر پس‌زمینه (صفحه مطالعه)"
+  "Background Image (Reader)": "تصویر پس‌زمینه (صفحه مطالعه)",
+  "updated metadata for {{n}} book(s)": "متادیتای {{n}} کتاب به‌روزرسانی شد",
+  "{{n}} metadata": "{{n}} متادیتا",
+  "Metadata updated": "متادیتا به‌روزرسانی شد"
 }

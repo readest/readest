@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "මෙය කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ස්ථිරවම මකා දමයි. මෙය අහෝසි කළ නොහැක.",
   "Also erase reading progress, notes, and bookmarks.": "කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ද මකා දමයි.",
   "Background Image (Library)": "පසුබිම් රූපය (පුස්තකාලය)",
-  "Background Image (Reader)": "පසුබිම් රූපය (කියවීමේ දසුන)"
+  "Background Image (Reader)": "පසුබිම් රූපය (කියවීමේ දසුන)",
+  "updated metadata for {{n}} book(s)": "පොත් {{n}}ක මෙටාඩේටා යාවත්කාලීන කරන ලදී",
+  "{{n}} metadata": "{{n}} මෙටාඩේටා",
+  "Metadata updated": "මෙටාඩේටා යාවත්කාලීන කරන ලදී"
 }

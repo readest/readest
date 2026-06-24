@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "읽기 진행 상황, 메모, 북마크가 영구적으로 지워집니다. 이 작업은 되돌릴 수 없습니다.",
   "Also erase reading progress, notes, and bookmarks.": "읽기 진행 상황, 메모, 북마크도 함께 지웁니다.",
   "Background Image (Library)": "배경 이미지 (라이브러리)",
-  "Background Image (Reader)": "배경 이미지 (리더)"
+  "Background Image (Reader)": "배경 이미지 (리더)",
+  "updated metadata for {{n}} book(s)": "{{n}}권의 메타데이터 업데이트됨",
+  "{{n}} metadata": "{{n}} 메타데이터",
+  "Metadata updated": "메타데이터 업데이트됨"
 }

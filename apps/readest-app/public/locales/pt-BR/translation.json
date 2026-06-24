@@ -1824,5 +1824,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Isso apaga permanentemente o progresso de leitura, as notas e os marcadores. Esta ação não pode ser desfeita.",
   "Also erase reading progress, notes, and bookmarks.": "Também apaga o progresso de leitura, as notas e os marcadores.",
   "Background Image (Library)": "Imagem de fundo (Biblioteca)",
-  "Background Image (Reader)": "Imagem de fundo (Vista de leitura)"
+  "Background Image (Reader)": "Imagem de fundo (Vista de leitura)",
+  "updated metadata for {{n}} book(s)": "metadados atualizados de {{n}} livro(s)",
+  "{{n}} metadata": "{{n}} metadados",
+  "Metadata updated": "Metadados atualizados"
 }

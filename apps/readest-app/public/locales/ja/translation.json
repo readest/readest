@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "読書進捗、メモ、ブックマークが完全に消去されます。この操作は元に戻せません。",
   "Also erase reading progress, notes, and bookmarks.": "読書進捗、メモ、ブックマークも消去します。",
   "Background Image (Library)": "背景画像（ライブラリ）",
-  "Background Image (Reader)": "背景画像（リーダー）"
+  "Background Image (Reader)": "背景画像（リーダー）",
+  "updated metadata for {{n}} book(s)": "{{n}} 冊分のメタデータを更新",
+  "{{n}} metadata": "{{n}} 件メタデータ",
+  "Metadata updated": "更新したメタデータ"
 }

@@ -1824,5 +1824,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Cela efface définitivement la progression de lecture, les notes et les signets. Cette action est irréversible.",
   "Also erase reading progress, notes, and bookmarks.": "Efface aussi la progression de lecture, les notes et les signets.",
   "Background Image (Library)": "Image de Fond (Bibliothèque)",
-  "Background Image (Reader)": "Image de Fond (Vue de lecture)"
+  "Background Image (Reader)": "Image de Fond (Vue de lecture)",
+  "updated metadata for {{n}} book(s)": "métadonnées mises à jour pour {{n}} livre(s)",
+  "{{n}} metadata": "{{n}} métadonnées",
+  "Metadata updated": "Métadonnées mises à jour"
 }

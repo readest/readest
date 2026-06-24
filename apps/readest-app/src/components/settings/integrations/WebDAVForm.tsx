@@ -410,6 +410,20 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
           // library that's already persisted on disk.
           setLibrary(newLibrary);
         },
+        updateBookMetadata: async (book) => {
+          if (!appService) return;
+          // The cover bytes were just refreshed via saveBookCover, so
+          // regenerate the device-local blob URL the bookshelf renders.
+          try {
+            book.coverImageUrl = await appService.generateCoverImageUrl(book);
+          } catch (e) {
+            console.warn('WD library sync: cover URL generation failed', book.hash, e);
+          }
+          book.syncedAt = Date.now();
+          // updateBook persists via saveLibraryBooks and refreshes the store,
+          // so the new title / author / cover show up without a reload.
+          await useLibraryStore.getState().updateBook(envConfig, book);
+        },
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
           updateProgress(
@@ -430,6 +444,9 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       }
       if (result.configsDownloaded > 0) {
         parts.push(_('pulled progress for {{n}} book(s)', { n: result.configsDownloaded }));
+      }
+      if (result.metadataUpdated > 0) {
+        parts.push(_('updated metadata for {{n}} book(s)', { n: result.metadataUpdated }));
       }
       if (result.configsUploaded > 0) {
         parts.push(_('pushed {{n}} config(s)', { n: result.configsUploaded }));

@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "இது வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளை நிரந்தரமாக அழிக்கும். இதை மீட்டெடுக்க முடியாது.",
   "Also erase reading progress, notes, and bookmarks.": "வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளையும் அழிக்கும்.",
   "Background Image (Library)": "பின்னணி படம் (நூலகம்)",
-  "Background Image (Reader)": "பின்னணி படம் (வாசிப்புப் பக்கம்)"
+  "Background Image (Reader)": "பின்னணி படம் (வாசிப்புப் பக்கம்)",
+  "updated metadata for {{n}} book(s)": "{{n}} புத்தகத்தின் மெட்டாடேட்டா புதுப்பிக்கப்பட்டது",
+  "{{n}} metadata": "{{n}} மெட்டாடேட்டா",
+  "Metadata updated": "மெட்டாடேட்டா புதுப்பிக்கப்பட்டது"
 }

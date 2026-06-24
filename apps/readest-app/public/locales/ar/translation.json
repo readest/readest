@@ -1923,5 +1923,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "يؤدي هذا إلى مسح تقدم القراءة والملاحظات والإشارات المرجعية نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
   "Also erase reading progress, notes, and bookmarks.": "يمسح أيضًا تقدم القراءة والملاحظات والإشارات المرجعية.",
   "Background Image (Library)": "صورة الخلفية (المكتبة)",
-  "Background Image (Reader)": "صورة الخلفية (واجهة القراءة)"
+  "Background Image (Reader)": "صورة الخلفية (واجهة القراءة)",
+  "updated metadata for {{n}} book(s)": "تم تحديث البيانات الوصفية لـ {{n}} كتاب",
+  "{{n}} metadata": "{{n}} بيانات وصفية",
+  "Metadata updated": "تم تحديث البيانات الوصفية"
 }

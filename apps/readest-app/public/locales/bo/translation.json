@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "འདིས་ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་གཏན་དུ་སུབ་ངེས་ཡིན། ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Also erase reading progress, notes, and bookmarks.": "ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་ཀྱང་སུབ་པ།",
   "Background Image (Library)": "གནས་སྟངས་ཀྱི་རི་མོ། (དེབ་མཛོད།)",
-  "Background Image (Reader)": "གནས་སྟངས་ཀྱི་རི་མོ། (ཀློག་ངོས།)"
+  "Background Image (Reader)": "གནས་སྟངས་ཀྱི་རི་མོ། (ཀློག་ངོས།)",
+  "updated metadata for {{n}} book(s)": "དཔེ་ཆ་{{n}}་ཡི་གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།",
+  "{{n}} metadata": "{{n}} གནད་སྨིན་གོ་དོན།",
+  "Metadata updated": "གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།"
 }

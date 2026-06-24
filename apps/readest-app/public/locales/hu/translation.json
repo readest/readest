@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ez véglegesen törli az olvasási haladást, a jegyzeteket és a könyvjelzőket. A művelet nem vonható vissza.",
   "Also erase reading progress, notes, and bookmarks.": "Az olvasási haladást, jegyzeteket és könyvjelzőket is törli.",
   "Background Image (Library)": "Háttérkép (Könyvtár)",
-  "Background Image (Reader)": "Háttérkép (Olvasónézet)"
+  "Background Image (Reader)": "Háttérkép (Olvasónézet)",
+  "updated metadata for {{n}} book(s)": "{{n}} könyv metaadatai frissítve",
+  "{{n}} metadata": "{{n}} metaadat",
+  "Metadata updated": "Metaadatok frissítve"
 }

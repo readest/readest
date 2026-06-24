@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Αυτό διαγράφει οριστικά την πρόοδο ανάγνωσης, τις σημειώσεις και τους σελιδοδείκτες. Δεν είναι δυνατή η αναίρεση.",
   "Also erase reading progress, notes, and bookmarks.": "Διαγράφει επίσης την πρόοδο ανάγνωσης, τις σημειώσεις και τους σελιδοδείκτες.",
   "Background Image (Library)": "Εικόνα φόντου (Βιβλιοθήκη)",
-  "Background Image (Reader)": "Εικόνα φόντου (Προβολή ανάγνωσης)"
+  "Background Image (Reader)": "Εικόνα φόντου (Προβολή ανάγνωσης)",
+  "updated metadata for {{n}} book(s)": "ενημερώθηκαν τα μεταδεδομένα για {{n}} βιβλίο/α",
+  "{{n}} metadata": "{{n}} μεταδεδομένα",
+  "Metadata updated": "Ενημερωμένα μεταδεδομένα"
 }

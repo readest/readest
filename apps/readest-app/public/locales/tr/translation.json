@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu, okuma ilerlemesini, notları ve yer işaretlerini kalıcı olarak siler. Bu işlem geri alınamaz.",
   "Also erase reading progress, notes, and bookmarks.": "Okuma ilerlemesi, notlar ve yer işaretlerini de siler.",
   "Background Image (Library)": "Arka Plan Görüntüsü (Kütüphane)",
-  "Background Image (Reader)": "Arka Plan Görüntüsü (Okuma Görünümü)"
+  "Background Image (Reader)": "Arka Plan Görüntüsü (Okuma Görünümü)",
+  "updated metadata for {{n}} book(s)": "{{n}} kitabın meta verileri güncellendi",
+  "{{n}} metadata": "{{n}} meta veri",
+  "Metadata updated": "Meta veriler güncellendi"
 }

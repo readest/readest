@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Thao tác này xóa vĩnh viễn tiến độ đọc, ghi chú và dấu trang. Không thể hoàn tác.",
   "Also erase reading progress, notes, and bookmarks.": "Đồng thời xóa tiến độ đọc, ghi chú và dấu trang.",
   "Background Image (Library)": "Ảnh nền (Thư viện)",
-  "Background Image (Reader)": "Ảnh nền (Trình đọc)"
+  "Background Image (Reader)": "Ảnh nền (Trình đọc)",
+  "updated metadata for {{n}} book(s)": "đã cập nhật siêu dữ liệu cho {{n}} sách",
+  "{{n}} metadata": "{{n}} siêu dữ liệu",
+  "Metadata updated": "Đã cập nhật siêu dữ liệu"
 }

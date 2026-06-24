@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu oʻqish jarayoni, eslatmalar va xatchoʻplarni butunlay oʻchiradi. Buni qaytarib boʻlmaydi.",
   "Also erase reading progress, notes, and bookmarks.": "Shuningdek, oʻqish jarayoni, eslatmalar va xatchoʻplarni ham oʻchiradi.",
   "Background Image (Library)": "Fon rasmi (Kutubxona)",
-  "Background Image (Reader)": "Fon rasmi (Oʻqish koʻrinishi)"
+  "Background Image (Reader)": "Fon rasmi (Oʻqish koʻrinishi)",
+  "updated metadata for {{n}} book(s)": "{{n}} ta kitob metamaʼlumotlari yangilandi",
+  "{{n}} metadata": "{{n}} metamaʼlumot",
+  "Metadata updated": "Metamaʼlumotlar yangilandi"
 }

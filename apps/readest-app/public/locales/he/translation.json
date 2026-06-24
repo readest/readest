@@ -1824,5 +1824,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "פעולה זו מוחקת לצמיתות את התקדמות הקריאה, ההערות והסימניות. לא ניתן לבטל פעולה זו.",
   "Also erase reading progress, notes, and bookmarks.": "מוחק גם את התקדמות הקריאה, ההערות והסימניות.",
   "Background Image (Library)": "תמונת רקע (ספרייה)",
-  "Background Image (Reader)": "תמונת רקע (מצב קריאה)"
+  "Background Image (Reader)": "תמונת רקע (מצב קריאה)",
+  "updated metadata for {{n}} book(s)": "המטא-נתונים עודכנו עבור {{n}} ספרים",
+  "{{n}} metadata": "{{n}} מטא-נתונים",
+  "Metadata updated": "המטא-נתונים עודכנו"
 }

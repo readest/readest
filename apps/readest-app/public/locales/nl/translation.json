@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Hiermee worden leesvoortgang, notities en bladwijzers permanent gewist. Dit kan niet ongedaan worden gemaakt.",
   "Also erase reading progress, notes, and bookmarks.": "Wist ook leesvoortgang, notities en bladwijzers.",
   "Background Image (Library)": "Achtergrondafbeelding (Bibliotheek)",
-  "Background Image (Reader)": "Achtergrondafbeelding (Leesweergave)"
+  "Background Image (Reader)": "Achtergrondafbeelding (Leesweergave)",
+  "updated metadata for {{n}} book(s)": "metadata bijgewerkt voor {{n}} boek(en)",
+  "{{n}} metadata": "{{n}} metadata",
+  "Metadata updated": "Metadata bijgewerkt"
 }

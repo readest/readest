@@ -1857,5 +1857,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Це назавжди видалить проґрес читання, нотатки та закладки. Цю дію не можна скасувати.",
   "Also erase reading progress, notes, and bookmarks.": "Також видаляє проґрес читання, нотатки та закладки.",
   "Background Image (Library)": "Фонове зображення (Бібліотека)",
-  "Background Image (Reader)": "Фонове зображення (Режим читання)"
+  "Background Image (Reader)": "Фонове зображення (Режим читання)",
+  "updated metadata for {{n}} book(s)": "оновлено метадані для {{n}} книг",
+  "{{n}} metadata": "{{n}} метадані",
+  "Metadata updated": "Метадані оновлено"
 }

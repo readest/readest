@@ -1791,5 +1791,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "यह पढ़ने की प्रगति, नोट्स और बुकमार्क को स्थायी रूप से मिटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
   "Also erase reading progress, notes, and bookmarks.": "पढ़ने की प्रगति, नोट्स और बुकमार्क भी मिटा देता है।",
   "Background Image (Library)": "पृष्ठभूमि छवि (लाइब्रेरी)",
-  "Background Image (Reader)": "पृष्ठभूमि छवि (रीडर)"
+  "Background Image (Reader)": "पृष्ठभूमि छवि (रीडर)",
+  "updated metadata for {{n}} book(s)": "{{n}} पुस्तक(ों) के मेटाडेटा अपडेट किए गए",
+  "{{n}} metadata": "{{n}} मेटाडेटा",
+  "Metadata updated": "मेटाडेटा अपडेट किया गया"
 }

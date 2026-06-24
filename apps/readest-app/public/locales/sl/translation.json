@@ -1857,5 +1857,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "To trajno izbriše napredek branja, opombe in zaznamke. Tega ni mogoče razveljaviti.",
   "Also erase reading progress, notes, and bookmarks.": "Izbriše tudi napredek branja, opombe in zaznamke.",
   "Background Image (Library)": "Slikovno ozadje (Knjižnica)",
-  "Background Image (Reader)": "Slikovno ozadje (Bralni pogled)"
+  "Background Image (Reader)": "Slikovno ozadje (Bralni pogled)",
+  "updated metadata for {{n}} book(s)": "posodobljeni metapodatki za {{n}} knjig",
+  "{{n}} metadata": "{{n}} metapodatki",
+  "Metadata updated": "Metapodatki posodobljeni"
 }

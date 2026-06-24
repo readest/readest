@@ -1857,5 +1857,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Spowoduje to trwałe usunięcie postępu czytania, notatek i zakładek. Tej operacji nie można cofnąć.",
   "Also erase reading progress, notes, and bookmarks.": "Usuwa również postęp czytania, notatki i zakładki.",
   "Background Image (Library)": "Obraz tła (Biblioteka)",
-  "Background Image (Reader)": "Obraz tła (Widok czytania)"
+  "Background Image (Reader)": "Obraz tła (Widok czytania)",
+  "updated metadata for {{n}} book(s)": "zaktualizowano metadane dla {{n}} książek",
+  "{{n}} metadata": "{{n}} metadane",
+  "Metadata updated": "Zaktualizowane metadane"
 }

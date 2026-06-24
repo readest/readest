@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "這將永久清除閱讀進度、筆記和書籤，且無法復原。",
   "Also erase reading progress, notes, and bookmarks.": "同時清除閱讀進度、筆記和書籤。",
   "Background Image (Library)": "背景圖片（書庫）",
-  "Background Image (Reader)": "背景圖片（閱讀介面）"
+  "Background Image (Reader)": "背景圖片（閱讀介面）",
+  "updated metadata for {{n}} book(s)": "已更新 {{n}} 本書的中繼資料",
+  "{{n}} metadata": "{{n}} 中繼資料",
+  "Metadata updated": "已更新中繼資料"
 }

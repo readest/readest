@@ -140,6 +140,28 @@ const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] => {
   return Array.from(byId.values());
 };
 
+/**
+ * Overlay the user-facing metadata of `remote` onto `local`, preserving every
+ * device-local / file-system field: `filePath`, `sourceTitle` (which names the
+ * on-disk file), `coverImageUrl` (a device-local blob URL the caller
+ * regenerates), reading progress, reading status, group membership, `hash`,
+ * `format`, `createdAt`, etc.
+ *
+ * Only the fields a metadata edit actually changes travel — this list mirrors
+ * `getBookWithUpdatedMetadata` in `utils/book.ts`, which is the local side of
+ * the same operation. The cover image is replicated separately as cover.png
+ * bytes (see the reconciliation pass in `syncLibrary`), so it is intentionally
+ * absent here.
+ */
+const mergeRemoteBookMetadata = (local: Book, remote: Book): Book => ({
+  ...local,
+  title: remote.title,
+  author: remote.author,
+  metadata: remote.metadata ?? local.metadata,
+  primaryLanguage: remote.primaryLanguage ?? local.primaryLanguage,
+  updatedAt: remote.updatedAt,
+});
+
 export interface PullResult {
   /** True when the remote had a config and we merged something into local. */
   applied: boolean;
@@ -572,6 +594,11 @@ export interface SyncLibraryResult {
   filesAlreadyInSync: number;
   coversUploaded: number;
   booksDownloaded: number;
+  /**
+   * Number of already-local books whose metadata (title / author / cover)
+   * was refreshed from a newer copy in the shared library.json (#4756).
+   */
+  metadataUpdated: number;
   failures: number;
   /**
    * Per-book failure breakdown for the diagnostic log surfaced in the
@@ -641,6 +668,15 @@ export interface SyncLibraryOptions {
    */
   saveBookConfig?: (book: Book, config: BookConfig) => Promise<void>;
   addBookToLibrary?: (book: Book) => Promise<void>;
+  /**
+   * Persist refreshed metadata for a book that already exists in the local
+   * library. Called once per book whose copy in the shared library.json is
+   * strictly newer than the local one (last-writer-wins on `book.updatedAt`),
+   * so a peer's title / author / cover edit propagates to devices that
+   * already hold the book. Distinct from `addBookToLibrary`, which only
+   * inserts brand-new rows and no-ops on an existing hash.
+   */
+  updateBookMetadata?: (book: Book) => Promise<void>;
   /** Stable per-device id; written into every config envelope. */
   deviceId: string;
   /**
@@ -721,6 +757,7 @@ export const syncLibrary = async (
     filesAlreadyInSync: 0,
     coversUploaded: 0,
     booksDownloaded: 0,
+    metadataUpdated: 0,
     failures: 0,
     failedBooks: [],
   };
@@ -750,6 +787,45 @@ export const syncLibrary = async (
   // existed, or by an older buggy build). We always resolve the path by
   // listing the hash dir.
   const explicitRemotePaths = new Map<string, string>();
+
+  // Metadata reconciliation for books present BOTH locally and in the shared
+  // library.json (#4756). Last-writer-wins on `book.updatedAt`: when a peer's
+  // indexed copy is strictly newer, pull its title / author / cover down to
+  // this device. Without this, a device that already holds the book never
+  // learns about a peer's metadata edit, AND the index re-push at the end of
+  // syncLibrary would clobber the peer's newer metadata with this device's
+  // stale copy (allBooksMap still pointed at the local book). Updating
+  // allBooksMap with the merged copy fixes both directions at once.
+  if (canPull && remoteIndex && remoteIndex.books && options.updateBookMetadata) {
+    for (const rb of remoteIndex.books) {
+      if (rb.deletedAt) continue;
+      const local = allBooksMap.get(rb.hash);
+      if (!local || local.deletedAt) continue;
+      if ((rb.updatedAt ?? 0) <= (local.updatedAt ?? 0)) continue;
+      const merged = mergeRemoteBookMetadata(local, rb);
+      // Re-pull the cover so a changed cover travels with the metadata. The
+      // cover is best-effort: a missing remote cover.png simply leaves the
+      // existing local cover in place. The subsequent push-side pushBookCover
+      // HEAD/size short-circuit then matches (local now equals remote), so we
+      // never bounce the freshly-pulled cover back up.
+      if (options.saveBookCover) {
+        try {
+          const coverBytes = await pullBookCover(settings, rb.hash);
+          if (coverBytes) await options.saveBookCover(merged, coverBytes);
+        } catch (e) {
+          console.warn('WD library sync: metadata cover pull failed', rb.hash, e);
+        }
+      }
+      try {
+        await options.updateBookMetadata(merged);
+        // Keep the merged metadata authoritative for the index re-push below.
+        allBooksMap.set(rb.hash, merged);
+        result.metadataUpdated += 1;
+      } catch (e) {
+        console.warn('WD library sync: metadata update failed', rb.hash, e);
+      }
+    }
+  }
 
   if (canPull) {
     const client = toClientConfig(settings);

@@ -1824,5 +1824,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Aceasta șterge definitiv progresul citirii, notele și marcajele. Această acțiune nu poate fi anulată.",
   "Also erase reading progress, notes, and bookmarks.": "Șterge de asemenea progresul citirii, notele și marcajele.",
   "Background Image (Library)": "Imagine de fundal (Bibliotecă)",
-  "Background Image (Reader)": "Imagine de fundal (Vizualizare de lectură)"
+  "Background Image (Reader)": "Imagine de fundal (Vizualizare de lectură)",
+  "updated metadata for {{n}} book(s)": "metadate actualizate pentru {{n}} carte/cărți",
+  "{{n}} metadata": "{{n}} metadate",
+  "Metadata updated": "Metadate actualizate"
 }

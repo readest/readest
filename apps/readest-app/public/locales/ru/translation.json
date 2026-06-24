@@ -1857,5 +1857,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Это безвозвратно удалит прогресс чтения, заметки и закладки. Это действие нельзя отменить.",
   "Also erase reading progress, notes, and bookmarks.": "Также удаляет прогресс чтения, заметки и закладки.",
   "Background Image (Library)": "Фоновое изображение (Библиотека)",
-  "Background Image (Reader)": "Фоновое изображение (Режим чтения)"
+  "Background Image (Reader)": "Фоновое изображение (Режим чтения)",
+  "updated metadata for {{n}} book(s)": "обновлены метаданные для {{n}} книг",
+  "{{n}} metadata": "{{n}} метаданные",
+  "Metadata updated": "Метаданные обновлены"
 }

@@ -1758,5 +1758,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "การดำเนินการนี้จะลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กอย่างถาวร ไม่สามารถเลิกทำได้",
   "Also erase reading progress, notes, and bookmarks.": "ลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กด้วย",
   "Background Image (Library)": "ภาพพื้นหลัง (คลังหนังสือ)",
-  "Background Image (Reader)": "ภาพพื้นหลัง (มุมมองการอ่าน)"
+  "Background Image (Reader)": "ภาพพื้นหลัง (มุมมองการอ่าน)",
+  "updated metadata for {{n}} book(s)": "อัปเดตเมทาดาตาสำหรับ {{n}} เล่ม",
+  "{{n}} metadata": "{{n}} เมทาดาตา",
+  "Metadata updated": "อัปเดตเมทาดาตาแล้ว"
 }

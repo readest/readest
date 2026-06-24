@@ -1824,5 +1824,8 @@
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Questa operazione cancella definitivamente il progresso di lettura, le note e i segnalibri. Non può essere annullata.",
   "Also erase reading progress, notes, and bookmarks.": "Cancella anche il progresso di lettura, le note e i segnalibri.",
   "Background Image (Library)": "Immagine di sfondo (Libreria)",
-  "Background Image (Reader)": "Immagine di sfondo (Vista di lettura)"
+  "Background Image (Reader)": "Immagine di sfondo (Vista di lettura)",
+  "updated metadata for {{n}} book(s)": "metadati aggiornati per {{n}} libro/i",
+  "{{n}} metadata": "{{n}} metadati",
+  "Metadata updated": "Metadati aggiornati"
 }
