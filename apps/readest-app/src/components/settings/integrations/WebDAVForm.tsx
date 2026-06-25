@@ -206,21 +206,23 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   // enabled — anyone bothering to set up cloud sync wants those. Only
   // book files stay opt-in because they're bandwidth/storage heavy.
   const handleToggleSyncBooks = () => persistWebdav({ syncBooks: !(stored?.syncBooks ?? false) });
+  const handleToggleFullSync = () => persistWebdav({ fullSync: !(stored?.fullSync ?? false) });
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     await persistWebdav({ strategy: e.target.value as typeof stored.strategy });
   };
 
   /**
-   * Manual "Sync now" — push every book in the local library up to the
-   * remote in a single sequential pass. We don't pull here; the per-
-   * book Reader hook handles incoming changes when the user opens a
-   * book.
+   * Manual "Sync now" — reconcile the local library with the remote over a
+   * bounded-concurrency pool. By default this is incremental: only books whose
+   * local copy differs from the shared library.json index are processed
+   * (`book.updatedAt` is the per-book change marker). The "Full Sync" toggle
+   * re-checks every book. The engine pulls peers' changes and pushes ours; the
+   * per-book Reader hook still handles live changes as the user reads.
    *
-   * Why sequential: shared WebDAV servers (NextCloud, Synology, …) are
-   * not happy with parallel PUTs from one user, and a steady linear
-   * walk gives us a usable progress indicator. The whole thing runs
-   * off-thread relative to the UI by virtue of being async — we just
-   * surface a status string and disable the button.
+   * Concurrency is capped (engine default 4) so shared WebDAV servers
+   * (NextCloud, Synology, …) aren't hammered while still hiding per-request
+   * latency. The run is async relative to the UI — we surface a status string
+   * and disable the button.
    */
   const handleSyncNow = async () => {
     // Re-entrancy gate must read the live store, not the closure: a
@@ -270,6 +272,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       const result = await engine.syncLibrary(eligibleBooks, {
         strategy: stored.strategy === 'prompt' ? 'silent' : stored.strategy,
         syncBooks: stored.syncBooks ?? false,
+        fullSync: stored.fullSync ?? false,
         deviceId: deviceId as string,
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
@@ -368,6 +371,12 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
               description={_('Uploads book files to your other devices.')}
               checked={stored.syncBooks ?? false}
               onChange={handleToggleSyncBooks}
+            />
+            <SettingsSwitchRow
+              label={_('Full Sync')}
+              description={_('Re-check every book instead of only changed ones.')}
+              checked={stored.fullSync ?? false}
+              onChange={handleToggleFullSync}
             />
             <SettingsRow label={_('Sync Strategy')}>
               <SettingsSelect

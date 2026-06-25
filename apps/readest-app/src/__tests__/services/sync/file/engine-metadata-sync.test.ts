@@ -154,7 +154,10 @@ describe('FileSyncEngine metadata reconciliation (#4756)', () => {
 
 describe('FileSyncEngine config merge before push (Sync now must not blind-overwrite)', () => {
   test('unions remote booknotes into the pushed config instead of clobbering them', async () => {
-    const local = makeLocalBook({ updatedAt: 100 });
+    // Local book is newer than the index, so incremental includes it in the
+    // push set (the only case where merge-before-push matters); the metadata
+    // pass stays a no-op since the index copy isn't newer.
+    const local = makeLocalBook({ updatedAt: 200 });
     const capture: { config?: RemoteBookConfig | null } = {};
     const provider = makeProvider(
       makeRemoteIndex(makeLocalBook({ updatedAt: 100 }), 100),
@@ -177,7 +180,10 @@ describe('FileSyncEngine config merge before push (Sync now must not blind-overw
   });
 
   test('does not regress newer remote progress with an older local push', async () => {
-    const local = makeLocalBook({ updatedAt: 100 });
+    // Local newer than the index -> pushed under incremental. The remote
+    // config is nonetheless ahead on progress, so the pull-merge must carry the
+    // remote page, not regress it.
+    const local = makeLocalBook({ updatedAt: 200 });
     const capture: { config?: RemoteBookConfig | null } = {};
     const provider = makeProvider(
       makeRemoteIndex(makeLocalBook({ updatedAt: 100 }), 100),

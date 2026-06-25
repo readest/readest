@@ -117,6 +117,10 @@ export interface WebDAVSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  // When true, "Sync now" re-checks every book instead of only those whose
+  // local copy differs from the shared library.json index (the default
+  // incremental walk). An escape hatch for drift or a first full sync.
+  fullSync?: boolean;
   // Conflict policy — same vocabulary as KOSync so users only learn one.
   strategy?: KOSyncStrategy;
   // Stable per-device id (uuidv4); written into library.json so we can tell

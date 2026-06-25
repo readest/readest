@@ -4,6 +4,7 @@ import type { Book } from '@/types/book';
 import { FileSyncEngine } from '@/services/sync/file/engine';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import type { LocalStore } from '@/services/sync/file/localStore';
+import type { RemoteBookConfig, RemoteLibraryIndex } from '@/services/sync/file/wire';
 
 /**
  * Coverage for the engine paths the behavior-preservation gate
@@ -159,5 +160,183 @@ describe('FileSyncEngine.syncLibrary — receive strategy is pull-only', () => {
     expect(captured.writes).toHaveLength(0);
     expect(res.configsUploaded).toBe(0);
     expect(res.filesUploaded).toBe(0);
+  });
+});
+
+const makeIndex = (books: Book[]): RemoteLibraryIndex => ({
+  schemaVersion: 1,
+  updatedAt: 1,
+  books,
+});
+
+const makeEnvelope = (over: Partial<RemoteBookConfig> = {}): RemoteBookConfig => ({
+  schemaVersion: 1,
+  bookHash: 'h1',
+  config: { updatedAt: 100 },
+  booknotes: [],
+  writerDeviceId: 'peer',
+  writerVersion: 'readest-webdav-1',
+  updatedAt: 100,
+  ...over,
+});
+
+const configWrites = (captured: Captured) =>
+  captured.writes.filter((w) => w.path.endsWith('config.json'));
+
+describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
+  test('skips a book whose updatedAt matches the remote index', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      captured,
+    });
+    const store = fakeStore({ loadConfig: async () => ({ updatedAt: 1, booknotes: [] }) });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+      },
+    );
+
+    expect(configWrites(captured)).toHaveLength(0);
+    expect(res.configsUploaded).toBe(0);
+    // The index itself is still re-pushed.
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(true);
+  });
+
+  test('pushes a book that is newer locally than the index', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      captured,
+    });
+    const store = fakeStore({ loadConfig: async () => ({ updatedAt: 1, booknotes: [] }) });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+      },
+    );
+
+    expect(res.configsUploaded).toBe(1);
+    expect(configWrites(captured)).toHaveLength(1);
+  });
+
+  test('pulls config + metadata for a book newer in the index', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) => {
+        if (p.endsWith('library.json'))
+          return JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 200, title: 'Remote' })]));
+        if (p.endsWith('config.json'))
+          return JSON.stringify(makeEnvelope({ config: { updatedAt: 200, progress: [9, 10] } }));
+        return null;
+      },
+      captured,
+    });
+    const saveBookConfig = vi.fn(async () => {});
+    const updateBookMetadata = vi.fn(async () => {});
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      saveBookConfig,
+      updateBookMetadata,
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+      },
+    );
+
+    expect(res.metadataUpdated).toBe(1);
+    expect(res.configsDownloaded).toBe(1);
+    expect(saveBookConfig).toHaveBeenCalledTimes(1);
+    // Remote is newer, so the book is NOT in the push set — no config.json PUT.
+    expect(configWrites(captured)).toHaveLength(0);
+  });
+
+  test('fullSync re-pushes an in-sync book', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      captured,
+    });
+    const store = fakeStore({ loadConfig: async () => ({ updatedAt: 1, booknotes: [] }) });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+        fullSync: true,
+      },
+    );
+
+    expect(res.configsUploaded).toBe(1);
+    expect(configWrites(captured)).toHaveLength(1);
+  });
+});
+
+describe('FileSyncEngine.syncLibrary — bounded concurrency', () => {
+  const runWithConcurrency = async (concurrency: number | undefined, bookCount: number) => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const loadConfig = async () => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight -= 1;
+      return { updatedAt: 1, booknotes: [] };
+    };
+    const books = Array.from({ length: bookCount }, (_, i) =>
+      makeBook(`h${i}`, { updatedAt: 100 }),
+    );
+    // No remote index -> every book is local-only -> all pushed.
+    const provider = fakeProvider({ captured: { writes: [] } });
+    const store = fakeStore({ loadConfig });
+    const res = await new FileSyncEngine(provider, store).syncLibrary(books, {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'd',
+      concurrency,
+    });
+    return { res, maxInFlight };
+  };
+
+  test('caps in-flight work at the configured concurrency', async () => {
+    const { res, maxInFlight } = await runWithConcurrency(3, 8);
+    expect(res.configsUploaded).toBe(8);
+    expect(maxInFlight).toBe(3);
+  });
+
+  test('defaults to 4 when concurrency is omitted', async () => {
+    const { res, maxInFlight } = await runWithConcurrency(undefined, 8);
+    expect(res.configsUploaded).toBe(8);
+    expect(maxInFlight).toBe(4);
+  });
+
+  test('concurrency 1 runs strictly sequentially', async () => {
+    const { res, maxInFlight } = await runWithConcurrency(1, 4);
+    expect(res.configsUploaded).toBe(4);
+    expect(maxInFlight).toBe(1);
   });
 });
