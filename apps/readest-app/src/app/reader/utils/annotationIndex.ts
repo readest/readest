@@ -70,6 +70,10 @@ export function selectLocationAnnotations(
   const candidates = index.bySection.get(sectionKey) ?? [];
   const matchesLocation = createCfiLocationMatcher(location);
   for (const item of candidates) {
+    // Re-check `deletedAt` at read time: the index is memoized, so a highlight
+    // deleted in place after the index was built still sits in this bucket. Re-
+    // drawing it here would orphan its overlay (visible until reopen) — #4773.
+    if (item.deletedAt) continue;
     if (!matchesLocation(item.cfi)) continue;
     if (item.style) annotations.push(item);
     if (item.note && item.note.trim().length > 0) notes.push(item);

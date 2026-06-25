@@ -985,6 +985,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       // covered by `onCreateOverlay`. Using the pre-built `globals`
       // array avoids re-walking booknotes per page turn.
       for (const annotation of annotationIndex.globals) {
+        // Same stale-index guard as selectLocationAnnotations: a global deleted
+        // in place after the memoized index was built must not be re-fanned out
+        // across sections, which would orphan its overlays (#4773).
+        if (annotation.deletedAt) continue;
         if (view) expandAllRenderedSections(view, annotation);
       }
     } catch (e) {
