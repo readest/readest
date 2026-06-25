@@ -471,6 +471,7 @@
   "Sync Strategy": "Стратегія синхронізації",
   "Ask on conflict": "Запитувати при конфлікті",
   "Always use latest": "Завжди використовувати найновішу",
+  "Send and receive": "Надсилати й отримувати",
   "Send changes only": "Відправити тільки зміни",
   "Receive changes only": "Отримати тільки зміни",
   "Checksum Method": "Метод контролю суми",
@@ -1661,8 +1662,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Парольну фразу синхронізації забуто. Усі зашифровані поля очищено.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Лише ручні синхронізації та очищення. Автоматичні синхронізації під час читання тут не записуються.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Видалити {{n}} книг із сервера WebDAV?\n\nЦе видалить лише віддалені файли; ваша локальна бібліотека не зміниться. Видалення неможливо скасувати. Дані на сервері зникнуть назавжди.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Впливає лише на вивантаження файлів книг. Прогрес читання й завантаження завжди синхронізуються.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Вивантажує файли книг на ваші інші пристрої.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Неправильна парольна фраза синхронізації. Не вдалося розшифрувати синхронізовані облікові дані.",
   "Email books straight to your library": "Надсилайте книги електронною поштою прямо в бібліотеку",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Пересилайте вкладення та статті на свою приватну адресу Readest. Доступно в планах Plus, Pro і Lifetime.",
@@ -1855,6 +1856,6 @@
   "Purge all reading data": "Очистити всі дані читання",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Це назавжди видалить проґрес читання, нотатки та закладки. Цю дію не можна скасувати.",
   "Also erase reading progress, notes, and bookmarks.": "Також видаляє проґрес читання, нотатки та закладки.",
-  "Applies to the Library": "Застосовується до бібліотеки",
-  "Applies to the Reader": "Застосовується до режиму читання"
+  "Background Image (Library)": "Фонове зображення (Бібліотека)",
+  "Background Image (Reader)": "Фонове зображення (Режим читання)"
 }

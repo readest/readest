@@ -459,6 +459,7 @@
   "Sync Strategy": "Chiến lược đồng bộ",
   "Ask on conflict": "Hỏi khi có xung đột",
   "Always use latest": "Luôn sử dụng phiên bản mới nhất",
+  "Send and receive": "Gửi và nhận",
   "Send changes only": "Chỉ gửi thay đổi",
   "Receive changes only": "Chỉ nhận thay đổi",
   "Checksum Method": "Phương pháp kiểm tra",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Đã quên cụm mật khẩu đồng bộ. Tất cả các trường được mã hóa đã bị xóa.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Chỉ đồng bộ thủ công và dọn dẹp. Các lần đồng bộ tự động khi đọc không được ghi tại đây.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Xóa {{n}} sách khỏi máy chủ WebDAV?\n\nThao tác này chỉ xóa các tệp từ xa; thư viện cục bộ của bạn không bị ảnh hưởng. Không thể hoàn tác. Dữ liệu trên máy chủ sẽ mất vĩnh viễn.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Chỉ ảnh hưởng đến việc tải lên tệp sách. Tiến độ đọc và tải xuống luôn được đồng bộ.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Tải lên tệp sách đến các thiết bị khác của bạn.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Cụm mật khẩu đồng bộ không đúng. Không thể giải mã thông tin xác thực đã đồng bộ.",
   "Email books straight to your library": "Gửi sách qua email thẳng đến thư viện của bạn",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Chuyển tiếp tệp đính kèm và bài viết đến địa chỉ Readest riêng của bạn. Có sẵn trong các gói Plus, Pro và Lifetime.",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "Xóa toàn bộ dữ liệu đọc",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Thao tác này xóa vĩnh viễn tiến độ đọc, ghi chú và dấu trang. Không thể hoàn tác.",
   "Also erase reading progress, notes, and bookmarks.": "Đồng thời xóa tiến độ đọc, ghi chú và dấu trang.",
-  "Applies to the Library": "Áp dụng cho Thư viện",
-  "Applies to the Reader": "Áp dụng cho trình đọc"
+  "Background Image (Library)": "Ảnh nền (Thư viện)",
+  "Background Image (Reader)": "Ảnh nền (Trình đọc)"
 }

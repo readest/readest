@@ -459,6 +459,7 @@
   "Sync Strategy": "Strategi Sinkronisasi",
   "Ask on conflict": "Tanya saat terjadi konflik",
   "Always use latest": "Selalu gunakan yang terbaru",
+  "Send and receive": "Kirim dan terima",
   "Send changes only": "Kirim perubahan saja",
   "Receive changes only": "Terima perubahan saja",
   "Checksum Method": "Metode Checksum",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Frasa sandi sinkronisasi dilupakan. Semua bidang terenkripsi dihapus.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Hanya sinkronisasi manual dan pembersihan. Sinkronisasi otomatis saat membaca tidak dicatat di sini.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Hapus {{n}} buku dari server WebDAV?\n\nIni hanya menghapus file jarak jauh; perpustakaan lokal Anda tidak terpengaruh. Penghapusan tidak dapat dibatalkan. Data di server akan hilang permanen.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Hanya memengaruhi unggahan file buku. Kemajuan baca dan unduhan selalu disinkronkan.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Mengunggah file buku ke perangkat Anda yang lain.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Frasa sandi sinkronisasi salah. Kredensial yang disinkronkan tidak dapat didekripsi.",
   "Email books straight to your library": "Kirim buku langsung ke perpustakaan Anda melalui email",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Teruskan lampiran dan artikel ke alamat Readest pribadi Anda. Tersedia di paket Plus, Pro, dan Lifetime.",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "Bersihkan semua data baca",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ini menghapus permanen progres membaca, catatan, dan penanda. Tindakan ini tidak dapat dibatalkan.",
   "Also erase reading progress, notes, and bookmarks.": "Juga menghapus progres membaca, catatan, dan penanda.",
-  "Applies to the Library": "Berlaku untuk Perpustakaan",
-  "Applies to the Reader": "Berlaku untuk tampilan baca"
+  "Background Image (Library)": "Gambar Latar Belakang (Perpustakaan)",
+  "Background Image (Reader)": "Gambar Latar Belakang (Tampilan Baca)"
 }

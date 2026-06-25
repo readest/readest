@@ -22,12 +22,6 @@ import { type TranslationFunc } from '@/hooks/useTranslation';
 import { syncLibrary } from '@/services/webdav/WebDAVSync';
 import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
-import {
-  WEBDAV_SYNC_LOG_LIMIT,
-  WebDAVSyncLogEntry,
-  WebDAVSyncLogFailure,
-  WebDAVSyncLogStatus,
-} from '@/types/settings';
 import SubPageHeader from '../SubPageHeader';
 import {
   BoxedList,
@@ -36,7 +30,6 @@ import {
   SettingsSwitchRow,
   SettingsSelect,
 } from '../primitives';
-import SyncHistoryPanel from './SyncHistoryPanel';
 import WebDAVBrowsePane from './WebDAVBrowsePane';
 
 interface WebDAVFormProps {
@@ -136,6 +129,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   // server. See `webdavSyncStore.ts` for the design rationale.
   const isSyncing = useWebDAVSyncStore((s) => s.isSyncing);
   const syncProgressLabel = useWebDAVSyncStore((s) => s.progressLabel);
+  const syncProgressDetail = useWebDAVSyncStore((s) => s.progressDetail);
   const beginSync = useWebDAVSyncStore((s) => s.beginSync);
   const updateProgress = useWebDAVSyncStore((s) => s.updateProgress);
   const endSync = useWebDAVSyncStore((s) => s.endSync);
@@ -155,8 +149,8 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     }
     // Spread previous webdav state so a reconnect preserves bookkeeping
     // fields earned by prior use — deviceId, syncBooks, strategy,
-    // syncProgress, syncNotes, lastSyncedAt, syncLog. Rotating deviceId
-    // on reconnect would make this device look new to the cross-device
+    // syncProgress, syncNotes, lastSyncedAt. Rotating deviceId on
+    // reconnect would make this device look new to the cross-device
     // clobber check in `RemoteBookConfig.writerDeviceId`.
     const newSettings = {
       ...settings,
@@ -196,15 +190,14 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   // per session).
   //
   // IMPORTANT: read latest settings from the store (NOT the closure
-  // variable) when computing `next`. `handleSyncNow` issues two
-  // back-to-back persistWebdav calls — first `lastSyncedAt`, then
-  // `syncLog`. The closure's `settings` was captured before either
-  // write landed, so a closure-based merge would clobber the freshly-
-  // written `lastSyncedAt` when the second call rebuilds the webdav
-  // object from the stale snapshot. Symptom: the "Last synced" label
-  // stays pinned to the previous value while the Sync History row
-  // shows the up-to-date timestamp. Use `useSettingsStore.getState()`
-  // so each call merges into whatever's currently committed.
+  // variable) when computing `next`. Several persistWebdav calls can
+  // land back-to-back — e.g. `handleSyncNow` writes `deviceId` up front
+  // and `lastSyncedAt` when it finishes, and the user may flip a toggle
+  // in between. The closure's `settings` was captured before those
+  // writes, so a closure-based merge would rebuild the webdav object
+  // from a stale snapshot and clobber a freshly-written field. Use
+  // `useSettingsStore.getState()` so each call merges into whatever's
+  // currently committed.
   const persistWebdav = async (patch: Partial<typeof stored>) => {
     const latest = useSettingsStore.getState().settings;
     const next = { ...latest, webdav: { ...latest.webdav, ...patch } };
@@ -218,29 +211,6 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   const handleToggleSyncBooks = () => persistWebdav({ syncBooks: !(stored?.syncBooks ?? false) });
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     await persistWebdav({ strategy: e.target.value as typeof stored.strategy });
-  };
-
-  /**
-   * Append a diagnostic entry to the bounded sync history.
-   *
-   * We deliberately re-read settings from the store at write time
-   * (rather than closing over `stored`) so concurrent updates — e.g.
-   * the user flips the syncBooks toggle while a Sync now is in flight
-   * — don't clobber each other. The 10-entry cap matches
-   * `WEBDAV_SYNC_LOG_LIMIT` and trims oldest-first; we keep the
-   * persisted JSON small so settings.json round-trips on every app
-   * start stay cheap.
-   */
-  const appendSyncLogEntry = async (entry: WebDAVSyncLogEntry) => {
-    const current = useSettingsStore.getState().settings.webdav?.syncLog ?? [];
-    // Newest first — UI renders in array order, so unshift keeps the
-    // freshest run at the top without reversing on every render.
-    const next = [entry, ...current].slice(0, WEBDAV_SYNC_LOG_LIMIT);
-    await persistWebdav({ syncLog: next });
-  };
-
-  const handleClearSyncLog = async () => {
-    await persistWebdav({ syncLog: [] });
   };
 
   /**
@@ -285,11 +255,6 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     }
 
     beginSync(_('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }));
-
-    // Captured before the run begins so we can attribute startedAt
-    // accurately even when the run fails in the catch block (the
-    // pre-flight library load can take a moment on slow disks).
-    const startedAt = Date.now();
 
     try {
       const result = await syncLibrary(stored, eligibleBooks, {
@@ -448,12 +413,8 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
           updateProgress(
-            _('{{action}} {{n}} / {{total}} · {{title}}', {
-              action: actionStr,
-              n: index + 1,
-              total,
-              title: book.title || book.hash.slice(0, 8),
-            }),
+            _('{{action}} {{n}} / {{total}}', { action: actionStr, n: index + 1, total }),
+            book.title || book.hash.slice(0, 8),
           );
         },
       });
@@ -508,64 +469,9 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         type: toastType,
         message: summary,
       });
-      // Append a diagnostic entry to the persistent sync log. Status
-      // mirrors the toast classification: warning toast → 'partial'
-      // (some failures, some ok); info/success toast → 'success'. We
-      // also collapse the per-book failure phase + reason into the
-      // shape the UI expects (no internal type leakage into settings).
-      const status: WebDAVSyncLogStatus = result.failures > 0 ? 'partial' : 'success';
-      const failedBooks: WebDAVSyncLogFailure[] | undefined =
-        result.failedBooks.length > 0
-          ? result.failedBooks.map((f) => ({
-              hash: f.hash,
-              title: f.title,
-              reason: `[${f.phase}] ${f.reason}`,
-            }))
-          : undefined;
-      const entry: WebDAVSyncLogEntry = {
-        id: uuidv4(),
-        startedAt,
-        finishedAt: Date.now(),
-        status,
-        trigger: 'manual',
-        totalBooks: result.totalBooks,
-        booksDownloaded: result.booksDownloaded,
-        filesUploaded: result.filesUploaded,
-        filesAlreadyInSync: result.filesAlreadyInSync,
-        configsUploaded: result.configsUploaded,
-        configsDownloaded: result.configsDownloaded,
-        coversUploaded: result.coversUploaded,
-        failures: result.failures,
-        summary,
-        failedBooks,
-      };
-      await appendSyncLogEntry(entry);
     } catch (e) {
       const message = formatSyncError(_, e);
       eventDispatcher.dispatch('toast', { type: 'error', message });
-      // Persist a "failure" entry so the user can show what went wrong
-      // without rummaging through the dev console. We don't have a
-      // SyncLibraryResult to draw counters from (the run aborted
-      // before returning), so all the count fields stay zero except
-      // totalBooks for context.
-      const entry: WebDAVSyncLogEntry = {
-        id: uuidv4(),
-        startedAt,
-        finishedAt: Date.now(),
-        status: 'failure',
-        trigger: 'manual',
-        totalBooks: eligibleBooks.length,
-        booksDownloaded: 0,
-        filesUploaded: 0,
-        filesAlreadyInSync: 0,
-        configsUploaded: 0,
-        configsDownloaded: 0,
-        coversUploaded: 0,
-        failures: 0,
-        summary: message,
-        errorMessage: e instanceof Error ? e.message : String(e),
-      };
-      await appendSyncLogEntry(entry);
     } finally {
       endSync();
     }
@@ -595,9 +501,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
           <BoxedList>
             <SettingsSwitchRow
               label={_('Upload Book Files')}
-              description={_(
-                'Only affects uploading book files. Reading progress and downloads always sync.',
-              )}
+              description={_('Uploads book files to your other devices.')}
               checked={stored.syncBooks ?? false}
               onChange={handleToggleSyncBooks}
             />
@@ -607,7 +511,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
                 onChange={handleStrategyChange}
                 ariaLabel={_('Sync Strategy')}
                 options={[
-                  { value: 'silent', label: _('Always use latest') },
+                  { value: 'silent', label: _('Send and receive') },
                   { value: 'send', label: _('Send changes only') },
                   { value: 'receive', label: _('Receive changes only') },
                 ]}
@@ -622,6 +526,11 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
                         when: new Date(stored.lastSyncedAt).toLocaleString(),
                       })
                     : _('Never synced')
+              }
+              description={
+                syncProgressDetail ? (
+                  <span className='line-clamp-1'>{syncProgressDetail}</span>
+                ) : undefined
               }
             >
               <button
@@ -645,15 +554,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
             </SettingsRow>
           </BoxedList>
 
-          {/* Sync history panel — diagnostic surface for users to
-              screenshot when reporting issues. Collapsed by default to
-              keep the page compact; opens to show the most-recent ten
-              runs with full counters and per-book failures. We render
-              even when the log is empty so users can find where it
-              lives before their first run. */}
-          <SyncHistoryPanel entries={stored.syncLog ?? []} onClear={handleClearSyncLog} />
-
-          <WebDAVBrowsePane settings={stored} onAppendSyncLogEntry={appendSyncLogEntry} />
+          <WebDAVBrowsePane settings={stored} />
 
           <div className='flex justify-end'>
             <button

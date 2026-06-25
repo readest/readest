@@ -439,6 +439,7 @@
   "Sync Strategy": "Strategija sinhronizacije",
   "Ask on conflict": "Vprašaj ob sporu",
   "Always use latest": "Vedno uporabi najnovejše",
+  "Send and receive": "Pošiljanje in prejemanje",
   "Send changes only": "Pošlji samo spremembe",
   "Receive changes only": "Prejmi samo spremembe",
   "Checksum Method": "Metoda kontrolne vsote",
@@ -1661,8 +1662,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Sinhronizacijska gesla pozabljena. Vsa šifrirana polja so počiščena.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Samo ročne sinhronizacije in čiščenja. Samodejne sinhronizacije med branjem se tu ne beležijo.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Izbrišem {{n}} knjig s strežnika WebDAV?\n\nTo odstrani samo oddaljene datoteke; vaša lokalna knjižnica ostane nedotaknjena. Izbrisa ni mogoče razveljaviti. Biti na strežniku bodo trajno izgubljeni.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Vpliva samo na nalaganje datotek knjig. Bralni napredek in prenosi se vedno sinhronizirajo.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Naloži datoteke knjig v vaše druge naprave.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Napačno geslo sinhronizacije. Sinhroniziranih poverilnic ni bilo mogoče dešifrirati.",
   "Email books straight to your library": "Knjige po e-pošti pošljite naravnost v knjižnico",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Posredujte priponke in članke na svoj zasebni Readest naslov. Na voljo v paketih Plus, Pro in Lifetime.",
@@ -1855,6 +1856,6 @@
   "Purge all reading data": "Počisti vse podatke o branju",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "To trajno izbriše napredek branja, opombe in zaznamke. Tega ni mogoče razveljaviti.",
   "Also erase reading progress, notes, and bookmarks.": "Izbriše tudi napredek branja, opombe in zaznamke.",
-  "Applies to the Library": "Velja za knjižnico",
-  "Applies to the Reader": "Velja za bralni pogled"
+  "Background Image (Library)": "Slikovno ozadje (Knjižnica)",
+  "Background Image (Reader)": "Slikovno ozadje (Bralni pogled)"
 }

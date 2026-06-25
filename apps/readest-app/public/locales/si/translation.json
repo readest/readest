@@ -164,6 +164,7 @@
   "Sync Strategy": "සමමුහුර්ත උපාය",
   "Ask on conflict": "ගැටුමේදී විමසන්න",
   "Always use latest": "සෑම විටම නවතම භාවිතා කරන්න",
+  "Send and receive": "යැවීම සහ ලැබීම",
   "Send changes only": "වෙනස්කම් පමණක් යවන්න",
   "Receive changes only": "වෙනස්කම් පමණක් ලබන්න",
   "Checksum Method": "පරීක්ෂණ ක්‍රමය",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "සමමුහුර්ත මුරපදය අමතක කරන ලදී. සියලුම සංකේතාංකන ක්ෂේත්‍ර හිස් කරන ලදී.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "අතින් සමමුහුර්තකරණ සහ පිරිසිදු කිරීම් පමණක්. කියවීමේදී ස්වයංක්‍රීය සමමුහුර්තකරණ මෙහි සටහන් නොවේ.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV සේවාදායකයෙන් පොත් {{n}}ක් මකන්න ද?\n\nමෙය දුරස්ථ ගොනු පමණක් ඉවත් කරයි; ඔබේ දේශීය පුස්තකාලය බලපාන්නේ නැත. මැකීම අහෝසි කළ නොහැක. සේවාදායකයේ දත්ත සදහටම නැති වේ.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "පොත් ගොනු උඩුගත කිරීමට පමණක් බලපායි. කියවීමේ ප්‍රගතිය සහ බාගත කිරීම් සැම විටම සමමුහුර්ත වේ.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "පොත් ගොනු ඔබගේ අනෙක් උපාංගවලට උඩුගත කරයි.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "වැරදි සමමුහුර්ත මුරපදය. සමමුහුර්ත අක්තපත්‍ර විකේතනය කළ නොහැකි විය.",
   "Email books straight to your library": "ඊමේල් මගින් ඔබේ පුස්තකාලයට කෙලින්ම පොත් යවන්න",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "ඇමුණුම් සහ ලිපි ඔබේ පෞද්ගලික Readest ලිපිනය වෙත ඉදිරියට යවන්න. Plus, Pro සහ Lifetime සැලසුම් වල ලබා ගත හැක.",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "සියලු කියවීම් දත්ත ඉවත් කරන්න",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "මෙය කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ස්ථිරවම මකා දමයි. මෙය අහෝසි කළ නොහැක.",
   "Also erase reading progress, notes, and bookmarks.": "කියවීමේ ප්‍රගතිය, සටහන් සහ පොත් සලකුණු ද මකා දමයි.",
-  "Applies to the Library": "පුස්තකාලයට අදාළ වේ",
-  "Applies to the Reader": "කියවීමේ දසුනට අදාළ වේ"
+  "Background Image (Library)": "පසුබිම් රූපය (පුස්තකාලය)",
+  "Background Image (Reader)": "පසුබිම් රූපය (කියවීමේ දසුන)"
 }

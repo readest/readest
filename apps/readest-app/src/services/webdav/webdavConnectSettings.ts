@@ -13,8 +13,8 @@ export interface WebDAVConnectFormValues {
  *
  * The form's Connect handler only owns the four credential/path fields the
  * user just typed. Everything else — `deviceId`, `syncBooks`, `strategy`,
- * `syncProgress`, `syncNotes`, `lastSyncedAt`, `syncLog` — was earned by
- * prior use and MUST be preserved across a disconnect/reconnect cycle.
+ * `syncProgress`, `syncNotes`, `lastSyncedAt` — was earned by prior use
+ * and MUST be preserved across a disconnect/reconnect cycle.
  *
  * Spreading `previous` first lets the form fields shadow the captured
  * credentials while every bookkeeping field rides through untouched. The
@@ -24,7 +24,7 @@ export interface WebDAVConnectFormValues {
  * Pulled out as a pure helper specifically to unit-test the "reconnect
  * preserves prior state" invariant: the inline version in WebDAVForm
  * regressed in PR #4204 by replacing the whole webdav block, which
- * silently rotated the deviceId and dropped the diagnostic syncLog.
+ * silently rotated the deviceId.
  */
 export const buildWebDAVConnectSettings = (
   previous: Partial<WebDAVSettings> | undefined,

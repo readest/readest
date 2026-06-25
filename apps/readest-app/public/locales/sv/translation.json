@@ -208,6 +208,7 @@
   "Sync Strategy": "Synkstrategi",
   "Ask on conflict": "Fråga vid konflikt",
   "Always use latest": "Använd alltid senaste",
+  "Send and receive": "Skicka och ta emot",
   "Send changes only": "Skicka endast ändringar",
   "Receive changes only": "Ta endast emot ändringar",
   "Checksum Method": "Kontrollsummemetod",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Synklösenfras glömd. Alla krypterade fält rensade.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Endast manuella synkroniseringar och rensningar. Automatiska synkroniseringar under läsning loggas inte här.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Ta bort {{n}} bok/böcker från WebDAV-servern?\n\nDetta tar bara bort fjärrfiler; ditt lokala bibliotek påverkas inte. Borttagningen kan inte ångras. Data på servern försvinner permanent.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Påverkar bara uppladdning av bokfiler. Läsförlopp och nedladdningar synkroniseras alltid.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Laddar upp bokfiler till dina andra enheter.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Fel synklösenfras. Synkroniserade autentiseringsuppgifter kunde inte dekrypteras.",
   "Email books straight to your library": "E-posta böcker direkt till ditt bibliotek",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Vidarebefordra bilagor och artiklar till din privata Readest-adress. Tillgänglig i Plus-, Pro- och Lifetime-abonnemangen.",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "Rensa alla läsdata",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Detta raderar permanent läsframsteg, anteckningar och bokmärken. Detta kan inte ångras.",
   "Also erase reading progress, notes, and bookmarks.": "Raderar även läsframsteg, anteckningar och bokmärken.",
-  "Applies to the Library": "Gäller biblioteket",
-  "Applies to the Reader": "Gäller läsvyn"
+  "Background Image (Library)": "Bakgrundsbild (Bibliotek)",
+  "Background Image (Reader)": "Bakgrundsbild (Läsvy)"
 }

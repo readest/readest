@@ -459,6 +459,7 @@
   "Sync Strategy": "동기화 전략",
   "Ask on conflict": "충돌 시 묻기",
   "Always use latest": "항상 최신 버전 사용",
+  "Send and receive": "전송 및 수신",
   "Send changes only": "변경 사항만 전송",
   "Receive changes only": "변경 사항만 수신",
   "Checksum Method": "체크섬 방법",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "동기화 암호구를 잊었습니다. 모든 암호화된 필드가 지워졌습니다.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "수동 동기화 및 정리만 표시됩니다. 읽는 중에 자동으로 수행된 동기화는 여기에 기록되지 않습니다.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV 서버에서 {{n}}권을 삭제하시겠습니까?\n\n이 작업은 원격 파일만 제거합니다; 로컬 라이브러리에는 영향을 주지 않습니다. 삭제는 취소할 수 없습니다. 서버의 데이터는 영구히 사라집니다.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "책 파일 업로드에만 영향을 줍니다. 읽기 진행도와 다운로드는 항상 동기화됩니다.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "책 파일을 다른 기기로 업로드합니다.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "동기화 암호구가 잘못되었습니다. 동기화된 자격 증명을 복호화할 수 없습니다.",
   "Email books straight to your library": "이메일로 책을 라이브러리에 바로 전송",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "첨부 파일과 기사를 개인 Readest 주소로 전달하세요. Plus, Pro, Lifetime 요금제에서 사용할 수 있습니다.",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "모든 읽기 데이터 지우기",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "읽기 진행 상황, 메모, 북마크가 영구적으로 지워집니다. 이 작업은 되돌릴 수 없습니다.",
   "Also erase reading progress, notes, and bookmarks.": "읽기 진행 상황, 메모, 북마크도 함께 지웁니다.",
-  "Applies to the Library": "라이브러리에 적용됩니다",
-  "Applies to the Reader": "리더에 적용됩니다"
+  "Background Image (Library)": "배경 이미지 (라이브러리)",
+  "Background Image (Reader)": "배경 이미지 (리더)"
 }

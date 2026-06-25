@@ -471,6 +471,7 @@
   "Sync Strategy": "Стратегия синхронизации",
   "Ask on conflict": "Спрашивать при конфликте",
   "Always use latest": "Всегда использовать последнюю",
+  "Send and receive": "Отправлять и получать",
   "Send changes only": "Отправлять только изменения",
   "Receive changes only": "Получать только изменения",
   "Checksum Method": "Метод контрольной суммы",
@@ -1661,8 +1662,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Парольная фраза синхронизации забыта. Все зашифрованные поля очищены.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Только ручные синхронизации и очистки. Автоматические синхронизации во время чтения здесь не отображаются.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Удалить {{n}} книг с сервера WebDAV?\n\nЭто удалит только удалённые файлы; ваша локальная библиотека не пострадает. Удаление невозможно отменить. Данные на сервере исчезнут навсегда.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Влияет только на отправку файлов книг. Прогресс чтения и загрузки всегда синхронизируются.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Загружает файлы книг на ваши другие устройства.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Неверная парольная фраза синхронизации. Не удалось расшифровать синхронизированные данные.",
   "Email books straight to your library": "Отправляйте книги по электронной почте прямо в библиотеку",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Пересылайте вложения и статьи на ваш личный адрес Readest. Доступно в тарифах Plus, Pro и Lifetime.",
@@ -1855,6 +1856,6 @@
   "Purge all reading data": "Очистить все данные чтения",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Это безвозвратно удалит прогресс чтения, заметки и закладки. Это действие нельзя отменить.",
   "Also erase reading progress, notes, and bookmarks.": "Также удаляет прогресс чтения, заметки и закладки.",
-  "Applies to the Library": "Применяется к библиотеке",
-  "Applies to the Reader": "Применяется к режиму чтения"
+  "Background Image (Library)": "Фоновое изображение (Библиотека)",
+  "Background Image (Reader)": "Фоновое изображение (Режим чтения)"
 }

@@ -459,6 +459,7 @@
   "Sync Strategy": "กลยุทธ์การซิงค์",
   "Ask on conflict": "ถามเมื่อเกิดความขัดแย้ง",
   "Always use latest": "ใช้เวอร์ชันล่าสุดเสมอ",
+  "Send and receive": "ส่งและรับ",
   "Send changes only": "ส่งการเปลี่ยนแปลงเท่านั้น",
   "Receive changes only": "รับการเปลี่ยนแปลงเท่านั้น",
   "Checksum Method": "วิธีการตรวจสอบความถูกต้อง",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "ลืมรหัสผ่านการซิงค์แล้ว ฟิลด์ที่เข้ารหัสทั้งหมดถูกล้าง",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "การซิงค์และล้างข้อมูลด้วยตนเองเท่านั้น การซิงค์อัตโนมัติระหว่างอ่านจะไม่ถูกบันทึกที่นี่",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "ลบหนังสือ {{n}} เล่มจากเซิร์ฟเวอร์ WebDAV?\n\nสิ่งนี้จะลบเฉพาะไฟล์ระยะไกล; คลังข้อมูลในเครื่องของคุณจะไม่ได้รับผลกระทบ การลบไม่สามารถย้อนกลับได้ ข้อมูลบนเซิร์ฟเวอร์จะหายไปอย่างถาวร",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "มีผลกับการอัปโหลดไฟล์หนังสือเท่านั้น ความคืบหน้าการอ่านและการดาวน์โหลดจะซิงค์เสมอ",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "อัปโหลดไฟล์หนังสือไปยังอุปกรณ์อื่นของคุณ",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "รหัสผ่านการซิงค์ไม่ถูกต้อง ไม่สามารถถอดรหัสข้อมูลรับรองที่ซิงค์ได้",
   "Email books straight to your library": "ส่งหนังสือทางอีเมลไปยังคลังของคุณโดยตรง",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "ส่งต่อไฟล์แนบและบทความไปยังที่อยู่ Readest ส่วนตัวของคุณ ใช้งานได้ในแผน Plus, Pro และ Lifetime",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "ล้างข้อมูลการอ่านทั้งหมด",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "การดำเนินการนี้จะลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กอย่างถาวร ไม่สามารถเลิกทำได้",
   "Also erase reading progress, notes, and bookmarks.": "ลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กด้วย",
-  "Applies to the Library": "ใช้กับคลังหนังสือ",
-  "Applies to the Reader": "ใช้กับมุมมองการอ่าน"
+  "Background Image (Library)": "ภาพพื้นหลัง (คลังหนังสือ)",
+  "Background Image (Reader)": "ภาพพื้นหลัง (มุมมองการอ่าน)"
 }

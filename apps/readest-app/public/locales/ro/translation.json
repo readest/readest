@@ -461,6 +461,7 @@
   "Sync Strategy": "Strategie de sincronizare",
   "Ask on conflict": "Întreabă în caz de conflict",
   "Always use latest": "Folosește întotdeauna cel mai recent",
+  "Send and receive": "Trimite și primește",
   "Send changes only": "Trimite doar modificările",
   "Receive changes only": "Primește doar modificările",
   "Checksum Method": "Metoda sumei de control",
@@ -1631,8 +1632,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Parola de sincronizare uitată. Toate câmpurile criptate au fost șterse.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Doar sincronizări manuale și curățări. Sincronizările automate în timpul citirii nu sunt înregistrate aici.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Ștergi {{n}} carte/cărți de pe serverul WebDAV?\n\nAceasta elimină doar fișierele de la distanță; biblioteca locală nu este afectată. Ștergerea nu poate fi anulată. Datele de pe server vor dispărea definitiv.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Afectează doar încărcarea fișierelor de carte. Progresul lecturii și descărcările se sincronizează întotdeauna.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Încarcă fișierele de carte pe celelalte dispozitive ale tale.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Parolă de sincronizare incorectă. Acreditările sincronizate nu au putut fi decriptate.",
   "Email books straight to your library": "Trimite cărți prin e-mail direct în biblioteca ta",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Redirecționează atașamente și articole către adresa ta Readest privată. Disponibil în planurile Plus, Pro și Lifetime.",
@@ -1822,6 +1823,6 @@
   "Purge all reading data": "Curăță toate datele de citire",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Aceasta șterge definitiv progresul citirii, notele și marcajele. Această acțiune nu poate fi anulată.",
   "Also erase reading progress, notes, and bookmarks.": "Șterge de asemenea progresul citirii, notele și marcajele.",
-  "Applies to the Library": "Se aplică bibliotecii",
-  "Applies to the Reader": "Se aplică vizualizării de lectură"
+  "Background Image (Library)": "Imagine de fundal (Bibliotecă)",
+  "Background Image (Reader)": "Imagine de fundal (Vizualizare de lectură)"
 }

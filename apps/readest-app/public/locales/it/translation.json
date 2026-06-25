@@ -467,6 +467,7 @@
   "Sync Strategy": "Strategia di Sincronizzazione",
   "Ask on conflict": "Chiedi in caso di conflitto",
   "Always use latest": "Usa sempre l'ultima versione",
+  "Send and receive": "Invia e ricevi",
   "Send changes only": "Invia solo le modifiche",
   "Receive changes only": "Ricevi solo le modifiche",
   "Checksum Method": "Metodo di Controllo",
@@ -1631,8 +1632,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Passphrase di sincronizzazione dimenticata. Tutti i campi cifrati sono stati cancellati.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Solo sincronizzazioni manuali e pulizie. Le sincronizzazioni automatiche durante la lettura non vengono registrate qui.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Eliminare {{n}} libro/i dal server WebDAV?\n\nQuesto rimuove solo i file remoti; la tua libreria locale non è interessata. L'eliminazione non può essere annullata. I byte sul server saranno persi per sempre.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Influisce solo sul caricamento dei file dei libri. L'avanzamento di lettura e i download sono sempre sincronizzati.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Carica i file dei libri sugli altri tuoi dispositivi.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Passphrase di sincronizzazione errata. Impossibile decifrare le credenziali sincronizzate.",
   "Email books straight to your library": "Invia i libri direttamente alla tua libreria via email",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Inoltra allegati e articoli al tuo indirizzo Readest privato. Disponibile nei piani Plus, Pro e Lifetime.",
@@ -1822,6 +1823,6 @@
   "Purge all reading data": "Elimina tutti i dati di lettura",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Questa operazione cancella definitivamente il progresso di lettura, le note e i segnalibri. Non può essere annullata.",
   "Also erase reading progress, notes, and bookmarks.": "Cancella anche il progresso di lettura, le note e i segnalibri.",
-  "Applies to the Library": "Si applica alla libreria",
-  "Applies to the Reader": "Si applica alla vista di lettura"
+  "Background Image (Library)": "Immagine di sfondo (Libreria)",
+  "Background Image (Reader)": "Immagine di sfondo (Vista di lettura)"
 }

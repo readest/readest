@@ -523,6 +523,7 @@
   "Sync Strategy": "Sinxronlash strategiyasi",
   "Ask on conflict": "Ziddiyatda soʻrash",
   "Always use latest": "Doimo eng songgisidan foydalanish",
+  "Send and receive": "Yuborish va qabul qilish",
   "Send changes only": "Faqat oʻzgarishlarni yuborish",
   "Receive changes only": "Faqat oʻzgarishlarni qabul qilish",
   "Checksum Method": "Nazorat yigʻindisi usuli",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Sinxronlash parol iborasi unutildi. Barcha shifrlangan maydonlar tozalandi.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Faqat qo'lda sinxronlashlar va tozalashlar. O'qish paytidagi avtomatik sinxronlashlar bu yerda qayd etilmaydi.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV serveridan {{n}} ta kitob o'chirilsinmi?\n\nBu faqat masofaviy fayllarni o'chiradi; mahalliy kutubxonangiz ta'sirlanmaydi. O'chirishni bekor qilib bo'lmaydi. Serverdagi ma'lumotlar mangulikka yo'qoladi.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Faqat kitob fayllarini yuklashga ta'sir qiladi. O'qish jarayoni va yuklab olishlar har doim sinxronlanadi.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Kitob fayllarini boshqa qurilmalaringizga yuklaydi.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Noto'g'ri sinxronlash parol iborasi. Sinxronlangan hisob ma'lumotlarini parolini ochib bo'lmadi.",
   "Email books straight to your library": "Kitoblarni elektron pochta orqali to'g'ridan-to'g'ri kutubxonangizga yuboring",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Ilovalar va maqolalarni shaxsiy Readest manzilingizga yuboring. Plus, Pro va Lifetime tariflarida mavjud.",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "Barcha oʻqish maʼlumotlarini tozalash",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu oʻqish jarayoni, eslatmalar va xatchoʻplarni butunlay oʻchiradi. Buni qaytarib boʻlmaydi.",
   "Also erase reading progress, notes, and bookmarks.": "Shuningdek, oʻqish jarayoni, eslatmalar va xatchoʻplarni ham oʻchiradi.",
-  "Applies to the Library": "Kutubxonaga qoʻllanadi",
-  "Applies to the Reader": "Oʻqish koʻrinishiga qoʻllanadi"
+  "Background Image (Library)": "Fon rasmi (Kutubxona)",
+  "Background Image (Reader)": "Fon rasmi (Oʻqish koʻrinishi)"
 }

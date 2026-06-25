@@ -164,6 +164,7 @@
   "Sync Strategy": "সিঙ্ক কৌশল",
   "Ask on conflict": "দ্বন্দ্বে জিজ্ঞাসা করুন",
   "Always use latest": "সবসময় সর্বশেষ ব্যবহার করুন",
+  "Send and receive": "পাঠানো এবং গ্রহণ করা",
   "Send changes only": "শুধু পরিবর্তন পাঠান",
   "Receive changes only": "শুধু পরিবর্তন গ্রহণ করুন",
   "Checksum Method": "চেকসাম পদ্ধতি",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "সিঙ্ক পাসফ্রেজ ভুলে যাওয়া হয়েছে। সমস্ত এনক্রিপ্ট করা ফিল্ড পরিষ্কার করা হয়েছে।",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "শুধুমাত্র ম্যানুয়াল সিঙ্ক এবং পরিচ্ছন্নতা। পড়ার সময় স্বয়ংক্রিয় সিঙ্ক এখানে লগ হয় না।",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV সার্ভার থেকে {{n}}টি বই মুছে ফেলবেন?\n\nএটি শুধু রিমোট ফাইল মুছে; আপনার স্থানীয় লাইব্রেরি অপরিবর্তিত থাকে। মুছে ফেলা পূর্বাবস্থায় ফেরানো যাবে না। সার্ভারের ডেটা স্থায়ীভাবে চলে যাবে।",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "শুধুমাত্র বইয়ের ফাইল আপলোডকে প্রভাবিত করে। পড়ার অগ্রগতি এবং ডাউনলোড সবসময় সিঙ্ক হয়।",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "আপনার অন্যান্য ডিভাইসে বইয়ের ফাইল আপলোড করে।",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "ভুল সিঙ্ক পাসফ্রেজ। সিঙ্ক করা ক্রেডেনশিয়াল ডিক্রিপ্ট করা যায়নি।",
   "Email books straight to your library": "ইমেইলের মাধ্যমে সরাসরি বই আপনার লাইব্রেরিতে পাঠান",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "অ্যাটাচমেন্ট এবং নিবন্ধগুলি আপনার ব্যক্তিগত Readest ঠিকানায় ফরওয়ার্ড করুন। Plus, Pro এবং Lifetime প্ল্যানে উপলব্ধ।",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "সমস্ত পড়ার ডেটা পরিষ্কার করুন",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "এটি স্থায়ীভাবে পড়ার অগ্রগতি, নোট এবং বুকমার্ক মুছে ফেলে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Also erase reading progress, notes, and bookmarks.": "পড়ার অগ্রগতি, নোট এবং বুকমার্কও মুছে ফেলে।",
-  "Applies to the Library": "লাইব্রেরিতে প্রযোজ্য",
-  "Applies to the Reader": "রিডারে প্রযোজ্য"
+  "Background Image (Library)": "ব্যাকগ্রাউন্ড ছবি (লাইব্রেরি)",
+  "Background Image (Reader)": "ব্যাকগ্রাউন্ড ছবি (রিডার)"
 }

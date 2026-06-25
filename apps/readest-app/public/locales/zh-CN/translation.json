@@ -460,6 +460,7 @@
   "Sync Strategy": "同步策略",
   "Ask on conflict": "发生冲突时询问",
   "Always use latest": "始终使用最新",
+  "Send and receive": "发送和接收",
   "Send changes only": "仅发送更改",
   "Receive changes only": "仅接收更改",
   "Checksum Method": "校验和方法",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "已忘记同步密码短语。所有加密字段已清空。",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "仅显示手动同步与清理。阅读时的自动同步不在此记录。",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "从 WebDAV 服务器删除 {{n}} 本书？\n\n这只会移除远程文件；您的本地书库不受影响。删除无法撤销。服务器上的数据将永久消失。",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "仅影响书籍文件的上传。阅读进度和下载始终同步。",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "将书籍文件上传到您的其他设备。",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "同步密码短语错误。无法解密已同步的凭据。",
   "Email books straight to your library": "通过电子邮件直接将书籍发送到您的书库",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "将附件和文章转发到您的专属 Readest 地址。Plus、Pro 和 Lifetime 套餐可用。",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "清除所有阅读数据",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "这将永久清除阅读进度、笔记和书签，且无法撤销。",
   "Also erase reading progress, notes, and bookmarks.": "同时清除阅读进度、笔记和书签。",
-  "Applies to the Library": "应用于书库",
-  "Applies to the Reader": "应用于阅读界面"
+  "Background Image (Library)": "背景图片（书库）",
+  "Background Image (Reader)": "背景图片（阅读界面）"
 }

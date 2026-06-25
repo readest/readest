@@ -469,6 +469,7 @@
   "Sync Strategy": "Szinkronizálási stratégia",
   "Ask on conflict": "Kérdezzen ütközéskor",
   "Always use latest": "Mindig a legújabbat használja",
+  "Send and receive": "Küldés és fogadás",
   "Send changes only": "Csak módosítások küldése",
   "Receive changes only": "Csak módosítások fogadása",
   "Checksum Method": "Ellenőrzőösszeg-módszer",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "A szinkronizálási jelmondat törölve. Minden titkosított mező törölve.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Csak kézi szinkronizálások és takarítások. Az olvasás közbeni automatikus szinkronizálások itt nem szerepelnek.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Törli a(z) {{n}} könyvet a WebDAV kiszolgálóról?\n\nEz csak a távoli fájlokat törli; a helyi könyvtárát nem érinti. A törlés nem vonható vissza. A kiszolgálón lévő adatok véglegesen eltűnnek.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Csak a könyvfájlok feltöltését érinti. Az olvasási folyamat és a letöltések mindig szinkronizálódnak.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Feltölti a könyvfájlokat a többi eszközére.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Hibás szinkronizálási jelmondat. A szinkronizált hitelesítő adatokat nem sikerült visszafejteni.",
   "Email books straight to your library": "Küldjön könyveket közvetlenül e-mailben a könyvtárába",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Továbbítsa a mellékleteket és cikkeket a privát Readest-címére. Elérhető a Plus, Pro és Lifetime csomagokban.",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "Összes olvasási adat törlése",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ez véglegesen törli az olvasási haladást, a jegyzeteket és a könyvjelzőket. A művelet nem vonható vissza.",
   "Also erase reading progress, notes, and bookmarks.": "Az olvasási haladást, jegyzeteket és könyvjelzőket is törli.",
-  "Applies to the Library": "A könyvtárra vonatkozik",
-  "Applies to the Reader": "Az olvasónézetre vonatkozik"
+  "Background Image (Library)": "Háttérkép (Könyvtár)",
+  "Background Image (Reader)": "Háttérkép (Olvasónézet)"
 }

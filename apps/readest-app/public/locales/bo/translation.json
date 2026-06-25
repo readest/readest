@@ -461,6 +461,7 @@
   "Sync Strategy": "སྤྲི་དོན་འབྱུང་ཁུངས།",
   "Ask on conflict": "འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
   "Always use latest": "དེ་ལས་འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
+  "Send and receive": "གཏོང་བ་དང་ལེན་པ།",
   "Send changes only": "འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
   "Receive changes only": "འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
   "Checksum Method": "ཡིག་སྣེ་འབྱུང་ཁུངས།",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "མཉམ་སྦྲེལ་གསང་ཨང་བརྗེད་སོང་། གསང་སྦས་བྱས་པའི་ཁོངས་གཙང་འཕྱག་བྱས་ཟིན།",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "ལག་འཁྱེར་མཉམ་སྦྲེལ་དང་གཙང་སྦྲ་ཁོ་ན། ཀློག་སྐབས་ཀྱི་རང་འགུལ་མཉམ་སྦྲེལ་འདིར་ཐོ་འགོད་མི་བྱེད།",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV རིམ་པ་ཟུང་འབྲེལ་ནས་དཔེ་ཆ་{{n}}་སུབ་དགོས་སམ?\n\nའདིས་རྒྱང་རིང་གི་ཡིག་ཆ་ཁོ་ན་སུབ་པ་ཡིན། ཁྱེད་ཀྱི་ས་གནས་དཔེ་མཛོད་ལ་གནོད་མི་འགྱུར། སུབ་པ་འདི་ཕྱིར་ལོག་མི་ཐུབ། རིམ་པ་ཟུང་འབྲེལ་གྱི་ཟིན་བྲིས་གཏན་ནས་མེད་པར་འགྱུར།",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "དཔེ་ཆའི་ཡིག་ཆ་ཡར་འགོད་ལ་ཁོ་ན་གནོད་ཀྱི། ཀློག་འཐུས་དང་ཕབ་ལེན་རྟག་ཏུ་མཉམ་སྦྲེལ་འགྱུར།",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "དཔེ་ཆའི་ཡིག་ཆ་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་པར་ཡར་འགོད་བྱེད།",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "མཉམ་སྦྲེལ་གསང་ཨང་ནོར་འདུག། མཉམ་སྦྲེལ་བྱས་པའི་ངོ་སྤྲོད་ཀྱི་གསང་སྒྲིག་འགྲོལ་མ་ཐུབ།",
   "Email books straight to your library": "གློག་འཕྲིན་གྱིས་དཔེ་ཆ་ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་ཐད་ཀར་སྐུར།",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "མཉམ་སྦྱར་དང་ཡིག་རྩོམ་ཁྱེད་ཀྱི་སྒེར་གྱི་ Readest ས་གནས་སུ་གཏོང་། Plus, Pro, Lifetime འཆར་གཞི་ལ་ཐོབ་པ།",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "ཀློག་པའི་གཞི་གྲངས་ཡོངས་གཙང་སེལ།",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "འདིས་ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་གཏན་དུ་སུབ་ངེས་ཡིན། ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Also erase reading progress, notes, and bookmarks.": "ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་ཀྱང་སུབ་པ།",
-  "Applies to the Library": "དེབ་མཛོད་ལ་འཇུག་པ།",
-  "Applies to the Reader": "ཀློག་ངོས་ལ་འཇུག་པ།"
+  "Background Image (Library)": "གནས་སྟངས་ཀྱི་རི་མོ། (དེབ་མཛོད།)",
+  "Background Image (Reader)": "གནས་སྟངས་ཀྱི་རི་མོ། (ཀློག་ངོས།)"
 }

@@ -22,8 +22,9 @@ import { create } from 'zustand';
  *     still going).
  *   - We don't track structured progress (counters, per-book status
  *     etc.) — `syncLibrary.onProgress` already builds a localised
- *     label and the UI only ever displays it as a string. Keeping the
- *     store flat avoids re-implementing the formatting in two places.
+ *     label, and we keep only a second `progressDetail` string (the
+ *     current book's title) so the form can render the status and the
+ *     book on separate lines. Formatting still lives in the callback.
  *
  * Re-entrancy: callers MUST gate on `isSyncing` *before* flipping it.
  * The `beginSync` action does not itself enforce mutual exclusion —
@@ -35,26 +36,39 @@ interface WebDAVSyncState {
   /** True while a library-wide Sync now is currently running. */
   isSyncing: boolean;
   /**
-   * Localised progress string. Set by `syncLibrary.onProgress` via
-   * `updateProgress`; rendered verbatim by the form. Null when no run
-   * is active.
+   * Localised progress string (the status line, e.g. "Uploading 3 / 12").
+   * Set by `syncLibrary.onProgress` via `updateProgress`. Null when no
+   * run is active.
    */
   progressLabel: string | null;
+  /**
+   * Secondary line under the status — the current book's title. Null
+   * before the first per-book callback (e.g. right after `beginSync`)
+   * and when no run is active.
+   */
+  progressDetail: string | null;
   /** Wall-clock millis when the current run kicked off, or null. */
   startedAt: number | null;
 
   beginSync: (initialLabel: string) => void;
-  updateProgress: (label: string) => void;
+  updateProgress: (label: string, detail?: string | null) => void;
   endSync: () => void;
 }
 
 export const useWebDAVSyncStore = create<WebDAVSyncState>((set) => ({
   isSyncing: false,
   progressLabel: null,
+  progressDetail: null,
   startedAt: null,
 
   beginSync: (initialLabel) =>
-    set({ isSyncing: true, progressLabel: initialLabel, startedAt: Date.now() }),
-  updateProgress: (label) => set({ progressLabel: label }),
-  endSync: () => set({ isSyncing: false, progressLabel: null, startedAt: null }),
+    set({
+      isSyncing: true,
+      progressLabel: initialLabel,
+      progressDetail: null,
+      startedAt: Date.now(),
+    }),
+  updateProgress: (label, detail = null) => set({ progressLabel: label, progressDetail: detail }),
+  endSync: () =>
+    set({ isSyncing: false, progressLabel: null, progressDetail: null, startedAt: null }),
 }));

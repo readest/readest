@@ -143,7 +143,7 @@ export const useWebDAVSync = (bookKey: string) => {
       // doesn't reflect interim writes by the prior call. Using the
       // closure here would let a second `updateLastSyncedAt` rebuild
       // the webdav object from a stale snapshot, clobbering whatever
-      // the first call (or a sibling write like `syncLog` from the
+      // the first call (or a sibling write like `syncBooks` from the
       // settings panel) just committed.
       const latest = useSettingsStore.getState().settings;
       const next = { ...latest, webdav: { ...latest.webdav, lastSyncedAt: ts } };

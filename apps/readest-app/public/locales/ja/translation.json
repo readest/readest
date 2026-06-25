@@ -459,6 +459,7 @@
   "Sync Strategy": "同期戦略",
   "Ask on conflict": "競合時に確認",
   "Always use latest": "最新を常に使用",
+  "Send and receive": "送信と受信",
   "Send changes only": "変更のみを送信",
   "Receive changes only": "変更のみを受信",
   "Checksum Method": "チェックサム方式",
@@ -1571,8 +1572,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "同期パスフレーズを忘却しました。すべての暗号化フィールドがクリアされました。",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "手動同期とクリーンアップのみ。読書中の自動同期はここには記録されません。",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV サーバーから {{n}} 冊を削除しますか?\n\nこの操作はリモートファイルのみを削除します。ローカルライブラリには影響しません。削除は元に戻せません。サーバー上のデータは完全に失われます。",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "書籍ファイルのアップロードのみに影響します。読書の進捗とダウンロードは常に同期されます。",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "書籍ファイルを他のデバイスにアップロードします。",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "同期パスフレーズが正しくありません。同期された認証情報を復号できませんでした。",
   "Email books straight to your library": "本をメールで直接ライブラリに送信",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "添付ファイルや記事をあなた専用の Readest アドレスに転送できます。Plus、Pro、Lifetime プランで利用可能。",
@@ -1756,6 +1757,6 @@
   "Purge all reading data": "すべての読書データを消去",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "読書進捗、メモ、ブックマークが完全に消去されます。この操作は元に戻せません。",
   "Also erase reading progress, notes, and bookmarks.": "読書進捗、メモ、ブックマークも消去します。",
-  "Applies to the Library": "ライブラリに適用されます",
-  "Applies to the Reader": "リーダーに適用されます"
+  "Background Image (Library)": "背景画像（ライブラリ）",
+  "Background Image (Reader)": "背景画像（リーダー）"
 }

@@ -164,6 +164,7 @@
   "Sync Strategy": "ஒத்திசைவு உத்தி",
   "Ask on conflict": "முரண்பாட்டில் கேட்கவும்",
   "Always use latest": "எப்போதும் சமீபத்தியதைப் பயன்படுத்தவும்",
+  "Send and receive": "அனுப்புதல் மற்றும் பெறுதல்",
   "Send changes only": "மாற்றங்களை மட்டும் அனுப்பவும்",
   "Receive changes only": "மாற்றங்களை மட்டும் பெறவும்",
   "Checksum Method": "சரிபார்ப்பு முறை",
@@ -1601,8 +1602,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "ஒத்திசைவு கடவுச்சொற்றொடர் மறக்கப்பட்டது. அனைத்து குறியாக்கப்பட்ட புலங்களும் அழிக்கப்பட்டன.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "கைமுறை ஒத்திசைவுகள் மற்றும் சுத்திகரிப்புகள் மட்டுமே. வாசிக்கும்போது தானியங்கி ஒத்திசைவுகள் இங்கு பதிவாகாது.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV சேவையகத்திலிருந்து {{n}} புத்தகம்(ங்கள்) நீக்க வேண்டுமா?\n\nஇது தொலைதூர கோப்புகளை மட்டுமே நீக்கும்; உங்கள் உள்ளூர் நூலகம் பாதிக்கப்படாது. நீக்கலை மீட்க முடியாது. சேவையகத்தில் உள்ள தரவு நிரந்தரமாக மறையும்.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "புத்தக கோப்புகள் பதிவேற்றத்தை மட்டுமே பாதிக்கும். வாசிப்பு முன்னேற்றமும் பதிவிறக்கங்களும் எப்போதும் ஒத்திசைகின்றன.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "புத்தக கோப்புகளை உங்கள் பிற சாதனங்களுக்கு பதிவேற்றுகிறது.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "தவறான ஒத்திசைவு கடவுச்சொற்றொடர். ஒத்திசைக்கப்பட்ட சான்றுகளை மறைகுறியாக்க முடியவில்லை.",
   "Email books straight to your library": "புத்தகங்களை மின்னஞ்சல் வழியாக நேரடியாக உங்கள் நூலகத்திற்கு அனுப்பவும்",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "இணைப்புகள் மற்றும் கட்டுரைகளை உங்கள் தனிப்பட்ட Readest முகவரிக்கு முன்னனுப்பவும். Plus, Pro மற்றும் Lifetime திட்டங்களில் கிடைக்கும்.",
@@ -1789,6 +1790,6 @@
   "Purge all reading data": "அனைத்து வாசிப்புத் தரவையும் அழி",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "இது வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளை நிரந்தரமாக அழிக்கும். இதை மீட்டெடுக்க முடியாது.",
   "Also erase reading progress, notes, and bookmarks.": "வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளையும் அழிக்கும்.",
-  "Applies to the Library": "நூலகத்திற்குப் பொருந்தும்",
-  "Applies to the Reader": "வாசிப்புப் பக்கத்திற்குப் பொருந்தும்"
+  "Background Image (Library)": "பின்னணி படம் (நூலகம்)",
+  "Background Image (Reader)": "பின்னணி படம் (வாசிப்புப் பக்கம்)"
 }

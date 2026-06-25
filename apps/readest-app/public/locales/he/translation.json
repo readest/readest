@@ -423,6 +423,7 @@
   "Sync Strategy": "אסטרטגיית סנכרון",
   "Ask on conflict": "שאל בעת קונפליקט",
   "Always use latest": "תמיד השתמש בהכי חדש",
+  "Send and receive": "שליחה וקבלה",
   "Send changes only": "שלח שינויים בלבד",
   "Receive changes only": "קבל שינויים בלבד",
   "Checksum Method": "שיטת סיכום ביקורת (Checksum)",
@@ -1631,8 +1632,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "משפט הסיסמה לסנכרון נשכח. כל השדות המוצפנים נמחקו.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "רק סנכרונים ידניים וניקויים. סנכרונים אוטומטיים בזמן קריאה אינם נרשמים כאן.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "למחוק {{n}} ספרים משרת ה-WebDAV?\n\nפעולה זו מסירה רק את הקבצים המרוחקים; הספרייה המקומית שלך אינה מושפעת. לא ניתן לבטל את המחיקה. הבייטים בשרת ייעלמו לתמיד.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "משפיע רק על העלאת קובצי ספרים. התקדמות הקריאה וההורדות תמיד מסונכרנות.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "מעלה את קובצי הספרים למכשירים האחרים שלך.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "משפט סיסמה לסנכרון שגוי. לא ניתן היה לפענח את פרטי הכניסה המסונכרנים.",
   "Email books straight to your library": "שלח ספרים ישירות לספרייה שלך באמצעות אימייל",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "העבר קבצים מצורפים ומאמרים לכתובת Readest הפרטית שלך. זמין בתוכניות Plus, Pro ו-Lifetime.",
@@ -1822,6 +1823,6 @@
   "Purge all reading data": "נקה את כל נתוני הקריאה",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "פעולה זו מוחקת לצמיתות את התקדמות הקריאה, ההערות והסימניות. לא ניתן לבטל פעולה זו.",
   "Also erase reading progress, notes, and bookmarks.": "מוחק גם את התקדמות הקריאה, ההערות והסימניות.",
-  "Applies to the Library": "חל על הספרייה",
-  "Applies to the Reader": "חל על מצב הקריאה"
+  "Background Image (Library)": "תמונת רקע (ספרייה)",
+  "Background Image (Reader)": "תמונת רקע (מצב קריאה)"
 }

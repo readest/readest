@@ -467,6 +467,7 @@
   "Sync Strategy": "Stratégie de synchronisation",
   "Ask on conflict": "Demander en cas de conflit",
   "Always use latest": "Toujours utiliser la dernière version",
+  "Send and receive": "Envoyer et recevoir",
   "Send changes only": "Envoyer uniquement les modifications",
   "Receive changes only": "Recevoir uniquement les modifications",
   "Checksum Method": "Méthode de somme de contrôle",
@@ -1631,8 +1632,8 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Phrase secrète de synchronisation oubliée. Tous les champs chiffrés ont été effacés.",
   "Manual syncs and cleanups only. Automatic syncs while reading aren't logged here.": "Synchronisations manuelles et nettoyages uniquement. Les synchronisations automatiques pendant la lecture ne sont pas enregistrées ici.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Supprimer {{n}} livre(s) du serveur WebDAV ?\n\nCela ne supprime que les fichiers distants ; votre bibliothèque locale n'est pas affectée. La suppression est irréversible. Les octets sur le serveur seront définitivement perdus.",
-  "{{action}} {{n}} / {{total}} · {{title}}": "{{action}} {{n}} / {{total}} · {{title}}",
-  "Only affects uploading book files. Reading progress and downloads always sync.": "Affecte uniquement le téléversement des fichiers de livres. La progression de lecture et les téléchargements sont toujours synchronisés.",
+  "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
+  "Uploads book files to your other devices.": "Téléverse les fichiers de livres vers vos autres appareils.",
   "Wrong sync passphrase. Synced credentials could not be decrypted.": "Phrase secrète de synchronisation incorrecte. Les identifiants synchronisés n'ont pas pu être déchiffrés.",
   "Email books straight to your library": "Envoyez des livres par e-mail directement dans votre bibliothèque",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Transférez les pièces jointes et les articles vers votre adresse Readest privée. Disponible avec les forfaits Plus, Pro et Lifetime.",
@@ -1822,6 +1823,6 @@
   "Purge all reading data": "Purger toutes les données de lecture",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Cela efface définitivement la progression de lecture, les notes et les signets. Cette action est irréversible.",
   "Also erase reading progress, notes, and bookmarks.": "Efface aussi la progression de lecture, les notes et les signets.",
-  "Applies to the Library": "S’applique à la bibliothèque",
-  "Applies to the Reader": "S’applique à la vue de lecture"
+  "Background Image (Library)": "Image de Fond (Bibliothèque)",
+  "Background Image (Reader)": "Image de Fond (Vue de lecture)"
 }

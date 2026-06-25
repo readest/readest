@@ -391,7 +391,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <BackgroundTextureSelector
             predefinedTextures={PREDEFINED_TEXTURES}
             customTextures={customTextures.filter((t) => !t.deletedAt)}
-            scopeLabel={isLibraryContext ? _('Applies to the Library') : _('Applies to the Reader')}
+            title={
+              isLibraryContext ? _('Background Image (Library)') : _('Background Image (Reader)')
+            }
             selectedTextureId={selectedTextureId}
             backgroundOpacity={backgroundOpacity}
             backgroundSize={backgroundSize}

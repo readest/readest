@@ -676,19 +676,18 @@ export interface SyncLibraryOptions {
  * counters returned to the caller drive the final toast.
  */
 /**
- * Reduce an arbitrary error to a short, single-line description suitable
- * for surfacing in the user-visible sync log.
+ * Reduce an arbitrary error to a short, single-line description for the
+ * per-book failure breakdown in the returned {@link SyncLibraryResult}.
  *
  * Goals:
- *   - Strip stack traces and any embedded server XML so the persisted
- *     `syncLog` in settings.json doesn't bloat (settings is read on every
- *     app start, so size matters).
+ *   - Strip stack traces and any embedded server XML so each reason stays
+ *     a compact one-liner.
  *   - Preserve the semantically useful bits — HTTP status, our own
  *     `code` enum (`AUTH_FAILED`, `NOT_FOUND`, `NETWORK`) — because that
  *     is what tells a user whether they should re-tap or fix their
  *     credentials.
  *   - Cap at 200 chars so a runaway server response doesn't make a
- *     single failure entry dominate the log file.
+ *     single failure entry dominate the result.
  */
 const formatFailureReason = (e: unknown): string => {
   let message: string;
