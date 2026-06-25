@@ -1860,5 +1860,11 @@
   "Background Image (Reader)": "Slikovno ozadje (Bralni pogled)",
   "updated metadata for {{n}} book(s)": "posodobljeni metapodatki za {{n}} knjig",
   "{{n}} metadata": "{{n}} metapodatki",
-  "Metadata updated": "Metapodatki posodobljeni"
+  "Metadata updated": "Metapodatki posodobljeni",
+  "Filter": "Filtriraj",
+  "Sort by": "Razvrsti po",
+  "Date modified": "Datum spremembe",
+  "Date created": "Datum ustvarjanja",
+  "Sort ascending": "Naraščajoče razvrščanje",
+  "Sort descending": "Padajoče razvrščanje"
 }

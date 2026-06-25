@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "Imej Latar Belakang (Paparan Bacaan)",
   "updated metadata for {{n}} book(s)": "metadata dikemas kini untuk {{n}} buku",
   "{{n}} metadata": "{{n}} metadata",
-  "Metadata updated": "Metadata dikemas kini"
+  "Metadata updated": "Metadata dikemas kini",
+  "Filter": "Tapis",
+  "Sort by": "Isih mengikut",
+  "Date modified": "Tarikh diubah suai",
+  "Date created": "Tarikh dicipta",
+  "Sort ascending": "Isih menaik",
+  "Sort descending": "Isih menurun"
 }

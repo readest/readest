@@ -104,12 +104,25 @@ export interface HardcoverSettings {
   autoSync?: boolean;
 }
 
+/**
+ * Sort field for the WebDAV browser listing. 'name' reproduces the
+ * legacy directories-first/alphabetical default; the date fields drive
+ * the "pull up recent books" use case ('created' relies on the server
+ * reporting `<creationdate>`, which not all do). 'size' orders files.
+ */
+export type WebDAVBrowseSortByType = 'name' | 'modified' | 'created' | 'size';
+
 export interface WebDAVSettings {
   enabled: boolean;
   serverUrl: string;
   username: string;
   password: string;
   rootPath: string;
+  // Browser sort preference, persisted so a chosen "recent first" order
+  // survives across sessions. Both optional: absent => name/ascending,
+  // matching the pre-feature default (no migration needed).
+  browseSortBy?: WebDAVBrowseSortByType;
+  browseSortAscending?: boolean;
   // Sync sub-toggles. WebDAV sync runs as a parallel channel alongside the
   // native cloud sync, KOSync, Readwise, and Hardcover; each sub-toggle
   // gates a category independently so a user can e.g. mirror progress to

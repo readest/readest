@@ -392,7 +392,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
             </SettingsRow>
           </BoxedList>
 
-          <WebDAVBrowsePane settings={stored} />
+          <WebDAVBrowsePane settings={stored} onUpdateSettings={persistWebdav} />
 
           <div className='flex justify-end'>
             <button

@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "පසුබිම් රූපය (කියවීමේ දසුන)",
   "updated metadata for {{n}} book(s)": "පොත් {{n}}ක මෙටාඩේටා යාවත්කාලීන කරන ලදී",
   "{{n}} metadata": "{{n}} මෙටාඩේටා",
-  "Metadata updated": "මෙටාඩේටා යාවත්කාලීන කරන ලදී"
+  "Metadata updated": "මෙටාඩේටා යාවත්කාලීන කරන ලදී",
+  "Filter": "පෙරහන",
+  "Sort by": "අනුව සකසන්න",
+  "Date modified": "වෙනස් කළ දිනය",
+  "Date created": "සෑදූ දිනය",
+  "Sort ascending": "ආරෝහණව සකසන්න",
+  "Sort descending": "අවරෝහණව සකසන්න"
 }

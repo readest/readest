@@ -15,6 +15,8 @@ import { LuBookImage } from 'react-icons/lu';
 import { MdInsertDriveFile } from 'react-icons/md';
 import React from 'react';
 import { SUPPORTED_BOOK_EXTS } from '@/services/constants';
+import type { WebDAVEntry } from '@/services/sync/providers/webdav/client';
+import type { WebDAVBrowseSortByType } from '@/types/settings';
 
 /**
  * Pure presentational helpers for WebDAVBrowsePane. Lives apart from the
@@ -136,4 +138,107 @@ export const getEntryIcon = (filename: string): React.ComponentType<{ className?
     default:
       return MdInsertDriveFile;
   }
+};
+
+/**
+ * Resolves the comparable/searchable display name for an entry. Defaults
+ * to the raw `entry.name`; the pane passes a resolver that maps a
+ * per-book hash directory to its local library title so sort + search
+ * operate on what the user actually sees.
+ */
+export type WebDAVEntryNameResolver = (entry: WebDAVEntry) => string;
+
+const resolveName = (entry: WebDAVEntry, getName: WebDAVEntryNameResolver): string =>
+  getName(entry) || entry.name;
+
+/**
+ * Parse a WebDAV timestamp to epoch milliseconds. `getlastmodified` is
+ * RFC 1123 and `creationdate` is ISO 8601; `Date.parse` handles both.
+ * Missing or unparseable values return `null` so a date sort can sink
+ * them to the bottom rather than scattering "Invalid Date" rows.
+ */
+const parseTimestamp = (raw: string | undefined): number | null => {
+  if (!raw) return null;
+  const ts = Date.parse(raw);
+  return Number.isFinite(ts) ? ts : null;
+};
+
+/**
+ * Compare two optional numbers for sorting. A `null` (unknown size /
+ * undated entry) always sinks below known values — in BOTH directions —
+ * so toggling ascending/descending never lifts "unknown" to the top.
+ */
+const compareNullableNumber = (a: number | null, b: number | null, ascending: boolean): number => {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  const diff = a - b;
+  return ascending ? diff : -diff;
+};
+
+/**
+ * Sort a directory listing for display. Directories are always grouped
+ * before files (conventional file-browser behaviour); within each group
+ * entries are ordered by the chosen field and direction. Ties — and the
+ * "unknown field" rows that sink to the bottom of date/size sorts — fall
+ * back to ascending display name so the order stays stable and
+ * predictable. Pure: returns a new array, never mutates the input.
+ */
+export const sortWebDAVEntries = (
+  entries: WebDAVEntry[],
+  sortBy: WebDAVBrowseSortByType,
+  ascending: boolean,
+  getName: WebDAVEntryNameResolver = (e) => e.name,
+): WebDAVEntry[] => {
+  const byNameAsc = (a: WebDAVEntry, b: WebDAVEntry): number =>
+    resolveName(a, getName).localeCompare(resolveName(b, getName), undefined, {
+      sensitivity: 'base',
+    });
+
+  const compareField = (a: WebDAVEntry, b: WebDAVEntry): number => {
+    switch (sortBy) {
+      case 'modified':
+        return compareNullableNumber(
+          parseTimestamp(a.lastModified),
+          parseTimestamp(b.lastModified),
+          ascending,
+        );
+      case 'created':
+        return compareNullableNumber(
+          parseTimestamp(a.created),
+          parseTimestamp(b.created),
+          ascending,
+        );
+      case 'size':
+        return compareNullableNumber(a.size ?? null, b.size ?? null, ascending);
+      case 'name':
+      default:
+        return ascending ? byNameAsc(a, b) : -byNameAsc(a, b);
+    }
+  };
+
+  return [...entries].sort((a, b) => {
+    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+    const primary = compareField(a, b);
+    return primary !== 0 ? primary : byNameAsc(a, b);
+  });
+};
+
+/**
+ * Filter a listing by a free-text query, matching case-insensitively as a
+ * substring against both the raw entry name and its resolved display name
+ * (so a hashed book directory matches on its library title). An empty or
+ * whitespace-only query returns the input unchanged.
+ */
+export const filterWebDAVEntries = (
+  entries: WebDAVEntry[],
+  query: string,
+  getName: WebDAVEntryNameResolver = (e) => e.name,
+): WebDAVEntry[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return entries;
+  return entries.filter((entry) => {
+    if (entry.name.toLowerCase().includes(q)) return true;
+    return resolveName(entry, getName).toLowerCase().includes(q);
+  });
 };

@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "Εικόνα φόντου (Προβολή ανάγνωσης)",
   "updated metadata for {{n}} book(s)": "ενημερώθηκαν τα μεταδεδομένα για {{n}} βιβλίο/α",
   "{{n}} metadata": "{{n}} μεταδεδομένα",
-  "Metadata updated": "Ενημερωμένα μεταδεδομένα"
+  "Metadata updated": "Ενημερωμένα μεταδεδομένα",
+  "Filter": "Φιλτράρισμα",
+  "Sort by": "Ταξινόμηση κατά",
+  "Date modified": "Ημερομηνία τροποποίησης",
+  "Date created": "Ημερομηνία δημιουργίας",
+  "Sort ascending": "Αύξουσα ταξινόμηση",
+  "Sort descending": "Φθίνουσα ταξινόμηση"
 }

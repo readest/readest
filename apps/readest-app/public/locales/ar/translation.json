@@ -1926,5 +1926,11 @@
   "Background Image (Reader)": "صورة الخلفية (واجهة القراءة)",
   "updated metadata for {{n}} book(s)": "تم تحديث البيانات الوصفية لـ {{n}} كتاب",
   "{{n}} metadata": "{{n}} بيانات وصفية",
-  "Metadata updated": "تم تحديث البيانات الوصفية"
+  "Metadata updated": "تم تحديث البيانات الوصفية",
+  "Filter": "تصفية",
+  "Sort by": "ترتيب حسب",
+  "Date modified": "تاريخ التعديل",
+  "Date created": "تاريخ الإنشاء",
+  "Sort ascending": "ترتيب تصاعدي",
+  "Sort descending": "ترتيب تنازلي"
 }

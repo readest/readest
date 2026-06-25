@@ -1860,5 +1860,11 @@
   "Background Image (Reader)": "Фонове зображення (Режим читання)",
   "updated metadata for {{n}} book(s)": "оновлено метадані для {{n}} книг",
   "{{n}} metadata": "{{n}} метадані",
-  "Metadata updated": "Метадані оновлено"
+  "Metadata updated": "Метадані оновлено",
+  "Filter": "Фільтр",
+  "Sort by": "Сортувати за",
+  "Date modified": "Дата зміни",
+  "Date created": "Дата створення",
+  "Sort ascending": "За зростанням",
+  "Sort descending": "За спаданням"
 }

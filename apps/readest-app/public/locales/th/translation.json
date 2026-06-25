@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "ภาพพื้นหลัง (มุมมองการอ่าน)",
   "updated metadata for {{n}} book(s)": "อัปเดตเมทาดาตาสำหรับ {{n}} เล่ม",
   "{{n}} metadata": "{{n}} เมทาดาตา",
-  "Metadata updated": "อัปเดตเมทาดาตาแล้ว"
+  "Metadata updated": "อัปเดตเมทาดาตาแล้ว",
+  "Filter": "กรอง",
+  "Sort by": "เรียงตาม",
+  "Date modified": "วันที่แก้ไข",
+  "Date created": "วันที่สร้าง",
+  "Sort ascending": "เรียงจากน้อยไปมาก",
+  "Sort descending": "เรียงจากมากไปน้อย"
 }

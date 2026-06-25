@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "背景图片（阅读界面）",
   "updated metadata for {{n}} book(s)": "已更新 {{n}} 本书的元数据",
   "{{n}} metadata": "{{n}} 元数据",
-  "Metadata updated": "已更新元数据"
+  "Metadata updated": "已更新元数据",
+  "Filter": "筛选",
+  "Sort by": "排序方式",
+  "Date modified": "修改日期",
+  "Date created": "创建日期",
+  "Sort ascending": "升序排列",
+  "Sort descending": "降序排列"
 }

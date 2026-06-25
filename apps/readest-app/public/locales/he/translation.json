@@ -1827,5 +1827,11 @@
   "Background Image (Reader)": "תמונת רקע (מצב קריאה)",
   "updated metadata for {{n}} book(s)": "המטא-נתונים עודכנו עבור {{n}} ספרים",
   "{{n}} metadata": "{{n}} מטא-נתונים",
-  "Metadata updated": "המטא-נתונים עודכנו"
+  "Metadata updated": "המטא-נתונים עודכנו",
+  "Filter": "סינון",
+  "Sort by": "מיין לפי",
+  "Date modified": "תאריך שינוי",
+  "Date created": "תאריך יצירה",
+  "Sort ascending": "מיון עולה",
+  "Sort descending": "מיון יורד"
 }

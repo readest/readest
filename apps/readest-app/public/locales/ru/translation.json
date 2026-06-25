@@ -1860,5 +1860,11 @@
   "Background Image (Reader)": "Фоновое изображение (Режим чтения)",
   "updated metadata for {{n}} book(s)": "обновлены метаданные для {{n}} книг",
   "{{n}} metadata": "{{n}} метаданные",
-  "Metadata updated": "Метаданные обновлены"
+  "Metadata updated": "Метаданные обновлены",
+  "Filter": "Фильтр",
+  "Sort by": "Сортировать по",
+  "Date modified": "Дата изменения",
+  "Date created": "Дата создания",
+  "Sort ascending": "По возрастанию",
+  "Sort descending": "По убыванию"
 }

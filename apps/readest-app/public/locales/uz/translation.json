@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "Fon rasmi (Oʻqish koʻrinishi)",
   "updated metadata for {{n}} book(s)": "{{n}} ta kitob metamaʼlumotlari yangilandi",
   "{{n}} metadata": "{{n}} metamaʼlumot",
-  "Metadata updated": "Metamaʼlumotlar yangilandi"
+  "Metadata updated": "Metamaʼlumotlar yangilandi",
+  "Filter": "Filtr",
+  "Sort by": "Saralash tartibi",
+  "Date modified": "Oʻzgartirilgan sana",
+  "Date created": "Yaratilgan sana",
+  "Sort ascending": "Oʻsish boʻyicha",
+  "Sort descending": "Kamayish boʻyicha"
 }

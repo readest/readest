@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "Ảnh nền (Trình đọc)",
   "updated metadata for {{n}} book(s)": "đã cập nhật siêu dữ liệu cho {{n}} sách",
   "{{n}} metadata": "{{n}} siêu dữ liệu",
-  "Metadata updated": "Đã cập nhật siêu dữ liệu"
+  "Metadata updated": "Đã cập nhật siêu dữ liệu",
+  "Filter": "Lọc",
+  "Sort by": "Sắp xếp theo",
+  "Date modified": "Ngày sửa đổi",
+  "Date created": "Ngày tạo",
+  "Sort ascending": "Sắp xếp tăng dần",
+  "Sort descending": "Sắp xếp giảm dần"
 }

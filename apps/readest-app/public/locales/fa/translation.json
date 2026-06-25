@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "تصویر پس‌زمینه (صفحه مطالعه)",
   "updated metadata for {{n}} book(s)": "متادیتای {{n}} کتاب به‌روزرسانی شد",
   "{{n}} metadata": "{{n}} متادیتا",
-  "Metadata updated": "متادیتا به‌روزرسانی شد"
+  "Metadata updated": "متادیتا به‌روزرسانی شد",
+  "Filter": "فیلتر",
+  "Sort by": "مرتب‌سازی بر اساس",
+  "Date modified": "تاریخ تغییر",
+  "Date created": "تاریخ ایجاد",
+  "Sort ascending": "مرتب‌سازی صعودی",
+  "Sort descending": "مرتب‌سازی نزولی"
 }

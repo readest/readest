@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "पृष्ठभूमि छवि (रीडर)",
   "updated metadata for {{n}} book(s)": "{{n}} पुस्तक(ों) के मेटाडेटा अपडेट किए गए",
   "{{n}} metadata": "{{n}} मेटाडेटा",
-  "Metadata updated": "मेटाडेटा अपडेट किया गया"
+  "Metadata updated": "मेटाडेटा अपडेट किया गया",
+  "Filter": "फ़िल्टर",
+  "Sort by": "इसके अनुसार क्रमित करें",
+  "Date modified": "संशोधन तिथि",
+  "Date created": "निर्माण तिथि",
+  "Sort ascending": "आरोही क्रम",
+  "Sort descending": "अवरोही क्रम"
 }

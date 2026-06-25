@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "Hintergrundbild (Leseansicht)",
   "updated metadata for {{n}} book(s)": "Metadaten für {{n}} Buch/Bücher aktualisiert",
   "{{n}} metadata": "{{n}} Metadaten",
-  "Metadata updated": "Metadaten aktualisiert"
+  "Metadata updated": "Metadaten aktualisiert",
+  "Filter": "Filtern",
+  "Sort by": "Sortieren nach",
+  "Date modified": "Änderungsdatum",
+  "Date created": "Erstellungsdatum",
+  "Sort ascending": "Aufsteigend sortieren",
+  "Sort descending": "Absteigend sortieren"
 }

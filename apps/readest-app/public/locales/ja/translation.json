@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "背景画像（リーダー）",
   "updated metadata for {{n}} book(s)": "{{n}} 冊分のメタデータを更新",
   "{{n}} metadata": "{{n}} 件メタデータ",
-  "Metadata updated": "更新したメタデータ"
+  "Metadata updated": "更新したメタデータ",
+  "Filter": "フィルター",
+  "Sort by": "並べ替え",
+  "Date modified": "更新日",
+  "Date created": "作成日",
+  "Sort ascending": "昇順で並べ替え",
+  "Sort descending": "降順で並べ替え"
 }

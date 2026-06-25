@@ -1761,5 +1761,11 @@
   "Background Image (Reader)": "Gambar Latar Belakang (Tampilan Baca)",
   "updated metadata for {{n}} book(s)": "metadata diperbarui untuk {{n}} buku",
   "{{n}} metadata": "{{n}} metadata",
-  "Metadata updated": "Metadata diperbarui"
+  "Metadata updated": "Metadata diperbarui",
+  "Filter": "Filter",
+  "Sort by": "Urutkan menurut",
+  "Date modified": "Tanggal diubah",
+  "Date created": "Tanggal dibuat",
+  "Sort ascending": "Urutkan menaik",
+  "Sort descending": "Urutkan menurun"
 }

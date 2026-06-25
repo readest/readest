@@ -1827,5 +1827,11 @@
   "Background Image (Reader)": "Imagine de fundal (Vizualizare de lectură)",
   "updated metadata for {{n}} book(s)": "metadate actualizate pentru {{n}} carte/cărți",
   "{{n}} metadata": "{{n}} metadate",
-  "Metadata updated": "Metadate actualizate"
+  "Metadata updated": "Metadate actualizate",
+  "Filter": "Filtrează",
+  "Sort by": "Sortează după",
+  "Date modified": "Data modificării",
+  "Date created": "Data creării",
+  "Sort ascending": "Sortare crescătoare",
+  "Sort descending": "Sortare descrescătoare"
 }

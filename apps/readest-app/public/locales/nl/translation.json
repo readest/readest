@@ -1794,5 +1794,11 @@
   "Background Image (Reader)": "Achtergrondafbeelding (Leesweergave)",
   "updated metadata for {{n}} book(s)": "metadata bijgewerkt voor {{n}} boek(en)",
   "{{n}} metadata": "{{n}} metadata",
-  "Metadata updated": "Metadata bijgewerkt"
+  "Metadata updated": "Metadata bijgewerkt",
+  "Filter": "Filteren",
+  "Sort by": "Sorteren op",
+  "Date modified": "Wijzigingsdatum",
+  "Date created": "Aanmaakdatum",
+  "Sort ascending": "Oplopend sorteren",
+  "Sort descending": "Aflopend sorteren"
 }
