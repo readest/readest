@@ -1,6 +1,6 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
 import { replace as expandURITemplate, getVariables } from 'foliate-js/uri-template.js';
-import { OPDSBaseLink } from '@/types/opds';
+import { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
 
@@ -317,6 +317,25 @@ export const validateOPDSURL = async (
       error: e instanceof Error ? e.message : VALIDATION_ERROR.NOT_OPDS,
     };
   }
+};
+
+/**
+ * Filter the built-in "popular" OPDS catalogs down to those the user hasn't
+ * already added to their personal list. Matching is by normalized URL (trim +
+ * lowercase), mirroring the store's `findByUrl` dedup so case/whitespace
+ * differences still hide a popular entry once it's been added. Disabled
+ * popular entries are always excluded. Without this an added popular catalog
+ * would keep rendering in the Popular section and look like a duplicate
+ * (issue #4782).
+ */
+export const getUnaddedPopularCatalogs = (
+  popularCatalogs: OPDSCatalog[],
+  addedCatalogs: OPDSCatalog[],
+): OPDSCatalog[] => {
+  const addedUrls = new Set(addedCatalogs.map((c) => c.url.trim().toLowerCase()));
+  return popularCatalogs.filter(
+    (catalog) => !catalog.disabled && !addedUrls.has(catalog.url.trim().toLowerCase()),
+  );
 };
 
 export const getFileExtFromPath = (pathname: string, delimiter = '/'): string => {
