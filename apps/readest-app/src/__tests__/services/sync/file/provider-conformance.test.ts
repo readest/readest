@@ -51,6 +51,24 @@ const runProviderConformance = (
       mock.ok(404, null);
       await expect(makeProvider().deleteDir('/Readest/books/gone')).resolves.toBeUndefined();
     });
+
+    test('list maps 401 to FileSyncError AUTH_FAILED', async () => {
+      mock.ok(401, '');
+      const err = await makeProvider()
+        .list('/Readest/books')
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(FileSyncError);
+      expect(err).toMatchObject({ code: 'AUTH_FAILED', status: 401 });
+    });
+
+    test('list maps 404 to FileSyncError NOT_FOUND', async () => {
+      mock.ok(404, '');
+      const err = await makeProvider()
+        .list('/Readest/books')
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(FileSyncError);
+      expect(err).toMatchObject({ code: 'NOT_FOUND', status: 404 });
+    });
   });
 };
 
