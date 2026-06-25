@@ -1,0 +1,145 @@
+/**
+ * Pure request builders for the Google Drive v3 REST API.
+ *
+ * {@link GoogleDriveProvider} drives all of its file operations through the Drive
+ * REST endpoints. Drive is *ID-addressed*: there is no path-based lookup, so the
+ * provider resolves a logical path segment-by-segment with `files.list` search
+ * queries, then acts on the resolved file id with download/upload/metadata
+ * endpoints. The query strings and endpoint URLs those calls need are assembled
+ * here as small pure functions, kept apart from the provider so the exact wire
+ * format (quote escaping, query parameters, `fields` selectors, pagination) is
+ * unit-testable without a network and reads as a single source of truth.
+ *
+ * No `fetch`, no auth, no state — every export is a deterministic string builder.
+ *
+ * Adapted from ratatabananana-bit/Readest-google-drive-mod-patcher (AGPL-3.0),
+ * used with the author's explicit permission. Pagination + `about.get` added for
+ * Readest.
+ */
+
+/** Drive REST collection endpoint for file *metadata* operations (list/get/patch/delete). */
+export const FILES_ENDPOINT = 'https://www.googleapis.com/drive/v3/files';
+
+/**
+ * Drive REST *upload* endpoint (a different host path than {@link FILES_ENDPOINT}).
+ * Drive splits metadata operations from media transfer onto the `/upload/...`
+ * path, so the byte-carrying POST/PATCH requests target this base URL.
+ */
+export const UPLOAD_ENDPOINT = 'https://www.googleapis.com/upload/drive/v3/files';
+
+/** Drive REST endpoint for account info (`about.get`) — used to label the account. */
+export const ABOUT_ENDPOINT = 'https://www.googleapis.com/drive/v3/about';
+
+/** MIME type Drive assigns to folders; the marker we use to tell folders from blobs. */
+export const FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+/**
+ * Max children returned per `files.list` page. Drive caps `pageSize` at 1000;
+ * requesting the max minimises round-trips for large hash directories while the
+ * provider still loops on `nextPageToken` to drain every page.
+ */
+const LIST_PAGE_SIZE = 1000;
+
+/**
+ * Escape a string literal for embedding inside a Drive search query. Drive query
+ * literals are wrapped in single quotes, so any single quote inside the value
+ * (e.g. a file named `O'Brien`) must be backslash-escaped or the query is
+ * malformed. This is the only metacharacter the grammar requires escaping.
+ */
+export const escapeDriveLiteral = (s: string): string => s.replace(/'/g, "\\'");
+
+/**
+ * Build the `files.list` `q` to find a *named* child directly under a parent —
+ * the per-segment lookup that powers path resolution. `trashed = false` keeps
+ * tombstoned files (still listable in Drive) from masking a live file of the
+ * same name.
+ */
+export const listQuery = (name: string, parentId: string): string =>
+  `name = '${escapeDriveLiteral(name)}' and '${parentId}' in parents and trashed = false`;
+
+/**
+ * Build the `files.list` `q` to enumerate *all* live children of a parent — the
+ * query behind {@link GoogleDriveProvider.list}.
+ */
+export const childrenQuery = (parentId: string): string =>
+  `'${parentId}' in parents and trashed = false`;
+
+/**
+ * URL to download a file's raw bytes. `alt=media` switches the metadata `get`
+ * endpoint into returning the file *body* instead of its JSON metadata.
+ */
+export const mediaDownloadUrl = (fileId: string): string => `${FILES_ENDPOINT}/${fileId}?alt=media`;
+
+/**
+ * URL for a simple (single-request) media upload that creates a new file.
+ * `uploadType=media` means the request body *is* the file bytes (no multipart
+ * metadata envelope). `fields` narrows the JSON response to the new `id` plus
+ * the `md5Checksum`/`size`.
+ */
+export const simpleUploadUrl = (): string =>
+  `${UPLOAD_ENDPOINT}?uploadType=media&fields=id,md5Checksum,size`;
+
+/**
+ * URL to overwrite an *existing* file's bytes via a media PATCH. Same simple
+ * media transfer as {@link simpleUploadUrl}, targeted at a known file id.
+ */
+export const mediaUpdateUrl = (fileId: string): string =>
+  `${UPLOAD_ENDPOINT}/${fileId}?uploadType=media&fields=id,md5Checksum,size`;
+
+/**
+ * URL to fetch a single file's metadata, restricted to the {@link FileEntry}
+ * fields the provider exposes.
+ */
+export const metadataUrl = (fileId: string): string =>
+  `${FILES_ENDPOINT}/${fileId}?fields=${FILE_FIELDS}`;
+
+/** URL to delete a file by id. */
+export const deleteUrl = (fileId: string): string => `${FILES_ENDPOINT}/${fileId}`;
+
+/**
+ * URL for the metadata PATCH that renames a freshly-uploaded file and moves it
+ * from the upload's default root location into its target folder. `addParents`
+ * attaches the file to the destination folder and `removeParents` detaches it
+ * from `root`. Both are query parameters; only the new `name` rides in the body.
+ */
+export const reparentUrl = (
+  fileId: string,
+  addParentId: string,
+  removeParentId: string,
+): string => {
+  const url = new URL(`${FILES_ENDPOINT}/${fileId}`);
+  url.searchParams.set('addParents', addParentId);
+  url.searchParams.set('removeParents', removeParentId);
+  return url.toString();
+};
+
+/**
+ * URL for the `about.get` call that returns the signed-in user's identity. The
+ * `fields` selector is mandatory for `about`; we request only the display
+ * name + email so the settings UI can render "Connected as <email>".
+ */
+export const aboutUrl = (): string => `${ABOUT_ENDPOINT}?fields=user(displayName,emailAddress)`;
+
+/**
+ * The metadata `fields` selector requested for individual files and list rows.
+ * Drive omits unrequested fields entirely, so this is the contract for what the
+ * provider can read back: enough to build a {@link FileEntry}.
+ */
+const FILE_FIELDS = 'id,name,mimeType,size,modifiedTime,md5Checksum';
+
+/**
+ * Build a `files.list` request URL for the given query, asking for the
+ * id-resolution/metadata fields the provider uses from each row plus the
+ * `nextPageToken` that drives pagination. Pass `pageToken` to fetch a
+ * subsequent page; omit it for the first page.
+ */
+export const listUrl = (query: string, pageToken?: string): string => {
+  const url = new URL(FILES_ENDPOINT);
+  url.searchParams.set('q', query);
+  // `nextPageToken` rides alongside the per-row fields so a large directory is
+  // drained page by page rather than silently truncated at the first page.
+  url.searchParams.set('fields', `nextPageToken,files(${FILE_FIELDS})`);
+  url.searchParams.set('pageSize', String(LIST_PAGE_SIZE));
+  if (pageToken) url.searchParams.set('pageToken', pageToken);
+  return url.toString();
+};

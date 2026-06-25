@@ -3,6 +3,7 @@ import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVPro
 import { FileSyncError } from '@/services/sync/file/provider';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import type { WebDAVSettings } from '@/types/settings';
+import { runSemanticContract } from './providerSemanticContract';
 
 /**
  * Contract every {@link FileSyncProvider} must satisfy, exercised here against
@@ -96,6 +97,18 @@ afterEach(() => {
 runProviderConformance('WebDAVProvider', () => createWebDAVProvider(settings), {
   ok: (status, body = '', headers) =>
     fetchMock.mockResolvedValueOnce(new Response(body, { status, headers })),
+});
+
+// The same shared semantic contract Drive is held to, proving it is genuinely
+// transport-agnostic (WebDAV does one fetch/op; Drive does several).
+runSemanticContract('WebDAVProvider', () => {
+  const scenarioFetch = vi.fn();
+  globalThis.fetch = scenarioFetch as unknown as typeof fetch;
+  return {
+    makeProvider: () => createWebDAVProvider(settings),
+    stageAbsent: () => scenarioFetch.mockResolvedValueOnce(new Response(null, { status: 404 })),
+    stageAuthFailure: () => scenarioFetch.mockResolvedValueOnce(new Response('', { status: 401 })),
+  };
 });
 
 describe('WebDAVProvider construction', () => {

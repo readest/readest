@@ -285,6 +285,47 @@ export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableRe
   return invoke<SyncKeychainAvailableResponse>('plugin:native-bridge|is_sync_keychain_available');
 }
 
+// ── Keyed secure key-value store ─────────────────────────────────────────
+// Tauri-only. A generic, keyed secret store over the same OS keychain backends
+// as the sync passphrase above, so secrets that aren't the single sync
+// passphrase (the Google Drive OAuth token set, and any future cloud
+// provider's refresh token) get the same XSS-free cross-launch persistence
+// without each needing its own native command. Availability is the same probe
+// as `is_sync_keychain_available`.
+
+export interface SetSecureItemRequest {
+  key: string;
+  value: string;
+}
+
+export interface GetSecureItemRequest {
+  key: string;
+}
+
+export interface SecureItemResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface GetSecureItemResponse {
+  value?: string;
+  error?: string;
+}
+
+export async function setSecureItem(request: SetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|set_secure_item', { payload: request });
+}
+
+export async function getSecureItem(request: GetSecureItemRequest): Promise<GetSecureItemResponse> {
+  return invoke<GetSecureItemResponse>('plugin:native-bridge|get_secure_item', {
+    payload: request,
+  });
+}
+
+export async function clearSecureItem(request: GetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
+}
+
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────
 // `verify_update_signature` gates the custom install flows (portable /
 // AppImage / Android); `install_nightly_update` drives the Tauri updater for
