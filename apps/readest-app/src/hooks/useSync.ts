@@ -170,9 +170,11 @@ export function useSync(bookKey?: string) {
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
-        if (err.message.includes('Not authenticated') && settings.keepLogin) {
-          settings.keepLogin = false;
-          setSettings(settings);
+        // Read live store settings, not the stale hook closure (see below).
+        const latest = useSettingsStore.getState().settings;
+        if (err.message.includes('Not authenticated') && latest.keepLogin) {
+          latest.keepLogin = false;
+          setSettings(latest);
           navigateToLogin(router);
         }
         setSyncError(err.message || `Error pulling ${type}`);
@@ -182,7 +184,13 @@ export function useSync(bookKey?: string) {
       return 0;
     } finally {
       setSyncing(false);
-      saveSettings(envConfig, settings);
+      // Persist the LIVE store settings, never the hook-closure `settings`
+      // captured at this pull's render. On a slow connection a settings
+      // change that lands mid-pull (notably a WebDAV connect, which is the
+      // only integration not re-hydrated from the server replica) would be
+      // silently overwritten on disk here and read back as "Not connected"
+      // after the app is reopened. Issue #4780.
+      saveSettings(envConfig, useSettingsStore.getState().settings);
     }
   };
 
