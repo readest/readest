@@ -206,6 +206,7 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
 
     expect(configWrites(captured)).toHaveLength(0);
     expect(res.configsUploaded).toBe(0);
+    expect(res.booksSynced).toBe(0);
     // The index itself is still re-pushed.
     expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(true);
   });
@@ -231,6 +232,7 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     );
 
     expect(res.configsUploaded).toBe(1);
+    expect(res.booksSynced).toBe(1);
     expect(configWrites(captured)).toHaveLength(1);
   });
 
@@ -265,6 +267,7 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
 
     expect(res.metadataUpdated).toBe(1);
     expect(res.configsDownloaded).toBe(1);
+    expect(res.booksSynced).toBe(1);
     expect(saveBookConfig).toHaveBeenCalledTimes(1);
     // Remote is newer, so the book is NOT in the push set — no config.json PUT.
     expect(configWrites(captured)).toHaveLength(0);
@@ -325,6 +328,7 @@ describe('FileSyncEngine.syncLibrary — bounded concurrency', () => {
   test('caps in-flight work at the configured concurrency', async () => {
     const { res, maxInFlight } = await runWithConcurrency(3, 8);
     expect(res.configsUploaded).toBe(8);
+    expect(res.booksSynced).toBe(8);
     expect(maxInFlight).toBe(3);
   });
 

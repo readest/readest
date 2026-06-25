@@ -284,58 +284,23 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       });
 
       await persistWebdav({ lastSyncedAt: Date.now() });
-      // Build a compact, accurate summary. Downloads happen regardless
-      // of the `syncBooks` toggle, so they're always part of the toast;
-      // the upload counters are only included when there was anything
-      // to push (otherwise they'd just be a wall of zeros).
-      const parts: string[] = [];
-      if (result.booksDownloaded > 0) {
-        parts.push(_('downloaded {{n}} book(s)', { n: result.booksDownloaded }));
-      }
-      if (result.configsDownloaded > 0) {
-        parts.push(_('pulled progress for {{n}} book(s)', { n: result.configsDownloaded }));
-      }
-      if (result.metadataUpdated > 0) {
-        parts.push(_('updated metadata for {{n}} book(s)', { n: result.metadataUpdated }));
-      }
-      if (result.configsUploaded > 0) {
-        parts.push(_('pushed {{n}} config(s)', { n: result.configsUploaded }));
-      }
-      if (stored.syncBooks && result.filesUploaded > 0) {
-        parts.push(_('uploaded {{n}} new file(s)', { n: result.filesUploaded }));
-      }
-      // Build the toast in two pieces so we can render the details on
-      // their own lines on mobile. The Toast component truncates
-      // single-line `info` messages (max-width + `truncate`), which
-      // chops the long detail string on small screens. Two ways out:
-      //   1. Use `success` type, which renders multi-line and shows a
-      //      dismiss button — picked when there's actionable detail.
-      //   2. Stick with `info` for the short "everything up to date"
-      //      string, which always fits in one line anyway.
-      // The detail bullets are joined with `\n` because Toast's
-      // renderer (Toast.tsx) already splits on newlines into <br>s.
-      let toastType: 'info' | 'success' | 'warning' = 'info';
-      let summary: string;
+      // Keep the toast as simple as the native cloud sync: a single-line
+      // "{{count}} book(s) synced" info message. Failures still surface as a
+      // warning so a partial sync isn't reported as a clean success.
       if (result.failures > 0) {
-        toastType = 'warning';
-        summary = _('Sync finished with {{failed}} failure(s). {{ok}} ok.', {
-          failed: result.failures,
-          ok: Math.max(0, result.totalBooks - result.failures),
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Sync finished with {{failed}} failure(s). {{ok}} ok.', {
+            failed: result.failures,
+            ok: Math.max(0, result.totalBooks - result.failures),
+          }),
         });
-        if (parts.length > 0) {
-          summary += '\n' + parts.map((p) => `• ${p}`).join('\n');
-        }
-      } else if (parts.length > 0) {
-        toastType = 'success';
-        const heading = _('Sync complete');
-        summary = `${heading}\n${parts.map((p) => `• ${p}`).join('\n')}`;
       } else {
-        summary = _('Everything is already up to date.');
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('{{count}} book(s) synced', { count: result.booksSynced }),
+        });
       }
-      eventDispatcher.dispatch('toast', {
-        type: toastType,
-        message: summary,
-      });
     } catch (e) {
       const message = formatSyncError(_, e);
       eventDispatcher.dispatch('toast', { type: 'error', message });

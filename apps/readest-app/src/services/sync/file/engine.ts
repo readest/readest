@@ -70,6 +70,8 @@ export interface SyncLibraryResult {
   booksDownloaded: number;
   /** Already-local books whose metadata was refreshed from a newer index copy (#4756). */
   metadataUpdated: number;
+  /** Distinct books that had any sync activity (pushed, downloaded, or reconciled). */
+  booksSynced: number;
   failures: number;
   /** Per-book failure breakdown for the diagnostic log in the Settings UI. */
   failedBooks: SyncFailureEntry[];
@@ -362,9 +364,16 @@ export class FileSyncEngine {
       coversUploaded: 0,
       booksDownloaded: 0,
       metadataUpdated: 0,
+      booksSynced: 0,
       failures: 0,
       failedBooks: [],
     };
+
+    // Distinct books touched in any direction — the single "N book(s) synced"
+    // number the UI surfaces. Tracked as a set because the per-action counters
+    // overlap (a Full-Sync re-check both reconciles and re-pushes the same
+    // book, and one book can push a config + cover + file).
+    const syncedHashes = new Set<string>();
 
     const strategy = options.strategy || 'silent';
     const canPull = strategy !== 'send';
@@ -458,6 +467,7 @@ export class FileSyncEngine {
           await this.store.updateBookMetadata(merged);
           allBooksMap.set(rb.hash, merged);
           result.metadataUpdated += 1;
+          syncedHashes.add(rb.hash);
         } catch (e) {
           console.warn('file sync: metadata update failed', rb.hash, e);
         }
@@ -597,6 +607,7 @@ export class FileSyncEngine {
             }
             await this.store.addBookToLibrary(rb);
             result.booksDownloaded += 1;
+            syncedHashes.add(rb.hash);
           } else {
             // No bytes returned (typically a 404 we couldn't resolve).
             result.failures += 1;
@@ -665,13 +676,17 @@ export class FileSyncEngine {
             }
             await this.pushBookConfig(book, configToPush, options.deviceId);
             result.configsUploaded += 1;
+            syncedHashes.add(book.hash);
           }
           // Covers ride along with the config-level sync, NOT with syncBooks:
           // the receiving device can't regenerate them without the book bytes.
           // Failures here are warnings, not hard failures.
           try {
             const coverResult = await this.pushBookCover(book);
-            if (coverResult.uploaded) result.coversUploaded += 1;
+            if (coverResult.uploaded) {
+              result.coversUploaded += 1;
+              syncedHashes.add(book.hash);
+            }
           } catch (e) {
             console.warn('file sync: cover failed', book.hash, e);
           }
@@ -680,6 +695,7 @@ export class FileSyncEngine {
             const fileResult = await this.pushBookFile(book);
             if (fileResult.uploaded) {
               result.filesUploaded += 1;
+              syncedHashes.add(book.hash);
             } else if (fileResult.reason === 'remote-matches') {
               result.filesAlreadyInSync += 1;
             }
@@ -714,6 +730,7 @@ export class FileSyncEngine {
       }
     }
 
+    result.booksSynced = syncedHashes.size;
     return result;
   }
 }
