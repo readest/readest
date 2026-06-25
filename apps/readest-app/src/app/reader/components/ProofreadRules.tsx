@@ -246,14 +246,20 @@ const useReplacementRules = (bookKey: string | null) => {
   const persistedConfig = bookKey ? getConfig(bookKey) : null;
   const persistedBookRules = persistedConfig?.viewSettings?.proofreadRules || [];
 
-  // Prefer persisted rules; fall back to in-memory
-  const bookRuleSource = persistedBookRules.length ? persistedBookRules : inMemoryRules;
+  // Prefer persisted rules; fall back to in-memory. Drop tombstoned rules
+  // (deletedAt set) — deletion is a soft tombstone now so it can sync across
+  // devices (see store/proofreadStore.ts), but it must not show in the list.
+  const bookRuleSource = (persistedBookRules.length ? persistedBookRules : inMemoryRules).filter(
+    (r: ProofreadRule) => !r.deletedAt,
+  );
 
   const singleRules = bookRuleSource
     .filter((r: ProofreadRule) => r.scope === 'selection')
     .sort(byOrder);
   const bookScopedRules = bookRuleSource.filter((r: ProofreadRule) => r.scope === 'book');
-  const globalRules = settings?.globalViewSettings?.proofreadRules || [];
+  const globalRules = (settings?.globalViewSettings?.proofreadRules || []).filter(
+    (r: ProofreadRule) => !r.deletedAt,
+  );
 
   // Merge book-scoped and global rules
   const globalRuleIds = new Set(globalRules.map((gr: ProofreadRule) => gr.id));

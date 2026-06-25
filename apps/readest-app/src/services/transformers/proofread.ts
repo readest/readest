@@ -219,7 +219,7 @@ export const proofreadTransformer: Transformer = {
     if (!merged.length) return ctx.content;
 
     const processed = merged
-      .filter((r) => r.enabled && r.pattern.trim())
+      .filter((r) => r.enabled && !r.deletedAt && r.pattern.trim())
       .filter((r) => (onlyForTTS ? r.onlyForTTS : !r.onlyForTTS))
       .map((r) => ({
         ...r,

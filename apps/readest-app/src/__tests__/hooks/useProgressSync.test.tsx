@@ -37,11 +37,15 @@ const h = vi.hoisted(() => {
     user: { id: 'u1' },
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
+    saveConfigMock: vi.fn(async () => {}),
+    setViewSettingsMock: vi.fn(),
+    recreateViewerMock: vi.fn(),
     cfiCompareMock: vi.fn((_a: string, _b: string) => 0),
     view: { renderer: { getContents: () => [], primaryIndex: 0 }, goTo: vi.fn() },
     state: {
       syncedConfigs: [] as unknown[] | null,
       progress: { location: 'cfi-loc' } as { location: string } | null,
+      viewSettings: { proofreadRules: [] } as { proofreadRules: unknown[] } | null,
     },
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
   };
@@ -63,10 +67,15 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ envConfig: {} }),
+}));
+
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
     getConfig: () => h.config,
     setConfig: vi.fn(),
+    saveConfig: h.saveConfigMock,
     getBookData: () => ({ book: h.book }),
   }),
 }));
@@ -75,6 +84,9 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: h.makeStore({
     getView: () => h.view,
     getProgress: () => h.state.progress,
+    getViewSettings: () => h.state.viewSettings,
+    setViewSettings: h.setViewSettingsMock,
+    recreateViewer: h.recreateViewerMock,
     setHoveredBookKey: vi.fn(),
     getViewState: () => ({ previewMode: false }),
   }),
@@ -141,11 +153,15 @@ beforeEach(() => {
   vi.useFakeTimers();
   h.syncConfigsMock.mockClear();
   h.syncBooksMock.mockClear();
+  h.saveConfigMock.mockClear();
+  h.setViewSettingsMock.mockClear();
+  h.recreateViewerMock.mockClear();
   h.view.goTo.mockClear();
   h.cfiCompareMock.mockReset();
   h.cfiCompareMock.mockReturnValue(0);
   h.state.syncedConfigs = [];
   h.state.progress = { location: 'cfi-loc' };
+  h.state.viewSettings = { proofreadRules: [] };
   h.eventListeners.clear();
 });
 
@@ -285,6 +301,55 @@ describe('useProgressSync', () => {
     // And the retry chain restarts from delay[0].
     await advance(1500);
     expect(pullCallCount()).toBe(callsBeforeRefresh + 2);
+  });
+
+  test('merges synced book-scope proofread rules into local config by id', async () => {
+    // Local has a book rule; the remote config carries a different book rule
+    // plus a library-scope rule (which must be ignored — it syncs separately
+    // via the settings replica). After the pull both book rules should be
+    // merged into local viewSettings, persisted, and the live view refreshed.
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = {
+      proofreadRules: [{ id: 'local', scope: 'book', pattern: 'a', updatedAt: 100 }],
+    };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        viewSettings: {
+          proofreadRules: [
+            { id: 'remote', scope: 'book', pattern: 'b', updatedAt: 200 },
+            { id: 'lib', scope: 'library', pattern: 'c', updatedAt: 200 },
+          ],
+        },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).toHaveBeenCalledTimes(1);
+    const mergedRules = (
+      h.setViewSettingsMock.mock.calls[0]![1] as { proofreadRules: { id: string }[] }
+    ).proofreadRules;
+    // Both book rules merged; the library-scope rule is excluded.
+    expect(mergedRules.map((r) => r.id).sort()).toEqual(['local', 'remote']);
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+    expect(h.recreateViewerMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not touch the view when synced proofread rules match local', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    const rule = { id: 'same', scope: 'book', pattern: 'a', updatedAt: 100 };
+    h.state.viewSettings = { proofreadRules: [rule] };
+    h.state.syncedConfigs = [
+      { bookHash: 'h1', metaHash: 'm1', viewSettings: { proofreadRules: [rule] } },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).not.toHaveBeenCalled();
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+    expect(h.recreateViewerMock).not.toHaveBeenCalled();
   });
 
   test('sync-book-progress flushes the pending cloud push on book close', async () => {

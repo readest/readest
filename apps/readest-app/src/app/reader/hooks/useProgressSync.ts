@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -7,6 +8,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { mergeProofreadRules } from '@/utils/proofread';
 import { serializeConfig } from '@/utils/serializer';
 import { CFI } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
@@ -27,9 +29,14 @@ export const useProgressSync = (bookKey: string) => {
   // to the WHOLE bookDataStore — saveConfig writes booksData on every
   // throttled save and would otherwise re-render the entire reader subtree.
   const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getView = useReaderStore((s) => s.getView);
+  const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const recreateViewer = useReaderStore((s) => s.recreateViewer);
   const setHoveredBookKey = useReaderStore((s) => s.setHoveredBookKey);
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { syncedConfigs, syncConfigs } = useSync(bookKey);
   const { user } = useAuth();
@@ -237,8 +244,9 @@ export const useProgressSync = (bookKey: string) => {
           remoteCFILocation = candidateCFI;
         }
       }
-      // Currently, only reading progress is synced.
-      // TODO: Configuration sync will be handled through a more robust profile-based solution in the future.
+      // Reading progress applies below. Proofread (find/replace) rules merge
+      // separately just after; other config fields remain device-local.
+      // TODO: general config sync via a more robust profile-based solution.
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
           // While previewing a deep-link target, do NOT yank the view to the
@@ -253,6 +261,38 @@ export const useProgressSync = (bookKey: string) => {
               bookKey,
               message: _('Reading Progress Synced'),
             });
+          }
+        }
+      }
+      // Merge book/selection-scope proofread rules from the remote config by id.
+      // Library-scope rules sync via the settings replica, so they're excluded.
+      // Item-level CRDT (see utils/proofread.ts) keeps a concurrent edit on
+      // another device from being lost to whole-config last-writer-wins, and
+      // tombstones stop a deleted rule from being resurrected by a stale peer.
+      const remoteRules = (syncedConfig.viewSettings?.proofreadRules ?? []).filter(
+        (r) => r.scope !== 'library',
+      );
+      const localViewSettings = getViewSettings(bookKey);
+      const localRules = localViewSettings?.proofreadRules ?? [];
+      if (localViewSettings && (remoteRules.length || localRules.length)) {
+        const mergedRules = mergeProofreadRules(localRules, remoteRules);
+        if (JSON.stringify(mergedRules) !== JSON.stringify(localRules)) {
+          const updatedViewSettings = { ...localViewSettings, proofreadRules: mergedRules };
+          setViewSettings(bookKey, updatedViewSettings);
+          if (config) {
+            await saveConfig(
+              envConfig,
+              bookKey,
+              { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() },
+              settings,
+            );
+          }
+          // Refresh a live view so merged rules take effect immediately; a
+          // not-yet-rendered view picks them up from viewSettings on first
+          // render. Skip while previewing a deep-link target.
+          const isPreview = useReaderStore.getState().getViewState(bookKey)?.previewMode;
+          if (getView(bookKey) && !isPreview) {
+            recreateViewer(envConfig, bookKey);
           }
         }
       }

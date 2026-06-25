@@ -380,6 +380,13 @@ export interface ProofreadRule {
   wholeWord?: boolean; // Match whole words only (uses \b word boundaries)
   caseSensitive?: boolean; // Case-sensitive matching (default true)
   onlyForTTS?: boolean; // Only replace text for TTS, not in the book display (only for book/library scope)
+  // CRDT sync fields (book/selection scope rides the book-config sync). `updatedAt`
+  // is the last-write-wins key for the per-id merge; `deletedAt` is a tombstone so a
+  // deletion survives the merge instead of being resurrected by the peer's copy.
+  // Library-scope rules sync via the settings replica (whole-field LWW) and don't
+  // need a tombstone, so these stay optional for back-compat with older configs.
+  updatedAt?: number;
+  deletedAt?: number | null;
 }
 
 export interface ProofreadRulesConfig {

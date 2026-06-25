@@ -248,6 +248,63 @@ describe('ProofreadRulesManager', () => {
     expect(screen.getByText("'book-hit'")).toBeTruthy();
   });
 
+  it('hides tombstoned (deleted) book rules from the list', async () => {
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+
+    const liveRule: ProofreadRule = {
+      id: 'live',
+      scope: 'book',
+      pattern: 'visible-pattern',
+      replacement: 'kept',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+    const deletedRule: ProofreadRule = {
+      id: 'dead',
+      scope: 'book',
+      pattern: 'deleted-pattern',
+      replacement: 'gone',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 2,
+      wholeWord: true,
+      updatedAt: 5,
+      deletedAt: 10,
+    };
+    const rules = [liveRule, deletedRule];
+
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: rules } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: rules } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    setProofreadRulesVisibility(true);
+
+    await screen.findByRole('dialog');
+    expect(screen.getByText('visible-pattern')).toBeTruthy();
+    expect(screen.queryByText('deleted-pattern')).toBeNull();
+  });
+
   it('renders a drag handle for each reorderable rule', async () => {
     const selectionRule: ProofreadRule = {
       id: 's1',
