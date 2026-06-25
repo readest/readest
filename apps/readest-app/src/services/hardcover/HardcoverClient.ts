@@ -23,7 +23,10 @@ type HardcoverSettingsLike = {
 };
 
 type BookContext = {
-  editionId: number;
+  // Null when no real Hardcover edition is known (e.g. a title-search match with
+  // no featured edition and no user-selected edition). Never fall back to the
+  // book id here — Hardcover rejects a book id used as an edition_id (#4792).
+  editionId: number | null;
   pages: number | null;
   bookId: number;
   bookPages: number | null;
@@ -284,9 +287,10 @@ export class HardcoverClient {
     if (!rawBookId) return null;
 
     const bookId = Number(rawBookId);
-    const editionId = Number(
-      hit.featured_edition_id ?? hit.document?.featured_edition_id ?? bookId,
-    );
+    const rawEditionId = hit.featured_edition_id ?? hit.document?.featured_edition_id;
+    // Only the featured edition is a real edition id; never substitute the book
+    // id (Hardcover rejects a book id passed as edition_id, #4792).
+    const editionId = rawEditionId != null ? Number(rawEditionId) : null;
     const pages =
       hit.pages != null
         ? Number(hit.pages)
@@ -461,7 +465,7 @@ export class HardcoverClient {
     if (context.userBook) return context;
 
     const data = await this.request<
-      { object: { book_id: number; edition_id: number; status_id: number } },
+      { object: { book_id: number; edition_id?: number; status_id: number } },
       {
         insert_user_book: {
           error?: string | null;
@@ -474,7 +478,9 @@ export class HardcoverClient {
     >(MUTATION_INSERT_USER_BOOK, {
       object: {
         book_id: context.bookId,
-        edition_id: context.editionId,
+        // Omit edition_id entirely when unknown so Hardcover falls back to the
+        // book's default edition instead of rejecting an invalid one (#4792).
+        ...(context.editionId != null ? { edition_id: context.editionId } : {}),
         status_id: isReading ? 2 : 1,
       },
     });
