@@ -12,9 +12,10 @@ import TextButton from '@/components/TextButton';
 interface NoteEditorProps {
   onSave: (selection: TextSelection, note: string) => void;
   onEdit: (annotation: BookNote) => void;
+  onCancel?: () => void;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit, onCancel }) => {
   const _ = useTranslation();
   const {
     notebookNewAnnotation,
@@ -78,6 +79,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ onSave, onEdit }) => {
   };
 
   const handleEscape = () => {
+    if (onCancel) {
+      onCancel();
+    }
     if (notebookNewAnnotation) {
       setNotebookNewAnnotation(null);
     }

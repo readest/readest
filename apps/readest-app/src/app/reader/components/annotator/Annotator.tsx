@@ -992,13 +992,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowDictionaryPopup(false);
   };
 
-  const handleCopy = (dismissPopup = true) => {
+  const handleCopy = (dismissPopup: boolean = true) => {
     if (!selection || !selection.text) return;
     const textToCopy = selection.text;
-    setTimeout(() => {
-      // Delay to ensure it won't be overridden by system clipboard actions
-      void writeTextToClipboard(textToCopy);
-    }, 100);
+    // Execute immediately to maintain transient user activation context
+    void writeTextToClipboard(textToCopy);
     if (dismissPopup) {
       handleDismissPopupAndSelection();
     }
@@ -1057,7 +1055,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleDismissPopupAndSelection();
   };
 
-  const handleHighlight = (update = false, highlightStyle?: HighlightStyle) => {
+  const handleHighlight = (update = false, highlightStyle?: HighlightStyle): string | undefined => {
     if (!selection || !selection.text) return;
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
@@ -1124,6 +1122,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
+    return cfi;
   };
 
   const handleCreateTTSHighlight = (event: CustomEvent) => {
@@ -1190,10 +1189,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return;
     const { sectionHref: href } = progress;
     selection.href = href;
-    handleHighlight(true);
-    setNotebookVisible(true);
-    setNotebookNewAnnotation(selection);
-    handleDismissPopup();
+    const cfi = handleHighlight(true);
+    if (cfi) {
+      setNotebookVisible(true);
+      setNotebookNewAnnotation({ ...selection, cfi });
+      handleDismissPopup();
+    }
   };
 
   const handleSearch = () => {

@@ -23,7 +23,7 @@ import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import { NOTE_PREFIX } from '@/types/view';
 import useShortcuts from '@/hooks/useShortcuts';
-import { findAnnotationAtCfi } from '../../utils/annotatorUtil';
+import { findAnnotationAtCfi, removeBookNoteOverlays } from '../../utils/annotatorUtil';
 import BooknoteItem from '../sidebar/BooknoteItem';
 import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
@@ -45,7 +45,7 @@ const Notebook: React.FC = ({}) => {
     useNotebookStore();
   const { notebookNewAnnotation, notebookEditAnnotation, setNotebookPin } = useNotebookStore();
   const { getBookData, getConfig, saveConfig, updateBooknotes } = useBookDataStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings, getViewsById } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
   const { setNotebookNewAnnotation, setNotebookEditAnnotation, setNotebookActiveTab } =
@@ -78,12 +78,51 @@ const Notebook: React.FC = ({}) => {
     }
   };
 
+  const handleCancelNewAnnotation = useCallback(
+    (selection: TextSelection, bookKey: string) => {
+      const view = getView(bookKey);
+      const config = getConfig(bookKey);
+      if (!config) return;
+
+      const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
+      if (!cfi) return;
+
+      const { booknotes: annotations = [] } = config;
+      const idx = annotations.findIndex(
+        (a) => a.cfi === cfi && a.type === 'annotation' && !a.deletedAt,
+      );
+      if (idx !== -1) {
+        const annotation = annotations[idx]!;
+        if (!annotation.note || annotation.note.trim().length === 0) {
+          annotation.deletedAt = Date.now();
+          const views = getViewsById(bookKey.split('-')[0]!);
+          views.forEach((v) => removeBookNoteOverlays(v, annotation));
+          const updatedConfig = updateBooknotes(bookKey, annotations);
+          if (updatedConfig) {
+            saveConfig(envConfig, bookKey, updatedConfig, settings);
+          }
+        }
+      }
+    },
+    [getView, getConfig, getViewsById, updateBooknotes, saveConfig, envConfig, settings],
+  );
+
+  const handleCancelNote = useCallback(() => {
+    if (notebookNewAnnotation && sideBarBookKey) {
+      handleCancelNewAnnotation(notebookNewAnnotation, sideBarBookKey);
+    }
+  }, [notebookNewAnnotation, sideBarBookKey, handleCancelNewAnnotation]);
+
   const handleHideNotebook = useCallback(() => {
+    if (notebookNewAnnotation && sideBarBookKey) {
+      handleCancelNewAnnotation(notebookNewAnnotation, sideBarBookKey);
+    }
     if (!isNotebookPinned) {
       setNotebookVisible(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNotebookPinned]);
+    setNotebookNewAnnotation(null);
+    setNotebookEditAnnotation(null);
+  }, [isNotebookPinned, notebookNewAnnotation, sideBarBookKey, handleCancelNewAnnotation]);
 
   useShortcuts({ onEscape: handleHideNotebook }, [handleHideNotebook]);
 
@@ -97,6 +136,16 @@ const Notebook: React.FC = ({}) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNotebookVisible]);
+
+  useEffect(() => {
+    const currentBookKey = sideBarBookKey;
+    return () => {
+      const state = useNotebookStore.getState();
+      if (state.notebookNewAnnotation && currentBookKey) {
+        handleCancelNewAnnotation(state.notebookNewAnnotation, currentBookKey);
+      }
+    };
+  }, [sideBarBookKey, handleCancelNewAnnotation]);
 
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
@@ -140,7 +189,19 @@ const Notebook: React.FC = ({}) => {
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
+  const handleClose = () => {
+    if (notebookNewAnnotation && sideBarBookKey) {
+      handleCancelNewAnnotation(notebookNewAnnotation, sideBarBookKey);
+    }
+    setNotebookVisible(false);
+    setNotebookNewAnnotation(null);
+    setNotebookEditAnnotation(null);
+  };
+
   const handleClickOverlay = () => {
+    if (notebookNewAnnotation && sideBarBookKey) {
+      handleCancelNewAnnotation(notebookNewAnnotation, sideBarBookKey);
+    }
     setNotebookVisible(false);
     setNotebookNewAnnotation(null);
     setNotebookEditAnnotation(null);
@@ -151,7 +212,7 @@ const Notebook: React.FC = ({}) => {
     const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
 
-    const cfi = view?.getCFI(selection.index, selection.range);
+    const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
 
     const { booknotes: annotations = [] } = config;
@@ -355,7 +416,7 @@ const Notebook: React.FC = ({}) => {
           <NotebookHeader
             isPinned={isNotebookPinned}
             isSearchBarVisible={isSearchBarVisible && notebookActiveTab === 'notes'}
-            handleClose={() => setNotebookVisible(false)}
+            handleClose={handleClose}
             handleTogglePin={handleTogglePin}
             handleToggleSearchBar={handleToggleSearchBar}
             showSearchButton={notebookActiveTab === 'notes'}
@@ -463,7 +524,11 @@ const Notebook: React.FC = ({}) => {
               )}
             </div>
             {(notebookNewAnnotation || notebookEditAnnotation) && !isSearchBarVisible && (
-              <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
+              <NoteEditor
+                onSave={handleSaveNote}
+                onEdit={(item) => handleEditNote(item, false)}
+                onCancel={handleCancelNote}
+              />
             )}
             <ul>
               {filteredAnnotationNotes.map((item, index) => (
