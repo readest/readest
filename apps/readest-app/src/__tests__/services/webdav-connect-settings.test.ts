@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
+import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
 import type { WebDAVSettings } from '@/types/settings';
 
 describe('buildWebDAVConnectSettings', () => {
