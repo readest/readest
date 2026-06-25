@@ -7,21 +7,18 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useWebDAVSyncStore } from '@/store/webdavSyncStore';
-import { isTauriAppPlatform } from '@/services/environment';
-import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
 import {
-  buildBasicAuthHeader,
-  buildRequestUrl,
   checkConnection,
   normalizeRootPath,
   WebDAVConnectResult,
-  WebDAVRequestError,
-} from '@/services/webdav/WebDAVClient';
+} from '@/services/sync/providers/webdav/client';
 import { type TranslationFunc } from '@/hooks/useTranslation';
-import { syncLibrary } from '@/services/webdav/WebDAVSync';
-import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
-import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
+import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
+import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
+import { FileSyncEngine } from '@/services/sync/file/engine';
+import { FileSyncError } from '@/services/sync/file/provider';
+import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
 import SubPageHeader from '../SubPageHeader';
 import {
   BoxedList,
@@ -68,7 +65,7 @@ const formatConnectError = (_: TranslationFunc, result: WebDAVConnectResult): st
  * showing the raw English `e.message` to the user.
  */
 const formatSyncError = (_: TranslationFunc, e: unknown): string => {
-  if (e instanceof WebDAVRequestError) {
+  if (e instanceof FileSyncError) {
     switch (e.code) {
       case 'AUTH_FAILED':
         return _('WebDAV authentication failed. Reconnect in Settings.');
@@ -257,173 +254,17 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     beginSync(_('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }));
 
     try {
-      const result = await syncLibrary(stored, eligibleBooks, {
+      // The provider owns the WebDAV URL + auth + streaming transport; the
+      // shared local-store bridge owns all on-disk book/cover/config I/O
+      // (including the in-place vs hash-copy path resolution and the Tauri
+      // streaming fast path). This form no longer knows any WebDAV specifics.
+      const provider = createWebDAVProvider(stored);
+      const store = createAppLocalStore({ appService, settings, envConfig });
+      const engine = new FileSyncEngine(provider, store);
+      const result = await engine.syncLibrary(eligibleBooks, {
         strategy: stored.strategy === 'prompt' ? 'silent' : stored.strategy,
         syncBooks: stored.syncBooks ?? false,
         deviceId: deviceId as string,
-        loadConfig: (book) =>
-          appService ? appService.loadBookConfig(book, settings) : Promise.resolve(null),
-        loadBookFile: async (book) => {
-          if (!appService) return null;
-          // In-place imports live outside Books/<hash>/; resolve to
-          // (book.filePath, 'None') when set. Hash-copy books fall
-          // through to the original Books-relative path. Same fallback
-          // pattern as cloudService.uploadBook so library Sync now
-          // treats in-place books as first-class.
-          const fp = book.filePath ?? getLocalBookFilename(book);
-          const base = book.filePath ? 'None' : 'Books';
-          if (!(await appService.exists(fp, base))) return null;
-          const file = await appService.openFile(fp, base);
-          const bytes = await file.arrayBuffer();
-          return { bytes, size: bytes.byteLength };
-        },
-        // Tauri-only: stream the book file straight from disk to the
-        // WebDAV server via Rust-side `upload_file`, never letting the
-        // bytes land in the JS heap. Without this, syncing a library
-        // with multiple multi-hundred-megabyte PDFs accumulates
-        // ArrayBuffers that V8 can't free fast enough between
-        // sequential `pushBookFile` calls — the renderer eventually
-        // hits its heap ceiling and the WebView crashes mid-sync,
-        // surfacing as a blank white screen on desktop and as a
-        // binder-OOM kill on Android. The metadata-only fast path
-        // (open file just to read `.size`) keeps the HEAD short-
-        // circuit working the same way the buffered path does.
-        loadBookFileStreaming: isTauriAppPlatform()
-          ? async (book) => {
-              if (!appService) return null;
-              const fp = book.filePath ?? getLocalBookFilename(book);
-              const base = book.filePath ? 'None' : 'Books';
-              if (!(await appService.exists(fp, base))) return null;
-              const file = await appService.openFile(fp, base);
-              const size = file.size;
-              // openFile returns a File-like handle; close eagerly when
-              // the platform exposes it so the Tauri side can re-open
-              // the path for the streamed PUT without holding two FDs.
-              const closable = file as { close?: () => Promise<void> };
-              if (closable.close) await closable.close();
-              const dst = await appService.resolveFilePath(fp, base);
-              return {
-                size,
-                upload: async (remoteUrl, headers) => {
-                  try {
-                    // tauriUpload's TS type says Map, but its Tauri
-                    // command on the Rust side accepts a JSON object →
-                    // HashMap<String, String>. The internal `headers ??
-                    // {}` default already proves a plain object works,
-                    // so cast and pass the headers object directly
-                    // rather than building a Map (which Tauri's IPC
-                    // serialiser handles less consistently).
-                    await tauriUpload(
-                      remoteUrl,
-                      dst,
-                      'PUT',
-                      undefined,
-                      headers as unknown as Map<string, string>,
-                    );
-                    return true;
-                  } catch (e) {
-                    console.warn('WD library sync: tauriUpload failed', book.hash, e);
-                    return false;
-                  }
-                },
-              };
-            }
-          : undefined,
-        loadBookCover: async (book) => {
-          // Covers are best-effort — books without one (TXT/MD without
-          // metadata, custom imports without art) just return null and
-          // syncLibrary skips them silently.
-          if (!appService) return null;
-          const fp = getCoverFilename(book);
-          if (!(await appService.exists(fp, 'Books'))) return null;
-          const file = await appService.openFile(fp, 'Books');
-          const bytes = await file.arrayBuffer();
-          return { bytes, size: bytes.byteLength };
-        },
-        saveBookFile: async (book, bytes) => {
-          if (!appService) return;
-          const fp = getLocalBookFilename(book);
-          await appService.writeFile(fp, 'Books', bytes);
-        },
-        // Tauri-only: stream the book straight to disk via the Rust
-        // side instead of slurping it into a JS ArrayBuffer first. The
-        // WebView<->Tauri IPC bridge cannot handle multi-megabyte
-        // buffers on Android (the renderer is binder-killed mid-write),
-        // so for any non-trivial epub/pdf this is the *only* path that
-        // works reliably on mobile.
-        downloadBookFile: isTauriAppPlatform()
-          ? async (book, remotePath) => {
-              if (!appService) return false;
-              const url = buildRequestUrl(stored.serverUrl, remotePath);
-              const headers = {
-                Authorization: buildBasicAuthHeader(stored.username, stored.password),
-              };
-              // The Rust downloader writes the file verbatim and does
-              // NOT create parent dirs — make sure the per-hash folder
-              // under Books exists before kicking off the stream.
-              try {
-                if (!(await appService.exists(book.hash, 'Books'))) {
-                  await appService.createDir(book.hash, 'Books', true);
-                }
-              } catch (e) {
-                console.warn('WD library sync: mkdir failed', book.hash, e);
-              }
-              const dst = await appService.resolveFilePath(getLocalBookFilename(book), 'Books');
-              try {
-                await tauriDownload(url, dst, undefined, headers);
-                return true;
-              } catch (e) {
-                console.warn('WD library sync: tauriDownload failed', book.hash, e);
-                return false;
-              }
-            }
-          : undefined,
-        saveBookCover: async (book, bytes) => {
-          if (!appService) return;
-          const fp = getCoverFilename(book);
-          await appService.writeFile(fp, 'Books', bytes);
-        },
-        saveBookConfig: async (book, config) => {
-          if (!appService) return;
-          await appService.saveBookConfig(book, config, settings);
-        },
-        addBookToLibrary: async (book) => {
-          if (!appService) return;
-          try {
-            book.coverImageUrl = await appService.generateCoverImageUrl(book);
-          } catch (e) {
-            // Missing or broken cover shouldn't block adding the book —
-            // the bookshelf renders a placeholder when coverImageUrl
-            // is empty.
-            console.warn('WD library sync: cover URL generation failed', book.hash, e);
-            book.coverImageUrl = null;
-          }
-          book.syncedAt = Date.now();
-          book.downloadedAt = Date.now();
-          if (!book.metaHash) book.metaHash = book.hash;
-          const { library, setLibrary } = useLibraryStore.getState();
-          // Avoid duplicates if the user runs Sync now twice quickly.
-          if (library.find((b) => b.hash === book.hash)) return;
-          const newLibrary = [...library, book];
-          await appService.saveLibraryBooks(newLibrary);
-          // Update the store last so subscribers re-render against a
-          // library that's already persisted on disk.
-          setLibrary(newLibrary);
-        },
-        updateBookMetadata: async (book) => {
-          if (!appService) return;
-          // The cover bytes were just refreshed via saveBookCover, so
-          // regenerate the device-local blob URL the bookshelf renders.
-          try {
-            book.coverImageUrl = await appService.generateCoverImageUrl(book);
-          } catch (e) {
-            console.warn('WD library sync: cover URL generation failed', book.hash, e);
-          }
-          book.syncedAt = Date.now();
-          // updateBook persists via saveLibraryBooks and refreshes the store,
-          // so the new title / author / cover show up without a reload.
-          await useLibraryStore.getState().updateBook(envConfig, book);
-        },
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
           updateProgress(

@@ -25,10 +25,11 @@ import {
   listDirectory,
   normalizeRootPath,
   WebDAVEntry,
-  WebDAVRequestError,
-} from '@/services/webdav/WebDAVClient';
-import { buildBasePath, WEBDAV_BOOKS_DIR } from '@/services/webdav/WebDAVPaths';
-import { deleteRemoteBookDir } from '@/services/webdav/WebDAVSync';
+} from '@/services/sync/providers/webdav/client';
+import { buildBasePath, SYNC_BOOKS_DIR } from '@/services/sync/file/layout';
+import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
+import { deleteRemoteBookDir } from '@/services/sync/file/engine';
+import { FileSyncError } from '@/services/sync/file/provider';
 import { WebDAVSettings } from '@/types/settings';
 import { Book } from '@/types/book';
 import { SettingLabel } from '../primitives';
@@ -61,6 +62,10 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings }) => {
   // limit. Memoise so we don't recompute on every keystroke.
   const savedRoot = useMemo(() => normalizeRootPath(settings.rootPath || '/'), [settings.rootPath]);
 
+  // Provider for the engine-level cleanup helper (orphan GC). The browse
+  // pane is WebDAV-specific UI, so it builds the WebDAV provider directly.
+  const provider = useMemo(() => createWebDAVProvider(settings), [settings]);
+
   // Absolute path of the per-book hash directories. When the user has
   // drilled into this exact path, each row's `entry.name` is a content
   // hash and we can swap in the human-readable book title from the
@@ -69,7 +74,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings }) => {
   // can be string-compared against `currentPath` without further
   // normalisation.
   const booksDirPath = useMemo(
-    () => `${buildBasePath(settings.rootPath || '/')}/${WEBDAV_BOOKS_DIR}`,
+    () => `${buildBasePath(settings.rootPath || '/')}/${SYNC_BOOKS_DIR}`,
     [settings.rootPath],
   );
 
@@ -197,7 +202,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings }) => {
       for (let i = 0; i < targets.length; i++) {
         const t0 = targets[i]!;
         try {
-          const res = await deleteRemoteBookDir(settings, t0.hash);
+          const res = await deleteRemoteBookDir(provider, t0.hash);
           if (res.ok) {
             succeeded++;
             // Splice on success so the listing itself is the progress
@@ -217,7 +222,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings }) => {
             });
           }
         } catch (e) {
-          if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+          if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') {
             // Every remaining target would fail identically; stop
             // and surface a single re-auth toast.
             authFailed = true;
