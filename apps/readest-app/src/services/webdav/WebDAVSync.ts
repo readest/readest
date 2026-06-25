@@ -1014,7 +1014,30 @@ export const syncLibrary = async (
       try {
         const config = await options.loadConfig(book);
         if (config) {
-          await pushBookConfig(settings, book, config, options.deviceId);
+          // Mirror the reader hook's pull-merge-push discipline so a manual
+          // "Sync now" can't blind-overwrite state this device hasn't pulled
+          // yet: a peer's booknotes (element-set CRDT) or newer progress
+          // (per-config LWW). Only in two-way ('silent') mode — 'send'
+          // deliberately treats the local copy as authoritative and keeps the
+          // blind push. A failed pull-merge falls back to the local config so
+          // a flaky GET never blocks the book's sync.
+          let configToPush = config;
+          if (canPull) {
+            try {
+              const pull = await pullBookConfig(settings, book, config);
+              if (pull.applied && pull.mergedConfig) {
+                configToPush = pull.mergedConfig;
+                // Persist the merged superset locally so this device converges
+                // too, not just the remote.
+                if (options.saveBookConfig) {
+                  await options.saveBookConfig(book, pull.mergedConfig);
+                }
+              }
+            } catch (e) {
+              console.warn('WD library sync: config pull-merge failed', book.hash, e);
+            }
+          }
+          await pushBookConfig(settings, book, configToPush, options.deviceId);
           result.configsUploaded += 1;
         }
         // Covers ride along with the config-level sync, NOT with

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { WebDAVSettings } from '@/types/settings';
-import type { Book, BookConfig } from '@/types/book';
+import type { Book, BookConfig, BookNote } from '@/types/book';
 
 /**
  * Regression tests for issue #4756: once a device already has a book in its
@@ -38,7 +38,11 @@ import {
   putFileBinary,
   ensureDirectory,
 } from '@/services/webdav/WebDAVClient';
-import { syncLibrary, type RemoteLibraryIndex } from '@/services/webdav/WebDAVSync';
+import {
+  syncLibrary,
+  type RemoteLibraryIndex,
+  type RemoteBookConfig,
+} from '@/services/webdav/WebDAVSync';
 
 const settings: WebDAVSettings = {
   enabled: true,
@@ -65,10 +69,17 @@ const makeRemoteIndex = (book: Book, updatedAt = book.updatedAt): RemoteLibraryI
   books: [book],
 });
 
-/** Route `getFile` by path: library.json → index JSON, config.json → null. */
-const wireGetFile = (index: RemoteLibraryIndex | null) => {
+/**
+ * Route `getFile` by path: library.json → index JSON, config.json → the
+ * supplied remote envelope (or null when none).
+ */
+const wireGetFile = (
+  index: RemoteLibraryIndex | null,
+  remoteConfig: RemoteBookConfig | null = null,
+) => {
   (getFile as ReturnType<typeof vi.fn>).mockImplementation(async (_client, path: string) => {
     if (path.endsWith('library.json')) return index ? JSON.stringify(index) : null;
+    if (path.endsWith('config.json')) return remoteConfig ? JSON.stringify(remoteConfig) : null;
     return null;
   });
 };
@@ -81,6 +92,35 @@ const capturePushedIndex = (): { value: RemoteLibraryIndex | null } => {
   });
   return captured;
 };
+
+/** Capture the per-book config envelope pushed to <hash>/config.json. */
+const capturePushedConfig = (): { value: RemoteBookConfig | null } => {
+  const captured: { value: RemoteBookConfig | null } = { value: null };
+  (putFile as ReturnType<typeof vi.fn>).mockImplementation(async (_client, path: string, body) => {
+    if (path.endsWith('config.json')) captured.value = JSON.parse(body as string);
+  });
+  return captured;
+};
+
+const makeNote = (id: string, updatedAt: number): BookNote => ({
+  id,
+  type: 'annotation',
+  cfi: `cfi-${id}`,
+  note: '',
+  createdAt: updatedAt,
+  updatedAt,
+});
+
+const makeRemoteConfig = (overrides: Partial<RemoteBookConfig> = {}): RemoteBookConfig => ({
+  schemaVersion: 1,
+  bookHash: 'h1',
+  config: { updatedAt: 100 },
+  booknotes: [],
+  writerDeviceId: 'mobile',
+  writerVersion: 'readest-webdav-1',
+  updatedAt: 100,
+  ...overrides,
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -161,5 +201,77 @@ describe('syncLibrary metadata reconciliation (#4756)', () => {
     // Local wins: the re-pushed index keeps the local title.
     const indexedBook = pushedIndex.value!.books.find((b) => b.hash === 'h1')!;
     expect(indexedBook.title).toBe('Local Newer');
+  });
+});
+
+describe('syncLibrary config merge before push (Sync now must not blind-overwrite)', () => {
+  test('unions remote booknotes into the pushed config instead of clobbering them', async () => {
+    const local = makeLocalBook({ updatedAt: 100 });
+    // Same updatedAt in the index so the metadata pass is a no-op — this
+    // isolates the config/notes path.
+    wireGetFile(
+      makeRemoteIndex(makeLocalBook({ updatedAt: 100 }), 100),
+      makeRemoteConfig({ config: { updatedAt: 100 }, booknotes: [makeNote('remote-note', 100)] }),
+    );
+    const pushedConfig = capturePushedConfig();
+
+    await syncLibrary(settings, [local], {
+      ...baseOptions(),
+      loadConfig: async (): Promise<BookConfig> => ({
+        updatedAt: 50,
+        booknotes: [makeNote('local-note', 50)],
+      }),
+    });
+
+    // The pushed envelope must carry BOTH notes — a blind push would have
+    // dropped the peer's note that this device never pulled.
+    expect(pushedConfig.value).not.toBeNull();
+    const ids = pushedConfig.value!.booknotes.map((n) => n.id).sort();
+    expect(ids).toEqual(['local-note', 'remote-note']);
+  });
+
+  test('does not regress newer remote progress with an older local push', async () => {
+    const local = makeLocalBook({ updatedAt: 100 });
+    wireGetFile(
+      makeRemoteIndex(makeLocalBook({ updatedAt: 100 }), 100),
+      makeRemoteConfig({ config: { updatedAt: 200, progress: [50, 100] }, booknotes: [] }),
+    );
+    const pushedConfig = capturePushedConfig();
+
+    await syncLibrary(settings, [local], {
+      ...baseOptions(),
+      loadConfig: async (): Promise<BookConfig> => ({
+        updatedAt: 50,
+        progress: [10, 100],
+        booknotes: [],
+      }),
+    });
+
+    // Remote progress is newer (updatedAt 200 > 50): the LWW merge must push
+    // the remote's page, never regress it back to the local page.
+    expect(pushedConfig.value!.config.progress).toEqual([50, 100]);
+  });
+
+  test('send strategy keeps the blind push (local authoritative, no pull-merge)', async () => {
+    const local = makeLocalBook({ updatedAt: 100 });
+    wireGetFile(
+      null,
+      makeRemoteConfig({ config: { updatedAt: 200 }, booknotes: [makeNote('remote-note', 200)] }),
+    );
+    const pushedConfig = capturePushedConfig();
+
+    await syncLibrary(settings, [local], {
+      ...baseOptions(),
+      strategy: 'send',
+      loadConfig: async (): Promise<BookConfig> => ({
+        updatedAt: 50,
+        booknotes: [makeNote('local-note', 50)],
+      }),
+    });
+
+    // 'send' deliberately treats local as the source of truth — it must not
+    // pull the remote note in.
+    const ids = pushedConfig.value!.booknotes.map((n) => n.id);
+    expect(ids).toEqual(['local-note']);
   });
 });
