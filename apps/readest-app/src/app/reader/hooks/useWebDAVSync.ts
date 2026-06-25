@@ -8,16 +8,10 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import {
-  pullBookConfig,
-  pushBookConfig,
-  pushBookCover,
-  pushBookFile,
-} from '@/services/webdav/WebDAVSync';
-import { WebDAVRequestError } from '@/services/webdav/WebDAVClient';
-import { isTauriAppPlatform } from '@/services/environment';
-import { tauriUpload } from '@/utils/transfer';
-import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
+import { FileSyncEngine } from '@/services/sync/file/engine';
+import { FileSyncError } from '@/services/sync/file/provider';
+import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
+import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
@@ -162,6 +156,17 @@ export const useWebDAVSync = (bookKey: string) => {
   const allowPush = isReady && strategy !== 'receive';
   const allowPull = isReady && strategy !== 'send';
 
+  // One engine per (credentials, appService) — the provider owns the WebDAV
+  // URL + auth and the streaming transport; the shared local-store bridge owns
+  // the on-disk book/cover I/O. Rebuilt when settings change (cheap closures).
+  const engine = useMemo(() => {
+    const w = settings.webdav;
+    if (!w?.enabled || !w?.serverUrl || !w?.username || !appService) return null;
+    const provider = createWebDAVProvider(w);
+    const store = createAppLocalStore({ appService, settings, envConfig });
+    return new FileSyncEngine(provider, store);
+  }, [settings, appService, envConfig]);
+
   /**
    * Push the latest config (progress + booknotes) to the remote.
    * Skips while the user is previewing a deep-link target — the in-memory
@@ -178,18 +183,18 @@ export const useWebDAVSync = (bookKey: string) => {
 
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    if (!config || !book) return;
+    if (!config || !book || !engine) return;
 
     try {
       const deviceId = ensureDeviceId();
       // We always push the full envelope; sub-toggles only gate _which_
       // fields the local writer applies on pull. This keeps the wire
       // schema stable across users with different toggle combinations.
-      await pushBookConfig(settings.webdav!, book, config, deviceId);
+      await engine.pushBookConfig(book, config, deviceId);
       dirtyRef.current = false;
       await updateLastSyncedAt(Date.now());
     } catch (e) {
-      if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') {
         eventDispatcher.dispatch('toast', {
           type: 'error',
           message: _('WebDAV authentication failed. Reconnect in Settings.'),
@@ -204,6 +209,7 @@ export const useWebDAVSync = (bookKey: string) => {
     getConfig,
     getBookData,
     ensureDeviceId,
+    engine,
     settings.webdav,
     updateLastSyncedAt,
     _,
@@ -224,68 +230,13 @@ export const useWebDAVSync = (bookKey: string) => {
     fileSyncedRef.current = true;
 
     const book = getBookData(bookKey)?.book;
-    if (!book || !appService) return;
+    if (!book || !engine) return;
 
     try {
-      const result = await pushBookFile(
-        settings.webdav!,
-        book,
-        async () => {
-          // Buffered fallback: read the local book file off disk lazily
-          // so we only do the expensive ArrayBuffer materialisation when
-          // the HEAD probe says we actually need to upload. Used on web
-          // targets where streaming PUTs aren't available.
-          // In-place imports keep their bytes outside Books/<hash>/, so
-          // resolve to (book.filePath, 'None') when the field is set —
-          // mirrors the same fallback in cloudService.uploadBook so
-          // syncBooks treats in-place books as first-class.
-          const fp = book.filePath ?? getLocalBookFilename(book);
-          const base = book.filePath ? 'None' : 'Books';
-          if (!(await appService.exists(fp, base))) return null;
-          const file = await appService.openFile(fp, base);
-          const bytes = await file.arrayBuffer();
-          return { bytes, size: bytes.byteLength };
-        },
-        // Tauri-only: stream the book file straight from disk to the
-        // server via Rust-side `upload_file`, never letting the bytes
-        // land in the JS heap. Without this, opening a multi-hundred-
-        // megabyte PDF / scanned book would buffer the whole file into
-        // V8 just to PUT it, blowing the renderer's heap and freezing
-        // the reader to a blank screen mid-open. Same flow as the
-        // library Sync now path in WebDAVForm.
-        isTauriAppPlatform()
-          ? async () => {
-              const fp = book.filePath ?? getLocalBookFilename(book);
-              const base = book.filePath ? 'None' : 'Books';
-              if (!(await appService.exists(fp, base))) return null;
-              const file = await appService.openFile(fp, base);
-              const size = file.size;
-              // Release the FD before streaming so the Tauri side can
-              // re-open the path for the PUT without contending.
-              const closable = file as { close?: () => Promise<void> };
-              if (closable.close) await closable.close();
-              const dst = await appService.resolveFilePath(fp, base);
-              return {
-                size,
-                upload: async (remoteUrl, headers) => {
-                  try {
-                    await tauriUpload(
-                      remoteUrl,
-                      dst,
-                      'PUT',
-                      undefined,
-                      headers as unknown as Map<string, string>,
-                    );
-                    return true;
-                  } catch (e) {
-                    console.warn('WD per-book push: tauriUpload failed', book.hash, e);
-                    return false;
-                  }
-                },
-              };
-            }
-          : undefined,
-      );
+      // The engine prefers the provider's streaming upload (Tauri) and falls
+      // back to a buffered PUT on web — both resolve the local bytes/path via
+      // the shared local store, so this hook no longer owns that plumbing.
+      const result = await engine.pushBookFile(book);
       if (result.uploaded) {
         await updateLastSyncedAt(Date.now());
       }
@@ -294,7 +245,7 @@ export const useWebDAVSync = (bookKey: string) => {
       // open retries — otherwise a transient hiccup would mark this
       // book "synced" for the rest of the session.
       fileSyncedRef.current = false;
-      if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') {
         eventDispatcher.dispatch('toast', {
           type: 'error',
           message: _('WebDAV authentication failed. Reconnect in Settings.'),
@@ -303,7 +254,7 @@ export const useWebDAVSync = (bookKey: string) => {
         console.warn('WD book file push failed', e);
       }
     }
-  }, [allowPush, settings.webdav, getBookData, bookKey, appService, updateLastSyncedAt, _]);
+  }, [allowPush, settings.webdav, getBookData, bookKey, engine, updateLastSyncedAt, _]);
 
   /**
    * Push the local cover image to the remote, independent of
@@ -324,21 +275,15 @@ export const useWebDAVSync = (bookKey: string) => {
     coverSyncedRef.current = true;
 
     const book = getBookData(bookKey)?.book;
-    if (!book || !appService) return;
+    if (!book || !engine) return;
 
     try {
-      await pushBookCover(settings.webdav!, book.hash, async () => {
-        const fp = getCoverFilename(book);
-        if (!(await appService.exists(fp, 'Books'))) return null;
-        const file = await appService.openFile(fp, 'Books');
-        const bytes = await file.arrayBuffer();
-        return { bytes, size: bytes.byteLength };
-      });
+      await engine.pushBookCover(book);
     } catch (e) {
       // Reset the lock so a manual "Sync now" or a subsequent open
       // can retry, mirroring `pushBookFileNow`'s recovery model.
       coverSyncedRef.current = false;
-      if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') {
         eventDispatcher.dispatch('toast', {
           type: 'error',
           message: _('WebDAV authentication failed. Reconnect in Settings.'),
@@ -347,7 +292,7 @@ export const useWebDAVSync = (bookKey: string) => {
         console.warn('WD book cover push failed', e);
       }
     }
-  }, [allowPush, settings.webdav, getBookData, bookKey, appService, _]);
+  }, [allowPush, getBookData, bookKey, engine, _]);
 
   /**
    * Pull, merge, and persist. Uses the same per-config / per-note merge
@@ -367,10 +312,10 @@ export const useWebDAVSync = (bookKey: string) => {
 
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    if (!config || !book) return false;
+    if (!config || !book || !engine) return false;
 
     try {
-      const result = await pullBookConfig(settings.webdav!, book, config);
+      const result = await engine.pullBookConfig(book, config);
       lastPulledAtRef.current = Date.now();
       if (!result.applied || !result.mergedConfig) return false;
 
@@ -416,7 +361,7 @@ export const useWebDAVSync = (bookKey: string) => {
       await updateLastSyncedAt(Date.now());
       return true;
     } catch (e) {
-      if (e instanceof WebDAVRequestError && e.code === 'AUTH_FAILED') {
+      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') {
         eventDispatcher.dispatch('toast', {
           type: 'error',
           message: _('WebDAV authentication failed. Reconnect in Settings.'),
@@ -435,6 +380,7 @@ export const useWebDAVSync = (bookKey: string) => {
     getViewsById,
     setConfig,
     saveConfig,
+    engine,
     envConfig,
     settings,
     updateLastSyncedAt,
