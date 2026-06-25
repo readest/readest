@@ -236,6 +236,12 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     let currentLibrary = library ?? [];
     if (!libraryLoaded && appService) {
       currentLibrary = await appService.loadLibraryBooks();
+      // Hydrate the store before syncing. The engine's addBookToLibrary /
+      // updateBookMetadata merge against the in-memory library; if it were
+      // still empty here, a downloaded book or a metadata update would persist
+      // as the *entire* library and clobber what's on disk. setLibrary also
+      // flips libraryLoaded so the per-book store calls see a loaded store.
+      useLibraryStore.getState().setLibrary(currentLibrary);
     }
 
     const eligibleBooks = currentLibrary.filter((b) => !b.deletedAt);

@@ -92,14 +92,23 @@ export const createAppLocalStore = ({
     book.syncedAt = Date.now();
     book.downloadedAt = Date.now();
     if (!book.metaHash) book.metaHash = book.hash;
-    const { library, setLibrary } = useLibraryStore.getState();
+    // Hydrate from disk if the store hasn't loaded yet. Merging against an
+    // empty in-memory array would persist this book as the *entire* library
+    // and clobber whatever is on disk. Mirrors useLibraryStore.updateBooks'
+    // hardening; the Sync-now caller also hydrates up front, so this is
+    // belt-and-suspenders for a data-loss path.
+    let library = useLibraryStore.getState().library;
+    if (!useLibraryStore.getState().libraryLoaded) {
+      library = await appService.loadLibraryBooks();
+      useLibraryStore.getState().setLibrary(library);
+    }
     // Avoid duplicates if the user runs Sync now twice quickly.
     if (library.find((b) => b.hash === book.hash)) return;
     const newLibrary = [...library, book];
     await appService.saveLibraryBooks(newLibrary);
     // Update the store last so subscribers re-render against a library that's
     // already persisted on disk.
-    setLibrary(newLibrary);
+    useLibraryStore.getState().setLibrary(newLibrary);
   },
 
   updateBookMetadata: async (book) => {
@@ -111,6 +120,12 @@ export const createAppLocalStore = ({
       console.warn('createAppLocalStore: cover URL generation failed', book.hash, e);
     }
     book.syncedAt = Date.now();
+    // Hydrate before updating: updateBook merges against the in-memory library,
+    // so an unloaded store would persist an empty (or single-book) library and
+    // clobber the disk. See the same guard in addBookToLibrary.
+    if (!useLibraryStore.getState().libraryLoaded) {
+      useLibraryStore.getState().setLibrary(await appService.loadLibraryBooks());
+    }
     // updateBook persists via saveLibraryBooks and refreshes the store, so the
     // new title / author / cover show up without a reload.
     await useLibraryStore.getState().updateBook(envConfig, book);
