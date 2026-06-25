@@ -1,0 +1,118 @@
+import { AppService } from '@/types/system';
+import { SystemSettings } from '@/types/settings';
+import { EnvConfigType } from '@/services/environment';
+import { useLibraryStore } from '@/store/libraryStore';
+import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
+import { LocalStore } from './localStore';
+
+/**
+ * The app-backed {@link LocalStore} used by every file-sync consumer (the
+ * reader hook and the library "Sync now" form). Consolidating the buffered +
+ * streaming book/cover loaders here is the whole reason the bridge exists:
+ * the logic used to be copy-pasted across both consumers.
+ *
+ * In-place imports keep their bytes outside `Books/<hash>/`, so the book-file
+ * helpers resolve to `(book.filePath, 'None')` when `filePath` is set and fall
+ * through to the hash-copy `Books`-relative path otherwise — mirroring
+ * `cloudService.uploadBook` so sync treats in-place books as first-class.
+ */
+export const createAppLocalStore = ({
+  appService,
+  settings,
+  envConfig,
+}: {
+  appService: AppService;
+  settings: SystemSettings;
+  envConfig: EnvConfigType;
+}): LocalStore => ({
+  loadConfig: (book) => appService.loadBookConfig(book, settings),
+  saveBookConfig: (book, config) => appService.saveBookConfig(book, config, settings),
+
+  loadBookFile: async (book) => {
+    const fp = book.filePath ?? getLocalBookFilename(book);
+    const base = book.filePath ? 'None' : 'Books';
+    if (!(await appService.exists(fp, base))) return null;
+    const file = await appService.openFile(fp, base);
+    const bytes = await file.arrayBuffer();
+    return { bytes, size: bytes.byteLength };
+  },
+
+  resolveLocalBookPath: async (book) => {
+    const fp = book.filePath ?? getLocalBookFilename(book);
+    const base = book.filePath ? 'None' : 'Books';
+    if (!(await appService.exists(fp, base))) return null;
+    const file = await appService.openFile(fp, base);
+    const size = file.size;
+    // Release the FD before streaming so the Tauri side can re-open the path
+    // for the PUT without contending.
+    const closable = file as { close?: () => Promise<void> };
+    if (closable.close) await closable.close();
+    const path = await appService.resolveFilePath(fp, base);
+    return { path, size };
+  },
+
+  saveBookFile: async (book, bytes) => {
+    await appService.writeFile(getLocalBookFilename(book), 'Books', bytes);
+  },
+
+  prepareLocalBookPath: async (book) => {
+    // The Rust downloader writes the file verbatim and does NOT create parent
+    // dirs — make sure the per-hash folder under Books exists first.
+    try {
+      if (!(await appService.exists(book.hash, 'Books'))) {
+        await appService.createDir(book.hash, 'Books', true);
+      }
+    } catch (e) {
+      console.warn('createAppLocalStore: mkdir failed', book.hash, e);
+    }
+    return appService.resolveFilePath(getLocalBookFilename(book), 'Books');
+  },
+
+  loadBookCover: async (book) => {
+    const fp = getCoverFilename(book);
+    if (!(await appService.exists(fp, 'Books'))) return null;
+    const file = await appService.openFile(fp, 'Books');
+    const bytes = await file.arrayBuffer();
+    return { bytes, size: bytes.byteLength };
+  },
+
+  saveBookCover: async (book, bytes) => {
+    await appService.writeFile(getCoverFilename(book), 'Books', bytes);
+  },
+
+  addBookToLibrary: async (book) => {
+    try {
+      book.coverImageUrl = await appService.generateCoverImageUrl(book);
+    } catch (e) {
+      // Missing/broken cover shouldn't block adding the book — the bookshelf
+      // renders a placeholder when coverImageUrl is empty.
+      console.warn('createAppLocalStore: cover URL generation failed', book.hash, e);
+      book.coverImageUrl = null;
+    }
+    book.syncedAt = Date.now();
+    book.downloadedAt = Date.now();
+    if (!book.metaHash) book.metaHash = book.hash;
+    const { library, setLibrary } = useLibraryStore.getState();
+    // Avoid duplicates if the user runs Sync now twice quickly.
+    if (library.find((b) => b.hash === book.hash)) return;
+    const newLibrary = [...library, book];
+    await appService.saveLibraryBooks(newLibrary);
+    // Update the store last so subscribers re-render against a library that's
+    // already persisted on disk.
+    setLibrary(newLibrary);
+  },
+
+  updateBookMetadata: async (book) => {
+    // The cover bytes were just refreshed via saveBookCover, so regenerate the
+    // device-local blob URL the bookshelf renders.
+    try {
+      book.coverImageUrl = await appService.generateCoverImageUrl(book);
+    } catch (e) {
+      console.warn('createAppLocalStore: cover URL generation failed', book.hash, e);
+    }
+    book.syncedAt = Date.now();
+    // updateBook persists via saveLibraryBooks and refreshes the store, so the
+    // new title / author / cover show up without a reload.
+    await useLibraryStore.getState().updateBook(envConfig, book);
+  },
+});

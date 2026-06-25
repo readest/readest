@@ -5,6 +5,7 @@
  */
 export * from './provider';
 export * from './localStore';
+export * from './appLocalStore';
 export * from './layout';
 export * from './wire';
 export * from './merge';
