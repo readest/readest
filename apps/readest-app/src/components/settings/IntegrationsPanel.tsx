@@ -10,7 +10,6 @@ import {
   RiDiscordLine,
   RiSendPlaneLine,
   RiCloudLine,
-  RiGoogleLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -26,12 +25,11 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
-import WebDAVForm from './integrations/WebDAVForm';
-import GoogleDriveForm from './integrations/GoogleDriveForm';
+import CloudSyncForm from './integrations/CloudSyncForm';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'webdav' | 'gdrive' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage = 'kosync' | 'cloudsync' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -58,8 +56,6 @@ const IntegrationsPanel: React.FC = () => {
   // when they back out of the WebDAV sub-page or close the dialog.
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
   const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
-  // Drive sign-in is desktop-only for now (mobile OAuth runners land later).
-  const showGoogleDrive = !!appService?.isDesktopApp;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
@@ -93,13 +89,16 @@ const IntegrationsPanel: React.FC = () => {
     if (!requestedSubPage) return;
     if (
       requestedSubPage === 'kosync' ||
-      requestedSubPage === 'webdav' ||
+      requestedSubPage === 'cloudsync' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
       requestedSubPage === 'send'
     ) {
       setSubPage(requestedSubPage);
+    } else if (requestedSubPage === 'webdav' || requestedSubPage === 'gdrive') {
+      // Back-compat: the two providers merged into the unified Cloud Sync page.
+      setSubPage('cloudsync');
     }
     setRequestedSubPage(null);
   }, [requestedSubPage, setRequestedSubPage]);
@@ -114,16 +113,10 @@ const IntegrationsPanel: React.FC = () => {
         <KOSyncForm onBack={() => setSubPage(null)} />
       </div>
     );
-  if (subPage === 'webdav')
+  if (subPage === 'cloudsync')
     return (
       <div className='my-4 w-full'>
-        <WebDAVForm onBack={() => setSubPage(null)} />
-      </div>
-    );
-  if (subPage === 'gdrive')
-    return (
-      <div className='my-4 w-full'>
-        <GoogleDriveForm onBack={() => setSubPage(null)} />
+        <CloudSyncForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'readwise')
@@ -165,19 +158,15 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
-  const webdavStatus = isWebDAVSyncing
-    ? _('Syncing…')
-    : settings.webdav?.enabled
-      ? settings.webdav.username
-        ? _('Connected as {{user}}', { user: settings.webdav.username })
-        : _('Connected')
-      : _('Not connected');
-  const gdriveStatus = isGDriveSyncing
-    ? _('Syncing…')
+  // One row for the (single, exclusive) active cloud-sync provider.
+  const cloudSyncStatus = settings.webdav?.enabled
+    ? isWebDAVSyncing
+      ? _('WebDAV · Syncing…')
+      : _('WebDAV')
     : settings.googleDrive?.enabled
-      ? settings.googleDrive.accountLabel
-        ? _('Connected as {{user}}', { user: settings.googleDrive.accountLabel })
-        : _('Connected')
+      ? isGDriveSyncing
+        ? _('Google Drive · Syncing…')
+        : _('Google Drive')
       : _('Not connected');
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
@@ -202,20 +191,6 @@ const IntegrationsPanel: React.FC = () => {
               onClick={() => setSubPage('kosync')}
             />
             <IntegrationRow
-              icon={RiCloudLine}
-              title={_('WebDAV')}
-              status={webdavStatus}
-              onClick={() => setSubPage('webdav')}
-            />
-            {showGoogleDrive && (
-              <IntegrationRow
-                icon={RiGoogleLine}
-                title={_('Google Drive')}
-                status={gdriveStatus}
-                onClick={() => setSubPage('gdrive')}
-              />
-            )}
-            <IntegrationRow
               icon={RiBookReadLine}
               title={_('Readwise')}
               status={readwiseStatus}
@@ -226,6 +201,20 @@ const IntegrationsPanel: React.FC = () => {
               title={_('Hardcover')}
               status={hardcoverStatus}
               onClick={() => setSubPage('hardcover')}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
+        <SectionTitle className='mb-2'>{_('Third-party Cloud Sync')}</SectionTitle>
+        <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+          <div className='divide-base-200 divide-y'>
+            <IntegrationRow
+              icon={RiCloudLine}
+              title={_('Cloud Sync')}
+              status={cloudSyncStatus}
+              onClick={() => setSubPage('cloudsync')}
             />
           </div>
         </div>

@@ -8,30 +8,45 @@ import {
   runGoogleDriveConnect,
   runGoogleDriveDisconnect,
 } from '@/services/sync/providers/gdrive/googleDriveConnect';
-import SubPageHeader from '../SubPageHeader';
 import { Tips } from '../primitives';
 import FileSyncForm from './FileSyncForm';
+import { withActiveCloudProvider } from './cloudSync';
 
-interface GoogleDriveFormProps {
-  onBack: () => void;
-}
+const disconnectButtonClass = clsx(
+  'eink-bordered',
+  'h-10 rounded-lg px-4 text-sm font-medium',
+  'text-error hover:bg-error/10',
+  'transition-colors duration-150',
+  'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+);
+
+const primaryButtonClass = clsx(
+  'btn btn-primary',
+  'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
+  'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+);
 
 /**
- * Google Drive integration form. Mirrors {@link WebDAVForm}'s two-mode layout,
- * but the connect panel is an OAuth sign-in (open consent in the browser, store
- * the token in the OS keychain) rather than a URL/credentials form. Once
- * connected it renders the shared {@link FileSyncForm} sync controls.
+ * Google Drive provider panel, embedded in the unified {@link CloudSyncForm}.
+ * Three states:
  *
- * Desktop only for now — the Integrations row is hidden off-desktop until the
- * mobile OAuth runners land.
+ * - **Active** (`googleDrive.enabled`): the shared {@link FileSyncForm} controls
+ *   + Disconnect (which clears the keychain token — a full teardown).
+ * - **Configured but inactive** (a token exists — `accountLabel` is set — but
+ *   another provider is active): "Use Google Drive" re-activates it WITHOUT a
+ *   fresh sign-in, so switching back is frictionless; Disconnect tears it down.
+ * - **Not connected**: the OAuth Connect button.
+ *
+ * Activating makes Drive the single active cloud provider (turns WebDAV off).
  */
-const GoogleDriveForm: React.FC<GoogleDriveFormProps> = ({ onBack }) => {
+const GoogleDriveForm: React.FC = () => {
   const _ = useTranslation();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { envConfig } = useEnv();
 
   const stored = settings.googleDrive;
-  const isConnected = !!stored?.enabled;
+  const isActive = !!stored?.enabled;
+  const isConfigured = !!stored?.accountLabel;
   const [isConnecting, setIsConnecting] = useState(false);
 
   const persistGDrive = async (patch: Partial<typeof stored>) => {
@@ -41,15 +56,27 @@ const GoogleDriveForm: React.FC<GoogleDriveFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, next);
   };
 
+  // Make Drive the active provider (turns WebDAV off), optionally stamping a
+  // freshly-resolved account label.
+  const activate = async (accountLabel?: string) => {
+    const latest = useSettingsStore.getState().settings;
+    const withLabel =
+      accountLabel === undefined
+        ? latest
+        : { ...latest, googleDrive: { ...latest.googleDrive, accountLabel } };
+    const next = withActiveCloudProvider(withLabel, 'gdrive');
+    setSettings(next);
+    await saveSettings(envConfig, next);
+  };
+
   const handleConnect = async () => {
     if (isConnecting) return;
     setIsConnecting(true);
     try {
       const { accountLabel } = await runGoogleDriveConnect();
-      // Only mark connected after the token has persisted (runGoogleDriveConnect
-      // throws if the keychain save fails), so a "Connected" row never points at
-      // a token that won't survive a restart.
-      await persistGDrive({ enabled: true, accountLabel: accountLabel ?? undefined });
+      // Only mark connected after the token persisted (runGoogleDriveConnect
+      // throws if the keychain save fails).
+      await activate(accountLabel ?? undefined);
       eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
     } catch (e) {
       console.warn('[gdrive] connect failed', e);
@@ -59,78 +86,78 @@ const GoogleDriveForm: React.FC<GoogleDriveFormProps> = ({ onBack }) => {
     }
   };
 
+  const handleActivate = async () => {
+    await activate();
+    eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
+  };
+
   const handleDisconnect = async () => {
     await runGoogleDriveDisconnect();
-    await persistGDrive({ enabled: false, accountLabel: undefined });
+    const latest = useSettingsStore.getState().settings;
+    const base = withActiveCloudProvider(latest, null);
+    const next = { ...base, googleDrive: { ...base.googleDrive, accountLabel: undefined } };
+    setSettings(next);
+    await saveSettings(envConfig, next);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
   };
 
-  const description: string = isConnected
-    ? stored.accountLabel
-      ? _('Connected as {{account}}', { account: stored.accountLabel })
-      : _('Connected to Google Drive')
-    : _('Sync your library, reading progress, and highlights with your Google Drive.');
+  if (isActive) {
+    return (
+      <div className='space-y-5'>
+        <FileSyncForm kind='gdrive' stored={stored} persist={persistGDrive} />
+        <div className='flex justify-end'>
+          <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
+            {_('Disconnect')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isConfigured) {
+    return (
+      <div className='space-y-5'>
+        <Tips>
+          <li>
+            {_('Connected as {{account}}', { account: stored.accountLabel })}
+            {_('. Make Google Drive the active cloud provider.')}
+          </li>
+        </Tips>
+        <div className='flex justify-end gap-2'>
+          <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
+            {_('Disconnect')}
+          </button>
+          <button type='button' onClick={handleActivate} className={primaryButtonClass}>
+            {_('Use Google Drive')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className='w-full'>
-      <SubPageHeader
-        parentLabel={_('Integrations')}
-        currentLabel={_('Google Drive')}
-        description={description}
-        onBack={onBack}
-      />
-
-      {isConnected ? (
-        <div className='space-y-5'>
-          <FileSyncForm kind='gdrive' stored={stored} persist={persistGDrive} />
-
-          <div className='flex justify-end'>
-            <button
-              type='button'
-              onClick={handleDisconnect}
-              className={clsx(
-                'eink-bordered',
-                'h-10 rounded-lg px-4 text-sm font-medium',
-                'text-error hover:bg-error/10',
-                'transition-colors duration-150',
-                'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
-              )}
-            >
-              {_('Disconnect')}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className='space-y-5'>
-          <Tips>
-            <li>{_('Sign-in opens in your browser.')}</li>
-            <li>{_('Readest only accesses the files it creates in your Drive.')}</li>
-          </Tips>
-
-          <div className='flex justify-end pt-1'>
-            <button
-              type='button'
-              onClick={handleConnect}
-              disabled={isConnecting}
-              className={clsx(
-                'btn btn-primary',
-                'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
-                isConnecting && 'opacity-60',
-              )}
-            >
-              {isConnecting ? (
-                <>
-                  <span className='loading loading-spinner loading-sm' />
-                  {_('Waiting for sign-in…')}
-                </>
-              ) : (
-                _('Connect Google Drive')
-              )}
-            </button>
-          </div>
-        </div>
-      )}
+    <div className='space-y-5'>
+      <Tips>
+        <li>{_('Sign-in opens in your browser.')}</li>
+        <li>{_('Readest only accesses the files it creates in your Drive.')}</li>
+      </Tips>
+      <div className='flex justify-end pt-1'>
+        <button
+          type='button'
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className={clsx(primaryButtonClass, isConnecting && 'opacity-60')}
+        >
+          {isConnecting ? (
+            <>
+              <span className='loading loading-spinner loading-sm' />
+              {_('Waiting for sign-in…')}
+            </>
+          ) : (
+            _('Connect Google Drive')
+          )}
+        </button>
+      </div>
     </div>
   );
 };
