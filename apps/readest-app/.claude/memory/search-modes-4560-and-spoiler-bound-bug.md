@@ -10,7 +10,7 @@ metadata:
 agreed the original "foundational Turso-cached engine + searchBook agent tool" was over-scoped).
 Decision = **phase it**.
 
-**PR-1 (done, branch `feat/search-modes-regex-nearby-4560`, worktree `/Users/chrox/dev/readest-feat-search-modes-regex-nearby-4560`):**
+**PR-1 (MERGED: readest#4764 + foliate-js#38):**
 adds `regex` + `nearby-words` modes INSIDE the foliate submodule `packages/foliate-js/search.js`
 (`regexSearch`, `nearbyWordsSearch`, `mode` dispatch in `search()`/`searchMatcher`); per-word `cfis`
 + annotation dedupe in `view.js`; `BookSearchConfig.mode`/`nearbyWords` + `BookSearchMatch.cfis` +
