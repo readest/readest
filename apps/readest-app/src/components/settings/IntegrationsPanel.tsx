@@ -10,6 +10,7 @@ import {
   RiDiscordLine,
   RiSendPlaneLine,
   RiCloudLine,
+  RiGoogleLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -26,10 +27,11 @@ import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
+import GoogleDriveForm from './integrations/GoogleDriveForm';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'webdav' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage = 'kosync' | 'webdav' | 'gdrive' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -55,6 +57,9 @@ const IntegrationsPanel: React.FC = () => {
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
+  const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
+  // Drive sign-in is desktop-only for now (mobile OAuth runners land later).
+  const showGoogleDrive = !!appService?.isDesktopApp;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
@@ -115,6 +120,12 @@ const IntegrationsPanel: React.FC = () => {
         <WebDAVForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'gdrive')
+    return (
+      <div className='my-4 w-full'>
+        <GoogleDriveForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'readwise')
     return (
       <div className='my-4 w-full'>
@@ -161,6 +172,13 @@ const IntegrationsPanel: React.FC = () => {
         ? _('Connected as {{user}}', { user: settings.webdav.username })
         : _('Connected')
       : _('Not connected');
+  const gdriveStatus = isGDriveSyncing
+    ? _('Syncing…')
+    : settings.googleDrive?.enabled
+      ? settings.googleDrive.accountLabel
+        ? _('Connected as {{user}}', { user: settings.googleDrive.accountLabel })
+        : _('Connected')
+      : _('Not connected');
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
 
@@ -189,6 +207,14 @@ const IntegrationsPanel: React.FC = () => {
               status={webdavStatus}
               onClick={() => setSubPage('webdav')}
             />
+            {showGoogleDrive && (
+              <IntegrationRow
+                icon={RiGoogleLine}
+                title={_('Google Drive')}
+                status={gdriveStatus}
+                onClick={() => setSubPage('gdrive')}
+              />
+            )}
             <IntegrationRow
               icon={RiBookReadLine}
               title={_('Readwise')}
