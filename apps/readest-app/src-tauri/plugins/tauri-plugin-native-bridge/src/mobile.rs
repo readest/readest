@@ -300,6 +300,39 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn set_secure_item(
+        &self,
+        payload: SetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        self.0
+            .run_mobile_plugin("set_secure_item", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn get_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<GetSecureItemResponse> {
+        self.0
+            .run_mobile_plugin("get_secure_item", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn clear_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        self.0
+            .run_mobile_plugin("clear_secure_item", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     /// Open a full-screen `WKWebView` / `WebView` over the main app,
     /// navigate to `payload.url` with a real Chrome UA, wait for load
     /// + settle, then return `document.documentElement.outerHTML`. The

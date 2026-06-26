@@ -249,3 +249,27 @@ pub(crate) async fn is_sync_keychain_available<R: Runtime>(
 ) -> Result<SyncKeychainAvailableResponse> {
     app.native_bridge().is_sync_keychain_available()
 }
+
+#[command]
+pub(crate) async fn set_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetSecureItemRequest,
+) -> Result<SecureItemResponse> {
+    app.native_bridge().set_secure_item(payload)
+}
+
+#[command]
+pub(crate) async fn get_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: GetSecureItemRequest,
+) -> Result<GetSecureItemResponse> {
+    app.native_bridge().get_secure_item(payload)
+}
+
+#[command]
+pub(crate) async fn clear_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: GetSecureItemRequest,
+) -> Result<SecureItemResponse> {
+    app.native_bridge().clear_secure_item(payload)
+}

@@ -285,6 +285,66 @@ impl<R: Runtime> NativeBridge<R> {
                 .to_string(),
         ))
     }
+
+    // ── Keyed secure key-value store ────────────────────────────────────
+    //
+    // Same keychain backends + fail-loud/fail-soft contract as the sync
+    // passphrase above, but each item gets its own keychain entry keyed by
+    // `key` (the item's `user`/account), so many independent secrets (the
+    // Drive token set, future provider tokens) coexist under one service
+    // without colliding with the passphrase entry (user "default").
+
+    pub fn set_secure_item(
+        &self,
+        payload: SetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.set_password(&payload.value)) {
+            Ok(()) => Ok(SecureItemResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SecureItemResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn get_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<GetSecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.get_password()) {
+            Ok(value) => Ok(GetSecureItemResponse {
+                value: Some(value),
+                error: None,
+            }),
+            Err(keyring_core::Error::NoEntry) => Ok(GetSecureItemResponse {
+                value: None,
+                error: None,
+            }),
+            Err(err) => Ok(GetSecureItemResponse {
+                value: None,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn clear_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.delete_credential()) {
+            Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(SecureItemResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SecureItemResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";
@@ -292,4 +352,10 @@ const KEYRING_USER: &str = "default";
 
 fn keyring_entry() -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
     keyring_core::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+}
+
+/// Keychain entry for a keyed secure item — same service as the passphrase,
+/// with the caller's `key` as the per-item account so each secret is distinct.
+fn keyring_entry_for(key: &str) -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
+    keyring_core::Entry::new(KEYRING_SERVICE, key)
 }

@@ -358,3 +358,40 @@ pub struct SyncKeychainAvailableResponse {
     pub available: bool,
     pub error: Option<String>,
 }
+
+// ── Keyed secure key-value store ─────────────────────────────────────────
+//
+// A generic, keyed secret store over the same OS keychain backends as the
+// sync passphrase above, so secrets that aren't the single sync passphrase
+// (the Google Drive OAuth token set, and any future cloud provider's refresh
+// token) get the same cross-launch persistence without each needing its own
+// native command.
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetSecureItemRequest {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSecureItemRequest {
+    pub key: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecureItemResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSecureItemResponse {
+    /// Present iff an item is stored under the key. Absent (and `error: None`)
+    /// means "no entry on this device".
+    pub value: Option<String>,
+    pub error: Option<String>,
+}
