@@ -64,3 +64,15 @@ export const deriveReverseDnsRedirectUri = (clientId: string): string =>
  */
 export const matchesReverseDnsRedirect = (url: string, scheme: string): boolean =>
   url.toLowerCase().startsWith(`${scheme.toLowerCase()}:`);
+
+/**
+ * Whether a URL is *any* Google reverse-DNS OAuth redirect, regardless of which
+ * client id it targets. Used by the deep-link ingress to drop OAuth redirects
+ * from the `app-incoming-url` broadcast so no consumer (e.g. the book-import
+ * path) mistakes `com.googleusercontent.apps.<id>:/oauthredirect?...` for a file.
+ * The OAuth runner's own `single-instance` / `onOpenUrl` listeners still receive
+ * it directly. Matching the scheme prefix (not a specific client id) keeps this
+ * robust and independent of the env-baked client.
+ */
+export const isGoogleOAuthRedirectUrl = (url: string): boolean =>
+  url.toLowerCase().startsWith(GOOGLE_OAUTH_REDIRECT_SCHEME_PREFIX.toLowerCase());

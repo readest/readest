@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   deriveReverseDnsRedirectScheme,
   deriveReverseDnsRedirectUri,
+  isGoogleOAuthRedirectUrl,
   matchesReverseDnsRedirect,
 } from '@/services/sync/providers/gdrive/auth/reverseDnsRedirect';
 
@@ -36,5 +37,16 @@ describe('reverseDnsRedirect', () => {
     expect(matchesReverseDnsRedirect('readest://auth-callback', scheme)).toBe(false);
     // A scheme that is a strict prefix of a longer one must not false-match.
     expect(matchesReverseDnsRedirect(`${scheme}extra:/x`, scheme)).toBe(false);
+  });
+
+  test('isGoogleOAuthRedirectUrl flags any Google reverse-DNS redirect for the ingress filter', () => {
+    expect(
+      isGoogleOAuthRedirectUrl('com.googleusercontent.apps.ANY-id:/oauthredirect?code=x'),
+    ).toBe(true);
+    expect(isGoogleOAuthRedirectUrl(deriveReverseDnsRedirectUri(CLIENT_ID))).toBe(true);
+    // Real app/book URLs must pass through to the consumers untouched.
+    expect(isGoogleOAuthRedirectUrl('readest://auth-callback')).toBe(false);
+    expect(isGoogleOAuthRedirectUrl('file:///Users/me/book.epub')).toBe(false);
+    expect(isGoogleOAuthRedirectUrl('https://web.readest.com/s/abc')).toBe(false);
   });
 });
