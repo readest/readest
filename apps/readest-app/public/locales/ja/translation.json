@@ -1770,5 +1770,8 @@
   "Sort descending": "降順で並べ替え",
   "Filter Annotations": "注釈をフィルター",
   "Colors": "色",
-  "Styles": "スタイル"
+  "Styles": "スタイル",
+  "Word": "単語",
+  "Sentence": "文",
+  "Granularity": "粒度"
 }

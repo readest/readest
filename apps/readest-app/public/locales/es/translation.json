@@ -1836,5 +1836,8 @@
   "Sort descending": "Orden descendente",
   "Filter Annotations": "Filtrar anotaciones",
   "Colors": "Colores",
-  "Styles": "Estilos"
+  "Styles": "Estilos",
+  "Word": "Palabra",
+  "Sentence": "Oración",
+  "Granularity": "Granularidad"
 }

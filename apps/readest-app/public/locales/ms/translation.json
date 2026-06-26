@@ -1770,5 +1770,8 @@
   "Sort descending": "Isih menurun",
   "Filter Annotations": "Tapis Anotasi",
   "Colors": "Warna",
-  "Styles": "Gaya"
+  "Styles": "Gaya",
+  "Word": "Perkataan",
+  "Sentence": "Ayat",
+  "Granularity": "Granulariti"
 }

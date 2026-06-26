@@ -1770,5 +1770,8 @@
   "Sort descending": "내림차순 정렬",
   "Filter Annotations": "주석 필터링",
   "Colors": "색상",
-  "Styles": "스타일"
+  "Styles": "스타일",
+  "Word": "단어",
+  "Sentence": "문장",
+  "Granularity": "단위"
 }

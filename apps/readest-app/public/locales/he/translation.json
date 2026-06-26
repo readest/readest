@@ -1836,5 +1836,8 @@
   "Sort descending": "מיון יורד",
   "Filter Annotations": "סינון הערות",
   "Colors": "צבעים",
-  "Styles": "סגנונות"
+  "Styles": "סגנונות",
+  "Word": "מילה",
+  "Sentence": "משפט",
+  "Granularity": "רמת פירוט"
 }

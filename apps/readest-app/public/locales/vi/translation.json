@@ -1770,5 +1770,8 @@
   "Sort descending": "Sắp xếp giảm dần",
   "Filter Annotations": "Lọc chú thích",
   "Colors": "Màu sắc",
-  "Styles": "Kiểu"
+  "Styles": "Kiểu",
+  "Word": "Từ",
+  "Sentence": "Câu",
+  "Granularity": "Mức độ chi tiết"
 }

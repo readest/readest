@@ -1869,5 +1869,8 @@
   "Sort descending": "За спаданням",
   "Filter Annotations": "Фільтрувати анотації",
   "Colors": "Кольори",
-  "Styles": "Стилі"
+  "Styles": "Стилі",
+  "Word": "Слово",
+  "Sentence": "Речення",
+  "Granularity": "Деталізація"
 }

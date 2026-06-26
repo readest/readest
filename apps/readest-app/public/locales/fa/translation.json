@@ -1803,5 +1803,8 @@
   "Sort descending": "مرتب‌سازی نزولی",
   "Filter Annotations": "فیلتر یادداشت‌ها",
   "Colors": "رنگ‌ها",
-  "Styles": "سبک‌ها"
+  "Styles": "سبک‌ها",
+  "Word": "کلمه",
+  "Sentence": "جمله",
+  "Granularity": "دانه‌بندی"
 }

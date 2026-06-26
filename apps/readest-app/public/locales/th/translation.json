@@ -1770,5 +1770,8 @@
   "Sort descending": "เรียงจากมากไปน้อย",
   "Filter Annotations": "กรองคำอธิบายประกอบ",
   "Colors": "สี",
-  "Styles": "สไตล์"
+  "Styles": "สไตล์",
+  "Word": "คำ",
+  "Sentence": "ประโยค",
+  "Granularity": "ระดับความละเอียด"
 }

@@ -1869,5 +1869,8 @@
   "Sort descending": "Padajoče razvrščanje",
   "Filter Annotations": "Filtriraj opombe",
   "Colors": "Barve",
-  "Styles": "Slogi"
+  "Styles": "Slogi",
+  "Word": "Beseda",
+  "Sentence": "Stavek",
+  "Granularity": "Granularnost"
 }

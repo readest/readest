@@ -1869,5 +1869,8 @@
   "Sort descending": "По убыванию",
   "Filter Annotations": "Фильтровать аннотации",
   "Colors": "Цвета",
-  "Styles": "Стили"
+  "Styles": "Стили",
+  "Word": "Слово",
+  "Sentence": "Предложение",
+  "Granularity": "Детализация"
 }

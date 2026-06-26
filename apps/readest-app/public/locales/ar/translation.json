@@ -1935,5 +1935,8 @@
   "Sort descending": "ترتيب تنازلي",
   "Filter Annotations": "تصفية التعليقات التوضيحية",
   "Colors": "الألوان",
-  "Styles": "الأنماط"
+  "Styles": "الأنماط",
+  "Word": "كلمة",
+  "Sentence": "جملة",
+  "Granularity": "الدقة"
 }

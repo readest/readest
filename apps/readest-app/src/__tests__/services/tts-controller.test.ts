@@ -744,6 +744,29 @@ describe('TTSController', () => {
       controller.prepareSpeakWords([]);
       expect(controller.getCurrentHighlightCfi()).toBeNull();
     });
+
+    test('granularity "sentence" forces sentence highlighting (skips word-by-word)', async () => {
+      controller.setHighlightGranularity('sentence');
+      await armWithSentence(makeSentenceRange());
+      getOverlayer().add.mockClear();
+      // Even when the client reports word boundaries and calls prepareSpeakWords,
+      // the user's "sentence" choice keeps highlighting at the sentence level: the
+      // sentence highlight was already drawn at mark dispatch (not suppressed), so
+      // prepareSpeakWords is a no-op and word mode never engages.
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      expect(getOverlayer().add).not.toHaveBeenCalled();
+      expect(controller.getCurrentHighlightCfi()).toBeNull();
+    });
+
+    test('granularity "word" (default) still highlights word-by-word', async () => {
+      controller.setHighlightGranularity('word');
+      await armWithSentence(makeSentenceRange());
+      getOverlayer().add.mockClear();
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      // First word highlighted immediately and word mode engaged.
+      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+      expect(controller.getCurrentHighlightCfi()).not.toBeNull();
+    });
   });
 
   describe('tts-position event', () => {

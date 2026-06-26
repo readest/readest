@@ -133,6 +133,7 @@ vi.mock('@/services/tts', () => ({
       ),
       initViewTTS: vi.fn().mockResolvedValue(undefined),
       updateHighlightOptions: vi.fn(),
+      setHighlightGranularity: vi.fn(),
       setLang: vi.fn(),
       setRate: vi.fn(),
       setVoice: vi.fn(),

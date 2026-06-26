@@ -1770,5 +1770,8 @@
   "Sort descending": "Urutkan menurun",
   "Filter Annotations": "Filter Anotasi",
   "Colors": "Warna",
-  "Styles": "Gaya"
+  "Styles": "Gaya",
+  "Word": "Kata",
+  "Sentence": "Kalimat",
+  "Granularity": "Granularitas"
 }

@@ -1803,5 +1803,8 @@
   "Sort descending": "Azalan sıralama",
   "Filter Annotations": "Açıklamaları Filtrele",
   "Colors": "Renkler",
-  "Styles": "Stiller"
+  "Styles": "Stiller",
+  "Word": "Kelime",
+  "Sentence": "Cümle",
+  "Granularity": "Ayrıntı düzeyi"
 }

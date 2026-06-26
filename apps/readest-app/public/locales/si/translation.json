@@ -1803,5 +1803,8 @@
   "Sort descending": "අවරෝහණව සකසන්න",
   "Filter Annotations": "සටහන් පෙරහන් කරන්න",
   "Colors": "වර්ණ",
-  "Styles": "මෝස්තර"
+  "Styles": "මෝස්තර",
+  "Word": "වචනය",
+  "Sentence": "වාක්‍යය",
+  "Granularity": "විස්තර මට්ටම"
 }

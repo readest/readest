@@ -1770,5 +1770,8 @@
   "Sort descending": "降序排列",
   "Filter Annotations": "篩選筆記",
   "Colors": "顏色",
-  "Styles": "樣式"
+  "Styles": "樣式",
+  "Word": "單字",
+  "Sentence": "句子",
+  "Granularity": "粒度"
 }

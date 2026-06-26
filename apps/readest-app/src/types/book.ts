@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { TTSHighlightGranularity } from '@/services/tts/types';
 import { TTSMediaMetadataMode } from '@/services/tts/types';
 import type { AnnotationLinkType } from '@/utils/deeplink';
 import { AnnotationToolType } from './annotator';
@@ -314,6 +315,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;
 }
 

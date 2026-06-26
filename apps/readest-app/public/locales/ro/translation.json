@@ -1836,5 +1836,8 @@
   "Sort descending": "Sortare descrescătoare",
   "Filter Annotations": "Filtrează adnotările",
   "Colors": "Culori",
-  "Styles": "Stiluri"
+  "Styles": "Stiluri",
+  "Word": "Cuvânt",
+  "Sentence": "Propoziție",
+  "Granularity": "Granularitate"
 }

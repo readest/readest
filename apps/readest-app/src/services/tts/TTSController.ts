@@ -2,7 +2,13 @@ import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
-import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
+import {
+  TTSGranularity,
+  TTSHighlightGranularity,
+  TTSHighlightOptions,
+  TTSMark,
+  TTSVoice,
+} from './types';
 import { createRejectFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
@@ -78,6 +84,11 @@ export class TTSController extends EventTarget {
   // re-apply the word instead of redrawing the whole sentence over it.
   #wordHighlightActive = false;
   #lastSpeakWordRange: Range | null = null;
+  // User-chosen highlight granularity. 'word' (default) highlights word-by-word
+  // when the active client reports word boundaries (Edge); 'sentence' keeps the
+  // highlight at the sentence level even then. Sentence highlighting is assumed
+  // supported by every client, so 'word' falls back to it automatically.
+  #highlightGranularity: TTSHighlightGranularity = 'word';
 
   state: TTSState = 'stopped';
   ttsLang: string = '';
@@ -188,6 +199,10 @@ export class TTSController extends EventTarget {
   updateHighlightOptions(options: TTSHighlightOptions) {
     this.options.style = options.style;
     this.options.color = options.color;
+  }
+
+  setHighlightGranularity(granularity: TTSHighlightGranularity) {
+    this.#highlightGranularity = granularity;
   }
 
   async initViewTTS(index?: number) {
@@ -677,8 +692,11 @@ export class TTSController extends EventTarget {
         // When the active client highlights word-by-word, suppress the
         // sentence highlight that setMark would otherwise draw, so the page
         // doesn't flash the whole sentence before the first word. The fallback
-        // (no boundaries) is drawn later in prepareSpeakWords.
-        this.#suppressMarkHighlight = this.ttsClient.supportsWordBoundaries();
+        // (no boundaries) is drawn later in prepareSpeakWords. When the user
+        // forces sentence granularity we keep the sentence highlight, so don't
+        // suppress it.
+        this.#suppressMarkHighlight =
+          this.ttsClient.supportsWordBoundaries() && this.#highlightGranularity === 'word';
         const range = this.view.tts?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
         this.#speakWordsArmed = !!range;
@@ -760,6 +778,10 @@ export class TTSController extends EventTarget {
   // sentence-level semantics.
   prepareSpeakWords(words: string[]) {
     if (!this.#speakWordsArmed) return;
+    // User forced sentence-level highlighting: the sentence highlight was drawn
+    // at mark dispatch (not suppressed), so there's nothing to do here — leave
+    // word mode off even though the client reported word boundaries.
+    if (this.#highlightGranularity === 'sentence') return;
     const range = this.view.tts?.getLastRange();
     if (!range) return;
     this.#speakWordBaseRange = range;

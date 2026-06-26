@@ -531,6 +531,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.ttsHighlightOptions, viewSettings?.isEink, getTTSHighlightOptions]);
 
+  useEffect(() => {
+    if (ttsControllerRef.current && viewSettings?.ttsHighlightGranularity) {
+      ttsControllerRef.current.setHighlightGranularity(viewSettings.ttsHighlightGranularity);
+    }
+  }, [viewSettings?.ttsHighlightGranularity]);
+
   // handleStop (defined before handleTTSSpeak/handleTTSStop which reference it)
   const handleStop = useCallback(
     async (bookKey: string) => {
@@ -659,6 +665,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
         );
+        ttsController.setHighlightGranularity(viewSettings.ttsHighlightGranularity ?? 'word');
         const ssml =
           oneTime && ttsSpeakRange
             ? genSSMLRaw(ttsSpeakRange.toString().trim())

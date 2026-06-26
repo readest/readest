@@ -1803,5 +1803,8 @@
   "Sort descending": "अवरोही क्रम",
   "Filter Annotations": "टिप्पणियाँ फ़िल्टर करें",
   "Colors": "रंग",
-  "Styles": "शैलियाँ"
+  "Styles": "शैलियाँ",
+  "Word": "शब्द",
+  "Sentence": "वाक्य",
+  "Granularity": "सूक्ष्मता"
 }

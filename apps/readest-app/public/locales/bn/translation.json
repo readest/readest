@@ -1803,5 +1803,8 @@
   "Sort descending": "অধঃক্রমে সাজান",
   "Filter Annotations": "টীকা ফিল্টার করুন",
   "Colors": "রঙ",
-  "Styles": "শৈলী"
+  "Styles": "শৈলী",
+  "Word": "শব্দ",
+  "Sentence": "বাক্য",
+  "Granularity": "সূক্ষ্মতা"
 }

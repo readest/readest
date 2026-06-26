@@ -1764,5 +1764,8 @@
   "Metadata updated": "གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།",
   "Filter Annotations": "མཆན་འདེམས་སྒྲིག",
   "Colors": "ཁ་དོག",
-  "Styles": "རྣམ་པ"
+  "Styles": "རྣམ་པ",
+  "Word": "ཚིག",
+  "Sentence": "ཚིག་གྲུབ།",
+  "Granularity": "ཞིབ་ཕྲའི་ཚད"
 }

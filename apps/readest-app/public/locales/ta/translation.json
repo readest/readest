@@ -1803,5 +1803,8 @@
   "Sort descending": "இறங்குவரிசை",
   "Filter Annotations": "சிறுகுறிப்புகளை வடிகட்டு",
   "Colors": "நிறங்கள்",
-  "Styles": "பாணிகள்"
+  "Styles": "பாணிகள்",
+  "Word": "சொல்",
+  "Sentence": "வாக்கியம்",
+  "Granularity": "நுண்மை"
 }
