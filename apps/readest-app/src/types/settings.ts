@@ -145,6 +145,27 @@ export interface WebDAVSettings {
 }
 
 /**
+ * Google Drive file-sync settings. A second file-sync backend alongside
+ * {@link WebDAVSettings}, sharing the same engine, sub-toggles, and strategy
+ * vocabulary. Drive has no URL / credentials / root path (it is OAuth + a
+ * fixed `/Readest` namespace under the `drive.file` scope), and no BYO client.
+ * The OAuth token is NOT stored here — it lives in the OS keychain. `deviceId`
+ * and `lastSyncedAt` are device-local (excluded from cross-device restore).
+ */
+export interface GoogleDriveSettings {
+  enabled: boolean;
+  /** Connected account's email (or display name), shown in the settings UI. */
+  accountLabel?: string;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+}
+
+/**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica
@@ -296,6 +317,7 @@ export interface SystemSettings {
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
   webdav: WebDAVSettings;
+  googleDrive: GoogleDriveSettings;
 
   aiSettings: AISettings;
   /**

@@ -61,6 +61,13 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     },
     readwise: { enabled: true, accessToken: 'rw-token', lastSyncedAt: 999 },
     hardcover: { enabled: false, accessToken: 'hc-token', lastSyncedAt: 888 },
+    googleDrive: {
+      enabled: true,
+      accountLabel: 'me@gmail.com',
+      strategy: 'silent',
+      deviceId: 'gdrive-device-id',
+      lastSyncedAt: 777,
+    },
     aiSettings: {
       enabled: true,
       provider: 'ollama',
@@ -94,6 +101,9 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     const out = rec(sanitizeSettingsForBackup(makeSettings()));
     expect(out['replicaDeviceId']).toBeUndefined();
     expect(rec(out['kosync'])['deviceId']).toBeUndefined();
+    expect(rec(out['googleDrive'])['deviceId']).toBeUndefined();
+    // Non-identity Drive settings still travel with the backup.
+    expect(rec(out['googleDrive'])['enabled']).toBe(true);
   });
 
   it('strips sync cursors', () => {
@@ -104,6 +114,7 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(out['lastSyncedAtReplicas']).toBeUndefined();
     expect(rec(out['readwise'])['lastSyncedAt']).toBeUndefined();
     expect(rec(out['hardcover'])['lastSyncedAt']).toBeUndefined();
+    expect(rec(out['googleDrive'])['lastSyncedAt']).toBeUndefined();
   });
 
   it('strips transient runtime state', () => {

@@ -6,7 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useWebDAVSyncStore } from '@/store/webdavSyncStore';
+import { useFileSyncStore } from '@/store/fileSyncStore';
 import { eventDispatcher } from '@/utils/event';
 import {
   checkConnection,
@@ -123,13 +123,13 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
   // Without this hoist, the user would see the button re-enable, no
   // progress affordance, and could trigger a second concurrent
   // syncLibrary while the first was still in flight against the
-  // server. See `webdavSyncStore.ts` for the design rationale.
-  const isSyncing = useWebDAVSyncStore((s) => s.isSyncing);
-  const syncProgressLabel = useWebDAVSyncStore((s) => s.progressLabel);
-  const syncProgressDetail = useWebDAVSyncStore((s) => s.progressDetail);
-  const beginSync = useWebDAVSyncStore((s) => s.beginSync);
-  const updateProgress = useWebDAVSyncStore((s) => s.updateProgress);
-  const endSync = useWebDAVSyncStore((s) => s.endSync);
+  // server. See `fileSyncStore.ts` for the design rationale.
+  const isSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
+  const syncProgressLabel = useFileSyncStore((s) => s.byKind.webdav?.progressLabel ?? null);
+  const syncProgressDetail = useFileSyncStore((s) => s.byKind.webdav?.progressDetail ?? null);
+  const beginSync = useFileSyncStore((s) => s.beginSync);
+  const updateProgress = useFileSyncStore((s) => s.updateProgress);
+  const endSync = useFileSyncStore((s) => s.endSync);
 
   const handleConnect = async () => {
     if (!url || !username) return;
@@ -228,7 +228,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
     // Re-entrancy gate must read the live store, not the closure: a
     // second click after we re-mount could otherwise see the captured
     // `isSyncing` from this render rather than the up-to-date one.
-    if (useWebDAVSyncStore.getState().isSyncing) return;
+    if (useFileSyncStore.getState().byKind.webdav?.isSyncing) return;
     if (!stored?.enabled || !stored.serverUrl) return;
 
     // Load library from disk if not loaded yet
@@ -259,7 +259,13 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       await persistWebdav({ deviceId });
     }
 
-    beginSync(_('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }));
+    // Acquire the global library-sync mutex; bail if another backend's Sync now
+    // is already mutating the local library.
+    if (
+      !beginSync('webdav', _('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }))
+    ) {
+      return;
+    }
 
     try {
       // The provider owns the WebDAV URL + auth + streaming transport; the
@@ -277,6 +283,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
         onProgress: ({ book, index, total, action }) => {
           const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
           updateProgress(
+            'webdav',
             _('{{action}} {{n}} / {{total}}', { action: actionStr, n: index + 1, total }),
             book.title || book.hash.slice(0, 8),
           );
@@ -305,7 +312,7 @@ const WebDAVForm: React.FC<WebDAVFormProps> = ({ onBack }) => {
       const message = formatSyncError(_, e);
       eventDispatcher.dispatch('toast', { type: 'error', message });
     } finally {
-      endSync();
+      endSync('webdav');
     }
   };
 

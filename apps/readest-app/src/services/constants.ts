@@ -26,6 +26,7 @@ import {
   ReadwiseSettings,
   SystemSettings,
   WebDAVSettings,
+  GoogleDriveSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -102,6 +103,16 @@ export const DEFAULT_WEBDAV_SETTINGS = {
   lastSyncedAt: 0,
 } as WebDAVSettings;
 
+export const DEFAULT_GOOGLE_DRIVE_SETTINGS = {
+  enabled: false,
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as GoogleDriveSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -153,6 +164,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
+  googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,

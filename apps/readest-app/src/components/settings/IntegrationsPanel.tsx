@@ -17,7 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
-import { useWebDAVSyncStore } from '@/store/webdavSyncStore';
+import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLogin } from '@/utils/nav';
@@ -54,7 +54,7 @@ const IntegrationsPanel: React.FC = () => {
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
-  const isWebDAVSyncing = useWebDAVSyncStore((s) => s.isSyncing);
+  const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
