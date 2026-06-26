@@ -27,8 +27,8 @@ const primaryButtonClass = clsx(
 );
 
 /**
- * Google Drive provider panel, embedded in the unified {@link CloudSyncForm}.
- * Three states:
+ * Google Drive provider panel, embedded in the Integrations Google Drive
+ * sub-page (which owns the header). Three states:
  *
  * - **Active** (`googleDrive.enabled`): the shared {@link FileSyncForm} controls
  *   + Disconnect (which clears the keychain token — a full teardown).

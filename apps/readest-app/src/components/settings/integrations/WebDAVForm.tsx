@@ -37,8 +37,8 @@ const formatConnectError = (_: TranslationFunc, result: WebDAVConnectResult): st
 };
 
 /**
- * WebDAV provider panel, embedded in the unified {@link CloudSyncForm} (the
- * Cloud Sync sub-page owns the header). Two states:
+ * WebDAV provider panel, embedded in the Integrations WebDAV sub-page (which
+ * owns the header). Two states:
  *
  * - **Active** (`webdav.enabled`): the shared {@link FileSyncForm} sync controls
  *   + the {@link WebDAVBrowsePane} + a Disconnect button.

@@ -10,6 +10,7 @@ import {
   RiDiscordLine,
   RiSendPlaneLine,
   RiCloudLine,
+  RiGoogleLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -25,11 +26,14 @@ import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
-import CloudSyncForm from './integrations/CloudSyncForm';
+import WebDAVForm from './integrations/WebDAVForm';
+import GoogleDriveForm from './integrations/GoogleDriveForm';
+import { withActiveCloudProvider } from './integrations/cloudSync';
+import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
 
-type SubPage = 'kosync' | 'cloudsync' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage = 'kosync' | 'webdav' | 'gdrive' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -48,7 +52,8 @@ const IntegrationsPanel: React.FC = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
+  const { settings, setSettings, saveSettings, requestedSubPage, setRequestedSubPage } =
+    useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
@@ -89,16 +94,17 @@ const IntegrationsPanel: React.FC = () => {
     if (!requestedSubPage) return;
     if (
       requestedSubPage === 'kosync' ||
-      requestedSubPage === 'cloudsync' ||
+      requestedSubPage === 'webdav' ||
+      requestedSubPage === 'gdrive' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
       requestedSubPage === 'send'
     ) {
       setSubPage(requestedSubPage);
-    } else if (requestedSubPage === 'webdav' || requestedSubPage === 'gdrive') {
-      // Back-compat: the two providers merged into the unified Cloud Sync page.
-      setSubPage('cloudsync');
+    } else if (requestedSubPage === 'cloudsync') {
+      // Back-compat with the brief unified "Cloud Sync" page.
+      setSubPage('gdrive');
     }
     setRequestedSubPage(null);
   }, [requestedSubPage, setRequestedSubPage]);
@@ -113,10 +119,32 @@ const IntegrationsPanel: React.FC = () => {
         <KOSyncForm onBack={() => setSubPage(null)} />
       </div>
     );
-  if (subPage === 'cloudsync')
+  if (subPage === 'webdav')
     return (
       <div className='my-4 w-full'>
-        <CloudSyncForm onBack={() => setSubPage(null)} />
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('WebDAV')}
+          description={_(
+            'Sync your library, reading progress, and highlights with a WebDAV server.',
+          )}
+          onBack={() => setSubPage(null)}
+        />
+        <WebDAVForm />
+      </div>
+    );
+  if (subPage === 'gdrive')
+    return (
+      <div className='my-4 w-full'>
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('Google Drive')}
+          description={_(
+            'Sync your library, reading progress, and highlights with your Google Drive.',
+          )}
+          onBack={() => setSubPage(null)}
+        />
+        <GoogleDriveForm />
       </div>
     );
   if (subPage === 'readwise')
@@ -158,16 +186,39 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
-  // One row for the (single, exclusive) active cloud-sync provider.
-  const cloudSyncStatus = settings.webdav?.enabled
-    ? isWebDAVSyncing
-      ? _('WebDAV · Syncing…')
-      : _('WebDAV')
+
+  // Third-party cloud providers are mutually exclusive: at most one is the
+  // active sync target. A "configured" provider (WebDAV creds / a Drive token)
+  // can be switched on inline; an unconfigured one must be opened to connect.
+  const activeCloudKind: FileSyncBackendKind | null = settings.webdav?.enabled
+    ? 'webdav'
     : settings.googleDrive?.enabled
-      ? isGDriveSyncing
-        ? _('Google Drive · Syncing…')
-        : _('Google Drive')
+      ? 'gdrive'
+      : null;
+  const webdavConfigured = !!(settings.webdav?.serverUrl && settings.webdav?.username);
+  const gdriveConfigured = !!settings.googleDrive?.accountLabel;
+  const webdavStatus = settings.webdav?.enabled
+    ? isWebDAVSyncing
+      ? _('Syncing…')
+      : _('Active')
+    : webdavConfigured
+      ? _('Configured')
       : _('Not connected');
+  const gdriveStatus = settings.googleDrive?.enabled
+    ? isGDriveSyncing
+      ? _('Syncing…')
+      : _('Active')
+    : gdriveConfigured
+      ? _('Configured')
+      : _('Not connected');
+
+  const activateCloudProvider = async (kind: FileSyncBackendKind) => {
+    const latest = useSettingsStore.getState().settings;
+    const next = withActiveCloudProvider(latest, kind);
+    setSettings(next);
+    await saveSettings(envConfig, next);
+  };
+
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
 
@@ -210,12 +261,28 @@ const IntegrationsPanel: React.FC = () => {
         <SectionTitle className='mb-2'>{_('Third-party Cloud Sync')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div className='divide-base-200 divide-y'>
-            <IntegrationRow
+            <CloudProviderRow
               icon={RiCloudLine}
-              title={_('Cloud Sync')}
-              status={cloudSyncStatus}
-              onClick={() => setSubPage('cloudsync')}
+              title={_('WebDAV')}
+              status={webdavStatus}
+              isActive={activeCloudKind === 'webdav'}
+              canActivate={webdavConfigured}
+              onActivate={() => activateCloudProvider('webdav')}
+              onOpen={() => setSubPage('webdav')}
+              activateLabel={_('Use WebDAV')}
             />
+            {appService?.isDesktopApp && (
+              <CloudProviderRow
+                icon={RiGoogleLine}
+                title={_('Google Drive')}
+                status={gdriveStatus}
+                isActive={activeCloudKind === 'gdrive'}
+                canActivate={gdriveConfigured}
+                onActivate={() => activateCloudProvider('gdrive')}
+                onOpen={() => setSubPage('gdrive')}
+                activateLabel={_('Use Google Drive')}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -294,6 +361,86 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
       </div>
       <MdChevronRight className='text-base-content/50 h-5 w-5 flex-shrink-0' />
     </button>
+  );
+};
+
+interface CloudProviderRowProps {
+  icon: React.ElementType;
+  title: string;
+  status: string;
+  /** This provider is the active sync target. */
+  isActive: boolean;
+  /** Configured (credentials / token present) — can be switched on inline. */
+  canActivate: boolean;
+  onActivate: () => void;
+  onOpen: () => void;
+  /** Accessible label for the activate radio (e.g. "Use WebDAV"). */
+  activateLabel: string;
+}
+
+/**
+ * A third-party cloud-sync provider row. Two controls: a trailing radio that
+ * makes this provider the (single) active one inline — enabled only when it's
+ * already configured — and the row body / chevron that opens its config
+ * sub-page (connect, sync options, disconnect).
+ */
+const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
+  icon: Icon,
+  title,
+  status,
+  isActive,
+  canActivate,
+  onActivate,
+  onOpen,
+  activateLabel,
+}) => {
+  return (
+    <div className='group flex w-full items-center gap-3 px-4 py-3'>
+      <button
+        type='button'
+        onClick={onOpen}
+        className={clsx(
+          'flex min-w-0 flex-1 items-center gap-3 text-left',
+          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+        )}
+      >
+        <span
+          className={clsx(
+            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+            'bg-base-200 text-base-content/70',
+            'transition-colors duration-150',
+            'group-hover:bg-base-300/70',
+          )}
+        >
+          <Icon className='h-5 w-5' />
+        </span>
+        <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+          <SettingLabel>{title}</SettingLabel>
+          <span className='text-base-content/65 truncate text-[0.85em]'>{status}</span>
+        </div>
+      </button>
+      <input
+        type='radio'
+        name='cloud-sync-active'
+        className='radio radio-sm flex-shrink-0'
+        checked={isActive}
+        disabled={!canActivate}
+        onChange={onActivate}
+        aria-label={activateLabel}
+        title={activateLabel}
+      />
+      <button
+        type='button'
+        onClick={onOpen}
+        aria-label={title}
+        className={clsx(
+          'text-base-content/50 hover:text-base-content/80 flex-shrink-0 rounded',
+          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+        )}
+      >
+        <MdChevronRight className='h-5 w-5' />
+      </button>
+    </div>
   );
 };
 
