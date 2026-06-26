@@ -11,7 +11,10 @@ vi.mock('@/utils/bridge', () => ({
 
 import { isTauriAppPlatform } from '@/services/environment';
 import { isSyncKeychainAvailable } from '@/utils/bridge';
-import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
+import {
+  buildGoogleDriveProvider,
+  getGoogleClientId,
+} from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 
 const CLIENT_ID = 'cid.apps.googleusercontent.com';
 
@@ -21,11 +24,18 @@ afterEach(() => {
 });
 
 describe('buildGoogleDriveProvider', () => {
-  test('returns null when no client id is baked into the build', async () => {
+  test('falls back to the baked official client id when the env override is unset', async () => {
     vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', '');
+    expect(getGoogleClientId()).toMatch(/\.apps\.googleusercontent\.com$/);
+    // With a baked default + keychain, Drive builds even without an env override.
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
     vi.mocked(isSyncKeychainAvailable).mockResolvedValue({ available: true });
-    expect(await buildGoogleDriveProvider()).toBeNull();
+    expect(await buildGoogleDriveProvider()).not.toBeNull();
+  });
+
+  test('the env override wins over the baked default', () => {
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', 'forked.apps.googleusercontent.com');
+    expect(getGoogleClientId()).toBe('forked.apps.googleusercontent.com');
   });
 
   test('returns null off-Tauri (no secure token storage for the refresh token)', async () => {
