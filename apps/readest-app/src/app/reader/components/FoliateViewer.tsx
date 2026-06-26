@@ -254,6 +254,7 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
+                'nbsp',
                 'proofread',
                 'warichu',
               ],
