@@ -1800,5 +1800,8 @@
   "Date modified": "Wijzigingsdatum",
   "Date created": "Aanmaakdatum",
   "Sort ascending": "Oplopend sorteren",
-  "Sort descending": "Aflopend sorteren"
+  "Sort descending": "Aflopend sorteren",
+  "Filter Annotations": "Aantekeningen filteren",
+  "Colors": "Kleuren",
+  "Styles": "Stijlen"
 }

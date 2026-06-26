@@ -1866,5 +1866,8 @@
   "Date modified": "Дата зміни",
   "Date created": "Дата створення",
   "Sort ascending": "За зростанням",
-  "Sort descending": "За спаданням"
+  "Sort descending": "За спаданням",
+  "Filter Annotations": "Фільтрувати анотації",
+  "Colors": "Кольори",
+  "Styles": "Стилі"
 }

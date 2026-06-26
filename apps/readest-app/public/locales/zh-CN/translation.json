@@ -1767,5 +1767,8 @@
   "Date modified": "修改日期",
   "Date created": "创建日期",
   "Sort ascending": "升序排列",
-  "Sort descending": "降序排列"
+  "Sort descending": "降序排列",
+  "Filter Annotations": "筛选笔记",
+  "Colors": "颜色",
+  "Styles": "样式"
 }

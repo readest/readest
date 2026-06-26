@@ -1767,5 +1767,8 @@
   "Date modified": "วันที่แก้ไข",
   "Date created": "วันที่สร้าง",
   "Sort ascending": "เรียงจากน้อยไปมาก",
-  "Sort descending": "เรียงจากมากไปน้อย"
+  "Sort descending": "เรียงจากมากไปน้อย",
+  "Filter Annotations": "กรองคำอธิบายประกอบ",
+  "Colors": "สี",
+  "Styles": "สไตล์"
 }

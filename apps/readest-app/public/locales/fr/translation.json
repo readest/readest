@@ -1833,5 +1833,8 @@
   "Date modified": "Date de modification",
   "Date created": "Date de création",
   "Sort ascending": "Tri croissant",
-  "Sort descending": "Tri décroissant"
+  "Sort descending": "Tri décroissant",
+  "Filter Annotations": "Filtrer les annotations",
+  "Colors": "Couleurs",
+  "Styles": "Styles"
 }

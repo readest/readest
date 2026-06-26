@@ -1833,5 +1833,8 @@
   "Date modified": "Fecha de modificación",
   "Date created": "Fecha de creación",
   "Sort ascending": "Orden ascendente",
-  "Sort descending": "Orden descendente"
+  "Sort descending": "Orden descendente",
+  "Filter Annotations": "Filtrar anotaciones",
+  "Colors": "Colores",
+  "Styles": "Estilos"
 }

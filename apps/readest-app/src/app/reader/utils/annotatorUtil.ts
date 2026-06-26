@@ -1,5 +1,11 @@
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
-import { BookNote, DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
+import {
+  BookNote,
+  BooknoteGroup,
+  DEFAULT_HIGHLIGHT_COLORS,
+  HighlightColor,
+  HighlightStyle,
+} from '@/types/book';
 import { uniqueId } from '@/utils/misc';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
@@ -41,6 +47,67 @@ export const getHighlightColorLabel = (
   }
   return undefined;
 };
+
+const ALL_HIGHLIGHT_STYLES: readonly HighlightStyle[] = ['highlight', 'underline', 'squiggly'];
+
+export interface ExportFilter {
+  excludedColors: HighlightColor[];
+  excludedStyles: HighlightStyle[];
+}
+
+export interface FilteredExportGroups {
+  groups: BooknoteGroup[];
+  distinctColors: HighlightColor[];
+  distinctStyles: HighlightStyle[];
+  applyColorFilter: boolean;
+  applyStyleFilter: boolean;
+}
+
+/**
+ * Filter chapter groups for annotation export by highlight color and style (#4801).
+ *
+ * Exclusions (not inclusions) are stored so an empty filter exports everything and
+ * colors/styles introduced later are included by default. A dimension is only
+ * filtered when at least two distinct values are present, so a filter row the user
+ * cannot see can never silently drop notes. Notes without a color/style (e.g.
+ * bookmarks) always pass. Groups left empty by the filter are dropped.
+ *
+ * `distinctColors` is ordered by the default palette first, then custom colors in
+ * first-seen order; `distinctStyles` follows the canonical highlight/underline/
+ * squiggly order — both drive the filter UI.
+ */
+export function filterExportGroups(
+  groups: BooknoteGroup[],
+  { excludedColors, excludedStyles }: ExportFilter,
+): FilteredExportGroups {
+  const colorsSeen = new Set<HighlightColor>();
+  const stylesSeen = new Set<HighlightStyle>();
+  for (const group of groups) {
+    for (const note of group.booknotes) {
+      if (note.color) colorsSeen.add(note.color);
+      if (note.style) stylesSeen.add(note.style);
+    }
+  }
+
+  const distinctColors = [
+    ...DEFAULT_HIGHLIGHT_COLORS.filter((color) => colorsSeen.has(color)),
+    ...[...colorsSeen].filter((color) => !isDefaultHighlightColor(color)),
+  ];
+  const distinctStyles = ALL_HIGHLIGHT_STYLES.filter((style) => stylesSeen.has(style));
+
+  const applyColorFilter = distinctColors.length >= 2;
+  const applyStyleFilter = distinctStyles.length >= 2;
+
+  const keep = (note: BookNote) =>
+    (!applyColorFilter || !note.color || !excludedColors.includes(note.color)) &&
+    (!applyStyleFilter || !note.style || !excludedStyles.includes(note.style));
+
+  const filtered = groups
+    .map((group) => ({ ...group, booknotes: group.booknotes.filter(keep) }))
+    .filter((group) => group.booknotes.length > 0);
+
+  return { groups: filtered, distinctColors, distinctStyles, applyColorFilter, applyStyleFilter };
+}
 
 export function getExternalDragHandle(
   currentStart: Point,

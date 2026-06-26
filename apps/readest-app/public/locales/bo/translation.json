@@ -1761,5 +1761,8 @@
   "Background Image (Reader)": "གནས་སྟངས་ཀྱི་རི་མོ། (ཀློག་ངོས།)",
   "updated metadata for {{n}} book(s)": "དཔེ་ཆ་{{n}}་ཡི་གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།",
   "{{n}} metadata": "{{n}} གནད་སྨིན་གོ་དོན།",
-  "Metadata updated": "གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།"
+  "Metadata updated": "གནད་སྨིན་གོ་དོན་གསར་བསྒྱུར་བྱས།",
+  "Filter Annotations": "མཆན་འདེམས་སྒྲིག",
+  "Colors": "ཁ་དོག",
+  "Styles": "རྣམ་པ"
 }

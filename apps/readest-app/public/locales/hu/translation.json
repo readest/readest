@@ -1800,5 +1800,8 @@
   "Date modified": "Módosítás dátuma",
   "Date created": "Létrehozás dátuma",
   "Sort ascending": "Növekvő sorrend",
-  "Sort descending": "Csökkenő sorrend"
+  "Sort descending": "Csökkenő sorrend",
+  "Filter Annotations": "Jegyzetek szűrése",
+  "Colors": "Színek",
+  "Styles": "Stílusok"
 }

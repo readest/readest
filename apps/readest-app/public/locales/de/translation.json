@@ -1800,5 +1800,8 @@
   "Date modified": "Änderungsdatum",
   "Date created": "Erstellungsdatum",
   "Sort ascending": "Aufsteigend sortieren",
-  "Sort descending": "Absteigend sortieren"
+  "Sort descending": "Absteigend sortieren",
+  "Filter Annotations": "Anmerkungen filtern",
+  "Colors": "Farben",
+  "Styles": "Stile"
 }

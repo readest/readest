@@ -1800,5 +1800,8 @@
   "Date modified": "Ημερομηνία τροποποίησης",
   "Date created": "Ημερομηνία δημιουργίας",
   "Sort ascending": "Αύξουσα ταξινόμηση",
-  "Sort descending": "Φθίνουσα ταξινόμηση"
+  "Sort descending": "Φθίνουσα ταξινόμηση",
+  "Filter Annotations": "Φιλτράρισμα σχολιασμών",
+  "Colors": "Χρώματα",
+  "Styles": "Στυλ"
 }

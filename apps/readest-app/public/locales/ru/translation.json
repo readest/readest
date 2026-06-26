@@ -1866,5 +1866,8 @@
   "Date modified": "Дата изменения",
   "Date created": "Дата создания",
   "Sort ascending": "По возрастанию",
-  "Sort descending": "По убыванию"
+  "Sort descending": "По убыванию",
+  "Filter Annotations": "Фильтровать аннотации",
+  "Colors": "Цвета",
+  "Styles": "Стили"
 }

@@ -1866,5 +1866,8 @@
   "Date modified": "Data modyfikacji",
   "Date created": "Data utworzenia",
   "Sort ascending": "Sortuj rosnąco",
-  "Sort descending": "Sortuj malejąco"
+  "Sort descending": "Sortuj malejąco",
+  "Filter Annotations": "Filtruj adnotacje",
+  "Colors": "Kolory",
+  "Styles": "Style"
 }

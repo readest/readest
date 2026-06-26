@@ -401,6 +401,8 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   useCustomTemplate: false,
   customTemplate: '',
   exportAsPlainText: false,
+  excludedColors: [],
+  excludedStyles: [],
 };
 
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {

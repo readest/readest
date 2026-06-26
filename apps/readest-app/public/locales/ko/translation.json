@@ -1767,5 +1767,8 @@
   "Date modified": "수정한 날짜",
   "Date created": "만든 날짜",
   "Sort ascending": "오름차순 정렬",
-  "Sort descending": "내림차순 정렬"
+  "Sort descending": "내림차순 정렬",
+  "Filter Annotations": "주석 필터링",
+  "Colors": "색상",
+  "Styles": "스타일"
 }

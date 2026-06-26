@@ -1800,5 +1800,8 @@
   "Date modified": "மாற்றிய தேதி",
   "Date created": "உருவாக்கிய தேதி",
   "Sort ascending": "ஏறுவரிசை",
-  "Sort descending": "இறங்குவரிசை"
+  "Sort descending": "இறங்குவரிசை",
+  "Filter Annotations": "சிறுகுறிப்புகளை வடிகட்டு",
+  "Colors": "நிறங்கள்",
+  "Styles": "பாணிகள்"
 }
