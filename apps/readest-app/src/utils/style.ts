@@ -1235,6 +1235,11 @@ export const applyFixedlayoutStyles = (
   const isEink = viewSettings.isEink;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
+  const contrast = viewSettings.contrast ?? 100;
+  const imgFilters: string[] = [];
+  if (isDarkMode && invertImgColorInDark) imgFilters.push('invert(100%)');
+  if (contrast !== 100) imgFilters.push(`contrast(${contrast}%)`);
+  const imgFilter = imgFilters.length ? `filter: ${imgFilters.join(' ')};` : '';
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
   const existingStyleId = 'fixed-layout-styles';
   let style = document.getElementById(existingStyleId) as HTMLStyleElement;
@@ -1262,7 +1267,7 @@ export const applyFixedlayoutStyles = (
       background-color: var(--theme-bg-color);
     }
     img, canvas {
-      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${imgFilter}
       ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {

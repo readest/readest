@@ -297,6 +297,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   keepCoverSpread: true,
   invertImgColorInDark: false,
   applyThemeToPDF: false,
+  contrast: 100,
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
@@ -837,6 +838,10 @@ export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
 export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
+
+export const MAX_CONTRAST = 300;
+export const MIN_CONTRAST = 50;
+export const CONTRAST_STEP = 10;
 
 export const SHOW_UNREAD_STATUS_BADGE = false;
 

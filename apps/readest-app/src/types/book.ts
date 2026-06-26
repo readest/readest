@@ -240,6 +240,7 @@ export interface BookStyle {
   keepCoverSpread: boolean;
   invertImgColorInDark: boolean;
   applyThemeToPDF: boolean;
+  contrast: number;
 }
 
 export interface BookFont {

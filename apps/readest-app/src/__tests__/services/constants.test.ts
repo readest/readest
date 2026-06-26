@@ -505,6 +505,7 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_BOOK_STYLE.wordSpacing).toBe('number');
       expect(typeof DEFAULT_BOOK_STYLE.letterSpacing).toBe('number');
       expect(typeof DEFAULT_BOOK_STYLE.textIndent).toBe('number');
+      expect(DEFAULT_BOOK_STYLE.contrast).toBe(100);
     });
 
     it('has boolean style flags', () => {
