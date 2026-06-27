@@ -187,8 +187,8 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
           ariaLabel={_('Sync Strategy')}
           options={[
             { value: 'silent', label: _('Send and receive') },
-            { value: 'send', label: _('Send changes only') },
-            { value: 'receive', label: _('Receive changes only') },
+            { value: 'send', label: _('Send only') },
+            { value: 'receive', label: _('Receive only') },
           ]}
         />
       </SettingsRow>

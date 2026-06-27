@@ -182,8 +182,8 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   options={[
                     { value: 'prompt', label: _('Ask on conflict') },
                     { value: 'silent', label: _('Always use latest') },
-                    { value: 'send', label: _('Send changes only') },
-                    { value: 'receive', label: _('Receive changes only') },
+                    { value: 'send', label: _('Send only') },
+                    { value: 'receive', label: _('Receive only') },
                   ]}
                 />
               </div>
