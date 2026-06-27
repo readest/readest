@@ -11,6 +11,8 @@ import {
   mediaUpdateUrl,
   metadataUrl,
   reparentUrl,
+  resumableCreateUrl,
+  resumableUpdateUrl,
   simpleUploadUrl,
 } from '@/services/sync/providers/gdrive/driveRest';
 
@@ -47,6 +49,15 @@ describe('driveRest', () => {
     expect(simpleUploadUrl()).toContain('uploadType=media');
     expect(simpleUploadUrl()).toContain('fields=id,md5Checksum,size');
     expect(mediaUpdateUrl('FID')).toContain('/FID?uploadType=media');
+  });
+
+  test('resumable upload URLs use uploadType=resumable and request the id', () => {
+    expect(resumableCreateUrl()).toBe(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id',
+    );
+    expect(resumableUpdateUrl('FID')).toBe(
+      'https://www.googleapis.com/upload/drive/v3/files/FID?uploadType=resumable&fields=id',
+    );
   });
 
   test('metadataUrl + deleteUrl target the file id', () => {

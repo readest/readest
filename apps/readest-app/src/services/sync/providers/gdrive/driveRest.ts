@@ -90,6 +90,26 @@ export const mediaUpdateUrl = (fileId: string): string =>
   `${UPLOAD_ENDPOINT}/${fileId}?uploadType=media&fields=id,md5Checksum,size`;
 
 /**
+ * URL to open a *resumable* upload session that creates a new file. Unlike the
+ * simple media upload, the resumable initiation request carries the file
+ * metadata (name + parent) in its body, so no follow-up reparent PATCH is
+ * needed. The POST replies with the one-time session URI in its `Location`
+ * header; the bytes are then streamed to that URI from disk (constant heap,
+ * the whole point for large books on mobile). `fields=id` narrows the
+ * completion response to the new file id.
+ */
+export const resumableCreateUrl = (): string => `${UPLOAD_ENDPOINT}?uploadType=resumable&fields=id`;
+
+/**
+ * URL to open a resumable upload session that overwrites an *existing* file's
+ * bytes (a PATCH to the known id), preserving the file id and any links rather
+ * than orphaning it. The session-URI handshake is identical to
+ * {@link resumableCreateUrl}.
+ */
+export const resumableUpdateUrl = (fileId: string): string =>
+  `${UPLOAD_ENDPOINT}/${fileId}?uploadType=resumable&fields=id`;
+
+/**
  * URL to fetch a single file's metadata, restricted to the {@link FileEntry}
  * fields the provider exposes.
  */

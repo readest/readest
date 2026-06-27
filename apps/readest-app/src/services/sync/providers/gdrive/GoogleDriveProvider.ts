@@ -33,6 +33,8 @@
  * used with the author's explicit permission.
  */
 
+import { isTauriAppPlatform } from '@/services/environment';
+import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import {
   FileEntry,
   FileHead,
@@ -51,6 +53,8 @@ import {
   mediaUpdateUrl,
   metadataUrl,
   reparentUrl,
+  resumableCreateUrl,
+  resumableUpdateUrl,
   simpleUploadUrl,
 } from './driveRest';
 
@@ -91,6 +95,8 @@ const HTTP_NO_CONTENT = 204;
 const HTTP_SERVER_ERROR_FLOOR = 500;
 
 const CONTENT_TYPE_HEADER = 'Content-Type';
+/** Tells a resumable session the content type of the bytes the PUT will carry. */
+const UPLOAD_CONTENT_TYPE_HEADER = 'X-Upload-Content-Type';
 const JSON_CONTENT_TYPE = 'application/json';
 const DEFAULT_TEXT_CONTENT_TYPE = 'application/json';
 const DEFAULT_BINARY_CONTENT_TYPE = 'application/octet-stream';
@@ -564,6 +570,115 @@ class DriveProviderImpl {
     return (await res.json()) as DriveFile;
   }
 
+  // --- streaming (Tauri only) ----------------------------------------------
+
+  /**
+   * Streaming upload: create-or-overwrite a file by streaming its bytes straight
+   * from disk through a Drive *resumable* session, so a gigabyte-scale book never
+   * lands in the JS heap (buffered {@link writeBinary} marshals the whole file
+   * across the WebView↔Rust bridge, which crashes the renderer on mobile — the
+   * whole reason this path exists).
+   *
+   * Two-step handshake: (1) POST/PATCH the metadata to open a session — Drive
+   * replies with a one-time, already-authenticated session URI in `Location`;
+   * (2) the native upload plugin PUTs the file body to that URI off the disk.
+   * The metadata (name + parent) rides in the initiation, so unlike the buffered
+   * create-then-name path there is no follow-up reparent PATCH.
+   *
+   * Returns `true` on success, `false` on a swallowed failure (matching the
+   * provider contract: the engine re-ensures dirs and retries once, then throws).
+   */
+  async uploadStream(remotePath: string, localPath: string): Promise<boolean> {
+    try {
+      const segments = splitSegments(remotePath);
+      const name = segments.pop();
+      if (name === undefined) return false;
+      const folderId = await this.resolveFolderSegments(segments, true);
+      if (folderId === null) return false;
+
+      const existingId = await this.findChild(name, folderId);
+      const sessionUri = await this.openResumableSession(
+        name,
+        folderId,
+        existingId,
+        DEFAULT_BINARY_CONTENT_TYPE,
+        remotePath,
+      );
+
+      const responseBody = await tauriUpload(sessionUri, localPath, 'PUT', undefined, {
+        [CONTENT_TYPE_HEADER]: DEFAULT_BINARY_CONTENT_TYPE,
+      } as unknown as Map<string, string>);
+
+      // Overwrite preserves the file id; a new file's id is in the completion
+      // body. Cache it so a following head/read skips re-walking the tree;
+      // best-effort, since a missing id just means the next access re-resolves.
+      const id = existingId ?? parseUploadedId(responseBody);
+      if (id) this.idCache.set(remotePath, id);
+      return true;
+    } catch (e) {
+      console.warn('GoogleDriveProvider.uploadStream failed', remotePath, e);
+      return false;
+    }
+  }
+
+  /**
+   * Open a resumable upload session and return its one-time session URI. A new
+   * file POSTs `{name, parents}`; an overwrite PATCHes the known id with `{name}`
+   * (preserving the id and any links). `X-Upload-Content-Type` declares the body
+   * type the PUT will carry.
+   */
+  private async openResumableSession(
+    name: string,
+    folderId: string,
+    existingId: string | null,
+    contentType: string,
+    path: string,
+  ): Promise<string> {
+    const isNew = existingId === null;
+    const res = await this.authedFetch(
+      isNew ? resumableCreateUrl() : resumableUpdateUrl(existingId),
+      isNew ? HTTP_POST : HTTP_PATCH,
+      {
+        headers: {
+          [CONTENT_TYPE_HEADER]: JSON_CONTENT_TYPE,
+          [UPLOAD_CONTENT_TYPE_HEADER]: contentType,
+        },
+        body: JSON.stringify(isNew ? { name, parents: [folderId] } : { name }),
+      },
+    );
+    await this.ensureOk(res, 'upload', path);
+    const location = res.headers.get('Location');
+    if (!location) {
+      throw new DriveHttpError(
+        res.status,
+        undefined,
+        `Drive upload failed: no resumable session URI for ${path}`,
+      );
+    }
+    return location;
+  }
+
+  /**
+   * Streaming download: GET the file's bytes straight to disk through the native
+   * transfer plugin (same heap-safety rationale as {@link uploadStream}). The
+   * media URL needs a bearer token (the session-URI shortcut is upload-only).
+   * Returns `false` when the file is absent or the transport swallows a failure.
+   */
+  async downloadStream(remotePath: string, localPath: string): Promise<boolean> {
+    try {
+      const fileId = await this.resolveFile(remotePath);
+      if (fileId === null) return false;
+      const token = await this.auth.getAccessToken();
+      await tauriDownload(mediaDownloadUrl(fileId), localPath, undefined, {
+        Authorization: `Bearer ${token}`,
+      });
+      return true;
+    } catch (e) {
+      console.warn('GoogleDriveProvider.downloadStream failed', remotePath, e);
+      return false;
+    }
+  }
+
   // --- request plumbing ----------------------------------------------------
 
   /** Issue an authenticated Drive request, retried on transient failures. */
@@ -621,6 +736,19 @@ class DriveProviderImpl {
   }
 }
 
+/**
+ * Best-effort parse of a resumable upload's completion body for the new file id
+ * (we request `fields=id`). Undefined on any malformed/empty body — the caller
+ * treats that as "don't cache", and the next access re-resolves the id.
+ */
+const parseUploadedId = (body: string): string | undefined => {
+  try {
+    return (JSON.parse(body) as DriveFile).id;
+  } catch {
+    return undefined;
+  }
+};
+
 /** Best-effort read of Drive's `error.errors[0].reason` for 403 classification. */
 const readDriveErrorReason = async (res: Response): Promise<string | undefined> => {
   try {
@@ -634,9 +762,13 @@ const readDriveErrorReason = async (res: Response): Promise<string | undefined> 
 /**
  * Build a Google Drive {@link FileSyncProvider}. Each public method is wrapped so
  * a Drive HTTP failure surfaces as a {@link FileSyncError} the engine can branch
- * on — mirroring `createWebDAVProvider`. Streaming is intentionally omitted
- * (PR1): the engine falls back to buffered read/write, and resumable Drive upload
- * lands in a later phase to unlock large-book sync on mobile.
+ * on — mirroring `createWebDAVProvider`.
+ *
+ * Streaming `uploadStream`/`downloadStream` are attached only on Tauri platforms
+ * (they shell the bytes through the native transfer plugin off the disk); on web
+ * they stay absent and the engine falls back to buffered read/write. They are
+ * deliberately NOT `wrap`ped — they own the provider's boolean contract
+ * (swallow-to-`false`), matching `createWebDAVProvider`.
  */
 export const createGoogleDriveProvider = (
   auth: DriveAuth,
@@ -644,7 +776,7 @@ export const createGoogleDriveProvider = (
   options: GoogleDriveProviderOptions = {},
 ): FileSyncProvider => {
   const impl = new DriveProviderImpl(auth, fetchFn, options.sleep);
-  return {
+  const provider: FileSyncProvider = {
     rootPath: impl.rootPath,
     readText: (path) => wrap(() => impl.readText(path)),
     readBinary: (path) => wrap(() => impl.readBinary(path)),
@@ -655,4 +787,11 @@ export const createGoogleDriveProvider = (
     ensureDir: (paths) => wrap(() => impl.ensureDir(paths)),
     deleteDir: (path) => wrap(() => impl.deleteDir(path)),
   };
+
+  if (isTauriAppPlatform()) {
+    provider.uploadStream = (remotePath, localPath) => impl.uploadStream(remotePath, localPath);
+    provider.downloadStream = (remotePath, localPath) => impl.downloadStream(remotePath, localPath);
+  }
+
+  return provider;
 };
