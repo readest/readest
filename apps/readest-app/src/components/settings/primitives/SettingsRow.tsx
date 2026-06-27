@@ -7,7 +7,9 @@ interface SettingsRowProps {
   label: React.ReactNode;
   /**
    * Optional secondary line under the label (description / status hint).
-   * Keep it short — settings rows aren't meant to host paragraphs.
+   * Keep it short — settings rows aren't meant to host paragraphs; it is
+   * clamped to a single line (ellipsis on overflow) to keep row heights
+   * uniform across narrow (mobile) widths.
    */
   description?: React.ReactNode;
   /** Trailing slot — typically the control (toggle, select, input, button). */
@@ -66,7 +68,9 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       <div className='flex min-w-0 flex-col'>
         <SettingLabel>{label}</SettingLabel>
         {description && (
-          <span className='text-base-content/65 text-[0.8em] leading-snug'>{description}</span>
+          <span className='text-base-content/65 line-clamp-1 text-[0.8em] leading-snug'>
+            {description}
+          </span>
         )}
       </div>
       {children}
