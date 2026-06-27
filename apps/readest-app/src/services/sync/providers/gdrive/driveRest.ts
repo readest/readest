@@ -42,11 +42,14 @@ const LIST_PAGE_SIZE = 1000;
 
 /**
  * Escape a string literal for embedding inside a Drive search query. Drive query
- * literals are wrapped in single quotes, so any single quote inside the value
- * (e.g. a file named `O'Brien`) must be backslash-escaped or the query is
- * malformed. This is the only metacharacter the grammar requires escaping.
+ * literals are wrapped in single quotes, so the backslash escape character and
+ * the single quote both have to be escaped, or a value like a file named
+ * `O'Brien` (or one ending in a backslash) breaks out of the literal and
+ * malforms the query. Backslashes are escaped FIRST so the backslashes added
+ * for the quotes are not doubled.
  */
-export const escapeDriveLiteral = (s: string): string => s.replace(/'/g, "\\'");
+export const escapeDriveLiteral = (s: string): string =>
+  s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 /**
  * Build the `files.list` `q` to find a *named* child directly under a parent —

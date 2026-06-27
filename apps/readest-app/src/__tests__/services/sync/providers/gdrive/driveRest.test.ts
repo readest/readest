@@ -19,6 +19,16 @@ describe('driveRest', () => {
     expect(escapeDriveLiteral("O'Brien")).toBe("O\\'Brien");
   });
 
+  test('escapes backslashes (first) so they cannot break out of the literal', () => {
+    // A lone backslash is doubled.
+    expect(escapeDriveLiteral('a\\b')).toBe('a\\\\b');
+    // A trailing backslash would otherwise escape the closing quote.
+    expect(escapeDriveLiteral('dir\\')).toBe('dir\\\\');
+    // Backslash-then-quote: backslash doubled, then the quote escaped — never
+    // \' (which Drive would read as an escaped quote from the original input).
+    expect(escapeDriveLiteral("a\\'b")).toBe("a\\\\\\'b");
+  });
+
   test('listQuery scopes by name + parent + not-trashed', () => {
     expect(listQuery('config.json', 'PARENT')).toBe(
       "name = 'config.json' and 'PARENT' in parents and trashed = false",
