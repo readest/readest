@@ -30,6 +30,10 @@ func getLocalizedDisplayName(familyName: String) -> String? {
 
 class SafariAuthRequestArgs: Decodable {
   let authUrl: String
+  // ASWebAuthenticationSession callback scheme. Defaults to "readest" (the
+  // Supabase login); the Google Drive flow passes its reverse-DNS scheme so the
+  // session intercepts that redirect instead.
+  let callbackScheme: String?
 }
 
 class UseBackgroundAudioRequestArgs: Decodable {
@@ -770,8 +774,9 @@ class NativeBridgePlugin: Plugin {
   @objc public func auth_with_safari(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(SafariAuthRequestArgs.self)
     let authUrl = URL(string: args.authUrl)!
+    let callbackScheme = args.callbackScheme ?? "readest"
 
-    authSession = ASWebAuthenticationSession(url: authUrl, callbackURLScheme: "readest") {
+    authSession = ASWebAuthenticationSession(url: authUrl, callbackURLScheme: callbackScheme) {
       [weak self] callbackURL, error in
       guard let strongSelf = self else { return }
 

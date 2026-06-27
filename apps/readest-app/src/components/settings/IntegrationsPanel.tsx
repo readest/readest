@@ -290,7 +290,7 @@ const IntegrationsPanel: React.FC = () => {
                   onOpen={() => setSubPage('webdav')}
                   activateLabel={_('Use WebDAV')}
                 />
-                {(appService?.isDesktopApp || appService?.isAndroidApp) && (
+                {(appService?.isDesktopApp || appService?.isAndroidApp || appService?.isIOSApp) && (
                   <CloudProviderRow
                     icon={RiGoogleLine}
                     title={_('Google Drive')}
