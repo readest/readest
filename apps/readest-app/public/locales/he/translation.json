@@ -1405,7 +1405,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "מתאפס בעוד {{hours}} ש׳ {{minutes}} ד׳",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "בחר PIN בן 4 ספרות. תצטרך להזין אותו בכל פעם שתפתח את Readest. אין דרך לשחזר PIN שנשכח. ניקוי נתוני האפליקציה הוא הדרך היחידה לאפס אותו.",
   "Credentials": "אישורים",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "אסימונים, שמות משתמש וסיסמאות עבור OPDS, KOReader, Hardcover ו-Readwise. כאשר מבוטל, האישורים נשמרים רק במכשיר זה ולעולם אינם מועלים.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "אסימונים, שמות משתמש וסיסמאות עבור OPDS, KOReader, Hardcover, Readwise ו-WebDAV. כאשר מבוטל, האישורים נשמרים רק במכשיר זה ולעולם אינם מועלים.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "שדות מסונכרנים רגישים מוצפנים לפני העלאה. הגדר ביטוי סיסמה עכשיו או מאוחר יותר, כאשר תידרש הצפנה.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "נשמר בחשבון זה. תתבקש להזינו בעת פענוח אישורים.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "התקדמות הקריאה במכשיר זה שונה מ-\"{{deviceName}}\".",

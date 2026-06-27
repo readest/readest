@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã mỗi khi mở Readest. Không có cách nào để khôi phục mã PIN đã quên. Xóa dữ liệu ứng dụng là cách duy nhất để đặt lại mã.",
   "Credentials": "Thông tin xác thực",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Mã thông báo, tên người dùng và mật khẩu cho OPDS, KOReader, Hardcover và Readwise. Khi bị tắt, thông tin xác thực chỉ ở trên thiết bị này và không bao giờ được tải lên.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Mã thông báo, tên người dùng và mật khẩu cho OPDS, KOReader, Hardcover, Readwise và WebDAV. Khi bị tắt, thông tin xác thực chỉ ở trên thiết bị này và không bao giờ được tải lên.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Các trường đồng bộ nhạy cảm được mã hóa trước khi tải lên. Đặt cụm mật khẩu ngay bây giờ hoặc sau khi cần mã hóa.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Đã lưu vào tài khoản này. Bạn sẽ được nhắc nhập khi cần giải mã thông tin xác thực.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Tiến trình đọc trên thiết bị này khác với \"{{deviceName}}\".",

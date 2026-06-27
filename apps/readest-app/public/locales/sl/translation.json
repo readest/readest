@@ -1430,7 +1430,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "Ponastavi se čez {{hours}} h {{minutes}} min",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Izberite 4-mestno kodo PIN. Vnesti jo boste morali vsakič, ko boste odprli Readest. Pozabljene kode PIN ni mogoče obnoviti. Edini način za ponastavitev je brisanje podatkov aplikacije.",
   "Credentials": "Poverilnice",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Žetoni, uporabniška imena in gesla za OPDS, KOReader, Hardcover in Readwise. Ko je onemogočeno, poverilnice ostanejo le na tej napravi in se nikoli ne naložijo.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Žetoni, uporabniška imena in gesla za OPDS, KOReader, Hardcover, Readwise in WebDAV. Ko je onemogočeno, poverilnice ostanejo le na tej napravi in se nikoli ne naložijo.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Občutljiva sinhronizirana polja so pred nalaganjem šifrirana. Nastavite geselsko frazo zdaj ali pozneje, ko bo šifriranje potrebno.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Shranjeno v tem računu. Pozvani boste, ko bo treba dešifrirati poverilnice.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Napredek branja na tej napravi se razlikuje od »{{deviceName}}«.",

@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "Direset dalam {{hours}} j {{minutes}} mnt",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Pilih PIN 4 digit. Anda harus memasukkannya setiap kali membuka Readest. Tidak ada cara untuk memulihkan PIN yang terlupa. Menghapus data aplikasi adalah satu-satunya cara untuk mengaturnya ulang.",
   "Credentials": "Kredensial",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Token, nama pengguna, dan kata sandi untuk OPDS, KOReader, Hardcover, dan Readwise. Saat dinonaktifkan, kredensial hanya tetap di perangkat ini dan tidak pernah diunggah.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Token, nama pengguna, dan kata sandi untuk OPDS, KOReader, Hardcover, Readwise, dan WebDAV. Saat dinonaktifkan, kredensial hanya tetap di perangkat ini dan tidak pernah diunggah.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Bidang sinkron yang sensitif dienkripsi sebelum diunggah. Atur frasa sandi sekarang atau nanti saat enkripsi diperlukan.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Disimpan di akun ini. Anda akan diminta memasukkannya saat mendekripsi kredensial.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Progres membaca di perangkat ini berbeda dari \"{{deviceName}}\".",

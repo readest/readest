@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "รีเซ็ตใน {{hours}} ชม. {{minutes}} นาที",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "เลือก PIN 4 หลัก คุณจะต้องป้อนทุกครั้งที่เปิด Readest ไม่มีวิธีกู้คืน PIN ที่ลืม การล้างข้อมูลแอปเป็นวิธีเดียวในการรีเซ็ต",
   "Credentials": "ข้อมูลรับรอง",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "โทเคน ชื่อผู้ใช้ และรหัสผ่านสำหรับ OPDS, KOReader, Hardcover และ Readwise เมื่อปิดใช้งาน ข้อมูลรับรองจะยังคงอยู่ในอุปกรณ์นี้เท่านั้นและจะไม่ถูกอัปโหลด",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "โทเคน ชื่อผู้ใช้ และรหัสผ่านสำหรับ OPDS, KOReader, Hardcover, Readwise และ WebDAV เมื่อปิดใช้งาน ข้อมูลรับรองจะยังคงอยู่ในอุปกรณ์นี้เท่านั้นและจะไม่ถูกอัปโหลด",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "ฟิลด์ที่ซิงค์ที่มีความละเอียดอ่อนจะถูกเข้ารหัสก่อนอัปโหลด ตั้งวลีรหัสผ่านตอนนี้หรือภายหลังเมื่อจำเป็นต้องเข้ารหัส",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "บันทึกในบัญชีนี้แล้ว คุณจะได้รับแจ้งเมื่อจำเป็นต้องถอดรหัสข้อมูลรับรอง",
   "Reading progress on this device differs from \"{{deviceName}}\".": "ความคืบหน้าการอ่านบนอุปกรณ์นี้แตกต่างจาก \"{{deviceName}}\"",

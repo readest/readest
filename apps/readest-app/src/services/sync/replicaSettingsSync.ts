@@ -372,6 +372,13 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   if (patch.hardcover) {
     out.hardcover = { ...current.hardcover, ...patch.hardcover };
   }
+  if (patch.webdav) {
+    // Only serverUrl / username / password / rootPath are whitelisted, so
+    // the remote patch never carries the per-device fields (enabled,
+    // deviceId, lastSyncedAt, sync sub-toggles). Spread-with-current
+    // preserves them when the remote updates the synced connection fields.
+    out.webdav = { ...current.webdav, ...patch.webdav };
+  }
   if (patch.dictionarySettings) {
     // `defaultProviderId` (last-used tab) is per-device — not in the
     // whitelist, so the remote patch never sends it. Spread-with-current

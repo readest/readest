@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘後重設",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "請設定一組 4 位數的 PIN 碼。每次開啟 Readest 時都需要輸入。遺忘的 PIN 碼無法復原，清除應用程式資料是重設它的唯一方法。",
   "Credentials": "憑證",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover 與 Readwise 的權杖、使用者名稱與密碼。停用時，憑證僅留在此裝置上，永不上傳。",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise 與 WebDAV 的權杖、使用者名稱與密碼。停用時，憑證僅留在此裝置上，永不上傳。",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "敏感的同步欄位會在上傳前加密。立即設定密碼短語，或稍後在需要加密時再設定。",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "已儲存到此帳號。需要解密憑證時會提示您輸入。",
   "Reading progress on this device differs from \"{{deviceName}}\".": "此裝置上的閱讀進度與「{{deviceName}}」不同。",

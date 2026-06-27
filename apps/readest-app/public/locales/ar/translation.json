@@ -1480,7 +1480,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّنًا من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN المنسي. مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة ضبطه.",
   "Credentials": "بيانات الاعتماد",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "الرموز وأسماء المستخدمين وكلمات المرور لـ OPDS و KOReader و Hardcover و Readwise. عند التعطيل، تبقى بيانات الاعتماد على هذا الجهاز فقط ولا تُرفع أبدًا.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "الرموز وأسماء المستخدمين وكلمات المرور لـ OPDS و KOReader و Hardcover و Readwise و WebDAV. عند التعطيل، تبقى بيانات الاعتماد على هذا الجهاز فقط ولا تُرفع أبدًا.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "تُشفَّر الحقول الحساسة المتزامنة قبل الرفع. عيّن عبارة مرور الآن أو لاحقًا عند الحاجة إلى التشفير.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "محفوظة في هذا الحساب. سيُطلب منك إدخالها عند فك تشفير بيانات الاعتماد.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "يختلف تقدم القراءة على هذا الجهاز عن «{{deviceName}}».",

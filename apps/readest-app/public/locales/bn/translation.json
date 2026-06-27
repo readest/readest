@@ -1380,7 +1380,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ঘ {{minutes}} মি পরে রিসেট হবে",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "একটি ৪-অঙ্কের পিন বেছে নিন। প্রতিবার Readest খোলার সময় আপনাকে এটি প্রবেশ করাতে হবে। ভুলে যাওয়া পিন পুনরুদ্ধারের কোনো উপায় নেই। অ্যাপের ডেটা মুছে ফেলাই এটি রিসেট করার একমাত্র উপায়।",
   "Credentials": "ক্রেডেনশিয়াল",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover এবং Readwise-এর জন্য টোকেন, ব্যবহারকারীর নাম এবং পাসওয়ার্ড। নিষ্ক্রিয় থাকলে ক্রেডেনশিয়ালগুলি কেবল এই ডিভাইসেই থাকে এবং কখনই আপলোড হয় না।",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise এবং WebDAV-এর জন্য টোকেন, ব্যবহারকারীর নাম এবং পাসওয়ার্ড। নিষ্ক্রিয় থাকলে ক্রেডেনশিয়ালগুলি কেবল এই ডিভাইসেই থাকে এবং কখনই আপলোড হয় না।",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "সংবেদনশীল সিঙ্ক করা ক্ষেত্রগুলি আপলোডের আগে এনক্রিপ্ট করা হয়। এনক্রিপশনের প্রয়োজন হলে এখনই অথবা পরে একটি পাসফ্রেজ সেট করুন।",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "এই অ্যাকাউন্টে সংরক্ষিত। ক্রেডেনশিয়াল ডিক্রিপ্ট করার সময় আপনাকে এটি দিতে বলা হবে।",
   "Reading progress on this device differs from \"{{deviceName}}\".": "এই ডিভাইসে পড়ার অগ্রগতি \"{{deviceName}}\" থেকে আলাদা।",

@@ -1380,7 +1380,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} පැ {{minutes}} මි කින් යළි පිහිටුවයි",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "අංක 4ක PIN එකක් තෝරන්න. ඔබ Readest විවෘත කරන සෑම විටම ඔබට එය ඇතුළත් කිරීමට අවශ්‍ය වේ. අමතක වූ PIN එකක් ලබා ගැනීමට ක්‍රමයක් නැත. එය යළි පිහිටුවීමට ඇති එකම ක්‍රමය යෙදුම් දත්ත මකා දැමීමයි.",
   "Credentials": "අක්තපත්‍ර",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, සහ Readwise සඳහා ටෝකන, පරිශීලක නාම සහ මුරපද. අක්‍රිය කළ විට, අක්තපත්‍ර මෙම උපාංගයේ පමණක් රැඳී පවතින අතර කිසිදා උඩුගත නොකෙරේ.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, සහ WebDAV සඳහා ටෝකන, පරිශීලක නාම සහ මුරපද. අක්‍රිය කළ විට, අක්තපත්‍ර මෙම උපාංගයේ පමණක් රැඳී පවතින අතර කිසිදා උඩුගත නොකෙරේ.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "සංවේදී සමමුහූර්ත ක්ෂේත්‍ර උඩුගත කිරීමට පෙර සංකේතනය වේ. සංකේතනය අවශ්‍ය වූ විට දැන් හෝ පසුව මුර වැකියක් සකසන්න.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "මෙම ගිණුමට සුරකින ලදී. අක්තපත්‍ර විකේතනය කිරීමේදී ඔබෙන් එය ඉල්ලනු ලැබේ.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "මෙම උපාංගයේ කියවීමේ ප්‍රගතිය \"{{deviceName}}\" වලින් වෙනස් වේ.",

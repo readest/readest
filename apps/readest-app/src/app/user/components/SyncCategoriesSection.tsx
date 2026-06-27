@@ -56,7 +56,7 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
     credentials: {
       title: _('Credentials'),
       description: _(
-        'Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.',
+        'Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.',
       ),
     },
     stats: {

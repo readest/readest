@@ -1430,7 +1430,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "Resetuje się za {{hours}} godz. {{minutes}} min",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Wybierz 4-cyfrowy PIN. Będziesz musiał go wprowadzać za każdym razem, gdy otworzysz Readest. Nie ma sposobu na odzyskanie zapomnianego PIN-u. Wyczyszczenie danych aplikacji to jedyny sposób, aby go zresetować.",
   "Credentials": "Poświadczenia",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Tokeny, nazwy użytkowników i hasła do OPDS, KOReader, Hardcover i Readwise. Gdy wyłączone, poświadczenia pozostają tylko na tym urządzeniu i nigdy nie są przesyłane.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Tokeny, nazwy użytkowników i hasła do OPDS, KOReader, Hardcover, Readwise i WebDAV. Gdy wyłączone, poświadczenia pozostają tylko na tym urządzeniu i nigdy nie są przesyłane.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Wrażliwe zsynchronizowane pola są szyfrowane przed wysłaniem. Ustaw hasło teraz lub później, gdy szyfrowanie będzie potrzebne.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Zapisane w tym koncie. Zostaniesz o nie poproszony przy odszyfrowywaniu poświadczeń.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Postęp czytania na tym urządzeniu różni się od „{{deviceName}}”.",

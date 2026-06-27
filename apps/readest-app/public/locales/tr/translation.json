@@ -1380,7 +1380,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın yolu yoktur. Uygulama verilerini temizlemek, sıfırlamanın tek yoludur.",
   "Credentials": "Kimlik Bilgileri",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover ve Readwise için belirteçler, kullanıcı adları ve parolalar. Devre dışı bırakıldığında kimlik bilgileri yalnızca bu cihazda kalır ve hiçbir zaman karşıya yüklenmez.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise ve WebDAV için belirteçler, kullanıcı adları ve parolalar. Devre dışı bırakıldığında kimlik bilgileri yalnızca bu cihazda kalır ve hiçbir zaman karşıya yüklenmez.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Hassas senkronize alanlar yüklemeden önce şifrelenir. Şifreleme gerektiğinde şimdi ya da daha sonra bir parola tümcesi belirleyin.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Bu hesaba kaydedildi. Kimlik bilgileri şifresi çözülürken sizden istenecektir.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Bu cihazdaki okuma ilerlemesi \"{{deviceName}}\" cihazından farklı.",

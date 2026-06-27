@@ -60,6 +60,15 @@ export const SETTINGS_WHITELIST = [
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
+  // WebDAV connection. serverUrl + rootPath sync as plaintext so a fresh
+  // device pre-fills the connect form; username / password are listed in
+  // `encryptedFields` below. Per-device bookkeeping (enabled, deviceId,
+  // lastSyncedAt, sync sub-toggles) is deliberately excluded — see KOSync,
+  // which likewise syncs credentials but not its `enabled` flag.
+  'webdav.serverUrl',
+  'webdav.username',
+  'webdav.password',
+  'webdav.rootPath',
 ] as const;
 
 /**
@@ -81,6 +90,8 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'webdav.username',
+  'webdav.password',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];

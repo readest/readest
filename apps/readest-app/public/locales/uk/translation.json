@@ -1430,7 +1430,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "Скидання через {{hours}} год {{minutes}} хв",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Виберіть 4-значний PIN-код. Вам потрібно буде вводити його щоразу, коли ви відкриваєте Readest. Відновити забутий PIN-код неможливо. Очищення даних застосунку — єдиний спосіб його скинути.",
   "Credentials": "Облікові дані",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "Токени, імена користувачів і паролі для OPDS, KOReader, Hardcover та Readwise. Якщо вимкнено, облікові дані залишаються лише на цьому пристрої і ніколи не вивантажуються.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Токени, імена користувачів і паролі для OPDS, KOReader, Hardcover, Readwise та WebDAV. Якщо вимкнено, облікові дані залишаються лише на цьому пристрої і ніколи не вивантажуються.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Конфіденційні синхронізовані поля шифруються перед вивантаженням. Установіть парольну фразу зараз або пізніше, коли знадобиться шифрування.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "Збережено в цьому обліковому записі. Вас запитають про неї під час розшифровування облікових даних.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Прогрес читання на цьому пристрої відрізняється від «{{deviceName}}».",

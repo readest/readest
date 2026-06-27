@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}}시간 {{minutes}}분 후 재설정",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4자리 PIN을 선택하세요. Readest를 열 때마다 입력해야 합니다. 잊어버린 PIN을 복구할 방법은 없습니다. 앱 데이터를 지우는 것이 PIN을 재설정하는 유일한 방법입니다.",
   "Credentials": "자격 증명",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise의 토큰, 사용자 이름, 비밀번호입니다. 비활성화되면 자격 증명이 이 기기에만 남아 있고 절대 업로드되지 않습니다.",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, WebDAV의 토큰, 사용자 이름, 비밀번호입니다. 비활성화되면 자격 증명이 이 기기에만 남아 있고 절대 업로드되지 않습니다.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "민감한 동기화 필드는 업로드 전에 암호화됩니다. 지금 또는 암호화가 필요할 때 나중에 암호 문구를 설정하세요.",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "이 계정에 저장되었습니다. 자격 증명을 복호화할 때 입력하라는 메시지가 표시됩니다.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "이 기기의 읽기 진행 상황이 \"{{deviceName}}\"와(과) 다릅니다.",

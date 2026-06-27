@@ -1355,7 +1355,7 @@
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}}時間{{minutes}}分でリセット",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4桁のPINを設定してください。Readestを開くたびに入力する必要があります。忘れたPINを復元する方法はありません。アプリのデータを消去することがリセットする唯一の方法です。",
   "Credentials": "認証情報",
-  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, and Readwise. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise のトークン、ユーザー名、パスワード。無効にすると、認証情報はこのデバイスにのみ残り、アップロードされません。",
+  "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise、WebDAV のトークン、ユーザー名、パスワード。無効にすると、認証情報はこのデバイスにのみ残り、アップロードされません。",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "機密性の高い同期フィールドはアップロード前に暗号化されます。パスフレーズは今すぐ設定するか、暗号化が必要なときに後で設定できます。",
   "Saved to this account. You will be prompted for it when decrypting credentials.": "このアカウントに保存されました。認証情報を復号する際に入力を求められます。",
   "Reading progress on this device differs from \"{{deviceName}}\".": "このデバイスの読書進捗は「{{deviceName}}」と異なります。",
