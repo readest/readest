@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { getPanelTopInset } from '@/utils/insets';
+import { getPanelTopInset, getScrolledContentMargins } from '@/utils/insets';
+import type { ViewSettings } from '@/types/book';
 
-const insets = (top: number) => ({ top, right: 0, bottom: 0, left: 0 });
+const insets = (top: number, bottom = 0) => ({ top, right: 0, bottom, left: 0 });
+
+const scrolledSettings = (overrides: Partial<ViewSettings> = {}) =>
+  ({
+    showHeader: true,
+    showFooter: true,
+    vertical: false,
+    marginTopPx: 44,
+    marginBottomPx: 44,
+    showTTSBar: true,
+    ...overrides,
+  }) as ViewSettings;
 
 describe('getPanelTopInset', () => {
   it('respects the status bar on non-mobile panels when system UI is visible', () => {
@@ -76,5 +88,55 @@ describe('getPanelTopInset', () => {
         safeAreaInsets: null,
       }),
     ).toBe(0);
+  });
+});
+
+describe('getScrolledContentMargins', () => {
+  it('reserves the full mobile footer height in scrolled mode', () => {
+    expect(
+      getScrolledContentMargins({
+        gridInsets: insets(12, 30),
+        viewSettings: scrolledSettings({ marginBottomPx: 44 }),
+        ttsEnabled: false,
+        hasSafeAreaInset: true,
+        useMobileFooterLayout: true,
+      }),
+    ).toEqual({ top: 56, bottom: 64 + 30 * 0.33 });
+  });
+
+  it('reserves the desktop footer height when it exceeds the content margin', () => {
+    expect(
+      getScrolledContentMargins({
+        gridInsets: insets(0),
+        viewSettings: scrolledSettings({ marginBottomPx: 44 }),
+        ttsEnabled: false,
+        hasSafeAreaInset: false,
+        useMobileFooterLayout: false,
+      }).bottom,
+    ).toBe(52);
+  });
+
+  it('keeps larger user footer margins and TTS clearance', () => {
+    expect(
+      getScrolledContentMargins({
+        gridInsets: insets(0, 30),
+        viewSettings: scrolledSettings({ marginBottomPx: 88 }),
+        ttsEnabled: true,
+        hasSafeAreaInset: true,
+        useMobileFooterLayout: true,
+      }).bottom,
+    ).toBe(88 + 30 * 0.33);
+  });
+
+  it('does not reserve footer space for vertical writing footer chrome', () => {
+    expect(
+      getScrolledContentMargins({
+        gridInsets: insets(12, 30),
+        viewSettings: scrolledSettings({ vertical: true }),
+        ttsEnabled: false,
+        hasSafeAreaInset: true,
+        useMobileFooterLayout: true,
+      }),
+    ).toEqual({ top: 0, bottom: 0 });
   });
 });

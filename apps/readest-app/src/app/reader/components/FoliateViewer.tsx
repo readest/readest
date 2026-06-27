@@ -67,7 +67,7 @@ import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
-import { getViewInsets } from '@/utils/insets';
+import { getScrolledContentMargins, getViewInsets } from '@/utils/insets';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
@@ -781,13 +781,19 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
 
     if (viewSettings.scrolled) {
-      const headerVisible = showTopHeader;
-      const footerVisible = showBottomFooter;
-      const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-      const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
-      const scrollTop = headerVisible ? gridInsets.top + viewSettings.marginTopPx : 0;
-      const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
-      setScrollMargins({ top: scrollTop, bottom: scrollBottom });
+      const useMobileFooterLayout =
+        !!appService?.isMobile &&
+        window.innerWidth >= 640 &&
+        window.innerWidth <= window.innerHeight;
+      setScrollMargins(
+        getScrolledContentMargins({
+          gridInsets,
+          viewSettings,
+          ttsEnabled: !!viewState?.ttsEnabled,
+          hasSafeAreaInset: !!appService?.hasSafeAreaInset,
+          useMobileFooterLayout: useMobileFooterLayout || window.innerWidth < 640,
+        }),
+      );
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
     }
