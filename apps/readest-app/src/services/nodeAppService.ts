@@ -365,6 +365,12 @@ export class NodeAppService extends BaseAppService {
     return this.fs.resolvePath(fp, base);
   }
 
+  override async resolveFilePath(path: string, base: BaseDir): Promise<string> {
+    const prefix = await this.fs.getPrefix(base);
+    if (!path) return prefix;
+    return prefix ? nodePath.join(prefix, path) : path;
+  }
+
   async init(): Promise<void> {
     await this.prepareBooksDir();
   }
