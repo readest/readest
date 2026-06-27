@@ -189,7 +189,14 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         // OAuth callback uses a custom scheme on intent.data and is handled
         // separately from any user-shared content.
         intent.data?.let { uri ->
-            if (uri.scheme == "readest" && uri.host == "auth-callback") {
+            val scheme = uri.scheme ?: ""
+            val isReadestAuth = scheme == "readest" && uri.host == "auth-callback"
+            // Google Drive sign-in uses the reverse-DNS "iOS URL scheme"
+            // (com.googleusercontent.apps.<id>:/oauthredirect) registered as a
+            // BROWSABLE deep link; resolve it through the same pending invoke as
+            // the Supabase readest://auth-callback flow.
+            val isGoogleOAuth = scheme.startsWith("com.googleusercontent.apps.")
+            if (isReadestAuth || isGoogleOAuth) {
                 val result = JSObject().apply {
                     put("redirectUrl", uri.toString())
                 }
