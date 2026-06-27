@@ -141,7 +141,7 @@ describe('useTextSelector cross-page instant highlight (corner auto-turn)', () =
 
   test('turns to the next page when the instant-highlight drag dwells in the bottom-right corner', async () => {
     const { result } = setup();
-    engageAndMoveTo(result, 920, 920);
+    engageAndMoveTo(result, 970, 970);
     expect(result.current.isInstantAnnotating.current).toBe(true);
     await advance();
 
@@ -151,7 +151,7 @@ describe('useTextSelector cross-page instant highlight (corner auto-turn)', () =
 
   test('turns to the previous page when the drag dwells in the top-left corner', async () => {
     const { result } = setup();
-    engageAndMoveTo(result, 80, 80);
+    engageAndMoveTo(result, 30, 30);
     await advance();
 
     expect(h.view.prev).toHaveBeenCalledTimes(1);
@@ -170,7 +170,7 @@ describe('useTextSelector cross-page instant highlight (corner auto-turn)', () =
   test('does not auto-turn in scrolled mode', async () => {
     h.viewSettings = { scrolled: true };
     const { result } = setup();
-    engageAndMoveTo(result, 920, 920);
+    engageAndMoveTo(result, 970, 970);
     await advance();
 
     expect(h.view.next).not.toHaveBeenCalled();

@@ -13,6 +13,11 @@ export const AUTO_TURN_DWELL_MS = 500;
 // larger/rectangular zone catches normal selections that end in the lower-right
 // of the page and turns the page unexpectedly.
 export const AUTO_TURN_CORNER_FRACTION = 0.15;
+// Hard ceiling on the corner radius in pixels. The fraction alone grows the zone
+// with the reading area, so on a wide screen (desktop, multi-column pages) it
+// reaches deep into the text and turns the page when a selection merely ends near
+// the edge. Cap each axis so the zone stays a corner regardless of page size.
+export const AUTO_TURN_CORNER_MAX_PX = 50;
 
 export type Corner = 'br' | 'tl';
 export type Point = { x: number; y: number };
@@ -30,8 +35,8 @@ export interface AutoTurnControls {
 // corner. Returns null when the point is in neither.
 const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => {
   if (w <= 0 || h <= 0) return null;
-  const rx = w * AUTO_TURN_CORNER_FRACTION;
-  const ry = h * AUTO_TURN_CORNER_FRACTION;
+  const rx = Math.min(w * AUTO_TURN_CORNER_FRACTION, AUTO_TURN_CORNER_MAX_PX);
+  const ry = Math.min(h * AUTO_TURN_CORNER_FRACTION, AUTO_TURN_CORNER_MAX_PX);
   const inEllipse = (dx: number, dy: number) => (dx / rx) ** 2 + (dy / ry) ** 2 <= 1;
   if (inEllipse(w - x, h - y)) return 'br';
   if (inEllipse(x, y)) return 'tl';

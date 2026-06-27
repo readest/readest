@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 
 const DWELL_MS = 500;
-// The mocked reading frame is 1000x1000; with the 0.15 quarter-ellipse corner,
-// (920,920) sits in the bottom-right and (80,80) in the top-left.
+// The mocked reading frame is 1000x1000; the corner zone is capped at 50px, so
+// (970,970) sits in the bottom-right and (30,30) in the top-left.
 const VW = 1000;
 
 const h = vi.hoisted(() => ({
@@ -58,7 +58,7 @@ afterEach(() => {
 describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)', () => {
   test('turns to the next page after a point dwells in the bottom-right corner', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);
@@ -67,7 +67,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('turns to the previous page when a point dwells in the top-left corner', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 80, y: 80 });
+    result.current.noteAutoTurnPoint({ x: 30, y: 30 });
     await advance();
 
     expect(h.view.prev).toHaveBeenCalledTimes(1);
@@ -85,7 +85,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('does not turn until the dwell has elapsed', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await vi.advanceTimersByTimeAsync(DWELL_MS - 100);
 
     expect(h.view.next).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('cancels the turn if the point leaves the corner before the dwell', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     result.current.noteAutoTurnPoint({ x: 500, y: 500 });
     await advance();
 
@@ -102,7 +102,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('cancel() drops a pending turn', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     result.current.cancel();
     await advance();
 
@@ -111,21 +111,21 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('turns one page per engagement and does not repeat while held', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
 
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
 
   test('re-arms after the point leaves the corner and returns', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
     result.current.noteAutoTurnPoint({ x: 500, y: 500 });
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(2);
@@ -133,7 +133,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('null disengages the corner', async () => {
     const { result } = setup();
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     result.current.noteAutoTurnPoint(null);
     await advance();
 
@@ -146,7 +146,7 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
     await advance();
     expect(h.view.next).not.toHaveBeenCalled();
 
-    result.current.noteAutoTurnPoint({ x: 860, y: 860 });
+    result.current.noteAutoTurnPoint({ x: 870, y: 870 });
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
@@ -156,14 +156,14 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
     const cb = vi.fn();
     const unsub = result.current.onAfterTurn(cb);
 
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
     expect(cb).toHaveBeenCalledTimes(1);
     expect(cb).toHaveBeenCalledWith('br');
 
     unsub();
     result.current.noteAutoTurnPoint({ x: 500, y: 500 });
-    result.current.noteAutoTurnPoint({ x: 920, y: 920 });
+    result.current.noteAutoTurnPoint({ x: 970, y: 970 });
     await advance();
     expect(cb).toHaveBeenCalledTimes(1);
   });
@@ -187,10 +187,21 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('cornerAtPoint maps a window point to its corner', () => {
     const { result } = setup();
-    expect(result.current.cornerAtPoint({ x: 920, y: 920 })).toBe('br');
-    expect(result.current.cornerAtPoint({ x: 80, y: 80 })).toBe('tl');
+    expect(result.current.cornerAtPoint({ x: 970, y: 970 })).toBe('br');
+    expect(result.current.cornerAtPoint({ x: 30, y: 30 })).toBe('tl');
     expect(result.current.cornerAtPoint({ x: 500, y: 500 })).toBe(null);
     expect(result.current.cornerAtPoint(null)).toBe(null);
+  });
+
+  test('caps the corner zone to AUTO_TURN_CORNER_MAX_PX on a wide reading area', async () => {
+    // On the 1000px frame the 0.15 fraction would reach 150px from the corner,
+    // pulling (900,900) into the bottom-right zone; the 50px cap keeps it out so
+    // selections that merely end near the page edge on wide screens don't turn.
+    const { result } = setup();
+    expect(result.current.cornerAtPoint({ x: 900, y: 900 })).toBe(null);
+    result.current.noteAutoTurnPoint({ x: 900, y: 900 });
+    await advance();
+    expect(h.view.next).not.toHaveBeenCalled();
   });
 });
 
