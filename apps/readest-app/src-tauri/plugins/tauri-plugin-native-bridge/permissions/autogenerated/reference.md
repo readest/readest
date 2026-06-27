@@ -45,6 +45,7 @@ Default permissions for the plugin
 - `allow-set-secure-item`
 - `allow-get-secure-item`
 - `allow-clear-secure-item`
+- `allow-refresh-eink-screen`
 
 ## Permission Table
 
@@ -831,6 +832,32 @@ Enables the open_external_url command without any pre-configured scope.
 <td>
 
 Denies the open_external_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-refresh-eink-screen`
+
+</td>
+<td>
+
+Enables the refresh_eink_screen command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-refresh-eink-screen`
+
+</td>
+<td>
+
+Denies the refresh_eink_screen command without any pre-configured scope.
 
 </td>
 </tr>

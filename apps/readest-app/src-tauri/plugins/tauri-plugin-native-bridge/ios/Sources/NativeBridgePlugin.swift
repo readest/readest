@@ -1490,6 +1490,13 @@ class NativeBridgePlugin: Plugin {
       presenter.present(picker, animated: true)
     }
   }
+
+  // iOS devices have no e-ink panel; the "Refresh Page" page-turner action is
+  // gated to e-ink Android in the UI, so this is only ever reached defensively.
+  // Resolve as a soft no-op rather than rejecting.
+  @objc public func refresh_eink_screen(_ invoke: Invoke) {
+    invoke.resolve(["success": false])
+  }
 }
 
 /// Persistent store for security-scoped folder bookmarks.

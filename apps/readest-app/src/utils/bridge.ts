@@ -113,6 +113,11 @@ export interface GetStorefrontRegionCodeResponse {
   error?: string;
 }
 
+export interface RefreshEinkScreenResponse {
+  success: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -238,6 +243,16 @@ export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCode
     'plugin:native-bridge|get_storefront_region_code',
   );
   return result;
+}
+
+/**
+ * Trigger a deep e-ink full screen refresh (GC / GC16 waveform) to clear
+ * ghosting. Android-only; the native side probes several vendor mechanisms
+ * via reflection and returns `success: false` on devices with no e-ink
+ * controller. Other platforms reject with an unsupported-platform error.
+ */
+export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
+  return await invoke<RefreshEinkScreenResponse>('plugin:native-bridge|refresh_eink_screen');
 }
 
 // ── Sync passphrase keychain ────────────────────────────────────────────

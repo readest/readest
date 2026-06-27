@@ -395,3 +395,13 @@ pub struct GetSecureItemResponse {
     pub value: Option<String>,
     pub error: Option<String>,
 }
+
+/// Result of a deep e-ink full screen refresh. `success: false` means no
+/// known e-ink controller responded on this device (e.g. a non-e-ink
+/// Android phone) — not a hard error.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshEinkScreenResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}

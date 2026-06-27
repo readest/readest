@@ -304,6 +304,7 @@ describe('services/constants', () => {
       expect(hw.bindings.pageNext).toBeNull();
       expect(hw.bindings.sectionPrev).toBeNull();
       expect(hw.bindings.sectionNext).toBeNull();
+      expect(hw.bindings.refresh).toBeNull();
     });
   });
 

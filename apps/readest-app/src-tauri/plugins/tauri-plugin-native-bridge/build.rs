@@ -37,6 +37,7 @@ const COMMANDS: &[&str] = &[
     "set_secure_item",
     "get_secure_item",
     "clear_secure_item",
+    "refresh_eink_screen",
 ];
 
 fn main() {

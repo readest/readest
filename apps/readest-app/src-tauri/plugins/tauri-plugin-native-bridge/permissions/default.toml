@@ -42,4 +42,5 @@ permissions = [
   "allow-set-secure-item",
   "allow-get-secure-item",
   "allow-clear-secure-item",
+  "allow-refresh-eink-screen",
 ]

@@ -345,6 +345,12 @@ impl<R: Runtime> NativeBridge<R> {
             }),
         }
     }
+
+    /// E-ink panels exist only on the mobile (Android) side. Desktop has no
+    /// e-ink controller, so this is unsupported here.
+    pub fn refresh_eink_screen(&self) -> crate::Result<RefreshEinkScreenResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";

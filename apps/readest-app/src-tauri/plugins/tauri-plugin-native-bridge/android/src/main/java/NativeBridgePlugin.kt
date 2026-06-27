@@ -1418,6 +1418,30 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
         controller.show()
     }
+
+    /**
+     * Trigger a deep e-ink full screen refresh (GC16 waveform) to clear
+     * ghosting. Driven by the page-turner "Refresh Page" action on e-ink
+     * Android devices. Runs on the UI thread against the window's decor view;
+     * [EinkRefreshController] probes each vendor mechanism and resolves
+     * `success: false` (not an error) when none is available.
+     */
+    @Command
+    fun refresh_eink_screen(invoke: Invoke) {
+        activity.runOnUiThread {
+            val ret = JSObject()
+            try {
+                val view = activity.window?.decorView
+                val ok = view != null && EinkRefreshController.refresh(view)
+                ret.put("success", ok)
+            } catch (e: Exception) {
+                Log.e("NativeBridgePlugin", "refresh_eink_screen failed", e)
+                ret.put("success", false)
+                ret.put("error", e.message ?: "unknown")
+            }
+            invoke.resolve(ret)
+        }
+    }
 }
 
 @app.tauri.annotation.InvokeArg

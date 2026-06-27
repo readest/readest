@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
 import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/keybinding';
+import { refreshEinkScreen } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -359,6 +360,15 @@ export const usePagination = (
     const action = resolvePageTurn(settings, candidate);
     if (!action) return false;
 
+    // E-ink full screen refresh (Android only) — clears ghosting without
+    // turning the page. The native bridge no-ops on non-e-ink hardware.
+    if (action === 'refresh') {
+      if (appService?.isAndroidApp) {
+        refreshEinkScreen().catch(() => {});
+      }
+      return true;
+    }
+
     const viewSettings = getViewSettings(bookKey);
     const side = action === 'pagePrev' || action === 'sectionPrev' ? 'up' : 'down';
     const mode = action === 'sectionPrev' || action === 'sectionNext' ? 'section' : 'page';
@@ -455,7 +465,8 @@ export const usePagination = (
       hardwarePageTurner?.bindings.pagePrev?.source === 'native' ||
       hardwarePageTurner?.bindings.pageNext?.source === 'native' ||
       hardwarePageTurner?.bindings.sectionPrev?.source === 'native' ||
-      hardwarePageTurner?.bindings.sectionNext?.source === 'native';
+      hardwarePageTurner?.bindings.sectionNext?.source === 'native' ||
+      hardwarePageTurner?.bindings.refresh?.source === 'native';
     const needsNativeInterception =
       !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasNativeBinding;
 
@@ -485,6 +496,7 @@ export const usePagination = (
     hardwarePageTurner?.bindings.pageNext?.source,
     hardwarePageTurner?.bindings.sectionPrev?.source,
     hardwarePageTurner?.bindings.sectionNext?.source,
+    hardwarePageTurner?.bindings.refresh?.source,
   ]);
 
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor

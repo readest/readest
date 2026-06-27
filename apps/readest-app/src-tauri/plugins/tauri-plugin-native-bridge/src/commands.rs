@@ -273,3 +273,10 @@ pub(crate) async fn clear_secure_item<R: Runtime>(
 ) -> Result<SecureItemResponse> {
     app.native_bridge().clear_secure_item(payload)
 }
+
+#[command]
+pub(crate) async fn refresh_eink_screen<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<RefreshEinkScreenResponse> {
+    app.native_bridge().refresh_eink_screen()
+}
