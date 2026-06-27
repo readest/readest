@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
-import { isCloudSyncInPlan } from '@/utils/access';
+import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
 import type { SystemSettings } from '@/types/settings';
 
 const base = {
@@ -43,5 +43,15 @@ describe('isCloudSyncInPlan', () => {
 
   test('free plan cannot', () => {
     expect(isCloudSyncInPlan('free')).toBe(false);
+  });
+});
+
+describe('isCloudSyncAllowed (temporary ungate)', () => {
+  test('cloud sync is currently ungated for every plan, including free', () => {
+    // The feature ships ungated while it stabilises. When the paywall is
+    // restored (flip CLOUD_SYNC_REQUIRES_PREMIUM back to true), update this.
+    expect(CLOUD_SYNC_REQUIRES_PREMIUM).toBe(false);
+    expect(isCloudSyncAllowed('free')).toBe(true);
+    expect(isCloudSyncAllowed('plus')).toBe(true);
   });
 });

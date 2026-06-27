@@ -56,6 +56,23 @@ export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase']
 export const isCloudSyncInPlan = (plan: UserPlan): boolean =>
   (CLOUD_SYNC_PLANS as readonly UserPlan[]).includes(plan);
 
+/**
+ * Master switch for the third-party cloud-sync premium paywall. Temporarily
+ * OFF: cloud sync (WebDAV / Google Drive) ships ungated to every plan — including
+ * free — while the feature stabilises, and will be re-gated to
+ * {@link CLOUD_SYNC_PLANS} in an upcoming release. Every gate goes through
+ * {@link isCloudSyncAllowed}, so flipping this back to `true` is the whole toggle.
+ */
+export const CLOUD_SYNC_REQUIRES_PREMIUM = false;
+
+/**
+ * Whether third-party cloud sync is available for a plan. While
+ * {@link CLOUD_SYNC_REQUIRES_PREMIUM} is off this is always true; once it is
+ * re-enabled it falls back to the {@link isCloudSyncInPlan} paywall.
+ */
+export const isCloudSyncAllowed = (plan: UserPlan): boolean =>
+  !CLOUD_SYNC_REQUIRES_PREMIUM || isCloudSyncInPlan(plan);
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {

@@ -22,7 +22,7 @@ import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
-import { isCloudSyncInPlan } from '@/utils/access';
+import { isCloudSyncAllowed } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
@@ -63,10 +63,12 @@ const IntegrationsPanel: React.FC = () => {
   // when they back out of the WebDAV sub-page or close the dialog.
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
   const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
-  // Third-party cloud sync is a premium feature (any paid plan). `undefined`
-  // while the plan is still loading — treated as not-yet-premium.
+  // Third-party cloud sync will be a premium feature (any paid plan), but it is
+  // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
+  // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
+  // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
   const { userProfilePlan } = useQuotaStats();
-  const isCloudSyncPremium = !!userProfilePlan && isCloudSyncInPlan(userProfilePlan);
+  const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
