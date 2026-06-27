@@ -21,9 +21,9 @@ const disconnectButtonClass = clsx(
 );
 
 const primaryButtonClass = clsx(
-  'btn btn-primary',
+  'btn btn-contrast',
   'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-  'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-base-content/40 focus-visible:outline-none focus-visible:ring-2',
 );
 
 /**
@@ -137,10 +137,6 @@ const GoogleDriveForm: React.FC = () => {
 
   return (
     <div className='space-y-5'>
-      <Tips>
-        <li>{_('Sign-in opens in your browser.')}</li>
-        <li>{_('Readest only accesses the files it creates in your Drive.')}</li>
-      </Tips>
       <div className='flex justify-end pt-1'>
         <button
           type='button'
@@ -154,10 +150,14 @@ const GoogleDriveForm: React.FC = () => {
               {_('Waiting for sign-in…')}
             </>
           ) : (
-            _('Connect Google Drive')
+            _('Connect')
           )}
         </button>
       </div>
+      <Tips>
+        <li>{_('Sign-in opens in your browser.')}</li>
+        <li>{_('Readest only accesses the files it creates in your Drive.')}</li>
+      </Tips>
     </div>
   );
 };
