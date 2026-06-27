@@ -45,6 +45,17 @@ export const EMAIL_IN_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
 export const isEmailInPlan = (plan: UserPlan): boolean =>
   (EMAIL_IN_PLANS as readonly UserPlan[]).includes(plan);
 
+/**
+ * Plans that include third-party cloud sync (WebDAV / Google Drive): any paid
+ * plan — Plus, Pro, and Lifetime (`purchase`). Free users see an upgrade prompt
+ * in Settings and the reader's auto-sync stays off, so syncing to a personal
+ * cloud is a premium feature.
+ */
+export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+
+export const isCloudSyncInPlan = (plan: UserPlan): boolean =>
+  (CLOUD_SYNC_PLANS as readonly UserPlan[]).includes(plan);
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {

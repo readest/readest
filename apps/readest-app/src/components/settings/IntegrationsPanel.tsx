@@ -16,12 +16,14 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
+import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
-import { navigateToLogin } from '@/utils/nav';
+import { isCloudSyncInPlan } from '@/utils/access';
+import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
@@ -61,6 +63,10 @@ const IntegrationsPanel: React.FC = () => {
   // when they back out of the WebDAV sub-page or close the dialog.
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
   const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
+  // Third-party cloud sync is a premium feature (any paid plan). `undefined`
+  // while the plan is still loading — treated as not-yet-premium.
+  const { userProfilePlan } = useQuotaStats();
+  const isCloudSyncPremium = !!userProfilePlan && isCloudSyncInPlan(userProfilePlan);
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
@@ -92,6 +98,17 @@ const IntegrationsPanel: React.FC = () => {
   // stick to the next open. Recognised values match the SubPage union.
   useEffect(() => {
     if (!requestedSubPage) return;
+    const isCloudRequest =
+      requestedSubPage === 'webdav' ||
+      requestedSubPage === 'gdrive' ||
+      requestedSubPage === 'cloudsync';
+    // Cloud-sync sub-pages are premium-gated. If the plan is still loading, wait
+    // (don't consume the request); once known, only honor it for paid plans.
+    if (isCloudRequest && !isCloudSyncPremium) {
+      if (userProfilePlan === undefined) return;
+      setRequestedSubPage(null);
+      return;
+    }
     if (
       requestedSubPage === 'kosync' ||
       requestedSubPage === 'webdav' ||
@@ -107,7 +124,7 @@ const IntegrationsPanel: React.FC = () => {
       setSubPage('gdrive');
     }
     setRequestedSubPage(null);
-  }, [requestedSubPage, setRequestedSubPage]);
+  }, [requestedSubPage, setRequestedSubPage, isCloudSyncPremium, userProfilePlan]);
 
   // Sub-page wrapper matches the list-view's `my-4 w-full` so the
   // SubPageHeader's "Integrations" label lands at the exact same Y position
@@ -261,26 +278,39 @@ const IntegrationsPanel: React.FC = () => {
         <SectionTitle className='mb-2'>{_('Third-party Cloud Sync')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div className='divide-base-200 divide-y'>
-            <CloudProviderRow
-              icon={RiCloudLine}
-              title={_('WebDAV')}
-              status={webdavStatus}
-              isActive={activeCloudKind === 'webdav'}
-              canActivate={webdavConfigured}
-              onActivate={() => activateCloudProvider('webdav')}
-              onOpen={() => setSubPage('webdav')}
-              activateLabel={_('Use WebDAV')}
-            />
-            {appService?.isDesktopApp && (
-              <CloudProviderRow
-                icon={RiGoogleLine}
-                title={_('Google Drive')}
-                status={gdriveStatus}
-                isActive={activeCloudKind === 'gdrive'}
-                canActivate={gdriveConfigured}
-                onActivate={() => activateCloudProvider('gdrive')}
-                onOpen={() => setSubPage('gdrive')}
-                activateLabel={_('Use Google Drive')}
+            {isCloudSyncPremium ? (
+              <>
+                <CloudProviderRow
+                  icon={RiCloudLine}
+                  title={_('WebDAV')}
+                  status={webdavStatus}
+                  isActive={activeCloudKind === 'webdav'}
+                  canActivate={webdavConfigured}
+                  onActivate={() => activateCloudProvider('webdav')}
+                  onOpen={() => setSubPage('webdav')}
+                  activateLabel={_('Use WebDAV')}
+                />
+                {appService?.isDesktopApp && (
+                  <CloudProviderRow
+                    icon={RiGoogleLine}
+                    title={_('Google Drive')}
+                    status={gdriveStatus}
+                    isActive={activeCloudKind === 'gdrive'}
+                    canActivate={gdriveConfigured}
+                    onActivate={() => activateCloudProvider('gdrive')}
+                    onOpen={() => setSubPage('gdrive')}
+                    activateLabel={_('Use Google Drive')}
+                  />
+                )}
+              </>
+            ) : (
+              // Premium-gated: free users get an upgrade prompt instead of the
+              // provider rows. Tapping opens the plans page.
+              <IntegrationRow
+                icon={RiCloudLine}
+                title={_('Cloud Sync')}
+                status={_('Available on Plus, Pro, or Lifetime')}
+                onClick={() => navigateToProfile(router)}
               />
             )}
           </div>

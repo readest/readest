@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { isCloudSyncInPlan } from '@/utils/access';
 import type { SystemSettings } from '@/types/settings';
 
 const base = {
@@ -30,5 +31,17 @@ describe('withActiveCloudProvider', () => {
     const next = withActiveCloudProvider(base, 'gdrive');
     expect(next.webdav.serverUrl).toBe('https://dav');
     expect(next.googleDrive.accountLabel).toBe('a@b.com');
+  });
+});
+
+describe('isCloudSyncInPlan', () => {
+  test('any paid plan can use cloud sync', () => {
+    expect(isCloudSyncInPlan('plus')).toBe(true);
+    expect(isCloudSyncInPlan('pro')).toBe(true);
+    expect(isCloudSyncInPlan('purchase')).toBe(true); // lifetime
+  });
+
+  test('free plan cannot', () => {
+    expect(isCloudSyncInPlan('free')).toBe(false);
   });
 });
