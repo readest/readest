@@ -337,6 +337,16 @@ export class DocumentLoader {
     );
   }
 
+  private isMd(): boolean {
+    const name = this.file.name?.toLowerCase() ?? '';
+    return (
+      this.file.type === 'text/markdown' ||
+      this.file.type === 'text/x-markdown' ||
+      name.endsWith(`.${EXTS.MD}`) ||
+      name.endsWith('.markdown')
+    );
+  }
+
   public async open(): Promise<{ book: BookDoc; format: BookFormat }> {
     let book = null;
     let format: BookFormat = 'EPUB';
@@ -349,6 +359,13 @@ export class DocumentLoader {
       // conversion the import path runs) and parse that. The managed library
       // stores the already-converted EPUB, but the Android "Open with" transient
       // path points the book at the original .txt, so it reaches us unconverted.
+      // Markdown is rendered to HTML at runtime (no EPUB conversion). Check
+      // this BEFORE isTxt() — a .md served as text/plain would otherwise be
+      // grabbed by the TXT->EPUB path above.
+      if (this.isMd()) {
+        const { makeMarkdownBook } = await import('@/utils/md');
+        return { book: await makeMarkdownBook(this.file), format: 'MD' };
+      }
       if (this.isTxt()) {
         const { TxtToEpubConverter } = await import('@/utils/txt');
         const { file: epubFile } = await new TxtToEpubConverter().convert({ file: this.file });

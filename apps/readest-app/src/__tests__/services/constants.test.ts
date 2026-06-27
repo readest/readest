@@ -142,6 +142,7 @@ describe('services/constants', () => {
       expect(SUPPORTED_BOOK_EXTS).toContain('pdf');
       expect(SUPPORTED_BOOK_EXTS).toContain('mobi');
       expect(SUPPORTED_BOOK_EXTS).toContain('txt');
+      expect(SUPPORTED_BOOK_EXTS).toContain('md');
     });
 
     it('BOOK_ACCEPT_FORMATS is a comma-separated string of dotted extensions', () => {
