@@ -140,6 +140,37 @@ describe('GoogleDriveProvider — Drive transport', () => {
     expect(h.fetchMock).toHaveBeenCalledTimes(4);
   });
 
+  test('retries a thrown transport error (mobile connection-reuse) and then succeeds', async () => {
+    const h = makeDrive();
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest') ok
+      // childrenQuery throws like the Tauri HTTP plugin does on Android when a
+      // pooled connection goes bad: a plain Error (not a TypeError).
+      .mockRejectedValueOnce(
+        new Error('error sending request for url (https://www.googleapis.com/...)'),
+      )
+      .mockResolvedValueOnce(json({ files: [{ id: 'XID', name: 'x.json' }] })); // retry opens a fresh connection
+    const entries = await h.provider.list('/Readest');
+    expect(entries.map((e) => e.name)).toEqual(['x.json']);
+    expect(h.sleep).toHaveBeenCalledTimes(1);
+    expect(h.fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test('maps an exhausted thrown transport error to a NETWORK FileSyncError', async () => {
+    const h = makeDrive();
+    // Every attempt throws the reqwest transport error; after the bounded
+    // retries it must surface as NETWORK (not UNKNOWN) so the engine treats it
+    // as transient.
+    h.fetchMock.mockRejectedValue(
+      new Error('error sending request for url (https://www.googleapis.com/...)'),
+    );
+    const err = await h.provider.list('/Readest').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(FileSyncError);
+    expect((err as FileSyncError).code).toBe('NETWORK');
+    // 1 initial attempt + MAX_BACKOFF_RETRIES (4) = 5 calls on the first segment.
+    expect(h.fetchMock).toHaveBeenCalledTimes(5);
+  });
+
   test('classifies a 403 rate-limit as NETWORK and a 403 permission error as AUTH_FAILED', async () => {
     const rate = makeDrive();
     rate.fetchMock.mockResolvedValueOnce(

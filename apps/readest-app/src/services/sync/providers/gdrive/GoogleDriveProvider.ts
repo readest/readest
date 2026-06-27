@@ -200,12 +200,17 @@ const mapDriveError = (e: unknown): FileSyncError => {
     }
     return new FileSyncError(e.message, code, e.status);
   }
-  // A thrown fetch (offline / DNS / reset) surfaces as a TypeError.
-  const networkLike = e instanceof TypeError;
-  return new FileSyncError(
-    e instanceof Error ? e.message : String(e),
-    networkLike ? 'NETWORK' : 'UNKNOWN',
-  );
+  // A thrown fetch is a transport failure: a TypeError on the web `fetch`
+  // (offline / DNS / reset), or a plain Error from the Tauri HTTP plugin whose
+  // reqwest message reads `error sending request for url (...)` (seen on Android
+  // when a pooled connection to googleapis.com goes bad mid-sync). Classify both
+  // as NETWORK so the engine's head-probe short-circuit and retry logic treat
+  // them as transient rather than a hard UNKNOWN failure.
+  const message = e instanceof Error ? e.message : String(e);
+  const networkLike =
+    e instanceof TypeError ||
+    /sending request|network|connection|timed out|timeout|dns/i.test(message);
+  return new FileSyncError(message, networkLike ? 'NETWORK' : 'UNKNOWN');
 };
 
 /** Run a provider operation, mapping any Drive failure to a {@link FileSyncError}. */
@@ -694,15 +699,29 @@ class DriveProviderImpl {
   }
 
   /**
-   * Retry `fn` on a 429 / 5xx response with `Retry-After`-aware exponential
-   * backoff. A first full-sync of a large library at concurrency 4 multiplies
-   * Drive calls (per-segment resolution + 2-write create-then-name), so a 429 is
-   * expected, not exceptional. A thrown fetch is *not* retried here — it
-   * propagates and is mapped to NETWORK by {@link mapDriveError}.
+   * Retry `fn` on a 429 / 5xx response — OR a thrown transport error — with
+   * `Retry-After`-aware exponential backoff. A first full-sync of a large library
+   * at concurrency 4 multiplies Drive calls (per-segment resolution + 2-write
+   * create-then-name), so a 429 is expected, not exceptional.
+   *
+   * Thrown fetches are retried too: on mobile (observed on Android) a long
+   * multi-request sync hits transient transport failures — reqwest's
+   * `error sending request for url (...)` when a pooled keep-alive connection to
+   * googleapis.com goes bad — and the retry lets it re-establish a fresh
+   * connection. Without this every request after the first batch failed. The
+   * final attempt's error propagates (mapped to NETWORK by {@link mapDriveError}).
    */
   private async withBackoff(fn: () => Promise<Response>): Promise<Response> {
     for (let attempt = 0; ; attempt++) {
-      const res = await fn();
+      let res: Response;
+      try {
+        res = await fn();
+      } catch (e) {
+        // Out of retries: let the transport error propagate to mapDriveError.
+        if (attempt >= MAX_BACKOFF_RETRIES) throw e;
+        await this.sleep(BASE_BACKOFF_MS * 2 ** attempt);
+        continue;
+      }
       const transient =
         res.status === HTTP_TOO_MANY_REQUESTS || res.status >= HTTP_SERVER_ERROR_FLOOR;
       if (!transient || attempt >= MAX_BACKOFF_RETRIES) return res;
