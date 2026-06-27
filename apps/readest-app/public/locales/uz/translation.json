@@ -1807,5 +1807,7 @@
   "Word": "So‘z",
   "Sentence": "Gap",
   "Granularity": "Tafsilot darajasi",
-  "Refresh Page": "Sahifani yangilash"
+  "Refresh Page": "Sahifani yangilash",
+  "Recently read": "Yaqinda o'qilgan",
+  "Show recently read": "Yaqinda o'qilganlarni ko'rsatish"
 }

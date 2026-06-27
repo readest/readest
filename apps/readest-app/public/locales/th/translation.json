@@ -1774,5 +1774,7 @@
   "Word": "คำ",
   "Sentence": "ประโยค",
   "Granularity": "ระดับความละเอียด",
-  "Refresh Page": "รีเฟรชหน้า"
+  "Refresh Page": "รีเฟรชหน้า",
+  "Recently read": "อ่านล่าสุด",
+  "Show recently read": "แสดงรายการอ่านล่าสุด"
 }

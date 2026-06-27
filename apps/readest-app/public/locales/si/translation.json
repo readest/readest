@@ -1807,5 +1807,7 @@
   "Word": "වචනය",
   "Sentence": "වාක්‍යය",
   "Granularity": "විස්තර මට්ටම",
-  "Refresh Page": "පිටුව නැවුම් කරන්න"
+  "Refresh Page": "පිටුව නැවුම් කරන්න",
+  "Recently read": "මෑතකදී කියවූ",
+  "Show recently read": "මෑතකදී කියවූ ඒවා පෙන්වන්න"
 }

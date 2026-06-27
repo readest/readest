@@ -1807,5 +1807,7 @@
   "Word": "शब्द",
   "Sentence": "वाक्य",
   "Granularity": "सूक्ष्मता",
-  "Refresh Page": "पृष्ठ ताज़ा करें"
+  "Refresh Page": "पृष्ठ ताज़ा करें",
+  "Recently read": "हाल ही में पढ़े गए",
+  "Show recently read": "हाल ही में पढ़े गए दिखाएँ"
 }

@@ -1774,5 +1774,7 @@
   "Word": "단어",
   "Sentence": "문장",
   "Granularity": "단위",
-  "Refresh Page": "페이지 새로고침"
+  "Refresh Page": "페이지 새로고침",
+  "Recently read": "최근 읽은 책",
+  "Show recently read": "최근 읽은 책 표시"
 }

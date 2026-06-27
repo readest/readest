@@ -1840,5 +1840,7 @@
   "Word": "מילה",
   "Sentence": "משפט",
   "Granularity": "רמת פירוט",
-  "Refresh Page": "רענן דף"
+  "Refresh Page": "רענן דף",
+  "Recently read": "נקראו לאחרונה",
+  "Show recently read": "הצגת ספרים שנקראו לאחרונה"
 }

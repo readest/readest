@@ -272,6 +272,8 @@ export interface SystemSettings {
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;
+  /** Show the recently-read carousel at the top of the library (issue #3797). */
+  libraryRecentShelfEnabled: boolean;
   /**
    * Library page background texture, configured independently from the reader
    * background (issue #4743). When any of these is undefined the library

@@ -1,10 +1,8 @@
 import clsx from 'clsx';
 import { useCallback } from 'react';
 import { useEnv } from '@/context/EnvContext';
-import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAppRouter } from '@/hooks/useAppRouter';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, type MenuItemOptions } from '@tauri-apps/api/menu';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
@@ -13,7 +11,6 @@ import { openExternalUrl } from '@/utils/open';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
-import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -25,6 +22,7 @@ import {
 import { md5Fingerprint } from '@/utils/md5';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
+import { useOpenBook } from '../hooks/useOpenBook';
 
 export const generateBookshelfItems = (
   books: Book[],
@@ -127,39 +125,14 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleUpdateReadingStatus,
 }) => {
   const _ = useTranslation();
-  const router = useAppRouter();
-  const { envConfig, appService } = useEnv();
+  const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { updateBook } = useLibraryStore();
+  const { openBook } = useOpenBook({ setLoading, handleBookDownload });
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
     handleShowDetailsBook(book);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const makeBookAvailable = async (book: Book) => {
-    if (book.uploadedAt && !book.downloadedAt) {
-      if (await appService?.isBookAvailable(book)) {
-        if (!book.downloadedAt || !book.coverDownloadedAt) {
-          book.downloadedAt = Date.now();
-          book.coverDownloadedAt = Date.now();
-          await updateBook(envConfig, book);
-        }
-        return true;
-      }
-      let available = false;
-      const loadingTimeout = setTimeout(() => setLoading(true), 200);
-      try {
-        available = await handleBookDownload(book, { queued: false });
-        await updateBook(envConfig, book);
-      } finally {
-        if (loadingTimeout) clearTimeout(loadingTimeout);
-        setLoading(false);
-      }
-      return available;
-    }
-    return true;
-  };
 
   const handleBookClick = useCallback(
     async (book: Book) => {
@@ -167,40 +140,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection(book.hash);
         return;
       }
-      // In-place books point at a file outside Books/<hash>/ that the user
-      // (or another app) may have moved, renamed, or deleted between sessions.
-      // Probe the source before navigating: if it's gone, drop the stale
-      // library record instead of opening the reader only to fail inside
-      // loadBookContent and bounce back with a toast. We restrict this to
-      // purely-local in-place books — cloud-synced books (`uploadedAt`) still
-      // go through `makeBookAvailable`'s on-demand download path below, and
-      // hash-copy books (no `filePath`) shouldn't lose their Books/<hash>/
-      // file under normal use, so we don't second-guess those here.
-      if (book.filePath && !book.uploadedAt && !book.deletedAt) {
-        const available = await appService?.isBookAvailable(book);
-        if (!available) {
-          eventDispatcher.dispatch('toast', {
-            message: _(
-              'Book file no longer exists. Confirm deletion to remove it from the library.',
-            ),
-            type: 'info',
-          });
-          eventDispatcher.dispatch('delete-books', { ids: [book.hash] });
-          return;
-        }
-      }
-      const available = await makeBookAvailable(book);
-      if (!available) return;
-      if (appService?.hasWindow && settings.openBookInNewWindow) {
-        showReaderWindow(appService, [book.hash]);
-      } else {
-        setTimeout(() => {
-          navigateToReader(router, [book.hash]);
-        }, 0);
-      }
+      await openBook(book);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSelectMode, settings.openBookInNewWindow, appService],
+    [isSelectMode, openBook, toggleSelection],
   );
 
   const handleGroupClick = useCallback(

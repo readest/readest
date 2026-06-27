@@ -1873,5 +1873,7 @@
   "Word": "Beseda",
   "Sentence": "Stavek",
   "Granularity": "Granularnost",
-  "Refresh Page": "Osveži stran"
+  "Refresh Page": "Osveži stran",
+  "Recently read": "Nedavno prebrano",
+  "Show recently read": "Pokaži nedavno prebrano"
 }

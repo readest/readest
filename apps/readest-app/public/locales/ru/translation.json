@@ -1873,5 +1873,7 @@
   "Word": "Слово",
   "Sentence": "Предложение",
   "Granularity": "Детализация",
-  "Refresh Page": "Обновить страницу"
+  "Refresh Page": "Обновить страницу",
+  "Recently read": "Недавно прочитанные",
+  "Show recently read": "Показывать недавно прочитанные"
 }

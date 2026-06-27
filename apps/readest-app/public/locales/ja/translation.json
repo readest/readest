@@ -1774,5 +1774,7 @@
   "Word": "単語",
   "Sentence": "文",
   "Granularity": "粒度",
-  "Refresh Page": "ページを更新"
+  "Refresh Page": "ページを更新",
+  "Recently read": "最近読んだ本",
+  "Show recently read": "最近読んだ本を表示"
 }

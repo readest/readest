@@ -1807,5 +1807,7 @@
   "Word": "Λέξη",
   "Sentence": "Πρόταση",
   "Granularity": "Διαβάθμιση",
-  "Refresh Page": "Ανανέωση σελίδας"
+  "Refresh Page": "Ανανέωση σελίδας",
+  "Recently read": "Πρόσφατα αναγνωσμένα",
+  "Show recently read": "Εμφάνιση πρόσφατα αναγνωσμένων"
 }

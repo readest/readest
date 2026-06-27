@@ -1840,5 +1840,7 @@
   "Word": "Mot",
   "Sentence": "Phrase",
   "Granularity": "Granularité",
-  "Refresh Page": "Actualiser la page"
+  "Refresh Page": "Actualiser la page",
+  "Recently read": "Lectures récentes",
+  "Show recently read": "Afficher les lectures récentes"
 }

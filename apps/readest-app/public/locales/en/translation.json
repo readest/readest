@@ -67,5 +67,7 @@
   "Are you sure to clear all {{count}} highlights and notes?_one": "Are you sure to clear all {{count}} highlight and note?",
   "Are you sure to clear all {{count}} highlights and notes?_other": "Are you sure to clear all {{count}} highlights and notes?",
   "Imported {{count}} annotations_one": "Imported {{count}} annotation",
-  "Imported {{count}} annotations_other": "Imported {{count}} annotations"
+  "Imported {{count}} annotations_other": "Imported {{count}} annotations",
+  "Recently read": "Recently read",
+  "Show recently read": "Show recently read"
 }

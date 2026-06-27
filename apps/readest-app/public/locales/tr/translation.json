@@ -1807,5 +1807,7 @@
   "Word": "Kelime",
   "Sentence": "Cümle",
   "Granularity": "Ayrıntı düzeyi",
-  "Refresh Page": "Sayfayı Yenile"
+  "Refresh Page": "Sayfayı Yenile",
+  "Recently read": "Son okunanlar",
+  "Show recently read": "Son okunanları göster"
 }

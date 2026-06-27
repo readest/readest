@@ -150,6 +150,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,
+  libraryRecentShelfEnabled: false,
 
   metadataSeriesCollapsed: false,
   metadataOthersCollapsed: false,

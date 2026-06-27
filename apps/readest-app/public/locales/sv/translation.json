@@ -1807,5 +1807,7 @@
   "Word": "Ord",
   "Sentence": "Mening",
   "Granularity": "Detaljnivå",
-  "Refresh Page": "Uppdatera sidan"
+  "Refresh Page": "Uppdatera sidan",
+  "Recently read": "Nyligen lästa",
+  "Show recently read": "Visa nyligen lästa"
 }

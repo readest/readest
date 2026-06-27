@@ -1807,5 +1807,7 @@
   "Word": "Szó",
   "Sentence": "Mondat",
   "Granularity": "Részletesség",
-  "Refresh Page": "Oldal frissítése"
+  "Refresh Page": "Oldal frissítése",
+  "Recently read": "Nemrég olvasott",
+  "Show recently read": "Nemrég olvasottak megjelenítése"
 }

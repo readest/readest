@@ -1807,5 +1807,7 @@
   "Word": "کلمه",
   "Sentence": "جمله",
   "Granularity": "دانه‌بندی",
-  "Refresh Page": "تازه‌سازی صفحه"
+  "Refresh Page": "تازه‌سازی صفحه",
+  "Recently read": "اخیراً خوانده‌شده",
+  "Show recently read": "نمایش موارد اخیراً خوانده‌شده"
 }

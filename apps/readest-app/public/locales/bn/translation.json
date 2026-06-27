@@ -1807,5 +1807,7 @@
   "Word": "শব্দ",
   "Sentence": "বাক্য",
   "Granularity": "সূক্ষ্মতা",
-  "Refresh Page": "পৃষ্ঠা রিফ্রেশ করুন"
+  "Refresh Page": "পৃষ্ঠা রিফ্রেশ করুন",
+  "Recently read": "সম্প্রতি পড়া",
+  "Show recently read": "সম্প্রতি পড়া দেখান"
 }
