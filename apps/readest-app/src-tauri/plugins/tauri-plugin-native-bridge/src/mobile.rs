@@ -353,3 +353,11 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    pub fn update_reading_widget(&self, payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("update_reading_widget", payload)
+            .map_err(Into::into)
+    }
+}

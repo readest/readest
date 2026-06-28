@@ -203,6 +203,20 @@ const FoliateViewer: React.FC<{
     // Always stash the latest detail; if another rAF is already pending
     // it'll pick this up and the intermediate states are skipped.
     pendingRelocateRef.current = event as CustomEvent;
+    // requestAnimationFrame is paused while the WebView is backgrounded, so the
+    // rAF-coalesced commit below would never run during background TTS - which
+    // freezes book.progress (and readerProgressStore, and the home-screen
+    // widget that reads them). Commit synchronously when hidden so progress
+    // stays current. The page-follow relocate still fires; only the commit was
+    // being deferred.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      if (relocateRafRef.current != null) {
+        cancelAnimationFrame(relocateRafRef.current);
+        relocateRafRef.current = null;
+      }
+      commitRelocate();
+      return;
+    }
     if (relocateRafRef.current != null) return;
     relocateRafRef.current = requestAnimationFrame(commitRelocate);
   };

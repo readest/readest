@@ -1502,6 +1502,26 @@ class NativeBridgePlugin: Plugin {
   @objc public func refresh_eink_screen(_ invoke: Invoke) {
     invoke.resolve(["success": false])
   }
+
+  @objc public func update_reading_widget(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(UpdateReadingWidgetRequestArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.global(qos: .utility).async {
+      for book in args.books {
+        ReadingWidgetWriter.writeThumbnail(hash: book.hash, sourcePath: book.coverPath)
+      }
+      let snapshot = ReadingWidgetWriter.Snapshot(
+        books: args.books.map {
+          .init(hash: $0.hash, title: $0.title, author: $0.author, percent: $0.percent)
+        },
+        sectionTitle: args.sectionTitle,
+        emptyTitle: args.emptyTitle
+      )
+      ReadingWidgetWriter.write(snapshot: snapshot)
+      invoke.resolve()
+    }
+  }
 }
 
 /// Persistent store for security-scoped folder bookmarks.
@@ -1729,6 +1749,19 @@ class SecureItemGetArgs: Decodable {
 
 class ShowLookupPopoverArgs: Decodable {
   let word: String
+}
+
+struct UpdateReadingWidgetBookArgs: Decodable {
+  let hash: String
+  let title: String
+  let author: String
+  let percent: Int
+  let coverPath: String
+}
+struct UpdateReadingWidgetRequestArgs: Decodable {
+  let books: [UpdateReadingWidgetBookArgs]
+  let sectionTitle: String
+  let emptyTitle: String
 }
 
 @_cdecl("init_plugin_native_bridge")

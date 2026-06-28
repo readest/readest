@@ -341,6 +341,32 @@ export async function clearSecureItem(request: GetSecureItemRequest): Promise<Se
   return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
 }
 
+// ── Reading widget ────────────────────────────────────────────────────────
+
+export interface ReadingWidgetBookPayload {
+  hash: string;
+  title: string;
+  author: string;
+  percent: number;
+  coverPath: string;
+}
+
+export interface ReadingWidgetTts {
+  active: boolean;
+  playing: boolean;
+}
+
+export interface UpdateReadingWidgetRequest {
+  books: ReadingWidgetBookPayload[];
+  sectionTitle: string;
+  emptyTitle: string;
+  tts?: ReadingWidgetTts;
+}
+
+export async function updateReadingWidget(request: UpdateReadingWidgetRequest): Promise<void> {
+  await invoke('plugin:native-bridge|update_reading_widget', { payload: request });
+}
+
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────
 // `verify_update_signature` gates the custom install flows (portable /
 // AppImage / Android); `install_nightly_update` drives the Tauri updater for

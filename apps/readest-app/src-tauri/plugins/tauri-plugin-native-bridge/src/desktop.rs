@@ -351,6 +351,14 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn refresh_eink_screen(&self) -> crate::Result<RefreshEinkScreenResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
+
+    pub fn update_reading_widget(
+        &self,
+        _payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<()> {
+        // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(())
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";

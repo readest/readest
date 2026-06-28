@@ -114,6 +114,34 @@ class PurchaseProductRequestArgs {
     val productId: String? = null
 }
 
+@InvokeArg
+class UpdateReadingWidgetBookArgs {
+    var hash: String = ""
+    var title: String = ""
+    var author: String = ""
+    var percent: Int = 0
+    var coverPath: String = ""
+}
+
+@InvokeArg
+class UpdateReadingWidgetTtsArgs {
+    var active: Boolean = false
+    var playing: Boolean = false
+}
+
+@InvokeArg
+class UpdateReadingWidgetRequestArgs {
+    var books: List<UpdateReadingWidgetBookArgs> = emptyList()
+    var sectionTitle: String = ""
+    var emptyTitle: String = ""
+    // Nullable — omitted from the snapshot when the caller does not send a tts object.
+    // Note: Tauri parseArgs uses Gson for deserialization; a nullable nested @InvokeArg
+    // field is set to null when the key is absent from the JSON payload, which is the
+    // expected behavior. If deserialization issues arise at runtime, fall back to two
+    // flat optional fields (ttsActive: Boolean? / ttsPlaying: Boolean?).
+    var tts: UpdateReadingWidgetTtsArgs? = null
+}
+
 data class ProductData(
     val id: String,
     val title: String,
@@ -1052,6 +1080,40 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun triggerEvent(eventName: String, payload: JSObject) {
         activity.runOnUiThread {
             trigger(eventName, payload)
+        }
+    }
+
+    @Command
+    fun update_reading_widget(invoke: Invoke) {
+        val args = invoke.parseArgs(UpdateReadingWidgetRequestArgs::class.java)
+        pluginScope.launch {
+            withContext(Dispatchers.IO) {
+                val books = org.json.JSONArray()
+                for (book in args.books) {
+                    ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                    books.put(
+                        org.json.JSONObject()
+                            .put("hash", book.hash)
+                            .put("title", book.title)
+                            .put("author", book.author)
+                            .put("percent", book.percent)
+                    )
+                }
+                val snapshot = org.json.JSONObject()
+                    .put("books", books)
+                    .put("sectionTitle", args.sectionTitle)
+                    .put("emptyTitle", args.emptyTitle)
+                args.tts?.let { tts ->
+                    snapshot.put(
+                        "tts",
+                        org.json.JSONObject()
+                            .put("active", tts.active)
+                            .put("playing", tts.playing)
+                    )
+                }
+                ReadingWidgetStore.writeSnapshot(activity, snapshot.toString())
+            }
+            if (isActive) invoke.resolve()
         }
     }
 

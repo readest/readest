@@ -43,4 +43,5 @@ permissions = [
   "allow-get-secure-item",
   "allow-clear-secure-item",
   "allow-refresh-eink-screen",
+  "allow-update-reading-widget",
 ]

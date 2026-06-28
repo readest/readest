@@ -405,3 +405,30 @@ pub struct RefreshEinkScreenResponse {
     pub success: bool,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetBook {
+    pub hash: String,
+    pub title: String,
+    pub author: String,
+    pub percent: u8,
+    pub cover_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetTts {
+    pub active: bool,
+    pub playing: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateReadingWidgetRequest {
+    pub books: Vec<ReadingWidgetBook>,
+    pub section_title: String,
+    pub empty_title: String,
+    #[serde(default)]
+    pub tts: Option<ReadingWidgetTts>,
+}

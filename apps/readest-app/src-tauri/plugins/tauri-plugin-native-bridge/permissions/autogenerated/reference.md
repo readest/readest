@@ -46,6 +46,7 @@ Default permissions for the plugin
 - `allow-get-secure-item`
 - `allow-clear-secure-item`
 - `allow-refresh-eink-screen`
+- `allow-update-reading-widget`
 
 ## Permission Table
 
@@ -1196,6 +1197,32 @@ Enables the show_lookup_popover command without any pre-configured scope.
 <td>
 
 Denies the show_lookup_popover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-update-reading-widget`
+
+</td>
+<td>
+
+Enables the update_reading_widget command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-update-reading-widget`
+
+</td>
+<td>
+
+Denies the update_reading_widget command without any pre-configured scope.
 
 </td>
 </tr>

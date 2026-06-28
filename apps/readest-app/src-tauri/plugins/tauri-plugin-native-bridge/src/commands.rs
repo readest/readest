@@ -280,3 +280,11 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
 ) -> Result<RefreshEinkScreenResponse> {
     app.native_bridge().refresh_eink_screen()
 }
+
+#[command]
+pub(crate) async fn update_reading_widget<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateReadingWidgetRequest,
+) -> Result<()> {
+    app.native_bridge().update_reading_widget(payload)
+}

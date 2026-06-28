@@ -90,3 +90,38 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
 
   return null;
 };
+
+/**
+ * Parse an incoming readest:// or https://web.readest.com book-open URL.
+ * Matches only the bare form `book/{hash}` (the widget tap target); the
+ * 4-segment annotation form `book/{hash}/annotation/{id}` is handled by
+ * parseAnnotationDeepLink and must NOT match here.
+ */
+export const parseBookDeepLink = (url: string): { bookHash: string } | null => {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+
+  const isCustomScheme = parsed.protocol === 'readest:';
+  const isWebHost =
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+    parsed.host === 'web.readest.com';
+  if (!isCustomScheme && !isWebHost) return null;
+
+  const segments: string[] = isCustomScheme
+    ? [parsed.host, ...parsed.pathname.split('/')].filter(Boolean)
+    : parsed.pathname.split('/').filter(Boolean);
+
+  if (isWebHost) {
+    if (segments[0] !== 'o') return null;
+    segments.shift();
+  }
+
+  if (segments.length === 2 && segments[0] === 'book' && segments[1]) {
+    return { bookHash: segments[1] };
+  }
+  return null;
+};
