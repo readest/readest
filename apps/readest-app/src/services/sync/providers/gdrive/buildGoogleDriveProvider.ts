@@ -9,10 +9,11 @@
  * half-built provider that would fail on first use.
  */
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import { createGoogleDriveProvider, type FetchFn } from './GoogleDriveProvider';
 import { PersistedDriveAuth } from './PersistedDriveAuth';
+import { WebDriveAuth } from './WebDriveAuth';
 import { createDriveTokenPersistence } from './driveTokenStore';
 
 /**
@@ -31,11 +32,38 @@ const OFFICIAL_GOOGLE_CLIENT_ID =
 export const getGoogleClientId = (): string | undefined =>
   process.env['NEXT_PUBLIC_GOOGLE_CLIENT_ID'] || OFFICIAL_GOOGLE_CLIENT_ID;
 
+/**
+ * The official Readest **Web-type** Google OAuth client id used by the browser
+ * GIS flow (its authorized JavaScript origins are `web.readest.com` + the
+ * localhost dev origin). Separate from the iOS-type
+ * {@link OFFICIAL_GOOGLE_CLIENT_ID}, which can't drive a browser token client.
+ * Not a secret — it ships in the web bundle. A forker overrides it via
+ * `NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID` and must register their own deploy origin
+ * on that client.
+ */
+const OFFICIAL_GOOGLE_WEB_CLIENT_ID =
+  '209390247301-585tc3dohg4c02588uvah5d32hg6dneq.apps.googleusercontent.com';
+
+export const getGoogleWebClientId = (): string | undefined =>
+  process.env['NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID'] || OFFICIAL_GOOGLE_WEB_CLIENT_ID;
+
 /** Native `fetch` bypasses the WebView CSP for the googleapis.com hosts. */
 const resolveFetch = (): FetchFn =>
   (isTauriAppPlatform() ? tauriFetch : globalThis.fetch) as unknown as FetchFn;
 
 export const buildGoogleDriveProvider = async (): Promise<FileSyncProvider | null> => {
+  // Web: token from the full-page redirect flow, kept in sessionStorage, read by
+  // WebDriveAuth. Buffered I/O (createGoogleDriveProvider omits the Tauri-only
+  // streaming methods off-Tauri); the Drive REST API is CORS-enabled so plain
+  // fetch works. No keychain.
+  if (isWebAppPlatform()) {
+    if (!getGoogleWebClientId()) return null;
+    // Bind to the global so `this.fetchFn(...)` inside the provider doesn't call
+    // window.fetch with the wrong receiver ("Illegal invocation").
+    const fetchFn = globalThis.fetch.bind(globalThis) as unknown as FetchFn;
+    return createGoogleDriveProvider(new WebDriveAuth(fetchFn), fetchFn);
+  }
+
   const clientId = getGoogleClientId();
   if (!clientId) return null;
 

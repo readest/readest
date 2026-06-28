@@ -1,0 +1,29 @@
+import { afterEach, describe, expect, test } from 'vitest';
+import {
+  clearWebDriveToken,
+  loadWebDriveToken,
+  saveWebDriveToken,
+} from '@/services/sync/providers/gdrive/auth/webTokenStore';
+
+afterEach(() => {
+  window.sessionStorage.clear();
+});
+
+describe('webTokenStore', () => {
+  test('round-trips a token set through sessionStorage', () => {
+    expect(loadWebDriveToken()).toBeNull();
+    saveWebDriveToken({ accessToken: 'AT', expiresAt: 123 });
+    expect(loadWebDriveToken()).toEqual({ accessToken: 'AT', expiresAt: 123 });
+  });
+
+  test('clear removes the stored token', () => {
+    saveWebDriveToken({ accessToken: 'AT', expiresAt: 123 });
+    clearWebDriveToken();
+    expect(loadWebDriveToken()).toBeNull();
+  });
+
+  test('returns null for an unparseable stored value', () => {
+    window.sessionStorage.setItem('gdrive_web_token', 'not json');
+    expect(loadWebDriveToken()).toBeNull();
+  });
+});

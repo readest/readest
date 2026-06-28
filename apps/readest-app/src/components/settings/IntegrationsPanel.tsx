@@ -23,6 +23,8 @@ import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
+import { isWebAppPlatform } from '@/services/environment';
+import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
@@ -292,7 +294,11 @@ const IntegrationsPanel: React.FC = () => {
                   onOpen={() => setSubPage('webdav')}
                   activateLabel={_('Use WebDAV')}
                 />
-                {(appService?.isDesktopApp || appService?.isAndroidApp || appService?.isIOSApp) && (
+                {(appService?.isDesktopApp ||
+                  appService?.isAndroidApp ||
+                  appService?.isIOSApp ||
+                  // Web: only when a Web-type GIS client id is configured for this build.
+                  (isWebAppPlatform() && !!getGoogleWebClientId())) && (
                   <CloudProviderRow
                     icon={RiGoogleLine}
                     title={_('Google Drive')}

@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
-vi.mock('@/services/environment', () => ({ isTauriAppPlatform: vi.fn() }));
+vi.mock('@/services/environment', () => ({
+  isTauriAppPlatform: vi.fn(),
+  isWebAppPlatform: vi.fn(),
+}));
 vi.mock('@/utils/bridge', () => ({
   isSyncKeychainAvailable: vi.fn(),
   getSecureItem: vi.fn(),
@@ -9,11 +12,12 @@ vi.mock('@/utils/bridge', () => ({
   clearSecureItem: vi.fn(),
 }));
 
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { isSyncKeychainAvailable } from '@/utils/bridge';
 import {
   buildGoogleDriveProvider,
   getGoogleClientId,
+  getGoogleWebClientId,
 } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 
 const CLIENT_ID = 'cid.apps.googleusercontent.com';
@@ -59,5 +63,26 @@ describe('buildGoogleDriveProvider', () => {
     const provider = await buildGoogleDriveProvider();
     expect(provider).not.toBeNull();
     expect(provider?.rootPath).toBe('/');
+  });
+
+  test('web: falls back to the baked official web client id when the env override is unset', async () => {
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID', '');
+    vi.mocked(isWebAppPlatform).mockReturnValue(true);
+    expect(getGoogleWebClientId()).toMatch(/\.apps\.googleusercontent\.com$/);
+    const provider = await buildGoogleDriveProvider();
+    expect(provider).not.toBeNull();
+    expect(provider?.rootPath).toBe('/');
+    // The web path never touches the keychain.
+    expect(isSyncKeychainAvailable).not.toHaveBeenCalled();
+  });
+
+  test('web: the env override wins over the baked web default', async () => {
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID', 'forked-web.apps.googleusercontent.com');
+    vi.mocked(isWebAppPlatform).mockReturnValue(true);
+    expect(getGoogleWebClientId()).toBe('forked-web.apps.googleusercontent.com');
+    const provider = await buildGoogleDriveProvider();
+    expect(provider).not.toBeNull();
+    expect(provider?.rootPath).toBe('/');
+    expect(isSyncKeychainAvailable).not.toHaveBeenCalled();
   });
 });
