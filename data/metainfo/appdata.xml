@@ -70,6 +70,21 @@
   </supports>
 
   <releases>
+    <release version="0.11.16" date="2026-06-29">
+      <description>
+        <ul>
+          <li>Sync: Added WebDAV and Google Drive sync for your books and reading data</li>
+          <li>Widgets: Added home-screen reading widgets on mobile so you can jump straight back into your book</li>
+          <li>Reading: You can now open and read Markdown(.md) files</li>
+          <li>Reading: You can select a word by double-clicking it, and search gained regex and nearby-words modes</li>
+          <li>Reading: Added a sticky progress bar with chapter markers, and keyboard shortcuts to fine-tune text selection</li>
+          <li>Library: Added a Recently Read shelf to quickly pick up where you left off, plus a separate background texture for your library</li>
+          <li>Text-to-Speech: Added offline voices on iOS, a setting to highlight by word or by sentence</li>
+          <li>PDF: Smoother pinch-zoom and panning, faster scrolling on mobile, and a new contrast option in the view menu</li>
+          <li>More: Customize the highlight toolbar across all books, filter exported annotations by color and style</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.12" date="2026-06-20">
       <description>
         <ul>
@@ -205,21 +220,6 @@
           <li>Footnotes: Added back navigation with link history and more responsive popup sizing</li>
           <li>Annotations: Added loupe display when selecting text in instant annotation mode</li>
           <li>Text-to-Speech: Fixed TTS reading position tracking in scrolled mode</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.9.101" date="2026-02-28">
-      <description>
-        <ul>
-          <li>Text-to-Speech: Fixed an issue where TTS could not continue to the next chapter</li>
-          <li>Reading: Fixed an issue importing very large TXT files on iOS</li>
-          <li>Reading: Fixed the layout of the reading ruler in scrolled mode</li>
-          <li>Reading: Smoother page-turn animations for a more fluid experience</li>
-          <li>Reading: Added a gallery mode to zoom and browse images within books</li>
-          <li>Annotations: Page numbers are now displayed and exported with highlights and notes</li>
-          <li>Annotations: Added support for exporting highlights to Readwise</li>
-          <li>OPDS: Fixed missing book descriptions in OPDS feeds</li>
-          <li>Android: Improved compatibility with older WebView versions on Android</li>
         </ul>
       </description>
     </release>
