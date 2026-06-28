@@ -2,12 +2,14 @@ import clsx from 'clsx';
 import React, { useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { isWebAppPlatform } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import {
   runGoogleDriveConnect,
   runGoogleDriveDisconnect,
 } from '@/services/sync/providers/gdrive/googleDriveConnect';
+import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import { Tips } from '../primitives';
 import FileSyncForm from './FileSyncForm';
 import { withActiveCloudProvider } from './cloudSync';
@@ -48,6 +50,13 @@ const GoogleDriveForm: React.FC = () => {
   const isActive = !!stored?.enabled;
   const isConfigured = !!stored?.accountLabel;
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // On web the access token is short-lived (no refresh token) and lives in
+  // sessionStorage, so an active connection can sit with an expired/absent
+  // token. When that happens, swap Disconnect → Reconnect and disable Sync now;
+  // the user-facing "session expired" notice is a one-time toast in the reader
+  // (see useFileSync), not a hint here.
+  const sessionExpired = isActive && isWebAppPlatform() && !hasValidWebDriveToken();
 
   const persistGDrive = async (patch: Partial<typeof stored>) => {
     const latest = useSettingsStore.getState().settings;
@@ -104,11 +113,34 @@ const GoogleDriveForm: React.FC = () => {
   if (isActive) {
     return (
       <div className='space-y-5'>
-        <FileSyncForm kind='gdrive' stored={stored} persist={persistGDrive} />
+        <FileSyncForm
+          kind='gdrive'
+          stored={stored}
+          persist={persistGDrive}
+          syncNowDisabled={sessionExpired}
+        />
         <div className='flex justify-end'>
-          <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
-            {_('Disconnect')}
-          </button>
+          {sessionExpired ? (
+            <button
+              type='button'
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className={clsx(primaryButtonClass, isConnecting && 'opacity-60')}
+            >
+              {isConnecting ? (
+                <>
+                  <span className='loading loading-spinner loading-sm' />
+                  {_('Waiting for sign-in…')}
+                </>
+              ) : (
+                _('Reconnect')
+              )}
+            </button>
+          ) : (
+            <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
+              {_('Disconnect')}
+            </button>
+          )}
         </div>
       </div>
     );

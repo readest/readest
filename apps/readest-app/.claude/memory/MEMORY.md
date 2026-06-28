@@ -37,6 +37,7 @@
 - [Pull cursor via synced_at (#4678)](sync-synced-at-cursor-4678.md) — books `synced_at` + BEFORE trigger
 - [WebDAV metadata sync (#4756)](webdav-metadata-sync-4756.md) — PR #4776; LWW on `book.updatedAt` + `updateBookMetadata`
 - [File-sync refactor (#4784)](webdav-filesync-refactor-plan.md) — `FileSyncEngine`/`FileSyncProvider`/`merge.ts`; incremental + Full Sync
+- [Third-party library auto-sync (#4835)](third-party-library-autosync-4835.md) — `useLibraryFileSync` parity w/ `useBooksSync`; `library.json` on import/delete/close; delete propagation NEEDS full library (incl. deletedAt) passed to `syncLibrary`
 - [WebDAV connect nullified (#4780)](webdav-connect-nullified-4780.md) — catch+finally saved STALE closure; `getState().settings`
 - [WebDAV credential sync (#4810)](webdav-credential-sync-4810.md) — `webdav.*` missing from `SETTINGS_WHITELIST`/`ENCRYPTED_FIELDS`; new nested whitelist group NEEDS matching `mergeSettings` deep-merge or shallow merge clobbers per-device siblings
 - [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md) — stale window overwrites shared settings.json; cross-window broadcast `settingsSync.ts`
@@ -72,6 +73,7 @@
 - [Image zoom trackpad flicker (#4742)](image-zoom-trackpad-flicker-4742.md) — macOS pinch=`ctrl+wheel`; `isWheelZooming` debounce
 - [Instant Highlight ate tap/swipe](instant-highlight-tap-paginate.md) — preventDefault killed tap-paginate; `INSTANT_HOLD_MS=300`
 - [Keyboard selection adjust (#4728)](keyboard-selection-adjust-4728.md) — Shift+←/→ char, Ctrl/Alt+Shift word; `onAdjustTextSelection`
+- [Double-click word select](iframe-double-click-word-select.md) — orphaned `iframe-double-click` → `handleDoubleClick` selects word via `getWordRangeFromPoint`/`Intl.Segmenter`, routes through `makeSelection`; `pointerDownTimeRef=0` bypasses hold gate; `isValidSelection` guard avoids desktop double-fire
 - [Cross-page selection auto-turn (#4741)](cross-page-selection-autoturn-4741.md) — `useAutoPageTurn` dwell; `onAfterTurn` re-emit
 - [Annotator onLoad listener leak (#4735)](annotator-onload-listener-leak-paragraph-mode.md) — `useRendererInputListeners` once-per-view
 - [Paragraph mode toggle/resume (#4717)](paragraph-mode-toggle-resume-4717.md) — snapshot live Set; resume from fresh `lastLocation.cfi`
@@ -93,6 +95,7 @@
 - [Instant highlight delete orphan (#4773)](instant-highlight-delete-orphan-4773.md) — stale memoized index + in-place `deletedAt`; re-check at READ
 - [Empty highlight leak on annotate cancel (#4791)](empty-highlight-leak-on-annotate-cancel-4791.md) — Annotate eagerly creates placeholder; track `notebookNewHighlightId`, presentation-driven cleanup effect
 - [Customize Toolbar global (#4760)](customize-toolbar-global-serializeconfig.md) — `serializeConfig` ref-compare → stale override; value compare
+- [Customize Toolbar e-ink black bar (#4839)](customize-toolbar-eink-black-bar-4839.md) — preview Zone copied `bg-gray-600` w/o `.popup-container`; add `eink-bordered` (+ `eink:text-base-content` hint)
 - Native TTS: [iOS #4676](native-ios-tts-4676.md) AVSpeechSynthesizer pause==stop rate `pow^(1/2.5)`; [offline halt #4613](native-tts-offline-autoadvance-4613.md) advance only on `end`, SKIP-on-error via `forward()`
 - Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md) `audio.metadata` WordBoundary by rAF gate on UA; [drift](tts-word-highlight-singletextnode-drift.md) TEXT_NODE fast path ignored offsets, slice `[start,end]`
 - [TTS highlight granularity setting](tts-highlight-granularity-setting.md) — Word/Sentence; gate `prepareSpeakWords` on granularity (NOT supportsWordBoundaries); suppress = wordBoundaries && word

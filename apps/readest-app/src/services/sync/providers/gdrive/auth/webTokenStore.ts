@@ -41,3 +41,13 @@ export const loadWebDriveToken = (): TokenSet | null => {
 export const clearWebDriveToken = (): void => {
   getStorage()?.removeItem(WEB_TOKEN_KEY);
 };
+
+/**
+ * Whether a usable (non-expired) access token is stored. Lets the settings panel
+ * show a "session expired" hint + Reconnect when the web token is gone/expired
+ * (the connection stays `enabled`, but the short-lived token must be re-minted).
+ */
+export const hasValidWebDriveToken = (now: number = Date.now()): boolean => {
+  const tokens = loadWebDriveToken();
+  return !!tokens && now < tokens.expiresAt;
+};

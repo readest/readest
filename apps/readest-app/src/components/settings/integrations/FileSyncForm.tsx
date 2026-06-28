@@ -35,6 +35,12 @@ interface FileSyncFormProps {
   stored: FileSyncFormSettings;
   /** Persist a patch into this backend's settings slice (must merge store-latest). */
   persist: (patch: Partial<FileSyncFormSettings>) => Promise<void>;
+  /**
+   * Disable the "Sync now" button — set when the connection needs attention
+   * (e.g. an expired web Google Drive session) so a manual sync that would just
+   * fail isn't offered. The parent panel shows the reconnect affordance.
+   */
+  syncNowDisabled?: boolean;
 }
 
 /**
@@ -67,7 +73,12 @@ const formatSyncError = (_: TranslationFunc, e: unknown): string => {
  * form; everything below the connect line is identical across backends, so it
  * lives here once and is parameterised by {@link FileSyncFormProps.kind}.
  */
-const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) => {
+const FileSyncForm: React.FC<FileSyncFormProps> = ({
+  kind,
+  stored,
+  persist,
+  syncNowDisabled = false,
+}) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
   const { envConfig } = useEnv();
@@ -92,6 +103,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
    * provider is built by kind through the registry so this stays backend-neutral.
    */
   const handleSyncNow = async () => {
+    if (syncNowDisabled) return;
     if (useFileSyncStore.getState().byKind[kind]?.isSyncing) return;
     if (!stored.enabled) return;
 
@@ -213,8 +225,11 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
         <button
           type='button'
           onClick={handleSyncNow}
-          disabled={isSyncing}
-          className={clsx('btn btn-ghost btn-sm h-8 min-h-8 gap-1 px-2', isSyncing && 'opacity-60')}
+          disabled={isSyncing || syncNowDisabled}
+          className={clsx(
+            'btn btn-ghost btn-sm h-8 min-h-8 gap-1 px-2',
+            (isSyncing || syncNowDisabled) && 'opacity-60',
+          )}
           title={_('Sync now')}
           aria-label={_('Sync now')}
         >

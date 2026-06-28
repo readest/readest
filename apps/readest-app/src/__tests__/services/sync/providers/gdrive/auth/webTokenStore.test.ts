@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import {
   clearWebDriveToken,
+  hasValidWebDriveToken,
   loadWebDriveToken,
   saveWebDriveToken,
 } from '@/services/sync/providers/gdrive/auth/webTokenStore';
@@ -25,5 +26,12 @@ describe('webTokenStore', () => {
   test('returns null for an unparseable stored value', () => {
     window.sessionStorage.setItem('gdrive_web_token', 'not json');
     expect(loadWebDriveToken()).toBeNull();
+  });
+
+  test('hasValidWebDriveToken reflects presence + expiry', () => {
+    expect(hasValidWebDriveToken(1_000)).toBe(false); // none stored
+    saveWebDriveToken({ accessToken: 'AT', expiresAt: 5_000 });
+    expect(hasValidWebDriveToken(1_000)).toBe(true); // not yet expired
+    expect(hasValidWebDriveToken(9_000)).toBe(false); // expired
   });
 });
