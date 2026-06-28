@@ -140,6 +140,7 @@ const getFontStyles = (
     }
     pre, code, kbd {
       font-family: var(--monospace);
+      font-variant-ligatures: none;
     }
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
