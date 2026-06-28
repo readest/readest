@@ -152,6 +152,54 @@ describe('FileSyncEngine metadata reconciliation (#4756)', () => {
   });
 });
 
+describe('FileSyncEngine soft-delete propagation', () => {
+  test('tombstones a soft-deleted book in the pushed index', async () => {
+    const deleted = makeLocalBook({ deletedAt: 500, updatedAt: 100 });
+    const capture: { index?: RemoteLibraryIndex | null } = {};
+    const provider = makeProvider(null, null, capture);
+
+    const engine = new FileSyncEngine(provider, makeStore());
+    await engine.syncLibrary([deleted], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'd1',
+    });
+
+    // The deletion travels to peers as a tombstone in library.json.
+    const indexed = capture.index!.books.find((b) => b.hash === 'h1')!;
+    expect(indexed.deletedAt).toBe(500);
+  });
+
+  test('does not re-download a soft-deleted book whose remote dir still exists', async () => {
+    const deleted = makeLocalBook({ deletedAt: 500, updatedAt: 100 });
+    const capture: { index?: RemoteLibraryIndex | null } = {};
+    const provider = makeProvider(null, null, capture);
+    // The GC sweep is separate, so the deleted book's hash dir + file still
+    // exist remotely. Passing the deleted book in (it stays in allBooksMap)
+    // must keep the discovery pass from re-adding it as a download candidate.
+    provider.list = vi.fn(async (path: string) => {
+      if (path.endsWith('/books'))
+        return [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }];
+      if (path.endsWith('/h1'))
+        return [{ name: 'book.epub', path: '/Readest/books/h1/book.epub', isDirectory: false }];
+      return [];
+    });
+    const addBookToLibrary = vi.fn(async (_book: Book) => {});
+    const store = makeStore({ addBookToLibrary });
+
+    const engine = new FileSyncEngine(provider, store);
+    const result = await engine.syncLibrary([deleted], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'd1',
+    });
+
+    expect(addBookToLibrary).not.toHaveBeenCalled();
+    expect(result.booksDownloaded).toBe(0);
+    expect(capture.index!.books.find((b) => b.hash === 'h1')!.deletedAt).toBe(500);
+  });
+});
+
 describe('FileSyncEngine config merge before push (Sync now must not blind-overwrite)', () => {
   test('unions remote booknotes into the pushed config instead of clobbering them', async () => {
     // Local book is newer than the index, so incremental includes it in the

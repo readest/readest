@@ -106,7 +106,11 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
       useLibraryStore.getState().setLibrary(currentLibrary);
     }
 
-    const eligibleBooks = currentLibrary.filter((b) => !b.deletedAt);
+    // Count only live books for the progress label, but sync the FULL library
+    // (including soft-deleted books): the engine tombstones deleted books in
+    // library.json so deletions propagate, and keeping them in the input set
+    // stops the discovery pass from re-downloading a book the user just deleted.
+    const liveBookCount = currentLibrary.filter((b) => !b.deletedAt).length;
 
     // Lazily ensure a deviceId so the first cross-device sync attributes its
     // rows correctly (the reader hook also touches this on first push).
@@ -118,7 +122,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
 
     // Acquire the global library-sync mutex; bail if another backend's Sync now
     // is already mutating the local library.
-    if (!beginSync(kind, _('Syncing {{n}} / {{total}}', { n: 0, total: eligibleBooks.length }))) {
+    if (!beginSync(kind, _('Syncing {{n}} / {{total}}', { n: 0, total: liveBookCount }))) {
       return;
     }
 
@@ -129,7 +133,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({ kind, stored, persist }) =>
       }
       const store = createAppLocalStore({ appService, settings, envConfig });
       const engine = new FileSyncEngine(provider, store);
-      const result = await engine.syncLibrary(eligibleBooks, {
+      const result = await engine.syncLibrary(currentLibrary, {
         strategy: stored.strategy === 'prompt' ? 'silent' : stored.strategy,
         syncBooks: stored.syncBooks ?? false,
         fullSync: stored.fullSync ?? false,
