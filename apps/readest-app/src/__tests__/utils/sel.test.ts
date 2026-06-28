@@ -531,4 +531,95 @@ describe('sel utilities', () => {
       document.body.removeChild(container);
     });
   });
+
+  describe('getWordRangeAt', () => {
+    const withTextNode = (text: string) => {
+      const container = document.createElement('div');
+      const node = document.createTextNode(text);
+      container.appendChild(node);
+      document.body.appendChild(container);
+      return { container, node };
+    };
+
+    it('expands a caret in the middle of a word to the whole word', async () => {
+      const { container, node } = withTextNode('Hello world test');
+      const { getWordRangeAt } = await import('@/utils/sel');
+      // offset 8 = the "r" inside "world"
+      const range = getWordRangeAt(node, 8);
+      expect(range?.toString()).toBe('world');
+      document.body.removeChild(container);
+    });
+
+    it('selects the word when the caret sits at the word start boundary', async () => {
+      const { container, node } = withTextNode('Hello world test');
+      const { getWordRangeAt } = await import('@/utils/sel');
+      const range = getWordRangeAt(node, 6); // start of "world"
+      expect(range?.toString()).toBe('world');
+      document.body.removeChild(container);
+    });
+
+    it('selects the word when the caret sits at the word end boundary', async () => {
+      const { container, node } = withTextNode('Hello world test');
+      const { getWordRangeAt } = await import('@/utils/sel');
+      const range = getWordRangeAt(node, 11); // end of "world"
+      expect(range?.toString()).toBe('world');
+      document.body.removeChild(container);
+    });
+
+    it('selects a CJK word at the caret', async () => {
+      const { container, node } = withTextNode('阅读测试内容');
+      const { getWordRangeAt } = await import('@/utils/sel');
+      const range = getWordRangeAt(node, 1);
+      expect(range && range.toString().length > 0).toBe(true);
+      document.body.removeChild(container);
+    });
+
+    it('returns null on whitespace / non-word positions', async () => {
+      const { container, node } = withTextNode('   ');
+      const { getWordRangeAt } = await import('@/utils/sel');
+      expect(getWordRangeAt(node, 1)).toBeNull();
+      document.body.removeChild(container);
+    });
+
+    it('returns null when the node is not a text node', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = '<span>Hello</span>';
+      document.body.appendChild(container);
+      const { getWordRangeAt } = await import('@/utils/sel');
+      expect(getWordRangeAt(container, 0)).toBeNull();
+      document.body.removeChild(container);
+    });
+  });
+
+  describe('getWordRangeFromPoint', () => {
+    it('resolves the word under the point via caretRangeFromPoint', async () => {
+      const container = document.createElement('div');
+      const node = document.createTextNode('Hello world test');
+      container.appendChild(node);
+      document.body.appendChild(container);
+
+      const caretRange = document.createRange();
+      caretRange.setStart(node, 8);
+      caretRange.collapse(true);
+      const doc = Object.assign(document, {
+        caretRangeFromPoint: () => caretRange,
+      }) as Document & { caretRangeFromPoint: (x: number, y: number) => Range | null };
+
+      const { getWordRangeFromPoint } = await import('@/utils/sel');
+      const range = getWordRangeFromPoint(doc, 50, 50);
+      expect(range?.toString()).toBe('world');
+
+      delete (doc as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
+      document.body.removeChild(container);
+    });
+
+    it('returns null when no caret resolves at the point', async () => {
+      const doc = Object.assign(document, {
+        caretRangeFromPoint: () => null,
+      }) as Document & { caretRangeFromPoint: (x: number, y: number) => Range | null };
+      const { getWordRangeFromPoint } = await import('@/utils/sel');
+      expect(getWordRangeFromPoint(doc, 0, 0)).toBeNull();
+      delete (doc as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
+    });
+  });
 });

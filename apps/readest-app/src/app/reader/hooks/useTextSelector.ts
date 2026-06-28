@@ -8,6 +8,7 @@ import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import {
   focusCaretWindowPos,
+  getWordRangeFromPoint,
   isHyphenHandleBugProneRange,
   isPointerInsideSelection,
   Point,
@@ -419,6 +420,29 @@ export const useTextSelector = (
     }
   };
 
+  // A double-click / touch double-tap on a word: select the word (like a
+  // long-press selection) and route it through the same selection state that
+  // drives the quick action / annotation toolbar. On desktop the browser already
+  // selects the word natively on a real double-click, and that selection flows
+  // through handlePointerUp; so we only synthesize the selection when nothing is
+  // selected yet — the touch double-tap case (Android has no native word-select
+  // gesture), where the dblclick is detected from two quick taps.
+  const handleDoubleClick = async (doc: Document, index: number, x: number, y: number) => {
+    if (isInstantAnnotating.current) return;
+    const sel = doc.getSelection();
+    if (!sel || isValidSelection(sel)) return;
+    const range = getWordRangeFromPoint(doc, x, y);
+    if (!range) return;
+    guardProgrammaticSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    releaseProgrammaticSelection();
+    // No isUpToPopup latch here: a double-tap is two taps both consumed by the
+    // double-click detection, so no trailing single-click follows that would
+    // dismiss the popup — the next deliberate tap should dismiss it normally.
+    await makeSelection(sel, index, false);
+  };
+
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
     // A tap (or a long-press shorter than the hold) that never engaged: drop the
@@ -648,6 +672,7 @@ export const useTextSelector = (
     handleNativeTouchMove,
     handlePointerCancel,
     handlePointerUp,
+    handleDoubleClick,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,

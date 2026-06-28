@@ -322,6 +322,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleNativeTouchMove,
     handlePointerCancel,
     handlePointerUp,
+    handleDoubleClick,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,
@@ -611,6 +612,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     enableNativeTouch: !!appService?.isAndroidApp,
     listenToNativeTouchEvents,
   });
+
+  // A double-click / touch double-tap on a word selects that word and raises the
+  // quick action (if one is configured) or the annotation toolbar — like a
+  // long-press selection. The iframe posts `iframe-double-click` (gated by the
+  // user's double-click setting) with coordinates in the originating section's
+  // viewport; resolve the visible section's doc/index the way the native-touch
+  // bridge does, then select the word under the point.
+  useEffect(() => {
+    const handleDoubleClickMessage = (msg: MessageEvent) => {
+      const data = msg.data;
+      if (!data || data.bookKey !== bookKey || data.type !== 'iframe-double-click') return;
+      const renderer = view?.renderer;
+      const contents = renderer?.getContents?.() ?? [];
+      const content = contents.find((c) => c.index === renderer?.primaryIndex) ?? contents[0];
+      const doc = content?.doc;
+      const index = content?.index;
+      if (!doc || index === undefined) return;
+      // A double-click is a deliberate act-on-word gesture, so let the quick
+      // action fire without the touch long-press hold gate (matching a mouse
+      // selection, which sets this to 0 on pointerdown).
+      pointerDownTimeRef.current = 0;
+      void handleDoubleClick(doc, index, data.clientX, data.clientY);
+    };
+    window.addEventListener('message', handleDoubleClickMessage);
+    return () => window.removeEventListener('message', handleDoubleClickMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, view]);
 
   // Word Lens: open the dictionary popup for a tapped glossed word. The tap is
   // detected in the iframe click handler (iframeEventHandlers.ts), which sends

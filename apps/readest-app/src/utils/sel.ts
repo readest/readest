@@ -475,6 +475,60 @@ export const snapRangeToWords = (range: Range): void => {
   snapEndToWordBoundary();
 };
 
+// Expand a caret position (a text node + offset) to the word-like segment that
+// contains it — the same word a native double-click would select. Returns null
+// when the position isn't inside word-like text (whitespace, punctuation, a
+// non-text node). CJK is segmented via Intl.Segmenter, matching snapRangeToWords.
+export const getWordRangeAt = (node: Node, offset: number): Range | null => {
+  if (node.nodeType !== Node.TEXT_NODE) return null;
+  if (typeof Intl === 'undefined' || !Intl.Segmenter) return null;
+  const text = node.textContent ?? '';
+  if (!text) return null;
+  const doc = node.ownerDocument;
+  if (!doc) return null;
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+  for (const seg of segmenter.segment(text)) {
+    if (!seg.isWordLike) continue;
+    const start = seg.index;
+    const end = seg.index + seg.segment.length;
+    // The caret falls inside this word, or sits exactly on either edge (a
+    // caret-from-point at a word boundary should still select the adjacent word).
+    if (offset >= start && offset <= end) {
+      const range = doc.createRange();
+      try {
+        range.setStart(node, start);
+        range.setEnd(node, end);
+      } catch {
+        return null;
+      }
+      return range.collapsed ? null : range;
+    }
+  }
+  return null;
+};
+
+// The word range under a point (in `doc` viewport coordinates), like a native
+// double-click. Returns null when the point isn't on word-like text.
+export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Range | null => {
+  let node: Node | null = null;
+  let offset = 0;
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (pos) {
+      node = pos.offsetNode;
+      offset = pos.offset;
+    }
+  } else if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (range) {
+      node = range.startContainer;
+      offset = range.startOffset;
+    }
+  }
+  if (!node) return null;
+  return getWordRangeAt(node, offset);
+};
+
 // --- Android hyphenation selection-bounds bug (issue #1553) -----------------
 //
 // Blink's `LayoutSelection::ComputePaintingSelectionStateForCursor` compares

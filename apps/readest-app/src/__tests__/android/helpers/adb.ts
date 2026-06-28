@@ -53,6 +53,14 @@ export const tap = (x: number, y: number): Promise<string> =>
 export const longPress = (x: number, y: number, ms = 700): Promise<string> =>
   adbShell(`input swipe ${Math.round(x)} ${Math.round(y)} ${Math.round(x)} ${Math.round(y)} ${ms}`);
 
+// Two taps in a single shell invocation so both `click` events reach the WebView
+// inside the double-click window (DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250ms).
+export const doubleTap = (x: number, y: number): Promise<string> => {
+  const rx = Math.round(x);
+  const ry = Math.round(y);
+  return adbShell(`input tap ${rx} ${ry} && input tap ${rx} ${ry}`);
+};
+
 export interface MotionStep {
   x: number;
   y: number;
