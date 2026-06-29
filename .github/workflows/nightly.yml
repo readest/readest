@@ -40,6 +40,12 @@ jobs:
 
   build:
     needs: compute-version
+    permissions:
+      contents: read
+      # Required by actions/attest-build-provenance: id-token mints the Sigstore
+      # OIDC identity, attestations writes the provenance to the repo's store.
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -380,6 +386,18 @@ jobs:
               echo "::error::unknown release leg: $release"; exit 1
               ;;
           esac
+
+      # Attest the distributable binaries staged in nightly-out (apks, AppImage,
+      # app.tar.gz, setup/portable exe). gh attestation verify is digest-based,
+      # so it verifies these against readest/readest even though they ship via
+      # download.readest.com rather than a GitHub release. The .sig updater
+      # signatures are excluded — they are not binaries users run.
+      - name: attest nightly binaries
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            nightly-out/Readest*
+            !nightly-out/*.sig
 
       - name: upload artifacts + fragment to R2
         shell: bash
