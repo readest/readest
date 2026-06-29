@@ -57,7 +57,11 @@ object ReadingWidgetStore {
         val cropX = (srcW - cropW) / 2
         val cropY = (srcH - cropH) / 2
         val cropped = Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
-        bitmap.recycle()
+        // createBitmap returns the SAME instance when the crop covers the whole
+        // (immutable) source — i.e. covers already at exactly 2:3. Recycling here
+        // would recycle `cropped` too and crash createScaledBitmap below with
+        // "cannot use a recycled source". Mirror the scaled !== cropped guard.
+        if (cropped !== bitmap) bitmap.recycle()
 
         // Scale the cropped bitmap to the target size.
         val scaled = Bitmap.createScaledBitmap(cropped, THUMB_WIDTH, THUMB_HEIGHT, true)

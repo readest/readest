@@ -13,14 +13,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
-### verify_paths
-
-```sh
-[bundle exec] fastlane verify_paths
-```
-
-
-
 ### release_ios
 
 ```sh
