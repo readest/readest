@@ -70,7 +70,7 @@
   </supports>
 
   <releases>
-    <release version="0.11.16" date="2026-06-29">
+    <release version="0.11.17" date="2026-06-29">
       <description>
         <ul>
           <li>Sync: Added WebDAV and Google Drive sync for your books and reading data</li>
