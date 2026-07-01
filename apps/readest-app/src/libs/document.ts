@@ -452,7 +452,14 @@ export const getDirection = (doc: Document) => {
     }
   }
   const vertical = writingMode === 'vertical-rl' || writingMode === 'vertical-lr';
-  const rtl = doc.body.dir === 'rtl' || direction === 'rtl' || doc.documentElement.dir === 'rtl';
+  // `vertical-rl` (Japanese/Chinese vertical) advances columns right-to-left even
+  // though its computed `direction` stays `ltr`, so the writing mode itself marks
+  // it RTL. Without this the reading ruler and page turns run backwards (#4865).
+  const rtl =
+    writingMode === 'vertical-rl' ||
+    doc.body.dir === 'rtl' ||
+    direction === 'rtl' ||
+    doc.documentElement.dir === 'rtl';
   return { vertical, rtl };
 };
 
