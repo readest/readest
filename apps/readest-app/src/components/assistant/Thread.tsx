@@ -114,7 +114,6 @@ export const Thread: FC<ThreadProps> = ({
   const messageCount = useThread((t) => t.messages.length);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
-
   const showLoading = isLoadingHistory && hasActiveConversation;
 
   useEffect(() => {

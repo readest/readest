@@ -8,13 +8,14 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'annotate',
   'search',
   'dictionary',
+  'xray',
   'translate',
   'tts',
   'proofread',
   'share',
 ];
 
-// Default toolbar: the eight pre-existing tools in their original order.
+// Default toolbar: every non-share tool in canonical order.
 // 'share' starts hidden in the Available tray per the #4014 design.
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'copy',
@@ -22,6 +23,7 @@ export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'annotate',
   'search',
   'dictionary',
+  'xray',
   'translate',
   'tts',
   'proofread',
